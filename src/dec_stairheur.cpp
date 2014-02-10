@@ -74,9 +74,10 @@ using std::find;
 using std::vector;
 using std::swap;
 
+#ifdef WRITEALLOUTPUT
 #define DWSOLVER_REFNAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_ref.txt", (name), (blocks), (cons), (dummy)
 #define GP_NAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_%d.gp", (name), (blocks), (cons), (dummy)
-
+#endif
 /*
  * Data structures
  */
@@ -173,13 +174,13 @@ vector<int> SCIPvectorCreateInt(
    int                   to                  /**< End index */
    )
 {
-   vector<int> vector;
+   vector<int> v;
 
    for( int i = from; i <= to; ++i )
    {
-      vector.push_back(i);
+      v.push_back(i);
    }
-   return vector;
+   return v;
 }
 
 
@@ -200,7 +201,7 @@ void SCIPvectorRearrange(
 
    for( it1 = order.begin(); it1 != order.end(); ++it1 )
    {
-      new_vector.push_back(l[*it1-1]);
+      new_vector.push_back(l[(size_t)*it1-1]);
 
    }
    l.swap(new_vector);
@@ -491,7 +492,7 @@ SCIP_RETCODE createRowindexList(
       int nvars;
       int* probindices = NULL;
       vector<int> rowindices_row;
-      int* hashmapindex = &detectordata->hashmapindices[i+1];
+      int* hashmapindex = &detectordata->hashmapindices[(size_t)i+1];
 
       cons = (SCIP_CONS*) SCIPhashmapGetImage(indexcons, (void*) hashmapindex);
       nvars = GCGconsGetNVars(scip, cons);
@@ -547,7 +548,6 @@ SCIP_RETCODE createRowindexList(
 static
 SCIP_RETCODE createColumnindexList(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    vector<vector<int> >  &rowindices,        /**< A vector with the row indices (achieved from calling rowindices_vector() ) */
    vector<vector<int> >  &columnindices      /**< vector to store the column indices vector*/
 )
@@ -559,21 +559,21 @@ SCIP_RETCODE createColumnindexList(
    vector<int>::iterator inner;
    nvars = SCIPgetNVars(scip);
 
-   vector<vector<int> > columnindices_array(nvars);
+   vector<vector<int> > columnindices_array((size_t)nvars);
 
    for( outer = rowindices.begin(), i = 1; outer != rowindices.end(); ++outer, ++i )
    {
       for( inner = outer->begin(); inner != outer->end(); ++inner )
       {
          position = (*inner)-1;
-         columnindices_array[position].push_back(i);
+         columnindices_array[(size_t) position].push_back(i);
       }
    }
 
    /* create a columnindices vector instead of an array */
    for( i = 0; i < nvars; ++i )
    {
-      columnindices.push_back(columnindices_array[i]); /** @todo broken */
+      columnindices.push_back(columnindices_array[(size_t)i]); /** @todo broken */
    }
 
    return SCIP_OKAY;
@@ -597,14 +597,13 @@ vector<int> rowOrdering(
    vector<int> new_roworder;
    vector<vector<int> >::reverse_iterator it1;
    vector<int>::reverse_iterator it2;
-   int i;
 
    /* create a vector for the order of the rows ( 1 2 3 ... nrows ) */
    roworder = SCIPvectorCreateInt(1, nrows);
    new_roworder = SCIPvectorCreateInt(1, nrows);
 
    /* first from back to front */
-   for( i = columnindices.size(), it1 = columnindices.rbegin(); it1 != columnindices.rend(); ++it1, --i )
+   for( it1 = columnindices.rbegin(); it1 != columnindices.rend(); ++it1 )
    {
 
       /* second from back to front */
@@ -612,8 +611,8 @@ vector<int> rowOrdering(
       {
          vector<int>::iterator tmp;
 
-         tmp = std::find(new_roworder.begin(), new_roworder.end(), *it2);
-         std::rotate(new_roworder.begin(), tmp, tmp+1);
+         tmp = std::find(new_roworder.begin(), new_roworder.end(), *it2); /*lint !e864*/
+         std::rotate(new_roworder.begin(), tmp, tmp+1); /*lint !e1702 !e747*/
       }
       roworder = new_roworder;
    }
@@ -693,7 +692,7 @@ SCIP_RETCODE rankOrderClusteringIteration(
    vector<int>::iterator it1;
    int nvars;
    int ncons;
-   int i;
+   size_t i;
    int position;
    int* hashmapindex;
 
@@ -706,7 +705,7 @@ SCIP_RETCODE rankOrderClusteringIteration(
 
    /* create the vectors containing the positions of nonzero entries; row and column ordering */
    SCIP_CALL( createRowindexList(scip, detectordata, inputmap->indexcons, inputmap->varindex, rowindices) );
-   SCIP_CALL( createColumnindexList(scip, detectordata, rowindices, columnindices) );
+   SCIP_CALL( createColumnindexList(scip, rowindices, columnindices) );
 
    roworder = rowOrdering(scip, columnindices, ncons);
    SCIPvectorRearrange(rowindices, roworder);
@@ -715,7 +714,7 @@ SCIP_RETCODE rankOrderClusteringIteration(
    SCIPvectorRearrange(columnindices, columnorder);
 
    /* consindex and indexcons */
-   for( it1 = roworder.begin(), i = 0; it1 != roworder.end() && i < ncons; ++i,++it1 )
+   for( it1 = roworder.begin(), i = 0; it1 != roworder.end() && i < (size_t) ncons; ++i,++it1 )
    {
       SCIP_CONS* cons;
       position = *it1;
@@ -726,15 +725,15 @@ SCIP_RETCODE rankOrderClusteringIteration(
       /* consindex */
       hashmapindex = &detectordata->hashmapindices[i+1];
       assert( SCIPhashmapExists(outputmap->consindex, (void*) cons));
-      SCIPhashmapSetImage(outputmap->consindex, (void*) cons, (void*) hashmapindex);
+      SCIP_CALL( SCIPhashmapSetImage(outputmap->consindex, (void*) cons, (void*) hashmapindex) );
 
       /* indexcons */
       assert( SCIPhashmapExists(outputmap->indexcons, (void*) hashmapindex ));
-      SCIPhashmapSetImage(outputmap->indexcons, (void*) hashmapindex, cons);
+      SCIP_CALL( SCIPhashmapSetImage(outputmap->indexcons, (void*) hashmapindex, cons) );
    }
 
    /* varindex and indexvar */
-   for( it1 = columnorder.begin(), i = 0; it1 != columnorder.end() &&i < nvars; ++i, ++it1 )
+   for( it1 = columnorder.begin(), i = 0; it1 != columnorder.end() &&i < (size_t) nvars; ++i, ++it1 )
    {
       SCIP_VAR* var;
       position = *it1;
@@ -745,21 +744,22 @@ SCIP_RETCODE rankOrderClusteringIteration(
       /* varindex */
       hashmapindex = &detectordata->hashmapindices[i+1];
       assert( SCIPhashmapExists(outputmap->varindex, (void*) var) );
-      SCIPhashmapSetImage(outputmap->varindex, (void*) var, (void*) hashmapindex);
+      SCIP_CALL( SCIPhashmapSetImage(outputmap->varindex, (void*) var, (void*) hashmapindex) );
 
       /* indexvar */
       assert( SCIPhashmapExists(outputmap->indexvar, (void*) hashmapindex ));
-      SCIPhashmapSetImage(outputmap->indexvar, (void*) hashmapindex, var);
+      SCIP_CALL( SCIPhashmapSetImage(outputmap->indexvar, (void*) hashmapindex, var) );
    }
 
    return SCIP_OKAY;
 }
 
 static
-int rankOrderClustering(
+SCIP_RETCODE rankOrderClustering(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
-   int                   max_iterations      /**< number of maximal iterations */
+   int                   max_iterations,     /**< number of maximal iterations */
+   int*                  iterations          /**< number of performed iterations */
    )
 {
    int i;
@@ -773,62 +773,71 @@ int rankOrderClustering(
    assert(scip != NULL);
    assert(detectordata != NULL);
 
+   int nvars = SCIPgetNVars(scip);
+   int nconss = SCIPgetNConss(scip);
+
+   if( iterations != NULL )
+      *iterations = -1;
+
    if( max_iterations <= 0 )
    {
-      return max_iterations;
+      return SCIP_OKAY;
    }
-   else
+
+
+
+   SCIP_CALL( indexmapCreate(scip, &indexmap_permuted, nconss, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &ibegin_permuted, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &iend_permuted, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &jbegin_permuted, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &jend_permuted, nvars) );
+   SCIP_CALL( indexmapInit(indexmap_permuted, SCIPgetVars(scip), nvars, SCIPgetConss(scip), nconss, detectordata->hashmapindices) );
+   i = 0;
+
+   do
    {
-      int nvars = SCIPgetNVars(scip);
-      int nconss = SCIPgetNConss(scip);
+      ++i;
+      /* not more than max_iterations loops. no iteration limit for max_iterations == -1 */
+      if(i > max_iterations && max_iterations != -1)
+         break;
 
-      indexmapCreate(scip, &indexmap_permuted, nconss, nvars);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &ibegin_permuted, nconss) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &iend_permuted, nconss) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &jbegin_permuted, nvars) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &jend_permuted, nvars) );
-      SCIP_CALL( indexmapInit(indexmap_permuted, SCIPgetVars(scip), nvars, SCIPgetConss(scip), nconss, detectordata->hashmapindices) );
-      i = 0;
-      do
-      {
-         ++i;
-         /* not more than max_iterations loops. no iteration limit for max_iterations == -1 */
-         if(i > max_iterations && max_iterations != -1)
-            break;
+      SCIPdebugMessage("Iteration # %i of ROC2\n", i);
+      SCIP_CALL( rankOrderClusteringIteration(scip, detectordata, detectordata->indexmap, indexmap_permuted) );
 
-         SCIPdebugMessage("Iteration # %i of ROC2\n", i);
-         rankOrderClusteringIteration(scip, detectordata, detectordata->indexmap, indexmap_permuted);
+      /* form the new index arrays after the permutation */
+      SCIP_CALL( createRowindexList(scip, detectordata, indexmap_permuted->indexcons, indexmap_permuted->varindex, rowindices) );
+      SCIP_CALL( createColumnindexList(scip, rowindices, columnindices) );
+      SCIP_CALL( formIndexArray(ibegin_permuted, iend_permuted, rowindices) );
+      SCIP_CALL( formIndexArray(jbegin_permuted, jend_permuted, columnindices) );
+      rowindices.clear();
+      columnindices.clear();
 
-         /* form the new index arrays after the permutation */
-         SCIP_CALL( createRowindexList(scip, detectordata, indexmap_permuted->indexcons, indexmap_permuted->varindex, rowindices) );
-         SCIP_CALL( createColumnindexList(scip, detectordata, rowindices, columnindices) );
-         SCIP_CALL( formIndexArray(ibegin_permuted, iend_permuted, rowindices) );
-         SCIP_CALL( formIndexArray(jbegin_permuted, jend_permuted, columnindices) );
-         rowindices.clear();
-         columnindices.clear();
+      /* switch between index arrays containing new and old indices */
+      swap( detectordata->ibegin, ibegin_permuted);
+      swap( detectordata->iend, iend_permuted);
+      swap( detectordata->jbegin, jbegin_permuted);
+      swap( detectordata->jend, jend_permuted);
 
-         /* switch between index arrays containing new and old indices */
-         swap( detectordata->ibegin, ibegin_permuted);
-         swap( detectordata->iend, iend_permuted);
-         swap( detectordata->jbegin, jbegin_permuted);
-         swap( detectordata->jend, jend_permuted);
-
-         /* switch between hash maps containing new and old indices */
-         swap(detectordata->indexmap, indexmap_permuted);
-      }
-      /* while Index Arrays change */
-      while( ! (arraysAreEqual(detectordata->ibegin, ibegin_permuted, nconss )
-             && arraysAreEqual(detectordata->iend, iend_permuted, nconss)
-             && arraysAreEqual(detectordata->jbegin, jbegin_permuted, nvars)
-             && arraysAreEqual(detectordata->jend, jend_permuted, nvars)));
-
-      indexmapFree(scip, &indexmap_permuted);
-      SCIPfreeMemoryArray(scip, &ibegin_permuted);
-      SCIPfreeMemoryArray(scip, &iend_permuted);
-      SCIPfreeMemoryArray(scip, &jbegin_permuted);
-      SCIPfreeMemoryArray(scip, &jend_permuted);
+      /* switch between hash maps containing new and old indices */
+      swap(detectordata->indexmap, indexmap_permuted);
    }
-   return (i-1);
+   /* while Index Arrays change */
+   while( ! (arraysAreEqual(detectordata->ibegin, ibegin_permuted, nconss )
+         && arraysAreEqual(detectordata->iend, iend_permuted, nconss)
+         && arraysAreEqual(detectordata->jbegin, jbegin_permuted, nvars)
+         && arraysAreEqual(detectordata->jend, jend_permuted, nvars)));
+
+   indexmapFree(scip, &indexmap_permuted);
+   SCIPfreeMemoryArray(scip, &ibegin_permuted);
+   SCIPfreeMemoryArray(scip, &iend_permuted);
+   SCIPfreeMemoryArray(scip, &jbegin_permuted);
+   SCIPfreeMemoryArray(scip, &jend_permuted);
+
+
+   if( iterations != NULL )
+      *iterations = i-1;
+
+   return SCIP_OKAY;
 }
 
 /** finds rows with local minima regarding the number of linking variables and stores them in detectordata->rowsWithConstrictions */
@@ -839,13 +848,14 @@ SCIP_RETCODE rowsWithConstriction(
    )
 {
    /* if blocking is performed after row i+1; local minima */
-   int i;
-   for( i = 1; i < SCIPgetNConss(scip) - 2; ++i )
+   size_t i;
+   size_t nconss = (size_t) SCIPgetNConss(scip);
+   for( i = 1; i < nconss - 2; ++i )
    {
       /* is minV[i] a local minimum?    < or <=   ? What does make more sense? */
       if( detectordata->minV[i] < detectordata->minV[i-1] && detectordata->minV[i] < detectordata->minV[i+1] )
       {
-         detectordata->rowsWithConstrictions->push_back(i+1);
+         detectordata->rowsWithConstrictions->push_back((int)(i+1));
       }
    }
    return SCIP_OKAY;
@@ -865,10 +875,9 @@ SCIP_RETCODE assignConsToBlock(
    )
 {
    int i;
-   int j;
 
    /* assign the constraints to the current block */
-   for( i = first_cons, j = 0; i <= last_cons; ++i, ++j )
+   for( i = first_cons; i <= last_cons; ++i )
    {
       int* hashmapindex = &detectordata->hashmapindices[i];
       SCIP_CONS* cons = (SCIP_CONS*) SCIPhashmapGetImage(detectordata->indexmap->indexcons, (void*) hashmapindex);
@@ -890,7 +899,7 @@ int getMaxColIndex(
    )
 {
    /* some pointer arithmetic */
-   return std::max_element(detectordata->iend + (from_row), detectordata->iend+(to_row + 1))-detectordata->iend;
+   return std::max_element(detectordata->iend + (from_row), detectordata->iend+((size_t)to_row + 1))-detectordata->iend; /*lint !e712*/
 }
 
 /** returns the column index of the first nonzero entry in 'row'. Rows start counting at 1, not 0. */
@@ -962,7 +971,6 @@ vector<int>::iterator findBlockingCandidate(
       /* advance iterator to next element */
       ++it_constrictions;
    }
-   return it_constrictions;
 }
 
 /** this functions determines the next row to block at
@@ -1087,7 +1095,7 @@ SCIP_RETCODE blockingDynamic(
    int                   tau,                /**< desired number of blocks */
    int                   nvars               /**< number of variables in the problem*/
    )
-{
+{ /*lint -e715*/
    int block;
    int prev_block_first_row;
    int prev_block_last_row;
@@ -1104,7 +1112,7 @@ SCIP_RETCODE blockingDynamic(
    prev_block_first_row = 0;
    prev_block_last_row = 0;
 
-   min_block_size = SCIPround(scip, (SCIPgetNConss(scip)*1.0) / (2 * tau ));
+   min_block_size = (int) SCIPround(scip, ((SCIP_Real)SCIPgetNConss(scip)) / (2.0 * tau ));
    it1 = detectordata->rowsWithConstrictions->begin();
 
    for( it1 = nextRowToBlockAt(detectordata, it1, detectordata->rowsWithConstrictions, min_block_size, prev_block_first_row, prev_block_last_row);
@@ -1178,7 +1186,7 @@ SCIP_RETCODE blockingStatic(
    {
       current_row += detectordata->nconssperblock;
       SCIPdebugMessage("Blocking from %d to %d in block %d",prev_block_last_row + 1,  current_row, block);
-      assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, current_row);
+      SCIP_CALL( assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, current_row) );
 
 
       prev_block_last_row = current_row;
@@ -1268,7 +1276,7 @@ SCIP_RETCODE blocking(
       {
          int n = *std::max_element(detectordata->width, detectordata->width+ncons);
          int v = *std::min_element(detectordata->width, detectordata->width+ncons);
-         tau = round((nvars - v)/(n - v));
+         tau = (int)SCIPround(scip, ((SCIP_Real)nvars - v)/((SCIP_Real)n - v));
          SCIPdebugMessage("<n><v><tau>: <%i><%i><%i>\n", n, v, tau);
          if( tau > detectordata->maxblocks )
          {
@@ -1429,7 +1437,7 @@ DEC_DECL_INITDETECTOR(initStairheur)
    detectordata->blockedAfterrow = new vector<int>();
 
    /* create hash tables */
-   indexmapCreate(scip, &detectordata->indexmap, nconss, nvars);
+   SCIP_CALL( indexmapCreate(scip, &detectordata->indexmap, nconss, nvars) );
 
    return SCIP_OKAY;
 }
@@ -1529,7 +1537,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    /* initialize index arrays ibegin, iend, jbegin, jend */
    SCIP_CALL( createRowindexList(scip, detectordata, detectordata->indexmap->indexcons, detectordata->indexmap->varindex, rowindices) );
 
-   SCIP_CALL( createColumnindexList(scip, detectordata, rowindices, columnindices) );
+   SCIP_CALL( createColumnindexList(scip, rowindices, columnindices) );
 
    SCIP_CALL( formIndexArray(detectordata->ibegin, detectordata->iend, rowindices) );
    SCIP_CALL( formIndexArray(detectordata->jbegin, detectordata->jend, columnindices) );
@@ -1541,7 +1549,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 
 
 #ifdef WRITEALLOUTPUT
-   ROC_iterations = rankOrderClustering(scip, detectordata, detectordata->maxiterationsROC);
+   SCIP_CALL( rankOrderClustering(scip, detectordata, detectordata->maxiterationsROC, &ROC_iterations) );
    {
       char filename[256];
       sprintf(filename, "%s_ROC", getProbNameWithoutPath(scip));
@@ -1553,7 +1561,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
       checkConsistencyOfIndexarrays(detectordata, nvars, nconss);
    }
 #else
-   (void) rankOrderClustering(scip, detectordata, detectordata->maxiterationsROC);
+   SCIP_CALL( rankOrderClustering(scip, detectordata, detectordata->maxiterationsROC, NULL) );
 #endif
    /* arrays jmin, jmax and minV */
    SCIPdebugMessage("calculating index arrays\n");
@@ -1589,6 +1597,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 
 
 /** creates the stairheur presolver and includes it in SCIP */
+extern "C"
 SCIP_RETCODE SCIPincludeDetectionStairheur(
    SCIP*                 scip              /**< SCIP data structure */
    )
