@@ -285,14 +285,14 @@ ifeq ($(FILES),)
 			do \
 			echo $$i; \
 			$(LINT) lint/co-gcc.lnt lint/$(MAINNAME)-test.lnt +os\(lint.out\) -u -zero \
-			$(FLAGS) -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
+			$(FLAGS) -dCPLEXSOLVER -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
 			done'
 else
 		$(SHELL) -ec  'for i in $(FILES); \
 			do \
 			echo $$i; \
 			$(LINT) lint/co-gcc.lnt lint/$(MAINNAME)-test.lnt +os\(lint.out\) -u -zero \
-			$(FLAGS) -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
+			$(FLAGS) -dCPLEXSOLVER -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
 			done'
 endif
 

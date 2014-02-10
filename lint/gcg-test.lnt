@@ -41,7 +41,7 @@
 --i"/usr/lib64/gcc/x86_64-suse-linux/4.6/../../../../x86_64-suse-linux/include"
 --i"/usr/include"
 --i"lib/blissinc"
-
+--i"lib/scip/lib/cpxinc"
 +libh(cplex.h)
 +fll
 

@@ -44,7 +44,7 @@ extern "C" {
 
 /** creates the cplex solver for pricing problems and includes it in GCG */
 extern
-SCIP_RETCODE GCGincludeSolverCplex(  /*lint !e752 */
+SCIP_RETCODE GCGincludeSolverCplex(
    SCIP*                 scip                /**< SCIP data structure */
 );
 
