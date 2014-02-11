@@ -1896,8 +1896,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_SOL*** sols = NULL;
    int* nsols = NULL;
    SCIP_Bool** solisray = NULL;
+   SCIP_Real* bestobjvals;
    SCIP_Real pricinglowerbound;
    SCIP_Real bestredcost;
+   SCIP_Real beststabobj;
    SCIP_Real dualconvsum;
    SCIP_RETCODE retcode;
    SCIP_Bool infeasible;
@@ -1941,6 +1943,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &sols, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &solisray, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &pricingstatus, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs) );
+
    BMSclearMemoryArray(nsols, pricerdata->npricingprobs);
 
    for( i = 0; i < pricerdata->npricingprobs; i++ )
@@ -1965,6 +1969,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    do
    {
       bestredcost = 0.0;
+      beststabobj = 0.0;
       *bestredcostvalid = isMasterLPOptimal() && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
       stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
@@ -1972,7 +1977,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       SCIP_CALL( freePricingProblems() );
       SCIP_CALL( setPricingObjs(pricetype) );
 
-      #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost,bestredcostvalid,nfoundvars,successfulmips,infeasible,pricinghaserror) reduction(+:solvedmips) schedule(static,1)
+      #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost, beststabobj,bestredcostvalid,nfoundvars,successfulmips,infeasible,pricinghaserror) reduction(+:solvedmips) schedule(static,1)
       for( i = 0; i < pricerdata->npricingprobs; i++ )
       {
          int prob;
@@ -2016,6 +2021,15 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             }
          }
 
+         if( optimal )
+         {
+            #pragma omp atomic
+            beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
+
+            #pragma omp atomic
+            bestobjvals[prob] = pricinglowerbound;
+         }
+
          if( optimal && nsols[prob] > 0)
          {
             SCIP_Real convdual = stabilization->convGetDual(prob);
@@ -2057,19 +2071,23 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       if( stabilized && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
       {
+         SCIP_Real beststabredcost;
          SCIP_Real lowerboundcandidate;
          SCIP_Real stabdualval = 0.0;
          assert(lowerbound != NULL);
+
          SCIP_CALL( getStabilizedDualObjectiveValue(&stabdualval) );
          SCIPdebugMessage("candidate: %.8g bestredcost %.8g, dualconvsum %.8g\n", stabdualval, bestredcost, dualconvsum);
-         lowerboundcandidate = stabdualval + bestredcost + dualconvsum;
+         lowerboundcandidate = stabdualval + beststabobj;
 
+         beststabredcost = beststabobj - dualconvsum;
          //SCIPinfoMessage(scip_, NULL, "Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, boundcandidate = %f\n", stabilized, nfoundvars, optimal, lowerboundcandidate);
 
-         if(*bestredcostvalid && SCIPisGE(scip_, bestredcost, 0.0))
+         if(*bestredcostvalid)
          {
+            SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals) );
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
-            SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate) );
+
          }
 
          SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %ud, nfoundvars = %d, optimal = %ud, *bestredcostvalid = %ud\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
@@ -2077,7 +2095,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
                stabilization->updateAlphaMisprice();
          }
-         else if( *bestredcostvalid && !SCIPisGE(scip_, bestredcost, 0.0))
+         else if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0))
          {
             SCIP_SOL** pricingsols = NULL;
 
@@ -2092,25 +2110,19 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                }
             }
 
-            /* We are not allowed to use the stabilized dual bound as the new stabcenter because it is not feasible to the dual program
-             * and therefore does not define a new lowerbound
-             */
-            /*
-            lowerboundcandidate = getStabilizedDualObjectiveValue(scip_) + bestredcost;
-            *lowerbound = MAX(*lowerbound, lowerboundcandidate);
-            SCIP_CALL( stabilization->updateStabilityCenter( lowerboundcandidate) );
-            */
-
             stabilization->updateAlpha(pricingsols);
 
             SCIPfreeBlockMemoryArray(scip_, &pricingsols, pricerdata->npricingprobs)
          }
 
       }
-      else if(*bestredcostvalid)
+      else if( optimal && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
       {
-         assert(lowerbound != NULL);
-         *lowerbound = MAX(*lowerbound, SCIPgetLPObjval(scip_) + bestredcost); /*lint !e666*/
+         SCIP_Real lowerboundcandidate;
+
+         lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
+
+         *lowerbound = MAX(*lowerbound, lowerboundcandidate);
       }
 
       /* free solutions if none of them has negative reduced cost */
@@ -2206,6 +2218,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIPfreeBlockMemoryArray(scip_, &sols, pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip_, &nsols, pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip_, &pricingstatus, pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs);
 
    /* free the pricingproblems if they exist and need to be freed */
    SCIP_CALL( freePricingProblems() );

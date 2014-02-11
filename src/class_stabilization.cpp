@@ -222,13 +222,15 @@ SCIP_Real Stabilization::convGetDual(
 }
 
 SCIP_RETCODE Stabilization::updateStabilityCenter(
-   SCIP_Real lowerbound
+   SCIP_Real             lowerbound,         /**< lower bound due to lagrange function corresponding to current (stabilized) dual vars */
+   SCIP_Real*            dualsolconv         /**< corresponding feasible dual solution for convexity constraints */
    )
 {
+   assert(dualsolconv != NULL);
    SCIPdebugMessage("Updating stability center: ");
 
-   /* in case the bound is not improving, do nothing */
-   if( SCIPisLE(scip_, lowerbound, SCIPnodeGetLowerbound(SCIPgetCurrentNode(scip_))) )
+   /* in case the bound is not improving and we have a stability center, do nothing */
+   if( SCIPisLE(scip_, lowerbound, SCIPnodeGetLowerbound(SCIPgetCurrentNode(scip_))) && hasstabilitycenter )
    {
       SCIPdebugPrintf("no bound increase: %g <= %g\n", lowerbound, SCIPnodeGetLowerbound(SCIPgetCurrentNode(scip_)));
       return SCIP_OKAY;
@@ -271,7 +273,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
       if(!GCGisPricingprobRelevant(origprob, i))
          continue;
 
-      stabcenterconv[i] = convGetDual(i);
+      stabcenterconv[i] = dualsolconv[i];
    }
 
    hasstabilitycenter = TRUE;
