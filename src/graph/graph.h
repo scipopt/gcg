@@ -124,7 +124,7 @@ public:
       SCIP_VAR**         vars,               /**< variables for which graph should be created */
       int                nconss_,            /**< number of constraints */
       int                nvars_              /**< number of variables */
-   ) { return SCIP_ERROR; };
+   ) { return SCIP_ERROR; }
 
    /** writes the graph to the given file.
     *  The format is graph dependent
@@ -156,7 +156,7 @@ public:
    void setDummynodes(int dummynodes_)
    {
       dummynodes = dummynodes_;
-   };
+   }
 
    int getDummynodes() const
    {

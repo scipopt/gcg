@@ -160,7 +160,7 @@ public:
    void setDummynodes(int dummynodes_)
    {
       dummynodes = dummynodes_;
-   };
+   }
 
 
    int getDummynodes() const

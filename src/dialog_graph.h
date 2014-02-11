@@ -49,7 +49,7 @@ public:
    DialogGraph(
       SCIP*              scip                /**< SCIP data structure */
    );
-   virtual ~DialogGraph() {};
+   virtual ~DialogGraph() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
 };
 
@@ -59,7 +59,7 @@ public:
    DialogWriteGraph(
       SCIP*              scip                /**< SCIP data structure */
    );
-   virtual ~DialogWriteGraph() {};
+   virtual ~DialogWriteGraph() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
 };
 
@@ -69,7 +69,7 @@ public:
    DialogReadPartition(
       SCIP*              scip                /**< SCIP data structure */
    );
-   virtual ~DialogReadPartition() {};
+   virtual ~DialogReadPartition() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
 };
 
@@ -82,7 +82,7 @@ public:
    DialogReadGraphs(
       SCIP*              scip                /**< SCIP data structure */
    );
-   virtual ~DialogReadGraphs() {};
+   virtual ~DialogReadGraphs() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
 };
 
@@ -95,7 +95,7 @@ public:
    DialogWriteGraphs(
       SCIP*              scip                /**< SCIP data structure */
    );
-   virtual ~DialogWriteGraphs() {};
+   virtual ~DialogWriteGraphs() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
 };
 } /* namespace gcg */

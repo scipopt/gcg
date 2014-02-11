@@ -164,7 +164,7 @@ public:
       calls = 0;
       SCIP_CALL( SCIPresetClock(scip_, clock) );
       return SCIP_OKAY;
-   };
+   }
 
 };
 
@@ -174,7 +174,7 @@ public:
    ReducedCostPricing(
           SCIP* p_scip
           );
-    virtual ~ReducedCostPricing() {};
+    virtual ~ReducedCostPricing() {}
     virtual SCIP_RETCODE addParameters();
     virtual SCIP_Real consGetDual(SCIP* scip, SCIP_CONS* cons) const;
     virtual SCIP_Real rowGetDual(SCIP_ROW* row) const;
@@ -203,7 +203,7 @@ public:
    FarkasPricing(
           SCIP* p_scip
           );
-   virtual ~FarkasPricing() {};
+   virtual ~FarkasPricing() {}
    virtual SCIP_RETCODE addParameters();
    virtual SCIP_Real consGetDual(SCIP *scip, SCIP_CONS *cons) const;
    virtual SCIP_Real rowGetDual(SCIP_ROW* row) const;

@@ -81,11 +81,14 @@ public:
    {
       SCIP_CALL(graphiface->writeToFile(fd, writeweights) );
       return SCIP_OKAY;
-   };
+   }
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
-      ) { return SCIP_ERROR; };
+   )
+   {
+      return SCIP_ERROR;
+   }
    /**
     * reads the partition from the given file.
     * The format is graph dependent. The default is a file with one line for each node a
@@ -102,7 +105,7 @@ public:
    void setDummynodes(int dummynodes_)
    {
       dummynodes = dummynodes_;
-   };
+   }
 
    int getDummynodes() const
    {
@@ -120,7 +123,7 @@ public:
       SCIP_VAR**            vars,               /**< variables for which graph should be created */
       int                   nconss_,             /**< number of constraints */
       int                   nvars_               /**< number of variables */
-      ) { return SCIP_ERROR; };
+      ) { return SCIP_ERROR; }
 
 
    virtual int getNNonzeroes() const

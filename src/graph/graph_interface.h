@@ -52,12 +52,12 @@ protected:
    std::vector<int> partition;
 public:
 
-   GraphInterface() {};
+   GraphInterface() {}
 
-   virtual ~GraphInterface() {};
+   virtual ~GraphInterface() {}
 
    /** return a partition of the nodes */
-   virtual std::vector<int> getPartition() const { return partition; };
+   virtual std::vector<int> getPartition() const { return partition; }
 
    /** assigns partition to a given node*/
    virtual void setPartition(int i, int nodeid) = 0;

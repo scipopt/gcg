@@ -64,7 +64,7 @@ public:
    );
    /** destructor */
    virtual ~ObjPricerGcg()
-   {};
+   {}
 
    /** destructor of variable pricer to free user data (called when SCIP is exiting) */
    virtual SCIP_DECL_PRICERFREE(scip_free);
@@ -85,7 +85,6 @@ public:
       return pricerdata;
    }
 
-   ;
    /** computes the pricing problem objectives */
    SCIP_RETCODE setPricingObjs(
       PricingType *pricetype

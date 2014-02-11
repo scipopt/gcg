@@ -43,8 +43,8 @@ namespace gcg
 class Bridge
 {
 public:
-   Bridge() {};
-   virtual ~Bridge() {};
+   Bridge() {}
+   virtual ~Bridge() {}
    /** get number of nodes in the graph */
    virtual int getNNodes() = 0;
 
