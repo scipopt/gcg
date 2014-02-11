@@ -7,6 +7,7 @@ detectors/connected/enabled = FALSE
 # Type of the graph: 'c' column hypergraph, 'r' row hypergraph, 'a' column-row hypergraph
 # [type: char, range: {cra}, default: r]
 detectors/arrowheur/type = r
+detectors/arrowheur/enabled = TRUE
 
 detectors/arrowheur/enabled = TRUE
 

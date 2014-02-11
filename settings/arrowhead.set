@@ -7,6 +7,7 @@ detectors/connected/enabled = FALSE
 # Type of the graph: 'c' column hypergraph, 'r' row hypergraph, 'a' column-row hypergraph
 # [type: char, range: {cra}, default: r]
 detectors/arrowheur/type = a
+detectors/arrowheur/enabled = TRUE
 
 # flag to indicate whether detector <staircase> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
