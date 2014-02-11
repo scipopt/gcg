@@ -1103,6 +1103,7 @@ SCIP_RETCODE blockingDynamic(
    prev_block_first_row = 0;
    prev_block_last_row = 0;
 
+   assert(tau > 0);
    min_block_size = (int) SCIPround(scip, ((SCIP_Real)SCIPgetNConss(scip)) / (2.0 * tau ));
    it1 = detectordata->rowsWithConstrictions->begin();
 
@@ -1253,7 +1254,7 @@ SCIP_RETCODE blocking(
    SCIP_RESULT*          result              /**< pointer to store result */
    )
 {
-   int tau = 0; /*  desired number of blocks */
+   int tau = 1; /*  desired number of blocks */
 
    assert(*ndecdecomps == 0);
 

@@ -812,10 +812,10 @@ SCIP_RETCODE InducedLexicographicSort(
    assert( C!= NULL );
 
    assert(arraysize > 0);
-
    if( arraysize <= 1 )
       return SCIP_OKAY;
 
+   assert(array != NULL);
    for( i=0; i<arraysize; ++i )
    {
       array[i]->scip = scip;
