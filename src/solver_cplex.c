@@ -652,10 +652,12 @@ SCIP_RETCODE solveCplex(
    double* cplexsolvals;
    double objective;
    double upperbound;
+   double* primsol;
    int nsolscplex;
    int numcols;
    int status;
    int s;
+   int dummy;
 
    *nsols = 0;
    *result = SCIP_STATUS_UNKNOWN;
@@ -689,6 +691,12 @@ SCIP_RETCODE solveCplex(
    case CPXMIP_UNBOUNDED:
    case CPXMIP_INForUNBD: /* 119 */
    {
+      SCIP_CALL( SCIPallocBufferArray(scip, &primsol, numcols) );
+
+      CHECK_ZERO( CPXsolution(solverdata->cpxenv[probnr], solverdata->lp[probnr], &dummy, NULL, primsol, NULL, NULL, NULL) );
+
+      assert(dummy == status);
+
       CHECK_ZERO( CPXgetray(solverdata->cpxenv[probnr], solverdata->lp[probnr], cplexsolvals) );
 
       SCIP_CALL( SCIPcreateSol(pricingprob, &sols[*nsols], NULL) );
@@ -697,6 +705,8 @@ SCIP_RETCODE solveCplex(
       ++(*nsols);
 
       *result = SCIP_STATUS_UNBOUNDED;
+
+      SCIPfreeBufferArray(scip, &primsol);
 
       goto TERMINATE;
    }
