@@ -239,7 +239,7 @@ LDFLAGS		+=	-fopenmp
 CXXFLAGS	+=	-fopenmp
 endif
 
-CXXFLAGS	+=	-Wno-variadic-macros
+#CXXFLAGS	+=	-Wno-variadic-macros
 
 #-----------------------------------------------------------------------------
 # Rules

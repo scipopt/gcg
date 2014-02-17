@@ -40,6 +40,11 @@
 
 /*lint -e64 disable useless and wrong lint warning */
 
+#ifdef __INTEL_COMPILER
+#ifndef _OPENMP
+#pragma warning disable 3180  /* disable wrong and useless omp warnings */
+#endif
+#endif
 #include "scip/scip.h"
 #include "gcg.h"
 
