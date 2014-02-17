@@ -34,16 +34,21 @@
  *
  * This detector tries to detect staircase structures by recursively partitioning the
  * rowgraph of the matrix by using hmetis.
+ *
+ * This detector needs hmetis and works only under Linux/MacOS
+ *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#include "dec_cutpacking.h"
+
+#if !defined(_WIN32) || !defined(_wIN64)
 
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
 
-#include "dec_cutpacking.h"
 
 #include "cons_decomp.h"
 #include "struct_decomp.h"
@@ -1963,17 +1968,14 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
-
-
-/*
- * detection specific interface methods
- */
+#endif
 
 /** creates the cutpacking detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionCutpacking(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+#if !defined(_WIN32) || !defined(_wIN64)
    DEC_DETECTORDATA *detectordata;
    assert(scip != NULL);
 
@@ -2014,6 +2016,7 @@ SCIP_RETCODE SCIPincludeDetectionCutpacking(
    SCIP_CALL( SCIPaddBoolParam(scip, "staircase/metisuseptyperb",
       "Should the rb or kway method be used for partitioning by metis",
       &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
+#endif
 
    return SCIP_OKAY;
 }

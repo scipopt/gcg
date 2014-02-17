@@ -44,7 +44,6 @@
 #include <vector>
 
 #include "dec_stairheur.h"
-
 #include "cons_decomp.h"
 #include "struct_decomp.h"
 #include "pub_decomp.h"
@@ -1587,7 +1586,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    return SCIP_OKAY;
 }
 
-
 /** creates the stairheur presolver and includes it in SCIP */
 extern "C"
 SCIP_RETCODE SCIPincludeDetectionStairheur(
@@ -1626,5 +1624,6 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/blockingassoonaspossible", "Enable blocking type 'as soon as possible", &detectordata->blockingassoonaspossible, FALSE, DEFAULT_BLOCKINGASSOONASPOSSIBLE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/multipledecomps", "Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks", &detectordata->multipledecomps, FALSE, DEFAULT_MULTIPLEDECOMPS, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxiterationsROC", "The maximum number of iterations of the ROC-algorithm. -1 for no limit", &detectordata->maxiterationsROC, FALSE, DEFAULT_MAXITERATIONSROC, -1, 1000000, NULL, NULL) );
+
    return SCIP_OKAY;
 }

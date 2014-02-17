@@ -32,17 +32,20 @@
  *
  * Detects arrowhead (double bordered) decompositions as well as decompositions
  * with only linking variables or linking constraints.
+ *
+ * This detector needs hmetis and works only under Linux/MacOS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
+#include "dec_arrowheur.h"
 
+#if !defined(_WIN32) || !defined(_wIN64)
 #include <cassert>
 #include <cstring>
 #include <cerrno>
 #include <unistd.h>
 
-#include "dec_arrowheur.h"
 #include "cons_decomp.h"
 #include "struct_decomp.h"
 #include "pub_decomp.h"
@@ -400,7 +403,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
    return SCIP_OKAY;
 }
-
+#endif
 
 /** creates the arrowheur presolver and includes it in SCIP */
 extern "C"
@@ -408,6 +411,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+#if !defined(_WIN32) || !defined(_wIN64)
    DEC_DETECTORDATA *detectordata = NULL;
    assert(scip != NULL);
 
@@ -440,5 +444,6 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/realname", "Should the problem be used for metis files or a temporary name", &detectordata->realname, FALSE, DEFAULT_REALNAME, NULL, NULL) );
    SCIP_CALL( SCIPaddCharParam(scip, "detectors/arrowheur/type", "Type of the graph: 'c' column hypergraph, 'r' row hypergraph, 'a' column-row hypergraph", &detectordata->type, FALSE, DEFAULT_TYPE, "cra", NULL, NULL) );
+#endif
    return SCIP_OKAY;
 }
