@@ -966,6 +966,7 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetIntParam(scip, "timing/clocktype", clocktype) );
 
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/finitesolutionstore", TRUE) );
 
 
    return SCIP_OKAY;
