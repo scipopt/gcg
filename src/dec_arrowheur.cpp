@@ -33,7 +33,8 @@
  * Detects arrowhead (double bordered) decompositions as well as decompositions
  * with only linking variables or linking constraints.
  *
- * This detector needs hmetis and works only under Linux/MacOS
+ * This detector needs hmetis and works only under Linux/MacOS, it further needs the Z-shell (zsh)
+ * to enforce memory and time limits on hmetis as this is the only shell reliably doing that.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
