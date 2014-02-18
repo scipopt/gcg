@@ -42,7 +42,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #include "dec_cutpacking.h"
 
-#if !defined(_WIN32) || !defined(_wIN64)
+#if !defined(_WIN32) && !defined(_WIN64)
 
 #include <assert.h>
 #include <string.h>
@@ -1975,7 +1975,7 @@ SCIP_RETCODE SCIPincludeDetectionCutpacking(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-#if !defined(_WIN32) || !defined(_wIN64)
+#if !defined(_WIN32) && !defined(_WIN64)
    DEC_DETECTORDATA *detectordata;
    assert(scip != NULL);
 

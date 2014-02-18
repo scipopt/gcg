@@ -41,7 +41,7 @@
 /* #define SCIP_DEBUG */
 #include "dec_arrowheur.h"
 
-#if !defined(_WIN32) || !defined(_wIN64)
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <cassert>
 #include <cstring>
 #include <cerrno>
@@ -412,7 +412,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-#if !defined(_WIN32) || !defined(_wIN64)
+#if !defined(_WIN32) && !defined(_WIN64)
    DEC_DETECTORDATA *detectordata = NULL;
    assert(scip != NULL);
 
