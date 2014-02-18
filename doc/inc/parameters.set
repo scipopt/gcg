@@ -320,9 +320,13 @@ lp/checkstability = TRUE
 # [type: real, range: [-1,1.79769313486232e+308], default: -1]
 lp/conditionlimit = -1
 
-# should LP solutions be checked, resolving LP when numerical troubles occur?
+# should LP solutions be checked for primal feasibility, resolving LP when numerical troubles occur?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-lp/checkfeas = TRUE
+lp/checkprimfeas = TRUE
+
+# should LP solutions be checked for dual feasibility, resolving LP when numerical troubles occur?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+lp/checkdualfeas = TRUE
 
 # which FASTMIP setting of LP solver should be used? 0: off, 1: low
 # [type: int, range: [0,1], default: 1]
@@ -1316,6 +1320,10 @@ constraints/xor/delayprop = FALSE
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
 constraints/xor/delaypresol = FALSE
 
+# enable linear upgrading for constraint handler <xor>
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+constraints/linear/upgrade/xor = TRUE
+
 # should pairwise constraint comparison be performed in presolving?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 constraints/xor/presolpairwise = TRUE
@@ -1344,6 +1352,30 @@ constraints/xor/gausspropfreq = 5
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 reading/cipreader/writefixedvars = TRUE
 
+# should an artificial objective, depending on the number of clauses a variable appears in, be used?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+reading/cnfreader/useobj = FALSE
+
+# have integer variables no upper bound by default (depending on GAMS version)?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+reading/gmsreader/freeints = FALSE
+
+# shall characters '#', '*', '+', '/', and '-' in variable and constraint names be replaced by '_'?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+reading/gmsreader/replaceforbiddenchars = FALSE
+
+# default M value for big-M reformulation of indicator constraints in case no bound on slack variable is given
+# [type: real, range: [0,1.79769313486232e+308], default: 1000000]
+reading/gmsreader/bigmdefault = 1000000
+
+# which reformulation to use for indicator constraints: 'b'ig-M, 's'os1
+# [type: char, range: {bs}, default: s]
+reading/gmsreader/indicatorreform = s
+
+# is it allowed to use the gams function signpower(x,a)?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+reading/gmsreader/signpower = FALSE
+
 # should possible "and" constraint be linearized when writing the lp file?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 reading/lpreader/linearize-and-constraints = TRUE
@@ -1359,6 +1391,42 @@ reading/mpsreader/linearize-and-constraints = TRUE
 # should an aggregated linearization for and constraints be used?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 reading/mpsreader/aggrlinearization-ands = TRUE
+
+# should model constraints be subject to aging?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+reading/opbreader/dynamicconss = FALSE
+
+# use '*' between coefficients and variables by writing to problem?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+reading/opbreader/multisymbol = FALSE
+
+# should the coloring values be relativ or absolute
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+reading/ppmreader/rgbrelativ = TRUE
+
+# should the output format be binary(P6) (otherwise plain(P3) format)
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+reading/ppmreader/rgbascii = TRUE
+
+# splitting coefficients in this number of intervals
+# [type: int, range: [3,16], default: 3]
+reading/ppmreader/coefficientlimit = 3
+
+# maximal color value
+# [type: int, range: [0,255], default: 160]
+reading/ppmreader/rgblimit = 160
+
+# should the output format be binary(P4) (otherwise plain(P1) format)
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+reading/pbmreader/binary = TRUE
+
+# maximum number of rows in the scaled picture (-1 for no limit)
+# [type: int, range: [-1,2147483647], default: 1000]
+reading/pbmreader/maxrows = 1000
+
+# maximum number of columns in the scaled picture (-1 for no limit)
+# [type: int, range: [-1,2147483647], default: 1000]
+reading/pbmreader/maxcols = 1000
 
 # priority of presolver <boundshift>
 # [type: int, range: [-536870912,536870911], default: 7900000]
@@ -1865,8 +1933,8 @@ propagating/redcost/freq = 1
 propagating/redcost/delay = FALSE
 
 # timing when propagator should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
-# [type: int, range: [1,15], default: 2]
-propagating/redcost/timingmask = 2
+# [type: int, range: [1,15], default: 6]
+propagating/redcost/timingmask = 6
 
 # presolving priority of propagator <redcost>
 # [type: int, range: [-536870912,536870911], default: 0]
@@ -1997,8 +2065,8 @@ propagating/obbt/itlimitfactor = 5
 propagating/obbt/dualfeastol = 1e-09
 
 # maximum condition limit used in LP solver (-1.0: no limit)
-# [type: real, range: [-1,1.79769313486232e+308], default: 1000000000000]
-propagating/obbt/conditionlimit = 1000000000000
+# [type: real, range: [-1,1.79769313486232e+308], default: -1]
+propagating/obbt/conditionlimit = -1
 
 # priority of heuristic <actconsdiving>
 # [type: int, range: [-536870912,536870911], default: -1003700]
@@ -3443,6 +3511,10 @@ heuristics/shiftandpropagate/normalize = TRUE
 # should row weight be increased every time the row is violated?
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
 heuristics/shiftandpropagate/updateweights = FALSE
+
+# should implicit integer variables be treated as continuous variables?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/shiftandpropagate/impliscontinuous = TRUE
 
 # priority of heuristic <shifting>
 # [type: int, range: [-536870912,536870911], default: -5000]
@@ -5144,8 +5216,8 @@ detectors/cutpacking/skip = FALSE
 detectors/cutpacking/priority = 1100
 
 # should the stoer-wagner algorithm or metis be used for finding a minimal cut
-# [type: int, range: [-2147483648,2147483647], default: 1]
-staircase/algorithm = 1
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+staircase/algorithm = TRUE
 
 # Should the blocks consist of a certain number of constraints
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
