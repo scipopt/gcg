@@ -293,16 +293,17 @@ SCIP_Real Stabilization::computeDual(
 }
 void Stabilization::updateIterationCount()
 {
+   ++k;
+}
+
+void Stabilization::updateNode()
+{
    if( node != SCIPgetCurrentNode(scip_) )
    {
       node = SCIPgetCurrentNode(scip_);
       k = 1;
       alpha= 0.8;
       hasstabilitycenter = FALSE;
-   }
-   else
-   {
-      ++k;
    }
 }
 void Stabilization::updateAlphaMisprice()

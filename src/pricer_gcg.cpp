@@ -2001,6 +2001,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       *bestredcostvalid = isMasterLPOptimal() && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
       stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
+      if( stabilized )
+         stabilization->updateNode();
+
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
       SCIP_CALL( setPricingObjs(pricetype) );
@@ -2049,17 +2052,15 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             }
          }
 
-         if( optimal )
+         if( optimal && nsols[prob] > 0)
          {
+            SCIP_Real convdual = stabilization->convGetDual(prob);
+
             #pragma omp atomic
             beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
 
             bestobjvals[prob] = pricinglowerbound;
-         }
 
-         if( optimal && nsols[prob] > 0)
-         {
-            SCIP_Real convdual = stabilization->convGetDual(prob);
             if( !solisray[prob][0] )
             {
                #pragma omp atomic
@@ -2114,7 +2115,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals) );
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
-
          }
 
          SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %ud, nfoundvars = %d, optimal = %ud, *bestredcostvalid = %ud\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
@@ -2143,7 +2143,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
 
       }
-      else if( optimal && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
+      else if( *bestredcostvalid && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
       {
          SCIP_Real lowerboundcandidate;
          assert(lowerbound != NULL );

@@ -125,6 +125,8 @@ public:
       int i
       );
 
+   void updateNode();
+
 private:
    /** updates the number of iterations */
    void updateIterationCount();
