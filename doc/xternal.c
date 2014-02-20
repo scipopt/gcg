@@ -36,32 +36,6 @@
 
 /**@mainpage Generic Column Generation
  *
- * <b>What is GCG?</b>
- *
- * GCG is a generic branch-cut-and-price solver for mixed integer programs. It is based on the branch-and-cut-and-price
- * framework SCIP and is also part of the <a href="http://scip.zib.de">SCIP Optimization Suite</a>.
- *
- * After the standard presolving process of SCIP, GCG performs a Dantzig-Wolfe decomposition of the problem to obtain an
- * extended formulation of the problem. The decomposition is based on a structure either provided by the user or
- * automatically detected by one of the structure detectors included in GCG .
- *
- * During the solving process, GCG manages two SCIP instances, one holding the original problem, the other one
- * representing the reformulated problem. The original instance coordinates the solving process while the other one
- * builds the tree in the same way, transfers branching decisions and bound changes from the original problem and
- * solves the LP relaxation of the extended formulation via column generation.
- *
- * GCG is developed jointly by <a href="http://www.or.rwth-aachen.de">RWTH Aachen</a> and <a
- * href="http://www.zib.de">Zuse-Institute Berlin</a>
- * and has more than 30,000 lines of C code.
- *
- * You can report any bug you find to \BUGEMAIL .
- *
- *
- * <b> Latest Version </b>
- *  - The latest version is 2.0.0
- *  - Get it \ref DOWNLOAD "here"
- *
- *
  * <table cellpadding="0px" border="0" width="100%">
  *   <tr>
  *     <td nowrap >
@@ -79,7 +53,6 @@
  * - \ref CHANGELOG    "Changelog"
  * - \ref RELEASENOTES "Release notes"
  * - \ref LICENSE      "Licensing information"
- * - \ref LITERATURE   "Papers dealing with GCG"
  *
  * @version  2.0.0
  *
@@ -466,27 +439,6 @@ GCG> q
 
 /**@page AUTHORS GCG Authors
  * \htmlinclude authors.inc
- */
-
-/**@page LITERATURE Papers dealing with GCG
- *
- * We are currently preparing a paper about GCG including a description of the design and extensive computational
- * studies.
- *
- * Until then, an introduction and computational results for an older GCG version can be found in the following
- * references.
- *
- * <a href="http://www.zib.de/gamrath/publications/gamrath2010_genericBCP.pdf">Generic Branch-Cut-and-Price</a>,
- * Gerald Gamrath\n
- * Diploma Thesis, TU Berlin, 2010
- *
- * <a href="http://www.zib.de/gamrath/publications/gamrathluebbecke2010_experimentsDW.pdf">Experiments with a Generic Dantzig-Wolfe Decomposition for Integer Programs</a>,
- * Gerald Gamrath and Marco E. Lübbecke\n
- * In P.Festa (Ed.), Symposium on Experimental Algorithms (SEA 2010), LNCS, 6049, pp. 239-252, 2010, Springer, Berlin.
- * DOI: 10.1007/978-3-642-13193-6_21
- *
- * Primal Heuristics for Branch-and-Price Algorithms, Christian Puchert\n
- * Master's Thesis, Technische Universität Darmstadt, 2011
  */
 
 /**@page PARAMS GCG default parameter settings

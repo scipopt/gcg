@@ -2,8 +2,6 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
-    <tab type="user" url="DOWNLOAD.html" title="Download"/>
-    <tab type="user" url="LICENSE.html" title="License"/>
     <tab type="files" visible="yes" title="Files">
       <tab type="files" visible="no" title=""/>
       <tab type="globals" visible="no" title=""/>

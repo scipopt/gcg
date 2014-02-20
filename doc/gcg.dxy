@@ -828,7 +828,7 @@ HTML_FILE_EXTENSION    = .html
 # each generated HTML page. If it is left blank doxygen will generate a
 # standard header.
 
-HTML_HEADER            =
+HTML_HEADER            = gcgheader.html
 
 # The HTML_FOOTER tag can be used to specify a personal HTML footer for
 # each generated HTML page. If it is left blank doxygen will generate a
@@ -843,7 +843,7 @@ HTML_FOOTER            = gcgfooter.html
 # the style sheet file to the HTML output directory, so don't put your own
 # stylesheet in the HTML output directory as well, or it will be erased!
 
-HTML_STYLESHEET        = gcg.css
+HTML_EXTRA_STYLESHEET        = gcg.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -852,7 +852,15 @@ HTML_STYLESHEET        = gcg.css
 # files. In the HTML_STYLESHEET file, use the file name only. Also note that
 # the files will be copied as-is; there are no commands or markers available.
 
-HTML_EXTRA_FILES       = klammeraffe.png
+HTML_EXTRA_FILES       = klammeraffe.png \
+		       jquery.js \
+		       custom.js \
+		       bootstrap.min.css \
+		       bootstrap.min.	  \
+		       bootstrap-theme.css \
+		       custom-gcg.css \
+		       tabs.css \
+		       logo_zib.png
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output.
 # Doxygen will adjust the colors in the stylesheet and background images

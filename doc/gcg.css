@@ -1,18 +1,5 @@
 /* The standard CSS for doxygen */
 
-body, div {
-  color:            black;
-/*  background-color: #ffffe6; */
-  font-size: 11pt;
-  font-family: sans-serif;
-}
-
-body {
-  margin:           2px;
-  padding:          0px;
-  background: #FFFFFF;
-}
-
 /* boxes */
 div.outer {
   padding:    19px;
@@ -43,20 +30,6 @@ div.inner {
     font-size: 13px;
     width: 100%;
     z-index: 101;
-}
-
-/* @group Heading Levels */
-
-h1 {
-    font-size: 150%;
-}
-
-h2 {
-    font-size: 120%;
-}
-
-h3 {
-    font-size: 100%;
 }
 
 dt {

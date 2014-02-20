@@ -298,7 +298,7 @@ endif
 
 .PHONY: doc
 doc:
-		cd doc; $(DOXY) $(MAINNAME).dxy; cp tabs.css html/
+		cd doc; $(DOXY) $(MAINNAME).dxy;
 
 .PHONY: $(MAINSHORTLINK)
 $(MAINSHORTLINK):	$(MAINFILE)
