@@ -649,15 +649,17 @@ SCIP_RETCODE solveCplex(
    )
 { /*lint -e715*/
    SCIP_RETCODE retval;
+   SCIP_Bool predisabled = FALSE;
    double* cplexsolvals;
    double objective;
    double upperbound;
-   double* primsol;
+   double* primsol = NULL;
+   int curpreind = -1;
+   int curadvind = -1;
    int nsolscplex;
    int numcols;
    int status;
    int s;
-   int dummy;
 
    *nsols = 0;
    *result = SCIP_STATUS_UNKNOWN;
@@ -668,9 +670,16 @@ SCIP_RETCODE solveCplex(
    assert(numcols == SCIPgetNOrigVars(pricingprob));
 
    SCIP_CALL( SCIPallocBufferArray(scip, &cplexsolvals, numcols) );
-
+ SOLVEAGAIN:
    /* the optimization call */
-   CHECK_ZERO( CPXmipopt(solverdata->cpxenv[probnr], solverdata->lp[probnr]) );
+   if( predisabled )
+   {
+      CHECK_ZERO( CPXprimopt(solverdata->cpxenv[probnr], solverdata->lp[probnr]) );
+   }
+   else
+   {
+      CHECK_ZERO( CPXmipopt(solverdata->cpxenv[probnr], solverdata->lp[probnr]) );
+   }
 
    /* get number of solutions */
    nsolscplex = CPXgetsolnpoolnumsolns(solverdata->cpxenv[probnr], solverdata->lp[probnr]);
@@ -691,13 +700,39 @@ SCIP_RETCODE solveCplex(
    case CPXMIP_UNBOUNDED:
    case CPXMIP_INForUNBD: /* 119 */
    {
+      int cpxretval;
+      int dummy;
+
       SCIP_CALL( SCIPallocBufferArray(scip, &primsol, numcols) );
 
       CHECK_ZERO( CPXsolution(solverdata->cpxenv[probnr], solverdata->lp[probnr], &dummy, NULL, primsol, NULL, NULL, NULL) );
 
       assert(dummy == status);
 
-      CHECK_ZERO( CPXgetray(solverdata->cpxenv[probnr], solverdata->lp[probnr], cplexsolvals) );
+      cpxretval = CPXgetray(solverdata->cpxenv[probnr], solverdata->lp[probnr], cplexsolvals);
+
+      if( cpxretval == 1254 )
+      {
+         assert(!predisabled);
+
+         printf("disable presolving in CPLEX to get primal ray\n");
+
+         CHECK_ZERO( CPXgetintparam(solverdata->cpxenv[probnr], CPX_PARAM_PREIND, &curpreind) );
+         CHECK_ZERO( CPXgetintparam(solverdata->cpxenv[probnr], CPX_PARAM_ADVIND, &curadvind) );
+
+         CHECK_ZERO( CPXchgprobtype(solverdata->cpxenv[probnr], solverdata->lp[probnr], CPXPROB_FIXEDMILP) );
+
+         CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_ADVIND, 0) );
+         CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_PREIND, 0) );
+
+         predisabled = TRUE;
+
+         goto SOLVEAGAIN;
+      }
+      else
+      {
+         CHECK_ZERO( cpxretval );
+      }
 
       SCIP_CALL( SCIPcreateSol(pricingprob, &sols[*nsols], NULL) );
       SCIP_CALL( SCIPsetSolVals(pricingprob, sols[*nsols], numcols, solverdata->pricingvars[probnr], cplexsolvals) );
@@ -790,6 +825,19 @@ SCIP_RETCODE solveCplex(
       }
    }
  TERMINATE:
+   if( predisabled )
+   {
+      assert(curpreind >= 0);
+      assert(curadvind >= 0);
+      CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_PREIND, curpreind) );
+      CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_ADVIND, curadvind) );
+
+      CHECK_ZERO( CPXchgprobtype(solverdata->cpxenv[probnr], solverdata->lp[probnr], CPXPROB_MILP) );
+   }
+
+   if( primsol != NULL )
+      SCIPfreeBufferArray(scip, &primsol);
+
    SCIPfreeBufferArray(scip, &cplexsolvals);
 
    return retval;
