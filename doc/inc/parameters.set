@@ -469,8 +469,8 @@ misc/transorigsols = TRUE
 misc/calcintegral = TRUE
 
 # should SCIP try to remove infinite fixings from solutions copied to the solution store?
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-misc/finitesolutionstore = TRUE
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+misc/finitesolutionstore = FALSE
 
 # child selection rule ('d'own, 'u'p, 'p'seudo costs, 'i'nference, 'l'p value, 'r'oot LP value difference, 'h'ybrid inference/root LP value difference)
 # [type: char, range: {dupilrh}, default: h]
@@ -1319,10 +1319,6 @@ constraints/xor/delayprop = FALSE
 # should presolving method be delayed, if other presolvers found reductions?
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
 constraints/xor/delaypresol = FALSE
-
-# enable linear upgrading for constraint handler <xor>
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-constraints/linear/upgrade/xor = TRUE
 
 # should pairwise constraint comparison be performed in presolving?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
