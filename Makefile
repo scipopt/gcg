@@ -37,11 +37,10 @@
 VERSION         :=	2.0.0
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
+
 #-----------------------------------------------------------------------------
 # necessary information
 #-----------------------------------------------------------------------------
-
-
 LIBDIR          =	lib
 DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 SOFTLINKS	=
@@ -72,7 +71,7 @@ endif
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
-include $(SCIPDIR)/make/make.project
+-include $(SCIPDIR)/make/make.project
 
 #-----------------------------------------------------------------------------
 # BLISS
@@ -246,8 +245,15 @@ endif
 #-----------------------------------------------------------------------------
 # Rules
 #-----------------------------------------------------------------------------
+
 .PHONY: all
-all:       libs $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK) |$(SCIPDIR)
+all:       	$(SCIPDIR)
+		@-$(MAKE) libs
+		@-$(MAKE) mainfiles
+
+.PHONY: mainfiles
+mainfiles:
+		@-$(MAKE) $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
 
 $(SCIPDIR)/make/make.project: |$(SCIPDIR)
 
