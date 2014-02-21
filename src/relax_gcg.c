@@ -1797,7 +1797,17 @@ SCIP_RETCODE solveDiagonalBlocks(
 
    /** @todo maybe add a constraint here to indicate that it has been decomposed */
 
+   /* solve pricing problems one after the other */
+   for( i = 0; i < relaxdata->npricingprobs; ++i )
+   {
+      if( relaxdata->pricingprobs[i] == NULL )
+         continue;
+
+      SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
+   }
+
    *result = SCIP_SUCCESS;
+
    return SCIP_OKAY;
 
 }
@@ -2139,6 +2149,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
+      /* update the number of the last solved node */
+      relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
 
       /* increase the node limit for the master problem by 1 */
       SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
@@ -2177,7 +2189,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          {
             SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
             if( *result == SCIP_SUCCESS )
+            {
+               *result = SCIP_CUTOFF;
                return SCIP_OKAY;
+            }
          }
          /* We are solving the masterproblem regularly */
          else
@@ -2237,21 +2252,19 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       /* transform the current solution of the master problem to the original space and save it */
       SCIPdebugMessage("Update current sol.\n");
       SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
+
+      if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL )
+      {
+         SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
+               GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
+      }
+
    }
    else
    {
       SCIPdebugMessage("Problem has been already solved at this node\n");
    }
 
-   if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL
-      && SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
-   {
-      SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
-            GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
-   }
-
-   /* update the number of the last solved node */
-   relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
 
    *result = SCIP_SUCCESS;
 
