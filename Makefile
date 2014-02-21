@@ -63,7 +63,7 @@ BLISS       	=   	true
 OPENMP          =       false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
-
+SCIPMARKERFILE	=	$(LIBDIR)/linkscreated.scip
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
 override PARASCIP=true
@@ -253,6 +253,13 @@ $(SCIPDIR)/make/make.project: |$(SCIPDIR)
 
 -include make/local/make.targets
 
+# This is Makefile magic: We include this file at first make run such that the
+# Makefile is automatically reloaded
+$(SCIPMARKERFILE): |$(SCIPDIR)
+	@touch $(SCIPMARKERFILE)
+
+include $(SCIPMARKERFILE)
+
 ifeq ($(VERBOSE),false)
 .SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK) ${GCGLIBFILE} ${GCGLIB} $(GCGLIBLINK) ${GCGLIBSHORTLINK} ${TESTSHORTLINK} ${GCGLIBOBJFILES} $(TESTOBJFILES) ${TESTFILE} ${TESTMAIN}
 endif
@@ -433,7 +440,6 @@ $(GCGLIBSHORTLINK):	$(GCGLIBFILE)
 		@rm -f $@
 		cd $(dir $@) && $(LN_s) $(notdir $(GCGLIBFILE)) $(notdir $@)
 
-
 $(LINKSMARKERFILE):
 		@$(MAKE) links
 
@@ -446,8 +452,8 @@ $(DIRECTORIES):
 		@echo
 		@echo "- creating directory \"$@\""
 		@-mkdir -p $@
--include $(LASTSETTINGS)
 
+-include $(LASTSETTINGS)
 .PHONY: touchexternal
 touchexternal: | $(LIBOBJDIR)
 ifneq ($(LAST_LPS),$(LPS))
@@ -551,6 +557,7 @@ ifeq ($(MAKESOFTLINKS), true)
 					pwd;\
 					rm -f $@ ; \
 					$(LN_s) $$TARGET $@ ; \
+					touch $(SCIPMARKERFILE) ;\
 				else \
 					echo "* skipped creation of softlink \"$@\". Call \"make links\" if needed later." ; \
 				fi ; \
