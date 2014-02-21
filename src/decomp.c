@@ -3269,6 +3269,12 @@ SCIP_RETCODE DECcreatePolishedDecomp(
    assert(scip != NULL);
    assert(decomp != NULL);
    assert(newdecomp != NULL);
+
+   if( DECdecompGetNBlocks(decomp) == 1)
+   {
+      *newdecomp = NULL;
+      return SCIP_OKAY;
+   }
    *newdecomp = decomp;
 
    do

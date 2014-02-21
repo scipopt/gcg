@@ -551,7 +551,6 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
       }
       SCIPdebugMessage("%d\n", nmasterconss);
 
-
       SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[0]), masterconss, nmasterconss) );
       *ndecdecomps = 1;
       SCIPfreeMemoryArray(scip, &masterconss);
