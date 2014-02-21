@@ -213,16 +213,11 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    )
 {
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
-   SCIP_CALL( SCIPincludeConshdlrAnd(scip) );
-   SCIP_CALL( SCIPincludeConshdlrBounddisjunction(scip) );
-   SCIP_CALL( SCIPincludeConshdlrConjunction(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegral(scip) );
    SCIP_CALL( SCIPincludeConshdlrKnapsack(scip) );
    SCIP_CALL( SCIPincludeConshdlrLogicor(scip) );
-   SCIP_CALL( SCIPincludeConshdlrOr(scip) );
    SCIP_CALL( SCIPincludeConshdlrSetppc(scip) );
    SCIP_CALL( SCIPincludeConshdlrVarbound(scip) );
-   SCIP_CALL( SCIPincludeConshdlrXor(scip) );
 
    SCIP_CALL( SCIPincludeReaderBnd(scip) );
    SCIP_CALL( SCIPincludeReaderCcg(scip) );
@@ -236,7 +231,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderOpb(scip) );
    SCIP_CALL( SCIPincludeReaderOsil(scip) );
    SCIP_CALL( SCIPincludeReaderPip(scip) );
-   SCIP_CALL( SCIPincludeReaderPpm(scip) );
    SCIP_CALL( SCIPincludeReaderPbm(scip) );
    SCIP_CALL( SCIPincludeReaderRlp(scip) );
    SCIP_CALL( SCIPincludeReaderSol(scip) );
@@ -249,7 +243,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
    SCIP_CALL( SCIPincludePresolComponents(scip) );
    SCIP_CALL( SCIPincludePresolDomcol(scip) );
-   SCIP_CALL( SCIPincludePresolGateextraction(scip) );
    SCIP_CALL( SCIPincludePresolConvertinttobin(scip) );
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
