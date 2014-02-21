@@ -825,138 +825,6 @@ constraints/linear/sortvars = TRUE
 constraints/linear/checkrelmaxabs = FALSE
 
 # frequency for separating cuts (-1: never, 0: only in root node)
-# [type: int, range: [-1,2147483647], default: 1]
-constraints/and/sepafreq = 1
-
-# frequency for propagating domains (-1: never, 0: only in root node)
-# [type: int, range: [-1,2147483647], default: 1]
-constraints/and/propfreq = 1
-
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
-# [type: int, range: [1,15], default: 1]
-constraints/and/timingmask = 1
-
-# frequency for using all instead of only the useful constraints in separation, propagation and enforcement (-1: never, 0: only in first evaluation)
-# [type: int, range: [-1,2147483647], default: 100]
-constraints/and/eagerfreq = 100
-
-# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
-# [type: int, range: [-1,2147483647], default: -1]
-constraints/and/maxprerounds = -1
-
-# should separation method be delayed, if other separators found cuts?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/and/delaysepa = FALSE
-
-# should propagation method be delayed, if other propagators found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/and/delayprop = FALSE
-
-# should presolving method be delayed, if other presolvers found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/and/delaypresol = FALSE
-
-# should pairwise constraint comparison be performed in presolving?
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-constraints/and/presolpairwise = TRUE
-
-# should hash table be used for detecting redundant constraints in advance
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-constraints/and/presolusehashing = TRUE
-
-# should the "and" constraint get linearized and removed (in presolving)?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/and/linearize = FALSE
-
-# should cuts be separated during LP enforcing?
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-constraints/and/enforcecuts = TRUE
-
-# should an aggregated linearization be used?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/and/aggrlinearization = FALSE
-
-# should all binary resultant variables be upgraded to implicit binary variables?
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-constraints/and/upgraderesultant = TRUE
-
-# should dual presolving be performed?
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-constraints/and/dualpresolving = TRUE
-
-# maximal percantage of continuous variables within a conflict
-# [type: real, range: [0,1], default: 0.4]
-conflict/bounddisjunction/continuousfrac = 0.4
-
-# priority of conflict handler <bounddisjunction>
-# [type: int, range: [-2147483648,2147483647], default: -3000000]
-conflict/bounddisjunction/priority = -3000000
-
-# frequency for separating cuts (-1: never, 0: only in root node)
-# [type: int, range: [-1,2147483647], default: -1]
-constraints/bounddisjunction/sepafreq = -1
-
-# frequency for propagating domains (-1: never, 0: only in root node)
-# [type: int, range: [-1,2147483647], default: 1]
-constraints/bounddisjunction/propfreq = 1
-
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
-# [type: int, range: [1,15], default: 1]
-constraints/bounddisjunction/timingmask = 1
-
-# frequency for using all instead of only the useful constraints in separation, propagation and enforcement (-1: never, 0: only in first evaluation)
-# [type: int, range: [-1,2147483647], default: 100]
-constraints/bounddisjunction/eagerfreq = 100
-
-# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
-# [type: int, range: [-1,2147483647], default: -1]
-constraints/bounddisjunction/maxprerounds = -1
-
-# should separation method be delayed, if other separators found cuts?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/bounddisjunction/delaysepa = FALSE
-
-# should propagation method be delayed, if other propagators found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/bounddisjunction/delayprop = FALSE
-
-# should presolving method be delayed, if other presolvers found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/bounddisjunction/delaypresol = FALSE
-
-# frequency for separating cuts (-1: never, 0: only in root node)
-# [type: int, range: [-1,2147483647], default: -1]
-constraints/conjunction/sepafreq = -1
-
-# frequency for propagating domains (-1: never, 0: only in root node)
-# [type: int, range: [-1,2147483647], default: -1]
-constraints/conjunction/propfreq = -1
-
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
-# [type: int, range: [1,15], default: 1]
-constraints/conjunction/timingmask = 1
-
-# frequency for using all instead of only the useful constraints in separation, propagation and enforcement (-1: never, 0: only in first evaluation)
-# [type: int, range: [-1,2147483647], default: 100]
-constraints/conjunction/eagerfreq = 100
-
-# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
-# [type: int, range: [-1,2147483647], default: -1]
-constraints/conjunction/maxprerounds = -1
-
-# should separation method be delayed, if other separators found cuts?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/conjunction/delaysepa = FALSE
-
-# should propagation method be delayed, if other propagators found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/conjunction/delayprop = FALSE
-
-# should presolving method be delayed, if other presolvers found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/conjunction/delaypresol = FALSE
-
-# frequency for separating cuts (-1: never, 0: only in root node)
 # [type: int, range: [-1,2147483647], default: -1]
 constraints/integral/sepafreq = -1
 
@@ -1140,38 +1008,6 @@ constraints/logicor/implications = TRUE
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 constraints/logicor/strengthen = TRUE
 
-# frequency for separating cuts (-1: never, 0: only in root node)
-# [type: int, range: [-1,2147483647], default: 0]
-constraints/or/sepafreq = 0
-
-# frequency for propagating domains (-1: never, 0: only in root node)
-# [type: int, range: [-1,2147483647], default: 1]
-constraints/or/propfreq = 1
-
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
-# [type: int, range: [1,15], default: 1]
-constraints/or/timingmask = 1
-
-# frequency for using all instead of only the useful constraints in separation, propagation and enforcement (-1: never, 0: only in first evaluation)
-# [type: int, range: [-1,2147483647], default: 100]
-constraints/or/eagerfreq = 100
-
-# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
-# [type: int, range: [-1,2147483647], default: -1]
-constraints/or/maxprerounds = -1
-
-# should separation method be delayed, if other separators found cuts?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/or/delaysepa = FALSE
-
-# should propagation method be delayed, if other propagators found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/or/delayprop = FALSE
-
-# should presolving method be delayed, if other presolvers found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/or/delaypresol = FALSE
-
 # priority of conflict handler <setppc>
 # [type: int, range: [-2147483648,2147483647], default: 700000]
 conflict/setppc/priority = 700000
@@ -1288,62 +1124,6 @@ constraints/varbound/maxlpcoef = 1000000000
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 constraints/varbound/usebdwidening = TRUE
 
-# frequency for separating cuts (-1: never, 0: only in root node)
-# [type: int, range: [-1,2147483647], default: 0]
-constraints/xor/sepafreq = 0
-
-# frequency for propagating domains (-1: never, 0: only in root node)
-# [type: int, range: [-1,2147483647], default: 1]
-constraints/xor/propfreq = 1
-
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
-# [type: int, range: [1,15], default: 1]
-constraints/xor/timingmask = 1
-
-# frequency for using all instead of only the useful constraints in separation, propagation and enforcement (-1: never, 0: only in first evaluation)
-# [type: int, range: [-1,2147483647], default: 100]
-constraints/xor/eagerfreq = 100
-
-# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
-# [type: int, range: [-1,2147483647], default: -1]
-constraints/xor/maxprerounds = -1
-
-# should separation method be delayed, if other separators found cuts?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/xor/delaysepa = FALSE
-
-# should propagation method be delayed, if other propagators found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/xor/delayprop = FALSE
-
-# should presolving method be delayed, if other presolvers found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/xor/delaypresol = FALSE
-
-# should pairwise constraint comparison be performed in presolving?
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-constraints/xor/presolpairwise = TRUE
-
-# should hash table be used for detecting redundant constraints in advance?
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-constraints/xor/presolusehashing = TRUE
-
-# should the extended formulation be added in presolving?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/xor/addextendedform = FALSE
-
-# should the extended flow formulation be added (nonsymmetric formulation otherwise)?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/xor/addflowextended = FALSE
-
-# should parity inequalities be separated?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-constraints/xor/separateparity = FALSE
-
-# frequency for applying the Gauss propagator
-# [type: int, range: [-1,2147483647], default: 5]
-constraints/xor/gausspropfreq = 5
-
 # should fixed and aggregated variables be printed (if not, re-parsing might fail)
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 reading/cipreader/writefixedvars = TRUE
@@ -1395,22 +1175,6 @@ reading/opbreader/dynamicconss = FALSE
 # use '*' between coefficients and variables by writing to problem?
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
 reading/opbreader/multisymbol = FALSE
-
-# should the coloring values be relativ or absolute
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-reading/ppmreader/rgbrelativ = TRUE
-
-# should the output format be binary(P6) (otherwise plain(P3) format)
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-reading/ppmreader/rgbascii = TRUE
-
-# splitting coefficients in this number of intervals
-# [type: int, range: [3,16], default: 3]
-reading/ppmreader/coefficientlimit = 3
-
-# maximal color value
-# [type: int, range: [0,255], default: 160]
-reading/ppmreader/rgblimit = 160
 
 # should the output format be binary(P4) (otherwise plain(P1) format)
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
@@ -1547,30 +1311,6 @@ presolving/domcol/predbndstr = FALSE
 # should singleton columns stuffing be applied?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 presolving/domcol/singcolstuffing = TRUE
-
-# priority of presolver <gateextraction>
-# [type: int, range: [-536870912,536870911], default: 1000000]
-presolving/gateextraction/priority = 1000000
-
-# maximal number of presolving rounds the presolver participates in (-1: no limit)
-# [type: int, range: [-1,2147483647], default: -1]
-presolving/gateextraction/maxrounds = -1
-
-# should presolver be delayed, if other presolvers found reductions?
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-presolving/gateextraction/delay = TRUE
-
-# should we only try to extract set-partitioning constraints and no and-constraints
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-presolving/gateextraction/onlysetpart = FALSE
-
-# should we try to extract set-partitioning constraint out of one logicor and one corresponding set-packing constraint
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-presolving/gateextraction/searchequations = TRUE
-
-# order logicor contraints to extract big-gates before smaller ones (-1), do not order them (0) or order them to extract smaller gates at first (1)
-# [type: int, range: [-1,1], default: 1]
-presolving/gateextraction/sorting = 1
 
 # priority of presolver <convertinttobin>
 # [type: int, range: [-536870912,536870911], default: 6000000]

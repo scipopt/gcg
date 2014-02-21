@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # For release versions, only use VERSION="x.x.x".
 # For development versions, use VERSION="x.x.x.x" with subversion number.
@@ -69,9 +69,16 @@ grep "@version" doc/xternal.c
 grep "^VERSION" Makefile
 tail src/githash.c
 
+
 echo "Collecting webpage"
+mkdir temp-webpage
+pushd temp-webpage
 rm -f web-$NAME
-ln -s doc/html web-$NAME
-tar jchf release/web-$NAME.tbz2 web-$NAME
-rm -f web-$NAME
+ln -s ../doc/html doc
+ln -sf ../doc/index.html index.html
+tar jchf ../release/web-$NAME.tbz2 doc index.html
+rm -f doc
+rm -f index.html
+popd
+rm -r temp-webpage
 echo "finished"
