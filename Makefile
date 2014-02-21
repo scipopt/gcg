@@ -89,7 +89,7 @@ FLAGS		+=	-I$(LIBDIR)/blissinc
 endif
 SOFTLINKS	+=	$(LIBDIR)/blissinc
 SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
-LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with 'make BLISS=false'):\n"
+LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with \"make BLISS=false\"):\n"
 LINKMSG		+=	" -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
 LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"blissinc/libbliss.$(STATICLIBEXT)\"\n"
 endif
