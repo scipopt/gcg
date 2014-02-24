@@ -601,8 +601,8 @@ separating/maxbounddist = 1
 separating/minefficacy = 0.05
 
 # minimal efficacy for a cut to enter the LP in the root node
-# [type: real, range: [0,1e+98], default: 0.01]
-separating/minefficacyroot = 0.01
+# [type: real, range: [0,1e+98], default: 0.001]
+separating/minefficacyroot = 0.001
 
 # minimal orthogonality for a cut to enter the LP
 # [type: real, range: [0,1], default: 0.5]
@@ -1296,11 +1296,11 @@ presolving/domcol/maxrounds = -1
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 presolving/domcol/delay = TRUE
 
-# minimal number of pair comparisons 
+# minimal number of pair comparisons
 # [type: int, range: [100,1048576], default: 1024]
 presolving/domcol/numminpairs = 1024
 
-# maximal number of pair comparisons 
+# maximal number of pair comparisons
 # [type: int, range: [1024,1000000000], default: 1048576]
 presolving/domcol/nummaxpairs = 1048576
 
@@ -2132,7 +2132,7 @@ heuristics/dualval/onlyleaves = FALSE
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
 heuristics/dualval/relaxindicators = FALSE
 
-# relax the continous variables 
+# relax the continous variables
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
 heuristics/dualval/relaxcontvars = FALSE
 
@@ -3053,12 +3053,12 @@ heuristics/rens/fullscale = FALSE
 heuristics/rins/priority = -1101000
 
 # frequency for calling primal heuristic <rins> (-1: never, 0: only at depth freqofs)
-# [type: int, range: [-1,2147483647], default: -1]
-heuristics/rins/freq = -1
+# [type: int, range: [-1,2147483647], default: 25]
+heuristics/rins/freq = 25
 
 # frequency offset for calling primal heuristic <rins>
-# [type: int, range: [0,2147483647], default: 5]
-heuristics/rins/freqofs = 5
+# [type: int, range: [0,2147483647], default: 0]
+heuristics/rins/freqofs = 0
 
 # maximal depth level to call primal heuristic <rins> (-1: no limit)
 # [type: int, range: [-1,2147483647], default: -1]
@@ -3229,16 +3229,16 @@ heuristics/shiftandpropagate/collectstats = TRUE
 heuristics/shiftandpropagate/stopafterfeasible = TRUE
 
 # Should binary variables be shifted first?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-heuristics/shiftandpropagate/preferbinaries = FALSE
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/shiftandpropagate/preferbinaries = TRUE
 
 # should variables with a zero shifting value be delayed instead of being fixed?
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
 heuristics/shiftandpropagate/nozerofixing = FALSE
 
 # should binary variables with no locks in one direction be fixed to that direction?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-heuristics/shiftandpropagate/fixbinlocks = FALSE
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/shiftandpropagate/fixbinlocks = TRUE
 
 # should coefficients and left/right hand sides be normalized by max row coeff?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
