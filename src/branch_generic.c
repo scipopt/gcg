@@ -2342,13 +2342,9 @@ SCIP_RETCODE createChildNodesGeneric(
             SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
             SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &childcons, child, GCGconsMasterbranchGetActiveCons(masterscip)) );
             SCIP_CALL( SCIPaddConsNode(masterscip, child, childcons, NULL) );
-
+            assert(branchchilddata->consS[branchchilddata->consSsize-1].component != NULL);
             /* define names for origbranch constraints */
-            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %d) (last comp=%s %s %g) >= %g", SCIPnodeGetNumber(child), blocknr, p+1,
-               SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
-               branchchilddata->consS[branchchilddata->consSsize-1].sense == GCG_COMPSENSE_GE? ">=": "<",
-               branchchilddata->consS[branchchilddata->consSsize-1].bound,
-               branchchilddata->lhs);
+            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %d)", SCIPnodeGetNumber(child), blocknr, p+1);
 
             assert(branchchilddata != NULL);
 
