@@ -2344,7 +2344,7 @@ SCIP_RETCODE createChildNodesGeneric(
             SCIP_CALL( SCIPaddConsNode(masterscip, child, childcons, NULL) );
 
             /* define names for origbranch constraints */
-            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %d) (last comp=%s %s %g) >= %g", SCIPnodeGetNumber(child), blocknr, p+1,
+            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%lld,%d, %d) (last comp=%s %s %g) >= %g", SCIPnodeGetNumber(child), blocknr, p+1,
                SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
                branchchilddata->consS[branchchilddata->consSsize-1].sense == GCG_COMPSENSE_GE? ">=": "<",
                branchchilddata->consS[branchchilddata->consSsize-1].bound,
