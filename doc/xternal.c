@@ -435,6 +435,10 @@ GCG> q
  *
  * \verbinclude release-notes-2.0.0
  *
+ * \verbinclude release-notes-1.1.1
+ *
+ * \verbinclude release-notes-1.0.0
+ *
  */
 
 /**@page AUTHORS GCG Authors
