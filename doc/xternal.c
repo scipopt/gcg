@@ -40,7 +40,6 @@
  *   <tr>
  *     <td nowrap >
  * <b>How to get started</b>
- * - \ref DOWNLOAD     "Download locations"
  * - \ref INSTALL      "Installation information"
  * - \ref EXAMPLE      "How to get started (example)"
  * - \ref FILEFORMATS  "Input file formats"
@@ -78,25 +77,6 @@
  * For information about the origin of the test instances, consult <code>check/instances/readme</code>.
  *
  * \verbinclude LICENSE
- */
-
-/**@page DOWNLOAD Download Locations
- * @section Downloading GCG
- *
- * GCG can be downloaded from two locations in two versions
- * - Standalone from the server at  RWTH Aachen
- *  - <a href="download/gcg-2.0.0.tgz">gcg-2.0.0.tgz</a> (700K)
- *  - <a href="download/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (680K)
- *  - <a href="download/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (670K)
- * - Complete with SCIP in the SCIP Optimization Suite 3.1.0 from the Zuse Institute Berlin
- *  - <a href="http://scip.zib.de">http://scip.zib.de</a>
- *
- * You will need SCIP to compile GCG, which you can download <a href="http://scip.zib.de">here</a>.
- *
- * Instructions how to compile and build GCG can be found in the \ref INSTALL "Install section".
- *
- * We will not offer precompiled binaries and GCG. It is developed and tested on GNU/Linux. It will compile under
- * Windows using the Intel compiler, we don't provide any help on that, however.
  */
 
 /**@page INSTALL Installation information
