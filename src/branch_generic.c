@@ -1090,7 +1090,7 @@ SCIP_RETCODE Separate(
          SCIPfreeBufferArray(scip, &compvalues);
          compvalues = NULL;
 
-         /** @todo mb: this is a fix for an issue that Marcel claims that Vanderbeck did wrong */
+         /** @todo mb: this is a fix for an issue that Marcel claims need fixing */
          j = 0;
 
          do
