@@ -1406,6 +1406,24 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             if( contained || !handled )
             {
                SCIPdebugMessage("orig var %s is contained in %s but not handled val = %f \n", SCIPvarGetName(consdata->boundchgvars[k]), SCIPvarGetName(vars[i]), val);
+               if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER )
+               {
+                  if( SCIPisLT(scip, val, SCIPvarGetLbLocal(consdata->boundchgvars[k])) && !SCIPisZero(scip, SCIPvarGetUbLocal(vars[i])) )
+                  {
+                     SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
+                     propcount++;
+                  }
+               }
+
+               if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER )
+               {
+
+                  if( SCIPisGT(scip, val, SCIPvarGetUbLocal(consdata->boundchgvars[k])) && !SCIPisZero(scip, SCIPvarGetUbLocal(vars[i])))
+                  {
+                     SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
+                     propcount++;
+                  }
+               }
 
             }
             assert(j == norigvars || contained);
