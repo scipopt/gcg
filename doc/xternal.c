@@ -555,15 +555,15 @@ GCG> q
  * depending on the context. In general, methods defined in relax_gcg.h need a pointer to the original SCIP instance
  * while methods defined in pricer_gcg.h need a pointer to the reformulated SCIP instance.
  *
- * \li GCGpricerGetOrigprob(): given the pointer to the SCIP instance representing the master problem, returns the pointer to the original SCIP instance
- * \li GCGrelaxGetMasterprob(): given the pointer to the original SCIP instance, returns the pointer to the SCIP instance representing the master problem
- * \li GCGrelaxGetNPricingprobs(): returns the number of pricing problems
- * \li GCGrelaxGetPricingprob(): returns a specific pricing problem
+ * \li GCGmasterGetOrigprob(): given the pointer to the SCIP instance representing the master problem, returns the pointer to the original SCIP instance
+ * \li GCGgetMasterprob(): given the pointer to the original SCIP instance, returns the pointer to the SCIP instance representing the master problem
+ * \li GCGgetNPricingprobs(): returns the number of pricing problems
+ * \li GCGgetPricingprob(): returns a specific pricing problem
  * \li GCGrelaxGetCurrentOrigSol(): returns the current original solution candidate, i.e., the current solution of the
  * master LP transferred back to the original problem space
  * \li GCGrelaxUpdateCurrentSol(): updates the current original solution candidate, i.e., transfers the current solution
  * of the master LP back to the original problem space and stores it
- * \li GCGrelaxTransformMastersolToOrigsol(): transforms a given primal solution of the master problem to the original
+ * \li GCGtransformMastersolToOrigsol(): transforms a given primal solution of the master problem to the original
  * problem
  * \li GCGrelaxStartProbing(): starts probing mode in master problem (probing in the original problem should have been started
  * directly before that)
