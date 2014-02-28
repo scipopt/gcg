@@ -1,0 +1,262 @@
+.reveal:hover {
+    text-shadow: 1px 1px 1px #777;
+}
+.reveal {
+    color:#06c;
+    padding-top: 1em;
+    cursor: pointer;
+    margin: 5px 0;
+}
+.answer {
+    background-color: #fff;
+    padding-left:   1em;
+}
+/* used for download buttons */
+.w-30 {
+   width:30px;
+}
+.w-60 {
+   width:60px;
+}
+/* used for news dates */
+.w-150 {
+   width:150px
+}
+/* used for developer names */
+.w-200 {
+   width:200px;
+}
+/* used for cooperation partner names */
+.w-350 {
+   width:350px;
+}
+.center {
+   position:center;
+}
+.al-r {
+   text-align: right;
+}
+.al-l {
+   text-align:left;
+}
+.val-t {
+   vertical-align:top;
+}
+.val-c {
+   vertical-align:center;
+}
+.footer {
+margin-top: 100px;
+border-top: 1px solid #06c;
+color: #000;
+font-size: 8pt;
+}
+/* scroll up a bit to compensate for the header */
+.targetpadding {
+    padding-top:80px;
+    margin-top:-60px;
+}
+body {
+    position: relative;
+    /* For scrollyspy */
+    padding-top: 50px;
+    /* Account for fixed navbar */
+}
+/* Keep code small in tables on account of limited space */
+.table code {
+    font-size: 13px;
+    font-weight: normal;
+}
+
+/* text of navbar brand/title */
+.bs-docs-nav .navbar-brand {
+    color: #fff;
+    padding-right:80px;
+}
+/* text of navbar elements */
+.bs-docs-nav .navbar-nav > li > a {
+    color: #fff;
+}
+/* style for mouse over in navbar */
+.bs-docs-nav .navbar-nav > li > a:hover {
+    background-color: black;
+    text-shadow: 0px 0px 2px white;
+}
+.bs-docs-nav .navbar-toggle {
+    border-color: #ddd;
+}
+.bs-footer {
+    padding-top: 40px;
+    padding-bottom: 30px;
+    margin-top: 100px;
+    color: #777;
+    text-align: center;
+    border-top: 1px solid #e5e5e5;
+}
+.footer-links {
+    margin: 10px 0;
+    padding-left: 0;
+}
+.footer-links li {
+    display: inline;
+    padding: 0 2px;
+}
+.footer-links li:first-child {
+    padding-left: 0;
+}
+@media (min-width: 768px) {
+    .bs-footer {
+        text-align: left;
+    }
+    .bs-footer p {
+        margin-bottom: 0;
+    }
+}
+/* Masthead (headings and download button) */
+ .bs-masthead {
+    position: relative;
+    padding: 30px 15px;
+    text-align: center;
+}
+.bs-masthead h1 {
+    font-size: 50px;
+    line-height: 1;
+    color: #fff;
+}
+.bs-masthead .btn-outline {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 18px 24px;
+    font-size: 21px;
+}
+/* Links to project-level content like the repo, Expo, etc */
+ .bs-masthead-links {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 0 15px;
+    list-style: none;
+    text-align: center;
+}
+.bs-masthead-links li {
+    display: inline;
+}
+.bs-masthead-links li + li {
+    margin-left: 20px;
+}
+.bs-masthead-links a {
+    color: #fff;
+}
+@media screen and (min-width: 768px) {
+    .bs-masthead {
+        text-align: left;
+        padding-top: 140px;
+        padding-bottom: 140px;
+    }
+    .bs-masthead h1 {
+        font-size: 100px;
+    }
+    .bs-masthead .lead {
+        margin-right: 25%;
+        font-size: 30px;
+    }
+    .bs-masthead-links {
+        padding: 0;
+        text-align: left;
+    }
+}
+/* Page headers */
+.bs-header {
+    padding: 30px 15px 40px;
+    /* side padding builds on .container 15px, so 30px */
+    font-size: 16px;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .15);
+}
+.bs-header h1 {
+    color: #fff;
+}
+.bs-header p {
+    font-weight: 300;
+    line-height: 1.5;
+}
+.bs-header .container {
+    position: relative;
+}
+@media screen and (min-width: 768px) {
+    .bs-header {
+        font-size: 21px;
+        text-align: left;
+    }
+    .bs-header h1 {
+        font-size: 60px;
+        line-height: 1;
+    }
+}
+@media screen and (min-width: 992px) {
+    .bs-header h1, .bs-header p {
+        margin-right: 380px;
+    }
+}
+.bs-sidebar.affix {
+    position: static;
+}
+/* First level of nav */
+.bs-sidenav {
+    margin-top: 30px;
+    margin-bottom: 30px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+/*     text-shadow: 0 1px 0 #fff; */
+    background-color: #f5f5f5;
+    border-radius: 5px;
+}
+/* Nav: second level (shown on .active) */
+.bs-sidebar .nav .nav {
+    display: none;
+    /* Hide by default, but at >768px, show it */
+    margin-bottom: 8px;
+}
+.bs-sidebar .nav .nav > li > a {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 30px;
+    font-size: 90%;
+}
+/* Show and affix the side nav when space allows it */
+@media screen and (min-width: 992px) {
+    .bs-sidebar .nav > .active > ul {
+        display: block;
+    }
+    /* Widen the fixed sidebar */
+    .bs-sidebar.affix, .bs-sidebar.affix-bottom {
+        width: 213px;
+    }
+    .bs-sidebar.affix {
+        position: fixed;
+        /* Undo the static from mobile first approach */
+        top: 80px;
+    }
+    .bs-sidebar.affix-bottom {
+        position: absolute;
+        /* Undo the static from mobile first approach */
+    }
+    .bs-sidebar.affix-bottom .bs-sidenav, .bs-sidebar.affix .bs-sidenav {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}
+@media screen and (min-width: 1200px) {
+    /* Widen the fixed sidebar again */
+    .bs-sidebar.affix-bottom, .bs-sidebar.affix {
+        width: 263px;
+    }
+}
+/* Space things out */
+ .bs-docs-section + .bs-docs-section {
+    padding-top: 40px;
+}
+/* Janky fix for preventing navbar from overlapping */
+ h1[id] {
+    padding-top: 80px;
+    margin-top: -45px;
+}

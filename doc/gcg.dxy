@@ -855,10 +855,11 @@ HTML_EXTRA_STYLESHEET        = gcg.css
 HTML_EXTRA_FILES       = klammeraffe.png \
 		       jquery.js \
 		       custom.js \
-		       bootstrap.min.css \
-		       bootstrap.min.	  \
+		       bootstrap.css \
+		       bootstrap.js	  \
 		       bootstrap-theme.css \
 		       custom-gcg.css \
+		       custom.css \
 		       tabs.css \
 		       logo_zib.png
 
