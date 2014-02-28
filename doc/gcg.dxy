@@ -853,11 +853,10 @@ HTML_EXTRA_STYLESHEET        = gcg.css
 # the files will be copied as-is; there are no commands or markers available.
 
 HTML_EXTRA_FILES       = klammeraffe.png \
-		       jquery.js \
+		       jquery.min.js \
 		       custom.js \
-		       bootstrap.css \
-		       bootstrap.js	  \
-		       bootstrap-theme.css \
+		       bootstrap.min.css \
+		       bootstrap.min.js	  \
 		       custom-gcg.css \
 		       custom.css \
 		       tabs.css \
