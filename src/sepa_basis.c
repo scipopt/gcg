@@ -191,29 +191,6 @@ SCIP_RETCODE ensureSizeRowsOfMatrix(
    return SCIP_OKAY;
 }
 
-/* returns l2-norm of difference of solutions */
-static
-SCIP_Real getL2Norm(
-   SCIP*                scip,               /**< SCIP data structure */
-   SCIP_Real*           array,              /**< get L2-Norm of the following array */
-   int                  length              /**< length of array */
-)
-{
-   SCIP_Real norm;
-   int i;
-
-   norm = 0.0;
-
-   for(i = 0; i < length; ++i)
-   {
-      norm += array[i];
-   }
-
-   norm = sqrt(norm);
-
-   return norm;
-}
-
 /* computes basis^exp */
 static
 SCIP_Real exponentiate(
@@ -237,7 +214,7 @@ SCIP_Real exponentiate(
 
 /**< Initialize dive objective coefficient for each variable with original objective. */
 static
-SCIP_RETCODE origScipInitObj(
+SCIP_RETCODE initDiveObjWithOrigObj(
    SCIP*                origscip,           /**< orig scip problem */
    SCIP_Bool            enableobj,          /**< returns if objective row was added to the lp */
    SCIP_Real            objfactor           /**< factor, the objective is multiplied with */
@@ -275,7 +252,7 @@ SCIP_RETCODE origScipInitObj(
  *   to the dive objective.
  */
 static
-SCIP_RETCODE origScipChgObj(
+SCIP_RETCODE chgDiveObjAddingOrigObj(
    SCIP*                origscip,           /**< orig scip problem */
    SCIP_Real            objfactor,          /**< factor the objective is multiplied with */
    SCIP_Real            objdivisor          /**< factor the objective is divided with */
@@ -313,7 +290,7 @@ SCIP_RETCODE origScipChgObj(
  *   Additionally, add original objective to the dive objective if this is enabled.
  */
 static
-SCIP_RETCODE origScipInitObjOrig(
+SCIP_RETCODE initDiveObjUsingVarBounds(
    SCIP*                origscip,           /**< orig scip problem */
    SCIP_SEPADATA*       sepadata,           /**< separator specific data */
    SCIP_SOL*            origsol,            /**< orig solution */
@@ -407,7 +384,7 @@ SCIP_RETCODE origScipInitObjOrig(
  * of variable i and if rhs == sum a_i*x_i^* add -a_i to objective of variable i.
  */
 static
-SCIP_RETCODE origScipChgObjAllRows(
+SCIP_RETCODE chgDiveObjUsingRows(
    SCIP*                origscip,           /**< orig scip problem */
    SCIP_SEPADATA*       sepadata,           /**< separator data */
    SCIP_SOL*            origsol,            /**< orig solution */
@@ -532,47 +509,6 @@ SCIP_RETCODE origScipChgObjAllRows(
    SCIPfreeBufferArray(origscip, &vars);
 
    return SCIP_OKAY;
-}
-
-/* returns absoltue value of number */
-static
-SCIP_Real getAbsVal(
-   SCIP_Real            number
-   )
-{
-   return MAX(number, -1.0*number);
-}
-
-/* returns l1-norm of difference of solutions */
-static
-SCIP_Real getL1DiffSols(
-   SCIP*                scip,               /**< SCIP data structure */
-   SCIP_SOL*            sol1,               /**< first solution */
-   SCIP_SOL*            sol2                /**< second solution */
-)
-{
-   SCIP_VAR** vars;
-   int nvars;
-
-   SCIP_Real diff;
-   SCIP_Real solval1;
-   SCIP_Real solval2;
-   int i;
-
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
-
-   diff = 0.0;
-
-   for(i = 0; i < nvars; ++i)
-   {
-      solval1 = SCIPgetSolVal(scip, sol1, vars[i]);
-      solval2 = SCIPgetSolVal(scip, sol2, vars[i]);
-
-      diff += getAbsVal(solval1 - solval2);
-   }
-
-   return diff;
 }
 
 /* returns square of number */
@@ -821,8 +757,6 @@ SCIP_RETCODE getRowMatrix(
    return SCIP_OKAY;
 }
 
-
-
 /* replace row with (row*factor) */
 static
 SCIP_RETCODE rowMultiplyFactor(
@@ -1011,118 +945,32 @@ SCIP_RETCODE addPPObjConss(
    SCIP_SEPA*           sepa,               /**< separator basis */
    int                  ppnumber,           /**< number of pricing problem */
    SCIP_Real            dualsolconv         /**< dual solution corresponding to convexity constraint */
-
 )
 {
-   SCIP* masterscip;
    SCIP* pricingscip;
 
-   SCIP_VAR** mastervars;
-   int nmastervars;
-   int nvarsconvex;
-   SCIP_VAR** origvars;
-   SCIP_VAR** pricingvarsoflinking;
    SCIP_VAR** pricingvars;
    SCIP_VAR* var;
-   SCIP_Real* origvals;
 
    int npricingvars;
-   int norigvars;
    int nvars;
-   int* blocks;
-   int nblocks;
 
    char name[SCIP_MAXSTRLEN];
 
-   int i;
    int j;
    int k;
 
    SCIP_OBJSENSE objsense;
-   SCIP_Real solval;
-   int nnonz;
 
    SCIP_Real lhs;
    SCIP_Real rhs;
 
-   masterscip = GCGrelaxGetMasterprob(scip);
-   mastervars = SCIPgetVars(masterscip);
-   nmastervars = SCIPgetNVars(masterscip);
    nvars = 0;
    pricingscip = GCGrelaxGetPricingprob(scip, ppnumber);
    pricingvars = SCIPgetVars(pricingscip);
    npricingvars = SCIPgetNVars(pricingscip);
 
    if(!GCGrelaxIsPricingprobRelevant(scip, ppnumber) || pricingscip == NULL)
-      return SCIP_OKAY;
-
-   SCIP_CALL( SCIPallocBufferArray(scip, &blocks, GCGrelaxGetNPricingprobs(scip)) );
-
-   nvarsconvex = 0;
-
-   /** loop over master variables and check if solution value is greater than zero */
-   for(i = 0; i < nmastervars; ++i)
-   {
-      solval = SCIPgetSolVal(masterscip, NULL, mastervars[i]);
-      if(SCIPisGT(masterscip, solval, 0.0))
-      {
-         /* get corresponding original variable information */
-         origvals = GCGmasterVarGetOrigvals(mastervars[i]);
-         origvars = GCGmasterVarGetOrigvars(mastervars[i]);
-         norigvars = GCGmasterVarGetNOrigvars(mastervars[i]);
-
-         nnonz = 0;
-         /* loop over original variables, which are represented by current master variable */
-         for(j = 0; j < norigvars; ++j)
-         {
-            /* check if coefficient is not equal to zero and if variable belongs to current pricing problem */
-            if(!SCIPisEQ(scip, origvals[j], 0.0) && GCGvarGetBlock(origvars[j]) >= 0 && GCGrelaxGetBlockRepresentative(scip, GCGvarGetBlock(origvars[j])) == ppnumber)
-            {
-               assert(GCGvarIsOriginal(origvars[j]));
-
-               var = GCGoriginalVarGetPricingVar(origvars[j]);
-
-               ++nnonz;
-
-            }
-            else if(GCGvarGetBlock(origvars[j]) == -2)
-            {
-               assert(GCGvarIsLinking(origvars[j]));
-
-               nblocks = GCGlinkingVarGetNBlocks(origvars[j]);
-               GCGlinkingVarGetBlocks(origvars[j], nblocks, blocks);
-
-               for(k = 0; k < nblocks; ++k)
-               {
-                  if(GCGrelaxGetBlockRepresentative(scip, blocks[k]) == ppnumber)
-                  {
-                     pricingvarsoflinking = GCGlinkingVarGetPricingVars(origvars[j]);
-
-                     var = pricingvarsoflinking[k];
-
-                     ++nnonz;
-
-                     break;
-                  }
-               }
-            }
-            else if(GCGvarGetBlock(origvars[j]) == -1)
-            {
-               SCIPdebugMessage("origvar is mastervar \n");
-            }
-         }
-
-         /* check if variable for affine combination was added to a constraint */
-         if(nnonz > 0)
-         {
-            ++nvarsconvex;
-         }
-      }
-   }
-
-   SCIPfreeBufferArray(scip, &blocks);
-
-   if(nvarsconvex < 2)
       return SCIP_OKAY;
 
    objsense = SCIPgetObjsense(pricingscip);
@@ -1446,27 +1294,27 @@ SCIP_RETCODE initConvObj(
 
    if(SCIPisEQ(origscip, convex, 0.0))
    {
-      SCIP_CALL( origScipInitObj(origscip, TRUE, 1.0) );
+      SCIP_CALL( initDiveObjWithOrigObj(origscip, TRUE, 1.0) );
    }
    else if(SCIPisLT(origscip, convex, 1.0))
    {
-      SCIP_CALL( origScipInitObj(origscip, TRUE, 1.0) );
+      SCIP_CALL( initDiveObjWithOrigObj(origscip, TRUE, 1.0) );
       objnormnull = SCIPgetObjNorm(origscip);
 
-      SCIP_CALL( origScipInitObjOrig(origscip, sepadata, origsol, FALSE, convex) );
-      SCIP_CALL( origScipChgObjAllRows(origscip, sepadata, origsol, convex, 1.0) );
+      SCIP_CALL( initDiveObjUsingVarBounds(origscip, sepadata, origsol, FALSE, convex) );
+      SCIP_CALL( chgDiveObjUsingRows(origscip, sepadata, origsol, convex, 1.0) );
 
       objnormcurrent = SCIPgetObjNorm(origscip)/(convex);
 
       if(SCIPisEQ(origscip, objnormcurrent, 0.0))
-         SCIP_CALL( origScipInitObj(origscip, TRUE, 1.0) );
+         SCIP_CALL( initDiveObjWithOrigObj(origscip, TRUE, 1.0) );
       else if(SCIPisGT(origscip, objnormnull, 0.0) )
-         SCIP_CALL( origScipChgObj(origscip, (1.0 - convex) * objnormcurrent, objnormnull) );
+         SCIP_CALL( chgDiveObjAddingOrigObj(origscip, (1.0 - convex) * objnormcurrent, objnormnull) );
    }
    else if(SCIPisEQ(origscip, convex, 1.0))
    {
-      SCIP_CALL( origScipInitObjOrig(origscip, sepadata, origsol, !genericconv && sepadata->enableobj, 1.0) );
-      SCIP_CALL( origScipChgObjAllRows(origscip, sepadata, origsol, 1.0, 1.0) );
+      SCIP_CALL( initDiveObjUsingVarBounds(origscip, sepadata, origsol, !genericconv && sepadata->enableobj, 1.0) );
+      SCIP_CALL( chgDiveObjUsingRows(origscip, sepadata, origsol, 1.0, 1.0) );
    }
    return SCIP_OKAY;
 }
@@ -1499,7 +1347,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
    SCIP_CUT** poolcuts;
    int npoolcuts;
-
 
    SCIP_OBJSENSE objsense;
    SCIP_SOL* origsol;
@@ -1630,8 +1477,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          if(SCIProwGetLPPos(row) == -1 &&
             (SCIProwGetAge(row) < 1 || (strncmp("newmaster", SCIProwGetName(row), 9) == 0)|| (strncmp("newcons", SCIProwGetName(row), 7) == 0)))
          {
-            //SCIPinfoMessage(origscip, NULL, "\n");
-            //SCIPprintRow(origscip, row, NULL);
             SCIP_CALL( SCIPaddRowDive(origscip, row) );
             ++nnewcutsadded;
          }
@@ -1772,9 +1617,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       mastervars = SCIPgetVars(scip);
       nmastervars = SCIPgetNVars(scip);
       SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
-
-      /* copy cuts */
-
 
       /* end diving */
       SCIPendDive(origscip);
