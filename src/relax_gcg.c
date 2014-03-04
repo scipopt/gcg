@@ -921,7 +921,7 @@ static
 SCIP_RETCODE setPricingProblemParameters(
    SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
    int                   clocktype,          /**< clocktype to use in the pricing problem */
-   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_base */
+   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_basis */
    )
 {
    assert(scip != NULL);
@@ -1330,7 +1330,7 @@ SCIP_RETCODE createPricingProblem(
    SCIP**                pricingscip,        /**< Pricing scip data structure */
    const char*           name,               /**< name of the pricing problem */
    int                   clocktype,          /**< clocktype to use in the pricing problem */
-   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_base */
+   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_basis */
    )
 {
    assert(pricingscip != NULL);
@@ -1569,7 +1569,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype) );
 
    enableppcuts = FALSE;
-   SCIPgetBoolParam(scip, "sepa/base/enableppcuts", &enableppcuts);
+   SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts);
 
    /* create the pricing problems */
    for( i = 0; i < npricingprobs; i++ )

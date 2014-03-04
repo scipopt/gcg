@@ -151,7 +151,7 @@ LIBOBJ		=	reader_blk.o \
 			masterplugins.o \
 			nodesel_master.o \
 			sepa_master.o \
-			sepa_base.o \
+			sepa_basis.o \
 			disp_gcg.o \
 			disp_master.o \
 			dialog_gcg.o \

@@ -13,16 +13,16 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   sepa_base.h
+/**@file   sepa_basis.h
  * @ingroup SEPARATORS
- * @brief  base separator
+ * @brief  basis separator
  * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_SEPA_BASE_H__
-#define __SCIP_SEPA_BASE_H__
+#ifndef __SCIP_SEPA_BASIS_H__
+#define __SCIP_SEPA_BASIS_H__
 
 
 #include "scip/scip.h"
@@ -31,39 +31,39 @@
 extern "C" {
 #endif
 
-/** creates the base separator and includes it in SCIP */
+/** creates the basis separator and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeSepaBase(
+SCIP_RETCODE SCIPincludeSepaBasis(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the array of original cuts saved in the separator data */
 extern
-SCIP_ROW** GCGsepaBaseGetOrigcuts(
+SCIP_ROW** GCGsepaBasisGetOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the number of original cuts saved in the separator data */
 extern
-int GCGsepaBaseGetNOrigcuts(
+int GCGsepaBasisGetNOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the array of master cuts saved in the separator data */
 extern
-SCIP_ROW** GCGsepaBaseGetMastercuts(
+SCIP_ROW** GCGsepaBasisGetMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the number of master cuts saved in the separator data */
 extern
-int GCGsepaBaseGetNMastercuts(
+int GCGsepaBasisGetNMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** transforms cut in pricing variables to cut in original variables and adds it to newcuts array */
 extern
-SCIP_RETCODE GCGsepaBaseAddPricingCut(
+SCIP_RETCODE GCGsepaBasisAddPricingCut(
    SCIP*                scip,
    int                  ppnumber,
    SCIP_ROW*            cut

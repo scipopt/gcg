@@ -13,8 +13,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   sepa_base.c
- * @brief  base separator
+/**@file   sepa_basis.c
+ * @brief  basis separator
  * @author Jonas Witt
  */
 
@@ -30,7 +30,7 @@
 #include "scip/lp.h"
 #include "scip/scipdefplugins.h"
 #include "scip_misc.h"
-#include "sepa_base.h"
+#include "sepa_basis.h"
 #include "sepa_master.h"
 #include "gcg.h"
 #include "relax_gcg.h"
@@ -39,8 +39,8 @@
 #include "scip/var.h"
 
 
-#define SEPA_NAME              "base"
-#define SEPA_DESC              "separator calculates a base of the orig problem to generate cuts, which cut off the master lp sol"
+#define SEPA_NAME              "basis"
+#define SEPA_DESC              "separator calculates a basis of the orig problem to generate cuts, which cut off the master lp sol"
 #define SEPA_PRIORITY                1000
 #define SEPA_FREQ                     0
 #define SEPA_MAXBOUNDDIST           1.0
@@ -77,7 +77,7 @@ struct SCIP_SepaData
    SCIP_Real             shiftediterationsnotfound; /**< mean number of iterations until no cuts at all were found */
    int                   nfound;             /**< number of calls where useful cuts were found */
    int                   nnotfound;          /**< number of calls where no useful cuts were found */
-   SCIP_Bool             enable;             /**< parameter returns if base separator is enabled */
+   SCIP_Bool             enable;             /**< parameter returns if basis separator is enabled */
    SCIP_Bool             enableobj;          /**< parameter returns if objective constraint is enabled */
    SCIP_Bool             enableobjround;     /**< parameter returns if rhs/lhs of objective constraint is rounded, when obj is int */
    SCIP_Bool             enableppcuts;       /**< parameter returns if cuts generated during pricing are added to newconss array */
@@ -214,10 +214,10 @@ SCIP_Real getL2Norm(
    return norm;
 }
 
-/* computes base^exp */
+/* computes basis^exp */
 static
 SCIP_Real exponentiate(
-   SCIP_Real            base,               /**< basis for exponentiation */
+   SCIP_Real            basis,               /**< basis for exponentiation */
    int                  exponent            /**< exponent for exponentiation */
    )
 {
@@ -229,7 +229,7 @@ SCIP_Real exponentiate(
    result = 1.0;
    for(i = 0; i < exponent; ++i)
    {
-      result *= base;
+      result *= basis;
    }
 
    return result;
@@ -1008,7 +1008,7 @@ SCIP_RETCODE getRowRank(
 static
 SCIP_RETCODE addPPObjConss(
    SCIP*                scip,               /**< SCIP data structure */
-   SCIP_SEPA*           sepa,               /**< separator base */
+   SCIP_SEPA*           sepa,               /**< separator basis */
    int                  ppnumber,           /**< number of pricing problem */
    SCIP_Real            dualsolconv         /**< dual solution corresponding to convexity constraint */
 
@@ -1183,20 +1183,20 @@ SCIP_RETCODE addPPObjConss(
 /** copy method for separator plugins (called when SCIP copies plugins) */
 #if 0
 static
-SCIP_DECL_SEPACOPY(sepaCopyBase)
+SCIP_DECL_SEPACOPY(sepaCopyBasis)
 {  /*lint --e{715}*/
-   SCIPerrorMessage("method of base separator not implemented yet\n");
+   SCIPerrorMessage("method of basis separator not implemented yet\n");
    SCIPABORT(); /*lint --e{527}*/
 
    return SCIP_OKAY;
 }
 #else
-#define sepaCopyBase NULL
+#define sepaCopyBasis NULL
 #endif
 
 /** destructor of separator to free user data (called when SCIP is exiting) */
 static
-SCIP_DECL_SEPAFREE(sepaFreeBase)
+SCIP_DECL_SEPAFREE(sepaFreeBasis)
 {  /*lint --e{715}*/
    SCIP_SEPADATA* sepadata;
 
@@ -1248,7 +1248,7 @@ SCIP_DECL_SEPAFREE(sepaFreeBase)
 
    /* print separator information */
    SCIPinfoMessage(scip, NULL, "            time ncalls ncfound ncapplied nlpcfound mncfound mncapplied mnlpcfound nprimalsols convex diffstart diffend itfound itnfound\n");
-   SCIPinfoMessage(scip, NULL, "SepaBase:  %5.2f %6d %7d %9d %9d  %7.2f %10.2f %10.2f %11d %6.6f %4.3f %6.3f %6.3f %6.3f \n", time, ncalls, ncutsfound,
+   SCIPinfoMessage(scip, NULL, "SepaBasis:  %5.2f %6d %7d %9d %9d  %7.2f %10.2f %10.2f %11d %6.6f %4.3f %6.3f %6.3f %6.3f \n", time, ncalls, ncutsfound,
                   ncutsapplied, nlpcuts, meancutsfound, meancutsapplied, meanlpcutsfound, nprimalsols, sepadata->shiftedconvexgeom, sepadata->shifteddiffstartgeom, sepadata->shifteddiffendgeom,
                   sepadata->shiftediterationsfound, sepadata->shiftediterationsnotfound);
 
@@ -1274,7 +1274,7 @@ SCIP_DECL_SEPAFREE(sepaFreeBase)
 
 /** initialization method of separator (called after problem was transformed) */
 static
-SCIP_DECL_SEPAINIT(sepaInitBase)
+SCIP_DECL_SEPAINIT(sepaInitBasis)
 {  /*lint --e{715}*/
    SCIP*   origscip;
    SCIP_SEPADATA* sepadata;
@@ -1301,7 +1301,7 @@ SCIP_DECL_SEPAINIT(sepaInitBase)
    origvars = SCIPgetVars(origscip);
    norigvars = SCIPgetNVars(origscip);
 
-   SCIPdebugMessage("sepaInitBase\n");
+   SCIPdebugMessage("sepaInitBasis\n");
 
    enable = sepadata->enable;
    enableobj = sepadata->enableobj;
@@ -1331,7 +1331,7 @@ SCIP_DECL_SEPAINIT(sepaInitBase)
 
 /** deinitialization method of separator (called before transformed problem is freed) */
 static
-SCIP_DECL_SEPAEXIT(sepaExitBase)
+SCIP_DECL_SEPAEXIT(sepaExitBasis)
 {  /*lint --e{715}*/
    SCIP* origscip;
    SCIP_SEPADATA* sepadata;
@@ -1367,21 +1367,21 @@ SCIP_DECL_SEPAEXIT(sepaExitBase)
 /** solving process initialization method of separator (called when branch and bound process is about to begin) */
 #if 0
 static
-SCIP_DECL_SEPAINITSOL(sepaInitsolBase)
+SCIP_DECL_SEPAINITSOL(sepaInitsolBasis)
 {  /*lint --e{715}*/
-   SCIPerrorMessage("method of base separator not implemented yet\n");
+   SCIPerrorMessage("method of basis separator not implemented yet\n");
    SCIPABORT(); /*lint --e{527}*/
 
    return SCIP_OKAY;
 }
 #else
-#define sepaInitsolBase NULL
+#define sepaInitsolBasis NULL
 #endif
 
 
 /** solving process deinitialization method of separator (called before branch and bound process data is freed) */
 static
-SCIP_DECL_SEPAEXITSOL(sepaExitsolBase)
+SCIP_DECL_SEPAEXITSOL(sepaExitsolBasis)
 {  /*lint --e{715}*/
    SCIP_SEPADATA* sepadata;
    int i;
@@ -1475,7 +1475,7 @@ SCIP_RETCODE initConvObj(
 
 /** LP solution separation method of separator */
 static
-SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
+SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 {  /*lint --e{715}*/
 
    SCIP* origscip;
@@ -1533,7 +1533,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
-   SCIPdebugMessage("sepaExeclpBase\n");
+   SCIPdebugMessage("sepaExeclpBasis\n");
 
    *result = SCIP_DIDNOTFIND;
 
@@ -1882,7 +1882,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
          sepadata->norigcuts++;
 
          /* create new cut in the master problem */
-         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_base_%s", SCIProwGetName(origcut));
+         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_basis_%s", SCIProwGetName(origcut));
          SCIP_CALL( SCIPcreateEmptyRowSepa(scip, &mastercut, sepa, name,
                ( SCIPisInfinity(scip, -SCIProwGetLhs(origcut)) ?
                   SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut)),
@@ -1963,23 +1963,23 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
 /** arbitrary primal solution separation method of separator */
 #if 0
 static
-SCIP_DECL_SEPAEXECSOL(sepaExecsolBase)
+SCIP_DECL_SEPAEXECSOL(sepaExecsolBasis)
 {  /*lint --e{715}*/
-   SCIPerrorMessage("method of base separator not implemented yet\n");
+   SCIPerrorMessage("method of basis separator not implemented yet\n");
    SCIPABORT(); /*lint --e{527}*/
 
    return SCIP_OKAY;
 }
 #else
-#define sepaExecsolBase NULL
+#define sepaExecsolBasis NULL
 #endif
 
 /*
  * separator specific interface methods
  */
 
-/** creates the base separator and includes it in SCIP */
-SCIP_RETCODE SCIPincludeSepaBase(
+/** creates the basis separator and includes it in SCIP */
+SCIP_RETCODE SCIPincludeSepaBasis(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2025,37 +2025,37 @@ SCIP_RETCODE SCIPincludeSepaBase(
     */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
          SEPA_USESSUBSCIP, SEPA_DELAY,
-         sepaCopyBase, sepaFreeBase, sepaInitBase, sepaExitBase, sepaInitsolBase, sepaExitsolBase, sepaExeclpBase, sepaExecsolBase,
+         sepaCopyBasis, sepaFreeBasis, sepaInitBasis, sepaExitBasis, sepaInitsolBasis, sepaExitsolBasis, sepaExeclpBasis, sepaExecsolBasis,
          sepadata) );
 
-   /* add base separator parameters */
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/enable", "is base separator enabled?",
+   /* add basis separator parameters */
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enable", "is basis separator enabled?",
          &(sepadata->enable), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/enableobj", "is objective constraint of separator enabled?",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableobj", "is objective constraint of separator enabled?",
          &(sepadata->enableobj), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/enableobjround", "round obj rhs/lhs of obj constraint if obj is int?",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableobjround", "round obj rhs/lhs of obj constraint if obj is int?",
          &(sepadata->enableobjround), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/enableppcuts", "add cuts generated during pricing to newconss array?",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppcuts", "add cuts generated during pricing to newconss array?",
          &(sepadata->enableppcuts), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/enableppobjconss", "is objective constraint for redcost of each pp of separator enabled?",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjconss", "is objective constraint for redcost of each pp of separator enabled?",
          &(sepadata->enableppobjconss), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/genobjconvex", "generated obj convex dynamically",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/genobjconvex", "generated obj convex dynamically",
          &(sepadata->genobjconvex), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/enableposslack", "should positive slack influence the dive objective function?",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableposslack", "should positive slack influence the dive objective function?",
          &(sepadata->enableposslack), FALSE, FALSE, NULL, NULL);
-   SCIPaddIntParam(GCGpricerGetOrigprob(scip), "sepa/base/posslackexp", "exponent of positive slack usage",
+   SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexp", "exponent of positive slack usage",
          &(sepadata->posslackexp), FALSE, 1, 1, INT_MAX, NULL, NULL);
-   SCIPaddRealParam(GCGpricerGetOrigprob(scip), "sepa/base/objconvex", "convex combination factor",
+   SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/basis/objconvex", "convex combination factor",
          &(sepadata->objconvex), FALSE, 1.0, 0.0, 1.0, NULL, NULL);
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/aggressive", "parameter returns if aggressive separation is used",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/aggressive", "parameter returns if aggressive separation is used",
       &(sepadata->aggressive), FALSE, TRUE, NULL, NULL);
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/chgobj", "parameter returns if basis is searched with different objective",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobj", "parameter returns if basis is searched with different objective",
       &(sepadata->chgobj), FALSE, TRUE, NULL, NULL);
-   SCIPaddIntParam(GCGpricerGetOrigprob(scip), "sepa/base/iterations", "parameter returns if number new rows adding"
+   SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/iterations", "parameter returns if number new rows adding"
       "iterations (rows just cut off dive lp sol)", &(sepadata->iterations), FALSE, 1000000, 1, 10000000 , NULL, NULL);
-   SCIPaddIntParam(GCGpricerGetOrigprob(scip), "sepa/base/mincuts", "parameter returns number of minimum cuts needed to "
+   SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/mincuts", "parameter returns number of minimum cuts needed to "
       "return *result = SCIP_Separated", &(sepadata->mincuts), FALSE, 1, 1, 100, NULL, NULL);
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/chgobjallways", "parameter returns if obj is changed not only in the first iteration",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobjallways", "parameter returns if obj is changed not only in the first iteration",
       &(sepadata->chgobjallways), FALSE, FALSE, NULL, NULL);
 
    return SCIP_OKAY;
@@ -2063,7 +2063,7 @@ SCIP_RETCODE SCIPincludeSepaBase(
 
 
 /** returns the array of original cuts saved in the separator data */
-SCIP_ROW** GCGsepaBaseGetOrigcuts(
+SCIP_ROW** GCGsepaBasisGetOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2082,7 +2082,7 @@ SCIP_ROW** GCGsepaBaseGetOrigcuts(
 }
 
 /** returns the number of original cuts saved in the separator data */
-int GCGsepaBaseGetNOrigcuts(
+int GCGsepaBasisGetNOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2101,7 +2101,7 @@ int GCGsepaBaseGetNOrigcuts(
 }
 
 /** returns the array of master cuts saved in the separator data */
-SCIP_ROW** GCGsepaBaseGetMastercuts(
+SCIP_ROW** GCGsepaBasisGetMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2120,7 +2120,7 @@ SCIP_ROW** GCGsepaBaseGetMastercuts(
 }
 
 /** returns the number of master cuts saved in the separator data */
-int GCGsepaBaseGetNMastercuts(
+int GCGsepaBasisGetNMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2140,7 +2140,7 @@ int GCGsepaBaseGetNMastercuts(
 
 /** transforms cut in pricing variables to cut in original variables and adds it to newcuts array */
 extern
-SCIP_RETCODE GCGsepaBaseAddPricingCut(
+SCIP_RETCODE GCGsepaBasisAddPricingCut(
    SCIP*                scip,
    int                  ppnumber,
    SCIP_ROW*            cut
@@ -2168,7 +2168,7 @@ SCIP_RETCODE GCGsepaBaseAddPricingCut(
 
    if(sepa == NULL)
    {
-      SCIPerrorMessage("sepa base not found\n");
+      SCIPerrorMessage("sepa basis not found\n");
       return SCIP_OKAY;
    }
 
