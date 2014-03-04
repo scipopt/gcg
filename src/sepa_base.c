@@ -1573,6 +1573,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
    /* separate cuts in cutpool */
    SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, result) );
 
+   SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, result) );
+
    if(SCIPgetNCuts(origscip) > 0)
       SCIPdebugMessage("Found cuts in cutpool\n");
 
@@ -1615,6 +1617,25 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
          }
       }
 
+      npoolcuts = SCIPgetNDelayedPoolCuts(origscip);
+      poolcuts = SCIPgetDelayedPoolCuts(origscip);
+
+      /* loop over cuts in delayed cutpool and cuts which are satisfied with equality by origsol to dive lp */
+      for(i = 0; i < npoolcuts; ++i)
+      {
+         SCIP_ROW* row;
+
+         row = SCIPcutGetRow(poolcuts[i]);
+
+         if(SCIProwGetLPPos(row) == -1 &&
+            (SCIProwGetAge(row) < 1 || (strncmp("newmaster", SCIProwGetName(row), 9) == 0)|| (strncmp("newcons", SCIProwGetName(row), 7) == 0)))
+         {
+            //SCIPinfoMessage(origscip, NULL, "\n");
+            //SCIPprintRow(origscip, row, NULL);
+            SCIP_CALL( SCIPaddRowDive(origscip, row) );
+            ++nnewcutsadded;
+         }
+      }
       /* add new constraints if this is enabled  */
       if(enableppobjconss)
       {
