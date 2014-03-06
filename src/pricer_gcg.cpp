@@ -2382,6 +2382,14 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals) );
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
+
+            for(i = 0; i < pricerdata->npricingprobs; ++i)
+            {
+               if(!GCGisPricingprobRelevant(scip_, i))
+                  continue;
+
+               SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i]) );
+            }
          }
 
          SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %ud, nfoundvars = %d, optimal = %ud, *bestredcostvalid = %ud\n", stabilized, nfoundvars, optimal, *bestredcostvalid);

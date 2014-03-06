@@ -1,17 +1,17 @@
 # SCIP version 3.0.0
 
-# is base separator enabled?
-sepa/base/enable = TRUE
+# is basis separator enabled?
+sepa/basis/enable = TRUE
 
 # is objective constraint of separator enabled?
-sepa/base/enableobj = TRUE
+sepa/basis/enableobj = TRUE
 
 # round obj rhs/lhs of obj constraint if obj is int?
-sepa/base/enableobjround = TRUE
+sepa/basis/enableobjround = TRUE
 
-sepa/base/iterations = 10
+sepa/basis/iterations = 10
 
-sepa/base/aggressive = TRUE
+sepa/basis/aggressive = TRUE
 
 lp/solvefreq = 0
 

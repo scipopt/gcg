@@ -1,14 +1,14 @@
 # SCIP version 3.0.0
 
-sepa/base/enable = TRUE
+sepa/basis/enable = TRUE
 
-sepa/base/genobjconvex = FALSE
+sepa/basis/genobjconvex = TRUE
 
-sepa/base/objconvex = 0.999
+sepa/basis/objconvex = 1.0
 
-sepa/base/enableobj = FALSE
+sepa/basis/enableobj = TRUE
 
-sepa/base/enableobjround = FALSE
+sepa/basis/enableobjround = FALSE
 
 lp/solvefreq = 0
 
@@ -19,5 +19,4 @@ lp/rootiterlim = -1
 conflict/enable = FALSE
 
 detectors/random/enabled = FALSE
-
 separating/poolfreq = -1
