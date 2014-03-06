@@ -69,6 +69,15 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
    SCIP_ROW*            cut
    );
 
+/** Add cuts which are due to the latest objective function of the pricing problems
+ *  (reduced cost non-negative) */
+extern
+SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
+   SCIP*                scip,               /**< SCIP data structure */
+   int                  ppnumber,           /**< number of pricing problem */
+   SCIP_Real            dualsolconv         /**< dual solution corresponding to convexity constraint */
+   );
+
 #ifdef __cplusplus
 }
 #endif

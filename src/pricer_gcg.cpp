@@ -2380,15 +2380,21 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          if( *bestredcostvalid )
          {
+            SCIP_Bool enableppobjcg;
+
             SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals) );
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
 
-            for(i = 0; i < pricerdata->npricingprobs; ++i)
+            SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg);
+            if(enableppobjcg)
             {
-               if(!GCGisPricingprobRelevant(scip_, i))
-                  continue;
+               for(i = 0; i < pricerdata->npricingprobs; ++i)
+               {
+                  if(!GCGisPricingprobRelevant(GCGmasterGetOrigprob(scip_), i))
+                     continue;
 
-               SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i]) );
+                  SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i]) );
+               }
             }
          }
 
@@ -2425,6 +2431,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       }
       else if( *bestredcostvalid && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
       {
+         SCIP_Bool enableppobjcg;
          SCIP_Real lowerboundcandidate;
          assert(lowerbound != NULL );
          lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
@@ -2432,6 +2439,18 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          *lowerbound = MAX(*lowerbound, lowerboundcandidate);
          if(stabilization->isInMispricingSchedule())
             stabilization->disablingMispricingSchedule();
+
+         SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg);
+         if(enableppobjcg)
+         {
+            for(i = 0; i < pricerdata->npricingprobs; ++i)
+            {
+               if(!GCGisPricingprobRelevant(GCGmasterGetOrigprob(scip_), i))
+                  continue;
+
+               SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i]) );
+            }
+         }
       }
 
       /* free solutions if none of them has negative reduced cost */

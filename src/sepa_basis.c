@@ -82,6 +82,7 @@ struct SCIP_SepaData
    SCIP_Bool             enableobjround;     /**< parameter returns if rhs/lhs of objective constraint is rounded, when obj is int */
    SCIP_Bool             enableppcuts;       /**< parameter returns if cuts generated during pricing are added to newconss array */
    SCIP_Bool             enableppobjconss;   /**< parameter returns if objective constraint for each redcost of pp is enabled */
+   SCIP_Bool             enableppobjcg;      /**< parameter returns if objective constraint for each redcost of pp is enabled during pricing */
    SCIP_Bool             aggressive;         /**< parameter returns if aggressive separation is used */
    SCIP_Bool             chgobj;             /**< parameter returns if basis is searched with different objective */
    SCIP_Bool             chgobjallways;      /**< parameter returns if obj is not only changed in first iteration */
@@ -966,9 +967,9 @@ SCIP_RETCODE addPPObjConss(
    SCIP_Real rhs;
 
    nvars = 0;
-   pricingscip = GCGrelaxGetPricingprob(scip, ppnumber);
-   pricingvars = SCIPgetVars(pricingscip);
-   npricingvars = SCIPgetNVars(pricingscip);
+   pricingscip = GCGgetPricingprob(scip, ppnumber);
+   pricingvars = SCIPgetOrigVars(pricingscip);
+   npricingvars = SCIPgetNOrigVars(pricingscip);
 
    if(!GCGrelaxIsPricingprobRelevant(scip, ppnumber) || pricingscip == NULL)
       return SCIP_OKAY;
@@ -1013,7 +1014,7 @@ SCIP_RETCODE addPPObjConss(
       if(nvars > 0)
       {
          SCIPdebug( SCIPprintRow(scip, origcut, NULL) );
-         SCIP_CALL( SCIPaddRowDive(scip, origcut) );
+         //SCIP_CALL( SCIPaddRowDive(scip, origcut) );
 
          SCIP_CALL( SCIPaddPoolCut(scip, origcut) );
          SCIPdebugMessage("cut added to dive\n");
@@ -1266,6 +1267,8 @@ SCIP_RETCODE initGenconv(
 
    *convex = 1.0* rank/nbasis;
 
+   SCIPinfoMessage(origscip, NULL, "genconv = %d/%d = %f\n", rank, nbasis, *convex);
+
    ncalls = sepadata->ncalculatedconvex;
 
    sepadata->shiftedconvexgeom = pow(sepadata->shiftedconvexgeom, 1.0*ncalls/(ncalls + 1))
@@ -1423,7 +1426,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, result) );
 
    if(SCIPgetNCuts(origscip) > 0)
+   {
       SCIPdebugMessage("Found cuts in cutpool\n");
+      SCIPinfoMessage(scip, NULL, "Found cuts in cutpool\n");
+   }
 
    *result = SCIP_DIDNOTFIND;
 
@@ -1475,7 +1481,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          row = SCIPcutGetRow(poolcuts[i]);
 
          if(SCIProwGetLPPos(row) == -1 &&
-            (SCIProwGetAge(row) < 1 || (strncmp("newmaster", SCIProwGetName(row), 9) == 0)|| (strncmp("newcons", SCIProwGetName(row), 7) == 0)))
+            (SCIProwGetAge(row) < 5 || (strncmp("newmaster", SCIProwGetName(row), 9) == 0)|| (strncmp("newcons", SCIProwGetName(row), 7) == 0)))
          {
             SCIP_CALL( SCIPaddRowDive(origscip, row) );
             ++nnewcutsadded;
@@ -1607,6 +1613,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
       SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
 
+      SCIPinfoMessage(scip, NULL,"SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
+
       /* get separated cuts */
       cuts = SCIPgetCuts(origscip);
       ncuts = SCIPgetNCuts(origscip);
@@ -1628,7 +1636,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          colvarused = FALSE;
          origcut = cuts[i];
-
 
          SCIPdebugMessage("cutname = %s \n", SCIProwGetName(origcut));
 
@@ -1780,6 +1787,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       SCIPdebugMessage("%d cuts are in the original sepastore!\n", SCIPgetNCuts(origscip));
       SCIPdebugMessage("%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
 
+      SCIPinfoMessage(scip, NULL, "%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
+
       SCIP_CALL( SCIPclearCuts(origscip) );
 
       SCIPfreeBufferArray(scip, &mastervals);
@@ -1881,6 +1890,8 @@ SCIP_RETCODE SCIPincludeSepaBasis(
          &(sepadata->enableppcuts), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjconss", "is objective constraint for redcost of each pp of separator enabled?",
          &(sepadata->enableppobjconss), FALSE, FALSE, NULL, NULL);
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjcg", "is objective constraint for redcost of each pp during pricing of separator enabled?",
+         &(sepadata->enableppobjcg), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/genobjconvex", "generated obj convex dynamically",
          &(sepadata->genobjconvex), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableposslack", "should positive slack influence the dive objective function?",
@@ -2078,6 +2089,31 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
    }
 
    SCIPfreeMemoryArray(scip, &pricingvars);
+
+   return SCIP_OKAY;
+}
+
+/** Add cuts which are due to the latest objective function of the pricing problems
+ *  (reduced cost non-negative) */
+SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
+   SCIP*                scip,               /**< SCIP data structure */
+   int                  ppnumber,           /**< number of pricing problem */
+   SCIP_Real            dualsolconv         /**< dual solution corresponding to convexity constraint */
+)
+{
+   SCIP_SEPA* sepa;
+
+   assert(GCGisMaster(scip));
+
+   sepa = SCIPfindSepa(scip, SEPA_NAME);
+
+   if(sepa == NULL)
+   {
+      SCIPerrorMessage("sepa basis not found\n");
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( addPPObjConss(GCGmasterGetOrigprob(scip), sepa, ppnumber, dualsolconv) );
 
    return SCIP_OKAY;
 }
