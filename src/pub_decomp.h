@@ -503,6 +503,14 @@ SCIP_RETCODE DECcreatePolishedDecomp(
    DEC_DECOMP**          newdecomp           /**< new decomposition, if successful */
    );
 
+/** permutes the decomposition according to the permutation seed */
+extern
+SCIP_RETCODE DECpermuteDecomp(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   unsigned int          permutationseed     /**< permutation seed */
+   );
+
 #ifdef __cplusplus
 }
 #endif

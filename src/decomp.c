@@ -3300,3 +3300,48 @@ SCIP_RETCODE DECcreatePolishedDecomp(
 
    return SCIP_OKAY;
 }
+
+/** permutes the decomposition according to the permutation seed */
+SCIP_RETCODE DECpermuteDecomp(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   unsigned int          permutationseed     /**< permutation seed */
+   )
+{
+   int b;
+   int npricingprobs;
+   assert(scip != NULL);
+   assert(decomp != NULL);
+
+   npricingprobs = DECdecompGetNBlocks(decomp);
+
+   /* Permute individual variables and constraints of pricing problems */
+   for( b = 0; b < npricingprobs; ++b )
+   {
+      SCIP_CONS*** subscipconss;
+      SCIP_VAR*** subscipvars;
+      int *nsubscipconss = DECdecompGetNSubscipconss(decomp);
+      int *nsubscipvars = DECdecompGetNSubscipvars(decomp);
+      subscipconss = DECdecompGetSubscipconss(decomp);
+
+      SCIPpermuteArray((void**)(subscipconss[b]), 0, nsubscipconss[b], &permutationseed);
+
+      subscipvars = DECdecompGetSubscipvars(decomp);
+      SCIPpermuteArray((void**)(subscipvars[b]), 0, nsubscipvars[b], &permutationseed);
+   }
+
+   if( DECdecompGetNLinkingconss(decomp) > 0 )
+   {
+      SCIP_CONS** linkingconss = DECdecompGetLinkingconss(decomp);
+      SCIPpermuteArray((void**)linkingconss, 0, DECdecompGetNLinkingconss(decomp), &permutationseed);
+   }
+
+   if( DECdecompGetNLinkingvars(decomp) > 0 )
+   {
+      SCIP_VAR** linkingvars = DECdecompGetLinkingvars(decomp);;
+      SCIPpermuteArray((void**)linkingvars, 0, DECdecompGetNLinkingvars(decomp), &permutationseed);
+   }
+
+   SCIP_CALL( DECdecompCheckConsistency(scip, decomp) );
+   return SCIP_OKAY;
+}
