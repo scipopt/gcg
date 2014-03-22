@@ -321,7 +321,7 @@ void Stabilization::updateAlpha(
    SCIPdebugMessage("Alpha update after successful pricing\n");
    updateIterationCount();
 
-   if( calculateSubgradient(pricingsols) > 0 )
+   if( SCIPisPositive(scip_, calculateSubgradient(pricingsols)) )
    {
       increaseAlpha();
    }
@@ -430,7 +430,7 @@ SCIP_Real Stabilization::calculateSubgradient(
          continue;
       }
       assert(!SCIPisInfinity(scip_, ABS(lhs)));
-      gradientproduct -= lhs * dual;
+      gradientproduct -= (stabcenterconss[i] - dual) * lhs;
    }
 
    /* mastercuts */
@@ -478,7 +478,7 @@ SCIP_Real Stabilization::calculateSubgradient(
          }
          assert(stabcentercuts != NULL);
          assert(vals != NULL);
-         gradientproduct += (stabcentercuts[i] -dual) * vals[j] * val;
+         gradientproduct += (stabcentercuts[i] - dual) * vals[j] * val;
       }
 
       if( SCIPisGT(scip_, dual, 0.0) )
@@ -494,7 +494,7 @@ SCIP_Real Stabilization::calculateSubgradient(
          continue;
       }
       assert(!SCIPisInfinity(scip_, ABS(lhs)));
-      gradientproduct -= lhs * dual;
+      gradientproduct -=  (stabcentercuts[i] - dual) * lhs;
    }
 
    /* linkingconss */
