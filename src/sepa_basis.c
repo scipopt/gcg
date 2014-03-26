@@ -215,7 +215,7 @@ SCIP_Real exponentiate(
 
 /**< Initialize dive objective coefficient for each variable with original objective. */
 static
-SCIP_RETCODE initDiveObjWithOrigObj(
+SCIP_RETCODE initProbingObjWithOrigObj(
    SCIP*                origscip,           /**< orig scip problem */
    SCIP_Bool            enableobj,          /**< returns if objective row was added to the lp */
    SCIP_Real            objfactor           /**< factor, the objective is multiplied with */
@@ -228,7 +228,7 @@ SCIP_RETCODE initDiveObjWithOrigObj(
    SCIP_Real newobj;
    int i;
 
-   assert(SCIPinDive(origscip));
+   assert(SCIPinProbing(origscip));
 
    origvars = SCIPgetVars(origscip);
    norigvars = SCIPgetNVars(origscip);
@@ -244,7 +244,7 @@ SCIP_RETCODE initDiveObjWithOrigObj(
       if(enableobj)
          newobj = objfactor * SCIPvarGetObj(origvar);
 
-      SCIPchgVarObjDive(origscip, origvar, newobj);
+      SCIPchgVarObjProbing(origscip, origvar, newobj);
    }
    return SCIP_OKAY;
 }
@@ -253,7 +253,7 @@ SCIP_RETCODE initDiveObjWithOrigObj(
  *   to the dive objective.
  */
 static
-SCIP_RETCODE chgDiveObjAddingOrigObj(
+SCIP_RETCODE chgProbingObjAddingOrigObj(
    SCIP*                origscip,           /**< orig scip problem */
    SCIP_Real            objfactor,          /**< factor the objective is multiplied with */
    SCIP_Real            objdivisor          /**< factor the objective is divided with */
@@ -266,7 +266,7 @@ SCIP_RETCODE chgDiveObjAddingOrigObj(
    SCIP_Real newobj;
    int i;
 
-   assert(SCIPinDive(origscip));
+   assert(SCIPinProbing(origscip));
 
    origvars = SCIPgetVars(origscip);
    norigvars = SCIPgetNVars(origscip);
@@ -277,9 +277,9 @@ SCIP_RETCODE chgDiveObjAddingOrigObj(
       /* get variable information */
       origvar = origvars[i];
 
-      newobj = SCIPgetVarObjDive(origscip, origvar) + SCIPvarGetObj(origvar);
+      newobj = SCIPgetVarObjProbing(origscip, origvar) + SCIPvarGetObj(origvar);
 
-      SCIPchgVarObjDive(origscip, origvar, (objfactor * newobj)/objdivisor);
+      SCIPchgVarObjProbing(origscip, origvar, (objfactor * newobj)/objdivisor);
    }
    return SCIP_OKAY;
 }
@@ -291,7 +291,7 @@ SCIP_RETCODE chgDiveObjAddingOrigObj(
  *   Additionally, add original objective to the dive objective if this is enabled.
  */
 static
-SCIP_RETCODE initDiveObjUsingVarBounds(
+SCIP_RETCODE initProbingObjUsingVarBounds(
    SCIP*                origscip,           /**< orig scip problem */
    SCIP_SEPADATA*       sepadata,           /**< separator specific data */
    SCIP_SOL*            origsol,            /**< orig solution */
@@ -373,7 +373,7 @@ SCIP_RETCODE initDiveObjUsingVarBounds(
       if(enableobj)
          newobj = newobj + SCIPvarGetObj(origvar);
 
-      SCIPchgVarObjDive(origscip, origvar, objfactor*newobj);
+      SCIPchgVarObjProbing(origscip, origvar, objfactor*newobj);
    }
 
    return SCIP_OKAY;
@@ -385,7 +385,7 @@ SCIP_RETCODE initDiveObjUsingVarBounds(
  * of variable i and if rhs == sum a_i*x_i^* add -a_i to objective of variable i.
  */
 static
-SCIP_RETCODE chgDiveObjUsingRows(
+SCIP_RETCODE chgProbingObjUsingRows(
    SCIP*                origscip,           /**< orig scip problem */
    SCIP_SEPADATA*       sepadata,           /**< separator data */
    SCIP_SOL*            origsol,            /**< orig solution */
@@ -423,7 +423,7 @@ SCIP_RETCODE chgDiveObjUsingRows(
    enableposslack = sepadata->enableposslack;
    posslackexp = sepadata->posslackexp;
 
-   assert(SCIPinDive(origscip));
+   assert(SCIPinProbing(origscip));
 
    SCIP_CALL( SCIPallocBufferArray(origscip, &solvals, SCIPgetNVars(origscip)) );
    SCIP_CALL( SCIPallocBufferArray(origscip, &vars, SCIPgetNVars(origscip)) );
@@ -499,10 +499,10 @@ SCIP_RETCODE chgDiveObjUsingRows(
       /** loop over variables of the constraint and change objective */
       for(j = 0; j < nvars; ++j)
       {
-         obj = SCIPgetVarObjDive(origscip, vars[j]);
+         obj = SCIPgetVarObjProbing(origscip, vars[j]);
          objadd = (objfactor * factor * vals[j]) / norm;
 
-         SCIPchgVarObjDive(origscip, vars[j], obj + /*objsense **/ objadd / objdivisor);
+         SCIPchgVarObjProbing(origscip, vars[j], obj + /*objsense **/ objadd / objdivisor);
       }
    }
 
@@ -1014,7 +1014,7 @@ SCIP_RETCODE addPPObjConss(
       if(nvars > 0)
       {
          SCIPdebug( SCIPprintRow(scip, origcut, NULL) );
-         //SCIP_CALL( SCIPaddRowDive(scip, origcut) );
+         //SCIP_CALL( SCIPaddRowProbing(scip, origcut) );
 
          SCIP_CALL( SCIPaddPoolCut(scip, origcut) );
          SCIPdebugMessage("cut added to dive\n");
@@ -1297,27 +1297,27 @@ SCIP_RETCODE initConvObj(
 
    if(SCIPisEQ(origscip, convex, 0.0))
    {
-      SCIP_CALL( initDiveObjWithOrigObj(origscip, TRUE, 1.0) );
+      SCIP_CALL( initProbingObjWithOrigObj(origscip, TRUE, 1.0) );
    }
    else if(SCIPisLT(origscip, convex, 1.0))
    {
-      SCIP_CALL( initDiveObjWithOrigObj(origscip, TRUE, 1.0) );
+      SCIP_CALL( initProbingObjWithOrigObj(origscip, TRUE, 1.0) );
       objnormnull = SCIPgetObjNorm(origscip);
 
-      SCIP_CALL( initDiveObjUsingVarBounds(origscip, sepadata, origsol, FALSE, convex) );
-      SCIP_CALL( chgDiveObjUsingRows(origscip, sepadata, origsol, convex, 1.0) );
+      SCIP_CALL( initProbingObjUsingVarBounds(origscip, sepadata, origsol, FALSE, convex) );
+      SCIP_CALL( chgProbingObjUsingRows(origscip, sepadata, origsol, convex, 1.0) );
 
       objnormcurrent = SCIPgetObjNorm(origscip)/(convex);
 
       if(SCIPisEQ(origscip, objnormcurrent, 0.0))
-         SCIP_CALL( initDiveObjWithOrigObj(origscip, TRUE, 1.0) );
+         SCIP_CALL( initProbingObjWithOrigObj(origscip, TRUE, 1.0) );
       else if(SCIPisGT(origscip, objnormnull, 0.0) )
-         SCIP_CALL( chgDiveObjAddingOrigObj(origscip, (1.0 - convex) * objnormcurrent, objnormnull) );
+         SCIP_CALL( chgProbingObjAddingOrigObj(origscip, (1.0 - convex) * objnormcurrent, objnormnull) );
    }
    else if(SCIPisEQ(origscip, convex, 1.0))
    {
-      SCIP_CALL( initDiveObjUsingVarBounds(origscip, sepadata, origsol, !genericconv && sepadata->enableobj, 1.0) );
-      SCIP_CALL( chgDiveObjUsingRows(origscip, sepadata, origsol, 1.0, 1.0) );
+      SCIP_CALL( initProbingObjUsingVarBounds(origscip, sepadata, origsol, !genericconv && sepadata->enableobj, 1.0) );
+      SCIP_CALL( chgProbingObjUsingRows(origscip, sepadata, origsol, 1.0, 1.0) );
    }
    return SCIP_OKAY;
 }
@@ -1360,6 +1360,11 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_Bool infeasible;
    SCIP_Real obj;
    int ncalls;
+
+   SCIP_Real mineff;
+   SCIP_Real mineffroot;
+   int maxrounds;
+   int maxroundsroot;
 
    SCIP_Bool enable;
    SCIP_Bool enableobj;
@@ -1406,6 +1411,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       return SCIP_OKAY;
    }
 
+   SCIP_CALL( SCIPgetRealParam(origscip, "separating/minefficacy", &mineff) );
+   SCIP_CALL( SCIPgetRealParam(origscip, "separating/minefficacyroot", &mineffroot) );
+   SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineffroot) );
+
+   SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxrounds", &maxrounds) );
+   SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxroundsroot", &maxroundsroot) );
+   SCIP_CALL( SCIPsetIntParam(origscip, "separating/maxrounds", maxroundsroot) );
+
    /* update current original solution */
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
 
@@ -1420,34 +1433,40 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    if(sepadata->genobjconvex)
       SCIP_CALL(getRowRank(origscip, &nbasis));
 
-   /* separate cuts in cutpool */
-   SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, result) );
-
-   SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, result) );
-
-   if(SCIPgetNCuts(origscip) > 0)
-   {
-      SCIPdebugMessage("Found cuts in cutpool\n");
-      SCIPinfoMessage(scip, NULL, "Found cuts in cutpool\n");
-   }
-
    *result = SCIP_DIDNOTFIND;
 
    /* init iteration counter */
    iteration = 0;
 
+   /* set separating to aggressive or default */
+   if(sepadata->aggressive)
+      SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_AGGRESSIVE, TRUE) );
+   else
+      SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_DEFAULT, TRUE) );
+
+   /* start diving */
+   SCIPstartProbing(origscip);
+
+   SCIPnewProbingNode(origscip);
+
+   SCIP_CALL( SCIPconstructLP(origscip, &cutoff) );
+
+   /* solve dive lp */
+   SCIP_CALL( SCIPsolveProbingLP(origscip, -1, &lperror, &cutoff) );
+
    /* while the counter is smaller than the number of allowed iterations,
     * try to separate origsol via dive lp sol */
    while( iteration < sepadata->iterations )
    {
-      /* start diving */
-      SCIPstartDive(origscip);
+	  SCIP_CALL( SCIPapplyCutsProbing(origscip, &cutoff) );
 
       /** add origcuts to dive lp */
       for(i = 0; i < GCGsepaGetNCuts(scip); ++i)
       {
          if(SCIProwGetLPPos(GCGsepaGetOrigcuts(scip)[i]) == -1)
-            SCIP_CALL( SCIPaddRowDive(origscip, GCGsepaGetOrigcuts(scip)[i]) );
+         {
+        	 SCIP_CALL( SCIPaddCut(origscip, origsol, GCGsepaGetOrigcuts(scip)[i], TRUE, &infeasible) );
+         }
       }
 
       /* init number of new cuts added */
@@ -1465,7 +1484,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          if(SCIProwGetLPPos(row) == -1 && SCIProwGetAge(row) < 5)
          {
-            SCIP_CALL( SCIPaddRowDive(origscip, row) );
+            SCIP_CALL( SCIPaddCut(origscip, origsol, row, FALSE, &infeasible) );
             ++nnewcutsadded;
          }
       }
@@ -1483,7 +1502,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          if(SCIProwGetLPPos(row) == -1 &&
             (SCIProwGetAge(row) < 5 || (strncmp("newmaster", SCIProwGetName(row), 9) == 0)|| (strncmp("newcons", SCIProwGetName(row), 7) == 0)))
          {
-            SCIP_CALL( SCIPaddRowDive(origscip, row) );
+            SCIP_CALL( SCIPaddCut(origscip, origsol, row, FALSE, &infeasible) );
             ++nnewcutsadded;
          }
       }
@@ -1540,11 +1559,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             SCIP_CALL( SCIPchgRowRhs(origscip, sepadata->objrow, SCIPinfinity(origscip)) );
          }
          /** add row to dive lp */
-         SCIP_CALL( SCIPaddRowDive(origscip, sepadata->objrow) );
+         SCIP_CALL( SCIPaddCut(origscip, origsol, sepadata->objrow, FALSE, &infeasible) );
       }
 
+      SCIP_CALL( SCIPapplyCutsProbing(origscip, &cutoff) );
+
       /* solve dive lp */
-      SCIP_CALL( SCIPsolveDiveLP(origscip, -1, &lperror, &cutoff) );
+      SCIP_CALL( SCIPsolveProbingLP(origscip, -1, &lperror, &cutoff) );
+
 
       assert(!lperror);
 
@@ -1555,12 +1577,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          sepadata->shifteddiffstartgeom = pow(sepadata->shifteddiffstartgeom, 1.0*ncalls/(ncalls + 1))
                                   * pow(MAX(getL2DiffSols(origscip, origsol, NULL) + 1.0, 1.0), 1.0/(ncalls + 1));
       }
-
-      /* set separating to aggressive or default */
-      if(sepadata->aggressive)
-         SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_AGGRESSIVE, TRUE) );
-      else
-         SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_DEFAULT, TRUE) );
 
       /* get separators of origscip */
       sepas = SCIPgetSepas(origscip);
@@ -1591,6 +1607,18 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          }
       }
 
+
+      /* separate cuts in cutpool */
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, result) );
+
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, result) );
+
+      if(SCIPgetNCuts(origscip) > 0)
+      {
+         SCIPdebugMessage("Found cuts in cutpool\n");
+         SCIPinfoMessage(scip, NULL, "Found cuts in cutpool\n");
+      }
+
       /** separate current dive lp sol of origscip */
       SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, FALSE, &delayed, &cutoff) );
 
@@ -1599,12 +1627,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       {
          *result = SCIP_CUTOFF;
          SCIPinfoMessage(scip, NULL, "SCIPseparateSol() detected cut off\n");
-         SCIPendDive(origscip);
+         SCIPendProbing(origscip);
+
+         /* disable separating again */
+         SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
+
          return SCIP_OKAY;
       }
-
-      /* disable separating again */
-      SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
 
       /* update number of lp cuts */
       sepadata->nlpcuts += SCIPgetNCuts(origscip);
@@ -1625,9 +1654,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       mastervars = SCIPgetVars(scip);
       nmastervars = SCIPgetNVars(scip);
       SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
-
-      /* end diving */
-      SCIPendDive(origscip);
 
       /** loop over cuts and transform cut to master problem (and safe cuts) if it seperates origsol */
       for( i = 0; i < ncuts; i++ )
@@ -1789,12 +1815,15 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
       SCIPinfoMessage(scip, NULL, "%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
 
-      SCIP_CALL( SCIPclearCuts(origscip) );
-
       SCIPfreeBufferArray(scip, &mastervals);
 
       assert(sepadata->norigcuts == sepadata->nmastercuts );
    }
+
+   SCIP_CALL( SCIPclearCuts(origscip) );
+
+   /* end diving */
+   SCIPendProbing(origscip);
 
    /* update mean differences */
    ncalls = SCIPsepaGetNCalls(sepa);
@@ -1805,6 +1834,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    {
       *result = SCIP_SEPARATED;
    }
+
+   /* disable separating again */
+   SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
+
+   SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineff) );
+   SCIP_CALL( SCIPsetIntParam(origscip, "separating/maxrounds", maxrounds) );
 
    SCIPdebugMessage("separated origsol\n");
 
@@ -1905,7 +1940,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobj", "parameter returns if basis is searched with different objective",
       &(sepadata->chgobj), FALSE, TRUE, NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/iterations", "parameter returns if number new rows adding"
-      "iterations (rows just cut off dive lp sol)", &(sepadata->iterations), FALSE, 1000000, 1, 10000000 , NULL, NULL);
+      "iterations (rows just cut off dive lp sol)", &(sepadata->iterations), FALSE, 100, 1, 10000000 , NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/mincuts", "parameter returns number of minimum cuts needed to "
       "return *result = SCIP_Separated", &(sepadata->mincuts), FALSE, 1, 1, 100, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobjallways", "parameter returns if obj is changed not only in the first iteration",
