@@ -1378,6 +1378,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    int iteration;
    int nnewcutsadded;
    int nbasis;
+   int nlprowsstart;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -1454,29 +1455,36 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /* solve dive lp */
    SCIP_CALL( SCIPsolveProbingLP(origscip, -1, &lperror, &cutoff) );
 
+   /** add origcuts to probing lp */
+   for(i = 0; i < GCGsepaGetNCuts(scip); ++i)
+   {
+      SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOrigcuts(scip)[i]) );
+   }
+
+   /** add new cuts which did not cut off master sol to probing lp */
+   for( i = 0; i < sepadata->nnewcuts; ++i )
+   {
+      SCIP_CALL( SCIPaddRowProbing(origscip, sepadata->newcuts[i]) );
+   }
+
+   /* store numeber of lp rows in the beginning */
+   nlprowsstart = SCIPgetNLPRows(origscip);
+
    /* while the counter is smaller than the number of allowed iterations,
     * try to separate origsol via dive lp sol */
    while( iteration < sepadata->iterations )
    {
 	  SCIP_CALL( SCIPapplyCutsProbing(origscip, &cutoff) );
 
-      /** add origcuts to dive lp */
-      for(i = 0; i < GCGsepaGetNCuts(scip); ++i)
-      {
-         if(SCIProwGetLPPos(GCGsepaGetOrigcuts(scip)[i]) == -1)
-         {
-        	 SCIP_CALL( SCIPaddCut(origscip, origsol, GCGsepaGetOrigcuts(scip)[i], TRUE, &infeasible) );
-         }
-      }
-
       /* init number of new cuts added */
       nnewcutsadded = 0;
 
+/*
       npoolcuts = SCIPgetNPoolCuts(origscip);
       poolcuts = SCIPgetPoolCuts(origscip);
-
+*/
       /* loop over cuts in cutpool and cuts which are satisfied with equality by origsol to dive lp */
-      for(i = 0; i < npoolcuts; ++i)
+/*      for(i = 0; i < npoolcuts; ++i)
       {
          SCIP_ROW* row;
 
@@ -1488,12 +1496,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             ++nnewcutsadded;
          }
       }
-
-      npoolcuts = SCIPgetNDelayedPoolCuts(origscip);
+*/
+/*      npoolcuts = SCIPgetNDelayedPoolCuts(origscip);
       poolcuts = SCIPgetDelayedPoolCuts(origscip);
-
+*/
       /* loop over cuts in delayed cutpool and cuts which are satisfied with equality by origsol to dive lp */
-      for(i = 0; i < npoolcuts; ++i)
+/*      for(i = 0; i < npoolcuts; ++i)
       {
          SCIP_ROW* row;
 
@@ -1506,6 +1514,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             ++nnewcutsadded;
          }
       }
+*/
       /* add new constraints if this is enabled  */
       if(enableppobjconss)
       {
@@ -1519,7 +1528,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIPfreeMemoryArray(scip, &dualsolconv);
       }
 
-      /* init dive objective */
+      /* init objective */
       if(sepadata->chgobj)
       {
          if(sepadata->genobjconvex)
@@ -1649,7 +1658,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       ncuts = SCIPgetNCuts(origscip);
 
       SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->norigcuts + ncuts) );
-      SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + ncuts) );
 
       mastervars = SCIPgetVars(scip);
       nmastervars = SCIPgetNVars(scip);
@@ -1703,7 +1711,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          if(!SCIPisCutEfficacious(origscip, origsol, origcut))
          {
             SCIP_CALL( SCIPaddPoolCut(origscip, neworigcut) );
-
             SCIPfreeBufferArray(scip, &roworigvars);
             SCIPreleaseRow(origscip, &neworigcut);
 
@@ -1821,6 +1828,23 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    }
 
    SCIP_CALL( SCIPclearCuts(origscip) );
+
+   int nlprows;
+   SCIP_ROW** lprows;
+
+   lprows = SCIPgetLPRows(origscip);
+   nlprows = SCIPgetNLPRows(origscip);
+
+   assert(nlprowsstart <= nlprows);
+
+   SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + nlprows - nlprowsstart) );
+
+   for( i = nlprowsstart; i < nlprows; ++i)
+   {
+	   sepadata->newcuts[sepadata->nnewcuts] = lprows[i];
+	   SCIP_CALL( SCIPcaptureRow(origscip, sepadata->newcuts[sepadata->nnewcuts]) );
+	   ++(sepadata->nnewcuts);
+   }
 
    /* end diving */
    SCIPendProbing(origscip);
