@@ -21,4 +21,5 @@ lp/rootiterlim = -1
 conflict/enable = FALSE
 
 detectors/random/enabled = FALSE
-separating/poolfreq = -1
+
+separating/poolfreq = -1 fix

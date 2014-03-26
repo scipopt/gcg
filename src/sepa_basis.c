@@ -41,7 +41,7 @@
 
 #define SEPA_NAME              "basis"
 #define SEPA_DESC              "separator calculates a basis of the orig problem to generate cuts, which cut off the master lp sol"
-#define SEPA_PRIORITY                1000
+#define SEPA_PRIORITY                100
 #define SEPA_FREQ                     0
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP           FALSE /**< does the separator use a secondary SCIP instance? */
@@ -1014,9 +1014,8 @@ SCIP_RETCODE addPPObjConss(
       if(nvars > 0)
       {
          SCIPdebug( SCIPprintRow(scip, origcut, NULL) );
-         //SCIP_CALL( SCIPaddRowProbing(scip, origcut) );
 
-         SCIP_CALL( SCIPaddPoolCut(scip, origcut) );
+         SCIP_CALL( SCIPaddRowProbing(scip, origcut) );
          SCIPdebugMessage("cut added to dive\n");
 
       }
@@ -1338,7 +1337,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_ROW** cuts;
    SCIP_ROW* mastercut;
    SCIP_ROW* origcut;
-   SCIP_ROW* neworigcut;
    SCIP_COL** cols;
    SCIP_VAR** roworigvars;
    SCIP_VAR** mastervars;
@@ -1347,9 +1345,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    int ncuts;
    SCIP_Real* vals;
    int nmastervars;
-
-   SCIP_CUT** poolcuts;
-   int npoolcuts;
 
    SCIP_OBJSENSE objsense;
    SCIP_SOL* origsol;
@@ -1376,9 +1371,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    int i;
    int j;
    int iteration;
-   int nnewcutsadded;
    int nbasis;
    int nlprowsstart;
+   int nlprows;
+   SCIP_ROW** lprows;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -1409,6 +1405,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    if( SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
    {
       SCIPdebugMessage("master LP not solved to optimality, do no separation!\n");
+      *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
@@ -1431,8 +1428,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    obj = SCIPgetSolOrigObj(origscip, origsol);
 
    /** get number of linearly independent rows needed for basis */
-   if(sepadata->genobjconvex)
+   if( sepadata->genobjconvex )
+   {
       SCIP_CALL(getRowRank(origscip, &nbasis));
+   }
 
    *result = SCIP_DIDNOTFIND;
 
@@ -1440,23 +1439,24 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    iteration = 0;
 
    /* set separating to aggressive or default */
-   if(sepadata->aggressive)
+   if( sepadata->aggressive )
+   {
       SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_AGGRESSIVE, TRUE) );
+   }
    else
+   {
       SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_DEFAULT, TRUE) );
+   }
 
    /* start diving */
-   SCIPstartProbing(origscip);
+   SCIP_CALL( SCIPstartProbing(origscip) );
 
-   SCIPnewProbingNode(origscip);
+   SCIP_CALL( SCIPnewProbingNode(origscip) );
 
    SCIP_CALL( SCIPconstructLP(origscip, &cutoff) );
 
-   /* solve dive lp */
-   SCIP_CALL( SCIPsolveProbingLP(origscip, -1, &lperror, &cutoff) );
-
    /** add origcuts to probing lp */
-   for(i = 0; i < GCGsepaGetNCuts(scip); ++i)
+   for( i = 0; i < GCGsepaGetNCuts(scip); ++i )
    {
       SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOrigcuts(scip)[i]) );
    }
@@ -1474,64 +1474,27 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
     * try to separate origsol via dive lp sol */
    while( iteration < sepadata->iterations )
    {
-	  SCIP_CALL( SCIPapplyCutsProbing(origscip, &cutoff) );
+      SCIP_CALL( SCIPapplyCutsProbing(origscip, &cutoff) );
 
-      /* init number of new cuts added */
-      nnewcutsadded = 0;
-
-/*
-      npoolcuts = SCIPgetNPoolCuts(origscip);
-      poolcuts = SCIPgetPoolCuts(origscip);
-*/
-      /* loop over cuts in cutpool and cuts which are satisfied with equality by origsol to dive lp */
-/*      for(i = 0; i < npoolcuts; ++i)
-      {
-         SCIP_ROW* row;
-
-         row = SCIPcutGetRow(poolcuts[i]);
-
-         if(SCIProwGetLPPos(row) == -1 && SCIProwGetAge(row) < 5)
-         {
-            SCIP_CALL( SCIPaddCut(origscip, origsol, row, FALSE, &infeasible) );
-            ++nnewcutsadded;
-         }
-      }
-*/
-/*      npoolcuts = SCIPgetNDelayedPoolCuts(origscip);
-      poolcuts = SCIPgetDelayedPoolCuts(origscip);
-*/
-      /* loop over cuts in delayed cutpool and cuts which are satisfied with equality by origsol to dive lp */
-/*      for(i = 0; i < npoolcuts; ++i)
-      {
-         SCIP_ROW* row;
-
-         row = SCIPcutGetRow(poolcuts[i]);
-
-         if(SCIProwGetLPPos(row) == -1 &&
-            (SCIProwGetAge(row) < 5 || (strncmp("newmaster", SCIProwGetName(row), 9) == 0)|| (strncmp("newcons", SCIProwGetName(row), 7) == 0)))
-         {
-            SCIP_CALL( SCIPaddCut(origscip, origsol, row, FALSE, &infeasible) );
-            ++nnewcutsadded;
-         }
-      }
-*/
       /* add new constraints if this is enabled  */
-      if(enableppobjconss)
+      if( enableppobjconss && iteration == 0 )
       {
          SCIP_Real* dualsolconv;
          SCIP_CALL( SCIPallocMemoryArray(scip, &dualsolconv, GCGrelaxGetNPricingprobs(origscip)));
          SCIP_CALL( GCGsetPricingObjs(scip, dualsolconv) );
-         for(i = 0; i < GCGrelaxGetNPricingprobs(origscip); ++i)
+
+         for( i = 0; i < GCGgetNPricingprobs(origscip); ++i )
          {
             SCIP_CALL( addPPObjConss(origscip, sepa, i, dualsolconv[i]) );
          }
+
          SCIPfreeMemoryArray(scip, &dualsolconv);
       }
 
       /* init objective */
-      if(sepadata->chgobj)
+      if( sepadata->chgobj )
       {
-         if(sepadata->genobjconvex)
+         if( sepadata->genobjconvex )
          {
             SCIP_Real genconvex;
 
@@ -1545,19 +1508,23 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       }
 
       /* update rhs/lhs of objective constraint and add it to dive LP, if it exists (only in first iteration) */
-      if(enableobj)
+      if( enableobj && iteration == 0 )
       {
          /* round rhs/lhs of objective constraint, if it exists, obj is integral and this is enabled */
-         if( SCIPisObjIntegral(origscip) && enableobjround)
+         if( SCIPisObjIntegral(origscip) && enableobjround )
          {
-            if(objsense == SCIP_OBJSENSE_MAXIMIZE)
+            if( objsense == SCIP_OBJSENSE_MAXIMIZE )
+            {
                obj = SCIPfloor(origscip, obj);
+            }
             else
+            {
                obj = SCIPceil(origscip, obj);
+            }
          }
 
          /* update rhs/lhs of objective constraint */
-         if(objsense == SCIP_OBJSENSE_MAXIMIZE)
+         if( objsense == SCIP_OBJSENSE_MAXIMIZE )
          {
             SCIP_CALL( SCIPchgRowRhs(origscip, sepadata->objrow, obj) );
             SCIP_CALL( SCIPchgRowLhs(origscip, sepadata->objrow, -1.0*SCIPinfinity(origscip)) );
@@ -1568,19 +1535,17 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             SCIP_CALL( SCIPchgRowRhs(origscip, sepadata->objrow, SCIPinfinity(origscip)) );
          }
          /** add row to dive lp */
-         SCIP_CALL( SCIPaddCut(origscip, origsol, sepadata->objrow, FALSE, &infeasible) );
+         SCIP_CALL( SCIPaddRowProbing(origscip, sepadata->objrow) );
       }
-
-      SCIP_CALL( SCIPapplyCutsProbing(origscip, &cutoff) );
 
       /* solve dive lp */
       SCIP_CALL( SCIPsolveProbingLP(origscip, -1, &lperror, &cutoff) );
 
 
-      assert(!lperror);
+      assert( !lperror );
 
       /* update mean differences */
-      if(iteration == 0)
+      if( iteration == 0 )
       {
          ncalls = SCIPsepaGetNCalls(sepa);
          sepadata->shifteddiffstartgeom = pow(sepadata->shifteddiffstartgeom, 1.0*ncalls/(ncalls + 1))
@@ -1592,7 +1557,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       nsepas = SCIPgetNSepas(origscip);
 
       /* loop over sepas and enable/disable sepa */
-      for(i = 0; i < nsepas; ++i)
+      for( i = 0; i < nsepas; ++i )
       {
          const char* sepaname;
          char paramname[SCIP_MAXSTRLEN];
@@ -1615,24 +1580,16 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             SCIPdebugMessage("%s = %d\n", paramname, 0);
          }
       }
-
-
-      /* separate cuts in cutpool */
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, result) );
-
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, result) );
-
-      if(SCIPgetNCuts(origscip) > 0)
-      {
-         SCIPdebugMessage("Found cuts in cutpool\n");
-         SCIPinfoMessage(scip, NULL, "Found cuts in cutpool\n");
-      }
-
       /** separate current dive lp sol of origscip */
       SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, FALSE, &delayed, &cutoff) );
 
+      if( delayed && !cutoff )
+      {
+         SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, TRUE, &delayed, &cutoff) );
+      }
+
       /* if cut off is detected set result pointer and return SCIP_OKAY */
-      if(cutoff)
+      if( cutoff )
       {
          *result = SCIP_CUTOFF;
          SCIPinfoMessage(scip, NULL, "SCIPseparateSol() detected cut off\n");
@@ -1684,82 +1641,71 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          {
             roworigvars[j] = SCIPcolGetVar(cols[j]);
             assert(roworigvars[j] != NULL);
-            if(!GCGvarIsOriginal(roworigvars[j]))
+            if( !GCGvarIsOriginal(roworigvars[j]) )
             {
                colvarused = TRUE;
                break;
             }
          }
 
-         if(colvarused)
+         if( colvarused )
          {
             SCIPinfoMessage(origscip, NULL, "colvar used\n");
             SCIPfreeBufferArray(scip, &roworigvars);
             continue;
          }
 
-         /** create new orig cut */
-         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s", SCIProwGetName(origcut));
-         SCIP_CALL( SCIPcreateEmptyRow(origscip, &neworigcut, name,
-               ( SCIPisInfinity(origscip, -SCIProwGetLhs(origcut)) ?
-                  SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut)),
-               ( SCIPisInfinity(origscip, SCIProwGetRhs(origcut)) ?
-                  SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut)),
-                  SCIProwIsLocal(origcut), FALSE, FALSE) );
-         SCIP_CALL( SCIPaddVarsToRow(origscip, neworigcut, ncols, roworigvars, vals) );
-
-         if(!SCIPisCutEfficacious(origscip, origsol, origcut))
+         if( !SCIPisCutEfficacious(origscip, origsol, origcut) )
          {
-            SCIP_CALL( SCIPaddPoolCut(origscip, neworigcut) );
+            SCIP_CALL( SCIPaddPoolCut(origscip, origcut) );
             SCIPfreeBufferArray(scip, &roworigvars);
-            SCIPreleaseRow(origscip, &neworigcut);
 
             continue;
          }
 
-         if(strncmp("cgcut", SCIProwGetName(origcut), 5) == 0)
+         if( strncmp("cgcut", SCIProwGetName(origcut), 5) == 0 )
          {
             ++(sepadata->ncgcut);
          }
-         else if(strncmp("clique", SCIProwGetName(origcut), 6) == 0)
+         else if( strncmp("clique", SCIProwGetName(origcut), 6) == 0 )
          {
             ++(sepadata->nclique);
          }
-         else if(strncmp("cmir", SCIProwGetName(origcut), 4) == 0)
+         else if( strncmp("cmir", SCIProwGetName(origcut), 4) == 0 )
          {
             ++(sepadata->ncmir);
          }
-         else if(strncmp("flowcover", SCIProwGetName(origcut), 9) == 0)
+         else if( strncmp("flowcover", SCIProwGetName(origcut), 9) == 0 )
          {
             ++(sepadata->nflowcover);
          }
-         else if(strncmp("gom", SCIProwGetName(origcut), 3) == 0)
+         else if( strncmp("gom", SCIProwGetName(origcut), 3) == 0 )
          {
             ++(sepadata->ngom);
          }
-         else if(strncmp("implbd", SCIProwGetName(origcut), 6) == 0)
+         else if( strncmp("implbd", SCIProwGetName(origcut), 6) == 0 )
          {
             ++(sepadata->nimplbd);
          }
-         else if(strncmp("mcf", SCIProwGetName(origcut), 3) == 0)
+         else if( strncmp("mcf", SCIProwGetName(origcut), 3) == 0 )
          {
             ++(sepadata->nmcf);
          }
-         else if(strncmp("oddcycle", SCIProwGetName(origcut), 8) == 0)
+         else if( strncmp("oddcycle", SCIProwGetName(origcut), 8) == 0 )
          {
             ++(sepadata->noddcycle);
          }
-         else if(strncmp("scg", SCIProwGetName(origcut), 3) == 0)
+         else if( strncmp("scg", SCIProwGetName(origcut), 3) == 0 )
          {
             ++(sepadata->nscg);
          }
-         else if(strncmp("zerohalf", SCIProwGetName(origcut), 8) == 0)
+         else if( strncmp("zerohalf", SCIProwGetName(origcut), 8) == 0 )
          {
             ++(sepadata->nzerohalf);
          }
 
          /* add the cut to the original cut storage */
-         sepadata->origcuts[sepadata->norigcuts] = neworigcut;
+         sepadata->origcuts[sepadata->norigcuts] = origcut;
          SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[sepadata->norigcuts]) );
          sepadata->norigcuts++;
 
@@ -1781,7 +1727,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
          SCIP_CALL( SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->nmastercuts]) );
          sepadata->nmastercuts++;
-         GCGsepaAddMastercuts(scip, neworigcut, mastercut);
+         SCIP_CALL( GCGsepaAddMastercuts(scip, origcut, mastercut) );
+         assert( SCIPisCutEfficacious(scip, NULL, mastercut) );
 
    #ifdef SCIP_DEBUG
          SCIPdebugMessage("Cut %d:\n", i);
@@ -1789,8 +1736,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIPdebugMessage("\n\n");
    #endif
 
+         SCIP_CALL( SCIPreleaseRow(scip, &mastercut) );
          SCIPfreeBufferArray(scip, &roworigvars);
-         SCIPreleaseRow(origscip, &neworigcut);
       }
 
       if( SCIPgetNCuts(scip) >= sepadata->mincuts )
@@ -1829,21 +1776,21 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
    SCIP_CALL( SCIPclearCuts(origscip) );
 
-   int nlprows;
-   SCIP_ROW** lprows;
-
    lprows = SCIPgetLPRows(origscip);
    nlprows = SCIPgetNLPRows(origscip);
 
-   assert(nlprowsstart <= nlprows);
+   assert( nlprowsstart <= nlprows );
 
    SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + nlprows - nlprowsstart) );
 
    for( i = nlprowsstart; i < nlprows; ++i)
    {
-	   sepadata->newcuts[sepadata->nnewcuts] = lprows[i];
-	   SCIP_CALL( SCIPcaptureRow(origscip, sepadata->newcuts[sepadata->nnewcuts]) );
-	   ++(sepadata->nnewcuts);
+      if( SCIProwGetOrigintype(lprows[i]) == SCIP_ROWORIGINTYPE_SEPA )
+	   {
+         sepadata->newcuts[sepadata->nnewcuts] = lprows[i];
+	      SCIP_CALL( SCIPcaptureRow(origscip, sepadata->newcuts[sepadata->nnewcuts]) );
+	      ++(sepadata->nnewcuts);
+	   }
    }
 
    /* end diving */
@@ -1982,13 +1929,13 @@ SCIP_ROW** GCGsepaBasisGetOrigcuts(
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert( scip != NULL );
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
-   assert(sepa != NULL);
+   assert( sepa != NULL );
 
    sepadata = SCIPsepaGetData(sepa);
-   assert(sepadata != NULL);
+   assert( sepadata != NULL );
 
    return sepadata->origcuts;
 }
@@ -2001,13 +1948,13 @@ int GCGsepaBasisGetNOrigcuts(
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert( scip != NULL );
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
-   assert(sepadata != NULL);
+   assert( sepadata != NULL );
 
    return sepadata->norigcuts;
 }
@@ -2020,13 +1967,13 @@ SCIP_ROW** GCGsepaBasisGetMastercuts(
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert( scip != NULL );
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
-   assert(sepa != NULL);
+   assert( sepa != NULL );
 
    sepadata = SCIPsepaGetData(sepa);
-   assert(sepadata != NULL);
+   assert( sepadata != NULL );
 
    return sepadata->mastercuts;
 }
@@ -2039,13 +1986,13 @@ int GCGsepaBasisGetNMastercuts(
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert( scip != NULL );
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
-   assert(sepa != NULL);
+   assert( sepa != NULL );
 
    sepadata = SCIPsepaGetData(sepa);
-   assert(sepadata != NULL);
+   assert( sepadata != NULL );
 
    return sepadata->nmastercuts;
 }
@@ -2074,11 +2021,11 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
 
    char name[SCIP_MAXSTRLEN];
 
-   assert(GCGisMaster(scip));
+   assert( GCGisMaster(scip) );
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
 
-   if(sepa == NULL)
+   if( sepa == NULL )
    {
       SCIPerrorMessage("sepa basis not found\n");
       return SCIP_OKAY;
@@ -2088,26 +2035,31 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
    origscip = GCGpricerGetOrigprob(scip);
    pricingprob = GCGrelaxGetPricingprob(origscip, ppnumber);
 
-   if(!sepadata->enableppcuts)
+   if( !sepadata->enableppcuts )
+   {
       return SCIP_OKAY;
+   }
 
-   assert(!SCIProwIsLocal(cut));
+   assert( !SCIProwIsLocal(cut) );
 
    nvars = SCIProwGetNNonz(cut);
    cols = SCIProwGetCols(cut);
    vals = SCIProwGetVals(cut);
+
    if(nvars == 0)
+   {
       return SCIP_OKAY;
+   }
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &pricingvars, nvars) );
 
-   for(i = 0; i < nvars; ++i)
+   for( i = 0; i < nvars; ++i )
    {
       pricingvars[i] = SCIPcolGetVar(cols[i]);
       assert(pricingvars[i] != NULL);
    }
 
-   for(k = 0; k < GCGrelaxGetNIdenticalBlocks(origscip, ppnumber); ++k)
+   for( k = 0; k < GCGgetNIdenticalBlocks(origscip, ppnumber); ++k )
    {
       SCIP_ROW* origcut;
 
@@ -2120,11 +2072,11 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
             SCIPinfinity(origscip) : SCIProwGetRhs(cut) - SCIProwGetConstant(cut)),
              FALSE, FALSE, TRUE) );
 
-      for(j = 0; j < nvars ; ++j)
+      for( j = 0; j < nvars ; ++j )
       {
          SCIP_VAR* var;
 
-         if(!GCGvarIsPricing(pricingvars[j]))
+         if( !GCGvarIsPricing(pricingvars[j]) )
          {
             nvars = 0;
             break;
@@ -2132,12 +2084,12 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
          assert( GCGvarIsPricing(pricingvars[j]) );
 
          var = GCGpricingVarGetOrigvars(pricingvars[j])[k];
-         assert(var != NULL);
+         assert( var != NULL );
 
          SCIP_CALL( SCIPaddVarToRow(origscip, origcut, var, vals[j]) );
       }
 
-      if(nvars > 0)
+      if( nvars > 0 )
       {
          SCIPdebug( SCIPprintRow(origscip, origcut, NULL) );
          SCIP_CALL( SCIPaddPoolCut( origscip, origcut) );
@@ -2162,11 +2114,11 @@ SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
 {
    SCIP_SEPA* sepa;
 
-   assert(GCGisMaster(scip));
+   assert( GCGisMaster(scip) );
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
 
-   if(sepa == NULL)
+   if( sepa == NULL )
    {
       SCIPerrorMessage("sepa basis not found\n");
       return SCIP_OKAY;

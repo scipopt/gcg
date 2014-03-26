@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "scip/scip.h"
 #include "scip/lp.h"
@@ -45,7 +46,7 @@
 
 #define SEPA_NAME         "master"
 #define SEPA_DESC         "separator for separating cuts in the original problem, called in the master"
-#define SEPA_PRIORITY     0
+#define SEPA_PRIORITY     1000
 
 #define SEPA_FREQ         1
 #define SEPA_MAXBOUNDDIST 1.0
@@ -279,6 +280,11 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    cuts = SCIPgetCuts(origscip);
    ncuts = SCIPgetNCuts(origscip);
+
+   /* separate cuts in cutpool */
+   //SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), GCGrelaxGetCurrentOrigSol(origscip), result) );
+
+   //SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), GCGrelaxGetCurrentOrigSol(origscip), result) );
 
    /* save cuts in the origcuts array in the separator data */
    norigcuts = sepadata->ncuts;

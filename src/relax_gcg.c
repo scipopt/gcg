@@ -984,7 +984,6 @@ SCIP_RETCODE setPricingProblemParameters(
 
       SCIP_CALL( SCIPgetIntParam(scip, "branching/pscost/priority", &pscost) );
       SCIP_CALL( SCIPgetIntParam(scip, "propagating/maxroundsroot", &prop) );
-      //SCIPinfoMessage(scip, NULL, "pscost = %d, prop = %d\n", pscost, prop);
 
       SCIP_CALL( SCIPsetIntParam(scip, "branching/pscost/priority", 11000) );
       SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
