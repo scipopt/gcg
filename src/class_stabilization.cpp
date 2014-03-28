@@ -54,7 +54,7 @@ Stabilization::Stabilization(
       stabcentercuts(NULL), stabcentercutssize(0), nstabcentercuts(0),
       stabcenterlinkingconss(NULL), nstabcenterlinkingconss(0),
       stabcenterconv(NULL), nstabcenterconv(0),
-      pricingtype(pricingtype_), alpha(0.8), node(NULL), k(0), hasstabilitycenter(FALSE)
+      pricingtype(pricingtype_), alpha(0.8), node(NULL), k(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip))
 {
 
 }
@@ -230,7 +230,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    SCIPdebugMessage("Updating stability center: ");
 
    /* in case the bound is not improving and we have a stability center, do nothing */
-   if( SCIPisLE(scip_, lowerbound, SCIPnodeGetLowerbound(SCIPgetCurrentNode(scip_))) && hasstabilitycenter )
+   if( SCIPisLE(scip_, lowerbound, stabcenterbound) && hasstabilitycenter )
    {
       SCIPdebugPrintf("no bound increase: %g <= %g\n", lowerbound, SCIPnodeGetLowerbound(SCIPgetCurrentNode(scip_)));
       return SCIP_OKAY;
@@ -277,6 +277,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    }
 
    hasstabilitycenter = TRUE;
+   stabcenterbound = lowerbound;
 
    return SCIP_OKAY;
 }
@@ -304,6 +305,7 @@ void Stabilization::updateNode()
       k = 1;
       alpha= 0.8;
       hasstabilitycenter = FALSE;
+      stabcenterbound = -SCIPinfinity(scip_);
    }
 }
 void Stabilization::updateAlphaMisprice()

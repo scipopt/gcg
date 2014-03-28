@@ -1999,10 +1999,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       bestredcost = 0.0;
       beststabobj = 0.0;
       *bestredcostvalid = isMasterLPOptimal() && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
-      stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
+
+      stabilized = optimal && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
       if( stabilized )
          stabilization->updateNode();
+
+      stabilized = stabilized && stabilization->isStabilized();
 
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
@@ -2108,6 +2111,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          SCIPdebugMessage("candidate: %.8g bestredcost %.8g, dualconvsum %.8g\n", stabdualval, bestredcost, dualconvsum);
          lowerboundcandidate = stabdualval + beststabobj;
 
+         SCIPinfoMessage(scip_, NULL, "lowerboundcandidate stab %f \n", lowerboundcandidate);
+
          beststabredcost = beststabobj - dualconvsum;
          //SCIPinfoMessage(scip_, NULL, "Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, boundcandidate = %f\n", stabilized, nfoundvars, optimal, lowerboundcandidate);
 
@@ -2139,7 +2144,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
             stabilization->updateAlpha(pricingsols);
 
-            SCIPfreeBlockMemoryArray(scip_, &pricingsols, pricerdata->npricingprobs)
+            SCIPfreeBlockMemoryArray(scip_, &pricingsols, pricerdata->npricingprobs);
          }
 
       }
@@ -2148,7 +2153,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          SCIP_Real lowerboundcandidate;
          assert(lowerbound != NULL );
          lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
-
+         SCIPinfoMessage(scip_, NULL, "lowerboundcandidate redcost %f\n", lowerboundcandidate);
          *lowerbound = MAX(*lowerbound, lowerboundcandidate);
       }
 
