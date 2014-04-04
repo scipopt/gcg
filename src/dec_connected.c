@@ -304,7 +304,15 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
 
       if( *result == SCIP_SUCCESS )
       {
+         DEC_DECOMP *newdecomp;
          assert((*decdecomps)[0] != NULL);
+         SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[0], &newdecomp) );
+         if( newdecomp != NULL )
+         {
+            SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[0])) );
+            (*decdecomps)[0] = newdecomp;
+         }
+
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found with %d blocks.\n", DECdecompGetNBlocks((*decdecomps)[0]));
          detectordata->blockdiagonal = DECdecompGetType((*decdecomps)[0]) == DEC_DECTYPE_DIAGONAL;
          *ndecdecomps = 1;

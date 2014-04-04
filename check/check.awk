@@ -467,7 +467,7 @@ BEGIN {
 #
 # solution
 #
-/^Original Problem   : no problem exists./ { readerror = 1; }
+/^Original Problem   : no problem exists./ { if( inoriginalprob ) readerror = 1; }
 /^SCIP Status        :/ { aborted = 0; }
 /solving was interrupted/ { if( inoriginalprob ) timeout = 1; }
 /gap limit reached/ { if( inoriginalprob ) gapreached = 1; }
