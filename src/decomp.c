@@ -2792,18 +2792,19 @@ SCIP_RETCODE GCGprintDecompStatistics(
 
    assert(scip != NULL);
 
+
+   if( SCIPgetStage(GCGgetMasterprob(scip)) < SCIP_STAGE_PRESOLVED )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "No Dantzig-Wolfe reformulation applied. The problem was most likely already solved by the LP or presolving in the original problem.\n");
+      return SCIP_OKAY;
+   }
+
    decomp = DECgetBestDecomp(scip);
    assert(decomp != NULL);
    nblocks = DECdecompGetNBlocks(decomp);
 
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
-
-   if( SCIPgetStage(GCGgetMasterprob(scip)) < SCIP_STAGE_PRESOLVED )
-   {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "No Dantzig-Wolfe reformulation applied. The problem was most likely already solved by the LP in the original problem.\n");
-      return SCIP_OKAY;
-   }
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nallvars, nblocks) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nbinvars, nblocks) );

@@ -225,6 +225,13 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
    if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING || SCIPgetStage(scip) == SCIP_STAGE_SOLVED )
    {
+      if( SCIPgetStage(GCGgetMasterprob(scip)) < SCIP_STAGE_PRESOLVED )
+      {
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "No Dantzig-Wolfe reformulation applied. No decomposition statistics available.\n");
+         *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+         return SCIP_OKAY;
+      }
+
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "\nAdditional statistics:\n");
       if( DECdecompGetType(DECgetBestDecomp(scip)) == DEC_DECTYPE_DIAGONAL )
       {
@@ -405,7 +412,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
          break;
       }
-      assert(DECgetBestDecomp(scip) != NULL && DEChasDetectionRun(scip));
       /*lint -fallthrough*/
    case SCIP_STAGE_SOLVING:
       SCIP_CALL( SCIPsolve(scip) );
