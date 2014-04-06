@@ -5,10 +5,12 @@ features
 - Decomposition and pricing problems are permuted when the permutation
   seed is set
 - progress in dual bound is now displayed while solving the root node
+- pricing solvers can be enabled or disabled via parameter
 
 bug fixes
 - Calculation of subgradient in stabilization corrected
-
+- CPLEX pricing solver is disabled as it is incompatible with generic
+  branching
 
 GCG Version 2.0
 ===============

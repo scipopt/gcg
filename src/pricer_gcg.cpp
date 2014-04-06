@@ -766,14 +766,18 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
       GCG_SOLVER* solver;
       GCG_DECL_SOLVERSOLVE((*solversolve));
 
+      solver = pricerdata->solvers[i];
+      assert(solver != NULL);
+
+      if( !solver->enabled )
+         continue;
+
       #pragma omp critical (limits)
       {
          retcode = setPricingProblemLimits(prob, pricetype, optimal);
       }
       SCIP_CALL( retcode );
 
-      solver = pricerdata->solvers[i];
-      assert(solver != NULL);
 
       SCIP_CALL( getSolverPointers(solver, pricetype, optimal, &clock, &calls, &solversolve) );
       assert(solversolve == solver->solversolve || solversolve == solver->solversolveheur);
@@ -2922,6 +2926,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    const char*           name,               /**< name of solver */
    const char*           description,        /**< description of solver */
    int                   priority,           /**< priority of solver */
+   SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
    GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**< heuristic solving method for solver */
    GCG_DECL_SOLVERFREE   ((*solverfree)),    /**< free method of solver */
@@ -2933,7 +2938,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    )
 {
    int pos;
-
+   char paramname[SCIP_MAXSTRLEN];
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
 
@@ -2960,6 +2965,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    SCIP_ALLOC( BMSduplicateMemoryArray(&pricerdata->solvers[pos]->name, name, strlen(name)+1) );
    SCIP_ALLOC( BMSduplicateMemoryArray(&pricerdata->solvers[pos]->description, description, strlen(description)+1) );
 
+   pricerdata->solvers[pos]->enabled = enabled;
    pricerdata->solvers[pos]->priority = priority;
    pricerdata->solvers[pos]->solversolve = solversolve;
    pricerdata->solvers[pos]->solversolveheur = solveheur;
@@ -2980,6 +2986,12 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    pricerdata->solvers[pos]->optredcostcalls = 0;
    pricerdata->solvers[pos]->heurfarkascalls = 0;
    pricerdata->solvers[pos]->heurredcostcalls = 0;
+
+   (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "pricingsolver/%s/enabled", name);
+
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), paramname,
+           "flag to indicate whether the solver is enabled",
+           &(pricerdata->solvers[pos]->enabled), FALSE, enabled, NULL, NULL));
 
    pricerdata->nsolvers++;
 
@@ -3043,8 +3055,47 @@ void GCGpricerPrintListOfSolvers(
    }
 }
 
-/** prints pricer statistics */
+/** prints pricing solver statistics */
 extern "C"
+void GCGpricerPrintPricingStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file */
+)
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   /**@todo add constraint statistics: how many constraints (instead of cuts) have been added? */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file,
+         "Pricing Solver     : #HeurFarkas  #OptFarkas  #HeurRedcost #OptRedcost Time: HeurFarkas  OptFarkas  HeurRedcost OptRedcost\n");
+   for( int i = 0; i < pricerdata->nsolvers; ++i )
+   {
+      GCG_SOLVER* solver;
+      solver = pricerdata->solvers[i];
+      assert(solver != NULL);
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-17.17s:",
+            solver->name);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file,
+            " %11d %11d   %11d %11d       %10.2f %10.2f   %10.2f %10.2f \n",
+            solver->heurfarkascalls, solver->optfarkascalls,
+            solver->heurredcostcalls, solver->optredcostcalls,
+            SCIPgetClockTime(scip, solver->heurfarkasclock),
+            SCIPgetClockTime(scip, solver->optfarkasclock),
+            SCIPgetClockTime(scip, solver->heurredcostclock),
+            SCIPgetClockTime(scip, solver->optredcostclock));
+   }
+}
+
+/** prints pricer statistics */
 void GCGpricerPrintStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
@@ -3067,23 +3118,6 @@ void GCGpricerPrintStatistics(
    assert(pricerdata != NULL);
 
    /**@todo add constraint statistics: how many constraints (instead of cuts) have been added? */
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing Solver     : #HeurFarkas  #OptFarkas  #HeurRedcost #OptRedcost Time: HeurFarkas  OptFarkas  HeurRedcost OptRedcost\n");
-
-   for( i = 0; i < pricerdata->nsolvers; ++i )
-   {
-      GCG_SOLVER* solver;
-      solver = pricerdata->solvers[i];
-      assert(solver != NULL);
-
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-17.17s:", solver->name);
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %11d %11d   %11d %11d       %10.2f %10.2f   %10.2f %10.2f \n",
-         solver->heurfarkascalls, solver->optfarkascalls,
-         solver->heurredcostcalls, solver->optredcostcalls,
-         SCIPgetClockTime(scip, solver->heurfarkasclock),
-         SCIPgetClockTime(scip, solver->optfarkasclock),
-         SCIPgetClockTime(scip, solver->heurredcostclock),
-         SCIPgetClockTime(scip, solver->optredcostclock));
-   }
 
    /* print of Pricing Statistics */
 

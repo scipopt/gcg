@@ -50,9 +50,10 @@
 #define SOLVER_DESC          "mip solver for pricing problems"
 #define SOLVER_PRIORITY      0
 
+#define SOLVER_ENABLED      TRUE  /**< indicates whether the solver should be enabled */
+
 #define DEFAULT_CHECKSOLS    TRUE
 #define DEFAULT_SETTINGSFILE "-"
-
 
 /** branching data for branching decisions */
 struct GCG_SolverData
@@ -573,7 +574,7 @@ SCIP_RETCODE GCGincludeSolverMip(
    SCIP_CALL( SCIPallocMemory(scip, &data) );
    data->settingsfile = NULL;
 
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
          solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
          solverInitsolMip, solverExitsolMip, data) );
 

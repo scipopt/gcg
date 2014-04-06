@@ -450,6 +450,11 @@ SCIP_RETCODE GCGprintStatistics(
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\nMaster Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(GCGgetMasterprob(scip), file) );
+   if( SCIPgetStage(GCGgetMasterprob(scip)) > SCIP_STAGE_PRESOLVED )
+   {
+      GCGpricerPrintPricingStatistics(GCGgetMasterprob(scip), file);
+   }
+
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(scip, file) );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");

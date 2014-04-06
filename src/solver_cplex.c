@@ -58,9 +58,11 @@
 #define SOLVER_NAME          "cplex"
 #define SOLVER_DESC          "cplex solver for pricing problems"
 #define SOLVER_PRIORITY      1010
+#define SOLVER_ENABLED        FALSE  /**< indicates whether the solver should be enabled */
 
 #define DEFAULT_CHECKSOLS     TRUE   /**< should solutions of the pricing MIPs be checked for duplicity? */
 #define DEFAULT_THREADS       1      /**< number of threads the CPLEX pricing solver is allowed to use (0: automatic) */
+
 
 /** branching data for branching decisions */
 struct GCG_SolverData
@@ -1023,6 +1025,7 @@ SCIP_RETCODE GCGincludeSolverCplex(
    data->masterprob = scip;
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+         SOLVER_ENABLED,
          solverSolveCplex, solverSolveHeurCplex, solverFreeCplex, solverInitCplex,
          solverExitCplex, solverInitsolCplex, solverExitsolCplex, data));
 

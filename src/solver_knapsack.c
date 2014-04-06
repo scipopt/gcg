@@ -47,6 +47,8 @@
 #define SOLVER_DESC          "knapsack solver for pricing problems"
 #define SOLVER_PRIORITY      -100
 
+#define SOLVER_ENABLED       TRUE  /**< indicates whether the solver should be enabled */
+
 /** knapsack pricing solver needs no solverdata */
 /* struct GCG_SolverData {}; */
 
@@ -363,7 +365,7 @@ SCIP_RETCODE GCGincludeSolverKnapsack(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, solverSolveKnapsack,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED, solverSolveKnapsack,
          solverSolveHeurKnapsack, solverFreeKnapsack, solverInitKnapsack, solverExitKnapsack,
          solverInitsolKnapsack, solverExitsolKnapsack, NULL) );
 

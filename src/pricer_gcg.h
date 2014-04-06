@@ -96,6 +96,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    const char*           name,               /**< name of solver */
    const char*           description,        /**< description of solver */
    int                   priority,           /**< priority of solver */
+   SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
    GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**< heuristic solving method for solver */
    GCG_DECL_SOLVERFREE   ((*solverfree)),    /**< free method of solver */
@@ -124,6 +125,13 @@ void GCGsolverSetSolverdata(
 extern
 void GCGpricerPrintListOfSolvers(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** prints pricing solver statistics */
+extern
+void GCGpricerPrintPricingStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file */
    );
 
 extern
