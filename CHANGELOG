@@ -1,3 +1,14 @@
+GCG Version Next
+===============
+
+features
+- Decomposition and pricing problems are permuted when the permutation
+  seed is set
+- progress in dual bound is now displayed while solving the root node
+
+bug fixes
+- Calculation of subgradient in stabilization corrected
+
 
 GCG Version 2.0
 ===============
