@@ -2111,8 +2111,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          SCIPdebugMessage("candidate: %.8g bestredcost %.8g, dualconvsum %.8g\n", stabdualval, bestredcost, dualconvsum);
          lowerboundcandidate = stabdualval + beststabobj;
 
-         SCIPinfoMessage(scip_, NULL, "lowerboundcandidate stab %f \n", lowerboundcandidate);
-
          beststabredcost = beststabobj - dualconvsum;
          //SCIPinfoMessage(scip_, NULL, "Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, boundcandidate = %f\n", stabilized, nfoundvars, optimal, lowerboundcandidate);
 
@@ -2153,7 +2151,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          SCIP_Real lowerboundcandidate;
          assert(lowerbound != NULL );
          lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
-         SCIPinfoMessage(scip_, NULL, "lowerboundcandidate redcost %f\n", lowerboundcandidate);
          *lowerbound = MAX(*lowerbound, lowerboundcandidate);
       }
 
