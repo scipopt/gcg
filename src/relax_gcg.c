@@ -1825,6 +1825,7 @@ SCIP_RETCODE initRelaxator(
    SCIP_RELAXDATA* relaxdata;
    int i;
    int nvars;
+   int permutationseed;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -1840,6 +1841,13 @@ SCIP_RETCODE initRelaxator(
          SCIPerrorMessage("No decomposition specified!\n");
          return SCIP_ERROR;
       }
+   }
+
+   /* permute the decomposition if the permutation seed is set */
+   SCIP_CALL( SCIPgetIntParam(scip, "misc/permutationseed", &permutationseed) );
+   if( permutationseed >= 0 )
+   {
+      SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, permutationseed) );
    }
 
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
