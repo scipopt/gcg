@@ -9,3 +9,6 @@ instances/cs/TEST0055.lp
 instances/cs/TEST0059.lp
 instances/gap/gap4_2.txt.lp
 instances/gap/gap8_4.txt.lp
+instances/mkp/strong_d_45_15_12.lp
+instances/mkp/strong_s_75_15_14.lp
+instances/mkp/strong_s_75_15_18.lp

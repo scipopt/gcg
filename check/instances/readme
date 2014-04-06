@@ -25,6 +25,11 @@ The instances
 The nowswot.mps instance is from the MIPLIB2003 available under http://miplib.zib.de
 
 The testset files
+ strong*.lp
+ are generated according to Pisinger, D. (1999). An exact algorithm for large multiple knapsack problems
+ European Journal of Operational Research, 114, 528–541.
+
+The testset files
  gap4_2.txt.lp
  gap8_4.txt.lp
 
