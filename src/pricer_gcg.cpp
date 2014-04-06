@@ -1999,10 +1999,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       bestredcost = 0.0;
       beststabobj = 0.0;
       *bestredcostvalid = isMasterLPOptimal() && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
-      stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
+
+      stabilized = optimal && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
       if( stabilized )
          stabilization->updateNode();
+
+      stabilized = stabilized && stabilization->isStabilized();
 
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
@@ -2139,7 +2142,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
             stabilization->updateAlpha(pricingsols);
 
-            SCIPfreeBlockMemoryArray(scip_, &pricingsols, pricerdata->npricingprobs)
+            SCIPfreeBlockMemoryArray(scip_, &pricingsols, pricerdata->npricingprobs);
          }
 
       }
@@ -2148,7 +2151,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          SCIP_Real lowerboundcandidate;
          assert(lowerbound != NULL );
          lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
-
          *lowerbound = MAX(*lowerbound, lowerboundcandidate);
       }
 

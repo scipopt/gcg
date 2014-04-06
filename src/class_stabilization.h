@@ -60,6 +60,7 @@ private:
    SCIP_NODE* node;
    int k;
    SCIP_Bool hasstabilitycenter;
+   SCIP_Real stabcenterbound;
 
 public:
    /** constructor */
