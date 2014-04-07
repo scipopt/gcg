@@ -246,11 +246,12 @@ then
 fi
 
 # counter to define file names for a test set uniquely
-COUNT=0
+
 
 # loop over permutations
 for ((p = 0; $p <= $PERMUTE; p++))
 do
+    COUNT=0
     # if number of permutations is positive, add postfix
     if test $PERMUTE -gt 0
     then
@@ -448,6 +449,7 @@ EOF
 		sed -i "s,\$HARDMEMLIMIT,$HARDMEMLIMIT," runcluster_tmp.sh
 		sed -i "s,\$ULIMITMEMLIMIT,$ULIMITMEMLIMIT," runcluster_tmp.sh
 		sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sh
+
 #	        sed -i "s,,," runcluster_tmp.sh
 
 #	        less runcluster_aachen.sh
@@ -464,6 +466,6 @@ EOF
     done
     if test  "$QUEUETYPE" = "bsub"
     then
-        bsub -J "$TSTNAME[1-$COUNT]" -q $QUEUE -o error/out_$TSTNAME_%I_%J.txt < runcluster_tmp.sh
+	bsub -J "$TSTNAME[1-$COUNT]" -q $QUEUE -o error/out_$TSTNAME_%I_%J.txt < runcluster_tmp.sh
     fi
 done
