@@ -45,7 +45,7 @@
 
 #define SOLVER_NAME          "knapsack"
 #define SOLVER_DESC          "knapsack solver for pricing problems"
-#define SOLVER_PRIORITY      -100
+#define SOLVER_PRIORITY      200
 
 #define SOLVER_ENABLED       TRUE  /**< indicates whether the solver should be enabled */
 
@@ -86,7 +86,9 @@ SCIP_RETCODE solveKnapsack(
    int                   nitems;
    SCIP_Longint*         weights;
    SCIP_Real*            profits;
+   SCIP_Real*            ubs;
    SCIP_Longint          capacity;
+   SCIP_Longint          prelcapacity;
    int*                  items;
    int*                  solitems;
    int                   nsolitems;
@@ -94,7 +96,7 @@ SCIP_RETCODE solveKnapsack(
    int                   nnonsolitems;
    SCIP_Real             solval;
    SCIP_Bool             success;
-
+   SCIP_Bool             inferbounds;
    int i;
    int j;
    int k;
@@ -158,12 +160,42 @@ SCIP_RETCODE solveKnapsack(
          return SCIP_OKAY;
       }
    }
-
    capacity = (SCIP_Longint)SCIPfloor(pricingprob, SCIPgetRhsLinear(pricingprob, cons));
-   nitems = 0;
-   for( i = 0; i < npricingprobvars; i++ )
-      nitems += (int)(SCIPvarGetUbLocal(pricingprobvars[i]) - SCIPvarGetLbLocal(pricingprobvars[i]) + 0.5);
+   prelcapacity = capacity;
 
+   inferbounds = FALSE;
+   for( i = 0; i < nconsvars; i++ )
+   {
+      if(SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])))
+      {
+         inferbounds = TRUE;
+      }
+      if( SCIPisNegative(pricingprob, consvals[i]) )
+      {
+         prelcapacity -= (SCIP_Longint)SCIPfloor(pricingprob, consvals[i]);
+      }
+   }
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &ubs, npricingprobvars) );
+
+   for( i = 0; i < nconsvars; i++ )
+   {
+      if( inferbounds && SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])))
+      {
+         SCIP_Real newbound = SCIPfloor(pricingprob, ABS((double)prelcapacity/consvals[i]));
+         SCIPdebugMessage("newbound: %.2f/%.2f = %.2f\n", (double)prelcapacity, consvals[i], newbound);
+         ubs[i] = newbound+1;
+      }
+      else
+         ubs[i] = SCIPvarGetUbLocal(consvars[i]);
+
+   }
+
+   nitems = 0;
+   for( i = 0; i < nconsvars; i++ )
+   {
+      assert(!SCIPisInfinity(pricingprob, ubs[i]));
+      nitems += (int)(ubs[i] - SCIPvarGetLbLocal(consvars[i]) + 0.5);
+   }
    SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, npricingprobvars) );
    SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, npricingprobvars) );
 
@@ -176,13 +208,13 @@ SCIP_RETCODE solveKnapsack(
    BMSclearMemoryArray(weights, nitems);
 
    k = 0;
-   for( i = 0; i < npricingprobvars; i++ )
+   for( i = 0; i < nconsvars; i++ )
    {
-      assert(!SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(pricingprobvars[i])));
-      for( j = 0; j < (int)(SCIPvarGetUbLocal(pricingprobvars[i]) - SCIPvarGetLbLocal(pricingprobvars[i]) + 0.5); ++j )
+      assert(!SCIPisInfinity(pricingprob, ubs[i]));
+      for( j = 0; j < (int)(ubs[i] - SCIPvarGetLbLocal(consvars[i]) + 0.5); ++j )
       {
          items[k] = i;
-         profits[k] = - SCIPvarGetObj(pricingprobvars[i]);
+         profits[k] = - SCIPvarGetObj(consvars[i]);
          k++;
       }
    }
@@ -201,7 +233,7 @@ SCIP_RETCODE solveKnapsack(
       }
 
       j = 0;
-      for( k = 0; k < nitems && j < (int)(SCIPvarGetUbLocal(consvars[i]) - SCIPvarGetLbLocal(consvars[i]) + 0.5); k++ )
+      for( k = 0; k < nitems && j < (int)(ubs[i] - SCIPvarGetLbLocal(consvars[i]) + 0.5); k++ )
       {
          if( pricingprobvars[items[k]] == consvars[i] )
          {
@@ -218,7 +250,7 @@ SCIP_RETCODE solveKnapsack(
             ++j;
          }
       }
-      assert(j == (int)(SCIPvarGetUbLocal(consvars[i]) - SCIPvarGetLbLocal(consvars[i]) + 0.5));
+      assert(j == (int)(ubs[i] - SCIPvarGetLbLocal(consvars[i]) + 0.5));
    }
 
    success = TRUE;
@@ -310,7 +342,7 @@ SCIP_RETCODE solveKnapsack(
 
    *nsols = 1;
 
-   *lowerbound = solval;
+   *lowerbound = SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MAXIMIZE? solval:-solval;
 
    *result = SCIP_STATUS_OPTIMAL;
 
@@ -320,6 +352,7 @@ SCIP_RETCODE solveKnapsack(
    SCIPfreeBufferArray(pricingprob, &profits);
    SCIPfreeBufferArray(pricingprob, &weights);
    SCIPfreeBufferArray(pricingprob, &items);
+   SCIPfreeMemoryArray(pricingprob, &ubs);
    SCIPfreeMemoryArray(pricingprob, &solvars);
    SCIPfreeMemoryArray(pricingprob, &solvals);
 
