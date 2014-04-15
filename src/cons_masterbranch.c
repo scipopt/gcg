@@ -109,8 +109,8 @@ struct SCIP_ConsData
                                               *   branching restrictions for cons_origbranch */
    GCG_BRANCHDATA*       origbranchdata;     /**< branching data stored by the branching rule at the corresponding origcons constraint
                                               *   containing information about the branching restrictions for cons_origbranch */
-   SCIP_CONS**           origbranchcons;     /**< the corresponding origbranch cons in the original program for cons_origbranch */
-   int                   norigbranchcons;    /**< number of origbranchcons */
+   SCIP_CONS**           origbranchconss;    /**< the corresponding original branching constraints in the original program for cons_origbranch */
+   int                   norigbranchconss;   /**< number of original branching constraints */
    SCIP_Bool             chgVarUbNode;       /**< upper bound of the variable changed */
    SCIP_Bool             chgVarLbNode;       /**< lower bound of the variable changed */
    SCIP_Bool             addPropBoundChg;    /**< whether a bound change was added */
@@ -949,6 +949,11 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    assert(*consdata != NULL);
 
    SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", (*consdata)->name);
+
+   /* remove original branching constraints, if not yet done (might happen, if node is cut off before branching
+    * decisions are transferred to the original problem)
+    */
+   SCIP_CALL( GCGconsMasterbranchReleaseOrigbranchConss(scip, GCGmasterGetOrigprob(scip), cons) );
 
    nchildconss = (*consdata)->nchildconss;
 
@@ -1877,8 +1882,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->origbranchconsname = NULL;
    consdata->origbranchrule = NULL;
    consdata->origbranchdata = NULL;
-   consdata->origbranchcons = NULL;
-   consdata->norigbranchcons = 0;
+   consdata->origbranchconss = NULL;
+   consdata->norigbranchconss = 0;
    consdata->chgVarUbNode = 0;
    consdata->chgVarLbNode = 0;
    consdata->addPropBoundChg = 0;
@@ -1967,7 +1972,7 @@ SCIP_Bool GCGnodeisVanderbeck(
 
 /** the function initializes the consdata data structure */
 SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
-   SCIP*                 scip,               /**< SCIP data structure*/
+   SCIP*                 scip,               /**< SCIP data structure of the master problem */
    SCIP_CONS*            cons,               /**< constraint for which the consdata is setted */
    char*                 name,               /**< name of the constraint */
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branchrule*/
@@ -1985,8 +1990,10 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
 {
    SCIP_CONSDATA* consdata;
 
-   consdata = SCIPconsGetData(cons);
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
 
+   consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
    if( name != NULL )
@@ -2007,15 +2014,12 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
 
    consdata->origbranchrule = branchrule;
 
-
-   if( branchdata == NULL )
-      SCIPfreeMemoryNull(scip, &(consdata->origbranchdata));
+   SCIPfreeMemoryNull(scip, &(consdata->origbranchdata));
    consdata->origbranchdata = branchdata;
 
-   if( origcons == NULL )
-      SCIPfreeMemoryArrayNull(scip, &(consdata->origcons));
-   consdata->origbranchcons = origcons;
-   consdata->norigbranchcons = norigcons;
+   SCIP_CALL( GCGconsMasterbranchReleaseOrigbranchConss(scip, GCGmasterGetOrigprob(scip), cons) );
+   consdata->origbranchconss = origcons;
+   consdata->norigbranchconss = norigcons;
 
    consdata->chgVarUbNode = chgVarUbNode;
    consdata->chgVarLbNode = chgVarLbNode;
@@ -2180,8 +2184,8 @@ GCG_BRANCHDATA* GCGconsMasterbranchGetOrigbranchdata(
    return consdata->origbranchdata;
 }
 
-/** the function returns the array of origcons of the constraint in the origconsdata data structure */
-SCIP_CONS** GCGconsMasterbranchGetOrigbranchCons(
+/** the function returns the array of original branchiong constraints of the constraint in the origconsdata data structure */
+SCIP_CONS** GCGconsMasterbranchGetOrigbranchConss(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -2191,11 +2195,11 @@ SCIP_CONS** GCGconsMasterbranchGetOrigbranchCons(
 
    assert(consdata != NULL);
 
-   return consdata->origbranchcons;
+   return consdata->origbranchconss;
 }
 
-/** the function returns the size of the array of origcons of the constraint in the origconsdata data structure */
-int GCGconsMasterbranchGetNOrigbranchCons(
+/** the function returns the size of the array of original branching constraints of the constraint in the origconsdata data structure */
+int GCGconsMasterbranchGetNOrigbranchConss(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -2205,7 +2209,38 @@ int GCGconsMasterbranchGetNOrigbranchCons(
 
    assert(consdata != NULL);
 
-   return consdata->norigbranchcons;
+   return consdata->norigbranchconss;
+}
+
+/** releases the array of original branching constraints of the constraint in the origconsdata data structure */
+SCIP_RETCODE GCGconsMasterbranchReleaseOrigbranchConss(
+   SCIP*                 masterscip,         /**< master problem SCIP instance */
+   SCIP*                 origscip,           /**< original SCIP instance */
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   assert(GCGisMaster(masterscip));
+   assert(GCGisOriginal(origscip));
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   if( consdata->norigbranchconss > 0 )
+   {
+      int c;
+
+      for( c = consdata->norigbranchconss - 1; c >= 0; --c )
+      {
+         SCIP_CALL( SCIPreleaseCons(origscip, &consdata->origbranchconss[c]) );
+      }
+      SCIPfreeMemoryArray(masterscip, &consdata->origbranchconss);
+      consdata->origbranchconss = NULL;
+      consdata->norigbranchconss = 0;
+   }
+
+   return SCIP_OKAY;
 }
 
 /** returns the masterbranch constraint of the current node */

@@ -132,16 +132,25 @@ GCG_BRANCHDATA* GCGconsMasterbranchGetOrigbranchdata(
    );
 
 extern
-/** the function returns the array of origcons of the constraint in the origconsdata data structure */
-SCIP_CONS** GCGconsMasterbranchGetOrigbranchCons(
+/** the function returns the array of original branchiong constraints of the constraint in the origconsdata data structure */
+SCIP_CONS** GCGconsMasterbranchGetOrigbranchConss(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    );
 
 extern
-/** the function returns the size of the array of origcons of the constraint in the origconsdata data structure */
-int GCGconsMasterbranchGetNOrigbranchCons(
+/** the function returns the size of the array of original branching constraints of the constraint in the origconsdata data structure */
+int GCGconsMasterbranchGetNOrigbranchConss(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    );
+
+/** releases the array of original branching constraints of the constraint in the origconsdata data structure */
+extern
+SCIP_RETCODE GCGconsMasterbranchReleaseOrigbranchConss(
+   SCIP*                 masterscip,         /**< master problem SCIP instance */
+   SCIP*                 origscip,           /**< original SCIP instance */
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
 
 /** returns the masterbranch constraint of the current node */
 extern

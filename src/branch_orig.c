@@ -236,10 +236,10 @@ SCIP_RETCODE branchVar(
       addPropBoundChg = TRUE;
    }
 
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(scip, cons1, upname, branchrule,
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, upname, branchrule,
          branchupdata, origbranchcons1, norigbranchcons, chgVarUbNodeup, chgVarLbNodeup, addPropBoundChg,
          branchvar, solval, branchupdata->boundtype, branchupdata->newbound) );
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(scip, cons2, downname, branchrule,
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, downname, branchrule,
          branchdowndata, origbranchcons2, norigbranchcons, chgVarUbNodedown, chgVarLbNodedown, addPropBoundChg,
          branchvar, solval, branchdowndata->boundtype, branchdowndata->newbound) );
 

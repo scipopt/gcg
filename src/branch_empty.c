@@ -105,8 +105,8 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
 {
    SCIP_NODE* child;
    SCIP_CONS*  origbranch;
-   SCIP_CONS** origbranchcons;
-   int norigbranchcons;
+   SCIP_CONS** origbranchconss;
+   int norigbranchconss;
    int i;
 
    assert(scip != NULL);
@@ -124,13 +124,12 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
 
    SCIP_CALL( SCIPaddConsNode(scip, child, origbranch, NULL) );
 
-   norigbranchcons = GCGconsMasterbranchGetNOrigbranchCons(masterbranchchildcons);
-   origbranchcons = GCGconsMasterbranchGetOrigbranchCons(masterbranchchildcons);
+   origbranchconss = GCGconsMasterbranchGetOrigbranchConss(masterbranchchildcons);
+   norigbranchconss = GCGconsMasterbranchGetNOrigbranchConss(masterbranchchildcons);
 
-   for( i=0; i<norigbranchcons; ++i )
+   for( i = 0; i < norigbranchconss; ++i )
    {
-      SCIP_CALL( SCIPaddConsNode(scip, child, origbranchcons[i], NULL) );
-      SCIP_CALL( SCIPreleaseCons(scip, &(origbranchcons[i])) );
+      SCIP_CALL( SCIPaddConsNode(scip, child, origbranchconss[i], NULL) );
    }
 
    if( GCGmasterbranchGetChgVarUb(masterbranchchildcons) )
@@ -160,8 +159,7 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
 
    SCIP_CALL( SCIPreleaseCons(scip, &origbranch) );
 
-   if( norigbranchcons > 0 )
-      SCIPfreeMemoryArrayNull(GCGgetMasterprob(scip), &origbranchcons);
+   SCIP_CALL( GCGconsMasterbranchReleaseOrigbranchConss(GCGgetMasterprob(scip), scip, masterbranchchildcons) );
 
    if( SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) != SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGgetMasterprob(scip)))) )
    {
