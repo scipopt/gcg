@@ -105,7 +105,7 @@ public:
 
    /** updates the alpha after successful pricing */
    void updateAlpha(
-      SCIP_SOL**            pricingsols         /**< solutions of the pricing problems */
+      GCG_COL**            pricingcols         /**< columns of the pricing problems */
    );
 
    /** returns whether the stabilization is active */
@@ -168,7 +168,7 @@ private:
 
    /** calculates the subgradient (with linking variables */
    SCIP_Real calculateSubgradient(
-      SCIP_SOL**         pricingsols         /**< solutions of the pricing problems */
+      GCG_COL**            pricingcols         /**< columns of the pricing problems */
    );
 
    /** computes the new dual value based on the current and the stability center values */
