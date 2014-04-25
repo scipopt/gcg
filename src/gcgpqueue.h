@@ -25,41 +25,25 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_gcgcol.h
- * @brief  struct to store columns (solutions from a pricing problem)
+/**@file   gcgpqueue.h
+ * @brief  private methods for working with priority queue
  * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#ifndef GCG_GCGPQUEUE_H__
+#define GCG_GCGPUEUE_H__
 
-#ifndef GCG_STRUCT_GCGCOL_H_
-#define GCG_STRUCT_GCGCOL_H_
-
-#include "scip/def.h"
-#include "scip/type_misc.h"
-#include "scip/scip.h"
-
-#include "type_gcgcol.h"
+#include "struct_gcgpqueue.h"
+#include "type_gcgpqueue.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct GCG_Col
-{
-   SCIP*                pricingprob;        /**< SCIP data structure (pricing problem)*/
-   int                  probnr;             /**< number of corresponding pricing problem */
-   SCIP_VAR**           vars;               /**< (sorted) array of variables of corresponding pricing problem */
-   SCIP_Real*           vals;               /**< array of solution values (belonging to vars) */
-   int                  nvars;              /**< number of variables */
-   SCIP_Bool            isray;              /**< is the column a ray? */
-   SCIP_Real            redcost;            /**< last known reduced cost */
-   int                  age;                /**< age of column (number of iterations since it was created;
-                                                 each time reduced cost are calculated counts as an interation) */
-};
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRUCT_GCGCOL_H_ */
+#endif
