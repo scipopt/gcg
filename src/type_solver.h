@@ -132,6 +132,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - result          : the result of the solving call:
  *                      - SCIP_STATUS_OPTIMAL if the problem was solved heuristically with a finite solution value
  *                                            (not necessarily to optimality)
+ *                      - SCIP_STATUS_INFEASIBLE if the problem was proven to be infeasible
  *                      - SCIP_STATUS_UNBOUNDED if the problem is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
