@@ -147,7 +147,6 @@ SCIP_RETCODE addVarToMasterbranch(
 {
    int p;
 
-   SCIP_Bool blockfound = TRUE;
    SCIP_Bool varinS = TRUE;
 
    assert(scip != NULL);
@@ -156,29 +155,8 @@ SCIP_RETCODE addVarToMasterbranch(
    assert(added != NULL);
 
    *added = FALSE;
-   if( GCGvarIsLinking(mastervar) )
-   {
-      SCIP_VAR** pricingvars;
-      int k;
-      blockfound = FALSE;
 
-      pricingvars = GCGlinkingVarGetPricingVars(mastervar);
-      assert(pricingvars != NULL );
-
-      for( k=0; k<GCGlinkingVarGetNBlocks(mastervar); ++k )
-      {
-         if( pricingvars[k] != NULL )
-         {
-            if( GCGvarGetBlock(pricingvars[k]) == GCGbranchGenericBranchdataGetConsblocknr(branchdata) )
-            {
-               blockfound = TRUE;
-               break;
-            }
-         }
-      }
-   }
-
-   if( !blockfound )
+   if( !GCGmasterVarIsInBlock(mastervar, GCGbranchGenericBranchdataGetConsblocknr(branchdata)) )
       return SCIP_OKAY;
 
    SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
@@ -1842,31 +1820,7 @@ SCIP_RETCODE ChooseSeparateMethod(
 
       for( i=0; i<nmastervars; ++i )
       {
-         SCIP_Bool blockfound;
-
-         if( GCGvarGetBlock(mastervars[i]) == -1 && GCGvarIsLinking(mastervars[i]) )
-         {
-            int u;
-            SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(mastervars[i]);
-            assert(pricingvars != NULL );
-
-            blockfound = FALSE;
-
-            for( u = 0; u < GCGlinkingVarGetNBlocks(mastervars[i]); ++u )
-            {
-               if( pricingvars[u] != NULL && GCGvarGetBlock(pricingvars[u]) == blocknr )
-               {
-                  blockfound = TRUE;
-                  break;
-               }
-            }
-         }
-         else
-         {
-            blockfound = (GCGvarGetBlock(mastervars[i]) == blocknr);
-         }
-
-         if( blockfound )
+         if( GCGmasterVarIsInBlock(mastervars[i], blocknr) )
          {
             ++nstrips;
 
@@ -2253,34 +2207,11 @@ SCIP_RETCODE createChildNodesGeneric(
          for( i = 0; i < ncopymastervars; ++i )
          {
             SCIP_VAR* swap;
-            SCIP_Bool blockfound;
 
             if( i >= nmastervars2 )
                break;
 
-            if( GCGvarGetBlock(mastervars2[i]) == -1 && GCGvarIsLinking(mastervars2[i]) )
-            {
-               SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(mastervars2[i]);
-               int u;
-
-               assert(pricingvars != NULL );
-               blockfound = FALSE;
-
-               for( u=0; u<GCGlinkingVarGetNBlocks(mastervars2[i]); ++u )
-               {
-                  if( pricingvars[u] != NULL && GCGvarGetBlock(pricingvars[u]) == blocknr )
-                  {
-                     blockfound = TRUE;
-                     break;
-                  }
-               }
-            }
-            else
-            {
-               blockfound = (GCGvarGetBlock(mastervars2[i]) == blocknr);
-            }
-
-            if( blockfound )
+            if( GCGmasterVarIsInBlock(mastervars2[i], blocknr) )
             {
                SCIP_Real generator_i = getGeneratorEntry(mastervars2[i], S[p].component);
 
@@ -2375,33 +2306,8 @@ SCIP_RETCODE createChildNodesGeneric(
   for( i = 0; i < nmastervars; ++i )
   {
      SCIP_VAR* mastervar = mastervars[i];
-     SCIP_Bool blockfound;
 
-     if( GCGvarIsLinking(mastervar) )
-     {
-        int u;
-        SCIP_VAR** pricingvars = NULL;
-        assert( GCGvarIsLinking(mastervar) );
-        blockfound = FALSE;
-
-        pricingvars = GCGlinkingVarGetPricingVars(mastervar);
-        assert(pricingvars != NULL );
-
-        for( u = 0; u < GCGlinkingVarGetNBlocks(mastervar); ++u )
-        {
-           if( pricingvars[u] != NULL && GCGvarGetBlock(pricingvars[u]) == blocknr )
-           {
-              blockfound = TRUE;
-              break;
-           }
-        }
-     }
-     else
-     {
-        blockfound = (GCGvarGetBlock(mastervar) == blocknr);
-     }
-
-     if( blockfound )
+     if( GCGmasterVarIsInBlock(mastervar, blocknr) )
      {
         identicalcontrol += SCIPgetSolVal(masterscip, NULL, mastervar);
      }
@@ -2648,37 +2554,10 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    /* calculate F and the strips */
    for( i=0; i<nbranchcands; ++i )
    {
-      SCIP_Bool blockfound;
-
       mastervar = branchcands[i];
       assert(GCGvarIsMaster(mastervar));
 
-      if( GCGvarGetBlock(mastervar) == -1 && GCGvarIsLinking(mastervar) )
-      {
-         int k;
-         blockfound = FALSE;
-
-         pricingvars = GCGlinkingVarGetPricingVars(mastervar);
-         assert(pricingvars != NULL );
-
-         for( k = 0; k < GCGlinkingVarGetNBlocks(mastervar); ++k )
-         {
-            if( pricingvars[k] != NULL )
-            {
-               if( GCGvarGetBlock(pricingvars[k]) == GCGbranchGenericBranchdataGetConsblocknr(branchdata) )
-               {
-                  blockfound = TRUE;
-                  break;
-               }
-            }
-         }
-      }
-      else
-      {
-         blockfound = (blocknr == GCGvarGetBlock(mastervar));
-      }
-
-      if( blockfound )
+      if( GCGmasterVarIsInBlock(mastervar, blocknr) )
       {
          mastervarValue = SCIPgetSolVal(masterscip, NULL, mastervar);
          if( SCIPisGT(origscip, mastervarValue - SCIPfloor(origscip, mastervarValue), 0.0) )

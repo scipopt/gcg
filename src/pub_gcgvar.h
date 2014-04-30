@@ -421,6 +421,12 @@ void GCGprintVar(
    SCIP_VAR*             var                 /**< variable that should be printed */
    );
 
+/** determines if the master variable is in the given block */
+extern
+SCIP_Bool GCGmasterVarIsInBlock(
+   SCIP_VAR*             mastervar,          /**< master variable */
+   int                   blocknr             /**< block number to check */
+   );
 #ifdef __cplusplus
 }
 #endif
