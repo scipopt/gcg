@@ -807,13 +807,6 @@ SCIP_RETCODE InducedLexicographicSort(
    return SCIP_OKAY;
 }
 
-/** method for calculating the median over all fractional components values using
- * the quickselect algorithm (or a variant of it)
- *
- * This method will change the array
- *
- * @return median or if the median is the minimum return ceil(arithm middle)
- */
 /** partitions the strip according to the priority */
 static
 SCIP_RETCODE partition(
@@ -901,16 +894,9 @@ SCIP_RETCODE addToRecord(
 
    SCIPdebugMessage("recordsize=%d, Ssize=%d\n", record->recordsize, Ssize);
 
-   if( record->recordsize == 0 )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(record->record), 1) ); /*lint !e866 !e506*/
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(record->sequencesizes), 1) ); /*lint !e866 !e506*/
-   }
-   else
-   {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->record), (size_t)record->recordsize+1) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->sequencesizes), (size_t)record->recordsize+1) );
-   }
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->record), (size_t)record->recordsize+1) );
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->sequencesizes), (size_t)record->recordsize+1) );
+
    SCIP_CALL( SCIPallocMemoryArray(scip, &(record->record[record->recordsize]), Ssize) ); /*lint !e866*/
    for( i=0; i<Ssize;++i )
    {
@@ -1576,17 +1562,9 @@ SCIP_RETCODE Explore(
    /* add bound to the end of S */
    ++(*Ssize);
    assert(S != NULL );
-   if( *S==NULL )
-   {
-      assert(*Ssize == 1);
-      SCIP_CALL( SCIPallocMemoryArray(scip, S, *Ssize) );
-   }
-   else
-   {
-      assert(*S != NULL );
-      assert(*Ssize >1);
-      SCIP_CALL( SCIPreallocMemoryArray(scip, S, *Ssize) );
-   }
+
+   SCIP_CALL( SCIPreallocMemoryArray(scip, S, *Ssize) );
+
    median = ivalue;
    (*S)[*Ssize-1].component = origvar;
    (*S)[*Ssize-1].sense = GCG_COMPSENSE_GE;
@@ -1803,18 +1781,9 @@ SCIP_RETCODE ChooseSeparateMethod(
       ++ncheckedblocks;
       assert(ncheckedblocks <= GCGgetNPricingprobs(scip)+1);
 
-      if( ncheckedblocks == 1 )
-      {
-         SCIP_CALL( SCIPallocBufferArray(scip, &checkedblocks, ncheckedblocks) );
-         SCIP_CALL( SCIPallocBufferArray(scip, &checkedblockssortstrips, ncheckedblocks) );
-         SCIP_CALL( SCIPallocBufferArray(scip, &checkedblocksnsortstrips, ncheckedblocks) );
-      }
-      else
-      {
-         SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblocks, ncheckedblocks) );
-         SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblockssortstrips, ncheckedblocks) );
-         SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblocksnsortstrips, ncheckedblocks) );
-      }
+      SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblocks, ncheckedblocks) );
+      SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblockssortstrips, ncheckedblocks) );
+      SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblocksnsortstrips, ncheckedblocks) );
 
       checkedblocks[ncheckedblocks-1] = blocknr;
 
@@ -1824,14 +1793,8 @@ SCIP_RETCODE ChooseSeparateMethod(
          {
             ++nstrips;
 
-            if( nstrips == 1 )
-            {
-               SCIP_CALL( SCIPallocBufferArray(scip, &strips, nstrips) );
-            }
-            else
-            {
-               SCIP_CALL( SCIPreallocBufferArray(scip, &strips, nstrips) );
-            }
+            SCIP_CALL( SCIPreallocBufferArray(scip, &strips, nstrips) );
+
             assert(strips != NULL);
 
             SCIP_CALL( SCIPallocBuffer(scip, &(strips[nstrips-1])) ); /*lint !e866*/
@@ -2563,14 +2526,8 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          if( SCIPisGT(origscip, mastervarValue - SCIPfloor(origscip, mastervarValue), 0.0) )
          {
 
-            if( Fsize == 0 )
-            {
-               SCIP_CALL( SCIPallocMemoryArray(origscip, &F, (size_t)Fsize+1) );
-            }
-            else
-            {
-               SCIP_CALL( SCIPreallocMemoryArray(origscip, &F, (size_t)Fsize+1) );
-            }
+            SCIP_CALL( SCIPreallocMemoryArray(origscip, &F, (size_t)Fsize+1) );
+
             F[Fsize] = mastervar;
             ++Fsize;
          }
