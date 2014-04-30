@@ -558,16 +558,8 @@ SCIP_RETCODE GCGoriginalVarAddCoef(
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
 
-   if( vardata->data.origvardata.ncoefs == 0 )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.coefs), 1) ); /*lint !e506*/
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.masterconss), 1) ); /*lint !e506*/
-   }
-   else
-   {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.coefs), (size_t)vardata->data.origvardata.ncoefs+1) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.masterconss), (size_t)vardata->data.origvardata.ncoefs+1) );
-   }
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.coefs), (size_t)vardata->data.origvardata.ncoefs+1) );
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.masterconss), (size_t)vardata->data.origvardata.ncoefs+1) );
 
    assert(vardata->data.origvardata.coefs != NULL);
    assert(vardata->data.origvardata.masterconss != NULL);
