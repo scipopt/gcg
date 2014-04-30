@@ -1171,7 +1171,7 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
    DECdecompSetConsindex(decomp, consindex);
    SCIP_CALL( DECdecompSetType(decomp, DEC_DECTYPE_STAIRCASE) );
 
-   for( b = 0; b < nblocks; ++b )
+   for( b = nblocks-1; b >= 0; --b )
    {
       if( nstairlinkingvars[b] == 0 )
       {
@@ -1181,12 +1181,12 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
 
    SCIP_CALL( DECdecompSetStairlinkingvars(scip, decomp, stairlinkingvars, nstairlinkingvars) );
 
-   for( b = 0; b < nblocks; ++b )
+   for( b = nblocks-1; b >= 0; --b )
    {
       SCIPfreeBufferArrayNull(scip, &stairlinkingvars[b]);
    }
-   SCIPfreeBufferArray(scip, &stairlinkingvars);
    SCIPfreeBufferArray(scip, &nstairlinkingvars);
+   SCIPfreeBufferArray(scip, &stairlinkingvars);
 
    SCIP_CALL( DECdecompCheckConsistency(scip, decomp) );
 
@@ -1979,9 +1979,9 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
    SCIP_CALL( DECdecompCreate(scip, decomp) );
    SCIP_CALL( DECfilloutDecompFromConstoblock(scip, *decomp, newconstoblock, nblocks, FALSE) );
 
-   SCIPfreeBufferArray(scip, &blockrepresentative);
-   SCIPfreeBufferArray(scip, &consismaster);
    SCIPfreeBufferArray(scip, &vartoblock);
+   SCIPfreeBufferArray(scip, &consismaster);
+   SCIPfreeBufferArray(scip, &blockrepresentative);
    SCIPhashmapFree(&constoblock);
 
    return SCIP_OKAY;
@@ -2603,12 +2603,12 @@ SCIP_RETCODE DECevaluateDecomposition(
       break;
    }
 
-   SCIPfreeBufferArray(scip, &nzblocks);
-   SCIPfreeBufferArray(scip, &nlinkvarsblocks);
-   SCIPfreeBufferArray(scip, &blockdensities);
-   SCIPfreeBufferArray(scip, &blocksizes);
-   SCIPfreeBufferArray(scip, &nvarsblocks);
 
+   SCIPfreeBufferArray(scip, &nvarsblocks);
+   SCIPfreeBufferArray(scip, &blocksizes);
+   SCIPfreeBufferArray(scip, &blockdensities);
+   SCIPfreeBufferArray(scip, &nlinkvarsblocks);
+   SCIPfreeBufferArray(scip, &nzblocks);
    return SCIP_OKAY;
 }
 
