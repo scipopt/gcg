@@ -316,6 +316,8 @@ TEST_F(GcgVarTest, OriginalVarAddCoefsWhenEmpty) {
    SCIP_CONS* cons = (SCIP_CONS*) 0xDEADBEEF;
    ovardata.data.origvardata.ncoefs = 0;
    ovardata.data.origvardata.coefs = NULL;
+   ovardata.blocknr = 0;
+   ovardata.data.origvardata.masterconss = NULL;
 
    SCIP_CALL_EXPECT(GCGoriginalVarAddCoef(scip, &ovar, 1.0, cons));
    ASSERT_EQ(1, ovardata.data.origvardata.ncoefs);
