@@ -2398,7 +2398,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    GCG_COMPSEQUENCE* S;
    GCG_COMPSEQUENCE** C;
    SCIP_VAR** F;
-   SCIP_VAR** pricingvars;
    int Ssize;
    int Fsize;
    int* sequencesizes;
@@ -2406,6 +2405,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    int i;
    int j;
    int allnorigvars;
+   SCIP_Bool foundblocknr = FALSE;
 
    blocknr = -2;
    Ssize = 0;
@@ -2415,7 +2415,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    C = NULL;
    F = NULL;
    sequencesizes = NULL;
-   pricingvars = NULL;
 
    assert(masterscip != NULL);
 
@@ -2434,63 +2433,44 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
    for( i = 0; i < nbranchcands; ++i )
    {
-      SCIP_Bool foundblocknr;
-
+      int k;
       mastervar = branchcands[i];
       assert(GCGvarIsMaster(mastervar));
-      blocknr = GCGvarGetBlock(mastervar);
 
-      if( blocknr == -1 )
-      {
-         if( GCGvarIsLinking(mastervar) )
-         {
-
-            pricingvars = GCGlinkingVarGetPricingVars(mastervar);
-            assert(pricingvars != NULL );
-
-            for( j = 0; j < GCGlinkingVarGetNBlocks(mastervar); ++j )
-            {
-               if( pricingvars[j] != NULL )
-               {
-                  int k;
-                  blocknr = GCGvarGetBlock(pricingvars[j]);
-
-                  foundblocknr = TRUE;
-
-                  for( k = 0; k < ncheckedblocks; ++k )
-                  {
-                     if( checkedblocks[j] == blocknr )
-                        foundblocknr = FALSE;
-                  }
-                  if( foundblocknr )
-                  {
-                     break;
-                  }
-               }
-            }
-            if( blocknr > -1 )
-               break;
-         }
-         else
-            break;
-      }
-
-      if( blocknr > -1 )
+      /* if we have a master variable, we branch on it */
+      if( GCGvarGetBlock(mastervar) == -1 )
       {
          foundblocknr = TRUE;
-         for( j=0; j<ncheckedblocks; ++j )
+         blocknr = -1;
+         break;
+      }
+
+      /* else, check if the candidate is in an unchecked block */
+      for( j = 0; j < GCGgetNPricingprobs(origscip); ++j )
+      {
+         SCIP_Bool checked = FALSE;
+         for( k = 0; k < ncheckedblocks ; ++k )
          {
-            if( checkedblocks[j] == blocknr )
+            /* if the block has been checked, no need to check master variable */
+            if( checkedblocks[k] == j )
             {
-               foundblocknr = FALSE;
+               checked = TRUE;
                break;
             }
          }
-         if( foundblocknr )
+
+         if( checked )
+            continue;
+         /* else the block has not been checked and the variable is in it , we have a candidate */
+         else if( GCGmasterVarIsInBlock(mastervar, j))
+         {
+            foundblocknr = TRUE;
+            blocknr = j;
             break;
+         }
       }
    }
-
+   assert( foundblocknr || blocknr == -1);
    assert( i <= nbranchcands ); /* else all blocks has been checked and we can observe an integer solution */
 
    if( blocknr < -1 )
@@ -2499,23 +2479,20 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       return SCIP_ERROR;
    }
 
-   /* a special case; branch on copy of an origvar directly:- here say blocknr = -3 */
-   if( blocknr == -1 && !GCGvarIsLinking(mastervar) )
-      blocknr = -3;
+   /* a special case; branch on copy of an origvar directly */
+   if( blocknr == -1 )
+   {
+      assert(!GCGvarIsLinking(mastervar));
+      SCIPdebugMessage("branching on master variable\n");
+      SCIP_CALL( branchDirectlyOnMastervar(origscip, mastervar, branchrule) );
+      return SCIP_OKAY;
+   }
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
    SCIPdebugMessage("branching in block %d \n", blocknr);
 
-   if( blocknr == -3 )
-   {
-      /* direct branch on copied origvar */
-      SCIP_CALL( branchDirectlyOnMastervar(origscip, mastervar, branchrule) );
-
-      return SCIP_OKAY;
-   }
-
    /* calculate F and the strips */
-   for( i=0; i<nbranchcands; ++i )
+   for( i = 0; i < nbranchcands; ++i )
    {
       mastervar = branchcands[i];
       assert(GCGvarIsMaster(mastervar));
