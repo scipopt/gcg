@@ -2823,8 +2823,7 @@ $(LIBOBJDIR)/solver_cplex.o: src/solver_cplex.c lib/scip/src/scip/scip.h \
  lib/scip/src/scip/presolve.h src/gcg.h src/type_branchgcg.h \
  src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgvar.h \
  src/pub_decomp.h src/pricer_gcg.h src/scip_misc.h \
- lib/scip/src/scip/cons_setppc.h src/solver_cplex.h \
- lib/scip/lib/cpxinc/cplex.h lib/scip/lib/cpxinc/cpxconst.h
+ lib/scip/src/scip/cons_setppc.h src/solver_cplex.h
 $(LIBOBJDIR)/cons_decomp.o: src/cons_decomp.c src/cons_decomp.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \

@@ -1026,7 +1026,6 @@ SCIP_RETCODE GCGcreateMasterVar(
    int i;
    int j;
    SCIP_Bool trivialsol;
-   SCIP_Bool discretization;
 
    assert(scip != NULL);
    assert(pricingscip != NULL);
@@ -1040,8 +1039,6 @@ SCIP_RETCODE GCGcreateMasterVar(
    assert(solvars != NULL || nsolvars == 0);
 
    trivialsol = FALSE;
-   SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip), "relaxing/gcg/discretization", &discretization) );
-
    /* create data for the new variable in the master problem */
    SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
    newvardata->vartype = GCG_VARTYPE_MASTER;
@@ -1110,8 +1107,6 @@ SCIP_RETCODE GCGcreateMasterVar(
          assert(newvardata->data.mastervardata.origvars != NULL);
          assert(newvardata->data.mastervardata.origvals != NULL);
          assert(GCGvarIsOriginal(origvar));
-         assert(!solisray || !discretization || SCIPisIntegral(scip, solvals[i]) || SCIPvarGetType(solvars[i]) == SCIP_VARTYPE_CONTINUOUS);
-
          /* save in the master problem variable's data the quota of the corresponding original variable */
          newvardata->data.mastervardata.origvars[j] = origvar;
          newvardata->data.mastervardata.origvals[j] = solvals[i];
