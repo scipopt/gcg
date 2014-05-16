@@ -1728,6 +1728,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIP_CALL( SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->nmastercuts]) );
          sepadata->nmastercuts++;
          SCIP_CALL( GCGsepaAddMastercuts(scip, origcut, mastercut) );
+         /* todo: master cut does not have to be efficacious! */
          assert( SCIPisCutEfficacious(scip, NULL, mastercut) );
 
    #ifdef SCIP_DEBUG
