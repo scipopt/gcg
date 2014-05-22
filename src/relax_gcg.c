@@ -355,7 +355,7 @@ SCIP_RETCODE convertStructToGCG(
             curvars = NULL;
             if( ncurvars > 0 )
             {
-               SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+               SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
                SCIP_CALL( GCGconsGetVars(scip, subscipconss[j][k], curvars, ncurvars) );
 
                for( v = 0; v < ncurvars; ++v )
@@ -370,7 +370,7 @@ SCIP_RETCODE convertStructToGCG(
                   }
                }
 
-               SCIPfreeMemoryArray(scip, &curvars);
+               SCIPfreeBufferArray(scip, &curvars);
             }
 
             if( found )
@@ -1486,7 +1486,7 @@ SCIP_RETCODE createPricingprobConss(
             {
                int i;
 
-               SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+               SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
                SCIP_CALL( GCGconsGetVars(relaxdata->pricingprobs[b], newcons, curvars, ncurvars) );
 
                for( i = 0; i < ncurvars; ++i )
@@ -1494,7 +1494,7 @@ SCIP_RETCODE createPricingprobConss(
                   assert(GCGvarIsPricing(curvars[i]));
                }
 
-               SCIPfreeMemoryArrayNull(scip, &curvars);
+               SCIPfreeBufferArrayNull(scip, &curvars);
             }
          }
 #endif

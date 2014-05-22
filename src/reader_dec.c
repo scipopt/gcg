@@ -615,7 +615,7 @@ SCIP_RETCODE readBlock(
       assert(success);
       if( ncurvars > 0 )
       {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( SCIPgetConsVars(scip, cons, curvars, ncurvars, &success) );
          assert(success);
       }
@@ -635,7 +635,7 @@ SCIP_RETCODE readBlock(
          conshasvar = TRUE;
       }
 
-      SCIPfreeMemoryArrayNull(scip, &curvars);
+      SCIPfreeBufferArrayNull(scip, &curvars);
 
       if( !conshasvar )
       {

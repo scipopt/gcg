@@ -264,7 +264,7 @@ SCIP_RETCODE setuparrays(
       if( !added )
          delete scons;
 
-      SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
       SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
       //save the properties of variables of the constraints in a struct array and in a sorted pointer array
       for( j = 0; j < ncurvars; j++ )
@@ -283,7 +283,7 @@ SCIP_RETCODE setuparrays(
             delete scoef;
 
       }
-      SCIPfreeMemoryArray(scip, &curvals);
+      SCIPfreeBufferArray(scip, &curvals);
    }
    return SCIP_OKAY;
 }
@@ -360,9 +360,9 @@ static SCIP_RETCODE createGraph(
       ncurvars = GCGconsGetNVars(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
       SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
       SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
 
       for( j = 0; j < ncurvars; j++ )
@@ -393,8 +393,9 @@ static SCIP_RETCODE createGraph(
 
       }
 
-      SCIPfreeMemoryArray(scip, &curvals);
-      SCIPfreeMemoryArray(scip, &curvars);
+      SCIPfreeBufferArray(scip, &curvals);
+      SCIPfreeBufferArray(scip, &curvars);
+
    }
    SCIPdebugMessage("Iteration 1: nnodes = %ud, Cons = %d, Vars = %d\n", nnodes, colorinfo.getLenCons(), colorinfo.getLenVar()); /*lint !e864 */
    assert(*result == SCIP_SUCCESS && nnodes == h->get_nof_vertices());

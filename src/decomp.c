@@ -1553,7 +1553,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
          assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
          assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1 == b); /*lint !e507*/
          ncurvars = GCGconsGetNVars(scip, cons);
-         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
 
          for( v = 0; v < ncurvars; ++v )
@@ -1566,7 +1566,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
             assert(SCIPvarIsActive(var));
             assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp)+1 );
          }
-         SCIPfreeMemoryArray(scip, &curvars);
+         SCIPfreeBufferArray(scip, &curvars);
       }
 
       for( v = 0; v < DECdecompGetNSubscipvars(decdecomp)[b]; ++v )
@@ -2189,7 +2189,7 @@ SCIP_RETCODE DECgetDensityData(
 
          SCIP_CALL( SCIPgetConsNVars(scip, curconss[j], &ncurvars, &success) );
          assert(success);
-         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( SCIPgetConsVars(scip, curconss[j], curvars, ncurvars, &success) );
          assert(success);
 
@@ -2217,7 +2217,7 @@ SCIP_RETCODE DECgetDensityData(
             }
          }
 
-         SCIPfreeMemoryArray(scip, &curvars);
+         SCIPfreeBufferArray(scip, &curvars);
          c++;
       }
    }
@@ -2230,7 +2230,7 @@ SCIP_RETCODE DECgetDensityData(
       assert(c < nconss); /* This assertion and the logic forbids constraints in more than one block */
       SCIP_CALL( SCIPgetConsNVars(scip, curconss[j], &ncurvars, &success) );
       assert(success);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
       SCIP_CALL( SCIPgetConsVars(scip, curconss[j], curvars, ncurvars, &success) );
       assert(success);
 
@@ -2253,7 +2253,7 @@ SCIP_RETCODE DECgetDensityData(
       consmasterdensity[c] = ncurvars;
       c++;
 
-      SCIPfreeMemoryArray(scip, &curvars);
+      SCIPfreeBufferArray(scip, &curvars);
    }
 
    return SCIP_OKAY;
@@ -2356,8 +2356,8 @@ SCIP_RETCODE DECgetVarLockData(
 
          SCIP_CALL( SCIPgetConsNVars(scip, curconss[j], &ncurvars, &success) );
          assert(success);
-         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
-         SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
 
          SCIP_CALL( GCGconsGetVals(scip, curconss[j], curvals, ncurvars) );
          SCIP_CALL( SCIPgetConsVars(scip, curconss[j], curvars, ncurvars, &success) );
@@ -2380,8 +2380,8 @@ SCIP_RETCODE DECgetVarLockData(
             increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
          }
 
-         SCIPfreeMemoryArray(scip, &curvars);
-         SCIPfreeMemoryArray(scip, &curvals);
+         SCIPfreeBufferArray(scip, &curvals);
+         SCIPfreeBufferArray(scip, &curvars);
       }
    }
 
@@ -2391,8 +2391,8 @@ SCIP_RETCODE DECgetVarLockData(
    {
       SCIP_CALL( SCIPgetConsNVars(scip, curconss[j], &ncurvars, &success) );
       assert(success);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
 
       SCIP_CALL( GCGconsGetVals(scip, curconss[j], curvals, ncurvars) );
       SCIP_CALL( SCIPgetConsVars(scip, curconss[j], curvars, ncurvars, &success) );
@@ -2413,8 +2413,8 @@ SCIP_RETCODE DECgetVarLockData(
          increaseLock(scip, lhs, curvals[v], rhs, &(masterlocksdown[probindex]), &(masterlocksup[probindex]));
       }
 
-      SCIPfreeMemoryArray(scip, &curvars);
-      SCIPfreeMemoryArray(scip, &curvals);
+      SCIPfreeBufferArray(scip, &curvals);
+      SCIPfreeBufferArray(scip, &curvars);
    }
 
    return SCIP_OKAY;
