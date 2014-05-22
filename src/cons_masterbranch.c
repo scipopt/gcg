@@ -497,11 +497,12 @@ SCIP_RETCODE addPendingBndChg(
    /* realloc memory if needed */
    if( conshdlrData->npendingbnds >= conshdlrData->maxpendingbnds )
    {
-      conshdlrData->maxpendingbnds = conshdlrData->npendingbnds+5;
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->pendingvars), conshdlrData->maxpendingbnds) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->pendingbndtypes), conshdlrData->maxpendingbnds) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->pendingoldbnds), conshdlrData->maxpendingbnds) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->pendingnewbnds), conshdlrData->maxpendingbnds) );
+      int newsize = conshdlrData->npendingbnds+5;
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrData->pendingvars), conshdlrData->maxpendingbnds, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrData->pendingbndtypes), conshdlrData->maxpendingbnds, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrData->pendingoldbnds), conshdlrData->maxpendingbnds, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrData->pendingnewbnds), conshdlrData->maxpendingbnds, newsize) );
+      conshdlrData->maxpendingbnds = newsize;
    }
 
    /* store pending bound change */
@@ -559,17 +560,17 @@ SCIP_DECL_CONSINIT(consInitMasterbranch)
    SCIPdebugMessage("consInitMasterbranch()\n");
 
    /* prepare stack */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
    conshdlrData->nstack = 0;
 
    /* prepare pending bound changes */
    conshdlrData->npendingbnds = 0;
    conshdlrData->maxpendingbnds = 5;
    conshdlrData->pendingbndsactivated = TRUE;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingvars), conshdlrData->maxpendingbnds) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingbndtypes), conshdlrData->maxpendingbnds) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingoldbnds), conshdlrData->maxpendingbnds) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingnewbnds), conshdlrData->maxpendingbnds) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrData->pendingvars), conshdlrData->maxpendingbnds) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrData->pendingbndtypes), conshdlrData->maxpendingbnds) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrData->pendingoldbnds), conshdlrData->maxpendingbnds) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrData->pendingnewbnds), conshdlrData->maxpendingbnds) );
 
    return SCIP_OKAY;
 }
@@ -619,11 +620,11 @@ SCIP_DECL_CONSEXIT(consExitMasterbranch)
    SCIPdebugMessage("exiting masterbranch constraint handler\n");
 
    /* free stack */
-   SCIPfreeMemoryArray(scip, &(conshdlrData->stack));
-   SCIPfreeMemoryArray(scip, &(conshdlrData->pendingvars));
-   SCIPfreeMemoryArray(scip, &(conshdlrData->pendingbndtypes));
-   SCIPfreeMemoryArray(scip, &(conshdlrData->pendingoldbnds));
-   SCIPfreeMemoryArray(scip, &(conshdlrData->pendingnewbnds));
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrData->stack), conshdlrData->maxstacksize);
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrData->pendingvars), conshdlrData->maxpendingbnds);
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrData->pendingbndtypes), conshdlrData->maxpendingbnds);
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrData->pendingoldbnds), conshdlrData->maxpendingbnds);
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrData->pendingnewbnds), conshdlrData->maxpendingbnds);
 
    return SCIP_OKAY;
 }
@@ -687,9 +688,11 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    /* put constraint on the stack */
    if( conshdlrData->nstack >= conshdlrData->maxstacksize )
    {
-      conshdlrData->maxstacksize = 2*(conshdlrData->maxstacksize);
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->stack), conshdlrData->maxstacksize) );
-      SCIPdebugMessage("reallocating Memory for stack! %d --> %d\n", conshdlrData->maxstacksize/2, conshdlrData->maxstacksize);
+      int newsize = SCIPcalcMemGrowSize(scip,  conshdlrData->nstack+1);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrData->stack), conshdlrData->maxstacksize, newsize) );
+
+      SCIPdebugMessage("reallocating Memory for stack! %d --> %d\n", conshdlrData->maxstacksize, newsize);
+      conshdlrData->maxstacksize = newsize;
    }
 
    conshdlrData->stack[conshdlrData->nstack] = cons;

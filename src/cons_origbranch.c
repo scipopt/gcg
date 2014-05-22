@@ -171,7 +171,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    assert(conshdlrData != NULL);
 
    /* prepare stack */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
    assert( conshdlrData->nstack >= 0 );
 
    /* check consistency */
@@ -223,7 +223,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
       conshdlrdata->rootcons = NULL;
    }
    /* free stack */
-   SCIPfreeMemoryArray(scip, &conshdlrdata->stack);
+   SCIPfreeBlockMemoryArray(scip, &conshdlrdata->stack, conshdlrdata->maxstacksize);
    conshdlrdata->stack = NULL;
 
    return SCIP_OKAY;
@@ -360,9 +360,10 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    /* put constraint on the stack */
    if( conshdlrData->nstack >= conshdlrData->maxstacksize )
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->stack), (2*(size_t)conshdlrData->maxstacksize)) );
-      conshdlrData->maxstacksize = 2*(conshdlrData->maxstacksize);
-      SCIPdebugMessage("reallocating Memory for stack! %d --> %d\n", conshdlrData->maxstacksize/2, conshdlrData->maxstacksize);
+      int newsize = SCIPcalcMemGrowSize(scip, conshdlrData->nstack+1);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrData->stack), conshdlrData->maxstacksize, newsize) );
+      SCIPdebugMessage("reallocating Memory for stack! %d --> %d\n", conshdlrData->maxstacksize, newsize);
+      conshdlrData->maxstacksize = newsize;
    }
 
    /* put constraint on the stack */
