@@ -1906,7 +1906,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
 
    if( (*branchdata)->consS != NULL && (*branchdata)->consSsize > 0 )
    {
-      SCIPfreeMemoryArray(scip, &((*branchdata)->consS));
+      SCIPfreeBlockMemoryArrayNull(scip, &((*branchdata)->consS), (*branchdata)->consSsize);
       (*branchdata)->consS = NULL;
       (*branchdata)->consSsize = 0;
    }
@@ -2125,12 +2125,12 @@ SCIP_RETCODE createChildNodesGeneric(
 
       if( p == Ssize )
       {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(branchchilddata->consS), Ssize) );
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(branchchilddata->consS), Ssize) );
          branchchilddata->consSsize = Ssize;
       }
       else
       {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(branchchilddata->consS), (size_t)p+1) );
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(branchchilddata->consS), (size_t)p+1) );
          branchchilddata->consSsize = p+1;
       }
       for( k = 0; k <= p; ++k )
@@ -2258,7 +2258,7 @@ SCIP_RETCODE createChildNodesGeneric(
       }
       else
       {
-         SCIPfreeMemoryArrayNull(scip, &(branchchilddata->consS));
+         SCIPfreeBlockMemoryArrayNull(scip, &(branchchilddata->consS), branchchilddata->consSsize);
          SCIPfreeBlockMemoryNull(scip, &branchchilddata);
       }
    }
@@ -2328,10 +2328,10 @@ SCIP_RETCODE branchDirectlyOnMastervar(
    SCIP_CALL( initNodeBranchdata(scip, &branchupchilddata, -3) );
    SCIP_CALL( initNodeBranchdata(scip, &branchdownchilddata, -3) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(branchupchilddata->consS), 1) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(branchupchilddata->consS), 1) ); /*lint !e506*/
    branchupchilddata->consSsize = 1;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(branchdownchilddata->consS), 1) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(branchdownchilddata->consS), 1) ); /*lint !e506*/
       branchdownchilddata->consSsize = 1;
 
    branchupchilddata->consS[0].component = mastervar;
