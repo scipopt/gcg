@@ -1008,6 +1008,7 @@ SCIP_RETCODE createPricingVar(
 /** creates a variable in each of the pricing problems linked by given original variable */
 static
 SCIP_RETCODE createLinkingPricingVars(
+   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< relaxator data data structure */
    SCIP_VAR*             origvar             /**< corresponding linking variable in the original program */
    )
@@ -1062,8 +1063,8 @@ SCIP_RETCODE createLinkingPricingVars(
       assert(GCGvarIsPricing(var));
       SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[i], var) );
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &relaxdata->varlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &relaxdata->varlinkconsblock, (size_t)relaxdata->nvarlinkconss+1) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &relaxdata->varlinkconss, relaxdata->nvarlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &relaxdata->varlinkconsblock, relaxdata->nvarlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
 
       relaxdata->varlinkconss[relaxdata->nvarlinkconss] = linkcons;
       relaxdata->varlinkconsblock[relaxdata->nvarlinkconss] = i;
@@ -1177,7 +1178,7 @@ SCIP_RETCODE createPricingVariables(
          SCIP_VAR** pricingvars;
          SCIPdebugPrintf("linking.\n");
 
-         SCIP_CALL( createLinkingPricingVars(relaxdata, probvar) );
+         SCIP_CALL( createLinkingPricingVars(scip, relaxdata, probvar) );
          assert(GCGlinkingVarGetPricingVars(probvar) != NULL);
 
          pricingvars = GCGlinkingVarGetPricingVars(probvar);
@@ -2077,8 +2078,8 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    {
       SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->varlinkconss[i]) );
    }
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->varlinkconss));
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->varlinkconsblock));
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->varlinkconss), relaxdata->nvarlinkconss);
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->varlinkconsblock), relaxdata->nvarlinkconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss);
