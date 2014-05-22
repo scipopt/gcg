@@ -324,16 +324,16 @@ TEST_F(GcgVarTest, OriginalVarAddCoefsWhenEmpty) {
    ASSERT_EQ(1, ovardata.data.origvardata.ncoefs);
    ASSERT_EQ(1.0, ovardata.data.origvardata.coefs[0]);
    ASSERT_EQ(cons, ovardata.data.origvardata.masterconss[0]);
-   SCIPfreeMemoryArray(scip, &ovardata.data.origvardata.coefs);
-   SCIPfreeMemoryArray(scip, &ovardata.data.origvardata.masterconss);
+   SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.coefs, ovardata.data.origvardata.ncoefs);
+   SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.masterconss, ovardata.data.origvardata.ncoefs);
 }
 
 TEST_F(GcgVarTest, OriginalVarAddCoefsWhenNonemty) {
    ORIGVAR(ovar, ovardata);
    SCIP_CONS* cons = (SCIP_CONS*) 0xDEADBEEF;
    ovardata.data.origvardata.ncoefs = 1;
-   SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &ovardata.data.origvardata.coefs, 1));
-   SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &ovardata.data.origvardata.masterconss, 1));
+   SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &ovardata.data.origvardata.coefs, 1));
+   SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &ovardata.data.origvardata.masterconss, 1));
    ovardata.data.origvardata.coefs[0] = 1.0;
    ovardata.data.origvardata.masterconss[0] = (SCIP_CONS*) 0xDEADCAFF;
 
@@ -343,8 +343,8 @@ TEST_F(GcgVarTest, OriginalVarAddCoefsWhenNonemty) {
    ASSERT_EQ((SCIP_CONS*) 0xDEADCAFF, ovardata.data.origvardata.masterconss[0]);
    ASSERT_EQ(2.0, ovardata.data.origvardata.coefs[1]);
    ASSERT_EQ(cons, ovardata.data.origvardata.masterconss[1]);
-   SCIPfreeMemoryArray(scip, &ovardata.data.origvardata.coefs);
-   SCIPfreeMemoryArray(scip, &ovardata.data.origvardata.masterconss);
+   SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.coefs, ovardata.data.origvardata.ncoefs);
+   SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.masterconss, ovardata.data.origvardata.ncoefs);
 }
 
 TEST_F(GcgVarTest, OriginalVarGetMasterconss) {

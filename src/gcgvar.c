@@ -90,8 +90,8 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
       {
          assert((*vardata)->data.origvardata.coefs != NULL);
          assert((*vardata)->data.origvardata.masterconss != NULL);
-         SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.coefs));
-         SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.masterconss));
+         SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.origvardata.coefs), (*vardata)->data.origvardata.ncoefs);
+         SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.origvardata.masterconss), (*vardata)->data.origvardata.ncoefs);
       }
    }
    if( (*vardata)->vartype == GCG_VARTYPE_PRICING )
@@ -559,8 +559,8 @@ SCIP_RETCODE GCGoriginalVarAddCoef(
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
 
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.coefs), (size_t)vardata->data.origvardata.ncoefs+1) );
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.masterconss), (size_t)vardata->data.origvardata.ncoefs+1) );
+   SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(vardata->data.origvardata.coefs), (size_t)vardata->data.origvardata.ncoefs, (size_t)vardata->data.origvardata.ncoefs+1) );
+   SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(vardata->data.origvardata.masterconss), (size_t)vardata->data.origvardata.ncoefs, (size_t)vardata->data.origvardata.ncoefs+1) );
 
    assert(vardata->data.origvardata.coefs != NULL);
    assert(vardata->data.origvardata.masterconss != NULL);
