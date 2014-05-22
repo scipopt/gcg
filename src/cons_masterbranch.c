@@ -229,10 +229,10 @@ SCIP_RETCODE createConsData(
 
    if( consdata->nboundchanges > 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->boundchgvars, consdata->nboundchanges) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->boundtypes, consdata->nboundchanges) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->newbounds, consdata->nboundchanges) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->oldbounds, consdata->nboundchanges) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->boundchgvars, consdata->nboundchanges) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->boundtypes, consdata->nboundchanges) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->newbounds, consdata->nboundchanges) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consdata->oldbounds, consdata->nboundchanges) );
    }
 
    consdata->nbranchingchanges = 0;
@@ -282,10 +282,10 @@ SCIP_RETCODE createConsData(
 
             diff = ndomboundchgs - parentdata->nboundchangestreated[i];
 
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundchgvars, (size_t)consdata->nboundchanges + diff) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundtypes, (size_t)consdata->nboundchanges + diff) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->newbounds, (size_t)consdata->nboundchanges + diff) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->oldbounds, (size_t)consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &consdata->boundchgvars, consdata->nboundchanges, (size_t)consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &consdata->boundtypes, consdata->nboundchanges, (size_t)consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &consdata->newbounds, consdata->nboundchanges, (size_t)consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &consdata->oldbounds, consdata->nboundchanges, (size_t)consdata->nboundchanges + diff) );
 
             /* add bound changes to the boundchanges array */
             for( j = 0; j < ndomboundchgs; ++j )
@@ -1080,10 +1080,10 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /* delete array with bound changes */
    if( (*consdata)->nboundchanges > 0 )
    {
-      SCIPfreeMemoryArrayNull(scip, &(*consdata)->oldbounds);
-      SCIPfreeMemoryArrayNull(scip, &(*consdata)->newbounds);
-      SCIPfreeMemoryArrayNull(scip, &(*consdata)->boundtypes);
-      SCIPfreeMemoryArrayNull(scip, &(*consdata)->boundchgvars);
+      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->oldbounds, (*consdata)->nboundchanges);
+      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->newbounds, (*consdata)->nboundchanges);
+      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->boundtypes, (*consdata)->nboundchanges);
+      SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->boundchgvars, (*consdata)->nboundchanges);
    }
 
    SCIPfreeMemoryArrayNull(scip, &(*consdata)->nboundchangestreated);

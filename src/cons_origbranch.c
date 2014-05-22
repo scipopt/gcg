@@ -318,9 +318,9 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    /* free propagation domain changes arrays */
    if( (*consdata)->maxpropbounds > 0 )
    {
-      SCIPfreeMemoryArrayNull(scip, &((*consdata)->propvars));
-      SCIPfreeMemoryArrayNull(scip, &((*consdata)->propboundtypes));
-      SCIPfreeMemoryArrayNull(scip, &((*consdata)->propbounds));
+      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->propvars), (*consdata)->maxpropbounds);
+      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->propboundtypes), (*consdata)->maxpropbounds);
+      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->propbounds), (*consdata)->maxpropbounds);
    }
 
    SCIPfreeMemoryArrayNull(scip, &(*consdata)->childcons);
@@ -860,10 +860,11 @@ SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
    /* realloc the arrays, if needed */
    if( consdata->npropbounds >= consdata->maxpropbounds )
    {
-      consdata->maxpropbounds = consdata->npropbounds+5;
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(consdata->propvars), consdata->maxpropbounds) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(consdata->propboundtypes), consdata->maxpropbounds) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(consdata->propbounds), consdata->maxpropbounds) );
+      int newsize = SCIPcalcMemGrowSize(scip, consdata->npropbounds+1);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->propvars), consdata->maxpropbounds, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->propboundtypes), consdata->maxpropbounds, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->propbounds), consdata->maxpropbounds, newsize) );
+      consdata->maxpropbounds = newsize;
    }
 
    SCIPdebugMessage("Bound change stored at branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
