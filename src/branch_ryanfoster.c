@@ -291,7 +291,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
             &(*branchdata)->pricecons) );
    }
 
-   SCIPfreeMemory(scip, branchdata);
+   SCIPfreeBlockMemory(scip, branchdata);
    *branchdata = NULL;
 
    return SCIP_OKAY;
@@ -360,7 +360,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
 
 
    /* allocate branchdata for same child and store information */
-   SCIP_CALL( SCIPallocMemory(scip, &branchsamedata) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, &branchsamedata) );
    branchsamedata->var1 = ovar1;
    branchsamedata->var2 = ovar2;
    branchsamedata->same = TRUE;
@@ -368,7 +368,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
    branchsamedata->pricecons = NULL;
 
    /* allocate branchdata for differ child and store information */
-   SCIP_CALL( SCIPallocMemory(scip, &branchdifferdata) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, &branchdifferdata) );
    branchdifferdata->var1 = ovar1;
    branchdifferdata->var2 = ovar2;
    branchdifferdata->same = FALSE;
