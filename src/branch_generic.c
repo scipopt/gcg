@@ -1911,7 +1911,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
       (*branchdata)->consSsize = 0;
    }
 
-   SCIPfreeMemoryNull(scip, branchdata);
+   SCIPfreeBlockMemoryNull(scip, branchdata);
    *branchdata = NULL;
 
    return SCIP_OKAY;
@@ -2034,11 +2034,12 @@ SCIP_Bool pruneChildNodeByDominanceGeneric(
 /** initialize branchdata at the node */
 static
 SCIP_RETCODE initNodeBranchdata(
+   SCIP*                 scip,               /**< SCIP data structure */
    GCG_BRANCHDATA**      nodebranchdata,     /**< branching data to set */
    int                   blocknr             /**< block we are branching in */
    )
 {
-   SCIP_CALL( SCIPallocMemory(scip, nodebranchdata) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, nodebranchdata) );
 
    (*nodebranchdata)->consblocknr = blocknr;
    (*nodebranchdata)->mastercons = NULL;
@@ -2120,7 +2121,7 @@ SCIP_RETCODE createChildNodesGeneric(
       branchchilddata = NULL;
 
       /*  allocate branchdata for child and store information */
-      SCIP_CALL( initNodeBranchdata(&branchchilddata, blocknr) );
+      SCIP_CALL( initNodeBranchdata(scip, &branchchilddata, blocknr) );
 
       if( p == Ssize )
       {
@@ -2258,7 +2259,7 @@ SCIP_RETCODE createChildNodesGeneric(
       else
       {
          SCIPfreeMemoryArrayNull(scip, &(branchchilddata->consS));
-         SCIPfreeMemoryNull(scip, &branchchilddata);
+         SCIPfreeBlockMemoryNull(scip, &branchchilddata);
       }
    }
    SCIPdebugMessage("lhsSum = %g\n", lhsSum);
@@ -2324,8 +2325,8 @@ SCIP_RETCODE branchDirectlyOnMastervar(
    bound = (int) (SCIPceil( scip, SCIPgetSolVal(masterscip, NULL, mastervar)) + 0.5); /*lint -e524*/
 
    /*  allocate branchdata for child and store information */
-   SCIP_CALL( initNodeBranchdata(&branchupchilddata, -3) );
-   SCIP_CALL( initNodeBranchdata(&branchdownchilddata, -3) );
+   SCIP_CALL( initNodeBranchdata(scip, &branchupchilddata, -3) );
+   SCIP_CALL( initNodeBranchdata(scip, &branchdownchilddata, -3) );
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(branchupchilddata->consS), 1) ); /*lint !e506*/
    branchupchilddata->consSsize = 1;
@@ -2942,7 +2943,7 @@ SCIP_RETCODE GCGbranchGenericCreateBranchdata(
    assert(scip != NULL);
    assert(branchdata != NULL);
 
-   SCIP_CALL( SCIPallocMemory(scip, branchdata) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, branchdata) );
    (*branchdata)->consS = NULL;
    (*branchdata)->consSsize = 0;
    (*branchdata)->sequencesizes = 0;
