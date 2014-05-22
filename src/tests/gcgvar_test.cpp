@@ -706,8 +706,8 @@ TEST_F(GcgVarTest, CreateMasterVar)
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &(solvars[0])));
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &(solvars[1])));
    mvardata = SCIPvarGetData(newvar);
-   SCIPfreeMemoryArrayNull(scip, &mvardata->data.mastervardata.origvals);
-   SCIPfreeMemoryArrayNull(scip, &mvardata->data.mastervardata.origvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvals, mvardata->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvars, mvardata->data.mastervardata.norigvars);
 
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &newvar));
 
@@ -747,8 +747,8 @@ TEST_F(GcgVarTest, CreateInitialLinkingMasterVar)
 
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &ovar));
    mvardata = SCIPvarGetData(mvar);
-   SCIPfreeMemoryArrayNull(scip, &mvardata->data.mastervardata.origvals);
-   SCIPfreeMemoryArrayNull(scip, &mvardata->data.mastervardata.origvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvals, mvardata->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvars, mvardata->data.mastervardata.norigvars);
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &mvar));
 }
 

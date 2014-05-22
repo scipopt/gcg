@@ -112,8 +112,8 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 {
    /*lint -e715 */
    assert((*vardata)->vartype == GCG_VARTYPE_MASTER);
-   SCIPfreeMemoryArray(scip, &((*vardata)->data.mastervardata.origvals));
-   SCIPfreeMemoryArray(scip, &((*vardata)->data.mastervardata.origvars));
+   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
 
    SCIPfreeBlockMemory(scip, vardata);
 
@@ -1081,8 +1081,8 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    if( newvardata->data.mastervardata.norigvars > 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.norigvars) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.norigvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.norigvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.norigvars) );
    }
    else
    {
@@ -1178,8 +1178,8 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    newvardata->data.mastervardata.norigvars = 1;
 
    /* save corresoponding origvar */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvars), 1) ); /*lint !e506*/
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvals), 1) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), 1) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), 1) ); /*lint !e506*/
    newvardata->data.mastervardata.origvars[0] = var;
    newvardata->data.mastervardata.origvals[0] = 1.0;
 
