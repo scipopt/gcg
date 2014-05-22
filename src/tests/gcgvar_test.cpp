@@ -254,7 +254,7 @@ TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenNonempty) {
 
    SCIP_CALL_EXPECT(GCGpricingVarAddOrigVar(scip, &var, &ovar));
    ASSERT_EQ(2, GCGpricingVarGetNOrigvars(&var));
-   SCIPfreeMemoryArray(scip, &vardata.data.pricingvardata.origvars);
+   SCIPfreeBlockMemoryArray(scip, &vardata.data.pricingvardata.origvars, vardata.data.pricingvardata.norigvars);
 }
 
 TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenEmpty) {
@@ -271,7 +271,7 @@ TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenEmpty) {
 
    SCIP_CALL_EXPECT(GCGpricingVarAddOrigVar(scip, &var, &ovar));
    ASSERT_EQ(1, GCGpricingVarGetNOrigvars(&var));
-   SCIPfreeMemoryArray(scip, &vardata.data.pricingvardata.origvars);
+   SCIPfreeBlockMemoryArray(scip, &vardata.data.pricingvardata.origvars, vardata.data.pricingvardata.norigvars);
 }
 
 TEST_F(GcgVarTest, OriginalVarGetNMastervars) {
@@ -668,7 +668,7 @@ TEST_F(GcgVarTest, CreateMasterVar)
       pvardata[i].blocknr = 0;
       pvardata[i].vartype = GCG_VARTYPE_PRICING;
 
-      SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &pvardata[i].data.pricingvardata.origvars, 1));
+      SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &pvardata[i].data.pricingvardata.origvars, 1));
 
       pvardata[i].data.pricingvardata.norigvars = 1;
       pvardata[i].data.pricingvardata.origvars[0] = ovars[i];
@@ -713,7 +713,7 @@ TEST_F(GcgVarTest, CreateMasterVar)
 
    for(int i = 0; i < 2; ++i)
    {
-      SCIPfreeMemoryArray(scip, &pvardata[i].data.pricingvardata.origvars);
+      SCIPfreeBlockMemoryArray(scip, &pvardata[i].data.pricingvardata.origvars, pvardata[i].data.pricingvardata.norigvars);
       SCIPfreeBlockMemoryArray(scip, &ovardata[i]->data.origvardata.mastervals, 1);
       SCIPfreeBlockMemoryArray(scip, &ovardata[i]->data.origvardata.mastervars, 1);
    }

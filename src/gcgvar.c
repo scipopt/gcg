@@ -97,7 +97,7 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
    if( (*vardata)->vartype == GCG_VARTYPE_PRICING )
    {
       assert((*vardata)->data.pricingvardata.norigvars >= 1);
-      SCIPfreeMemoryArray(scip, &((*vardata)->data.pricingvardata.origvars));
+      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.pricingvardata.origvars), (*vardata)->data.pricingvardata.norigvars);
    }
    assert((*vardata)->vartype != GCG_VARTYPE_MASTER);
    SCIPfreeBlockMemory(scip, vardata);
@@ -432,8 +432,8 @@ SCIP_RETCODE GCGpricingVarAddOrigVar(
    assert(vardata->blocknr >= 0); /* variable belongs to exactly one block */
    if( vardata->data.pricingvardata.norigvars >= 1 )
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars),
-            (size_t)vardata->data.pricingvardata.norigvars + 1) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars),
+            vardata->data.pricingvardata.norigvars, (size_t)vardata->data.pricingvardata.norigvars + 1) );
    }
    vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars] = origvar;
    vardata->data.pricingvardata.norigvars++;
@@ -954,7 +954,7 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
    vardata->vartype = GCG_VARTYPE_PRICING;
    vardata->blocknr = pricingprobnr;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars), 1) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars), 1) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
 
@@ -991,7 +991,7 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemory(pricingscip, &vardata) );
    vardata->vartype = GCG_VARTYPE_PRICING;
    vardata->blocknr = pricingprobnr;
-   SCIP_CALL( SCIPallocMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), 1) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), 1) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
 
