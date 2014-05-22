@@ -77,7 +77,7 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
             SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.origvardata.linkingvardata->linkconss), nblocks);
             SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.origvardata.linkingvardata->pricingvars), nblocks);
          }
-         SCIPfreeMemory(scip, &((*vardata)->data.origvardata.linkingvardata));
+         SCIPfreeBlockMemory(scip, &((*vardata)->data.origvardata.linkingvardata));
          (*vardata)->data.origvardata.linkingvardata = NULL;
       }
       assert((*vardata)->data.origvardata.linkingvardata == NULL);
@@ -611,7 +611,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    /* the variable was only in one block so far, so set up the linking variable data */
    if( blocknr > -1 )
    {
-      SCIP_CALL( SCIPallocMemory(scip, &vardata->data.origvardata.linkingvardata) );
+      SCIP_CALL( SCIPallocBlockMemory(scip, &vardata->data.origvardata.linkingvardata) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->pricingvars, nblocks) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->linkconss, nblocks) );
       BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->pricingvars, nblocks);

@@ -371,7 +371,7 @@ TEST_F(GcgVarTest, OriginalVarAddFirstBlock) {
 
    SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.linkingvardata->pricingvars, 4);
    SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.linkingvardata->linkconss, 4);
-   SCIPfreeMemoryArray(scip, &ovardata.data.origvardata.linkingvardata);
+   SCIPfreeBlockMemory(scip, &ovardata.data.origvardata.linkingvardata);
 
 }
 
