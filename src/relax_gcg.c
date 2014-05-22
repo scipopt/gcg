@@ -397,10 +397,12 @@ SCIP_RETCODE ensureSizeMasterConss(
 
    if( relaxdata->maxmasterconss < size )
    {
-      relaxdata->maxmasterconss = MAX(relaxdata->maxmasterconss + 5, size);
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss) );
+      int newsize = SCIPcalcMemGrowSize(scip, size);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss, newsize) );
+      relaxdata->maxmasterconss = newsize;
+
    }
    assert(relaxdata->maxmasterconss >= size);
 
@@ -1257,13 +1259,13 @@ SCIP_RETCODE initRelaxProblemdata(
    assert(relaxdata != NULL);
 
    /* initialize relaxator data */
-   relaxdata->maxmasterconss = 5;
+   relaxdata->maxmasterconss = 16;
    relaxdata->nmasterconss = 0;
 
    /* arrays of constraints belonging to the master problems */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss) );
 
    if( relaxdata->npricingprobs > 0 )
    {
@@ -2077,9 +2079,9 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    }
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->varlinkconss));
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->varlinkconsblock));
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->origmasterconss));
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->linearmasterconss));
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->masterconss));
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss);
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss);
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->convconss), relaxdata->npricingprobs);
 
    /* free master problem */
