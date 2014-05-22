@@ -2183,6 +2183,6 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/gtest/gtest/internal/gtest-param-util-generated.h \
  lib/gtest/gtest/gtest_prod.h lib/gtest/gtest/gtest-test-part.h \
  lib/gtest/gtest/gtest-typed-test.h lib/gtest/gtest/gtest_pred_impl.h \
- src/pub_gcgvar.h src/struct_vardata.h src/gcg.h src/type_branchgcg.h \
- src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgvar.h \
- src/pub_decomp.h
+ src/pub_gcgvar.h src/struct_vardata.h src/relax_gcg.h \
+ src/type_branchgcg.h src/type_decomp.h src/gcg.h src/type_detector.h \
+ src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h

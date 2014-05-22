@@ -36,6 +36,7 @@
 #include "pub_gcgvar.h"
 #include "struct_vardata.h"
 #include "scip/struct_var.h"
+#include "relax_gcg.h"
 #include "gcg.h"
 
 #define ORIGVAR(ovar, ovardata) SCIP_VAR ovar;  SCIP_VARDATA ovardata; ovar.vardata = &ovardata;   ovardata.vartype = GCG_VARTYPE_ORIGINAL
@@ -503,9 +504,10 @@ TEST_F(GcgVarTest, OriginalVarAddMasterVarWithReallocation)
    MASTERVAR(mvar, mvardata);
    ovardata.data.origvardata.maxmastervars = 1;
    ovardata.data.origvardata.nmastervars = 1;
+   SCIP_CALL_EXPECT(SCIPincludeRelaxGcg(scip));
 
-   SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &ovardata.data.origvardata.mastervars, 1));
-   SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &ovardata.data.origvardata.mastervals, 1));
+   SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &ovardata.data.origvardata.mastervars, 1));
+   SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &ovardata.data.origvardata.mastervals, 1));
    ovardata.data.origvardata.mastervars[0] = (SCIP_VAR*) 0xDEADBEEF;
    ovardata.data.origvardata.mastervals[0] = 1.0;
    SCIP_CALL_EXPECT(GCGoriginalVarAddMasterVar(scip, &ovar, &mvar, 2.0));
@@ -515,8 +517,8 @@ TEST_F(GcgVarTest, OriginalVarAddMasterVarWithReallocation)
    ASSERT_EQ(&mvar, ovardata.data.origvardata.mastervars[1]);
    ASSERT_EQ(2.0, ovardata.data.origvardata.mastervals[1]);
    ASSERT_EQ(2, ovardata.data.origvardata.nmastervars);
-   SCIPfreeMemoryArray(scip, &ovardata.data.origvardata.mastervars);
-   SCIPfreeMemoryArray(scip, &ovardata.data.origvardata.mastervals);
+   SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.mastervars, ovardata.data.origvardata.maxmastervars);
+   SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.mastervals, ovardata.data.origvardata.maxmastervars);
 }
 
 TEST_F(GcgVarTest, OriginalVarAddMasterVarWithoutReallocation)
@@ -525,9 +527,9 @@ TEST_F(GcgVarTest, OriginalVarAddMasterVarWithoutReallocation)
    MASTERVAR(mvar, mvardata);
    ovardata.data.origvardata.maxmastervars = 2;
    ovardata.data.origvardata.nmastervars = 1;
-
-   SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &ovardata.data.origvardata.mastervars, 2));
-   SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &ovardata.data.origvardata.mastervals, 2));
+   SCIP_CALL_EXPECT(SCIPincludeRelaxGcg(scip));
+   SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &ovardata.data.origvardata.mastervars, 2));
+   SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &ovardata.data.origvardata.mastervals, 2));
    ovardata.data.origvardata.mastervars[0] = (SCIP_VAR*) 0xDEADBEEF;
    ovardata.data.origvardata.mastervals[0] = 1.0;
    ovardata.data.origvardata.mastervars[1] = (SCIP_VAR*) 0xDEADBEEF;
@@ -539,8 +541,8 @@ TEST_F(GcgVarTest, OriginalVarAddMasterVarWithoutReallocation)
    ASSERT_EQ(&mvar, ovardata.data.origvardata.mastervars[1]);
    ASSERT_EQ(2.0, ovardata.data.origvardata.mastervals[1]);
    ASSERT_EQ(2, ovardata.data.origvardata.nmastervars);
-   SCIPfreeMemoryArray(scip, &ovardata.data.origvardata.mastervars);
-   SCIPfreeMemoryArray(scip, &ovardata.data.origvardata.mastervals);
+   SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.mastervars, 2);
+   SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.mastervals, 2);
 }
 
 TEST_F(GcgVarTest, OriginalVarRemoveExistingMasterVar)
@@ -672,8 +674,8 @@ TEST_F(GcgVarTest, CreateMasterVar)
       pvardata[i].data.pricingvardata.origvars[0] = ovars[i];
       ovardata[i]->data.origvardata.maxmastervars = 1;
       ovardata[i]->data.origvardata.nmastervars = 0;
-      SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &ovardata[i]->data.origvardata.mastervars, 1));
-      SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &ovardata[i]->data.origvardata.mastervals, 1));
+      SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &ovardata[i]->data.origvardata.mastervars, 1));
+      SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &ovardata[i]->data.origvardata.mastervals, 1));
    }
 
 
@@ -682,8 +684,9 @@ TEST_F(GcgVarTest, CreateMasterVar)
    SCIP_CALL_EXPECT(SCIPcreateVarBasic(scip, &(solvars[1]), "test2", -2.0, -1.0, -3.0, SCIP_VARTYPE_CONTINUOUS));
    SCIPvarSetData(solvars[0], &(pvardata[0]));
    SCIPvarSetData(solvars[1], &(pvardata[1]));
+   SCIP_CALL_EXPECT(SCIPincludeRelaxGcg(scip));
 
-   SCIP_CALL_EXPECT(GCGcreateMasterVar(scip, scip, &newvar, "newname", 1.0, SCIP_VARTYPE_INTEGER, FALSE, 0, 2, solvals, solvars));
+   SCIP_CALL_EXPECT(GCGcreateMasterVar(scip, scip, scip, &newvar, "newname", 1.0, SCIP_VARTYPE_INTEGER, FALSE, 0, 2, solvals, solvars));
 
    ASSERT_NE((SCIP_VAR*)NULL, newvar);
    ASSERT_EQ(1.0, SCIPvarGetObj(newvar));
@@ -711,8 +714,8 @@ TEST_F(GcgVarTest, CreateMasterVar)
    for(int i = 0; i < 2; ++i)
    {
       SCIPfreeMemoryArray(scip, &pvardata[i].data.pricingvardata.origvars);
-      SCIPfreeMemoryArray(scip, &ovardata[i]->data.origvardata.mastervals);
-      SCIPfreeMemoryArray(scip, &ovardata[i]->data.origvardata.mastervars);
+      SCIPfreeBlockMemoryArray(scip, &ovardata[i]->data.origvardata.mastervals, 1);
+      SCIPfreeBlockMemoryArray(scip, &ovardata[i]->data.origvardata.mastervars, 1);
    }
 }
 

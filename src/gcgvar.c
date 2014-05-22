@@ -42,7 +42,7 @@
 #include "scip_misc.h"
 #include "scip/cons_linear.h"
 
-#define STARTMAXMASTERVARS 10
+#define STARTMAXMASTERVARS 8
 
 /*
  * Vardata methods
@@ -83,8 +83,9 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
       assert((*vardata)->data.origvardata.linkingvardata == NULL);
       assert((*vardata)->data.origvardata.mastervars != NULL);
       assert((*vardata)->data.origvardata.mastervals != NULL);
-      SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervars));
-      SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervals));
+      SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.origvardata.mastervars), (*vardata)->data.origvardata.maxmastervars);
+      SCIPfreeBlockMemoryArrayNull(scip, &((*vardata)->data.origvardata.mastervals), (*vardata)->data.origvardata.maxmastervars);
+
       if( (*vardata)->data.origvardata.ncoefs > 0 )
       {
          assert((*vardata)->data.origvardata.coefs != NULL);
@@ -262,9 +263,9 @@ SCIP_RETCODE GCGorigVarCreateData(
    vardata->data.origvardata.nmastervars = 0;
    vardata->data.origvardata.maxmastervars = STARTMAXMASTERVARS;
    vardata->data.origvardata.linkingvardata = NULL;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.mastervars),
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.origvardata.mastervars),
          vardata->data.origvardata.maxmastervars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.mastervals),
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.origvardata.mastervals),
          vardata->data.origvardata.maxmastervars) );
 
    if( SCIPvarGetData(var) != NULL )
@@ -850,7 +851,7 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
    assert(scip != NULL);
    assert(origvar != NULL);
    assert(var != NULL);
-
+   assert(GCGisOriginal(scip));
    vardata = SCIPvarGetData(origvar);
 
    assert(vardata != NULL);
@@ -863,13 +864,14 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
    /* realloc mastervars array of the original variable, if needed */
    if( vardata->data.origvardata.maxmastervars == vardata->data.origvardata.nmastervars )
    {
-      SCIP_CALL( SCIPreallocMemoryArray(pricerdata->origprob, &(vardata->data.origvardata.mastervars),
-            2*(size_t)vardata->data.origvardata.maxmastervars) );
-      SCIP_CALL( SCIPreallocMemoryArray(pricerdata->origprob, &(vardata->data.origvardata.mastervals),
-            2*(size_t)vardata->data.origvardata.maxmastervars) );
+      int newsize = SCIPcalcMemGrowSize(scip, vardata->data.origvardata.nmastervars+1);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(vardata->data.origvardata.mastervars), vardata->data.origvardata.maxmastervars,
+            newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(vardata->data.origvardata.mastervals), vardata->data.origvardata.maxmastervars,
+            newsize) );
       SCIPdebugMessage("mastervars array of var %s resized from %d to %d\n", SCIPvarGetName(origvar),
-         vardata->data.origvardata.maxmastervars, 2*vardata->data.origvardata.maxmastervars);
-      vardata->data.origvardata.maxmastervars = 2*vardata->data.origvardata.maxmastervars;
+         vardata->data.origvardata.maxmastervars, newsize);
+      vardata->data.origvardata.maxmastervars = newsize;
    }
    /* add information to the original variable's vardata */
    vardata->data.origvardata.mastervars[vardata->data.origvardata.nmastervars] = var;
@@ -1009,7 +1011,8 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
 
 /** creates the master var and initializes the vardata */
 SCIP_RETCODE GCGcreateMasterVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< master SCIP data structure */
+   SCIP*                 origscip,           /**< original SCIP data structure */
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
    SCIP_VAR**            newvar,             /**< pointer to store new master variable */
    const char*           varname,            /**< new variable name */
@@ -1111,7 +1114,7 @@ SCIP_RETCODE GCGcreateMasterVar(
          newvardata->data.mastervardata.origvars[j] = origvar;
          newvardata->data.mastervardata.origvals[j] = solvals[i];
          /* save the quota in the original variable's data */
-         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, origvar, *newvar, solvals[i]) );
+         SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, solvals[i]) );
          j++;
       }
    }
@@ -1137,7 +1140,7 @@ SCIP_RETCODE GCGcreateMasterVar(
          newvardata->data.mastervardata.origvars[j] = origvar;
          newvardata->data.mastervardata.origvals[j] = 0.0;
          /* save the quota in the original variable's data */
-         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, origvar, *newvar, 0.0) );
+         SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, 0.0) );
       }
    }
    assert(j == newvardata->data.mastervardata.norigvars);

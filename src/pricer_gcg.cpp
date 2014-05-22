@@ -1506,7 +1506,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       pricerdata->npointsprob[prob]++;
    }
 
-   SCIP_CALL( GCGcreateMasterVar(scip, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
+   SCIP_CALL( GCGcreateMasterVar(scip, origprob, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
          pricerdata->vartype, solisray, prob, nsolvars, solvals, solvars));
 
    SCIPvarMarkDeletable(newvar);
@@ -3336,7 +3336,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 /** create initial master variables */
 extern "C"
 SCIP_RETCODE GCGmasterCreateInitialMastervars(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip                /**< master SCIP data structure */
    )
 {
    ObjPricerGcg* pricer;
@@ -3385,7 +3385,7 @@ SCIP_RETCODE GCGmasterCreateInitialMastervars(
          SCIP_CALL( GCGcreateInitialMasterVar(scip, var, &newvar) );
          SCIP_CALL( SCIPaddVar(scip, newvar) );
 
-         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, var, newvar, 1.0) );
+         SCIP_CALL( GCGoriginalVarAddMasterVar(origprob, var, newvar, 1.0) );
 
          linkconss = GCGoriginalVarGetMasterconss(var);
 

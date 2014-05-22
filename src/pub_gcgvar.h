@@ -314,6 +314,7 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
 extern
 SCIP_RETCODE GCGcreateMasterVar(
    SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 origscip,           /**< original SCIP data structure */
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
    SCIP_VAR**            newvar,             /**< pointer to store new master variable */
    const char*           varname,            /**< new variable name */
