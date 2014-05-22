@@ -245,7 +245,7 @@ TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenNonempty) {
    ORIGVAR(ovar, ovardata);
 
    SCIP_VAR** vars;
-   SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &vars, 1));
+   SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &vars, 1));
    vars[0]= &ovar;
 
    vardata.blocknr = 0;
@@ -262,7 +262,7 @@ TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenEmpty) {
    ORIGVAR(ovar, ovardata);
 
    SCIP_VAR** vars;
-   SCIP_CALL_EXPECT(SCIPallocMemoryArray(scip, &vars, 1));
+   SCIP_CALL_EXPECT(SCIPallocBlockMemoryArray(scip, &vars, 1));
    vars[0]= (SCIP_VAR*)0xDEADBEEF;
 
    vardata.blocknr = 0;
