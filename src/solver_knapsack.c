@@ -181,8 +181,8 @@ SCIP_RETCODE solveKnapsack(
    {
       if( inferbounds && SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])))
       {
-         SCIP_Real newbound = SCIPfloor(pricingprob, ABS((double)prelcapacity/consvals[i]));
-         SCIPdebugMessage("newbound: %.2f/%.2f = %.2f\n", (double)prelcapacity, consvals[i], newbound);
+         SCIP_Real newbound = SCIPfloor(pricingprob, ABS((SCIP_Real)prelcapacity/consvals[i]));
+         SCIPdebugMessage("newbound: %.2f/%.2f = %.2f\n", (SCIP_Real)prelcapacity, consvals[i], newbound);
          ubs[i] = newbound+1;
       }
       else
