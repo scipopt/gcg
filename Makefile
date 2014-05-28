@@ -92,6 +92,10 @@ LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with \"make
 LINKMSG		+=	" -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
 LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"blissinc/libbliss.$(STATICLIBEXT)\"\n"
 endif
+#-----------------------------------------------------------------------------
+# GSL
+#-----------------------------------------------------------------------------
+LDFLAGS                +=      -lgsl -lgslcblas -lm
 
 #-----------------------------------------------------------------------------
 # CPLEX pricing solver

@@ -38,6 +38,9 @@
 #include "pub_gcgvar.h"
 #include "scip/var.h"
 
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_permutation.h>
+#include <gsl/gsl_linalg.h>
 
 #define SEPA_NAME              "basis"
 #define SEPA_DESC              "separator calculates a basis of the orig problem to generate cuts, which cut off the master lp sol"
@@ -665,6 +668,135 @@ SCIP_RETCODE getEqualityMatrix(
    return SCIP_OKAY;
 }
 
+/**< Get matrix (including nrows and ncols) of rows that are satisfied with equality by sol */
+static
+SCIP_RETCODE getEqualityMatrixGsl(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_SOL*            sol,                /**< solution */
+   gsl_matrix**         matrix,             /**< pointer to store equality matrix */
+   int*                 nrows,              /**< pointer to store number of rows */
+   int*                 ncols,              /**< pointer to store number of columns */
+   int*                 prerank             /**< pointer to store preprocessed rank */
+)
+{
+   int* var2col;
+   int* delvars;
+
+   int nvar2col;
+   int ndelvars;
+
+   int maxrows;
+
+   SCIP_ROW** lprows;
+   int nlprows;
+
+   SCIP_COL** lpcols;
+   int nlpcols;
+
+   int i;
+   int j;
+
+   *ncols = SCIPgetNLPCols(scip);
+   nlprows = SCIPgetNLPRows(scip);
+   lprows = SCIPgetLPRows(scip);
+   nlpcols = SCIPgetNLPCols(scip);
+   lpcols = SCIPgetLPCols(scip);
+
+   maxrows = STARTMAXCUTS;
+
+   *nrows = 0;
+
+   ndelvars = 0;
+   nvar2col = 0;
+
+   SCIPallocBufferArray(scip, &var2col, nlpcols);
+   SCIPallocBufferArray(scip, &delvars, nlpcols);
+
+   /* loop over lp cols and check if it is at one of its bounds */
+   for(i = 0; i < nlpcols; ++i)
+   {
+      SCIP_COL* lpcol;
+      SCIP_VAR* lpvar;
+
+      lpcol = lpcols[i];
+
+      lpvar = SCIPcolGetVar(lpcol);
+
+      if(SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetUb(lpcol))
+         || SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetLb(lpcol)))
+      {
+         int ind;
+
+         ind = SCIPcolGetIndex(lpcol);
+
+         delvars[ndelvars] = ind;
+
+         ++ndelvars;
+
+         var2col[ind] = -1;
+      }
+      else
+      {
+         int ind;
+
+         ind = SCIPcolGetIndex(lpcol);
+
+         var2col[ind] = nvar2col;
+
+         ++nvar2col;
+      }
+   }
+
+   SCIPsortInt(delvars, ndelvars);
+
+   *matrix = gsl_matrix_calloc(nlprows, nvar2col);
+
+   *ncols = nvar2col;
+
+   /* loop over lp rows and check if solution feasibility is equal to zero */
+   for(i = 0; i < nlprows; ++i)
+   {
+      SCIP_ROW* lprow;
+
+      lprow = lprows[i];
+
+      /* if solution feasiblity is equal to zero, add row to matrix */
+      if(SCIPisEQ(scip, SCIPgetRowSolFeasibility(scip, lprow, sol), 0.0))
+      {
+         SCIP_COL** cols;
+         SCIP_Real* vals;
+         int nnonz;
+
+         cols = SCIProwGetCols(lprow);
+         vals = SCIProwGetVals(lprow);
+         nnonz = SCIProwGetNNonz(lprow);
+
+         /* get nonzero coefficients of row */
+         for(j = 0; j < nnonz; ++j)
+         {
+            int ind;
+            int pos;
+
+            ind = SCIPcolGetIndex(cols[j]);
+            assert(ind >= 0 && ind < nlpcols);
+
+            if( !SCIPsortedvecFindInt(delvars, ind, ndelvars, &pos) )
+            {
+               gsl_matrix_set(*matrix, *nrows, var2col[ind], vals[j]);
+            }
+         }
+         ++(*nrows);
+      }
+   }
+   *nrows = nlprows;
+   *prerank = ndelvars;
+
+   SCIPfreeBufferArray(scip, &delvars);
+   SCIPfreeBufferArray(scip, &var2col);
+
+   return SCIP_OKAY;
+}
+
 /**< Get matrix (inclinding nrows and ncols) of all rows */
 static
 SCIP_RETCODE getRowMatrix(
@@ -901,6 +1033,99 @@ SCIP_RETCODE getEqualityRank(
    SCIPfreeMemoryArray(scip, &matrix);
 
    *equalityrank = rowrank;
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_RETCODE getRank(
+   SCIP*                scip,
+   gsl_matrix*          matrix,
+   int                  nrows,
+   int                  ncols,
+   int*                 rank
+)
+{
+   gsl_matrix* matrixq;
+   gsl_matrix* matrixr;
+
+   gsl_vector* tau;
+   gsl_vector* norm;
+   gsl_permutation* permutation;
+
+   int ranktmp;
+   int dimnullspacetmp;
+   int signum;
+
+   int i;
+   int j;
+
+   matrixq = gsl_matrix_alloc(nrows, nrows);
+   matrixr = gsl_matrix_alloc(nrows, ncols);
+
+   norm = gsl_vector_alloc(ncols);
+   tau = gsl_vector_alloc(MIN(nrows, ncols));
+
+   permutation = gsl_permutation_alloc(ncols);
+
+   gsl_linalg_QRPT_decomp(matrix, tau, permutation, &signum, norm);
+
+   gsl_linalg_QR_unpack(matrix, tau, matrixq, matrixr);
+
+   ranktmp = 0;
+
+   for( i = 0; i < MIN(nrows, ncols); ++i )
+   {
+      SCIP_Real val;
+
+      val = gsl_matrix_get(matrixr, i, i);
+
+      if( SCIPisZero(scip, val) )
+      {
+         break;
+      }
+      ++(ranktmp);
+   }
+
+   *rank = ranktmp;
+
+   gsl_matrix_free(matrixq);
+   gsl_matrix_free(matrixr);
+
+   gsl_vector_free(tau);
+   gsl_vector_free(norm);
+
+   gsl_permutation_free(permutation);
+
+   return SCIP_OKAY;
+}
+
+/**< Get rank (number of linear independent rows) of rows that are satisfied
+ *   with equality by solution sol */
+static
+SCIP_RETCODE getEqualityRankGsl(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_SOL*            sol,                /**< solution */
+   int*                 equalityrank        /**< pointer to store rank of rows with equality */
+   )
+{
+   gsl_matrix* matrix;
+   int nrows;
+   int ncols;
+
+   int* basisrows;
+   int prerank;
+   int rowrank;
+
+   int i;
+
+   SCIP_CALL( getEqualityMatrixGsl(scip, sol, &matrix, &nrows, &ncols, &prerank) );
+
+   SCIP_CALL( getRank(scip, matrix, nrows, ncols, &rowrank) );
+
+   gsl_matrix_free(matrix);
+
+   *equalityrank = rowrank + prerank;
 
    return SCIP_OKAY;
 }
@@ -1262,7 +1487,7 @@ SCIP_RETCODE initGenconv(
    int rank;
    int ncalls;
 
-   SCIP_CALL( getEqualityRank(origscip, origsol, &rank) );
+   SCIP_CALL( getEqualityRankGsl(origscip, origsol, &rank) );
 
    *convex = 1.0* rank/nbasis;
 
