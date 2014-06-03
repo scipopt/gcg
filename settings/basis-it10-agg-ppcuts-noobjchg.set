@@ -17,7 +17,7 @@ sepa/basis/enableppcuts = TRUE
 
 sepa/basis/chgobj = FALSE
 
-lp/solvefreq = 0
+
 
 lp/iterlim = -1
 

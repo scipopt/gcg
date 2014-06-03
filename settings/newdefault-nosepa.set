@@ -1,4 +1,4 @@
-lp/solvefreq = 0
+
 
 lp/iterlim = -1
 
@@ -8,5 +8,4 @@ conflict/enable = FALSE
 
 detectors/random/enabled = FALSE
 
-pricing/masterpricer/stabilization = FALSE
-
+sepa/master/enable = FALSE

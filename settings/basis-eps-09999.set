@@ -10,7 +10,7 @@ sepa/basis/enableobj = FALSE
 
 sepa/basis/enableobjround = FALSE
 
-lp/solvefreq = 0
+
 
 lp/iterlim = -1
 

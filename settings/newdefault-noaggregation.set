@@ -1,10 +1,12 @@
-lp/solvefreq = 0
+
 
 lp/iterlim = -1
 
 lp/rootiterlim = -1
 
 conflict/enable = FALSE
+
+relaxing/gcg/aggregation = FALSE
 
 detectors/random/enabled = FALSE
 

@@ -12,7 +12,7 @@ sepa/basis/enableobjround = FALSE
 
 sepa/basis/enablenewconss = FALSE
 
-lp/solvefreq = 0
+
 
 lp/iterlim = -1
 

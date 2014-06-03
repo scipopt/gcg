@@ -14,7 +14,7 @@ sepa/basis/enableposslack = TRUE
 
 sepa/basis/posslackexp = 100
 
-lp/solvefreq = 0
+
 
 lp/iterlim = -1
 

@@ -13,7 +13,7 @@ sepa/basis/iterations = 10
 
 sepa/basis/aggressive = TRUE
 
-lp/solvefreq = 0
+
 
 lp/iterlim = -1
 
