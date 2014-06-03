@@ -1108,6 +1108,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONS* cons;
    SCIP_CONSDATA* consdata;
+   SCIP_CONS* curcons;
+   SCIP_CONSDATA* curconsdata;
    SCIP_Real val;
 
    int propcount;
@@ -1159,9 +1161,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    *result = SCIP_DIDNOTFIND;
 
    propcount = 0;
-
-   /* propagate all bound changes or only the branching bound changes, depending on the setting for the enforcement of proper variables */
-   nboundchanges = (conshdlrData->enforceproper ? consdata->nboundchanges : consdata->nbranchingchanges);
 
    assert((conshdlrData->npendingbnds > 0) || conshdlrData->pendingbndsactivated);
 
@@ -1239,17 +1238,20 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             assert(bndchgorigvars[0] != NULL);
             /* val is the value of the branching variable in the current mastervar,
              * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
-             * if we do not find the branching variable in this array, it has value 0.0 */
+             * if we do not find the branching variable in this array, it has value 0.0
+             */
             val = 0.0;
 
             for( j = 0; j < norigvars; j++ )
             {
                /* Make sure that the original variable and the master variable belong to the same block
-                * or that, in case of linking variables, the linking variable is in that block */
+                * or that, in case of linking variables, the linking variable is in that block
+                */
                assert(GCGvarGetBlock(origvars[j]) == blocknr || (GCGisLinkingVarInBlock(origvars[j], blocknr))); /*lint !e613*/
 
                /* check whether the original variable contained in the master variable equals the variable
-                * on which the current branching was performed */
+                * on which the current branching was performed
+                */
                if( origvars[j] == bndchgorigvars[0] ) /*lint !e613*/
                {
                   val = origvals[j];
@@ -1284,142 +1286,158 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       SCIPdebugMessage("Finished handling of pending global bound changes: %d changed bounds\n", propcount);
    }
 
-   /* iterate over all master variables created after the current node was left the last time */
-   for( i = consdata->propagatedvars; i < nvars; i++ )
+   /* propagate local bound changes on the path from the current node to the root */
+   curcons = cons;
+   while( curcons != NULL )
    {
-      SCIP_VAR** origvars;
-      int norigvars;
-      SCIP_Real* origvals;
-      int blocknr;
+      curconsdata = SCIPconsGetData(curcons);
+      assert(curconsdata != NULL);
 
-      assert(GCGvarIsMaster(vars[i]));
-      blocknr = GCGvarGetBlock(vars[i]);
-      assert(blocknr >= -1 && blocknr < GCGgetNPricingprobs(origscip));
+      /* propagate all bound changes or only the branching bound changes, depending on the setting for the enforcement of proper variables */
+      nboundchanges = (conshdlrData->enforceproper ? curconsdata->nboundchanges : curconsdata->nbranchingchanges);
 
-      origvals = GCGmasterVarGetOrigvals(vars[i]);
-      norigvars = GCGmasterVarGetNOrigvars(vars[i]);
-      origvars = GCGmasterVarGetOrigvars(vars[i]);
-      /** @todo check if this really works with linking variables */
-
-      /* only look at variables not already fixed to 0 or that belong to no block */
-      if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) && blocknr >= 0 )
-         continue;
-
-      /* the variable was copied from original to master */
-      /** @todo This code might never be executed as the vars array only contains variables generated
-        * during pricing. We might want to check that with an assert */
-      if( blocknr == -1 )
+      /* iterate over all master variables created after the current node was left the last time */
+      for( i = consdata->propagatedvars; i < nvars; i++ )
       {
-         /* iterate over bound changes performed at the current node's equivalent in the original tree */
-         for( k = 0; k < nboundchanges; k++ )
+         SCIP_VAR** origvars;
+         int norigvars;
+         SCIP_Real* origvals;
+         int blocknr;
+
+         assert(GCGvarIsMaster(vars[i]));
+         blocknr = GCGvarGetBlock(vars[i]);
+         assert(blocknr >= -1 && blocknr < GCGgetNPricingprobs(origscip));
+
+         origvals = GCGmasterVarGetOrigvals(vars[i]);
+         norigvars = GCGmasterVarGetNOrigvars(vars[i]);
+         origvars = GCGmasterVarGetOrigvars(vars[i]);
+         /** @todo check if this really works with linking variables */
+
+         /* ignore master variables that contain no original variables */
+         if( origvars == NULL || origvars[0] == NULL )
+            continue;
+
+         /* only look at variables not already fixed to 0 or that belong to no block */
+         if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) && blocknr >= 0 )
+            continue;
+
+         /* the variable was copied from original to master */
+         /** @todo This code might never be executed as the vars array only contains variables generated
+          * during pricing. We might want to check that with an assert */
+         if( blocknr == -1 )
          {
-            assert(SCIPisFeasEQ(scip, origvals[0], 1.0));
-            if( origvars[0] == consdata->boundchgvars[k] )
+            /* iterate over bound changes performed at the current node's equivalent in the original tree */
+            for( k = 0; k < nboundchanges; k++ )
             {
-               /* branching imposes new lower bound */
-               if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER
-                  && SCIPisGT(scip, consdata->newbounds[k], SCIPvarGetLbLocal(vars[i])) )
+               assert(SCIPisFeasEQ(scip, origvals[0], 1.0));
+               if( origvars[0] == curconsdata->boundchgvars[k] )
                {
-                  SCIP_CALL( SCIPchgVarLb(scip, vars[i], consdata->newbounds[k]) );
-                  propcount++;
-               }
-               /* branching imposes new upper bound */
-               if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER
-                  && SCIPisLT(scip, consdata->newbounds[k], SCIPvarGetUbLocal(vars[i])) )
-               {
-                  SCIP_CALL( SCIPchgVarUb(scip, vars[i], consdata->newbounds[k]) );
-                  propcount++;
+                  /* branching imposes new lower bound */
+                  if( curconsdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER
+                     && SCIPisGT(scip, curconsdata->newbounds[k], SCIPvarGetLbLocal(vars[i])) )
+                  {
+                     SCIP_CALL( SCIPchgVarLb(scip, vars[i], curconsdata->newbounds[k]) );
+                     propcount++;
+                  }
+                  /* branching imposes new upper bound */
+                  if( curconsdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER
+                     && SCIPisLT(scip, curconsdata->newbounds[k], SCIPvarGetUbLocal(vars[i])) )
+                  {
+                     SCIP_CALL( SCIPchgVarUb(scip, vars[i], curconsdata->newbounds[k]) );
+                     propcount++;
+                  }
                }
             }
          }
-      }
-      else
-      {
-         /* iterate over bound changes performed at the current node's equivalent in the original tree */
-         for( k = 0; k < nboundchanges; k++ )
+         else
          {
-#ifdef SCIP_DEBUG
-            SCIP_Bool contained = FALSE;
-            SCIP_Bool handled = FALSE;
-#endif
-            int bndchgblocknr;
-
-            /* get the block the original variable is in */
-            bndchgblocknr = GCGvarGetBlock(consdata->boundchgvars[k]);
-            assert(GCGvarIsOriginal(consdata->boundchgvars[k]));
-            assert(bndchgblocknr < GCGgetNPricingprobs(origscip));
-
-            /* ignore master variables that contain no original variables */
-            /** @todo move this statement one for loop higher? */
-            if( origvars == NULL || origvars[0] == NULL )
-               continue;
-
-            /* the boundchange was performed on a variable in another block, continue */
-            if( (!GCGvarIsLinking(consdata->boundchgvars[k]) && bndchgblocknr != blocknr) ||
-               (GCGvarIsLinking(consdata->boundchgvars[k]) && !GCGisLinkingVarInBlock(consdata->boundchgvars[k], blocknr)) )
-               continue;
-
-            assert(bndchgblocknr != -1);
-
-            /* val is the value of the branching variable in the current mastervar,
-             * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
-             * if we do not find the branching variable in this array, it has value 0.0 */
-            val = 0.0;
-
-            /* iterate over all original variables contained in the current master variable */
-            for( j = 0; j < norigvars; j++ )
+            /* iterate over bound changes performed at the current node's equivalent in the original tree */
+            for( k = 0; k < nboundchanges; k++ )
             {
-               assert(GCGvarGetBlock(origvars[j]) == blocknr || GCGisLinkingVarInBlock(origvars[j], blocknr));
-
-               /* check whether the original variable contained in the master variable equals the variable
-                * on which the current branching was performed */
-               if( origvars[j] == consdata->boundchgvars[k] )
-               {
 #ifdef SCIP_DEBUG
-                  contained = TRUE;
+               SCIP_Bool contained = FALSE;
+               SCIP_Bool handled = FALSE;
 #endif
-                  val = origvals[j];
+               int bndchgblocknr;
+
+               /* get the block the original variable is in */
+               bndchgblocknr = GCGvarGetBlock(curconsdata->boundchgvars[k]);
+               assert(GCGvarIsOriginal(curconsdata->boundchgvars[k]));
+               assert(bndchgblocknr < GCGgetNPricingprobs(origscip));
+
+               /* the boundchange was performed on a variable in another block, continue */
+               if( (!GCGvarIsLinking(curconsdata->boundchgvars[k]) && bndchgblocknr != blocknr) ||
+                  (GCGvarIsLinking(curconsdata->boundchgvars[k]) && !GCGisLinkingVarInBlock(curconsdata->boundchgvars[k], blocknr)) )
+                  continue;
+
+               assert(bndchgblocknr != -1);
+
+               /* val is the value of the branching variable in the current mastervar,
+                * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
+                * if we do not find the branching variable in this array, it has value 0.0
+                */
+               val = 0.0;
+
+               /* iterate over all original variables contained in the current master variable */
+               for( j = 0; j < norigvars; j++ )
+               {
+                  assert(GCGvarGetBlock(origvars[j]) == blocknr || GCGisLinkingVarInBlock(origvars[j], blocknr));
+
+                  /* check whether the original variable contained in the master variable equals the variable
+                   * on which the current branching was performed
+                   */
+                  if( origvars[j] == curconsdata->boundchgvars[k] )
+                  {
+#ifdef SCIP_DEBUG
+                     contained = TRUE;
+#endif
+                     val = origvals[j];
+                     break;
+                  }
+               }
+
+               /* if the variable contains a part of the branching variable that violates the bound,
+                * fix the master variable to 0
+                */
+
+               /* branching imposes new lower bound */
+               if( curconsdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER && SCIPisFeasLT(scip, val, curconsdata->newbounds[k]) )
+               {
+                  SCIPdebugMessage("Changing lower bound of var %s\n", SCIPvarGetName(vars[i]));
+                  SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
+                  propcount++;
+#ifdef SCIP_DEBUG
+                  handled = TRUE;
+#endif
                   break;
                }
-            }
-
-            /* if the variable contains a part of the branching variable that violates the bound,
-             * fix the master variable to 0 */
-
-            /* branching imposes new lower bound */
-            if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER && SCIPisFeasLT(scip, val, consdata->newbounds[k]) )
-            {
-               SCIPdebugMessage("Changing lower bound of var %s\n", SCIPvarGetName(vars[i]));
-               SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
-               propcount++;
-#ifdef SCIP_DEBUG
-               handled = TRUE;
-#endif
-               break;
-            }
-            /* branching imposes new upper bound */
-            if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER && SCIPisFeasGT(scip, val, consdata->newbounds[k]) )
-            {
-               SCIPdebugMessage("Changing upper bound of var %s\n", SCIPvarGetName(vars[i]));
-               SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
-               propcount++;
+               /* branching imposes new upper bound */
+               if( curconsdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER && SCIPisFeasGT(scip, val, curconsdata->newbounds[k]) )
+               {
+                  SCIPdebugMessage("Changing upper bound of var %s\n", SCIPvarGetName(vars[i]));
+                  SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
+                  propcount++;
 
 
 #ifdef SCIP_DEBUG
-               handled = TRUE;
+                  handled = TRUE;
 #endif
-               break;
-            }
+                  break;
+               }
 #ifdef SCIP_DEBUG
-            if( contained || !handled )
-            {
-               SCIPdebugMessage("orig var %s is contained in %s but not handled val = %f \n", SCIPvarGetName(consdata->boundchgvars[k]), SCIPvarGetName(vars[i]), val);
+               if( contained || !handled )
+               {
+                  SCIPdebugMessage("orig var %s is contained in %s but not handled val = %f \n", SCIPvarGetName(consdata->boundchgvars[k]), SCIPvarGetName(vars[i]), val);
 
-            }
-            assert(j == norigvars || contained);
+               }
+               assert(j == norigvars || contained);
 #endif
+            }
          }
       }
+
+      /* proceed with the parent node */
+      curcons = curconsdata->parentcons;
    }
    SCIPdebugMessage("Finished propagation of newly created variables: %d changed bounds\n", propcount);
 
