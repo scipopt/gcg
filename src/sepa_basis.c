@@ -351,7 +351,8 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
          newobj = 0.0;
       }
 
-      assert(SCIPgetObjsense(origscip) == SCIP_OBJSENSE_MINIMIZE);
+      newobj = SCIPgetObjsense(origscip) * newobj;
+
       /* if objective row is enabled consider also the original objective value */
       if(enableobj)
          newobj = newobj + SCIPvarGetObj(origvar);
@@ -484,6 +485,8 @@ SCIP_RETCODE chgProbingObjUsingRows(
       {
          obj = SCIPgetVarObjProbing(origscip, vars[j]);
          objadd = (factor * vals[j]) / norm;
+
+         objadd = SCIPgetObjsense(origscip) * objadd;
 
          SCIPchgVarObjProbing(origscip, vars[j], obj + (objfactor * objadd) / objdivisor);
       }
