@@ -175,17 +175,20 @@ SCIP_RETCODE solveKnapsack(
          /* Handle the cases where the transformation is not clear:
           *
           * a column with infinite upper bound (capacity not deducible) or
-          * a column column with negative weight and negative cost (should we add it?) or
+          * a column column with negative weight and negative cost (should we add it?)
           */
          if( SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])) )
          {
             *result = SCIP_STATUS_UNKNOWN;
             return SCIP_OKAY;
          }
-         if( SCIPisNegative(pricingprob, SCIPvarGetObj(consvars[i])) )
-            prelcapacity += (SCIP_Longint)SCIPfloor(pricingprob, consvals[i]* SCIPvarGetUbLocal(consvars[i]));
-         else
-            prelcapacity -= (SCIP_Longint)SCIPfloor(pricingprob, consvals[i]* SCIPvarGetUbLocal(consvars[i]));
+         else if( SCIPisNegative(pricingprob, SCIPvarGetObj(consvars[i])) )
+         {
+            *result = SCIP_STATUS_UNKNOWN;
+            return SCIP_OKAY;
+         }
+
+         prelcapacity -= (SCIP_Longint)SCIPfloor(pricingprob, consvals[i]* SCIPvarGetUbLocal(consvars[i]));
       }
    }
    SCIP_CALL( SCIPallocMemoryArray(pricingprob, &ubs, npricingprobvars) );
