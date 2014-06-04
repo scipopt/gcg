@@ -73,7 +73,7 @@ struct SCIP_SepaData
    int                   nlpcuts;            /**< number of cuts, which cut of the basic solution */
    int                   nprimalsols;        /**< number of primal solutions found */
    SCIP_Real             shifteddiffendgeom; /**< mean l2-norm difference between original solution and lp solution */
-   SCIP_Real             shifteddiffstartgeom;/**< mean l2-norm difference between original solution and dive lp solution */
+   SCIP_Real             shifteddiffstartgeom;/**< mean l2-norm difference between original solution and probing lp solution */
    SCIP_Real             shiftedconvexgeom;  /**< mean calculated convex coefficient */
    int                   ncalculatedconvex;  /**< number of calculated lp solution (and convex and l2 diff) */
    SCIP_Real             shiftediterationsfound; /**< mean number of iterations until usefull cuts were found */
@@ -90,9 +90,10 @@ struct SCIP_SepaData
    SCIP_Bool             chgobj;             /**< parameter returns if basis is searched with different objective */
    SCIP_Bool             chgobjallways;      /**< parameter returns if obj is not only changed in first iteration */
    SCIP_Bool             genobjconvex;       /**< parameter returns if objconvex is generated dynamically */
-   SCIP_Bool             enableposslack;     /**< parameter returns if positive slack should influence the dive objective function */
+   SCIP_Bool             enableposslack;     /**< parameter returns if positive slack should influence the probing objective function */
+   SCIP_Bool             forcecuts;          /**< parameter returns if cuts are forced to enter the LP */
    int                   posslackexp;        /**< parameter return exponent of usage of positive slack */
-   int                   iterations;         /**< parameter returns number of new rows adding iterations (rows just cut off dive lp sol) */
+   int                   iterations;         /**< parameter returns number of new rows adding iterations (rows just cut off probing lp sol) */
    int                   mincuts;            /**< parameter returns number of minimum cuts needed to return *result = SCIP_Separated */
    SCIP_Real             objconvex;          /**< parameter return convex combination factor */
    int                   ncgcut;             /**< number of cgcuts */
@@ -216,7 +217,7 @@ SCIP_Real exponentiate(
    return result;
 }
 
-/**< Initialize dive objective coefficient for each variable with original objective. */
+/**< Initialize probing objective coefficient for each variable with original objective. */
 static
 SCIP_RETCODE initProbingObjWithOrigObj(
    SCIP*                origscip,           /**< orig scip problem */
@@ -252,14 +253,14 @@ SCIP_RETCODE initProbingObjWithOrigObj(
    return SCIP_OKAY;
 }
 
-/**< Change dive objective coefficient for each variable by adding original objective
- *   to the dive objective.
+/**< Change probing objective coefficient for each variable by adding original objective
+ *   to the probing objective.
  */
 static
 SCIP_RETCODE chgProbingObjAddingOrigObj(
    SCIP*                origscip,           /**< orig scip problem */
-   SCIP_Real            objfactor,          /**< factor the objective is multiplied with */
-   SCIP_Real            objdivisor          /**< factor the objective is divided with */
+   SCIP_Real            objfactor,          /**< factor the additional part of the objective is multiplied with */
+   SCIP_Real            objdivisor          /**< factor the additional part of the objective is divided with */
 )
 {
    SCIP_VAR** origvars;
@@ -280,18 +281,18 @@ SCIP_RETCODE chgProbingObjAddingOrigObj(
       /* get variable information */
       origvar = origvars[i];
 
-      newobj = SCIPgetVarObjProbing(origscip, origvar) + SCIPvarGetObj(origvar);
+      newobj = SCIPgetVarObjProbing(origscip, origvar) + (objfactor * SCIPvarGetObj(origvar))/ objdivisor ;
 
-      SCIPchgVarObjProbing(origscip, origvar, (objfactor * newobj)/objdivisor);
+      SCIPchgVarObjProbing(origscip, origvar, newobj);
    }
    return SCIP_OKAY;
 }
 
-/**< Initialize dive objective coefficient for each variable depending on the current origsol.
+/**< Initialize probing objective coefficient for each variable depending on the current origsol.
  *
  *   If variable is at upper bound set objective to -1, if variable is at lower bound set obj to 1,
  *   else set obj to 0.
- *   Additionally, add original objective to the dive objective if this is enabled.
+ *   Additionally, add original objective to the probing objective if this is enabled.
  */
 static
 SCIP_RETCODE initProbingObjUsingVarBounds(
@@ -338,11 +339,15 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
       /* if solution value of variable is at ub or lb initialize objective value of the variable
        * such that the difference to this bound is minimized
        */
-      if(SCIPisLT(origscip, ub, SCIPinfinity(origscip)) && SCIPisLE(origscip, ub, solval))
+      if( SCIPisEQ(origscip, lb, ub) )
+      {
+         newobj = 0.0;
+      }
+      else if( SCIPisLT(origscip, ub, SCIPinfinity(origscip)) && SCIPisLE(origscip, ub, solval) )
       {
          newobj = -1.0;
       }
-      else if(SCIPisGT(origscip, lb, -SCIPinfinity(origscip)) && SCIPisGE(origscip, lb, solval))
+      else if(SCIPisGT(origscip, lb, -SCIPinfinity(origscip)) && SCIPisGE(origscip, lb, solval) )
       {
          newobj = 1.0;
       }
@@ -372,6 +377,7 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
          newobj = 0.0;
       }
 
+      assert(SCIPgetObjsense(origscip) == SCIP_OBJSENSE_MINIMIZE);
       /* if objective row is enabled consider also the original objective value */
       if(enableobj)
          newobj = newobj + SCIPvarGetObj(origvar);
@@ -382,7 +388,7 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
    return SCIP_OKAY;
 }
 
-/* Change dive objective depending on the current origsol.
+/* Change probing objective depending on the current origsol.
  *
  * Loop over all constraints lhs <= sum a_i*x_i <= rhs. If lhs == sum a_i*x_i^* add a_i to objective
  * of variable i and if rhs == sum a_i*x_i^* add -a_i to objective of variable i.
@@ -503,9 +509,9 @@ SCIP_RETCODE chgProbingObjUsingRows(
       for(j = 0; j < nvars; ++j)
       {
          obj = SCIPgetVarObjProbing(origscip, vars[j]);
-         objadd = (objfactor * factor * vals[j]) / norm;
+         objadd = (factor * vals[j]) / norm;
 
-         SCIPchgVarObjProbing(origscip, vars[j], obj + /*objsense **/ objadd / objdivisor);
+         SCIPchgVarObjProbing(origscip, vars[j], obj + (objfactor * objadd) / objdivisor);
       }
    }
 
@@ -685,8 +691,6 @@ SCIP_RETCODE getEqualityMatrixGsl(
    int nvar2col;
    int ndelvars;
 
-   int maxrows;
-
    SCIP_ROW** lprows;
    int nlprows;
 
@@ -701,8 +705,6 @@ SCIP_RETCODE getEqualityMatrixGsl(
    lprows = SCIPgetLPRows(scip);
    nlpcols = SCIPgetNLPCols(scip);
    lpcols = SCIPgetLPCols(scip);
-
-   maxrows = STARTMAXCUTS;
 
    *nrows = 0;
 
@@ -1054,11 +1056,9 @@ SCIP_RETCODE getRank(
    gsl_permutation* permutation;
 
    int ranktmp;
-   int dimnullspacetmp;
    int signum;
 
    int i;
-   int j;
 
    matrixq = gsl_matrix_alloc(nrows, nrows);
    matrixr = gsl_matrix_alloc(nrows, ncols);
@@ -1113,7 +1113,6 @@ SCIP_RETCODE getEqualityRankGsl(
    int nrows;
    int ncols;
 
-   int* basisrows;
    int prerank;
    int rowrank;
 
@@ -1241,7 +1240,7 @@ SCIP_RETCODE addPPObjConss(
          SCIPdebug( SCIPprintRow(scip, origcut, NULL) );
 
          SCIP_CALL( SCIPaddRowProbing(scip, origcut) );
-         SCIPdebugMessage("cut added to dive\n");
+         SCIPdebugMessage("cut added to probing\n");
 
       }
       SCIP_CALL(SCIPreleaseRow(scip, &origcut) );
@@ -1546,8 +1545,6 @@ SCIP_RETCODE initConvObj(
    return SCIP_OKAY;
 }
 
-
-
 /** LP solution separation method of separator */
 static
 SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
@@ -1571,6 +1568,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_Real* vals;
    int nmastervars;
 
+   SCIP_RESULT resultdummy;
    SCIP_OBJSENSE objsense;
    SCIP_SOL* origsol;
    SCIP_Bool feasible;
@@ -1634,6 +1632,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       return SCIP_OKAY;
    }
 
+   if( GCGgetNRelPricingprobs(origscip) < GCGgetNPricingprobs(origscip) )
+   {
+      SCIPdebugMessage("aggregated pricing problems, do no separation!\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPgetRealParam(origscip, "separating/minefficacy", &mineff) );
    SCIP_CALL( SCIPgetRealParam(origscip, "separating/minefficacyroot", &mineffroot) );
    SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineffroot) );
@@ -1653,10 +1658,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    obj = SCIPgetSolOrigObj(origscip, origsol);
 
    /** get number of linearly independent rows needed for basis */
-   if( sepadata->genobjconvex )
-   {
-      SCIP_CALL(getRowRank(origscip, &nbasis));
-   }
+   nbasis = SCIPgetNLPCols(origscip);
 
    *result = SCIP_DIDNOTFIND;
 
@@ -1683,20 +1685,22 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /** add origcuts to probing lp */
    for( i = 0; i < GCGsepaGetNCuts(scip); ++i )
    {
-      SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOrigcuts(scip)[i]) );
+      if( SCIProwGetLPPos(GCGsepaGetOrigcuts(scip)[i]) == -1 )
+         SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOrigcuts(scip)[i]) );
    }
 
    /** add new cuts which did not cut off master sol to probing lp */
    for( i = 0; i < sepadata->nnewcuts; ++i )
    {
-      SCIP_CALL( SCIPaddRowProbing(origscip, sepadata->newcuts[i]) );
+      if( SCIProwGetLPPos(sepadata->newcuts[i]) == -1 )
+         SCIP_CALL( SCIPaddRowProbing(origscip, sepadata->newcuts[i]) );
    }
 
    /* store numeber of lp rows in the beginning */
    nlprowsstart = SCIPgetNLPRows(origscip);
 
    /* while the counter is smaller than the number of allowed iterations,
-    * try to separate origsol via dive lp sol */
+    * try to separate origsol via probing lp sol */
    while( iteration < sepadata->iterations )
    {
       SCIP_CALL( SCIPapplyCutsProbing(origscip, &cutoff) );
@@ -1717,7 +1721,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       }
 
       /* init objective */
-      if( sepadata->chgobj )
+      if( sepadata->chgobj && (iteration == 0 || sepadata->chgobjallways) )
       {
          if( sepadata->genobjconvex )
          {
@@ -1732,7 +1736,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          }
       }
 
-      /* update rhs/lhs of objective constraint and add it to dive LP, if it exists (only in first iteration) */
+      /* update rhs/lhs of objective constraint and add it to probing LP, if it exists (only in first iteration) */
       if( enableobj && iteration == 0 )
       {
          /* round rhs/lhs of objective constraint, if it exists, obj is integral and this is enabled */
@@ -1759,11 +1763,11 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             SCIP_CALL( SCIPchgRowLhs(origscip, sepadata->objrow, obj) );
             SCIP_CALL( SCIPchgRowRhs(origscip, sepadata->objrow, SCIPinfinity(origscip)) );
          }
-         /** add row to dive lp */
+         /** add row to probing lp */
          SCIP_CALL( SCIPaddRowProbing(origscip, sepadata->objrow) );
       }
 
-      /* solve dive lp */
+      /* solve probing lp */
       SCIP_CALL( SCIPsolveProbingLP(origscip, -1, &lperror, &cutoff) );
 
 
@@ -1805,13 +1809,22 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             SCIPdebugMessage("%s = %d\n", paramname, 0);
          }
       }
-      /** separate current dive lp sol of origscip */
+
+      /** separate current probing lp sol of origscip */
       SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, FALSE, &delayed, &cutoff) );
 
       if( delayed && !cutoff )
       {
          SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, TRUE, &delayed, &cutoff) );
       }
+
+      /* separate cuts in cutpool */
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, &resultdummy) );
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), NULL, &resultdummy) );
+
+      /* separate cuts in cutpool */
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, &resultdummy) );
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, &resultdummy) );
 
       /* if cut off is detected set result pointer and return SCIP_OKAY */
       if( cutoff )
@@ -1948,7 +1961,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
          /* add the cut to the master problem and to the master cut storage */
-         SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, FALSE, &infeasible) );
+         SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, sepadata->forcecuts, &infeasible) );
          sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
          SCIP_CALL( SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->nmastercuts]) );
          sepadata->nmastercuts++;
@@ -2127,7 +2140,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
          &(sepadata->enableppobjcg), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/genobjconvex", "generated obj convex dynamically",
          &(sepadata->genobjconvex), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableposslack", "should positive slack influence the dive objective function?",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableposslack", "should positive slack influence the probing objective function?",
          &(sepadata->enableposslack), FALSE, FALSE, NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexp", "exponent of positive slack usage",
          &(sepadata->posslackexp), FALSE, 1, 1, INT_MAX, NULL, NULL);
@@ -2138,11 +2151,13 @@ SCIP_RETCODE SCIPincludeSepaBasis(
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobj", "parameter returns if basis is searched with different objective",
       &(sepadata->chgobj), FALSE, TRUE, NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/iterations", "parameter returns if number new rows adding"
-      "iterations (rows just cut off dive lp sol)", &(sepadata->iterations), FALSE, 100, 1, 10000000 , NULL, NULL);
+      "iterations (rows just cut off probing lp sol)", &(sepadata->iterations), FALSE, 100, 1, 10000000 , NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/mincuts", "parameter returns number of minimum cuts needed to "
       "return *result = SCIP_Separated", &(sepadata->mincuts), FALSE, 1, 1, 100, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobjallways", "parameter returns if obj is changed not only in the first iteration",
       &(sepadata->chgobjallways), FALSE, FALSE, NULL, NULL);
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/forcecuts", "parameter returns if cuts are forced to enter the LP ",
+      &(sepadata->forcecuts), FALSE, FALSE, NULL, NULL);
 
    return SCIP_OKAY;
 }
