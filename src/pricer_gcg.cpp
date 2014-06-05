@@ -1013,7 +1013,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          consvals = SCIProwGetVals(origcuts[i]);
 
          /* get the variables corresponding to the columns in the cut */
-         SCIP_CALL( SCIPallocMemoryArray(scip, &consvars, nconsvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip_, &consvars, nconsvars) );
          for( j = 0; j < nconsvars; j++ )
             consvars[j] = SCIPcolGetVar(cols[j]);
 
@@ -1039,7 +1039,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
                                    SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol, -1.0 * consvals[j]* pricetype->consGetDual(scip_, masterconss[i]));*/
             }
          }
-         SCIPfreeMemoryArray(scip, &consvars);
+         SCIPfreeMemoryArray(scip_, &consvars);
       }
    }
 
