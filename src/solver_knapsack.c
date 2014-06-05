@@ -358,7 +358,9 @@ SCIP_RETCODE solveKnapsack(
 
    *nsols = 1;
 
-   *lowerbound = SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MAXIMIZE? solval:-solval;
+   solval = SCIPgetSolOrigObj(pricingprob, sols[0]);
+
+   *lowerbound = solval;
 
    *result = SCIP_STATUS_OPTIMAL;
 
