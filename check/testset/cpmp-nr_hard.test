@@ -1,14 +1,9 @@
-database/problems/cpmp/testsets/optlab/data/cpmp/p20200/p20200-37.txt.lp.gz
-database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/110/p10100-11.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p10100/p10100-20.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p15150/p15150-22.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p15150/p15150-27.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p20200/p20200-32.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p20200/p20200-34.txt.lp.gz
-database/problems/cpmp/testsets/optlab/data/cpmp/p20200/p20200-38.txt.lp.gz
-database/problems/cpmp/testsets/optlab/data/cpmp/p25100/p25100-11.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p25100/p25100-13.txt.lp.gz
-database/problems/cpmp/testsets/optlab/data/cpmp/p25100/p25100-14.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p25100/p25100-16.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p25100/p25100-20.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p33100/p33100-12.txt.lp.gz
@@ -21,10 +16,8 @@ database/problems/cpmp/testsets/optlab/data/cpmp/p36150/p36150-23.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p36150/p36150-28.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p37150/p37150-23.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p37150/p37150-27.txt.lp.gz
-database/problems/cpmp/testsets/optlab/data/cpmp/p37150/p37150-28.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p37150/p37150-30.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p40100/p40100-12.txt.lp.gz
-database/problems/cpmp/testsets/optlab/data/cpmp/p40100/p40100-17.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p50150/p50150-21.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p50150/p50150-22.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p50150/p50150-23.txt.lp.gz
@@ -46,8 +39,8 @@ database/problems/cpmp/testsets/optlab/data/cpmp/p60150/p60150-24.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p60150/p60150-25.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p60150/p60150-27.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p60150/p60150-28.txt.lp.gz
-database/problems/cpmp/testsets/optlab/data/cpmp/p60150/p60150-29.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p60150/p60150-30.txt.lp.gz
+database/problems/cpmp/testsets/optlab/data/cpmp/p66200/p66200-31.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p66200/p66200-32.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p66200/p66200-33.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/p66200/p66200-34.txt.lp.gz
@@ -82,10 +75,8 @@ database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/110/p40100-16.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/110/p40100-17.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/110/p40100-18.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/110/p40100-19.txt.lp.gz
-database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/115/p10100-11.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/115/p10100-20.txt.lp.gz
-database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/115/p40100-11.txt.lp.gz
-database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/115/p40100-12.txt.lp.gz
+database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/115/p40100-11.txt.lp.gz´
 database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/115/p40100-13.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/115/p40100-16.txt.lp.gz
 database/problems/cpmp/testsets/optlab/data/cpmp/LOWCAP/115/p40100-17.txt.lp.gz
