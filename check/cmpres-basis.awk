@@ -240,6 +240,10 @@ BEGIN {
    markbetterrootdbs = 0.1;
    markworserootdbs  = 0.1;
 
+   rootgapgeomshift = 1.0;
+   markbetterrootgaps = 0.1;
+   markworserootgaps  = 0.1;
+
    problistlen = 0;
    nsolver = 0;
    nprobs[nsolver] = 0;
@@ -442,6 +446,27 @@ BEGIN {
       dualbound[nsolver,nprobs[nsolver]] = max(min($11, +infinity), -infinity);
       primalbound[nsolver,nprobs[nsolver]] = max(min($12, +infinity), -infinity);
       gap[nsolver,nprobs[nsolver]] = $13;
+
+      pb = primalbound[nsolver,nprobs[nsolver]];
+      db = rootdbs[nsolver,nprobs[nsolver]];
+
+      if( abs(pb - db) < 1e-06 && pb < +1e+20 ) {
+         rootgap = 0.0;
+      }
+      else if( abs(db) < 1e-06 )
+         rootgap = -1.0;
+      else if( abs(pb) < 1e-06 )
+         rootgap = -1.0;
+      else if( pb*db < 0.0 )
+         rootgap = -1.0;
+      else if( abs(db) >= +1e+20 )
+         rootgap = -1.0;
+      else if( abs(pb) >= +1e+20 )
+         rootgap = -1.0;
+      else
+         rootgap = 100.0*abs((pb-db)/min(abs(db),abs(pb)));
+
+      rootgaps[nsolver,nprobs[nsolver]] = rootgap;
       iters[nsolver,nprobs[nsolver]] = $19;
       nodes[nsolver,nprobs[nsolver]] = max($20,1);
       time[nsolver,nprobs[nsolver]] = fracceil(max($21,mintime),0.1);
@@ -538,6 +563,13 @@ END {
          refrootdbgeom[s,cat] = 1.0;
          refrootdbshiftedgeom[s,cat] = rootdbgeomshift;
 
+         rootgaptotal[s,cat] = 0.0;
+         rootgapgeom[s,cat] = 1.0;
+         rootgapshiftedgeom[s,cat] = rootgapgeomshift;
+         refrootgaptotal[s,cat] = 0.0;
+         refrootgapgeom[s,cat] = 1.0;
+         refrootgapshiftedgeom[s,cat] = rootgapgeomshift;
+
          wins[s,cat] = 0;
          nsolved[s,cat] = 0;
          ntimeouts[s,cat] = 0;
@@ -570,6 +602,9 @@ END {
 
    bestrootdbgeom = 1.0;
    bestrootdbshiftedgeom = rootdbgeomshift;
+
+   bestrootgapgeom = 1.0;
+   bestrootgapshiftedgeom = rootgapgeomshift;
 
    # calculate the order in which the columns should be printed: CPLEX < SCIP, default < non-default
    # ignore the first column as this is the reference column
@@ -750,6 +785,10 @@ END {
       bestrootdbs = +infinity;
       worstrootdbs = -infinity;
 
+      rootgapcomp = -1;
+      bestrootgaps = +infinity;
+      worstrootgaps = -infinity;
+
       # check for exclusion
       if( excluded[p] )
       {
@@ -813,6 +852,9 @@ END {
 
     	    bestrootdbs = min(bestrootdbs, rootdbs[s,pidx]);
             worstrootdbs = max(worstrootdbs, rootdbs[s,pidx]);
+
+    	    bestrootgaps = min(bestrootgaps, rootgaps[s,pidx]);
+            worstrootgaps = max(worstrootgaps, rootgaps[s,pidx]);
          }
          else
             countprob = 0;
@@ -868,6 +910,8 @@ END {
             bcutcomp = bcuts[s,pidx];
 
             rootdbcomp = rootdbs[s,pidx];
+
+            rootgapcomp = rootgaps[s,pidx];
          }
          iseqpath = (iters[s,pidx] == itercomp && nodes[s,pidx] == nodecomp);
          hastimeout = timeoutcomp || hitlimit[s,pidx];
@@ -1089,6 +1133,8 @@ END {
 
             refrootdbs = rootdbs[ref,probidx[p,ref]];
 
+            refrootgaps = rootgaps[ref,probidx[p,ref]];
+
             for( o = 0; o < nsolver; ++o )
             {
                s = printorder[o];
@@ -1120,6 +1166,13 @@ END {
                else
                   rootdbcolor = "black";
 
+               if( rootgaps[s,pidx] < 0.5*refrootgaps && !hitlimit[s,pidx] )
+                  rootgapcolor = "blue";
+               else if( rootgaps[s,pidx] > 2.0*refrootgaps && !refhitlimit )
+                  rootgapcolor = "red";
+               else
+                  rootgapcolor = "black";
+
                if( (time[s,pidx] <= 0.5*reftime && !hitlimit[s,pidx]) ||
                   (!hitlimit[s,pidx] && refhitlimit) )
                   timecolor = "blue";
@@ -1132,7 +1185,7 @@ END {
                if( status[s,pidx] == "ok" || status[s,pidx] == "unknown" || status[s,pidx] == "timeout" || status[s,pidx] == "memlimit" || status[s,pidx] == "nodelimit" )
                   printf("&\\textcolor{%s}{%s %8s} &\\textcolor{%s}{%s %8.1f}&\\textcolor{%s}{%8.1f}&\\textcolor{%s}{%8s}",
                      nodecolor, timeoutmarker, texint(nodes[s,pidx]), timecolor, timeoutmarker, time[s,pidx], 
-                     rootdbcolor, rootdbs[s,pidx], bcutcolor, texint(bcuts[s,pidx])) > texcmpfile;
+                     rootgapcolor, rootgaps[s,pidx], bcutcolor, texint(bcuts[s,pidx])) > texcmpfile;
                else
                   printf("&        --- &        --- &       --- &      ---") > texcmpfile;
             }
@@ -1158,6 +1211,9 @@ END {
          refbcuts = bcuts[printorder[0],probidx[p,printorder[0]]];
 
          refrootdbs = rootdbs[printorder[0],probidx[p,printorder[0]]];
+
+         refrootgaps = rootgaps[printorder[0],probidx[p,printorder[0]]];
+
          for( s = 0; s < nsolver; ++s )
          {
             pidx = probidx[p,s];
@@ -1205,6 +1261,13 @@ END {
                refrootdbgeom[s,cat] = refrootdbgeom[s,cat]^((nep-1)/nep) * refrootdbs^(1.0/nep);
                refrootdbshiftedgeom[s,cat] = refrootdbshiftedgeom[s,cat]^((nep-1)/nep) * (refrootdbs+rootdbgeomshift)^(1.0/nep);
 
+               rootgaptotal[s,cat] += rootgaps[s,pidx];
+               rootgapgeom[s,cat] = rootgapgeom[s,cat]^((nep-1)/nep) * rootgaps[s,pidx]^(1.0/nep);
+               rootgapshiftedgeom[s,cat] = rootgapshiftedgeom[s,cat]^((nep-1)/nep) * (rootgaps[s,pidx]+rootgapgeomshift)^(1.0/nep);
+               refrootgaptotal[s,cat] += refrootgaps;
+               refrootgapgeom[s,cat] = refrootgapgeom[s,cat]^((nep-1)/nep) * refrootgaps^(1.0/nep);
+               refrootgapshiftedgeom[s,cat] = refrootgapshiftedgeom[s,cat]^((nep-1)/nep) * (refrootgaps+rootgapgeomshift)^(1.0/nep);
+
               if( time[s,pidx] <= wintolerance*besttime )
                   wins[s,cat]++;
                if( !hitlimit[s,pidx] && (isfaster(time[s,pidx], reftime, wintolerance) || refhitlimit))
@@ -1240,6 +1303,9 @@ END {
 
          bestrootdbgeom = bestrootdbgeom^((nevalprobs[s,0]-1)/nevalprobs[s,0]) * bestrootdbs^(1.0/nevalprobs[s,0]);
          bestrootdbshiftedgeom = bestrootdbshiftedgeom^((nevalprobs[s,0]-1)/nevalprobs[s,0]) * (bestrootdbs+rootdbgeomshift)^(1.0/nevalprobs[s,0]);
+
+         bestrootgapgeom = bestrootgapgeom^((nevalprobs[s,0]-1)/nevalprobs[s,0]) * bestrootgaps^(1.0/nevalprobs[s,0]);
+         bestrootgapshiftedgeom = bestrootgapshiftedgeom^((nevalprobs[s,0]-1)/nevalprobs[s,0]) * (bestrootgaps+rootgapgeomshift)^(1.0/nevalprobs[s,0]);
 
          if( hasbetter )
             bestbetter++;
@@ -1282,6 +1348,13 @@ END {
                refrootdbtotal[s,cat] += refrootdbs;
                refrootdbgeom[s,cat] = refrootdbgeom[s,cat]^((nep-1)/nep) * refrootdbs^(1.0/nep);
                refrootdbshiftedgeom[s,cat] = refrootdbshiftedgeom[s,cat]^((nep-1)/nep) * (refrootdbs+rootdbgeomshift)^(1.0/nep);
+
+               rootgaptotal[s,cat] += rootgaps[s,pidx];
+               rootgapgeom[s,cat] = rootgapgeom[s,cat]^((nep-1)/nep) * rootgaps[s,pidx]^(1.0/nep);
+               rootgapshiftedgeom[s,cat] = rootgapshiftedgeom[s,cat]^((nep-1)/nep) * (rootgaps[s,pidx]+rootgapgeomshift)^(1.0/nep);
+               refrootgaptotal[s,cat] += refrootgaps;
+               refrootgapgeom[s,cat] = refrootgapgeom[s,cat]^((nep-1)/nep) * refrootgaps^(1.0/nep);
+               refrootgapshiftedgeom[s,cat] = refrootgapshiftedgeom[s,cat]^((nep-1)/nep) * (refrootgaps+rootgapgeomshift)^(1.0/nep);
 
                if( time[s,pidx] <= wintolerance*besttime )
                   wins[s,cat]++;
@@ -1366,6 +1439,9 @@ END {
    rootdbgeomcomp = -1;
    rootdbtotalcomp = -1;
 
+   rootgapgeomcomp = -1;
+   rootgaptotalcomp = -1;
+
    for( o = 0; o < nsolver; ++o )
    {
       s = printorder[o];
@@ -1400,6 +1476,11 @@ END {
             rootdbgeomcomp = rootdbgeom[s,0];
          if( rootdbtotalcomp < 0 )
             rootdbtotalcomp = rootdbtotal[s,0];
+
+         if( rootgapgeomcomp < 0 )
+            rootgapgeomcomp = rootgapgeom[s,0];
+         if( rootgaptotalcomp < 0 )
+            rootgaptotalcomp = rootgaptotal[s,0];
       }
       else
       {
@@ -1418,7 +1499,10 @@ END {
 
    bcutshiftedgeomcomp = -1;
 
+
    rootdbshiftedgeomcomp = -1;
+
+   rootgapshiftedgeomcomp = -1;
    for( o = 0; o < nsolver; ++o )
    {
       s = printorder[o];
@@ -1446,6 +1530,11 @@ END {
          #rootdbshiftedgeom[s,cat] = max(rootdbshiftedgeom[s,cat], 1);
          refrootdbshiftedgeom[s,cat] -= rootdbgeomshift;
          #refrootdbshiftedgeom[s,cat] = max(refrootdbshiftedgeom[s,cat], mintime);
+
+         rootgapshiftedgeom[s,cat] -= rootgapgeomshift;
+         #rootgapshiftedgeom[s,cat] = max(rootgapshiftedgeom[s,cat], 1);
+         refrootgapshiftedgeom[s,cat] -= rootgapgeomshift;
+         #refrootgapshiftedgeom[s,cat] = max(refrootgapshiftedgeom[s,cat], mintime);
       }
       if( o == 0 || short )
       {
@@ -1467,6 +1556,9 @@ END {
 
          if( rootdbshiftedgeomcomp < 0 )
             rootdbshiftedgeomcomp = rootdbshiftedgeom[s,0];
+
+         if( rootgapshiftedgeomcomp < 0 )
+            rootgapshiftedgeomcomp = rootgapshiftedgeom[s,0];
       }
       else
       {
@@ -1487,6 +1579,9 @@ END {
 
    bestrootdbshiftedgeom -= rootdbgeomshift;
    #bestrootdbshiftedgeom = max(bestrootdbshiftedgeom, 1.0);
+
+   bestrootgapshiftedgeom -= rootgapgeomshift;
+   #bestrootgapshiftedgeom = max(bestrootgapshiftedgeom, 1.0);
 
    printf("\n");
 
@@ -1533,21 +1628,21 @@ END {
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodegeom[s,0]), timegeom[s,0], rootdbgeom[s,0], bcutgeom[s,0]) > texcmpfile;
+         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodegeom[s,0]), timegeom[s,0], rootgapgeom[s,0], bcutgeom[s,0]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("sh. geom. mean ") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodeshiftedgeom[s,0]), timeshiftedgeom[s,0], rootdbshiftedgeom[s,0], bcutshiftedgeom[s,0]) > texcmpfile;
+         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodeshiftedgeom[s,0]), timeshiftedgeom[s,0], rootgapshiftedgeom[s,0], bcutshiftedgeom[s,0]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("arithm. mean   ") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodetotal[s,0]/nevalprobs[s,0]), timetotal[s,0]/nevalprobs[s,0], rootdbtotal[s,0]/nevalprobs[s,0], bcuttotal[s,0]/nevalprobs[s,0]) > texcmpfile;
+         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodetotal[s,0]/nevalprobs[s,0]), timetotal[s,0]/nevalprobs[s,0], rootgaptotal[s,0]/nevalprobs[s,0], bcuttotal[s,0]/nevalprobs[s,0]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
 
@@ -1558,21 +1653,21 @@ END {
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodegeom[s,-1]), timegeom[s,-1], rootdbgeom[s,-1], bcutgeom[s,-1]) > texcmpfile;
+         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodegeom[s,-1]), timegeom[s,-1], rootgapgeom[s,-1], bcutgeom[s,-1]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("sh. geom. mean ") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodeshiftedgeom[s,-1]), timeshiftedgeom[s,-1], rootdbshiftedgeom[s,-1], bcutshiftedgeom[s,-1]) > texcmpfile;
+         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodeshiftedgeom[s,-1]), timeshiftedgeom[s,-1], rootgapshiftedgeom[s,-1], bcutshiftedgeom[s,-1]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("arithm. mean   ") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodetotal[s,-1]/nevalprobs[s,-1]), timetotal[s,-1]/nevalprobs[s,-1], rootdbtotal[s,-1]/nevalprobs[s,-1], bcuttotal[s,-1]/nevalprobs[s,-1]) > texcmpfile;
+         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodetotal[s,-1]/nevalprobs[s,-1]), timetotal[s,-1]/nevalprobs[s,-1], rootgaptotal[s,-1]/nevalprobs[s,-1], bcuttotal[s,-1]/nevalprobs[s,-1]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("\\bottomrule\n") > texcmpfile;
@@ -1607,6 +1702,9 @@ END {
 
                rootdbgeomcomp = rootdbgeom[s,cat];
                rootdbshiftedgeomcomp = rootdbshiftedgeom[s,cat];
+
+               rootgapgeomcomp = rootgapgeom[s,cat];
+               rootgapshiftedgeomcomp = rootgapshiftedgeom[s,cat];
             }
             if( (o > 0 || cat == 0 || cat == -1) && nevalprobs[s,cat] > 0 )
             {
@@ -1656,6 +1754,9 @@ END {
 
             rootdbgeomcomp = rootdbgeom[s,cat];
             rootdbshiftedgeomcomp = rootdbshiftedgeom[s,cat];
+
+            rootgapgeomcomp = rootgapgeom[s,cat];
+            rootgapshiftedgeomcomp = rootgapshiftedgeom[s,cat];
          }
          if( (o > 0 || cat == 0 || cat == -1) && nevalprobs[s,cat] > 0 )
          {
@@ -1804,7 +1905,7 @@ END {
       texsummaryfiletime = texsummarypath texsummarybase "_time.tex";
       texsummaryfilenodes = texsummarypath texsummarybase "_nodes.tex";
       texsummaryfilebcuts = texsummarypath texsummarybase "_bcuts.tex";
-      texsummaryfilerootdbs = texsummarypath texsummarybase "_rootdbs.tex";
+      texsummaryfilerootgaps = texsummarypath texsummarybase "_rootgaps.tex";
 
       if( texsummaryheader > 0 )
       {
@@ -1851,7 +1952,7 @@ END {
             if( si == 0 || si == 4 )
             {
                printf("\\midrule\n") > texsummaryfile;
-               printf("\\input{Tables/mip/auto/%s_rootdbs}\n", texsummarybase) > texsummaryfile;
+               printf("\\input{Tables/mip/auto/%s_rootgaps}\n", texsummarybase) > texsummaryfile;
             }
             printf("\\bottomrule\n") >> texsummaryfile;
             printf("\\end{tabular*}\n") >> texsummaryfile;
@@ -1864,8 +1965,8 @@ END {
             1.5*(texsummaryheader+1)) > texsummaryfilenodes;
          printf("\\raisebox{-%.1fex}[0em][0em]{\\rotatebox{90}{\\makebox[3em]{bcuts}}}",
             1.5*(texsummaryheader+1)) > texsummaryfilebcuts;
-         printf("\\raisebox{-%.1fex}[0em][0em]{\\rotatebox{90}{\\makebox[3em]{rootdbs}}}",
-            1.5*(texsummaryheader+1)) > texsummaryfilerootdbs;
+         printf("\\raisebox{-%.1fex}[0em][0em]{\\rotatebox{90}{\\makebox[3em]{rootgaps}}}",
+            1.5*(texsummaryheader+1)) > texsummaryfilerootgaps;
       }
       printf("& \\testset{%s}", textestset) >> texsummaryfiletime;
       for( o = 1; o < nsolver; o++ )
@@ -1900,16 +2001,16 @@ END {
       }
       printf("\\\\\n") > texsummaryfilebcuts;
 
-      printf("& \\testset{%s}", textestset) >> texsummaryfilerootdbs;
+      printf("& \\testset{%s}", textestset) >> texsummaryfilerootgaps;
       for( o = 1; o < nsolver; o++ )
       {
          s = printorder[o];
          if( texsummaryshifted )
-            printf(" & %s", texcompstr(rootdbshiftedgeom[s,0], refrootdbshiftedgeom[s,0])) > texsummaryfilerootdbs;
+            printf(" & %s", texcompstr(rootgapshiftedgeom[s,0], refrootgapshiftedgeom[s,0])) > texsummaryfilerootgaps;
          else
-            printf(" & %s", texcompstr(rootdbgeom[s,0], refrootdbgeom[s,0])) > texsummaryfilerootdbs;
+            printf(" & %s", texcompstr(rootgapgeom[s,0], refrootgapgeom[s,0])) > texsummaryfilerootgaps;
       }
-      printf("\\\\\n") > texsummaryfilerootdbs;
+      printf("\\\\\n") > texsummaryfilerootgaps;
 
       # add tex comment to summary file which is later be used to generate overall statistics
       for( o = 1; o < nsolver; o++ )

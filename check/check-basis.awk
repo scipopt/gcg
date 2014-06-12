@@ -406,7 +406,7 @@ BEGIN {
    insepas = 1;			
 }
 
-/^  base             :/ {
+/^  basis            :/ {
    if( inmasterprob && insepas )
    {
 
@@ -418,7 +418,7 @@ BEGIN {
 }
 
 
-/^SepaBase:/ {
+/^SepaBasis:/ {
 
    baseconvex = $11;
    basediffstart = $12;
