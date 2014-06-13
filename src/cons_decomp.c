@@ -865,7 +865,7 @@ SCIP_RETCODE GCGprintDetectorStatistics(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    int i;
-
+   int j;
    assert(scip != NULL);
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -875,10 +875,15 @@ SCIP_RETCODE GCGprintDetectorStatistics(
    assert(conshdlrdata != NULL);
    assert(scip != NULL);
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Detector statistics:       time     number\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Detector statistics:       time     number     blocks\n");
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-10.10s       :   %8.2f %10d\n", conshdlrdata->detectors[i]->name, SCIPclockGetTime(conshdlrdata->detectors[i]->dectime), conshdlrdata->detectors[i]->ndecomps );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-10.10s       :   %8.2f %10d    ", conshdlrdata->detectors[i]->name, SCIPclockGetTime(conshdlrdata->detectors[i]->dectime), conshdlrdata->detectors[i]->ndecomps );
+      for( j = 0; j < conshdlrdata->detectors[i]->ndecomps; ++j )
+      {
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %d", DECdecompGetNBlocks(conshdlrdata->detectors[i]->decomps[j]));
+      }
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
    }
    return SCIP_OKAY;
 }
