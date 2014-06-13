@@ -54,7 +54,7 @@
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "isomorph"  /**< name of detector */
-#define DEC_DESC                 "Detector for pricng problems suitable for aggregation" /**< description of detector*/
+#define DEC_DESC                 "Detector for pricing problems suitable for aggregation" /**< description of detector*/
 #define DEC_PRIORITY             100         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'I'         /**< display character of detector */
 
@@ -437,7 +437,7 @@ static DEC_DECL_INITDETECTOR(initIsomorphism)
    assert(detectordata != NULL);
 
    detectordata->result = SCIP_SUCCESS;
-   detectordata->numofsol = 10000;
+   detectordata->numofsol = 1;
 
    return SCIP_OKAY;
 }
@@ -497,6 +497,45 @@ void collapsePermutation(
    }
 }
 
+/** filters the best permutation */
+SCIP_RETCODE filterPermutation(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int*                  permutation,        /**< the permutation */
+   int                   permsize,           /**< size of the permutation */
+   int                   nperms              /**< number of permutations */
+)
+{
+   int best = 0;
+   int i;
+   int* count;
+
+   assert(scip != NULL);
+   assert(permutation != NULL);
+   assert(permsize > 0);
+   assert(nperms > 0);
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &count, nperms) );
+   BMSclearMemoryArray(count, nperms);
+
+   for( i = 0; i < permsize; ++i )
+   {
+      if( permutation[i] >= 0 )
+         count[permutation[i]] += 1;
+   }
+
+   best = count-std::max_element(count, count+nperms);
+   SCIPfreeBufferArray(scip, &count);
+
+   for( i = 0; i < permsize; ++i )
+   {
+      if( permutation[i] != best )
+         permutation[i] = -1;
+   }
+
+
+   return SCIP_OKAY;
+}
+
 /** detection function of detector */
 static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
 { /*lint -esym(429,ptrhook)*/
@@ -528,48 +567,64 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
 
    if( detectordata->result == SCIP_SUCCESS )
    {
+      int nperms;
       DEC_DECOMP* newdecomp;
       int nmasterconss;
       SCIP_CONS** masterconss = NULL;
+      int p;
 
       // assign to a permutation circle only one number
       collapsePermutation(ptrhook->conssperm, nconss);
       // renumbering from 0 to number of permutations
-      (void) renumberPermutations(ptrhook->conssperm, nconss);
-      // create decomposition for every permutation
-      SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, detectordata->numofsol) ); /*lint !e506*/
-      SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
+      nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
-      nmasterconss = 0;
-      for( i = 0; i < nconss; i++ )
+      // filter decomposition with largest orbit
+      if( detectordata->numofsol == 1)
+         SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
+
+      SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
+
+      int pos = 0;
+      for( p = 0; p < nperms && pos < detectordata->numofsol; ++p,++pos)
       {
-         if( -1 == ptrhook->conssperm[i] )
+         SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
+
+
+         nmasterconss = 0;
+         for( i = 0; i < nconss; i++ )
          {
-            masterconss[nmasterconss] = SCIPgetConss(scip)[i];
-            SCIPdebugMessage("%s\n", SCIPconsGetName(masterconss[nmasterconss]));
-            nmasterconss++;
+            if( p != ptrhook->conssperm[i] )
+            {
+               masterconss[nmasterconss] = SCIPgetConss(scip)[i];
+               SCIPdebugMessage("%s\n", SCIPconsGetName(masterconss[nmasterconss]));
+               nmasterconss++;
+            }
+         }
+         SCIPdebugMessage("%d\n", nmasterconss);
+
+         SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[pos]), masterconss, nmasterconss) );
+
+         SCIPfreeMemoryArray(scip, &masterconss);
+         SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[pos], &newdecomp) );
+         if( newdecomp != NULL )
+         {
+            SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[pos])) );
+            (*decdecomps)[pos] = newdecomp;
          }
       }
-      SCIPdebugMessage("%d\n", nmasterconss);
+      *ndecdecomps = pos;
 
-      SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[0]), masterconss, nmasterconss) );
-      *ndecdecomps = 1;
-      SCIPfreeMemoryArray(scip, &masterconss);
-      SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[0], &newdecomp) );
-      if( newdecomp != NULL )
+      int unique = DECfilterSimilarDecompositions(scip, *decdecomps, *ndecdecomps);
+
+      for( p = unique; p < *ndecdecomps; ++p )
       {
-         SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[0])) );
-         (*decdecomps)[0] = newdecomp;
+         SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[p])) );
+         (*decdecomps)[p] = NULL;
       }
+      SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
 
-      for( i = 0; i < *ndecdecomps; i++ )
-      {
-         assert((*decdecomps)[i] != NULL);
-
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "%d ", DECdecompGetNBlocks((*decdecomps)[i]));
-      }
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "blocks.\n");
-
+      *ndecdecomps = unique;
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d decompositions.\n", *ndecdecomps);
    }
    else
    {
