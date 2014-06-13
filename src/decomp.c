@@ -2157,9 +2157,7 @@ SCIP_RETCODE DECgetDensityData(
    assert(decomp != NULL);
    assert(vars != NULL);
    assert(nvars > 0);
-   assert(nvars == SCIPgetNVars(scip));
    assert(conss != NULL);
-   assert(nconss == SCIPgetNConss(scip));
    assert(varsubproblemdensity != NULL);
    assert(varmasterdensity != NULL);
    assert(conssubproblemdensity != NULL);
@@ -2750,6 +2748,21 @@ SCIP_RETCODE computeVarDensities(
    return SCIP_OKAY;
 }
 
+/** returns the number of constraints saved in the decomposition */
+int DECdecompGetNConss(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   int b;
+   int nconss = 0;
+   assert(decomp != NULL);
+
+   for( b = 0; b < DECdecompGetNBlocks(decomp); ++b )
+      nconss += DECdecompGetNSubscipconss(decomp)[b];
+
+   nconss += DECdecompGetNLinkingconss(decomp);
+   return nconss;
+}
 
 /** display statistics about the decomposition */
 SCIP_RETCODE GCGprintDecompStatistics(
@@ -2803,7 +2816,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    nblocks = DECdecompGetNBlocks(decomp);
 
    nvars = SCIPgetNVars(scip);
-   nconss = SCIPgetNConss(scip);
+   nconss = DECdecompGetNConss(decomp);
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nallvars, nblocks) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nbinvars, nblocks) );
@@ -2866,10 +2879,10 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPfreeBlockMemoryArray(scip, &vars, nvars);
    SCIPfreeBlockMemoryArray(scip, &conss, nconss);
 
-   SCIPfreeBlockMemoryArray(scip, &varprobdensity, SCIPgetNVars(scip));
-   SCIPfreeBlockMemoryArray(scip, &varmasterdensity, SCIPgetNVars(scip));
-   SCIPfreeBlockMemoryArray(scip, &consprobsensity, SCIPgetNConss(scip));
-   SCIPfreeBlockMemoryArray(scip, &consmasterdensity, SCIPgetNConss(scip));
+   SCIPfreeBlockMemoryArray(scip, &varprobdensity, nvars);
+   SCIPfreeBlockMemoryArray(scip, &varmasterdensity, nvars);
+   SCIPfreeBlockMemoryArray(scip, &consprobsensity, nconss);
+   SCIPfreeBlockMemoryArray(scip, &consmasterdensity, nconss);
 
    SCIPfreeBlockMemoryArray(scip, &blockvardensities, nblocks);
    SCIPfreeBlockMemoryArray(scip, &blockconsdensities, nblocks);

@@ -425,6 +425,11 @@ SCIP_RETCODE DECevaluateDecomposition(
    DEC_SCORES*           score               /**< returns the score of the decomposition */
    );
 
+/** returns the number of constraints saved in the decomposition */
+int DECdecompGetNConss(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
 /** display statistics about the decomposition */
 extern
 SCIP_RETCODE GCGprintDecompStatistics(
