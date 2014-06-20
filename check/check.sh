@@ -211,13 +211,9 @@ do
 
             if test $MODE = "detect"
             then
-                echo write prob images\/$NAME.gp   >> $TMPFILE
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
-                echo write prob images\/$NAME-dec.gp >> $TMPFILE
-                echo write prob decs\/$NAME.dec    >> $TMPFILE
-                mkdir -p decs/$TSTNAME.$SETNAME
-                echo write all decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
+                echo display statistics            >> $TMPFILE
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
