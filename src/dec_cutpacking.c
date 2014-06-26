@@ -1717,10 +1717,10 @@ DEC_DECL_INITDETECTOR(initCutpacking)
    SCIP_Bool ishandled;
    SCIP_CONS** conss;
    SCIP_CONS** newconss;
-   SCIP_VAR** vars;
+   SCIP_VAR** curvars;
    SCIP_VAR** allvars;
    SCIP_VAR** relvars;
-   int nvars;
+   int ncurvars;
    SCIP_HASHMAP* vartopos;
    SCIP_CONS*** varinconss;
    int* nvarinconss;
@@ -1776,16 +1776,16 @@ DEC_DECL_INITDETECTOR(initCutpacking)
          continue;
       }
 
-      nvars = GCGconsGetNVars(scip, conss[i]);
-      if( nvars > 0 )
+      ncurvars = GCGconsGetNVars(scip, conss[i]);
+      if( ncurvars > 0 )
       {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vars, nvars) );
-         SCIP_CALL( GCGconsGetVars(scip, conss[i], vars, nvars) );
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
 
          ishandled = FALSE;
 
-         for( j = 0; (j < nvars) && (ishandled == FALSE); ++j )
-            ishandled = GCGisVarRelevant(vars[j]);
+         for( j = 0; (j < ncurvars) && (ishandled == FALSE); ++j )
+            ishandled = GCGisVarRelevant(curvars[j]);
 
          if( ishandled )
          {
@@ -1793,7 +1793,7 @@ DEC_DECL_INITDETECTOR(initCutpacking)
             k++;
          }
 
-         /* SCIPfreeMemoryArrayNull(scip, &vars); */
+         SCIPfreeBlockMemoryArrayNull(scip, &curvars, ncurvars);
       }
    }
 
@@ -1831,22 +1831,26 @@ DEC_DECL_INITDETECTOR(initCutpacking)
 
    for( i = 0; i < k; ++i )
    {
-      nvars = GCGconsGetNVars(scip, detectordata->graphs[0].conss[i]);
-      SCIP_CALL( SCIPallocMemoryArray(scip,&vars,nvars) );
-      SCIP_CALL( GCGconsGetVars(scip,detectordata->graphs[0].conss[i], vars, nvars) );
-      for( j = 0; j < nvars; ++j )
+      curvars = NULL;
+      ncurvars = GCGconsGetNVars(scip, detectordata->graphs[0].conss[i]);
+      if( ncurvars > 0 )
       {
-         if( GCGisVarRelevant(vars[j]) )
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip,&curvars,ncurvars) );
+         SCIP_CALL( GCGconsGetVars(scip,detectordata->graphs[0].conss[i], curvars, ncurvars) );
+      }
+      for( j = 0; j < ncurvars; ++j )
+      {
+         if( GCGisVarRelevant(curvars[j]) )
          {
             int varpos;
 
-            varpos = (int) (size_t) SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(vars[j])); /*lint !e507*/
+            varpos = (int) (size_t) SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(curvars[j])); /*lint !e507*/
 
             (varinconss[varpos])[nvarinconss[varpos]] = detectordata->graphs[0].conss[i];
             ++nvarinconss[varpos];
          }
       }
-      SCIPfreeMemoryArrayNull(scip, &vars);
+      SCIPfreeBlockMemoryArrayNull(scip, &curvars, ncurvars);
    }
 
    return SCIP_OKAY;
