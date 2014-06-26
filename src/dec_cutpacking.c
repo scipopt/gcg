@@ -273,7 +273,8 @@ SCIP_HASHMAPLIST* hashmapIteration(
       if( list != NULL )
          return list;
    }
-   else
+
+   if( list == NULL )
    {
       int j;
       for( j = detectordata->iter; j < SCIPhashmapGetNLists(hm); ++j )
