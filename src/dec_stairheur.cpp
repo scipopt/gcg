@@ -362,7 +362,9 @@ SCIP_RETCODE plotInitialProblem(
          int ncurvars;
          int consindex;
          SCIP_CONS* cons = SCIPgetConss(scip)[i];
-         consindex = (int) (size_t) SCIPhashmapGetImage(detectordata->indexmap->consindex, cons);
+         consindex = *((int*)  SCIPhashmapGetImage(detectordata->indexmap->consindex, cons));
+         assert(SCIPhashmapExists(detectordata->indexmap->consindex, cons));
+
          /* Get array of variables from constraint */
          SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
          assert(success);
@@ -371,9 +373,14 @@ SCIP_RETCODE plotInitialProblem(
          assert(success);
          for( j = 0; j < ncurvars; ++j )
          {
-            SCIP_VAR* var = curvars[j];
-            int varindex = (int) (size_t) SCIPhashmapGetImage(detectordata->indexmap->varindex, var);
-            fprintf(output, "%i %i\n", varindex, consindex);
+            SCIP_VAR* var = SCIPvarGetProbvar(curvars[j]);
+            assert(SCIPhashmapExists(detectordata->indexmap->varindex, var));
+            int varindex = *((int*) SCIPhashmapGetImage(detectordata->indexmap->varindex, var));
+            assert(varindex <= SCIPgetNVars(scip));
+            assert(varindex > 0);
+            assert(consindex <= SCIPgetNConss(scip));
+            assert(consindex > 0);
+            fprintf(output, "%d %d\n", varindex, consindex);
          }
          SCIPfreeBufferArray(scip, &curvars);
       }
@@ -426,7 +433,7 @@ void plotMinV(
       /* write data to datafile */
       for( i = 0; i < nconss -1; ++i )
       {
-         fprintf(output, "%i\n", detectordata->minV[i]);
+         fprintf(output, "%d\n", detectordata->minV[i]);
       }
    }
    fclose(output);
@@ -442,7 +449,7 @@ void plotMinV(
       /* write data to blockingfile */
       for( it1 = detectordata->blockedAfterrow->begin(); it1 != detectordata->blockedAfterrow->end(); ++it1 )
       {
-         fprintf(output, "%i %i\n", *it1-1, detectordata->minV[*it1-1]);
+         fprintf(output, "%d %d\n", *it1-1, detectordata->minV[*it1-1]);
       }
    }
    fclose(output);
@@ -716,12 +723,14 @@ SCIP_RETCODE rankOrderClusteringIteration(
       SCIP_CONS* cons;
       position = *it1;
       hashmapindex = &detectordata->hashmapindices[position];
+
       cons = (SCIP_CONS*) SCIPhashmapGetImage(inputmap->indexcons, (void*) hashmapindex);
       assert ( cons != NULL);
 
       /* consindex */
       hashmapindex = &detectordata->hashmapindices[i+1];
       assert( SCIPhashmapExists(outputmap->consindex, (void*) cons));
+      assert(*hashmapindex <= ncons);
       SCIP_CALL( SCIPhashmapSetImage(outputmap->consindex, (void*) cons, (void*) hashmapindex) );
 
       /* indexcons */
@@ -737,7 +746,7 @@ SCIP_RETCODE rankOrderClusteringIteration(
       hashmapindex = &detectordata->hashmapindices[position];
       var = (SCIP_VAR*) SCIPhashmapGetImage(inputmap->indexvar, (void*) hashmapindex);
       assert ( var != NULL);
-
+      assert(*hashmapindex <= nvars);
       /* varindex */
       hashmapindex = &detectordata->hashmapindices[i+1];
       assert( SCIPhashmapExists(outputmap->varindex, (void*) var) );
@@ -1521,7 +1530,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    {
       char filename[256];
       sprintf(filename, "%s_initial_problem", getProbNameWithoutPath(scip));
-      plotInitialProblem(scip, detectordata, filename);
+      //plotInitialProblem(scip, detectordata, filename);
    }
 #endif
 
@@ -1541,11 +1550,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 
 #ifdef WRITEALLOUTPUT
    SCIP_CALL( rankOrderClustering(scip, detectordata, detectordata->maxiterationsROC, &ROC_iterations) );
-   {
-      char filename[256];
-      sprintf(filename, "%s_ROC", getProbNameWithoutPath(scip));
-      plotInitialProblem(scip, detectordata, filename);
-   }
+
    /* check conditions for arrays ibegin and jbegin: ibegin[i]<=ibegin[i+k] for all positive k */
    if( ROC_iterations < detectordata->maxiterationsROC || detectordata->maxiterationsROC  == -1 )
    {
@@ -1573,7 +1578,11 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIP_CALL( blocking(scip, detectordata, decdecomps, ndecdecomps, nvars, nconss, result) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d decompositions.\n", *ndecdecomps);
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " \tBlocks:", *ndecdecomps);
-
+   {
+      char filename[256];
+      sprintf(filename, "%s_ROC", getProbNameWithoutPath(scip));
+      plotInitialProblem(scip, detectordata, filename);
+   }
    for( i = 0; i < *ndecdecomps; ++i )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %i", DECdecompGetNBlocks( (*decdecomps)[i] ));
