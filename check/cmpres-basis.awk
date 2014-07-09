@@ -143,7 +143,6 @@ function texstring(s, ts)
 {
    ts = s;
    gsub(/_/, "\\_", ts);
-
    return ts;
 }
 
@@ -180,8 +179,9 @@ function texsolvername(s, sname)
    {
       sub(/.*:/, "", sname);
       sub(/.*_/, "", sname);
+      sub(/.*/, "", sname);
       if( length(sname) > 12 )
-         sname = substr(sname, length(sname)-11, 12);
+         sname = substr(sname, 0, 12);
    }
 
    return sname;
@@ -741,7 +741,7 @@ END {
    {
       p = problist[i];
       if( length(p) > 18 )
-         shortp = substr(p, length(p)-17, 18);
+         shortp = substr(p, 0, 18);
       else
          shortp = p;
 
@@ -1183,7 +1183,7 @@ END {
                   timecolor = "black";
 
                if( status[s,pidx] == "ok" || status[s,pidx] == "unknown" || status[s,pidx] == "timeout" || status[s,pidx] == "memlimit" || status[s,pidx] == "nodelimit" )
-                  printf("&\\textcolor{%s}{%s %8s} &\\textcolor{%s}{%s %8.1f}&\\textcolor{%s}{%8.1f}&\\textcolor{%s}{%8s}",
+                  printf("&\\textcolor{%s}{%s %8s} &\\textcolor{%s}{%s %8.1f}&\\textcolor{%s}{%8.5f}&\\textcolor{%s}{%8s}",
                      nodecolor, timeoutmarker, texint(nodes[s,pidx]), timecolor, timeoutmarker, time[s,pidx], 
                      rootgapcolor, rootgaps[s,pidx], bcutcolor, texint(bcuts[s,pidx])) > texcmpfile;
                else
@@ -1628,21 +1628,21 @@ END {
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodegeom[s,0]), timegeom[s,0], rootgapgeom[s,0], bcutgeom[s,0]) > texcmpfile;
+         printf("& %8.1f & %8.1f & %8.3f & %8.1f", nodegeom[s,0], timegeom[s,0], rootgapgeom[s,0], bcutgeom[s,0]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("sh. geom. mean ") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodeshiftedgeom[s,0]), timeshiftedgeom[s,0], rootgapshiftedgeom[s,0], bcutshiftedgeom[s,0]) > texcmpfile;
+         printf("& %8.1f & %8.1f & %8.3f & %8.1f", nodeshiftedgeom[s,0], timeshiftedgeom[s,0], rootgapshiftedgeom[s,0], bcutshiftedgeom[s,0]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("arithm. mean   ") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodetotal[s,0]/nevalprobs[s,0]), timetotal[s,0]/nevalprobs[s,0], rootgaptotal[s,0]/nevalprobs[s,0], bcuttotal[s,0]/nevalprobs[s,0]) > texcmpfile;
+         printf("& %8s & %8.1f & %8.3f & %8.1f", texint(nodetotal[s,0]/nevalprobs[s,0]), timetotal[s,0]/nevalprobs[s,0], rootgaptotal[s,0]/nevalprobs[s,0], bcuttotal[s,0]/nevalprobs[s,0]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
 
@@ -1653,21 +1653,21 @@ END {
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodegeom[s,-1]), timegeom[s,-1], rootgapgeom[s,-1], bcutgeom[s,-1]) > texcmpfile;
+         printf("& %8.1f & %8.1f & %8.3f & %8.1f", nodegeom[s,-1], timegeom[s,-1], rootgapgeom[s,-1], bcutgeom[s,-1]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("sh. geom. mean ") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodeshiftedgeom[s,-1]), timeshiftedgeom[s,-1], rootgapshiftedgeom[s,-1], bcutshiftedgeom[s,-1]) > texcmpfile;
+         printf("& %8.1f & %8.1f & %8.3f & %8.1f", nodeshiftedgeom[s,-1], timeshiftedgeom[s,-1], rootgapshiftedgeom[s,-1], bcutshiftedgeom[s,-1]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("arithm. mean   ") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.1f & %8.1f", texint(nodetotal[s,-1]/nevalprobs[s,-1]), timetotal[s,-1]/nevalprobs[s,-1], rootgaptotal[s,-1]/nevalprobs[s,-1], bcuttotal[s,-1]/nevalprobs[s,-1]) > texcmpfile;
+         printf("& %8s & %8.1f & %8.3f & %8.1f", texint(nodetotal[s,-1]/nevalprobs[s,-1]), timetotal[s,-1]/nevalprobs[s,-1], rootgaptotal[s,-1]/nevalprobs[s,-1], bcuttotal[s,-1]/nevalprobs[s,-1]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("\\bottomrule\n") > texcmpfile;
