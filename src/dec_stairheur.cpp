@@ -1578,11 +1578,13 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIP_CALL( blocking(scip, detectordata, decdecomps, ndecdecomps, nvars, nconss, result) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d decompositions.\n", *ndecdecomps);
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " \tBlocks:", *ndecdecomps);
+#ifdef WRITEALLOUTPUT
    {
       char filename[256];
       sprintf(filename, "%s_ROC", getProbNameWithoutPath(scip));
       plotInitialProblem(scip, detectordata, filename);
    }
+#endif
    for( i = 0; i < *ndecdecomps; ++i )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %i", DECdecompGetNBlocks( (*decdecomps)[i] ));

@@ -2661,14 +2661,15 @@ SCIP_RETCODE computeVarDensities(
 
    for( v = 0; v < nvars; ++v )
    {
-      int block = GCGvarGetBlock(vars[v]);
+      int block = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), (vars[v]))) -1 ;
+      assert(block >= 0);
       SCIPdebugMessage("Var <%s>:", SCIPvarGetName(vars[v]));
 
 
       mastervardistribution[v] = 1.0*varmasterdensity[v]/DECdecompGetNLinkingconss(decomp);
       SCIPdebugPrintf("master %d ", varmasterdensity[v]);
 
-      if( block >= 0 )
+      if( block < nblocks )
       {
          vardistribution[block][nvardistribution[block]] = 1.0*varprobdensity[v]/DECdecompGetNSubscipconss(decomp)[block];
          SCIPdebugPrintf("block %d %.3f\n", block, vardistribution[block][nvardistribution[block]]);
@@ -2764,6 +2765,115 @@ int DECdecompGetNConss(
    return nconss;
 }
 
+/** computes nonzero elements of a given constraint, separated into linking variables and normal vars */
+static
+SCIP_RETCODE computeConssNzeros(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_CONS*            cons,               /**< SCIP data structure */
+   int*                  nzeros,             /**< pointer to store nonzero elements */
+   int*                  nintzeros,          /**< pointer to store integer nonzeros */
+   int*                  nbzeros,            /**< pointer to store border nonzero elements */
+   int*                  nintbzeros          /**< pointer to store border integer nonzeros */
+)
+{
+   int v;
+   int ncurvars = 0;
+   SCIP_VAR** curvars = NULL;
+   SCIP_Real* curvals = NULL;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(cons != NULL);
+   assert(nzeros != NULL);
+   assert(nintzeros != NULL);
+   assert(nbzeros != NULL);
+   assert(nintbzeros != NULL);
+
+   ncurvars = GCGconsGetNVars(scip, cons);
+   SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
+
+   SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
+   SCIP_CALL( GCGconsGetVals(scip, cons, curvals, ncurvars) );
+
+   for( v = 0; v < ncurvars; ++v )
+   {
+      int block;
+      SCIP_VAR* curvar;
+      if( SCIPisZero(scip, curvals[v]) )
+         continue;
+
+      curvar = SCIPvarGetProbvar(curvars[v]);
+
+      block = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), (curvar))) -1 ;
+      assert(block >= 0);
+
+      if(block > DECdecompGetNBlocks(decomp) )
+      {
+         if( SCIPvarGetType(curvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(curvar) == SCIP_VARTYPE_INTEGER)
+            *nintbzeros += 1;
+
+         *nbzeros += 1;
+      }
+      else
+      {
+         if( SCIPvarGetType(curvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(curvar) == SCIP_VARTYPE_INTEGER)
+            *nintzeros += 1;
+
+         *nzeros += 1;
+      }
+   }
+
+   SCIPfreeBufferArrayNull(scip, &curvals);
+   SCIPfreeBufferArrayNull(scip, &curvars);
+
+   return SCIP_OKAY;
+}
+
+/** computes nonzero elements of the pricing problems and the master */
+static
+SCIP_RETCODE computeNonzeros(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   int*                  mnzeros,            /**< number of nonzero elements in row border */
+   int*                  mintnzeros,         /**< number of integral nonzero elements in row border */
+   int*                  lnzeros,            /**< number of nonzero elements in column border */
+   int*                  lintnzeros,         /**< number of integral nonzero elements in column border */
+   int*                  nonzeros,           /**< number of nonzero elements per pricing problem */
+   int*                  intnzeros           /**< number of integral nonzero elements per pricing problem */
+   )
+{
+   int c;
+   int b;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(mnzeros != NULL);
+   assert(mintnzeros != NULL);
+   assert(lnzeros != NULL);
+   assert(lintnzeros != NULL);
+   assert(nonzeros != NULL);
+   assert(intnzeros != NULL);
+
+   for( b = 0; b < DECdecompGetNBlocks(decomp); ++b )
+   {
+      SCIP_CONS** subscipconss = DECdecompGetSubscipconss(decomp)[b];
+      int nsubscipconss = DECdecompGetNSubscipconss(decomp)[b];
+      for( c = 0; c < nsubscipconss; ++c )
+      {
+         SCIP_CALL( computeConssNzeros(scip, decomp, subscipconss[c], &(nonzeros[b]), &(intnzeros[b]), lnzeros, lintnzeros ));
+      }
+   }
+
+   for( c = 0; c < DECdecompGetNLinkingconss(decomp); ++c )
+   {
+      SCIP_CALL( computeConssNzeros(scip, decomp, DECdecompGetLinkingconss(decomp)[c], mnzeros, mintnzeros, lnzeros, lintnzeros ));
+   }
+
+   return SCIP_OKAY;
+}
+
 /** display statistics about the decomposition */
 SCIP_RETCODE GCGprintDecompStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -2802,16 +2912,23 @@ SCIP_RETCODE GCGprintDecompStatistics(
    DEC_STATISTIC* blockconsdensities;
    DEC_STATISTIC mastervardensity;
 
+   int mnzeros;
+   int mintnzeros;
+   int lnzeros;
+   int lintnzeros;
+
+   int* nonzeros;
+   int* intnzeros;
+
    assert(scip != NULL);
 
+   decomp = DECgetBestDecomp(scip);
 
-   if( SCIPgetStage(GCGgetMasterprob(scip)) < SCIP_STAGE_PRESOLVED )
+   if( decomp == NULL )
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "No Dantzig-Wolfe reformulation applied. The problem was most likely already solved by the LP or presolving in the original problem.\n");
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "No decomposition available. Cannot output decomposition statistics.\n");
       return SCIP_OKAY;
    }
-
-   decomp = DECgetBestDecomp(scip);
    assert(decomp != NULL);
    nblocks = DECdecompGetNBlocks(decomp);
 
@@ -2834,6 +2951,17 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consprobsensity, nconss) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consmasterdensity, nconss) );
 
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nonzeros, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &intnzeros, nblocks) );
+
+   BMSclearMemoryArray(nonzeros, nblocks);
+   BMSclearMemoryArray(intnzeros, nblocks);
+
+   mnzeros = 0;
+   mintnzeros = 0;
+   lnzeros = 0;
+   lintnzeros = 0;
+
    SCIP_CALL( DECevaluateDecomposition(scip, decomp, &scores) );
 
    DECgetSubproblemVarsData(scip, decomp, nallvars, nbinvars, nintvars, nimplvars, ncontvars, nblocks);
@@ -2841,6 +2969,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIP_CALL( DECgetDensityData(scip, decomp, vars, nvars, conss, nconss, varprobdensity, varmasterdensity, consprobsensity, consmasterdensity) );
 
    SCIP_CALL( computeVarDensities(scip, decomp, varprobdensity, varmasterdensity, vars, nvars, blockvardensities, &mastervardensity, nblocks) );
+   SCIP_CALL( computeNonzeros(scip, decomp, &mnzeros, &mintnzeros, &lnzeros, &lintnzeros, nonzeros, intnzeros) );
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Decomp statistics  :\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  type             : %10s\n", DECgetStrType(DECdecompGetType(decomp)));
@@ -2848,26 +2977,36 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  blocks           : %10d\n", DECdecompGetNBlocks(decomp));
 
    nblocksrelevant = nblocks;
-   for( b = 0; b < nblocks; ++b )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED)
    {
-      if( GCGgetNIdenticalBlocks(scip, b) == 0 )
-         nblocksrelevant -= 1;
+      for( b = 0; b < nblocks; ++b )
+      {
+         if( GCGgetNIdenticalBlocks(scip, b) == 0 )
+            nblocksrelevant -= 1;
+      }
    }
-
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  aggr. blocks     : %10d\n", nblocksrelevant);
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss  min(dens)  max(dens) medi(dens) mean(dens)\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f\n", nlinkvars,
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss   nonzeros  intnzeros    bnzeros bintnzeros  min(dens)  max(dens) medi(dens) mean(dens)\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %10d %10d %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f\n", nlinkvars,
          nlinkbinvar, nlinkintvars, nlinkimplvars, nlinkcontvars, DECdecompGetNLinkingconss(decomp),
-         mastervardensity.min, mastervardensity.max, mastervardensity.median, mastervardensity.mean);
+         mnzeros, mintnzeros, lnzeros, lintnzeros, mastervardensity.min, mastervardensity.max, mastervardensity.median, mastervardensity.mean);
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss  min(dens)  max(dens) medi(dens) mean(dens)  identical\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss   nonzeros  intnzeros  min(dens)  max(dens) medi(dens) mean(dens)  identical\n");
    for( b = 0; b < nblocks; ++b )
    {
-      if( GCGisPricingprobRelevant(scip, b) )
+      int identical = 0;
+      SCIP_Bool relevant = TRUE;
+
+      if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED)
       {
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f %10d\n", b+1, nallvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b],
-               DECdecompGetNSubscipconss(decomp)[b], blockvardensities[b].min, blockvardensities[b].max, blockvardensities[b].median, blockvardensities[b].mean, GCGgetNIdenticalBlocks(scip, b));
+         relevant =  GCGisPricingprobRelevant(scip, b);
+         identical = GCGgetNIdenticalBlocks(scip, b);
+      }
+      if( relevant )
+      {
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10d %10d %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f %10d\n", b+1, nallvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b],
+               DECdecompGetNSubscipconss(decomp)[b], nonzeros[b], intnzeros[b], blockvardensities[b].min, blockvardensities[b].max, blockvardensities[b].median, blockvardensities[b].mean, identical);
       }
    }
 
@@ -2878,6 +3017,10 @@ SCIP_RETCODE GCGprintDecompStatistics(
 
    SCIPfreeBlockMemoryArray(scip, &vars, nvars);
    SCIPfreeBlockMemoryArray(scip, &conss, nconss);
+
+
+   SCIPfreeBlockMemoryArray(scip, &intnzeros, nblocks);
+   SCIPfreeBlockMemoryArray(scip, &nonzeros, nblocks);
 
    SCIPfreeBlockMemoryArray(scip, &varprobdensity, nvars);
    SCIPfreeBlockMemoryArray(scip, &varmasterdensity, nvars);
