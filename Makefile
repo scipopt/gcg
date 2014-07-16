@@ -184,7 +184,6 @@ LIBOBJ		=	reader_blk.o \
 			objdialog.o \
 			dialog_graph.o
 
-
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
 			dec_isomorph.o \
