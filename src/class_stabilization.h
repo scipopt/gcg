@@ -57,7 +57,7 @@ private:
    int nstabcenterconv;
    PricingType* pricingtype;
    SCIP_Real alpha;
-   SCIP_NODE* node;
+   int nodenr;
    int k;
    SCIP_Bool hasstabilitycenter;
    SCIP_Real stabcenterbound;
