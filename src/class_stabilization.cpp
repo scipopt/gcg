@@ -54,7 +54,7 @@ Stabilization::Stabilization(
       stabcentercuts(NULL), stabcentercutssize(0), nstabcentercuts(0),
       stabcenterlinkingconss(NULL), nstabcenterlinkingconss(0),
       stabcenterconv(NULL), nstabcenterconv(0),
-      pricingtype(pricingtype_), alpha(0.8), node(NULL), k(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip))
+      pricingtype(pricingtype_), alpha(0.8), nodenr(-1), k(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip))
 {
 
 }
@@ -71,7 +71,7 @@ Stabilization::~Stabilization()
    stabcenterlinkingconss = NULL;
    stabcenterconv = NULL;
    pricingtype = NULL;
-   node = NULL;
+   nodenr = -1;
 
 
 }
@@ -299,9 +299,9 @@ void Stabilization::updateIterationCount()
 
 void Stabilization::updateNode()
 {
-   if( node != SCIPgetCurrentNode(scip_) )
+   if( nodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(scip_)) )
    {
-      node = SCIPgetCurrentNode(scip_);
+      nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip_));
       k = 1;
       alpha= 0.8;
       hasstabilitycenter = FALSE;
