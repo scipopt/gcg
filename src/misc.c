@@ -222,71 +222,59 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
 
       while( SCIPisFeasPositive(scip, mastervals[i]) )
       {
+         assert(blocknr >= 0);
          assert(GCGvarIsMaster(mastervars[i]));
          assert(!GCGmasterVarIsRay(mastervars[i]));
 
-         if( blocknr == -1 )
+         increaseval = MIN(mastervals[i], 1.0 - blockvalue[blocknr]);
+         /* loop over all original variables contained in the current master variable */
+         for( j = 0; j < norigvars; j++ )
          {
-            assert(norigvars == 1);
-            assert(origvals[0] == 1.0);
+            SCIP_VAR* pricingvar;
+            int norigpricingvars;
+            SCIP_VAR** origpricingvars;
 
-            SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[0]), origvals[0] * mastervals[i], SCIPvarGetName(mastervars[i]) );
-            /* increase the corresponding value */
-            SCIP_CALL( SCIPincSolVal(scip, *origsol, origvars[0], origvals[0] * mastervals[i]) );
+            if( SCIPisZero(scip, origvals[j]) )
+               continue;
+
+            /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */
+            if( GCGvarIsLinking(origvars[j]) )
+               continue;
+
+            pricingvar = GCGoriginalVarGetPricingVar(origvars[j]);
+            assert(GCGvarIsPricing(pricingvar));
+
+            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+            origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+            if( norigpricingvars <= blocknrs[blocknr] )
+            {
+               increaseval = mastervals[i];
+
+               SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[norigpricingvars-1]), origvals[j] * increaseval, SCIPvarGetName(mastervars[i]) );
+               /* increase the corresponding value */
+               SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[norigpricingvars-1], origvals[j] * increaseval) );
+            }
+            else
+            {
+               /* increase the corresponding value */
+               SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[blocknrs[blocknr]]), origvals[j] * increaseval, SCIPvarGetName(mastervars[i]) );
+               SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[blocknrs[blocknr]], origvals[j] * increaseval) );
+            }
+         }
+
+         mastervals[i] = mastervals[i] - increaseval;
+         if( SCIPisFeasZero(scip, mastervals[i]) )
+         {
             mastervals[i] = 0.0;
          }
-         else
+         blockvalue[blocknr] += increaseval;
+
+         /* if the value assigned to the block is equal to 1, this block is full and we take the next block */
+         if( SCIPisFeasGE(scip, blockvalue[blocknr], 1.0) )
          {
-            increaseval = MIN(mastervals[i], 1.0 - blockvalue[blocknr]);
-            /* loop over all original variables contained in the current master variable */
-            for( j = 0; j < norigvars; j++ )
-            {
-               SCIP_VAR* pricingvar;
-               int norigpricingvars;
-               SCIP_VAR** origpricingvars;
-
-               if( SCIPisZero(scip, origvals[j]) )
-                  continue;
-
-               /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */
-               if( GCGvarIsLinking(origvars[j]) )
-                  continue;
-
-               pricingvar = GCGoriginalVarGetPricingVar(origvars[j]);
-               assert(GCGvarIsPricing(pricingvar));
-
-               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
-               origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
-
-               if( norigpricingvars <= blocknrs[blocknr] )
-               {
-                  increaseval = mastervals[i];
-
-                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[norigpricingvars-1]), origvals[j] * increaseval, SCIPvarGetName(mastervars[i]) );
-                  /* increase the corresponding value */
-                  SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[norigpricingvars-1], origvals[j] * increaseval) );
-               }
-               else
-               {
-                  /* increase the corresponding value */
-                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[blocknrs[blocknr]]), origvals[j] * increaseval, SCIPvarGetName(mastervars[i]) );
-                  SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[blocknrs[blocknr]], origvals[j] * increaseval) );
-               }
-            }
-
-            mastervals[i] = mastervals[i] - increaseval;
-            if( SCIPisFeasZero(scip, mastervals[i]) )
-            {
-               mastervals[i] = 0.0;
-            }
-            blockvalue[blocknr] += increaseval;
-
-            /* if the value assigned to the block is equal to 1, this block is full and we take the next block */
-            if( SCIPisFeasGE(scip, blockvalue[blocknr], 1.0) )
-            {
-               blockvalue[blocknr] = 0.0;
-               blocknrs[blocknr]++;
-            }
+            blockvalue[blocknr] = 0.0;
+            blocknrs[blocknr]++;
          }
       }
    }
