@@ -483,11 +483,11 @@ SCIP_Real Stabilization::calculateSubgradient(
          gradientproduct += (stabcentercuts[i] - dual) * vals[j] * val;
       }
 
-      if( SCIPisGT(scip_, dual, 0.0) )
+      if( SCIPisFeasGT(scip_, dual, 0.0) )
       {
          lhs = SCIProwGetLhs(origcut);
       }
-      else if( SCIPisLT(scip_, dual, 0.0) )
+      else if( SCIPisFeasLT(scip_, dual, 0.0) )
       {
          lhs = SCIProwGetRhs(origcut);
       }
