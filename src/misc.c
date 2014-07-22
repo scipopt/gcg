@@ -107,7 +107,6 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       isray = GCGmasterVarIsRay(mastervars[i]);
 
       assert(GCGvarIsMaster(mastervars[i]));
-      assert(!SCIPisFeasNegative(scip, mastervals[i]));
 
       /** @todo handle infinite master solution values */
       assert(!SCIPisInfinity(scip, mastervals[i]));
@@ -199,6 +198,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
          mastervals[i] = mastervals[i] - 1.0;
          blocknrs[blocknr]++;
       }
+      assert(!SCIPisFeasNegative(scip, mastervals[i]));
    }
 
    /* loop over all given master variables */
