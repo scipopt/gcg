@@ -1861,8 +1861,10 @@ SCIP_RETCODE initRelaxator(
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Discretization with continuous variables is currently not supported. The parameter setting will be ignored.\n");
-      relaxdata->discretization = FALSE;
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Warning: Discretization with continuous variables may lead to wrong solutions.\n");
+
+      /* don't disable discretization */
+      //relaxdata->discretization = FALSE;
    }
 
    SCIP_CALL( createMaster(scip, relaxdata) );
