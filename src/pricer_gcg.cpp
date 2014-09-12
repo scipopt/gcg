@@ -2764,7 +2764,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    /* set variable type for master variables */
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-   if( discretization && (SCIPgetNContVars(scip) == 0) )
+   if( discretization )
    {
       pricerdata->vartype = SCIP_VARTYPE_INTEGER;
    }

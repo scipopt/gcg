@@ -2810,6 +2810,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
       SCIPdebugMessage("Generic branching executed on a set covering or set partitioning problem\n");
    }
 
+
    if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
