@@ -290,7 +290,12 @@ SCIP_RETCODE solveKnapsack(
          nonsolitems, &nsolitems, &nnonsolitems, &solval ));
    }
 
-   assert(success);
+   if( ! success )
+   {
+      SCIPwarningMessage(pricingprob, "Knapsack solver could not solve pricing problem!");
+      goto TERMINATE;
+   }
+
    SCIPdebugMessage("knapsack solved, solval = %g\n", solval);
 
    nsolvars = 0;
