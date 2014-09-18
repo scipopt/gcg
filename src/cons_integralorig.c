@@ -173,7 +173,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    /* if we use the discretization approach, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-   if( discretization )
+   if( discretization && SCIPgetNContVars(origprob) == 0 )
    {
       return SCIP_OKAY;
    }
@@ -236,7 +236,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    /* if we use the discretization approach, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-   if( discretization )
+   if( discretization && SCIPgetNContVars(origprob) == 0 )
    {
       return SCIP_OKAY;
    }
@@ -289,7 +289,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    /* if we use the discretization approach, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-   if( discretization )
+   if( discretization && SCIPgetNContVars(origprob) == 0 )
    {
       return SCIP_OKAY;
    }

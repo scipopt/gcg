@@ -42,6 +42,7 @@
 #include "scip/cons_linear.h"
 #include "type_branchgcg.h"
 #include "gcg.h"
+#include "cons_integralorig.h"
 
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
@@ -398,11 +399,17 @@ SCIP_RETCODE InitIndexSet(
 
       if( *IndexSetSize == 0 && norigvars > 0 )
       {
-         *IndexSetSize = norigvars;
-         SCIP_CALL( SCIPallocMemoryArray(scip, IndexSet, *IndexSetSize) );
-         for( j = 0; j < *IndexSetSize; ++j )
+         SCIP_CALL( SCIPallocMemoryArray(scip, IndexSet, 1) );
+         for( j = 0; j < norigvars; ++j )
          {
-            (*IndexSet)[j] = origvars[j];
+            if( SCIPvarGetType(origvars[j]) > SCIP_VARTYPE_INTEGER )
+               continue;
+
+            if( *IndexSetSize > 0 )
+               SCIP_CALL( SCIPreallocMemoryArray(scip, IndexSet, *IndexSetSize + 1) );
+
+            (*IndexSet)[*IndexSetSize] = origvars[j];
+            ++(*IndexSetSize);
          }
       }
       else
@@ -411,6 +418,9 @@ SCIP_RETCODE InitIndexSet(
          {
             int k;
             int oldsize = *IndexSetSize;
+
+            if( SCIPvarGetType(origvars[j]) > SCIP_VARTYPE_INTEGER )
+               continue;
 
             for( k = 0; k < oldsize; ++k )
             {
@@ -546,6 +556,9 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
 
    for( i = 0; i < norigvars; ++i )
    {
+      if( SCIPvarGetType(origvars[i]) > SCIP_VARTYPE_INTEGER )
+         continue;
+
       if( getGeneratorEntry(mastervar1, origvars[i]) > getGeneratorEntry(mastervar2, origvars[i]) )
          return -1;
       if( getGeneratorEntry(mastervar1, origvars[i]) < getGeneratorEntry(mastervar2, origvars[i]) )
@@ -624,7 +637,7 @@ int ILOcomp(
       strip1->mastervar = mastervar1;
       strip2->mastervar = mastervar2;
 
-      returnvalue = (*ptrcomp)( strip1, strip2);
+      returnvalue = (*ptrcomp)(strip1, strip2);
 
       SCIPfreeBuffer(scip, &strip1);
       SCIPfreeBuffer(scip, &strip2);
@@ -643,6 +656,7 @@ int ILOcomp(
    }
    origvar = C[k][p-1].component;
    assert(origvar != NULL);
+   assert(SCIPvarGetType(origvar) <= SCIP_VARTYPE_INTEGER);
    ivalue = C[k][p-1].bound;
 
    /* calculate subset of C */
@@ -690,7 +704,7 @@ int ILOcomp(
       if( Nupper != 0 )
          assert( k == Nupper );
 
-      returnvalue = ILOcomp( scip, mastervar1, mastervar2, CopyC, Nupper, newsequencesizes, p+1);
+      returnvalue = ILOcomp(scip, mastervar1, mastervar2, CopyC, Nupper, newsequencesizes, p+1);
 
       for( j=0; j< Nupper; ++j )
       {
@@ -765,7 +779,7 @@ SCIP_DECL_SORTPTRCOMP(ptrilocomp)
    strip1 = (GCG_STRIP*) elem1;
    strip2 = (GCG_STRIP*) elem2;
 
-   returnvalue = ILOcomp( strip1->scip, strip1->mastervar, strip2->mastervar, strip1->C, strip1->Csize, strip1->sequencesizes, 1);
+   returnvalue = ILOcomp(strip1->scip, strip1->mastervar, strip2->mastervar, strip1->C, strip1->Csize, strip1->sequencesizes, 1);
 
    return returnvalue;
 }
@@ -794,7 +808,7 @@ SCIP_RETCODE InducedLexicographicSort(
       return SCIP_OKAY;
 
    assert(array != NULL);
-   for( i=0; i<arraysize; ++i )
+   for( i = 0; i < arraysize; ++i )
    {
       array[i]->scip = scip;
       array[i]->Csize = NBoundsequences;
@@ -1482,6 +1496,8 @@ SCIP_RETCODE Explore(
    ivalue = C[k][p-1].bound;
 
    assert(origvar != NULL);
+
+   assert(SCIPvarGetType(origvar) <= SCIP_VARTYPE_INTEGER);
    /* SCIPdebugMessage("orivar = %s; ivalue = %g\n", SCIPvarGetName(origvar), ivalue); */
 
    for( j = 0; j < Fsize; ++j )
@@ -2410,6 +2426,8 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP_Bool foundblocknr = FALSE;
 #endif
 
+   SCIP_Bool discretization;
+
    blocknr = -2;
    Ssize = 0;
    Fsize = 0;
@@ -2425,13 +2443,15 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
    origscip = GCGmasterGetOrigprob(masterscip);
 
+   SCIP_CALL( SCIPgetBoolParam(origscip, "relaxing/gcg/discretization", &discretization) );
+
    assert(origscip != NULL);
    SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
 
    SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
-   assert(nbranchcands > 0);
+   assert(nbranchcands > 0 || (discretization && SCIPgetNContVars(origscip)) > 0);
    mastervar = NULL;
 
    for( i = 0; i < nbranchcands; ++i )
@@ -2477,8 +2497,44 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          }
       }
    }
-   assert( foundblocknr || blocknr == -1);
+   assert( foundblocknr || blocknr == -1  || (discretization && SCIPgetNContVars(origscip)) > 0 );
    assert( i <= nbranchcands ); /* else all blocks has been checked and we can observe an integer solution */
+
+
+   if(discretization && SCIPgetNContVars(origscip) > 0)
+   {
+      int norigvars;
+      SCIP_VAR** origvars;
+      SCIP_VAR* origvar;
+
+      norigvars = SCIPgetNVars(origscip);
+      origvars = SCIPgetVars(origscip);
+
+      nbranchcands = SCIPgetNVars(masterscip);
+      branchcands = SCIPgetVars(masterscip);
+
+      assert(nbranchcands > 0);
+
+      for( i = 0; i < norigvars; ++i )
+      {
+         origvar = origvars[i];
+
+         if( SCIPvarGetType(origvar) > SCIP_VARTYPE_INTEGER )
+            continue;
+
+         if( SCIPisIntegral(origscip, SCIPgetSolVal(origscip, GCGrelaxGetCurrentOrigSol(origscip), origvar)) )
+            continue;
+
+         blocknr = GCGgetBlockRepresentative(origscip, GCGvarGetBlock(origvar));
+
+         if( blocknr == -1 )
+         {
+            assert(GCGoriginalVarGetNMastervars(origvar) == 1);
+            mastervar = GCGoriginalVarGetMastervars(origvar)[0];
+         }
+         break;
+      }
+   }
 
    if( blocknr < -1 )
    {
@@ -2810,7 +2866,6 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
       SCIPdebugMessage("Generic branching executed on a set covering or set partitioning problem\n");
    }
 
-
    if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
@@ -2894,6 +2949,7 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
    )
 {
    SCIP_BRANCHRULEDATA* branchruledata;
+   SCIP_BRANCHRULE* branchrule;
 
    /* create branching rule data */
    branchruledata = NULL;
@@ -2912,6 +2968,12 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
          NULL, NULL, eventInitGenericbranchvaradd, eventExitGenericbranchvaradd,
          NULL, NULL, NULL, eventExecGenericbranchvaradd,
          NULL) );
+
+   branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
+   assert(branchrule != NULL);
+
+   SCIP_CALL( GCGcreateBranchruleConsOrig(scip, branchrule) );
+
 
    return SCIP_OKAY;
 }
