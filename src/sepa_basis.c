@@ -170,7 +170,7 @@ SCIP_RETCODE ensureSizeNewCuts(
    return SCIP_OKAY;
 }
 
-/* computes basis^exp */
+/** returns the result of the exponentiation for given exponent and basis (basis^exponent) */
 static
 SCIP_Real exponentiate(
    SCIP_Real            basis,               /**< basis for exponentiation */
@@ -363,7 +363,7 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
    return SCIP_OKAY;
 }
 
-/* Change probing objective depending on the current origsol.
+/**< Change probing objective depending on the current origsol.
  *
  * Loop over all constraints lhs <= sum a_i*x_i <= rhs. If lhs == sum a_i*x_i^* add a_i to objective
  * of variable i and if rhs == sum a_i*x_i^* add -a_i to objective of variable i.
@@ -498,7 +498,7 @@ SCIP_RETCODE chgProbingObjUsingRows(
    return SCIP_OKAY;
 }
 
-/* returns square of number */
+/**< returns square of given number */
 static
 SCIP_Real getSquare(
    SCIP_Real            number
@@ -507,7 +507,7 @@ SCIP_Real getSquare(
    return number*number;
 }
 
-/* returns l2-norm of difference of solutions */
+/**< returns l2-norm of difference of solutions */
 static
 SCIP_Real getL2DiffSols(
    SCIP*                scip,               /**< SCIP data structure */
@@ -666,6 +666,7 @@ SCIP_RETCODE getEqualityMatrixGsl(
    return SCIP_OKAY;
 }
 
+/**< get the rank of a given matrix */
 static
 SCIP_RETCODE getRank(
    SCIP*                scip,
