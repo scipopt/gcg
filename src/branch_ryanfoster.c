@@ -470,7 +470,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
       return SCIP_OKAY;
    }
 
-   if( GCGnodeisVanderbeck(scip, result) )
+   if( GCGcurrentNodeIsGeneric(scip) )
    {
       SCIPdebugMessage("Not executing Ryan&Foster branching, node was branched by generic branchrule\n");
       return SCIP_OKAY;
@@ -707,7 +707,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
       return SCIP_OKAY;
    }
 
-   if( GCGnodeisVanderbeck(scip, result) )
+   if( GCGcurrentNodeIsGeneric(scip) )
    {
       SCIPdebugMessage("Not executing Ryanfoster branching, node was branched by generic branchrule\n");
       return SCIP_OKAY;

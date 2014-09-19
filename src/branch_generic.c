@@ -326,7 +326,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 
 
-   if( GCGvarIsMaster(mastervar) &&  (GCGconsMasterbranchGetbranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ) )
+   if( GCGvarIsMaster(mastervar) && (GCGconsMasterbranchGetbranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ) )
    {
       SCIP_Bool added = FALSE;
       SCIPdebugMessage("Mastervar <%s>\n", SCIPvarGetName(mastervar));
@@ -363,10 +363,10 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    return SCIP_OKAY;
 }
 
+
 /*
  * branching specific interface methods
  */
-
 
 /** method for initializing the set of respected indices */
 static

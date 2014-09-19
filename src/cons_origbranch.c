@@ -30,8 +30,9 @@
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  * @author Martin Bergner
- *
  */
+
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
 /* #define CHECKCONSISTENCY */
 #include <assert.h>
@@ -183,7 +184,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    }
 
    /* create origbranch constraint corresponding to the root node only if there is some problem */
-   if( SCIPgetNVars(scip)> 0 || SCIPgetNConss(scip) > 0 )
+   if( SCIPgetNVars(scip) > 0 || SCIPgetNConss(scip) > 0 )
    {
 
    }
@@ -284,7 +285,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
          parentdata->probingtmpcons = NULL;
       }
 
-      for( i=0; i < parentdata->nchildcons; ++i )
+      for( i = 0; i < parentdata->nchildcons; ++i )
       {
          if( parentdata->childcons[i] == cons )
          {
@@ -301,7 +302,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
       assert(childdeleted || SCIPinProbing(scip));
    }
    /* no child nodes may exist */
-   for( i=0; i<(*consdata)->nchildcons; ++i )
+   for( i = 0; i < (*consdata)->nchildcons; ++i )
          assert((*consdata)->childcons[i] == NULL);
 
    /* delete branchdata, if no mastercons is linked, which would still need the branchdata
@@ -908,6 +909,7 @@ SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
    *newbounds = consdata->propbounds;
    *npropbounds = consdata->npropbounds;
 
+   /* @fixme: This is a side effect */
    consdata->npropbounds = 0;
 
    return SCIP_OKAY;

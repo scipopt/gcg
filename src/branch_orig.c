@@ -165,7 +165,7 @@ SCIP_RETCODE branchVar(
    SCIPdebugMessage("Branching on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
 
    /** @todo use block memory here */
-   /* create the branch data for the childs and assign the values */
+   /* create the branch data for the children and assign the values */
    SCIP_CALL( SCIPallocBlockMemory(scip, &branchupdata) );
    SCIP_CALL( SCIPallocBlockMemory(scip, &branchdowndata) );
 
@@ -556,9 +556,10 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 
    assert(origscip != NULL);
 
-   if( GCGnodeisVanderbeck(scip, result) )
+   if( GCGcurrentNodeIsGeneric(scip) )
    {
       SCIPdebugMessage("Not executing orig branching, node was branched by generic branchrule\n");
+      *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
@@ -595,9 +596,10 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 
    assert(origscip != NULL);
 
-   if( GCGnodeisVanderbeck(scip, result) )
+   if( GCGcurrentNodeIsGeneric(scip) )
    {
       SCIPdebugMessage("Not executing orig branching, node was branched by generic branchrule\n");
+      *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
@@ -656,9 +658,10 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    /* masterscip = scip; */
    assert(origscip != NULL);
 
-   if( GCGnodeisVanderbeck(scip, result) )
+   if( GCGcurrentNodeIsGeneric(scip) )
    {
       SCIPdebugMessage("Not executing orig branching, node was branched by generic branchrule\n");
+      *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
