@@ -64,11 +64,11 @@
  * Callback methods for enforcing branching constraints
  */
 
-/* copy default SCIP branching rules to allow solving restrictions of the original problem as a subSCIP without
- * Dantzig-Wolfe decomposition
+/** copy default SCIP branching rules in order to solve restrictions of the original problem as a subSCIP without
+ *  Dantzig-Wolfe decomposition
  */
 static
-SCIP_RETCODE GCGincludeOriginalCopyPlugins(
+SCIP_RETCODE includeSCIPBranchingRules(
    SCIP*                 scip
 )
 {
@@ -85,19 +85,25 @@ SCIP_RETCODE GCGincludeOriginalCopyPlugins(
 
    return SCIP_OKAY;
 }
-/** copy method for master branching rule */
+
+/** copy method for empty branching rule */
 static
 SCIP_DECL_BRANCHCOPY(branchCopyEmpty)
 {
    assert(branchrule != NULL);
    assert(scip != NULL);
 
-   SCIPdebugMessage("pricer copy called.\n");
-   SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) );
+   /* SubSCIPs are solved with SCIP rather than GCG;
+    * therefore, only the default SCIP branching rules are included into the subSCIP.
+    */
+   SCIP_CALL( includeSCIPBranchingRules(scip) );
 
    return SCIP_OKAY;
 }
 
+/** for a new branch-and-bound node on the master problem, create a corresponding node in the original problem
+ *  as well as an origbranch constraint that holds the branching decision
+ */
 SCIP_RETCODE GCGcreateConsOrigbranchNode(
    SCIP*                 scip,
    SCIP_CONS*            masterbranchchildcons
@@ -107,51 +113,62 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    SCIP_CONS*  origbranch;
    SCIP_CONS** origbranchconss;
    int norigbranchconss;
+   SCIP_Bool enforcebycons;
+
    int i;
 
    assert(scip != NULL);
    assert(masterbranchchildcons != NULL);
 
+   /* create a child node and an origbranch constraint holding the branching decision */
    SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
-   SCIPdebugMessage("Name is %s\n", GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons) );
+   SCIPdebugMessage("Create original branching constraint %s\n", GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons));
 
    SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranch, GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons), child,
             GCGconsOrigbranchGetActiveCons(scip), GCGconsMasterbranchGetOrigbranchrule(masterbranchchildcons), GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons)) );
 
    if( GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons) == NULL )
+   {
       SCIPdebugMessage("origbranch with no branchdata created\n");
+   }
 
    SCIP_CALL( SCIPaddConsNode(scip, child, origbranch, NULL) );
 
+   /* get previous original branching constraints and add them to the new node */
    origbranchconss = GCGconsMasterbranchGetOrigbranchConss(masterbranchchildcons);
    norigbranchconss = GCGconsMasterbranchGetNOrigbranchConss(masterbranchchildcons);
-
    for( i = 0; i < norigbranchconss; ++i )
    {
       SCIP_CALL( SCIPaddConsNode(scip, child, origbranchconss[i], NULL) );
    }
 
-   if( GCGmasterbranchGetChgVarUb(masterbranchchildcons) )
+   /* If a branching decision on an original variable was made, apply it */
+   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/enforcebycons", &enforcebycons) );
+   if( !enforcebycons )
    {
-      SCIP_CALL( SCIPchgVarUbNode(scip, child,
-         GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
-         GCGmasterbranchGetBoundChg(masterbranchchildcons)) );
+      if( GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_LOWER )
+      {
+         SCIP_CALL( SCIPchgVarLbNode(scip, child,
+            GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
+            GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
+      }
+      else if( GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_UPPER )
+      {
+         SCIP_CALL( SCIPchgVarUbNode(scip, child,
+            GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
+            GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
+      }
    }
-   if( GCGmasterbranchGetChgVarLb(masterbranchchildcons) )
+
+   if( GCGconsMasterbranchGetPropagatebndchg(masterbranchchildcons) )
    {
-      SCIP_CALL( SCIPchgVarLbNode(scip, child,
-         GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
-         GCGmasterbranchGetBoundChg(masterbranchchildcons)) );
-   }
-   if( GCGmasterbranchGetPropBoundChg(masterbranchchildcons) )
-   {
-      assert(GCGmasterbranchGetPropBoundType(masterbranchchildcons) != GCG_BOUNDTYPE_NONE);
+      assert(GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) != GCG_BOUNDTYPE_NONE);
 
       SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
-            GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
-            (SCIP_BOUNDTYPE) GCGmasterbranchGetPropBoundType(masterbranchchildcons),
-            GCGmasterbranchGetPropBound(masterbranchchildcons)) );
+         GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
+         GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons),
+         GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
    }
 
    GCGconsOrigbranchSetMastercons(origbranch, masterbranchchildcons);
@@ -159,13 +176,17 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
 
    SCIP_CALL( SCIPreleaseCons(scip, &origbranch) );
 
+   /* release array of original branching constraints */
    SCIP_CALL( GCGconsMasterbranchReleaseOrigbranchConss(GCGgetMasterprob(scip), scip, masterbranchchildcons) );
 
+   /* @fixme: this should actually be an assertion */
    if( SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) != SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGgetMasterprob(scip)))) )
    {
-      SCIPdebugMessage("norignodes = %lld; nmasternodes = %lld\n",
+#ifdef SCIP_DEBUG
+      SCIPwarningMessage(scip, "norignodes = %lld; nmasternodes = %lld\n",
          SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))),
          SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGgetMasterprob(scip)))));
+#endif
    }
 
    assert(SCIPgetNNodes(scip) == SCIPgetNNodes(GCGgetMasterprob(scip)));
@@ -174,7 +195,7 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    return SCIP_OKAY;
 }
 
-/** creates the copies of the master branching nodes in the original problem */
+/** creates branch-and-bound nodes in the original problem corresponding to those in the master problem */
 static
 SCIP_RETCODE createBranchNodesInOrigprob(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -185,6 +206,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
    SCIP_Bool feasible;
    SCIP_CONS* masterbranchcons;
    int nchildnodes;
+
    int i;
 
    feasible = TRUE;
@@ -194,6 +216,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
    *result = SCIP_DIDNOTRUN;
 
+   /* @fixme: This looks like a hack */
    if( GCGrelaxGetCurrentOrigSol(scip) == NULL )
    {
       SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
@@ -217,18 +240,17 @@ SCIP_RETCODE createBranchNodesInOrigprob(
       return SCIP_OKAY;
    }
 
+   /* get master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
+   /* get masterbranch constraint at the current node */
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-
-
-
+   /* @todo: Why should this happen? */
    if( masterbranchcons == NULL )
-   {
       return SCIP_OKAY;
-   }
 
+   /* get the children of the current node */
    nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
    if( nchildnodes <= 0 )
    {
@@ -238,7 +260,8 @@ SCIP_RETCODE createBranchNodesInOrigprob(
       return SCIP_OKAY;
    }
 
-   for( i=0; i<nchildnodes; ++i )
+   /* for each child, create a corresponding node in the original problem as well as an origbranch constraint */
+   for( i = 0; i < nchildnodes; ++i )
    {
       SCIP_CONS* masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
       assert(masterbranchchildcons != NULL);
@@ -247,7 +270,9 @@ SCIP_RETCODE createBranchNodesInOrigprob(
    }
 
    *result = SCIP_BRANCHED;
+
    assert(nchildnodes > 0);
+
    return SCIP_OKAY;
 }
 
@@ -277,8 +302,10 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpEmpty)
    assert(result != NULL);
 
    SCIP_CALL( createBranchNodesInOrigprob(scip, result) );
+
    return SCIP_OKAY;
 }
+
 /** branching execution method relaxation solutions */
 static
 SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
@@ -289,6 +316,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
    assert(result != NULL);
 
    SCIP_CALL( createBranchNodesInOrigprob(scip, result) );
+
    return SCIP_OKAY;
 }
 
@@ -302,25 +330,31 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
    assert(result != NULL);
 
    SCIP_CALL( createBranchNodesInOrigprob(scip, result) );
+
    return SCIP_OKAY;
 }
+
 
 /*
  * branching specific interface methods
  */
-/** creates the master branching rule and includes it in SCIP */
+
+/** creates the empty branching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleEmpty(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {
    SCIP_BRANCHRULEDATA* branchruledata;
+
    /* create inference branching rule data */
    branchruledata = NULL;
+
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
       BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
       branchCopyEmpty, branchFreeEmpty, branchInitEmpty, branchExitEmpty, branchInitsolEmpty,
       branchExitsolEmpty, branchExeclpEmpty, branchExecextEmpty, branchExecpsEmpty,
       branchruledata) );
+
    return SCIP_OKAY;
 }

@@ -117,18 +117,14 @@ SCIP_RETCODE branchVar(
    SCIP_NODE* child2;
    SCIP_CONS* cons1;
    SCIP_CONS* cons2;
-   SCIP_CONS** origbranchcons1;
-   SCIP_CONS** origbranchcons2;
+   SCIP_CONS** origbranchconss1;
+   SCIP_CONS** origbranchconss2;
    GCG_BRANCHDATA* branchupdata;
    GCG_BRANCHDATA* branchdowndata;
-   SCIP_Bool chgVarUbNodeup;
-   SCIP_Bool chgVarUbNodedown;
-   SCIP_Bool chgVarLbNodeup;
-   SCIP_Bool chgVarLbNodedown;
-   SCIP_Bool addPropBoundChg;
+   SCIP_Bool propagatebndchg;
    char upname[SCIP_MAXSTRLEN];
    char downname[SCIP_MAXSTRLEN];
-   int norigbranchcons;
+   int norigbranchconss;
 
    /* parameter data */
    SCIP_Bool enforcebycons;
@@ -140,14 +136,11 @@ SCIP_RETCODE branchVar(
 
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
-   chgVarUbNodeup = FALSE;
-   chgVarUbNodedown = FALSE;
-   chgVarLbNodeup = FALSE;
-   chgVarLbNodedown = FALSE;
-   addPropBoundChg = FALSE;
-   origbranchcons1 = NULL;
-   origbranchcons2 = NULL;
-   norigbranchcons = 0;
+
+   propagatebndchg = FALSE;
+   origbranchconss1 = NULL;
+   origbranchconss2 = NULL;
+   norigbranchconss = 0;
 
    /* for cons_masterbranch */
 
@@ -198,12 +191,12 @@ SCIP_RETCODE branchVar(
       SCIP_CONS* consup;
       SCIP_CONS* consdown;
 
-      norigbranchcons = 1;
+      norigbranchconss = 1;
 
       SCIPdebugMessage("enforced by cons\n");
 
-      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons1, norigbranchcons) );
-      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons2, norigbranchcons) );
+      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchconss1, norigbranchconss) );
+      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchconss2, norigbranchconss) );
 
       /* create corresponding constraints */
       SCIP_CALL( SCIPcreateConsLinear(scip, &consup, upname, 0, NULL, NULL,
@@ -215,33 +208,28 @@ SCIP_RETCODE branchVar(
       SCIP_CALL( SCIPaddCoefLinear(scip, consup, branchvar, 1.0) );
       SCIP_CALL( SCIPaddCoefLinear(scip, consdown, branchvar, 1.0) );
 
-      origbranchcons1[0] = consup;
-      origbranchcons2[0] = consdown;
+      origbranchconss1[0] = consup;
+      origbranchconss2[0] = consdown;
 
       branchupdata->cons = consup;
       branchdowndata->cons = consdown;
    }
    else
    {
-      chgVarUbNodedown = TRUE;
-      chgVarLbNodeup = TRUE;
-
       branchupdata->cons = NULL;
       branchdowndata->cons = NULL;
    }
 
    /* store bound change of variables that were directly transferred to the master problem */
    if( !enforcebycons && GCGvarGetBlock(branchvar) == -1 )
-   {
-      addPropBoundChg = TRUE;
-   }
+      propagatebndchg = TRUE;
 
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, upname, branchrule,
-         branchupdata, origbranchcons1, norigbranchcons, chgVarUbNodeup, chgVarLbNodeup, addPropBoundChg,
-         branchvar, solval, branchupdata->boundtype, branchupdata->newbound) );
+         branchupdata, origbranchconss1, norigbranchconss, branchvar,
+         GCG_BOUNDTYPE_LOWER, branchupdata->newbound, propagatebndchg) );
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, downname, branchrule,
-         branchdowndata, origbranchcons2, norigbranchcons, chgVarUbNodedown, chgVarLbNodedown, addPropBoundChg,
-         branchvar, solval, branchdowndata->boundtype, branchdowndata->newbound) );
+         branchdowndata, origbranchconss2, norigbranchconss, branchvar,
+         GCG_BOUNDTYPE_UPPER, branchdowndata->newbound, propagatebndchg) );
 
    return SCIP_OKAY;
 }

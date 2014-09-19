@@ -118,7 +118,7 @@ SCIP_CONS* GCGconsOrigbranchGetParentcons(
 /** returns the number of origbranch constraints of the childarray of the node at which the
     given origbranch constraint is sticking */
 extern
-int GCGconsOrigbranchGetNChildcons(
+int GCGconsOrigbranchGetNChildconss(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
 

@@ -2248,7 +2248,7 @@ SCIP_RETCODE createChildNodesGeneric(
             assert(branchchilddata != NULL);
 
             SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, childcons, childname, branchrule, branchchilddata,
-               NULL, 0, FALSE, FALSE, FALSE, NULL, 0.0, GCG_BOUNDTYPE_NONE, 0.0) );
+               NULL, 0, NULL, GCG_BOUNDTYPE_NONE, 0.0, FALSE) );
 
             SCIP_CALL( createBranchingCons(masterscip, child, branchchilddata) );
 
@@ -2358,11 +2358,11 @@ SCIP_RETCODE branchDirectlyOnMastervar(
 
    assert(branchupchilddata != NULL);
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, upchildcons, upchildname, branchrule, branchupchilddata,
-      NULL, 0, FALSE, FALSE, FALSE, NULL, 0.0, GCG_BOUNDTYPE_NONE, 0.0) );
+      NULL, 0, NULL, GCG_BOUNDTYPE_NONE, 0.0, FALSE) );
 
    assert(branchdownchilddata != NULL);
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, downchildcons, downchildname, branchrule, branchdownchilddata,
-      NULL, 0, FALSE, FALSE, FALSE, NULL, 0.0, GCG_BOUNDTYPE_NONE, 0.0) );
+      NULL, 0, NULL, GCG_BOUNDTYPE_NONE, 0.0, FALSE) );
 
    /*  create branching constraint in master */
    SCIP_CALL( createDirectBranchingCons(masterscip, upchild, branchupchilddata) );

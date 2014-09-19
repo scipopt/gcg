@@ -30,11 +30,12 @@
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  * @author Martin Bergner
+ * @author Marcel Schmickerath
  * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+/*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <string.h>
 
@@ -103,21 +104,19 @@ struct SCIP_ConsData
    char*                 name;               /**< name of the constraint */
 
 
-   /*following data is NULL after corresponding cons_origbranch was created */
-   char*                 origbranchconsname; /**< name of the constraint for cons_origbranch */
+   /* The following data contains branching information for the original problem */
+   char*                 origbranchconsname; /**< name of the branching constraint for cons_origbranch */
    SCIP_BRANCHRULE*      origbranchrule;     /**< branching rule that created the corresponding node in the original problem and imposed
                                               *   branching restrictions for cons_origbranch */
    GCG_BRANCHDATA*       origbranchdata;     /**< branching data stored by the branching rule at the corresponding origcons constraint
                                               *   containing information about the branching restrictions for cons_origbranch */
-   SCIP_CONS**           origbranchconss;    /**< the corresponding original branching constraints in the original program for cons_origbranch */
-   int                   norigbranchconss;   /**< number of original branching constraints */
-   SCIP_Bool             chgVarUbNode;       /**< upper bound of the variable changed */
-   SCIP_Bool             chgVarLbNode;       /**< lower bound of the variable changed */
-   SCIP_Bool             addPropBoundChg;    /**< whether a bound change was added */
-   SCIP_VAR*             chgVarNodeVar;      /**< the variables for whicht the bounds where changed */
-   SCIP_Real             chgVarNodeBound;    /**< the new bound*/
-   GCG_BOUNDTYPE         addPropBoundChgBoundtype; /**< the type of the propagated bound change */
-   SCIP_Real             addPropBoundChgBound; /**< the bound from the propagated bound change */
+   SCIP_CONS**           origbranchconss;    /**< the corresponding original branching constraints in the original program for branch_empty */
+   int                   norigbranchconss;   /**< number of original branching constraints to be added to the node by branch_empty */
+   /* branching decisions on original variables, needed by branch_empty */
+   SCIP_VAR*             origboundvar;       /**< an original variable on which the bound was changed (or NULL, if there is no such variable) */
+   GCG_BOUNDTYPE         origboundtype;      /**< type of the original variable's new bound (or GCG_BOUNDTYPE_NONE if there is no bound change) */
+   SCIP_Real             origbound;          /**< the original variable's new bound */
+   SCIP_Bool             propagatebndchg;    /**< propagate the bound change in the master problem if the original variable was copied directly to the master */
 
 };
 
@@ -180,14 +179,14 @@ SCIP_RETCODE createConsData(
    consdata->branchrule = GCGconsOrigbranchGetBranchrule(origcons);
    consdata->branchdata = GCGconsOrigbranchGetBranchdata(origcons);
 
-   if(consdata->origcons != origcons) /*rootnode?*/
+   if( consdata->origcons != origcons ) /*rootnode?*/
    {
       SCIPdebugMessage("set root origcons\n");
       consdata->origcons = origcons;
       GCGconsOrigbranchSetMastercons(origcons, cons);
    }
 
-   if( GCGconsOrigbranchGetNChildcons(origcons) == 0 )
+   if( GCGconsOrigbranchGetNChildconss(origcons) == 0 )
    {
       consdata->nchildconss = 0;
       consdata->childconss = NULL;
@@ -1905,13 +1904,10 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->origbranchdata = NULL;
    consdata->origbranchconss = NULL;
    consdata->norigbranchconss = 0;
-   consdata->chgVarUbNode = 0;
-   consdata->chgVarLbNode = 0;
-   consdata->addPropBoundChg = 0;
-   consdata->chgVarNodeVar = NULL;
-   consdata->chgVarNodeBound = 0;
-   consdata->addPropBoundChgBoundtype = GCG_BOUNDTYPE_NONE;
-   consdata->addPropBoundChgBound = 0;
+   consdata->origboundvar = NULL;
+   consdata->origboundtype = GCG_BOUNDTYPE_NONE;
+   consdata->origbound = 0.0;
+   consdata->propagatebndchg = FALSE;
 
 
    SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", (void*) parentcons);
