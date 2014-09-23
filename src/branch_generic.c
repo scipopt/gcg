@@ -1848,7 +1848,7 @@ SCIP_RETCODE ChooseSeparateMethod(
       SCIPfreeBufferArrayNull(scip, &strips);
 
       /*choose new block */
-      SCIP_CALL( GCGbranchGenericInitbranch(scip, branchrule, result, checkedblocks, ncheckedblocks, checkedblockssortstrips, checkedblocksnsortstrips) );
+      SCIP_CALL( GCGbranchGenericInitbranch(GCGgetMasterprob(scip), branchrule, result, checkedblocks, ncheckedblocks, checkedblockssortstrips, checkedblocksnsortstrips) );
 
    }
    else
@@ -2517,6 +2517,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
       for( i = 0; i < norigvars; ++i )
       {
+         int k;
          origvar = origvars[i];
 
          if( SCIPvarGetType(origvar) > SCIP_VARTYPE_INTEGER )
@@ -2531,8 +2532,28 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          {
             assert(GCGoriginalVarGetNMastervars(origvar) == 1);
             mastervar = GCGoriginalVarGetMastervars(origvar)[0];
+            break;
          }
-         break;
+
+         SCIP_Bool checked = FALSE;
+         for( k = 0; k < ncheckedblocks ; ++k )
+         {
+            /* if the block has been checked, no need to check master variable */
+            if( checkedblocks[k] == j )
+            {
+               checked = TRUE;
+               break;
+            }
+         }
+
+         if( checked )
+         {
+            continue;
+         }
+         else
+         {
+            break;
+         }
       }
    }
 
