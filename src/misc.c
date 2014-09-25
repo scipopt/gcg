@@ -40,6 +40,89 @@
 #include "cons_decomp.h"
 
 #include <string.h>
+
+/** computes the generator of mastervar for the entry in origvar
+ * @return entry of the generator corresponding to origvar */
+static
+SCIP_Real getGeneratorEntry(
+   SCIP_VAR*             mastervar,          /**< current mastervariable */
+   SCIP_VAR*             origvar             /**< corresponding origvar */
+   )
+{
+   int i;
+   SCIP_VAR** origvars;
+   SCIP_Real* origvals;
+   int norigvars;
+
+   assert(mastervar != NULL);
+   assert(origvar != NULL);
+
+   origvars = GCGmasterVarGetOrigvars(mastervar);
+   norigvars = GCGmasterVarGetNOrigvars(mastervar);
+   origvals = GCGmasterVarGetOrigvals(mastervar);
+
+   for( i = 0; i < norigvars; ++i )
+   {
+      if( origvars[i] == origvar )
+      {
+         return origvals[i];
+      }
+   }
+
+   return 0;
+}
+
+/** comparefunction for lexicographical sort */
+static
+SCIP_DECL_SORTPTRCOMP(mastervarcomp)
+{
+   SCIP* origprob;
+   SCIP* masterprob;
+   SCIP_VAR* mastervar1;
+   SCIP_VAR* mastervar2;
+   SCIP_VAR** origvars;
+   int norigvars;
+   int i;
+
+   mastervar1 = elem1;
+   mastervar2 = elem2;
+
+   assert(mastervar1 != NULL);
+   assert(mastervar2 != NULL);
+
+   if( GCGvarGetBlock(mastervar1) < 0 )
+   {
+      SCIPdebugMessage("linkingvar or directy transferred var\n");
+   }
+   if( GCGvarGetBlock(mastervar2) < 0 )
+   {
+      SCIPdebugMessage("linkingvar or directy transferred var\n");
+   }
+
+   /* TODO: get all original variables (need scip...maybe from pricer via function and scip_ */
+   masterprob = GCGmasterVarGetProb(mastervar1);
+   assert(masterprob == GCGmasterVarGetProb(mastervar2));
+
+   origprob = GCGmasterGetOrigprob(masterprob);
+
+   origvars = SCIPgetVars(origprob);
+   norigvars = SCIPgetNVars(origprob);
+
+   for( i = 0; i < norigvars; ++i )
+   {
+      if( SCIPvarGetType(origvars[i]) > SCIP_VARTYPE_INTEGER )
+         continue;
+
+      if( getGeneratorEntry(mastervar1, origvars[i]) > getGeneratorEntry(mastervar2, origvars[i]) )
+         return -1;
+      if( getGeneratorEntry(mastervar1, origvars[i]) < getGeneratorEntry(mastervar2, origvars[i]) )
+         return 1;
+   }
+
+   return 0;
+}
+
+
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
  */
@@ -55,6 +138,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_Real* blockvalue;
    SCIP_Real increaseval;
    SCIP_VAR** mastervars;
+   SCIP_VAR** mastervarsunsorted;
    SCIP_Real* mastervals;
    int nmastervars;
    SCIP_VAR** vars;
@@ -77,9 +161,13 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
 
    /* get variables of the master problem and their solution values */
-   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
-   assert(mastervars != NULL);
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervarsunsorted, &nmastervars, NULL, NULL, NULL, NULL) );
+   assert(mastervarsunsorted != NULL);
    assert(nmastervars >= 0);
+
+   SCIP_CALL( SCIPduplicateBlockMemoryArray(scip, &mastervars, mastervarsunsorted, nmastervars) );
+
+   SCIPsortPtr((void**)mastervars, mastervarcomp, nmastervars );
 
    SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
    SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervars, mastervars, mastervals) );
@@ -201,6 +289,8 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       assert(!SCIPisFeasNegative(scip, mastervals[i]));
    }
 
+   /* TODO: Change order of mastervars */
+
    /* loop over all given master variables */
    for( i = 0; i < nmastervars; i++ )
    {
@@ -282,6 +372,8 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIPfreeBufferArray(scip, &mastervals);
    SCIPfreeBufferArray(scip, &blocknrs);
    SCIPfreeBufferArray(scip, &blockvalue);
+   SCIPfreeBlockMemoryArray(scip, &mastervars, nmastervars);
+
 
    /* if the solution violates one of its bounds by more than feastol
     * and less than 10*feastol, round it and print a warning

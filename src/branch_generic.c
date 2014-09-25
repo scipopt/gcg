@@ -523,6 +523,8 @@ SCIP_Real GetMedian(
 static
 SCIP_DECL_SORTPTRCOMP(ptrcomp)
 {
+   SCIP* origprob;
+   SCIP* masterprob;
    GCG_STRIP* strip1;
    GCG_STRIP* strip2;
    SCIP_VAR* mastervar1;
@@ -551,8 +553,14 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
       assert(GCGmasterVarIsLinking(mastervar2));
    }
 
-   origvars = GCGmasterVarGetOrigvars(mastervar1);
-   norigvars = GCGmasterVarGetNOrigvars(mastervar1);
+   /* TODO: why not all original variables */
+   masterprob = GCGmasterVarGetProb(mastervar1);
+   assert(masterprob == GCGmasterVarGetProb(mastervar2));
+
+   origprob = GCGmasterGetOrigprob(masterprob);
+
+   origvars = SCIPgetVars(origprob);
+   norigvars = SCIPgetNVars(origprob);
 
    for( i = 0; i < norigvars; ++i )
    {
@@ -1801,6 +1809,8 @@ SCIP_RETCODE ChooseSeparateMethod(
       SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblockssortstrips, ncheckedblocks) );
       SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblocksnsortstrips, ncheckedblocks) );
 
+      SCIPinfoMessage(scip, NULL, "check block %d\n", blocknr);
+
       checkedblocks[ncheckedblocks-1] = blocknr;
 
       for( i=0; i<nmastervars; ++i )
@@ -2454,7 +2464,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    assert(nbranchcands > 0 || (discretization && SCIPgetNContVars(origscip)) > 0);
    mastervar = NULL;
 
-   for( i = 0; i < nbranchcands; ++i )
+   for( i = 0; i < nbranchcands && (!discretization || SCIPgetNContVars(origscip) == 0); ++i )
    {
       int k;
       mastervar = branchcands[i];
@@ -2518,6 +2528,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       for( i = 0; i < norigvars; ++i )
       {
          int k;
+         SCIP_Bool checked;
          origvar = origvars[i];
 
          if( SCIPvarGetType(origvar) > SCIP_VARTYPE_INTEGER )
@@ -2528,6 +2539,8 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
          blocknr = GCGgetBlockRepresentative(origscip, GCGvarGetBlock(origvar));
 
+         SCIPdebugMessage("Variable %s belonging to block %d with representative %d is not integral!\n", SCIPvarGetName(origvar), GCGvarGetBlock(origvar), blocknr);
+
          if( blocknr == -1 )
          {
             assert(GCGoriginalVarGetNMastervars(origvar) == 1);
@@ -2535,11 +2548,11 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
             break;
          }
 
-         SCIP_Bool checked = FALSE;
+         checked = FALSE;
          for( k = 0; k < ncheckedblocks ; ++k )
          {
             /* if the block has been checked, no need to check master variable */
-            if( checkedblocks[k] == j )
+            if( checkedblocks[k] == blocknr )
             {
                checked = TRUE;
                break;
