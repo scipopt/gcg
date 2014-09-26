@@ -1746,10 +1746,10 @@ SCIP_RETCODE ChooseSeparateMethod(
    int                   blocknr,            /**< id of the pricing problem (or block) in which we want to branch */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_RESULT*          result,             /**< pointer to store the result of the branching call */
-   int*                  checkedblocks,      /**< array to store which blocks have been checked */
-   int                   ncheckedblocks,     /**< number of blocks that have beend checked */
-   GCG_STRIP***          checkedblockssortstrips, /**< sorted strips of checked blocks */
-   int*                  checkedblocksnsortstrips /**< size of the strips */
+   int**                 checkedblocks,      /**< array to store which blocks have been checked */
+   int*                  ncheckedblocks,     /**< number of blocks that have beend checked */
+   GCG_STRIP****         checkedblockssortstrips, /**< sorted strips of checked blocks */
+   int**                 checkedblocksnsortstrips /**< size of the strips */
    )
 {
    int i;
@@ -1802,16 +1802,23 @@ SCIP_RETCODE ChooseSeparateMethod(
    {
       SCIP_CALL( SCIPgetVarsData(GCGgetMasterprob(scip), &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
-      ++ncheckedblocks;
-      assert(ncheckedblocks <= GCGgetNPricingprobs(scip)+1);
+      ++(*ncheckedblocks);
+      assert((*ncheckedblocks) <= GCGgetNPricingprobs(scip)+1);
 
-      SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblocks, ncheckedblocks) );
-      SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblockssortstrips, ncheckedblocks) );
-      SCIP_CALL( SCIPreallocBufferArray(scip, &checkedblocksnsortstrips, ncheckedblocks) );
+      if( (*ncheckedblocks) > 1 )
+      {
+         SCIP_CALL( SCIPreallocBufferArray(scip, checkedblocks, *ncheckedblocks) );
+         SCIP_CALL( SCIPreallocBufferArray(scip, checkedblockssortstrips, *ncheckedblocks) );
+         SCIP_CALL( SCIPreallocBufferArray(scip, checkedblocksnsortstrips, *ncheckedblocks) );
+      }
+      else
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, checkedblocks, *ncheckedblocks) );
+         SCIP_CALL( SCIPallocBufferArray(scip, checkedblockssortstrips, *ncheckedblocks) );
+         SCIP_CALL( SCIPallocBufferArray(scip, checkedblocksnsortstrips, *ncheckedblocks) );
+      }
 
-      SCIPinfoMessage(scip, NULL, "check block %d\n", blocknr);
-
-      checkedblocks[ncheckedblocks-1] = blocknr;
+      (*checkedblocks)[(*ncheckedblocks)-1] = blocknr;
 
       for( i=0; i<nmastervars; ++i )
       {
@@ -1836,17 +1843,16 @@ SCIP_RETCODE ChooseSeparateMethod(
 
       SCIP_CALL( InducedLexicographicSort(scip, strips, nstrips, C, Csize, CompSizes) );
 
-      checkedblocksnsortstrips[ncheckedblocks-1] = nstrips;
+      (*checkedblocksnsortstrips)[(*ncheckedblocks)-1] = nstrips;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &(checkedblockssortstrips[ncheckedblocks-1]), nstrips) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &((*checkedblockssortstrips)[(*ncheckedblocks)-1]), nstrips) ); /*lint !e866*/
 
       /* sort the direct copied origvars at the end */
 
       for( i = 0; i < nstrips; ++i )
       {
          assert(strips != NULL);
-         SCIP_CALL( SCIPallocBuffer(scip, &(checkedblockssortstrips[ncheckedblocks-1][i])) ); /*lint !e866*/
-         checkedblockssortstrips[ncheckedblocks-1][i] = strips[i];
+         SCIP_CALL( SCIPduplicateBuffer(scip, &((*checkedblockssortstrips)[(*ncheckedblocks)-1][i]), strips[i]) );
       }
 
       for( i=0; i<nstrips; ++i )
@@ -1863,31 +1869,34 @@ SCIP_RETCODE ChooseSeparateMethod(
    }
    else
    {
-      if( ncheckedblocks > 0 )
+      if( (*ncheckedblocks) > 0 )
       {
-         SCIPfreeBufferArray(scip, &checkedblocks);
+         SCIPfreeBufferArray(scip, checkedblocks);
 
-         for( i = 0; i < ncheckedblocks; ++i )
+         for( i = (*ncheckedblocks) - 1; i >= 0; --i )
          {
             int j;
 
-            for( j = 0; j < checkedblocksnsortstrips[i]; ++j )
+            for( j = (*checkedblocksnsortstrips)[i] - 1; j >= 0; --j )
             {
-               SCIPfreeBuffer(scip, &(checkedblockssortstrips[i][j]) );
+               SCIPfreeBuffer(scip, &((*checkedblockssortstrips)[i][j]) );
             }
 
-            SCIPfreeBufferArray(scip, &(checkedblockssortstrips[i]) );
+            SCIPfreeBufferArray(scip, &((*checkedblockssortstrips)[i]) );
          }
 
-         SCIPfreeBufferArray(scip, &checkedblockssortstrips);
-         SCIPfreeBufferArray(scip, &checkedblocksnsortstrips);
+         SCIPfreeBufferArray(scip, checkedblockssortstrips);
+         SCIPfreeBufferArray(scip, checkedblocksnsortstrips);
+         *ncheckedblocks = 0;
       }
    }
 
-   assert(record->recordsize > 0);
+   if( record->recordsize > 0 )
+   {
+      SCIP_CALL( ChoseS( scip, &record, S, Ssize) );
+      assert(*S != NULL);
+   }
 
-   SCIP_CALL( ChoseS( scip, &record, S, Ssize) );
-   assert(*S != NULL);
 
    SCIPfreeMemoryArray(scip, &IndexSet);
    if( record != NULL )
@@ -2406,10 +2415,10 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP*                 masterscip,         /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_RESULT*          result,             /**< pointer to store the result of the branching call */
-   int*                  checkedblocks,      /**< blocks that have been checked */
-   int                   ncheckedblocks,     /**< number of checked blocks */
-   GCG_STRIP***          checkedblockssortstrips, /**< sorted strips of checked blocks */
-   int*                  checkedblocksnsortstrips /**< sizes of the strips */
+   int**                 checkedblocks,      /**< blocks that have been checked */
+   int*                  ncheckedblocks,     /**< number of checked blocks */
+   GCG_STRIP****         checkedblockssortstrips, /**< sorted strips of checked blocks */
+   int**                 checkedblocksnsortstrips /**< sizes of the strips */
    )
 {
    SCIP* origscip;
@@ -2484,10 +2493,10 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       for( j = 0; j < GCGgetNPricingprobs(origscip); ++j )
       {
          SCIP_Bool checked = FALSE;
-         for( k = 0; k < ncheckedblocks ; ++k )
+         for( k = 0; k < (*ncheckedblocks) ; ++k )
          {
             /* if the block has been checked, no need to check master variable */
-            if( checkedblocks[k] == j )
+            if( (*checkedblocks)[k] == j )
             {
                checked = TRUE;
                break;
@@ -2549,10 +2558,10 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          }
 
          checked = FALSE;
-         for( k = 0; k < ncheckedblocks ; ++k )
+         for( k = 0; k < (*ncheckedblocks) ; ++k )
          {
             /* if the block has been checked, no need to check master variable */
-            if( checkedblocks[k] == blocknr )
+            if( (*checkedblocks)[k] == blocknr )
             {
                checked = TRUE;
                break;
@@ -2911,7 +2920,9 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
 
    *result = SCIP_BRANCHED;
 
-   SCIP_CALL( GCGbranchGenericInitbranch(scip, branchrule, result, NULL, 0, NULL, NULL) );
+   ncheckedblocks = 0;
+
+   SCIP_CALL( GCGbranchGenericInitbranch(scip, branchrule, result, &checkedblocks, &ncheckedblocks, &checkedblockssortstrips, &checkedblocksnsortstrips) );
 
    return SCIP_OKAY;
 }

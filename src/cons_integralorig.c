@@ -268,6 +268,7 @@ static
 SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 {  /*lint --e{715}*/
    SCIP* origprob;
+   SCIP_SOL* origsol;
    SCIP_VAR** origvars;
    int norigvars;
    SCIP_Real solval;
@@ -294,30 +295,22 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
       return SCIP_OKAY;
    }
 
+   SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol) );
+
    origvars = SCIPgetOrigVars(origprob);
    norigvars = SCIPgetNOrigVars(origprob);
 
    /* check for each integral original variable whether it has a fractional value */
    for( v = 0; v < norigvars && *result == SCIP_FEASIBLE; v++ )
    {
-      SCIP_Real* mastervals;
-      SCIP_VAR** mastervars;
-      int nmastervars;
-
       if( SCIPvarGetType(origvars[v]) == SCIP_VARTYPE_CONTINUOUS )
          continue;
 
-      solval = 0;
+      solval = 0.0;
       assert(GCGvarIsOriginal(origvars[v]));
 
-      mastervals = GCGoriginalVarGetMastervals(origvars[v]);
-      mastervars = GCGoriginalVarGetMastervars(origvars[v]);
-      nmastervars = GCGoriginalVarGetNMastervars(origvars[v]);
+      solval = SCIPgetSolVal(origprob, origsol, origvars[v]);
 
-      for( i = 0; i < nmastervars; i++ )
-      {
-         solval += mastervals[i] * SCIPgetSolVal(scip, sol, mastervars[i]);
-      }
       if( !SCIPisFeasIntegral(scip, solval) )
       {
          *result = SCIP_INFEASIBLE;
@@ -329,6 +322,8 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
          }
       }
    }
+
+   SCIPfreeSol(origprob, &origsol);
 
    return SCIP_OKAY;
 }
