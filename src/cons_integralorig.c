@@ -43,6 +43,7 @@
 #include "pub_gcgvar.h"
 #include "scip/struct_branch.h"
 #include "relax_gcg.h"
+#include "gcg.h"
 
 #include "branch_orig.h"
 
@@ -274,7 +275,6 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    SCIP_Real solval;
    SCIP_Bool discretization;
    int v;
-   int i;
 
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
