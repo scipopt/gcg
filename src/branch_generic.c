@@ -1387,7 +1387,7 @@ double computeAlpha(
       if ( (isense == GCG_COMPSENSE_GE && SCIPisGE(scip, generatorentry, ivalue)) ||
            (isense == GCG_COMPSENSE_LT && SCIPisLT(scip, generatorentry, ivalue)) )
       {
-         alpha_i += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[j]);
+         alpha_i += generatorentry*SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[j]);
       }
    }
 
@@ -1499,6 +1499,7 @@ SCIP_RETCODE Explore(
       }
       assert( k < Csize );
    }
+
    origvar = C[k][p-1].component;
    isense = C[k][p-1].sense;
    ivalue = C[k][p-1].bound;
