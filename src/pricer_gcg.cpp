@@ -2304,8 +2304,17 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             SCIP_Real convdual = stabilization->convGetDual(prob);
 
-            #pragma omp atomic
-            beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
+            if(!SCIPisInfinity(scip_, -pricinglowerbound) && !SCIPisInfinity(scip_, -beststabobj) )
+            {
+               #pragma omp atomic
+               beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
+            }
+            else
+            {
+               #pragma omp atomic
+               beststabobj = -SCIPinfinity(scip_);
+            }
+
 
             #pragma omp atomic
             bestobjvals[prob] = GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
@@ -2372,6 +2381,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             SCIPdebugMessage("enabling mispricing schedule\n");
             stabilization->activateMispricingSchedule();
+
             stabilization->updateAlphaMisprice();
          }
          else if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0) )
