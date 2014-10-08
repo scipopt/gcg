@@ -1861,8 +1861,9 @@ SCIP_RETCODE initRelaxator(
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Warning: Discretization with continuous variables may lead to wrong solutions.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Warning: Discretization with continuous variables may lead to wrong solutions. Disabling stabilization.\n");
 
+      SCIPsetBoolParam(scip, "pricing/masterpricer/stabilization", FALSE);
       /* don't disable discretization */
       //relaxdata->discretization = FALSE;
    }
