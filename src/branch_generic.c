@@ -134,7 +134,7 @@ SCIP_Real getGeneratorEntry(
       }
    }
 
-   return 0;
+   return 0.0;
 }
 
 /** adds a variable to a branching constraint */
@@ -553,7 +553,6 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
       assert(GCGmasterVarIsLinking(mastervar2));
    }
 
-   /* TODO: why not all original variables */
    masterprob = GCGmasterVarGetProb(mastervar1);
    assert(masterprob == GCGmasterVarGetProb(mastervar2));
 
@@ -567,9 +566,9 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
       if( SCIPvarGetType(origvars[i]) > SCIP_VARTYPE_INTEGER )
          continue;
 
-      if( getGeneratorEntry(mastervar1, origvars[i]) > getGeneratorEntry(mastervar2, origvars[i]) )
+      if( SCIPisFeasGT(origprob, getGeneratorEntry(mastervar1, origvars[i]), getGeneratorEntry(mastervar2, origvars[i])) )
          return -1;
-      if( getGeneratorEntry(mastervar1, origvars[i]) < getGeneratorEntry(mastervar2, origvars[i]) )
+      if( SCIPisFeasLT(origprob, getGeneratorEntry(mastervar1, origvars[i]), getGeneratorEntry(mastervar2, origvars[i])) )
          return 1;
    }
 
@@ -1377,7 +1376,7 @@ double computeAlpha(
    )
 {
    int j;
-   SCIP_Real alpha_i = 0;
+   SCIP_Real alpha_i = 0.0;
    for ( j = 0; j < Fsize; ++j )
    {
       SCIP_Real generatorentry;
@@ -1387,7 +1386,7 @@ double computeAlpha(
       if ( (isense == GCG_COMPSENSE_GE && SCIPisGE(scip, generatorentry, ivalue)) ||
            (isense == GCG_COMPSENSE_LT && SCIPisLT(scip, generatorentry, ivalue)) )
       {
-         alpha_i += generatorentry*SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[j]);
+         alpha_i += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[j]);
       }
    }
 
@@ -1507,28 +1506,22 @@ SCIP_RETCODE Explore(
    assert(origvar != NULL);
 
    assert(SCIPvarGetType(origvar) <= SCIP_VARTYPE_INTEGER);
-   /* SCIPdebugMessage("orivar = %s; ivalue = %g\n", SCIPvarGetName(origvar), ivalue); */
+   SCIPdebugMessage("orivar = %s; ivalue = %g\n", SCIPvarGetName(origvar), ivalue);
 
    for( j = 0; j < Fsize; ++j )
    {
       muF += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[j]);
    }
 
-   /* SCIPdebugMessage("muF = %g\n", muF); */
+   SCIPdebugMessage("muF = %g\n", muF);
 
    /* ******************************************* *
     * compute alpha_i                             *
     * ******************************************* */
 
-   alpha_i = computeAlpha(scip, Fsize, isense, ivalue, origvar, F);
+   alpha_i = computeAlpha(scip, Fsize, GCG_COMPSENSE_GE, ivalue, origvar, F);
 
-   if( alpha_i == 0 && isense != GCG_COMPSENSE_GE )
-   {
-      isense = GCG_COMPSENSE_GE;
-      alpha_i = computeAlpha(scip, Fsize, isense, ivalue, origvar, F);
-   }
-
-   /* SCIPdebugMessage("alpha(%s) = %g\n", SCIPvarGetName(origvar), alpha_i); */
+   SCIPdebugMessage("alpha(%s) = %g\n", SCIPvarGetName(origvar), alpha_i);
 
    /* ******************************************* *
     * if f > 0, add pair to record                *

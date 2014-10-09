@@ -113,9 +113,9 @@ SCIP_DECL_SORTPTRCOMP(mastervarcomp)
       if( SCIPvarGetType(origvars[i]) > SCIP_VARTYPE_INTEGER )
          continue;
 
-      if( getGeneratorEntry(mastervar1, origvars[i]) > getGeneratorEntry(mastervar2, origvars[i]) )
+      if( SCIPisFeasGT(origprob, getGeneratorEntry(mastervar1, origvars[i]), getGeneratorEntry(mastervar2, origvars[i])) )
          return -1;
-      if( getGeneratorEntry(mastervar1, origvars[i]) < getGeneratorEntry(mastervar2, origvars[i]) )
+      if( SCIPisFeasLT(origprob, getGeneratorEntry(mastervar1, origvars[i]), getGeneratorEntry(mastervar2, origvars[i])) )
          return 1;
    }
 
@@ -211,7 +211,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
             for( j = 0; j < norigvars; j++ )
             {
                if( SCIPisZero(scip, origvals[j]) )
-                  break;
+                  continue;
 
                assert(!SCIPisZero(scip, origvals[j]));
 
@@ -254,7 +254,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
             int norigpricingvars;
             SCIP_VAR** origpricingvars;
             if( SCIPisZero(scip, origvals[j]) )
-               break;
+               continue;
             assert(!SCIPisZero(scip, origvals[j]));
 
             /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */
