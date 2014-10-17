@@ -2354,7 +2354,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
-         NULL, FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
+         &(relaxdata->discretization), FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation",
          "should identical blocks be aggregated (only for discretization approach)?",
          &(relaxdata->aggregation), FALSE, DEFAULT_AGGREGATION, NULL, NULL) );
