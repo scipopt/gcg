@@ -29,8 +29,9 @@
  * @brief  class with functions for dual variable smoothing
  * @author Martin Bergner
  * @author Jonas Witt
+ * @author Michael Bastubbe
  *
- * This is based on the paper
+ * This is an implementation of dynamic alpha-schedule (based on subgradient information) stabilization based on the paper
  *
  * Pessoa, A., Sadykov, R., Uchoa, E., & Vanderbeck, F. (2013). In-Out Separation and Column Generation
  * Stabilization by Dual Price Smoothing. In Experimental Algorithms (pp. 354-365). Springer Berlin Heidelberg.
@@ -54,7 +55,8 @@ Stabilization::Stabilization(
       stabcentercuts(NULL), stabcentercutssize(0), nstabcentercuts(0),
       stabcenterlinkingconss(NULL), nstabcenterlinkingconss(0),
       stabcenterconv(NULL), nstabcenterconv(0),
-      pricingtype(pricingtype_), alpha(0.8), nodenr(-1), k(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip))
+      pricingtype(pricingtype_), alpha(0.8), alphabar(0.8), nodenr(-1), k(0), t(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip)),
+         inmispricingschedule(FALSE)
 {
 
 }
@@ -75,6 +77,31 @@ Stabilization::~Stabilization()
 
 
 }
+
+
+/** enabling mispricing schedule */
+  SCIP_RETCODE Stabilization::activateMispricingSchedule(
+  )
+  {
+     inmispricingschedule = TRUE;
+     return SCIP_OKAY;
+  }
+
+  /** disabling mispricing schedule */
+  SCIP_RETCODE Stabilization::disablingMispricingSchedule(
+  ){
+     inmispricingschedule = FALSE;
+     k=0;
+     return SCIP_OKAY;
+  }
+
+  /** is mispricing schedule enabled */
+  SCIP_Bool Stabilization::isInMispricingSchedule(
+     ){
+     return inmispricingschedule;
+  }
+
+
 
 SCIP_RETCODE Stabilization::updateStabcenterconss()
 {
@@ -287,33 +314,48 @@ SCIP_Real Stabilization::computeDual(
       SCIP_Real current
       )
 {
+   SCIP_Real usedalpha = alpha;
+
+   if (inmispricingschedule)
+      usedalpha = alphabar;
+
    if( hasstabilitycenter )
-      return alpha*center+(1.0-alpha)*current;
+      return usedalpha*center+(1.0-usedalpha)*current;
    else
       return current;
 }
+
 void Stabilization::updateIterationCount()
+{
+   ++t;
+}
+
+void Stabilization::updateIterationCountMispricing()
 {
    ++k;
 }
+
+
 
 void Stabilization::updateNode()
 {
    if( nodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(scip_)) )
    {
       nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip_));
-      k = 1;
+      k = 0;
+      t = 1;
       alpha= 0.8;
       hasstabilitycenter = FALSE;
       stabcenterbound = -SCIPinfinity(scip_);
+      inmispricingschedule = FALSE;
    }
 }
 void Stabilization::updateAlphaMisprice()
 {
-   SCIPdebugMessage("Alpha update after mispricing\n");
-   updateIterationCount();
-   alpha = MAX(0, 1-k*(1-alpha));
-   SCIPdebugMessage("alpha updated to %g (k=%d)\n", alpha, k);
+   SCIPdebugMessage("Alphabar update after mispricing\n");
+   updateIterationCountMispricing();
+   alphabar = MAX(0, 1-k*(1-alpha));
+   SCIPdebugMessage("alphabar updated to %g in mispricing iteration k=%d and node pricing iteration t=%d \n", alphabar, k, t);
 }
 
 void Stabilization::updateAlpha(
@@ -336,7 +378,8 @@ void Stabilization::updateAlpha(
 
 void Stabilization::increaseAlpha()
 {
-   alpha = alpha+(1-alpha)*0.1;
+   alpha = MIN(0.9, alpha+(1-alpha)*0.1); //to avoid numerical problems, we assure alpha <= 0.999
+
    SCIPdebugMessage("alpha increased to %g\n", alpha);
 }
 
@@ -531,6 +574,8 @@ SCIP_Real Stabilization::calculateSubgradient(
 
 SCIP_Bool Stabilization::isStabilized()
 {
+   if(inmispricingschedule)
+      return SCIPisGT(scip_, alphabar, 0.0);
    return SCIPisGT(scip_, alpha, 0.0);
 }
 

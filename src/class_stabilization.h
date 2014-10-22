@@ -57,10 +57,13 @@ private:
    int nstabcenterconv;
    PricingType* pricingtype;
    SCIP_Real alpha;
+   SCIP_Real alphabar; /**< alpha that is used and updated in a mispricing schedule */
    int nodenr;
-   int k;
+   int k; /**< counter for the number of stabilized pricing rounds in B&B node, excluding the mispricing schedule iterations  */
+   int t; /**< counter for the number of pricing rounds during a mispricing schedule, restarted after a mispricing schedule is finished */
    SCIP_Bool hasstabilitycenter;
    SCIP_Real stabcenterbound;
+   SCIP_Bool inmispricingschedule; /**< currently in mispricing schedule */
 
 public:
    /** constructor */
@@ -69,6 +72,19 @@ public:
       PricingType*       pricingtype         /**< the pricing type when the stabilization should run */
    );
    virtual ~Stabilization();
+
+   /** enabling mispricing schedule */
+   SCIP_RETCODE activateMispricingSchedule(
+   );
+
+   /** disabling mispricing schedule */
+   SCIP_RETCODE disablingMispricingSchedule(
+   );
+
+   /** is mispricing schedule enabled */
+   SCIP_Bool isInMispricingSchedule(
+      );
+
 
    /** gets the stabilized dual solution of constraint at position i */
    SCIP_RETCODE consGetDual(
@@ -131,6 +147,11 @@ public:
 private:
    /** updates the number of iterations */
    void updateIterationCount();
+
+   /** updates the number of iterations in the current mispricing schedule */
+      void updateIterationCountMispricing();
+
+
 
    /** updates the constraints in the stability center (and allocates more memory) */
    SCIP_RETCODE updateStabcenterconss();

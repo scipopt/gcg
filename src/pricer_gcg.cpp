@@ -31,6 +31,7 @@
  * @author Martin Bergner
  * @author Alexander Gross
  * @author Christian Puchert
+ * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -2125,11 +2126,15 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
 
          SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %ud, nfoundvars = %d, optimal = %ud, *bestredcostvalid = %ud\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
+
          if( nfoundvars == 0 )
          {
-               stabilization->updateAlphaMisprice();
+            SCIPdebugMessage("enabling mispricing schedule\n");
+            stabilization->activateMispricingSchedule();
+            stabilization->updateAlphaMisprice();
          }
-         else if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0))
+         else
+            if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0))
          {
             SCIP_SOL** pricingsols = NULL;
 
@@ -2144,7 +2149,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                }
             }
 
+            if(stabilization->isInMispricingSchedule())
+               stabilization->disablingMispricingSchedule();
             stabilization->updateAlpha(pricingsols);
+
 
             SCIPfreeBlockMemoryArray(scip_, &pricingsols, pricerdata->npricingprobs);
          }
@@ -2156,6 +2164,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          assert(lowerbound != NULL );
          lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
          *lowerbound = MAX(*lowerbound, lowerboundcandidate);
+         if(stabilization->isInMispricingSchedule())
+            stabilization->disablingMispricingSchedule();
       }
 
       /* free solutions if none of them has negative reduced cost */
