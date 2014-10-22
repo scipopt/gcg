@@ -8,7 +8,6 @@ detectors/connected/enabled = FALSE
 # [type: char, range: {cra}, default: r]
 detectors/arrowheur/type = a
 detectors/arrowheur/enabled = TRUE
-detectors/arrowheur/minblocks = 18
 
 # flag to indicate whether detector <staircase> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
