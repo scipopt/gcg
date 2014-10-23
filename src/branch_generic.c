@@ -399,6 +399,7 @@ SCIP_RETCODE InitIndexSet(
 
       if( *IndexSetSize == 0 && norigvars > 0 )
       {
+         /* TODO: allocate memory for norigvars although there might be slots for continuous variables which are not needed? */
          SCIP_CALL( SCIPallocMemoryArray(scip, IndexSet, 1) );
          for( j = 0; j < norigvars; ++j )
          {
@@ -2464,9 +2465,11 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
+   /* in case original problem contains continuous variables, there are no branching cands */
    assert(nbranchcands > 0 || (discretization && SCIPgetNContVars(origscip)) > 0);
    mastervar = NULL;
 
+   /** loop over all branching candidates */
    for( i = 0; i < nbranchcands && (!discretization || SCIPgetNContVars(origscip) == 0); ++i )
    {
       int k;
@@ -2513,7 +2516,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    assert( foundblocknr || blocknr == -1  || (discretization && SCIPgetNContVars(origscip)) > 0 );
    assert( i <= nbranchcands ); /* else all blocks has been checked and we can observe an integer solution */
 
-
+   /* in case of continuous origvar look for "fractional" blocks using the representation (currentorigsol) in the original problem */
    if(discretization && SCIPgetNContVars(origscip) > 0)
    {
       int norigvars;
@@ -3012,7 +3015,6 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
    assert(branchrule != NULL);
 
    SCIP_CALL( GCGcreateBranchruleConsOrig(scip, branchrule) );
-
 
    return SCIP_OKAY;
 }

@@ -167,6 +167,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
 
    SCIP_CALL( SCIPduplicateBlockMemoryArray(scip, &mastervars, mastervarsunsorted, nmastervars) );
 
+   /* sort mastervariables lexicographically */
    SCIPsortPtr((void**)mastervars, mastervarcomp, nmastervars );
 
    SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
