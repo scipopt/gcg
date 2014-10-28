@@ -953,7 +953,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
       }
 
-      if( !SCIPisZero(scip_, dualsol) )
+      if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, pricetype->consGetDual(scip_, masterconss[i])) )
       {
 #ifdef PRINTDUALSOLS
          SCIPdebugMessage("mastercons <%s> dualsol: %g\n", SCIPconsGetName(masterconss[i]), dualsol);
