@@ -37,12 +37,12 @@
 /* #define CHECKCONSISTENCY */
 #include <assert.h>
 #include <string.h>
-#include "cons_origbranch.h"
-#include "scip/cons_linear.h"
+
 #include "gcg.h"
-#include "cons_masterbranch.h"
 #include "branch_generic.h"
 #include "cons_masterbranch.h"
+#include "cons_origbranch.h"
+
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
 #include "scip/nodesel_estimate.h"
@@ -56,6 +56,7 @@
 #include "scip/branch_pscost.h"
 #include "scip/branch_random.h"
 #include "scip/branch_relpscost.h"
+#include "scip/cons_linear.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "origbranch"
@@ -79,11 +80,9 @@ struct SCIP_ConsData
 {
    SCIP_NODE*            node;               /**< the node at which the cons is sticking */
    SCIP_CONS*            parentcons;         /**< the origbranch constraint of the parent node */
-
-   SCIP_CONS**           childcons;   /**< array of the masterbranch constraints of child nodes */
-   int                   nchildcons;  /**< number of the masterbranch constraints of child nodes */
-
-   SCIP_CONS*            probingtmpcons;     /**< pointer to save the last (second) child if the child2cons pointer is overwritten in probing mode */
+   SCIP_CONS**           childconss;         /**< array of the masterbranch constraints of child nodes */
+   int                   nchildconss;        /**< number of the masterbranch constraints of child nodes */
+   SCIP_CONS*            probingtmpcons;     /**< pointer to save the last child in the childconss array if it is overwritten in probing mode */
    SCIP_CONS*            mastercons;         /**< the masterbranch constraint of the corresponding node
                                               *   in the master program */
    GCG_BRANCHDATA*       branchdata;         /**< branching data stored by the branching rule containing information
@@ -106,29 +105,10 @@ struct SCIP_ConshdlrData
    SCIP_CONS*            rootcons;           /**< constraint in the root node */
 };
 
+
 /*
  * Callback methods of constraint handler
  */
-
-/** initializes array of cons */
-SCIP_RETCODE SCIPinitOrigconsArray(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS***          cons,               /**< pointer to constraint array */
-   int                   nconss              /**< number of constraints in cons array */
-   )
-{
-   assert(scip != NULL);
-   assert(nconss > 0);
-   assert(cons != NULL);
-
-   *cons = NULL;
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, cons, nconss) );
-   BMSclearMemoryArray(*cons, nconss);
-
-   return SCIP_OKAY;
-}
-
 
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
 static
@@ -173,7 +153,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
 
    /* prepare stack */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
-   assert( conshdlrData->nstack >= 0 );
+   assert(conshdlrData->nstack >= 0);
 
    /* check consistency */
    if( conshdlrData->rootcons != NULL )
@@ -181,12 +161,6 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
       SCIP_CALL( SCIPreleaseCons(scip, &conshdlrData->rootcons) );
       conshdlrData->rootcons = NULL;
       --(conshdlrData->nstack);
-   }
-
-   /* create origbranch constraint corresponding to the root node only if there is some problem */
-   if( SCIPgetNVars(scip) > 0 || SCIPgetNConss(scip) > 0 )
-   {
-
    }
 
    GCGconsOrigbranchCheckConsistency(scip);
@@ -209,20 +183,20 @@ SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
    assert(conshdlrdata->nstack <= 1);
+
    SCIPdebugMessage("exiting solution process branch orig constraint handler (nconss = %d)\n", SCIPconshdlrGetNConss(conshdlr));
-      /* check for root */
-      if( conshdlrdata->rootcons != NULL )
-      {
-         branchdata = GCGconsOrigbranchGetBranchdata(conshdlrdata->rootcons);
 
-         SCIPfreeMemoryNull(scip, &branchdata );
-      }
-
+   /* check for root */
    if( conshdlrdata->rootcons != NULL )
    {
+      branchdata = GCGconsOrigbranchGetBranchdata(conshdlrdata->rootcons);
+
+      SCIPfreeMemoryNull(scip, &branchdata );
+
       SCIP_CALL( SCIPreleaseCons(scip, &conshdlrdata->rootcons) );
       conshdlrdata->rootcons = NULL;
    }
+
    /* free stack */
    SCIPfreeBlockMemoryArray(scip, &conshdlrdata->stack, conshdlrdata->maxstacksize);
    conshdlrdata->stack = NULL;
@@ -239,6 +213,7 @@ SCIP_DECL_CONSEXIT(consExitOrigbranch)
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+
    SCIPdebugMessage("exiting transformed branch orig constraint handler (nconss = %d)\n", SCIPconshdlrGetNConss(conshdlr));
 
    if( conshdlrdata->rootcons != NULL )
@@ -281,39 +256,35 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
       parentdata = SCIPconsGetData((*consdata)->parentcons);
 
       if( SCIPinProbing(scip) )
-      {
          parentdata->probingtmpcons = NULL;
-      }
 
-      for( i = 0; i < parentdata->nchildcons; ++i )
+      for( i = 0; i < parentdata->nchildconss; ++i )
       {
-         if( parentdata->childcons[i] == cons )
+         if( parentdata->childconss[i] == cons )
          {
 
-            parentdata->childcons[i] = parentdata->childcons[parentdata->nchildcons-1];/*NULL;*/
-            parentdata->childcons[parentdata->nchildcons-1] = NULL;
+            parentdata->childconss[i] = parentdata->childconss[parentdata->nchildconss-1];
+            parentdata->childconss[parentdata->nchildconss-1] = NULL;
 #ifndef NDEBUG
             childdeleted = TRUE;
 #endif
-            (parentdata->nchildcons) -= 1;
+            (parentdata->nchildconss) -= 1;
             break;
          }
       }
       assert(childdeleted || SCIPinProbing(scip));
    }
-   /* no child nodes may exist */
-   for( i = 0; i < (*consdata)->nchildcons; ++i )
-         assert((*consdata)->childcons[i] == NULL);
 
-   /* delete branchdata, if no mastercons is linked, which would still need the branchdata
-    * otherwise, the mastercons deletes the branchdata when it is deleted itself */
-   if( (*consdata)->mastercons == NULL && (*consdata)->branchdata != NULL )
+   /* no child nodes may exist */
+   for( i = 0; i < (*consdata)->nchildconss; ++i )
+      assert((*consdata)->childconss[i] == NULL);
+
+   /* delete branchdata if no mastercons is linked which would still need the branchdata;
+    * otherwise, the mastercons deletes the branchdata when it is deleted itself
+    */
+   if( (*consdata)->mastercons == NULL && (*consdata)->branchdata != NULL && (*consdata)->branchrule != NULL )
    {
-      if( (*consdata)->branchrule != NULL && (*consdata)->branchdata != NULL )
-      {
-         /*SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) ); // masterbranch is deleted first*/
-         (*consdata)->branchdata = NULL;
-      }
+      (*consdata)->branchdata = NULL;
    }
 
    /* free propagation domain changes arrays */
@@ -324,9 +295,9 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
       SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->propbounds), (*consdata)->maxpropbounds);
    }
 
-   SCIPfreeMemoryArrayNull(scip, &(*consdata)->childcons);
-   (*consdata)->childcons = NULL;
-   (*consdata)->nchildcons = 0;
+   SCIPfreeMemoryArrayNull(scip, &(*consdata)->childconss);
+   (*consdata)->childconss = NULL;
+   (*consdata)->nchildconss = 0;
 
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);
@@ -374,7 +345,6 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
 
    return SCIP_OKAY;
 }
-
 
 
 /** constraint deactivation notification method of constraint handler */
@@ -466,6 +436,8 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
 #define consParseOrigbranch NULL
 #define consGetVarsOrigbranch NULL
 #define consGetNVarsOrigbranch NULL
+
+
 /*
  * interface methods
  */
@@ -477,8 +449,6 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
    )
 {
    SCIP_CONSHDLRDATA* conshdlrData;
-
-   SCIPdebugMessage("Including branch orig constraint handler.\n");
 
    SCIP_CALL( SCIPallocMemory(scip, &conshdlrData) );
    conshdlrData->stack = NULL;
@@ -527,11 +497,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 
    /* find the origbranch constraint handler */
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("origbranch constraint handler not found\n");
-      return SCIP_PLUGINNOTFOUND;
-   }
+   assert(conshdlr != NULL);
 
    /* create constraint data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
@@ -545,20 +511,19 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    }
 
    /* initialize the fields in the constraint data */
-   consdata->parentcons = parentcons;
    consdata->node = node;
+   consdata->parentcons = parentcons;
+   consdata->childconss = NULL;
+   consdata->nchildconss = 0;
    consdata->probingtmpcons = NULL;
    consdata->mastercons = NULL;
-   consdata->branchrule = branchrule;
    consdata->branchdata = branchdata;
-   consdata->npropbounds = 0;
-   consdata->maxpropbounds = 0;
+   consdata->branchrule = branchrule;
    consdata->propvars = NULL;
    consdata->propboundtypes = NULL;
    consdata->propbounds = NULL;
-
-   consdata->childcons = NULL;
-   consdata->nchildcons = 0;
+   consdata->npropbounds = 0;
+   consdata->maxpropbounds = 0;
 
    SCIPdebugMessage("Creating branch orig constraint: <%s> (nconss = %d).\n", name, SCIPconshdlrGetNConss(conshdlr));
 
@@ -580,27 +545,42 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
       }
       else
       {
-         ++parentdata->nchildcons;
-         if( parentdata->nchildcons == 1 )
+         ++parentdata->nchildconss;
+         if( parentdata->nchildconss == 1 )
          {
-            SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
-            parentdata->childcons[0] = NULL;
+            SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childconss), parentdata->nchildconss) );
+            parentdata->childconss[0] = NULL;
          }
          else
          {
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
-            parentdata->childcons[parentdata->nchildcons - 1] = NULL;
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childconss), parentdata->nchildconss) );
+            parentdata->childconss[parentdata->nchildconss - 1] = NULL;
          }
-         parentdata->childcons[parentdata->nchildcons-1] = *cons;
+         parentdata->childconss[parentdata->nchildconss-1] = *cons;
       }
    }
 
    return SCIP_OKAY;
 }
 
+/** create array of constraints */
+SCIP_RETCODE GCGconsOrigbranchCreateOrigconsArray(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS***          conss,              /**< pointer to constraint array */
+   int                   nconss              /**< number of constraints in the constraint array */
+   )
+{
+   assert(scip != NULL);
+   assert(conss != NULL);
+   assert(nconss > 0);
 
+   *conss = NULL;
 
-/* ----------------------------------- external methods -------------------------- */
+   SCIP_CALL( SCIPallocMemoryArray(scip, conss, nconss) );
+   BMSclearMemoryArray(*conss, nconss);
+
+   return SCIP_OKAY;
+}
 
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
 SCIP_CONS* GCGconsOrigbranchGetActiveCons(
@@ -612,11 +592,8 @@ SCIP_CONS* GCGconsOrigbranchGetActiveCons(
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("origbranch constraint handler not found\n");
-      return NULL;
-   }
+   assert(conshdlr != NULL);
+
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
    assert(conshdlrData->stack != NULL);
@@ -638,18 +615,14 @@ void GCGconsOrigbranchGetStack(
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("origbranch constraint handler not found\n");
-      return;
-   }
+   assert(conshdlr != NULL);
+
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
    assert(conshdlrData->stack != NULL);
 
    *stack = conshdlrData->stack;
    *nstackelements = conshdlrData->nstack;
-
 }
 
 /** returns the branching data for a given origbranch constraint */
@@ -664,9 +637,6 @@ void GCGconsOrigbranchSetBranchdata(
    assert(consdata != NULL);
 
    consdata->branchdata = branchdata;
-
-   if( GCGconsOrigbranchGetMastercons(cons) != NULL )
-      printf("root-orig has mastercons\n");
 }
 
 /** returns the branching data for a given origbranch constraint */
@@ -737,7 +707,7 @@ int GCGconsOrigbranchGetNChildconss(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   return consdata->nchildcons;
+   return consdata->nchildconss;
 }
 
 /** returns the origbranch constraint of the vanderbeckchild of the node at which the
@@ -751,10 +721,10 @@ SCIP_CONS* GCGconsOrigbranchGetChildcons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
-   assert(consdata->childcons != NULL);
-   assert(consdata->nchildcons > childnr);
+   assert(consdata->childconss != NULL);
+   assert(consdata->nchildconss > childnr);
 
-   return consdata->childcons[childnr];
+   return consdata->childconss[childnr];
 }
 
 /** sets the masterbranch constraint of the node in the master program corresponding to the node
@@ -934,7 +904,7 @@ int GCGconsOrigbranchGetNPropBoundChgs(
 }
 
 /** adds initial constraint to root node */
-SCIP_RETCODE SCIPconsOrigbranchAddRootCons(
+SCIP_RETCODE GCGconsOrigbranchAddRootCons(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -944,19 +914,16 @@ SCIP_RETCODE SCIPconsOrigbranchAddRootCons(
    SCIP_CONS** conss;
    int nconss;
    int i;
+
    assert(scip != NULL);
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("origbranch constraint handler not found\n");
-      return SCIP_ERROR;
-   }
+   assert(conshdlr != NULL);
 
    nconss = SCIPconshdlrGetNConss(conshdlr);
    assert(nconss <= 1);
    conss = SCIPconshdlrGetConss(conshdlr);
-   for( i = 0; i  < nconss; ++i )
+   for( i = 0; i < nconss; ++i )
    {
       SCIP_CALL( SCIPdelCons(scip, conss[i]) );
    }

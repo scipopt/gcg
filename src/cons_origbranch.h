@@ -30,6 +30,8 @@
  * @author Gerald Gamrath
  */
 
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+
 #ifndef GCG_CONS_ORIGBRANCH_H__
 #define GCG_CONS_ORIGBRANCH_H__
 
@@ -39,21 +41,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern
-/** initializes array of cons */
-SCIP_RETCODE SCIPinitOrigconsArray(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS***          cons,               /**< pointer to constraint array */
-   int                   ncons               /**< number of constraints in cons array */
-   );
-
-/** returns the branch orig constraint of the current node, only needs the pointer to scip */
-extern
-SCIP_CONS* GCGconsOrigbranchGetActiveCons(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
 
 /** creates the handler for origbranch constraints and includes it in SCIP */
 extern
@@ -73,6 +60,21 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    GCG_BRANCHDATA*       branchdata          /**< branching data storing information about the branching restrictions at the
                                               *   corresponding node */
    );
+
+/** create array of constraints */
+extern
+SCIP_RETCODE GCGconsOrigbranchCreateOrigconsArray(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS***          cons,               /**< pointer to constraint array */
+   int                   ncons               /**< number of constraints in cons array */
+   );
+
+/** returns the branch orig constraint of the current node, only needs the pointer to scip */
+extern
+SCIP_CONS* GCGconsOrigbranchGetActiveCons(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 
 /** returns the stack and the number of elements on it */
 extern
@@ -188,7 +190,7 @@ int GCGconsOrigbranchGetNPropBoundChgs(
 
 /** adds initial constraint to root node */
 extern
-SCIP_RETCODE SCIPconsOrigbranchAddRootCons(
+SCIP_RETCODE GCGconsOrigbranchAddRootCons(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

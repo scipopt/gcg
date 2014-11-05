@@ -397,8 +397,8 @@ SCIP_RETCODE createChildNodesRyanfoster(
 
    if( norigvars1 > 0 )
    {
-      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchconss, norigvars1) );
-      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchconss2, norigvars1) );
+      SCIP_CALL( GCGconsOrigbranchCreateOrigconsArray(masterscip, &origbranchconss, norigvars1) );
+      SCIP_CALL( GCGconsOrigbranchCreateOrigconsArray(masterscip, &origbranchconss2, norigvars1) );
    }
 
    /* add branching decision as varbound constraints to original problem */
@@ -425,9 +425,9 @@ SCIP_RETCODE createChildNodesRyanfoster(
    }
 
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, samename, branchrule, branchsamedata,
-         origbranchconss, norigvars1, NULL, 0, NULL, GCG_BOUNDTYPE_NONE, 0.0, FALSE, GCG_BOUNDTYPE_NONE, 0.0) );
+         origbranchconss, norigvars1, NULL, GCG_BOUNDTYPE_NONE, 0.0, FALSE) );
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, differname, branchrule, branchdifferdata,
-         origbranchconss2, norigvars1, NULL, 0, NULL, GCG_BOUNDTYPE_NONE, 0.0, FALSE, GCG_BOUNDTYPE_NONE, 0.0) );
+         origbranchconss2, norigvars1, NULL, GCG_BOUNDTYPE_NONE, 0.0, FALSE) );
 
    /*  release constraints */
    SCIP_CALL( SCIPreleaseCons(masterscip, &cons1) );

@@ -26,8 +26,9 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   branch_orig.c
- * @brief  branching rule for original problem in GCG
+ * @brief  branching rule for the original problem in GCG
  * @author Gerald Gamrath
+ * @author Marcel Schmickerath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -37,15 +38,15 @@
 
 #include "branch_orig.h"
 #include "gcg.h"
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
-#include "cons_origbranch.h"
 #include "branch_relpsprob.h"
-#include "scip/cons_linear.h"
-#include "type_branchgcg.h"
-
 #include "cons_integralorig.h"
 #include "cons_masterbranch.h"
+#include "cons_origbranch.h"
+#include "relax_gcg.h"
+#include "pricer_gcg.h"
+#include "type_branchgcg.h"
+
+#include "scip/cons_linear.h"
 
 
 #define BRANCHRULE_NAME          "orig"
@@ -81,6 +82,8 @@ SCIP_RETCODE updateExternBranchcandsForMasterbranch(
    int norigvars;
    int i;
 
+   assert(GCGisOriginal(scip));
+
    origvars = SCIPgetVars(scip);
    norigvars = SCIPgetNVars(scip);
    assert(origvars != NULL);
@@ -89,6 +92,7 @@ SCIP_RETCODE updateExternBranchcandsForMasterbranch(
 
    /* store branching candidates */
    for( i = 0; i < norigvars; i++ )
+   {
       if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
       {
          assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
@@ -97,6 +101,7 @@ SCIP_RETCODE updateExternBranchcandsForMasterbranch(
             origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])),
             SCIPgetRelaxSolVal(scip, origvars[i])) );
       }
+   }
    SCIPdebugMessage("updated relaxation branching candidates\n");
 
    return SCIP_OKAY;
@@ -106,7 +111,7 @@ SCIP_RETCODE updateExternBranchcandsForMasterbranch(
 static
 SCIP_RETCODE branchVar(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< pointer of the orig branching rule */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the original variable branching rule */
    SCIP_VAR*             branchvar,          /**< variable to branch on */
    SCIP_Real             solval              /**< value of the variable in the current solution */
    )
@@ -134,6 +139,7 @@ SCIP_RETCODE branchVar(
    assert(branchrule != NULL);
    assert(branchvar != NULL);
 
+   /* get master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
@@ -195,8 +201,8 @@ SCIP_RETCODE branchVar(
 
       SCIPdebugMessage("enforced by cons\n");
 
-      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchconss1, norigbranchconss) );
-      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchconss2, norigbranchconss) );
+      SCIP_CALL( GCGconsOrigbranchCreateOrigconsArray(masterscip, &origbranchconss1, norigbranchconss) );
+      SCIP_CALL( GCGconsOrigbranchCreateOrigconsArray(masterscip, &origbranchconss2, norigbranchconss) );
 
       /* create corresponding constraints */
       SCIP_CALL( SCIPcreateConsLinear(scip, &consup, upname, 0, NULL, NULL,
@@ -239,7 +245,7 @@ SCIP_RETCODE branchVar(
 static
 SCIP_RETCODE branchExtern(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< pointer of the orig branching rule */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the original variable branching rule */
    SCIP_RESULT*          result              /**< pointer to store the result of the branching call */
    )
 {
@@ -271,9 +277,9 @@ SCIP_RETCODE branchExtern(
    assert(result != NULL);
    assert(SCIPisRelaxSolValid(scip));
 
-   SCIPdebugMessage("Execrel method of orig branching\n");
-
    *result = SCIP_DIDNOTRUN;
+
+   /* get master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
@@ -539,10 +545,11 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 
    SCIPdebugMessage("Execlp method of orig branching\n");
 
+   /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
-   feasible = FALSE;
-
    assert(origscip != NULL);
+
+   feasible = FALSE;
 
    if( GCGcurrentNodeIsGeneric(scip) )
    {
@@ -579,10 +586,11 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 
    SCIPdebugMessage("Execext method of orig branching\n");
 
+   /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
-   feasible = FALSE;
-
    assert(origscip != NULL);
+
+   feasible = FALSE;
 
    if( GCGcurrentNodeIsGeneric(scip) )
    {
@@ -642,8 +650,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    assert(scip != NULL);
    assert(result != NULL);
 
+   /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
-   /* masterscip = scip; */
    assert(origscip != NULL);
 
    if( GCGcurrentNodeIsGeneric(scip) )
@@ -736,23 +744,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    return SCIP_OKAY;
 }
 
-static
-SCIP_DECL_BRANCHCOPY(branchCopyOrig)
-{
-
-   assert(scip != NULL);
-   assert(branchrule != NULL);
-
-   SCIPdebugMessage("orig copy called.\n");
-
-   return SCIP_OKAY;
-}
-
-/* define not used callback as NULL*/
-#define branchFreeOrig NULL
-#define branchExitOrig NULL
-#define branchInitsolOrig NULL
-#define branchExitsolOrig NULL
 
 
 /*
@@ -764,36 +755,44 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   SCIP* origscip;
    SCIP_BRANCHRULE* branchrule;
 
-   SCIPdebugMessage("include method of branchorig called.\n");
+   /* get original problem */
+   origscip = GCGmasterGetOrigprob(scip);
+   assert(origscip != NULL);
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchCopyOrig,
-         branchFreeOrig, branchInitOrig, branchExitOrig, branchInitsolOrig, branchExitsolOrig,
-         branchExeclpOrig, branchExecextOrig, branchExecpsOrig, NULL) );
+   SCIP_CALL( SCIPincludeBranchruleBasic(scip, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
+            BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, NULL) );
+   assert(branchrule != NULL);
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/enforcebycons",
+   /* set non fundamental callbacks via setter functions */
+   SCIP_CALL( SCIPsetBranchruleInit(scip, branchrule, branchInitOrig) );
+   SCIP_CALL( SCIPsetBranchruleExecLp(scip, branchrule, branchExeclpOrig) );
+   SCIP_CALL( SCIPsetBranchruleExecExt(scip, branchrule, branchExecextOrig) );
+   SCIP_CALL( SCIPsetBranchruleExecPs(scip, branchrule, branchExecpsOrig) );
+
+   /* add original variable branching rule parameters */
+
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/enforcebycons",
          "should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE)",
          NULL, FALSE, DEFAULT_ENFORCEBYCONS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/mostfrac",
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/mostfrac",
          "should branching be performed on the most fractional variable instead of the first variable?",
          NULL, FALSE, DEFAULT_MOSTFRAC, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/usepseudocosts",
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usepseudocosts",
          "should pseudocosts be used to determine the variable on which the branching is performed?",
          NULL, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/usepsstrong",
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/orig/usepsstrong",
          "should strong branching with propagation be used to determine the variable on which the branching is performed?",
          NULL, FALSE, DEFAULT_USEPSSTRONG, NULL, NULL) );
 
-   branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
-   assert(branchrule != NULL);
-
-   SCIP_CALL( GCGcreateBranchruleConsOrig(scip, branchrule) );
+   /* notify cons_integralorig about the original variable branching rule */
+   SCIP_CALL( GCGconsIntegralorigAddBranchrule(scip, branchrule) );
 
    return SCIP_OKAY;
 }

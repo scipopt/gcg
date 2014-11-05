@@ -2883,7 +2883,7 @@ SCIP_DECL_BRANCHINIT(branchInitGeneric)
    return SCIP_OKAY;
 }
 
-/** creates the most infeasible LP branching rule and includes it in SCIP */
+/** creates the generic branching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
    SCIP*                 scip                /**< SCIP data structure */
    )
