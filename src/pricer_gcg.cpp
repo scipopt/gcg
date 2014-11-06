@@ -845,7 +845,8 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
  *  @todo this method could use more parameters as it is private
  */
 SCIP_RETCODE ObjPricerGcg::setPricingObjs(
-   PricingType*          pricetype           /**< Farkas or Reduced cost pricing */
+   PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */
+   SCIP_Bool             stabilize           /**< do we use stabilization ? */
    )
 {
    SCIP_CONS** origconss;
@@ -863,7 +864,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
    SCIP_VAR** consvars = NULL;
    int nconsvars;
-   SCIP_Bool stabilize;
    int i;
    int j;
 
@@ -874,8 +874,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
    origconss = GCGrgetLinearOrigMasterConss(origprob);
-
-   stabilize = (pricetype->getType() == GCG_PRICETYPE_REDCOST) && pricerdata->stabilization;
 
    /* set objective value of all variables in the pricing problems to 0 (for farkas pricing) /
     * to the original objective of the variable (for redcost pricing)
@@ -2014,7 +2012,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
-      SCIP_CALL( setPricingObjs(pricetype) );
+      SCIP_CALL( setPricingObjs(pricetype, stabilized) );
 
       #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost, beststabobj,bestredcostvalid,nfoundvars,successfulmips,infeasible,pricinghaserror) reduction(+:solvedmips) schedule(static,1)
       for( i = 0; i < pricerdata->npricingprobs; i++ )
