@@ -2476,7 +2476,15 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
    if( blocknr < -1 )
    {
+      SCIP_Bool rays;
+
       SCIPdebugMessage("Generic branching rule could not find variables to branch on!\n");
+
+      GCGpricerExistRays(masterscip, &rays);
+
+      if( rays )
+         SCIPdebugMessage("This is because generic branching is not compatible with unbounded problems!\n");
+
       return SCIP_ERROR;
    }
 

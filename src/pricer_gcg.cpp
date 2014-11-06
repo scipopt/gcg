@@ -3180,6 +3180,40 @@ void GCGpricerPrintStatistics(
 
 }
 
+/** method to get existence of rays */
+extern "C"
+SCIP_RETCODE GCGpricerExistRays(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool*            exist               /**< pointer to store if there exists any ray */
+   )
+{
+   int prob;
+
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   *exist = FALSE;
+
+   for( prob = 0; prob < pricerdata->npricingprobs; ++prob )
+   {
+      if( pricerdata->nraysprob[prob] > 0 )
+      {
+         *exist = TRUE;
+         break;
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
 
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */
