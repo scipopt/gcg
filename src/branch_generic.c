@@ -2483,7 +2483,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       GCGpricerExistRays(masterscip, &rays);
 
       if( rays )
-         SCIPdebugMessage("This is because generic branching is not compatible with unbounded problems!\n");
+         SCIPwarningMessage(masterscip, "Generic branching is not compatible with unbounded problems!\n");
 
       return SCIP_ERROR;
    }
