@@ -43,17 +43,12 @@
 /* include header files here, such that the user only has to include
  * gcgplugins.h
  */
-#include "scip/cons_and.h"
-#include "scip/cons_bounddisjunction.h"
-#include "scip/cons_conjunction.h"
 #include "scip/cons_integral.h"
 #include "scip/cons_knapsack.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_logicor.h"
-#include "scip/cons_or.h"
 #include "scip/cons_setppc.h"
 #include "scip/cons_varbound.h"
-#include "scip/cons_xor.h"
 
 #if USEHEURS
 #include "scip/heur_actconsdiving.h"
@@ -108,7 +103,6 @@
 #include "scip/presol_boundshift.h"
 #include "scip/presol_components.h"
 #include "scip/presol_domcol.h"
-#include "scip/presol_gateextraction.h"
 #include "scip/presol_convertinttobin.h"
 
 #if USEPROP
@@ -134,7 +128,6 @@
 #include "scip/reader_opb.h"
 #include "scip/reader_osil.h"
 #include "scip/reader_pip.h"
-#include "scip/reader_ppm.h"
 #include "scip/reader_pbm.h"
 #include "scip/reader_rlp.h"
 #include "scip/reader_sol.h"

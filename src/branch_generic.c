@@ -2480,7 +2480,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
       SCIPdebugMessage("Generic branching rule could not find variables to branch on!\n");
 
-      GCGpricerExistRays(masterscip, &rays);
+      SCIP_CALL( GCGpricerExistRays(masterscip, &rays) );
 
       if( rays )
          SCIPwarningMessage(masterscip, "Generic branching is not compatible with unbounded problems!\n");
