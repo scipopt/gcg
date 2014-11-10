@@ -70,9 +70,16 @@ PricingType::PricingType(
    calls = 0;
 }
 
-PricingType::~PricingType()
+PricingType::~PricingType() throw(SCIP_RETCODE)
 {
+   //try
+   //{
    SCIP_CALL_ABORT( SCIPfreeClock(scip_, &(clock)) );
+   //}
+//   catch(int e)
+//   {
+//      SCIPerrorMessage("An exception occured. Exception Nr. %d\n", e);
+//   }
    scip_ = NULL;
 }
 

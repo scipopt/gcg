@@ -54,10 +54,12 @@ protected:
 
 public:
    /** constructor */
+   PricingType();
+
    PricingType(SCIP *p_scip);
 
    /** destructor */
-   virtual ~PricingType();
+   virtual ~PricingType() throw(SCIP_RETCODE);
 
    /** get dual value of a constraint */
    virtual double consGetDual(
@@ -171,10 +173,16 @@ public:
 class ReducedCostPricing : public PricingType
 {
 public:
+   /** constructor */
+   ReducedCostPricing();
+
    ReducedCostPricing(
           SCIP* p_scip
           );
+
+    /** destructor */
     virtual ~ReducedCostPricing() {}
+
     virtual SCIP_RETCODE addParameters();
     virtual SCIP_Real consGetDual(SCIP* scip, SCIP_CONS* cons) const;
     virtual SCIP_Real rowGetDual(SCIP_ROW* row) const;
@@ -200,9 +208,12 @@ public:
 class FarkasPricing : public PricingType
 {
 public:
+   /** constructor */
+   FarkasPricing();
    FarkasPricing(
           SCIP* p_scip
           );
+   /** destructor */
    virtual ~FarkasPricing() {}
    virtual SCIP_RETCODE addParameters();
    virtual SCIP_Real consGetDual(SCIP *scip, SCIP_CONS *cons) const;

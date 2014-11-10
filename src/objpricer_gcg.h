@@ -223,7 +223,7 @@ private:
    SCIP_Bool canPricingBeAborted() const;
 
    /** sorts pricing problems according to their score */
-   void sortPricingProblemsByScore();
+   void sortPricingProblemsByScore() const;
 
    /** returns the gegeneracy of the masterproblem */
    SCIP_RETCODE computeCurrentDegeneracy(

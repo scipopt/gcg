@@ -68,6 +68,10 @@ public:
       SCIP*              scip,               /**< SCIP data structure */
       PricingType*       pricingtype         /**< the pricing type when the stabilization should run */
    );
+   /** constructor */
+   Stabilization();
+
+   /** destructor */
    virtual ~Stabilization();
 
    /** gets the stabilized dual solution of constraint at position i */
