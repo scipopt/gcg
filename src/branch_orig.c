@@ -381,8 +381,8 @@ SCIP_RETCODE branchVar(
       SCIPdebugMessage(" -> creating child: <%s> == %g\n",
          SCIPvarGetName(branchvar), fixval);
 
-      (void) SCIPsnprintf(fixname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdowndata->origvar),
-         "==", branchdowndata->newbound);
+      (void) SCIPsnprintf(fixname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchfixdata->origvar),
+         "==", branchfixdata->newbound);
 
       /* enforce branching decision by a constraint rather than by bound changes */
        if( enforcebycons )
