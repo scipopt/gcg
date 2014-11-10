@@ -102,20 +102,16 @@ SCIP_RETCODE updateExternBranchcandsForMasterbranch(
    return SCIP_OKAY;
 }
 
-/** branches on a given variable */
-
 /** branches on a integer variable x
  *  if solution value x' is fractional, two child nodes will be created
  *  (x <= floor(x'), x >= ceil(x')),
- *  if solution value is integral, the x' is equal to lower or upper bound of the branching
- *  variable and the bounds of x are finite, then two child nodes will be created
+ *  if solution value is integral, the bounds of x are finite, then two child nodes will be created
  *  (x <= x", x >= x"+1 with x" = floor((lb + ub)/2)),
  *  otherwise (up to) three child nodes will be created
  *  (x <= x'-1, x == x', x >= x'+1)
  *  if solution value is equal to one of the bounds and the other bound is infinite, only two child nodes
  *  will be created (the third one would be infeasible anyway)
  */
-
 static
 SCIP_RETCODE branchVar(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -128,19 +124,26 @@ SCIP_RETCODE branchVar(
    SCIP* masterscip;
    SCIP_NODE* child1;
    SCIP_NODE* child2;
+   SCIP_NODE* child3;
    SCIP_CONS* cons1;
    SCIP_CONS* cons2;
+   SCIP_CONS* cons3;
    SCIP_CONS** origbranchcons1;
    SCIP_CONS** origbranchcons2;
+   SCIP_CONS** origbranchcons3;
    GCG_BRANCHDATA* branchupdata;
    GCG_BRANCHDATA* branchdowndata;
+   GCG_BRANCHDATA* branchfixdata;
    SCIP_Bool chgVarUbNodeup;
    SCIP_Bool chgVarUbNodedown;
+   SCIP_Bool chgVarUbNodefix;
    SCIP_Bool chgVarLbNodeup;
    SCIP_Bool chgVarLbNodedown;
+   SCIP_Bool chgVarLbNodefix;
    SCIP_Bool addPropBoundChg;
    char upname[SCIP_MAXSTRLEN];
    char downname[SCIP_MAXSTRLEN];
+   char fixname[SCIP_MAXSTRLEN];
    int norigbranchcons;
    SCIP_Real downub;
    SCIP_Real fixval;
@@ -158,11 +161,14 @@ SCIP_RETCODE branchVar(
    assert(masterscip != NULL);
    chgVarUbNodeup = FALSE;
    chgVarUbNodedown = FALSE;
+   chgVarUbNodefix = FALSE;
    chgVarLbNodeup = FALSE;
    chgVarLbNodedown = FALSE;
+   chgVarLbNodefix = FALSE;
    addPropBoundChg = FALSE;
    origbranchcons1 = NULL;
    origbranchcons2 = NULL;
+   origbranchcons3 = NULL;
    norigbranchcons = 0;
 
    /* for cons_masterbranch */
@@ -171,12 +177,7 @@ SCIP_RETCODE branchVar(
    fixval = SCIP_INVALID;
    uplb = SCIP_INVALID;
 
-   if( TRUE )
-   {
-      downub = SCIPfeasFloor(scip, solval);
-      uplb = SCIPfeasCeil(scip, solval);
-   }
-   else if( SCIPisFeasIntegral(scip, solval) )
+   if( SCIPisFeasIntegral(scip, solval) )
    {
       SCIP_Real lb;
       SCIP_Real ub;
@@ -358,6 +359,63 @@ SCIP_RETCODE branchVar(
        SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, downname, branchrule,
              branchdowndata, origbranchcons2, norigbranchcons, chgVarUbNodedown, chgVarLbNodedown, addPropBoundChg,
              branchvar, solval, branchdowndata->boundtype, branchdowndata->newbound) );
+   }
+
+   if( fixval != SCIP_INVALID )    /*lint !e777*/
+   {
+      /* create child node x = fixval */
+      SCIP_CALL( SCIPcreateChild(masterscip, &child3, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons3, child3, GCGconsMasterbranchGetActiveCons(masterscip)) );
+      SCIP_CALL( SCIPaddConsNode(masterscip, child3, cons3, NULL) );
+
+      SCIP_CALL( SCIPallocBlockMemory(scip, &branchfixdata) );
+
+      branchfixdata->origvar = branchvar;
+      branchfixdata->oldvalue = solval;
+      branchfixdata->olddualbound = SCIPgetLocalLowerbound(GCGgetMasterprob(scip));
+      branchfixdata->boundtype = GCG_BOUNDTYPE_FIXED;
+      branchfixdata->newbound = fixval;
+      branchfixdata->oldbound = SCIPvarGetUbLocal(branchvar);
+      branchfixdata->cons = cons3;
+
+      SCIPdebugMessage(" -> creating child: <%s> == %g\n",
+         SCIPvarGetName(branchvar), fixval);
+
+      (void) SCIPsnprintf(fixname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdowndata->origvar),
+         "==", branchdowndata->newbound);
+
+      /* enforce branching decision by a constraint rather than by bound changes */
+       if( enforcebycons )
+       {
+          /* enforce new bounds by linear constraints */
+          SCIP_CONS* consfix;
+
+          norigbranchcons = 1;
+
+          SCIPdebugMessage("enforced by cons\n");
+
+          SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons3, norigbranchcons) );
+
+          /* create corresponding constraints */
+          SCIP_CALL( SCIPcreateConsLinear(scip, &consfix, fixname, 0, NULL, NULL,
+               fixval, fixval, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE) );
+          SCIP_CALL( SCIPaddCoefLinear(scip, consfix, branchvar, 1.0) );
+
+          origbranchcons3[0] = consfix;
+
+          branchfixdata->cons = consfix;
+       }
+       else
+       {
+          chgVarLbNodefix = TRUE;
+          chgVarUbNodefix = TRUE;
+
+          branchfixdata->cons = NULL;
+       }
+
+       SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons3, fixname, branchrule,
+             branchfixdata, origbranchcons3, norigbranchcons, chgVarUbNodefix, chgVarLbNodefix, addPropBoundChg,
+             branchvar, solval, branchfixdata->boundtype, branchfixdata->newbound) );
    }
 
    return SCIP_OKAY;
@@ -590,7 +648,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    assert(origscip != NULL);
 
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
-      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
+      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ), branchdata->newbound);
 
    /* transform constraint to the master variable space */
    SCIP_CALL( GCGrelaxTransOrigToMasterCons(origscip, branchdata->cons, &mastercons) );
@@ -616,7 +674,7 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
    assert(branchdata->origvar != NULL);
 
    SCIPdebugMessage("branchMasterSolvedOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
-      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
+      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ), branchdata->newbound);
 
    if( !SCIPisInfinity(scip, newlowerbound) && SCIPgetStage(GCGgetMasterprob(scip)) == SCIP_STAGE_SOLVING
       && SCIPisRelaxSolValid(GCGgetMasterprob(scip)) )
@@ -640,7 +698,8 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
       return SCIP_OKAY;
 
    SCIPdebugMessage("branchDataDeleteOrig: %s %s %f\n", SCIPvarGetName((*branchdata)->origvar),
-      ( (*branchdata)->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : "<=" ), (*branchdata)->newbound);
+      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : branchdata->boundtype == GCG_BOUNDTYPE_UPPER ? "<=" : "==" ),
+      (*branchdata)->newbound);
 
    /* release constraint */
    if( (*branchdata)->cons != NULL )
@@ -763,6 +822,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    /* values for choosing the variable to branch on */
    SCIP_VAR* branchvar;
    SCIP_Real solval;
+   SCIP_Real lb;
+   SCIP_Real ub;
 
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -801,8 +862,26 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
          continue;
 
       branchvar = branchcands[i];
-      assert(SCIPvarGetUbLocal(branchvar) - SCIPvarGetLbLocal(branchvar) > 0.8);
-      solval = SCIPvarGetLbLocal(branchvar) + 0.5;
+      lb = SCIPvarGetLbLocal(branchvar);
+      ub = SCIPvarGetUbLocal(branchvar);
+
+      assert(ub - lb > 0.8);
+
+      /*  if the bounds of the branching variable x are finite, then the solution value
+       *  is floor((lb + ub)/2)) + 0.5,
+       *  otherwise the solution value is set to a finite bound
+       *  if no finite bound exists, the solution value is set to 0.
+       */
+      if( !SCIPisInfinity(origscip, ub) && !SCIPisInfinity(origscip, -lb) )
+         solval =  SCIPfeasFloor(scip, (ub + lb) / 2.0) + 0.5;
+      else if( !SCIPisInfinity(origscip, -lb) )
+         solval = lb;
+      else if( !SCIPisInfinity(origscip, ub) )
+         solval = ub;
+      else
+         solval = 0.0;
+
+      break;
    }
 
    /* we did not find a variable to branch on so far, so we look for an unfixed linking variable or an integer variable
@@ -842,8 +921,26 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
          }
 
          branchvar = branchcands[i];
-         assert(SCIPvarGetUbLocal(branchvar) - SCIPvarGetLbLocal(branchvar) > 0.8);
-         solval = SCIPvarGetLbLocal(branchvar) + 0.5;
+         lb = SCIPvarGetLbLocal(branchvar);
+         ub = SCIPvarGetUbLocal(branchvar);
+
+         assert(ub - lb > 0.8);
+
+         /*  if the bounds of the branching variable x are finite, then the solution value
+          *  is floor((lb + ub)/2)) + 0.5,
+          *  otherwise the solution value is set to a finite bound
+          *  if no finite bound exists, the solution value is set to 0.
+          */
+         if( !SCIPisInfinity(origscip, ub) && !SCIPisInfinity(origscip, -lb) )
+            solval =  SCIPfeasFloor(scip, (ub + lb) / 2.0) + 0.5;
+         else if( !SCIPisInfinity(origscip, -lb) )
+            solval = lb;
+         else if( !SCIPisInfinity(origscip, ub) )
+            solval = ub;
+         else
+            solval = 0.0;
+
+         break;
       }
    }
 
