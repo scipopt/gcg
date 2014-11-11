@@ -40,6 +40,8 @@
 #include "scip/clock.h"
 #include "scip_misc.h"
 
+#include <exception>
+
 #define DEFAULT_MAXVARSROUNDREDCOSTROOT  100        /**< maximal number of variables per reduced cost pricing round at root node */
 #define DEFAULT_MAXVARSROUNDREDCOST      100        /**< maximal number of variables per reduced cost pricing round */
 #define DEFAULT_MAXSUCCESSFULMIPSREDCOST INT_MAX    /**< maximal number of successful MIP solves */
@@ -50,6 +52,17 @@
 #define DEFAULT_MAXVARSROUNDFARKAS       10         /**< maximal number of variables per farkas pricing round */
 #define DEFAULT_MIPSRELFARKAS            1.0        /**< factor of farkas pricing MIPs to be solved */
 
+
+#define SCIP_CALL_EXC(x)   do                                                                                  \
+                       {                                                                                      \
+                          SCIP_RETCODE _restat_;                                                              \
+                          if( (_restat_ = (x)) !=  SCIP_OKAY )                                                \
+                          {                                                                                   \
+                             SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
+                             throw std::exception();                                                          \
+                           }                                                                                  \
+                       }                                                                                      \
+                       while( FALSE )
 
 PricingType::PricingType(
       SCIP* scip
@@ -66,13 +79,13 @@ PricingType::PricingType(
    mipsrel = 1.0;
    mipsrelroot = 1.0;
 
-   SCIP_CALL_ABORT( SCIPcreateCPUClock(scip, &(clock)) );
+   SCIP_CALL_EXC( SCIPcreateCPUClock(scip, &(clock)) );
    calls = 0;
 }
 
 PricingType::~PricingType()
 {
-   SCIP_CALL_ABORT( SCIPfreeClock(scip_, &(clock)) );
+   SCIP_CALL_EXC( SCIPfreeClock(scip_, &(clock)) );
 
    scip_ = (SCIP*) NULL;
 }
