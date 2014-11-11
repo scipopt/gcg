@@ -1467,7 +1467,7 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
 
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchruleBasic(scip, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-            BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, NULL) );
+            BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
    assert(branchrule != NULL);
 
    /* set non fundamental callbacks via setter functions */
