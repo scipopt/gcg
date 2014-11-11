@@ -70,17 +70,11 @@ PricingType::PricingType(
    calls = 0;
 }
 
-PricingType::~PricingType() throw(SCIP_RETCODE)
+PricingType::~PricingType()
 {
-   //try
-   //{
    SCIP_CALL_ABORT( SCIPfreeClock(scip_, &(clock)) );
-   //}
-//   catch(int e)
-//   {
-//      SCIPerrorMessage("An exception occured. Exception Nr. %d\n", e);
-//   }
-   scip_ = NULL;
+
+   scip_ = (SCIP*) NULL;
 }
 
 SCIP_RETCODE PricingType::startClock()
@@ -134,11 +128,11 @@ SCIP_RETCODE FarkasPricing::addParameters()
 {
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxvarsroundfarkas",
          "maximal number of variables created in one farkas pricing round",
-         &maxvarsround, FALSE, DEFAULT_MAXVARSROUNDFARKAS, 1, INT_MAX, NULL, NULL) );
+         &maxvarsround, FALSE, DEFAULT_MAXVARSROUNDFARKAS, 1, INT_MAX, NULL, (SCIP_PARAMDATA*) NULL) );
 
    SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/mipsrelfarkas",
-         "part of the submips that are solved before Farkas pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
-         &mipsrel, FALSE, DEFAULT_MIPSRELFARKAS, 0.0, 1.0, NULL, NULL) );
+         "part of the submips that are solved before Farkas pricing round is aborted, if variables have been found yet? (1.0 = solve all pricing MIPs)",
+         &mipsrel, FALSE, DEFAULT_MIPSRELFARKAS, 0.0, 1.0, NULL, (SCIP_PARAMDATA*) NULL) );
 
    return SCIP_OKAY;
 }
@@ -183,30 +177,30 @@ SCIP_RETCODE ReducedCostPricing::addParameters()
 {
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxsuccessfulmipsredcost",
          "maximal number of pricing mips leading to new variables solved solved in one redcost pricing round",
-         &maxsuccessfulmips, FALSE, DEFAULT_MAXSUCCESSFULMIPSREDCOST, 1, INT_MAX, NULL, NULL) );
+         &maxsuccessfulmips, FALSE, DEFAULT_MAXSUCCESSFULMIPSREDCOST, 1, INT_MAX, NULL, (SCIP_PARAMDATA*) NULL) );
 
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxvarsroundredcost",
          "maximal number of variables created in one redcost pricing round",
          &maxvarsround, FALSE, DEFAULT_MAXVARSROUNDREDCOST, 0, INT_MAX,
-         NULL, NULL) );
+         NULL, (SCIP_PARAMDATA*) NULL) );
 
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxvarsroundredcostroot",
          "maximal number of variables created in one redcost pricing round at the root node",
          &maxvarsroundroot, FALSE, DEFAULT_MAXVARSROUNDREDCOSTROOT, 0, INT_MAX,
-         NULL, NULL) );
+         NULL, (SCIP_PARAMDATA*) NULL) );
 
    SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxroundsredcost",
          "maximal number of pricing rounds per node after the root node",
-         &maxrounds, FALSE, DEFAULT_MAXROUNDSREDCOST, 0, INT_MAX, NULL, NULL) );
+         &maxrounds, FALSE, DEFAULT_MAXROUNDSREDCOST, 0, INT_MAX, NULL, (SCIP_PARAMDATA*) NULL) );
 
 
    SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/mipsrelredcostroot",
          "part of the submips that are solved before redcost pricing round is aborted at the root node, if variables have been found yed? (1.0 = solve all pricing MIPs)",
-         &mipsrelroot, FALSE, DEFAULT_MIPSRELREDCOSTROOT, 0.0, 1.0, NULL, NULL) );
+         &mipsrelroot, FALSE, DEFAULT_MIPSRELREDCOSTROOT, 0.0, 1.0, NULL, (SCIP_PARAMDATA*) NULL) );
 
    SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/mipsrelredcost",
          "part of the submips that are solved before redcost pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
-         &mipsrel, FALSE, DEFAULT_MIPSRELREDCOST, 0.0, 1.0, NULL, NULL) );
+         &mipsrel, FALSE, DEFAULT_MIPSRELREDCOST, 0.0, 1.0, NULL, (SCIP_PARAMDATA*) NULL) );
 
    return SCIP_OKAY;
 }

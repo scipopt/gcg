@@ -59,7 +59,7 @@ public:
    PricingType(SCIP *p_scip);
 
    /** destructor */
-   virtual ~PricingType() throw(SCIP_RETCODE);
+   virtual ~PricingType();
 
    /** get dual value of a constraint */
    virtual double consGetDual(

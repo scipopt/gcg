@@ -57,7 +57,7 @@ private:
    int nstabcenterconv;
    PricingType* pricingtype;
    SCIP_Real alpha;
-   int nodenr;
+   SCIP_Longint nodenr;
    int k;
    SCIP_Bool hasstabilitycenter;
    SCIP_Real stabcenterbound;
@@ -157,7 +157,7 @@ private:
    SCIP_Real computeDual(
       SCIP_Real          center,             /**< value of stabilility center */
       SCIP_Real          current             /**< current dual value */
-   );
+   ) const;
 };
 
 } /* namespace gcg */
