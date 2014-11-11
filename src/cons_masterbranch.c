@@ -475,7 +475,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricingprobs(
 
 /** apply global bound changes on original problem variables to the master problem */
 static
-SCIP_RETCODE applyGlobalBndchgsToMasterprob(
+SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
    SCIP*                 scip,               /**< SCIP data structure */
    int*                  propcount           /**< number of applied bound changes */
    )
@@ -522,6 +522,7 @@ SCIP_RETCODE applyGlobalBndchgsToMasterprob(
          int blocknr;
          blocknr = GCGvarGetBlock(vars[i]);
 
+         /* get the original variables that are contained in the master variable */
          assert(GCGvarIsMaster(vars[i]));
          norigvars = GCGmasterVarGetNOrigvars(vars[i]);
          origvars = GCGmasterVarGetOrigvars(vars[i]);
@@ -543,7 +544,6 @@ SCIP_RETCODE applyGlobalBndchgsToMasterprob(
           */
          for( k = 0; k < conshdlrdata->npendingbnds; k++ )
          {
-            SCIP_Bool isbndchgvarrelevant;
             int bndchgblocknr;
             SCIP_VAR** bndchgorigvars;
             SCIP_Real val;
@@ -567,29 +567,20 @@ SCIP_RETCODE applyGlobalBndchgsToMasterprob(
             assert(bndchgblocknr < GCGgetNPricingprobs(origscip));
             assert(bndchgorigvars != NULL);
 
-            /* LINK: mb: this might work  */
-            /* the boundchange was performed on a variable in another block, continue */
-
-            /* If we are not dealing with a linking variable, skip the master variable if it is useless */
-            isbndchgvarrelevant = (bndchgblocknr == blocknr);
-
-            /* If we are dealing with a linking master variable but it has nothing to do with the
-             * boundchangevar's block, skip it, too
+            /* The bound change is only relevant for the master variable if either
+             *  - the bound change was performed in the same block as the master variable, or
+             *  - the master variable is a copied linking variable and the bound change was performed
+             *    in one of the blocks that the variable is linking
              */
-            assert(origvars != NULL);
-            if( GCGvarIsLinking(origvars[0]) )
-            {
-               SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
-               isbndchgvarrelevant = isbndchgvarrelevant || (pricingvars[bndchgblocknr] != NULL);
-            }
-
-            if( !isbndchgvarrelevant )
+            if( (bndchgblocknr != blocknr)
+               && !(blocknr == -1 && GCGvarIsLinking(origvars[0]) && GCGisLinkingVarInBlock(origvars[0], bndchgblocknr) )            )
                continue;
 
             assert(bndchgorigvars[0] != NULL);
-            /* val is the value of the branching variable in the current mastervar,
+
+            /* val is the value of the bound change variable in the current mastervar,
              * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
-             * if we do not find the branching variable in this array, it has value 0.0
+             * if we do not find the original variable in this array, it has value 0.0
              */
             val = 0.0;
 
@@ -601,7 +592,7 @@ SCIP_RETCODE applyGlobalBndchgsToMasterprob(
                assert(GCGvarGetBlock(origvars[j]) == blocknr || (GCGisLinkingVarInBlock(origvars[j], blocknr))); /*lint !e613*/
 
                /* check whether the original variable contained in the master variable equals the variable
-                * on which the current branching was performed
+                * on which the bound change was performed
                 */
                if( origvars[j] == bndchgorigvars[0] ) /*lint !e613*/
                {
@@ -611,9 +602,13 @@ SCIP_RETCODE applyGlobalBndchgsToMasterprob(
             }
 
             /* if the variable contains a part of the branching variable that violates the bound,
-             * fix the master variable to 0 */
+             * fix the master variable to 0
+             */
+            /* @todo: This is the wrong way to treat bound changes on original variable copies in the master problem;
+             * I think they have already been treated during constraint activation
+             */
 
-            /* branching imposes new lower bound */
+            /* new lower bound */
             if( conshdlrdata->pendingbndtypes[k] == SCIP_BOUNDTYPE_LOWER &&
                SCIPisFeasLT(scip, val, conshdlrdata->pendingnewbnds[k]) )
             {
@@ -621,7 +616,7 @@ SCIP_RETCODE applyGlobalBndchgsToMasterprob(
                ++(*propcount);
                break;
             }
-            /* branching imposes new upper bound */
+            /* new upper bound */
             if( conshdlrdata->pendingbndtypes[k] == SCIP_BOUNDTYPE_UPPER &&
                SCIPisFeasGT(scip, val, conshdlrdata->pendingnewbnds[k]) )
             {
@@ -1040,7 +1035,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
 
          assert(GCGvarIsMaster(vars[i]));
          blocknr = GCGvarGetBlock(vars[i]);
-         assert(blocknr >= -1 && blocknr < GCGgetNPricingprobs(origscip));
+         assert(blocknr >= 0 && blocknr < GCGgetNPricingprobs(origscip));
 
          origvals = GCGmasterVarGetOrigvals(vars[i]);
          norigvars = GCGmasterVarGetNOrigvars(vars[i]);
@@ -1052,122 +1047,91 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
             continue;
 
          /* only look at variables not already fixed to 0 or that belong to no block */
-         if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) && blocknr >= 0 )
+         if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) )
             continue;
 
-         /* the variable was copied from original to master */
-         /** @todo This code might never be executed as the vars array only contains variables generated
-          * during pricing. We might want to check that with an assert */
-         if( blocknr == -1 )
+         /* iterate over bound changes performed at the current node's equivalent in the original tree */
+         for( k = 0; k < nboundchanges; k++ )
          {
-            /* iterate over bound changes performed at the current node's equivalent in the original tree */
-            for( k = 0; k < nboundchanges; k++ )
+#ifdef SCIP_DEBUG
+            SCIP_Bool contained = FALSE;
+            SCIP_Bool handled = FALSE;
+#endif
+            int bndchgblocknr;
+            SCIP_Real val;
+
+            /* get the block the original variable is in */
+            bndchgblocknr = GCGvarGetBlock(curconsdata->boundchgvars[k]);
+            assert(GCGvarIsOriginal(curconsdata->boundchgvars[k]));
+            assert(bndchgblocknr < GCGgetNPricingprobs(origscip));
+
+            /* the boundchange was performed on a variable in another block, continue */
+            if( (!GCGvarIsLinking(curconsdata->boundchgvars[k]) && bndchgblocknr != blocknr) ||
+               (GCGvarIsLinking(curconsdata->boundchgvars[k]) && !GCGisLinkingVarInBlock(curconsdata->boundchgvars[k], blocknr)) )
+               continue;
+
+            assert(bndchgblocknr != -1);
+
+            /* val is the value of the branching variable in the current mastervar,
+             * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
+             * if we do not find the branching variable in this array, it has value 0.0
+             */
+            val = 0.0;
+
+            /* iterate over all original variables contained in the current master variable */
+            for( j = 0; j < norigvars; j++ )
             {
-               assert(SCIPisFeasEQ(scip, origvals[0], 1.0));
-               if( origvars[0] == curconsdata->boundchgvars[k] )
-               {
-                  /* branching imposes new lower bound */
-                  if( curconsdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER
-                     && SCIPisGT(scip, curconsdata->newbounds[k], SCIPvarGetLbLocal(vars[i])) )
-                  {
-                     SCIP_CALL( SCIPchgVarLb(scip, vars[i], curconsdata->newbounds[k]) );
-                     ++(*propcount);
-                  }
-                  /* branching imposes new upper bound */
-                  if( curconsdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER
-                     && SCIPisLT(scip, curconsdata->newbounds[k], SCIPvarGetUbLocal(vars[i])) )
-                  {
-                     SCIP_CALL( SCIPchgVarUb(scip, vars[i], curconsdata->newbounds[k]) );
-                     ++(*propcount);
-                  }
-               }
-            }
-         }
-         else
-         {
-            /* iterate over bound changes performed at the current node's equivalent in the original tree */
-            for( k = 0; k < nboundchanges; k++ )
-            {
-#ifdef SCIP_DEBUG
-               SCIP_Bool contained = FALSE;
-               SCIP_Bool handled = FALSE;
-#endif
-               int bndchgblocknr;
-               SCIP_Real val;
+               assert(GCGvarGetBlock(origvars[j]) == blocknr || GCGisLinkingVarInBlock(origvars[j], blocknr));
 
-               /* get the block the original variable is in */
-               bndchgblocknr = GCGvarGetBlock(curconsdata->boundchgvars[k]);
-               assert(GCGvarIsOriginal(curconsdata->boundchgvars[k]));
-               assert(bndchgblocknr < GCGgetNPricingprobs(origscip));
-
-               /* the boundchange was performed on a variable in another block, continue */
-               if( (!GCGvarIsLinking(curconsdata->boundchgvars[k]) && bndchgblocknr != blocknr) ||
-                  (GCGvarIsLinking(curconsdata->boundchgvars[k]) && !GCGisLinkingVarInBlock(curconsdata->boundchgvars[k], blocknr)) )
-                  continue;
-
-               assert(bndchgblocknr != -1);
-
-               /* val is the value of the branching variable in the current mastervar,
-                * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
-                * if we do not find the branching variable in this array, it has value 0.0
+               /* check whether the original variable contained in the master variable equals the variable
+                * on which the current branching was performed
                 */
-               val = 0.0;
-
-               /* iterate over all original variables contained in the current master variable */
-               for( j = 0; j < norigvars; j++ )
+               if( origvars[j] == curconsdata->boundchgvars[k] )
                {
-                  assert(GCGvarGetBlock(origvars[j]) == blocknr || GCGisLinkingVarInBlock(origvars[j], blocknr));
-
-                  /* check whether the original variable contained in the master variable equals the variable
-                   * on which the current branching was performed
-                   */
-                  if( origvars[j] == curconsdata->boundchgvars[k] )
-                  {
 #ifdef SCIP_DEBUG
-                     contained = TRUE;
+                  contained = TRUE;
 #endif
-                     val = origvals[j];
-                     break;
-                  }
-               }
-
-               /* if the variable contains a part of the branching variable that violates the bound,
-                * fix the master variable to 0
-                */
-
-               /* branching imposes new lower bound */
-               if( curconsdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER && SCIPisFeasLT(scip, val, curconsdata->newbounds[k]) )
-               {
-                  SCIPdebugMessage("Changing lower bound of var %s\n", SCIPvarGetName(vars[i]));
-                  SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
-                  ++(*propcount);
-#ifdef SCIP_DEBUG
-                  handled = TRUE;
-#endif
+                  val = origvals[j];
                   break;
                }
-               /* branching imposes new upper bound */
-               if( curconsdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER && SCIPisFeasGT(scip, val, curconsdata->newbounds[k]) )
-               {
-                  SCIPdebugMessage("Changing upper bound of var %s\n", SCIPvarGetName(vars[i]));
-                  SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
-                  ++(*propcount);
-
-
-#ifdef SCIP_DEBUG
-                  handled = TRUE;
-#endif
-                  break;
-               }
-#ifdef SCIP_DEBUG
-               if( contained || !handled )
-               {
-                  SCIPdebugMessage("orig var %s is contained in %s but not handled val = %f \n", SCIPvarGetName(curconsdata->boundchgvars[k]), SCIPvarGetName(vars[i]), val);
-
-               }
-               assert(j == norigvars || contained);
-#endif
             }
+
+            /* if the variable contains a part of the branching variable that violates the bound,
+             * fix the master variable to 0
+             */
+
+            /* branching imposes new lower bound */
+            if( curconsdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER && SCIPisFeasLT(scip, val, curconsdata->newbounds[k]) )
+            {
+               SCIPdebugMessage("Changing lower bound of var %s\n", SCIPvarGetName(vars[i]));
+               SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
+               ++(*propcount);
+#ifdef SCIP_DEBUG
+               handled = TRUE;
+#endif
+               break;
+            }
+            /* branching imposes new upper bound */
+            if( curconsdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER && SCIPisFeasGT(scip, val, curconsdata->newbounds[k]) )
+            {
+               SCIPdebugMessage("Changing upper bound of var %s\n", SCIPvarGetName(vars[i]));
+               SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
+               ++(*propcount);
+
+
+#ifdef SCIP_DEBUG
+               handled = TRUE;
+#endif
+               break;
+            }
+#ifdef SCIP_DEBUG
+            if( contained || !handled )
+            {
+               SCIPdebugMessage("orig var %s is contained in %s but not handled val = %f \n", SCIPvarGetName(curconsdata->boundchgvars[k]), SCIPvarGetName(vars[i]), val);
+
+            }
+            assert(j == norigvars || contained);
+#endif
          }
       }
 
@@ -1711,7 +1675,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    propcount = 0;
 
    /* apply global bound changes on original problem variables to the master problem */
-   SCIP_CALL( applyGlobalBndchgsToMasterprob(scip, &propcount) );
+   SCIP_CALL( applyGlobalBndchgsToPricedMastervars(scip, &propcount) );
 
    /* apply local bound changes on the original variables on newly generated master variables */
    SCIP_CALL( applyLocalBndchgsToPricedMastervars(scip, cons, &propcount) );
