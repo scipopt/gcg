@@ -89,11 +89,12 @@ struct SCIP_ConsData
                                               *   about the branching restrictions */
    SCIP_BRANCHRULE*      branchrule;         /**< branching rule that created the corresponding node and imposed
                                               *   branching restrictions */
-   SCIP_VAR**            propvars;           /**< original variable for which the propagation found domain reductions */
-   SCIP_BOUNDTYPE*       propboundtypes;     /**< type of the new bound found by propagation */
-   SCIP_Real*            propbounds;         /**< new lower/upper bound of the propagated original variable */
-   int                   npropbounds;        /**< number of propagation bounds stored */
-   int                   maxpropbounds;      /**< size of propvars, propboundtypes, and propbounds arrays */
+   /* local bound changes on original variables that have been directly copied to the master problem */
+   SCIP_VAR**            copiedvars;         /**< original variables on which local bounds were changed */
+   SCIP_BOUNDTYPE*       copiedvarbndtypes;  /**< types of the new local bounds of the coped original variables */
+   SCIP_Real*            copiedvarbnds;         /**< new lower/upper bounds of the coped original variables */
+   int                   ncopiedvarbnds;        /**< number of new local bounds stored */
+   int                   maxcopiedvarbnds;      /**< size of copiedvars, copiedvarbndtypes, and copiedvarbnds arrays */
 };
 
 /** constraint handler data */
@@ -288,11 +289,11 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    }
 
    /* free propagation domain changes arrays */
-   if( (*consdata)->maxpropbounds > 0 )
+   if( (*consdata)->maxcopiedvarbnds > 0 )
    {
-      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->propvars), (*consdata)->maxpropbounds);
-      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->propboundtypes), (*consdata)->maxpropbounds);
-      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->propbounds), (*consdata)->maxpropbounds);
+      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->copiedvars), (*consdata)->maxcopiedvarbnds);
+      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->copiedvarbndtypes), (*consdata)->maxcopiedvarbnds);
+      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->copiedvarbnds), (*consdata)->maxcopiedvarbnds);
    }
 
    SCIPfreeMemoryArrayNull(scip, &(*consdata)->childconss);
@@ -519,11 +520,11 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    consdata->mastercons = NULL;
    consdata->branchdata = branchdata;
    consdata->branchrule = branchrule;
-   consdata->propvars = NULL;
-   consdata->propboundtypes = NULL;
-   consdata->propbounds = NULL;
-   consdata->npropbounds = 0;
-   consdata->maxpropbounds = 0;
+   consdata->copiedvars = NULL;
+   consdata->copiedvarbndtypes = NULL;
+   consdata->copiedvarbnds = NULL;
+   consdata->ncopiedvarbnds = 0;
+   consdata->maxcopiedvarbnds = 0;
 
    SCIPdebugMessage("Creating branch orig constraint: <%s> (nconss = %d).\n", name, SCIPconshdlrGetNConss(conshdlr));
 
@@ -809,9 +810,8 @@ void GCGconsOrigbranchCheckConsistency(
 #endif
 }
 
-/** adds a bound change on an original variable found by propagation in the original problem
- *  to the given origbranch constraint so that it will be transferred to the master problem */
-SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
+/** adds a bound change on an original variable that was directly copied to the master problem */
+SCIP_RETCODE GCGconsOrigbranchAddCopiedVarBndchg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< origbranch constraint to which the bound change is added */
    SCIP_VAR*             var,                /**< variable on which the bound change was performed */
@@ -829,22 +829,22 @@ SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
    assert(consdata != NULL);
 
    /* realloc the arrays, if needed */
-   if( consdata->npropbounds >= consdata->maxpropbounds )
+   if( consdata->ncopiedvarbnds >= consdata->maxcopiedvarbnds )
    {
-      int newsize = SCIPcalcMemGrowSize(scip, consdata->npropbounds+1);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->propvars), consdata->maxpropbounds, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->propboundtypes), consdata->maxpropbounds, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->propbounds), consdata->maxpropbounds, newsize) );
-      consdata->maxpropbounds = newsize;
+      int newsize = SCIPcalcMemGrowSize(scip, consdata->ncopiedvarbnds+1);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->copiedvars), consdata->maxcopiedvarbnds, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->copiedvarbndtypes), consdata->maxcopiedvarbnds, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->copiedvarbnds), consdata->maxcopiedvarbnds, newsize) );
+      consdata->maxcopiedvarbnds = newsize;
    }
 
    SCIPdebugMessage("Bound change stored at branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
 
    /* store the new bound change */
-   consdata->propvars[consdata->npropbounds] = var;
-   consdata->propboundtypes[consdata->npropbounds] = boundtype;
-   consdata->propbounds[consdata->npropbounds] = newbound;
-   consdata->npropbounds++;
+   consdata->copiedvars[consdata->ncopiedvarbnds] = var;
+   consdata->copiedvarbndtypes[consdata->ncopiedvarbnds] = boundtype;
+   consdata->copiedvarbnds[consdata->ncopiedvarbnds] = newbound;
+   consdata->ncopiedvarbnds++;
 
    /* mark the corresponding master node to be repropagated */
    if( consdata->mastercons != NULL )
@@ -855,15 +855,14 @@ SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
    return SCIP_OKAY;
 }
 
-/** returns the array of bound changes on original variables found by propagation in the original problem
- *  at the node corresponding to the given origbranch constraint */
-SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
+/** returns the array of bound changes on original variables that were directly copied to the master problem */
+SCIP_RETCODE GCGconsOrigbranchGetCopiedVarBndchgs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< origbranch constraint for which the bound changes are requested */
    SCIP_VAR***           vars,               /**< pointer to store array of variables corresponding to the bound changes */
    SCIP_BOUNDTYPE**      boundtypes,         /**< pointer to store array of the types of the bound changes */
    SCIP_Real**           newbounds,          /**< pointer to store array of the new bounds */
-   int*                  npropbounds         /**< pointer to store the number of bound changes stored at the constraint */
+   int*                  ncopiedvarbnds      /**< pointer to store the number of bound changes stored at the constraint */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -874,20 +873,19 @@ SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   *vars = consdata->propvars;
-   *boundtypes = consdata->propboundtypes;
-   *newbounds = consdata->propbounds;
-   *npropbounds = consdata->npropbounds;
+   *vars = consdata->copiedvars;
+   *boundtypes = consdata->copiedvarbndtypes;
+   *newbounds = consdata->copiedvarbnds;
+   *ncopiedvarbnds = consdata->ncopiedvarbnds;
 
    /* @fixme: This is a side effect */
-   consdata->npropbounds = 0;
+   consdata->ncopiedvarbnds = 0;
 
    return SCIP_OKAY;
 }
 
-/** returns the number of bound changes on original variables found by propagation in the original problem
- *  at the node corresponding to the given origbranch constraint */
-int GCGconsOrigbranchGetNPropBoundChgs(
+/** returns the number of bound changes on original variables that were directly copied to the master problem */
+int GCGconsOrigbranchGetNCopiedVarBndchgs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< origbranch constraint for which the bound changes are requested */
    )
@@ -900,7 +898,7 @@ int GCGconsOrigbranchGetNPropBoundChgs(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   return consdata->npropbounds;
+   return consdata->ncopiedvarbnds;
 }
 
 /** adds initial constraint to root node */

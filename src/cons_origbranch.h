@@ -157,10 +157,9 @@ void GCGconsOrigbranchCheckConsistency(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** adds a bound change on an original variable found by propagation in the original problem
- *  to the given origbranch constraint so that is will be transferred to the master problem */
+/** adds a bound change on an original variable that was directly copied to the master problem */
 extern
-SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
+SCIP_RETCODE GCGconsOrigbranchAddCopiedVarBndchg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< origbranch constraint to which the bound change is added */
    SCIP_VAR*             var,                /**< variable on which the bound change was performed */
@@ -168,10 +167,9 @@ SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
    SCIP_Real             newbound            /**< new bound of the variable after the bound change */
    );
 
-/** returns the array of bound changes on original variables found by propagation in the original problem
- *  at the node corresponding to the given origbranch constraint and clears the arrays */
+/** returns the array of bound changes on original variables that were directly copied to the master problem */
 extern
-SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
+SCIP_RETCODE GCGconsOrigbranchGetCopiedVarBndchgs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< origbranch constraint for which the bound changes are requested */
    SCIP_VAR***           vars,               /**< pointer to store array of variables corresponding to the bound changes */
@@ -180,10 +178,9 @@ SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
    int*                  npropbounds         /**< pointer to store the number of bound changes stored at the constraint */
    );
 
-/** returns the number of bound changes on original variables found by propagation in the original problem
- *  at the node corresponding to the given origbranch constraint */
+/** returns the number of bound changes on original variables that were directly copied to the master problem */
 extern
-int GCGconsOrigbranchGetNPropBoundChgs(
+int GCGconsOrigbranchGetNCopiedVarBndchgs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< origbranch constraint for which the bound changes are requested */
    );
