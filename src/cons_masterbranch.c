@@ -564,7 +564,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
                assert(GCGvarIsMaster(conshdlrdata->pendingvars[k]) || GCGvarIsPricing(conshdlrdata->pendingvars[k]));
                bndchgorigvars = NULL;
             }
-            assert(bndchgblocknr < GCGgetNPricingprobs(origscip));
+            assert(bndchgblocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
             assert(bndchgorigvars != NULL);
 
             /* The bound change is only relevant for the master variable if either
