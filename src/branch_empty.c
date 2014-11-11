@@ -146,8 +146,11 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
 
    /* If a branching decision on an original variable was made, apply it */
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/enforcebycons", &enforcebycons) );
-   if( !enforcebycons )
+   if( !enforcebycons && GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) != GCG_BOUNDTYPE_NONE )
    {
+      assert(GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_LOWER
+         || GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_UPPER);
+
       if( GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_LOWER )
       {
          SCIP_CALL( SCIPchgVarLbNode(scip, child,
@@ -160,16 +163,14 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
             GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
             GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
       }
-   }
 
-   if( GCGconsMasterbranchGetPropagatebndchg(masterbranchchildcons) )
-   {
-      assert(GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) != GCG_BOUNDTYPE_NONE);
-
-      SCIP_CALL(  GCGconsMasterbranchAddCopiedVarBndchg(GCGgetMasterprob(scip), masterbranchchildcons,
-         GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
-         GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons),
-         GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
+      if( GCGvarGetBlock(GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons)) == -1 )
+      {
+         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(GCGgetMasterprob(scip), masterbranchchildcons,
+            GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
+            GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons),
+            GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
+      }
    }
 
    GCGconsOrigbranchSetMastercons(origbranch, masterbranchchildcons);

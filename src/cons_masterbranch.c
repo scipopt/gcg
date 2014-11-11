@@ -123,8 +123,6 @@ struct SCIP_ConsData
    SCIP_VAR*             origboundvar;       /**< an original variable on which the bound was changed (or NULL, if there is no such variable) */
    GCG_BOUNDTYPE         origboundtype;      /**< type of the original variable's new bound (or GCG_BOUNDTYPE_NONE if there is no bound change) */
    SCIP_Real             origbound;          /**< the original variable's new bound */
-   SCIP_Bool             propagatebndchg;    /**< propagate the bound change in the master problem if the original variable was copied directly to the master */
-
 };
 
 /** constraint handler data */
@@ -2083,8 +2081,6 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->origboundvar = NULL;
    consdata->origboundtype = GCG_BOUNDTYPE_NONE;
    consdata->origbound = 0.0;
-   consdata->propagatebndchg = FALSE;
-
 
    SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", (void*) parentcons);
 
@@ -2167,8 +2163,7 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    int                   norigconss,         /**< number of original constraints */
    SCIP_VAR*             origboundvar,       /**< an original variable on which the bound was changed (or NULL, if there is no such variable) */
    GCG_BOUNDTYPE         origboundtype,      /**< type of the original variable's new bound (or GCG_BOUNDTYPE_NONE if there is no bound change) */
-   SCIP_Real             origbound,          /**< the original variable's new bound */
-   SCIP_Bool             propagatebndchg     /**< propagate the bound change in the master problem if the original variable was copied directly to the master */
+   SCIP_Real             origbound           /**< the original variable's new bound */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -2193,7 +2188,6 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    assert(consdata->origboundvar == NULL);
    assert(consdata->origboundtype == GCG_BOUNDTYPE_NONE);
    assert(consdata->origbound == 0.0);
-   assert(consdata->propagatebndchg == FALSE);
 
    /* set the data for branching on the original problem */
    SCIP_CALL( SCIPduplicateMemoryArray(scip, &(consdata->origbranchconsname), name, strlen(name)+1) );
@@ -2204,7 +2198,6 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    consdata->origboundvar = origboundvar;
    consdata->origboundtype = origboundtype;
    consdata->origbound = origbound;
-   consdata->propagatebndchg = propagatebndchg;
 
    return SCIP_OKAY;
 }
@@ -2324,19 +2317,6 @@ SCIP_Real GCGconsMasterbranchGetOrigbound(
    assert(consdata != NULL);
 
    return consdata->origbound;
-}
-
-/** return whether the bound change on the original variable should be propagated */
-SCIP_Bool GCGconsMasterbranchGetPropagatebndchg(
-   SCIP_CONS*            cons                /**< masterbranch constraint holding the branching information */
-   )
-{
-   SCIP_CONSDATA* consdata;
-
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
-
-   return consdata->propagatebndchg;
 }
 
 /** releases the array of original branching constraints of the constraint in the origconsdata data structure */

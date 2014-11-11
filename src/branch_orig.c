@@ -126,7 +126,6 @@ SCIP_RETCODE branchVar(
    SCIP_CONS** origbranchconss2;
    GCG_BRANCHDATA* branchupdata;
    GCG_BRANCHDATA* branchdowndata;
-   SCIP_Bool propagatebndchg;
    char upname[SCIP_MAXSTRLEN];
    char downname[SCIP_MAXSTRLEN];
    int norigbranchconss;
@@ -143,7 +142,6 @@ SCIP_RETCODE branchVar(
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
-   propagatebndchg = FALSE;
    origbranchconss1 = NULL;
    origbranchconss2 = NULL;
    norigbranchconss = 0;
@@ -226,16 +224,12 @@ SCIP_RETCODE branchVar(
       branchdowndata->cons = NULL;
    }
 
-   /* store bound change of variables that were directly transferred to the master problem */
-   if( !enforcebycons && GCGvarGetBlock(branchvar) == -1 )
-      propagatebndchg = TRUE;
-
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, upname, branchrule,
          branchupdata, origbranchconss1, norigbranchconss, branchvar,
-         GCG_BOUNDTYPE_LOWER, branchupdata->newbound, propagatebndchg) );
+         GCG_BOUNDTYPE_LOWER, branchupdata->newbound) );
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, downname, branchrule,
          branchdowndata, origbranchconss2, norigbranchconss, branchvar,
-         GCG_BOUNDTYPE_UPPER, branchdowndata->newbound, propagatebndchg) );
+         GCG_BOUNDTYPE_UPPER, branchdowndata->newbound) );
 
    return SCIP_OKAY;
 }
