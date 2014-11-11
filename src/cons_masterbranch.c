@@ -1123,10 +1123,10 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
 {
    SCIP* origscip;
    SCIP_CONSDATA* consdata;
-   SCIP_VAR** propvars;                      /**< original variables copied to the master problem for which the propagation found domain reductions */
-   SCIP_BOUNDTYPE* proplocalbndtypes;           /**< type of the domain new bound found by propagation */
-   SCIP_Real* propbounds;                    /**< new lower/upper bound of the propagated original variable */
-   int npropbounds;
+   SCIP_VAR** copiedvars;                    /**< original variables copied to the master problem for which the propagation found domain reductions */
+   SCIP_BOUNDTYPE* copiedvarbndtypes;        /**< type of the domain new bound found by propagation */
+   SCIP_Real* copiedvarbnds;                 /**< new lower/upper bound of the propagated original variable */
+   int ncopiedvarbnds;
    int i;
 
    /* get constraint data */
@@ -1138,40 +1138,40 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
    assert(origscip != NULL);
 
    /* get local bound changes on variables directly transferred to the master problem and apply them */
-   SCIP_CALL( GCGconsOrigbranchGetCopiedVarBndchgs(origscip, consdata->origcons, &propvars, &proplocalbndtypes,
-         &propbounds, &npropbounds) );
+   SCIP_CALL( GCGconsOrigbranchGetCopiedVarBndchgs(origscip, consdata->origcons, &copiedvars, &copiedvarbndtypes,
+         &copiedvarbnds, &ncopiedvarbnds) );
 
    /* apply local bound changes */
-   for( i = 0; i < npropbounds; i++ )
+   for( i = 0; i < ncopiedvarbnds; i++ )
    {
       SCIP_VAR* mastervar;
 
-      assert(GCGvarIsOriginal(propvars[i]));
-      assert(GCGvarGetBlock(propvars[i]) < 0); /** @todo this might lead to an error with linking variables*/
-      assert(GCGoriginalVarGetNMastervars(propvars[i]) >= 1);
-      mastervar = GCGoriginalVarGetMastervars(propvars[i])[0];
+      assert(GCGvarIsOriginal(copiedvars[i]));
+      assert(GCGvarGetBlock(copiedvars[i]) < 0); /** @todo this might lead to an error with linking variables*/
+      assert(GCGoriginalVarGetNMastervars(copiedvars[i]) >= 1);
+      mastervar = GCGoriginalVarGetMastervars(copiedvars[i])[0];
 
-      if( proplocalbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
+      if( copiedvarbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
       {
-         if( SCIPisLT(scip, SCIPvarGetLbLocal(mastervar), propbounds[i]) )
+         if( SCIPisLT(scip, SCIPvarGetLbLocal(mastervar), copiedvarbnds[i]) )
          {
-            SCIP_CALL( SCIPchgVarLb(scip, mastervar, propbounds[i]) );
+            SCIP_CALL( SCIPchgVarLb(scip, mastervar, copiedvarbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed lb of copied original var %s locally to %g\n", SCIPvarGetName(propvars[i]), propbounds[i]);
+            SCIPdebugMessage("changed lb of copied original var %s locally to %g\n", SCIPvarGetName(copiedvars[i]), copiedvarbnds[i]);
          }
       }
       else
       {
-         if( SCIPisGT(scip, SCIPvarGetUbLocal(mastervar), propbounds[i]) )
+         if( SCIPisGT(scip, SCIPvarGetUbLocal(mastervar), copiedvarbnds[i]) )
          {
-            SCIP_CALL( SCIPchgVarUb(scip, mastervar, propbounds[i]) );
+            SCIP_CALL( SCIPchgVarUb(scip, mastervar, copiedvarbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed ub of copied original var %s locally to %g\n", SCIPvarGetName(propvars[i]), propbounds[i]);
+            SCIPdebugMessage("changed ub of copied original var %s locally to %g\n", SCIPvarGetName(copiedvars[i]), copiedvarbnds[i]);
          }
       }
    }
 
-   SCIPdebugMessage("Finished propagation of %d stored propagated bounds: %d vars fixed.\n", npropbounds, *propcount);
+   SCIPdebugMessage("Finished propagation of %d stored propagated bounds: %d vars fixed.\n", ncopiedvarbnds, *propcount);
 
    return SCIP_OKAY;
 }
