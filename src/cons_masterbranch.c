@@ -1126,17 +1126,12 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
    int*                  propcount           /**< number of applied bound changes */
    )
 {
-   SCIP* origscip;
    SCIP_CONSDATA* consdata;
    int i;
 
    /* get constraint data */
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
-
-   /* get original problem */
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
 
    /* apply local bound changes */
    for( i = 0; i < consdata->ncopiedvarbnds; i++ )
