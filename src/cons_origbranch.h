@@ -157,34 +157,6 @@ void GCGconsOrigbranchCheckConsistency(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** adds a bound change on an original variable that was directly copied to the master problem */
-extern
-SCIP_RETCODE GCGconsOrigbranchAddCopiedVarBndchg(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS*            cons,               /**< origbranch constraint to which the bound change is added */
-   SCIP_VAR*             var,                /**< variable on which the bound change was performed */
-   SCIP_BOUNDTYPE        boundtype,          /**< bound type of the bound change */
-   SCIP_Real             newbound            /**< new bound of the variable after the bound change */
-   );
-
-/** returns the array of bound changes on original variables that were directly copied to the master problem */
-extern
-SCIP_RETCODE GCGconsOrigbranchGetCopiedVarBndchgs(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS*            cons,               /**< origbranch constraint for which the bound changes are requested */
-   SCIP_VAR***           vars,               /**< pointer to store array of variables corresponding to the bound changes */
-   SCIP_BOUNDTYPE**      boundtypes,         /**< pointer to store array of the types of the bound changes */
-   SCIP_Real**           newbounds,          /**< pointer to store array of the new bounds */
-   int*                  npropbounds         /**< pointer to store the number of bound changes stored at the constraint */
-   );
-
-/** returns the number of bound changes on original variables that were directly copied to the master problem */
-extern
-int GCGconsOrigbranchGetNCopiedVarBndchgs(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS*            cons                /**< origbranch constraint for which the bound changes are requested */
-   );
-
 /** adds initial constraint to root node */
 extern
 SCIP_RETCODE GCGconsOrigbranchAddRootCons(

@@ -238,6 +238,16 @@ void GCGconsMasterbranchSetOrigcons(
    SCIP_CONS*            origcons            /**< original origbranch constraint */
    );
 
+/** adds a bound change on an original variable that was directly copied to the master problem */
+extern
+SCIP_RETCODE GCGconsMasterbranchAddCopiedVarBndchg(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< masterbranch constraint to which the bound change is added */
+   SCIP_VAR*             var,                /**< variable on which the bound change was performed */
+   SCIP_BOUNDTYPE        boundtype,          /**< bound type of the bound change */
+   SCIP_Real             newbound            /**< new bound of the variable after the bound change */
+   );
+
 /** checks the consistency of the masterbranch constraints in the problem */
 extern
 void GCGconsMasterbranchCheckConsistency(

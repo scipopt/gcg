@@ -104,6 +104,13 @@ struct SCIP_ConsData
    int                   nlocalbndchgs;      /**< number of bound changes */
    int                   nbranchingchgs;     /**< number of bound changes due to branching (<= nlocalbndchgs) */
 
+   /* local bound changes on original variables that have been directly copied to the master problem */
+   SCIP_VAR**            copiedvars;         /**< original variables on which local bounds were changed */
+   SCIP_BOUNDTYPE*       copiedvarbndtypes;  /**< types of the new local bounds of the coped original variables */
+   SCIP_Real*            copiedvarbnds;         /**< new lower/upper bounds of the coped original variables */
+   int                   ncopiedvarbnds;        /**< number of new local bounds stored */
+   int                   maxcopiedvarbnds;      /**< size of copiedvars, copiedvarbndtypes, and copiedvarbnds arrays */
+
    /* The following data contains branching information for the original problem */
    char*                 origbranchconsname; /**< name of the branching constraint for cons_origbranch */
    SCIP_BRANCHRULE*      origbranchrule;     /**< branching rule that created the corresponding node in the original problem and imposed
@@ -1123,10 +1130,6 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
 {
    SCIP* origscip;
    SCIP_CONSDATA* consdata;
-   SCIP_VAR** copiedvars;                    /**< original variables copied to the master problem for which the propagation found domain reductions */
-   SCIP_BOUNDTYPE* copiedvarbndtypes;        /**< type of the domain new bound found by propagation */
-   SCIP_Real* copiedvarbnds;                 /**< new lower/upper bound of the propagated original variable */
-   int ncopiedvarbnds;
    int i;
 
    /* get constraint data */
@@ -1137,41 +1140,39 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
-   /* get local bound changes on variables directly transferred to the master problem and apply them */
-   SCIP_CALL( GCGconsOrigbranchGetCopiedVarBndchgs(origscip, consdata->origcons, &copiedvars, &copiedvarbndtypes,
-         &copiedvarbnds, &ncopiedvarbnds) );
-
    /* apply local bound changes */
-   for( i = 0; i < ncopiedvarbnds; i++ )
+   for( i = 0; i < consdata->ncopiedvarbnds; i++ )
    {
       SCIP_VAR* mastervar;
 
-      assert(GCGvarIsOriginal(copiedvars[i]));
-      assert(GCGvarGetBlock(copiedvars[i]) < 0); /** @todo this might lead to an error with linking variables*/
-      assert(GCGoriginalVarGetNMastervars(copiedvars[i]) >= 1);
-      mastervar = GCGoriginalVarGetMastervars(copiedvars[i])[0];
+      assert(GCGvarIsOriginal(consdata->copiedvars[i]));
+      assert(GCGvarGetBlock(consdata->copiedvars[i]) < 0); /** @todo this might lead to an error with linking variables*/
+      assert(GCGoriginalVarGetNMastervars(consdata->copiedvars[i]) >= 1);
+      mastervar = GCGoriginalVarGetMastervars(consdata->copiedvars[i])[0];
 
-      if( copiedvarbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
+      if( consdata->copiedvarbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
       {
-         if( SCIPisLT(scip, SCIPvarGetLbLocal(mastervar), copiedvarbnds[i]) )
+         if( SCIPisLT(scip, SCIPvarGetLbLocal(mastervar), consdata->copiedvarbnds[i]) )
          {
-            SCIP_CALL( SCIPchgVarLb(scip, mastervar, copiedvarbnds[i]) );
+            SCIP_CALL( SCIPchgVarLb(scip, mastervar, consdata->copiedvarbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed lb of copied original var %s locally to %g\n", SCIPvarGetName(copiedvars[i]), copiedvarbnds[i]);
+            SCIPdebugMessage("changed lb of copied original var %s locally to %g\n", SCIPvarGetName(consdata->copiedvars[i]), consdata->copiedvarbnds[i]);
          }
       }
       else
       {
-         if( SCIPisGT(scip, SCIPvarGetUbLocal(mastervar), copiedvarbnds[i]) )
+         if( SCIPisGT(scip, SCIPvarGetUbLocal(mastervar), consdata->copiedvarbnds[i]) )
          {
-            SCIP_CALL( SCIPchgVarUb(scip, mastervar, copiedvarbnds[i]) );
+            SCIP_CALL( SCIPchgVarUb(scip, mastervar, consdata->copiedvarbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed ub of copied original var %s locally to %g\n", SCIPvarGetName(copiedvars[i]), copiedvarbnds[i]);
+            SCIPdebugMessage("changed ub of copied original var %s locally to %g\n", SCIPvarGetName(consdata->copiedvars[i]), consdata->copiedvarbnds[i]);
          }
       }
    }
 
-   SCIPdebugMessage("Finished propagation of %d stored propagated bounds: %d vars fixed.\n", ncopiedvarbnds, *propcount);
+   consdata->ncopiedvarbnds = 0;
+
+   SCIPdebugMessage("Finished propagation of %d stored propagated bounds: %d vars fixed.\n", consdata->ncopiedvarbnds, *propcount);
 
    return SCIP_OKAY;
 }
@@ -1336,7 +1337,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
     * or if new bound changes on directly transferred variables were found
     */
    assert(GCGmasterGetNPricedvars(scip) >= consdata->npropvars);
-   if( GCGmasterGetNPricedvars(scip) > consdata->npropvars || GCGconsOrigbranchGetNCopiedVarBndchgs(origscip, consdata->origcons) > 0 )
+   if( GCGmasterGetNPricedvars(scip) > consdata->npropvars || consdata->ncopiedvarbnds > 0 )
    {
       consdata->needprop = TRUE;
       SCIP_CALL( SCIPrepropagateNode(scip, consdata->node) );
@@ -1574,7 +1575,15 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       }
    }
 
-   /* delete array with bound changes */
+   /* free arrays with local bound changes on copied original variables */
+   if( (*consdata)->maxcopiedvarbnds > 0 )
+   {
+      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->copiedvars), (*consdata)->maxcopiedvarbnds);
+      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->copiedvarbndtypes), (*consdata)->maxcopiedvarbnds);
+      SCIPfreeBlockMemoryArrayNull(scip, &((*consdata)->copiedvarbnds), (*consdata)->maxcopiedvarbnds);
+   }
+
+   /* free arrays with local bound changes on original variables belonging to a unique block */
    if( (*consdata)->nlocalbndchgs > 0 )
    {
       SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localoldbnds, (*consdata)->nlocalbndchgs);
@@ -1626,7 +1635,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if( !consdata->needprop && GCGconsOrigbranchGetNCopiedVarBndchgs(origscip, consdata->origcons) == 0 )
+   if( !consdata->needprop && consdata->ncopiedvarbnds == 0 )
    {
       SCIPdebugMessage("No propagation of masterbranch constraint needed: <%s>, stack size = %d.\n",
          consdata->name, conshdlrdata->nstack);
@@ -1636,7 +1645,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    }
 
    SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s>, stack size = %d, newvars = %d, npendingbnds = %d, npropbounds = %d.\n",
-      consdata->name, conshdlrdata->nstack, GCGmasterGetNPricedvars(scip) - consdata->npropvars, conshdlrdata->npendingbnds, GCGconsOrigbranchGetNCopiedVarBndchgs(origscip, consdata->origcons));
+      consdata->name, conshdlrdata->nstack, GCGmasterGetNPricedvars(scip) - consdata->npropvars, conshdlrdata->npendingbnds, consdata->ncopiedvarbnds);
 
    *result = SCIP_DIDNOTFIND;
 
@@ -1839,7 +1848,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsOrigbranchAddCopiedVarBndchg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
+         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(scip, GCGconsMasterbranchGetActiveCons(scip), var,
                SCIP_BOUNDTYPE_LOWER, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_UBTIGHTENED) != 0 )
@@ -1847,7 +1856,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsOrigbranchAddCopiedVarBndchg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
+         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(scip, GCGconsMasterbranchGetActiveCons(scip), var,
                SCIP_BOUNDTYPE_UPPER, newbound) );
 
          /** @todo do we also have to iterate over the pricing problems or is this handled elsewhere? */
@@ -1925,7 +1934,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsOrigbranchAddCopiedVarBndchg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
+         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(GCGgetMasterprob(scip), GCGconsMasterbranchGetActiveCons(scip), var,
                SCIP_BOUNDTYPE_LOWER, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_UBTIGHTENED) != 0 )
@@ -1933,7 +1942,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsOrigbranchAddCopiedVarBndchg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
+         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(GCGgetMasterprob(scip), GCGconsMasterbranchGetActiveCons(scip), var,
                SCIP_BOUNDTYPE_UPPER, newbound) );
       }
    }
@@ -2059,6 +2068,12 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->nactivated = 0;
 
    consdata->nbranchingchgs = 0;
+
+   consdata->copiedvars = NULL;
+   consdata->copiedvarbndtypes = NULL;
+   consdata->copiedvarbnds = NULL;
+   consdata->ncopiedvarbnds = 0;
+   consdata->maxcopiedvarbnds = 0;
 
    consdata->origbranchconsname = NULL;
    consdata->origbranchrule = NULL;
@@ -2523,6 +2538,49 @@ void GCGconsMasterbranchSetOrigcons(
    consdata->origcons = origcons;
 }
 
+/** adds a bound change on an original variable that was directly copied to the master problem */
+SCIP_RETCODE GCGconsMasterbranchAddCopiedVarBndchg(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< masterbranch constraint to which the bound change is added */
+   SCIP_VAR*             var,                /**< variable on which the bound change was performed */
+   SCIP_BOUNDTYPE        boundtype,          /**< bound type of the bound change */
+   SCIP_Real             newbound            /**< new bound of the variable after the bound change */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(cons != NULL);
+   assert(var != NULL);
+
+   /* get constraint data */
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   /* realloc the arrays, if needed */
+   if( consdata->ncopiedvarbnds >= consdata->maxcopiedvarbnds )
+   {
+      int newsize = SCIPcalcMemGrowSize(scip, consdata->ncopiedvarbnds+1);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->copiedvars), consdata->maxcopiedvarbnds, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->copiedvarbndtypes), consdata->maxcopiedvarbnds, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(consdata->copiedvarbnds), consdata->maxcopiedvarbnds, newsize) );
+      consdata->maxcopiedvarbnds = newsize;
+   }
+
+   SCIPdebugMessage("Bound change on copied original variable stored at masterbranch constraint: <%s>.\n", SCIPconsGetName(cons));
+
+   /* store the new bound change */
+   consdata->copiedvars[consdata->ncopiedvarbnds] = var;
+   consdata->copiedvarbndtypes[consdata->ncopiedvarbnds] = boundtype;
+   consdata->copiedvarbnds[consdata->ncopiedvarbnds] = newbound;
+   consdata->ncopiedvarbnds++;
+
+   /* mark the corresponding master node to be repropagated */
+   SCIP_CALL( SCIPrepropagateNode(scip, consdata->node) );
+
+   return SCIP_OKAY;
+}
 
 /** checks the consistency of the masterbranch constraints in the problem */
 void GCGconsMasterbranchCheckConsistency(

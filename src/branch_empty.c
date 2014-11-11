@@ -166,7 +166,7 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    {
       assert(GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) != GCG_BOUNDTYPE_NONE);
 
-      SCIP_CALL( GCGconsOrigbranchAddCopiedVarBndchg(scip, origbranch,
+      SCIP_CALL(  GCGconsMasterbranchAddCopiedVarBndchg(GCGgetMasterprob(scip), masterbranchchildcons,
          GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
          GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons),
          GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
