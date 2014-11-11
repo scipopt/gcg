@@ -480,7 +480,6 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
    int*                  propcount           /**< number of applied bound changes */
    )
 {
-   SCIP* origscip;
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_VAR** vars;
@@ -499,10 +498,6 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
    /* get constraint handler data */
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
-
-   /* get original problem */
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
 
    /* get master problem variables generated during pricing */
    vars = GCGmasterGetPricedvars(scip);
@@ -528,7 +523,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
          origvars = GCGmasterVarGetOrigvars(vars[i]);
          origvals = GCGmasterVarGetOrigvals(vars[i]);
 
-         assert(blocknr < GCGgetNPricingprobs(origscip));
+         assert(blocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
          assert(norigvars >= 0);
          assert(origvars != NULL || norigvars == 0);
 
@@ -788,21 +783,11 @@ SCIP_RETCODE applyLocalBndchgsToPricingprobs(
    )
 {
    SCIP* origscip;
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONSDATA* consdata;
    int i;
 
    assert(scip != NULL);
    assert(GCGisMaster(scip));
-
-   /* get constraint handler */
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   /* get constraint handler data */
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
 
    /* get constraint data */
    consdata = SCIPconsGetData(cons);
@@ -890,22 +875,11 @@ SCIP_RETCODE undoLocalBndchgsToPricingprobs(
    )
 {
    SCIP* origscip;
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONSDATA* consdata;
    int i;
-   int j;
 
    assert(scip != NULL);
    assert(GCGisMaster(scip));
-
-   /* get constraint handler */
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   /* get constraint handler data */
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
 
    /* get constraint data */
    consdata = SCIPconsGetData(cons);
@@ -979,7 +953,6 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
    int*                  propcount           /**< number of applied bound changes */
    )
 {
-   SCIP* origscip;
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONSDATA* consdata;
@@ -1007,10 +980,6 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   /* get original problem */
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-
    /* get master problem variables generated during pricing */
    vars = GCGmasterGetPricedvars(scip);
    nvars = GCGmasterGetNPricedvars(scip);
@@ -1035,7 +1004,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
 
          assert(GCGvarIsMaster(vars[i]));
          blocknr = GCGvarGetBlock(vars[i]);
-         assert(blocknr >= 0 && blocknr < GCGgetNPricingprobs(origscip));
+         assert(blocknr >= 0 && blocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
 
          origvals = GCGmasterVarGetOrigvals(vars[i]);
          norigvars = GCGmasterVarGetNOrigvars(vars[i]);
@@ -1063,7 +1032,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
             /* get the block the original variable is in */
             bndchgblocknr = GCGvarGetBlock(curconsdata->localbndvars[k]);
             assert(GCGvarIsOriginal(curconsdata->localbndvars[k]));
-            assert(bndchgblocknr < GCGgetNPricingprobs(origscip));
+            assert(bndchgblocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
 
             /* the boundchange was performed on a variable in another block, continue */
             if( (!GCGvarIsLinking(curconsdata->localbndvars[k]) && bndchgblocknr != blocknr) ||
@@ -1320,7 +1289,6 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    SCIP* origscip;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONSDATA* consdata;
-   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
