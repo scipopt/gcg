@@ -383,7 +383,7 @@ SCIP_RETCODE buildNewAdjacencyList(
       nconss = j;
 
       /* insert representative */
-      SCIP_CALL( SCIPhashmapInsert(detectordata->representatives, (void*) ((size_t) detectordata->nrepresentatives + 1), representative ) );
+      SCIP_CALL( SCIPhashmapInsert(detectordata->representatives, (void*) (size_t) (detectordata->nrepresentatives + 1), representative ) );
       SCIP_CALL( copyhashmap(consslink,detectordata->mergedconss[detectordata->nrepresentatives]) );
       detectordata->nrepresentatives++;
 
@@ -636,7 +636,7 @@ SCIP_RETCODE buildNewGraphs(
    pos2 = -1;
    for( i = 0; i < detectordata->nrelconss + 1; ++i )
    {
-      if( (!SCIPhashmapExists(detectordata->occupied, (void*) ((size_t)i + 1))) )
+      if( (!SCIPhashmapExists(detectordata->occupied, (void*) (size_t) (i + 1))) )
       {
          if( pos1 == -1 )
             pos1 = i;
@@ -652,7 +652,7 @@ SCIP_RETCODE buildNewGraphs(
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs[pos1].conss, graph.nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs[pos2].conss, graph.nconss) );
-   SCIP_CALL( SCIPhashmapRemove(detectordata->occupied, (void*) ((size_t)detectordata->position + 1)) );
+   SCIP_CALL( SCIPhashmapRemove(detectordata->occupied, (void*) (size_t) (detectordata->position + 1)) );
 
    for( i = 0; i < graph.nconss; ++i )
    {
@@ -805,20 +805,20 @@ SCIP_RETCODE buildNewGraphs(
    {
       SCIP_CALL( copyConss(scip, detectordata, pos1, nconss1) );
       SCIP_CALL( setStartBlock(scip, detectordata,detectordata->graphs[pos1].cons1) );
-      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) ((size_t)pos2 + 1), NULL) );
+      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) (size_t) (pos2 + 1), NULL) );
       SCIP_CALL( freeGraph(scip, detectordata, pos1, nconss1) );
    }
    else if( (nconss2 < 2) || ((stop1 == 0) && stop2) )
    {
       SCIP_CALL( copyConss(scip, detectordata, pos2, nconss2) );
       SCIP_CALL( setStartBlock(scip, detectordata,detectordata->graphs[pos2].cons1) );
-      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) ((size_t)pos1 + 1), NULL) );
+      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) (size_t) (pos1 + 1), NULL) );
       SCIP_CALL( freeGraph(scip, detectordata, pos2, nconss2) );
    }
    else
    {
-      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) ((size_t)pos1 + 1), NULL) );
-      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) ((size_t)pos2 + 1), NULL) );
+      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) (size_t) (pos1 + 1), NULL) );
+      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) (size_t) (pos2 + 1), NULL) );
       detectordata->ngraphs++;
    }
 
@@ -853,7 +853,7 @@ SCIP_RETCODE getMergedConss(
    {
       for( j = 0; j < detectordata->nsubscipconss[i]; ++j )
       {
-         SCIP_CALL( hashmapInsert(constoblock, subscipconss[i][j], (void *) ((size_t)i+1)) );
+         SCIP_CALL( hashmapInsert(constoblock, subscipconss[i][j], (void *) (size_t) (i+1)) );
       }
    }
 
@@ -1002,7 +1002,7 @@ SCIP_RETCODE getConsIndex(
    {
       for( j = 0; j < nnewsubscipconss[i]; ++j )
       {
-         SCIP_CALL( SCIPhashmapSetImage(detectordata->constoblock, newsubscipconss[i][j], (void*) ((size_t)i+1)) );
+         SCIP_CALL( SCIPhashmapSetImage(detectordata->constoblock, newsubscipconss[i][j], (void*) (size_t) (i+1)) );
       }
    }
 
@@ -1099,7 +1099,7 @@ SCIP_RETCODE getLinkingVars(
       {
          linkingvars[nlinkingvars] = vars[i];
          ++nlinkingvars;
-         SCIP_CALL( SCIPhashmapInsert(vartoblock, vars[i], (void*) ((size_t)detectordata->nblocks+1)) );
+         SCIP_CALL( SCIPhashmapInsert(vartoblock, vars[i], (void*) (size_t) (detectordata->nblocks+1)) );
       }
       else
       {

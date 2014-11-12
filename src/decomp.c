@@ -87,7 +87,7 @@ SCIP_Real quick_select_median(SCIP_Real arr[], int n)
       if( arr[middle] > arr[low] )
          ELEM_SWAP(arr[middle], arr[low]);
       /* Swap low item (now in position middle) into position (low+1) */
-      ELEM_SWAP(arr[middle], arr[(size_t)low + 1]);
+      ELEM_SWAP(arr[middle], arr[(size_t) (low + 1)]);
       /* Nibble from each end towards middle, swapping items when stuck */
       ll = low + 1;
       hh = high;
@@ -1119,7 +1119,7 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
          int linkindex = 0;
          SCIP_CONS* cons = subscipconss[b][i];
 
-         SCIP_CALL( SCIPhashmapInsert(consindex, cons, (void*)((size_t)cindex+1)) );
+         SCIP_CALL( SCIPhashmapInsert(consindex, cons, (void*)(size_t) (cindex+1)) );
          ++cindex;
          SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
          assert(success);
@@ -1269,12 +1269,12 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
          else if( varblock != consblock && consblock <= nblocks )
          {
             SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
-            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) ((size_t)nblocks+2)) );
+            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
          }
          else if( consblock == nblocks+1 )
          {
             SCIPdebugMessage(" var <%s> not handled and current cons linking, var is master.\n", SCIPvarGetName(probvar));
-            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) ((size_t)nblocks+1)) );
+            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
          }
          else
          {
@@ -1291,7 +1291,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       if( !SCIPhashmapExists(vartoblock, vars[i]) )
       {
          SCIPdebugMessage(" var <%s> not handled at all and now in master\n", SCIPvarGetName(vars[i]));
-         SCIP_CALL( SCIPhashmapSetImage(vartoblock, vars[i], (void*) ((size_t)nblocks+1)) );
+         SCIP_CALL( SCIPhashmapSetImage(vartoblock, vars[i], (void*) (size_t) (nblocks+1)) );
       }
    }
 
@@ -1361,7 +1361,7 @@ SCIP_RETCODE DECdecompTransform(
          }
          assert(decomp->subscipconss[b][c] != NULL);
          assert(!SCIPhashmapExists(newconstoblock, decomp->subscipconss[b][c]));
-         SCIP_CALL( SCIPhashmapSetImage(newconstoblock, decomp->subscipconss[b][c], (void*) ((size_t)b+1)) );
+         SCIP_CALL( SCIPhashmapSetImage(newconstoblock, decomp->subscipconss[b][c], (void*) (size_t) (b+1)) );
       }
    }
    /* transform all variables and put them into vartoblock */
@@ -1398,7 +1398,7 @@ SCIP_RETCODE DECdecompTransform(
 
             assert(decomp->subscipvars[b][idx] != NULL);
             assert(!SCIPhashmapExists(newvartoblock, decomp->subscipvars[b][idx]));
-            SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decomp->subscipvars[b][idx], (void*) ((size_t)b+1)) );
+            SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decomp->subscipvars[b][idx], (void*) (size_t) (b+1)) );
             ++idx;
          }
       }
@@ -1419,7 +1419,7 @@ SCIP_RETCODE DECdecompTransform(
          SCIP_CALL( SCIPreleaseCons(scip, &(decomp->linkingconss[c])) );
          decomp->linkingconss[c] = newcons;
       }
-      SCIP_CALL( SCIPhashmapSetImage(newconstoblock, decomp->linkingconss[c],(void*) ((size_t)decomp->nblocks+1) ) );
+      SCIP_CALL( SCIPhashmapSetImage(newconstoblock, decomp->linkingconss[c],(void*) (size_t) (decomp->nblocks+1) ) );
 
       assert(decomp->linkingconss[c] != NULL);
    }
@@ -1493,14 +1493,14 @@ SCIP_RETCODE DECdecompAddRemainingConss(
                SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss, SCIPcalcMemGrowSize(scip,decdecomp->nlinkingconss), SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss+1)) );
                decdecomp->linkingconss[decdecomp->nlinkingconss] = cons;
                decdecomp->nlinkingconss += 1;
-               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) ((size_t)DECdecompGetNBlocks(decdecomp)+1)) );
+               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (DECdecompGetNBlocks(decdecomp)+1)) );
             }
             else
             {
                SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block], SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]), SCIPcalcMemGrowSize(scip, (size_t)decdecomp->nsubscipconss[block]+1)) ); /*lint !e866*/
                decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
                decdecomp->nsubscipconss[block] += 1;
-               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) ((size_t)block+1)) );
+               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)) );
             }
             SCIP_CALL( SCIPcaptureCons(scip, cons) );
          }
@@ -1885,7 +1885,7 @@ SCIP_RETCODE fillConstoblock(
 
       if( consismaster[i] )
       {
-         SCIP_CALL( SCIPhashmapInsert(newconstoblock, cons, (void*) ((size_t)nblocks+1)) );
+         SCIP_CALL( SCIPhashmapInsert(newconstoblock, cons, (void*) (size_t) (nblocks+1)) );
          continue;
       }
 
@@ -1950,7 +1950,7 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
 
    for( i = 0; i < nmasterconss; ++i )
    {
-      SCIP_CALL( SCIPhashmapInsert(constoblock, masterconss[i], (void*) ((size_t)nblocks+1)) );
+      SCIP_CALL( SCIPhashmapInsert(constoblock, masterconss[i], (void*) (size_t) (nblocks+1)) );
    }
 
    for( i = 0; i < nconss; ++i )
@@ -3400,7 +3400,7 @@ SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
          consblock = (int) (size_t) SCIPhashmapGetImage(decomp->constoblock, cons); /*lint !e507 */
          SCIPdebugMessage("Cons <%s> %d -> %d\n", SCIPconsGetName(cons), consblock, consblock+1);
 
-         SCIP_CALL( SCIPhashmapSetImage(constoblock, cons, (void*) ((size_t)consblock+1)) );
+         SCIP_CALL( SCIPhashmapSetImage(constoblock, cons, (void*) (size_t) (consblock+1)) );
       }
       SCIP_CALL( SCIPhashmapSetImage(constoblock, decomp->linkingconss[c], (void*) (size_t) (1)) );
       SCIPdebugMessage("Cons <%s>    -> %d\n", SCIPconsGetName(decomp->linkingconss[c]), 1);
