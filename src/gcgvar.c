@@ -817,21 +817,17 @@ SCIP_Bool GCGisLinkingVarInBlock(
    int                   block               /**< pricing problem number */
    )
 {
-   SCIP_VARDATA* vardata;
+   SCIP_VAR** pricingvars;
+
    assert(var != NULL);
    assert(block >= 0);
-
-   vardata = SCIPvarGetData(var);
-   assert(vardata != NULL);
 
    assert(GCGvarIsLinking(var));
    assert(GCGvarIsOriginal(var));
 
-   assert(vardata->data.origvardata.linkingvardata != NULL);
-   assert(vardata->data.origvardata.linkingvardata->pricingvars != NULL);
+   pricingvars = GCGlinkingVarGetPricingVars(var);
 
-   return vardata->data.origvardata.linkingvardata->pricingvars[block] != NULL;
-
+   return pricingvars[block] != NULL;
 }
 
 /** determines if the master variable is in the given block */
@@ -840,42 +836,29 @@ SCIP_Bool GCGisMasterVarInBlock(
    int                   block               /**< block number to check */
    )
 {
-   SCIP_VARDATA* vardata;
+   int varblock;
 
    assert(mastervar != NULL);
    assert(block >= 0);
 
-   vardata = SCIPvarGetData(mastervar);
-   assert(vardata != NULL);
+   varblock = GCGvarGetBlock(mastervar);
 
    /* the master variable is a direct copy from an original variable */
-   if( vardata->blocknr == -1 )
+   if( varblock == -1 )
    {
-      SCIP_VAR* origvar;
+      SCIP_VAR** origvars;
       SCIP_VARDATA* origvardata;
 
-      assert(vardata->data.mastervardata.norigvars == 1);
-      assert(vardata->data.mastervardata.origvars[0] != NULL);
-
-      origvar = vardata->data.mastervardata.origvars[0];
-      origvardata = SCIPvarGetData(origvar);
-      assert(origvardata != NULL);
-      assert(origvardata->blocknr == -1 || origvardata->blocknr == -2);
+      origvars = GCGmasterVarGetOrigvars(mastervar);
 
       /* the corresponding original variable is a linking variable */
-      if( origvardata->blocknr == -2 )
-      {
-         assert(origvardata->data.origvardata.linkingvardata != NULL);
-         assert(origvardata->data.origvardata.linkingvardata->pricingvars != NULL);
-
-         return origvardata->data.origvardata.linkingvardata->pricingvars[block] != NULL;
-      }
+      if( GCGvarIsLinking(origvars[0]) )
+         return GCGisLinkingVarInBlock(origvars[0], block);
       else
          return FALSE;
    }
    else
-      return vardata->blocknr == block;
-
+      return varblock == block;
 }
 
 /** informs an original variable, that a variable in the master problem was created,
