@@ -28,6 +28,7 @@
 /**@file   gcgvar.c
  * @brief  GCG variable access functions
  * @author Martin Bergner
+ * @author Christian Puchert
  *
  * @todo capture and release variables stored in other variable's data?
  */
