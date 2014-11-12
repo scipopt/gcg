@@ -63,7 +63,7 @@ SCIP_Bool GCGvarIsMaster(
 
 /** returns TRUE or FALSE whether variable is a linking variable or not */
 extern
-SCIP_Bool GCGvarIsLinking(
+SCIP_Bool GCGoriginalVarIsLinking(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    );
 
@@ -196,6 +196,12 @@ extern
 void GCGoriginalVarSetNCoefs(
    SCIP_VAR*             var,                /**< SCIP variable structure */
    int                   coef                /**< number of coefficient to set */
+   );
+
+/** returns TRUE or FALSE whether a master variable is a direct copy of a linking variable or not */
+extern
+SCIP_Bool GCGmasterVarIsLinking(
+   SCIP_VAR*             var                 /**< variable data structure */
    );
 
 /** returns whether the master variable is a ray */

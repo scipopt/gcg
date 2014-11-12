@@ -585,7 +585,7 @@ SCIP_RETCODE createGraph(
          ncurvars = SCIPgetNVarsLinear(origscip, mastercons);
          for( j = 0; j < ncurvars; ++j )
          {
-            if( GCGvarIsLinking(curvars[j]) )
+            if( GCGoriginalVarIsLinking(curvars[j]) )
             {
                SCIPdebugMessage("Var <%s> is linking, abort detection.\n", SCIPvarGetName(curvars[j]));
                *result = SCIP_DIDNOTFIND;
@@ -638,7 +638,7 @@ SCIP_RETCODE createGraph(
       for( j = 0; j < ncurvars; ++j )
       {
          SCIP* pricingscip = NULL;
-         if( GCGvarIsLinking(curvars[j]) )
+         if( GCGoriginalVarIsLinking(curvars[j]) )
          {
             SCIPdebugMessage("Var <%s> is linking, abort detection.\n", SCIPvarGetName(curvars[j]));
             *result = SCIP_DIDNOTFIND;

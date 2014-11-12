@@ -889,7 +889,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       for( j = 0; j < nprobvars; j++ )
       {
          assert(GCGvarGetBlock(probvars[j]) == i);
-         assert( GCGvarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
+         assert( GCGoriginalVarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
 
          SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], pricetype->varGetObj(probvars[j])));
 
@@ -1111,7 +1111,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraints(
          assert(!SCIPisInfinity(scip_, solvals[i]));
 
          /* original variable is a linking variable, just add it to the linkcons */
-         if( GCGvarIsLinking(origvars[0]) )
+         if( GCGoriginalVarIsLinking(origvars[0]) )
          {
 #ifndef NDEBUG
             SCIP_VAR** pricingvars;
@@ -1481,7 +1481,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
 
          /* original variable is linking variable --> directly transferred master variable got the full obj,
           * priced-in variables get no objective value for this origvar */
-         if( GCGvarIsLinking(origvar) )
+         if( GCGoriginalVarIsLinking(origvar) )
             continue;
 
          /* add quota of original variable's objcoef to the master variable's coef */
@@ -3299,11 +3299,11 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
       }
       else
       {
-         assert((GCGoriginalVarGetNMastervars(origvars[i]) == 1) || (GCGvarIsLinking(origvars[i])));
+         assert((GCGoriginalVarGetNMastervars(origvars[i]) == 1) || (GCGoriginalVarIsLinking(origvars[i])));
          assert(GCGoriginalVarGetMastervars(origvars[i])[0] != NULL);
          SCIP_CALL( SCIPsetSolVal(scip, mastersol, GCGoriginalVarGetMastervars(origvars[i])[0], origsolvals[i]) );
 
-         if( GCGvarIsLinking(origvars[i]) )
+         if( GCGoriginalVarIsLinking(origvars[i]) )
          {
             if( !SCIPisZero(scip, origsolvals[i]) )
             {
@@ -3432,7 +3432,7 @@ SCIP_RETCODE GCGmasterCreateInitialMastervars(
          }
 
          /* we copied a linking variable into the master, add it to the linkcons */
-         if( GCGvarIsLinking(var) )
+         if( GCGoriginalVarIsLinking(var) )
          {
             SCIP_CONS** linkingconss;
             linkingconss = GCGlinkingVarGetLinkingConss(var);

@@ -166,7 +166,7 @@ SCIP_Real ReducedCostPricing::varGetObj(
 
    origvar = GCGpricingVarGetOrigvars(var)[0];
 
-   if( GCGvarIsLinking(origvar) )
+   if( GCGoriginalVarIsLinking(origvar) )
       return 0.0;
    else
       return SCIPvarGetObj(origvar);

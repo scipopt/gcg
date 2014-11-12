@@ -898,7 +898,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
          int npricingprobs;
 
          /* if the variable is linking, we have to perform the same step as above for every existing block*/
-         assert(GCGvarIsLinking(consdata->boundchgvars[i]));
+         assert(GCGoriginalVarIsLinking(consdata->boundchgvars[i]));
          pricingvars = GCGlinkingVarGetPricingVars(consdata->boundchgvars[i]);
          npricingprobs = GCGgetNPricingprobs(origscip);
 
@@ -1188,7 +1188,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          /* only look at master variables not globally fixed to zero that belong to a block */
          ismastervariablerelevant = !SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i]));
          ismastervariablerelevant = ismastervariablerelevant && (norigvars > 0);
-         ismastervariablerelevant = ismastervariablerelevant && (blocknr >= 0 || GCGvarIsLinking(origvars[0])); /*lint !e613*/
+         ismastervariablerelevant = ismastervariablerelevant && (blocknr >= 0 || GCGoriginalVarIsLinking(origvars[0])); /*lint !e613*/
          if( !ismastervariablerelevant )
             continue;
 
@@ -1225,7 +1225,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
              * boundchangevar's block, skip it, too */
             if( origvars != NULL )
             {
-               if( GCGvarIsLinking(origvars[0]) )
+               if( GCGoriginalVarIsLinking(origvars[0]) )
                {
                   SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
                   ismastervarrelevant = ismastervarrelevant || (pricingvars[bndchgblocknr] != NULL);
@@ -1366,8 +1366,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                assert(bndchgblocknr < GCGgetNPricingprobs(origscip));
 
                /* the boundchange was performed on a variable in another block, continue */
-               if( (!GCGvarIsLinking(curconsdata->boundchgvars[k]) && bndchgblocknr != blocknr) ||
-                  (GCGvarIsLinking(curconsdata->boundchgvars[k]) && !GCGisLinkingVarInBlock(curconsdata->boundchgvars[k], blocknr)) )
+               if( (!GCGoriginalVarIsLinking(curconsdata->boundchgvars[k]) && bndchgblocknr != blocknr) ||
+                  (GCGoriginalVarIsLinking(curconsdata->boundchgvars[k]) && !GCGisLinkingVarInBlock(curconsdata->boundchgvars[k], blocknr)) )
                   continue;
 
                assert(bndchgblocknr != -1);

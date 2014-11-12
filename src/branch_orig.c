@@ -328,11 +328,11 @@ SCIP_RETCODE branchExtern(
             continue;
 
          /* block is not unique (non-linking variables) */
-         if( !GCGvarIsLinking(branchcands[i]) && GCGgetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
+         if( !GCGoriginalVarIsLinking(branchcands[i]) && GCGgetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
             continue;
 
          /* check that blocks of linking variable are unique */
-         if( GCGvarIsLinking(branchcands[i]) )
+         if( GCGoriginalVarIsLinking(branchcands[i]) )
          {
             int nvarblocks;
             int* varblocks;
@@ -702,7 +702,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
             continue;
 
          /* check that blocks of linking variable are unique */
-         if( GCGvarIsLinking(branchcands[i]) )
+         if( GCGoriginalVarIsLinking(branchcands[i]) )
          {
             int nvarblocks;
             int* varblocks;

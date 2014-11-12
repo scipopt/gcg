@@ -166,12 +166,13 @@ SCIP_Bool GCGvarIsOriginal(
 }
 
 /** returns TRUE or FALSE whether variable is a linking variable or not */
-SCIP_Bool GCGvarIsLinking(
+SCIP_Bool GCGoriginalVarIsLinking(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    )
 {
    SCIP_VARDATA* vardata;
    assert(var != NULL);
+   assert(GCGvarIsOriginal(var));
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
@@ -191,7 +192,7 @@ SCIP_VAR* GCGoriginalVarGetPricingVar(
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
    assert(vardata->data.origvardata.linkingvardata == NULL);
-   assert(!GCGvarIsLinking(var));
+   assert(!GCGoriginalVarIsLinking(var));
    if( vardata->data.origvardata.pricingvar != NULL )
       assert(GCGvarIsPricing(vardata->data.origvardata.pricingvar));
    return vardata->data.origvardata.pricingvar;
@@ -213,7 +214,7 @@ void GCGoriginalVarSetPricingVar(
    assert(vardata != NULL);
 
    assert(vardata->data.origvardata.linkingvardata == NULL);
-   assert(!GCGvarIsLinking(var));
+   assert(!GCGoriginalVarIsLinking(var));
    vardata->data.origvardata.pricingvar = pricingvar;
 }
 
@@ -301,7 +302,7 @@ SCIP_VAR** GCGlinkingVarGetPricingVars(
 {
    SCIP_VARDATA* vardata;
    assert(var != NULL);
-   assert(GCGvarIsLinking(var));
+   assert(GCGoriginalVarIsLinking(var));
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
@@ -323,7 +324,7 @@ void GCGlinkingVarSetPricingVar(
    assert(var != NULL);
    assert(pricingprobnr >= 0);
 
-   assert(GCGvarIsLinking(origvar));
+   assert(GCGoriginalVarIsLinking(origvar));
    assert(GCGvarIsPricing(var));
 
    vardata = SCIPvarGetData(origvar);
@@ -348,7 +349,7 @@ SCIP_RETCODE GCGlinkingVarGetBlocks(
    assert(var != NULL);
    assert(nblocks == 0 || blocks != NULL);
 
-   assert(GCGvarIsLinking(var));
+   assert(GCGoriginalVarIsLinking(var));
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
    assert(vardata->data.origvardata.linkingvardata != NULL);
@@ -384,7 +385,7 @@ int GCGlinkingVarGetNBlocks(
    SCIP_VARDATA* vardata;
    assert(var != NULL);
 
-   assert(GCGvarIsLinking(var));
+   assert(GCGoriginalVarIsLinking(var));
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
    assert(vardata->data.origvardata.linkingvardata != NULL);
@@ -623,7 +624,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
 
       vardata->blocknr = -2;
    }
-   assert(GCGvarIsLinking(var));
+   assert(GCGoriginalVarIsLinking(var));
 
    /* store new block */
    if( vardata->data.origvardata.linkingvardata->pricingvars[newblock] == NULL )
@@ -645,7 +646,7 @@ SCIP_CONS** GCGlinkingVarGetLinkingConss(
    SCIP_VARDATA* vardata;
    assert(var != NULL);
    assert(GCGvarIsOriginal(var));
-   assert(GCGvarIsLinking(var));
+   assert(GCGoriginalVarIsLinking(var));
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
@@ -667,7 +668,7 @@ void GCGlinkingVarSetLinkingCons(
    assert(cons != NULL);
    assert(index >= 0);
    assert(GCGvarIsOriginal(var));
-   assert(GCGvarIsLinking(var));
+   assert(GCGoriginalVarIsLinking(var));
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
@@ -675,6 +676,25 @@ void GCGlinkingVarSetLinkingCons(
    assert(vardata->data.origvardata.linkingvardata != NULL);
    assert(vardata->data.origvardata.linkingvardata->linkconss != NULL);
    vardata->data.origvardata.linkingvardata->linkconss[index] = cons;
+}
+
+/** returns TRUE or FALSE whether a master variable is a direct copy of a linking variable or not */
+SCIP_Bool GCGmasterVarIsLinking(
+   SCIP_VAR*             var                 /**< variable data structure */
+   )
+{
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   /* the master variable is a direct copy from an original variable */
+   if( GCGvarGetBlock(var) == -1 )
+   {
+      SCIP_VAR** origvars;
+      origvars = GCGmasterVarGetOrigvars(var);
+      return GCGoriginalVarIsLinking(origvars[0]);
+   }
+   else
+      return FALSE;
 }
 
 /** returns whether the master variable is a ray */
@@ -728,7 +748,7 @@ SCIP_VAR** GCGmasterVarGetOrigvars(
    assert(vardata->blocknr != -1 || vardata->data.mastervardata.origvars != NULL);
    assert(vardata->blocknr != -1 || vardata->data.mastervardata.origvars[0] != NULL);
    assert(vardata->blocknr != -1 || GCGvarGetBlock(vardata->data.mastervardata.origvars[0]) == -1
-      || GCGvarIsLinking(vardata->data.mastervardata.origvars[0]));
+      || GCGoriginalVarIsLinking(vardata->data.mastervardata.origvars[0]));
 
 
    return vardata->data.mastervardata.origvars;
@@ -822,7 +842,7 @@ SCIP_Bool GCGisLinkingVarInBlock(
    assert(var != NULL);
    assert(block >= 0);
 
-   assert(GCGvarIsLinking(var));
+   assert(GCGoriginalVarIsLinking(var));
    assert(GCGvarIsOriginal(var));
 
    pricingvars = GCGlinkingVarGetPricingVars(var);
@@ -847,12 +867,11 @@ SCIP_Bool GCGisMasterVarInBlock(
    if( varblock == -1 )
    {
       SCIP_VAR** origvars;
-      SCIP_VARDATA* origvardata;
 
       origvars = GCGmasterVarGetOrigvars(mastervar);
 
       /* the corresponding original variable is a linking variable */
-      if( GCGvarIsLinking(origvars[0]) )
+      if( GCGoriginalVarIsLinking(origvars[0]) )
          return GCGisLinkingVarInBlock(origvars[0], block);
       else
          return FALSE;
@@ -971,7 +990,7 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
    assert(origvar != NULL);
    assert(var != NULL);
    assert(GCGvarIsOriginal(origvar));
-   assert(!GCGvarIsLinking(origvar));
+   assert(!GCGoriginalVarIsLinking(origvar));
    assert(GCGoriginalVarGetPricingVar(origvar) == NULL);
 
    /* get the number of the pricing block to which the variable belongs */
@@ -1010,7 +1029,7 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    assert(pricingscip != NULL);
    assert(pricingprobnr >= 0);
    assert(origvar != NULL);
-   assert(GCGvarIsLinking(origvar));
+   assert(GCGoriginalVarIsLinking(origvar));
    assert(var != NULL);
    assert(linkcons != NULL);
 
@@ -1414,7 +1433,7 @@ void GCGprintVar(
       SCIP_Real* mastervals;
       int  nmastervars;
 
-      if( GCGvarIsLinking(var) )
+      if( GCGoriginalVarIsLinking(var) )
       {
          SCIP_VAR** pricingvars;
          int nblocks;

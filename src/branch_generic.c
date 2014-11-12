@@ -343,7 +343,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
 
          if( (GCGbranchGenericBranchdataGetConsblocknr(branchdata) != GCGvarGetBlock(mastervar) && GCGvarGetBlock(mastervar) != -1 )
-               || (GCGvarGetBlock(mastervar) == -1 && !GCGvarIsLinking(mastervar)) )
+               || (GCGvarGetBlock(mastervar) == -1 && !GCGmasterVarIsLinking(mastervar)) )
          {
             parentcons = GCGconsMasterbranchGetParentcons(parentcons);
 
@@ -533,12 +533,12 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
    if( GCGvarGetBlock(mastervar1) == -1 )
    {
       SCIPdebugMessage("linkingvar\n");
-      assert(GCGvarIsLinking(mastervar1));
+      assert(GCGmasterVarIsLinking(mastervar1));
    }
    if( GCGvarGetBlock(mastervar2) == -1 )
    {
       SCIPdebugMessage("linkingvar\n");
-      assert(GCGvarIsLinking(mastervar2));
+      assert(GCGmasterVarIsLinking(mastervar2));
    }
 
    origvars = GCGmasterVarGetOrigvars(mastervar1);
@@ -2491,7 +2491,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    /* a special case; branch on copy of an origvar directly */
    if( blocknr == -1 )
    {
-      assert(!GCGvarIsLinking(mastervar));
+      assert(!GCGmasterVarIsLinking(mastervar));
       SCIPdebugMessage("branching on master variable\n");
       SCIP_CALL( branchDirectlyOnMastervar(origscip, mastervar, branchrule) );
       return SCIP_OKAY;
