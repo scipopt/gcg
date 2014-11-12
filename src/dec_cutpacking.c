@@ -274,7 +274,7 @@ SCIP_HASHMAPLIST* hashmapIteration(
          return list;
    }
 
-   if( list == NULL )
+   if( list == NULL ) /*lint !e774*/
    {
       int j;
       for( j = detectordata->iter; j < SCIPhashmapGetNLists(hm); ++j )
@@ -1837,17 +1837,17 @@ DEC_DECL_INITDETECTOR(initCutpacking)
       {
          SCIP_CALL( SCIPallocBlockMemoryArray(scip,&curvars,ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip,detectordata->graphs[0].conss[i], curvars, ncurvars) );
-      }
-      for( j = 0; j < ncurvars; ++j )
-      {
-         if( GCGisVarRelevant(curvars[j]) )
+         for( j = 0; j < ncurvars; ++j )
          {
-            int varpos;
+            if( GCGisVarRelevant(curvars[j]) )
+            {
+               int varpos;
 
-            varpos = (int) (size_t) SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(curvars[j])); /*lint !e507*/
+               varpos = (int) (size_t) SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(curvars[j])); /*lint !e507*/
 
-            (varinconss[varpos])[nvarinconss[varpos]] = detectordata->graphs[0].conss[i];
-            ++nvarinconss[varpos];
+               (varinconss[varpos])[nvarinconss[varpos]] = detectordata->graphs[0].conss[i];
+               ++nvarinconss[varpos];
+            }
          }
       }
       SCIPfreeBlockMemoryArrayNull(scip, &curvars, ncurvars);
@@ -1934,7 +1934,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    {
       for( i = 0; i < detectordata->nrelconss + 1; i++ )
       {
-         if( SCIPhashmapExists(detectordata->occupied, (void*) ((size_t)i + 1)) )
+         if( SCIPhashmapExists(detectordata->occupied, (void*) (size_t)(i + 1)) )
          {
             detectordata->position = i;
 
