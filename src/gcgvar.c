@@ -834,6 +834,50 @@ SCIP_Bool GCGisLinkingVarInBlock(
 
 }
 
+/** determines if the master variable is in the given block */
+SCIP_Bool GCGisMasterVarInBlock(
+   SCIP_VAR*             mastervar,          /**< master variable */
+   int                   block               /**< block number to check */
+   )
+{
+   SCIP_VARDATA* vardata;
+
+   assert(mastervar != NULL);
+   assert(block >= 0);
+
+   vardata = SCIPvarGetData(mastervar);
+   assert(vardata != NULL);
+
+   /* the master variable is a direct copy from an original variable */
+   if( vardata->blocknr == -1 )
+   {
+      SCIP_VAR* origvar;
+      SCIP_VARDATA* origvardata;
+
+      assert(vardata->data.mastervardata.norigvars == 1);
+      assert(vardata->data.mastervardata.origvars[0] != NULL);
+
+      origvar = vardata->data.mastervardata.origvars[0];
+      origvardata = SCIPvarGetData(origvar);
+      assert(origvardata != NULL);
+      assert(origvardata->blocknr == -1 || origvardata->blocknr == -2);
+
+      /* the corresponding original variable is a linking variable */
+      if( origvardata->blocknr == -2 )
+      {
+         assert(origvardata->data.origvardata.linkingvardata != NULL);
+         assert(origvardata->data.origvardata.linkingvardata->pricingvars != NULL);
+
+         return origvardata->data.origvardata.linkingvardata->pricingvars[block] != NULL;
+      }
+      else
+         return FALSE;
+   }
+   else
+      return vardata->blocknr == block;
+
+}
+
 /** informs an original variable, that a variable in the master problem was created,
  * that contains a part of the original variable.
  * Saves this information in the original variable's data
@@ -1454,37 +1498,4 @@ void GCGprintVar(
       }
       SCIPinfoMessage(scip, file, "%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
    }
-}
-
-/** determines if the master variable is in the given block */
-SCIP_Bool GCGmasterVarIsInBlock(
-   SCIP_VAR*             mastervar,          /**< master variable */
-   int                   blocknr             /**< block number to check */
-   )
-{
-   SCIP_Bool blockfound = FALSE;
-
-   assert(mastervar != NULL);
-   assert(blocknr >= 0);
-   if ( GCGvarIsLinking(mastervar) )
-   {
-      int u;
-      SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(mastervar);
-      assert(pricingvars != NULL);
-
-      for ( u = 0; u < GCGlinkingVarGetNBlocks(mastervar); ++u )
-      {
-         if ( pricingvars[u] != NULL && GCGvarGetBlock(pricingvars[u]) == blocknr )
-         {
-            blockfound = TRUE;
-            break;
-         }
-      }
-   }
-   else
-   {
-      blockfound = (GCGvarGetBlock(mastervar) == blocknr);
-   }
-
-   return blockfound;
 }
