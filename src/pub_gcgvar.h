@@ -267,6 +267,13 @@ SCIP_Bool GCGisLinkingVarInBlock(
    int                   block               /**< pricing problem number */
    );
 
+/** determines if the master variable is in the given block */
+extern
+SCIP_Bool GCGisMasterVarInBlock(
+   SCIP_VAR*             mastervar,          /**< master variable */
+   int                   blocknr             /**< block number to check */
+   );
+
 /** informs an original variable, that a variable in the master problem was created,
  * that contains a part of the original variable.
  * Saves this information in the original variable's data
@@ -422,12 +429,6 @@ void GCGprintVar(
    SCIP_VAR*             var                 /**< variable that should be printed */
    );
 
-/** determines if the master variable is in the given block */
-extern
-SCIP_Bool GCGmasterVarIsInBlock(
-   SCIP_VAR*             mastervar,          /**< master variable */
-   int                   blocknr             /**< block number to check */
-   );
 #ifdef __cplusplus
 }
 #endif

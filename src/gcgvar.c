@@ -834,6 +834,39 @@ SCIP_Bool GCGisLinkingVarInBlock(
 
 }
 
+/** determines if the master variable is in the given block */
+SCIP_Bool GCGisMasterVarInBlock(
+   SCIP_VAR*             mastervar,          /**< master variable */
+   int                   blocknr             /**< block number to check */
+   )
+{
+   SCIP_Bool blockfound = FALSE;
+
+   assert(mastervar != NULL);
+   assert(blocknr >= 0);
+   if ( GCGvarIsLinking(mastervar) )
+   {
+      int u;
+      SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(mastervar);
+      assert(pricingvars != NULL);
+
+      for ( u = 0; u < GCGlinkingVarGetNBlocks(mastervar); ++u )
+      {
+         if ( pricingvars[u] != NULL && GCGvarGetBlock(pricingvars[u]) == blocknr )
+         {
+            blockfound = TRUE;
+            break;
+         }
+      }
+   }
+   else
+   {
+      blockfound = (GCGvarGetBlock(mastervar) == blocknr);
+   }
+
+   return blockfound;
+}
+
 /** informs an original variable, that a variable in the master problem was created,
  * that contains a part of the original variable.
  * Saves this information in the original variable's data
@@ -1454,37 +1487,4 @@ void GCGprintVar(
       }
       SCIPinfoMessage(scip, file, "%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
    }
-}
-
-/** determines if the master variable is in the given block */
-SCIP_Bool GCGmasterVarIsInBlock(
-   SCIP_VAR*             mastervar,          /**< master variable */
-   int                   blocknr             /**< block number to check */
-   )
-{
-   SCIP_Bool blockfound = FALSE;
-
-   assert(mastervar != NULL);
-   assert(blocknr >= 0);
-   if ( GCGvarIsLinking(mastervar) )
-   {
-      int u;
-      SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(mastervar);
-      assert(pricingvars != NULL);
-
-      for ( u = 0; u < GCGlinkingVarGetNBlocks(mastervar); ++u )
-      {
-         if ( pricingvars[u] != NULL && GCGvarGetBlock(pricingvars[u]) == blocknr )
-         {
-            blockfound = TRUE;
-            break;
-         }
-      }
-   }
-   else
-   {
-      blockfound = (GCGvarGetBlock(mastervar) == blocknr);
-   }
-
-   return blockfound;
 }
