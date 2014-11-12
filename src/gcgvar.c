@@ -837,34 +837,45 @@ SCIP_Bool GCGisLinkingVarInBlock(
 /** determines if the master variable is in the given block */
 SCIP_Bool GCGisMasterVarInBlock(
    SCIP_VAR*             mastervar,          /**< master variable */
-   int                   blocknr             /**< block number to check */
+   int                   block               /**< block number to check */
    )
 {
-   SCIP_Bool blockfound = FALSE;
+   SCIP_VARDATA* vardata;
 
    assert(mastervar != NULL);
-   assert(blocknr >= 0);
-   if ( GCGvarIsLinking(mastervar) )
-   {
-      int u;
-      SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(mastervar);
-      assert(pricingvars != NULL);
+   assert(block >= 0);
 
-      for ( u = 0; u < GCGlinkingVarGetNBlocks(mastervar); ++u )
+   vardata = SCIPvarGetData(mastervar);
+   assert(vardata != NULL);
+
+   /* the master variable is a direct copy from an original variable */
+   if( vardata->blocknr == -1 )
+   {
+      SCIP_VAR* origvar;
+      SCIP_VARDATA* origvardata;
+
+      assert(vardata->data.mastervardata.norigvars == 1);
+      assert(vardata->data.mastervardata.origvars[0] != NULL);
+
+      origvar = vardata->data.mastervardata.origvars[0];
+      origvardata = SCIPvarGetData(origvar);
+      assert(origvardata != NULL);
+      assert(origvardata->blocknr == -1 || origvardata->blocknr == -2);
+
+      /* the corresponding original variable is a linking variable */
+      if( origvardata->blocknr == -2 )
       {
-         if ( pricingvars[u] != NULL && GCGvarGetBlock(pricingvars[u]) == blocknr )
-         {
-            blockfound = TRUE;
-            break;
-         }
+         assert(origvardata->data.origvardata.linkingvardata != NULL);
+         assert(origvardata->data.origvardata.linkingvardata->pricingvars != NULL);
+
+         return origvardata->data.origvardata.linkingvardata->pricingvars[block] != NULL;
       }
+      else
+         return FALSE;
    }
    else
-   {
-      blockfound = (GCGvarGetBlock(mastervar) == blocknr);
-   }
+      return vardata->blocknr == block;
 
-   return blockfound;
 }
 
 /** informs an original variable, that a variable in the master problem was created,
