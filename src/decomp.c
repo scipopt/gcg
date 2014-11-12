@@ -402,7 +402,7 @@ SCIP_RETCODE DECdecompFree(
             }
          }
 
-         SCIPfreeBlockMemoryArrayNull(scip, &(decomp->subscipvars[i]), SCIPcalcMemGrowSize(scip, decomp->nsubscipvars[i]));
+         SCIPfreeBlockMemoryArrayNull(scip, &(decomp->subscipvars[i]), SCIPcalcMemGrowSize(scip, decomp->nsubscipvars[i])); /*lint !e866*/
       }
       if( decomp->nsubscipconss != NULL )
       {
@@ -413,7 +413,7 @@ SCIP_RETCODE DECdecompFree(
                SCIP_CALL( SCIPreleaseCons(scip, &(decomp->subscipconss[i][j])) );
             }
          }
-         SCIPfreeBlockMemoryArrayNull(scip, &decomp->subscipconss[i], SCIPcalcMemGrowSize(scip, decomp->nsubscipconss[i]));
+         SCIPfreeBlockMemoryArrayNull(scip, &decomp->subscipconss[i], SCIPcalcMemGrowSize(scip, decomp->nsubscipconss[i])); /*lint !e866*/
       }
    }
 
@@ -441,7 +441,7 @@ SCIP_RETCODE DECdecompFree(
                SCIP_CALL( SCIPreleaseVar(scip, &(decomp->stairlinkingvars[i][j])) );
             }
          }
-         SCIPfreeBlockMemoryArrayNull(scip, &decomp->stairlinkingvars[i], SCIPcalcMemGrowSize(scip, decomp->nstairlinkingvars[i]));
+         SCIPfreeBlockMemoryArrayNull(scip, &decomp->stairlinkingvars[i], SCIPcalcMemGrowSize(scip, decomp->nstairlinkingvars[i])); /*lint !e866*/
       }
 
    /* free hashmaps if they are not NULL */
@@ -611,8 +611,10 @@ SCIP_RETCODE DECdecompSetSubscipvars(
       }
       else if( nsubscipvars[b] > 0 )
       {
+         int size;
          assert(subscipvars[b] != NULL);
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->subscipvars[b], SCIPcalcMemGrowSize(scip, nsubscipvars[b])) );
+         size = SCIPcalcMemGrowSize(scip, nsubscipvars[b]);
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->subscipvars[b], size) ); /*lint !e866*/
          BMScopyMemoryArray(decomp->subscipvars[b],subscipvars[b], nsubscipvars[b]); /*lint !e866*/
 
          for( i = 0; i < nsubscipvars[b]; ++i )
@@ -694,9 +696,11 @@ SCIP_RETCODE DECdecompSetSubscipconss(
 
       if( nsubscipconss[b] > 0 )
       {
+         int size;
 
          assert(subscipconss[b] != NULL);
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->subscipconss[b], SCIPcalcMemGrowSize(scip, nsubscipconss[b])) );
+         size = SCIPcalcMemGrowSize(scip, nsubscipconss[b]);
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->subscipconss[b], size) ); /*lint !e866*/
          BMScopyMemoryArray(decomp->subscipconss[b], subscipconss[b], nsubscipconss[b]); /*lint !e866*/
          for( i = 0; i < nsubscipconss[b]; ++i )
          {
@@ -750,8 +754,10 @@ SCIP_RETCODE DECdecompSetLinkingconss(
    if( nlinkingconss > 0 )
    {
       int i;
+      int size;
       assert(linkingconss != NULL);
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->linkingconss, SCIPcalcMemGrowSize(scip, nlinkingconss)) );
+      size = SCIPcalcMemGrowSize(scip, nlinkingconss);
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->linkingconss, size) );
       BMScopyMemoryArray(decomp->linkingconss, linkingconss, nlinkingconss);
 
       for( i = 0; i < nlinkingconss; ++i )
@@ -810,8 +816,10 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    if( nlinkingvars > 0 )
    {
       int i;
+      int size;
       assert(linkingvars != NULL);
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->linkingvars, SCIPcalcMemGrowSize(scip, nlinkingvars)) );
+      size = SCIPcalcMemGrowSize(scip, nlinkingvars);
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->linkingvars, size) );
       BMScopyMemoryArray(decomp->linkingvars, linkingvars, nlinkingvars);
 
       for( i = 0; i < nlinkingvars; ++i )
@@ -888,7 +896,8 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
       decomp->nstairlinkingvars[b] = nstairlinkingvars[b];
       if( stairlinkingvars[b] != NULL )
       {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(decomp->stairlinkingvars[b]), SCIPcalcMemGrowSize(scip, nstairlinkingvars[b])) ); /*lint !e866 */
+         int size = SCIPcalcMemGrowSize(scip, nstairlinkingvars[b]);
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(decomp->stairlinkingvars[b]), size) ); /*lint !e866 */
          BMScopyMemoryArray(decomp->stairlinkingvars[b], stairlinkingvars[b], nstairlinkingvars[b]); /*lint !e866 */
       }
       else
@@ -1490,14 +1499,18 @@ SCIP_RETCODE DECdecompAddRemainingConss(
             SCIPdebugMessage("cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
             if( block == DECdecompGetNBlocks(decdecomp) )
             {
-               SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss, SCIPcalcMemGrowSize(scip,decdecomp->nlinkingconss), SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss+1)) );
+               int oldsize = SCIPcalcMemGrowSize(scip,decdecomp->nlinkingconss);
+               int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss+1);
+               SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss, oldsize, newsize) );
                decdecomp->linkingconss[decdecomp->nlinkingconss] = cons;
                decdecomp->nlinkingconss += 1;
                SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (DECdecompGetNBlocks(decdecomp)+1)) );
             }
             else
             {
-               SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block], SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]), SCIPcalcMemGrowSize(scip, (size_t)decdecomp->nsubscipconss[block]+1)) ); /*lint !e866*/
+               int oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]);
+               int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]+1);
+               SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block], oldsize, newsize) ); /*lint !e866*/
                decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
                decdecomp->nsubscipconss[block] += 1;
                SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)) );
@@ -2661,7 +2674,7 @@ SCIP_RETCODE computeVarDensities(
 
    for( v = 0; v < nvars; ++v )
    {
-      int block = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), (vars[v]))) -1 ;
+      int block = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), (vars[v]))) - 1; /*lint !e507 */
       assert(block >= 0);
       SCIPdebugMessage("Var <%s>:", SCIPvarGetName(vars[v]));
 
@@ -2778,7 +2791,7 @@ SCIP_RETCODE computeConssNzeros(
 )
 {
    int v;
-   int ncurvars = 0;
+   int ncurvars;
    SCIP_VAR** curvars = NULL;
    SCIP_Real* curvals = NULL;
 
@@ -2806,7 +2819,7 @@ SCIP_RETCODE computeConssNzeros(
 
       curvar = SCIPvarGetProbvar(curvars[v]);
 
-      block = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), (curvar))) -1 ;
+      block = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), (curvar))) - 1; /*lint !e507 */
       assert(block >= 0);
 
       if(block > DECdecompGetNBlocks(decomp) )
@@ -3217,6 +3230,8 @@ SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
    SCIP_VAR** curvars = NULL;
    int ncurvars = 0;
    SCIP_Bool success = FALSE;
+   int oldsize;
+   int newsize;
    int v;
 
    assert(scip != NULL);
@@ -3235,7 +3250,9 @@ SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
    decomp->linkingconss[consindex] =  decomp->linkingconss[decomp->nlinkingconss-1];
    decomp->nlinkingconss -= 1;
 
-   SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decomp->subscipconss[block], SCIPcalcMemGrowSize(scip, decomp->nsubscipconss[block]), SCIPcalcMemGrowSize(scip, (size_t)decomp->nsubscipconss[block]+1)) ); /*lint !e866 */
+   oldsize = SCIPcalcMemGrowSize(scip, decomp->nsubscipconss[block]);
+   newsize = SCIPcalcMemGrowSize(scip, decomp->nsubscipconss[block]+1);
+   SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decomp->subscipconss[block], oldsize, newsize) ); /*lint !e866 */
    decomp->subscipconss[block][decomp->nsubscipconss[block]] = linkcons;
    decomp->nsubscipconss[block] += 1;
    SCIP_CALL( SCIPhashmapSetImage(decomp->constoblock, linkcons, (void*) (size_t)((size_t)block+1)) );
@@ -3247,8 +3264,10 @@ SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
       /* if variable is in master only, move to subproblem */
       if( (int) (size_t) SCIPhashmapGetImage(decomp->vartoblock, probvar) == decomp->nblocks+1 ) /*lint !e507 */
       {
-         SCIP_CALL( SCIPhashmapSetImage(decomp->vartoblock, probvar, (void*) ((size_t)block+1)) );
-         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decomp->subscipvars[block], SCIPcalcMemGrowSize(scip, decomp->nsubscipvars[block]), SCIPcalcMemGrowSize(scip, decomp->nsubscipvars[block] + 1)) ) /*lint !e866 */;
+         oldsize = SCIPcalcMemGrowSize(scip, decomp->nsubscipvars[block]);
+         newsize = SCIPcalcMemGrowSize(scip, decomp->nsubscipvars[block] + 1);
+         SCIP_CALL( SCIPhashmapSetImage(decomp->vartoblock, probvar, (void*) (size_t)(block+1)) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decomp->subscipvars[block], oldsize, newsize) ) /*lint !e866 */;
          decomp->subscipvars[block][decomp->nsubscipvars[block]] = probvar;
          decomp->nsubscipvars[block] += 1;
          SCIP_CALL( DECdecompRemoveLinkingVar(scip, decomp, probvar, &success) );
@@ -3296,7 +3315,9 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    {
       if( decomp->nlinkingconss > 0 )
       {
-         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decomp->linkingconss, SCIPcalcMemGrowSize(scip, linkingconssize),  SCIPcalcMemGrowSize(scip, decomp->nlinkingconss)) );
+         int oldsize = SCIPcalcMemGrowSize(scip, linkingconssize);
+         int newsize = SCIPcalcMemGrowSize(scip, decomp->nlinkingconss);
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decomp->linkingconss, oldsize, newsize) );
       }
       else
       {
@@ -3351,7 +3372,9 @@ SCIP_RETCODE DECdecompRemoveLinkingVar(
       }
       else
       {
-         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decomp->linkingvars, SCIPcalcMemGrowSize(scip, linkingvarsize), SCIPcalcMemGrowSize(scip, decomp->nlinkingvars)) );
+         int oldsize = SCIPcalcMemGrowSize(scip, linkingvarsize);
+         int newsize = SCIPcalcMemGrowSize(scip, decomp->nlinkingvars);
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decomp->linkingvars, oldsize, newsize) );
       }
    }
    return SCIP_OKAY;
