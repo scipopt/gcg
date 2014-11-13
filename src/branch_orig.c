@@ -739,6 +739,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
    }
 
    SCIPdebugMessage("Update current sol.\n");
+
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
 
    /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */

@@ -212,19 +212,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
    *result = SCIP_DIDNOTRUN;
 
-   if( GCGrelaxGetCurrentOrigSol(scip) == NULL )
-   {
-      SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
-   }
-   else
-   {
-      /* check whether the current original solution is integral */
-#ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
-#else
-      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
-#endif
-   }
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
 
    if( feasible )
    {

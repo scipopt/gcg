@@ -2807,19 +2807,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
       SCIPdebugMessage("Generic branching executed on a set covering or set partitioning problem\n");
    }
 
-   if( GCGrelaxGetCurrentOrigSol(origscip) == NULL )
-   {
-      SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
-   }
-   else
-   {
-      /* check whether the current original solution is integral */
-#ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(origscip), TRUE, TRUE, TRUE, TRUE, &feasible) );
-#else
-      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(origscip), FALSE, TRUE, TRUE, TRUE, &feasible) );
-#endif
-   }
+
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
 
    if( feasible )
    {
