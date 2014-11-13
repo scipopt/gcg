@@ -1586,7 +1586,7 @@ SCIP_Bool  ObjPricerGcg::canPricingBeAborted() const
 }
 
 /** sorts pricing problems according to their score */
-void ObjPricerGcg::sortPricingProblemsByScore()
+void ObjPricerGcg::sortPricingProblemsByScore() const
 {
    int i;
    assert(pricerdata != NULL);
@@ -3104,6 +3104,7 @@ void GCGpricerPrintPricingStatistics(
 }
 
 /** prints pricer statistics */
+extern "C"
 void GCGpricerPrintStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */

@@ -1850,7 +1850,7 @@ SCIP_RETCODE initRelaxator(
    SCIP_CALL( SCIPgetIntParam(scip, "misc/permutationseed", &permutationseed) );
    if( permutationseed >= 0 )
    {
-      SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, permutationseed) );
+      SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, (unsigned int) permutationseed) );
    }
 
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );

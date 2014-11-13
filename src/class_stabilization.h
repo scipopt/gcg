@@ -58,7 +58,7 @@ private:
    PricingType* pricingtype;
    SCIP_Real alpha;
    SCIP_Real alphabar; /**< alpha that is used and updated in a mispricing schedule */
-   int nodenr;
+   SCIP_Longint nodenr;
    int k; /**< counter for the number of stabilized pricing rounds in B&B node, excluding the mispricing schedule iterations  */
    int t; /**< counter for the number of pricing rounds during a mispricing schedule, restarted after a mispricing schedule is finished */
    SCIP_Bool hasstabilitycenter;
@@ -71,6 +71,10 @@ public:
       SCIP*              scip,               /**< SCIP data structure */
       PricingType*       pricingtype         /**< the pricing type when the stabilization should run */
    );
+   /** constructor */
+   Stabilization();
+
+   /** destructor */
    virtual ~Stabilization();
 
    /** enabling mispricing schedule */
@@ -174,7 +178,7 @@ private:
    SCIP_Real computeDual(
       SCIP_Real          center,             /**< value of stabilility center */
       SCIP_Real          current             /**< current dual value */
-   );
+   ) const;
 };
 
 } /* namespace gcg */

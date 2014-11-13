@@ -358,7 +358,7 @@ SCIP_RETCODE constructCuts(
       int dist;
       dist = getDistance(start, i, distance);
       SCIPdebugPrintf("from %d to %d = %d (%s = %d)\n", start, i, dist, SCIPconsGetName(conss[i]), dist+1 );
-      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*) ((size_t)dist+1)) );
+      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*) (size_t) (dist+1)) );
    }
 
    return SCIP_OKAY;
