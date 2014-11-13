@@ -52,7 +52,8 @@ enum GCG_BoundType
 {
    GCG_BOUNDTYPE_LOWER = 0,            /**< lower bound */
    GCG_BOUNDTYPE_UPPER = 1,            /**< upper bound */
-   GCG_BOUNDTYPE_NONE = 2              /**< no bound */
+   GCG_BOUNDTYPE_FIXED = 2,            /**< variable fixed */
+   GCG_BOUNDTYPE_NONE = 3              /**< no bound */
 };
 typedef enum GCG_BoundType GCG_BOUNDTYPE;
 

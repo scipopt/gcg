@@ -149,15 +149,19 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    if( !enforcebycons && GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) != GCG_BOUNDTYPE_NONE )
    {
       assert(GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_LOWER
-         || GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_UPPER);
+         || GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_UPPER
+         || GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_FIXED);
 
-      if( GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_LOWER )
+      if( GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_LOWER
+         || GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_FIXED )
       {
          SCIP_CALL( SCIPchgVarLbNode(scip, child,
             GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
             GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
       }
-      else if( GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_UPPER )
+
+      if( GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_UPPER
+         || GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_FIXED )
       {
          SCIP_CALL( SCIPchgVarUbNode(scip, child,
             GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
@@ -218,20 +222,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
    *result = SCIP_DIDNOTRUN;
 
-   /* @fixme: This looks like a hack */
-   if( GCGrelaxGetCurrentOrigSol(scip) == NULL )
-   {
-      SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
-   }
-   else
-   {
-      /* check whether the current original solution is integral */
-#ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
-#else
-      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
-#endif
-   }
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
 
    if( feasible )
    {

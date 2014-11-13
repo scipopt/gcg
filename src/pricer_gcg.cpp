@@ -31,6 +31,7 @@
  * @author Martin Bergner
  * @author Alexander Gross
  * @author Christian Puchert
+ * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -844,7 +845,8 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
  *  @todo this method could use more parameters as it is private
  */
 SCIP_RETCODE ObjPricerGcg::setPricingObjs(
-   PricingType*          pricetype           /**< Farkas or Reduced cost pricing */
+   PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */
+   SCIP_Bool             stabilize           /**< do we use stabilization ? */
    )
 {
    SCIP_CONS** origconss;
@@ -862,7 +864,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
    SCIP_VAR** consvars = NULL;
    int nconsvars;
-   SCIP_Bool stabilize;
    int i;
    int j;
 
@@ -873,8 +874,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
    origconss = GCGrgetLinearOrigMasterConss(origprob);
-
-   stabilize = (pricetype->getType() == GCG_PRICETYPE_REDCOST) && pricerdata->stabilization;
 
    /* set objective value of all variables in the pricing problems to 0 (for farkas pricing) /
     * to the original objective of the variable (for redcost pricing)
@@ -889,7 +888,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       for( j = 0; j < nprobvars; j++ )
       {
          assert(GCGvarGetBlock(probvars[j]) == i);
-         assert( GCGvarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
+         assert( GCGoriginalVarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
 
          SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], pricetype->varGetObj(probvars[j])));
 
@@ -952,7 +951,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
       }
 
-      if( !SCIPisZero(scip_, dualsol) )
+      if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, pricetype->consGetDual(scip_, masterconss[i])) )
       {
 #ifdef PRINTDUALSOLS
          SCIPdebugMessage("mastercons <%s> dualsol: %g\n", SCIPconsGetName(masterconss[i]), dualsol);
@@ -1111,7 +1110,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraints(
          assert(!SCIPisInfinity(scip_, solvals[i]));
 
          /* original variable is a linking variable, just add it to the linkcons */
-         if( GCGvarIsLinking(origvars[0]) )
+         if( GCGoriginalVarIsLinking(origvars[0]) )
          {
 #ifndef NDEBUG
             SCIP_VAR** pricingvars;
@@ -1481,7 +1480,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
 
          /* original variable is linking variable --> directly transferred master variable got the full obj,
           * priced-in variables get no objective value for this origvar */
-         if( GCGvarIsLinking(origvar) )
+         if( GCGoriginalVarIsLinking(origvar) )
             continue;
 
          /* add quota of original variable's objcoef to the master variable's coef */
@@ -1587,7 +1586,7 @@ SCIP_Bool  ObjPricerGcg::canPricingBeAborted() const
 }
 
 /** sorts pricing problems according to their score */
-void ObjPricerGcg::sortPricingProblemsByScore()
+void ObjPricerGcg::sortPricingProblemsByScore() const
 {
    int i;
    assert(pricerdata != NULL);
@@ -2013,7 +2012,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
-      SCIP_CALL( setPricingObjs(pricetype) );
+      SCIP_CALL( setPricingObjs(pricetype, stabilized) );
 
       #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost, beststabobj,bestredcostvalid,nfoundvars,successfulmips,infeasible,pricinghaserror) reduction(+:solvedmips) schedule(static,1)
       for( i = 0; i < pricerdata->npricingprobs; i++ )
@@ -2059,7 +2058,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             }
          }
 
-         if( optimal && nsols[prob] > 0)
+         if( optimal && nsols[prob] > 0 )
          {
             SCIP_Real convdual = stabilization->convGetDual(prob);
 
@@ -2104,7 +2103,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
       }
 
-      if( stabilized && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
+      if( stabilized && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
       {
          SCIP_Real beststabredcost;
          SCIP_Real lowerboundcandidate;
@@ -2118,18 +2117,21 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          beststabredcost = beststabobj - dualconvsum;
          //SCIPinfoMessage(scip_, NULL, "Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, boundcandidate = %f\n", stabilized, nfoundvars, optimal, lowerboundcandidate);
 
-         if(*bestredcostvalid)
+         if( *bestredcostvalid )
          {
             SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals) );
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
          }
 
          SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %ud, nfoundvars = %d, optimal = %ud, *bestredcostvalid = %ud\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
+
          if( nfoundvars == 0 )
          {
-               stabilization->updateAlphaMisprice();
+            SCIPdebugMessage("enabling mispricing schedule\n");
+            stabilization->activateMispricingSchedule();
+            stabilization->updateAlphaMisprice();
          }
-         else if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0))
+         else if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0) )
          {
             SCIP_SOL** pricingsols = NULL;
 
@@ -2144,18 +2146,23 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                }
             }
 
+            if( stabilization->isInMispricingSchedule() )
+               stabilization->disablingMispricingSchedule();
             stabilization->updateAlpha(pricingsols);
+
 
             SCIPfreeBlockMemoryArray(scip_, &pricingsols, pricerdata->npricingprobs);
          }
 
       }
-      else if( *bestredcostvalid && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
+      else if( *bestredcostvalid && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
       {
          SCIP_Real lowerboundcandidate;
          assert(lowerbound != NULL );
          lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
          *lowerbound = MAX(*lowerbound, lowerboundcandidate);
+         if(stabilization->isInMispricingSchedule())
+            stabilization->disablingMispricingSchedule();
       }
 
       /* free solutions if none of them has negative reduced cost */
@@ -3096,6 +3103,7 @@ void GCGpricerPrintPricingStatistics(
 }
 
 /** prints pricer statistics */
+extern "C"
 void GCGpricerPrintStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
@@ -3178,6 +3186,40 @@ void GCGpricerPrintStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Time for transformation          : %f\n", SCIPgetClockTime(scip, pricerdata->transformclock));
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Time for freeing subMIPs         : %f\n", SCIPgetClockTime(scip, pricerdata->freeclock));
 
+}
+
+/** method to get existence of rays */
+extern "C"
+SCIP_RETCODE GCGpricerExistRays(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool*            exist               /**< pointer to store if there exists any ray */
+   )
+{
+   int prob;
+
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   *exist = FALSE;
+
+   for( prob = 0; prob < pricerdata->npricingprobs; ++prob )
+   {
+      if( pricerdata->nraysprob[prob] > 0 )
+      {
+         *exist = TRUE;
+         break;
+      }
+   }
+
+   return SCIP_OKAY;
 }
 
 
@@ -3265,11 +3307,11 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
       }
       else
       {
-         assert((GCGoriginalVarGetNMastervars(origvars[i]) == 1) || (GCGvarIsLinking(origvars[i])));
+         assert((GCGoriginalVarGetNMastervars(origvars[i]) == 1) || (GCGoriginalVarIsLinking(origvars[i])));
          assert(GCGoriginalVarGetMastervars(origvars[i])[0] != NULL);
          SCIP_CALL( SCIPsetSolVal(scip, mastersol, GCGoriginalVarGetMastervars(origvars[i])[0], origsolvals[i]) );
 
-         if( GCGvarIsLinking(origvars[i]) )
+         if( GCGoriginalVarIsLinking(origvars[i]) )
          {
             if( !SCIPisZero(scip, origsolvals[i]) )
             {
@@ -3398,7 +3440,7 @@ SCIP_RETCODE GCGmasterCreateInitialMastervars(
          }
 
          /* we copied a linking variable into the master, add it to the linkcons */
-         if( GCGvarIsLinking(var) )
+         if( GCGoriginalVarIsLinking(var) )
          {
             SCIP_CONS** linkingconss;
             linkingconss = GCGlinkingVarGetLinkingConss(var);

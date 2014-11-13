@@ -575,7 +575,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
          /* linking variables are treated differently; if the variable already has been assigned a value,
           * one must check whether the value for the current block is the same (otherwise, the resulting
           * solution will be infeasible in any case) */
-         if( GCGvarIsLinking(origvars[i]) )
+         if( GCGoriginalVarIsLinking(origvars[i]) )
          {
             SCIP_VAR** linkingpricingvars;
             SCIP_Bool hasvalue;
@@ -650,7 +650,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
          SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, -1.0) );
          for( k = 0; k < i; k++ )
          {
-            if( GCGvarIsLinking(origvars[k]) )
+            if( GCGoriginalVarIsLinking(origvars[k]) )
             {
                SCIP_VAR** linkingpricingvars;
                SCIP_Bool hasvalue;

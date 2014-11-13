@@ -37,12 +37,13 @@
 
 #include "scip/scip.h"
 #include "gcg.h"
-#include "pricer_gcg.h"
-#include "scip_misc.h"
 #include "type_solver.h"
 #include "solver_cplex.h"
 
 #ifdef CPLEXSOLVER
+#include "pricer_gcg.h"
+#include "scip_misc.h"
+
 #include "cplex.h"
 
 #define CHECK_ZERO(x) { int _restat_;                                   \

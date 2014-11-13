@@ -184,7 +184,7 @@ SCIP_RETCODE initializeStartsol(
                assert(!SCIPisZero(scip, origval));
 
                /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done later) */
-               if( GCGvarIsLinking(origvar) )
+               if( GCGoriginalVarIsLinking(origvar) )
                   continue;
 
                /* increase the corresponding value */
@@ -270,7 +270,7 @@ SCIP_RETCODE initializeStartsol(
                /* linking variables are treated differently; if the variable already has been assigned a value,
                 * one must check whether the value for the current block is the same (otherwise, the resulting
                 * solution will be infeasible in any case) */
-               if( GCGvarIsLinking(origvar) )
+               if( GCGoriginalVarIsLinking(origvar) )
                {
                   SCIP_VAR** linkingpricingvars;
                   SCIP_Bool hasvalue;
@@ -741,7 +741,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
             /* linking variables are treated differently; if the variable already has been assigned a value,
              * one must check whether the value for the current block is the same (otherwise, the resulting
              * solution will be infeasible in any case) */
-            if( GCGvarIsLinking(origvar) )
+            if( GCGoriginalVarIsLinking(origvar) )
             {
                SCIP_VAR** linkingpricingvars;
                SCIP_Bool hasvalue;
@@ -823,7 +823,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
                origvar = origvars[k];
                origval = origvals[k];
 
-               if( GCGvarIsLinking(origvar) )
+               if( GCGoriginalVarIsLinking(origvar) )
                {
                   SCIP_VAR** linkingpricingvars;
                   SCIP_Bool hasvalue;

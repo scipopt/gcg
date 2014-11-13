@@ -57,10 +57,13 @@ private:
    int nstabcenterconv;
    PricingType* pricingtype;
    SCIP_Real alpha;
-   int nodenr;
-   int k;
+   SCIP_Real alphabar; /**< alpha that is used and updated in a mispricing schedule */
+   SCIP_Longint nodenr;
+   int k; /**< counter for the number of stabilized pricing rounds in B&B node, excluding the mispricing schedule iterations  */
+   int t; /**< counter for the number of pricing rounds during a mispricing schedule, restarted after a mispricing schedule is finished */
    SCIP_Bool hasstabilitycenter;
    SCIP_Real stabcenterbound;
+   SCIP_Bool inmispricingschedule; /**< currently in mispricing schedule */
 
 public:
    /** constructor */
@@ -68,6 +71,10 @@ public:
       SCIP*              scip,               /**< SCIP data structure */
       PricingType*       pricingtype         /**< the pricing type when the stabilization should run */
    );
+   /** constructor */
+   Stabilization();
+
+   /** destructor */
    virtual ~Stabilization();
 
    /** gets the stabilized dual solution of constraint at position i */
@@ -104,6 +111,18 @@ public:
    /** returns whether the stabilization is active */
    SCIP_Bool isStabilized();
 
+   /** enabling mispricing schedule */
+   void activateMispricingSchedule(
+   );
+
+   /** disabling mispricing schedule */
+   void disablingMispricingSchedule(
+   );
+
+   /** is mispricing schedule enabled */
+   SCIP_Bool isInMispricingSchedule(
+   ) const;
+
    /** sets the variable linking constraints in the master */
    SCIP_RETCODE setLinkingConss(
       SCIP_CONS**        linkingconss,       /**< array of linking master constraints */
@@ -132,6 +151,9 @@ private:
    /** updates the number of iterations */
    void updateIterationCount();
 
+   /** updates the number of iterations in the current mispricing schedule */
+   void updateIterationCountMispricing();
+
    /** updates the constraints in the stability center (and allocates more memory) */
    SCIP_RETCODE updateStabcenterconss();
 
@@ -153,7 +175,7 @@ private:
    SCIP_Real computeDual(
       SCIP_Real          center,             /**< value of stabilility center */
       SCIP_Real          current             /**< current dual value */
-   );
+   ) const;
 };
 
 } /* namespace gcg */

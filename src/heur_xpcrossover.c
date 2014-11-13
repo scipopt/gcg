@@ -970,7 +970,7 @@ SCIP_RETCODE fixVariables(
                 * check whether this is the first block in which this variable appears;
                 * search for the right original variable (in case of aggregation)
                 */
-               if( GCGvarIsLinking(origvars[k]) )
+               if( GCGoriginalVarIsLinking(origvars[k]) )
                {
 #ifndef NDEBUG
                   SCIP_VAR* pricingvar;
@@ -1077,7 +1077,7 @@ SCIP_RETCODE fixVariables(
          int nlinkblocks;
 
          assert(block >= 0 || block == -2);
-         nlinkblocks = GCGvarIsLinking(var) ? GCGlinkingVarGetNBlocks(var) : 1;
+         nlinkblocks = GCGoriginalVarIsLinking(var) ? GCGlinkingVarGetNBlocks(var) : 1;
          assert(ptcounter[i] <= nusedpts * nlinkblocks);
 
          /* a variable which has appeared nonzero in some points

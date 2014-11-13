@@ -128,7 +128,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
                assert(!SCIPisZero(scip, origvals[j]));
 
                /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done later) */
-               if( GCGvarIsLinking(origvars[j]) )
+               if( GCGoriginalVarIsLinking(origvars[j]) )
                   continue;
 
                SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[j]), origvals[j] * mastervals[i], SCIPvarGetName(mastervars[i]));
@@ -170,7 +170,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
             assert(!SCIPisZero(scip, origvals[j]));
 
             /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */
-            if( GCGvarIsLinking(origvars[j]) )
+            if( GCGoriginalVarIsLinking(origvars[j]) )
                continue;
 
             pricingvar = GCGoriginalVarGetPricingVar(origvars[j]);
@@ -238,7 +238,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
                continue;
 
             /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */
-            if( GCGvarIsLinking(origvars[j]) )
+            if( GCGoriginalVarIsLinking(origvars[j]) )
                continue;
 
             pricingvar = GCGoriginalVarGetPricingVar(origvars[j]);

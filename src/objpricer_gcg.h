@@ -87,7 +87,8 @@ public:
 
    /** computes the pricing problem objectives */
    SCIP_RETCODE setPricingObjs(
-      PricingType *pricetype
+      PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */
+      SCIP_Bool             stabilize           /**< do we use stabilization ? */
    );
 
    /** performs the pricing routine, gets the type of pricing that should be done: farkas or redcost pricing */
@@ -223,7 +224,7 @@ private:
    SCIP_Bool canPricingBeAborted() const;
 
    /** sorts pricing problems according to their score */
-   void sortPricingProblemsByScore();
+   void sortPricingProblemsByScore() const;
 
    /** returns the gegeneracy of the masterproblem */
    SCIP_RETCODE computeCurrentDegeneracy(

@@ -110,7 +110,7 @@ TEST_F(GcgVarTest, OriginalVarIsOriginalVar) {
 
 TEST_F(GcgVarTest, LinkingVarIsLinkingVar) {
    LINKINGVAR(var, vardata);
-   ASSERT_EQ(TRUE, GCGvarIsLinking(&var));
+   ASSERT_EQ(TRUE, GCGoriginalVarIsLinking(&var));
 }
 
 TEST_F(GcgVarTest, BlockVarIsNotLinkingVar) {
@@ -119,7 +119,7 @@ TEST_F(GcgVarTest, BlockVarIsNotLinkingVar) {
    var.vardata = &vardata;
    vardata.blocknr = 1;
 
-   ASSERT_EQ(FALSE, GCGvarIsLinking(&var));
+   ASSERT_EQ(FALSE, GCGoriginalVarIsLinking(&var));
 }
 
 TEST_F(GcgVarTest, MasterVarIsNotLinkingVar) {
@@ -128,7 +128,7 @@ TEST_F(GcgVarTest, MasterVarIsNotLinkingVar) {
    var.vardata = &vardata;
    vardata.blocknr = -1;
 
-   ASSERT_EQ(FALSE, GCGvarIsLinking(&var));
+   ASSERT_EQ(FALSE, GCGoriginalVarIsLinking(&var));
 }
 
 TEST_F(GcgVarTest, OriginalVarGetPricingVar) {
@@ -367,7 +367,7 @@ TEST_F(GcgVarTest, OriginalVarAddFirstBlock) {
    ASSERT_EQ(&ovar, ovardata.data.origvardata.linkingvardata->pricingvars[0]);
    ASSERT_EQ(&ovar, ovardata.data.origvardata.linkingvardata->pricingvars[2]);
    ASSERT_EQ(2, ovardata.data.origvardata.linkingvardata->nblocks);
-   ASSERT_EQ(TRUE, GCGvarIsLinking(&ovar));
+   ASSERT_EQ(TRUE, GCGoriginalVarIsLinking(&ovar));
 
    SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.linkingvardata->pricingvars, 4);
    SCIPfreeBlockMemoryArray(scip, &ovardata.data.origvardata.linkingvardata->linkconss, 4);

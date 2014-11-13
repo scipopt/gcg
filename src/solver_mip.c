@@ -258,30 +258,33 @@ SCIP_RETCODE filterInfiniteSolutions(
 {
    int s;
    int i;
-   SCIP_VAR** origvars;
-   int norigvars;
+   SCIP_VAR** origpricingvars;
+   int norigpricingvars;
 
    assert(pricingprob != NULL);
    assert(sols != NULL);
    assert(nsols != NULL);
 
-   origvars = SCIPgetOrigVars(pricingprob);
-   norigvars = SCIPgetNOrigVars(pricingprob);
+   origpricingvars = SCIPgetOrigVars(pricingprob);
+   norigpricingvars = SCIPgetNOrigVars(pricingprob);
 
    /*lint --e{850} s is modified in the loop */
    for( s = 0; s < *nsols; ++s )
    {
-      for( i = 0; i < norigvars; ++i )
+      for( i = 0; i < norigpricingvars; ++i )
       {
-         if( SCIPisInfinity(pricingprob, SCIPgetSolVal(pricingprob, sols[s], origvars[i])) )
+         if( SCIPisInfinity(pricingprob, SCIPgetSolVal(pricingprob, sols[s], origpricingvars[i])) )
          {
             if( s == 0 )
-               printf("WARNING: Removing solution with infinite value.\n");
+            {
+               SCIPwarningMessage(pricingprob, "Removing solution with infinite value.\n");
+            }
 
             SCIP_CALL( SCIPfreeSol(pricingprob, &sols[s]) );
             sols[s] = sols[*nsols-1];
             --(*nsols);
             --s;
+            break;
          }
       }
    }

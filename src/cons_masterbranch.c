@@ -535,7 +535,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
          /* only look at master variables not globally fixed to zero that belong to a block */
          ismastervarrelevant = !SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i]));
          ismastervarrelevant = ismastervarrelevant && (norigvars > 0);
-         ismastervarrelevant = ismastervarrelevant && (blocknr >= 0 || GCGvarIsLinking(origvars[0])); /*lint !e613*/
+         ismastervarrelevant = ismastervarrelevant && (blocknr >= 0 || GCGmasterVarIsLinking(vars[i])); /*lint !e613*/
          if( !ismastervarrelevant )
             continue;
 
@@ -573,7 +573,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
              *    in one of the blocks that the variable is linking
              */
             if( (bndchgblocknr != blocknr)
-               && !(blocknr == -1 && GCGvarIsLinking(origvars[0]) && GCGisLinkingVarInBlock(origvars[0], bndchgblocknr) )            )
+               && !(GCGmasterVarIsLinking(vars[i]) && GCGisLinkingVarInBlock(origvars[0], bndchgblocknr)) )
                continue;
 
             assert(bndchgorigvars[0] != NULL);
@@ -922,7 +922,7 @@ SCIP_RETCODE undoLocalBndchgsToPricingprobs(
          int npricingprobs;
 
          /* if the variable is linking, we have to perform the same step as above for every existing block*/
-         assert(GCGvarIsLinking(consdata->localbndvars[i]));
+         assert(GCGoriginalVarIsLinking(consdata->localbndvars[i]));
          pricingvars = GCGlinkingVarGetPricingVars(consdata->localbndvars[i]);
          npricingprobs = GCGgetNPricingprobs(origscip);
 
@@ -1040,8 +1040,8 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
             assert(bndchgblocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
 
             /* the boundchange was performed on a variable in another block, continue */
-            if( (!GCGvarIsLinking(curconsdata->localbndvars[k]) && bndchgblocknr != blocknr) ||
-               (GCGvarIsLinking(curconsdata->localbndvars[k]) && !GCGisLinkingVarInBlock(curconsdata->localbndvars[k], blocknr)) )
+            if( (!GCGoriginalVarIsLinking(curconsdata->localbndvars[k]) && bndchgblocknr != blocknr) ||
+               (GCGoriginalVarIsLinking(curconsdata->localbndvars[k]) && !GCGisLinkingVarInBlock(curconsdata->localbndvars[k], blocknr)) )
                continue;
 
             assert(bndchgblocknr != -1);

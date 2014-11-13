@@ -148,6 +148,8 @@ SCIP_DECL_SEPAEXIT(sepaExitMaster)
       SCIP_CALL( SCIPreleaseRow(origscip, &(sepadata->origcuts[i])) );
    }
 
+   sepadata->ncuts = 0;
+
    return SCIP_OKAY;
 }
 

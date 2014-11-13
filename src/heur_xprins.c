@@ -654,7 +654,7 @@ static SCIP_RETCODE fixVariables(
       {
          SCIP_VAR** linkingpricingvars;
 
-         assert(GCGvarIsLinking(var));
+         assert(GCGoriginalVarIsLinking(var));
          linkingpricingvars = GCGlinkingVarGetPricingVars(var);
 
          neqpts[i] = 0;
@@ -714,7 +714,7 @@ static SCIP_RETCODE fixVariables(
                continue;
 
             /* get the corresponding pricing variable */
-            if( GCGvarIsLinking(origvars[k]) )
+            if( GCGoriginalVarIsLinking(origvars[k]) )
             {
                SCIP_VAR** linkingpricingvars;
 
@@ -801,7 +801,7 @@ static SCIP_RETCODE fixVariables(
                      continue;
 
                   /* get the corresponding pricing variable */
-                  if( GCGvarIsLinking(origvars[k]) )
+                  if( GCGoriginalVarIsLinking(origvars[k]) )
                   {
                      SCIP_VAR** linkingpricingvars;
 
@@ -901,7 +901,7 @@ static SCIP_RETCODE fixVariables(
             SCIP_VAR** linkingpricingvars;
             int ntotalpts;
 
-            assert(GCGvarIsLinking(var));
+            assert(GCGoriginalVarIsLinking(var));
             linkingpricingvars = GCGlinkingVarGetPricingVars(var);
 
             ntotalpts = 0;

@@ -179,12 +179,12 @@ SCIP_RETCODE setOriginalVarBlockNr(
    /* if var already belongs to another block, it is a linking variable */
    else if( blocknr != newblock )
    {
-      if( !GCGvarIsLinking(var) )
+      if( !GCGoriginalVarIsLinking(var) )
          relaxdata->nlinkingvars++;
 
       SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock, relaxdata->npricingprobs) );
       assert(GCGisLinkingVarInBlock(var, newblock));
-      assert(GCGvarIsLinking(var));
+      assert(GCGoriginalVarIsLinking(var));
    }
    blocknr = GCGvarGetBlock(var);
    assert(blocknr == -2 || blocknr == newblock);
@@ -339,7 +339,7 @@ SCIP_RETCODE convertStructToGCG(
    for( i = 0; i < nlinkingvars; ++i )
    {
 
-      if( GCGvarIsLinking(linkingvars[i]) )
+      if( GCGoriginalVarIsLinking(linkingvars[i]) )
          continue;
 
       SCIPdebugMessage("\tDetecting constraint blocks of linking var %s\n", SCIPvarGetName(linkingvars[i]));
@@ -856,7 +856,7 @@ SCIP_RETCODE checkIdenticalBlocks(
             {
                assert(GCGvarIsPricing(vars[k]));
                origvar = GCGpricingVarGetOrigvars(vars[k])[0];
-               if( GCGvarIsLinking(origvar) )
+               if( GCGoriginalVarIsLinking(origvar) )
                {
                   SCIPdebugMessage("Var <%s> is linking and can not be aggregated.\n", SCIPvarGetName(origvar));
                   identical = FALSE;
@@ -1027,7 +1027,7 @@ SCIP_RETCODE createLinkingPricingVars(
 
    /* get variable data of the original variable */
    assert(GCGvarIsOriginal(origvar));
-   assert(GCGvarIsLinking(origvar));
+   assert(GCGoriginalVarIsLinking(origvar));
    pricingvars = GCGlinkingVarGetPricingVars(origvar);
 
 #ifndef NDEBUG
@@ -1173,7 +1173,7 @@ SCIP_RETCODE createPricingVariables(
       }
       /* variable is a linking variable --> create corresponding pricing variable in all linked blocks
        * and create corresponding linking constraints */
-      else if( GCGvarIsLinking(probvar) )
+      else if( GCGoriginalVarIsLinking(probvar) )
       {
          SCIP_VAR** pricingvars;
          SCIPdebugPrintf("linking.\n");
@@ -1850,7 +1850,7 @@ SCIP_RETCODE initRelaxator(
    SCIP_CALL( SCIPgetIntParam(scip, "misc/permutationseed", &permutationseed) );
    if( permutationseed >= 0 )
    {
-      SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, permutationseed) );
+      SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, (unsigned int) permutationseed) );
    }
 
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
@@ -1899,7 +1899,7 @@ SCIP_RETCODE initRelaxator(
    {
       assert(GCGvarIsOriginal(vars[i]));
 
-      if( GCGvarIsLinking(vars[i]) )
+      if( GCGoriginalVarIsLinking(vars[i]) )
       {
          int j;
          SCIP_CONS** linkconss;
@@ -2354,7 +2354,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
-         NULL, FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
+         &(relaxdata->discretization), FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation",
          "should identical blocks be aggregated (only for discretization approach)?",
          &(relaxdata->aggregation), FALSE, DEFAULT_AGGREGATION, NULL, NULL) );
@@ -3422,7 +3422,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, TRUE, &stored) );
          if( !stored )
          {
-            SCIP_CALL( SCIPcheckSol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+            SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, FALSE, TRUE) );
          }
 
          SCIPdebugMessage("updated current original LP solution, %s feasible in the original problem!\n",
