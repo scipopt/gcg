@@ -107,9 +107,9 @@ struct SCIP_ConsData
    /* local bound changes on original variables that have been directly copied to the master problem */
    SCIP_VAR**            copiedvars;         /**< original variables on which local bounds were changed */
    SCIP_BOUNDTYPE*       copiedvarbndtypes;  /**< types of the new local bounds of the coped original variables */
-   SCIP_Real*            copiedvarbnds;         /**< new lower/upper bounds of the coped original variables */
-   int                   ncopiedvarbnds;        /**< number of new local bounds stored */
-   int                   maxcopiedvarbnds;      /**< size of copiedvars, copiedvarbndtypes, and copiedvarbnds arrays */
+   SCIP_Real*            copiedvarbnds;      /**< new lower/upper bounds of the coped original variables */
+   int                   ncopiedvarbnds;     /**< number of new local bounds stored */
+   int                   maxcopiedvarbnds;   /**< size of copiedvars, copiedvarbndtypes, and copiedvarbnds arrays */
 
    /* The following data contains branching information for the original problem */
    char*                 origbranchconsname; /**< name of the branching constraint for cons_origbranch */
