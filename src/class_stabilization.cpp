@@ -78,31 +78,6 @@ Stabilization::~Stabilization()
 
 }
 
-
-/** enabling mispricing schedule */
-  SCIP_RETCODE Stabilization::activateMispricingSchedule(
-  )
-  {
-     inmispricingschedule = TRUE;
-     return SCIP_OKAY;
-  }
-
-  /** disabling mispricing schedule */
-  SCIP_RETCODE Stabilization::disablingMispricingSchedule(
-  ){
-     inmispricingschedule = FALSE;
-     k=0;
-     return SCIP_OKAY;
-  }
-
-  /** is mispricing schedule enabled */
-  SCIP_Bool Stabilization::isInMispricingSchedule(
-     ){
-     return inmispricingschedule;
-  }
-
-
-
 SCIP_RETCODE Stabilization::updateStabcenterconss()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
@@ -588,6 +563,26 @@ SCIP_Bool Stabilization::isStabilized()
    if(inmispricingschedule)
       return SCIPisGT(scip_, alphabar, 0.0);
    return SCIPisGT(scip_, alpha, 0.0);
+}
+
+/** enabling mispricing schedule */
+void Stabilization::activateMispricingSchedule(
+)
+{
+   inmispricingschedule = TRUE;
+}
+
+/** disabling mispricing schedule */
+void Stabilization::disablingMispricingSchedule(
+){
+   inmispricingschedule = FALSE;
+   k=0;
+}
+
+/** is mispricing schedule enabled */
+SCIP_Bool Stabilization::isInMispricingSchedule(
+   ){
+   return inmispricingschedule;
 }
 
 } /* namespace gcg */

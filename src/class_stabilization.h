@@ -77,19 +77,6 @@ public:
    /** destructor */
    virtual ~Stabilization();
 
-   /** enabling mispricing schedule */
-   SCIP_RETCODE activateMispricingSchedule(
-   );
-
-   /** disabling mispricing schedule */
-   SCIP_RETCODE disablingMispricingSchedule(
-   );
-
-   /** is mispricing schedule enabled */
-   SCIP_Bool isInMispricingSchedule(
-      );
-
-
    /** gets the stabilized dual solution of constraint at position i */
    SCIP_RETCODE consGetDual(
       int                i,                  /**< index of the constraint */
@@ -123,6 +110,21 @@ public:
 
    /** returns whether the stabilization is active */
    SCIP_Bool isStabilized();
+
+   /** enabling mispricing schedule */
+   void activateMispricingSchedule(
+   );
+
+   /** disabling mispricing schedule */
+   void disablingMispricingSchedule(
+   );
+
+   /** is mispricing schedule enabled */
+   SCIP_Bool isInMispricingSchedule(
+   );
+
+
+
 
    /** sets the variable linking constraints in the master */
    SCIP_RETCODE setLinkingConss(
