@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   branch_empty.c
- * @brief  branching rule for original problem in GCG while real branching is applied in the master
+ * @brief  branching rule for the original problem while real branching is applied in the master
  * @author Marcel Schmickerath
  * @author Martin Bergner
  * @author Christian Puchert
@@ -56,7 +56,7 @@
 #include "type_branchgcg.h"
 
 #define BRANCHRULE_NAME          "empty"
-#define BRANCHRULE_DESC          "empty branching in generic column generation"
+#define BRANCHRULE_DESC          "branching rule for the original problem while real branching is applied in the master"
 #define BRANCHRULE_PRIORITY      1000000
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
