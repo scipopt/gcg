@@ -1427,7 +1427,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 #ifdef SCIP_DEBUG
                if( contained || !handled )
                {
-                  SCIPdebugMessage("orig var %s is contained in %s but not handled val = %f \n", SCIPvarGetName(consdata->boundchgvars[k]), SCIPvarGetName(vars[i]), val);
+                  SCIPdebugMessage("orig var %s is contained in %s but not handled val = %f \n", SCIPvarGetName(curconsdata->boundchgvars[k]), SCIPvarGetName(vars[i]), val);
 
                }
                assert(j == norigvars || contained);
