@@ -148,10 +148,28 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    {
       assert(GCGmasterbranchGetPropBoundType(masterbranchchildcons) != GCG_BOUNDTYPE_NONE);
 
-      SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
+      /* check if bound change is of type upper or lower */
+      if( GCGmasterbranchGetPropBoundType(masterbranchchildcons) != GCG_BOUNDTYPE_FIXED )
+      {
+         SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
             GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
             (SCIP_BOUNDTYPE) GCGmasterbranchGetPropBoundType(masterbranchchildcons),
             GCGmasterbranchGetPropBound(masterbranchchildcons)) );
+      }
+      else
+      {
+         /* variable is fixed: add upper and lower bound change */
+         SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
+            GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
+            SCIP_BOUNDTYPE_LOWER,
+            GCGmasterbranchGetPropBound(masterbranchchildcons)) );
+
+         SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
+           GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
+           SCIP_BOUNDTYPE_UPPER,
+           GCGmasterbranchGetPropBound(masterbranchchildcons)) );
+
+      }
    }
 
    GCGconsOrigbranchSetMastercons(origbranch, masterbranchchildcons);
