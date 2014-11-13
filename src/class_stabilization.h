@@ -121,10 +121,7 @@ public:
 
    /** is mispricing schedule enabled */
    SCIP_Bool isInMispricingSchedule(
-   );
-
-
-
+   ) const;
 
    /** sets the variable linking constraints in the master */
    SCIP_RETCODE setLinkingConss(
@@ -155,9 +152,7 @@ private:
    void updateIterationCount();
 
    /** updates the number of iterations in the current mispricing schedule */
-      void updateIterationCountMispricing();
-
-
+   void updateIterationCountMispricing();
 
    /** updates the constraints in the stability center (and allocates more memory) */
    SCIP_RETCODE updateStabcenterconss();

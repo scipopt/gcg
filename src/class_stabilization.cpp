@@ -63,10 +63,10 @@ Stabilization::Stabilization(
 
 Stabilization::~Stabilization()
 {
-   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconss, stabcenterconsssize);
-   SCIPfreeBlockMemoryArrayNull(scip_, &stabcentercuts, stabcentercutssize);
-   SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconss);
-   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconv, nstabcenterconv);
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconss, stabcenterconsssize); /*lint !e64*/
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcentercuts, stabcentercutssize); /*lint !e64*/
+   SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconss); /*lint !e64*/
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconv, nstabcenterconv); /*lint !e64*/
    scip_ = (SCIP*) NULL;
    stabcenterconss = (SCIP_Real*) NULL;
    stabcentercuts = (SCIP_Real*) NULL;
@@ -130,7 +130,7 @@ SCIP_RETCODE Stabilization::setNLinkingconss(
       )
 {
 
-   SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconss);
+   SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconss); /*lint !e64*/
    SCIP_CALL( SCIPallocMemoryArray(scip_, &stabcenterlinkingconss, nlinkingconssnew) );
    nstabcenterlinkingconss = nlinkingconssnew;
    BMSclearMemoryArray(stabcenterlinkingconss, nstabcenterlinkingconss);
@@ -142,7 +142,7 @@ SCIP_RETCODE Stabilization::setNConvconss(
       int nconvconssnew
       )
 {
-   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconss, nstabcenterconv);
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconss, nstabcenterconv); /*lint !e64*/
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &stabcenterconv, nconvconssnew) );
    nstabcenterconv = nconvconssnew;
@@ -574,14 +574,16 @@ void Stabilization::activateMispricingSchedule(
 
 /** disabling mispricing schedule */
 void Stabilization::disablingMispricingSchedule(
-){
+)
+{
    inmispricingschedule = FALSE;
    k=0;
 }
 
 /** is mispricing schedule enabled */
 SCIP_Bool Stabilization::isInMispricingSchedule(
-   ){
+) const
+{
    return inmispricingschedule;
 }
 
