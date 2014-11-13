@@ -31,6 +31,7 @@
  * @author Martin Bergner
  * @author Alexander Gross
  * @author Christian Puchert
+ * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -844,7 +845,8 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
  *  @todo this method could use more parameters as it is private
  */
 SCIP_RETCODE ObjPricerGcg::setPricingObjs(
-   PricingType*          pricetype           /**< Farkas or Reduced cost pricing */
+   PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */
+   SCIP_Bool             stabilize           /**< do we use stabilization ? */
    )
 {
    SCIP_CONS** origconss;
@@ -862,7 +864,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
    SCIP_VAR** consvars = NULL;
    int nconsvars;
-   SCIP_Bool stabilize;
    int i;
    int j;
 
@@ -873,8 +874,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
    origconss = GCGrgetLinearOrigMasterConss(origprob);
-
-   stabilize = (pricetype->getType() == GCG_PRICETYPE_REDCOST) && pricerdata->stabilization;
 
    /* set objective value of all variables in the pricing problems to 0 (for farkas pricing) /
     * to the original objective of the variable (for redcost pricing)
@@ -952,7 +951,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
       }
 
-      if( !SCIPisZero(scip_, dualsol) )
+      if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, pricetype->consGetDual(scip_, masterconss[i])) )
       {
 #ifdef PRINTDUALSOLS
          SCIPdebugMessage("mastercons <%s> dualsol: %g\n", SCIPconsGetName(masterconss[i]), dualsol);
@@ -2013,7 +2012,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
-      SCIP_CALL( setPricingObjs(pricetype) );
+      SCIP_CALL( setPricingObjs(pricetype, stabilized) );
 
       #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost, beststabobj,bestredcostvalid,nfoundvars,successfulmips,infeasible,pricinghaserror) reduction(+:solvedmips) schedule(static,1)
       for( i = 0; i < pricerdata->npricingprobs; i++ )
@@ -2125,11 +2124,15 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
 
          SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %ud, nfoundvars = %d, optimal = %ud, *bestredcostvalid = %ud\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
+
          if( nfoundvars == 0 )
          {
-               stabilization->updateAlphaMisprice();
+            SCIPdebugMessage("enabling mispricing schedule\n");
+            stabilization->activateMispricingSchedule();
+            stabilization->updateAlphaMisprice();
          }
-         else if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0))
+         else
+            if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0))
          {
             SCIP_SOL** pricingsols = NULL;
 
@@ -2144,7 +2147,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                }
             }
 
+            if(stabilization->isInMispricingSchedule())
+               stabilization->disablingMispricingSchedule();
             stabilization->updateAlpha(pricingsols);
+
 
             SCIPfreeBlockMemoryArray(scip_, &pricingsols, pricerdata->npricingprobs);
          }
@@ -2156,6 +2162,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          assert(lowerbound != NULL );
          lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
          *lowerbound = MAX(*lowerbound, lowerboundcandidate);
+         if(stabilization->isInMispricingSchedule())
+            stabilization->disablingMispricingSchedule();
       }
 
       /* free solutions if none of them has negative reduced cost */
