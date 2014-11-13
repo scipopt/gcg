@@ -2058,7 +2058,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             }
          }
 
-         if( optimal && nsols[prob] > 0)
+         if( optimal && nsols[prob] > 0 )
          {
             SCIP_Real convdual = stabilization->convGetDual(prob);
 
@@ -2103,7 +2103,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
       }
 
-      if( stabilized && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
+      if( stabilized && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
       {
          SCIP_Real beststabredcost;
          SCIP_Real lowerboundcandidate;
@@ -2117,7 +2117,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          beststabredcost = beststabobj - dualconvsum;
          //SCIPinfoMessage(scip_, NULL, "Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, boundcandidate = %f\n", stabilized, nfoundvars, optimal, lowerboundcandidate);
 
-         if(*bestredcostvalid)
+         if( *bestredcostvalid )
          {
             SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals) );
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
@@ -2131,8 +2131,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             stabilization->activateMispricingSchedule();
             stabilization->updateAlphaMisprice();
          }
-         else
-            if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0))
+         else if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0) )
          {
             SCIP_SOL** pricingsols = NULL;
 
@@ -2147,7 +2146,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                }
             }
 
-            if(stabilization->isInMispricingSchedule())
+            if( stabilization->isInMispricingSchedule() )
                stabilization->disablingMispricingSchedule();
             stabilization->updateAlpha(pricingsols);
 
@@ -2156,7 +2155,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
 
       }
-      else if( *bestredcostvalid && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
+      else if( *bestredcostvalid && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
       {
          SCIP_Real lowerboundcandidate;
          assert(lowerbound != NULL );
