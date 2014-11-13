@@ -73,40 +73,6 @@ struct GCG_BranchData
                                               *   problem, or NULL if this is done by variable bounds */
 };
 
-/** updates extern branching candidates before branching */
-SCIP_RETCODE updateExternBranchcandsForMasterbranch(
-   SCIP*                 scip               /**< SCIP data structure */
-)
-{
-   SCIP_VAR** origvars;
-   int norigvars;
-   int i;
-
-   assert(GCGisOriginal(scip));
-
-   origvars = SCIPgetVars(scip);
-   norigvars = SCIPgetNVars(scip);
-   assert(origvars != NULL);
-
-   SCIPclearExternBranchCands(scip);
-
-   /* store branching candidates */
-   for( i = 0; i < norigvars; i++ )
-   {
-      if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
-      {
-         assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
-
-         SCIP_CALL( SCIPaddExternBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip,
-            origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])),
-            SCIPgetRelaxSolVal(scip, origvars[i])) );
-      }
-   }
-   SCIPdebugMessage("updated relaxation branching candidates\n");
-
-   return SCIP_OKAY;
-}
-
 /** branches on a integer variable x
  *  if solution value x' is fractional, two child nodes will be created
  *  (x <= floor(x'), x >= ceil(x')),
@@ -284,8 +250,7 @@ SCIP_RETCODE branchVar(
          branchupdata->cons = NULL;
 
       SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, upname, branchrule,
-            branchupdata, origbranchconss1, norigbranchconss, branchvar,
-            GCG_BOUNDTYPE_LOWER, branchupdata->newbound) );
+            branchupdata, origbranchconss1, norigbranchconss) );
    }
 
    if( downub != SCIP_INVALID ) /*lint !e777*/
@@ -337,8 +302,7 @@ SCIP_RETCODE branchVar(
          branchdowndata->cons = NULL;
 
        SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, downname, branchrule,
-                branchdowndata, origbranchconss2, norigbranchconss, branchvar,
-                GCG_BOUNDTYPE_UPPER, branchdowndata->newbound) );
+                branchdowndata, origbranchconss2, norigbranchconss) );
    }
 
    if( fixval != SCIP_INVALID ) /*lint !e777*/
@@ -389,8 +353,7 @@ SCIP_RETCODE branchVar(
          branchfixdata->cons = NULL;
 
        SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons3, fixname, branchrule,
-             branchfixdata, origbranchconss3, norigbranchconss, branchvar,
-             GCG_BOUNDTYPE_FIXED, branchfixdata->newbound) );
+             branchfixdata, origbranchconss3, norigbranchconss) );
    }
 
    return SCIP_OKAY;
@@ -989,6 +952,70 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
 
    /* notify cons_integralorig about the original variable branching rule */
    SCIP_CALL( GCGconsIntegralorigAddBranchrule(scip, branchrule) );
+
+   return SCIP_OKAY;
+}
+
+/** get the original variable on which the branching was performed */
+SCIP_VAR* GCGbranchOrigGetOrigvar(
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
+   )
+{
+   assert(branchdata != NULL);
+
+   return branchdata->origvar;
+}
+
+/** get the type of the new bound which resulted of the performed branching */
+GCG_BOUNDTYPE GCGbranchOrigGetBoundtype(
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
+   )
+{
+   assert(branchdata != NULL);
+
+   return branchdata->boundtype;
+}
+
+/** get the new bound which resulted of the performed branching */
+SCIP_Real GCGbranchOrigGetNewbound(
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
+   )
+{
+   assert(branchdata != NULL);
+
+   return branchdata->newbound;
+}
+
+/** updates extern branching candidates before branching */
+SCIP_RETCODE GCGbranchOrigUpdateExternBranchcands(
+   SCIP*                 scip               /**< SCIP data structure */
+)
+{
+   SCIP_VAR** origvars;
+   int norigvars;
+   int i;
+
+   assert(GCGisOriginal(scip));
+
+   origvars = SCIPgetVars(scip);
+   norigvars = SCIPgetNVars(scip);
+   assert(origvars != NULL);
+
+   SCIPclearExternBranchCands(scip);
+
+   /* store branching candidates */
+   for( i = 0; i < norigvars; i++ )
+   {
+      if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
+      {
+         assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
+
+         SCIP_CALL( SCIPaddExternBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip,
+            origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])),
+            SCIPgetRelaxSolVal(scip, origvars[i])) );
+      }
+   }
+   SCIPdebugMessage("updated relaxation branching candidates\n");
 
    return SCIP_OKAY;
 }

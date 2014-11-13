@@ -119,10 +119,6 @@ struct SCIP_ConsData
                                               *   containing information about the branching restrictions for cons_origbranch */
    SCIP_CONS**           origbranchconss;    /**< the corresponding original branching constraints in the original program for branch_empty */
    int                   norigbranchconss;   /**< number of original branching constraints to be added to the node by branch_empty */
-   /* branching decisions on the original variables, needed by branch_empty */
-   SCIP_VAR*             origboundvar;       /**< an original variable on which the bound was changed (or NULL, if there is no such variable) */
-   GCG_BOUNDTYPE         origboundtype;      /**< type of the original variable's new bound (or GCG_BOUNDTYPE_NONE if there is no bound change) */
-   SCIP_Real             origbound;          /**< the original variable's new bound */
 };
 
 /** constraint handler data */
@@ -2073,9 +2069,6 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->origbranchdata = NULL;
    consdata->origbranchconss = NULL;
    consdata->norigbranchconss = 0;
-   consdata->origboundvar = NULL;
-   consdata->origboundtype = GCG_BOUNDTYPE_NONE;
-   consdata->origbound = 0.0;
 
    SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", (void*) parentcons);
 
@@ -2133,7 +2126,7 @@ SCIP_Bool GCGcurrentNodeIsGeneric(
    if( masterbranchcons == NULL || SCIPnodeGetDepth(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(scip))) == 0 )
       return FALSE;
 
-   branchrule = GCGconsMasterbranchGetbranchrule(masterbranchcons);
+   branchrule = GCGconsMasterbranchGetBranchrule(masterbranchcons);
 
    if( branchrule == NULL )
       branchrule = GCGconsMasterbranchGetOrigbranchrule(masterbranchcons);
@@ -2155,10 +2148,7 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branchrule*/
    GCG_BRANCHDATA*       branchdata,         /**< branching data */
    SCIP_CONS**           origconss,          /**< array of original constraints */
-   int                   norigconss,         /**< number of original constraints */
-   SCIP_VAR*             origboundvar,       /**< an original variable on which the bound was changed (or NULL, if there is no such variable) */
-   GCG_BOUNDTYPE         origboundtype,      /**< type of the original variable's new bound (or GCG_BOUNDTYPE_NONE if there is no bound change) */
-   SCIP_Real             origbound           /**< the original variable's new bound */
+   int                   norigconss          /**< number of original constraints */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -2180,9 +2170,6 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    assert(consdata->origbranchdata == NULL);
    assert(consdata->origbranchconss == NULL);
    assert(consdata->norigbranchconss == 0);
-   assert(consdata->origboundvar == NULL);
-   assert(consdata->origboundtype == GCG_BOUNDTYPE_NONE);
-   assert(consdata->origbound == 0.0);
 
    /* set the data for branching on the original problem */
    SCIP_CALL( SCIPduplicateMemoryArray(scip, &(consdata->origbranchconsname), name, strlen(name)+1) );
@@ -2190,15 +2177,12 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    consdata->origbranchdata = branchdata;
    consdata->origbranchconss = origconss;
    consdata->norigbranchconss = norigconss;
-   consdata->origboundvar = origboundvar;
-   consdata->origboundtype = origboundtype;
-   consdata->origbound = origbound;
 
    return SCIP_OKAY;
 }
 
 /** the function returns the branchrule of the constraint in the masterbranchconsdata data structure */
-SCIP_BRANCHRULE* GCGconsMasterbranchGetbranchrule(
+SCIP_BRANCHRULE* GCGconsMasterbranchGetBranchrule(
    SCIP_CONS*            cons                /**< constraint for which the consdata is set */
    )
 {
@@ -2273,45 +2257,6 @@ int GCGconsMasterbranchGetNOrigbranchConss(
    assert(consdata != NULL);
 
    return consdata->norigbranchconss;
-}
-
-/** return an original variable on which a bound was changed (or NULL if there is no such variable) */
-SCIP_VAR* GCGconsMasterbranchGetOrigboundvar(
-   SCIP_CONS*            cons                /**< masterbranch constraint holding the branching information */
-   )
-{
-   SCIP_CONSDATA* consdata;
-
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
-
-   return consdata->origboundvar;
-}
-
-/** return the type of a bound change on an original variable (or GCG_BOUNDTYPE_NONE if there was no such bound change) */
-GCG_BOUNDTYPE GCGconsMasterbranchGetOrigboundtype(
-   SCIP_CONS*            cons                /**< masterbranch constraint holding the branching information */
-   )
-{
-   SCIP_CONSDATA* consdata;
-
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
-
-   return consdata->origboundtype;
-}
-
-/** return a new bound for an original variable */
-SCIP_Real GCGconsMasterbranchGetOrigbound(
-   SCIP_CONS*            cons                /**< masterbranch constraint holding the branching information */
-   )
-{
-   SCIP_CONSDATA* consdata;
-
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
-
-   return consdata->origbound;
 }
 
 /** releases the array of original branching constraints of the constraint in the origconsdata data structure */

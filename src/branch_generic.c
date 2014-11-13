@@ -316,7 +316,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    assert(masterbranchcons != NULL);
 
    /* if branch rule is not generic, abort */
-   if( !GCGisBranchruleGeneric(GCGconsMasterbranchGetbranchrule(masterbranchcons)) )
+   if( !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(masterbranchcons)) )
       return SCIP_OKAY;
 
    SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
@@ -326,14 +326,14 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 
 
-   if( GCGvarIsMaster(mastervar) && (GCGconsMasterbranchGetbranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ) )
+   if( GCGvarIsMaster(mastervar) && (GCGconsMasterbranchGetBranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ) )
    {
       SCIP_Bool added = FALSE;
       SCIPdebugMessage("Mastervar <%s>\n", SCIPvarGetName(mastervar));
       while( parentcons != NULL && branchdata != NULL
             && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 )
       {
-         if( GCGconsMasterbranchGetbranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") != 0 )
+         if( GCGconsMasterbranchGetBranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetBranchrule(parentcons)), "generic") != 0 )
             break;
 
          if( GCGconsMasterbranchGetOrigbranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetOrigbranchrule(parentcons)), "generic") != 0 )
@@ -1947,7 +1947,7 @@ SCIP_Bool checkchildconsS(
       if( childcons == NULL )
          continue;
 
-      if( GCGconsMasterbranchGetbranchrule(childcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(childcons)), "generic") != 0 )
+      if( GCGconsMasterbranchGetBranchrule(childcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetBranchrule(childcons)), "generic") != 0 )
          continue;
 
       branchdata = GCGconsMasterbranchGetBranchdata(childcons);
@@ -2014,7 +2014,7 @@ SCIP_Bool pruneChildNodeByDominanceGeneric(
          /* root node: check children for pruning */
          return checkchildconsS(scip, lhs, childS, childSsize, cons, childBlocknr);
       }
-      if( strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(cons)), "generic") != 0 )
+      if( strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetBranchrule(cons)), "generic") != 0 )
          return checkchildconsS(scip, lhs, childS, childSsize, cons, childBlocknr);
 
       ispruned = checkchildconsS(scip, lhs, childS, childSsize, cons, childBlocknr);
@@ -2247,8 +2247,7 @@ SCIP_RETCODE createChildNodesGeneric(
 
             assert(branchchilddata != NULL);
 
-            SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, childcons, childname, branchrule, branchchilddata,
-               NULL, 0, NULL, GCG_BOUNDTYPE_NONE, 0.0) );
+            SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, childcons, childname, branchrule, branchchilddata, NULL, 0) );
 
             SCIP_CALL( createBranchingCons(masterscip, child, branchchilddata) );
 
@@ -2358,11 +2357,11 @@ SCIP_RETCODE branchDirectlyOnMastervar(
 
    assert(branchupchilddata != NULL);
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, upchildcons, upchildname, branchrule, branchupchilddata,
-      NULL, 0, NULL, GCG_BOUNDTYPE_NONE, 0.0) );
+      NULL, 0) );
 
    assert(branchdownchilddata != NULL);
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, downchildcons, downchildname, branchrule, branchdownchilddata,
-      NULL, 0, NULL, GCG_BOUNDTYPE_NONE, 0.0) );
+      NULL, 0) );
 
    /*  create branching constraint in master */
    SCIP_CALL( createDirectBranchingCons(masterscip, upchild, branchupchilddata) );
@@ -2528,8 +2527,8 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       int Csize = 0;
       SCIP_CONS* parentcons = masterbranchcons;
 
-      while( parentcons != NULL && GCGconsMasterbranchGetbranchrule(parentcons) != NULL
-         && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0)
+      while( parentcons != NULL && GCGconsMasterbranchGetBranchrule(parentcons) != NULL
+         && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetBranchrule(parentcons)), "generic") == 0)
       {
          branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
          if( branchdata == NULL )

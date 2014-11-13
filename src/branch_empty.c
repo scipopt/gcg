@@ -40,6 +40,7 @@
 #include "branch_empty.h"
 #include "relax_gcg.h"
 #include "gcg.h"
+#include "branch_orig.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "scip/branch_allfullstrong.h"
@@ -111,6 +112,7 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
 )
 {
    SCIP_NODE* child;
+   SCIP_BRANCHRULE* branchrule;
    SCIP_CONS*  origbranch;
    SCIP_CONS** origbranchconss;
    int norigbranchconss;
@@ -146,34 +148,39 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
 
    /* If a branching decision on an original variable was made, apply it */
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/enforcebycons", &enforcebycons) );
-   if( !enforcebycons && GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) != GCG_BOUNDTYPE_NONE )
+   branchrule = GCGconsMasterbranchGetBranchrule(masterbranchchildcons);
+   assert(branchrule != NULL);
+   if( !enforcebycons && strcmp(SCIPbranchruleGetName(branchrule), "orig") == 0 )
    {
-      assert(GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_LOWER
-         || GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_UPPER
-         || GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_FIXED);
+      GCG_BRANCHDATA* branchdata;
+      SCIP_VAR* boundvar;
+      GCG_BOUNDTYPE boundtype;
+      SCIP_Real newbound;
 
-      if( GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_LOWER
-         || GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_FIXED )
+      /* get branching decision */
+      branchdata = GCGconsMasterbranchGetBranchdata(masterbranchchildcons);
+      assert(branchdata != NULL);
+      boundvar = GCGbranchOrigGetOrigvar(branchdata);
+      boundtype = GCGbranchOrigGetBoundtype(branchdata);
+      newbound = GCGbranchOrigGetNewbound(branchdata);
+
+      assert(boundvar != NULL);
+      assert(boundtype == GCG_BOUNDTYPE_LOWER || boundtype == GCG_BOUNDTYPE_UPPER || boundtype == GCG_BOUNDTYPE_FIXED);
+
+      if( boundtype == GCG_BOUNDTYPE_LOWER || boundtype == GCG_BOUNDTYPE_FIXED )
       {
-         SCIP_CALL( SCIPchgVarLbNode(scip, child,
-            GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
-            GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
+         SCIP_CALL( SCIPchgVarLbNode(scip, child, boundvar, newbound) );
       }
 
-      if( GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_UPPER
-         || GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons) == GCG_BOUNDTYPE_FIXED )
+      if( boundtype == GCG_BOUNDTYPE_UPPER || boundtype == GCG_BOUNDTYPE_FIXED )
       {
-         SCIP_CALL( SCIPchgVarUbNode(scip, child,
-            GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
-            GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
+         SCIP_CALL( SCIPchgVarUbNode(scip, child, boundvar, newbound) );
       }
 
-      if( GCGvarGetBlock(GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons)) == -1 )
+      if( GCGvarGetBlock(boundvar) == -1 )
       {
          SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(GCGgetMasterprob(scip), masterbranchchildcons,
-            GCGconsMasterbranchGetOrigboundvar(masterbranchchildcons),
-            GCGconsMasterbranchGetOrigboundtype(masterbranchchildcons),
-            GCGconsMasterbranchGetOrigbound(masterbranchchildcons)) );
+            boundvar, boundtype, newbound) );
       }
    }
 
