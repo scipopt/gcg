@@ -2398,7 +2398,7 @@ SCIP_CONS* GCGconsMasterbranchGetParentcons(
 
 /** returns the number of origbranch constraints of the vanderbeckchildarray of the node at which the
     given masterbranch constraint is sticking */
-int GCGconsMasterbranchGetNChildcons(
+int GCGconsMasterbranchGetNChildconss(
    SCIP_CONS*            cons                /**< constraint pointer */
    )
 {

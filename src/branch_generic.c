@@ -1932,7 +1932,7 @@ SCIP_Bool checkchildconsS(
    int i;
    int nchildren;
 
-   nchildren = GCGconsMasterbranchGetNChildcons(parentcons);
+   nchildren = GCGconsMasterbranchGetNChildconss(parentcons);
    assert(nchildren>0);
 
    for( i=0; i<nchildren; ++i )

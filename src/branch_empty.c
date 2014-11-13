@@ -251,7 +251,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
       return SCIP_OKAY;
 
    /* get the children of the current node */
-   nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
+   nchildnodes = GCGconsMasterbranchGetNChildconss(masterbranchcons);
    if( nchildnodes <= 0 )
    {
       SCIPdebugMessage("node cut off, since there is no successor node\n");
