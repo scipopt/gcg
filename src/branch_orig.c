@@ -29,6 +29,8 @@
  * @brief  branching rule for the original problem in GCG
  * @author Gerald Gamrath
  * @author Marcel Schmickerath
+ * @author Christian Puchert
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -93,22 +95,6 @@ SCIP_RETCODE branchVar(
 {
    /* data for b&b child creation */
    SCIP* masterscip;
-   SCIP_NODE* child1;
-   SCIP_NODE* child2;
-   SCIP_NODE* child3;
-   SCIP_CONS* cons1;
-   SCIP_CONS* cons2;
-   SCIP_CONS* cons3;
-   SCIP_CONS** origbranchconss1;
-   SCIP_CONS** origbranchconss2;
-   SCIP_CONS** origbranchconss3;
-   GCG_BRANCHDATA* branchupdata;
-   GCG_BRANCHDATA* branchdowndata;
-   GCG_BRANCHDATA* branchfixdata;
-   char upname[SCIP_MAXSTRLEN];
-   char downname[SCIP_MAXSTRLEN];
-   char fixname[SCIP_MAXSTRLEN];
-   int norigbranchconss;
    SCIP_Real downub;
    SCIP_Real fixval;
    SCIP_Real uplb;
@@ -125,16 +111,12 @@ SCIP_RETCODE branchVar(
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
-   origbranchconss1 = NULL;
-   origbranchconss2 = NULL;
-   origbranchconss3 = NULL;
-   norigbranchconss = 0;
-
-   /* for cons_masterbranch */
-
    downub = SCIP_INVALID;
    fixval = SCIP_INVALID;
    uplb = SCIP_INVALID;
+
+   /* get values of parameters */
+   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/enforcebycons", &enforcebycons) );
 
    if( SCIPisFeasIntegral(scip, solval) )
    {
@@ -194,85 +176,100 @@ SCIP_RETCODE branchVar(
          SCIPvarGetName(branchvar), solval, SCIPvarGetRootSol(branchvar), SCIPvarGetBranchPriority(branchvar), SCIPgetLocalLowerbound(GCGgetMasterprob(scip)));
    }
 
-
-   /* get values of parameters */
-   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/enforcebycons", &enforcebycons) );
-
    SCIPdebugMessage("Branching on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
 
 
    if( uplb != SCIP_INVALID ) /*lint !e777*/
    {
+      SCIP_CONS* cons;
+      SCIP_NODE* child;
+      SCIP_CONS** origbranchconss;
+      GCG_BRANCHDATA* branchdata;
+      char name[SCIP_MAXSTRLEN];
+
+      int norigbranchconss;
+
+      origbranchconss = NULL;
+      norigbranchconss = 0;
+
       /* create child node x >= uplb */
-      SCIP_CALL( SCIPcreateChild(masterscip, &child1, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+      SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
 
-      SCIP_CALL( SCIPallocBlockMemory(scip, &branchupdata) );
+      SCIP_CALL( SCIPallocBlockMemory(scip, &branchdata) );
 
-      branchupdata->origvar = branchvar;
-      branchupdata->oldvalue = solval;
-      branchupdata->olddualbound = SCIPgetLocalLowerbound(masterscip);
-      branchupdata->boundtype = GCG_BOUNDTYPE_LOWER;
-      branchupdata->newbound = uplb;
-      branchupdata->oldbound = SCIPvarGetLbLocal(branchvar);
-      branchupdata->cons = cons1;
+      branchdata->origvar = branchvar;
+      branchdata->oldvalue = solval;
+      branchdata->olddualbound = SCIPgetLocalLowerbound(masterscip);
+      branchdata->boundtype = GCG_BOUNDTYPE_LOWER;
+      branchdata->newbound = uplb;
+      branchdata->oldbound = SCIPvarGetLbLocal(branchvar);
 
       SCIPdebugMessage(" -> creating child: <%s> >= %g\n",
          SCIPvarGetName(branchvar), uplb);
 
-      (void) SCIPsnprintf(upname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchupdata->origvar),
-         ">=", branchupdata->newbound);
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdata->origvar),
+         ">=", branchdata->newbound);
 
       if( enforcebycons )
       {
          /* enforce new bounds by linear constraints */
          SCIP_CONS* consup;
 
-         norigbranchconss = 1;
-
          SCIPdebugMessage("enforced by cons\n");
 
-         SCIP_CALL( GCGconsOrigbranchCreateOrigconsArray(masterscip, &origbranchconss1, norigbranchconss) );
+         norigbranchconss = 1;
+         SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchconss, norigbranchconss) );
+         BMSclearMemoryArray(origbranchconss, norigbranchconss);
 
          /* create corresponding constraints */
-         SCIP_CALL( SCIPcreateConsLinear(scip, &consup, upname, 0, NULL, NULL,
+         SCIP_CALL( SCIPcreateConsLinear(scip, &consup, name, 0, NULL, NULL,
             SCIPceil(scip, solval), SCIPinfinity(scip),
             TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE) );
 
          SCIP_CALL( SCIPaddCoefLinear(scip, consup, branchvar, 1.0) );
 
-         origbranchconss1[0] = consup;
-
-         branchupdata->cons = consup;
+         origbranchconss[0] = consup;
+         branchdata->cons = consup;
       }
       else
-         branchupdata->cons = NULL;
+         branchdata->cons = NULL;
 
       /* create and add the masterbranch constraint */
-      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, upname, child1,
-         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchupdata, origbranchconss1, norigbranchconss) );
-      SCIP_CALL( SCIPaddConsNode(masterscip, child1, cons1, NULL) );
+      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons, name, child,
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss) );
+      SCIP_CALL( SCIPaddConsNode(masterscip, child, cons, NULL) );
    }
 
    if( downub != SCIP_INVALID ) /*lint !e777*/
    {
+      SCIP_CONS* cons;
+      SCIP_NODE* child;
+      SCIP_CONS** origbranchconss;
+      GCG_BRANCHDATA* branchdata;
+      char name[SCIP_MAXSTRLEN];
+
+      int norigbranchconss;
+
+      origbranchconss = NULL;
+      norigbranchconss = 0;
+
       /* create child node x <= downub */
-      SCIP_CALL( SCIPcreateChild(masterscip, &child2, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+      SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
 
-      SCIP_CALL( SCIPallocBlockMemory(scip, &branchdowndata) );
+      SCIP_CALL( SCIPallocBlockMemory(scip, &branchdata) );
 
-      branchdowndata->origvar = branchvar;
-      branchdowndata->oldvalue = solval;
-      branchdowndata->olddualbound = SCIPgetLocalLowerbound(masterscip);
-      branchdowndata->boundtype = GCG_BOUNDTYPE_UPPER;
-      branchdowndata->newbound = downub;
-      branchdowndata->oldbound = SCIPvarGetUbLocal(branchvar);
-      branchdowndata->cons = cons2;
+      branchdata->origvar = branchvar;
+      branchdata->oldvalue = solval;
+      branchdata->olddualbound = SCIPgetLocalLowerbound(masterscip);
+      branchdata->boundtype = GCG_BOUNDTYPE_UPPER;
+      branchdata->newbound = downub;
+      branchdata->oldbound = SCIPvarGetUbLocal(branchvar);
 
       SCIPdebugMessage(" -> creating child: <%s> <= %g\n",
          SCIPvarGetName(branchvar), downub);
 
-      (void) SCIPsnprintf(downname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdowndata->origvar),
-         "<=", branchdowndata->newbound);
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdata->origvar),
+         "<=", branchdata->newbound);
 
       /* enforce branching decision by a constraint rather than by bound changes */
       if( enforcebycons )
@@ -281,50 +278,57 @@ SCIP_RETCODE branchVar(
          SCIP_CONS* consdown;
 
          norigbranchconss = 1;
-
-         SCIPdebugMessage("enforced by cons\n");
-
-         SCIP_CALL( GCGconsOrigbranchCreateOrigconsArray(masterscip, &origbranchconss2, norigbranchconss) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchconss, norigbranchconss) );
+         BMSclearMemoryArray(origbranchconss, norigbranchconss);
 
          /* create corresponding constraints */
-         SCIP_CALL( SCIPcreateConsLinear(scip, &consdown, downname, 0, NULL, NULL,
+         SCIP_CALL( SCIPcreateConsLinear(scip, &consdown, name, 0, NULL, NULL,
             -1.0 * SCIPinfinity(scip), SCIPfloor(scip, solval),
             TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE) );
          SCIP_CALL( SCIPaddCoefLinear(scip, consdown, branchvar, 1.0) );
 
-         origbranchconss2[0] = consdown;
-
-         branchdowndata->cons = consdown;
+         origbranchconss[0] = consdown;
+         branchdata->cons = consdown;
       }
       else
-         branchdowndata->cons = NULL;
+         branchdata->cons = NULL;
 
       /* create and add the masterbranch constraint */
-      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons2, downname, child2,
-         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdowndata, origbranchconss2, norigbranchconss) );
-      SCIP_CALL( SCIPaddConsNode(masterscip, child2, cons2, NULL) );
+      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons, name, child,
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss) );
+      SCIP_CALL( SCIPaddConsNode(masterscip, child, cons, NULL) );
    }
 
    if( fixval != SCIP_INVALID ) /*lint !e777*/
    {
+      SCIP_CONS* cons;
+      SCIP_NODE* child;
+      SCIP_CONS** origbranchconss;
+      GCG_BRANCHDATA* branchdata;
+      char name[SCIP_MAXSTRLEN];
+
+      int norigbranchconss;
+
+      origbranchconss = NULL;
+      norigbranchconss = 0;
+
       /* create child node x = fixval */
-      SCIP_CALL( SCIPcreateChild(masterscip, &child3, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+      SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
 
-      SCIP_CALL( SCIPallocBlockMemory(scip, &branchfixdata) );
+      SCIP_CALL( SCIPallocBlockMemory(scip, &branchdata) );
 
-      branchfixdata->origvar = branchvar;
-      branchfixdata->oldvalue = solval;
-      branchfixdata->olddualbound = SCIPgetLocalLowerbound(masterscip);
-      branchfixdata->boundtype = GCG_BOUNDTYPE_FIXED;
-      branchfixdata->newbound = fixval;
-      branchfixdata->oldbound = SCIPvarGetUbLocal(branchvar);
-      branchfixdata->cons = cons3;
+      branchdata->origvar = branchvar;
+      branchdata->oldvalue = solval;
+      branchdata->olddualbound = SCIPgetLocalLowerbound(masterscip);
+      branchdata->boundtype = GCG_BOUNDTYPE_FIXED;
+      branchdata->newbound = fixval;
+      branchdata->oldbound = SCIPvarGetUbLocal(branchvar);
 
       SCIPdebugMessage(" -> creating child: <%s> == %g\n",
          SCIPvarGetName(branchvar), fixval);
 
-      (void) SCIPsnprintf(fixname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchfixdata->origvar),
-         "==", branchfixdata->newbound);
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdata->origvar),
+         "==", branchdata->newbound);
 
       /* enforce branching decision by a constraint rather than by bound changes */
       if( enforcebycons )
@@ -333,27 +337,24 @@ SCIP_RETCODE branchVar(
          SCIP_CONS* consfix;
 
          norigbranchconss = 1;
-
-         SCIPdebugMessage("enforced by cons\n");
-
-         SCIP_CALL( GCGconsOrigbranchCreateOrigconsArray(masterscip, &origbranchconss3, norigbranchconss) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchconss, norigbranchconss) );
+         BMSclearMemoryArray(origbranchconss, norigbranchconss);
 
          /* create corresponding constraints */
-         SCIP_CALL( SCIPcreateConsLinear(scip, &consfix, fixname, 0, NULL, NULL,
+         SCIP_CALL( SCIPcreateConsLinear(scip, &consfix, name, 0, NULL, NULL,
             fixval, fixval, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE) );
          SCIP_CALL( SCIPaddCoefLinear(scip, consfix, branchvar, 1.0) );
 
-         origbranchconss3[0] = consfix;
-
-         branchfixdata->cons = consfix;
+         origbranchconss[0] = consfix;
+         branchdata->cons = consfix;
       }
       else
-         branchfixdata->cons = NULL;
+         branchdata->cons = NULL;
 
       /* create and add the masterbranch constraint */
-      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons3, fixname, child3,
-         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchfixdata, origbranchconss3, norigbranchconss) );
-      SCIP_CALL( SCIPaddConsNode(masterscip, child3, cons3, NULL) );
+      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons, name, child,
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdata, origbranchconss, norigbranchconss) );
+      SCIP_CALL( SCIPaddConsNode(masterscip, child, cons, NULL) );
    }
 
    return SCIP_OKAY;

@@ -328,7 +328,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
    SCIP_NODE* child2;
    SCIP_CONS* cons1;
    SCIP_CONS* cons2;
-   SCIP_CONS** origbranchconss;
+   SCIP_CONS** origbranchconss1;
    SCIP_CONS** origbranchconss2;
 
 
@@ -339,7 +339,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
    assert(GCGvarIsOriginal(ovar1));
    assert(GCGvarIsOriginal(ovar2));
 
-   origbranchconss = NULL;
+   origbranchconss1 = NULL;
    origbranchconss2 = NULL;
 
    masterscip = GCGgetMasterprob(scip);
@@ -392,8 +392,10 @@ SCIP_RETCODE createChildNodesRyanfoster(
 
    if( norigvars1 > 0 )
    {
-      SCIP_CALL( GCGconsOrigbranchCreateOrigconsArray(masterscip, &origbranchconss, norigvars1) );
-      SCIP_CALL( GCGconsOrigbranchCreateOrigconsArray(masterscip, &origbranchconss2, norigvars1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchconss1, norigvars1) );
+      BMSclearMemoryArray(origbranchconss1, norigvars1);
+      SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchconss2, norigvars1) );
+      BMSclearMemoryArray(origbranchconss2, norigvars1);
    }
 
    /* add branching decision as varbound constraints to original problem */
@@ -403,14 +405,14 @@ SCIP_RETCODE createChildNodesRyanfoster(
       SCIP_CONS* origcons2;
 
       assert(GCGvarGetBlock(origvars1[v]) == GCGvarGetBlock(origvars2[v]));
-      assert(origbranchconss != NULL);
+      assert(origbranchconss1 != NULL);
       assert(origbranchconss2 != NULL);
 
       /* create constraint for same-child */
       SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons, samename, origvars1[v], origvars2[v],
             -1.0, 0.0, 0.0, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
 
-      origbranchconss[v] = origcons;
+      origbranchconss1[v] = origcons;
 
       /* create constraint for differ-child */
       SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons2, differname, origvars1[v], origvars2[v],
@@ -421,7 +423,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
 
    /* create and add the masterbranch constraints */
    SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, samename, child1,
-      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchsamedata, origbranchconss, norigvars1) );
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchsamedata, origbranchconss1, norigvars1) );
    SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons2, differname, child2,
       GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdifferdata, origbranchconss2, norigvars1) );
    SCIP_CALL( SCIPaddConsNode(masterscip, child1, cons1, NULL) );

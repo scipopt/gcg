@@ -545,25 +545,6 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    return SCIP_OKAY;
 }
 
-/** create array of constraints */
-SCIP_RETCODE GCGconsOrigbranchCreateOrigconsArray(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS***          conss,              /**< pointer to constraint array */
-   int                   nconss              /**< number of constraints in the constraint array */
-   )
-{
-   assert(scip != NULL);
-   assert(conss != NULL);
-   assert(nconss > 0);
-
-   *conss = NULL;
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, conss, nconss) );
-   BMSclearMemoryArray(*conss, nconss);
-
-   return SCIP_OKAY;
-}
-
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
 SCIP_CONS* GCGconsOrigbranchGetActiveCons(
    SCIP*                 scip                /**< SCIP data structure */
@@ -583,7 +564,6 @@ SCIP_CONS* GCGconsOrigbranchGetActiveCons(
 
    return conshdlrData->stack[conshdlrData->nstack-1];
 }
-
 
 /** returns the stack and the number of elements on it */
 void GCGconsOrigbranchGetStack(
@@ -663,7 +643,8 @@ SCIP_NODE* GCGconsOrigbranchGetNode(
 }
 
 /** returns the origbranch constraint of the B&B father of the node at which the
-    given origbranch constraint is sticking */
+  * given origbranch constraint is sticking
+  */
 SCIP_CONS* GCGconsOrigbranchGetParentcons(
    SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of
                                               *   the father node is requested */
@@ -679,7 +660,8 @@ SCIP_CONS* GCGconsOrigbranchGetParentcons(
 }
 
 /** returns the number of origbranch constraints of the vanderbeckchildarray of the node at which the
-    given origbranch constraint is sticking */
+  * given origbranch constraint is sticking
+  */
 int GCGconsOrigbranchGetNChildconss(
    SCIP_CONS*            cons                /**< constraint */
    )
@@ -693,7 +675,8 @@ int GCGconsOrigbranchGetNChildconss(
 }
 
 /** returns the origbranch constraint of the vanderbeckchild of the node at which the
-    given origbranch constraint is sticking */
+  * given origbranch constraint is sticking
+  */
 SCIP_CONS* GCGconsOrigbranchGetChildcons(
    SCIP_CONS*            cons,               /**< constraint */
    int                   childnr             /**< number of child */
@@ -710,7 +693,8 @@ SCIP_CONS* GCGconsOrigbranchGetChildcons(
 }
 
 /** sets the masterbranch constraint of the node in the master program corresponding to the node
-    at which the given origbranchbranch constraint is sticking */
+  * at which the given origbranchbranch constraint is sticking
+  */
 void GCGconsOrigbranchSetMastercons(
    SCIP_CONS*            cons,               /**< origbranch constraint for which the masterbranch constraint should be set */
    SCIP_CONS*            mastercons          /**< masterbranch constraint corresponding to the given origbranch constraint */
@@ -726,7 +710,8 @@ void GCGconsOrigbranchSetMastercons(
 }
 
 /** returns the masterbranch constraint of the node in the master program corresponding to the node
-    at which the given origbranchbranch constraint is sticking */
+  * at which the given origbranchbranch constraint is sticking
+  */
 SCIP_CONS* GCGconsOrigbranchGetMastercons(
    SCIP_CONS*            cons                /**< origbranch constraint for which the corresponding masterbranch
                                               *   constraint is requested */
@@ -741,6 +726,46 @@ SCIP_CONS* GCGconsOrigbranchGetMastercons(
    return consdata->mastercons;
 }
 
+/** adds initial constraint to root node */
+SCIP_RETCODE GCGconsOrigbranchAddRootCons(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_CONS* cons;
+   SCIP_CONS** conss;
+   int nconss;
+   int i;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   nconss = SCIPconshdlrGetNConss(conshdlr);
+   assert(nconss <= 1);
+   conss = SCIPconshdlrGetConss(conshdlr);
+   for( i = 0; i < nconss; ++i )
+   {
+      SCIP_CALL( SCIPdelCons(scip, conss[i]) );
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+   assert(SCIPconshdlrGetNConss(conshdlr) == 0);
+   if( conshdlrdata->rootcons == NULL )
+   {
+      SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
+      SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
+      conshdlrdata->rootcons = cons;
+   }
+
+   /* check consistency */
+   GCGconsOrigbranchCheckConsistency(scip);
+
+   return SCIP_OKAY;
+}
 
 /** checks the consistency of the origbranch constraints in the problem */
 void GCGconsOrigbranchCheckConsistency(
@@ -789,45 +814,4 @@ void GCGconsOrigbranchCheckConsistency(
    }
 #endif
 #endif
-}
-
-/** adds initial constraint to root node */
-SCIP_RETCODE GCGconsOrigbranchAddRootCons(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   SCIP_CONS* cons;
-   SCIP_CONS** conss;
-   int nconss;
-   int i;
-
-   assert(scip != NULL);
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   nconss = SCIPconshdlrGetNConss(conshdlr);
-   assert(nconss <= 1);
-   conss = SCIPconshdlrGetConss(conshdlr);
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIP_CALL( SCIPdelCons(scip, conss[i]) );
-   }
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-   assert(SCIPconshdlrGetNConss(conshdlr) == 0);
-   if( conshdlrdata->rootcons == NULL )
-   {
-      SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
-      SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
-      conshdlrdata->rootcons = cons;
-   }
-
-   /* check consistency */
-   GCGconsOrigbranchCheckConsistency(scip);
-
-   return SCIP_OKAY;
 }
