@@ -1005,7 +1005,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->rowGetDual(mastercuts[i]);
       }
 
-      if( !SCIPisZero(scip_, dualsol) )
+      if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, pricetype->rowGetDual(mastercuts[i])) )
       {
          /* get columns and vals of the cut */
          nconsvars = SCIProwGetNNonz(origcuts[i]);
@@ -2111,8 +2111,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          assert(lowerbound != NULL);
 
          SCIP_CALL( getStabilizedDualObjectiveValue(&stabdualval) );
-         SCIPdebugMessage("candidate: %.8g bestredcost %.8g, dualconvsum %.8g\n", stabdualval, bestredcost, dualconvsum);
          lowerboundcandidate = stabdualval + beststabobj;
+         SCIPdebugMessage("lowerboundcandidate: %.8g stabdualval %.8g, besttabobj %.8g\n", lowerboundcandidate, stabdualval, beststabobj);
 
          beststabredcost = beststabobj - dualconvsum;
          //SCIPinfoMessage(scip_, NULL, "Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, boundcandidate = %f\n", stabilized, nfoundvars, optimal, lowerboundcandidate);
@@ -2123,7 +2123,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
          }
 
-         SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %ud, nfoundvars = %d, optimal = %ud, *bestredcostvalid = %ud\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
+         SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, *bestredcostvalid = %d\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
 
          if( nfoundvars == 0 )
          {
@@ -2160,6 +2160,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          SCIP_Real lowerboundcandidate;
          assert(lowerbound != NULL );
          lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
+         SCIPdebugMessage("*lowerbound: %.8g lowerboundcandidate: %.8g bestredcost %.8g\n", *lowerbound, lowerboundcandidate, bestredcost);
          *lowerbound = MAX(*lowerbound, lowerboundcandidate);
          if(stabilization->isInMispricingSchedule())
             stabilization->disablingMispricingSchedule();
@@ -2287,7 +2288,6 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    )
 {
    int nfoundvars;
-   SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
 
    assert(result != NULL || pricetype->getType() == GCG_PRICETYPE_FARKAS);
@@ -2321,7 +2321,6 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    sortPricingProblemsByScore();
 
-   bestredcost = 0.0;
    bestredcostvalid = TRUE;
 
    if( pricerdata->useheurpricing )
@@ -2340,7 +2339,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    if( pricetype->getType() == GCG_PRICETYPE_REDCOST && bestredcostvalid )
    {
       assert(lowerbound != NULL);
-      GCGpricerPrintInfo(scip_, pricerdata, "lower bound = %g, bestredcost = %g\n", *lowerbound, bestredcost);
+      GCGpricerPrintInfo(scip_, pricerdata, "lower bound = %g\n", *lowerbound);
 
       pricerdata->eagerage = 0;
    }
