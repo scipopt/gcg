@@ -245,7 +245,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
       return SCIP_OKAY;
    }
 
-   SCIPdebugPrintf("bound increase: %g >= %g\n", lowerbound, SCIPnodeGetLowerbound(SCIPgetCurrentNode(scip_)));
+   SCIPdebugPrintf("bound increase: %g > %g\n", lowerbound, SCIPnodeGetLowerbound(SCIPgetCurrentNode(scip_)));
 
    /* first update the arrays */
    SCIP_CALL( updateStabcenterconss() );
@@ -360,7 +360,8 @@ void Stabilization::updateAlpha(
 
 void Stabilization::increaseAlpha()
 {
-   alpha = MIN(0.9, alpha+(1-alpha)*0.1); //to avoid numerical problems, we assure alpha <= 0.999
+   /* to avoid numerical problems, we assure alpha <= 0.9 */
+   alpha = MIN(0.9, alpha+(1-alpha)*0.1);
 
    SCIPdebugMessage("alpha increased to %g\n", alpha);
 }
