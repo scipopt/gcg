@@ -250,16 +250,15 @@ SCIP_RETCODE createBranchNodesInOrigprob(
       SCIP_CONS* masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
       assert(masterbranchchildcons != NULL);
 
-      /* get branching rule */
-      branchrule = GCGconsMasterbranchGetBranchrule(masterbranchchildcons);
-      assert(branchrule != NULL);
-
       /* create a child node and an origbranch constraint holding the branching decision */
       SCIP_CALL( SCIPcreateChild(scip, &childnode, 0.0, SCIPgetLocalTransEstimate(scip)) );
       SCIP_CALL( createOrigbranchConstraint(scip, childnode, masterbranchchildcons) );
 
+      /* get branching rule */
+      branchrule = GCGconsMasterbranchGetBranchrule(masterbranchchildcons);
+
       /* If a branching decision on an original variable was made, apply it */
-      if( !enforcebycons && strcmp(SCIPbranchruleGetName(branchrule), "orig") == 0 )
+      if( !enforcebycons && branchrule != NULL && strcmp(SCIPbranchruleGetName(branchrule), "orig") == 0 )
       {
          SCIP_CALL( applyOriginalBranching(scip, childnode, masterbranchchildcons)  );
       }
