@@ -33,7 +33,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+/*#define SCIP_DEBUG*/
 #include "branch_generic.h"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
@@ -2231,7 +2231,7 @@ SCIP_RETCODE createChildNodesGeneric(
             assert(branchchilddata != NULL);
 
             /* define names for origbranch constraints */
-            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%lld,%d, %d) (last comp=%s %s %g) >= %g", SCIPnodeGetNumber(child), blocknr, p+1,
+            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d, %d) (last comp=%s %s %g) >= %g", blocknr, p+1,
                SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
                branchchilddata->consS[branchchilddata->consSsize-1].sense == GCG_COMPSENSE_GE? ">=": "<",
                branchchilddata->consS[branchchilddata->consSsize-1].bound,
@@ -2263,7 +2263,7 @@ SCIP_RETCODE createChildNodesGeneric(
   {
      SCIP_VAR* mastervar = mastervars[i];
 
-     if( GCGmasterVarIsInBlock(mastervar, blocknr) )
+     if( GCGisMasterVarInBlock(mastervar, blocknr) )
      {
         identicalcontrol += SCIPgetSolVal(masterscip, NULL, mastervar);
      }
@@ -2338,9 +2338,9 @@ SCIP_RETCODE branchDirectlyOnMastervar(
    assert(branchupchilddata != NULL);
    assert(branchdownchilddata != NULL);
 
-   (void) SCIPsnprintf(upchildname, SCIP_MAXSTRLEN, "node(1,-3, %f) direct up on comp=%s", branchupchilddata->consS[0].bound,
+   (void) SCIPsnprintf(upchildname, SCIP_MAXSTRLEN, "node(-3, %f) direct up on comp=%s", branchupchilddata->consS[0].bound,
                SCIPvarGetName(branchupchilddata->consS[branchupchilddata->consSsize-1].component));
-   (void) SCIPsnprintf(downchildname, SCIP_MAXSTRLEN, "node(1,-3, %f) direct up on comp=%s", branchdownchilddata->consS[0].bound,
+   (void) SCIPsnprintf(downchildname, SCIP_MAXSTRLEN, "node(-3, %f) direct up on comp=%s", branchdownchilddata->consS[0].bound,
                SCIPvarGetName(branchdownchilddata->consS[branchdownchilddata->consSsize-1].component));
 
    SCIP_CALL( SCIPcreateChild(masterscip, &upchild, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
