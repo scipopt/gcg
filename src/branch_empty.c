@@ -98,31 +98,39 @@ SCIP_RETCODE createOrigbranchConstraint(
    SCIP_CONS*            masterbranchchildcons
 )
 {
+   char* consname;
+   SCIP_BRANCHRULE* branchrule;
+   GCG_BRANCHDATA* branchdata;
    SCIP_CONS* origcons;
-   SCIP_CONS** prevorigconss;
-   int nprevorigconss;
+   SCIP_CONS** origbranchconss;
+   int norigbranchconss;
 
    int i;
 
    assert(scip != NULL);
    assert(masterbranchchildcons != NULL);
 
+   /* get name and branching information from the corresponding masterbranch constraint */
+   consname = GCGconsMasterbranchGetName(masterbranchchildcons);
+   branchrule = GCGconsMasterbranchGetBranchrule(masterbranchchildcons);
+   branchdata = GCGconsMasterbranchGetBranchdata(masterbranchchildcons);
+
    /* create an origbranch constraint and add it to the node */
-   SCIPdebugMessage("Create original branching constraint %s\n", GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons));
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origcons, GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons), childnode,
-            GCGconsOrigbranchGetActiveCons(scip), GCGconsMasterbranchGetOrigbranchrule(masterbranchchildcons), GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons)) );
-   if( GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons) == NULL )
+   SCIPdebugMessage("Create original branching constraint %s\n", consname);
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origcons, consname, childnode,
+            GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdata) );
+   if( branchdata == NULL )
    {
       SCIPdebugMessage("origbranch with no branchdata created\n");
    }
    SCIP_CALL( SCIPaddConsNode(scip, childnode, origcons, NULL) );
 
-   /* get previous original branching constraints and add them to the new node */
-   prevorigconss = GCGconsMasterbranchGetOrigbranchConss(masterbranchchildcons);
-   nprevorigconss = GCGconsMasterbranchGetNOrigbranchConss(masterbranchchildcons);
-   for( i = 0; i < nprevorigconss; ++i )
+   /* add those constraints to the node that enforce the branching decision in the original problem */
+   origbranchconss = GCGconsMasterbranchGetOrigbranchConss(masterbranchchildcons);
+   norigbranchconss = GCGconsMasterbranchGetNOrigbranchConss(masterbranchchildcons);
+   for( i = 0; i < norigbranchconss; ++i )
    {
-      SCIP_CALL( SCIPaddConsNode(scip, childnode, prevorigconss[i], NULL) );
+      SCIP_CALL( SCIPaddConsNode(scip, childnode, origbranchconss[i], NULL) );
    }
 
    /* notify the original and master branching constraint about each other */

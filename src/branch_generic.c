@@ -326,7 +326,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 
 
-   if( GCGvarIsMaster(mastervar) && (GCGconsMasterbranchGetBranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ) )
+   if( GCGvarIsMaster(mastervar) && GCGconsMasterbranchGetBranchrule(parentcons) != NULL )
    {
       SCIP_Bool added = FALSE;
       SCIPdebugMessage("Mastervar <%s>\n", SCIPvarGetName(mastervar));
@@ -334,9 +334,6 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
             && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 )
       {
          if( GCGconsMasterbranchGetBranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetBranchrule(parentcons)), "generic") != 0 )
-            break;
-
-         if( GCGconsMasterbranchGetOrigbranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetOrigbranchrule(parentcons)), "generic") != 0 )
             break;
 
          assert(branchdata != NULL);
@@ -1951,10 +1948,7 @@ SCIP_Bool checkchildconsS(
          continue;
 
       branchdata = GCGconsMasterbranchGetBranchdata(childcons);
-      assert(branchdata != NULL || GCGconsMasterbranchGetOrigbranchdata(childcons) != NULL);
-
-      if( branchdata == NULL )
-         branchdata = GCGconsMasterbranchGetOrigbranchdata(childcons);
+      assert(branchdata != NULL);
 
       if( childBlocknr != branchdata->consblocknr || childSsize != branchdata->consSsize || !SCIPisEQ(scip, lhs, branchdata->lhs) )
          continue;
