@@ -78,7 +78,6 @@ struct SCIP_ConsData
    int                   npropvars;          /**< number of variables that existed the last time the related node was propagated,
                                                   used to determine whether the constraint should be repropagated */
    SCIP_Bool             needprop;           /**< should the constraint be propagated? */
-   SCIP_Bool             created;
    SCIP_NODE*            node;               /**< the node at which the constraint is sticking */
    int                   nactivated;         /**< number of times the constraint has been activated so far */
 
@@ -259,7 +258,6 @@ SCIP_RETCODE initializeConsdata(
       }
    }
 
-   consdata->created = TRUE;
    consdata->needprop = TRUE;
 
    assert((consdata->parentcons == NULL) == (conshdlrdata->nstack == 0));
@@ -635,7 +633,7 @@ SCIP_RETCODE resetPricingVarBound(
    assert(scip != NULL);
    assert(pricingvar != NULL);
    assert(consdata != NULL);
-   assert(consdata->created);
+   assert(consdata->nactivated >= 1);
    assert(consdata->localbndvars != NULL);
    assert(consdata->localbndtypes != NULL);
    assert(consdata->localnewbnds != NULL);
@@ -723,7 +721,7 @@ SCIP_RETCODE tightenPricingVarBound(
    assert(scip != NULL);
    assert(pricingvar != NULL);
    assert(consdata != NULL);
-   assert(consdata->created);
+   assert(consdata->nactivated >= 1);
    assert(consdata->localbndvars != NULL);
    assert(consdata->localbndtypes != NULL);
    assert(consdata->localnewbnds != NULL);
@@ -1297,19 +1295,18 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
-   consdata->nactivated++;
 
    SCIPdebugMessage("Activating ");
    /* If the node is activated the first time, we have to initialize the constraint data first */
-   if( !consdata->created )
+   if( consdata->nactivated == 0 )
    {
       SCIPdebugPrintf("for the first time\n");
       SCIP_CALL( initializeConsdata(scip, cons) );
-
-      assert(consdata->created);
    }
    else
       SCIPdebugPrintf("\n");
+
+   consdata->nactivated++;
 
    /* The node has to be repropagated if new variables were created after the node was left the last time
     * or if new bound changes on directly transferred variables were found
@@ -1378,7 +1375,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    /* get constraint data */
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
-   assert(consdata->created);
+   assert(consdata->nactivated >= 1);
 
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
@@ -2024,7 +2021,6 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->nchildconss = 0;
 
    consdata->probingtmpcons = NULL;
-   consdata->created = FALSE;
    consdata->origcons = NULL;
 
    consdata->branchrule = branchrule;
