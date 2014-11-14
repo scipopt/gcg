@@ -2321,7 +2321,6 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    sortPricingProblemsByScore();
 
-   bestredcost = 0.0;
    bestredcostvalid = TRUE;
 
    if( pricerdata->useheurpricing )
@@ -2340,7 +2339,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    if( pricetype->getType() == GCG_PRICETYPE_REDCOST && bestredcostvalid )
    {
       assert(lowerbound != NULL);
-      GCGpricerPrintInfo(scip_, pricerdata, "lower bound = %g, bestredcost = %g\n", *lowerbound, bestredcost);
+      GCGpricerPrintInfo(scip_, pricerdata, "lower bound = %g\n", *lowerbound);
 
       pricerdata->eagerage = 0;
    }
