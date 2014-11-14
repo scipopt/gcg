@@ -614,7 +614,7 @@ GCG_BRANCHDATA* GCGconsOrigbranchGetBranchdata(
    return consdata->branchdata;
 }
 
-/** returns the branchrule for a given origbranch constraint */
+/** returns the branching rule for a given origbranch constraint */
 SCIP_BRANCHRULE* GCGconsOrigbranchGetBranchrule(
    SCIP_CONS*            cons                /**< origbranch constraint for which the branchrule is requested */
    )
@@ -659,7 +659,7 @@ SCIP_CONS* GCGconsOrigbranchGetParentcons(
    return consdata->parentcons;
 }
 
-/** returns the number of origbranch constraints of the vanderbeckchildarray of the node at which the
+/** returns the number of origbranch constraints of the children of the node at which the
   * given origbranch constraint is sticking
   */
 int GCGconsOrigbranchGetNChildconss(
@@ -674,7 +674,7 @@ int GCGconsOrigbranchGetNChildconss(
    return consdata->nchildconss;
 }
 
-/** returns the origbranch constraint of the vanderbeckchild of the node at which the
+/** returns an origbranch constraint of a child of the node at which the
   * given origbranch constraint is sticking
   */
 SCIP_CONS* GCGconsOrigbranchGetChildcons(
