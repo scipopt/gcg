@@ -205,8 +205,6 @@ SCIP_RETCODE branchVar(
    {
       /* create child node x >= uplb */
       SCIP_CALL( SCIPcreateChild(masterscip, &child1, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, child1, GCGconsMasterbranchGetActiveCons(masterscip)) );
-      SCIP_CALL( SCIPaddConsNode(masterscip, child1, cons1, NULL) );
 
       SCIP_CALL( SCIPallocBlockMemory(scip, &branchupdata) );
 
@@ -249,16 +247,16 @@ SCIP_RETCODE branchVar(
       else
          branchupdata->cons = NULL;
 
-      SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, upname, branchrule,
-            branchupdata, origbranchconss1, norigbranchconss) );
+      /* create and add the masterbranch constraint */
+      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, upname, child1,
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchupdata, origbranchconss1, norigbranchconss) );
+      SCIP_CALL( SCIPaddConsNode(masterscip, child1, cons1, NULL) );
    }
 
    if( downub != SCIP_INVALID ) /*lint !e777*/
    {
       /* create child node x <= downub */
       SCIP_CALL( SCIPcreateChild(masterscip, &child2, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons2, child2, GCGconsMasterbranchGetActiveCons(masterscip)) );
-      SCIP_CALL( SCIPaddConsNode(masterscip, child2, cons2, NULL) );
 
       SCIP_CALL( SCIPallocBlockMemory(scip, &branchdowndata) );
 
@@ -301,16 +299,16 @@ SCIP_RETCODE branchVar(
       else
          branchdowndata->cons = NULL;
 
-       SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, downname, branchrule,
-                branchdowndata, origbranchconss2, norigbranchconss) );
+      /* create and add the masterbranch constraint */
+      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons2, downname, child2,
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdowndata, origbranchconss2, norigbranchconss) );
+      SCIP_CALL( SCIPaddConsNode(masterscip, child2, cons2, NULL) );
    }
 
    if( fixval != SCIP_INVALID ) /*lint !e777*/
    {
       /* create child node x = fixval */
       SCIP_CALL( SCIPcreateChild(masterscip, &child3, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons3, child3, GCGconsMasterbranchGetActiveCons(masterscip)) );
-      SCIP_CALL( SCIPaddConsNode(masterscip, child3, cons3, NULL) );
 
       SCIP_CALL( SCIPallocBlockMemory(scip, &branchfixdata) );
 
@@ -352,8 +350,10 @@ SCIP_RETCODE branchVar(
       else
          branchfixdata->cons = NULL;
 
-       SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons3, fixname, branchrule,
-             branchfixdata, origbranchconss3, norigbranchconss) );
+      /* create and add the masterbranch constraint */
+      SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons3, fixname, child3,
+         GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchfixdata, origbranchconss3, norigbranchconss) );
+      SCIP_CALL( SCIPaddConsNode(masterscip, child3, cons3, NULL) );
    }
 
    return SCIP_OKAY;

@@ -2228,9 +2228,7 @@ SCIP_RETCODE createChildNodesGeneric(
             char childname[SCIP_MAXSTRLEN];
             ++nchildnodes;
 
-            SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-            SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &childcons, child, GCGconsMasterbranchGetActiveCons(masterscip)) );
-            SCIP_CALL( SCIPaddConsNode(masterscip, child, childcons, NULL) );
+            assert(branchchilddata != NULL);
 
             /* define names for origbranch constraints */
             (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%lld,%d, %d) (last comp=%s %s %g) >= %g", SCIPnodeGetNumber(child), blocknr, p+1,
@@ -2239,9 +2237,10 @@ SCIP_RETCODE createChildNodesGeneric(
                branchchilddata->consS[branchchilddata->consSsize-1].bound,
                branchchilddata->lhs);
 
-            assert(branchchilddata != NULL);
-
-            SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, childcons, childname, branchrule, branchchilddata, NULL, 0) );
+            SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+            SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &childcons, childname, child,
+               GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchchilddata, NULL, 0) );
+            SCIP_CALL( SCIPaddConsNode(masterscip, child, childcons, NULL) );
 
             SCIP_CALL( createBranchingCons(masterscip, child, branchchilddata) );
 
@@ -2336,26 +2335,23 @@ SCIP_RETCODE branchDirectlyOnMastervar(
    branchdownchilddata->consS[0].bound = bound;
 
 
+   assert(branchupchilddata != NULL);
+   assert(branchdownchilddata != NULL);
+
    (void) SCIPsnprintf(upchildname, SCIP_MAXSTRLEN, "node(1,-3, %f) direct up on comp=%s", branchupchilddata->consS[0].bound,
                SCIPvarGetName(branchupchilddata->consS[branchupchilddata->consSsize-1].component));
    (void) SCIPsnprintf(downchildname, SCIP_MAXSTRLEN, "node(1,-3, %f) direct up on comp=%s", branchdownchilddata->consS[0].bound,
                SCIPvarGetName(branchdownchilddata->consS[branchdownchilddata->consSsize-1].component));
 
    SCIP_CALL( SCIPcreateChild(masterscip, &upchild, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &upchildcons, upchild, GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &upchildcons, upchildname, upchild,
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchupchilddata, NULL, 0) );
    SCIP_CALL( SCIPaddConsNode(masterscip, upchild, upchildcons, NULL) );
 
    SCIP_CALL( SCIPcreateChild(masterscip, &downchild, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &downchildcons, downchild, GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &downchildcons, downchildname, downchild,
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdownchilddata, NULL, 0) );
    SCIP_CALL( SCIPaddConsNode(masterscip, downchild, downchildcons, NULL) );
-
-   assert(branchupchilddata != NULL);
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, upchildcons, upchildname, branchrule, branchupchilddata,
-      NULL, 0) );
-
-   assert(branchdownchilddata != NULL);
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, downchildcons, downchildname, branchrule, branchdownchilddata,
-      NULL, 0) );
 
    /*  create branching constraint in master */
    SCIP_CALL( createDirectBranchingCons(masterscip, upchild, branchupchilddata) );

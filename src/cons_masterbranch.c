@@ -1226,7 +1226,7 @@ SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
    assert(conshdlrdata != NULL);
 
    /* create masterbranch constraint for the root node */
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons, NULL, NULL) );
+   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons, "root-masterbranch", NULL,  NULL, NULL, NULL, NULL, 0) );
    GCGconsOrigbranchSetMastercons(GCGconsOrigbranchGetActiveCons(GCGmasterGetOrigprob(scip)), cons);
 
    conshdlrdata->nstack = 1;
@@ -1986,8 +1986,13 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
 SCIP_RETCODE GCGcreateConsMasterbranch(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
+   const char*           name,               /**< name of the constraint */
    SCIP_NODE*            node,               /**< node at which the constraint should be created */
-   SCIP_CONS*            parentcons          /**< parent constraint */
+   SCIP_CONS*            parentcons,         /**< parent constraint */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
+   GCG_BRANCHDATA*       branchdata,         /**< branching data */
+   SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
+   int                   norigbranchconss    /**< number of original constraints */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -2007,6 +2012,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    /* create constraint data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
 
+   SCIP_CALL( SCIPduplicateBlockMemoryArray(scip, &(consdata->name), name, strlen(name)+1) );
+
    consdata->npropvars = 0;
    consdata->needprop = TRUE;
 
@@ -2019,10 +2026,9 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->probingtmpcons = NULL;
    consdata->created = FALSE;
    consdata->origcons = NULL;
-   consdata->name = NULL;
 
-   consdata->branchrule = NULL;
-   consdata->branchdata = NULL;
+   consdata->branchrule = branchrule;
+   consdata->branchdata = branchdata;
 
    consdata->localbndvars = NULL;
    consdata->localbndtypes = NULL;
@@ -2040,13 +2046,13 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->ncopiedvarbnds = 0;
    consdata->maxcopiedvarbnds = 0;
 
-   consdata->origbranchconss = NULL;
-   consdata->norigbranchconss = 0;
+   consdata->origbranchconss = origbranchconss;
+   consdata->norigbranchconss = norigbranchconss;
 
    SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", (void*) parentcons);
 
    /* create constraint */
-   SCIP_CALL( SCIPcreateCons(scip, cons, "masterbranch", conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, TRUE,
+   SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, TRUE,
          TRUE, FALSE, FALSE, FALSE, TRUE) );
 
    /* add the new masterbranch constraint to the parent node's masterbranch constraint data
@@ -2105,44 +2111,6 @@ SCIP_Bool GCGcurrentNodeIsGeneric(
       return FALSE;
 
    return TRUE;
-}
-
-/** set branching information for the original problem */
-SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
-   SCIP*                 scip,               /**< SCIP data structure of the master problem */
-   SCIP_CONS*            cons,               /**< masterbranch constraint for which the consdata is set */
-   char*                 name,               /**< name of the constraint */
-   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
-   GCG_BRANCHDATA*       branchdata,         /**< branching data */
-   SCIP_CONS**           origbranchconss,    /**< array of original constraints */
-   int                   norigbranchconss    /**< number of original constraints */
-   )
-{
-   SCIP_CONSDATA* consdata;
-
-   assert(scip != NULL);
-   assert(cons != NULL);
-   assert(name != NULL);
-   assert(branchrule != NULL);
-   assert(branchdata != NULL);
-
-   assert(GCGisMaster(scip));
-
-   /* get constraint data */
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
-
-   assert(consdata->origbranchconss == NULL);
-   assert(consdata->norigbranchconss == 0);
-
-   /* set the data for branching on the original problem */
-   SCIP_CALL( SCIPduplicateBlockMemoryArray(scip, &(consdata->name), name, strlen(name)+1) );
-   consdata->branchrule = branchrule;
-   consdata->branchdata = branchdata;
-   consdata->origbranchconss = origbranchconss;
-   consdata->norigbranchconss = norigbranchconss;
-
-   return SCIP_OKAY;
 }
 
 /** returns the name of the constraint */

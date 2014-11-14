@@ -350,14 +350,9 @@ SCIP_RETCODE createChildNodesRyanfoster(
 
    /* for cons_masterbranch */
 
-   /*  create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
+   /* create two child-nodes of the current node in the b&b-tree */
    SCIP_CALL( SCIPcreateChild(masterscip, &child1, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
    SCIP_CALL( SCIPcreateChild(masterscip, &child2, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, child1, GCGconsMasterbranchGetActiveCons(masterscip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons2, child2, GCGconsMasterbranchGetActiveCons(masterscip)) );
-   SCIP_CALL( SCIPaddConsNode(masterscip, child1, cons1, NULL) );
-   SCIP_CALL( SCIPaddConsNode(masterscip, child2, cons2, NULL) );
-
 
    /* allocate branchdata for same child and store information */
    SCIP_CALL( SCIPallocBlockMemory(scip, &branchsamedata) );
@@ -424,12 +419,15 @@ SCIP_RETCODE createChildNodesRyanfoster(
       origbranchconss2[v] = origcons2;
    }
 
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, samename, branchrule, branchsamedata,
-         origbranchconss, norigvars1) );
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, differname, branchrule, branchdifferdata,
-         origbranchconss2, norigvars1) );
+   /* create and add the masterbranch constraints */
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, samename, child1,
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchsamedata, origbranchconss, norigvars1) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons2, differname, child2,
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdifferdata, origbranchconss2, norigvars1) );
+   SCIP_CALL( SCIPaddConsNode(masterscip, child1, cons1, NULL) );
+   SCIP_CALL( SCIPaddConsNode(masterscip, child2, cons2, NULL) );
 
-   /*  release constraints */
+   /* release constraints */
    SCIP_CALL( SCIPreleaseCons(masterscip, &cons1) );
    SCIP_CALL( SCIPreleaseCons(masterscip, &cons2) );
    return SCIP_OKAY;
