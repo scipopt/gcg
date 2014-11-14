@@ -2655,7 +2655,7 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
       /** @todo This is just a workaround around SCIP stages! */
       if( farkaspricing->getCalls() == 0 )
       {
-         SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
+         SCIP_CALL( GCGconsMasterbranchAddRootCons(scip) );
       }
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
    }
@@ -2708,7 +2708,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    /** @todo This is just a workaround around SCIP stages! */
    if( reducedcostpricing->getCalls() == 0 && farkaspricing->getCalls() == 0 )
    {
-      SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
+      SCIP_CALL( GCGconsMasterbranchAddRootCons(scip) );
    }
 
    /* get solutions from the original problem */
