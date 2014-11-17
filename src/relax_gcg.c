@@ -943,9 +943,9 @@ SCIP_RETCODE setPricingProblemParameters(
 
    /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
    SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/freq", -1) );
-   /*SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );*/
+   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
    SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
-   /*SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );*/
+   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
 
    /* disable solution storage ! */
    SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
