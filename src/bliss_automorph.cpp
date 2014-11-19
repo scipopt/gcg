@@ -607,7 +607,8 @@ SCIP_RETCODE createGraph(
 
             /* add coefficent node for current coeff */
             (void) h->add_vertex((unsigned int)color);
-            SCIPdebugMessage("master nz for var <%s> (id: %d) (value: %f, color: %d)\n", SCIPvarGetName(curvars[j]), nnodes, curvals[i], color);
+            assert(ABS(curvals[j] < SCIPinfinity(scip)));
+            SCIPdebugMessage("master nz for var <%s> (id: %d) (value: %f, color: %d)\n", SCIPvarGetName(curvars[j]), nnodes, curvals[j], color);
             nnodes++;
          }
       }

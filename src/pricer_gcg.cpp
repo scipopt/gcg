@@ -3306,9 +3306,21 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
       }
       else
       {
+         SCIP_VAR* mastervar;
+
          assert((GCGoriginalVarGetNMastervars(origvars[i]) == 1) || (GCGoriginalVarIsLinking(origvars[i])));
          assert(GCGoriginalVarGetMastervars(origvars[i])[0] != NULL);
-         SCIP_CALL( SCIPsetSolVal(scip, mastersol, GCGoriginalVarGetMastervars(origvars[i])[0], origsolvals[i]) );
+
+         mastervar = GCGoriginalVarGetMastervars(origvars[i])[0];
+
+         if( SCIPisEQ(scip, SCIPvarGetUbGlobal(mastervar), SCIPvarGetLbGlobal(mastervar)) )
+         {
+            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, SCIPvarGetUbGlobal(mastervar)) );
+         }
+         else
+         {
+            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, origsolvals[i]) );
+         }
 
          if( GCGoriginalVarIsLinking(origvars[i]) )
          {
