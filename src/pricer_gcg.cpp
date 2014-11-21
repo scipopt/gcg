@@ -2276,6 +2276,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       else if( pricinghaserror )
          *result = SCIP_DIDNOTRUN;
    }
+   else if( pricinghaserror )
+   {
+      SCIPwarningMessage(scip_, "There occurred an error in Farkas pricing. This might lead to wrong solutions!\n");
+   }
 
    return SCIP_OKAY;
 }
