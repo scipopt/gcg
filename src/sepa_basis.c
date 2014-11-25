@@ -86,7 +86,7 @@ struct SCIP_SepaData
    SCIP_Bool             enableppcuts;       /**< parameter returns if cuts generated during pricing are added to newconss array */
    SCIP_Bool             enableppobjconss;   /**< parameter returns if objective constraint for each redcost of pp is enabled */
    SCIP_Bool             enableppobjcg;      /**< parameter returns if objective constraint for each redcost of pp is enabled during pricing */
-   SCIP_Bool             aggressive;         /**< parameter returns if aggressive separation is used */
+   int                   separationsetting;  /**< parameter returns which parameter setting is used for separation */
    SCIP_Bool             chgobj;             /**< parameter returns if basis is searched with different objective */
    SCIP_Bool             chgobjallways;      /**< parameter returns if obj is not only changed in first iteration */
    SCIP_Bool             genobjconvex;       /**< parameter returns if objconvex is generated dynamically */
@@ -1258,15 +1258,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /* init iteration counter */
    iteration = 0;
 
-   /* set separating to aggressive or default */
-   if( sepadata->aggressive )
-   {
-      SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_AGGRESSIVE, TRUE) );
-   }
-   else
-   {
-      SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_DEFAULT, TRUE) );
-   }
+   /* set parameter setting for separation */
+   SCIP_CALL( SCIPsetSeparating(origscip, (SCIP_PARAMSETTING) sepadata->separationsetting, TRUE) );
 
    /* start diving */
    SCIP_CALL( SCIPstartProbing(origscip) );
@@ -1362,7 +1355,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
       /* solve probing lp */
       SCIP_CALL( SCIPsolveProbingLP(origscip, -1, &lperror, &cutoff) );
-
 
       assert( !lperror );
 
@@ -1736,8 +1728,8 @@ SCIP_RETCODE SCIPincludeSepaBasis(
          &(sepadata->posslackexp), FALSE, 1, 1, INT_MAX, NULL, NULL);
    SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/basis/objconvex", "convex combination factor",
          &(sepadata->objconvex), FALSE, 1.0, 0.0, 1.0, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/aggressive", "parameter returns if aggressive separation is used",
-      &(sepadata->aggressive), FALSE, TRUE, NULL, NULL);
+   SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/paramsetting", "parameter returns which parameter setting is used for separation (default = 0, aggressive = 1, fast = 2",
+      &(sepadata->separationsetting), FALSE, 0, 0, 2, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobj", "parameter returns if basis is searched with different objective",
       &(sepadata->chgobj), FALSE, TRUE, NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/iterations", "parameter returns if number new rows adding"
