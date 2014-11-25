@@ -2547,12 +2547,12 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                ncuts = SCIPgetNPoolCuts(pricerdata->pricingprobs[j]);
                cuts = SCIPgetPoolCuts(pricerdata->pricingprobs[j]);
 
-               for(i = 0; i < ncuts; ++i)
+               for( i = 0; i < ncuts; ++i )
                {
                   SCIP_ROW* row;
                   row = SCIPcutGetRow(cuts[i]);
 
-                  if(!SCIProwIsLocal(row) && SCIProwGetRank(row) >=1)
+                  if( !SCIProwIsLocal(row) && SCIProwGetRank(row) >=1 && nfoundvars == 0 )
                      SCIP_CALL( GCGsepaBasisAddPricingCut(scip_, j, row) );
                }
             }
