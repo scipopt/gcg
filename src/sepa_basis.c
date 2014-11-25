@@ -1232,16 +1232,15 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPgetRealParam(origscip, "separating/minefficacy", &mineff) );
-   SCIP_CALL( SCIPgetRealParam(origscip, "separating/minefficacyroot", &mineffroot) );
-   SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineffroot) );
-
-   SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxrounds", &maxrounds) );
-   SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxroundsroot", &maxroundsroot) );
-   SCIP_CALL( SCIPsetIntParam(origscip, "separating/maxrounds", maxroundsroot) );
-
    /* update current original solution */
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
+
+   if( feasible )
+   {
+      SCIPdebugMessage("Current solution is feasible, no separation necessary!\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
 
    /* get current original solution */
    origsol = GCGrelaxGetCurrentOrigSol(origscip);
@@ -1257,6 +1256,15 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
    /* init iteration counter */
    iteration = 0;
+
+   /* TODO: Why is this necessary? */
+   SCIP_CALL( SCIPgetRealParam(origscip, "separating/minefficacy", &mineff) );
+   SCIP_CALL( SCIPgetRealParam(origscip, "separating/minefficacyroot", &mineffroot) );
+   SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineffroot) );
+
+   SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxrounds", &maxrounds) );
+   SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxroundsroot", &maxroundsroot) );
+   SCIP_CALL( SCIPsetIntParam(origscip, "separating/maxrounds", maxroundsroot) );
 
    /* set parameter setting for separation */
    SCIP_CALL( SCIPsetSeparating(origscip, (SCIP_PARAMSETTING) sepadata->separationsetting, TRUE) );
@@ -1282,11 +1290,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIP_CALL( SCIPaddRowProbing(origscip, sepadata->newcuts[i]) );
    }
 
-   /* store numeber of lp rows in the beginning */
+   /* store number of lp rows in the beginning */
    nlprowsstart = SCIPgetNLPRows(origscip);
 
    /* while the counter is smaller than the number of allowed iterations,
     * try to separate origsol via probing lp sol */
+   /* TODO: while z*(T) = 0 like Range suggests? But then we have to adjust which cuts are added */
    while( iteration < sepadata->iterations )
    {
       SCIP_CALL( SCIPapplyCutsProbing(origscip, &cutoff) );
@@ -1420,6 +1429,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          /* disable separating again */
          SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
+
+         /* reset parameters */
+         SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineff) );
+         SCIP_CALL( SCIPsetIntParam(origscip, "separating/maxrounds", maxrounds) );
 
          return SCIP_OKAY;
       }
@@ -1631,6 +1644,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /* disable separating again */
    SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
 
+   /* reset parameters */
    SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineff) );
    SCIP_CALL( SCIPsetIntParam(origscip, "separating/maxrounds", maxrounds) );
 
@@ -1716,28 +1730,28 @@ SCIP_RETCODE SCIPincludeSepaBasis(
          &(sepadata->enableobjround), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppcuts", "add cuts generated during pricing to newconss array?",
          &(sepadata->enableppcuts), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjconss", "is objective constraint for redcost of each pp of separator enabled?",
-         &(sepadata->enableppobjconss), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjcg", "is objective constraint for redcost of each pp during pricing of separator enabled?",
-         &(sepadata->enableppobjcg), FALSE, FALSE, NULL, NULL);
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjconss", "is objective constraint for redcost of each pp of "
+      "separator enabled?", &(sepadata->enableppobjconss), FALSE, FALSE, NULL, NULL);
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjcg", "is objective constraint for redcost of each pp during "
+      "pricing of separator enabled?", &(sepadata->enableppobjcg), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/genobjconvex", "generated obj convex dynamically",
          &(sepadata->genobjconvex), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableposslack", "should positive slack influence the probing objective function?",
-         &(sepadata->enableposslack), FALSE, FALSE, NULL, NULL);
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableposslack", "should positive slack influence the probing objective "
+      "function?", &(sepadata->enableposslack), FALSE, FALSE, NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexp", "exponent of positive slack usage",
          &(sepadata->posslackexp), FALSE, 1, 1, INT_MAX, NULL, NULL);
    SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/basis/objconvex", "convex combination factor",
          &(sepadata->objconvex), FALSE, 1.0, 0.0, 1.0, NULL, NULL);
-   SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/paramsetting", "parameter returns which parameter setting is used for separation (default = 0, aggressive = 1, fast = 2",
-      &(sepadata->separationsetting), FALSE, 0, 0, 2, NULL, NULL);
+   SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/paramsetting", "parameter returns which parameter setting is used for "
+      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 0, 0, 2, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobj", "parameter returns if basis is searched with different objective",
       &(sepadata->chgobj), FALSE, TRUE, NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/iterations", "parameter returns if number new rows adding"
       "iterations (rows just cut off probing lp sol)", &(sepadata->iterations), FALSE, 100, 1, 10000000 , NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/mincuts", "parameter returns number of minimum cuts needed to "
       "return *result = SCIP_Separated", &(sepadata->mincuts), FALSE, 1, 1, 100, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobjallways", "parameter returns if obj is changed not only in the first iteration",
-      &(sepadata->chgobjallways), FALSE, FALSE, NULL, NULL);
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobjallways", "parameter returns if obj is changed not only in the "
+      "first iteration", &(sepadata->chgobjallways), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/forcecuts", "parameter returns if cuts are forced to enter the LP ",
       &(sepadata->forcecuts), FALSE, FALSE, NULL, NULL);
 
