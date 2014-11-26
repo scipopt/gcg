@@ -2,13 +2,15 @@
 
 sepa/basis/enable = TRUE
 
-sepa/basis/genobjconvex = FALSE
+sepa/basis/genobjconvex = TRUE
 
 sepa/basis/objconvex = 1.0
 
 sepa/basis/enableobj = FALSE
 
 sepa/basis/enableobjround = FALSE
+
+sepa/basis/enableppobjcg = TRUE
 
 
 

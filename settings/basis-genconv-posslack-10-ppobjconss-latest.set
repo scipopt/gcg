@@ -10,6 +10,10 @@ sepa/basis/enableobj = FALSE
 
 sepa/basis/enableobjround = FALSE
 
+sepa/basis/enableposslack = TRUE
+
+sepa/basis/posslackexp = 10
+
 sepa/basis/enableppobjconss = TRUE
 
 

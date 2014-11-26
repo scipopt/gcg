@@ -8,7 +8,7 @@ sepa/basis/objconvex = 1.0
 
 sepa/basis/enableobj = FALSE
 
-sepa/basis/enableobjround = FALSE
+sepa/basis/enableppobjconss = TRUE
 
 
 

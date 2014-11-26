@@ -762,9 +762,13 @@ SCIP_RETCODE addPPObjConss(
    SCIP*                scip,               /**< SCIP data structure */
    SCIP_SEPA*           sepa,               /**< separator basis */
    int                  ppnumber,           /**< number of pricing problem */
-   SCIP_Real            dualsolconv         /**< dual solution corresponding to convexity constraint */
+   SCIP_Real            dualsolconv,        /**< dual solution corresponding to convexity constraint */
+   SCIP_Bool            newcuts,            /**< add cut to newcuts in sepadata? (otherwise add it just to the cutpool) */
+   SCIP_Bool            probing             /**< add cut to probing LP? */
 )
 {
+   SCIP_SEPADATA* sepadata;
+
    SCIP* pricingscip;
 
    SCIP_VAR** pricingvars;
@@ -782,6 +786,8 @@ SCIP_RETCODE addPPObjConss(
 
    SCIP_Real lhs;
    SCIP_Real rhs;
+
+   sepadata = SCIPsepaGetData(sepa);
 
    nvars = 0;
    pricingscip = GCGgetPricingprob(scip, ppnumber);
@@ -828,12 +834,31 @@ SCIP_RETCODE addPPObjConss(
          }
       }
 
-      if(nvars > 0)
+      if( nvars > 0 )
       {
-         SCIPdebug( SCIPprintRow(scip, origcut, NULL) );
+         if( newcuts )
+         {
+            /* TODO: Okay? */
+            SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + 1) );
 
-         SCIP_CALL( SCIPaddRowProbing(scip, origcut) );
-         SCIPdebugMessage("cut added to probing\n");
+            sepadata->newcuts[sepadata->nnewcuts] = origcut;
+            SCIP_CALL( SCIPcaptureRow(scip, sepadata->newcuts[sepadata->nnewcuts]) );
+            ++(sepadata->nnewcuts);
+
+            SCIPdebugMessage("cut added to new cuts in relaxdata\n");
+         }
+         else
+         {
+            SCIP_CALL( SCIPaddPoolCut(scip, origcut) );
+            SCIPdebugMessage("cut added to orig cut pool\n");
+         }
+
+         if( probing )
+         {
+            SCIP_CALL( SCIPaddRowProbing(scip, origcut) );
+            SCIPdebugMessage("cut added to probing\n");
+         }
+
 
       }
       SCIP_CALL(SCIPreleaseRow(scip, &origcut) );
@@ -1083,7 +1108,7 @@ SCIP_RETCODE initGenconv(
 
    *convex = 1.0* rank/nbasis;
 
-   SCIPinfoMessage(origscip, NULL, "genconv = %d/%d = %f\n", rank, nbasis, *convex);
+   SCIPdebugMessage("use generic coefficient %d/%d = %f\n", rank, nbasis, *convex);
 
    ncalls = sepadata->ncalculatedconvex;
 
@@ -1201,7 +1226,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
-   SCIPdebugMessage("sepaExeclpBasis\n");
+   SCIPdebugMessage("calling sepaExeclpBasis\n");
 
    *result = SCIP_DIDNOTFIND;
 
@@ -1213,6 +1238,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /* if separator is disabled do nothing */
    if(!enable)
    {
+      SCIPdebugMessage("separator is not enabled\n");
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
@@ -1298,18 +1324,23 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /* TODO: while z*(T) = 0 like Range suggests? But then we have to adjust which cuts are added */
    while( iteration < sepadata->iterations )
    {
+      SCIPdebugMessage("iteration %d of at most %d iterations\n", iteration + 1, sepadata->iterations);
+
       SCIP_CALL( SCIPapplyCutsProbing(origscip, &cutoff) );
 
       /* add new constraints if this is enabled  */
       if( enableppobjconss && iteration == 0 )
       {
          SCIP_Real* dualsolconv;
-         SCIP_CALL( SCIPallocMemoryArray(scip, &dualsolconv, GCGrelaxGetNPricingprobs(origscip)));
+
+         SCIPdebugMessage("add reduced cost cut for relevant pricing problems\n");
+
+         SCIP_CALL( SCIPallocMemoryArray(scip, &dualsolconv, GCGgetNPricingprobs(origscip)));
          SCIP_CALL( GCGsetPricingObjs(scip, dualsolconv) );
 
          for( i = 0; i < GCGgetNPricingprobs(origscip); ++i )
          {
-            SCIP_CALL( addPPObjConss(origscip, sepa, i, dualsolconv[i]) );
+            SCIP_CALL( addPPObjConss(origscip, sepa, i, dualsolconv[i], FALSE, TRUE) );
          }
 
          SCIPfreeMemoryArray(scip, &dualsolconv);
@@ -1318,15 +1349,19 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       /* init objective */
       if( sepadata->chgobj && (iteration == 0 || sepadata->chgobjallways) )
       {
+         SCIPdebugMessage("initialize objective function\n");
          if( sepadata->genobjconvex )
          {
             SCIP_Real genconvex;
 
             SCIP_CALL( initGenconv(origscip, sepadata, origsol, nbasis, &genconvex) );
+
             SCIP_CALL( initConvObj(origscip, sepadata, origsol, genconvex, TRUE) );
          }
          else
          {
+            SCIPdebugMessage("use given coefficient %g\n", sepadata->objconvex);
+
             SCIP_CALL( initConvObj(origscip, sepadata, origsol, sepadata->objconvex, FALSE) );
          }
       }
@@ -1334,15 +1369,19 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       /* update rhs/lhs of objective constraint and add it to probing LP, if it exists (only in first iteration) */
       if( enableobj && iteration == 0 )
       {
+         SCIPdebugMessage("initialize original objective cut\n");
+
          /* round rhs/lhs of objective constraint, if it exists, obj is integral and this is enabled */
          if( SCIPisObjIntegral(origscip) && enableobjround )
          {
             if( objsense == SCIP_OBJSENSE_MAXIMIZE )
             {
+               SCIPdebugMessage("round rhs down\n");
                obj = SCIPfloor(origscip, obj);
             }
             else
             {
+               SCIPdebugMessage("round lhs up\n");
                obj = SCIPceil(origscip, obj);
             }
          }
@@ -1358,10 +1397,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             SCIP_CALL( SCIPchgRowLhs(origscip, sepadata->objrow, obj) );
             SCIP_CALL( SCIPchgRowRhs(origscip, sepadata->objrow, SCIPinfinity(origscip)) );
          }
+         SCIPdebugMessage("add original objective cut to probing LP\n");
+
          /** add row to probing lp */
          SCIP_CALL( SCIPaddRowProbing(origscip, sepadata->objrow) );
       }
 
+      SCIPdebugMessage("solve probing LP\n");
       /* solve probing lp */
       SCIP_CALL( SCIPsolveProbingLP(origscip, -1, &lperror, &cutoff) );
 
@@ -1379,6 +1421,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       sepas = SCIPgetSepas(origscip);
       nsepas = SCIPgetNSepas(origscip);
 
+      SCIPdebugMessage("set parameters of separators\n");
+
       /* loop over sepas and enable/disable sepa */
       for( i = 0; i < nsepas; ++i )
       {
@@ -1395,30 +1439,26 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             || (strcmp(sepaname, "cgmip") == 0))
          {
             SCIP_CALL( SCIPsetIntParam(origscip, paramname, -1) );
-            SCIPdebugMessage("%s = %d\n", paramname, -1);
+            /* SCIPdebugMessage("%s = %d\n", paramname, -1); */
          }
          else
          {
             SCIP_CALL( SCIPsetIntParam(origscip, paramname, 0) );
-            SCIPdebugMessage("%s = %d\n", paramname, 0);
+            /* SCIPdebugMessage("%s = %d\n", paramname, 0); */
          }
       }
+
+      SCIPdebugMessage("separate current LP solution\n");
 
       /** separate current probing lp sol of origscip */
       SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, FALSE, &delayed, &cutoff) );
 
       if( delayed && !cutoff )
       {
+         SCIPdebugMessage("call delayed separators\n");
+
          SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, TRUE, &delayed, &cutoff) );
       }
-
-      /* separate cuts in cutpool */
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, &resultdummy) );
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), NULL, &resultdummy) );
-
-      /* separate cuts in cutpool */
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, &resultdummy) );
-      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, &resultdummy) );
 
       /* if cut off is detected set result pointer and return SCIP_OKAY */
       if( cutoff )
@@ -1437,14 +1477,22 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          return SCIP_OKAY;
       }
 
+      SCIPdebugMessage("separate current LP solution and current original solution in cutpool\n");
+
+      /* separate cuts in cutpool */
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), NULL, &resultdummy) );
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), NULL, &resultdummy) );
+
+      /* separate cuts in cutpool */
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, &resultdummy) );
+      SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, &resultdummy) );
+
       /* update number of lp cuts */
       sepadata->nlpcuts += SCIPgetNCuts(origscip);
 
       assert(sepadata->norigcuts == sepadata->nmastercuts);
 
-      SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
-
-      SCIPinfoMessage(scip, NULL,"SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
+      SCIPdebugMessage("%d cuts are in the original sepastore!\n", SCIPgetNCuts(origscip));
 
       /* get separated cuts */
       cuts = SCIPgetCuts(origscip);
@@ -1463,8 +1511,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          colvarused = FALSE;
          origcut = cuts[i];
-
-         SCIPdebugMessage("cutname = %s \n", SCIProwGetName(origcut));
 
          /* get columns and vals of the cut */
          ncols = SCIProwGetNNonz(origcut);
@@ -1486,7 +1532,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          if( colvarused )
          {
-            SCIPinfoMessage(origscip, NULL, "colvar used\n");
+            SCIPwarningMessage(origscip, "colvar used in original cut %s\n", SCIProwGetName(origcut));
             SCIPfreeBufferArray(scip, &roworigvars);
             continue;
          }
@@ -1565,12 +1611,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          sepadata->nmastercuts++;
          SCIP_CALL( GCGsepaAddMastercuts(scip, origcut, mastercut) );
 
-   #ifdef SCIP_DEBUG
-         SCIPdebugMessage("Cut %d:\n", i);
-         SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
-         SCIPdebugMessage("\n\n");
-   #endif
-
          SCIP_CALL( SCIPreleaseRow(scip, &mastercut) );
          SCIPfreeBufferArray(scip, &roworigvars);
       }
@@ -1599,10 +1639,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          ++iteration;
       }
 
-      SCIPdebugMessage("%d cuts are in the original sepastore!\n", SCIPgetNCuts(origscip));
       SCIPdebugMessage("%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
-
-      SCIPinfoMessage(scip, NULL, "%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
 
       SCIPfreeBufferArray(scip, &mastervals);
 
@@ -1648,7 +1685,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineff) );
    SCIP_CALL( SCIPsetIntParam(origscip, "separating/maxrounds", maxrounds) );
 
-   SCIPdebugMessage("separated origsol\n");
+   SCIPdebugMessage("exiting sepaExeclpBasis\n");
 
    return SCIP_OKAY;
 }
@@ -1929,7 +1966,6 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
 
       if( nvars > 0 )
       {
-         SCIPdebug( SCIPprintRow(origscip, origcut, NULL) );
          SCIP_CALL( SCIPaddPoolCut( origscip, origcut) );
 
          SCIPdebugMessage("cut added to orig cut pool\n");
@@ -1947,7 +1983,8 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
 SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
    SCIP*                scip,               /**< SCIP data structure */
    int                  ppnumber,           /**< number of pricing problem */
-   SCIP_Real            dualsolconv         /**< dual solution corresponding to convexity constraint */
+   SCIP_Real            dualsolconv,        /**< dual solution corresponding to convexity constraint */
+   SCIP_Bool            newcuts             /**< add cut to newcuts in sepadata? (otherwise add it just to the cutpool) */
 )
 {
    SCIP_SEPA* sepa;
@@ -1962,7 +1999,7 @@ SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( addPPObjConss(GCGmasterGetOrigprob(scip), sepa, ppnumber, dualsolconv) );
+   SCIP_CALL( addPPObjConss(GCGmasterGetOrigprob(scip), sepa, ppnumber, dualsolconv, newcuts, FALSE) );
 
    return SCIP_OKAY;
 }

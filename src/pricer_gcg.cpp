@@ -2386,14 +2386,14 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
 
             SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg);
-            if(enableppobjcg)
+            if(enableppobjcg && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
             {
                for(i = 0; i < pricerdata->npricingprobs; ++i)
                {
                   if(!GCGisPricingprobRelevant(GCGmasterGetOrigprob(scip_), i))
                      continue;
 
-                  SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i]) );
+                  SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i], TRUE) );
                }
             }
          }
@@ -2441,14 +2441,15 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             stabilization->disablingMispricingSchedule();
 
          SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg);
-         if(enableppobjcg)
+
+         if(enableppobjcg && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
          {
             for(i = 0; i < pricerdata->npricingprobs; ++i)
             {
                if(!GCGisPricingprobRelevant(GCGmasterGetOrigprob(scip_), i))
                   continue;
 
-               SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i]) );
+               SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i], TRUE) );
             }
          }
       }
@@ -2540,22 +2541,22 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       {
          if( pricerdata->pricingprobs[j] != NULL
             && SCIPgetStage(pricerdata->pricingprobs[j]) >= SCIP_STAGE_SOLVING)
+         {
+            SCIP_CUT** cuts;
+            int ncuts;
+
+            ncuts = SCIPgetNPoolCuts(pricerdata->pricingprobs[j]);
+            cuts = SCIPgetPoolCuts(pricerdata->pricingprobs[j]);
+
+            for( i = 0; i < ncuts; ++i )
             {
-               SCIP_CUT** cuts;
-               int ncuts;
+               SCIP_ROW* row;
+               row = SCIPcutGetRow(cuts[i]);
 
-               ncuts = SCIPgetNPoolCuts(pricerdata->pricingprobs[j]);
-               cuts = SCIPgetPoolCuts(pricerdata->pricingprobs[j]);
-
-               for( i = 0; i < ncuts; ++i )
-               {
-                  SCIP_ROW* row;
-                  row = SCIPcutGetRow(cuts[i]);
-
-                  if( !SCIProwIsLocal(row) && SCIProwGetRank(row) >=1 && nfoundvars == 0 )
-                     SCIP_CALL( GCGsepaBasisAddPricingCut(scip_, j, row) );
-               }
+               if( !SCIProwIsLocal(row) && SCIProwGetRank(row) >=1 && nfoundvars == 0 )
+                  SCIP_CALL( GCGsepaBasisAddPricingCut(scip_, j, row) );
             }
+         }
       }
    }
 

@@ -64,9 +64,9 @@ int GCGsepaBasisGetNMastercuts(
 /** transforms cut in pricing variables to cut in original variables and adds it to newcuts array */
 extern
 SCIP_RETCODE GCGsepaBasisAddPricingCut(
-   SCIP*                scip,
-   int                  ppnumber,
-   SCIP_ROW*            cut
+   SCIP*                scip,               /**< SCIP data structure */
+   int                  ppnumber,           /**< number of pricing problem */
+   SCIP_ROW*            cut                 /**< cut to be added */
    );
 
 /** Add cuts which are due to the latest objective function of the pricing problems
@@ -75,7 +75,8 @@ extern
 SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
    SCIP*                scip,               /**< SCIP data structure */
    int                  ppnumber,           /**< number of pricing problem */
-   SCIP_Real            dualsolconv         /**< dual solution corresponding to convexity constraint */
+   SCIP_Real            dualsolconv,        /**< dual solution corresponding to convexity constraint */
+   SCIP_Bool            newcuts             /**< add cut to newcuts in sepadata? (otherwise add it just to the cutpool) */
    );
 
 #ifdef __cplusplus
