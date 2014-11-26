@@ -183,7 +183,7 @@ SCIP_Real exponentiate(
    assert(exponent >= 0);
 
    result = 1.0;
-   for(i = 0; i < exponent; ++i)
+   for( i = 0; i < exponent; ++i )
    {
       result *= basis;
    }
@@ -212,14 +212,14 @@ SCIP_RETCODE initProbingObjWithOrigObj(
    norigvars = SCIPgetNVars(origscip);
 
    /** loop over original variables */
-   for(i = 0; i < norigvars; ++i)
+   for( i = 0; i < norigvars; ++i )
    {
       /* get variable information */
       origvar = origvars[i];
       newobj = 0.0;
 
       /* if objective row is enabled consider also the original objective value */
-      if(enableobj)
+      if( enableobj )
          newobj = objfactor * SCIPvarGetObj(origvar);
 
       SCIPchgVarObjProbing(origscip, origvar, newobj);
@@ -250,7 +250,7 @@ SCIP_RETCODE chgProbingObjAddingOrigObj(
    norigvars = SCIPgetNVars(origscip);
 
    /** loop over original variables */
-   for(i = 0; i < norigvars; ++i)
+   for( i = 0; i < norigvars; ++i )
    {
       /* get variable information */
       origvar = origvars[i];
@@ -299,7 +299,7 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
    posslackexp = sepadata->posslackexp;
 
    /** loop over original variables */
-   for(i = 0; i < norigvars; ++i)
+   for( i = 0; i < norigvars; ++i )
    {
       /* get variable information */
       origvar = origvars[i];
@@ -321,11 +321,11 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
       {
          newobj = -1.0;
       }
-      else if(SCIPisGT(origscip, lb, -SCIPinfinity(origscip)) && SCIPisGE(origscip, lb, solval) )
+      else if( SCIPisGT(origscip, lb, -SCIPinfinity(origscip)) && SCIPisGE(origscip, lb, solval) )
       {
          newobj = 1.0;
       }
-      else if(enableposslack)
+      else if( enableposslack )
       {
          /* compute distance from solution to variable bound */
          distance = MIN(solval - lb, ub - solval);
@@ -333,12 +333,12 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
          assert(SCIPisPositive(origscip, distance));
 
          /* check if distance is lower than 1 and compute factor */
-         if(SCIPisLT(origscip, distance, 1.0))
+         if( SCIPisLT(origscip, distance, 1.0) )
          {
             newobj = exponentiate(MAX(0.0, 1.0 - distance), posslackexp);
 
             /* check if algebraic sign has to be changed */
-            if(SCIPisLT(origscip, distance, solval - lb))
+            if( SCIPisLT(origscip, distance, solval - lb) )
                newobj = -newobj;
          }
          else
@@ -354,7 +354,7 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
       newobj = SCIPgetObjsense(origscip) * newobj;
 
       /* if objective row is enabled consider also the original objective value */
-      if(enableobj)
+      if( enableobj )
          newobj = newobj + SCIPvarGetObj(origvar);
 
       SCIPchgVarObjProbing(origscip, origvar, objfactor*newobj);
@@ -413,59 +413,59 @@ SCIP_RETCODE chgProbingObjUsingRows(
    SCIP_CALL( SCIPallocBufferArray(origscip, &vars, SCIPgetNVars(origscip)) );
 
    /** loop over constraint and check activity */
-   for(i = 0; i < nrows; ++i)
+   for( i = 0; i < nrows; ++i )
    {
       row = rows[i];
       lhs = SCIProwGetLhs(row);
       rhs = SCIProwGetRhs(row);
 
       nvars = SCIProwGetNNonz(row);
-      if(nvars == 0 || (sepadata->objrow != NULL && strcmp(SCIProwGetName(row),SCIProwGetName(sepadata->objrow)) == 0 ))
+      if( nvars == 0 || (sepadata->objrow != NULL && strcmp(SCIProwGetName(row),SCIProwGetName(sepadata->objrow)) == 0 ) )
          continue;
 
       /* get values, variables and solution values */
       vals = SCIProwGetVals(row);
       cols = SCIProwGetCols(row);
-      for(j = 0; j < nvars; ++j)
+      for( j = 0; j < nvars; ++j )
       {
          vars[j] = SCIPcolGetVar(cols[j]);
       }
 
       activity = SCIPgetRowSolActivity(origscip, row, origsol);
 
-      if(SCIPisEQ(origscip, rhs, lhs))
+      if( SCIPisEQ(origscip, rhs, lhs) )
       {
          continue;
       }
-      if(SCIPisLT(origscip, rhs, SCIPinfinity(origscip)) && SCIPisLE(origscip, rhs, activity))
+      if( SCIPisLT(origscip, rhs, SCIPinfinity(origscip)) && SCIPisLE(origscip, rhs, activity) )
       {
          factor = -1.0;
       }
-      else if(SCIPisGT(origscip, lhs, -SCIPinfinity(origscip)) && SCIPisGE(origscip, lhs, activity))
+      else if( SCIPisGT(origscip, lhs, -SCIPinfinity(origscip)) && SCIPisGE(origscip, lhs, activity) )
       {
          factor = 1.0;
       }
-      else if(enableposslack)
+      else if( enableposslack )
       {
          assert(!(SCIPisInfinity(origscip, rhs) && SCIPisInfinity(origscip, lhs)));
          assert(!(SCIPisInfinity(origscip, activity) && SCIPisInfinity(origscip, -activity)));
 
          /* compute distance from solution to row */
-         if(SCIPisInfinity(origscip, rhs) && SCIPisGT(origscip, lhs, -SCIPinfinity(origscip)))
+         if( SCIPisInfinity(origscip, rhs) && SCIPisGT(origscip, lhs, -SCIPinfinity(origscip)) )
             distance = activity - lhs;
-         else if(SCIPisInfinity(origscip, lhs) && SCIPisLT(origscip, rhs, SCIPinfinity(origscip)))
+         else if( SCIPisInfinity(origscip, lhs) && SCIPisLT(origscip, rhs, SCIPinfinity(origscip)) )
             distance = rhs - activity;
          else
             distance = MIN(activity - lhs, rhs - activity);
 
          assert(SCIPisPositive(origscip, distance) || !SCIPisCutEfficacious(origscip, origsol, row));
          /* check if distance is lower than 1 and compute factor */
-         if(SCIPisLT(origscip, distance, 1.0))
+         if( SCIPisLT(origscip, distance, 1.0) )
          {
             factor = exponentiate(MAX(0.0, 1.0 - distance), posslackexp);
 
             /* check if algebraic sign has to be changed */
-            if(SCIPisLT(origscip, distance, activity - lhs))
+            if( SCIPisLT(origscip, distance, activity - lhs) )
                factor = -1.0*factor;
          }
          else
@@ -481,7 +481,7 @@ SCIP_RETCODE chgProbingObjUsingRows(
       norm = SCIProwGetNorm(row);
 
       /** loop over variables of the constraint and change objective */
-      for(j = 0; j < nvars; ++j)
+      for( j = 0; j < nvars; ++j )
       {
          obj = SCIPgetVarObjProbing(origscip, vars[j]);
          objadd = (factor * vals[j]) / norm;
@@ -528,7 +528,7 @@ SCIP_Real getL2DiffSols(
 
    diff = 0.0;
 
-   for(i = 0; i < nvars; ++i)
+   for( i = 0; i < nvars; ++i )
    {
       solval1 = SCIPgetSolVal(scip, sol1, vars[i]);
       solval2 = SCIPgetSolVal(scip, sol2, vars[i]);
@@ -582,7 +582,7 @@ SCIP_RETCODE getEqualityMatrixGsl(
    SCIPallocBufferArray(scip, &delvars, nlpcols);
 
    /* loop over lp cols and check if it is at one of its bounds */
-   for(i = 0; i < nlpcols; ++i)
+   for( i = 0; i < nlpcols; ++i )
    {
       SCIP_COL* lpcol;
       SCIP_VAR* lpvar;
@@ -591,8 +591,8 @@ SCIP_RETCODE getEqualityMatrixGsl(
 
       lpvar = SCIPcolGetVar(lpcol);
 
-      if(SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetUb(lpcol))
-         || SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetLb(lpcol)))
+      if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetUb(lpcol))
+         || SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetLb(lpcol)) )
       {
          int ind;
 
@@ -623,14 +623,14 @@ SCIP_RETCODE getEqualityMatrixGsl(
    *ncols = nvar2col;
 
    /* loop over lp rows and check if solution feasibility is equal to zero */
-   for(i = 0; i < nlprows; ++i)
+   for( i = 0; i < nlprows; ++i )
    {
       SCIP_ROW* lprow;
 
       lprow = lprows[i];
 
       /* if solution feasiblity is equal to zero, add row to matrix */
-      if(SCIPisEQ(scip, SCIPgetRowSolFeasibility(scip, lprow, sol), 0.0))
+      if( SCIPisEQ(scip, SCIPgetRowSolFeasibility(scip, lprow, sol), 0.0) )
       {
          SCIP_COL** cols;
          SCIP_Real* vals;
@@ -641,7 +641,7 @@ SCIP_RETCODE getEqualityMatrixGsl(
          nnonz = SCIProwGetNNonz(lprow);
 
          /* get nonzero coefficients of row */
-         for(j = 0; j < nnonz; ++j)
+         for( j = 0; j < nnonz; ++j )
          {
             int ind;
             int pos;
@@ -794,12 +794,12 @@ SCIP_RETCODE addPPObjConss(
    pricingvars = SCIPgetOrigVars(pricingscip);
    npricingvars = SCIPgetNOrigVars(pricingscip);
 
-   if(!GCGrelaxIsPricingprobRelevant(scip, ppnumber) || pricingscip == NULL)
+   if( !GCGisPricingprobRelevant(scip, ppnumber) || pricingscip == NULL )
       return SCIP_OKAY;
 
    objsense = SCIPgetObjsense(pricingscip);
 
-   if(objsense == SCIP_OBJSENSE_MINIMIZE)
+   if( objsense == SCIP_OBJSENSE_MINIMIZE )
    {
       lhs = dualsolconv;
       rhs = SCIPinfinity(scip);
@@ -811,7 +811,7 @@ SCIP_RETCODE addPPObjConss(
       lhs = -SCIPinfinity(scip);
    }
 
-   for(k = 0; k < GCGrelaxGetNIdenticalBlocks(scip, ppnumber); ++k)
+   for( k = 0; k < GCGgetNIdenticalBlocks(scip, ppnumber); ++k )
    {
       SCIP_ROW* origcut;
 
@@ -821,11 +821,11 @@ SCIP_RETCODE addPPObjConss(
 
       nvars = 0;
 
-      for(j = 0; j < npricingvars ; ++j)
+      for( j = 0; j < npricingvars ; ++j )
       {
-         assert( GCGvarIsPricing(pricingvars[j]) );
+         assert(GCGvarIsPricing(pricingvars[j]));
 
-         if(!SCIPisEQ(scip, SCIPvarGetObj(pricingvars[j]), 0.0))
+         if( !SCIPisEQ(scip, SCIPvarGetObj(pricingvars[j]), 0.0) )
          {
             var = GCGpricingVarGetOrigvars(pricingvars[j])[k];
             assert(var != NULL);
@@ -911,7 +911,7 @@ SCIP_DECL_SEPAFREE(sepaFreeBasis)
    nprimalsols = sepadata->nprimalsols;
    time = SCIPsepaGetTime(sepa);
 
-   if(ncalls > 0)
+   if( ncalls > 0 )
    {
       meancutsfound = (1.0*ncutsfound)/ncalls;
       meancutsapplied = (1.0*ncutsapplied)/ncalls;
@@ -923,7 +923,8 @@ SCIP_DECL_SEPAFREE(sepaFreeBasis)
       meancutsapplied = 0.0;
       meanlpcutsfound = 0.0;
    }
-   if(!sepadata->genobjconvex)
+
+   if( !sepadata->genobjconvex )
    {
       sepadata->shiftedconvexgeom = sepadata->objconvex;
    }
@@ -997,18 +998,18 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
    enableobj = sepadata->enableobj;
 
    /* if separator is disabled do nothing */
-   if(!enable)
+   if( !enable )
    {
       return SCIP_OKAY;
    }
 
    /* if objective row is enabled create row with objective coefficients */
-   if(enableobj)
+   if( enableobj )
    {
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "objrow");
       SCIP_CALL( SCIPcreateEmptyRowUnspec(origscip, &(sepadata->objrow), name, -SCIPinfinity(origscip), SCIPinfinity(origscip), TRUE, FALSE, TRUE) );
 
-      for(i = 0; i < norigvars; ++i)
+      for( i = 0; i < norigvars; ++i )
       {
          obj = SCIPvarGetObj(origvars[i]);
          SCIP_CALL( SCIPaddVarToRow(origscip, sepadata->objrow, origvars[i], obj) );
@@ -1042,13 +1043,13 @@ SCIP_DECL_SEPAEXIT(sepaExitBasis)
       SCIP_CALL( SCIPreleaseRow(origscip, &(sepadata->origcuts[i])) );
    }
 
-   for(i = 0; i < sepadata->nnewcuts; ++i)
+   for( i = 0; i < sepadata->nnewcuts; ++i )
    {
-      if(sepadata->newcuts[i] != NULL)
+      if( sepadata->newcuts[i] != NULL )
          SCIP_CALL( SCIPreleaseRow(origscip, &(sepadata->newcuts[i])) );
    }
 
-   if(enableobj)
+   if( enableobj )
       SCIP_CALL( SCIPreleaseRow(origscip, &(sepadata->objrow)) );
 
    return SCIP_OKAY;
@@ -1136,11 +1137,11 @@ SCIP_RETCODE initConvObj(
    objnormnull = 1.0;
    objnormcurrent = 1.0;
 
-   if(SCIPisEQ(origscip, convex, 0.0))
+   if( SCIPisEQ(origscip, convex, 0.0) )
    {
       SCIP_CALL( initProbingObjWithOrigObj(origscip, TRUE, 1.0) );
    }
-   else if(SCIPisLT(origscip, convex, 1.0))
+   else if( SCIPisLT(origscip, convex, 1.0) )
    {
       SCIP_CALL( initProbingObjWithOrigObj(origscip, TRUE, 1.0) );
       objnormnull = SCIPgetObjNorm(origscip);
@@ -1150,9 +1151,9 @@ SCIP_RETCODE initConvObj(
 
       objnormcurrent = SCIPgetObjNorm(origscip)/(convex);
 
-      if(SCIPisEQ(origscip, objnormcurrent, 0.0))
+      if( SCIPisEQ(origscip, objnormcurrent, 0.0) )
          SCIP_CALL( initProbingObjWithOrigObj(origscip, TRUE, 1.0) );
-      else if(SCIPisGT(origscip, objnormnull, 0.0) )
+      else if( SCIPisGT(origscip, objnormnull, 0.0) )
          SCIP_CALL( chgProbingObjAddingOrigObj(origscip, (1.0 - convex) * objnormcurrent, objnormnull) );
    }
    else if(SCIPisEQ(origscip, convex, 1.0))
@@ -1236,7 +1237,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    enableppobjconss = sepadata->enableppobjconss;
 
    /* if separator is disabled do nothing */
-   if(!enable)
+   if( !enable )
    {
       SCIPdebugMessage("separator is not enabled\n");
       *result = SCIP_DIDNOTRUN;
@@ -1407,7 +1408,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       /* solve probing lp */
       SCIP_CALL( SCIPsolveProbingLP(origscip, -1, &lperror, &cutoff) );
 
-      assert( !lperror );
+      assert(!lperror);
 
       /* update mean differences */
       if( iteration == 0 )
@@ -1651,7 +1652,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    lprows = SCIPgetLPRows(origscip);
    nlprows = SCIPgetNLPRows(origscip);
 
-   assert( nlprowsstart <= nlprows );
+   assert(nlprowsstart <= nlprows);
 
    SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + nlprows - nlprowsstart) );
 
@@ -1804,13 +1805,13 @@ SCIP_ROW** GCGsepaBasisGetOrigcuts(
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert( scip != NULL );
+   assert(scip != NULL);
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
-   assert( sepa != NULL );
+   assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
-   assert( sepadata != NULL );
+   assert(sepadata != NULL);
 
    return sepadata->origcuts;
 }
@@ -1823,13 +1824,13 @@ int GCGsepaBasisGetNOrigcuts(
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert( scip != NULL );
+   assert(scip != NULL);
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
-   assert( sepadata != NULL );
+   assert(sepadata != NULL);
 
    return sepadata->norigcuts;
 }
@@ -1842,13 +1843,13 @@ SCIP_ROW** GCGsepaBasisGetMastercuts(
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert( scip != NULL );
+   assert(scip != NULL);
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
-   assert( sepa != NULL );
+   assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
-   assert( sepadata != NULL );
+   assert(sepadata != NULL);
 
    return sepadata->mastercuts;
 }
@@ -1861,13 +1862,13 @@ int GCGsepaBasisGetNMastercuts(
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert( scip != NULL );
+   assert(scip != NULL);
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
-   assert( sepa != NULL );
+   assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
-   assert( sepadata != NULL );
+   assert(sepadata != NULL);
 
    return sepadata->nmastercuts;
 }
@@ -1896,7 +1897,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
 
    char name[SCIP_MAXSTRLEN];
 
-   assert( GCGisMaster(scip) );
+   assert(GCGisMaster(scip));
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
 
@@ -1915,7 +1916,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
       return SCIP_OKAY;
    }
 
-   assert( !SCIProwIsLocal(cut) );
+   assert(!SCIProwIsLocal(cut));
 
    nvars = SCIProwGetNNonz(cut);
    cols = SCIProwGetCols(cut);
@@ -1956,10 +1957,10 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
             nvars = 0;
             break;
          }
-         assert( GCGvarIsPricing(pricingvars[j]) );
+         assert(GCGvarIsPricing(pricingvars[j]));
 
          var = GCGpricingVarGetOrigvars(pricingvars[j])[k];
-         assert( var != NULL );
+         assert(var != NULL);
 
          SCIP_CALL( SCIPaddVarToRow(origscip, origcut, var, vals[j]) );
       }
@@ -1989,7 +1990,7 @@ SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
 {
    SCIP_SEPA* sepa;
 
-   assert( GCGisMaster(scip) );
+   assert(GCGisMaster(scip));
 
    sepa = SCIPfindSepa(scip, SEPA_NAME);
 
