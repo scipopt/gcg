@@ -2065,7 +2065,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             #pragma omp atomic
             beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
 
-            bestobjvals[prob] = pricinglowerbound;
+            #pragma omp atomic
+            bestobjvals[prob] = GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
 
             if( !solisray[prob][0] )
             {
