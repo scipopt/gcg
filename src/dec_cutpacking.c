@@ -124,7 +124,6 @@ struct DEC_DetectorData
    SCIP_HASHMAP*         constoblock;
 
    int                   nblocks;
-   SCIP_HASHMAP*         occupied;
    int                   position;
    int                   startblock;
    int*                  partition;
@@ -391,7 +390,6 @@ SCIP_RETCODE buildGraphStructure(
    }
 
    detectordata->ngraphs = 1;
-   SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) (size_t) 1, NULL) );
 
    return SCIP_OKAY;
 }
@@ -614,6 +612,8 @@ SCIP_RETCODE freeGraph(
    SCIPfreeMemoryArray(scip, &detectordata->graphs[pos]->adjlists);
    SCIPhashmapFree(&detectordata->graphs[pos]->constopos);
    SCIPfreeMemoryArray(scip, &detectordata->graphs[pos]->conss);
+   SCIPfreeMemory(scip, &detectordata->graphs[pos]);
+   detectordata->graphs[pos] = NULL;
 
    return SCIP_OKAY;
 }
@@ -807,9 +807,9 @@ SCIP_RETCODE buildNewGraphs(
    /* obtain indices for storing the two new graphs */
    pos1 = -1;
    pos2 = -1;
-   for( i = 0; i < detectordata->nrelconss + 1; ++i )
+   for( i = 0; i < detectordata->maxgraphs; ++i )
    {
-      if( (!SCIPhashmapExists(detectordata->occupied, (void*) ((size_t)i + 1))) )
+      if( detectordata->graphs[i] == NULL )
       {
          if( pos1 == -1 )
             pos1 = i;
@@ -820,12 +820,13 @@ SCIP_RETCODE buildNewGraphs(
          }
       }
    }
-   assert(i < detectordata->nrelconss+1);
+   assert(i < detectordata->maxgraphs);
    assert((pos1 != -1) && (pos2 != -1));
 
+   SCIP_CALL( SCIPallocMemory(scip, &detectordata->graphs[pos1]) );
+   SCIP_CALL( SCIPallocMemory(scip, &detectordata->graphs[pos2]) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs[pos1]->conss, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs[pos2]->conss, graph->nconss) );
-   SCIP_CALL( SCIPhashmapRemove(detectordata->occupied, (void*) ((size_t)detectordata->position + 1)) );
 
    /* assign the vertices (constraints) to the two new graphs according to the partition */
    for( i = 0; i < graph->nconss; ++i )
@@ -874,6 +875,7 @@ SCIP_RETCODE buildNewGraphs(
             && SCIPhashmapExists(detectordata->graphs[pos2]->constopos, graph->cons2)) )
       {
          SCIP_CALL( copyConss(scip, detectordata, detectordata->position, graph->nconss) );
+         SCIP_CALL( freeGraph(scip, detectordata, detectordata->position, graph->nconss) );
          detectordata->ngraphs--;
          SCIP_CALL( freeGraph(scip, detectordata, pos1, nconss1) );
          SCIP_CALL( freeGraph(scip, detectordata, pos2, nconss2) );
@@ -962,24 +964,21 @@ SCIP_RETCODE buildNewGraphs(
    {
       SCIP_CALL( copyConss(scip, detectordata, pos1, nconss1) );
       SCIP_CALL( setStartBlock(scip, detectordata,detectordata->graphs[pos1]->cons1) );
-      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) ((size_t)pos2 + 1), NULL) );
       SCIP_CALL( freeGraph(scip, detectordata, pos1, nconss1) );
    }
    else if( (nconss2 < 2) || ((stop1 == 0) && stop2) )
    {
       SCIP_CALL( copyConss(scip, detectordata, pos2, nconss2) );
       SCIP_CALL( setStartBlock(scip, detectordata,detectordata->graphs[pos2]->cons1) );
-      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) ((size_t)pos1 + 1), NULL) );
       SCIP_CALL( freeGraph(scip, detectordata, pos2, nconss2) );
    }
    else
    {
-      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) ((size_t)pos1 + 1), NULL) );
-      SCIP_CALL( SCIPhashmapInsert(detectordata->occupied, (void*) ((size_t)pos2 + 1), NULL) );
       detectordata->ngraphs++;
    }
 
    SCIP_CALL( freeGraph(scip, detectordata, detectordata->position, graph->nconss) );
+
    SCIPhashmapFree(&consslink1);
    SCIPhashmapFree(&consslink2);
 
@@ -1899,10 +1898,9 @@ DEC_DECL_INITDETECTOR(initCutpacking)
 
    /* get number of relevant conss */
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs, (size_t)nconss+1) );
-   for( i = 0; i < nconss + 1; ++i )
-   {
-      SCIP_CALL( SCIPallocMemory(scip, &detectordata->graphs[i]) );
-   }
+   SCIP_CALL( SCIPallocMemory(scip, &detectordata->graphs[0]) );
+   for( i = 1; i < nconss + 1; ++i )
+      detectordata->graphs[i] = NULL;
    detectordata->maxgraphs = nconss + 1;
    SCIP_CALL( SCIPallocMemoryArray(scip, &newconss, nconss) ); /*lint !e522*/
    k = 0;
@@ -1944,7 +1942,6 @@ DEC_DECL_INITDETECTOR(initCutpacking)
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->partition, k) );
    SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip),k) );
    SCIP_CALL( SCIPhashmapCreate(&detectordata->representatives, SCIPblkmem(scip),k) );
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->occupied, SCIPblkmem(scip),k) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->subscipconss, k) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->mergedconss, k) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->nsubscipconss, k) );
@@ -2028,9 +2025,9 @@ DEC_DECL_EXITDETECTOR(exitCutpacking)
    SCIPfreeMemoryArray(scip, &detectordata->nsubscipconss);
    SCIPfreeMemoryArray(scip, &detectordata->subscipconss);
    SCIPfreeMemoryArray(scip, &detectordata->partition);
-   for( i = 0; i < detectordata->maxgraphs; ++i)
+   for( i = 0; i < detectordata->maxgraphs; ++i)   /* @todo: This should not be necessary anymore */
    {
-      SCIPfreeMemory(scip, &detectordata->graphs[i]);
+      SCIPfreeMemoryNull(scip, &detectordata->graphs[i]);
    }
    SCIPfreeMemoryArray(scip, &detectordata->graphs);
    SCIPfreeMemoryArray(scip, &detectordata->varinconss);
@@ -2038,7 +2035,6 @@ DEC_DECL_EXITDETECTOR(exitCutpacking)
    SCIPfreeMemoryArray(scip, &detectordata->relvars);
    SCIPhashmapFree(&detectordata->vartopos);
    SCIPhashmapFree(&detectordata->representatives);
-   SCIPhashmapFree(&detectordata->occupied);
 
    for( i = 0; i < detectordata->nrelconss; i++ )
    {
@@ -2075,9 +2071,9 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    /* get the partitions for the new variables from metis */
    while( detectordata->ngraphs > 0 )
    {
-      for( i = 0; i < detectordata->nrelconss + 1; i++ )
+      for( i = 0; i < detectordata->maxgraphs; i++ )
       {
-         if( SCIPhashmapExists(detectordata->occupied, (void*) ((size_t)i + 1)) )
+         if( detectordata->graphs[i] != NULL )
          {
             detectordata->position = i;
 
