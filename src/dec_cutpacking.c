@@ -129,7 +129,7 @@ struct DEC_DetectorData
    int*                  partition;
 
    SCIP_HASHMAP**        mergedconss;
-   SCIP_HASHMAP*         representatives;
+   SCIP_CONS**           representatives;
    int                   nrepresentatives;
 
    /* general stuff */
@@ -545,10 +545,10 @@ SCIP_RETCODE buildNewAdjacencyList(
       nconss = k;
 
       /* insert representative */
-      SCIP_CALL( SCIPhashmapInsert(detectordata->representatives, (void*) ((size_t) detectordata->nrepresentatives + 1), representative ) );
-      SCIP_CALL( copyhashmap(consslink,detectordata->mergedconss[detectordata->nrepresentatives]) );
-      detectordata->nrepresentatives++;
-
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &detectordata->representatives, detectordata->nrepresentatives+5) );
+      detectordata->representatives[detectordata->nrepresentatives] = representative;
+      SCIP_CALL( copyhashmap(consslink, detectordata->mergedconss[detectordata->nrepresentatives]) );
+      ++detectordata->nrepresentatives;
    }
    else
    {
@@ -995,7 +995,7 @@ SCIP_RETCODE getMergedConss(
    int i;
    int j;
    SCIP_HASHMAP** mergedconss;
-   SCIP_HASHMAP* representatives;
+   SCIP_CONS** representatives;
    SCIP_CONS*** subscipconss;
    SCIP_HASHMAP* constoblock;
 
@@ -1013,13 +1013,13 @@ SCIP_RETCODE getMergedConss(
       }
    }
 
-   for( i = detectordata->nrepresentatives; i > 0; --i )
+   for( i = detectordata->nrepresentatives - 1; i >= 0; --i )
    {
       SCIP_CONS* cons;
       int block;
       SCIP_HASHMAPLIST* list = NULL;
 
-      cons = (SCIP_CONS*) SCIPhashmapGetImage(representatives, (void*) (size_t) i);
+      cons = representatives[i];
       block = (int) (size_t) SCIPhashmapGetImage(constoblock, cons); /*lint !e507*/
 
       detectordata->iter = 0;
@@ -1028,7 +1028,7 @@ SCIP_RETCODE getMergedConss(
       {
          SCIP_CONS* cons2;
 
-         list = hashmapIteration(scip, detectordata, mergedconss[i - 1], list);
+         list = hashmapIteration(scip, detectordata, mergedconss[i], list);
          if( list == NULL )
             break;
 
@@ -1940,8 +1940,8 @@ DEC_DECL_INITDETECTOR(initCutpacking)
 
    /* alloc */
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->partition, k) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->representatives, k) );
    SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip),k) );
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->representatives, SCIPblkmem(scip),k) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->subscipconss, k) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->mergedconss, k) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->nsubscipconss, k) );
@@ -2024,6 +2024,7 @@ DEC_DECL_EXITDETECTOR(exitCutpacking)
 
    SCIPfreeMemoryArray(scip, &detectordata->nsubscipconss);
    SCIPfreeMemoryArray(scip, &detectordata->subscipconss);
+   SCIPfreeMemoryArray(scip, &detectordata->representatives);
    SCIPfreeMemoryArray(scip, &detectordata->partition);
    for( i = 0; i < detectordata->maxgraphs; ++i)   /* @todo: This should not be necessary anymore */
    {
@@ -2034,7 +2035,6 @@ DEC_DECL_EXITDETECTOR(exitCutpacking)
    SCIPfreeMemoryArray(scip, &detectordata->nvarinconss);
    SCIPfreeMemoryArray(scip, &detectordata->relvars);
    SCIPhashmapFree(&detectordata->vartopos);
-   SCIPhashmapFree(&detectordata->representatives);
 
    for( i = 0; i < detectordata->nrelconss; i++ )
    {
