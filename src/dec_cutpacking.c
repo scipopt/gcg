@@ -313,15 +313,15 @@ SCIP_RETCODE copyAdjlist(
    {
       if( consslink == NULL || !SCIPhashmapExists(consslink, source->conss[i]) )
       {
-         target->conss[i] = source->conss[i];
-         target->weights[i] = source->weights[i];
+         target->conss[target->nconss] = source->conss[i];
+         target->weights[target->nconss] = source->weights[i];
          ++target->nconss;
       }
       else if( SCIPhashmapExists(consslink, source->conss[i]) )
          cost += source->weights[i];
    }
 
-   if( linkadjlist != NULL )
+   if( linkadjlist != NULL && cost > 0 )
    {
       adjlistIncreaseEntry(scip, linkadjlist, sourcecons, cost);
    }
@@ -1691,7 +1691,7 @@ SCIP_RETCODE callMetis(
       return SCIP_FILECREATEERROR;
    }
 
-   SCIPdebugMessage("Temporary filename: %s\n", tempfile);
+   SCIPdebugMessage("  -> temporary filename: %s\n", tempfile);
 
    file = fdopen(temp_filedes, "w");
    if( file == NULL )
@@ -1739,7 +1739,7 @@ SCIP_RETCODE callMetis(
 
    /* SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) ); */
    /* SCIP_CALL( SCIPstartClock(scip, detectordata->metisclock) ); */
-   SCIPdebugMessage("Calling metis with: %s\n", metiscall);
+   SCIPdebugMessage("  -> calling metis with: %s\n", metiscall);
 
    status = system(metiscall);
 
@@ -2068,7 +2068,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
 
    /* build the hypergraph structure from the original problem */
    SCIP_CALL( buildGraphStructure(scip, detectordata) );
-   SCIPdebugMessage("  -> building graph structure successful.\n");
+   SCIPdebugMessage("Building graph structure successful.\n");
 
    SCIP_CALL( DECdecompCreate(scip, &(*decdecomps)[0]) );
 
@@ -2083,15 +2083,18 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
 
             if( detectordata->algorithm )
             {
+               SCIPdebugMessage("Calling metis...\n");
                SCIP_CALL( callMetis(scip, detectordata,result) );
                SCIPdebugMessage("  -> metis successful.\n");
             }
             else
             {
+               SCIPdebugMessage("Applying Stoer-Wagner...\n");
                SCIP_CALL( applyStoerWagner(scip, detectordata) );
                SCIPdebugMessage("  -> Stoer-Wagner successful.\n");
             }
 
+            SCIPdebugMessage("Creating two new graphs according to partition...\n");
             SCIP_CALL( buildNewGraphs(scip, detectordata) );
             SCIPdebugMessage("  -> buildNewGraphs successful.\n");
          }
@@ -2099,7 +2102,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    }
    /* add merged conss */
    SCIP_CALL( getMergedConss(scip, detectordata) );
-   SCIPdebugMessage("  -> getMergedConss successful.\n");
+   SCIPdebugMessage("getMergedConss successful.\n");
 
    /* get subscipvars, copy data to decdecomp */
    SCIP_CALL( getConsIndex(scip, detectordata, (*decdecomps)[0]) );
