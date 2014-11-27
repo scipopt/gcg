@@ -2143,28 +2143,28 @@ SCIP_RETCODE SCIPincludeDetectionCutpacking(
       detectordata, detectAndBuildCutpacking, initCutpacking, exitCutpacking) );
 
    /* add cutpacking detector parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "staircase/algorithm",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/algorithm",
       "should the stoer-wagner algorithm or metis be used for finding a minimal cut",
       &detectordata->algorithm, FALSE, DEFAULT_ALGORITHM, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "staircase/fixedblocks",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/fixedblocks",
       "Should the blocks consist of a certain number of constraints",
       &detectordata->fixedblocks, FALSE, DEFAULT_FIXEDBLOCKS, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "staircase/blocksize",
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/cutpacking/blocksize",
       "number of constraints per block",
       &detectordata->blocksize, FALSE, DEFAULT_BLOCKSIZE, 1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "staircase/tidy",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/tidy",
       "Whether to clean up temporary files",
       &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "staircase/randomseed",
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/cutpacking/randomseed",
       "random seed for hmetis",
       &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "staircase/ubfactor",
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/cutpacking/ubfactor",
       "Unbalance factor for metis",
       &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "staircase/metisverbose",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/metisverbose",
       "Should the metis output be displayed",
       &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "staircase/metisuseptyperb",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/metisuseptyperb",
       "Should the rb or kway method be used for partitioning by metis",
       &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
 #endif
