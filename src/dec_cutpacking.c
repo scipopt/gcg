@@ -1485,10 +1485,30 @@ SCIP_RETCODE applyStoerWagner(
 
             if( SCIPhashmapExists(tightness, adjlists[pos]->conss[j]) )
             {
-               SCIP_CALL( adjlistIncreaseEntry(scip, adjlists[pos], adjlists[pos]->conss[j],
-                  (int) (size_t) SCIPhashmapGetImage(tightness, adjlists[pos]->conss[j])) );
+               int newtightness = ((int) (size_t) SCIPhashmapGetImage(tightness, adjlists[pos]->conss[j])) + adjlists[pos]->weights[j]; /*lint !e507*/
+               SCIP_CALL( SCIPhashmapSetImage(tightness, adjlists[pos]->conss[j], (void*) (size_t) newtightness ) ); /*lint !e507*/
             }
          }
+         detectordata->iter = 0;
+         list = NULL;
+         do
+         {
+            int idx;
+            int lastweight;
+
+            list = hashmapIteration(scip, detectordata, tightness, list);
+            if( list == NULL )
+               break;
+
+            idx = (int) (size_t) SCIPhashmapGetImage(constopos, SCIPhashmapListGetOrigin(list)); /*lint !e507*/
+            lastweight = adjlistGetEntry(adjlists[idx], last);
+            if( lastweight > 0 )
+            {
+               int newtightness = ((int) (size_t) SCIPhashmapGetImage(tightness, SCIPhashmapListGetOrigin(list))) + lastweight; /*lint !e507*/
+               SCIP_CALL( SCIPhashmapSetImage(tightness, SCIPhashmapListGetOrigin(list), (void*) (size_t) newtightness ) ); /*lint !e507*/
+            }
+         }
+         while( list != NULL );
 
          /* choose the most tight */
          tight = 0;
@@ -1526,6 +1546,20 @@ SCIP_RETCODE applyStoerWagner(
          if( SCIPhashmapExists(constopos, adjlists[pos]->conss[j]) )
             value_act_cut += adjlists[pos]->weights[j];
       }
+      detectordata->iter = 0;
+      list = NULL;
+      do
+      {
+         int idx;
+
+         list = hashmapIteration(scip, detectordata, constopos, list);
+         if( list == NULL )
+            break;
+
+         idx = (int) (size_t) SCIPhashmapGetImage(constopos, SCIPhashmapListGetOrigin(list)); /*lint !e507*/
+         value_act_cut += adjlistGetEntry(adjlists[idx], last);
+      }
+      while( list != NULL );
 
       if( value_act_cut < value_cut )
       {
@@ -1577,20 +1611,46 @@ SCIP_RETCODE applyStoerWagner(
 
          if( adjlists[lastpos]->conss[j] != next_to_last )
          {
-            if( nextpos < idx )
-            {
-               SCIP_CALL( adjlistIncreaseEntry(scip, adjlists[nextpos], adjlists[lastpos]->conss[j], adjlists[lastpos]->weights[j]) );
-            }
-            else
+            if( adjlistGetEntry(adjlists[idx], next_to_last) > 0 )
             {
                SCIP_CALL( adjlistIncreaseEntry(scip, adjlists[idx], next_to_last, adjlists[lastpos]->weights[j]) );
             }
+            else
+            {
+               SCIP_CALL( adjlistIncreaseEntry(scip, adjlists[nextpos], adjlists[lastpos]->conss[j], adjlists[lastpos]->weights[j]) );
+            }
          }
       }
+      detectordata->iter = 0;
+      list = NULL;
+      do
+      {
+         int idx;
+         int lastweight;
+
+         list = hashmapIteration(scip, detectordata, constopos, list);
+         if( list == NULL )
+            break;
+
+         idx = (int) (size_t) SCIPhashmapGetImage(constopos, SCIPhashmapListGetOrigin(list)); /*lint !e507*/
+         lastweight = adjlistGetEntry(adjlists[idx], last);
+         if( lastweight > 0 && SCIPhashmapListGetOrigin(list) != next_to_last )
+         {
+            if( adjlistGetEntry(adjlists[idx], next_to_last) > 0 )
+            {
+               SCIP_CALL( adjlistIncreaseEntry(scip, adjlists[idx], next_to_last, lastweight) );
+            }
+            else
+            {
+               SCIP_CALL( adjlistIncreaseEntry(scip, adjlists[nextpos], SCIPhashmapListGetOrigin(list), lastweight) );
+            }
+         }
+      }
+      while( list != NULL );
 
       SCIP_CALL( SCIPhashmapRemove(constopos, last) );
 
-      /* delete last in adja */
+      /* delete 'last' in adjacency list */
       for( i = 0; i < graph->nconss; ++i )
       {
          if( SCIPhashmapExists(constopos, graph->conss[i]) )
@@ -1690,7 +1750,7 @@ SCIP_RETCODE callMetis(
       return SCIP_FILECREATEERROR;
    }
 
-   SCIPdebugMessage("  -> temporary filename: %s\n", tempfile);
+   SCIPdebugMessage("temporary filename: %s\n", tempfile);
 
    file = fdopen(temp_filedes, "w");
    if( file == NULL )
@@ -1738,7 +1798,7 @@ SCIP_RETCODE callMetis(
 
    /* SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) ); */
    /* SCIP_CALL( SCIPstartClock(scip, detectordata->metisclock) ); */
-   SCIPdebugMessage("  -> calling metis with: %s\n", metiscall);
+   SCIPdebugMessage("Calling metis with: %s\n", metiscall);
 
    status = system(metiscall);
 
@@ -2079,13 +2139,11 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
 
             if( detectordata->algorithm )
             {
-               SCIPdebugMessage("Calling metis...\n");
                SCIP_CALL( callMetis(scip, detectordata,result) );
                SCIPdebugMessage("  -> metis successful.\n");
             }
             else
             {
-               SCIPdebugMessage("Applying Stoer-Wagner...\n");
                SCIP_CALL( applyStoerWagner(scip, detectordata) );
                SCIPdebugMessage("  -> Stoer-Wagner successful.\n");
             }
