@@ -153,7 +153,8 @@ SCIP_RETCODE GCGpricerExistRays(
 extern
 SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_SOL*             origsol             /**< the solution that should be transferred */
+   SCIP_SOL*             origsol,            /**< the solution that should be transferred */
+   SCIP_Bool*            stored              /**< pointer to store if transferred solution is feasible (or NULL) */
    );
 
 /** create initial master variables */

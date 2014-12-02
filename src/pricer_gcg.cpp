@@ -2728,7 +2728,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       for( i = 0; i < norigsols; ++i )
       {
          assert(origsols[i] != NULL);
-         SCIP_CALL( GCGmasterTransOrigSolToMasterVars(scip, origsols[i]) );
+         SCIP_CALL( GCGmasterTransOrigSolToMasterVars(scip, origsols[i], NULL) );
       }
       /* return if we transferred solutions as the master should be feasible */
       if( norigsols > 0 )
@@ -3231,7 +3231,8 @@ SCIP_RETCODE GCGpricerExistRays(
 extern "C"
 SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_SOL*             origsol             /**< the solution that should be transferred */
+   SCIP_SOL*             origsol,            /**< the solution that should be transferred */
+   SCIP_Bool*            stored              /**< pointer to store if transferred solution is feasible (or NULL) */
    )
 {
    ObjPricerGcg* pricer;
@@ -3364,8 +3365,11 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP_CALL( SCIPtrySolFree(scip, &mastersol, FALSE, TRUE, TRUE, TRUE, &added) );
 #endif
 
-   /* free memory for storing variables and solution values from the solution */
+   /* set external pointer if it is not NULL */
+   if( stored != NULL )
+      *stored = added;
 
+   /* free memory for storing variables and solution values from the solution */
    for( i = pricerdata->npricingprobs - 1; i>= 0; i-- )
    {
       SCIPfreeBufferArray(scip, &pricingvals[i]);
