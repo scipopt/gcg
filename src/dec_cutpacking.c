@@ -487,8 +487,8 @@ static
 SCIP_RETCODE buildNewAdjacencyList(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
-   GRAPH*                subgraph,           /**< subgraph whose adjacency list is to be built */
    GRAPH*                graph,              /**< current graph */
+   GRAPH*                subgraph,           /**< subgraph whose adjacency list is to be built */
    int*                  partition,          /**< partition of the graph */
    int                   partidx,            /**< side of the partition the subgraph belongs to (0 or 1) */
    SCIP_Bool*            consslink,          /**< array of linking constraints */
@@ -497,33 +497,38 @@ SCIP_RETCODE buildNewAdjacencyList(
 {
    int i;
    int j;
-   int k;
-   int l;
-   SCIP_HASHMAPLIST* list;
    SCIP_CONS* representative;                /* constraint representing the merged linking constraints */
-   ADJLIST* newadjlist;                      /* adjacency list for the merged linking constraints */
+
+   assert(consslink != NULL);
 
    representative = NULL;
-   newadjlist = subgraph->adjlists[0];
 
+   /* If there are linking constraints, they need to be merged into a single one */
    if( nconsslink > 0 )
    {
-      k = 1;
+      int k;
+      int l;
 
-      for( i = 0; i < subgraph->nconss; ++i )
+      k = 1;
+      l = 0;
+      subgraph->nedges = 0;
+
+      for( i = 0; i < graph->nconss; ++i )
       {
-         int idx;
          ADJLIST* adjlist;
 
-         assert(consslink != NULL);
+         if( partition[i] != partidx )
+            continue;
 
-         idx = (int) (size_t) SCIPhashmapGetImage(graph->constopos, subgraph->conss[i]); /*lint !e507*/
-         adjlist = graph->adjlists[idx];
+         adjlist = graph->adjlists[i];
 
          /* if the constraint is not a linking constraint, just copy its adjacency list */
-         if( !consslink[idx] )
+         if( !consslink[i] )
          {
-            SCIP_CALL( copyAdjlist(scip, adjlist, subgraph->adjlists[k], newadjlist, consslink, graph->constopos, subgraph->conss[i]) );
+            subgraph->conss[k] = graph->conss[i];
+            SCIP_CALL( SCIPhashmapSetImage(subgraph->constopos, graph->conss[i], (void*) (size_t) k) );
+            SCIP_CALL( copyAdjlist(scip, adjlist, subgraph->adjlists[k], subgraph->adjlists[0], consslink, graph->constopos, graph->conss[i]) );
+            subgraph->nedges += subgraph->adjlists[k]->nconss;
             ++k;
          }
          /* otherwise, the constraint will be merged with the other linking constraints;
@@ -531,66 +536,33 @@ SCIP_RETCODE buildNewAdjacencyList(
           */
          else
          {
-            representative = subgraph->conss[i];
+            representative = graph->conss[i];
+            detectordata->mergedconss[detectordata->nrepresentatives][l] = graph->conss[i];
+            ++l;
+            SCIP_CALL( SCIPhashmapRemove(subgraph->constopos, graph->conss[i]) );
 
             for( j = 0; j < adjlist->nconss; ++j )
             {
-               int idx2;
-               int subidx;
+               int idx = (int) (size_t) SCIPhashmapGetImage(graph->constopos, adjlist->conss[j]); /*lint !e507*/
 
-               idx2 = (int) (size_t) SCIPhashmapGetImage(graph->constopos, adjlist->conss[j]); /*lint !e507*/
-               subidx = SCIPhashmapExists(subgraph->constopos, adjlist->conss[j]) ? (int) (size_t) SCIPhashmapGetImage(subgraph->constopos, adjlist->conss[j]) : -1; /*lint !e507*/
-
-               if( subidx != -1 && !consslink[idx2] )
+               if( partition[idx] == partidx && !consslink[idx] )
                {
-                  SCIP_CALL( adjlistIncreaseEntry(scip, newadjlist, adjlist->conss[j], adjlist->weights[j]) );
+                  SCIP_CALL( adjlistIncreaseEntry(scip, subgraph->adjlists[0], adjlist->conss[j], adjlist->weights[j]) );
                }
             }
          }
       }
-
-      /* insert representative, adjust mapping from constraint to position and compute the number of edges */
-      k = 0;
-      l = 0;
-      subgraph->nedges = 0;
-      for( i = 0; i < subgraph->nconss; ++i )
-      {
-         int idx = (int) (size_t) SCIPhashmapGetImage(graph->constopos, subgraph->conss[i]); /*lint !e507*/
-
-         if( !consslink[idx] )
-         {
-            ++k;
-            SCIP_CALL( SCIPhashmapSetImage(subgraph->constopos, subgraph->conss[i], (void*) (size_t) k) );
-         }
-         else
-         {
-            detectordata->mergedconss[detectordata->nrepresentatives][l] = subgraph->conss[i];
-            ++l;
-            SCIP_CALL( SCIPhashmapRemove(subgraph->constopos, subgraph->conss[i]) );
-         }
-         subgraph->nedges += subgraph->adjlists[i]->nconss;
-      }
-      assert(k + l == subgraph->nconss);
+      assert(k - 1 + l == subgraph->nconss);
       assert(l == nconsslink);
-      subgraph->nconss = k + 1;
-
+      subgraph->conss[0] = representative;
       SCIP_CALL( SCIPhashmapInsert(subgraph->constopos, representative, (void*) (size_t) 0) );
+      subgraph->nedges += subgraph->adjlists[0]->nconss;
+      subgraph->nconss = k;
+
       SCIP_CALL( SCIPreallocMemoryArray(scip, &detectordata->representatives, detectordata->nrepresentatives+5) );
       detectordata->nmergedconss[detectordata->nrepresentatives] = nconsslink;
       detectordata->representatives[detectordata->nrepresentatives] = representative;
       ++detectordata->nrepresentatives;
-
-      /* re-arrange constraints in the constraints array */
-      detectordata->iter = 0;
-      list = NULL;
-      do
-      {
-         list = hashmapIteration(scip, detectordata, subgraph->constopos, list);
-         if( list == NULL )
-            break;
-         subgraph->conss[(int) (size_t) SCIPhashmapListGetImage(list)] = (SCIP_CONS*) SCIPhashmapListGetOrigin(list); /*lint !e507*/
-      }
-      while( list != NULL );
 
       /* free unnecessary adjacency lists */
       for( i = subgraph->nconss; i < subgraph->nconss + nconsslink - 1; ++i )
@@ -598,21 +570,27 @@ SCIP_RETCODE buildNewAdjacencyList(
          freeAdjlist(scip, &subgraph->adjlists[i]);
       }
    }
+   /* If there are no linking constraints, just copy the vertices (constraints) and edges */
    else
    {
+      int k = 0;
+
       subgraph->nedges = 0;
-      for( i = 0; i < subgraph->nconss; ++i )
+      for( i = 0; i < graph->nconss; ++i )
       {
-         int idx;
          ADJLIST* adjlist;
 
-         idx = (int) (size_t) SCIPhashmapGetImage(graph->constopos, subgraph->conss[i]); /*lint !e507*/
-         adjlist = graph->adjlists[idx];
+         if( partition[i] != partidx )
+            continue;
 
-         SCIP_CALL( copyAdjlist(scip, adjlist, subgraph->adjlists[i], NULL, NULL, NULL, NULL) );
-         assert((int) (size_t) SCIPhashmapGetImage(subgraph->constopos, subgraph->conss[i]) == i); /*lint !e507*/
+         adjlist = graph->adjlists[i];
 
-         subgraph->nedges += subgraph->adjlists[i]->nconss;
+         subgraph->conss[k] = graph->conss[i];
+         SCIP_CALL( copyAdjlist(scip, adjlist, subgraph->adjlists[k], NULL, NULL, NULL, NULL) );
+         assert((int) (size_t) SCIPhashmapGetImage(subgraph->constopos, subgraph->conss[k]) == k); /*lint !e507*/
+         SCIP_CALL( SCIPhashmapSetImage(subgraph->constopos, graph->conss[i], (void*) (size_t) k) );
+
+         subgraph->nedges += subgraph->adjlists[k]->nconss;
       }
    }
 
@@ -960,7 +938,7 @@ SCIP_RETCODE buildNewGraphs(
 
    if( (nconss1 > 1) && !stop1 )
    {
-      SCIP_CALL( buildNewAdjacencyList(scip, detectordata, detectordata->graphs[pos1], graph, partition, 0, consslink, nconsslink1) );
+      SCIP_CALL( buildNewAdjacencyList(scip, detectordata, graph, detectordata->graphs[pos1], partition, 0, consslink, nconsslink1) );
       SCIP_CALL( setLinkingCons(scip, detectordata, cas, 1, pos1, graph->cons1, graph->cons2) );
    }
    else if( stop1 )
@@ -970,7 +948,7 @@ SCIP_RETCODE buildNewGraphs(
 
    if( (nconss2 > 1) && !stop2 )
    {
-      SCIP_CALL( buildNewAdjacencyList(scip, detectordata, detectordata->graphs[pos2], graph, partition, 1, consslink, nconsslink2) );
+      SCIP_CALL( buildNewAdjacencyList(scip, detectordata, graph, detectordata->graphs[pos2], partition, 1, consslink, nconsslink2) );
       SCIP_CALL( setLinkingCons(scip, detectordata, cas, 2, pos2, graph->cons2, graph->cons1) );
    }
    else if( stop2 )
