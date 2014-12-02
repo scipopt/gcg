@@ -102,8 +102,8 @@ struct Graph
 
    int                   nedges;             /**< number of edges */
 
-   SCIP_CONS*            cons1;              /**< */
-   SCIP_CONS*            cons2;              /**< */
+   SCIP_CONS*            cons1;              /**< first linking constraint */
+   SCIP_CONS*            cons2;              /**< second linking constraint */
 };
 typedef struct Graph GRAPH;
 
