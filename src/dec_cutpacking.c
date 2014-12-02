@@ -858,6 +858,7 @@ SCIP_RETCODE buildNewGraphs(
 
    SCIP_CALL( allocateMemoryGraph(scip, detectordata, pos1, nconss1) );
    SCIP_CALL( allocateMemoryGraph(scip, detectordata, pos2, nconss2) );
+   detectordata->ngraphs += 2;
 
    /* test whether the cut is feasible */
    if( (graph->cons1 != NULL) && (graph->cons2 != NULL) )
@@ -869,10 +870,10 @@ SCIP_RETCODE buildNewGraphs(
       {
          SCIP_CALL( copyConss(scip, detectordata, graph, NULL, -1) );
          SCIP_CALL( freeGraph(scip, detectordata, detectordata->position, graph->nconss) );
-         detectordata->ngraphs--;
          SCIP_CALL( freeGraph(scip, detectordata, pos1, nconss1) );
          SCIP_CALL( freeGraph(scip, detectordata, pos2, nconss2) );
          SCIPfreeBufferArray(scip, &consslink);
+         detectordata->ngraphs -= 3;
          return SCIP_OKAY;
       }
 
@@ -932,9 +933,16 @@ SCIP_RETCODE buildNewGraphs(
       SCIP_CALL( buildNewAdjacencyList(scip, detectordata, graph, detectordata->graphs[pos1], partition, 0, consslink, nconsslink1) );
       SCIP_CALL( setLinkingCons(scip, detectordata, cas, 1, pos1, graph->cons1, graph->cons2) );
    }
-   else if( stop1 )
+   else
    {
-      SCIP_CALL( setLinkingCons(scip, detectordata, cas, 0, pos1, graph->cons1, graph->cons2) );
+      if( stop1 )
+      {
+         SCIP_CALL( setLinkingCons(scip, detectordata, cas, 0, pos1, graph->cons1, graph->cons2) );
+      }
+      SCIP_CALL( copyConss(scip, detectordata, graph, partition, 0) );
+      SCIP_CALL( setStartBlock(scip, detectordata, detectordata->graphs[pos1]->cons1) );
+      SCIP_CALL( freeGraph(scip, detectordata, pos1, nconss1) );
+      detectordata->ngraphs--;
    }
 
    if( (nconss2 > 1) && !stop2 )
@@ -942,39 +950,20 @@ SCIP_RETCODE buildNewGraphs(
       SCIP_CALL( buildNewAdjacencyList(scip, detectordata, graph, detectordata->graphs[pos2], partition, 1, consslink, nconsslink2) );
       SCIP_CALL( setLinkingCons(scip, detectordata, cas, 2, pos2, graph->cons2, graph->cons1) );
    }
-   else if( stop2 )
-   {
-      SCIP_CALL( setLinkingCons(scip, detectordata, cas, 0, pos2, graph->cons2, graph->cons1) );
-   }
-
-   if( ((nconss1 < 2) && (nconss2 < 2)) || (stop1 && stop2 ) )
-   {
-      SCIP_CALL( copyConss(scip, detectordata, graph, partition, 0) );
-      SCIP_CALL( setStartBlock(scip, detectordata, detectordata->graphs[pos1]->cons1) );
-      SCIP_CALL( copyConss(scip, detectordata, graph, partition, 1) );
-      detectordata->ngraphs--;
-      SCIP_CALL( setStartBlock(scip, detectordata, detectordata->graphs[pos2]->cons1) );
-      SCIP_CALL( freeGraph(scip, detectordata, pos1, nconss1) );
-      SCIP_CALL( freeGraph(scip, detectordata, pos2, nconss2) );
-   }
-   else if( (nconss1 < 2) || (stop1 && !stop2) )
-   {
-      SCIP_CALL( copyConss(scip, detectordata, graph, partition, 0) );
-      SCIP_CALL( setStartBlock(scip, detectordata, detectordata->graphs[pos1]->cons1) );
-      SCIP_CALL( freeGraph(scip, detectordata, pos1, nconss1) );
-   }
-   else if( (nconss2 < 2) || (!stop1 && stop2) )
-   {
-      SCIP_CALL( copyConss(scip, detectordata, graph, partition, 1) );
-      SCIP_CALL( setStartBlock(scip, detectordata, detectordata->graphs[pos2]->cons1) );
-      SCIP_CALL( freeGraph(scip, detectordata, pos2, nconss2) );
-   }
    else
    {
-      detectordata->ngraphs++;
+      if( stop2 )
+      {
+         SCIP_CALL( setLinkingCons(scip, detectordata, cas, 0, pos2, graph->cons2, graph->cons1) );
+      }
+      SCIP_CALL( copyConss(scip, detectordata, graph, partition, 1) );
+      SCIP_CALL( setStartBlock(scip, detectordata, detectordata->graphs[pos2]->cons1) );
+      SCIP_CALL( freeGraph(scip, detectordata, pos2, nconss2) );
+      detectordata->ngraphs--;
    }
 
    SCIP_CALL( freeGraph(scip, detectordata, detectordata->position, graph->nconss) );
+   detectordata->ngraphs--;
 
    SCIPfreeBufferArray(scip, &consslink);
 
