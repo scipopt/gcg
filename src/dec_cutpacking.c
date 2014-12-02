@@ -1341,7 +1341,8 @@ SCIP_RETCODE applyStoerWagner(
    int nextpos;
    int tight;
    SCIP_Real value_cut;
-   SCIP_HASHMAP* tightness;
+   int* tightness;
+   int ntight;
    SCIP_HASHMAP* repres_conss;
    SCIP_HASHMAP* constopos;
    ADJLIST** adjlists;
@@ -1363,7 +1364,7 @@ SCIP_RETCODE applyStoerWagner(
 
    cut = NULL;
 
-   SCIP_CALL( SCIPhashmapCreate(&tightness, SCIPblkmem(scip), graph->nconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &tightness, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &mincut, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &nmerged_conss, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &merged_conss, graph->nconss) );
@@ -1382,7 +1383,7 @@ SCIP_RETCODE applyStoerWagner(
    /* copy adjacency lists */
    for( i = 0; i < graph->nconss; ++i )
    {
-      SCIP_CALL( copyAdjlist(scip, graph->adjlists[i], adjlists[i], NULL, NULL, NULL, NULL) );
+      SCIP_CALL( copyAdjlist(scip, graph->adjlists[i], adjlists[i], NULL, NULL, graph->constopos, NULL) );
    }
 
    SCIPdebugMessage("apply Stoer-Wagner...\n");
@@ -1411,58 +1412,45 @@ SCIP_RETCODE applyStoerWagner(
       SCIP_HASHMAPLIST* list = NULL;
       SCIP_Real value_act_cut;
 
-      SCIP_CALL( SCIPhashmapRemoveAll(tightness) );
-      detectordata->iter = 0;
-
-      do
-      {
-         list = hashmapIteration(scip, detectordata, constopos, list);
-         if( list == NULL )
-            break;
-         if( SCIPhashmapListGetOrigin(list) != s )
-         {
-            SCIP_CALL( SCIPhashmapInsert(tightness, SCIPhashmapListGetOrigin(list), (void*) 0) );
-         }
-      }
-      while( list != NULL );
-
-      assert(SCIPhashmapGetNEntries(tightness) + 1 == SCIPhashmapGetNEntries(constopos));
       last = s;
       next_to_last = s;
+      lastpos = (int) (size_t) SCIPhashmapGetImage(constopos, last); /*lint !e507*/
+      nextpos = lastpos;
 
-      while( SCIPhashmapGetNEntries(tightness) > 0 )
+      BMSclearMemoryArray(tightness, graph->nconss);
+      tightness[lastpos] = -1;
+      ntight = 1;
+
+      while( ntight < SCIPhashmapGetNEntries(constopos) )
       {
+/*         SCIPdebugMessage("last: %p, nexttolast: %p\n", (void*) last, (void*) next_to_last);*/
+
          next_to_last = last;
-         pos = (int) (size_t) SCIPhashmapGetImage(constopos, last); /*lint !e507*/
+         nextpos = lastpos;
 
-         for( j = 0; j < adjlists[pos]->nconss; ++j )
+         for( j = 0; j < adjlists[nextpos]->nconss; ++j )
          {
-            assert( SCIPhashmapExists(constopos, adjlists[pos]->conss[j]) );
+            int idx;
 
-            if( SCIPhashmapExists(tightness, adjlists[pos]->conss[j]) )
-            {
-               int newtightness = ((int) (size_t) SCIPhashmapGetImage(tightness, adjlists[pos]->conss[j])) + adjlists[pos]->weights[j]; /*lint !e507*/
-               SCIP_CALL( SCIPhashmapSetImage(tightness, adjlists[pos]->conss[j], (void*) (size_t) newtightness ) ); /*lint !e507*/
-            }
+            assert(SCIPhashmapExists(constopos, adjlists[nextpos]->conss[j]));
+            idx = (int) (size_t) SCIPhashmapGetImage(constopos, adjlists[nextpos]->conss[j]); /*lint !e507*/
+
+            if( tightness[idx] != -1 )
+               tightness[idx] += adjlists[nextpos]->weights[j];
          }
          detectordata->iter = 0;
          list = NULL;
          do
          {
             int idx;
-            int lastweight;
 
-            list = hashmapIteration(scip, detectordata, tightness, list);
+            list = hashmapIteration(scip, detectordata, constopos, list);
             if( list == NULL )
                break;
 
             idx = (int) (size_t) SCIPhashmapGetImage(constopos, SCIPhashmapListGetOrigin(list)); /*lint !e507*/
-            lastweight = adjlistGetEntry(adjlists[idx], last);
-            if( lastweight > 0 )
-            {
-               int newtightness = ((int) (size_t) SCIPhashmapGetImage(tightness, SCIPhashmapListGetOrigin(list))) + lastweight; /*lint !e507*/
-               SCIP_CALL( SCIPhashmapSetImage(tightness, SCIPhashmapListGetOrigin(list), (void*) (size_t) newtightness ) ); /*lint !e507*/
-            }
+            if( tightness[idx] != -1 )
+               tightness[idx] += adjlistGetEntry(adjlists[idx], next_to_last);
          }
          while( list != NULL );
 
@@ -1472,24 +1460,26 @@ SCIP_RETCODE applyStoerWagner(
          list = NULL;
          do
          {
-            int image;
+            int idx;
 
-            list = hashmapIteration(scip, detectordata, tightness, list);
+            list = hashmapIteration(scip, detectordata, constopos, list);
             if( list == NULL )
                break;
 
-            image = (int) (size_t) SCIPhashmapListGetImage(list); /*lint !e507*/
-            if( image >= tight )
+            idx = (int) (size_t) SCIPhashmapGetImage(constopos, SCIPhashmapListGetOrigin(list)); /*lint !e507*/
+            if( tightness[idx] >= tight )
             {
+               tight = tightness[idx];
                last = (SCIP_CONS*) SCIPhashmapListGetOrigin(list);
-               tight = image;
+               lastpos = idx;
             }
          }
          while( list != NULL );
 
          assert(next_to_last != last);
-         assert(SCIPhashmapExists(tightness, last));
-         SCIP_CALL( SCIPhashmapRemove(tightness, last) );
+         assert(tightness[lastpos] != -1);
+         tightness[lastpos] = -1;
+         ++ntight;
       }
 
       /* calculate the value of the current cut */
@@ -1641,7 +1631,7 @@ SCIP_RETCODE applyStoerWagner(
    for( i = 0; i < nmincut; ++i )
       detectordata->partition[(int) (size_t) SCIPhashmapGetImage(graph->constopos, mincut[i])] = 1; /*lint !e507*/
 
-   SCIPhashmapFree(&tightness);
+   SCIPfreeBufferArray(scip, &tightness);
    SCIPhashmapFree(&constopos);
    for( i = 0; i < graph->nconss; ++i )
    {
