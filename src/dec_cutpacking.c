@@ -110,7 +110,6 @@ typedef struct Graph GRAPH;
 /** detector data */
 struct DEC_DetectorData
 {
-   int                   iter;
    SCIP_Bool             algorithm;
    int                   blocksize;
    SCIP_Bool             fixedblocks;
@@ -396,70 +395,6 @@ SCIP_RETCODE buildGraphStructure(
    detectordata->ngraphs = 1;
 
    return SCIP_OKAY;
-}
-
-/** copies hashmap hm1 to hashmap hm2 */
-static
-SCIP_RETCODE copyhashmap(
-   SCIP_HASHMAP*         hm1,                /**< pointer to first hashmap */
-   SCIP_HASHMAP*         hm2                 /**< pointer to second hashmap */
-)
-{
-   int i;
-
-   assert( hm1 != NULL );
-   assert( hm2 != NULL );
-
-   for( i = 0; i < SCIPhashmapGetNLists(hm1); ++i )
-   {
-      SCIP_HASHMAPLIST* list = SCIPhashmapGetList(hm1, i);
-      if( SCIPhashmapListGetNEntries(list) > 0 )
-      {
-         while( list != NULL )
-         {
-            SCIP_CALL( SCIPhashmapInsert(hm2, SCIPhashmapListGetOrigin(list),SCIPhashmapListGetImage(list)) );
-            list = SCIPhashmapListGetNext(list);
-         }
-      }
-   }
-
-   return SCIP_OKAY;
-}
-
-/** returns the next element of the hashmap hm */
-static
-SCIP_HASHMAPLIST* hashmapIteration(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< detectordata data structure */
-   SCIP_HASHMAP*         hm,                 /**< the hashmap */
-   SCIP_HASHMAPLIST*     list                /**< current iteration list */
-   )
-{
-   assert(detectordata->iter < SCIPhashmapGetNLists(hm)+1);
-   assert((detectordata->iter == 0)||(list != 0));
-
-   if( list != NULL )
-   {
-      list = SCIPhashmapListGetNext(list);
-      if( list != NULL )
-         return list;
-   }
-
-   if( list == NULL )
-   {
-      int j;
-      for( j = detectordata->iter; j < SCIPhashmapGetNLists(hm); ++j )
-      {
-         list = SCIPhashmapGetList(hm,j);
-         ++detectordata->iter;
-         if( SCIPhashmapListGetNEntries(list) > 0 )
-         {
-            assert(list != NULL);
-            return list;
-         }
-      }
-   }
-   return NULL;
 }
 
 /** inserts element into hashmap if it doesn't already exist */
@@ -1106,8 +1041,6 @@ SCIP_RETCODE getConsIndex(
       block = newblock;
       assert(0 < block);
       assert(block <= detectordata->nblocks);
-
-      detectordata->iter = 0;
    }
 
    for( i = 0; i < detectordata->nblocks; ++i )
@@ -1336,15 +1269,15 @@ SCIP_RETCODE applyStoerWagner(
 {
    int i;
    int j;
-   int pos;
    int lastpos;
    int nextpos;
    int tight;
    SCIP_Real value_cut;
    int* tightness;
    int ntight;
+   SCIP_Bool* merged;
+   int nmerged;
    SCIP_HASHMAP* repres_conss;
-   SCIP_HASHMAP* constopos;
    ADJLIST** adjlists;
    SCIP_CONS** mincut;
    int nmincut;
@@ -1364,6 +1297,7 @@ SCIP_RETCODE applyStoerWagner(
 
    cut = NULL;
 
+   SCIP_CALL( SCIPallocBufferArray(scip, &merged, graph->nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &tightness, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &mincut, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &nmerged_conss, graph->nconss) );
@@ -1374,11 +1308,7 @@ SCIP_RETCODE applyStoerWagner(
       SCIP_CALL( SCIPallocMemoryArray(scip, &(merged_conss[i]), graph->nconss) ); /*lint !e866*/
       SCIP_CALL( createAdjlist(scip, &adjlists[i]) );
    }
-   SCIP_CALL( SCIPhashmapCreate(&constopos, SCIPblkmem(scip), graph->nconss) );
    SCIP_CALL( SCIPhashmapCreate(&repres_conss, SCIPblkmem(scip), graph->nconss) );
-
-   /* copy constopos */
-   SCIP_CALL( copyhashmap(graph->constopos, constopos) );
 
    /* copy adjacency lists */
    for( i = 0; i < graph->nconss; ++i )
@@ -1406,25 +1336,24 @@ SCIP_RETCODE applyStoerWagner(
 
    assert(s != NULL);
    represent_t = t;
+   BMSclearMemoryArray(merged, graph->nconss);
+   nmerged = 0;
 
-   while( SCIPhashmapGetNEntries(constopos) > 1 )
+   while( nmerged < graph->nconss - 1 )
    {
-      SCIP_HASHMAPLIST* list = NULL;
       SCIP_Real value_act_cut;
 
       last = s;
       next_to_last = s;
-      lastpos = (int) (size_t) SCIPhashmapGetImage(constopos, last); /*lint !e507*/
+      lastpos = (int) (size_t) SCIPhashmapGetImage(graph->constopos, last); /*lint !e507*/
       nextpos = lastpos;
 
       BMSclearMemoryArray(tightness, graph->nconss);
       tightness[lastpos] = -1;
       ntight = 1;
 
-      while( ntight < SCIPhashmapGetNEntries(constopos) )
+      while( ntight < graph->nconss - nmerged )
       {
-/*         SCIPdebugMessage("last: %p, nexttolast: %p\n", (void*) last, (void*) next_to_last);*/
-
          next_to_last = last;
          nextpos = lastpos;
 
@@ -1432,49 +1361,29 @@ SCIP_RETCODE applyStoerWagner(
          {
             int idx;
 
-            assert(SCIPhashmapExists(constopos, adjlists[nextpos]->conss[j]));
-            idx = (int) (size_t) SCIPhashmapGetImage(constopos, adjlists[nextpos]->conss[j]); /*lint !e507*/
+            idx = (int) (size_t) SCIPhashmapGetImage(graph->constopos, adjlists[nextpos]->conss[j]); /*lint !e507*/
+            assert(!merged[idx]);
 
             if( tightness[idx] != -1 )
                tightness[idx] += adjlists[nextpos]->weights[j];
          }
-         detectordata->iter = 0;
-         list = NULL;
-         do
+         for( j = 0; j < graph->nconss; ++j )
          {
-            int idx;
-
-            list = hashmapIteration(scip, detectordata, constopos, list);
-            if( list == NULL )
-               break;
-
-            idx = (int) (size_t) SCIPhashmapGetImage(constopos, SCIPhashmapListGetOrigin(list)); /*lint !e507*/
-            if( tightness[idx] != -1 )
-               tightness[idx] += adjlistGetEntry(adjlists[idx], next_to_last);
+            if( !merged[j] && tightness[j] != -1 )
+               tightness[j] += adjlistGetEntry(adjlists[j], next_to_last);
          }
-         while( list != NULL );
 
          /* choose the most tight */
          tight = 0;
-         detectordata->iter = 0;
-         list = NULL;
-         do
+         for( j = 0; j < graph->nconss; ++j )
          {
-            int idx;
-
-            list = hashmapIteration(scip, detectordata, constopos, list);
-            if( list == NULL )
-               break;
-
-            idx = (int) (size_t) SCIPhashmapGetImage(constopos, SCIPhashmapListGetOrigin(list)); /*lint !e507*/
-            if( tightness[idx] >= tight )
+            if( !merged[j] && tightness[j] >= tight )
             {
-               tight = tightness[idx];
-               last = (SCIP_CONS*) SCIPhashmapListGetOrigin(list);
-               lastpos = idx;
+               tight = tightness[j];
+               last = graph->conss[j];
+               lastpos = j;
             }
          }
-         while( list != NULL );
 
          assert(next_to_last != last);
          assert(tightness[lastpos] != -1);
@@ -1484,28 +1393,16 @@ SCIP_RETCODE applyStoerWagner(
 
       /* calculate the value of the current cut */
       value_act_cut = 0;
-
-      pos = (int) (size_t) SCIPhashmapGetImage(constopos, last); /*lint !e507*/
-      for( j = 0; j < adjlists[pos]->nconss; ++j )
+      for( j = 0; j < adjlists[lastpos]->nconss; ++j )
       {
-         assert(adjlists[pos]->conss[j] != last);
-         if( SCIPhashmapExists(constopos, adjlists[pos]->conss[j]) )
-            value_act_cut += adjlists[pos]->weights[j];
+         int idx = (int) (size_t) SCIPhashmapGetImage(graph->constopos, adjlists[lastpos]->conss[j]); /*lint !e507*/
+         assert(adjlists[lastpos]->conss[j] != last);
+         if( !merged[idx] )
+            value_act_cut += adjlists[lastpos]->weights[j];
       }
-      detectordata->iter = 0;
-      list = NULL;
-      do
-      {
-         int idx;
-
-         list = hashmapIteration(scip, detectordata, constopos, list);
-         if( list == NULL )
-            break;
-
-         idx = (int) (size_t) SCIPhashmapGetImage(constopos, SCIPhashmapListGetOrigin(list)); /*lint !e507*/
-         value_act_cut += adjlistGetEntry(adjlists[idx], last);
-      }
-      while( list != NULL );
+      for( j = 0; j < graph->nconss; ++j )
+         if( !merged[j] )
+            value_act_cut += adjlistGetEntry(adjlists[j], last);
 
       if( value_act_cut < value_cut )
       {
@@ -1548,12 +1445,10 @@ SCIP_RETCODE applyStoerWagner(
       }
 
       /* connect last and next_to_last */
-      lastpos = (int) (size_t) SCIPhashmapGetImage(constopos, last); /*lint !e507*/
-      nextpos = (int) (size_t) SCIPhashmapGetImage(constopos, next_to_last); /*lint !e507*/
-
       for( j = 0; j < adjlists[lastpos]->nconss; ++j )
       {
-         int idx = (int) (size_t) SCIPhashmapGetImage(constopos, adjlists[lastpos]->conss[j]);
+         int idx = (int) (size_t) SCIPhashmapGetImage(graph->constopos, adjlists[lastpos]->conss[j]);
+         assert(!merged[idx]);
 
          if( adjlists[lastpos]->conss[j] != next_to_last )
          {
@@ -1567,43 +1462,34 @@ SCIP_RETCODE applyStoerWagner(
             }
          }
       }
-      detectordata->iter = 0;
-      list = NULL;
-      do
+      for( j = 0; j < graph->nconss; ++j )
       {
-         int idx;
          int lastweight;
 
-         list = hashmapIteration(scip, detectordata, constopos, list);
-         if( list == NULL )
-            break;
+         if( merged[j] )
+            continue;
 
-         idx = (int) (size_t) SCIPhashmapGetImage(constopos, SCIPhashmapListGetOrigin(list)); /*lint !e507*/
-         lastweight = adjlistGetEntry(adjlists[idx], last);
-         if( lastweight > 0 && SCIPhashmapListGetOrigin(list) != next_to_last )
+         lastweight = adjlistGetEntry(adjlists[j], last);
+         if( lastweight > 0 && graph->conss[j] != next_to_last )
          {
-            if( adjlistGetEntry(adjlists[idx], next_to_last) > 0 )
+            if( adjlistGetEntry(adjlists[j], next_to_last) > 0 )
             {
-               SCIP_CALL( adjlistIncreaseEntry(scip, adjlists[idx], next_to_last, lastweight) );
+               SCIP_CALL( adjlistIncreaseEntry(scip, adjlists[j], next_to_last, lastweight) );
             }
             else
             {
-               SCIP_CALL( adjlistIncreaseEntry(scip, adjlists[nextpos], SCIPhashmapListGetOrigin(list), lastweight) );
+               SCIP_CALL( adjlistIncreaseEntry(scip, adjlists[nextpos], graph->conss[j], lastweight) );
             }
          }
       }
-      while( list != NULL );
 
-      SCIP_CALL( SCIPhashmapRemove(constopos, last) );
+      merged[lastpos] = TRUE;
+      ++nmerged;
 
       /* delete 'last' in adjacency list */
       for( i = 0; i < graph->nconss; ++i )
-      {
-         if( SCIPhashmapExists(constopos, graph->conss[i]) )
-         {
+         if( !merged[i] )
             adjlistRemoveEntry(adjlists[i], last);
-         }
-      }
    }
 
    /* complete cut */
@@ -1632,7 +1518,7 @@ SCIP_RETCODE applyStoerWagner(
       detectordata->partition[(int) (size_t) SCIPhashmapGetImage(graph->constopos, mincut[i])] = 1; /*lint !e507*/
 
    SCIPfreeBufferArray(scip, &tightness);
-   SCIPhashmapFree(&constopos);
+   SCIPfreeBufferArray(scip, &merged);
    for( i = 0; i < graph->nconss; ++i )
    {
       freeAdjlist(scip, &adjlists[i]);
