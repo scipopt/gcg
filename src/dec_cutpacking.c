@@ -67,7 +67,7 @@
 #define DEFAULT_TIDY               TRUE      /**< whether to clean up afterwards */
 #define DEFAULT_FIXEDBLOCKS       FALSE      /**< whether the blocks should consist of a given number of constraints */
 #define DEFAULT_BLOCKSIZE           200      /**< number of constraints per block */
-#define DEFAULT_ALGORITHM          TRUE      /**< should metis be used (TRUE) or the Stoer-Wagner algorithm */
+#define DEFAULT_USEMETIS           TRUE      /**< should metis be used (TRUE) or the Stoer-Wagner algorithm */
 
 #define DEFAULT_METIS_UBFACTOR      5.0      /**< default unbalance factor given to metis on the commandline */
 #define DEFAULT_METIS_VERBOSE     FALSE      /**< should metis be verbose */
@@ -110,7 +110,9 @@ typedef struct Graph GRAPH;
 /** detector data */
 struct DEC_DetectorData
 {
-   SCIP_Bool             algorithm;
+   /* general parameters */
+   SCIP_Bool             tidy;
+   SCIP_Bool             usemetis;
    int                   blocksize;
    SCIP_Bool             fixedblocks;
 
@@ -139,9 +141,6 @@ struct DEC_DetectorData
    SCIP_VAR**            relvars;
    int                   nrelvars;
    int                   nrelconss;
-
-   /* general parameters */
-   SCIP_Bool             tidy;
 
    /* graph stuff for hmetis */
    int                   randomseed;
@@ -1971,7 +1970,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
          {
             detectordata->position = i;
 
-            if( detectordata->algorithm )
+            if( detectordata->usemetis )
             {
                SCIP_CALL( callMetis(scip, detectordata,result) );
                SCIPdebugMessage("  -> metis successful.\n");
@@ -2032,8 +2031,8 @@ SCIP_RETCODE SCIPincludeDetectionCutpacking(
 
    /* add cutpacking detector parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/algorithm",
-      "should the stoer-wagner algorithm or metis be used for finding a minimal cut",
-      &detectordata->algorithm, FALSE, DEFAULT_ALGORITHM, NULL, NULL) );
+      "should the Stoer-Wagner algorithm or metis be used for finding a minimal cut",
+      &detectordata->usemetis, FALSE, DEFAULT_USEMETIS, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/fixedblocks",
       "Should the blocks consist of a certain number of constraints",
       &detectordata->fixedblocks, FALSE, DEFAULT_FIXEDBLOCKS, NULL, NULL) );
