@@ -2406,7 +2406,9 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    int i;
    int j;
    int allnorigvars;
+#ifndef NDEBUG
    SCIP_Bool foundblocknr = FALSE;
+#endif
 
    blocknr = -2;
    Ssize = 0;
@@ -2441,7 +2443,9 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       /* if we have a master variable, we branch on it */
       if( GCGvarGetBlock(mastervar) == -1 )
       {
+#ifndef NDEBUG
          foundblocknr = TRUE;
+#endif
          blocknr = -1;
          break;
       }
@@ -2465,7 +2469,9 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          /* else the block has not been checked and the variable is in it , we have a candidate */
          else if( GCGisMasterVarInBlock(mastervar, j))
          {
+#ifndef NDEBUG
             foundblocknr = TRUE;
+#endif
             blocknr = j;
             break;
          }
