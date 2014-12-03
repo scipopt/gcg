@@ -40,11 +40,9 @@
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
 #include "class_stabilization.h"
-#include "class_colpool.h"
 #include "pub_gcgcol.h"
 
 using gcg::Stabilization;
-using gcg::Colpool;
 
 class ObjPricerGcg : public scip::ObjPricer
 {
@@ -53,7 +51,6 @@ public:
 
    SCIP*              origprob;           /**< the original program */
    SCIP_PRICERDATA *pricerdata;           /**< pricerdata data structure */
-   Colpool *colpool;                      /**< column pool */
    static int threads;
 
    /** default constructor */
@@ -170,9 +167,6 @@ public:
 
    /** create the pointers for the stabilization */
    void createStabilization();
-
-   /** create the pointers for the colpool */
-   void createColpool();
 
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
    SCIP_RETCODE getStabilizedDualObjectiveValue(

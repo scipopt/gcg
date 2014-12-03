@@ -35,7 +35,8 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
+ lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -59,7 +60,8 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
+ lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -82,10 +84,11 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
+ lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h \
+ lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \

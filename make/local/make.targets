@@ -80,8 +80,7 @@ TESTOBJ		=	tests/test.o \
 			tests/polish_test.o \
 			tests/gcgvar_test.o \
 			tests/graphalgorithm_test.o \
-			tests/gcgcol_test.o \
-			tests/colpool_test.o
+			tests/gcgcol_test.o
 #			tests/hypergraph_test.o \
 
 
