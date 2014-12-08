@@ -3438,7 +3438,8 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          /* create corresponding solution in the master problem when using discretization to avoid wrong master problem statistics */
          if( stored && relaxdata->discretization && SCIPgetStage(relaxdata->masterprob) != SCIP_STAGE_SOLVED )
          {
-            SCIP_CALL( GCGmasterTransOrigSolToMasterVars(relaxdata->masterprob, relaxdata->currentorigsol) );
+            SCIP_CALL( GCGmasterTransOrigSolToMasterVars(relaxdata->masterprob, relaxdata->currentorigsol, &stored) );
+            assert(stored);
          }
 
          /* store branching candidates */
