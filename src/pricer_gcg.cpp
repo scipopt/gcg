@@ -2731,7 +2731,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       for( i = 0; i < norigsols; ++i )
       {
          assert(origsols[i] != NULL);
-         SCIP_CALL( GCGmasterTransOrigSolToMasterVars(scip, origsols[i]) );
+         SCIP_CALL( GCGmasterTransOrigSolToMasterVars(scip, origsols[i], NULL) );
       }
       /* return if we transferred solutions as the master should be feasible */
       if( norigsols > 0 )
@@ -3234,7 +3234,8 @@ SCIP_RETCODE GCGpricerExistRays(
 extern "C"
 SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_SOL*             origsol             /**< the solution that should be transferred */
+   SCIP_SOL*             origsol,            /**< the solution that should be transferred */
+   SCIP_Bool*            stored              /**< pointer to store if transferred solution is feasible (or NULL) */
    )
 {
    ObjPricerGcg* pricer;
@@ -3278,12 +3279,12 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
+      int representative;
+      representative = GCGgetBlockRepresentative(origprob, i);
       npricingvars[i] = 0;
-      if( pricerdata->pricingprobs[i] == NULL )
-         continue;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars[i], SCIPgetNVars(pricerdata->pricingprobs[i])) ); /*lint !e866*/
-      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals[i], SCIPgetNVars(pricerdata->pricingprobs[i])) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars[i], SCIPgetNVars(pricerdata->pricingprobs[representative])) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals[i], SCIPgetNVars(pricerdata->pricingprobs[representative])) ); /*lint !e866*/
    }
 
    /* get solution values */
@@ -3300,15 +3301,11 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 
       if( blocknr >= 0 )
       {
-         prob = blocknr;
-         if( pricerdata->pricingprobs[prob] == NULL )
-            continue;
-
          if( !SCIPisZero(scip, origsolvals[i]) )
          {
-            pricingvars[prob][npricingvars[prob]] = GCGoriginalVarGetPricingVar(origvars[i]);
-            pricingvals[prob][npricingvars[prob]] = origsolvals[i];
-            npricingvars[prob]++;
+            pricingvars[blocknr][npricingvars[blocknr]] = GCGoriginalVarGetPricingVar(origvars[i]);
+            pricingvals[blocknr][npricingvars[blocknr]] = origsolvals[i];
+            npricingvars[blocknr]++;
          }
       }
       else
@@ -3355,14 +3352,14 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    /* create variables in the master problem */
    for( prob = 0; prob < pricerdata->npricingprobs; prob++ )
    {
-      if( pricerdata->pricingprobs[prob] == NULL )
-      {
-         continue;
-      }
-      SCIP_CALL( pricer->createNewMasterVar(scip, NULL, NULL, pricingvars[prob], pricingvals[prob], npricingvars[prob], FALSE, prob, TRUE, &added, &newvar) );
+      int representative;
+
+      representative = GCGgetBlockRepresentative(origprob, prob);
+
+      SCIP_CALL( pricer->createNewMasterVar(scip, NULL, NULL, pricingvars[prob], pricingvals[prob], npricingvars[prob], FALSE, representative, TRUE, &added, &newvar) );
       assert(added);
 
-      SCIP_CALL( SCIPsetSolVal(scip, mastersol, newvar, 1.0 * GCGgetNIdenticalBlocks(origprob, prob)) );
+      SCIP_CALL( SCIPsetSolVal(scip, mastersol, newvar, 1.0) );
    }
 
 #ifdef SCIP_DEBUG
@@ -3371,15 +3368,13 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP_CALL( SCIPtrySolFree(scip, &mastersol, FALSE, TRUE, TRUE, TRUE, &added) );
 #endif
 
-   /* free memory for storing variables and solution values from the solution */
+   /* set external pointer if it is not NULL */
+   if( stored != NULL )
+      *stored = added;
 
+   /* free memory for storing variables and solution values from the solution */
    for( i = pricerdata->npricingprobs - 1; i>= 0; i-- )
    {
-      if( pricerdata->pricingprobs[i] == NULL )
-      {
-         continue;
-      }
-
       SCIPfreeBufferArray(scip, &pricingvals[i]);
       SCIPfreeBufferArray(scip, &pricingvars[i]);
    }
