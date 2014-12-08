@@ -93,6 +93,7 @@ struct SCIP_RelaxData
    int*                  blockrepresentative;/**< number of the pricing problem, that represents the i-th problem */
    int*                  nblocksidentical;   /**< number of pricing blocks represented by the i-th pricing problem */
    SCIP_CONS**           convconss;          /**< array of convexity constraints, one for each block */
+   int                   ntransvars;         /**< number of variables directly transferred to the master problem */
    int                   nlinkingvars;       /**< number of linking variables */
    int                   nvarlinkconss;      /**< number of constraints that ensure that copies of linking variables have the same value */
    SCIP_Real             pricingprobsmemused; /**< sum of memory used after problem creation stage of all pricing problems */
@@ -174,8 +175,10 @@ SCIP_RETCODE setOriginalVarBlockNr(
 
    /* var belongs to no block so far, just set the new block number */
    if( blocknr == -1 )
+   {
+      relaxdata->ntransvars++;
       GCGvarSetBlock(var, newblock);
-
+   }
    /* if var already belongs to another block, it is a linking variable */
    else if( blocknr != newblock )
    {
@@ -1954,6 +1957,7 @@ void initRelaxdata(
    relaxdata->masterinprobing = FALSE;
    relaxdata->probingheur = NULL;
 
+   relaxdata->ntransvars = 0;
    relaxdata->nlinkingvars = 0;
    relaxdata->nvarlinkconss = 0;
    relaxdata->varlinkconss = NULL;
@@ -3647,4 +3651,42 @@ int GCGgetNVarLinkingconss(
    assert(relaxdata != NULL);
 
    return relaxdata->nvarlinkconss;
+}
+
+/** return number of linking variables */
+int GCGgetNLinkingvars(
+   SCIP*                 scip                /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->nlinkingvars;
+}
+
+/** return number of variables directly transferred to the master problem */
+int GCGgetNTransvars(
+   SCIP*                 scip                /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->ntransvars;
 }
