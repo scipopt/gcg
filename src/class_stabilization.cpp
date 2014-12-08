@@ -341,13 +341,13 @@ void Stabilization::updateAlphaMisprice()
 }
 
 void Stabilization::updateAlpha(
-   SCIP_SOL**            pricingsols         /**< solutions of the pricing problems */
+   GCG_COL**            pricingcols         /**< solutions of the pricing problems */
    )
 {
    SCIPdebugMessage("Alpha update after successful pricing\n");
    updateIterationCount();
 
-   if( SCIPisPositive(scip_, calculateSubgradient(pricingsols)) )
+   if( SCIPisPositive(scip_, calculateSubgradient(pricingcols)) )
    {
       increaseAlpha();
    }
@@ -380,7 +380,7 @@ void Stabilization::decreaseAlpha()
 }
 
 SCIP_Real Stabilization::calculateSubgradient(
-   SCIP_SOL**            pricingsols         /**< solutions of the pricing problems */
+   GCG_COL**            pricingcols         /**< solutions of the pricing problems */
    )
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
@@ -437,7 +437,7 @@ SCIP_Real Stabilization::calculateSubgradient(
             assert(GCGvarIsPricing(pricingvar));
             SCIP* pricingprob = GCGgetPricingprob(origprob, block);
             assert(pricingprob != NULL);
-            val = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
+            val = GCGcolGetSolVal(pricingprob, pricingcols[block], pricingvar);
             assert(!SCIPisInfinity(scip_, ABS(val)));
          }
          assert(stabcenterconss != NULL);
@@ -503,7 +503,7 @@ SCIP_Real Stabilization::calculateSubgradient(
             assert(GCGvarIsPricing(pricingvar));
             SCIP* pricingprob = GCGgetPricingprob(origprob, block);
             assert(pricingprob != NULL);
-            val = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
+            val = GCGcolGetSolVal(pricingprob, pricingcols[block], pricingvar);
             assert(!SCIPisInfinity(scip_, ABS(val)));
          }
          assert(stabcentercuts != NULL);
@@ -547,7 +547,7 @@ SCIP_Real Stabilization::calculateSubgradient(
       assert(stabcenterlinkingconss != NULL);
       SCIP_Real dual = stabcenterlinkingconss[i] - pricingtype->consGetDual(scip_, linkingcons);
       SCIP_Real masterval = SCIPgetSolVal(scip_, (SCIP_SOL*) NULL, mastervar);
-      SCIP_Real pricingval = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
+      SCIP_Real pricingval = GCGcolGetSolVal(pricingprob, pricingcols[block], pricingvar);
       assert(!SCIPisInfinity(scip_, ABS(masterval)));
       assert(!SCIPisInfinity(scip_, ABS(pricingval)));
       assert(!SCIPisInfinity(scip_, ABS(dual)));

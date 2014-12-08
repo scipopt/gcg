@@ -39,6 +39,7 @@
 #include "gcg.h"
 #include "type_solver.h"
 #include "solver_cplex.h"
+#include "pub_gcgcol.h"
 
 #ifdef CPLEXSOLVER
 #include "pricer_gcg.h"
@@ -97,42 +98,31 @@ struct GCG_SolverData
 
 /** checks whether the given solution is equal to one of the former solutions in the sols array */
 static
-SCIP_Bool solIsNew(
+SCIP_Bool colIsNew(
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
-   SCIP_SOL**            sols,               /**< array of solutions to check */
-   int                   nsols,              /**< number of solutions to check */
-   SCIP_VAR**            vars,               /**< pricing problem variables */
-   SCIP_Real*            solvals,            /**< solution values of pricing problem variables */
-   SCIP_Real             solobj,             /**< objective value of solution */
-   int                   nvars               /**< number of pricing problem variables */
+   GCG_COL**             cols,               /**< array of columns to check */
+   int                   ncols,              /**< number of columns to check */
+   GCG_COL*              newcol              /**< potentially new column */
    )
 {
    int s;
-   int v;
 
    assert(pricingprob != NULL);
-   assert(sols != NULL);
-   assert(vars != NULL);
-   assert(solvals != NULL);
-   assert(nvars > 0);
+   assert(cols != NULL);
 
-   for( s = 0; s < nsols; ++s )
+   for( s = 0; s < ncols; ++s )
    {
-      assert(sols[s] != NULL);
-      /** @todo ensure that the solutions are sorted by objective value and search for same objective value */
-      if( !SCIPisEQ(pricingprob, SCIPgetSolOrigObj(pricingprob, sols[s]), solobj) )
-         continue;
+      assert(cols[s] != NULL);
 
-      for( v = 0; v < nvars; ++v )
-         if( !SCIPisEQ(pricingprob, SCIPgetSolVal(pricingprob, sols[s], vars[v]), solvals[v]) )
-            break;
-
-      if( v == nvars )
+      if( GCGcolIsEq(cols[s], newcol) )
+      {
          return FALSE;
+      }
    }
 
    return TRUE;
 }
+
 
 /** creates a CPLEX environment and builds the pricing problem */
 static
@@ -644,10 +634,9 @@ SCIP_RETCODE solveCplex(
    int                   probnr,             /**< problem number */
    SCIP_Real             dualsolconv,        /**< dual solution value of the corresponding convexity constraint */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
-   SCIP_SOL**            sols,               /**< array of solutions */
-   SCIP_Bool*            solisray,           /**< array indicating whether solution is a ray */
-   int                   maxsols,            /**< size of preallocated array */
-   int*                  nsols,              /**< pointer to store number of solutions */
+   GCG_COL**             cols,               /**< array of columns corresponding to solutions */
+   int                   maxcols,            /**< size of preallocated array */
+   int*                  ncols,              /**< pointer to store number of columns */
    SCIP_STATUS*          result              /**< pointer to store the result code */
    )
 { /*lint -e715*/
@@ -664,7 +653,7 @@ SCIP_RETCODE solveCplex(
    int status;
    int s;
 
-   *nsols = 0;
+   *ncols = 0;
    *result = SCIP_STATUS_UNKNOWN;
 
    retval = SCIP_OKAY;
@@ -737,10 +726,9 @@ SCIP_RETCODE solveCplex(
          CHECK_ZERO( cpxretval );
       }
 
-      SCIP_CALL( SCIPcreateSol(pricingprob, &sols[*nsols], NULL) );
-      SCIP_CALL( SCIPsetSolVals(pricingprob, sols[*nsols], numcols, solverdata->pricingvars[probnr], cplexsolvals) );
-      solisray[*nsols] = TRUE;
-      ++(*nsols);
+      SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[*ncols], probnr, solverdata->pricingvars[probnr], cplexsolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
+
+      ++(*ncols);
 
       *result = SCIP_STATUS_UNBOUNDED;
 
@@ -794,26 +782,29 @@ SCIP_RETCODE solveCplex(
    /* iterate over all CPLEX solutions and check for negative reduced costs; the first solution should always be the
     * incumbent, all other solutions are unsorted
     */
-   for( s = 0; s < nsolscplex && *nsols < maxsols; ++s )
+   for( s = 0; s < nsolscplex && *ncols < maxcols; ++s )
    {
       CHECK_ZERO( CPXgetsolnpoolobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], s, &objective) );
 
       CHECK_ZERO( CPXgetsolnpoolx(solverdata->cpxenv[probnr], solverdata->lp[probnr], s, cplexsolvals, 0, numcols - 1) );
 
-      /* check whether the solution is equal to one of the previous solutions */
-      if( !solverdata->checksols || solIsNew(pricingprob, sols, *nsols, solverdata->pricingvars[probnr],
-            cplexsolvals, objective, solverdata->npricingvars[probnr]) )
+      /* create potentially new column */
+      SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[*ncols], probnr, solverdata->pricingvars[probnr], cplexsolvals, numcols, FALSE, SCIPinfinity(pricingprob)) );
+
+      /* check whether the column is equal to one of the previous solutions */
+      if( !solverdata->checksols || colIsNew(pricingprob, cols, *ncols, cols[*ncols]) )
       {
+         SCIP_SOL* sol;
          SCIP_Bool feasible;
 
-         SCIP_CALL( SCIPcreateSol(pricingprob, &sols[*nsols], NULL) );
-         SCIP_CALL( SCIPsetSolVals(pricingprob, sols[*nsols], numcols, solverdata->pricingvars[probnr], cplexsolvals) );
-         SCIP_CALL( SCIPcheckSolOrig(pricingprob, sols[*nsols], &feasible, FALSE, FALSE) );
-         solisray[*nsols] = FALSE;
+         SCIP_CALL( SCIPcreateSol(pricingprob, &sol, NULL) );
+         SCIP_CALL( SCIPsetSolVals(pricingprob, sol, numcols, solverdata->pricingvars[probnr], cplexsolvals) );
+         SCIP_CALL( SCIPcheckSolOrig(pricingprob, sol, &feasible, FALSE, FALSE) );
 
          if( !feasible )
          {
-            SCIP_CALL( SCIPfreeSol(pricingprob, &sols[*nsols]) );
+            SCIP_CALL( SCIPfreeSol(pricingprob, &sol) );
+            SCIP_CALL( GCGfreeGcgCol(&cols[*ncols]) );
 
             /* the optimal solution is not feasible, we return SCIP_UNKNOWN as result */
             if( s == 0 )
@@ -823,8 +814,12 @@ SCIP_RETCODE solveCplex(
          }
          else
          {
-            ++(*nsols);
+            ++(*ncols);
          }
+      }
+      else
+      {
+         SCIP_CALL( GCGfreeGcgCol(&cols[*ncols]) );
       }
    }
  TERMINATE:
@@ -978,7 +973,7 @@ static GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
 
    SCIPwarningMessage(solverdata->origprob, "heuristic pricing problem solving of CPLEX pricing solver not yet implemented!");
 
-   *nsols = 0;
+   *ncols = 0;
    *result = SCIP_STATUS_UNKNOWN;
 
    return SCIP_OKAY;
@@ -1008,8 +1003,8 @@ static GCG_DECL_SOLVERSOLVE(solverSolveCplex)
    }
 
    /* solve the pricing problem and evaluate solution */
-   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, sols, solisray, maxsols, nsols, result) );
-   assert(*result != SCIP_STATUS_OPTIMAL || *nsols > 0);
+   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, result) );
+   assert(*result != SCIP_STATUS_OPTIMAL || *ncols > 0);
    return SCIP_OKAY;
 }
 #endif

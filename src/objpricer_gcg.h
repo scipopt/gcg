@@ -40,6 +40,7 @@
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
 #include "class_stabilization.h"
+#include "pub_gcgcol.h"
 
 using gcg::Stabilization;
 
@@ -91,6 +92,16 @@ public:
       SCIP_Bool             stabilize           /**< do we use stabilization ? */
    );
 
+   /** update reduced cost of columns in column pool */
+   SCIP_RETCODE updateRedcostColumnPool(
+      PricingType*          pricetype           /**< type of pricing: reduced cost or Farkas */
+      );
+   /** method to price new columns from Column Pool */
+   SCIP_RETCODE priceColumnPool(
+      PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+      int*                  pnfoundvars         /**< pointer to store number of priced variables */
+      );
+
    /** performs the pricing routine, gets the type of pricing that should be done: farkas or redcost pricing */
    SCIP_RETCODE priceNewVariables(
       PricingType*       pricetype,          /**< type of the pricing */
@@ -111,6 +122,16 @@ public:
       unsigned int       force,              /**< should the given variable be added also if it has non-negative reduced cost? */
       unsigned int*      added,              /**< pointer to store whether the variable was successfully added */
       SCIP_VAR**         addedvar            /**< pointer to store the created variable */
+   );
+
+   /** creates a new master variable corresponding to the given gcg column */
+   SCIP_RETCODE createNewMasterVarFromGcgCol(
+      SCIP*                 scip,               /**< SCIP data structure */
+      PricingType*          pricetype,          /**< type of pricing */
+      GCG_COL*              gcgcol,             /**< GCG column data structure */
+      SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */
+      SCIP_Bool*            added,              /**< pointer to store whether the variable was successfully added */
+      SCIP_VAR**            addedvar            /**< pointer to store the created variable */
    );
 
    /** performs optimal or farkas pricing */
@@ -147,7 +168,6 @@ public:
    /** create the pointers for the stabilization */
    void createStabilization();
 
-
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
    SCIP_RETCODE getStabilizedDualObjectiveValue(
       SCIP_Real*         stabdualval         /**< pointer to store stabilized dual objective value */
@@ -176,13 +196,18 @@ private:
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    ) const;
 
+   SCIP_Real computeRedCostGcgCol(
+      PricingType*          pricetype,          /**< type of pricing */
+      GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
+      SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
+      ) const;
+
    /** counts the number of variables with negative reduced cost */
    int countPricedVariables(
       PricingType*          pricetype,          /**< pricing type, farkas or redcost */
       int&                  prob,               /**< number of the pricing problem */
-      SCIP_SOL**            sols,               /**< solutions which should be investigated */
-      int                   nsols,              /**< number of solutions */
-      SCIP_Bool*            solisray            /**< array indicating if a solution is a ray or not */
+      GCG_COL**             cols,               /**< columns corresponding to solutions which should be investigated */
+      int                   ncols               /**< number of columns */
    ) const;
 
    /** return TRUE or FALSE whether the master LP is solved to optimality */
@@ -266,10 +291,9 @@ private:
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
       SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
       SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
-      SCIP_SOL**            sols,               /**< pointer to store solutions */
-      SCIP_Bool*            solisray,           /**< array to indicate whether solution is a ray */
-      int                   maxsols,            /**< size of the sols array to indicate maximum solutions */
-      int*                  nsols,              /**< number of solutions */
+      GCG_COL**             cols,               /**< pointer to store columns corresponding to solutions */
+      int                   maxcols,            /**< size of the cols array to indicate maximum columns */
+      int*                  ncols,              /**< number of columns */
       SCIP_STATUS*          status              /**< solution status of the pricing problem */
    );
 
@@ -279,13 +303,12 @@ private:
     */
    SCIP_RETCODE solvePricingProblem(
       int                   prob,               /**< index of pricing problem */
-      PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
+      PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
       SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
       SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
-      SCIP_SOL**            sols,               /**< pointer to store solutions */
-      SCIP_Bool*            solisray,           /**< array to indicate whether solution is a ray */
-      int                   maxsols,            /**< size of the sols array to indicate maximum solutions */
-      int*                  nsols,              /**< number of solutions */
+      GCG_COL**             cols,               /**< pointer to store columns corresponding to solutions */
+      int                   maxcols,            /**< size of the cols array to indicate maximum columns */
+      int*                  ncols,              /**< number of columns */
       SCIP_STATUS*          status              /**< solution status of the pricing problem */
    );
 
@@ -326,6 +349,15 @@ private:
    SCIP_RETCODE checkBranchingBoundChanges(
       int                   prob,               /**< index of pricing problem */
       SCIP_SOL*             sol,                /**< solution to check */
+      SCIP_CONS*            branchcons,         /**< branching constraints from which bound should applied */
+      SCIP_Bool*            feasible            /**< check whether the solution is feasible */
+   ) const;
+
+   /** check bounds change from constraint from the pricing problem at this node
+    * @note This message has to be threadsafe!
+    */
+   SCIP_RETCODE checkBranchingBoundChangesGcgCol(
+      GCG_COL*              gcgcol,             /**< gcg column to check */
       SCIP_CONS*            branchcons,         /**< branching constraints from which bound should applied */
       SCIP_Bool*            feasible            /**< check whether the solution is feasible */
    ) const;

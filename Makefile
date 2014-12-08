@@ -182,7 +182,8 @@ LIBOBJ		=	reader_blk.o \
 			graph/graph_tclique.o \
 			stat.o \
 			objdialog.o \
-			dialog_graph.o
+			dialog_graph.o \
+			gcgcol.o 
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
