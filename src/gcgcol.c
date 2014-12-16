@@ -35,7 +35,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcgcol.h"
 #include "pub_gcgcol.h"
 
 #include "gcg.h"
@@ -65,8 +64,8 @@ SCIP_RETCODE GCGcreateGcgCol(
    SCIP_CALL( SCIPallocMemory(pricingprob, gcgcol) );
 
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vars), SCIPcalcMemGrowSize(pricingprob, nvars)) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vals), SCIPcalcMemGrowSize(pricingprob, nvars)) );
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &((*gcgcol)->vars), nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &((*gcgcol)->vals), nvars) );
 
    (*gcgcol)->pricingprob = pricingprob;
    (*gcgcol)->probnr = probnr;
@@ -123,8 +122,8 @@ SCIP_RETCODE GCGfreeGcgCol(
 {
    /* todo: release vars? */
 
-   SCIPfreeBlockMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vars, SCIPcalcMemGrowSize((*gcgcol)->pricingprob, (*gcgcol)->nvars));
-   SCIPfreeBlockMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vals, SCIPcalcMemGrowSize((*gcgcol)->pricingprob, (*gcgcol)->nvars));
+   SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vars);
+   SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vals);
    SCIPfreeMemory((*gcgcol)->pricingprob, gcgcol);
 
    return SCIP_OKAY;

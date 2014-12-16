@@ -60,6 +60,7 @@
 #include "struct_solver.h"
 #include "scip_misc.h"
 #include "pub_gcgvar.h"
+#include "pub_gcgcol.h"
 #include "cons_masterbranch.h"
 #include "objscip/objscip.h"
 #include "objpricer_gcg.h"
@@ -1311,7 +1312,7 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
    SCIP_Real redcost;
 
    SCIP_VAR** solvars;
-   SCIP_Real* solvals = NULL;
+   SCIP_Real* solvals;
    int nsolvars;
    SCIP_Real objvalue;
 
@@ -2100,7 +2101,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, cols, maxcols, ncols, status) );
    bestcol = cols[0];
    SCIP_Real redcost = computeRedCostGcgCol(pricetype, bestcol, NULL);
-   GCGcolUpdateRedcost(bestcol, redcost, FALSE);
+   SCIP_CALL( GCGcolUpdateRedcost(bestcol, redcost, FALSE) );
 
    if( SCIPisNegative(scip_, redcost) )
    {
@@ -2365,7 +2366,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
          }
 
-         SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, *bestredcostvalid = %d\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
+         SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %ud, optimal = %d, *bestredcostvalid = %d\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
 
          if( nfoundvars == 0 )
          {
