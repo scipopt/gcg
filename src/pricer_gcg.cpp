@@ -2366,7 +2366,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
          }
 
-         SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %ud, optimal = %d, *bestredcostvalid = %d\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
+         SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %ud, nfoundvars = %d, optimal = %ud, *bestredcostvalid = %ud\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
 
          if( nfoundvars == 0 )
          {
