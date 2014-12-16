@@ -133,6 +133,7 @@
 #include "solver_knapsack.h"
 #include "solver_mip.h"
 #include "event_bestsol.h"
+#include "event_relaxsol.h"
 #include "event_solvingstats.h"
 #include "event_display.h"
 
@@ -268,6 +269,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
 
    SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
+   SCIP_CALL( SCIPincludeEventHdlrRelaxsol(scip) );
    SCIP_CALL( SCIPincludeEventHdlrSolvingstats(scip) );
    SCIP_CALL( SCIPincludeEventHdlrDisplay(scip) );
 

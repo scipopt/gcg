@@ -476,9 +476,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
-
-   if( feasible )
+   if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
          SCIPgetSolOrigObj(origscip, GCGrelaxGetCurrentOrigSol(origscip)));

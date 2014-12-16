@@ -2783,10 +2783,7 @@ static
 SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
 {  /*lint --e{715}*/
    SCIP* origscip;
-   SCIP_Bool feasible;
    SCIP_Bool discretization;
-
-   feasible = TRUE;
 
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -2813,10 +2810,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
       SCIPdebugMessage("Generic branching executed on a set covering or set partitioning problem\n");
    }
 
-
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
-
-   if( feasible )
+   if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
          SCIPgetSolOrigObj(origscip, GCGrelaxGetCurrentOrigSol(origscip)));

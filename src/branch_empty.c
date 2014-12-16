@@ -199,21 +199,16 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 )
 {
    SCIP* masterscip;
-   SCIP_Bool feasible;
    SCIP_CONS* masterbranchcons;
    int nchildnodes;
    int i;
-
-   feasible = TRUE;
 
    assert(scip != NULL);
    assert(result != NULL);
 
    *result = SCIP_DIDNOTRUN;
 
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
-
-   if( feasible )
+   if( GCGrelaxIsOrigSolFeasible(scip) )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
             SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));

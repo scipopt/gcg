@@ -113,6 +113,7 @@ struct SCIP_RelaxData
    int                   nmasterconss;       /**< number of constraints saved in mastercons */
 
    SCIP_SOL*             currentorigsol;     /**< current lp solution transformed into the original space */
+   SCIP_Bool             origsolfeasible;    /**< is the current lp solution primal feasible in the original space? */
    SCIP_Longint          lastmasterlpiters;  /**< number of lp iterations when currentorigsol was updated the last time */
    SCIP_SOL*             lastmastersol;      /**< last feasible master solution that was added to the original problem */
    SCIP_CONS**           markedmasterconss;  /**< array of conss that are marked to be in the master */
@@ -133,7 +134,8 @@ struct SCIP_RelaxData
    /* data for probing */
    SCIP_Bool             masterinprobing;    /**< is the master problem in probing mode? */
    SCIP_HEUR*            probingheur;        /**< heuristic that started probing in master problem, or NULL */
-   SCIP_SOL*             storedorigsol;      /**< orig solution that was stored from before the probing */
+   SCIP_SOL*             storedorigsol;      /**< original solution that was stored before the probing */
+   SCIP_Bool             storedfeasibility;  /**< is the stored original solution feasible? */
 
    /* structure information */
    DEC_DECOMP*           decdecomp;          /**< structure information */
@@ -1949,6 +1951,8 @@ void initRelaxdata(
    relaxdata->nrelpricingprobs = 0;
    relaxdata->currentorigsol = NULL;
    relaxdata->storedorigsol = NULL;
+   relaxdata->origsolfeasible = FALSE;
+   relaxdata->storedfeasibility = FALSE;
    relaxdata->nblocksidentical = NULL;
 
    relaxdata->lastmastersol = NULL;
@@ -2130,7 +2134,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_Longint oldnnodes;
    SCIP_Real timelimit;
    SCIP_Real memorylimit;
-   SCIP_Bool feasible = FALSE;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2264,9 +2267,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       SCIPdebugMessage("Update lower bound (value = %g).\n", *lowerbound);
-      /* transform the current solution of the master problem to the original space and save it */
-      SCIPdebugMessage("Update current sol.\n");
-      SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
 
       if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL )
       {
@@ -2284,7 +2284,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    *result = SCIP_SUCCESS;
 
    /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
-   if( feasible )
+   if( GCGrelaxIsOrigSolFeasible(scip) )
    {
       *result = SCIP_CUTOFF;
       SCIPdebugMessage("solution was feasible, node can be cut off!");
@@ -2997,6 +2997,25 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    return relaxdata->currentorigsol;
 }
 
+/** returns whether the current solution is primal feasible in the original problem */
+SCIP_Bool GCGrelaxIsOrigSolFeasible(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->origsolfeasible;
+}
+
 /** returns whether the master problem is a set covering problem */
 SCIP_Bool GCGisMasterSetCovering(
    SCIP*                 scip                /**< SCIP data structure */
@@ -3066,7 +3085,10 @@ SCIP_RETCODE GCGrelaxStartProbing(
    /* remember the current original solution */
    assert(relaxdata->storedorigsol == NULL);
    if( relaxdata->currentorigsol != NULL )
+   {
       SCIP_CALL( SCIPcreateSolCopy(scip, &relaxdata->storedorigsol, relaxdata->currentorigsol) );
+      relaxdata->storedfeasibility = relaxdata->origsolfeasible;
+   }
 
    return SCIP_OKAY;
 }
@@ -3105,8 +3127,7 @@ SCIP_RETCODE performProbing(
    SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
    SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
                                               *   solving process should be stopped (e.g., due to a time limit) */
-   SCIP_Bool*            cutoff,             /**< pointer to store whether the probing direction is infeasible */
-   SCIP_Bool*            feasible            /**< pointer to store whether the probing solution is feasible */
+   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    )
 {
    SCIP_RELAX* relax;
@@ -3156,7 +3177,6 @@ SCIP_RETCODE performProbing(
    oldnlpiters = SCIPgetNLPIterations(masterscip);
    oldpricerounds = SCIPgetNPriceRounds(masterscip);
 
-   *feasible = FALSE;
    *lpobjvalue = 0.0;
    *lpsolved = FALSE;
 
@@ -3192,7 +3212,6 @@ SCIP_RETCODE performProbing(
          SCIPdebugMessage("lpobjval = %g\n", SCIPgetLPObjval(masterscip));
          *lpobjvalue = SCIPgetLPObjval(masterscip);
          *lpsolved = TRUE;
-         SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, feasible) );
       }
    }
    else
@@ -3214,12 +3233,11 @@ SCIP_RETCODE GCGrelaxPerformProbing(
    SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
    SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
                                               *   solving process should be stopped (e.g., due to a time limit) */
-   SCIP_Bool*            cutoff,             /**< pointer to store whether the probing direction is infeasible */
-   SCIP_Bool*            feasible            /**< pointer to store whether the probing solution is feasible */
+   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    )
 {
    SCIP_CALL( performProbing(scip, maxlpiterations, 0, FALSE, nlpiterations,
-         NULL, lpobjvalue, lpsolved, lperror, cutoff, feasible) );
+         NULL, lpobjvalue, lpsolved, lperror, cutoff) );
 
    return SCIP_OKAY;
 }
@@ -3236,12 +3254,11 @@ SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
    SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
    SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
                                               *   solving process should be stopped (e.g., due to a time limit) */
-   SCIP_Bool*            cutoff,             /**< pointer to store whether the probing direction is infeasible */
-   SCIP_Bool*            feasible            /**< pointer to store whether the probing solution is feasible */
+   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    )
 {
    SCIP_CALL( performProbing(scip, -1, maxpricerounds, TRUE, nlpiterations,
-         npricerounds, lpobjvalue, lpsolved, lperror, cutoff, feasible) );
+         npricerounds, lpobjvalue, lpsolved, lperror, cutoff) );
 
    return SCIP_OKAY;
 }
@@ -3335,6 +3352,8 @@ SCIP_RETCODE GCGrelaxEndProbing(
       assert(SCIPisFeasEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
 
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
+
+      relaxdata->origsolfeasible = relaxdata->storedfeasibility;
    }
 
    /** @todo solve master problem again */
@@ -3346,9 +3365,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
 /** transforms the current solution of the master problem into the original problem's space
  *  and saves this solution as currentsol in the relaxator's data */
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool*            feasible            /**< pointer to store whether the master problem's solution is
-                                              *   primal feasible*/
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_RELAX* relax;
@@ -3358,7 +3375,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP_Bool stored;
 
    assert(scip != NULL);
-   assert(feasible != NULL);
 
    relax = SCIPfindRelax(scip, RELAX_NAME);
    assert(relax != NULL);
@@ -3370,7 +3386,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    norigvars = SCIPgetNVars(scip);
    assert(origvars != NULL);
 
-   *feasible = FALSE;
+   relaxdata->origsolfeasible = FALSE;
 
    /* if the master problem has not been solved, don't try to update the solution */
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_TRANSFORMED )
@@ -3433,14 +3449,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
             (stored ? "" : "not"));
 
          if( stored )
-            *feasible = TRUE;
-
-         /* create corresponding solution in the master problem when using discretization to avoid wrong master problem statistics */
-         if( stored && relaxdata->discretization && SCIPgetStage(relaxdata->masterprob) != SCIP_STAGE_SOLVED )
-         {
-            SCIP_CALL( GCGmasterTransOrigSolToMasterVars(relaxdata->masterprob, relaxdata->currentorigsol, &stored) );
-            assert(stored);
-         }
+            relaxdata->origsolfeasible = TRUE;
 
          /* store branching candidates */
          for( i = 0; i < norigvars; i++ )

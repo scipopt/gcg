@@ -121,6 +121,12 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** returns whether the current solution is primal feasible in the original problem */
+extern
+SCIP_Bool GCGrelaxIsOrigSolFeasible(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** start probing mode on master problem */
 extern
 SCIP_RETCODE GCGrelaxStartProbing(
@@ -144,8 +150,7 @@ SCIP_RETCODE GCGrelaxPerformProbing(
    SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
    SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
                                               *   solving process should be stopped (e.g., due to a time limit) */
-   SCIP_Bool*            cutoff,             /**< pointer to store whether the probing direction is infeasible */
-   SCIP_Bool*            feasible            /**< pointer to store whether the probing solution is feasible */
+   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    );
 
 /** for a probing node in the original problem, create a corresponding probing node in the master problem,
@@ -160,8 +165,7 @@ SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
    SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
    SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
                                               *   solving process should be stopped (e.g., due to a time limit) */
-   SCIP_Bool*            cutoff,             /**< pointer to store whether the probing direction is infeasible */
-   SCIP_Bool*            feasible            /**< pointer to store whether the probing solution is feasible */
+   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    );
 
 /** end probing mode in master problem */
@@ -174,9 +178,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
  *  and saves this solution as currentsol in the relaxator's data */
 extern
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool*            feasible            /**< pointer to store whether the master problem's solution is
-                                              *   primal feasible*/
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #ifdef __cplusplus
