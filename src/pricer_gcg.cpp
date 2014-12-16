@@ -1350,7 +1350,7 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
 
    redcost = (isray ? objvalue : objvalue - pricerdata->dualsolconv[prob]);
 
-   SCIP_CALL( GCGcolUpdateRedcost(gcgcol, redcost, FALSE) );
+   SCIP_CALL_ABORT( GCGcolUpdateRedcost(gcgcol, redcost, FALSE) );
 
    /* compute reduced cost of variable (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
    return redcost;
@@ -1873,7 +1873,7 @@ int ObjPricerGcg::countPricedVariables(
    for( int j = 0; j < ncols; ++j )
    {
       SCIP_Real redcost = computeRedCostGcgCol(pricetype, cols[j], NULL);
-      SCIP_CALL( GCGcolUpdateRedcost(cols[j], redcost, FALSE) );
+      SCIP_CALL_ABORT( GCGcolUpdateRedcost(cols[j], redcost, FALSE) );
 
       SCIPdebugMessage("solution %d of prob %d (%p) has reduced cost %g\n", j, prob, (void*) (cols[j]), redcost);
       if( SCIPisNegative(scip_, redcost) )
