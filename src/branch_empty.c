@@ -186,7 +186,6 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
          SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGgetMasterprob(scip)))));
    }
 
-   assert(SCIPgetNNodes(scip) == SCIPgetNNodes(GCGgetMasterprob(scip)));
    /*assert(SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) == SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGrelaxGetMasterprob(scip)))));*/
 
    return SCIP_OKAY;
