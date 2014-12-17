@@ -49,7 +49,7 @@ static
 SCIP_DECL_EVENTINIT(eventInitRelaxsol)
 {  /*lint --e{715}*/
 
-   /* notify SCIP that your event handler wants to react on the event types lp solved and first lp solved */
+   /* notify SCIP that your event handler wants to react on the event type lp solved and solution found */
    SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_LPSOLVED | SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, NULL) );
 
    return SCIP_OKAY;
@@ -60,7 +60,7 @@ static
 SCIP_DECL_EVENTEXIT(eventExitRelaxsol)
 {  /*lint --e{715}*/
 
-   /* notify SCIP that your event handler wants to drop the event types lp solved and first lp solved */
+   /* notify SCIP that your event handler wants to drop the event type lp solved and solution found */
    SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_LPSOLVED | SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, -1) );
 
    return SCIP_OKAY;

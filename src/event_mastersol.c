@@ -74,6 +74,7 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
 {  /*lint --e{715}*/
    SCIP* masterprob;
    SCIP_SOL* sol;
+   SCIP_Bool discretization;
 
    assert(scip != NULL);
    assert(eventhdlr != NULL);
@@ -87,8 +88,14 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
    masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
-   /* transfer solution to the master problem, but only if it is not from the relaxation */
-   if( SCIPsolGetHeur(sol) != NULL && SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED )
+   /* get discretization parameter */
+   SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &discretization) );
+
+   /* transfer solution to the master problem if it was found by a heuristic in the original problem
+    * or if discretization is used
+    */
+   if( SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED &&
+      (SCIPsolGetHeur(sol) != NULL || (discretization && SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED)) )
    {
       SCIP_Bool stored;
       stored = FALSE;

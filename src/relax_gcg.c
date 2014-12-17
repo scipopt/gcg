@@ -2134,6 +2134,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_Longint oldnnodes;
    SCIP_Real timelimit;
    SCIP_Real memorylimit;
+   SCIP_Bool stored;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2267,6 +2268,38 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       SCIPdebugMessage("Update lower bound (value = %g).\n", *lowerbound);
+
+      if( relaxdata->currentorigsol != NULL )
+      {
+         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+      }
+
+      /* if a new primal solution was found in the master problem, transfer it to the original problem */
+      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
+      {
+         SCIP_SOL* newsol;
+
+         relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
+
+         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
+   #ifdef SCIP_DEBUG
+         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &stored) );
+   #else
+         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+   #endif
+         if( !stored )
+         {
+
+            SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
+         }
+         /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
+          *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+          */
+         SCIP_CALL( SCIPfreeSol(scip, &newsol) );
+
+         if( stored )
+            SCIPdebugMessage("updated current best primal feasible solution!\n");
+      }
 
       if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL )
       {
@@ -3439,11 +3472,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol) );
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
 
-         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, TRUE, &stored) );
-         if( !stored )
-         {
-            SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, FALSE, TRUE) );
-         }
+         SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, FALSE, TRUE) );
 
          SCIPdebugMessage("updated current original LP solution, %s feasible in the original problem!\n",
             (stored ? "" : "not"));
@@ -3469,32 +3498,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
             }
          SCIPdebugMessage("updated relaxation branching candidates\n");
       }
-   }
-   /* if a new primal solution was found in the master problem, transfer it to the original problem */
-   if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
-   {
-      SCIP_SOL* newsol;
-
-      relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
-
-      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
-#ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &stored) );
-#else
-      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &stored) );
-#endif
-      if( !stored )
-      {
-
-         SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
-      }
-      /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
-       *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
-       */
-      SCIP_CALL( SCIPfreeSol(scip, &newsol) );
-
-      if( stored )
-         SCIPdebugMessage("updated current best primal feasible solution!\n");
    }
 
    return SCIP_OKAY;
