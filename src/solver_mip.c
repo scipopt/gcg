@@ -171,8 +171,14 @@ SCIP_RETCODE checkSolNew(
    {
       assert(sols[s] != NULL);
       /** @todo ensure that the solutions are sorted  */
-      if( !SCIPisEQ(pricingprob, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])) )
+      if( (!SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[s])) && !SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[idx])))
+        && !SCIPisEQ(pricingprob, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])) )
          continue;
+
+      if( (SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[s])) && !SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[idx])))
+       ||(!SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[s])) &&  SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[idx]))) )
+         continue;
+
 
       if( SCIPsolGetOrigin(sols[s]) != SCIP_SOLORIGIN_ORIGINAL && SCIPsolGetOrigin(sols[idx]) != SCIP_SOLORIGIN_ORIGINAL )
          continue;
@@ -197,11 +203,7 @@ SCIP_Bool problemIsUnbounded(
    )
 
 {
-   if( SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD )
-      return TRUE;
-   else
-      return SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, SCIPgetBestSol(pricingprob))) ||
-            SCIPisLT(pricingprob, SCIPinfinity(pricingprob), -SCIPgetSolOrigObj(pricingprob, SCIPgetBestSol(pricingprob)));
+   return SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD;
 }
 
 /** returns whether the solution process was aborted */
@@ -361,13 +363,13 @@ SCIP_RETCODE solveProblem(
       return SCIP_OKAY;
    }
 
+   if( problemIsUnbounded(pricingprob) && !SCIPhasPrimalRay(pricingprob) )
+   {
+      SCIP_CALL( resolvePricingWithoutPresolving(pricingprob) );
+   }
+
    if( problemIsUnbounded(pricingprob) )
    {
-      if( !SCIPhasPrimalRay(pricingprob) )
-      {
-         SCIP_CALL( resolvePricingWithoutPresolving(pricingprob) );
-      }
-
       SCIP_CALL( createSolutionFromRay(pricingprob, probnr, &cols[0]) );
 
       *ncols = 1;
