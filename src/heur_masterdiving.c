@@ -302,7 +302,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    SCIP_Real oldobjval;
    SCIP_Bool lperror;
    SCIP_Bool cutoff;
-   SCIP_Bool origfeas;
    SCIP_Longint ncalls;
    SCIP_Longint nsolsfound;
    SCIP_Longint nlpiterations;         /* lp iterations performed in one single diving loop */
@@ -478,7 +477,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
     */
    lperror = FALSE;
    cutoff = FALSE;
-   origfeas = FALSE;
    divedepth = 0;
    totalpricerounds = 0;
    startnlpcands = nlpcands;
@@ -689,9 +687,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
          /* get new number of fractional variables */
          nlpcands = SCIPgetNLPBranchCands(scip);
 
-         /* update original LP solution */
-         SCIP_CALL( GCGrelaxUpdateCurrentSol(origprob, &origfeas) );
-         if( origfeas )
+         if( GCGrelaxIsOrigSolFeasible(origprob) )
          {
             SCIPdebugMessage("   -> LP solution is feasible in the original problem\n");
          }

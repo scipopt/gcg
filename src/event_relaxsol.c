@@ -25,21 +25,19 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   event_mastersol.c
- * @brief  eventhdlr to transfer solutions found in the original problem to the master problem
+/**@file   event_relaxsol.c
+ * @brief  eventhandler to update the relaxation solution in the original problem when the master LP has been solved
  * @author Christian Puchert
  */
-
+#define SCIP_DEBUG
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include <string.h>
-#include "event_mastersol.h"
-#include "pricer_gcg.h"
-#include "gcg.h"
+#include "event_relaxsol.h"
 #include "relax_gcg.h"
+#include "pricer_gcg.h"
 
-#define EVENTHDLR_NAME         "mastersol"
-#define EVENTHDLR_DESC         "event handler to to transfer solutions found in the original problem to the master problem"
+#define EVENTHDLR_NAME         "relaxsol"
+#define EVENTHDLR_DESC         "eventhandler to update the relaxation solution in the original problem when the master LP has been solved"
 
 
 /*
@@ -48,65 +46,43 @@
 
 /** initialization method of event handler (called after problem was transformed) */
 static
-SCIP_DECL_EVENTINIT(eventInitMastersol)
+SCIP_DECL_EVENTINIT(eventInitRelaxsol)
 {  /*lint --e{715}*/
 
-   /* notify SCIP that your event handler wants to react on the event types best solution found and node solved */
-   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, NULL) );
+   /* notify SCIP that your event handler wants to react on the event type lp solved and solution found */
+   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_LPSOLVED | SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, NULL) );
 
    return SCIP_OKAY;
 }
 
 /** deinitialization method of event handler (called before transformed problem is freed) */
 static
-SCIP_DECL_EVENTEXIT(eventExitMastersol)
+SCIP_DECL_EVENTEXIT(eventExitRelaxsol)
 {  /*lint --e{715}*/
 
-   /* notify SCIP that your event handler wants to drop the event types best solution found and node solved */
-   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, -1) );
+   /* notify SCIP that your event handler wants to drop the event type lp solved and solution found */
+   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_LPSOLVED | SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, -1) );
 
    return SCIP_OKAY;
 }
 
 /** execution method of event handler */
 static
-SCIP_DECL_EVENTEXEC(eventExecMastersol)
+SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
 {  /*lint --e{715}*/
-   SCIP* masterprob;
-   SCIP_SOL* sol;
-   SCIP_Bool discretization;
+   SCIP* origprob;
 
-   assert(scip != NULL);
-   assert(eventhdlr != NULL);
-   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+   /* get original problem */
+   origprob = GCGmasterGetOrigprob(scip);
+   assert(origprob != NULL);
 
-   /* get new primal solution */
-   sol = SCIPeventGetSol(event);
-   assert(sol != NULL);
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(origprob) );
 
-   /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
-   assert(masterprob != NULL);
-
-   /* get discretization parameter */
-   SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &discretization) );
-
-   /* transfer solution to the master problem if it was found by a heuristic in the original problem
-    * or if discretization is used
-    */
-   if( SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED &&
-      (SCIPsolGetHeur(sol) != NULL || (discretization && SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED)) )
-   {
-      SCIP_Bool stored;
-      stored = FALSE;
-      SCIP_CALL( GCGmasterTransOrigSolToMasterVars(masterprob, sol, &stored) );
-      assert(stored);
-   }
    return SCIP_OKAY;
 }
 
-/** creates event handler for mastersol event */
-SCIP_RETCODE SCIPincludeEventHdlrMastersol(
+/** creates event handler for relaxsol event */
+SCIP_RETCODE SCIPincludeEventHdlrRelaxsol(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -114,14 +90,14 @@ SCIP_RETCODE SCIPincludeEventHdlrMastersol(
 
    eventhdlr = NULL;
 
-   /* include event handler into SCIP */
+   /* include event handler into GCG */
    SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
-         eventExecMastersol, NULL) );
+         eventExecRelaxsol, NULL) );
    assert(eventhdlr != NULL);
 
    /* set non fundamental callbacks via setter functions */
-   SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitMastersol) );
-   SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitMastersol) );
+   SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitRelaxsol) );
+   SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitRelaxsol) );
 
    return SCIP_OKAY;
 }
