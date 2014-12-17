@@ -199,28 +199,14 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 )
 {
    SCIP* masterscip;
-   SCIP_Bool feasible;
    SCIP_CONS* masterbranchcons;
    int nchildnodes;
    int i;
-
-   feasible = TRUE;
 
    assert(scip != NULL);
    assert(result != NULL);
 
    *result = SCIP_DIDNOTRUN;
-
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
-
-   if( feasible )
-   {
-      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
-            SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
-
-      *result = SCIP_CUTOFF;
-      return SCIP_OKAY;
-   }
 
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
@@ -276,10 +262,23 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpEmpty)
 {  /*lint --e{715}*/
+   SCIP_Bool feasible;
+
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
+
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
+
+   if( feasible )
+   {
+      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
+            SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
+
+      *result = SCIP_FEASIBLE;
+      return SCIP_OKAY;
+   }
 
    SCIP_CALL( createBranchNodesInOrigprob(scip, result) );
    return SCIP_OKAY;

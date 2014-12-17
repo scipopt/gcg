@@ -745,7 +745,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
    /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
    if( feasible )
    {
-      *result = SCIP_CUTOFF;
+      *result = SCIP_FEASIBLE;
       SCIPdebugMessage("solution was feasible, node can be cut off!");
    }
 
@@ -784,7 +784,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
    /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
    if( feasible )
    {
-      *result = SCIP_CUTOFF;
+      *result = SCIP_FEASIBLE;
       SCIPdebugMessage("solution was feasible, node can be cut off!");
    }
    SCIP_CALL( branchExtern(origscip, branchrule, result) );
