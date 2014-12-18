@@ -1190,7 +1190,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_RESULT resultdummy;
    SCIP_OBJSENSE objsense;
    SCIP_SOL* origsol;
-   SCIP_Bool feasible;
    SCIP_Bool lperror;
    SCIP_Bool delayed;
    SCIP_Bool cutoff;
@@ -1259,10 +1258,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       return SCIP_OKAY;
    }
 
-   /* update current original solution */
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
-
-   if( feasible )
+   if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
       SCIPdebugMessage("Current solution is feasible, no separation necessary!\n");
       *result = SCIP_DIDNOTRUN;

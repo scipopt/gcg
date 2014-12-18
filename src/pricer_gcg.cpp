@@ -2604,7 +2604,7 @@ SCIP_RETCODE GCGsetPricingObjs(
 
   pricer->pricerdata->stabilization = FALSE;
 
-  pricer->setPricingObjs(pricer->getReducedCostPricing());
+  pricer->setPricingObjs(pricer->getReducedCostPricingNonConst(), FALSE);
 
   if(dualsolconv != NULL)
   {
