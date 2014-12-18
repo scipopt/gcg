@@ -16,8 +16,8 @@ code cleanup
 
 bug fixes
 - fix bugs concerning stabilization
-- CPLEX pricing solver is disabled as it is incompatible with generic
-  branching
+- disable stabilization when linking variables or variables belonging to no block are present
+- CPLEX pricing solver is disabled as it is incompatible with generic branching
 - fix memory issues
 - fix bound propagation bugs
 - fix bug in knapsack solver
