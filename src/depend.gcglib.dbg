@@ -603,7 +603,8 @@ $(LIBOBJDIR)/cons_integralorig.o: src/cons_integralorig.c src/cons_integralorig.
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/pricer_gcg.h src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h \
  src/struct_gcgcol.h src/cons_masterbranch.h src/type_branchgcg.h \
- src/pub_gcgvar.h lib/scip/src/scip/struct_branch.h src/branch_orig.h
+ src/pub_gcgvar.h lib/scip/src/scip/struct_branch.h src/relax_gcg.h \
+ src/type_decomp.h src/branch_orig.h
 $(LIBOBJDIR)/heur_gcgcoefdiving.o: src/heur_gcgcoefdiving.c src/heur_gcgcoefdiving.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
