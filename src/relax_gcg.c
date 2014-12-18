@@ -2316,13 +2316,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    *result = SCIP_SUCCESS;
 
-   /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
-   if( GCGrelaxIsOrigSolFeasible(scip) )
-   {
-      *result = SCIP_CUTOFF;
-      SCIPdebugMessage("solution was feasible, node can be cut off!");
-   }
-
    return SCIP_OKAY;
 }
 

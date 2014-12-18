@@ -481,7 +481,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
          SCIPgetSolOrigObj(origscip, GCGrelaxGetCurrentOrigSol(origscip)));
 
-      *result = SCIP_FEASIBLE;
+      *result = SCIP_CUTOFF;
 
       return SCIP_OKAY;
    }

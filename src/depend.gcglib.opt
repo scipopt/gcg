@@ -326,8 +326,7 @@ $(LIBOBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
- lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -351,8 +350,7 @@ $(LIBOBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -375,11 +373,10 @@ $(LIBOBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
+ lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
@@ -870,8 +867,7 @@ $(LIBOBJDIR)/heur_gcgdins.o: src/heur_gcgdins.c src/heur_gcgdins.h \
  src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h src/gcgplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
- lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -895,8 +891,7 @@ $(LIBOBJDIR)/heur_gcgdins.o: src/heur_gcgdins.c src/heur_gcgdins.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -919,11 +914,10 @@ $(LIBOBJDIR)/heur_gcgdins.o: src/heur_gcgdins.c src/heur_gcgdins.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
+ lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
@@ -1000,8 +994,7 @@ $(LIBOBJDIR)/heur_gcgfeaspump.o: src/heur_gcgfeaspump.c src/heur_gcgfeaspump.h \
  src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h src/gcgplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
- lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -1025,8 +1018,7 @@ $(LIBOBJDIR)/heur_gcgfeaspump.o: src/heur_gcgfeaspump.c src/heur_gcgfeaspump.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -1049,11 +1041,10 @@ $(LIBOBJDIR)/heur_gcgfeaspump.o: src/heur_gcgfeaspump.c src/heur_gcgfeaspump.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
+ lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
@@ -1346,8 +1337,7 @@ $(LIBOBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h src/gcgplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
- lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -1371,8 +1361,7 @@ $(LIBOBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -1395,11 +1384,10 @@ $(LIBOBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
+ lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
@@ -1476,8 +1464,7 @@ $(LIBOBJDIR)/heur_gcgrins.o: src/heur_gcgrins.c src/heur_gcgrins.h \
  src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h src/gcgplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
- lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -1501,8 +1488,7 @@ $(LIBOBJDIR)/heur_gcgrins.o: src/heur_gcgrins.c src/heur_gcgrins.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -1525,11 +1511,10 @@ $(LIBOBJDIR)/heur_gcgrins.o: src/heur_gcgrins.c src/heur_gcgrins.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
+ lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
@@ -2294,8 +2279,7 @@ $(LIBOBJDIR)/heur_restmaster.o: src/heur_restmaster.c src/heur_restmaster.h \
  src/pub_gcgvar.h src/pub_decomp.h src/pricer_gcg.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
- lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -2319,8 +2303,7 @@ $(LIBOBJDIR)/heur_restmaster.o: src/heur_restmaster.c src/heur_restmaster.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -2343,11 +2326,10 @@ $(LIBOBJDIR)/heur_restmaster.o: src/heur_restmaster.c src/heur_restmaster.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
+ lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
@@ -2424,8 +2406,7 @@ $(LIBOBJDIR)/heur_xpcrossover.o: src/heur_xpcrossover.c src/heur_xpcrossover.h \
  src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h src/gcgplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
- lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -2449,8 +2430,7 @@ $(LIBOBJDIR)/heur_xpcrossover.o: src/heur_xpcrossover.c src/heur_xpcrossover.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -2473,11 +2453,10 @@ $(LIBOBJDIR)/heur_xpcrossover.o: src/heur_xpcrossover.c src/heur_xpcrossover.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
+ lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
@@ -2554,8 +2533,7 @@ $(LIBOBJDIR)/heur_xprins.o: src/heur_xprins.c src/heur_xprins.h \
  src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h src/gcgplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
- lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -2579,8 +2557,7 @@ $(LIBOBJDIR)/heur_xprins.o: src/heur_xprins.c src/heur_xprins.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -2603,11 +2580,10 @@ $(LIBOBJDIR)/heur_xprins.o: src/heur_xprins.c src/heur_xprins.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
+ lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
@@ -3481,8 +3457,7 @@ $(LIBOBJDIR)/solver_mip.o: src/solver_mip.c src/solver_mip.h lib/scip/src/scip/s
  src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h src/pub_decomp.h \
  src/pricer_gcg.h src/relax_gcg.h lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
- lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -3505,8 +3480,7 @@ $(LIBOBJDIR)/solver_mip.o: src/solver_mip.c src/solver_mip.h lib/scip/src/scip/s
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -3529,11 +3503,10 @@ $(LIBOBJDIR)/solver_mip.o: src/solver_mip.c src/solver_mip.h lib/scip/src/scip/s
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
+ lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
@@ -3660,7 +3633,9 @@ $(LIBOBJDIR)/solver_cplex.o: src/solver_cplex.c lib/scip/src/scip/scip.h \
  lib/scip/src/scip/struct_event.h src/gcg.h src/type_branchgcg.h \
  src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgcol.h \
  src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h src/pub_decomp.h \
- src/solver_cplex.h
+ src/solver_cplex.h src/pricer_gcg.h src/scip_misc.h \
+ lib/scip/src/scip/cons_setppc.h lib/scip/lib/cpxinc/cplex.h \
+ lib/scip/lib/cpxinc/cpxconst.h
 $(LIBOBJDIR)/cons_decomp.o: src/cons_decomp.c src/cons_decomp.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -4084,8 +4059,7 @@ $(LIBOBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip
  lib/scip/src/scip/struct_event.h lib/scip/src/scip/cons_setppc.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
- lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
@@ -4109,8 +4083,7 @@ $(LIBOBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -4133,11 +4106,10 @@ $(LIBOBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
- lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
- lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
+ lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
