@@ -97,10 +97,7 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
    if( SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED &&
       (SCIPsolGetHeur(sol) != NULL || (discretization && SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED)) )
    {
-      SCIP_Bool stored;
-      stored = FALSE;
-      SCIP_CALL( GCGmasterTransOrigSolToMasterVars(masterprob, sol, &stored) );
-      assert(stored);
+      SCIP_CALL( GCGmasterTransOrigSolToMasterVars(masterprob, sol, NULL) );
    }
    return SCIP_OKAY;
 }
