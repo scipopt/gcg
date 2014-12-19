@@ -58,7 +58,7 @@ VALGRIND	=	false
 MODE		=	readdec
 GTEST		=	true
 PARASCIP	= 	true
-BLISS       	=   	true
+BLISS       	=   	false
 OPENMP          =       false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
@@ -99,6 +99,8 @@ endif
 
 ifeq ($(LPS),cpx)
 FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/cpxinc
+else
+FLAGS		+=	-DNCPLEXSOLVER
 endif
 
 #-----------------------------------------------------------------------------
@@ -160,7 +162,6 @@ LIBOBJ		=	reader_blk.o \
 			event_display.o \
 			solver_mip.o \
 			solver_knapsack.o \
-			solver_cplex.o \
 			cons_decomp.o \
 			decomp.o \
 			dec_arrowheur.o \
@@ -190,6 +191,10 @@ ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
 			dec_isomorph.o \
 			bliss.o
+endif
+
+ifeq ($(LPS),cpx)
+LIBOBJ		+=	solver_cplex.o
 endif
 
 MAINOBJ		=	main.o

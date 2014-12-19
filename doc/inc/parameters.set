@@ -1,4 +1,4 @@
-# SCIP version 3.1.0.1
+# SCIP version 3.1.1
 
 # branching score function ('s'um, 'p'roduct, 'q'uotient)
 # [type: char, range: {spq}, default: p]
@@ -5018,18 +5018,6 @@ staircase/metisverbose = FALSE
 # Should the rb or kway method be used for partitioning by metis
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 staircase/metisuseptyperb = TRUE
-
-# flag to indicate whether detector <isomorph> is enabled
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/isomorph/enabled = TRUE
-
-# flag to indicate whether detector <isomorph> should be skipped if others found decompositions
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/isomorph/skip = TRUE
-
-# priority of detector <isomorph>
-# [type: int, range: [-2147483648,2147483647], default: 100]
-detectors/isomorph/priority = 100
 
 # priority of heuristic <gcgcoefdiving>
 # [type: int, range: [-536870912,536870911], default: -1001000]

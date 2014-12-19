@@ -606,7 +606,7 @@ SCIP_RETCODE checkIdentical(
       SCIPdebugMessage("--> number of variables differs!\n");
       return SCIP_OKAY;
    }
-   if( SCIPgetNConss(scip1) != SCIPgetNConss(scip1) )
+   if( SCIPgetNConss(scip1) != SCIPgetNConss(scip2) )
    {
       SCIPdebugMessage("--> number of constraints differs!\n");
       return SCIP_OKAY;

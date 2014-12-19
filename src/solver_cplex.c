@@ -803,7 +803,6 @@ SCIP_RETCODE solveCplex(
 
          if( !feasible )
          {
-            SCIP_CALL( SCIPfreeSol(pricingprob, &sol) );
             SCIP_CALL( GCGfreeGcgCol(&cols[*ncols]) );
 
             /* the optimal solution is not feasible, we return SCIP_UNKNOWN as result */
@@ -816,6 +815,7 @@ SCIP_RETCODE solveCplex(
          {
             ++(*ncols);
          }
+         SCIP_CALL( SCIPfreeSol(pricingprob, &sol) );
       }
       else
       {
