@@ -1777,7 +1777,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
    SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/basis/objconvex", "convex combination factor",
          &(sepadata->objconvex), FALSE, 1.0, 0.0, 1.0, NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/paramsetting", "parameter returns which parameter setting is used for "
-      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 0, 0, 2, NULL, NULL);
+      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 1, 0, 2, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobj", "parameter returns if basis is searched with different objective",
       &(sepadata->chgobj), FALSE, TRUE, NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/iterations", "parameter returns if number new rows adding"

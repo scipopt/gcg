@@ -1,0 +1,11 @@
+lp/iterlim = -1
+
+lp/rootiterlim = -1
+
+conflict/enable = FALSE
+
+detectors/random/enabled = FALSE
+
+limits/nodes = 1
+
+

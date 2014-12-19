@@ -1,0 +1,5 @@
+# SCIP version 2.0.1.4
+
+detectors/staircase/enabled = FALSE
+detectors/stairheur/enabled = FALSE
+

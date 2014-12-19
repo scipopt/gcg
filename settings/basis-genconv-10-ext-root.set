@@ -1,0 +1,27 @@
+# SCIP version 3.0.0
+
+sepa/basis/enable = TRUE
+
+sepa/basis/genobjconvex = TRUE
+
+sepa/basis/objconvex = 1.0
+
+sepa/basis/enableobj = FALSE
+
+sepa/basis/enableobjround = FALSE
+
+sepa/basis/enableposslack = TRUE
+
+sepa/basis/posslackexp = 10
+
+limits/nodes = 1
+
+lp/iterlim = -1
+
+lp/rootiterlim = -1
+
+conflict/enable = FALSE
+
+detectors/random/enabled = FALSE
+
+separating/poolfreq = -1 fix
