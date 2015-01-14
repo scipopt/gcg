@@ -3141,8 +3141,6 @@ void ObjPricerGcg::createColpool()
 
    hardlimit = actualsize + maxvarsround * pricerdata->npricingprobsnotnull;
 
-   SCIPinfoMessage(scip_, NULL, "soft: %d, hard: %d\n", actualsize, hardlimit);
-
    colpool = new Colpool(scip_, pricerdata->colpoolagelimit, actualsize, hardlimit);
 
 }
