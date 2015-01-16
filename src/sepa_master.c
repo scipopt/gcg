@@ -148,6 +148,8 @@ SCIP_DECL_SEPAEXIT(sepaExitMaster)
       SCIP_CALL( SCIPreleaseRow(origscip, &(sepadata->origcuts[i])) );
    }
 
+   sepadata->ncuts = 0;
+
    return SCIP_OKAY;
 }
 
@@ -214,7 +216,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
          FALSE, FALSE, &delayed, &cutoff) );

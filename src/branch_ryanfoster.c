@@ -476,18 +476,12 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
       return SCIP_OKAY;
    }
 
-   /* check whether the current original solution is integral */
-#ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPcheckSol(origscip, GCGrelaxGetCurrentOrigSol(origscip), TRUE, TRUE, TRUE, TRUE, &feasible) );
-#else
-   SCIP_CALL( SCIPcheckSol(origscip, GCGrelaxGetCurrentOrigSol(origscip), FALSE, TRUE, TRUE, TRUE, &feasible) );
-#endif
-   if( feasible )
+   if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
          SCIPgetSolOrigObj(origscip, GCGrelaxGetCurrentOrigSol(origscip)));
 
-      *result = SCIP_CUTOFF;
+      *result = SCIP_DIDNOTFIND;
 
       return SCIP_OKAY;
    }
@@ -528,7 +522,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 
          ovar1 = origvars1[o1];
          /* if we deal with a trivial variable, skip it */
-         if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[o1]) )
+         if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[o1]) || GCGoriginalVarGetNCoefs(ovar1) == 0 )
             continue;
 
          /* mvar1 contains ovar1, look for mvar2 which constains ovar1, too */
@@ -549,7 +543,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
             for( j = 0; j < norigvars2; j++ )
             {
                /* if we deal with a trivial variable, skip it */
-               if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar2)[j]) )
+               if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar2)[j]) || GCGoriginalVarGetNCoefs(origvars2[j]) == 0 )
                   continue;
 
                if( origvars2[j] == ovar1 )
@@ -567,7 +561,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
             for( o2 = 0; o2 < norigvars1; o2++ )
             {
                /* if we deal with a trivial variable, skip it */
-               if( !SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[o2]) )
+               if( !SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[o2]) || GCGoriginalVarGetNCoefs(origvars1[o2]) == 0 )
                   continue;
 
                ovar2 = origvars1[o2];
@@ -608,7 +602,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
                for( o2 = 0; o2 < norigvars2; o2++ )
                {
                   /* if we deal with a trivial variable, skip it */
-                  if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar2)[o2]) )
+                  if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar2)[o2]) || GCGoriginalVarGetNCoefs(origvars2[o2]) == 0 )
                      continue;
 
                   ovar2 = origvars2[o2];
@@ -620,7 +614,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
                   for( j = 0; j < norigvars1; j++ )
                   {
                      /* if we deal with a trivial variable, skip it */
-                     if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[j]) )
+                     if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[j]) || GCGoriginalVarGetNCoefs(origvars1[j]) == 0 )
                         continue;
                      if( origvars1[j] == ovar2 )
                      {

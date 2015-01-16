@@ -288,3 +288,177 @@ TEST_F(GcgAggregationTest, NonSetppcMasterWrongCoeffTest) {
    ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 1));
    ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
 }
+
+TEST_F(GcgAggregationTest, PresolvedMasterTest) {
+   DEC_DECOMP* decomp;
+   SCIP_CONS* mastercons[3];
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,2]") );
+
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x4>: obj=2.0, original bounds=[0,2]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 1<x1>[I] +1<x3>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x2>[I] +1<x3>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x2>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c5>: 1<x2>[I] +1<x3>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c6>: 1<x3>[I] +1<x1>[I] <= 2") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   mastercons[0] = SCIPfindCons(scip, "c4");
+   mastercons[1] = SCIPfindCons(scip, "c5");
+   mastercons[2] = SCIPfindCons(scip, "c6");
+   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, mastercons, 3) );
+   SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+   SCIP_CALL_EXPECT( SCIPsolve(scip) );
+
+   ASSERT_EQ(1, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
+}
+
+TEST_F(GcgAggregationTest, NonTriangleTest) {
+   DEC_DECOMP* decomp;
+   SCIP_CONS* mastercons[3];
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x4>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x5>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x6>: obj=2.0, original bounds=[0,2]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 1<x3>[I] +1<x4>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x5>[I] +1<x6>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x3>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c5>: 1<x5>[I] +1<x3>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c6>: 1<x5>[I] +1<x1>[I] <= 2") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   mastercons[0] = SCIPfindCons(scip, "c4");
+   mastercons[1] = SCIPfindCons(scip, "c5");
+   mastercons[2] = SCIPfindCons(scip, "c6");
+   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, mastercons, 3) );
+   SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+   SCIP_CALL_EXPECT( SCIPsolve(scip) );
+
+   ASSERT_EQ(3, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 2));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 2));
+}
+
+TEST_F(GcgAggregationTest, NonExtendedTriangleTest) {
+   DEC_DECOMP* decomp;
+   SCIP_CONS* mastercons[3];
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x4>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x5>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x6>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x7>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x8>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x9>: obj=2.0, original bounds=[0,2]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 1<x3>[I] +1<x4>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x5>[I] +1<x6>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x7>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c5>: 1<x3>[I] +1<x8>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c6>: 1<x5>[I] +1<x9>[I] <= 2") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   mastercons[0] = SCIPfindCons(scip, "c4");
+   mastercons[1] = SCIPfindCons(scip, "c5");
+   mastercons[2] = SCIPfindCons(scip, "c6");
+   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, mastercons, 3) );
+   SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+   SCIP_CALL_EXPECT( SCIPsolve(scip) );
+
+   ASSERT_EQ(3, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 2));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 2));
+}
+
+TEST_F(GcgAggregationTest, ExtendedMasterTest) {
+   DEC_DECOMP* decomp;
+   SCIP_CONS* mastercons[3];
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x4>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x5>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x6>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x7>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x8>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x9>: obj=2.0, original bounds=[0,2]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 1<x3>[I] +1<x4>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x5>[I] +1<x6>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x3>[I] +1<x5>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c5>: 2<x1>[I] +2<x3>[I] +1<x7>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c6>: 1<x1>[I] +1<x3>[I] <= 2") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   mastercons[0] = SCIPfindCons(scip, "c4");
+   mastercons[1] = SCIPfindCons(scip, "c5");
+   mastercons[2] = SCIPfindCons(scip, "c6");
+   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, mastercons, 3) );
+   SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+   SCIP_CALL_EXPECT( SCIPsolve(scip) );
+
+   ASSERT_EQ(3, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(2, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(0, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 2));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
+   ASSERT_EQ(FALSE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 2));
+}
+
+TEST_F(GcgAggregationTest, NonExtendedMasterTest) {
+   DEC_DECOMP* decomp;
+   SCIP_CONS* mastercons[3];
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x4>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x5>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x6>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x7>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x8>: obj=2.0, original bounds=[0,2]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x9>: obj=2.0, original bounds=[0,2]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 1<x3>[I] +1<x4>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x5>[I] +1<x6>[I] >= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x3>[I] +1<x5>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c5>: 1<x1>[I] +1<x3>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c6>: 1<x1>[I] +1<x5>[I] <= 2") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   mastercons[0] = SCIPfindCons(scip, "c4");
+   mastercons[1] = SCIPfindCons(scip, "c5");
+   mastercons[2] = SCIPfindCons(scip, "c6");
+   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, mastercons, 3) );
+   SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+   SCIP_CALL_EXPECT( SCIPsolve(scip) );
+
+   ASSERT_EQ(3, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 2));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 2));
+}

@@ -2,7 +2,7 @@
 
 # For release versions, only use VERSION="x.x.x".
 # For development versions, use VERSION="x.x.x.x" with subversion number.
-VERSION="2.0.0.2"
+VERSION="2.0.1"
 NAME="gcg-$VERSION"
 rm -f $NAME
 ln -s . $NAME
@@ -15,8 +15,8 @@ fi
 git status
 
 echo generating default setting files
-make LPS=none OPT=opt-gccold READLINE=false ZLIB=false ZIMPL=false scip -j4
-make LPS=none OPT=opt-gccold READLINE=false ZLIB=false ZIMPL=false -j4
+make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false scip -j4
+make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false BLISS=false -j4
 bin/gcg -c "set default set save doc/inc/parameters.set quit"
 
 sed -i '$ d' doc/inc/parameters.set
@@ -56,6 +56,7 @@ $NAME/check/instances/bpp/*.dec $NAME/check/instances/bpp/*.blk \
 $NAME/check/instances/gap/*.dec \
 $NAME/check/instances/cs/*.dec \
 $NAME/check/instances/miplib/*.dec \
+$NAME/check/instances/mkp/*.lp \
 $NAME/doc/inc/*.inc
 rm -f $NAME
 echo ""

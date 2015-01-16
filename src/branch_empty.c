@@ -148,10 +148,28 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    {
       assert(GCGmasterbranchGetPropBoundType(masterbranchchildcons) != GCG_BOUNDTYPE_NONE);
 
-      SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
+      /* check if bound change is of type upper or lower */
+      if( GCGmasterbranchGetPropBoundType(masterbranchchildcons) != GCG_BOUNDTYPE_FIXED )
+      {
+         SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
             GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
             (SCIP_BOUNDTYPE) GCGmasterbranchGetPropBoundType(masterbranchchildcons),
             GCGmasterbranchGetPropBound(masterbranchchildcons)) );
+      }
+      else
+      {
+         /* variable is fixed: add upper and lower bound change */
+         SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
+            GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
+            SCIP_BOUNDTYPE_LOWER,
+            GCGmasterbranchGetPropBound(masterbranchchildcons)) );
+
+         SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
+           GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
+           SCIP_BOUNDTYPE_UPPER,
+           GCGmasterbranchGetPropBound(masterbranchchildcons)) );
+
+      }
    }
 
    GCGconsOrigbranchSetMastercons(origbranch, masterbranchchildcons);
@@ -168,7 +186,6 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
          SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGgetMasterprob(scip)))));
    }
 
-   assert(SCIPgetNNodes(scip) == SCIPgetNNodes(GCGgetMasterprob(scip)));
    /*assert(SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) == SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGrelaxGetMasterprob(scip)))));*/
 
    return SCIP_OKAY;
@@ -182,47 +199,19 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 )
 {
    SCIP* masterscip;
-   SCIP_Bool feasible;
    SCIP_CONS* masterbranchcons;
    int nchildnodes;
    int i;
-
-   feasible = TRUE;
 
    assert(scip != NULL);
    assert(result != NULL);
 
    *result = SCIP_DIDNOTRUN;
 
-   if( GCGrelaxGetCurrentOrigSol(scip) == NULL )
-   {
-      SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
-   }
-   else
-   {
-      /* check whether the current original solution is integral */
-#ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
-#else
-      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
-#endif
-   }
-
-   if( feasible )
-   {
-      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
-            SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
-
-      *result = SCIP_CUTOFF;
-      return SCIP_OKAY;
-   }
-
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-
-
 
    if( masterbranchcons == NULL )
    {
@@ -230,6 +219,21 @@ SCIP_RETCODE createBranchNodesInOrigprob(
    }
 
    nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
+
+   /* check of focus node of master has children */
+   if( nchildnodes <= 0 && SCIPgetStage(masterscip) != SCIP_STAGE_SOLVED && SCIPgetNChildren(masterscip) >= 1 )
+   {
+      SCIP_NODE* child;
+
+      SCIPdebugMessage("create dummy child in origprob, because there is also a child in the master\n");
+
+      /* create dummy child */
+      SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
+
+      *result = SCIP_BRANCHED;
+      return SCIP_OKAY;
+   }
+
    if( nchildnodes <= 0 )
    {
       SCIPdebugMessage("node cut off, since there is no successor node\n");

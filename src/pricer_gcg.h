@@ -140,12 +140,21 @@ void GCGpricerPrintStatistics(
    FILE*                 file                /**< output file */
    );
 
+/** method to get existence of rays */
+extern
+SCIP_RETCODE GCGpricerExistRays(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool*            exist               /**< pointer to store if there exists any ray */
+   );
+
+
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */
 extern
 SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_SOL*             origsol             /**< the solution that should be transferred */
+   SCIP_SOL*             origsol,            /**< the solution that should be transferred */
+   SCIP_Bool*            stored              /**< pointer to store if transferred solution is feasible (or NULL) */
    );
 
 /** create initial master variables */

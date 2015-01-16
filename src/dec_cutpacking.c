@@ -907,7 +907,7 @@ SCIP_RETCODE getMergedConss(
    {
       for( j = 0; j < detectordata->nsubscipconss[i]; ++j )
       {
-         SCIP_CALL( hashmapInsert(constoblock, subscipconss[i][j], (void *) ((size_t)i+1)) );
+         SCIP_CALL( hashmapInsert(constoblock, subscipconss[i][j], (void *) (size_t) (i+1)) );
       }
    }
 
@@ -1046,7 +1046,7 @@ SCIP_RETCODE getConsIndex(
    {
       for( j = 0; j < nnewsubscipconss[i]; ++j )
       {
-         SCIP_CALL( SCIPhashmapSetImage(detectordata->constoblock, newsubscipconss[i][j], (void*) ((size_t)i+1)) );
+         SCIP_CALL( SCIPhashmapSetImage(detectordata->constoblock, newsubscipconss[i][j], (void*) (size_t) (i+1)) );
       }
    }
 
@@ -1143,7 +1143,7 @@ SCIP_RETCODE getLinkingVars(
       {
          linkingvars[nlinkingvars] = vars[i];
          ++nlinkingvars;
-         SCIP_CALL( SCIPhashmapInsert(vartoblock, vars[i], (void*) ((size_t)detectordata->nblocks+1)) );
+         SCIP_CALL( SCIPhashmapInsert(vartoblock, vars[i], (void*) (size_t) (detectordata->nblocks+1)) );
       }
       else
       {
@@ -1867,7 +1867,7 @@ DEC_DECL_INITDETECTOR(initCutpacking)
       }
       for( j = 0; j < ncurvars; ++j )
       {
-         if( GCGisVarRelevant(curvars[j]) )
+         if( GCGisVarRelevant(curvars[j]) && GCGisVarRelevant(curvars[j]) )
          {
             int varpos;
 

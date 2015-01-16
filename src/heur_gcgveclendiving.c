@@ -119,7 +119,7 @@ SCIP_Bool areVarsInSameBlock(
     * check whether the master variable is either its direct copy
     * or in one of its blocks
     */
-   if( GCGvarIsLinking(origvar) )
+   if( GCGoriginalVarIsLinking(origvar) )
    {
       assert(origblock == -2);
       if( masterblock == -1 )

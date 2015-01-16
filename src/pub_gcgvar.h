@@ -29,6 +29,7 @@
  * @ingroup PUBLICMETHODS
  * @brief  public methods for GCG variables
  * @author Martin Bergner
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -63,7 +64,7 @@ SCIP_Bool GCGvarIsMaster(
 
 /** returns TRUE or FALSE whether variable is a linking variable or not */
 extern
-SCIP_Bool GCGvarIsLinking(
+SCIP_Bool GCGoriginalVarIsLinking(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    );
 
@@ -198,6 +199,12 @@ void GCGoriginalVarSetNCoefs(
    int                   coef                /**< number of coefficient to set */
    );
 
+/** returns TRUE or FALSE whether a master variable is a direct copy of a linking variable or not */
+extern
+SCIP_Bool GCGmasterVarIsLinking(
+   SCIP_VAR*             var                 /**< variable data structure */
+   );
+
 /** returns whether the master variable is a ray */
 extern
 SCIP_Bool GCGmasterVarIsRay(
@@ -265,6 +272,13 @@ extern
 SCIP_Bool GCGisLinkingVarInBlock(
    SCIP_VAR*             var,                /**< variable data structure */
    int                   block               /**< pricing problem number */
+   );
+
+/** determines if the master variable is in the given block */
+extern
+SCIP_Bool GCGisMasterVarInBlock(
+   SCIP_VAR*             mastervar,          /**< master variable */
+   int                   blocknr             /**< block number to check */
    );
 
 /** informs an original variable, that a variable in the master problem was created,
@@ -422,12 +436,6 @@ void GCGprintVar(
    SCIP_VAR*             var                 /**< variable that should be printed */
    );
 
-/** determines if the master variable is in the given block */
-extern
-SCIP_Bool GCGmasterVarIsInBlock(
-   SCIP_VAR*             mastervar,          /**< master variable */
-   int                   blocknr             /**< block number to check */
-   );
 #ifdef __cplusplus
 }
 #endif

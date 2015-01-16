@@ -332,7 +332,6 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    SCIP_Bool lperror;
    SCIP_Bool lpsolved;
    SCIP_Bool cutoff;
-   SCIP_Bool feasible;
    SCIP_Longint ncalls;
    SCIP_Longint nsolsfound;
    SCIP_Longint nlpiterations;         /* lp iterations performed in one single diving loop */
@@ -663,11 +662,11 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
             {
                retstat = GCGrelaxPerformProbingWithPricing(scip, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds,
-                  &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff, &feasible);
+                  &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff);
             }
             else
             {
-               retstat = GCGrelaxPerformProbing(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff, &feasible);
+               retstat = GCGrelaxPerformProbing(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff);
                npricerounds = 0;
             }
             if( retstat != SCIP_OKAY )
@@ -679,11 +678,11 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
             {
                SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds,
-                  &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff, &feasible) );
+                  &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff) );
             }
             else
             {
-               SCIP_CALL( GCGrelaxPerformProbing(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff, &feasible) );
+               SCIP_CALL( GCGrelaxPerformProbing(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff) );
                npricerounds = 0;
             }
 #endif

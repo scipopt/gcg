@@ -156,7 +156,7 @@ SCIP_RETCODE addVarToMasterbranch(
 
    *added = FALSE;
 
-   if( !GCGmasterVarIsInBlock(mastervar, GCGbranchGenericBranchdataGetConsblocknr(branchdata)) )
+   if( !GCGisMasterVarInBlock(mastervar, GCGbranchGenericBranchdataGetConsblocknr(branchdata)) )
       return SCIP_OKAY;
 
    SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
@@ -343,7 +343,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
 
          if( (GCGbranchGenericBranchdataGetConsblocknr(branchdata) != GCGvarGetBlock(mastervar) && GCGvarGetBlock(mastervar) != -1 )
-               || (GCGvarGetBlock(mastervar) == -1 && !GCGvarIsLinking(mastervar)) )
+               || (GCGvarGetBlock(mastervar) == -1 && !GCGmasterVarIsLinking(mastervar)) )
          {
             parentcons = GCGconsMasterbranchGetParentcons(parentcons);
 
@@ -533,12 +533,12 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
    if( GCGvarGetBlock(mastervar1) == -1 )
    {
       SCIPdebugMessage("linkingvar\n");
-      assert(GCGvarIsLinking(mastervar1));
+      assert(GCGmasterVarIsLinking(mastervar1));
    }
    if( GCGvarGetBlock(mastervar2) == -1 )
    {
       SCIPdebugMessage("linkingvar\n");
-      assert(GCGvarIsLinking(mastervar2));
+      assert(GCGmasterVarIsLinking(mastervar2));
    }
 
    origvars = GCGmasterVarGetOrigvars(mastervar1);
@@ -1789,7 +1789,7 @@ SCIP_RETCODE ChooseSeparateMethod(
 
       for( i=0; i<nmastervars; ++i )
       {
-         if( GCGmasterVarIsInBlock(mastervars[i], blocknr) )
+         if( GCGisMasterVarInBlock(mastervars[i], blocknr) )
          {
             ++nstrips;
 
@@ -2175,7 +2175,7 @@ SCIP_RETCODE createChildNodesGeneric(
             if( i >= nmastervars2 )
                break;
 
-            if( GCGmasterVarIsInBlock(mastervars2[i], blocknr) )
+            if( GCGisMasterVarInBlock(mastervars2[i], blocknr) )
             {
                SCIP_Real generator_i = getGeneratorEntry(mastervars2[i], S[p].component);
 
@@ -2406,7 +2406,9 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    int i;
    int j;
    int allnorigvars;
+#ifndef NDEBUG
    SCIP_Bool foundblocknr = FALSE;
+#endif
 
    blocknr = -2;
    Ssize = 0;
@@ -2441,7 +2443,9 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       /* if we have a master variable, we branch on it */
       if( GCGvarGetBlock(mastervar) == -1 )
       {
+#ifndef NDEBUG
          foundblocknr = TRUE;
+#endif
          blocknr = -1;
          break;
       }
@@ -2463,9 +2467,11 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          if( checked )
             continue;
          /* else the block has not been checked and the variable is in it , we have a candidate */
-         else if( GCGmasterVarIsInBlock(mastervar, j))
+         else if( GCGisMasterVarInBlock(mastervar, j))
          {
+#ifndef NDEBUG
             foundblocknr = TRUE;
+#endif
             blocknr = j;
             break;
          }
@@ -2476,14 +2482,22 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
    if( blocknr < -1 )
    {
+      SCIP_Bool rays;
+
       SCIPdebugMessage("Generic branching rule could not find variables to branch on!\n");
+
+      SCIP_CALL( GCGpricerExistRays(masterscip, &rays) );
+
+      if( rays )
+         SCIPwarningMessage(masterscip, "Generic branching is not compatible with unbounded problems!\n");
+
       return SCIP_ERROR;
    }
 
    /* a special case; branch on copy of an origvar directly */
    if( blocknr == -1 )
    {
-      assert(!GCGvarIsLinking(mastervar));
+      assert(!GCGmasterVarIsLinking(mastervar));
       SCIPdebugMessage("branching on master variable\n");
       SCIP_CALL( branchDirectlyOnMastervar(origscip, mastervar, branchrule) );
       return SCIP_OKAY;
@@ -2498,7 +2512,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       mastervar = branchcands[i];
       assert(GCGvarIsMaster(mastervar));
 
-      if( GCGmasterVarIsInBlock(mastervar, blocknr) )
+      if( GCGisMasterVarInBlock(mastervar, blocknr) )
       {
          mastervarValue = SCIPgetSolVal(masterscip, NULL, mastervar);
          if( SCIPisGT(origscip, mastervarValue - SCIPfloor(origscip, mastervarValue), 0.0) )
@@ -2769,10 +2783,7 @@ static
 SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
 {  /*lint --e{715}*/
    SCIP* origscip;
-   SCIP_Bool feasible;
    SCIP_Bool discretization;
-
-   feasible = TRUE;
 
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -2799,19 +2810,12 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
       SCIPdebugMessage("Generic branching executed on a set covering or set partitioning problem\n");
    }
 
-   /* check whether the current original solution is integral */
-#ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(origscip), TRUE, TRUE, TRUE, TRUE, &feasible) );
-#else
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(origscip), FALSE, TRUE, TRUE, TRUE, &feasible) );
-#endif
-
-   if( feasible )
+   if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
          SCIPgetSolOrigObj(origscip, GCGrelaxGetCurrentOrigSol(origscip)));
 
-      *result = SCIP_CUTOFF;
+      *result = SCIP_DIDNOTFIND;
       return SCIP_OKAY;
    }
 
