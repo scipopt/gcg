@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.0.0.2
+VERSION         :=	2.0.1
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -58,7 +58,7 @@ VALGRIND	=	false
 MODE		=	readdec
 GTEST		=	true
 PARASCIP	= 	true
-BLISS       	=   	true
+BLISS       	=   	false
 OPENMP          =       false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
@@ -99,6 +99,8 @@ endif
 
 ifeq ($(LPS),cpx)
 FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/cpxinc
+else
+FLAGS		+=	-DNCPLEXSOLVER
 endif
 
 #-----------------------------------------------------------------------------
@@ -155,11 +157,11 @@ LIBOBJ		=	reader_blk.o \
 			dialog_master.o \
 			event_bestsol.o \
 			event_mastersol.o \
+			event_relaxsol.o \
 			event_solvingstats.o \
 			event_display.o \
 			solver_mip.o \
 			solver_knapsack.o \
-			solver_cplex.o \
 			cons_decomp.o \
 			decomp.o \
 			dec_arrowheur.o \
@@ -182,12 +184,17 @@ LIBOBJ		=	reader_blk.o \
 			graph/graph_tclique.o \
 			stat.o \
 			objdialog.o \
-			dialog_graph.o
+			dialog_graph.o \
+			gcgcol.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
 			dec_isomorph.o \
 			bliss.o
+endif
+
+ifeq ($(LPS),cpx)
+LIBOBJ		+=	solver_cplex.o
 endif
 
 MAINOBJ		=	main.o

@@ -203,23 +203,10 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
    int i;
 
-   feasible = TRUE;
-
    assert(scip != NULL);
    assert(result != NULL);
 
    *result = SCIP_DIDNOTRUN;
-
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
-
-   if( feasible )
-   {
-      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
-            SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
-
-      *result = SCIP_CUTOFF;
-      return SCIP_OKAY;
-   }
 
    /* get master problem */
    masterscip = GCGgetMasterprob(scip);
@@ -227,12 +214,28 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
    /* get masterbranch constraint at the current node */
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
+
    /* @todo: Why should this happen? */
    if( masterbranchcons == NULL )
       return SCIP_OKAY;
 
    /* get the children of the current node */
    nchildnodes = GCGconsMasterbranchGetNChildconss(masterbranchcons);
+
+   /* check if the focus node of the master problem has children */
+   if( nchildnodes <= 0 && SCIPgetStage(masterscip) != SCIP_STAGE_SOLVED && SCIPgetNChildren(masterscip) >= 1 )
+   {
+      SCIP_NODE* child;
+
+      SCIPdebugMessage("create dummy child in origprob, because there is also a child in the master\n");
+
+      /* create dummy child */
+      SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
+
+      *result = SCIP_BRANCHED;
+      return SCIP_OKAY;
+   }
+
    if( nchildnodes <= 0 )
    {
       SCIPdebugMessage("node cut off, since there is no successor node\n");

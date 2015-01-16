@@ -498,8 +498,6 @@ SCIP_RETCODE applyProbing(
    SCIP_Real leftubprobing;
    SCIP_Real rightlbprobing;
    SCIP_Real rightubprobing;
-   /** @todo handle the feasible result */
-   SCIP_Bool feasible;
 
    leftubprobing = -1.0;
    leftlbprobing = -1.0;
@@ -587,8 +585,9 @@ SCIP_RETCODE applyProbing(
    {
       *nlpiterations -= SCIPgetNLPIterations(masterscip);
 
+      /** @todo handle the feasible result */
       SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, -1, nlpiterations, NULL,
-            lpobjvalue, lpsolved, lperror, cutoff, &feasible) );
+            lpobjvalue, lpsolved, lperror, cutoff) );
    }
 
    /* exit probing mode */

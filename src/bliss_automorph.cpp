@@ -156,13 +156,14 @@ void fhook(
    if(hook->getBool())
       return;
 
-   SCIPdebugMessage("Looking for a permutation from [0,%ud] bijective to [%ud:%ud]\n", n/2-1, n/2, n-1);
+   SCIPdebugMessage("Looking for a permutation from [0,%u] bijective to [%u:%u] (N=%u) \n", n/2-1, n/2, n-1, N);
    for( i = 0; i < n / 2; i++ )
    {
       assert(aut[i] < INT_MAX);
       if( (aut[i]) >= n / 2 )
       {
-         SCIPdebugMessage("%ud -> %ud\n", i, aut[i]);
+         assert(aut[i] < n);
+         SCIPdebugMessage("%u -> %u\n", i, aut[i]);
          j++;
       }
       else
@@ -173,8 +174,18 @@ void fhook(
       hook->setBool(TRUE);
    }
 
+   for( i = n; i < N; ++i )
+   {
+      if( aut[i] != i )
+      {
+         SCIPdebugMessage("Master %u -> %u not the identity, no decomposition possible!\n", i, aut[i]);
+         hook->setBool(false);
+         break;
+      }
+   }
+
    SCIPdebugMessage("Permutation %s found.\n", hook->getBool() ? "":"not");
-   SCIPdebugMessage("j = %ud\n", j);
+   SCIPdebugMessage("j = %u\n", j);
 
    if( !hook->getBool() )
       return;
@@ -607,7 +618,8 @@ SCIP_RETCODE createGraph(
 
             /* add coefficent node for current coeff */
             (void) h->add_vertex((unsigned int)color);
-            SCIPdebugMessage("master nz for var <%s> (id: %d) (value: %f, color: %d)\n", SCIPvarGetName(curvars[j]), nnodes, curvals[i], color);
+            assert(ABS(curvals[j] < SCIPinfinity(scip)));
+            SCIPdebugMessage("master nz for var <%s> (id: %d) (value: %f, color: %d)\n", SCIPvarGetName(curvars[j]), nnodes, curvals[j], color);
             nnodes++;
          }
       }

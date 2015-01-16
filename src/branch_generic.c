@@ -2395,7 +2395,9 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    int i;
    int j;
    int allnorigvars;
+#ifndef NDEBUG
    SCIP_Bool foundblocknr = FALSE;
+#endif
 
    blocknr = -2;
    Ssize = 0;
@@ -2430,7 +2432,9 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       /* if we have a master variable, we branch on it */
       if( GCGvarGetBlock(mastervar) == -1 )
       {
+#ifndef NDEBUG
          foundblocknr = TRUE;
+#endif
          blocknr = -1;
          break;
       }
@@ -2454,7 +2458,9 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          /* else the block has not been checked and the variable is in it , we have a candidate */
          else if( GCGisMasterVarInBlock(mastervar, j))
          {
+#ifndef NDEBUG
             foundblocknr = TRUE;
+#endif
             blocknr = j;
             break;
          }
@@ -2766,10 +2772,7 @@ static
 SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
 {  /*lint --e{715}*/
    SCIP* origscip;
-   SCIP_Bool feasible;
    SCIP_Bool discretization;
-
-   feasible = TRUE;
 
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -2796,15 +2799,12 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
       SCIPdebugMessage("Generic branching executed on a set covering or set partitioning problem\n");
    }
 
-
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
-
-   if( feasible )
+   if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
          SCIPgetSolOrigObj(origscip, GCGrelaxGetCurrentOrigSol(origscip)));
 
-      *result = SCIP_CUTOFF;
+      *result = SCIP_DIDNOTFIND;
       return SCIP_OKAY;
    }
 

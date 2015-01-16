@@ -216,7 +216,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
          FALSE, FALSE, &delayed, &cutoff) );

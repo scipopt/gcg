@@ -42,6 +42,7 @@
 #include "type_solver.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
+#include "pub_gcgcol.h"
 
 #define SOLVER_NAME          "knapsack"
 #define SOLVER_DESC          "knapsack solver for pricing problems"
@@ -65,10 +66,9 @@ SCIP_RETCODE solveKnapsack(
    GCG_SOLVER*           solver,             /**< solver data structure */
    int                   probnr,             /**< problem number */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
-   SCIP_SOL**            sols,               /**< array of solutions */
-   SCIP_Bool*            solisray,           /**< array indicating whether solution is a ray */
-   int                   maxsols,            /**< size of preallocated array */
-   int*                  nsols,              /**< pointer to store number of solutions */
+   GCG_COL**             cols,               /**< array of columns corresponding to solutions */
+   int                   maxcols,            /**< size of preallocated array */
+   int*                  ncols,              /**< pointer to store number of columns */
    SCIP_STATUS*          result              /**< pointer to store pricing problem status */
    )
 { /*lint -e715 */
@@ -105,9 +105,8 @@ SCIP_RETCODE solveKnapsack(
    assert(pricingprob != NULL);
    assert(solver != NULL);
    assert(lowerbound != NULL);
-   assert(sols != NULL);
-   assert(solisray != NULL);
-   assert(nsols != NULL);
+   assert(cols != NULL);
+   assert(ncols != NULL);
    assert(result != NULL);
 
    pricingprobvars = SCIPgetVars(pricingprob);
@@ -299,7 +298,6 @@ SCIP_RETCODE solveKnapsack(
    SCIPdebugMessage("knapsack solved, solval = %g\n", solval);
 
    nsolvars = 0;
-   solisray[0] = FALSE;
 
    for( i = 0; i < nsolitems; i++ )
    {
@@ -358,12 +356,16 @@ SCIP_RETCODE solveKnapsack(
       }
    }
 
-   SCIP_CALL( SCIPcreateSol(pricingprob, &sols[0], NULL) );
-   SCIP_CALL( SCIPsetSolVals(pricingprob, sols[0], nsolvars, solvars, solvals) );
+   SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[0], probnr, solvars, solvals, nsolvars, FALSE, SCIPinfinity(pricingprob)) );
 
-   *nsols = 1;
+   *ncols = 1;
 
-   solval = SCIPgetSolOrigObj(pricingprob, sols[0]);
+   solval = 0.0;
+
+   for( i = 0; i < nsolvars; ++i )
+   {
+      solval += solvals[i] * SCIPvarGetObj(solvars[i]);
+   }
 
    *lowerbound = solval;
 
@@ -398,7 +400,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 {  /*lint --e{715}*/
 
    /* solve the knapsack problem exactly */
-   SCIP_CALL( solveKnapsack(TRUE, pricingprob, solver, probnr, lowerbound, sols, solisray, maxsols, nsols, result) );
+   SCIP_CALL( solveKnapsack(TRUE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, result) );
 
    return SCIP_OKAY;
 }
@@ -410,7 +412,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 {  /*lint --e{715}*/
 
    /* solve the knapsack problem approximately */
-   SCIP_CALL( solveKnapsack(FALSE, pricingprob, solver, probnr, lowerbound, sols, solisray, maxsols, nsols, result) );
+   SCIP_CALL( solveKnapsack(FALSE, pricingprob, solver, probnr, lowerbound, cols, maxcols, ncols, result) );
 
    return SCIP_OKAY;
 }

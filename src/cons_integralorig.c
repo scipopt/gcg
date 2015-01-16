@@ -42,6 +42,7 @@
 #include "cons_masterbranch.h"
 #include "pub_gcgvar.h"
 #include "scip/struct_branch.h"
+#include "relax_gcg.h"
 
 #include "branch_orig.h"
 
@@ -174,6 +175,13 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( discretization )
    {
+      return SCIP_OKAY;
+   }
+
+   /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
+   if( GCGrelaxIsOrigSolFeasible(origprob) )
+   {
+      *result = SCIP_FEASIBLE;
       return SCIP_OKAY;
    }
 

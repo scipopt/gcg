@@ -1,16 +1,32 @@
-GCG Version Next
-===============
+GCG Version 2.0.1
+=================
 
 features
-- Decomposition and pricing problems are permuted when the permutation
+- decomposition and pricing problems are permuted when the permutation
   seed is set
 - progress in dual bound is now displayed while solving the root node
 - pricing solvers can be enabled or disabled via parameter
+- display blocks found for decomposition in statistics
+- new boundtype for fixed original variables due to branching
+- use new GCG column structure instead SCIP solution structure in pricing
+
+code cleanup
+- simplify code in generic branching
+- structure of method branchVar()
 
 bug fixes
-- Calculation of subgradient in stabilization corrected
-- CPLEX pricing solver is disabled as it is incompatible with generic
-  branching
+- fix bugs concerning stabilization
+- disable stabilization when linking variables or variables belonging to no block are present
+- CPLEX pricing solver is disabled as it is incompatible with generic branching
+- fix memory issues
+- fix bound propagation bugs
+- fix bug in knapsack solver
+- delete constraints added at presolving after the root node
+- check feasibility of current solution in original problem if this fails in the transformed problem
+- fix wrong aggregation when using bliss
+- print warnings when pricing is aborted
+- fix translation of original solution to master problem when pricing problems are aggregated
+- better handling of infinite objective values in pricing
 
 GCG Version 2.0
 ===============

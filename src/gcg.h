@@ -247,6 +247,18 @@ int GCGgetNVarLinkingconss(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
+/** return number of linking variables */
+extern
+int GCGgetNLinkingvars(
+   SCIP*                 scip                /**< SCIP data structure */
+  );
+
+/** return number of variables directly transferred to the master problem */
+extern
+int GCGgetNTransvars(
+   SCIP*                 scip                /**< SCIP data structure */
+  );
+
 #ifdef __cplusplus
 }
 #endif

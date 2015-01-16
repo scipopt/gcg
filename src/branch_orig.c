@@ -662,15 +662,12 @@ static
 SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 {  /*lint --e{715}*/
    SCIP* origscip;
-   SCIP_Bool feasible;
 
    SCIPdebugMessage("Execlp method of orig branching\n");
 
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
-
-   feasible = FALSE;
 
    if( GCGcurrentNodeIsGeneric(scip) )
    {
@@ -679,14 +676,10 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
       return SCIP_OKAY;
    }
 
-   SCIPdebugMessage("Update current sol.\n");
-
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
-
    /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
-   if( feasible )
+   if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
-      *result = SCIP_CUTOFF;
+      *result = SCIP_DIDNOTFIND;
       SCIPdebugMessage("solution was feasible, node can be cut off!");
    }
 
@@ -704,15 +697,12 @@ static
 SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 {  /*lint --e{715}*/
    SCIP* origscip;
-   SCIP_Bool feasible;
 
    SCIPdebugMessage("Execext method of orig branching\n");
 
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
-
-   feasible = FALSE;
 
    if( GCGcurrentNodeIsGeneric(scip) )
    {
@@ -721,13 +711,10 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
       return SCIP_OKAY;
    }
 
-   SCIPdebugMessage("Update current sol.\n");
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
-
    /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
-   if( feasible )
+   if( GCGrelaxIsOrigSolFeasible(origscip) )
    {
-      *result = SCIP_CUTOFF;
+      *result = SCIP_DIDNOTFIND;
       SCIPdebugMessage("solution was feasible, node can be cut off!");
    }
    SCIP_CALL( branchExtern(origscip, branchrule, result) );
