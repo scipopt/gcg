@@ -398,5 +398,3 @@ SCIP_Real GCGcolGetSolVal(
 
    return vals[pos];
 }
-
-

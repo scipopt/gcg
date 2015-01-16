@@ -227,5 +227,3 @@ TEST_F(GcgColTest, GetSolValTest) {
 
    SCIPfreeMemoryArray(scip, &vars);
 }
-
-
