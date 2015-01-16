@@ -195,7 +195,6 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 )
 {
    SCIP* masterscip;
-   SCIP_Bool feasible;
    SCIP_BRANCHRULE* branchrule;
    SCIP_CONS* masterbranchcons;
    int nchildnodes;
