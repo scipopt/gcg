@@ -1977,7 +1977,11 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
 
       if( nvars > 0 )
       {
-         SCIP_CALL( SCIPaddPoolCut( origscip, origcut) );
+         SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + 1) );
+
+         sepadata->newcuts[sepadata->nnewcuts] = origcut;
+         SCIP_CALL( SCIPcaptureRow(scip, sepadata->newcuts[sepadata->nnewcuts]) );
+         ++(sepadata->nnewcuts);
 
          SCIPdebugMessage("cut added to orig cut pool\n");
       }
