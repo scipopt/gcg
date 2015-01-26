@@ -1548,7 +1548,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          if( !SCIPisCutEfficacious(origscip, origsol, origcut) )
          {
-            SCIP_CALL( SCIPaddPoolCut(origscip, origcut) );
+            if( !SCIProwIsLocal(origcut) )
+               SCIP_CALL( SCIPaddPoolCut(origscip, origcut) );
+
             SCIPfreeBufferArray(scip, &roworigvars);
 
             continue;
