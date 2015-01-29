@@ -94,6 +94,7 @@ struct SCIP_SepaData
    SCIP_Bool             forcecuts;          /**< parameter returns if cuts are forced to enter the LP */
    int                   posslackexp;        /**< parameter returns exponent of usage of positive slack */
    SCIP_Bool             posslackexpgen;     /**< parameter returns if exponent should be automatically generated */
+   SCIP_Real             posslackexpgenfactor; /**< parameter returns factor for automatically generated exponent */
    int                   iterations;         /**< parameter returns number of new rows adding iterations (rows just cut off probing lp sol) */
    int                   mincuts;            /**< parameter returns number of minimum cuts needed to return *result = SCIP_Separated */
    SCIP_Real             objconvex;          /**< parameter return convex combination factor */
@@ -1363,10 +1364,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             if( sepadata->enableposslack && sepadata->posslackexpgen )
             {
                SCIP_Real genconvex;
+               SCIP_Real factor;
+
+               factor = sepadata->posslackexpgenfactor;
 
                SCIP_CALL( initGenconv(origscip, sepadata, origsol, nbasis, &genconvex) );
 
-               sepadata->posslackexp = (int) SCIPceil(origscip, 0.1/(1.0 - genconvex)) + 0.5;
+               sepadata->posslackexp = (int) SCIPceil(origscip, factor/(1.0 - genconvex)) + 0.5;
 
                SCIPinfoMessage(origscip, NULL, "exponent = %d\n", sepadata->posslackexp);
 
@@ -1790,6 +1794,9 @@ SCIP_RETCODE SCIPincludeSepaBasis(
          &(sepadata->posslackexp), FALSE, 1, 1, INT_MAX, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexpgen", "automatically generated exponent?",
             &(sepadata->posslackexpgen), FALSE, FALSE, NULL, NULL);
+   SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexpgenfactor", "factor for automatically generated exponent",
+            &(sepadata->posslackexpgenfactor), FALSE, 0.1, SCIPepsilon(GCGmasterGetOrigprob(scip)),
+            SCIPinfinity(GCGmasterGetOrigprob(scip)), NULL, NULL);
    SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/basis/objconvex", "convex combination factor",
          &(sepadata->objconvex), FALSE, 1.0, 0.0, 1.0, NULL, NULL);
    SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/paramsetting", "parameter returns which parameter setting is used for "
