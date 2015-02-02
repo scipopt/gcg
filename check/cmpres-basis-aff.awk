@@ -1669,6 +1669,16 @@ END {
    {
       # all problems
       printf("\\midrule\n") > texcmpfile;
+
+      printf("ninst %d psolv paff", nevalprobs[0,0]) > texcmpfile;
+      for( o = 0; o < nsolver; ++o )
+      {
+         s = printorder[o];
+         printf("& & & %8.1f & %8.1f", 100*nsolved[s,0]/nevalprobs[s,0], 100*naffprobs[s,0]/nevalprobs[s,0]) > texcmpfile;
+      }
+      printf("\\\\\n") > texcmpfile;
+
+
       printf("geom. mean     ") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
       {
@@ -1687,7 +1697,7 @@ END {
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.3f & %8.1f bla", texint(nodetotal[s,0]/nevalprobs[s,0]), timetotal[s,0]/nevalprobs[s,0], rootgaptotal[s,0]/nevalprobs[s,0], 100*naffprobs[s,0]/nevalprobs[s,0]) > texcmpfile;
+         printf("& %8s & %8.1f & %8.3f & %8.1f", texint(nodetotal[s,0]/nevalprobs[s,0]), timetotal[s,0]/nevalprobs[s,0], rootgaptotal[s,0]/nevalprobs[s,0], bcuts[s,0]/nevalprobs[s,0]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
 
