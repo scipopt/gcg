@@ -1229,10 +1229,10 @@ END {
             {
                nevalprobs[s,cat]++;
 
-                     if( bcuts[s,pidx] > 0.0 )
-                     {
-                        ++naffprobs[s, cat];
-                     } 
+               if( bcuts[s,pidx] > 0.0 )
+               {
+                  ++naffprobs[s, cat];
+               } 
 
                nep = nevalprobs[s,cat];
                timetotal[s,cat] += time[s,pidx];
@@ -1261,44 +1261,54 @@ END {
                refnodeshiftedgeom[s,cat] = refnodeshiftedgeom[s,cat]^((nep-1)/nep) * (refnodes+nodegeomshift)^(1.0/nep);
               
 
-               bcuttotal[s,cat] += bcuts[s,pidx];
-               bcutgeom[s,cat] = bcutgeom[s,cat]^((nep-1)/nep) * bcuts[s,pidx]^(1.0/nep);
-               bcutshiftedgeom[s,cat] = bcutshiftedgeom[s,cat]^((nep-1)/nep) * (bcuts[s,pidx]+bcutgeomshift)^(1.0/nep);
-               refbcuttotal[s,cat] += refbcuts;
-               refbcutgeom[s,cat] = refbcutgeom[s,cat]^((nep-1)/nep) * refbcuts^(1.0/nep);
-               refbcutshiftedgeom[s,cat] = refbcutshiftedgeom[s,cat]^((nep-1)/nep) * (refbcuts+bcutgeomshift)^(1.0/nep);
-
-               rootdbtotal[s,cat] += rootdbs[s,pidx];
-               rootdbgeom[s,cat] = rootdbgeom[s,cat]^((nep-1)/nep) * rootdbs[s,pidx]^(1.0/nep);
-               rootdbshiftedgeom[s,cat] = rootdbshiftedgeom[s,cat]^((nep-1)/nep) * (rootdbs[s,pidx]+rootdbgeomshift)^(1.0/nep);
-               refrootdbtotal[s,cat] += refrootdbs;
-               refrootdbgeom[s,cat] = refrootdbgeom[s,cat]^((nep-1)/nep) * refrootdbs^(1.0/nep);
-               refrootdbshiftedgeom[s,cat] = refrootdbshiftedgeom[s,cat]^((nep-1)/nep) * (refrootdbs+rootdbgeomshift)^(1.0/nep);
-
-               if( rootgaps[s,pidx] > -0.5 )
+               if( bcuts[s,pidx] > 0.0 )
                {
-                  rootgaptotal[s,cat] += rootgaps[s,pidx];
-                  rootgapgeom[s,cat] = rootgapgeom[s,cat]^((nep-1)/nep) * rootgaps[s,pidx]^(1.0/nep);
-                  rootgapshiftedgeom[s,cat] = rootgapshiftedgeom[s,cat]^((nep-1)/nep) * (rootgaps[s,pidx]+rootgapgeomshift)^(1.0/nep);
-                  refrootgaptotal[s,cat] += refrootgaps;
-                  refrootgapgeom[s,cat] = refrootgapgeom[s,cat]^((nep-1)/nep) * refrootgaps^(1.0/nep);
-                  refrootgapshiftedgeom[s,cat] = refrootgapshiftedgeom[s,cat]^((nep-1)/nep) * (refrootgaps+rootgapgeomshift)^(1.0/nep);
+                   nep = naffprobs[s, cat];
+                   bcuttotal[s,cat] += bcuts[s,pidx];
+                   bcutgeom[s,cat] = bcutgeom[s,cat]^((nep-1)/nep) * bcuts[s,pidx]^(1.0/nep);
+                   bcutshiftedgeom[s,cat] = bcutshiftedgeom[s,cat]^((nep-1)/nep) * (bcuts[s,pidx]+bcutgeomshift)^(1.0/nep);
+                   refbcuttotal[s,cat] += refbcuts;
+                   refbcutgeom[s,cat] = refbcutgeom[s,cat]^((nep-1)/nep) * refbcuts^(1.0/nep);
+                   refbcutshiftedgeom[s,cat] = refbcutshiftedgeom[s,cat]^((nep-1)/nep) * (refbcuts+bcutgeomshift)^(1.0/nep);
+
+               }
+
+              nep = nevalprobs[s,cat];
+              rootdbtotal[s,cat] += rootdbs[s,pidx];
+              rootdbgeom[s,cat] = rootdbgeom[s,cat]^((nep-1)/nep) * rootdbs[s,pidx]^(1.0/nep);
+              rootdbshiftedgeom[s,cat] = rootdbshiftedgeom[s,cat]^((nep-1)/nep) * (rootdbs[s,pidx]+rootdbgeomshift)^(1.0/nep);
+              refrootdbtotal[s,cat] += refrootdbs;
+              refrootdbgeom[s,cat] = refrootdbgeom[s,cat]^((nep-1)/nep) * refrootdbs^(1.0/nep);
+              refrootdbshiftedgeom[s,cat] = refrootdbshiftedgeom[s,cat]^((nep-1)/nep) * (refrootdbs+rootdbgeomshift)^(1.0/nep);
+
+
+              if( rootgaps[s,pidx] > -0.5 )
+              {
+                 rootgaptotal[s,cat] += rootgaps[s,pidx];
+                 rootgapgeom[s,cat] = rootgapgeom[s,cat]^((nep-1)/nep) * rootgaps[s,pidx]^(1.0/nep);
+                 rootgapshiftedgeom[s,cat] = rootgapshiftedgeom[s,cat]^((nep-1)/nep) * (rootgaps[s,pidx]+rootgapgeomshift)^(1.0/nep);
+                 refrootgaptotal[s,cat] += refrootgaps;
+                 refrootgapgeom[s,cat] = refrootgapgeom[s,cat]^((nep-1)/nep) * refrootgaps^(1.0/nep);
+                 refrootgapshiftedgeom[s,cat] = refrootgapshiftedgeom[s,cat]^((nep-1)/nep) * (refrootgaps+rootgapgeomshift)^(1.0/nep);
               }
               else
               {
-                  if( worstrootgaps > -0.5 )
-		  {
-	                  rootgaptotal[s,cat] += worstrootgaps;
-        	          rootgapgeom[s,cat] = rootgapgeom[s,cat]^((nep-1)/nep) * worstrootgaps^(1.0/nep);
-        	          rootgapshiftedgeom[s,cat] = rootgapshiftedgeom[s,cat]^((nep-1)/nep) * (worstrootgaps+rootgapgeomshift)^(1.0/nep);
-		  }
-                  if( refrootgaps > -0.5 )
- 		  {
-	                 refrootgaptotal[s,cat] += refrootgaps;
-	                  refrootgapgeom[s,cat] = refrootgapgeom[s,cat]^((nep-1)/nep) * refrootgaps^(1.0/nep);
-	          refrootgapshiftedgeom[s,cat] = refrootgapshiftedgeom[s,cat]^((nep-1)/nep) * (refrootgaps+rootgapgeomshift)^(1.0/nep);	
-		  }
-              }
+                 if( worstrootgaps > -0.5 )
+		 {
+	                rootgaptotal[s,cat] += worstrootgaps;
+        	        rootgapgeom[s,cat] = rootgapgeom[s,cat]^((nep-1)/nep) * worstrootgaps^(1.0/nep);
+        	        rootgapshiftedgeom[s,cat] = rootgapshiftedgeom[s,cat]^((nep-1)/nep) * (worstrootgaps+rootgapgeomshift)^(1.0/nep);
+		 }
+                 if( refrootgaps > -0.5 )
+ 		 {
+	                refrootgaptotal[s,cat] += refrootgaps;
+	                refrootgapgeom[s,cat] = refrootgapgeom[s,cat]^((nep-1)/nep) * refrootgaps^(1.0/nep);
+	                refrootgapshiftedgeom[s,cat] = refrootgapshiftedgeom[s,cat]^((nep-1)/nep) * (refrootgaps+rootgapgeomshift)^(1.0/nep);	
+         	 }
+             }
+
+
+
 
               if( time[s,pidx] <= wintolerance*besttime )
                   wins[s,cat]++;
@@ -1697,7 +1707,7 @@ END {
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f & %8.3f & %8.1f", texint(nodetotal[s,0]/nevalprobs[s,0]), timetotal[s,0]/nevalprobs[s,0], rootgaptotal[s,0]/nevalprobs[s,0], bcuts[s,0]/nevalprobs[s,0]) > texcmpfile;
+         printf("& %8s & %8.1f & %8.3f & %8.1f", texint(nodetotal[s,0]/nevalprobs[s,0]), timetotal[s,0]/nevalprobs[s,0], rootgaptotal[s,0]/nevalprobs[s,0], bcuts[s,0]/max(naffprobs[s,0],1)) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
 
