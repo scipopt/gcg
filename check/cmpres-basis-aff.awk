@@ -732,7 +732,7 @@ END {
       }
       printf("\\\\\n") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
-         printf("& Nodes & Time & root db & bCuts") > texcmpfile;
+         printf("& Nodes & Time & gap & bCuts") > texcmpfile;
       printf("\\\\\n") > texcmpfile;
       printf("\\midrule\n") > texcmpfile;
    }
@@ -1362,7 +1362,12 @@ END {
                pidx = probidx[p,s];
                cat = -1;
                nevalprobs[s,cat]++;
-               
+
+               if( bcuts[s,pidx] > 0.0 )
+               {
+                  ++naffprobs[s, cat];
+               } 
+
                nep = nevalprobs[s,cat];
                timetotal[s,cat] += time[s,pidx];
                nodetotal[s,cat] += nodes[s,pidx];
@@ -1377,13 +1382,15 @@ END {
                reftimeshiftedgeom[s,cat] = reftimeshiftedgeom[s,cat]^((nep-1)/nep) * (reftime+timegeomshift)^(1.0/nep);
                refnodeshiftedgeom[s,cat] = refnodeshiftedgeom[s,cat]^((nep-1)/nep) * (refnodes+nodegeomshift)^(1.0/nep);
 
-
-               bcuttotal[s,cat] += bcuts[s,pidx];
-               bcutgeom[s,cat] = bcutgeom[s,cat]^((nep-1)/nep) * bcuts[s,pidx]^(1.0/nep);
-               bcutshiftedgeom[s,cat] = bcutshiftedgeom[s,cat]^((nep-1)/nep) * (bcuts[s,pidx]+bcutgeomshift)^(1.0/nep);
-               refbcuttotal[s,cat] += refbcuts;
-               refbcutgeom[s,cat] = refbcutgeom[s,cat]^((nep-1)/nep) * refbcuts^(1.0/nep);
-               refbcutshiftedgeom[s,cat] = refbcutshiftedgeom[s,cat]^((nep-1)/nep) * (refbcuts+bcutgeomshift)^(1.0/nep);
+               if( bcuts[s,pidx] > 0.0 )
+               {
+                   bcuttotal[s,cat] += bcuts[s,pidx];
+                   bcutgeom[s,cat] = bcutgeom[s,cat]^((nep-1)/nep) * bcuts[s,pidx]^(1.0/nep);
+                   bcutshiftedgeom[s,cat] = bcutshiftedgeom[s,cat]^((nep-1)/nep) * (bcuts[s,pidx]+bcutgeomshift)^(1.0/nep);
+                   refbcuttotal[s,cat] += refbcuts;
+                   refbcutgeom[s,cat] = refbcutgeom[s,cat]^((nep-1)/nep) * refbcuts^(1.0/nep);
+                   refbcutshiftedgeom[s,cat] = refbcutshiftedgeom[s,cat]^((nep-1)/nep) * (refbcuts+bcutgeomshift)^(1.0/nep);
+               }
 
                rootdbtotal[s,cat] += rootdbs[s,pidx];
                rootdbgeom[s,cat] = rootdbgeom[s,cat]^((nep-1)/nep) * rootdbs[s,pidx]^(1.0/nep);
@@ -1714,6 +1721,15 @@ END {
       # add statistics for problems solved to optimality
       printf("\\midrule\n") > texcmpfile;
       printf("\\multicolumn{%d}{@{}l}{all optimal}\\\\\n", 1 + 2 * nsolver) > texcmpfile;
+
+      printf("ninst %d psolv paff", nevalprobs[0,-1]) > texcmpfile;
+      for( o = 0; o < nsolver; ++o )
+      {
+         s = printorder[o];
+         printf("& & & %8.1f & %8.1f", 100*nsolved[s,-1]/nevalprobs[s,-1], 100*naffprobs[s,-1]/nevalprobs[s,-1]) > texcmpfile;
+      }
+      printf("\\\\\n") > texcmpfile;
+
       printf("geom. mean     ") > texcmpfile;
       for( o = 0; o < nsolver; ++o )
       {
@@ -1735,6 +1751,41 @@ END {
          printf("& %8s & %8.1f & %8.3f & %8.1f", texint(nodetotal[s,-1]/max(nevalprobs[s,-1],1)), timetotal[s,-1]/max(nevalprobs[s,-1],1), rootgaptotal[s,-1]/max(nevalprobs[s,-1],1), bcuttotal[s,-1]/max(nevalprobs[s,-1],1)) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
+
+      # add statistics for problems not solved to optimality
+      printf("\\midrule\n") > texcmpfile;
+      printf("\\multicolumn{%d}{@{}l}{not all optimal}\\\\\n", 1 + 2 * nsolver) > texcmpfile;
+
+      printf("ninst %d psolv paff", nevalprobs[0,0]- nevalprobs[0,-1]) > texcmpfile;
+      for( o = 0; o < nsolver; ++o )
+      {
+         s = printorder[o];
+         printf("& & & %8.1f & %8.1f", 100*nsolved[s,3]/nevalprobs[s,3], 100*naffprobs[s,3]/nevalprobs[s,3]) > texcmpfile;
+      }
+      printf("\\\\\n") > texcmpfile;
+
+      printf("geom. mean     ") > texcmpfile;
+      for( o = 0; o < nsolver; ++o )
+      {
+         s = printorder[o];
+         printf("& %8.1f & %8.1f & %8.3f & %8.1f", nodegeom[s,3], timegeom[s,3], rootgapgeom[s,3], bcutgeom[s,3]) > texcmpfile;
+      }
+      printf("\\\\\n") > texcmpfile;
+      printf("sh. geom. mean ") > texcmpfile;
+      for( o = 0; o < nsolver; ++o )
+      {
+         s = printorder[o];
+         printf("& %8.1f & %8.1f & %8.3f & %8.1f", nodeshiftedgeom[s,3], timeshiftedgeom[s,3], rootgapshiftedgeom[s,3], bcutshiftedgeom[s,3]) > texcmpfile;
+      }
+      printf("\\\\\n") > texcmpfile;
+      printf("arithm. mean   ") > texcmpfile;
+      for( o = 0; o < nsolver; ++o )
+      {
+         s = printorder[o];
+         printf("& %8s & %8.1f & %8.3f & %8.1f", texint(nodetotal[s,3]/max(nevalprobs[s,3],1)), timetotal[s,3]/max(nevalprobs[s,3],1), rootgaptotal[s,3]/max(nevalprobs[s,3],1), bcuttotal[s,3]/max(nevalprobs[s,3],1)) > texcmpfile;
+      }
+      printf("\\\\\n") > texcmpfile;
+
       printf("\\bottomrule\n") > texcmpfile;
       printf("\\end{tabular*}\n") > texcmpfile;
       printf("}\n") > texcmpfile;
