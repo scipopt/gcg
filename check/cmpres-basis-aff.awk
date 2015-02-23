@@ -856,9 +856,9 @@ END {
 
             if( rootgaps[s,pidx] >= 0.0 )
             {
-          	    bestrootgaps = min(bestrootgaps, rootgaps[s,pidx]);
+               bestrootgaps = min(bestrootgaps, rootgaps[s,pidx]);
       
-       	            worstrootgaps = max(worstrootgaps, rootgaps[s,pidx]);
+               worstrootgaps = max(worstrootgaps, rootgaps[s,pidx]);
 	    }
          }
          else
@@ -1307,9 +1307,6 @@ END {
          	 }
              }
 
-
-
-
               if( time[s,pidx] <= wintolerance*besttime )
                   wins[s,cat]++;
                if( !hitlimit[s,pidx] && (isfaster(time[s,pidx], reftime, wintolerance) || refhitlimit))
@@ -1410,14 +1407,20 @@ END {
                }
                else
                {
-                  rootgaptotal[s,cat] += worstrootgaps;
-                  rootgapgeom[s,cat] = rootgapgeom[s,cat]^((nep-1)/nep) * worstrootgaps^(1.0/nep);
-                  rootgapshiftedgeom[s,cat] = rootgapshiftedgeom[s,cat]^((nep-1)/nep) * (worstrootgaps+rootgapgeomshift)^(1.0/nep);
-                  refrootgaptotal[s,cat] += refrootgaps;
-                  refrootgapgeom[s,cat] = refrootgapgeom[s,cat]^((nep-1)/nep) * refrootgaps^(1.0/nep);
-                  refrootgapshiftedgeom[s,cat] = refrootgapshiftedgeom[s,cat]^((nep-1)/nep) * (refrootgaps+rootgapgeomshift)^(1.0/nep);
-               }
 
+                 if( worstrootgaps > -0.5 )
+		 {
+	                rootgaptotal[s,cat] += worstrootgaps;
+        	        rootgapgeom[s,cat] = rootgapgeom[s,cat]^((nep-1)/nep) * worstrootgaps^(1.0/nep);
+        	        rootgapshiftedgeom[s,cat] = rootgapshiftedgeom[s,cat]^((nep-1)/nep) * (worstrootgaps+rootgapgeomshift)^(1.0/nep);
+		 }
+                 if( refrootgaps > -0.5 )
+ 		 {
+	                refrootgaptotal[s,cat] += refrootgaps;
+	                refrootgapgeom[s,cat] = refrootgapgeom[s,cat]^((nep-1)/nep) * refrootgaps^(1.0/nep);
+	                refrootgapshiftedgeom[s,cat] = refrootgapshiftedgeom[s,cat]^((nep-1)/nep) * (refrootgaps+rootgapgeomshift)^(1.0/nep);	
+         	 }
+               }
                if( time[s,pidx] <= wintolerance*besttime )
                   wins[s,cat]++;
                if( isfaster(time[s,pidx], reftime, wintolerance) )
