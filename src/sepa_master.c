@@ -444,7 +444,7 @@ SCIP_RETCODE SCIPincludeSepaMaster(
          sepaExeclpMaster, sepaExecsolMaster,
          sepadata) );
 
-   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/master/enable", "enable master separator",
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/master/enable", "enable master separator",
          &(sepadata->enable), FALSE, TRUE, NULL, NULL);
 
    return SCIP_OKAY;

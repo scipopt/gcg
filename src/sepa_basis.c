@@ -985,7 +985,7 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
 
    assert(scip != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -1037,7 +1037,7 @@ SCIP_DECL_SEPAEXIT(sepaExitBasis)
    enableobj = sepadata->enableobj;
    assert(sepadata->nmastercuts == sepadata->norigcuts);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    for( i = 0; i < sepadata->norigcuts; i++ )
@@ -1083,7 +1083,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolBasis)
    assert(sepadata != NULL);
    assert(sepadata->nmastercuts == sepadata->norigcuts);
 
-   assert(GCGpricerGetOrigprob(scip) != NULL);
+   assert(GCGmasterGetOrigprob(scip) != NULL);
 
    for( i = 0; i < sepadata->nmastercuts; i++ )
    {
@@ -1222,7 +1222,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    assert(scip != NULL);
    assert(result != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -1927,8 +1927,8 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
    }
 
    sepadata = SCIPsepaGetData(sepa);
-   origscip = GCGpricerGetOrigprob(scip);
-   pricingprob = GCGrelaxGetPricingprob(origscip, ppnumber);
+   origscip = GCGmasterGetOrigprob(scip);
+   pricingprob = GCGgetPricingprob(origscip, ppnumber);
 
    if( !sepadata->enableppcuts )
    {

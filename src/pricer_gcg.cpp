@@ -2235,7 +2235,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    {
       for( i = 0; i < pricerdata->npricingprobs; i++ )
       {
-         if(GCGrelaxIsPricingprobRelevant(origprob, i))
+         if(GCGisPricingprobRelevant(origprob, i))
          {
             SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[i], "branching/pscost/priority", 2000) );
             SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[i], "propagating/maxroundsroot", 1000) );
