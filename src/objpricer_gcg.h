@@ -154,11 +154,6 @@ public:
       return reducedcostpricing;
    }
 
-   ReducedCostPricing *getReducedCostPricingNonConst()
-   {
-      return reducedcostpricing;
-   }
-
    /** ensures size of solvers array */
    SCIP_RETCODE ensureSizeSolvers();
 
