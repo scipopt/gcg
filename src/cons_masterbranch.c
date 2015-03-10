@@ -1285,7 +1285,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    /* @fixme: This is a hack */
    if( consdata->node == NULL )
    {
-      SCIPwarningMessage(scip, "root node not present in masterconsdata!\n");
+      SCIPdebugMessage("root node not present in masterconsdata!\n");
       consdata->node = SCIPgetRootNode(scip);
    }
 
