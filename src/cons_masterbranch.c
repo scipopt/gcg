@@ -1722,6 +1722,7 @@ SCIP_DECL_EVENTINITSOL(eventInitsolOrigvarbound)
 static
 SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 {  /*lint --e{715}*/
+   SCIP* masterscip;
    SCIP_EVENTTYPE eventtype;
    SCIP_VAR* var;
    SCIP_Real oldbound;
@@ -1736,6 +1737,11 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    SCIP_Real* mastervals;
 #endif
 
+   /* get master problem */
+   masterscip = GCGgetMasterprob(scip);
+   assert(masterscip != NULL);
+
+   /* get event data */
    eventtype = SCIPeventGetType(event);
    var = SCIPeventGetVar(event);
    oldbound = SCIPeventGetOldbound(event);
@@ -1768,20 +1774,18 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( addPendingBndChg(GCGgetMasterprob(scip),
-               GCGoriginalVarGetPricingVar(var), SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
+         SCIP_CALL( addPendingBndChg(masterscip, GCGoriginalVarGetPricingVar(var), SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
       {
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( addPendingBndChg(GCGgetMasterprob(scip),
-               GCGoriginalVarGetPricingVar(var), SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
+         SCIP_CALL( addPendingBndChg(masterscip, GCGoriginalVarGetPricingVar(var), SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
       }
    }
    /* deal with variables appearing in the master only */
-   if( blocknr == -1 && SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( blocknr == -1 && SCIPgetStage(masterscip) >= SCIP_STAGE_SOLVING )
    {
       assert(nmastervars == 1);
       assert(mastervals[0] == 1);
@@ -1793,23 +1797,21 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( addPendingBndChg(GCGgetMasterprob(scip),
-               mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
+         SCIP_CALL( addPendingBndChg(masterscip, mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
       {
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( addPendingBndChg(GCGgetMasterprob(scip),
-               mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
+         SCIP_CALL( addPendingBndChg(masterscip, mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_LBTIGHTENED) != 0 )
       {
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(scip, GCGconsMasterbranchGetActiveCons(scip), var,
+         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(masterscip, GCGconsMasterbranchGetActiveCons(masterscip), var,
                SCIP_BOUNDTYPE_LOWER, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_UBTIGHTENED) != 0 )
@@ -1817,7 +1819,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(scip, GCGconsMasterbranchGetActiveCons(scip), var,
+         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(masterscip, GCGconsMasterbranchGetActiveCons(masterscip), var,
                SCIP_BOUNDTYPE_UPPER, newbound) );
 
          /** @todo do we also have to iterate over the pricing problems or is this handled elsewhere? */
@@ -1841,14 +1843,13 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 
       if( (eventtype & SCIP_EVENTTYPE_GLBCHANGED) != 0 )
       {
-         if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+         if( SCIPgetStage(masterscip) >= SCIP_STAGE_SOLVING )
          {
 #ifdef SCIP_DEBUG
             handled = TRUE;
 #endif
             /* add the bound change in the master */
-            SCIP_CALL( addPendingBndChg(GCGgetMasterprob(scip),
-                  mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
+            SCIP_CALL( addPendingBndChg(masterscip, mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
          }
 
          /* add the bound change to the pricing problems */
@@ -1859,20 +1860,18 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
             handled = TRUE;
 #endif
-            SCIP_CALL( addPendingBndChg(GCGgetMasterprob(scip),
-                  pricingvars[i], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
+            SCIP_CALL( addPendingBndChg(masterscip, pricingvars[i], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
          }
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
       {
-         if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+         if( SCIPgetStage(masterscip) >= SCIP_STAGE_SOLVING )
          {
 #ifdef SCIP_DEBUG
             handled = TRUE;
 #endif
             /* add the bound change in the master */
-            SCIP_CALL( addPendingBndChg(GCGgetMasterprob(scip),
-                  mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
+            SCIP_CALL( addPendingBndChg(masterscip, mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
          }
 
          /* add the bound change to the pricing problems */
@@ -1883,8 +1882,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
             handled = TRUE;
 #endif
-            SCIP_CALL( addPendingBndChg(GCGgetMasterprob(scip),
-                  pricingvars[i], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
+            SCIP_CALL( addPendingBndChg(masterscip, pricingvars[i], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
          }
 
       }
@@ -1895,7 +1893,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(GCGgetMasterprob(scip), GCGconsMasterbranchGetActiveCons(scip), var,
+         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(masterscip, GCGconsMasterbranchGetActiveCons(masterscip), var,
                SCIP_BOUNDTYPE_LOWER, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_UBTIGHTENED) != 0 )
@@ -1903,7 +1901,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(GCGgetMasterprob(scip), GCGconsMasterbranchGetActiveCons(scip), var,
+         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(masterscip, GCGconsMasterbranchGetActiveCons(masterscip), var,
                SCIP_BOUNDTYPE_UPPER, newbound) );
       }
    }
@@ -2327,13 +2325,16 @@ SCIP_CONS* GCGconsMasterbranchGetActiveCons(
    SCIP_CONSHDLRDATA* conshdlrdata;
 
    assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   /* get constraint handler */
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
+   /* get constraint handler data */
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
    assert(conshdlrdata->stack != NULL);
-
 
    if( conshdlrdata->nstack == 0 )
       return NULL;
@@ -2416,6 +2417,9 @@ SCIP_Bool GCGcurrentNodeIsGeneric(
 {
    SCIP_CONS* mastercons;
    SCIP_BRANCHRULE* branchrule;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
 
    mastercons = GCGconsMasterbranchGetActiveCons(scip);
 
