@@ -96,7 +96,7 @@ using namespace scip;
 #define DEFAULT_STABILIZATION            TRUE       /** should stabilization be used */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
 #define DEFAULT_COLPOOL_AGELIMIT         10         /**< maximum age of columns in column pool */
-#define DEFAULT_COLPOOL_COLPOOLSIZE      10          /**< multiply nrows with this multiplier to get
+#define DEFAULT_COLPOOL_COLPOOLSIZE       1         /**< multiply nrows with this multiplier to get
                                                        * soft maximum number of columns in column pool */
 
 #define EVENTHDLR_NAME         "probdatavardeleted"
@@ -3134,10 +3134,10 @@ void ObjPricerGcg::createColpool()
 
    nconss = SCIPgetNConss(scip_);
 
-   actualsize = nconss * pricerdata->colpoolsize;
-
    maxvarsround = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()),
                    reducedcostpricing->getMaxvarsroundroot());
+
+   actualsize = maxvarsround * pricerdata->npricingprobsnotnull * pricerdata->colpoolsize;
 
    hardlimit = actualsize + maxvarsround * pricerdata->npricingprobsnotnull;
 

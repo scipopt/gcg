@@ -48,7 +48,7 @@ namespace gcg {
    Colpool::Colpool(
       SCIP*             scip_,               /**< SCIP data structure */
       int               agelimit_,           /**< maximum age a column can reach before it is deleted from the pool */
-      int               maxncolssoft_,       /**< softmaximal number of columns stored in the pool at the same time */
+      int               maxncolssoft_,       /**< soft maximal number of columns stored in the pool at the same time */
       int               maxncolshard_        /**< hard maximal number of columns stored in the pool at the same time */
       ):scip(scip_), pqueue(NULL), agelimit(agelimit_), maxncolssoft(maxncolssoft_), maxncolshard(maxncolshard_), nodenr(-1)
    {
