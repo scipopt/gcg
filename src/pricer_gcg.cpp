@@ -2123,7 +2123,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
          {
             SCIP_CALL( GCGfreeGcgCol(&cols[j]) );
          }
-         *nsols = 0;
+         *ncols = 0;
          SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
       }
       SCIPdebugMessage("Applying bound change of depth %d\n", -i);

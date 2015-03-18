@@ -2917,9 +2917,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
 
    *result = SCIP_BRANCHED;
 
-   ncheckedblocks = 0;
-
-   SCIP_CALL( GCGbranchGenericInitbranch(scip, branchrule, result, &checkedblocks, &ncheckedblocks, &checkedblockssortstrips, &checkedblocksnsortstrips) );
+   SCIP_CALL( GCGbranchGenericInitbranch(scip, branchrule, result, NULL, 0, NULL, NULL) );
 
    return SCIP_OKAY;
 }
