@@ -349,6 +349,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
 
+   int ndecomps;
+
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
@@ -356,7 +358,15 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    {
       SCIP_CALL( DECdetectStructure(scip, &result) );
       if( result == SCIP_SUCCESS )
+      {
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was successful.\n");
+
+            ndecomps = SCIPconshdlrDecompGetNDecdecomps( scip );
+            if( ndecomps == 0 )
+            {
+               /*@todo what belongs to gcg only?*/
+            }
+      }
       else
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was not successful.\n");
    }
