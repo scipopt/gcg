@@ -138,12 +138,16 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_Real* blockvalue;
    SCIP_Real increaseval;
    SCIP_VAR** mastervars;
+   SCIP_VAR** mastervarsall;
    SCIP_VAR** mastervarsunsorted;
    SCIP_Real* mastervals;
+   SCIP_Real* mastervalsall;
+   int nmastervarsall;
    int nmastervars;
    SCIP_VAR** vars;
    int nvars;
    SCIP_Real feastol;
+   SCIP_Bool discretization;
    int i;
    int j;
 
@@ -160,18 +164,55 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
 
-   /* get variables of the master problem and their solution values */
-   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervarsunsorted, &nmastervars, NULL, NULL, NULL, NULL) );
-   assert(mastervarsunsorted != NULL);
-   assert(nmastervars >= 0);
+   SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &discretization) );
 
-   SCIP_CALL( SCIPduplicateBlockMemoryArray(scip, &mastervars, mastervarsunsorted, nmastervars) );
+   if( discretization && (SCIPgetNContVars(scip) > 0) )
+   {
+      /* get variables of the master problem and their solution values */
+      SCIP_CALL( SCIPgetVarsData(masterprob, &mastervarsall, &nmastervarsall, NULL, NULL, NULL, NULL) );
 
-   /* sort mastervariables lexicographically */
-   SCIPsortPtr((void**)mastervars, mastervarcomp, nmastervars );
+      assert(mastervarsall != NULL);
+      assert(nmastervarsall >= 0);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
-   SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervars, mastervars, mastervals) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervars, nmastervarsall) );
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervarsall) );
+
+      SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervarsall, mastervarsall, mastervals) );
+
+      nmastervars = 0;
+
+      for( i = 0; i < nmastervarsall; ++i )
+      {
+         SCIP_Real solval;
+
+         assert( i >= nmastervars );
+         solval = mastervals[i];
+
+         if( SCIPisPositive(scip, solval) )
+         {
+            mastervars[nmastervars] = mastervarsall[i];
+            mastervals[nmastervars] = solval;
+
+            ++nmastervars;
+         }
+      }
+
+      /* sort mastervariables lexicographically */
+      SCIPsortPtrPtr((void**)mastervars, mastervals, mastervarcomp, nmastervars );
+   }
+   else
+   {
+      /* get variables of the master problem and their solution values */
+      SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+      assert(mastervars != NULL);
+      assert(nmastervars >= 0);
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
+
+      SCIP_CALL( SCIPgetSolVals(masterprob, mastersol, nmastervars, mastervars, mastervals) );
+   }
 
    /* initialize the block values for the pricing problems */
    for( i = 0; i < npricingprobs; i++ )
@@ -371,10 +412,14 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    }
 
    SCIPfreeBufferArray(scip, &mastervals);
+
+   if( discretization && (SCIPgetNContVars(scip) > 0) )
+   {
+      SCIPfreeBufferArray(scip, &mastervars);
+   }
+
    SCIPfreeBufferArray(scip, &blocknrs);
    SCIPfreeBufferArray(scip, &blockvalue);
-   SCIPfreeBlockMemoryArray(scip, &mastervars, nmastervars);
-
 
    /* if the solution violates one of its bounds by more than feastol
     * and less than 10*feastol, round it and print a warning
