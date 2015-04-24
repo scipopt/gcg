@@ -67,8 +67,6 @@
 #define SCP_MAX_ITER          300
 #define SCP_MAX_ITER_NO_IMP   10
 #define SCP_HEUR_MAX_ITER     250
-/*#define SCP_GREEDY_SIMPLE*/
-#define SCP_GREEDY_PRIORITY
 
 /*
  * Data structures
@@ -78,7 +76,6 @@
 
 /** primal heuristic data */
 
-#ifdef SCP_GREEDY_PRIORITY
 typedef struct
 {
    int size;                     /**< actual number of elements stored in the queue */
@@ -87,7 +84,6 @@ typedef struct
    int *data;                    /**< array of values */
    int **positions;              /**< array of pointers to save positions of elements */
 } PQueue;
-#endif
 
 typedef struct
 {
@@ -156,13 +152,11 @@ struct SCIP_HeurData
    SCP_Lagrange_Sol tp_mult_lb_subinst;   /**< lagrange multiplier */
 
    /* memory that is used locally by 'greedysetcover' */
-#ifdef SCP_GREEDY_PRIORITY
    PQueue greedy_queue;                   /**< priority queue used by the greedy algorithm */
    int *greedy_colpos;                    /**< stores position of a variable within the priority queue */
    int *greedy_colmu;                     /**< value mu for each variable */
    SCIP_Real *greedy_colgamma;            /**< value gamma for each variable */
    SCIP_Real *greedy_colscore;            /**< score of each variable */
-#endif
 };
 
 /*
@@ -171,7 +165,6 @@ struct SCIP_HeurData
 
 /* put your local methods here, and declare them static */
 
-#ifdef SCP_GREEDY_PRIORITY
 /** initializes a priority queue */
 static SCIP_RETCODE pqueue_init(SCIP *scip, PQueue *queue)
 {
@@ -184,18 +177,14 @@ static SCIP_RETCODE pqueue_init(SCIP *scip, PQueue *queue)
 
    return SCIP_OKAY;
 }
-#endif
 
-#ifdef SCP_GREEDY_PRIORITY
 /** removes all elements from a priority queue, but does not release any memory */
 static SCIP_RETCODE pqueue_clear(SCIP *scip, PQueue *queue)
 {
    queue->size = 0;
    return SCIP_OKAY;
 }
-#endif
 
-#ifdef SCP_GREEDY_PRIORITY
 /** releases all memory that is used by a priority queue */
 static SCIP_RETCODE pqueue_destroy(SCIP *scip, PQueue *queue)
 {
@@ -210,9 +199,7 @@ static SCIP_RETCODE pqueue_destroy(SCIP *scip, PQueue *queue)
 
    return SCIP_OKAY;
 }
-#endif
 
-#ifdef SCP_GREEDY_PRIORITY
 /** Inserts an element with key 'key' and value 'elem' into the queue.
  *  If 'position' is not NULL, the referenced memory location will always contain the internal position of the element
  * */
@@ -260,9 +247,7 @@ static SCIP_RETCODE pqueue_insert(SCIP *scip, PQueue *queue, SCIP_Real key, int 
 
    return SCIP_OKAY;
 }
-#endif
 
-#ifdef SCP_GREEDY_PRIORITY
 /** Decreases the key to 'key' of the element that is currently at position 'pos' */
 static SCIP_RETCODE pqueue_decrease_key(SCIP *scip, PQueue *queue, int pos, SCIP_Real key)
 {
@@ -301,9 +286,7 @@ static SCIP_RETCODE pqueue_decrease_key(SCIP *scip, PQueue *queue, int pos, SCIP
 
    return SCIP_OKAY;
 }
-#endif
 
-#ifdef SCP_GREEDY_PRIORITY
 /** Increases the key to 'key' of the element that is currently at position 'pos' */
 static SCIP_RETCODE pqueue_increase_key(SCIP *scip, PQueue *queue, int pos, SCIP_Real key)
 {
@@ -405,9 +388,7 @@ static SCIP_RETCODE pqueue_increase_key(SCIP *scip, PQueue *queue, int pos, SCIP
 
    return SCIP_OKAY;
 }
-#endif
 
-#ifdef SCP_GREEDY_PRIORITY
 /** Returns the value of a minimum element in 'elem'. Sets 'elem' to -1 if the queue is empty */
 static SCIP_RETCODE pqueue_get_min(SCIP *scip, PQueue *queue, int *elem)
 {
@@ -435,7 +416,6 @@ static SCIP_RETCODE pqueue_get_min(SCIP *scip, PQueue *queue, int *elem)
 
    return SCIP_OKAY;
 }
-#endif
 
 static SCIP_DECL_HASHGETKEY(hashGetKeyVar)
 {
@@ -1521,7 +1501,6 @@ static SCIP_RETCODE greedySetCover(SCIP *scip, SCP_Core *core, SCP_Instance *ins
    SCIP_Bool success = FALSE;
    int nvars;
 
-#ifdef SCP_GREEDY_PRIORITY
    PQueue *prioqueue;
    int *colpos;
    int *colmu;
@@ -1529,7 +1508,6 @@ static SCIP_RETCODE greedySetCover(SCIP *scip, SCP_Core *core, SCP_Instance *ins
    SCIP_Real *colscore;
    SCIP_VAR **vars;
    int k;
-#endif
 
    core->nsolgreedy = 0;
    mult->ub_greedy_local = 0.0;
@@ -1559,7 +1537,6 @@ static SCIP_RETCODE greedySetCover(SCIP *scip, SCP_Core *core, SCP_Instance *ins
       SCIPABORT();
    }
 
-#ifdef SCP_GREEDY_PRIORITY
    /* compute scores and add them to the priority queue */
    colpos = heurdata->greedy_colpos;
    colmu = heurdata->greedy_colmu;
@@ -1669,70 +1646,6 @@ static SCIP_RETCODE greedySetCover(SCIP *scip, SCP_Core *core, SCP_Instance *ins
          }
       }
    }
-#endif
-
-#ifdef SCP_GREEDY_SIMPLE
-   while(nrowsuncovered > 0)
-   {
-      SCIP_Real minscore = SCIP_REAL_MAX;
-      int mincolumn = -1;
-
-      /* compute scores for all core columns */
-      for(i = 0; i < core->ncorevariables; i++)
-      {
-         int varpos = core->listcorevariables[i];
-         int muh = 0;
-         SCIP_Real gamma = SCIPvarGetObj(core->variables[varpos]);
-
-         if(SCIPhashtableExists(core->corevariables, core->variables[varpos]) == FALSE)
-            continue;
-         else if(SCIPhashtableExists(inst->varsfixed, core->variables[varpos]) == TRUE)
-            continue;
-
-         for(j = 0; j < core->nvarconstraints[varpos]; j++)
-         {
-            if(SCIPhashtableExists(rowscovered, (void *) ((size_t) core->columns[varpos][j] + 1)) == FALSE)
-            {
-               gamma -= mult->u[core->columns[varpos][j]];
-               muh++;
-            }
-         }
-
-         /* skip columns that do not cover anything */
-         if(muh > 0)
-         {
-            SCIP_Real score = (gamma > 0) ? (gamma / ((SCIP_Real) muh)) : (gamma * muh);
-            if(score < minscore)
-            {
-               minscore = score;
-               mincolumn = varpos;
-            }
-         }
-      }
-
-      if(mincolumn == -1)
-      {
-         SCIPerrorMessage("greedy set cover: there exists an uncovered row but no column can cover it\n");
-         SCIPABORT();
-      }
-
-      /*SCIPdebugMessage("adding %i to the set cover, score = %f\n", mincolumn, minscore);*/
-      /* add variable 'variables[mincolumn]' to the set cover */
-      SCIPhashtableSafeInsert(mult->x_greedy_local, core->variables[mincolumn]);
-      mult->ub_greedy_local += SCIPvarGetObj(core->variables[mincolumn]);
-      core->solgreedy[core->nsolgreedy++] = mincolumn;
-
-      for(j = 0; j < core->nvarconstraints[mincolumn]; j++)
-      {
-         int col = core->columns[mincolumn][j];
-         if(SCIPhashtableExists(rowscovered, (void *) ((size_t) col + 1)) == FALSE)
-         {
-            SCIPhashtableSafeInsert(rowscovered, (void *) ((size_t) col + 1));
-            nrowsuncovered--;
-         }
-      }
-   }
-#endif
 
    SCIPhashtableFree(&rowscovered);
 
@@ -2665,9 +2578,7 @@ static SCIP_RETCODE setCoveringHeuristic(SCIP *scip, SCIP_HEUR *heur)
    if(computecorerows == TRUE)
       SCIP_CALL( computeCoreRows(scip, &heurdata->core, heurdata) );
 
-#ifdef SCP_GREEDY_PRIORITY
    SCIP_CALL( pqueue_init(scip, &heurdata->greedy_queue) );
-#endif
 
    /* set up basic instance. so far no variables are fixed */
    SCIP_CALL( initInstance(scip, &heurdata->inst) );
@@ -2676,12 +2587,10 @@ static SCIP_RETCODE setCoveringHeuristic(SCIP *scip, SCIP_HEUR *heur)
    core = &heurdata->core;
    inst = &heurdata->inst;
 
-#ifdef SCP_GREEDY_PRIORITY
    SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->greedy_colpos, core->nvariables) );
    SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->greedy_colmu, core->nvariables) );
    SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->greedy_colgamma, core->nvariables) );
    SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->greedy_colscore, core->nvariables) );
-#endif
 
    SCIP_CALL( allocateMemoryForSolution(scip, &heurdata->core, &heurdata->mult_best_lb_inst) );
    SCIP_CALL( allocateMemoryForSolution(scip, &heurdata->core, &heurdata->mult_best_lb_subinst) );
@@ -2781,13 +2690,11 @@ static SCIP_RETCODE setCoveringHeuristic(SCIP *scip, SCIP_HEUR *heur)
 
    SCIP_CALL( reportSolution(scip, core, inst, heurdata->best_ub_sol, heur) );
 
-#ifdef SCP_GREEDY_PRIORITY
    SCIP_CALL( pqueue_destroy(scip, &heurdata->greedy_queue) );
    SCIPfreeBufferArray(scip, &heurdata->greedy_colpos);
    SCIPfreeBufferArray(scip, &heurdata->greedy_colmu);
    SCIPfreeBufferArray(scip, &heurdata->greedy_colgamma);
    SCIPfreeBufferArray(scip, &heurdata->greedy_colscore);
-#endif
 
    SCIPfreeBufferArray(scip, &heurdata->vars);
 
