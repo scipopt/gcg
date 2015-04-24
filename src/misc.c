@@ -199,7 +199,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       }
 
       /* sort mastervariables lexicographically */
-      SCIPsortPtrPtr((void**)mastervars, mastervals, mastervarcomp, nmastervars );
+      SCIPsortPtrPtr((void**)mastervars, (void**) mastervals, mastervarcomp, nmastervars );
    }
    else
    {
