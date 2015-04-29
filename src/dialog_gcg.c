@@ -349,7 +349,11 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
 
+   SCIP_CONS** conss;
+
    int ndecomps;
+   int i;
+   int j;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
@@ -364,7 +368,19 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
             ndecomps = SCIPconshdlrDecompGetNDecdecomps( scip );
             if( ndecomps == 0 )
             {
-               /*@todo what belongs to gcg only?*/
+               for( i = 0; i < scip->set->nconshdlrs ; i++)
+               {
+                  conss = SCIPconshdlrGetConss( scip->set->conshdlrs[i] );
+                  for( j = 0; j < SCIPconshdlrGetNConss( scip->set->conshdlrs[i] ) ; j++)
+                  {
+                     if( GCGisConsGCGCons( conss[j] ) )
+                     {
+                        SCIP_CALL( conshdlrDeactivateCons( scip->set->conshdlrs[i], scip->set, SCIP_STATUS_UNKNOWN , conss[j] ) );
+                        /*@todo alternative: conshdlrDelCons( SCIP_CONSHDLR* conshdlr, SCIP_CONS* cons) */
+                     }
+                  }
+               }
+               /*@todo what else belongs to gcg only?*/
             }
       }
       else
