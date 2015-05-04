@@ -32,7 +32,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#define SCIP_DEBUG
+/*#define SCIP_DEBUG*/
 
 #include <assert.h>
 #include <string.h>
@@ -132,7 +132,6 @@ typedef struct
 
 struct SCIP_HeurData
 {
-   SCIP_Bool param_enabled;
    int param_core_tent_size;              /**< number of columns covering each row that are added to the tentative core at the beginning           */
    SCIP_Bool param_lambda_adjustments;    /**< adjust step size during the subgradient phase                                                       */
    int param_lambda_p;                    /**< number of iterations after which lambda is adjusted                                                 */
@@ -2830,10 +2829,6 @@ SCIP_DECL_HEUREXEC(heurExecSetcover)
 
    *result = SCIP_DIDNOTRUN;
 
-   /* only run if enabled (disabled by default) */
-   if(heurdata->param_enabled == FALSE)
-      return SCIP_OKAY;
-
    if(SCIPgetNVars(scip) < heurdata->param_min_prob_size)
    {
       SCIPdebugMessage("not running set covering heuristic because instance is too small\n");
@@ -2898,9 +2893,6 @@ SCIP_RETCODE SCIPincludeHeurSetcover(
 #endif
 
    /* add setcover primal heuristic parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/enabled",
-      "indicates whether the set cover heuristic is enabled",
-      &heurdata->param_enabled, FALSE, FALSE, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/tentcoresize",
       "how many columns are added to the tentative core for each row",
