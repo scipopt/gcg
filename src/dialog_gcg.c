@@ -42,6 +42,8 @@
 #include "scip/pub_dialog.h"
 #include "scip/type_dialog.h"
 #include "scip/dialog_default.h"
+#include "scip/cons.h"
+#include "scip/relax.h"
 
 #include "gcg.h"
 
@@ -352,6 +354,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    SCIP_CONS** conss;
 
    int ndecomps;
+   SCIP_RELAX* relax_gcg = NULL;
    int i;
    int j;
 
@@ -365,9 +368,11 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
       {
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was successful.\n");
 
+            /* if there is no decomp remove all GCG-specific characteristics and solve with scip */
             ndecomps = SCIPconshdlrDecompGetNDecdecomps( scip );
             if( ndecomps == 0 )
             {
+               /* remove all gcg constraints */
                for( i = 0; i < scip->set->nconshdlrs ; i++)
                {
                   conss = SCIPconshdlrGetConss( scip->set->conshdlrs[i] );
@@ -375,11 +380,37 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
                   {
                      if( GCGisConsGCGCons( conss[j] ) )
                      {
-                        SCIP_CALL( conshdlrDeactivateCons( scip->set->conshdlrs[i], scip->set, SCIP_STATUS_UNKNOWN , conss[j] ) );
-                        /*@todo alternative: conshdlrDelCons( SCIP_CONSHDLR* conshdlr, SCIP_CONS* cons) */
+                        SCIP_CALL( SCIPconsDeactivate( conss[j], scip->set, SCIP_STATUS_UNKNOWN ) );
+                        /*@todo alternative: SCIPconsDisable( same arguments ) */
                      }
                   }
                }
+
+               /* remove GCG relaxation */
+               for( i = 0; i < scip->set->nrelaxs ; i++){
+                  if( SCIPrelaxGetName( scip->set->relaxs[i] ) == ( char* ) "gcg" ){
+                     relax_gcg = scip->set->relaxs[i];
+                     break;
+                  }
+               }
+               assert( relax_gcg != NULL );
+
+               SCIP_CALL( SCIPrelaxExit( relax_gcg, scip->set ) );
+               SCIP_CALL( SCIPrelaxFree( &relax_gcg, scip->set ) );
+
+               /* remove GCG-specific heuristics */
+               /*for( i = 0; i < scip->set->nrelaxs ; i++){
+                  if( SCIPrelaxGetName( scip->set->relaxs[i] ) == ( char* ) "gcg" ){
+                     relax_gcg = scip->set->relaxs[i];
+                     break;
+                  }
+               }
+               assert( relax_gcg != NULL );
+
+               SCIP_CALL( SCIPheurExit( SCIP_HEUR* heur, scip->set ) );
+               SCIP_CALL( SCIPheurFree( SCIP_HEUR** heur, scip->set ) );
+               */
+
                /*@todo what else belongs to gcg only?*/
             }
       }
