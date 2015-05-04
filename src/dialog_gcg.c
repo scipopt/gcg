@@ -44,6 +44,7 @@
 #include "scip/dialog_default.h"
 #include "scip/cons.h"
 #include "scip/relax.h"
+#include "scip/heur.h"
 
 #include "gcg.h"
 
@@ -355,6 +356,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 
    int ndecomps;
    SCIP_RELAX* relax_gcg = NULL;
+   const char* gcg1 = "Gcg";
+   const char* gcg2 = "gcg";
+   const char* gcg3 = "GCG";
    int i;
    int j;
 
@@ -387,8 +391,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
                }
 
                /* remove GCG relaxation */
-               for( i = 0; i < scip->set->nrelaxs ; i++){
-                  if( SCIPrelaxGetName( scip->set->relaxs[i] ) == ( char* ) "gcg" ){
+               for( i = 0; i < scip->set->nrelaxs ; i++)
+               {
+                  if( SCIPrelaxGetName( scip->set->relaxs[i] ) == ( char* ) "gcg" )
+                  {
                      relax_gcg = scip->set->relaxs[i];
                      break;
                   }
@@ -399,17 +405,15 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
                SCIP_CALL( SCIPrelaxFree( &relax_gcg, scip->set ) );
 
                /* remove GCG-specific heuristics */
-               /*for( i = 0; i < scip->set->nrelaxs ; i++){
-                  if( SCIPrelaxGetName( scip->set->relaxs[i] ) == ( char* ) "gcg" ){
-                     relax_gcg = scip->set->relaxs[i];
-                     break;
+               for( i = 0; i < scip->set->nheurs ; i++)
+               {
+                  const char* heur_name = SCIPheurGetName( scip->set->heurs[i] );
+                  if( (strstr(heur_name, gcg1) != NULL ) || (strstr(heur_name, gcg2) != NULL ) || (strstr(heur_name, gcg3) != NULL ) )
+                  {
+                     SCIP_CALL( SCIPheurExit( scip->set->heurs[i], scip->set ) );
+                     SCIP_CALL( SCIPheurFree( &scip->set->heurs[i], scip->set ) );
                   }
                }
-               assert( relax_gcg != NULL );
-
-               SCIP_CALL( SCIPheurExit( SCIP_HEUR* heur, scip->set ) );
-               SCIP_CALL( SCIPheurFree( SCIP_HEUR** heur, scip->set ) );
-               */
 
                /*@todo what else belongs to gcg only?*/
             }
