@@ -351,14 +351,15 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
-
    SCIP_CONS** conss;
-
    int ndecomps;
    SCIP_RELAX* relax_gcg = NULL;
    const char* gcg1 = "Gcg";
    const char* gcg2 = "gcg";
    const char* gcg3 = "GCG";
+   SCIP_BRANCHRULE* branchrule;
+   SCIP_CONSHDLR* conshdlr_origbranch;
+   SCIP_EVENTHDLR* eventhdlr;
    int i;
    int j;
 
@@ -410,16 +411,24 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
                   const char* heur_name = SCIPheurGetName( SCIPgetHeurs(scip)[i] );
                   if( (strstr(heur_name, gcg1) != NULL ) || (strstr(heur_name, gcg2) != NULL ) || (strstr(heur_name, gcg3) != NULL ) || (strstr(heur_name, "xpcrossover") != NULL) || (strstr(heur_name, "xprins") != NULL))
                   {
-                     SCIP_CALL( SCIPheurExit( SCIPgetHeurs(scip)[i], scip->set ) );
-                     SCIP_CALL( SCIPheurFree( &SCIPgetHeurs(scip)[i], scip->set ) );
+                     SCIPheurSetFreq(SCIPgetHeurs(scip)[i], -1);
                   }
                }
 
                /* remove master branching rule */
+               branchrule = SCIPfindBranchrule(scip, "empty");
+               assert( branchrule != NULL );
+               /*@todo remove branchrule */
 
                /* remove origbranch conshdlr */
+               conshdlr_origbranch = SCIPfindConshdlr(scip, "origbranch");
+               assert( conshdlr_origbranch != NULL );
+               /*@todo remove conshdlr */
 
                /* remove event hdlr mastersol */
+               eventhdlr = SCIPfindEventhdlr(scip, "mastersol");
+               assert( eventhdlr != NULL );
+
 
             }
       }
