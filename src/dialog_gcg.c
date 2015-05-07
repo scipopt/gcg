@@ -377,10 +377,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
             if( ndecomps == 0 )
             {
                /* remove all gcg constraints */
-               for( i = 0; i < scip->set->nconshdlrs ; i++)
+               for( i = 0; i < SCIPgetNConshdlrs(scip) ; i++)
                {
-                  conss = SCIPconshdlrGetConss( scip->set->conshdlrs[i] );
-                  for( j = 0; j < SCIPconshdlrGetNConss( scip->set->conshdlrs[i] ) ; j++)
+                  conss = SCIPconshdlrGetConss( SCIPgetConshdlrs(scip)[i] );
+                  for( j = 0; j < SCIPconshdlrGetNConss( SCIPgetConshdlrs(scip)[i] ) ; j++)
                   {
                      if( GCGisConsGCGCons( conss[j] ) )
                      {
@@ -391,11 +391,11 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
                }
 
                /* remove GCG relaxation */
-               for( i = 0; i < scip->set->nrelaxs ; i++)
+               for( i = 0; i < SCIPgetNRelaxs(scip) ; i++)
                {
-                  if( SCIPrelaxGetName( scip->set->relaxs[i] ) == ( char* ) "gcg" )
+                  if( SCIPrelaxGetName( SCIPgetRelaxs(scip)[i] ) == ( char* ) "gcg" )
                   {
-                     relax_gcg = scip->set->relaxs[i];
+                     relax_gcg = SCIPgetRelaxs(scip)[i];
                      break;
                   }
                }
@@ -405,17 +405,22 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
                SCIP_CALL( SCIPrelaxFree( &relax_gcg, scip->set ) );
 
                /* remove GCG-specific heuristics */
-               for( i = 0; i < scip->set->nheurs ; i++)
+               for( i = 0; i < SCIPgetNHeurs(scip) ; i++)
                {
-                  const char* heur_name = SCIPheurGetName( scip->set->heurs[i] );
-                  if( (strstr(heur_name, gcg1) != NULL ) || (strstr(heur_name, gcg2) != NULL ) || (strstr(heur_name, gcg3) != NULL ) )
+                  const char* heur_name = SCIPheurGetName( SCIPgetHeurs(scip)[i] );
+                  if( (strstr(heur_name, gcg1) != NULL ) || (strstr(heur_name, gcg2) != NULL ) || (strstr(heur_name, gcg3) != NULL ) || (strstr(heur_name, "xpcrossover") != NULL) || (strstr(heur_name, "xprins") != NULL))
                   {
-                     SCIP_CALL( SCIPheurExit( scip->set->heurs[i], scip->set ) );
-                     SCIP_CALL( SCIPheurFree( &scip->set->heurs[i], scip->set ) );
+                     SCIP_CALL( SCIPheurExit( SCIPgetHeurs(scip)[i], scip->set ) );
+                     SCIP_CALL( SCIPheurFree( &SCIPgetHeurs(scip)[i], scip->set ) );
                   }
                }
 
-               /*@todo what else belongs to gcg only?*/
+               /* remove master branching rule */
+
+               /* remove origbranch conshdlr */
+
+               /* remove event hdlr mastersol */
+
             }
       }
       else
