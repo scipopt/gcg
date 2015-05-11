@@ -418,7 +418,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
                /* remove master branching rule */
                branchrule = SCIPfindBranchrule(scip, "empty");
                assert( branchrule != NULL );
-               /*@todo remove branchrule */
+               SCIP_CALL(SCIPsetBranchrulePriority( branchrule,  INT_MIN/4));
+               /*@todo remove branchrule, setting the priority just lowers the possibility of it being called (for testing only!) */
 
                /* remove origbranch conshdlr */
                conshdlr_origbranch = SCIPfindConshdlr(scip, "origbranch");
