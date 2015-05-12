@@ -43,6 +43,7 @@
 #include "pub_gcgvar.h"
 #include "scip/struct_branch.h"
 #include "relax_gcg.h"
+#include "gcg.h"
 
 #include "branch_orig.h"
 
@@ -173,7 +174,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    /* if we use the discretization approach, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-   if( discretization )
+   if( discretization && SCIPgetNContVars(origprob) == 0 )
    {
       return SCIP_OKAY;
    }
@@ -236,7 +237,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    /* if we use the discretization approach, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-   if( discretization )
+   if( discretization && SCIPgetNContVars(origprob) == 0 )
    {
       return SCIP_OKAY;
    }
@@ -268,12 +269,12 @@ static
 SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 {  /*lint --e{715}*/
    SCIP* origprob;
+   SCIP_SOL* origsol;
    SCIP_VAR** origvars;
    int norigvars;
    SCIP_Real solval;
    SCIP_Bool discretization;
    int v;
-   int i;
 
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
@@ -289,10 +290,13 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    /* if we use the discretization approach, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-   if( discretization )
+   if( discretization && SCIPgetNContVars(origprob) == 0 )
    {
       return SCIP_OKAY;
    }
+
+   /** get corresponding origsol in order to check integrality */
+   SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol) );
 
    origvars = SCIPgetOrigVars(origprob);
    norigvars = SCIPgetNOrigVars(origprob);
@@ -300,24 +304,14 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    /* check for each integral original variable whether it has a fractional value */
    for( v = 0; v < norigvars && *result == SCIP_FEASIBLE; v++ )
    {
-      SCIP_Real* mastervals;
-      SCIP_VAR** mastervars;
-      int nmastervars;
-
       if( SCIPvarGetType(origvars[v]) == SCIP_VARTYPE_CONTINUOUS )
          continue;
 
-      solval = 0;
+      solval = 0.0;
       assert(GCGvarIsOriginal(origvars[v]));
 
-      mastervals = GCGoriginalVarGetMastervals(origvars[v]);
-      mastervars = GCGoriginalVarGetMastervars(origvars[v]);
-      nmastervars = GCGoriginalVarGetNMastervars(origvars[v]);
+      solval = SCIPgetSolVal(origprob, origsol, origvars[v]);
 
-      for( i = 0; i < nmastervars; i++ )
-      {
-         solval += mastervals[i] * SCIPgetSolVal(scip, sol, mastervars[i]);
-      }
       if( !SCIPisFeasIntegral(scip, solval) )
       {
          *result = SCIP_INFEASIBLE;
@@ -329,6 +323,8 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
          }
       }
    }
+
+   SCIPfreeSol(origprob, &origsol);
 
    return SCIP_OKAY;
 }

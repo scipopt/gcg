@@ -698,6 +698,21 @@ SCIP_Bool GCGmasterVarIsLinking(
       return FALSE;
 }
 
+/** returns scip instance corresponding to master variable */
+SCIP* GCGmasterVarGetProb(
+   SCIP_VAR*             var                 /**< variable data structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   return vardata->data.mastervardata.scip;
+}
+
 /** returns whether the master variable is a ray */
 SCIP_Bool GCGmasterVarIsRay(
    SCIP_VAR*             var                 /**< variable data structure */
@@ -1094,6 +1109,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
    newvardata->vartype = GCG_VARTYPE_MASTER;
    newvardata->blocknr = prob;
+   newvardata->data.mastervardata.scip = scip;
 
    /* store whether the variable represents a ray */
    newvardata->data.mastervardata.isray = solisray;
@@ -1224,6 +1240,7 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
    newvardata->vartype = GCG_VARTYPE_MASTER;
    newvardata->blocknr = -1;
+   newvardata->data.mastervardata.scip = scip;
    newvardata->data.mastervardata.isray = FALSE;
    newvardata->data.mastervardata.norigvars = 1;
 

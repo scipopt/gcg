@@ -721,10 +721,15 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemLimits(
    /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
    if( !optimal && pricetype->getType() == GCG_PRICETYPE_REDCOST )
    {
-      SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+      if(SCIPisLE(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob], SCIPgetObjlimit(pricerdata->pricingprobs[prob])))
+      {
+         SCIPdebugMessage("Set objective limit of prob %d in stage %d to %f\n", prob, SCIPgetStage(pricerdata->pricingprobs[prob]),pricerdata->dualsolconv[prob]);
+         SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+      }
    }
-   else
+   else if( SCIPgetStage(pricerdata->pricingprobs[prob]) < SCIP_STAGE_TRANSFORMED )
    {
+      SCIPdebugMessage("Set objective limit of prob %d in stage %d to %f\n", prob, SCIPgetStage(pricerdata->pricingprobs[prob]), SCIPinfinity(pricerdata->pricingprobs[prob]));
       SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], SCIPinfinity(pricerdata->pricingprobs[prob])) );
    }
 
@@ -2118,6 +2123,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
          {
             SCIP_CALL( GCGfreeGcgCol(&cols[j]) );
          }
+         *ncols = 0;
          SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
       }
       SCIPdebugMessage("Applying bound change of depth %d\n", -i);
@@ -2304,8 +2310,17 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             SCIP_Real convdual = stabilization->convGetDual(prob);
 
-            #pragma omp atomic
-            beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
+            if(!SCIPisInfinity(scip_, -pricinglowerbound) && !SCIPisInfinity(scip_, -beststabobj) )
+            {
+               #pragma omp atomic
+               beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
+            }
+            else
+            {
+               #pragma omp atomic
+               beststabobj = -SCIPinfinity(scip_);
+            }
+
 
             #pragma omp atomic
             bestobjvals[prob] = GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
@@ -2372,6 +2387,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             SCIPdebugMessage("enabling mispricing schedule\n");
             stabilization->activateMispricingSchedule();
+
             stabilization->updateAlphaMisprice();
          }
          else if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0) )
@@ -2764,7 +2780,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    /* set variable type for master variables */
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-   if( discretization )
+   if( discretization && SCIPgetNContVars(origprob) == 0 )
    {
       pricerdata->vartype = SCIP_VARTYPE_INTEGER;
    }
