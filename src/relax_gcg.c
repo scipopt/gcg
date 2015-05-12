@@ -920,7 +920,13 @@ SCIP_RETCODE checkIdenticalBlocks(
 static
 SCIP_RETCODE setPricingProblemParameters(
    SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
-   int                   clocktype           /**< clocktype to use in the pricing problem */
+   int                   clocktype,          /**< clocktype to use in the pricing problem */
+   SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
+   SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the pricing problem */
+   SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the pricing problem */
+   SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
+   SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
+   SCIP_Real             dualfeastol         /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
    )
 {
    assert(scip != NULL);
@@ -975,6 +981,12 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/finitesolutionstore", TRUE) );
 
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/infinity", infinity) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/epsilon", epsilon) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/sumepsilon", sumepsilon) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/feastol", feastol) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/lpfeastol", lpfeastol) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
 
    return SCIP_OKAY;
 }
@@ -1294,7 +1306,13 @@ static
 SCIP_RETCODE createMasterProblem(
    SCIP*                 masterscip,         /**< SCIP data structure of master problem */
    const char*           name,               /**< name of the master problem */
-   int                   clocktype           /**< clocktype to use in the master SCIP */
+   int                   clocktype,          /**< clocktype to use in the master problem */
+   SCIP_Real             infinity,           /**< values larger than this are considered infinity in the master problem */
+   SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the master problem */
+   SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the master problem */
+   SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the master problem */
+   SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the master problem */
+   SCIP_Real             dualfeastol         /**< feasibility tolerance for reduced costs in LP solution in the master problem */
    )
 {
    assert(masterscip != NULL);
@@ -1306,6 +1324,14 @@ SCIP_RETCODE createMasterProblem(
    /* set clocktype */
    SCIP_CALL( SCIPsetIntParam(masterscip, "timing/clocktype", clocktype) );
 
+   /* set numerical tolerances */
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/infinity", infinity) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/epsilon", epsilon) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/sumepsilon", sumepsilon) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/feastol", feastol) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/lpfeastol", lpfeastol) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/dualfeastol", dualfeastol) );
+
    return SCIP_OKAY;
 }
 
@@ -1315,7 +1341,13 @@ static
 SCIP_RETCODE createPricingProblem(
    SCIP**                pricingscip,        /**< Pricing scip data structure */
    const char*           name,               /**< name of the pricing problem */
-   int                   clocktype           /**< clocktype to use in the pricing problem */
+   int                   clocktype,          /**< clocktype to use in the pricing problem */
+   SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
+   SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the pricing problem */
+   SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the pricing problem */
+   SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
+   SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
+   SCIP_Real             dualfeastol         /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
    )
 {
    assert(pricingscip != NULL);
@@ -1323,7 +1355,7 @@ SCIP_RETCODE createPricingProblem(
 
    SCIP_CALL( SCIPcreate(pricingscip) );
    SCIP_CALL( SCIPincludeDefaultPlugins(*pricingscip) );
-   SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype) );
+   SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
    SCIP_CALL( SCIPcreateProb(*pricingscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    return SCIP_OKAY;
@@ -1524,6 +1556,12 @@ SCIP_RETCODE createMaster(
    SCIP_HASHMAP** hashorig2pricingvar;
    char name[SCIP_MAXSTRLEN];
    int clocktype;
+   SCIP_Real infinity;
+   SCIP_Real epsilon;
+   SCIP_Real sumepsilon;
+   SCIP_Real feastol;
+   SCIP_Real lpfeastol;
+   SCIP_Real dualfeastol;
    int i;
 
    assert(scip != NULL);
@@ -1549,8 +1587,16 @@ SCIP_RETCODE createMaster(
    /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
    SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype) );
 
+   /* get numerical tolerances of the original SCIP instance in order to use the same numerical tolerances in master and pricing problems */
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/infinity", &infinity) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/epsilon", &epsilon) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/sumepsilon", &sumepsilon) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/feastol", &feastol) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/lpfeastol", &lpfeastol) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/dualfeastol", &dualfeastol) );
+
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
-   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype) );
+   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
 
    /* create the pricing problems */
    for( i = 0; i < npricingprobs; i++ )
@@ -1558,7 +1604,7 @@ SCIP_RETCODE createMaster(
       relaxdata->convconss[i] = NULL;
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
 
-      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype) );
+      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
       SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
    }
 
