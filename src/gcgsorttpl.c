@@ -175,7 +175,8 @@
 
 
 /** shell-sort an array of data elements; use it only for arrays smaller than 25 entries */
-static void GCGSORTTPL_NAME(gcgsorttpl_shellSort, GCGSORTTPL_NAMEEXT)
+static
+void GCGSORTTPL_NAME(gcgsorttpl_shellSort, GCGSORTTPL_NAMEEXT)
 (
    GCGSORTTPL_KEYTYPE*      key,                /**< pointer to data array that defines the order */
    GCGSORTTPL_HASFIELD1PAR(  GCGSORTTPL_FIELD1TYPE*    field1 )      /**< additional field that should be sorted in the same way */
@@ -241,7 +242,8 @@ static void GCGSORTTPL_NAME(gcgsorttpl_shellSort, GCGSORTTPL_NAMEEXT)
 
 
 /** quick-sort an array of pointers; pivot is the medial element */
-static void GCGSORTTPL_NAME(gcgsorttpl_qSort, GCGSORTTPL_NAMEEXT)
+static
+void GCGSORTTPL_NAME(gcgsorttpl_qSort, GCGSORTTPL_NAMEEXT)
 (
    GCGSORTTPL_KEYTYPE*      key,                /**< pointer to data array that defines the order */
    GCGSORTTPL_HASFIELD1PAR(  GCGSORTTPL_FIELD1TYPE*    field1 )      /**< additional field that should be sorted in the same way */
@@ -421,7 +423,8 @@ static void GCGSORTTPL_NAME(gcgsorttpl_qSort, GCGSORTTPL_NAMEEXT)
 
 #ifndef NDEBUG
 /** verifies that an array is indeed sorted */
-static void GCGSORTTPL_NAME(gcgsorttpl_checkSort, GCGSORTTPL_NAMEEXT)
+static
+void GCGSORTTPL_NAME(gcgsorttpl_checkSort, GCGSORTTPL_NAMEEXT)
 (
    GCGSORTTPL_KEYTYPE*      key,                /**< pointer to data array that defines the order */
    GCGSORTTPL_HASPTRCOMPPAR( GCG_DECL_SORTPTRCOMP((*ptrcomp)) )  /**< data element comparator */
@@ -441,7 +444,7 @@ static void GCGSORTTPL_NAME(gcgsorttpl_checkSort, GCGSORTTPL_NAMEEXT)
 #endif
 
 /** SCIPsort...(): sorts array 'key' and performs the same permutations on the additional 'field' arrays */
-static void GCGSORTTPL_NAME(GCGsort, GCGSORTTPL_NAMEEXT)
+void GCGSORTTPL_NAME(GCGsort, GCGSORTTPL_NAMEEXT)
 (
    GCGSORTTPL_KEYTYPE*      key,                /**< pointer to data array that defines the order */
    GCGSORTTPL_HASFIELD1PAR(  GCGSORTTPL_FIELD1TYPE*    field1 )      /**< additional field that should be sorted in the same way */
@@ -508,7 +511,7 @@ static void GCGSORTTPL_NAME(GCGsort, GCGSORTTPL_NAMEEXT)
  *  This method does not do any memory allocation! It assumes that the arrays are large enough
  *  to store the additional values.
  */
-static void GCGSORTTPL_NAME(GCGsortedvecInsert, GCGSORTTPL_NAMEEXT)
+void GCGSORTTPL_NAME(GCGsortedvecInsert, GCGSORTTPL_NAMEEXT)
 (
    GCGSORTTPL_KEYTYPE*      key,                /**< pointer to data array that defines the order */
    GCGSORTTPL_HASFIELD1PAR(  GCGSORTTPL_FIELD1TYPE*    field1 )      /**< additional field that should be sorted in the same way */
@@ -560,7 +563,6 @@ static void GCGSORTTPL_NAME(GCGsortedvecInsert, GCGSORTTPL_NAMEEXT)
 }
 
 /** SCIPsortedvecDelPos...(): deletes an element at a given position from a sorted multi-vector */
-static
 void GCGSORTTPL_NAME(GCGsortedvecDelPos, GCGSORTTPL_NAMEEXT)
 (
    GCGSORTTPL_KEYTYPE*      key,                /**< pointer to data array that defines the order */

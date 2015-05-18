@@ -83,11 +83,9 @@ struct GCG_PricingVarData
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 
 
-/** @todo don't copy the pointers to the original vars for each master variable, store them in a central place */
 /** data for master variables */
 struct GCG_MasterVarData
 {
-   SCIP*                 scip;               /**< SCIP data structure the master variable belongs to */
    int                   norigvars;          /**< number of variables in the original program corresponding to  the current variable */
    SCIP_VAR**            origvars;           /**< variables in the original program corresponding to the current variable */
    SCIP_Real*            origvals;           /**< this variable represents vals[i] times the variable origvars[i] in the

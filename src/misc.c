@@ -38,30 +38,8 @@
 #include "pricer_gcg.h"
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
-
+#include "gcgsort.h"
 #include <string.h>
-
-/** compares two element indices
- *  result:
- *    < 0: ind1 comes before (is better than) ind2
- *    = 0: both indices have the same value
- *    > 0: ind2 comes after (is worse than) ind2
- **/
-#define GCG_DECL_SORTINDCOMP(x) int x (void* userdata, void* dataptr, int ind1, int ind2)
-
-/** compares two data element pointers
- *  result:
- *    < 0: elem1 comes before (is better than) elem2
- *    = 0: both elements have the same value
- *    > 0: elem2 comes after (is worse than) elem2
- **/
-#define GCG_DECL_SORTPTRCOMP(x) int x (void* userdata, void* elem1, void* elem2)
-
-#define GCGSORTTPL_NAMEEXT     PtrPtr
-#define GCGSORTTPL_KEYTYPE     void*
-#define GCGSORTTPL_FIELD1TYPE  void*
-#define GCGSORTTPL_PTRCOMP
-#include "gcgsorttpl.c"
 
 /** computes the generator of mastervar for the entry in origvar
  * @return entry of the generator corresponding to origvar */
@@ -98,9 +76,7 @@ SCIP_Real getGeneratorEntry(
 static
 GCG_DECL_SORTPTRCOMP(mastervarcomp)
 {
-   SCIP* scip = (SCIP *) userdata; /* TODO: continue here */
-   SCIP* origprob;
-   SCIP* masterprob;
+   SCIP* origprob = (SCIP *) userdata; /* TODO: continue here */
    SCIP_VAR* mastervar1;
    SCIP_VAR* mastervar2;
    SCIP_VAR** origvars;
@@ -123,11 +99,6 @@ GCG_DECL_SORTPTRCOMP(mastervarcomp)
    }
 
    /* TODO: get all original variables (need scip...maybe from pricer via function and scip_ */
-   masterprob = GCGmasterVarGetProb(mastervar1);
-   assert(masterprob == GCGmasterVarGetProb(mastervar2));
-
-   origprob = GCGmasterGetOrigprob(masterprob);
-
    origvars = SCIPgetVars(origprob);
    norigvars = SCIPgetNVars(origprob);
 

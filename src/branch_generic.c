@@ -43,6 +43,7 @@
 #include "type_branchgcg.h"
 #include "gcg.h"
 #include "cons_integralorig.h"
+#include "gcgsort.h"
 
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
@@ -522,10 +523,9 @@ SCIP_Real GetMedian(
 
 /** comparefunction for lexicographical sort */
 static
-SCIP_DECL_SORTPTRCOMP(ptrcomp)
+GCG_DECL_SORTPTRCOMP(ptrcomp)
 {
-   SCIP* origprob;
-   SCIP* masterprob;
+   SCIP* origprob = (SCIP *) userdata;
    GCG_STRIP* strip1;
    GCG_STRIP* strip2;
    SCIP_VAR* mastervar1;
@@ -554,11 +554,6 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
       assert(GCGmasterVarIsLinking(mastervar2));
    }
 
-   masterprob = GCGmasterVarGetProb(mastervar1);
-   assert(masterprob == GCGmasterVarGetProb(mastervar2));
-
-   origprob = GCGmasterGetOrigprob(masterprob);
-
    origvars = SCIPgetVars(origprob);
    norigvars = SCIPgetNVars(origprob);
 
@@ -581,6 +576,7 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
  */
 static
 SCIP_RETCODE LexicographicSort(
+   SCIP*                 scip,               /**< SCIP data structure */
    GCG_STRIP**           array,              /**< array to sort (will be changed) */
    int                   arraysize           /**< size of the array */
    )
@@ -591,7 +587,7 @@ SCIP_RETCODE LexicographicSort(
 
    SCIPdebugMessage("Lexicographic sorting\n");
 
-   SCIPsortPtr((void**)array, ptrcomp, arraysize );
+   GCGsortPtr((void**)array, ptrcomp, scip, arraysize );
 
    return SCIP_OKAY;
 }
@@ -645,7 +641,7 @@ int ILOcomp(
       strip1->mastervar = mastervar1;
       strip2->mastervar = mastervar2;
 
-      returnvalue = (*ptrcomp)(strip1, strip2);
+      returnvalue = (*ptrcomp)(scip, strip1, strip2);
 
       SCIPfreeBuffer(scip, &strip1);
       SCIPfreeBuffer(scip, &strip2);
@@ -808,7 +804,7 @@ SCIP_RETCODE InducedLexicographicSort(
    SCIPdebugMessage("Induced Lexicographic sorting\n");
 
    if( NBoundsequences == 0 )
-      return LexicographicSort( array, arraysize );
+      return LexicographicSort( scip, array, arraysize );
    assert( C!= NULL );
 
    assert(arraysize > 0);
