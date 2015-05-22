@@ -216,6 +216,20 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       return SCIP_OKAY;
    }
 
+   if( GCGgetNRelPricingprobs(origscip) < GCGgetNPricingprobs(origscip) )
+   {
+      SCIPdebugMessage("aggregated pricing problems, do no separation!\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
+   if( GCGrelaxIsOrigSolFeasible(origscip) )
+   {
+      SCIPdebugMessage("Current solution is feasible, no separation necessary!\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),

@@ -48,17 +48,10 @@
 
 #define CONSHDLR_NAME          "integralorig"
 #define CONSHDLR_DESC          "integrality constraint"
-#define CONSHDLR_SEPAPRIORITY         0 /**< priority of the constraint handler for separation */
 #define CONSHDLR_ENFOPRIORITY      1000 /**< priority of the constraint handler for constraint enforcing */
 #define CONSHDLR_CHECKPRIORITY     1000 /**< priority of the constraint handler for checking feasibility */
-#define CONSHDLR_SEPAFREQ            -1 /**< frequency for separating cuts; zero means to separate only in the root node */
-#define CONSHDLR_PROPFREQ            -1 /**< frequency for propagating domains; zero means only preprocessing propagation */
 #define CONSHDLR_EAGERFREQ           -1 /**< frequency for using all instead of only the useful constraints in separation,
                                               *   propagation and enforcement, -1 for no eager evaluations, 0 for first only */
-#define CONSHDLR_MAXPREROUNDS        -1 /**< maximal number of presolving rounds the constraint handler participates in (-1: no limit) */
-#define CONSHDLR_DELAYSEPA        FALSE /**< should separation method be delayed, if other separators found cuts? */
-#define CONSHDLR_DELAYPROP        FALSE /**< should propagation method be delayed, if other propagators found reductions? */
-#define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS        FALSE /**< should the constraint handler be skipped, if no constraints are available? */
 
 
@@ -371,33 +364,6 @@ SCIP_DECL_CONSFREE(consFreeIntegralOrig)
    return SCIP_OKAY;
 }
 
-/* define not used callback as NULL */
-#define conshdlrCopyIntegralOrig NULL
-#define consInitIntegralOrig NULL
-#define consExitIntegralOrig NULL
-#define consInitpreIntegralOrig NULL
-#define consExitpreIntegralOrig NULL
-#define consInitsolIntegralOrig NULL
-#define consExitsolIntegralOrig NULL
-#define consDeleteIntegralOrig NULL
-#define consTransIntegralOrig NULL
-#define consInitlpIntegralOrig NULL
-#define consSepalpIntegralOrig NULL
-#define consSepasolIntegralOrig NULL
-#define consPropIntegralOrig NULL
-#define consPresolIntegralOrig NULL
-#define consRespropIntegralOrig NULL
-#define consActiveIntegralOrig NULL
-#define consDeactiveIntegralOrig NULL
-#define consEnableIntegralOrig NULL
-#define consDisableIntegralOrig NULL
-#define consDelvarsIntegralOrig NULL
-#define consPrintIntegralOrig NULL
-#define consCopyIntegralOrig NULL
-#define consParseIntegralOrig NULL
-#define consGetVarsIntegralOrig NULL
-#define consGetNVarsIntegralOrig NULL
-
 /*
  * constraint specific interface methods
  */
@@ -407,6 +373,7 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
    /* create integral constraint handler data */
@@ -416,21 +383,13 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
    conshdlrdata->nbranchrules = 0;
 
    /* include constraint handler */
-   SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
-         CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
-         CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS,
-         CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
-         SCIP_PROPTIMING_ALWAYS,
-         conshdlrCopyIntegralOrig, consFreeIntegralOrig, consInitIntegralOrig, consExitIntegralOrig,
-         consInitpreIntegralOrig, consExitpreIntegralOrig, consInitsolIntegralOrig, consExitsolIntegralOrig,
-         consDeleteIntegralOrig, consTransIntegralOrig, consInitlpIntegralOrig,
-         consSepalpIntegralOrig, consSepasolIntegralOrig, consEnfolpIntegralOrig, consEnfopsIntegralOrig, consCheckIntegralOrig,
-         consPropIntegralOrig, consPresolIntegralOrig, consRespropIntegralOrig, consLockIntegralOrig,
-         consActiveIntegralOrig, consDeactiveIntegralOrig,
-         consEnableIntegralOrig, consDisableIntegralOrig,
-         consDelvarsIntegralOrig, consPrintIntegralOrig, consCopyIntegralOrig, consParseIntegralOrig,
-         consGetVarsIntegralOrig, consGetNVarsIntegralOrig,
+   SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
+         CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,
+         consEnfolpIntegralOrig, consEnfopsIntegralOrig, consCheckIntegralOrig, consLockIntegralOrig,
          conshdlrdata) );
+   assert(conshdlr != NULL);
+
+   SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeIntegralOrig) );
 
    return SCIP_OKAY;
 }

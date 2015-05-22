@@ -53,19 +53,14 @@
 /* constraint handler properties */
 #define CONSHDLR_NAME          "masterbranch"
 #define CONSHDLR_DESC          "store branching decision at nodes of the tree constraint handler"
-#define CONSHDLR_SEPAPRIORITY         0 /**< priority of the constraint handler for separation */
 #define CONSHDLR_ENFOPRIORITY         0 /**< priority of the constraint handler for constraint enforcing */
 #define CONSHDLR_CHECKPRIORITY  2000000 /**< priority of the constraint handler for checking feasibility */
-#define CONSHDLR_SEPAFREQ            -1 /**< frequency for separating cuts; zero means to separate only in the root node */
 #define CONSHDLR_PROPFREQ             1 /**< frequency for propagating domains; zero means only preprocessing propagation */
 #define CONSHDLR_EAGERFREQ          100 /**< frequency for using all instead of only the useful constraints in separation,
                                          * propagation and enforcement, -1 for no eager evaluations, 0 for first only */
-#define CONSHDLR_MAXPREROUNDS        -1 /**< maximal number of presolving rounds the constraint handler participates in (-1: no limit) */
-#define CONSHDLR_DELAYSEPA        FALSE /**< should separation method be delayed, if other separators found cuts? */
 #define CONSHDLR_DELAYPROP        FALSE /**< should propagation method be delayed, if other propagators found reductions? */
-#define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS         TRUE /**< should the constraint handler be skipped, if no constraints are available? */
-
+#define CONSHDLR_PROPTIMING SCIP_PROPTIMING_ALWAYS
 
 #define EVENTHDLR_NAME         "origvarbound"
 #define EVENTHDLR_DESC         "event handler for bound changes on original variables"
@@ -201,6 +196,9 @@ SCIP_RETCODE initializeConsdata(
       consdata->nchildconss = 0;
       consdata->childconss = NULL;
    }
+
+   /*GCGconsOrigbranchSetMastercons(origcons, cons);*/
+
 
 #ifdef SCIP_DEBUG
    if( consdata->parentcons != NULL )
@@ -1562,7 +1560,10 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    SCIPfreeMemoryArrayNull(scip, &(*consdata)->childconss);
 
-   BMSfreeBlockMemoryArrayNull(SCIPblkmem(scip), &(*consdata)->name, strlen((*consdata)->name)+1);
+   if( (*consdata)->name != NULL )
+   {
+      SCIPfreeBlockMemoryArray(scip, &(*consdata)->name, strlen((*consdata)->name)+1);
+   }
 
    SCIPfreeBlockMemoryNull(scip, consdata);
    *consdata = NULL;
@@ -1675,27 +1676,6 @@ SCIP_DECL_CONSLOCK(consLockMasterbranch)
 {  /*lint --e{715}*/
    return SCIP_OKAY;
 }
-
-
-/* define not used callbacks as NULL */
-#define conshdlrCopyMasterbranch NULL
-#define consPresolMasterbranch NULL
-#define consRespropMasterbranch NULL
-#define consExitsolMasterbranch NULL
-#define consInitpreMasterbranch NULL
-#define consExitpreMasterbranch NULL
-#define consTransMasterbranch NULL
-#define consInitlpMasterbranch NULL
-#define consSepalpMasterbranch NULL
-#define consSepasolMasterbranch NULL
-#define consEnableMasterbranch NULL
-#define consDisableMasterbranch NULL
-#define consPrintMasterbranch NULL
-#define consDelvarsMasterbranch NULL
-#define consCopyMasterbranch NULL
-#define consParseMasterbranch NULL
-#define consGetVarsMasterbranch NULL
-#define consGetNVarsMasterbranch NULL
 
 
 /*
@@ -1896,6 +1876,7 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
    )
 {
    SCIP* origscip;
+   SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
@@ -1910,21 +1891,21 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
    conshdlrdata->maxstacksize = 25;
 
    /* include constraint handler */
-   SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
-         CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
-         CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS,
-         CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
-         SCIP_PROPTIMING_ALWAYS,
-         conshdlrCopyMasterbranch, consFreeMasterbranch, consInitMasterbranch, consExitMasterbranch,
-         consInitpreMasterbranch, consExitpreMasterbranch, consInitsolMasterbranch, consExitsolMasterbranch,
-         consDeleteMasterbranch, consTransMasterbranch, consInitlpMasterbranch,
-         consSepalpMasterbranch, consSepasolMasterbranch, consEnfolpMasterbranch, consEnfopsMasterbranch, consCheckMasterbranch,
-         consPropMasterbranch, consPresolMasterbranch, consRespropMasterbranch, consLockMasterbranch,
-         consActiveMasterbranch, consDeactiveMasterbranch,
-         consEnableMasterbranch, consDisableMasterbranch,
-         consDelvarsMasterbranch, consPrintMasterbranch, consCopyMasterbranch, consParseMasterbranch,
-         consGetVarsMasterbranch, consGetNVarsMasterbranch,
+   SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
+         CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,
+         consEnfolpMasterbranch, consEnfopsMasterbranch, consCheckMasterbranch, consLockMasterbranch,
          conshdlrdata) );
+   assert(conshdlr != NULL);
+
+   SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeMasterbranch) );
+   SCIP_CALL( SCIPsetConshdlrInit(scip, conshdlr, consInitMasterbranch) );
+   SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitMasterbranch) );
+   SCIP_CALL( SCIPsetConshdlrInitsol(scip, conshdlr, consInitsolMasterbranch) );
+   SCIP_CALL( SCIPsetConshdlrDelete(scip, conshdlr, consDeleteMasterbranch) );
+   SCIP_CALL( SCIPsetConshdlrActive(scip, conshdlr, consActiveMasterbranch) );
+   SCIP_CALL( SCIPsetConshdlrDeactive(scip, conshdlr, consDeactiveMasterbranch) );
+   SCIP_CALL( SCIPsetConshdlrProp(scip, conshdlr, consPropMasterbranch, CONSHDLR_PROPFREQ,
+         CONSHDLR_DELAYPROP, CONSHDLR_PROPTIMING) );
 
    /* create event handler data */
    eventhdlrdata = NULL;

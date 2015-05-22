@@ -61,17 +61,10 @@
 /* constraint handler properties */
 #define CONSHDLR_NAME          "origbranch"
 #define CONSHDLR_DESC          "store branching decision at nodes of the tree constraint handler"
-#define CONSHDLR_SEPAPRIORITY         0 /**< priority of the constraint handler for separation */
 #define CONSHDLR_ENFOPRIORITY         0 /**< priority of the constraint handler for constraint enforcing */
 #define CONSHDLR_CHECKPRIORITY  2000000 /**< priority of the constraint handler for checking feasibility */
-#define CONSHDLR_SEPAFREQ            -1 /**< frequency for separating cuts; zero means to separate only in the root node */
-#define CONSHDLR_PROPFREQ            -1 /**< frequency for propagating domains; zero means only preprocessing propagation */
 #define CONSHDLR_EAGERFREQ          100 /**< frequency for using all instead of only the useful constraints in separation,
                                               * propagation and enforcement, -1 for no eager evaluations, 0 for first only */
-#define CONSHDLR_MAXPREROUNDS        -1 /**< maximal number of presolving rounds the constraint handler participates in (-1: no limit) */
-#define CONSHDLR_DELAYSEPA        FALSE /**< should separation method be delayed, if other separators found cuts? */
-#define CONSHDLR_DELAYPROP        FALSE /**< should propagation method be delayed, if other propagators found reductions? */
-#define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS         TRUE /**< should the constraint handler be skipped, if no constraints are available? */
 
 
@@ -362,15 +355,6 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
    return SCIP_OKAY;
 }
 
-
-
-/** domain propagation method of constraint handler */
-static
-SCIP_DECL_CONSPROP(consPropOrigbranch)
-{  /*lint --e{715}*/
-   return SCIP_OKAY;
-}
-
 /** lp solution enforcement method */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpOrigbranch)
@@ -406,20 +390,7 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
 }
 
 /* define not used callbacks as NULL */
-#define consPresolOrigbranch NULL
-#define consRespropOrigbranch NULL
-#define consInitOrigbranch NULL
-#define consInitpreOrigbranch NULL
-#define consExitpreOrigbranch NULL
-#define consTransOrigbranch NULL
-#define consInitlpOrigbranch NULL
-#define consSepalpOrigbranch NULL
-#define consSepasolOrigbranch NULL
-#define consEnableOrigbranch NULL
-#define consDisableOrigbranch NULL
-#define consDelvarsOrigbranch NULL
 #define consPrintOrigbranch NULL
-#define consCopyOrigbranch NULL
 #define consParseOrigbranch NULL
 #define consGetVarsOrigbranch NULL
 #define consGetNVarsOrigbranch NULL
@@ -436,6 +407,7 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
    )
 {
    SCIP_CONSHDLRDATA* conshdlrData;
+   SCIP_CONSHDLR* conshdlr;
 
    SCIP_CALL( SCIPallocMemory(scip, &conshdlrData) );
    conshdlrData->stack = NULL;
@@ -444,21 +416,19 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
    conshdlrData->rootcons = NULL;
 
    /* include constraint handler */
-   SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
-         CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
-         CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS,
-         CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
-         SCIP_PROPTIMING_ALWAYS,
-         consCopyOrigbranch, consFreeOrigbranch, consInitOrigbranch, consExitOrigbranch,
-         consInitpreOrigbranch, consExitpreOrigbranch, consInitsolOrigbranch, consExitsolOrigbranch,
-         consDeleteOrigbranch, consTransOrigbranch, consInitlpOrigbranch,
-         consSepalpOrigbranch, consSepasolOrigbranch, consEnfolpOrigbranch, consEnfopsOrigbranch, consCheckOrigbranch,
-         consPropOrigbranch, consPresolOrigbranch, consRespropOrigbranch, consLockOrigbranch,
-         consActiveOrigbranch, consDeactiveOrigbranch,
-         consEnableOrigbranch, consDisableOrigbranch,
-         consDelvarsOrigbranch, consPrintOrigbranch, consCopyOrigbranch, consParseOrigbranch,
-         consGetVarsOrigbranch, consGetNVarsOrigbranch,
-         conshdlrData) );
+   SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
+         CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,
+         consEnfolpOrigbranch, consEnfopsOrigbranch, consCheckOrigbranch,
+         consLockOrigbranch, conshdlrData) );
+   assert(conshdlr != NULL);
+
+   SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrInitsol(scip, conshdlr, consInitsolOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrExitsol(scip, conshdlr, consExitsolOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrDelete(scip, conshdlr, consDeleteOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrActive(scip, conshdlr, consActiveOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrDeactive(scip, conshdlr, consDeactiveOrigbranch) );
 
    return SCIP_OKAY;
 }
