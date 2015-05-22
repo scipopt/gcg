@@ -609,6 +609,7 @@ static
 GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
 {
    assert(scip != NULL);
+   assert(GCGisOriginal(scip));
    assert(branchdata != NULL);
    assert(branchdata->origvar != NULL);
 
