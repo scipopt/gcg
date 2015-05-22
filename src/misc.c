@@ -133,9 +133,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_Real increaseval;
    SCIP_VAR** mastervars;
    SCIP_VAR** mastervarsall;
-   SCIP_VAR** mastervarsunsorted;
    SCIP_Real* mastervals;
-   SCIP_Real* mastervalsall;
    int nmastervarsall;
    int nmastervars;
    SCIP_VAR** vars;

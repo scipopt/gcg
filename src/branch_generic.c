@@ -2297,7 +2297,7 @@ SCIP_RETCODE createChildNodesGeneric(
   {
      SCIP_VAR* mastervar = mastervars[i];
 
-     if( GCGmasterVarIsInBlock(mastervar, blocknr) )
+     if( GCGisMasterVarInBlock(mastervar, blocknr) )
      {
         identicalcontrol += SCIPgetSolVal(masterscip, NULL, mastervar);
      }
@@ -2401,7 +2401,7 @@ SCIP_RETCODE branchDirectlyOnMastervar(
    return SCIP_OKAY;
 }
 
-/** prepares informations for using the generic branching scheme */
+/** prepares information for using the generic branching scheme */
 SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP*                 masterscip,         /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
@@ -2449,7 +2449,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
    assert(masterscip != NULL);
 
-   SCIPdebugMessage("get informations for Vanderbecks generic branching\n");
+   SCIPdebugMessage("get information for Vanderbecks generic branching\n");
 
    origscip = GCGmasterGetOrigprob(masterscip);
 
