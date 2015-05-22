@@ -52,10 +52,10 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
- lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
- lib/scip/src/scip/cons_abspower.h lib/scip/src/scip/cons_and.h \
- lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
+ lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
+ lib/scip/src/scip/branch_relpscost.h lib/scip/src/scip/cons_abspower.h \
+ lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
  lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
  lib/scip/src/scip/cons_cumulative.h lib/scip/src/scip/cons_disjunction.h \
@@ -69,10 +69,11 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/cons_sos2.h lib/scip/src/scip/cons_superindicator.h \
  lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/cons_xor.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
- lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_bound.h lib/scip/src/scip/heur_clique.h \
+ lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
+ lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_dualval.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
@@ -99,11 +100,12 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/presol_components.h \
  lib/scip/src/scip/presol_convertinttobin.h \
  lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_implfree.h \
- lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_dualagg.h lib/scip/src/scip/presol_dualinfer.h \
  lib/scip/src/scip/presol_gateextraction.h \
  lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h lib/scip/src/scip/presol_redvub.h \
- lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_tworowbnd.h \
+ lib/scip/src/scip/presol_stuffing.h lib/scip/src/scip/prop_dualfix.h \
  lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
