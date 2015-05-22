@@ -274,9 +274,6 @@ SCIP_RETCODE createBranchNodesInOrigprob(
             SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGgetMasterprob(scip)))));
    #endif
       }
-
-      assert(SCIPgetNNodes(scip) == SCIPgetNNodes(GCGgetMasterprob(scip)));
-      /*assert(SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) == SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGrelaxGetMasterprob(scip)))));*/
    }
 
    *result = SCIP_BRANCHED;
