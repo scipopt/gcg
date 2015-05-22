@@ -36,7 +36,7 @@
 #ifndef GCG_BRANCH_ORIG_H__
 #define GCG_BRANCH_ORIG_H__
 
-
+#include "type_branchgcg.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus
@@ -49,9 +49,27 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** get the original variable on which the branching was performed */
+extern
+SCIP_VAR* GCGbranchOrigGetOrigvar(
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
+   );
+
+/** get the type of the new bound which resulted of the performed branching */
+extern
+GCG_BOUNDTYPE GCGbranchOrigGetBoundtype(
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
+   );
+
+/** get the new bound which resulted of the performed branching */
+extern
+SCIP_Real GCGbranchOrigGetNewbound(
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
+   );
+
 /** updates extern branching candidates before branching */
 extern
-SCIP_RETCODE updateExternBranchcandsForMasterbranch(
+SCIP_RETCODE GCGbranchOrigUpdateExternBranchcands(
    SCIP*                 scip               /**< SCIP data structure */
 );
 

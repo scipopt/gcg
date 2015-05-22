@@ -68,7 +68,7 @@ struct GCG_Strip
 };
 typedef struct GCG_Strip GCG_STRIP;
 
-/** creates the most infeasible LP branching rule and includes it in SCIP */
+/** creates the generic branching rule and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
    SCIP*                 scip                /**< SCIP data structure */

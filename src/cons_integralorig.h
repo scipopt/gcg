@@ -49,7 +49,8 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
    );
 
 extern
-SCIP_RETCODE GCGcreateBranchruleConsOrig(
+/** insert branchrule in constraint handler data */
+SCIP_RETCODE GCGconsIntegralorigAddBranchrule(
    SCIP*                 scip,
    SCIP_BRANCHRULE*      branchrule
    );
