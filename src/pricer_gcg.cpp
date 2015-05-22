@@ -872,7 +872,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
-   origconss = GCGrgetLinearOrigMasterConss(origprob);
+   origconss = GCGgetLinearOrigMasterConss(origprob);
 
    /* set objective value of all variables in the pricing problems to 0 (for farkas pricing) /
     * to the original objective of the variable (for redcost pricing)
@@ -2466,8 +2466,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             {
                SCIPdebugPrintf("not added.\n");
             }
-            SCIP_CALL( GCGfreeGcgCol(&cols[prob][j]) );
          }
+         SCIP_CALL( GCGfreeGcgCol(&cols[prob][j]) );
       }
 
       if( nfoundvarsprob > 0 )
