@@ -811,7 +811,7 @@ SCIP_RETCODE applyLocalBndchgsToPricingprobs(
          /* set corresponding bound in the pricing problem */
          SCIP_CALL( tightenPricingVarBound(scip, GCGoriginalVarGetPricingVar(consdata->localbndvars[i]), consdata, i, blocknr) );
       }
-      else if( GCGvarGetBlock(consdata->localbndvars[i]) == -2 )
+      else if( blocknr == -2 )
       {
          int j;
          int npricingprobs;
@@ -1117,38 +1117,42 @@ SCIP_RETCODE applyLocalBndchgsToCopiedMastervars(
    assert(consdata != NULL);
 
    /* apply local bound changes */
-   for( i = 0; i < consdata->ncopiedvarbnds; i++ )
+   for( i = 0; i < consdata->nlocalbndchgs; i++ )
    {
       SCIP_VAR* mastervar;
 
-      assert(GCGvarIsOriginal(consdata->copiedvars[i]));
-      assert(GCGvarGetBlock(consdata->copiedvars[i]) < 0); /** @todo this might lead to an error with linking variables*/
-      assert(GCGoriginalVarGetNMastervars(consdata->copiedvars[i]) >= 1);
-      mastervar = GCGoriginalVarGetMastervars(consdata->copiedvars[i])[0];
+      assert(GCGvarIsOriginal(consdata->localbndvars[i]));
 
-      if( consdata->copiedvarbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
+      /** @todo this might lead to an error with linking variables ? */
+      if( GCGvarGetBlock(consdata->localbndvars[i]) >= 0 )
+         continue;
+
+      assert(GCGoriginalVarGetNMastervars(consdata->localbndvars[i]) >= 1);
+
+      mastervar = GCGoriginalVarGetMastervars(consdata->localbndvars[i])[0];
+      assert(GCGvarGetBlock(mastervar) == -1);
+
+      if( consdata->localbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
       {
-         if( SCIPisLT(scip, SCIPvarGetLbLocal(mastervar), consdata->copiedvarbnds[i]) )
+         if( SCIPisLT(scip, SCIPvarGetLbLocal(mastervar), consdata->localnewbnds[i]) )
          {
-            SCIP_CALL( SCIPchgVarLb(scip, mastervar, consdata->copiedvarbnds[i]) );
+            SCIP_CALL( SCIPchgVarLb(scip, mastervar, consdata->localnewbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed lb of copied original var %s locally to %g\n", SCIPvarGetName(consdata->copiedvars[i]), consdata->copiedvarbnds[i]);
+            SCIPdebugMessage("changed lb of copied original var %s locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), consdata->localnewbnds[i]);
          }
       }
       else
       {
-         if( SCIPisGT(scip, SCIPvarGetUbLocal(mastervar), consdata->copiedvarbnds[i]) )
+         if( SCIPisGT(scip, SCIPvarGetUbLocal(mastervar), consdata->localnewbnds[i]) )
          {
-            SCIP_CALL( SCIPchgVarUb(scip, mastervar, consdata->copiedvarbnds[i]) );
+            SCIP_CALL( SCIPchgVarUb(scip, mastervar, consdata->localnewbnds[i]) );
             ++(*propcount);
-            SCIPdebugMessage("changed ub of copied original var %s locally to %g\n", SCIPvarGetName(consdata->copiedvars[i]), consdata->copiedvarbnds[i]);
+            SCIPdebugMessage("changed ub of copied original var %s locally to %g\n", SCIPvarGetName(consdata->localbndvars[i]), consdata->localnewbnds[i]);
          }
       }
    }
 
-   consdata->ncopiedvarbnds = 0;
-
-   SCIPdebugMessage("Finished propagation of %d stored propagated bounds: %d vars fixed.\n", consdata->ncopiedvarbnds, *propcount);
+   SCIPdebugMessage("Finished propagation of bounds of copied original variables: %d bounds changed.\n", *propcount);
 
    return SCIP_OKAY;
 }
@@ -1337,7 +1341,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    SCIPdebugMessage("Activating masterbranch constraint: <%s> [stack size: %d], needprop = %u.\n",
       consdata->name, conshdlrdata->nstack, consdata->needprop);
 
-   /* apply global bound changes in the original problem to the master problem */
+   /* apply global bound changes in the original problem to the pricing problems */
    SCIP_CALL( applyGlobalBndchgsToPricingprobs(scip) );
 
    /* apply local bound changes in the original problem to the pricing problems */
@@ -1806,24 +1810,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #endif
          SCIP_CALL( addPendingBndChg(masterscip, mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
       }
-      if( (eventtype & SCIP_EVENTTYPE_LBTIGHTENED) != 0 )
-      {
-#ifdef SCIP_DEBUG
-         handled = TRUE;
-#endif
-         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(masterscip, GCGconsMasterbranchGetActiveCons(masterscip), var,
-               SCIP_BOUNDTYPE_LOWER, newbound) );
-      }
-      if( (eventtype & SCIP_EVENTTYPE_UBTIGHTENED) != 0 )
-      {
-#ifdef SCIP_DEBUG
-         handled = TRUE;
-#endif
-         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(masterscip, GCGconsMasterbranchGetActiveCons(masterscip), var,
-               SCIP_BOUNDTYPE_UPPER, newbound) );
-
-         /** @todo do we also have to iterate over the pricing problems or is this handled elsewhere? */
-      }
    }
    /* deal with linking variables */
    if( blocknr == -2 )
@@ -1887,23 +1873,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 
       }
 
-      /* store tightened bounds as prop bound changes */
-      if( (eventtype & SCIP_EVENTTYPE_LBTIGHTENED) != 0 )
-      {
-#ifdef SCIP_DEBUG
-         handled = TRUE;
-#endif
-         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(masterscip, GCGconsMasterbranchGetActiveCons(masterscip), var,
-               SCIP_BOUNDTYPE_LOWER, newbound) );
-      }
-      if( (eventtype & SCIP_EVENTTYPE_UBTIGHTENED) != 0 )
-      {
-#ifdef SCIP_DEBUG
-         handled = TRUE;
-#endif
-         SCIP_CALL( GCGconsMasterbranchAddCopiedVarBndchg(masterscip, GCGconsMasterbranchGetActiveCons(masterscip), var,
-               SCIP_BOUNDTYPE_UPPER, newbound) );
-      }
    }
 #ifdef SCIP_DEBUG
    if( !handled )
