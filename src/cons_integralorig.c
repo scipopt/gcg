@@ -63,7 +63,7 @@ struct SCIP_ConshdlrData
 };
 
 /** insert branchrule in constraint handler data */
-SCIP_RETCODE GCGcreateBranchruleConsOrig(
+SCIP_RETCODE GCGconsIntegralorigAddBranchrule(
    SCIP*                 scip,
    SCIP_BRANCHRULE*      branchrule
    )

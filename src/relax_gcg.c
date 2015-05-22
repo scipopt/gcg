@@ -2193,7 +2193,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    if( !relaxdata->relaxisinitialized )
    {
       SCIP_CALL( initRelaxator(scip, relax) );
-      SCIP_CALL( SCIPconsOrigbranchAddRootCons(scip) );
+      SCIP_CALL( GCGconsOrigbranchAddRootCons(scip) );
       relaxdata->relaxisinitialized = TRUE;
       assert(relaxdata->decdecomp != NULL);
    }
@@ -3234,7 +3234,8 @@ SCIP_RETCODE performProbing(
    /* create master constraint that captures the branching decision in the original instance */
    mprobingnode = SCIPgetCurrentNode(masterscip);
    assert(GCGconsMasterbranchGetActiveCons(masterscip) != NULL);
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, mprobingnode, GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, "probingcons", mprobingnode,
+      GCGconsMasterbranchGetActiveCons(masterscip), NULL, NULL, NULL, 0) );
    SCIP_CALL( SCIPaddConsNode(masterscip, mprobingnode, mprobingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterscip, &mprobingcons) );
 

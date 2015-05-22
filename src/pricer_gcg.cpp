@@ -1908,7 +1908,7 @@ SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
 
    /* get current branching rule */
    masterbranchcons = GCGconsMasterbranchGetActiveCons(scip_);
-   branchrule = GCGconsMasterbranchGetbranchrule(masterbranchcons);
+   branchrule = GCGconsMasterbranchGetBranchrule(masterbranchcons);
 
    while( GCGisBranchruleGeneric(branchrule) )
    {
@@ -1930,7 +1930,7 @@ SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
          (*nconsstack) += 1;
       }
       masterbranchcons = GCGconsMasterbranchGetParentcons(masterbranchcons);
-      branchrule = GCGconsMasterbranchGetbranchrule(masterbranchcons);
+      branchrule = GCGconsMasterbranchGetBranchrule(masterbranchcons);
    }
 
    return SCIP_OKAY;
@@ -2241,10 +2241,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    {
       bestredcost = 0.0;
       beststabobj = 0.0;
-      *bestredcostvalid = isMasterLPOptimal() && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
+      *bestredcostvalid = isMasterLPOptimal() && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
       stabilized = optimal && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
-         && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)))
+         && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)))
          /*&& GCGgetNLinkingvars(origprob) == 0 */&& GCGgetNTransvars(origprob) == 0;
 
       if( stabilized )
@@ -2883,7 +2883,7 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
       /** @todo This is just a workaround around SCIP stages! */
       if( farkaspricing->getCalls() == 0 )
       {
-         SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
+         SCIP_CALL( GCGconsMasterbranchAddRootCons(scip) );
       }
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
    }
@@ -2936,7 +2936,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    /** @todo This is just a workaround around SCIP stages! */
    if( reducedcostpricing->getCalls() == 0 && farkaspricing->getCalls() == 0 )
    {
-      SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
+      SCIP_CALL( GCGconsMasterbranchAddRootCons(scip) );
    }
 
    /* get solutions from the original problem */

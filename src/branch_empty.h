@@ -49,13 +49,6 @@ SCIP_RETCODE SCIPincludeBranchruleEmpty(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** creates the origbranchnode for the given masterbranchnode */
-extern
-SCIP_RETCODE GCGcreateConsOrigbranchNode(
-   SCIP*                 scip,                 /**< SCIP data structure */
-   SCIP_CONS*            masterbranchchildcons /**< corresponding masterbranchcons */
-   );
-
 #ifdef __cplusplus
 }
 #endif
