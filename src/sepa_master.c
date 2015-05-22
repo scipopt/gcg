@@ -69,17 +69,6 @@ struct SCIP_SepaData
    int                   ncuts;          /**< number of cuts in the original problem */
    int                   maxcuts;            /**< maximal number of allowed cuts */
    SCIP_Bool             enable;             /**< parameter returns if master separator is enabled */
-   int                   ncgcut;             /**< number of cgcuts */
-   int                   nclique;            /**< number of clique cuts */
-   int                   ncmir;              /**< number of cmir cuts */
-   int                   nflowcover;         /**< number of flowcover cuts */
-   int                   ngom;               /**< number of gomory cuts */
-   int                   nimplbd;            /**< number of implied bounds cuts */
-   int                   nmcf;               /**< number of mcf cuts */
-   int                   noddcycle;          /**< number of oddcycle cuts */
-   int                   nscg;               /**< number of strong cg cuts */
-   int                   nzerohalf;           /**< number of zero half cuts */
-
 };
 
 
@@ -133,17 +122,6 @@ SCIP_DECL_SEPAFREE(sepaFreeMaster)
    SCIP_SEPADATA* sepadata;
 
    sepadata = SCIPsepaGetData(sepa);
-
-   SCIPinfoMessage(scip, NULL, "SepaMaster      mCuts\n");
-   SCIPinfoMessage(scip, NULL, "clique         %6d\n", sepadata->nclique);
-   SCIPinfoMessage(scip, NULL, "cmir           %6d\n", sepadata->ncmir);
-   SCIPinfoMessage(scip, NULL, "flowcover      %6d\n", sepadata->nflowcover);
-   SCIPinfoMessage(scip, NULL, "gomory         %6d\n", sepadata->ngom);
-   SCIPinfoMessage(scip, NULL, "impliedbounds  %6d\n", sepadata->nimplbd);
-   SCIPinfoMessage(scip, NULL, "mcf            %6d\n", sepadata->nmcf);
-   SCIPinfoMessage(scip, NULL, "oddcycle       %6d\n", sepadata->noddcycle);
-   SCIPinfoMessage(scip, NULL, "strongcg       %6d\n", sepadata->nscg);
-   SCIPinfoMessage(scip, NULL, "zerohalf       %6d\n", sepadata->nzerohalf);
 
    SCIPfreeMemoryArray(scip, &(sepadata->origcuts));
    SCIPfreeMemoryArray(scip, &(sepadata->mastercuts));
@@ -295,11 +273,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    cuts = SCIPgetCuts(origscip);
    ncuts = SCIPgetNCuts(origscip);
 
-   /* separate cuts in cutpool */
-   //SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), GCGrelaxGetCurrentOrigSol(origscip), result) );
-
-   //SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), GCGrelaxGetCurrentOrigSol(origscip), result) );
-
    /* save cuts in the origcuts array in the separator data */
    norigcuts = sepadata->ncuts;
    SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->ncuts + ncuts) );
@@ -307,47 +280,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    {
       SCIP_ROW* origcut;
       origcut = cuts[i];
-
-      if(strncmp("cgcut", SCIProwGetName(origcut), 5) == 0)
-      {
-         ++(sepadata->ncgcut);
-      }
-      else if(strncmp("clique", SCIProwGetName(origcut), 6) == 0)
-      {
-         ++(sepadata->nclique);
-      }
-      else if(strncmp("cmir", SCIProwGetName(origcut), 4) == 0)
-      {
-         ++(sepadata->ncmir);
-      }
-      else if(strncmp("flowcover", SCIProwGetName(origcut), 9) == 0)
-      {
-         ++(sepadata->nflowcover);
-      }
-      else if(strncmp("gom", SCIProwGetName(origcut), 3) == 0)
-      {
-         ++(sepadata->ngom);
-      }
-      else if(strncmp("implbd", SCIProwGetName(origcut), 6) == 0)
-      {
-         ++(sepadata->nimplbd);
-      }
-      else if(strncmp("mcf", SCIProwGetName(origcut), 3) == 0)
-      {
-         ++(sepadata->nmcf);
-      }
-      else if(strncmp("oddcycle", SCIProwGetName(origcut), 8) == 0)
-      {
-         ++(sepadata->noddcycle);
-      }
-      else if(strncmp("scg", SCIProwGetName(origcut), 3) == 0)
-      {
-         ++(sepadata->nscg);
-      }
-      else if(strncmp("zerohalf", SCIProwGetName(origcut), 8) == 0)
-      {
-         ++(sepadata->nzerohalf);
-      }
 
       sepadata->origcuts[norigcuts] = cuts[i];
       SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[norigcuts]) );
@@ -440,16 +372,6 @@ SCIP_RETCODE SCIPincludeSepaMaster(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) ); /*lint !e506*/
    sepadata->maxcuts = STARTMAXCUTS;
    sepadata->ncuts = 0;
-   sepadata->ncgcut = 0;
-   sepadata->nclique = 0;
-   sepadata->ncmir = 0;
-   sepadata->nflowcover = 0;
-   sepadata->ngom = 0;
-   sepadata->nimplbd = 0;
-   sepadata->nmcf = 0;
-   sepadata->noddcycle = 0;
-   sepadata->nscg = 0;
-   sepadata->nzerohalf = 0;
 
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,

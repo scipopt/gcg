@@ -72,16 +72,6 @@ struct SCIP_SepaData
    int                   nnewcuts;           /**< number of new cuts */
    int                   maxnewcuts;         /**< maximal number of allowed new cuts */
    SCIP_ROW*             objrow;             /**< row with obj coefficients */
-   int                   nlpcuts;            /**< number of cuts, which cut of the basic solution */
-   int                   nprimalsols;        /**< number of primal solutions found */
-   SCIP_Real             shifteddiffendgeom; /**< mean l2-norm difference between original solution and lp solution */
-   SCIP_Real             shifteddiffstartgeom;/**< mean l2-norm difference between original solution and probing lp solution */
-   SCIP_Real             shiftedconvexgeom;  /**< mean calculated convex coefficient */
-   int                   ncalculatedconvex;  /**< number of calculated lp solution (and convex and l2 diff) */
-   SCIP_Real             shiftediterationsfound; /**< mean number of iterations until usefull cuts were found */
-   SCIP_Real             shiftediterationsnotfound; /**< mean number of iterations until no cuts at all were found */
-   int                   nfound;             /**< number of calls where useful cuts were found */
-   int                   nnotfound;          /**< number of calls where no useful cuts were found */
    SCIP_Bool             enable;             /**< parameter returns if basis separator is enabled */
    SCIP_Bool             enableobj;          /**< parameter returns if objective constraint is enabled */
    SCIP_Bool             enableobjround;     /**< parameter returns if rhs/lhs of objective constraint is rounded, when obj is int */
@@ -100,16 +90,6 @@ struct SCIP_SepaData
    int                   iterations;         /**< parameter returns number of new rows adding iterations (rows just cut off probing lp sol) */
    int                   mincuts;            /**< parameter returns number of minimum cuts needed to return *result = SCIP_Separated */
    SCIP_Real             objconvex;          /**< parameter return convex combination factor */
-   int                   ncgcut;             /**< number of cgcuts */
-   int                   nclique;            /**< number of clique cuts */
-   int                   ncmir;              /**< number of cmir cuts */
-   int                   nflowcover;         /**< number of flowcover cuts */
-   int                   ngom;               /**< number of gomory cuts */
-   int                   nimplbd;            /**< number of implied bounds cuts */
-   int                   nmcf;               /**< number of mcf cuts */
-   int                   noddcycle;          /**< number of oddcycle cuts */
-   int                   nscg;               /**< number of strong cg cuts */
-   int                   nzerohalf;          /**< number of zero half cuts */
 };
 
 /*
@@ -502,49 +482,6 @@ SCIP_RETCODE chgProbingObjUsingRows(
    return SCIP_OKAY;
 }
 
-/**< returns square of given number */
-static
-SCIP_Real getSquare(
-   SCIP_Real            number
-   )
-{
-   return number*number;
-}
-
-/**< returns l2-norm of difference of solutions */
-static
-SCIP_Real getL2DiffSols(
-   SCIP*                scip,               /**< SCIP data structure */
-   SCIP_SOL*            sol1,               /**< first solution */
-   SCIP_SOL*            sol2                /**< second solution */
-)
-{
-   SCIP_VAR** vars;
-   int nvars;
-
-   SCIP_Real diff;
-   SCIP_Real solval1;
-   SCIP_Real solval2;
-   int i;
-
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
-
-   diff = 0.0;
-
-   for( i = 0; i < nvars; ++i )
-   {
-      solval1 = SCIPgetSolVal(scip, sol1, vars[i]);
-      solval2 = SCIPgetSolVal(scip, sol2, vars[i]);
-
-      diff += getSquare(solval1 - solval2);
-   }
-
-   diff = sqrt(diff);
-
-   return diff;
-}
-
 #ifdef GSL
 /**< Get matrix (including nrows and ncols) of rows that are satisfied with equality by sol */
 static
@@ -812,7 +749,6 @@ SCIP_RETCODE addPPObjConss(
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, "pricing problem is maximization problem \n");
       rhs = dualsolconv;
       lhs = -SCIPinfinity(scip);
    }
@@ -896,69 +832,7 @@ SCIP_DECL_SEPAFREE(sepaFreeBasis)
 {  /*lint --e{715}*/
    SCIP_SEPADATA* sepadata;
 
-   int ncalls;
-   int ncutsfound;
-   int ncutsapplied;
-   int nlpcuts;
-   int nprimalsols;
-
-   SCIP_Real meancutsfound;
-   SCIP_Real meanlpcutsfound;
-   SCIP_Real meancutsapplied;
-   SCIP_Real time;
-
    sepadata = SCIPsepaGetData(sepa);
-
-   /* get separator information */
-   ncalls = SCIPsepaGetNCalls(sepa);
-   ncutsfound = SCIPsepaGetNCutsFound(sepa);
-   ncutsapplied = SCIPsepaGetNCutsApplied(sepa);
-   nlpcuts = sepadata->nlpcuts;
-   nprimalsols = sepadata->nprimalsols;
-   time = SCIPsepaGetTime(sepa);
-
-   if( ncalls > 0 )
-   {
-      meancutsfound = (1.0*ncutsfound)/ncalls;
-      meancutsapplied = (1.0*ncutsapplied)/ncalls;
-      meanlpcutsfound = (1.0*nlpcuts)/ncalls;
-   }
-   else
-   {
-      meancutsfound = 0.0;
-      meancutsapplied = 0.0;
-      meanlpcutsfound = 0.0;
-   }
-
-   if( !sepadata->genobjconvex )
-   {
-      sepadata->shiftedconvexgeom = sepadata->objconvex;
-   }
-   else
-   {
-      sepadata->shiftedconvexgeom = sepadata->shiftedconvexgeom - 1.0;
-   }
-   sepadata->shifteddiffstartgeom = sepadata->shifteddiffstartgeom - 1.0;
-   sepadata->shifteddiffendgeom = sepadata->shifteddiffendgeom - 1.0;
-   sepadata->shiftediterationsfound = sepadata->shiftediterationsfound - 1.0;
-   sepadata->shiftediterationsnotfound = sepadata->shiftediterationsnotfound - 1.0;
-
-   /* print separator information */
-   SCIPinfoMessage(scip, NULL, "            time ncalls ncfound ncapplied nlpcfound mncfound mncapplied mnlpcfound nprimalsols convex diffstart diffend itfound itnfound\n");
-   SCIPinfoMessage(scip, NULL, "SepaBasis:  %5.2f %6d %7d %9d %9d  %7.2f %10.2f %10.2f %11d %6.6f %4.3f %6.3f %6.3f %6.3f \n", time, ncalls, ncutsfound,
-                  ncutsapplied, nlpcuts, meancutsfound, meancutsapplied, meanlpcutsfound, nprimalsols, sepadata->shiftedconvexgeom, sepadata->shifteddiffstartgeom, sepadata->shifteddiffendgeom,
-                  sepadata->shiftediterationsfound, sepadata->shiftediterationsnotfound);
-
-   SCIPinfoMessage(scip, NULL, "                bCuts\n");
-   SCIPinfoMessage(scip, NULL, "clique         %6d\n", sepadata->nclique);
-   SCIPinfoMessage(scip, NULL, "cmir           %6d\n", sepadata->ncmir);
-   SCIPinfoMessage(scip, NULL, "flowcover      %6d\n", sepadata->nflowcover);
-   SCIPinfoMessage(scip, NULL, "gomory         %6d\n", sepadata->ngom);
-   SCIPinfoMessage(scip, NULL, "impliedbounds  %6d\n", sepadata->nimplbd);
-   SCIPinfoMessage(scip, NULL, "mcf            %6d\n", sepadata->nmcf);
-   SCIPinfoMessage(scip, NULL, "oddcycle       %6d\n", sepadata->noddcycle);
-   SCIPinfoMessage(scip, NULL, "strongcg       %6d\n", sepadata->nscg);
-   SCIPinfoMessage(scip, NULL, "zerohalf       %6d\n", sepadata->nzerohalf);
 
    SCIPfreeMemoryArrayNull(scip, &(sepadata->origcuts));
    SCIPfreeMemoryArrayNull(scip, &(sepadata->mastercuts));
@@ -1110,7 +984,6 @@ SCIP_RETCODE initGenconv(
 {
 #ifdef GSL
    int rank;
-   int ncalls;
 
 
    SCIP_CALL( getEqualityRankGsl(origscip, origsol, &rank) );
@@ -1119,11 +992,6 @@ SCIP_RETCODE initGenconv(
 
    SCIPdebugMessage("use generic coefficient %d/%d = %f\n", rank, nbasis, *convex);
 
-   ncalls = sepadata->ncalculatedconvex;
-
-   sepadata->shiftedconvexgeom = pow(sepadata->shiftedconvexgeom, 1.0*ncalls/(ncalls + 1))
-                           * pow(MAX(*convex+1.0, 1.0),1.0/(ncalls + 1));
-   ++(sepadata->ncalculatedconvex);
 #else
    SCIPwarningMessage(origscip, "Gnu Scientific Library is not enabled! \n"
       "either set sepa/basis/genobjconvex = FALSE sepa/basis/posslackexpgen = FALSE \n"
@@ -1210,7 +1078,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_Bool cutoff;
    SCIP_Bool infeasible;
    SCIP_Real obj;
-   int ncalls;
 
    SCIP_Real mineff;
    SCIP_Real mineffroot;
@@ -1385,7 +1252,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
                sepadata->posslackexp = (int) SCIPceil(origscip, factor/(1.0 - genconvex)) + 0.5;
 
-               SCIPinfoMessage(origscip, NULL, "exponent = %d\n", sepadata->posslackexp);
+               SCIPdebugMessage("exponent = %d\n", sepadata->posslackexp);
 
             }
             SCIP_CALL( initConvObj(origscip, sepadata, origsol, sepadata->objconvex, FALSE) );
@@ -1435,14 +1302,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
       assert(!lperror);
 
-      /* update mean differences */
-      if( iteration == 0 )
-      {
-         ncalls = SCIPsepaGetNCalls(sepa);
-         sepadata->shifteddiffstartgeom = pow(sepadata->shifteddiffstartgeom, 1.0*ncalls/(ncalls + 1))
-                                  * pow(MAX(getL2DiffSols(origscip, origsol, NULL) + 1.0, 1.0), 1.0/(ncalls + 1));
-      }
-
       /* get separators of origscip */
       sepas = SCIPgetSepas(origscip);
       nsepas = SCIPgetNSepas(origscip);
@@ -1490,7 +1349,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       if( cutoff )
       {
          *result = SCIP_CUTOFF;
-         SCIPinfoMessage(scip, NULL, "SCIPseparateSol() detected cut off\n");
          SCIPendProbing(origscip);
 
          /* disable separating again */
@@ -1512,9 +1370,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       /* separate cuts in cutpool */
       SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetGlobalCutpool(origscip), origsol, &resultdummy) );
       SCIP_CALL( SCIPseparateSolCutpool(origscip, SCIPgetDelayedGlobalCutpool(origscip), origsol, &resultdummy) );
-
-      /* update number of lp cuts */
-      sepadata->nlpcuts += SCIPgetNCuts(origscip);
 
       assert(sepadata->norigcuts == sepadata->nmastercuts);
 
@@ -1573,47 +1428,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             continue;
          }
 
-         if( strncmp("cgcut", SCIProwGetName(origcut), 5) == 0 )
-         {
-            ++(sepadata->ncgcut);
-         }
-         else if( strncmp("clique", SCIProwGetName(origcut), 6) == 0 )
-         {
-            ++(sepadata->nclique);
-         }
-         else if( strncmp("cmir", SCIProwGetName(origcut), 4) == 0 )
-         {
-            ++(sepadata->ncmir);
-         }
-         else if( strncmp("flowcover", SCIProwGetName(origcut), 9) == 0 )
-         {
-            ++(sepadata->nflowcover);
-         }
-         else if( strncmp("gom", SCIProwGetName(origcut), 3) == 0 )
-         {
-            ++(sepadata->ngom);
-         }
-         else if( strncmp("implbd", SCIProwGetName(origcut), 6) == 0 )
-         {
-            ++(sepadata->nimplbd);
-         }
-         else if( strncmp("mcf", SCIProwGetName(origcut), 3) == 0 )
-         {
-            ++(sepadata->nmcf);
-         }
-         else if( strncmp("oddcycle", SCIProwGetName(origcut), 8) == 0 )
-         {
-            ++(sepadata->noddcycle);
-         }
-         else if( strncmp("scg", SCIProwGetName(origcut), 3) == 0 )
-         {
-            ++(sepadata->nscg);
-         }
-         else if( strncmp("zerohalf", SCIProwGetName(origcut), 8) == 0 )
-         {
-            ++(sepadata->nzerohalf);
-         }
-
          /* add the cut to the original cut storage */
          sepadata->origcuts[sepadata->norigcuts] = origcut;
          SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[sepadata->norigcuts]) );
@@ -1646,20 +1460,11 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       if( SCIPgetNCuts(scip) >= sepadata->mincuts )
       {
          *result = SCIP_SEPARATED;
-         ncalls = sepadata->nfound;
-         sepadata->shiftediterationsfound = pow(sepadata->shiftediterationsfound, 1.0*ncalls/(1.0*ncalls + 1))
-                                        * pow(MAX(1.0*iteration + 1.0 + 1.0, 1.0), 1.0/(1.0*ncalls + 1));
 
-         ++(sepadata->nfound);
          iteration = sepadata->iterations;
-
       }
       else if( SCIPgetNCuts(origscip) == 0 )
       {
-         ncalls = sepadata->nnotfound;
-         sepadata->shiftediterationsnotfound = pow(sepadata->shiftediterationsnotfound, 1.0*ncalls/(1.0*ncalls + 1))
-                                        * pow(MAX(1.0*iteration + 1.0 + 1.0, 1.0), 1.0/(1.0*ncalls + 1));
-         ++(sepadata->nnotfound);
          iteration = sepadata->iterations;
       }
       else
@@ -1695,11 +1500,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
    /* end diving */
    SCIPendProbing(origscip);
-
-   /* update mean differences */
-   ncalls = SCIPsepaGetNCalls(sepa);
-   sepadata->shifteddiffendgeom = pow(sepadata->shifteddiffendgeom, 1.0*ncalls/(ncalls + 1))
-                                  * pow(MAX(getL2DiffSols(origscip, origsol, NULL) + 1.0, 1.0), 1.0/(ncalls + 1));
 
    if( SCIPgetNCuts(scip) > 0 )
    {
@@ -1755,27 +1555,6 @@ SCIP_RETCODE SCIPincludeSepaBasis(
    sepadata->maxnewcuts = 0;
    sepadata->nnewcuts = 0;
    sepadata->objrow = NULL;
-   sepadata->nprimalsols = 0;
-   sepadata->nlpcuts = 0;
-   sepadata->shifteddiffstartgeom = 1.0;
-   sepadata->shifteddiffendgeom = 1.0;
-   sepadata->ncalculatedconvex = 0;
-   sepadata->shiftedconvexgeom = 1.0;
-   sepadata->shiftediterationsfound = 1.0;
-   sepadata->shiftediterationsnotfound = 1.0;
-   sepadata->nfound = 0;
-   sepadata->nnotfound = 0;
-
-   sepadata->ncgcut = 0;
-   sepadata->nclique = 0;
-   sepadata->ncmir = 0;
-   sepadata->nflowcover = 0;
-   sepadata->ngom = 0;
-   sepadata->nimplbd = 0;
-   sepadata->nmcf = 0;
-   sepadata->noddcycle = 0;
-   sepadata->nscg = 0;
-   sepadata->nzerohalf = 0;
 
    /* include separator */
    /* use SCIPincludeSepa() if you want to set all callbacks explicitly and realize (by getting compiler errors) when
