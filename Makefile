@@ -60,6 +60,7 @@ GTEST		=	true
 PARASCIP	= 	true
 BLISS       	=   	true
 OPENMP          =       false
+GSL             =       false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 
@@ -92,10 +93,14 @@ LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with \"make
 LINKMSG		+=	" -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
 LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"blissinc/libbliss.$(STATICLIBEXT)\"\n"
 endif
+
 #-----------------------------------------------------------------------------
 # GSL
 #-----------------------------------------------------------------------------
+ifeq ($(GSL),true)
 LDFLAGS                +=      -lgsl -lgslcblas -lm
+FLAGS		           +=	   -DGSL
+endif
 
 #-----------------------------------------------------------------------------
 # CPLEX pricing solver

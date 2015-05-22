@@ -38,9 +38,11 @@
 #include "pub_gcgvar.h"
 #include "scip/var.h"
 
+#ifdef GSL
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_linalg.h>
+#endif
 
 #define SEPA_NAME              "basis"
 #define SEPA_DESC              "separator calculates a basis of the orig problem to generate cuts, which cut off the master lp sol"
@@ -543,6 +545,7 @@ SCIP_Real getL2DiffSols(
    return diff;
 }
 
+#ifdef GSL
 /**< Get matrix (including nrows and ncols) of rows that are satisfied with equality by sol */
 static
 SCIP_RETCODE getEqualityMatrixGsl(
@@ -756,6 +759,7 @@ SCIP_RETCODE getEqualityRankGsl(
 
    return SCIP_OKAY;
 }
+#endif
 
 /** Add cuts which are due to the latest objective function of the pricing problems
  *  (reduced cost non-negative) */
@@ -1104,8 +1108,10 @@ SCIP_RETCODE initGenconv(
    SCIP_Real*           convex              /**< pointer to store convex combination coefficient */
 )
 {
+#ifdef GSL
    int rank;
    int ncalls;
+
 
    SCIP_CALL( getEqualityRankGsl(origscip, origsol, &rank) );
 
@@ -1118,6 +1124,13 @@ SCIP_RETCODE initGenconv(
    sepadata->shiftedconvexgeom = pow(sepadata->shiftedconvexgeom, 1.0*ncalls/(ncalls + 1))
                            * pow(MAX(*convex+1.0, 1.0),1.0/(ncalls + 1));
    ++(sepadata->ncalculatedconvex);
+#else
+   SCIPwarningMessage(origscip, "Gnu Scientific Library is not enabled! \n"
+      "either set sepa/basis/genobjconvex = FALSE sepa/basis/posslackexpgen = FALSE \n"
+      "or compile with GSL=true and include Gnu Scientific Library");
+   *convex = sepadata->objconvex;
+#endif
+
 
    return SCIP_OKAY;
 }
