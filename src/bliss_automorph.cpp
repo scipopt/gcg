@@ -422,7 +422,7 @@ SCIP_RETCODE setuparrays(
    }
 
    /* add color information for master constraints */
-   SCIP_CONS** origmasterconss = GCGrgetLinearOrigMasterConss(origscip);
+   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
    int nmasterconss = GCGgetNMasterConss(origscip);
 
    SCIP_CALL( reallocMemory(origscip, colorinfo, nmasterconss, SCIPgetNVars(origscip)) );
@@ -496,7 +496,7 @@ SCIP_RETCODE createGraph(
    BMSclearMemoryArray(nnodesoffset, nscips);
    BMSclearMemoryArray(mastercoefindex, nscips);
 
-   SCIP_CONS** origmasterconss = GCGrgetLinearOrigMasterConss(origscip);
+   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
    int nmasterconss = GCGgetNMasterConss(origscip);
 
    for( s = 0; s < nscips && *result == SCIP_SUCCESS; ++s)

@@ -384,7 +384,7 @@ SCIP_Real Stabilization::calculateSubgradient(
    )
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
-   SCIP_CONS** origmasterconss = GCGrgetLinearOrigMasterConss(origprob);
+   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origprob);
    SCIP_CONS** masterconss = GCGgetMasterConss(origprob);
 
    SCIP_CONS** linkingconss = GCGgetVarLinkingconss(origprob);

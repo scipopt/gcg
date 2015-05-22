@@ -2962,8 +2962,9 @@ SCIP_CONS** GCGgetOrigMasterConss(
 }
 
 /** returns the linear counterpart of the contraints in the original problem that correspond
- * to the constraints in the master problem */
-SCIP_CONS** GCGrgetLinearOrigMasterConss(
+ * to the constraints in the master problem
+ */
+SCIP_CONS** GCGgetLinearOrigMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
