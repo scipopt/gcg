@@ -492,7 +492,7 @@ SCIP_DECL_HASHKEYEQ(hashKeyEqVar)
    SCIP_VAR *var1 = (SCIP_VAR *) key1;
    SCIP_VAR *var2 = (SCIP_VAR *) key2;
 
-   if(SCIPvarGetIndex(var1) == SCIPvarGetIndex(var2))
+   if( SCIPvarGetIndex(var1) == SCIPvarGetIndex(var2) )
       return TRUE;
    else
       return FALSE;
@@ -1658,7 +1658,7 @@ SCIP_RETCODE removeRedundantColumns(
          nvarcovering[i] = 0;
 
          SCIP_CALL( getConsVars(scip, core, i, vars, &nvars, &success) );
-         if(success == FALSE)
+         if( success == FALSE )
             continue;
 
          for( j = 0; j < nvars; j++ )
@@ -1945,7 +1945,7 @@ SCIP_RETCODE computeLocalLagrangianCosts(
             continue;
 
          SCIP_CALL( getConsVars(scip, core, i, vars, &nvars, &success) );
-         if(success == FALSE)
+         if( success == FALSE )
             continue;
 
          /* for each core variable: subtract u[i] from the variable's costs */
@@ -3115,17 +3115,17 @@ SCIP_DECL_HEUREXEC(heurExecSetcover)
    *result = SCIP_DIDNOTRUN;
 
    /* the heuristic is only executed on problems with many variables */
-   if(SCIPgetNVars(scip) < heurdata->param_min_prob_size)
+   if( SCIPgetNVars(scip) < heurdata->param_min_prob_size )
    {
       SCIPdebugMessage("not running set covering heuristic because instance is too small (only %i variables)\n", SCIPgetNVars(scip));
       return SCIP_OKAY;
    }
 
    /* only run on set covering problems */
-   if(GCGisMasterSetCovering(origprob) == FALSE)
+   if( GCGisMasterSetCovering(origprob) == FALSE )
       return SCIP_OKAY;
 
-   if(SCIPgetNVars(scip) == 0)
+   if( SCIPgetNVars(scip) == 0 )
       return SCIP_OKAY;
 
    SCIP_CALL( setCoveringHeuristic(scip, heur) );
