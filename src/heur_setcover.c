@@ -63,7 +63,7 @@
 #define DEF_STOP_CRIT_RATIO    0.99       /**<     the relative ratio between best lower and upper bound is less than DEF_STOP_CRIT_RATIO          */
 #define DEF_PI_MIN             0.3        /**< percentage of rows to be removed after fixing columns                                               */
 #define DEF_PI_ALPHA           1.1        /**< increase of pi when no improvement was made, i.e. more columns will be fixed                        */
-#define DEF_BETA               1.025      /**< allowed a gap between lowerbound and upper bound during the subgradient phase                       */
+#define DEF_BETA               1.025      /**< allowed gap between lowerbound and upper bound during the subgradient phase                         */
 #define DEF_MAX_ITER           300        /**< maximum number of iterations of three-phase                                                         */
 #define DEF_MAX_ITER_NO_IMP    5          /**< stop of no improvements during the last X iterations of three-phase                                 */
 #define DEF_GREEDY_MAX_ITER    250        /**< number of multipliers that are used for computing greedy solutions during each iteration            */
