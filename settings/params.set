@@ -1300,7 +1300,7 @@ heuristics/gcgzirounding/stopziround = TRUE
 # [type: real, range: [0,1], default: 0.02]
 heuristics/gcgzirounding/stoppercentage = 0.02
 
-# determines the minimum number of calls before percentage-basisd deactivation of Zirounding is applied
+# determines the minimum number of calls before percentage-based deactivation of Zirounding is applied
 # [type: int, range: [1,2147483647], default: 1000]
 heuristics/gcgzirounding/minstopncalls = 1000
 

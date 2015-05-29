@@ -1,0 +1,21 @@
+# SCIP version 2.1.2
+
+# frequency for solving LP at the nodes (-1: never; 0: only root LP)
+# [type: int, range: [-1,2147483647], default: 1]
+lp/solvefreq = -1
+
+# maximal number of restarts (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: -1]
+presolving/maxrestarts = 0
+
+# frequency for calling primal heuristic <gcgrounding> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgrounding/freq = 1
+
+# frequency for calling primal heuristic <gcgshifting> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgshifting/freq = 10
+
+# frequency for calling primal heuristic <gcgzirounding> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgzirounding/freq = 1

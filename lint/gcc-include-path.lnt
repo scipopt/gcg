@@ -1,0 +1,8 @@
+--i"/usr/include/c++/4.8"
+--i"/usr/include/c++/4.8/x86_64-suse-linux"
+--i"/usr/include/c++/4.8/backward"
+--i"/usr/lib64/gcc/x86_64-suse-linux/4.8/include"
+--i"/usr/local/include"
+--i"/usr/lib64/gcc/x86_64-suse-linux/4.8/include-fixed"
+--i"/usr/lib64/gcc/x86_64-suse-linux/4.8/../../../../x86_64-suse-linux/include"
+--i"/usr/include"

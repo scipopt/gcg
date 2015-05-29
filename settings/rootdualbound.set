@@ -1,0 +1,3 @@
+# maximal number of nodes to process (-1: no limit)
+# [type: longint, range: [-1,9223372036854775807], default: -1]
+limits/nodes = 1
