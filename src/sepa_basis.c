@@ -995,7 +995,7 @@ SCIP_RETCODE initGenconv(
 #else
    SCIPwarningMessage(origscip, "Gnu Scientific Library is not enabled! \n"
       "either set sepa/basis/genobjconvex = FALSE sepa/basis/posslackexpgen = FALSE \n"
-      "or compile with GSL=true and include Gnu Scientific Library");
+      "or compile with GSL=true and include Gnu Scientific Library\n");
    *convex = sepadata->objconvex;
 #endif
 
@@ -1044,6 +1044,7 @@ SCIP_RETCODE initConvObj(
       SCIP_CALL( initProbingObjUsingVarBounds(origscip, sepadata, origsol, !genericconv && sepadata->enableobj, 1.0) );
       SCIP_CALL( chgProbingObjUsingRows(origscip, sepadata, origsol, 1.0, 1.0) );
    }
+
    return SCIP_OKAY;
 }
 
@@ -1567,7 +1568,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
 
    /* add basis separator parameters */
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enable", "is basis separator enabled?",
-         &(sepadata->enable), FALSE, FALSE, NULL, NULL);
+         &(sepadata->enable), FALSE, TRUE, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableobj", "is objective constraint of separator enabled?",
          &(sepadata->enableobj), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableobjround", "round obj rhs/lhs of obj constraint if obj is int?",

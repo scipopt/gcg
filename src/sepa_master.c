@@ -276,11 +276,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    /* save cuts in the origcuts array in the separator data */
    norigcuts = sepadata->ncuts;
    SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->ncuts + ncuts) );
+
    for( i = 0; i < ncuts; i++ )
    {
-      SCIP_ROW* origcut;
-      origcut = cuts[i];
-
       sepadata->origcuts[norigcuts] = cuts[i];
       SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[norigcuts]) );
       norigcuts++;
