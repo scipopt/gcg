@@ -96,8 +96,7 @@ using namespace scip;
 #define DEFAULT_STABILIZATION            TRUE       /** should stabilization be used */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
 #define DEFAULT_COLPOOL_AGELIMIT         10         /**< maximum age of columns in column pool */
-#define DEFAULT_COLPOOL_COLPOOLSIZE       1         /**< multiply nrows with this multiplier to get
-                                                       * soft maximum number of columns in column pool */
+#define DEFAULT_COLPOOL_COLPOOLSIZE      10         /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
 
 #define EVENTHDLR_NAME         "probdatavardeleted"
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
@@ -168,7 +167,7 @@ struct SCIP_PricerData
    SCIP_Real             successfulmipsrel;  /**< Factor of successful MIPs solved until pricing be aborted */
    SCIP_Real             abortpricinggap;    /**< Gap at which pricing should be aborted */
    SCIP_Bool             stabilization;      /**< should stabilization be used */
-   int                   colpoolsize;        /**< size of colpool is nconss * colpoolsize */
+   int                   colpoolsize;        /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
 
@@ -2494,14 +2493,16 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             }
             else
             {
-               SCIPdebugPrintf("not added.\n");
+               SCIPdebugPrintf("added to column pool.\n");
             }
          }
-         SCIP_CALL( GCGfreeGcgCol(&cols[prob][j]) );
+         else
+         {
+            SCIP_CALL( GCGfreeGcgCol(&cols[prob][j]) );
+         }
       }
 
    }
-
 
    assert(oldnfoundvars >= nfoundvars);
 
@@ -3217,10 +3218,12 @@ SCIP_RETCODE SCIPincludePricerGcg(
          "should stabilization be performed?",
          &pricerdata->stabilization, FALSE, DEFAULT_STABILIZATION, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpoolsize", "size of colpool is nrows * this param",
-         &pricerdata->colpoolsize, FALSE, DEFAULT_COLPOOL_COLPOOLSIZE, 0, 100, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpoolsize", "actual size is"
+      "maxvarsround * npricingprobsnotnull * colpoolsize", &pricerdata->colpoolsize, FALSE,
+      DEFAULT_COLPOOL_COLPOOLSIZE, 0, 100, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpoolagelimit", "maximum age of cols in colpool",
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpoolagelimit", "maximum age of cols in colpool"
+      "(if age limit is set to 0, no columns are stored from the last pricing round)",
          &pricerdata->colpoolagelimit, FALSE, DEFAULT_COLPOOL_AGELIMIT, 0, 100, NULL, NULL) );
 
    SCIP_CALL( SCIPsetIntParam(scip, "lp/disablecutoff", DEFAULT_DISABLECUTOFF) );
