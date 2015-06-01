@@ -179,12 +179,17 @@ namespace gcg {
    )
    {
       GCG_COL** gcgcols;
-      int ngcgcols;
 
       gcgcols = getCols();
+
+#ifdef SCIP_DEBUG
+      int ngcgcols;
+
+
       ngcgcols = getNCols();
 
       assert(0 <= pos && pos < ngcgcols);
+#endif
 
       return GCGcolGetRedcost(gcgcols[pos]);
    }
@@ -195,12 +200,17 @@ namespace gcg {
    )
    {
       GCG_COL** gcgcols;
-      int ngcgcols;
 
       gcgcols = getCols();
+
+#ifdef SCIP_DEBUG
+      int ngcgcols;
+
+
       ngcgcols = getNCols();
 
       assert(0 <= pos && pos < ngcgcols);
+#endif
 
       return GCGcolGetAge(gcgcols[pos]);
    }

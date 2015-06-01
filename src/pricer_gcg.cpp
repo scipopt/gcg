@@ -3129,10 +3129,7 @@ void ObjPricerGcg::createColpool()
 {
    int actualsize;
    int hardlimit;
-   int nconss;
    int maxvarsround;
-
-   nconss = SCIPgetNConss(scip_);
 
    maxvarsround = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()),
                    reducedcostpricing->getMaxvarsroundroot());
