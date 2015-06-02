@@ -2199,7 +2199,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    assert(farkaspricing != NULL);
    assert(reducedcostpricing != NULL);
 
-   assert(pricetype->getType() == GCG_PRICETYPE_FARKAS || result != NULL);
+   assert(result != NULL);
    assert(pnfoundvars != NULL);
 
    SCIPdebugMessage("%s pricing\n", optimal ? "optimal" : "heuristic");
@@ -2652,7 +2652,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    int nfoundvars;
    SCIP_Bool bestredcostvalid;
 
-   assert(result != NULL || pricetype->getType() == GCG_PRICETYPE_FARKAS);
+   assert(result != NULL);
    assert(lowerbound != NULL || pricetype->getType() == GCG_PRICETYPE_FARKAS);
    assert(pricerdata != NULL);
 
@@ -2672,9 +2672,9 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
          *result = SCIP_DIDNOTRUN;
          return SCIP_OKAY;
       }
-
-      *result = SCIP_SUCCESS;
    }
+
+   *result = SCIP_SUCCESS;
 
    pricetype->incCalls();
 
@@ -3074,6 +3074,8 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    assert(reducedcostpricing != NULL);
    assert(farkaspricing != NULL);
 
+   *result = SCIP_DIDNOTRUN;
+
    /** @todo This is just a workaround around SCIP stages! */
    if( reducedcostpricing->getCalls() == 0 && farkaspricing->getCalls() == 0 )
    {
@@ -3084,6 +3086,8 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    origsols = SCIPgetSols(origprob);
    norigsols = SCIPgetNSols(origprob);
    assert(norigsols >= 0);
+
+   *result = SCIP_SUCCESS;
 
    /* Add already known solutions for the original problem to the master variable space */
    /** @todo This is just a workaround around SCIP stages! */
@@ -3105,7 +3109,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    }
 
    SCIP_CALL( farkaspricing->startClock() );
-   retcode = priceNewVariables(farkaspricing, NULL, NULL);
+   retcode = priceNewVariables(farkaspricing, result, NULL);
    SCIP_CALL( farkaspricing->stopClock() );
 
    return retcode;
