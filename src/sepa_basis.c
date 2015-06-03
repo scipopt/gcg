@@ -1080,11 +1080,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_Bool infeasible;
    SCIP_Real obj;
 
-   SCIP_Real mineff;
-   SCIP_Real mineffroot;
-   int maxrounds;
-   int maxroundsroot;
-
    SCIP_Bool enable;
    SCIP_Bool enableobj;
    SCIP_Bool enableobjround;
@@ -1162,15 +1157,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
    /* init iteration counter */
    iteration = 0;
-
-   /* TODO: Why is this necessary? */
-   SCIP_CALL( SCIPgetRealParam(origscip, "separating/minefficacy", &mineff) );
-   SCIP_CALL( SCIPgetRealParam(origscip, "separating/minefficacyroot", &mineffroot) );
-   SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineffroot) );
-
-   SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxrounds", &maxrounds) );
-   SCIP_CALL( SCIPgetIntParam(origscip, "separating/maxroundsroot", &maxroundsroot) );
-   SCIP_CALL( SCIPsetIntParam(origscip, "separating/maxrounds", maxroundsroot) );
 
    /* set parameter setting for separation */
    SCIP_CALL( SCIPsetSeparating(origscip, (SCIP_PARAMSETTING) sepadata->separationsetting, TRUE) );
@@ -1298,6 +1284,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       }
 
       SCIPdebugMessage("solve probing LP\n");
+
       /* solve probing lp */
       SCIP_CALL( SCIPsolveProbingLP(origscip, -1, &lperror, &cutoff) );
 
@@ -1325,12 +1312,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
             || (strcmp(sepaname, "cgmip") == 0))
          {
             SCIP_CALL( SCIPsetIntParam(origscip, paramname, -1) );
-            /* SCIPdebugMessage("%s = %d\n", paramname, -1); */
          }
          else
          {
             SCIP_CALL( SCIPsetIntParam(origscip, paramname, 0) );
-            /* SCIPdebugMessage("%s = %d\n", paramname, 0); */
          }
       }
 
@@ -1354,10 +1339,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          /* disable separating again */
          SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
-
-         /* reset parameters */
-         SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineff) );
-         SCIP_CALL( SCIPsetIntParam(origscip, "separating/maxrounds", maxrounds) );
 
          return SCIP_OKAY;
       }
@@ -1510,9 +1491,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    /* disable separating again */
    SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
 
-   /* reset parameters */
-   SCIP_CALL( SCIPsetRealParam(origscip, "separating/minefficacy", mineff) );
-   SCIP_CALL( SCIPsetIntParam(origscip, "separating/maxrounds", maxrounds) );
 
    SCIPdebugMessage("exiting sepaExeclpBasis\n");
 
