@@ -780,7 +780,6 @@ SCIP_RETCODE addPPObjConss(
       {
          if( newcuts )
          {
-            /* TODO: Okay? */
             SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + 1) );
 
             sepadata->newcuts[sepadata->nnewcuts] = origcut;
