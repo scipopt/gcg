@@ -377,61 +377,24 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
             ndecomps = SCIPconshdlrDecompGetNDecdecomps( scip );
             if( ndecomps == 0 )
             {
-               /* remove all gcg constraints */
-               for( i = 0; i < SCIPgetNConshdlrs(scip) ; i++)
-               {
-                  conss = SCIPconshdlrGetConss( SCIPgetConshdlrs(scip)[i] );
-                  for( j = 0; j < SCIPconshdlrGetNConss( SCIPgetConshdlrs(scip)[i] ) ; j++)
-                  {
-                     if( GCGisConsGCGCons( conss[j] ) )
-                     {
-                        SCIP_CALL( SCIPconsDeactivate( conss[j], scip->set, SCIP_STATUS_UNKNOWN ) );
-                        /*@todo alternative: SCIPconsDisable( same arguments ) */
-                     }
-                  }
-               }
+               /* start another scip */
+               SCIP_CALL( SCIPcreate(&scip) );
 
-               /* remove GCG relaxation */
-               for( i = 0; i < SCIPgetNRelaxs(scip) ; i++)
-               {
-                  if( SCIPrelaxGetName( SCIPgetRelaxs(scip)[i] ) == ( char* ) "gcg" )
-                  {
-                     relax_gcg = SCIPgetRelaxs(scip)[i];
-                     break;
-                  }
-               }
-               assert( relax_gcg != NULL );
+               SCIP_CALL( SCIPincludeDefaultPlugins(scip) );
 
-               SCIP_CALL( SCIPrelaxExit( relax_gcg, scip->set ) );
-               SCIP_CALL( SCIPrelaxFree( &relax_gcg, scip->set ) );
+               /* @todo how to get filename */
+               SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
+               SCIP_CALL( SCIPtransformProb(scip) );
+               SCIP_CALL( SCIPpresolve(scip) );
+               SCIP_CALL( SCIPsolve(scip) );
+               /*SCIP_CALL( SCIPprintBestSol(scip, NULL, FALSE) );*/
 
-               /* remove GCG-specific heuristics */
-               for( i = 0; i < SCIPgetNHeurs(scip) ; i++)
-               {
-                  const char* heur_name = SCIPheurGetName( SCIPgetHeurs(scip)[i] );
-                  if( (strstr(heur_name, gcg1) != NULL ) || (strstr(heur_name, gcg2) != NULL ) || (strstr(heur_name, gcg3) != NULL ) || (strstr(heur_name, "xpcrossover") != NULL) || (strstr(heur_name, "xprins") != NULL))
-                  {
-                     SCIPheurSetFreq(SCIPgetHeurs(scip)[i], -1);
-                  }
-               }
+               /* @todo prone results */
 
-               /* remove master branching rule */
-               branchrule = SCIPfindBranchrule(scip, "empty");
-               assert( branchrule != NULL );
-               SCIP_CALL(SCIPsetBranchrulePriority( branchrule,  INT_MIN/4));
-               /*@todo remove branchrule, setting the priority just lowers the possibility of it being called (for testing only!) */
-
-               /* remove origbranch conshdlr */
-               conshdlr_origbranch = SCIPfindConshdlr(scip, "origbranch");
-               assert( conshdlr_origbranch != NULL );
-               /*@todo remove conshdlr */
-
-               /* remove event hdlr mastersol */
-               eventhdlr = SCIPfindEventhdlr(scip, "mastersol");
-               assert( eventhdlr != NULL );
-
-
+               SCIP_CALL( SCIPfree(&scip) );
+               BMScheckEmptyMemory();
             }
+
       }
       else
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was not successful.\n");
