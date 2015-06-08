@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_setcover.c
- * @brief  setcover primal heuristic
+ * @brief  set covering primal heuristic according to Caprara, Fischetti, and Toth (1999)
  * @author Tobias Oelschlaegel
  */
 
@@ -45,10 +45,10 @@
 
 
 #define HEUR_NAME             "setcover"
-#define HEUR_DESC             "primal heuristic template"
-#define HEUR_DISPCHAR         '?'
+#define HEUR_DESC             "set covering primal heuristic according to Caprara, Fischetti, and Toth (1999)"
+#define HEUR_DISPCHAR         'S'
 #define HEUR_PRIORITY         0
-#define HEUR_FREQ             1
+#define HEUR_FREQ             0
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
@@ -3005,20 +3005,6 @@ SCIP_RETCODE setCoveringHeuristic(
  * Callback methods of primal heuristic
  */
 
-/** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-#if 0
-static
-SCIP_DECL_HEURCOPY(heurCopySetcover)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of setcover primal heuristic not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define heurCopySetcover NULL
-#endif
-
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_HEURFREE(heurFreeSetcover)
@@ -3038,61 +3024,6 @@ SCIP_DECL_HEURFREE(heurFreeSetcover)
 
    return SCIP_OKAY;
 }
-
-/** initialization method of primal heuristic (called after problem was transformed) */
-#if 0
-static
-SCIP_DECL_HEURINIT(heurInitSetcover)
-{
-   return SCIP_OKAY;
-}
-#else
-#define heurInitSetcover NULL
-#endif
-
-/** deinitialization method of primal heuristic (called before transformed problem is freed) */
-#if 0
-static
-SCIP_DECL_HEUREXIT(heurExitSetcover)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of setcover primal heuristic not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define heurExitSetcover NULL
-#endif
-
-
-/** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
-#if 0
-static
-SCIP_DECL_HEURINITSOL(heurInitsolSetcover)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of setcover primal heuristic not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define heurInitsolSetcover NULL
-#endif
-
-
-/** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed) */
-#if 0
-static
-SCIP_DECL_HEUREXITSOL(heurExitsolSetcover)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of setcover primal heuristic not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define heurExitsolSetcover NULL
-#endif
 
 
 /** execution method of primal heuristic */
@@ -3151,18 +3082,7 @@ SCIP_RETCODE SCIPincludeHeurSetcover(
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
 
    /* include primal heuristic */
-#if 0
-   /* use SCIPincludeHeur() if you want to set all callbacks explicitly and realize (by getting compiler errors) when
-    * new callbacks are added in future SCIP versions
-    */
-   SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
-         HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP,
-         heurCopySetcover, heurFreeSetcover, heurInitSetcover, heurExitSetcover, heurInitsolSetcover, heurExitsolSetcover, heurExecSetcover,
-         heurdata) );
-#else
-   /* use SCIPincludeHeurBasic() plus setter functions if you want to set callbacks one-by-one and your code should
-    * compile independent of new callbacks being added in future SCIP versions
-    */
+
    SCIP_CALL( SCIPincludeHeurBasic(scip, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP, heurExecSetcover, heurdata) );
@@ -3170,13 +3090,7 @@ SCIP_RETCODE SCIPincludeHeurSetcover(
    assert(heur != NULL);
 
    /* set non fundamental callbacks via setter functions */
-   SCIP_CALL( SCIPsetHeurCopy(scip, heur, heurCopySetcover) );
    SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeSetcover) );
-   SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitSetcover) );
-   SCIP_CALL( SCIPsetHeurExit(scip, heur, heurExitSetcover) );
-   SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolSetcover) );
-   SCIP_CALL( SCIPsetHeurExitsol(scip, heur, heurExitsolSetcover) );
-#endif
 
    /* add setcover primal heuristic parameters */
 

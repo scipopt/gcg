@@ -27,10 +27,9 @@
 
 /**@file   heur_setcover.h
  * @ingroup PRIMALHEURISTICS
- * @brief  setcover primal heuristic
+ * @brief  set covering primal heuristic according to Caprara, Fischetti, and Toth (1999)
  * @author Tobias Oelschlaegel
  *
- * template file for primal heuristic plugins
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
