@@ -144,6 +144,7 @@ LIBOBJ		=	reader_blk.o \
 			heur_origdiving.o \
 			heur_relaxcolsel.o \
 			heur_restmaster.o \
+			heur_setcover.o \
 			heur_xpcrossover.o \
 			heur_xprins.o \
 			branch_empty.o \

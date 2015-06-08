@@ -3,7 +3,8 @@ GCG Version 2.1
 
 features
 - numerical tolerances of the original problem are used in the master and pricing problems
-
+- new set covering heuristic
+ 
 bug fixes
 - GCG columns are freed correctly in the pricer
 
