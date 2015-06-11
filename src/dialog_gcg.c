@@ -45,6 +45,7 @@
 #include "scip/cons.h"
 #include "scip/relax.h"
 #include "scip/heur.h"
+#include "scip/scipdefplugins.h"
 
 #include "gcg.h"
 
@@ -351,17 +352,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
-   SCIP_CONS** conss;
    int ndecomps;
-   SCIP_RELAX* relax_gcg = NULL;
-   const char* gcg1 = "Gcg";
-   const char* gcg2 = "gcg";
-   const char* gcg3 = "GCG";
-   SCIP_BRANCHRULE* branchrule;
-   SCIP_CONSHDLR* conshdlr_origbranch;
-   SCIP_EVENTHDLR* eventhdlr;
-   int i;
-   int j;
+   SCIP* subscip;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
@@ -378,20 +370,24 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
             if( ndecomps == 0 )
             {
                /* start another scip */
-               SCIP_CALL( SCIPcreate(&scip) );
+               SCIP_CALL( SCIPcreate(&subscip) );
 
-               SCIP_CALL( SCIPincludeDefaultPlugins(scip) );
+               SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
 
-               /* @todo how to get filename */
-               SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
-               SCIP_CALL( SCIPtransformProb(scip) );
-               SCIP_CALL( SCIPpresolve(scip) );
-               SCIP_CALL( SCIPsolve(scip) );
-               /*SCIP_CALL( SCIPprintBestSol(scip, NULL, FALSE) );*/
+               subscip->origprob = scip->origprob;
 
-               /* @todo prone results */
+               scip = subscip;
 
-               SCIP_CALL( SCIPfree(&scip) );
+               SCIP_CALL( SCIPtransformProb(subscip) );
+               SCIP_CALL( SCIPpresolve(subscip) );
+
+
+               /*SCIP_CALL( SCIPsolve(subscip) );
+               SCIP_CALL( SCIPprintBestSol(subscip, NULL, FALSE) );
+
+               @todo prone results
+
+               SCIP_CALL( SCIPfree(&subscip) );*/
                BMScheckEmptyMemory();
             }
 
