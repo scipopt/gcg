@@ -193,6 +193,26 @@ SCIP_RETCODE writeAllDecompositions(
    return SCIP_OKAY;
 }
 
+/** replaces a presolved GCG SCIP instance with a presolved one containing the same problem but no GCG-specific plugins */
+SCIP_RETCODE removeGCG(SCIP* scip){
+
+   SCIP* subscip = NULL;
+
+   /* start another scip */
+   SCIP_CALL( SCIPcreate(&subscip) );
+   SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
+   subscip->origprob = scip->origprob;
+   subscip->set = scip->set;
+   SCIP_CALL( SCIPtransformProb(subscip) );
+   SCIP_CALL( SCIPpresolve(subscip) );
+
+   /* subscip contains no GCG-specific plugins */
+   scip = subscip;
+
+   BMScheckEmptyMemory();
+   return SCIP_OKAY;
+}
+
 /** dialog execution method for the display statistics command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
 {  /*lint --e{715}*/
@@ -352,8 +372,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
-   int ndecomps;
-   SCIP* subscip;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
@@ -364,32 +382,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
       if( result == SCIP_SUCCESS )
       {
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was successful.\n");
-
-            /* if there is no decomp remove all GCG-specific characteristics and solve with scip */
-            ndecomps = SCIPconshdlrDecompGetNDecdecomps( scip );
-            if( ndecomps == 0 )
-            {
-               /* start another scip */
-               SCIP_CALL( SCIPcreate(&subscip) );
-
-               SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
-
-               subscip->origprob = scip->origprob;
-
-               scip = subscip;
-
-               SCIP_CALL( SCIPtransformProb(subscip) );
-               SCIP_CALL( SCIPpresolve(subscip) );
-
-
-               /*SCIP_CALL( SCIPsolve(subscip) );
-               SCIP_CALL( SCIPprintBestSol(subscip, NULL, FALSE) );
-
-               @todo prone results
-
-               SCIP_CALL( SCIPfree(&subscip) );*/
-               BMScheckEmptyMemory();
-            }
 
       }
       else
@@ -437,14 +429,18 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          if( result == SCIP_DIDNOTFIND )
          {
             assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
-            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
+            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will be used for solving.\n");
+
+            /* if there is no decomp remove all GCG-specific characteristics and solve with scip */
+            SCIP_CALL( removeGCG(scip) );
             break;
          }
       }
       else if( DECgetBestDecomp(scip) == NULL )
       {
          assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
-         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
+         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will be used for solving.\n");
+         SCIP_CALL( removeGCG(scip) );
          break;
       }
       /*lint -fallthrough*/
