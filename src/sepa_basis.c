@@ -27,16 +27,14 @@
 #include <string.h>
 
 #include "scip/scip.h"
-#include "scip/lp.h"
 #include "scip/scipdefplugins.h"
-#include "scip_misc.h"
 #include "sepa_basis.h"
 #include "sepa_master.h"
 #include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "pub_gcgvar.h"
-#include "scip/var.h"
+
 
 #ifdef GSL
 #include <gsl/gsl_matrix.h>
