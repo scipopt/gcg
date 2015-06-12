@@ -1708,7 +1708,7 @@ SCIP_RETCODE combineSolutions(
       int block;
 
       pricingvar = GCGoriginalVarGetPricingVar(vars[v]);
-      block = GCGvarGetBlock(vars[v]);
+      block = GCGvarGetBlock(pricingvar);
       assert(block >= 0);
       assert(block < nprobs);
       assert(probs[block] != NULL);
@@ -1746,12 +1746,16 @@ SCIP_RETCODE setPricingObjsOriginal(
 
       assert(GCGvarIsOriginal(vars[v]));
       origvar = SCIPvarGetProbvar(vars[v]);
+
+      if( !GCGisPricingprobRelevant(scip, GCGvarGetBlock(origvar)) )
+         continue;
+
       pricingvar = GCGoriginalVarGetPricingVar(origvar);
       assert(pricingvar != NULL);
 
       objvalue = SCIPvarGetObj(origvar);
       /* SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar));*/
-      SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(origvar)], pricingvar, objvalue) );
+      SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(pricingvar)], pricingvar, objvalue) );
    }
    return SCIP_OKAY;
 }
@@ -1796,11 +1800,11 @@ SCIP_RETCODE solveDiagonalBlocks(
       /* give the pricing problem 2% more time then the original scip has left */
       if( SCIPgetStage(relaxdata->pricingprobs[i]) > SCIP_STAGE_PROBLEM )
       {
-         pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(relaxdata->pricingprobs[i]);
+         pricingtimelimit = MIN(SCIPinfinity(relaxdata->pricingprobs[i]), (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(relaxdata->pricingprobs[i]));
       }
       else
       {
-         pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02;
+         pricingtimelimit = MIN(SCIPinfinity(relaxdata->pricingprobs[i]), (timelimit - SCIPgetSolvingTime(scip)) * 1.02);
       }
       SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit) );
 
