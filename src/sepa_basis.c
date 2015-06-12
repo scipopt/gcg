@@ -289,21 +289,21 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
       ub = SCIPvarGetUbLocal(origvar);
       solval = SCIPgetSolVal(origscip, origsol, origvar);
 
-      assert(SCIPisLE(origscip, solval, ub));
-      assert(SCIPisGE(origscip, solval, lb));
+      assert(SCIPisFeasLE(origscip, solval, ub));
+      assert(SCIPisFeasGE(origscip, solval, lb));
 
       /* if solution value of variable is at ub or lb initialize objective value of the variable
        * such that the difference to this bound is minimized
        */
-      if( SCIPisEQ(origscip, lb, ub) )
+      if( SCIPisFeasEQ(origscip, lb, ub) )
       {
          newobj = 0.0;
       }
-      else if( SCIPisLT(origscip, ub, SCIPinfinity(origscip)) && SCIPisLE(origscip, ub, solval) )
+      else if( SCIPisLT(origscip, ub, SCIPinfinity(origscip)) && SCIPisFeasLE(origscip, ub, solval) )
       {
          newobj = -1.0;
       }
-      else if( SCIPisGT(origscip, lb, -SCIPinfinity(origscip)) && SCIPisGE(origscip, lb, solval) )
+      else if( SCIPisGT(origscip, lb, -SCIPinfinity(origscip)) && SCIPisFeasGE(origscip, lb, solval) )
       {
          newobj = 1.0;
       }
@@ -312,7 +312,7 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
          /* compute distance from solution to variable bound */
          distance = MIN(solval - lb, ub - solval);
 
-         assert(SCIPisPositive(origscip, distance));
+         assert(SCIPisFeasPositive(origscip, distance));
 
          /* check if distance is lower than 1 and compute factor */
          if( SCIPisLT(origscip, distance, 1.0) )
@@ -415,15 +415,15 @@ SCIP_RETCODE chgProbingObjUsingRows(
 
       activity = SCIPgetRowSolActivity(origscip, row, origsol);
 
-      if( SCIPisEQ(origscip, rhs, lhs) )
+      if( SCIPisFeasEQ(origscip, rhs, lhs) )
       {
          continue;
       }
-      if( SCIPisLT(origscip, rhs, SCIPinfinity(origscip)) && SCIPisLE(origscip, rhs, activity) )
+      if( SCIPisLT(origscip, rhs, SCIPinfinity(origscip)) && SCIPisFeasLE(origscip, rhs, activity) )
       {
          factor = -1.0;
       }
-      else if( SCIPisGT(origscip, lhs, -SCIPinfinity(origscip)) && SCIPisGE(origscip, lhs, activity) )
+      else if( SCIPisGT(origscip, lhs, -SCIPinfinity(origscip)) && SCIPisFeasGE(origscip, lhs, activity) )
       {
          factor = 1.0;
       }
@@ -440,7 +440,8 @@ SCIP_RETCODE chgProbingObjUsingRows(
          else
             distance = MIN(activity - lhs, rhs - activity);
 
-         assert(SCIPisPositive(origscip, distance) || !SCIPisCutEfficacious(origscip, origsol, row));
+         assert(SCIPisFeasPositive(origscip, distance) || !SCIPisCutEfficacious(origscip, origsol, row));
+
          /* check if distance is lower than 1 and compute factor */
          if( SCIPisLT(origscip, distance, 1.0) )
          {
