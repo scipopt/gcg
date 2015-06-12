@@ -73,8 +73,8 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -97,9 +97,8 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -116,9 +115,9 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -238,8 +237,8 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -262,9 +261,8 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -281,9 +279,9 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -408,8 +406,8 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -432,9 +430,8 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -451,9 +448,9 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -577,8 +574,8 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -601,9 +598,8 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -620,9 +616,9 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -746,8 +742,8 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -770,9 +766,8 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -789,9 +784,9 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -915,8 +910,8 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -939,9 +934,8 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -958,9 +952,9 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1080,8 +1074,8 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1104,9 +1098,8 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -1123,9 +1116,9 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1244,8 +1237,8 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1268,9 +1261,8 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -1287,9 +1279,9 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1412,8 +1404,8 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1436,9 +1428,8 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -1455,9 +1446,9 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1582,8 +1573,8 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1606,9 +1597,8 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -1625,9 +1615,9 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1752,8 +1742,8 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1776,9 +1766,8 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -1795,9 +1784,9 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1917,8 +1906,8 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -1941,9 +1930,8 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -1960,9 +1948,9 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -2083,8 +2071,8 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -2107,9 +2095,8 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -2126,9 +2113,9 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -2249,8 +2236,8 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -2273,9 +2260,8 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -2292,9 +2278,9 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -2417,8 +2403,8 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -2441,9 +2427,8 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -2460,9 +2445,9 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -2587,8 +2572,8 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -2611,9 +2596,8 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -2630,9 +2614,9 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -2757,8 +2741,8 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -2781,9 +2765,8 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -2800,9 +2783,9 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \

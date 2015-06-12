@@ -67,6 +67,14 @@ SCIP_ROW** GCGsepaGetMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** adds given original and master cut to master separator data */
+extern
+SCIP_RETCODE GCGsepaAddMastercuts(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_ROW*            origcut,            /**< pointer to orginal cut */
+   SCIP_ROW*            mastercut           /**< pointer to master cut */
+);
+
 #ifdef __cplusplus
 }
 #endif

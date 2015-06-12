@@ -17,6 +17,7 @@ lib/linkscreated.*
 gcg-*.*.*
 lib/scip
 lib/gtest*
+lib/libtest.*
 lib/libgcg*
 lib/libbliss*
 lib/libcplex*
