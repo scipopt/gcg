@@ -144,6 +144,7 @@ LIBOBJ		=	reader_blk.o \
 			heur_origdiving.o \
 			heur_relaxcolsel.o \
 			heur_restmaster.o \
+			heur_setcover.o \
 			heur_xpcrossover.o \
 			heur_xprins.o \
 			branch_empty.o \
@@ -185,7 +186,9 @@ LIBOBJ		=	reader_blk.o \
 			stat.o \
 			objdialog.o \
 			dialog_graph.o \
-			gcgcol.o
+			gcgpqueue.o \
+			gcgcol.o \
+			class_colpool.o 
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

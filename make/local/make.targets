@@ -80,7 +80,8 @@ TESTOBJ		=	tests/test.o \
 			tests/polish_test.o \
 			tests/gcgvar_test.o \
 			tests/graphalgorithm_test.o \
-			tests/gcgcol_test.o
+			tests/gcgcol_test.o \
+			tests/colpool_test.o
 #			tests/hypergraph_test.o \
 
 
@@ -94,21 +95,25 @@ TESTFILE	=	$(BINDIR)/$(TESTMAIN)
 TESTSHORTLINK	=	$(BINDIR)/$(TESTNAME)
 TESTOBJFILES	=	$(addprefix $(OBJDIR)/,$(TESTOBJ))
 TESTOBJDIR      =	$(OBJDIR)/tests
-TESTLDFLAGS	+=	$(LINKCXX_L)$(LIBDIR) $(LINKCXX_l)gtest $(LINKCXX_l)pthread
+TESTLDFLAGS	+=	$(LINKCXX_L)$(LIBDIR) $(LINKCXX_l)pthread
 
+ifeq ($(GTEST),true)
+TESTLDFLAGS	+=	$(LINKCXX_l)gtest
 SOFTLINKS	+=	$(LIBDIR)/gtest
 SOFTLINKS	+=	$(LIBDIR)/libgtest.$(STATICLIBEXT)
 
 LINKMSG		+=	"googletest testing framework links:\n"
 LINKMSG		+=	" -> gtest is the path to the googletest include files, e.g., \"googletest-1.7.0/include\"\n"
 LINKMSG		+=	" -> \"libgtest.$(STATICLIBEXT)\" is the path to the googletest library, e.g., \"googletest-1.7.0/build/libgtest.$(STATICLIBEXT)\"\n"
-
+endif
 
 .PHONY: testdepend
 testdepend::
+ifeq ($(GTEST),true)
 		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) -Ilib/gtest $(DFLAGS) $(TESTSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(TESTSRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(TESTOBJDIR\)/\2.o: $(TESTSRCDIR)/\2.c|g'\'' \
 		>$(TESTDEP)'
+endif
 -include	$(TESTDEP)
 
 $(TESTOBJDIR):	$(OBJDIR)

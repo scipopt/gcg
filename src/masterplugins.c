@@ -146,6 +146,7 @@
 #include "heur_mastervecldiving.h"
 #include "heur_relaxcolsel.h"
 #include "heur_restmaster.h"
+#include "heur_setcover.h"
 
 #ifndef NCPLEXSOLVER
 #include "solver_cplex.h"
@@ -238,6 +239,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( GCGincludeHeurMastervecldiving(scip) );
    SCIP_CALL( SCIPincludeHeurRelaxcolsel(scip) );
    SCIP_CALL( SCIPincludeHeurRestmaster(scip) );
+   SCIP_CALL( SCIPincludeHeurSetcover(scip) );
 #endif
 
 #if USESEPA
