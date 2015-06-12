@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "scip/scip.h"
 #include "scip/lp.h"
@@ -45,7 +46,7 @@
 
 #define SEPA_NAME         "master"
 #define SEPA_DESC         "separator for separating cuts in the original problem, called in the master"
-#define SEPA_PRIORITY     0
+#define SEPA_PRIORITY     1000
 
 #define SEPA_FREQ         1
 #define SEPA_MAXBOUNDDIST 1.0
@@ -67,6 +68,7 @@ struct SCIP_SepaData
    SCIP_ROW**            origcuts;           /**< cuts in the original problem */
    int                   ncuts;          /**< number of cuts in the original problem */
    int                   maxcuts;            /**< maximal number of allowed cuts */
+   SCIP_Bool             enable;             /**< parameter returns if master separator is enabled */
 };
 
 
@@ -185,6 +187,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP_VAR** rowvars;
    SCIP_SEPADATA* sepadata;
 
+   SCIP_SEPA** sepas;
+   int nsepas;
+
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
    int nmastervars;
@@ -210,6 +215,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    *result = SCIP_DIDNOTFIND;
 
+   if( !sepadata->enable )
+   {
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    if( SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
    {
       SCIPdebugMessage("master LP not solved to optimality, do no separation!\n");
@@ -232,6 +243,28 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
 
+   SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_DEFAULT, TRUE) );
+
+   sepas = SCIPgetSepas(origscip);
+   nsepas = SCIPgetNSepas(origscip);
+
+   for(i = 0; i < nsepas; ++i)
+   {
+      const char* sepaname;
+      char paramname[SCIP_MAXSTRLEN];
+
+      sepaname = SCIPsepaGetName(sepas[i]);
+
+      /* get frequency parameter of separator */
+      (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "separating/%s/freq", sepaname);
+
+      if( strcmp(sepaname, "intobj") == 0 || strcmp(sepaname, "closecuts") == 0
+         || (strcmp(sepaname, "cgmip") == 0))
+         SCIP_CALL( SCIPsetIntParam(origscip, paramname, -1) );
+      else
+         SCIP_CALL( SCIPsetIntParam(origscip, paramname, 0) );
+   }
+
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
          FALSE, FALSE, &delayed, &cutoff) );
 
@@ -243,6 +276,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    /* save cuts in the origcuts array in the separator data */
    norigcuts = sepadata->ncuts;
    SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->ncuts + ncuts) );
+
    for( i = 0; i < ncuts; i++ )
    {
       sepadata->origcuts[norigcuts] = cuts[i];
@@ -344,6 +378,9 @@ SCIP_RETCODE SCIPincludeSepaMaster(
          sepaExeclpMaster, sepaExecsolMaster,
          sepadata) );
 
+   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/master/enable", "enable master separator",
+         &(sepadata->enable), FALSE, TRUE, NULL, NULL);
+
    return SCIP_OKAY;
 }
 
@@ -403,4 +440,35 @@ SCIP_ROW** GCGsepaGetMastercuts(
    assert(sepadata != NULL);
 
    return sepadata->mastercuts;
+}
+
+/** adds given original and master cut to master separator data */
+extern
+SCIP_RETCODE GCGsepaAddMastercuts(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_ROW*            origcut,            /**< pointer to orginal cut */
+   SCIP_ROW*            mastercut           /**< pointer to master cut */
+)
+{
+   SCIP_SEPA* sepa;
+   SCIP_SEPADATA* sepadata;
+
+   assert(scip != NULL);
+
+   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   assert(sepa != NULL);
+
+   sepadata = SCIPsepaGetData(sepa);
+   assert(sepadata != NULL);
+
+   SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->ncuts + 1) );
+
+   sepadata->origcuts[sepadata->ncuts] = origcut;
+   sepadata->mastercuts[sepadata->ncuts] = mastercut;
+   SCIP_CALL( SCIPcaptureRow(scip, sepadata->origcuts[sepadata->ncuts]) );
+   SCIP_CALL( SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->ncuts]) );
+
+   ++(sepadata->ncuts);
+
+   return SCIP_OKAY;
 }

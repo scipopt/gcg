@@ -113,6 +113,9 @@
 #include "scip/sepa_strongcg.h"
 #endif
 
+/* Jonas' stuff */
+#include "sepa_basis.h"
+
 #include "scip/reader_cip.h"
 #include "scip/reader_lp.h"
 #include "scip/scipshell.h"
@@ -259,6 +262,9 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeDialogMaster(scip) );
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
+
+   /* Jonas' stuff */
+   SCIP_CALL( SCIPincludeSepaBasis(scip) );
 
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );

@@ -182,6 +182,14 @@ SCIP_RETCODE GCGmasterPrintSimplexIters(
    FILE*                 file                /**< output file */
    );
 
+/** set pricing objectives */
+extern
+SCIP_RETCODE GCGsetPricingObjs(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real*            dualsolconv         /**< array of dual solutions corresponding to convexity constraints */
+   );
+
+
 #ifdef __cplusplus
 }
 #endif

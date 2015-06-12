@@ -145,7 +145,13 @@
 #include "scip/sepa_oddcycle.h"
 #include "scip/sepa_strongcg.h"
 #include "scip/sepa_zerohalf.h"
+
+/** added by Jonas */
+#include "scip/sepa_closecuts.h"
+#include "scip/sepa_rapidlearning.h"
 #endif
+
+
 
 #include "scip/scipshell.h"
 #include "reader_blk.h"
@@ -308,6 +314,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
+
+   /* added by Jonas */
+   SCIP_CALL( SCIPincludeSepaClosecuts(scip) );
+   SCIP_CALL( SCIPincludeSepaRapidlearning(scip) );
 #endif
 
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
@@ -355,6 +365,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );
 
+   /* Jonas' stuff */
+   SCIP_CALL( SCIPsetSeparating(scip, SCIP_PARAMSETTING_OFF, TRUE) );
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
