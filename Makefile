@@ -60,6 +60,7 @@ GTEST		=	true
 PARASCIP	= 	true
 BLISS       	=   	true
 OPENMP          =       false
+GSL             =       false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 
@@ -91,6 +92,14 @@ SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
 LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with \"make BLISS=false\"):\n"
 LINKMSG		+=	" -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
 LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"blissinc/libbliss.$(STATICLIBEXT)\"\n"
+endif
+
+#-----------------------------------------------------------------------------
+# GSL
+#-----------------------------------------------------------------------------
+ifeq ($(GSL),true)
+LDFLAGS                +=      -lgsl -lgslcblas -lm
+FLAGS		           +=	   -DGSL
 endif
 
 #-----------------------------------------------------------------------------
@@ -152,6 +161,7 @@ LIBOBJ		=	reader_blk.o \
 			masterplugins.o \
 			nodesel_master.o \
 			sepa_master.o \
+			sepa_basis.o \
 			disp_gcg.o \
 			disp_master.o \
 			dialog_gcg.o \

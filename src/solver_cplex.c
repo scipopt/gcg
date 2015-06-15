@@ -784,45 +784,53 @@ SCIP_RETCODE solveCplex(
     */
    for( s = 0; s < nsolscplex && *ncols < maxcols; ++s )
    {
+      SCIP_SOL* sol;
+      SCIP_Bool feasible;
+
       CHECK_ZERO( CPXgetsolnpoolobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], s, &objective) );
 
       CHECK_ZERO( CPXgetsolnpoolx(solverdata->cpxenv[probnr], solverdata->lp[probnr], s, cplexsolvals, 0, numcols - 1) );
 
-      /* create potentially new column */
-      SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[*ncols], probnr, solverdata->pricingvars[probnr], cplexsolvals, numcols, FALSE, SCIPinfinity(pricingprob)) );
+      SCIP_CALL( SCIPcreateSol(pricingprob, &sol, NULL) );
+      SCIP_CALL( SCIPsetSolVals(pricingprob, sol, numcols, solverdata->pricingvars[probnr], cplexsolvals) );
 
-      /* check whether the column is equal to one of the previous solutions */
-      if( !solverdata->checksols || colIsNew(pricingprob, cols, *ncols, cols[*ncols]) )
+      feasible = FALSE;
+
+      /* check whether the solution is feasible */
+      if( !solverdata->checksols )
       {
-         SCIP_SOL* sol;
-         SCIP_Bool feasible;
-
-         SCIP_CALL( SCIPcreateSol(pricingprob, &sol, NULL) );
-         SCIP_CALL( SCIPsetSolVals(pricingprob, sol, numcols, solverdata->pricingvars[probnr], cplexsolvals) );
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, sol, &feasible, FALSE, FALSE) );
 
-         if( !feasible )
+         /* if the optimal solution is not feasible, we return SCIP_UNKNOWN as result */
+         if( !feasible && s == 0 )
          {
-            SCIP_CALL( SCIPfreeSol(pricingprob, &sol) );
-            SCIP_CALL( GCGfreeGcgCol(&cols[*ncols]) );
-
-            /* the optimal solution is not feasible, we return SCIP_UNKNOWN as result */
-            if( s == 0 )
-            {
-               *result = SCIP_STATUS_UNKNOWN;
-            }
+            *result = SCIP_STATUS_UNKNOWN;
          }
-         else
-         {
-            ++(*ncols);
-         }
-         SCIP_CALL( SCIPfreeSol(pricingprob, &sol) );
       }
       else
       {
-         SCIP_CALL( GCGfreeGcgCol(&cols[*ncols]) );
+         feasible = TRUE;
       }
+
+      if( feasible )
+      {
+         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &cols[*ncols], probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
+
+         /* check whether the column is equal to one of the previous solutions */
+         if( colIsNew(pricingprob, cols, *ncols, cols[*ncols]) )
+         {
+            ++(*ncols);
+         }
+         else
+         {
+            SCIP_CALL( GCGfreeGcgCol(&cols[*ncols]) );
+         }
+      }
+
+      SCIP_CALL( SCIPfreeSol(pricingprob, &sol) );
    }
+
+   assert( *result != SCIP_STATUS_OPTIMAL || *ncols > 0 );
  TERMINATE:
    if( predisabled )
    {

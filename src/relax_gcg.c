@@ -926,7 +926,8 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the pricing problem */
    SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
    SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
-   SCIP_Real             dualfeastol         /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
+   SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
+   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_basis */
    )
 {
    assert(scip != NULL);
@@ -988,6 +989,18 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetRealParam(scip, "numerics/lpfeastol", lpfeastol) );
    SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
 
+   /* jonas' stuff */
+   if(enableppcuts)
+   {
+      int pscost;
+      int prop;
+
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/pscost/priority", &pscost) );
+      SCIP_CALL( SCIPgetIntParam(scip, "propagating/maxroundsroot", &prop) );
+      SCIP_CALL( SCIPsetIntParam(scip, "branching/pscost/priority", 11000) );
+      SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
+      SCIP_CALL( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+   }
    return SCIP_OKAY;
 }
 
@@ -1347,7 +1360,8 @@ SCIP_RETCODE createPricingProblem(
    SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the pricing problem */
    SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
    SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
-   SCIP_Real             dualfeastol         /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
+   SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
+   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_basis */
    )
 {
    assert(pricingscip != NULL);
@@ -1355,7 +1369,7 @@ SCIP_RETCODE createPricingProblem(
 
    SCIP_CALL( SCIPcreate(pricingscip) );
    SCIP_CALL( SCIPincludeDefaultPlugins(*pricingscip) );
-   SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
+   SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts) );
    SCIP_CALL( SCIPcreateProb(*pricingscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    return SCIP_OKAY;
@@ -1554,6 +1568,7 @@ SCIP_RETCODE createMaster(
 {
    int npricingprobs;
    SCIP_HASHMAP** hashorig2pricingvar;
+   SCIP_Bool enableppcuts;
    char name[SCIP_MAXSTRLEN];
    int clocktype;
    SCIP_Real infinity;
@@ -1598,13 +1613,15 @@ SCIP_RETCODE createMaster(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
    SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
 
+   enableppcuts = FALSE;
+   SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts);
+
    /* create the pricing problems */
    for( i = 0; i < npricingprobs; i++ )
    {
       relaxdata->convconss[i] = NULL;
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
-
-      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
+      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts) );
       SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
    }
 
@@ -1708,7 +1725,7 @@ SCIP_RETCODE combineSolutions(
       int block;
 
       pricingvar = GCGoriginalVarGetPricingVar(vars[v]);
-      block = GCGvarGetBlock(vars[v]);
+      block = GCGvarGetBlock(pricingvar);
       assert(block >= 0);
       assert(block < nprobs);
       assert(probs[block] != NULL);
@@ -1746,12 +1763,16 @@ SCIP_RETCODE setPricingObjsOriginal(
 
       assert(GCGvarIsOriginal(vars[v]));
       origvar = SCIPvarGetProbvar(vars[v]);
+
+      if( !GCGisPricingprobRelevant(scip, GCGvarGetBlock(origvar)) )
+         continue;
+
       pricingvar = GCGoriginalVarGetPricingVar(origvar);
       assert(pricingvar != NULL);
 
       objvalue = SCIPvarGetObj(origvar);
       /* SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar));*/
-      SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(origvar)], pricingvar, objvalue) );
+      SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(pricingvar)], pricingvar, objvalue) );
    }
    return SCIP_OKAY;
 }
@@ -1796,11 +1817,11 @@ SCIP_RETCODE solveDiagonalBlocks(
       /* give the pricing problem 2% more time then the original scip has left */
       if( SCIPgetStage(relaxdata->pricingprobs[i]) > SCIP_STAGE_PROBLEM )
       {
-         pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(relaxdata->pricingprobs[i]);
+         pricingtimelimit = MIN(SCIPinfinity(relaxdata->pricingprobs[i]), (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(relaxdata->pricingprobs[i]));
       }
       else
       {
-         pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02;
+         pricingtimelimit = MIN(SCIPinfinity(relaxdata->pricingprobs[i]), (timelimit - SCIPgetSolvingTime(scip)) * 1.02);
       }
       SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit) );
 

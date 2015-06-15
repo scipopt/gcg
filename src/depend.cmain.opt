@@ -53,8 +53,8 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
  lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_multaggr.h \
- lib/scip/src/scip/branch_pscost.h lib/scip/src/scip/branch_random.h \
- lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/branch_nodereopt.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/compr_largestrepr.h \
  lib/scip/src/scip/compr_weakcompr.h lib/scip/src/scip/cons_abspower.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bivariate.h \
@@ -77,9 +77,8 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/heur_distributiondiving.h \
  lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
  lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
- lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
- lib/scip/src/scip/heur_indicator.h lib/scip/src/scip/heur_intdiving.h \
- lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_indicator.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
  lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
@@ -96,9 +95,9 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/heur_trivialnegation.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
- lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/heur_zeroobj.h lib/scip/src/scip/heur_zirounding.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_breadthfirst.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
