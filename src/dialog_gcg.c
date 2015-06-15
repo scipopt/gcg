@@ -193,29 +193,29 @@ SCIP_RETCODE writeAllDecompositions(
    return SCIP_OKAY;
 }
 
-/** replaces a presolved GCG SCIP instance with a presolved one containing the same problem but no GCG-specific plugins
+/** starts another SCIP instance containing the same problem but no GCG-specific plugins
  * @pre This method can be called if @p scip is in one of the following stages:
  *       - \ref SCIP_STAGE_PRESOLVED
  */
 static
-SCIP_RETCODE removeGCG(SCIP* scip){
+SCIP_RETCODE useSCIP(SCIP* scip){
 
    SCIP* subscip = NULL;
 
-   /* start another scip */
+   /* start another SCIP instance without GCG plugins */
    SCIP_CALL( SCIPcreate(&subscip) );
    SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
 
    SCIP_CALL( SCIPreadProb(subscip, SCIPgetProbName( scip ), NULL) );
 
+   /* remove old SCIP */
+   SCIP_CALL( SCIPfree( &scip ) );
+
+   /* Continue solving pure SCIP */
    SCIP_CALL( SCIPtransformProb(subscip) );
    SCIP_CALL( SCIPpresolve(subscip) );
 
    SCIP_CALL( SCIPsolve(subscip) );
-
-   /* subscip contains no GCG-specific plugins */
-   /* @todo free all scip memory before changing pointer */
-   scip = subscip;
 
    return SCIP_OKAY;
 }
@@ -439,7 +439,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
             SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will be used for solving.\n");
 
             /* if there is no decomp remove all GCG-specific characteristics and solve with scip */
-            SCIP_CALL( removeGCG(scip) );
+            SCIP_CALL( useSCIP(scip) );
             break;
          }
       }
@@ -447,7 +447,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       {
          assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
          SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will be used for solving.\n");
-         SCIP_CALL( removeGCG(scip) );
+         SCIP_CALL( useSCIP(scip) );
          break;
       }
       /*lint -fallthrough*/
