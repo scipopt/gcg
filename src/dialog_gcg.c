@@ -193,7 +193,11 @@ SCIP_RETCODE writeAllDecompositions(
    return SCIP_OKAY;
 }
 
-/** replaces a presolved GCG SCIP instance with a presolved one containing the same problem but no GCG-specific plugins */
+/** replaces a presolved GCG SCIP instance with a presolved one containing the same problem but no GCG-specific plugins
+ * @pre This method can be called if @p scip is in one of the following stages:
+ *       - \ref SCIP_STAGE_PRESOLVED
+ */
+static
 SCIP_RETCODE removeGCG(SCIP* scip){
 
    SCIP* subscip = NULL;
@@ -201,15 +205,18 @@ SCIP_RETCODE removeGCG(SCIP* scip){
    /* start another scip */
    SCIP_CALL( SCIPcreate(&subscip) );
    SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
-   subscip->origprob = scip->origprob;
-   subscip->set = scip->set;
+
+   SCIP_CALL( SCIPreadProb(subscip, SCIPgetProbName( scip ), NULL) );
+
    SCIP_CALL( SCIPtransformProb(subscip) );
    SCIP_CALL( SCIPpresolve(subscip) );
 
+   SCIP_CALL( SCIPsolve(subscip) );
+
    /* subscip contains no GCG-specific plugins */
+   /* @todo free all scip memory before changing pointer */
    scip = subscip;
 
-   BMScheckEmptyMemory();
    return SCIP_OKAY;
 }
 
