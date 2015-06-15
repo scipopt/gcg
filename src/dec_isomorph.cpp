@@ -549,6 +549,8 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
 
    int nconss = SCIPgetNConss(scip);
    int i;
+   int unique;
+
    colorinfo = new AUT_COLOR();
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
    SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
@@ -585,10 +587,9 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
       SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
 
       int pos = 0;
-      for( p = 0; p < nperms && pos < detectordata->numofsol; ++p,++pos)
+      for( p = 0; p < nperms && pos < detectordata->numofsol; ++p )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
-
 
          nmasterconss = 0;
          for( i = 0; i < nconss; i++ )
@@ -602,28 +603,53 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
          }
          SCIPdebugMessage("%d\n", nmasterconss);
 
-         SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[pos]), masterconss, nmasterconss) );
+         if( nmasterconss < SCIPgetNConss(scip) )
+         {
+            SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[pos]), masterconss, nmasterconss) );
 
-         SCIPfreeMemoryArray(scip, &masterconss);
+            SCIPfreeMemoryArray(scip, &masterconss);
+         }
+         else
+         {
+            SCIPfreeMemoryArray(scip, &masterconss);
+
+            continue;
+         }
+
+
          SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[pos], &newdecomp) );
          if( newdecomp != NULL )
          {
             SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[pos])) );
             (*decdecomps)[pos] = newdecomp;
          }
+
+         ++pos;
       }
       *ndecdecomps = pos;
 
-      int unique = DECfilterSimilarDecompositions(scip, *decdecomps, *ndecdecomps);
+      if( *ndecdecomps > 0 )
+      {
+         unique = DECfilterSimilarDecompositions(scip, *decdecomps, *ndecdecomps);
+      }
+      else
+      {
+         unique = *ndecdecomps;
+      }
 
       for( p = unique; p < *ndecdecomps; ++p )
       {
          SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[p])) );
          (*decdecomps)[p] = NULL;
       }
-      SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
 
       *ndecdecomps = unique;
+
+      if( *ndecdecomps > 0 )
+      {
+         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
+      }
+
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d decompositions.\n", *ndecdecomps);
    }
    else
