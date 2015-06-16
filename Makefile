@@ -69,6 +69,12 @@ ifeq ($(OPENMP),true)
 override PARASCIP=true
 endif
 
+# overriding SCIP LPS setting if compiled with CPLEXSOLVER
+ifeq ($(CPLEXSOLVER),true)
+override LPS =  cpx
+endif
+
+
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
@@ -106,7 +112,7 @@ endif
 # CPLEX pricing solver
 #-----------------------------------------------------------------------------
 
-ifeq ($(LPS),cpx)
+ifeq ($(CPLEXSOLVER),true)
 FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/cpxinc
 else
 FLAGS		+=	-DNCPLEXSOLVER
@@ -206,7 +212,7 @@ LIBOBJ		+=	bliss_automorph.o \
 			bliss.o
 endif
 
-ifeq ($(LPS),cpx)
+ifeq ($(CPLEXSOLVER),true)
 LIBOBJ		+=	solver_cplex.o
 endif
 
@@ -475,7 +481,7 @@ $(DIRECTORIES):
 
 .PHONY: touchexternal
 touchexternal: | $(LIBOBJDIR)
-ifneq ($(LAST_LPS),$(LPS))
+ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
 		@-touch $(SRCDIR)/solver_cplex.c
 endif
 ifneq ($(LAST_BLISS),$(BLISS))
@@ -524,6 +530,7 @@ endif
 		@echo "LAST_USRARFLAGS=$(USRARFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRDFLAGS=$(USRDFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_OPENMP=$(OPENMP)" >> $(LASTSETTINGS)
+		@echo "LAST_CPLEXSOLVER=$(CPLEXSOLVER)" >> $(LASTSETTINGS)
 
 .PHONY: $(SOFTLINKS)
 $(SOFTLINKS):
