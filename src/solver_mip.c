@@ -393,7 +393,7 @@ SCIP_RETCODE solveProblem(
       assert(success);
       assert(sol != NULL);
 
-      GCGcreateGcgColFromSol(pricingprob, &cols[0], probnr, sol, FALSE, SCIPinfinity(pricingprob) );
+      SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &cols[0], probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
       *ncols = 1;
       *status = SCIP_STATUS_OPTIMAL;
    }

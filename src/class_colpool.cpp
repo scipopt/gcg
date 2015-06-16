@@ -43,6 +43,19 @@
 #include "pub_gcgpqueue.h"
 #include "pub_gcgcol.h"
 
+#include <exception>
+
+#define SCIP_CALL_EXC(x)   do                                                                                  \
+                       {                                                                                      \
+                          SCIP_RETCODE _restat_;                                                              \
+                          if( (_restat_ = (x)) !=  SCIP_OKAY )                                                \
+                          {                                                                                   \
+                             SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
+                             throw std::exception();                                                          \
+                           }                                                                                  \
+                       }                                                                                      \
+                       while( FALSE )
+
 namespace gcg {
 
    Colpool::Colpool(
@@ -50,9 +63,9 @@ namespace gcg {
       int               agelimit_,           /**< maximum age a column can reach before it is deleted from the pool */
       int               maxncolssoft_,       /**< soft maximal number of columns stored in the pool at the same time */
       int               maxncolshard_        /**< hard maximal number of columns stored in the pool at the same time */
-      ):scip(scip_), pqueue(NULL), agelimit(agelimit_), maxncolssoft(maxncolssoft_), maxncolshard(maxncolshard_), nodenr(-1)
+      ):scip(scip_), pqueue((GCG_PQueue*) NULL), agelimit(agelimit_), maxncolssoft(maxncolssoft_), maxncolshard(maxncolshard_), nodenr(-1)
    {
-      GCGpqueueCreate(&pqueue, maxncolshard, sizeof(GCG_COL*), GCGcolCompRedcost);
+      SCIP_CALL_EXC( GCGpqueueCreate(&pqueue, maxncolshard, (SCIP_Real) sizeof(GCG_COL*), GCGcolCompRedcost) );
    }
    Colpool::~Colpool()
    {
@@ -66,7 +79,7 @@ namespace gcg {
 
       for( i = 0; i < ngcgcols; ++i )
       {
-         GCGfreeGcgCol(&(gcgcols[i]));
+         SCIP_CALL_EXC( GCGfreeGcgCol(&(gcgcols[i])) );
       }
       GCGpqueueFree(&pqueue);
       pqueue = NULL;
@@ -257,16 +270,16 @@ namespace gcg {
 
       if( maxncolssoft == 0 )
       {
-         deleteAllColumns();
+         SCIP_CALL( deleteAllColumns() );
 
          return SCIP_OKAY;
       }
 
       /* todo: get comperator of pqueue */
 
-      GCGpqueueSetComperator(pqueue, GCGcolCompAge);
+      SCIP_CALL( GCGpqueueSetComperator(pqueue, GCGcolCompAge) );
 
-      GCGpqueueResort(pqueue);
+      SCIP_CALL( GCGpqueueResort(pqueue) );
 
       while( GCGpqueueNElems(pqueue) > maxncolssoft )
       {
@@ -274,11 +287,11 @@ namespace gcg {
 
          gcgcol = (GCG_COL*) GCGpqueueRemove(pqueue);
 
-         GCGfreeGcgCol(&gcgcol);
+         SCIP_CALL( GCGfreeGcgCol(&gcgcol) );
       }
 
       /* todo: use previous comperator of pqueue */
-      GCGpqueueSetComperator(pqueue, GCGcolCompRedcost);
+      SCIP_CALL( GCGpqueueSetComperator(pqueue, GCGcolCompRedcost) );
 
       return SCIP_OKAY;
    }
@@ -296,7 +309,7 @@ namespace gcg {
 
       for(i = 0; i < ncols; ++i)
       {
-         GCGfreeGcgCol(&(cols[i]));
+         SCIP_CALL( GCGfreeGcgCol(&(cols[i])) );
       }
 
       GCGpqueueClear(pqueue);
@@ -307,7 +320,7 @@ namespace gcg {
    /**< resort columns (after reduce cost have changed) */
    SCIP_RETCODE Colpool::resortColumns()
    {
-      GCGpqueueResort(pqueue);
+      SCIP_CALL( GCGpqueueResort(pqueue) );
 
       return SCIP_OKAY;
    }
@@ -330,7 +343,7 @@ namespace gcg {
       }
       else if( nodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) )
       {
-         deleteAllColumns();
+         SCIP_CALL( deleteAllColumns() );
 
          nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
       }

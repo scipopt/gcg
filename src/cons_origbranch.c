@@ -389,13 +389,6 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
    return SCIP_OKAY;
 }
 
-/* define not used callbacks as NULL */
-#define consPrintOrigbranch NULL
-#define consParseOrigbranch NULL
-#define consGetVarsOrigbranch NULL
-#define consGetNVarsOrigbranch NULL
-
-
 /*
  * interface methods
  */

@@ -481,7 +481,7 @@ SCIP_RETCODE pqueue_get_min(
 
 static
 SCIP_DECL_HASHGETKEY(hashGetKeyVar)
-{
+{  /*lint !e613*/
    return elem;
 }
 
@@ -614,7 +614,7 @@ void fixVariable(
    assert(inst != NULL);
    assert(variable != NULL);
 
-   SCIPhashtableInsert(inst->varsfixed, variable);
+   SCIP_CALL( SCIPhashtableInsert(inst->varsfixed, variable) );
 }
 
 /** adds variable 'variable' to 'solution' */
@@ -628,7 +628,7 @@ void addVariableToSolution(
    assert(variable);
 
    /* no test whether the variable is already part of the solution */
-   SCIPhashtableInsert(solution, variable);
+   SCIP_CALL( SCIPhashtableInsert(solution, variable) );
 }
 
 /** checks if the row at position 'rowpos' is covered by fixed variables of 'inst' */
@@ -651,7 +651,7 @@ void markRowAsCovered(
    )
 {
    assert(inst != NULL);
-   SCIPhashtableInsert(inst->rowscovered, &core->constraintid[rowpos]);
+   SCIP_CALL( SCIPhashtableInsert(inst->rowscovered, &core->constraintid[rowpos]) );
 }
 
 /** returns the position of 'variable' within the array core->variables */
@@ -688,10 +688,12 @@ SCIP_RETCODE getConsVars(
    )
 {
    *success = FALSE;
+
    if( SCIPconsIsActive(core->constraints[pos]) == FALSE )
       return SCIP_OKAY;
 
    SCIP_CALL( SCIPgetConsNVars(scip, core->constraints[pos], nvars, success) );
+
    if( *success == FALSE )
       return SCIP_OKAY;
 
@@ -712,6 +714,7 @@ SCIP_RETCODE freeMemoryForSolution(
    SCIPfreeBufferArray(scip, &mult->lagrangiancostslocal);
    SCIPfreeBufferArray(scip, &mult->lagrangiancostsglobal);
    SCIPhashtableFree(&mult->xgreedylocal);
+
    return SCIP_OKAY;
 }
 

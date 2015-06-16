@@ -91,6 +91,7 @@ public:
       /*lint --e{64}*/
       SCIPfreeMemoryArray(scip_, &scip_name_);
       SCIPfreeMemoryArray(scip_, &scip_desc_);
+      scip_ = NULL;
    }
 
    /** destructor of dialog to free user data (called when SCIP is exiting)

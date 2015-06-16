@@ -41,9 +41,7 @@
 #include "gcg.h"
 #include "scip/def.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
 #include "blockmemshell/memory.h"
-#include "relax_gcg.h"
 
 #include <assert.h>
 
@@ -167,6 +165,7 @@ SCIP_RETCODE GCGpqueueInsert(
    )
 {
    int pos;
+   int parentpos;
 
    assert(pqueue != NULL);
    assert(pqueue->len >= 0);
@@ -176,11 +175,13 @@ SCIP_RETCODE GCGpqueueInsert(
 
    /* insert element as leaf in the tree, move it towards the root as long it is better than its parent */
    pos = pqueue->len;
+   parentpos = PQ_PARENT(pos);
    pqueue->len++;
-   while( pos > 0 && (*pqueue->ptrcomp)(elem, pqueue->slots[PQ_PARENT(pos)]) < 0 )
+   while( pos > 0 && (*pqueue->ptrcomp)(elem, pqueue->slots[parentpos]) < 0 )
    {
-      pqueue->slots[pos] = pqueue->slots[PQ_PARENT(pos)];
-      pos = PQ_PARENT(pos);
+      pqueue->slots[pos] = pqueue->slots[parentpos];
+      pos = parentpos;
+      parentpos = PQ_PARENT(pos);
    }
    pqueue->slots[pos] = elem;
 

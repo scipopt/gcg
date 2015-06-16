@@ -378,8 +378,8 @@ SCIP_RETCODE SCIPincludeSepaMaster(
          sepaExeclpMaster, sepaExecsolMaster,
          sepadata) );
 
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/master/enable", "enable master separator",
-         &(sepadata->enable), FALSE, TRUE, NULL, NULL);
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/master/enable", "enable master separator",
+         &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -443,7 +443,6 @@ SCIP_ROW** GCGsepaGetMastercuts(
 }
 
 /** adds given original and master cut to master separator data */
-extern
 SCIP_RETCODE GCGsepaAddMastercuts(
    SCIP*                scip,               /**< SCIP data structure */
    SCIP_ROW*            origcut,            /**< pointer to orginal cut */
