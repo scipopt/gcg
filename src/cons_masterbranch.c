@@ -520,9 +520,6 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
          if( !ismastervarrelevant )
             continue;
 
-         assert(norigvars > 0 && origvars != NULL);
-         assert(origvars[0] != NULL);
-
          /* iterate over global bound changes on the original variables
           * that have not yet been checked for the master variables
           */
@@ -550,6 +547,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
             }
             assert(bndchgblocknr < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
             assert(bndchgorigvars != NULL);
+            assert(origvars != NULL);
 
             /* The bound change is only relevant for the master variable if either
              *  - the bound change was performed in the same block as the master variable, or

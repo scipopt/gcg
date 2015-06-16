@@ -63,7 +63,7 @@ int GCGmajorVersion(void)
 static
 int GCGminorVersion(void)
 {
-   return (GCG_VERSION/10) % 10;
+   return (GCG_VERSION/10) % 10; /*lint !e778*/
 }
 
 /** returns GCG technical version */
