@@ -520,6 +520,9 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
          if( !ismastervarrelevant )
             continue;
 
+         assert(norigvars > 0 && origvars != NULL);
+         assert(origvars[0] != NULL);
+
          /* iterate over global bound changes on the original variables
           * that have not yet been checked for the master variables
           */
