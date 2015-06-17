@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1614,7 +1614,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
 
    enableppcuts = FALSE;
-   SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts);
+   SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
 
    /* create the pricing problems */
    for( i = 0; i < npricingprobs; i++ )
@@ -1814,14 +1814,31 @@ SCIP_RETCODE solveDiagonalBlocks(
 
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Solving block %i.\n", i+1);
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+
       /* give the pricing problem 2% more time then the original scip has left */
       if( SCIPgetStage(relaxdata->pricingprobs[i]) > SCIP_STAGE_PROBLEM )
       {
-         pricingtimelimit = MIN(SCIPinfinity(relaxdata->pricingprobs[i]), (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(relaxdata->pricingprobs[i]));
+         if( SCIPisInfinity(scip, timelimit) )
+         {
+            pricingtimelimit = SCIPinfinity(relaxdata->pricingprobs[i]);
+         }
+         else
+         {
+            pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(relaxdata->pricingprobs[i]);
+            pricingtimelimit = MIN(SCIPinfinity(relaxdata->pricingprobs[i]), pricingtimelimit); /*lint !e666*/
+         }
       }
       else
       {
-         pricingtimelimit = MIN(SCIPinfinity(relaxdata->pricingprobs[i]), (timelimit - SCIPgetSolvingTime(scip)) * 1.02);
+         if( SCIPisInfinity(scip, timelimit) )
+         {
+            pricingtimelimit = SCIPinfinity(relaxdata->pricingprobs[i]);
+         }
+         else
+         {
+            pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02;
+            pricingtimelimit = MIN(SCIPinfinity(relaxdata->pricingprobs[i]), pricingtimelimit); /*lint !e666*/
+         }
       }
       SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit) );
 

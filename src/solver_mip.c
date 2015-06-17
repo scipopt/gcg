@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -393,7 +393,7 @@ SCIP_RETCODE solveProblem(
       assert(success);
       assert(sol != NULL);
 
-      GCGcreateGcgColFromSol(pricingprob, &cols[0], probnr, sol, FALSE, SCIPinfinity(pricingprob) );
+      SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &cols[0], probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
       *ncols = 1;
       *status = SCIP_STATUS_OPTIMAL;
    }

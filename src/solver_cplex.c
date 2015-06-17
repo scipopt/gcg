@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -59,8 +59,8 @@
 
 #define SOLVER_NAME          "cplex"
 #define SOLVER_DESC          "cplex solver for pricing problems"
-#define SOLVER_PRIORITY      1010
-#define SOLVER_ENABLED        FALSE  /**< indicates whether the solver should be enabled */
+#define SOLVER_PRIORITY       100
+#define SOLVER_ENABLED        TRUE  /**< indicates whether the solver should be enabled */
 
 #define DEFAULT_CHECKSOLS     TRUE   /**< should solutions of the pricing MIPs be checked for duplicity? */
 #define DEFAULT_THREADS       1      /**< number of threads the CPLEX pricing solver is allowed to use (0: automatic) */

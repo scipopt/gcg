@@ -1,15 +1,27 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program and library             */
+/*                  This file is part of the program                         */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/*    Copyright (C) 2002-2012 Konrad-Zuse-Zentrum                            */
-/*                            fuer Informationstechnik Berlin                */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/*  SCIP is distributed under the terms of the ZIB Academic License.         */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
 /*                                                                           */
-/*  You should have received a copy of the ZIB Academic License              */
-/*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -204,7 +216,7 @@ SCIP_RETCODE initProbingObjWithOrigObj(
       if( enableobj )
          newobj = objfactor * SCIPvarGetObj(origvar);
 
-      SCIPchgVarObjProbing(origscip, origvar, newobj);
+      SCIP_CALL( SCIPchgVarObjProbing(origscip, origvar, newobj) );
    }
    return SCIP_OKAY;
 }
@@ -239,7 +251,7 @@ SCIP_RETCODE chgProbingObjAddingOrigObj(
 
       newobj = SCIPgetVarObjProbing(origscip, origvar) + (objfactor * SCIPvarGetObj(origvar))/ objdivisor ;
 
-      SCIPchgVarObjProbing(origscip, origvar, newobj);
+      SCIP_CALL( SCIPchgVarObjProbing(origscip, origvar, newobj) );
    }
    return SCIP_OKAY;
 }
@@ -333,13 +345,13 @@ SCIP_RETCODE initProbingObjUsingVarBounds(
          newobj = 0.0;
       }
 
-      newobj = SCIPgetObjsense(origscip) * newobj;
+      newobj = newobj * (int) SCIPgetObjsense(origscip);
 
       /* if objective row is enabled consider also the original objective value */
       if( enableobj )
          newobj = newobj + SCIPvarGetObj(origvar);
 
-      SCIPchgVarObjProbing(origscip, origvar, objfactor*newobj);
+      SCIP_CALL( SCIPchgVarObjProbing(origscip, origvar, objfactor*newobj) );
    }
 
    return SCIP_OKAY;
@@ -469,9 +481,9 @@ SCIP_RETCODE chgProbingObjUsingRows(
          obj = SCIPgetVarObjProbing(origscip, vars[j]);
          objadd = (factor * vals[j]) / norm;
 
-         objadd = SCIPgetObjsense(origscip) * objadd;
+         objadd = objadd * (int) SCIPgetObjsense(origscip);
 
-         SCIPchgVarObjProbing(origscip, vars[j], obj + (objfactor * objadd) / objdivisor);
+         SCIP_CALL( SCIPchgVarObjProbing(origscip, vars[j], obj + (objfactor * objadd) / objdivisor) );
       }
    }
 
@@ -979,7 +991,7 @@ SCIP_RETCODE initGenconv(
    int                  nbasis,             /**< rank of constraint matrix */
    SCIP_Real*           convex              /**< pointer to store convex combination coefficient */
 )
-{
+{  /*lint --e{715}*/
 #ifdef GSL
    int rank;
 
@@ -996,7 +1008,6 @@ SCIP_RETCODE initGenconv(
       "or compile with GSL=true and include Gnu Scientific Library\n");
    *convex = sepadata->objconvex;
 #endif
-
 
    return SCIP_OKAY;
 }
@@ -1235,7 +1246,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
                SCIP_CALL( initGenconv(origscip, sepadata, origsol, nbasis, &genconvex) );
 
-               sepadata->posslackexp = (int) SCIPceil(origscip, factor/(1.0 - genconvex)) + 0.5;
+               sepadata->posslackexp = (int) (SCIPceil(origscip, factor/(1.0 - genconvex)) + 0.5);
 
                SCIPdebugMessage("exponent = %d\n", sepadata->posslackexp);
 
@@ -1333,7 +1344,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       if( cutoff )
       {
          *result = SCIP_CUTOFF;
-         SCIPendProbing(origscip);
+         SCIP_CALL( SCIPendProbing(origscip) );
 
          /* disable separating again */
          SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_OFF, TRUE) );
@@ -1479,7 +1490,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    }
 
    /* end diving */
-   SCIPendProbing(origscip);
+   SCIP_CALL( SCIPendProbing(origscip) );
 
    if( SCIPgetNCuts(scip) > 0 )
    {
@@ -1543,43 +1554,43 @@ SCIP_RETCODE SCIPincludeSepaBasis(
          sepadata) );
 
    /* add basis separator parameters */
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enable", "is basis separator enabled?",
-         &(sepadata->enable), FALSE, TRUE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableobj", "is objective constraint of separator enabled?",
-         &(sepadata->enableobj), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableobjround", "round obj rhs/lhs of obj constraint if obj is int?",
-         &(sepadata->enableobjround), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppcuts", "add cuts generated during pricing to newconss array?",
-         &(sepadata->enableppcuts), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjconss", "is objective constraint for redcost of each pp of "
-      "separator enabled?", &(sepadata->enableppobjconss), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjcg", "is objective constraint for redcost of each pp during "
-      "pricing of separator enabled?", &(sepadata->enableppobjcg), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/genobjconvex", "generated obj convex dynamically",
-         &(sepadata->genobjconvex), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableposslack", "should positive slack influence the probing objective "
-      "function?", &(sepadata->enableposslack), FALSE, FALSE, NULL, NULL);
-   SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexp", "exponent of positive slack usage",
-         &(sepadata->posslackexp), FALSE, 1, 1, INT_MAX, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexpgen", "automatically generated exponent?",
-            &(sepadata->posslackexpgen), FALSE, FALSE, NULL, NULL);
-   SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexpgenfactor", "factor for automatically generated exponent",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enable", "is basis separator enabled?",
+         &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableobj", "is objective constraint of separator enabled?",
+         &(sepadata->enableobj), FALSE, FALSE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableobjround", "round obj rhs/lhs of obj constraint if obj is int?",
+         &(sepadata->enableobjround), FALSE, FALSE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppcuts", "add cuts generated during pricing to newconss array?",
+         &(sepadata->enableppcuts), FALSE, FALSE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjconss", "is objective constraint for redcost of each pp of "
+      "separator enabled?", &(sepadata->enableppobjconss), FALSE, FALSE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableppobjcg", "is objective constraint for redcost of each pp during "
+      "pricing of separator enabled?", &(sepadata->enableppobjcg), FALSE, FALSE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/genobjconvex", "generated obj convex dynamically",
+         &(sepadata->genobjconvex), FALSE, FALSE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/enableposslack", "should positive slack influence the probing objective "
+      "function?", &(sepadata->enableposslack), FALSE, FALSE, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexp", "exponent of positive slack usage",
+         &(sepadata->posslackexp), FALSE, 1, 1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexpgen", "automatically generated exponent?",
+            &(sepadata->posslackexpgen), FALSE, FALSE, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/basis/posslackexpgenfactor", "factor for automatically generated exponent",
             &(sepadata->posslackexpgenfactor), FALSE, 0.1, SCIPepsilon(GCGmasterGetOrigprob(scip)),
-            SCIPinfinity(GCGmasterGetOrigprob(scip)), NULL, NULL);
-   SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/basis/objconvex", "convex combination factor",
-         &(sepadata->objconvex), FALSE, 1.0, 0.0, 1.0, NULL, NULL);
-   SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/paramsetting", "parameter returns which parameter setting is used for "
-      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 1, 0, 2, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobj", "parameter returns if basis is searched with different objective",
-      &(sepadata->chgobj), FALSE, TRUE, NULL, NULL);
-   SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/iterations", "parameter returns if number new rows adding"
-      "iterations (rows just cut off probing lp sol)", &(sepadata->iterations), FALSE, 100, 1, 10000000 , NULL, NULL);
-   SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/mincuts", "parameter returns number of minimum cuts needed to "
-      "return *result = SCIP_Separated", &(sepadata->mincuts), FALSE, 1, 1, 100, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobjallways", "parameter returns if obj is changed not only in the "
-      "first iteration", &(sepadata->chgobjallways), FALSE, FALSE, NULL, NULL);
-   SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/forcecuts", "parameter returns if cuts are forced to enter the LP ",
-      &(sepadata->forcecuts), FALSE, FALSE, NULL, NULL);
+            SCIPinfinity(GCGmasterGetOrigprob(scip)), NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/basis/objconvex", "convex combination factor",
+         &(sepadata->objconvex), FALSE, 1.0, 0.0, 1.0, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/paramsetting", "parameter returns which parameter setting is used for "
+      "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 1, 0, 2, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobj", "parameter returns if basis is searched with different objective",
+      &(sepadata->chgobj), FALSE, TRUE, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/iterations", "parameter returns if number new rows adding"
+      "iterations (rows just cut off probing lp sol)", &(sepadata->iterations), FALSE, 100, 1, 10000000 , NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/basis/mincuts", "parameter returns number of minimum cuts needed to "
+      "return *result = SCIP_Separated", &(sepadata->mincuts), FALSE, 1, 1, 100, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/chgobjallways", "parameter returns if obj is changed not only in the "
+      "first iteration", &(sepadata->chgobjallways), FALSE, FALSE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/basis/forcecuts", "parameter returns if cuts are forced to enter the LP ",
+      &(sepadata->forcecuts), FALSE, FALSE, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -1662,7 +1673,6 @@ int GCGsepaBasisGetNMastercuts(
 }
 
 /** transforms cut in pricing variables to cut in original variables and adds it to newcuts array */
-extern
 SCIP_RETCODE GCGsepaBasisAddPricingCut(
    SCIP*                scip,
    int                  ppnumber,

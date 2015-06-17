@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -255,8 +255,8 @@ void adjlistRemoveEntry(
 
    for( i = pos; i < adjlist->nconss-1; ++i )
    {
-      adjlist->conss[i] = adjlist->conss[i+1];
-      adjlist->weights[i] = adjlist->weights[i+1];
+      adjlist->conss[i] = adjlist->conss[i+1]; /*lint !e679*/
+      adjlist->weights[i] = adjlist->weights[i+1]; /*lint !e679*/
    }
    --adjlist->nconss;
 
@@ -324,7 +324,7 @@ SCIP_RETCODE copyAdjlist(
 
    if( linkadjlist != NULL && cost > 0 )
    {
-      adjlistIncreaseEntry(scip, linkadjlist, sourcecons, cost);
+      SCIP_CALL( adjlistIncreaseEntry(scip, linkadjlist, sourcecons, cost) );
    }
 
    return SCIP_OKAY;
@@ -501,7 +501,7 @@ SCIP_RETCODE buildNewAdjacencyList(
       /* free unnecessary adjacency lists */
       for( i = subgraph->nconss; i < subgraph->nconss + nconsslink - 1; ++i )
       {
-         freeAdjlist(scip, &subgraph->adjlists[i]);
+         SCIP_CALL( freeAdjlist(scip, &subgraph->adjlists[i]) );
       }
    }
    /* If there are no linking constraints, just copy the vertices (constraints) and edges */
@@ -539,7 +539,7 @@ SCIP_RETCODE freeGraph(
 
    for( i = 0; i < nconss; ++i )
    {
-      freeAdjlist(scip, &detectordata->graphs[pos]->adjlists[i]);
+      SCIP_CALL( freeAdjlist(scip, &detectordata->graphs[pos]->adjlists[i]) );
    }
    SCIPfreeMemoryArray(scip, &detectordata->graphs[pos]->adjlists);
    SCIPhashmapFree(&detectordata->graphs[pos]->constopos);
@@ -561,7 +561,7 @@ SCIP_RETCODE allocateGraph(
 {
    int i;
 
-   SCIP_CALL( SCIPallocMemory(scip, &detectordata->graphs[pos]) );
+   SCIP_CALL( SCIPallocMemory(scip, &detectordata->graphs[pos]) ); /*lint !e866*/
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs[pos]->conss, nconss) );
    SCIP_CALL( SCIPhashmapCreate(&detectordata->graphs[pos]->constopos, SCIPblkmem(scip), nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs[pos]->adjlists, nconss) );
@@ -1446,7 +1446,7 @@ SCIP_RETCODE applyStoerWagner(
       /* connect last and nexttolast */
       for( j = 0; j < adjlists[lastpos]->nconss; ++j )
       {
-         int idx = (int) (size_t) SCIPhashmapGetImage(graph->constopos, adjlists[lastpos]->conss[j]);
+         int idx = (int) (size_t) SCIPhashmapGetImage(graph->constopos, adjlists[lastpos]->conss[j]); /*lint !e507*/
          assert(!merged[idx]);
 
          if( adjlists[lastpos]->conss[j] != nexttolast )
@@ -1520,7 +1520,7 @@ SCIP_RETCODE applyStoerWagner(
    SCIPfreeBufferArray(scip, &merged);
    for( i = 0; i < graph->nconss; ++i )
    {
-      freeAdjlist(scip, &adjlists[i]);
+      SCIP_CALL( freeAdjlist(scip, &adjlists[i]) );
       SCIPfreeMemoryArray(scip, &(mergedconss[i]));
    }
    SCIPfreeBlockMemoryArrayNull(scip, &adjlists, graph->nconss);
@@ -1862,22 +1862,24 @@ DEC_DECL_INITDETECTOR(initCutpacking)
       ncurvars = GCGconsGetNVars(scip, detectordata->graphs[0]->conss[i]);
       if( ncurvars > 0 )
       {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip,&curvars,ncurvars) );
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip,detectordata->graphs[0]->conss[i], curvars, ncurvars) );
-      }
-      for( j = 0; j < ncurvars; ++j )
-      {
-         if( GCGisVarRelevant(curvars[j]) && GCGisVarRelevant(curvars[j]) )
+
+         for( j = 0; j < ncurvars; ++j )
          {
-            int varpos;
+            if( GCGisVarRelevant(curvars[j]) && GCGisVarRelevant(curvars[j]) )
+            {
+               int varpos;
 
-            varpos = (int) (size_t) SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(curvars[j])); /*lint !e507*/
+               varpos = (int) (size_t) SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(curvars[j])); /*lint !e507*/
 
-            (varinconss[varpos])[nvarinconss[varpos]] = detectordata->graphs[0]->conss[i];
-            ++nvarinconss[varpos];
+               (varinconss[varpos])[nvarinconss[varpos]] = detectordata->graphs[0]->conss[i];
+               ++nvarinconss[varpos];
+            }
          }
+
+         SCIPfreeBlockMemoryArrayNull(scip, &curvars, ncurvars);
       }
-      SCIPfreeBlockMemoryArrayNull(scip, &curvars, ncurvars);
    }
 
    return SCIP_OKAY;

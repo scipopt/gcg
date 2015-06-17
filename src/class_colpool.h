@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -32,8 +32,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef CLASS_COLPOOL_H_
-#define CLASS_COLPOOL_H_
+#ifndef GCG_CLASS_COLPOOL_H__
+#define GCG_CLASS_COLPOOL_H__
 
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
@@ -44,7 +44,8 @@
 namespace gcg {
 
 class Colpool
-{
+{   /*lint -esym(1712,Colpool)*/
+
 private:
    SCIP*                scip;               /**< SCIP data structure */
    GCG_PQUEUE*          pqueue;             /**< priority queue for storing columns */
@@ -54,6 +55,7 @@ private:
    int                  nodenr;             /**< node at which columns in colpool respect branching decisions */
 
 public:
+
    /** constructor */
    Colpool(
       SCIP*             scip,               /**< SCIP data structure */
@@ -61,7 +63,8 @@ public:
       int               maxncolssoft,       /**< soft maximal number of columns stored in the pool at the same time */
       int               maxncolshard        /**< hard maximal number of columns stored in the pool at the same time */
       );
-   virtual ~Colpool();
+
+   ~Colpool();
 
    /** add gcg column to column pool */
    SCIP_RETCODE addCol(
@@ -128,4 +131,4 @@ private:
 };
 
 } /* namespace gcg */
-#endif /* CLASS_COLPOOL_H_ */
+#endif /* GCG_CLASS_COLPOOL_H__ */

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1093,7 +1093,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraints(
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
 
-   SCIP_CALL( SCIPallocBufferArray(scip_, &mastercoefs, nmasterconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip_, &mastercoefs, nmasterconss) ); /*lint !e530*/
    BMSclearMemoryArray(mastercoefs, nmasterconss);
 
    /* compute coef of the variable in the master constraints */
@@ -1520,16 +1520,16 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
 
       if( !SCIPisSumNegative(scip, redcost) )
       {
-         SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%d) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
+         SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%ud) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
          *added = FALSE;
 
          return SCIP_OKAY;
       }
-      SCIPdebugMessage("found var with redcost %g (objvalue=%g, dualsol=%g, ray=%d)\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
+      SCIPdebugMessage("found var with redcost %g (objvalue=%g, dualsol=%g, ray=%ud)\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
    }
    else
    {
-      SCIPdebugMessage("force var (objvalue=%g, dualsol=%g, ray=%d)\n",  objvalue, pricerdata->dualsolconv[prob], solisray);
+      SCIPdebugMessage("force var (objvalue=%g, dualsol=%g, ray=%ud)\n",  objvalue, pricerdata->dualsolconv[prob], solisray);
    }
 
    *added = TRUE;
@@ -1661,16 +1661,16 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
 
       if( !SCIPisSumNegative(scip, redcost) )
       {
-         SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%d) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], isray);
+         SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%ud) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], isray);
          *added = FALSE;
 
          return SCIP_OKAY;
       }
-      SCIPdebugMessage("found var with redcost %g (objvalue=%g, dualsol=%g, ray=%d)\n", redcost, objvalue, pricerdata->dualsolconv[prob], isray);
+      SCIPdebugMessage("found var with redcost %g (objvalue=%g, dualsol=%g, ray=%ud)\n", redcost, objvalue, pricerdata->dualsolconv[prob], isray);
    }
    else
    {
-      SCIPdebugMessage("force var (objvalue=%g, dualsol=%g, ray=%d)\n",  objvalue, pricerdata->dualsolconv[prob], isray);
+      SCIPdebugMessage("force var (objvalue=%g, dualsol=%g, ray=%ud)\n",  objvalue, pricerdata->dualsolconv[prob], isray);
    }
 
    *added = TRUE;
@@ -2235,7 +2235,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    }
 
    enableppcuts = FALSE;
-   SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppcuts", &enableppcuts);
+   SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppcuts", &enableppcuts) );
    /** add pool cuts to sepa basis */
    if(enableppcuts && SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_))
    {
@@ -2262,7 +2262,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    }
 
    /* todo: We avoid checking for feasibility of the columns using this hack */
-   colpool->updateNode();
+   SCIP_CALL( colpool->updateNode() );
 
    colpoolupdated = FALSE;
 
@@ -2289,9 +2289,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( !colpoolupdated )
       {
          /* update reduced cost of cols in colpool */
-         updateRedcostColumnPool(pricetype);
+         SCIP_CALL( updateRedcostColumnPool(pricetype) );
 
-         colpool->resortColumns();
+         SCIP_CALL( colpool->resortColumns() );
 
          colpoolupdated = TRUE;
       }
@@ -2406,7 +2406,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals) );
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
 
-            SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg);
+            SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg) );
             if(enableppobjcg && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
             {
                for(i = 0; i < pricerdata->npricingprobs; ++i)
@@ -2461,7 +2461,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          if(stabilization->isInMispricingSchedule())
             stabilization->disablingMispricingSchedule();
 
-         SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg);
+         SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg) );
 
          if(enableppobjcg && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
          {
@@ -2486,7 +2486,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
                success = FALSE;
 
-               colpool->addCol(cols[i][j], &success);
+               SCIP_CALL( colpool->addCol(cols[i][j], &success) );
 
                if( !success )
                {
@@ -2531,7 +2531,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             SCIPdebugMessage("Solution %d/%d of prob %d: ", j+1, ncols[prob], prob);
 
-            colpool->addCol(cols[prob][j], &added);
+            SCIP_CALL( colpool->addCol(cols[prob][j], &added) );
 
             if( !added )
             {
@@ -2557,9 +2557,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       SCIPfreeMemoryArray(scip_, &(cols[i]));
    }
 
-   priceColumnPool(pricetype, &nfoundvars);
+   SCIP_CALL( priceColumnPool(pricetype, &nfoundvars) );
 
-   colpool->deleteOldestColumns();
+   SCIP_CALL( colpool->deleteOldestColumns() );
 
    SCIPfreeBlockMemoryArray(scip_, &cols, pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip_, &ncols, pricerdata->npricingprobs);
@@ -2567,7 +2567,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIPfreeBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs);
 
    enableppcuts = FALSE;
-   SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppcuts", &enableppcuts);
+   SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppcuts", &enableppcuts) );
+
    /** add pool cuts to sepa basis */
    if(enableppcuts && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_))
    {
@@ -2599,21 +2600,14 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_CALL( freePricingProblems() );
    *pnfoundvars = nfoundvars;
 
-   if( result != NULL )
+   if( infeasible )
    {
-      if( infeasible )
-      {
-         *result = SCIP_SUCCESS;
-      }
-      else if( *pnfoundvars > 0)
-         *result = SCIP_SUCCESS;
-      else if( pricinghaserror )
-         *result = SCIP_DIDNOTRUN;
+      *result = SCIP_SUCCESS;
    }
+   else if( *pnfoundvars > 0)
+      *result = SCIP_SUCCESS;
    else if( pricinghaserror )
-   {
-      SCIPwarningMessage(scip_, "There occurred an error in Farkas pricing. This might lead to wrong solutions!\n");
-   }
+      *result = SCIP_DIDNOTRUN;
 
    return SCIP_OKAY;
 }
@@ -2640,7 +2634,7 @@ SCIP_RETCODE ObjPricerGcg::updateRedcostColumnPool(
 
       redcost = computeRedCostGcgCol(pricetype, col, NULL);
 
-      GCGcolUpdateRedcost(col, redcost, TRUE);
+      SCIP_CALL( GCGcolUpdateRedcost(col, redcost, TRUE) );
    }
 
    return SCIP_OKAY;
@@ -2662,7 +2656,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
    npricingprobs = pricerdata->npricingprobs;
    nfoundvars = 0;
 
-   SCIP_CALL( SCIPallocBufferArray(scip_, &nfoundvarsprob, npricingprobs) );
+   SCIP_CALL( SCIPallocBufferArray(scip_, &nfoundvarsprob, npricingprobs) );  /*lint !e530*/
 
    for( i = 0; i < npricingprobs; ++i )
    {
@@ -2689,7 +2683,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
          SCIP_Bool added;
          GCG_COL* gcgcol;
 
-         colpool->getBestCol(&gcgcol);
+         SCIP_CALL( colpool->getBestCol(&gcgcol) );
 
          /* todo: get column and add it */
          SCIP_CALL( createNewMasterVarFromGcgCol(scip_, pricetype, gcgcol, FALSE, &added, NULL) );
@@ -2719,7 +2713,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
 }
 
 /** set pricing objectives */
-extern
+extern "C"
 SCIP_RETCODE GCGsetPricingObjs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_Real*            dualsolconv         /**< array of dual solutions corresponding to convexity constraints */
@@ -2738,7 +2732,7 @@ SCIP_RETCODE GCGsetPricingObjs(
 
   pricer->pricerdata->stabilization = FALSE;
 
-  pricer->setPricingObjs(pricer->getReducedCostPricingNonConst(), FALSE);
+  SCIP_CALL( pricer->setPricingObjs(pricer->getReducedCostPricingNonConst(), FALSE) );
 
   if(dualsolconv != NULL)
   {
@@ -3037,7 +3031,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    SCIP_CALL( stabilization->setNLinkingconss(GCGgetNVarLinkingconss(origprob)) );
    SCIP_CALL( stabilization->setNConvconss(GCGgetNPricingprobs(origprob)) );
 
-
    createColpool();
 
    SCIP_CALL( SCIPactivateEventHdlrDisplay(scip_) );
@@ -3245,8 +3238,11 @@ void ObjPricerGcg::createColpool()
    int hardlimit;
    int maxvarsround;
 
-   maxvarsround = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()),
-                   reducedcostpricing->getMaxvarsroundroot());
+   assert(farkaspricing != NULL);
+   assert(reducedcostpricing != NULL);
+   assert(pricerdata != NULL);
+
+   maxvarsround = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()), reducedcostpricing->getMaxvarsroundroot()); /*lint !e666*/
 
    actualsize = maxvarsround * pricerdata->npricingprobsnotnull * pricerdata->colpoolsize;
 
@@ -3265,7 +3261,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 origprob            /**< SCIP data structure of the original problem */
    )
-{/*lint -esym(429,pricer) */
+{  /*lint -esym(429,pricer) */
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata = NULL;
 
@@ -3774,10 +3770,10 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    norigvars = SCIPgetNVars(origprob);
 
    /* allocate memory for storing variables and solution values from the solution */
-   SCIP_CALL( SCIPallocBufferArray(scip, &origsolvals, norigvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars, pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals, pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &npricingvars, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &origsolvals, norigvars) ); /*lint !e530*/
+   SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars, pricerdata->npricingprobs) ); /*lint !e530*/
+   SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals, pricerdata->npricingprobs) ); /*lint !e530*/
+   SCIP_CALL( SCIPallocBufferArray(scip, &npricingvars, pricerdata->npricingprobs) ); /*lint !e530*/
 
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
@@ -3834,7 +3830,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
             {
                int* blocks;
                int nblocks = GCGlinkingVarGetNBlocks(origvars[i]);
-               SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nblocks) );
+               SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nblocks) ); /*lint !e530*/
                SCIP_CALL( GCGlinkingVarGetBlocks(origvars[i], nblocks, blocks) );
                for ( j = 0; j < nblocks; ++j)
                {
