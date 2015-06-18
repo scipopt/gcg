@@ -98,17 +98,17 @@ typedef struct
    int ncorevariables;              /**< number of core variables */
    SCIP_HASHMAP *mapvariables;      /**< maps variables-indices to [0, nvariables) in array 'variables' */
    SCIP_VAR **variables;            /**< all variables of the problem */
-   int *nvarconstraints;            /**< array that contains for each variable the number of constraints it is part of */
+   int *nvarconss;                  /**< array that contains for each variable the number of constraints it is part of */
    int nvariables;                  /**< total number of variables  */
    SCIP_Bool columnsavailable;      /**< if set then 'columns' contains the columns for all core variables */
    int **columns;                   /**< columns of core variables, NULL if not a core variable */
    SCIP_Bool rowsavailable;         /**< if set then 'rows' contains all rows reduced to core variables */
    int **rows;                      /**< rows that only contain core variables */
    int *nrowvars;                   /**< number of core variables a row contains */
-   int nconstraints;                /**< total number of constraints (including inactive ones) */
-   int nactiveconstraints;          /**< total number of active constraints for which the variables can be retrieved */
+   int nconss;                      /**< total number of constraints (including inactive ones) */
+   int nactiveconss;                /**< total number of active constraints for which the variables can be retrieved */
    int maxconstraintvariables;      /**< greatest number of variables some constraint contains */
-   SCIP_CONS **constraints;         /**< all constraints of the problem */
+   SCIP_CONS **conss;               /**< all constraints of the problem */
    int *constraintid;               /**< unique id for each constraint */
    SCIP_Real *delta;                /**< delta values of variables */
    int *delta_pos;
@@ -541,8 +541,8 @@ SCIP_RETCODE allocateMemoryForSolution(
 {
    int i;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &mult->u, core->nconstraints) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &mult->subgradient, core->nconstraints) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &mult->u, core->nconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &mult->subgradient, core->nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->lagrangiancostslocal, core->nvariables) );
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->lagrangiancostsglobal, core->nvariables) );
    SCIP_CALL( SCIPhashtableCreate(&mult->xgreedylocal, SCIPblkmem(scip), SCIPcalcHashtableSize(10), hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
@@ -553,7 +553,7 @@ SCIP_RETCODE allocateMemoryForSolution(
       mult->lagrangiancostsglobal[i] = 0.0;
    }
 
-   for( i = 0; i < core->nconstraints; i++ )
+   for( i = 0; i < core->nconss; i++ )
    {
       mult->u[i] = 0.0;
       mult->subgradient[i] = 0.0;
@@ -696,15 +696,15 @@ SCIP_RETCODE getConsVars(
 {
    *success = FALSE;
 
-   if( SCIPconsIsActive(core->constraints[pos]) == FALSE )
+   if( SCIPconsIsActive(core->conss[pos]) == FALSE )
       return SCIP_OKAY;
 
-   SCIP_CALL( SCIPgetConsNVars(scip, core->constraints[pos], nvars, success) );
+   SCIP_CALL( SCIPgetConsNVars(scip, core->conss[pos], nvars, success) );
 
    if( *success == FALSE )
       return SCIP_OKAY;
 
-   SCIP_CALL( SCIPgetConsVars(scip, core->constraints[pos], vars, core->maxconstraintvariables, success) );
+   SCIP_CALL( SCIPgetConsVars(scip, core->conss[pos], vars, core->maxconstraintvariables, success) );
 
    return SCIP_OKAY;
 }
@@ -775,8 +775,8 @@ SCIP_RETCODE copySolution(
 
    memcpy(dest->lagrangiancostslocal, source->lagrangiancostslocal, sizeof(*dest->lagrangiancostslocal) * core->nvariables);
    memcpy(dest->lagrangiancostsglobal, source->lagrangiancostsglobal, sizeof(*dest->lagrangiancostsglobal) * core->nvariables);
-   memcpy(dest->u, source->u, sizeof(*dest->u) * core->nconstraints);
-   memcpy(dest->subgradient, source->subgradient, sizeof(*dest->subgradient) * core->nconstraints);
+   memcpy(dest->u, source->u, sizeof(*dest->u) * core->nconss);
+   memcpy(dest->subgradient, source->subgradient, sizeof(*dest->subgradient) * core->nconss);
 
    for( i = 0; i < core->nvariables; i++ )
    {
@@ -877,9 +877,9 @@ SCIP_RETCODE initTentativeCore(
    SCIP_CALL( SCIPallocBufferArray(scip, &core->solgreedy, core->nvariables) );
    core->nsolgreedy = 0;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &core->nvarconstraints, core->nvariables) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &core->nvarconss, core->nvariables) );
    for( i = 0; i< core->nvariables; i++ )
-      core->nvarconstraints[i] = 0;
+      core->nvarconss[i] = 0;
 
    /* construct mapping of variable-indices to array 'variables' */
    for( i = 0; i < core->nvariables; i++ )
@@ -888,37 +888,37 @@ SCIP_RETCODE initTentativeCore(
       SCIP_CALL( SCIPhashmapInsert(core->mapvariables, (void *) ((size_t) (varidx + 1)), (void *) (size_t) i) );
    }
 
-   core->nactiveconstraints = 0;
+   core->nactiveconss = 0;
    core->maxconstraintvariables = 0;
-   core->nconstraints = SCIPgetNConss(scip);
-   core->constraints = SCIPgetConss(scip);
+   core->nconss = SCIPgetNConss(scip);
+   core->conss = SCIPgetConss(scip);
    core->ncorevariables = 0;
    core->listcorevariables = NULL;
-   SCIP_CALL( SCIPallocBufferArray(scip, &core->constraintid, core->nconstraints) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &core->constraintid, core->nconss) );
 
    SCIP_CALL( SCIPallocBufferArray(scip, &vars, core->nvariables) );
 
-   for( i = 0; i < core->nconstraints; i++ )
+   for( i = 0; i < core->nconss; i++ )
    {
       core->constraintid[i] = i;
-      if( SCIPconsIsActive(core->constraints[i]) == FALSE )
+      if( SCIPconsIsActive(core->conss[i]) == FALSE )
       {
-         SCIPdebugMessage("constraint %i (%s) is inactive\n", i, SCIPconsGetName(core->constraints[i]));
+         SCIPdebugMessage("constraint %i (%s) is inactive\n", i, SCIPconsGetName(core->conss[i]));
          continue;
       }
 
       /* get all variables that are part of this constraint */
-      SCIP_CALL( SCIPgetConsNVars(scip, core->constraints[i], &nvars, &success) );
+      SCIP_CALL( SCIPgetConsNVars(scip, core->conss[i], &nvars, &success) );
       if( success == FALSE )
       {
-         SCIPdebugMessage("constraint %i (%s): can't get number of variables\n", i, SCIPconsGetName(core->constraints[i]));
+         SCIPdebugMessage("constraint %i (%s): can't get number of variables\n", i, SCIPconsGetName(core->conss[i]));
          continue;
       }
 
-      SCIP_CALL( SCIPgetConsVars(scip, core->constraints[i], vars, core->nvariables, &success) );
+      SCIP_CALL( SCIPgetConsVars(scip, core->conss[i], vars, core->nvariables, &success) );
       if( success == FALSE )
       {
-         SCIPdebugMessage("constraint %i (%s): can't get variables\n", i, SCIPconsGetName(core->constraints[i]));
+         SCIPdebugMessage("constraint %i (%s): can't get variables\n", i, SCIPconsGetName(core->conss[i]));
          continue;
       }
 
@@ -938,10 +938,10 @@ SCIP_RETCODE initTentativeCore(
          }
 
          /* increase the number of constraints this variable is part of */
-         core->nvarconstraints[varpos]++;
+         core->nvarconss[varpos]++;
       }
 
-      core->nactiveconstraints++;
+      core->nactiveconss++;
    }
 
    /* create list of core variables, so it is easy to traverse them */
@@ -1010,11 +1010,11 @@ SCIP_RETCODE computeCoreRows(
    assert(core->rows == NULL);
 
    SCIP_CALL( SCIPallocBufferArray(scip, &vars, core->maxconstraintvariables) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &core->rows, core->nconstraints) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &core->nrowvars, core->nconstraints) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &core->rows, core->nconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &core->nrowvars, core->nconss) );
 
    /* iterate through list of constraints */
-   for( i = 0; i < core->nconstraints; i++ )
+   for( i = 0; i < core->nconss; i++ )
    {
       core->rows[i] = NULL;
       core->nrowvars[i] = 0;
@@ -1092,18 +1092,18 @@ SCIP_RETCODE computeCoreColumns(
          continue;
 
       /* only allocate memory of it is part of any constraints at all (this should always be the case for core variables) */
-      if( core->nvarconstraints[i] == 0 )
+      if( core->nvarconss[i] == 0 )
          continue;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &(core->columns[i]), core->nvarconstraints[i]) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &(core->columns[i]), core->nvarconss[i]) ); /*lint !e866*/
 
-      for( j = 0; j < core->nvarconstraints[i]; j++ )
+      for( j = 0; j < core->nvarconss[i]; j++ )
          core->columns[i][j] = -1;
    }
 
    SCIP_CALL( SCIPallocBufferArray(scip, &vars, core->maxconstraintvariables) );
 
-   for( i = 0; i < core->nconstraints; i++ )
+   for( i = 0; i < core->nconss; i++ )
    {
       SCIP_CALL( getConsVars(scip, core, i, vars, &nvars, &success) );
       if( success == FALSE )
@@ -1119,7 +1119,7 @@ SCIP_RETCODE computeCoreColumns(
             continue;
 
          /* add this constraint to the column of the variable */
-         for( k = 0; k < core->nvarconstraints[varpos]; k++ )
+         for( k = 0; k < core->nvarconss[varpos]; k++ )
          {
             /* find first position that is not used yet in column 'varpos' */
             if( core->columns[varpos][k] == -1 )
@@ -1146,11 +1146,11 @@ SCIP_RETCODE freeCore(
    assert(core != NULL);
    assert(core->corevariables != NULL);
    assert(core->mapvariables != NULL);
-   assert(core->nvarconstraints != NULL);
+   assert(core->nvarconss != NULL);
 
    SCIPhashtableFree(&core->corevariables);
    SCIPhashmapFree(&core->mapvariables);
-   SCIPfreeBufferArray(scip, &core->nvarconstraints);
+   SCIPfreeBufferArray(scip, &core->nvarconss);
    SCIPfreeBufferArray(scip, &core->constraintid);
    SCIPfreeBufferArray(scip, &core->delta);
    SCIPfreeBufferArray(scip, &core->delta_pos);
@@ -1173,7 +1173,7 @@ SCIP_RETCODE freeCore(
    {
       int i;
 
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          if( core->rows[i] )
             SCIPfreeBufferArray(scip, &core->rows[i]);
@@ -1238,7 +1238,7 @@ SCIP_RETCODE redefineCore(
    {
       recomputerows = TRUE;
 
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          if( core->rows[i] )
             SCIPfreeBufferArray(scip, &core->rows[i]);
@@ -1261,14 +1261,14 @@ SCIP_RETCODE redefineCore(
    /* pick the first 'SCP_CORE_TENT_SIZE'*m columns with lowest delta values to be in the core */
    for( i = 0; i < core->nvariables; i++ )
    {
-      if( i >= heurdata->param_core_tent_size * core->nactiveconstraints )
+      if( i >= heurdata->param_core_tent_size * core->nactiveconss )
          break;
 
       SCIP_CALL( SCIPhashtableInsert(core->corevariables, core->variables[core->delta_pos[i]]) );
    }
 
    /* then add the first 'SCP_CORE_TENT_SIZE' columns covering each row in increasing order of their delta values */
-   for( i = 0; i < core->nconstraints; i++ )
+   for( i = 0; i < core->nconss; i++ )
    {
       SCIP_Bool success = FALSE;
       int *cols = heurdata->rccols; /*[SCP_CORE_TENT_SIZE];*/
@@ -1378,7 +1378,7 @@ SCIP_RETCODE markRowsCoveredByFixedVariables(
             continue;
 
          /* this variable is fixed, so mark its rows as covered */
-         for( j = 0; j < core->nvarconstraints[corevar]; j++ )
+         for( j = 0; j < core->nvarconss[corevar]; j++ )
          {
             int rowidx = core->columns[corevar][j];
 
@@ -1394,8 +1394,8 @@ SCIP_RETCODE markRowsCoveredByFixedVariables(
 
       vars = heurdata->vars;
 
-      /* if the core columns are not available, iterate through list of constraints and test which constraints are covered */
-      for( i = 0; i < core->nconstraints; i++ )
+      /* if the core columns are not available, iterate through list of constraints and test which conss are covered */
+      for( i = 0; i < core->nconss; i++ )
       {
          SCIP_Bool success = FALSE;
 
@@ -1448,7 +1448,7 @@ SCIP_RETCODE checkSetCover(
    vars = heurdata->vars;
 
    /* iterate through all constraints and check whether each of them contains a variable that is part of the cover */
-   for( i = 0; i < core->nconstraints; i++ )
+   for( i = 0; i < core->nconss; i++ )
    {
       SCIP_Bool rowcovered = FALSE;
 
@@ -1504,17 +1504,17 @@ SCIP_RETCODE computeDelta(
    delta = core->delta;
    delta_pos = core->delta_pos;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &nvarcovering, core->nconstraints) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nvarcovering, core->nconss) );
    vars = heurdata->vars;
 
    /* compute nvarcovering[i] = 'number of columns covering row i' */
    if( core->rowsavailable )
    {
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          nvarcovering[i] = 0;
 
-         if( !SCIPconsIsActive(core->constraints[i]) )
+         if( !SCIPconsIsActive(core->conss[i]) )
             continue;
 
          for( j = 0; j < core->nrowvars[i]; j++ )
@@ -1527,7 +1527,7 @@ SCIP_RETCODE computeDelta(
    }
    else
    {
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          nvarcovering[i] = 0;
 
@@ -1560,7 +1560,7 @@ SCIP_RETCODE computeDelta(
       if( delta[i] < 0.0 )
          delta[i] = 0.0;
 
-      for( j = 0; j < core->nvarconstraints[i]; j++ )
+      for( j = 0; j < core->nvarconss[i]; j++ )
       {
          int rowpos = core->columns[i][j];
 
@@ -1577,7 +1577,7 @@ SCIP_RETCODE computeDelta(
    /* fix variables as long as the sum of their delta values is not greater than delta_max.
     * We assume that variables with small delta values are likely part of an optimal solution. */
    delta_sum = 0.0;
-   delta_max = core->nactiveconstraints * pi;
+   delta_max = core->nactiveconss * pi;
 
    SCIPhashtableRemoveAll(inst->varsfixed);
    inst->costsfixed = 0.0;
@@ -1633,18 +1633,18 @@ SCIP_RETCODE removeRedundantColumns(
 
    SCIP_CALL( SCIPallocBufferArray(scip, &costs, core->nvariables) );
    SCIP_CALL( SCIPallocBufferArray(scip, &varpos, core->nvariables) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nvarcovering, core->nconstraints) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nvarcovering, core->nconss) );
 
    vars = heurdata->vars;
 
    /* compute nvarcovering[i] = 'number of columns covering row i' */
    if( core->rowsavailable )
    {
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          nvarcovering[i] = 0;
 
-         if( SCIPconsIsActive(core->constraints[i]) == FALSE )
+         if( SCIPconsIsActive(core->conss[i]) == FALSE )
             continue;
 
          if( core->nrowvars[i] == 0 )
@@ -1662,7 +1662,7 @@ SCIP_RETCODE removeRedundantColumns(
    else
    {
       /* iterate through the constraints if the core rows are not available */
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          nvarcovering[i] = 0;
 
@@ -1708,7 +1708,7 @@ SCIP_RETCODE removeRedundantColumns(
       int vpos = varpos[i];
 
       /* we can only remove this variable if every column it covers is covered by another variable */
-      for( j = 0; j < core->nvarconstraints[vpos]; j++ )
+      for( j = 0; j < core->nvarconss[vpos]; j++ )
       {
          if( nvarcovering[core->columns[vpos][j]] == 1 )
          {
@@ -1722,7 +1722,7 @@ SCIP_RETCODE removeRedundantColumns(
          SCIP_CALL( SCIPhashtableRemove(solution, core->variables[vpos]) );
          *solcosts -= SCIPvarGetObj(core->variables[vpos]);
 
-         for( j = 0; j < core->nvarconstraints[vpos]; j++ )
+         for( j = 0; j < core->nvarconss[vpos]; j++ )
          {
             nvarcovering[core->columns[vpos][j]]--;
          }
@@ -1767,13 +1767,13 @@ SCIP_RETCODE greedySetCover(
    SCIPhashtableRemoveAll(greedyinst->rowscovered);
 
    /* count number of uncovered rows and add covered rows to 'greedyinst' */
-   for( i = 0; i < core->nconstraints; i++ )
+   for( i = 0; i < core->nconss; i++ )
    {
-      if( SCIPconsIsActive(core->constraints[i]) == FALSE )
+      if( SCIPconsIsActive(core->conss[i]) == FALSE )
          continue;
 
       /* this is actually necessary because there exist constraints where this fails, and we simply need to ignore them */
-      SCIP_CALL( SCIPgetConsNVars(scip, core->constraints[i], &nvars, &success) );
+      SCIP_CALL( SCIPgetConsNVars(scip, core->conss[i], &nvars, &success) );
       if( success == FALSE )
          continue;
 
@@ -1816,7 +1816,7 @@ SCIP_RETCODE greedySetCover(
       else if( isFixedVariable(inst, core->variables[varpos]) )
          continue;
 
-      for( j = 0; j < core->nvarconstraints[varpos]; j++ )
+      for( j = 0; j < core->nvarconss[varpos]; j++ )
       {
          if( !isRowCovered(core, greedyinst, core->columns[varpos][j]) )
          {
@@ -1854,7 +1854,7 @@ SCIP_RETCODE greedySetCover(
       colmu[mincolumn] = 0;
 
       /* mark all rows covered by this variable as covered and update scores of variables that are affected by this */
-      for( j = 0; j < core->nvarconstraints[mincolumn]; j++ )
+      for( j = 0; j < core->nvarconss[mincolumn]; j++ )
       {
          int columnpos = core->columns[mincolumn][j];
 
@@ -1928,9 +1928,9 @@ SCIP_RETCODE computeLocalLagrangianCosts(
 
    if( core->rowsavailable )
    {
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
-         if( SCIPconsIsActive(core->constraints[i]) == FALSE )
+         if( SCIPconsIsActive(core->conss[i]) == FALSE )
             continue;
 
          if( isRowCovered(core, inst, i) )
@@ -1945,7 +1945,7 @@ SCIP_RETCODE computeLocalLagrangianCosts(
    }
    else
    {
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          SCIP_Bool success;
 
@@ -1992,7 +1992,7 @@ SCIP_RETCODE computeGlobalLagrangianCosts(
 
    vars = heurdata->vars;
 
-   for( i = 0; i < core->nconstraints; i++ )
+   for( i = 0; i < core->nconss; i++ )
    {
       SCIP_Bool success = FALSE;
 
@@ -2063,11 +2063,11 @@ SCIP_RETCODE computeOptimalSolution(
    if( core->rowsavailable )
    {
       /* compute the subgradient */
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          mult->subgradient[i] = 0.0;
 
-         if( SCIPconsIsActive(core->constraints[i]) == FALSE )
+         if( SCIPconsIsActive(core->conss[i]) == FALSE )
             continue;
 
          if( isRowCovered(core, inst, i) )
@@ -2095,7 +2095,7 @@ SCIP_RETCODE computeOptimalSolution(
       /* the core rows are NOT available, so we need to iterate through the constraints */
       vars = heurdata->vars;
 
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          mult->subgradient[i] = 0.0;
 
@@ -2159,7 +2159,7 @@ SCIP_RETCODE subgradientOptimization(
    SCIP_CALL( copySolution(core, &last_mult, best_mult_lb) );
 
    /* permutate best u by multiplying each entry with a uniformly random value in the range [0.9, 1.1] */
-   for( i = 0; i < core->nconstraints; i++ )
+   for( i = 0; i < core->nconss; i++ )
    {
       if( !isRowCovered(core, inst, i) )
          last_mult.u[i] = SCIPgetRandomReal(0.9, 1.1, &heurdata->seed) * last_mult.u[i];
@@ -2171,19 +2171,19 @@ SCIP_RETCODE subgradientOptimization(
    bestub -= inst->costsfixed;
 
    /* maximum number of subgradient iterations */
-   max_iter = 10 * core->nconstraints;
+   max_iter = 10 * core->nconss;
 
    for( iter = 0; iter < max_iter; iter++ )
    {
       /* compute norm of the subgradient */
       norm = 0.0;
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
          norm = norm + last_mult.subgradient[i] * last_mult.subgradient[i]; /* we have subgradient[i] = 0.0 if row i is not to be considered */
 
       assert(!SCIPisZero(scip, norm));
 
       /* Held-Karp update */
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          SCIP_Real hk = last_mult.u[i] + lambda * (bestub - last_mult.lblagrangelocal) * last_mult.subgradient[i] / norm;  /*lint !e795*/
          next_mult.u[i] = 0.0;
@@ -2278,7 +2278,7 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
 
    if( core->columnsavailable == TRUE )
    {
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
          mult->u[i] = SCIP_REAL_MAX;
 
       for( i = 0; i < core->nvariables; i++ )
@@ -2292,12 +2292,12 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
             continue;
 
          /* count how many uncovered, active rows this column covers */
-         for( j = 0; j < core->nvarconstraints[i]; j++ )
+         for( j = 0; j < core->nvarconss[i]; j++ )
          {
             int colpos = core->columns[i][j];
 
             /* skip inactive constraints */
-            if( SCIPconsIsActive(core->constraints[colpos]) == FALSE )
+            if( SCIPconsIsActive(core->conss[colpos]) == FALSE )
                continue;
 
             /* skip covered rows */
@@ -2313,7 +2313,7 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
             SCIP_Real costs = SCIPvarGetObj(core->variables[i]) / ((SCIP_Real) nuncovered);
             int nvars;
 
-            for( j = 0; j < core->nvarconstraints[i]; j++ )
+            for( j = 0; j < core->nvarconss[i]; j++ )
             {
                int colpos = core->columns[i][j];
                SCIP_Bool success = FALSE;
@@ -2321,10 +2321,10 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
                if( isRowCovered(core, inst, colpos) )
                   continue;
 
-               if( SCIPconsIsActive(core->constraints[colpos]) == FALSE )
+               if( SCIPconsIsActive(core->conss[colpos]) == FALSE )
                   continue;
 
-               SCIP_CALL( SCIPgetConsNVars(scip, core->constraints[colpos], &nvars, &success) );
+               SCIP_CALL( SCIPgetConsNVars(scip, core->conss[colpos], &nvars, &success) );
                if( success == FALSE )
                   continue;
 
@@ -2346,7 +2346,7 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
       for( i = 0; i < core->nvariables; i++ )
          nuncoveredactive[i] = 0;
 
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          SCIP_Bool success = FALSE;
 
@@ -2370,7 +2370,7 @@ SCIP_RETCODE computeInitialLagrangeMultiplier(
          }
       }
 
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          SCIP_Bool found = FALSE;
          SCIP_Bool success = FALSE;
@@ -2453,11 +2453,11 @@ SCIP_RETCODE exploreNeighborhood(
       /* compute subgradient for 'mult' */
       if( core->rowsavailable )
       {
-         for( i = 0; i < core->nconstraints; i++ )
+         for( i = 0; i < core->nconss; i++ )
          {
             mult.subgradient[i] = 0.0;
 
-            if( SCIPconsIsActive(core->constraints[i]) == FALSE )
+            if( SCIPconsIsActive(core->conss[i]) == FALSE )
                continue;
 
             if( isRowCovered(core, subinst, i) )
@@ -2479,7 +2479,7 @@ SCIP_RETCODE exploreNeighborhood(
       }
       else
       {
-         for( i = 0; i < core->nconstraints; i++ )
+         for( i = 0; i < core->nconss; i++ )
          {
             mult.subgradient[i] = 0.0;
 
@@ -2509,13 +2509,13 @@ SCIP_RETCODE exploreNeighborhood(
 
       /* compute norm of subgradient */
       norm = 0.0;
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
          norm = norm + mult.subgradient[i] * mult.subgradient[i];
 
       assert(!SCIPisZero(scip, norm));
 
       /* Held-Karp update */
-      for( i = 0; i < core->nconstraints; i++ )
+      for( i = 0; i < core->nconss; i++ )
       {
          SCIP_Real hk = mult.u[i] + heurdata->param_lambda * (bestub - mult.lblagrangelocal) * mult.subgradient[i] / norm; /*lint !e795*/
          mult.u[i] = 0.0;
@@ -2568,8 +2568,8 @@ SCIP_RETCODE reportSolution(
    SCIP_SOL *newsol;
    SCIP_Bool success = FALSE;
    SCIP_Bool foundsol = FALSE;
-   SCIP_CONS **cons;
-   int ncons;
+   SCIP_CONS **conss;
+   int nconss;
 
    SCIP_CALL( SCIPgetVarsData(scip, &solvars, &nsolvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPcreateSol(scip, &newsol, heur) );
@@ -2588,33 +2588,33 @@ SCIP_RETCODE reportSolution(
    SCIP_CALL( SCIPsetSolVals(scip, newsol, nsolvars, solvars, solvals) );
 
    /* test all constraints and check if the activity is correct, adjust some free variable if necessary */
-   cons = SCIPgetConss(scip);
-   ncons = SCIPgetNConss(scip);
-   for( i = 0; (i < ncons) && (foundsol == FALSE); i++ )
+   conss = SCIPgetConss(scip);
+   nconss = SCIPgetNConss(scip);
+   for( i = 0; (i < nconss) && (foundsol == FALSE); i++ )
    {
       SCIP_Real lhs = 0.0, activity = 0.0;
       SCIP_Real *vals = NULL;
       SCIP_Bool valuesallones = FALSE;
 
-      if( !strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons[i])), "linear") )
+      if( !strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "linear") )
       {
-         lhs = SCIPgetLhsLinear(scip, cons[i]);
-         activity = SCIPgetActivityLinear(scip, cons[i], newsol);
-         vals = SCIPgetValsLinear(scip, cons[i]);
+         lhs = SCIPgetLhsLinear(scip, conss[i]);
+         activity = SCIPgetActivityLinear(scip, conss[i], newsol);
+         vals = SCIPgetValsLinear(scip, conss[i]);
       }
-      else if( !strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons[i])), "logicor") )
+      else if( !strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "logicor") )
       {
          valuesallones = TRUE;
       }
-      else if( !strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons[i])), "masterbranch") )
+      else if( !strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "masterbranch") )
       {
          /* do nothing */
-         SCIPdebugMessage("constraint %i is a masterbranch\n", SCIPconsGetPos(cons[i]));
+         SCIPdebugMessage("constraint %i is a masterbranch\n", SCIPconsGetPos(conss[i]));
          continue;
       }
       else
       {
-         SCIPerrorMessage("constraint is '%s', can't handle this\n", SCIPconshdlrGetName(SCIPconsGetHdlr(cons[i])));
+         SCIPerrorMessage("constraint is '%s', can't handle this\n", SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])));
          SCIPABORT();
       }
 
@@ -2627,9 +2627,9 @@ SCIP_RETCODE reportSolution(
 
 
          /*SCIPdebugMessage("constraint %i: left hand side is violated by %f\n", i, lhs - activity);*/
-         SCIP_CALL( SCIPgetConsNVars(scip, cons[i], &nvars, &success) );
+         SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &nvars, &success) );
          SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
-         SCIP_CALL( SCIPgetConsVars(scip, cons[i], vars, nvars, &success) );
+         SCIP_CALL( SCIPgetConsVars(scip, conss[i], vars, nvars, &success) );
 
          for( j = 0; (changed == FALSE) && (j < nvars); j++ )
          {
@@ -2666,9 +2666,9 @@ SCIP_RETCODE reportSolution(
          SCIPfreeBufferArray(scip, &vars);
       }
 
-      if( !strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons[i])), "linear") )
+      if( !strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "linear") )
       {
-         if( SCIPgetLhsLinear(scip, cons[i]) > SCIPgetActivityLinear(scip, cons[i], newsol) )
+         if( SCIPgetLhsLinear(scip, conss[i]) > SCIPgetActivityLinear(scip, conss[i], newsol) )
             SCIPdebugMessage("activity is still smaller than lhs\n");
       }
       /* take care of the case rhs < activity. Question: can this occur?
@@ -2753,7 +2753,7 @@ SCIP_RETCODE threePhase(
       SCIP_CALL( reportSolution(scip, inst, heurdata->bestubsol, heur) );
    }
 
-   if( core->nactiveconstraints <= SCIPhashtableGetNElements(subinst->rowscovered) )
+   if( core->nactiveconss <= SCIPhashtableGetNElements(subinst->rowscovered) )
    {
       SCIPdebugMessage("threephase: all rows are already covered\n");
    }
@@ -2767,7 +2767,7 @@ SCIP_RETCODE threePhase(
     */
 
    /* stop if all rows are covered by fixed variables */
-   while( core->nactiveconstraints > SCIPhashtableGetNElements(subinst->rowscovered) )
+   while( core->nactiveconss > SCIPhashtableGetNElements(subinst->rowscovered) )
    {
       /* we mark all rows covered by fixed variables, in addition to the ones that were already covered */
       SCIP_CALL( markRowsCoveredByFixedVariables(scip, core, subinst, heurdata) );
@@ -2805,7 +2805,7 @@ SCIP_RETCODE threePhase(
          subinst->costsfixed += SCIPvarGetObj(core->variables[core->solgreedy[i]]);
 
          /* fix max(1, nconstraints / 200) variables */
-         if( i > core->nconstraints / 200 )
+         if( i > core->nconss / 200 )
             break;
       }
    }
@@ -2902,7 +2902,7 @@ SCIP_RETCODE setCoveringHeuristic(
       SCIP_CALL( markRowsCoveredByFixedVariables(scip, core, inst, heurdata) );
 
       /* call three-phase as long as 'inst' contains uncovered rows */
-      if( core->nactiveconstraints > SCIPhashtableGetNElements(inst->rowscovered) )
+      if( core->nactiveconss > SCIPhashtableGetNElements(inst->rowscovered) )
       {
          SCIPdebugMessage("%lli variables are fixed, %lli rows are covered\n", SCIPhashtableGetNElements(inst->varsfixed), SCIPhashtableGetNElements(inst->rowscovered));
 
