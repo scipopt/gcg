@@ -678,7 +678,7 @@ SCIP_RETCODE getVarIndex(
    assert(pos != NULL);
 
    varidx = SCIPvarGetIndex(variable);
-   *pos = (int) (size_t) SCIPhashmapGetImage(core->mapvariables, (void *) (((size_t) varidx) + 1));
+   *pos = (int) (size_t) SCIPhashmapGetImage(core->mapvariables, (void *) ((size_t) (varidx + 1))); /*lint !e507*/
 
    return SCIP_OKAY;
 }
@@ -885,7 +885,7 @@ SCIP_RETCODE initTentativeCore(
    for( i = 0; i < core->nvariables; i++ )
    {
       int varidx = SCIPvarGetIndex(core->variables[i]);
-      SCIP_CALL( SCIPhashmapInsert(core->mapvariables, (void *) (((size_t) varidx) + 1), (void *) (size_t) i) );
+      SCIP_CALL( SCIPhashmapInsert(core->mapvariables, (void *) ((size_t) (varidx + 1)), (void *) (size_t) i) );
    }
 
    core->nactiveconstraints = 0;
@@ -1039,7 +1039,7 @@ SCIP_RETCODE computeCoreRows(
       {
          /* create array of core variables of this constraint */
          core->nrowvars[i] = ncorevars;
-         SCIP_CALL( SCIPallocBufferArray(scip, &(core->rows[i]), core->nrowvars[i]) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &(core->rows[i]), core->nrowvars[i]) ); /*lint !e866*/
          for( j = 0; j < nvars; j++ )
          {
             int varpos;
@@ -1095,7 +1095,7 @@ SCIP_RETCODE computeCoreColumns(
       if( core->nvarconstraints[i] == 0 )
          continue;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &(core->columns[i]), core->nvarconstraints[i]) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &(core->columns[i]), core->nvarconstraints[i]) ); /*lint !e866*/
 
       for( j = 0; j < core->nvarconstraints[i]; j++ )
          core->columns[i][j] = -1;
@@ -2185,7 +2185,7 @@ SCIP_RETCODE subgradientOptimization(
       /* Held-Karp update */
       for( i = 0; i < core->nconstraints; i++ )
       {
-         SCIP_Real hk = last_mult.u[i] + lambda * (bestub - last_mult.lblagrangelocal) * last_mult.subgradient[i] / norm;
+         SCIP_Real hk = last_mult.u[i] + lambda * (bestub - last_mult.lblagrangelocal) * last_mult.subgradient[i] / norm;  /*lint !e795*/
          next_mult.u[i] = 0.0;
 
          if( SCIPisPositive(scip, 0.0) )
@@ -2211,7 +2211,7 @@ SCIP_RETCODE subgradientOptimization(
          last_lb[last_data_pos++] = next_mult.lblagrangelocal;
 
          /* lambda is adjusted after param_lambda_p iterations */
-         if( SCIPisGE(scip, last_data_pos, heurdata->param_lambda_p) )
+         if( last_data_pos >= heurdata->param_lambda_p )
          {
             SCIP_Real max_lb = last_lb[0];
             SCIP_Real min_lb = last_lb[0];
@@ -2517,7 +2517,7 @@ SCIP_RETCODE exploreNeighborhood(
       /* Held-Karp update */
       for( i = 0; i < core->nconstraints; i++ )
       {
-         SCIP_Real hk = mult.u[i] + heurdata->param_lambda * (bestub - mult.lblagrangelocal) * mult.subgradient[i] / norm;
+         SCIP_Real hk = mult.u[i] + heurdata->param_lambda * (bestub - mult.lblagrangelocal) * mult.subgradient[i] / norm; /*lint !e795*/
          mult.u[i] = 0.0;
 
          if( hk > 0.0 )
@@ -2556,7 +2556,6 @@ SCIP_RETCODE exploreNeighborhood(
 static
 SCIP_RETCODE reportSolution(
    SCIP *scip,                               /**< original SCIP data structure                                    */
-   SCP_Core *core,                           /**< SCP core data structure                                         */
    SCP_Instance *inst,                       /**< (reduced) SCP instance                                          */
    SCIP_HASHTABLE *solution,                 /**< solution for 'inst'; will be extended to global solution        */
    SCIP_HEUR *heur                           /**< pointer to the heuristic's data                                 */
@@ -2564,7 +2563,6 @@ SCIP_RETCODE reportSolution(
 {
    SCIP_VAR **solvars;
    SCIP_Real *solvals;
-   SCIP_Real newcosts = 0.0;
    int nsolvars;
    int i;
    SCIP_SOL *newsol;
@@ -2585,9 +2583,6 @@ SCIP_RETCODE reportSolution(
          solvals[i] = 1.0;
       else
          solvals[i] = 0.0;
-
-      if( solvals[i] > 0.0 )
-         newcosts += SCIPvarGetObj(solvars[i]);
    }
 
    SCIP_CALL( SCIPsetSolVals(scip, newsol, nsolvars, solvars, solvals) );
@@ -2641,14 +2636,20 @@ SCIP_RETCODE reportSolution(
             SCIP_Bool costszero = SCIPisZero(scip, SCIPvarGetObj(vars[j]));
             if( costszero == TRUE )
             {
-               assert( valuesallones || vals != NULL );
+               assert(valuesallones || vals != NULL);
 
+               /* constraint is "logicor" */
                if( valuesallones )
                   SCIP_CALL( SCIPincSolVal(scip, newsol, vars[j], lhs - activity) );
-               else if( !SCIPisZero(scip,vals[j]) )
-                  SCIP_CALL( SCIPincSolVal(scip, newsol, vars[j], (lhs - activity) / vals[j]) );
+               /* constraint is "linear" */
                else
-                  SCIPdebugMessage("could not adjust activity\n");
+               {
+                  assert(vals != NULL);
+                  if( !SCIPisZero(scip, vals[j]) )
+                     SCIP_CALL( SCIPincSolVal(scip, newsol, vars[j], (lhs - activity) / vals[j]) );
+                  else
+                     SCIPdebugMessage("could not adjust activity\n");
+               }
 
 #ifdef SCIP_DEBUG
                SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &foundsol) );
@@ -2749,7 +2750,7 @@ SCIP_RETCODE threePhase(
    {
       SCIP_CALL( copySetCoverSolution(core, inst, heurdata->bestubsol, &heurdata->bestub, heurdata->bestubinst_sol) );
       SCIPdebugMessage("new upper bound: %f\n", heurdata->bestub);
-      SCIP_CALL( reportSolution(scip, core, inst, heurdata->bestubsol, heur) );
+      SCIP_CALL( reportSolution(scip, inst, heurdata->bestubsol, heur) );
    }
 
    if( core->nactiveconstraints <= SCIPhashtableGetNElements(subinst->rowscovered) )
@@ -2788,7 +2789,7 @@ SCIP_RETCODE threePhase(
 
             SCIP_CALL( removeRedundantColumns(scip, heurdata, heurdata->bestubsol, &heurdata->bestub) );
             SCIPdebugMessage("new upper bound: %f\n", heurdata->bestub);
-            SCIP_CALL( reportSolution(scip, core, inst, heurdata->bestubsol, heur) );
+            SCIP_CALL( reportSolution(scip, inst, heurdata->bestubsol, heur) );
          }
       }
 
@@ -2825,8 +2826,6 @@ SCIP_RETCODE setCoveringHeuristic(
 {
    SCIP_HEURDATA *heurdata;
    SCIP_Bool stopcft = FALSE;
-   SCIP_Bool computecorecolumns = TRUE;      /* compute columns of all columns that are in the core                          */
-   SCIP_Bool computecorerows = TRUE;         /* store rows and only columns that are in the core                             */
    int niter = 0;                            /* total number of iterations of the three-phase loop                           */
    int nitercore = 0;                        /* total number of iterations on the current core                               */
    int niternoimp = 0;                       /* number of iterations for how long no improvement on the upper bound was made */
@@ -2861,11 +2860,8 @@ SCIP_RETCODE setCoveringHeuristic(
    SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->vars, heurdata->core.maxconstraintvariables) );
 
    /* after defining the core, we compute all core columns and core rows */
-   if( computecorecolumns == TRUE )
-      SCIP_CALL( computeCoreColumns(scip, &heurdata->core) );
-
-   if( computecorerows == TRUE )
-      SCIP_CALL( computeCoreRows(scip, &heurdata->core, heurdata) );
+   SCIP_CALL( computeCoreColumns(scip, &heurdata->core) );
+   SCIP_CALL( computeCoreRows(scip, &heurdata->core, heurdata) );
 
    /* set up basic instance. so far no variables are fixed */
    SCIP_CALL( initInstance(scip, &heurdata->inst) );
@@ -2903,7 +2899,7 @@ SCIP_RETCODE setCoveringHeuristic(
 
       /* derive the reduced subinstance by marking rows covered by fixed variables */
       SCIPhashtableRemoveAll(inst->rowscovered);
-      markRowsCoveredByFixedVariables(scip, core, inst, heurdata);
+      SCIP_CALL( markRowsCoveredByFixedVariables(scip, core, inst, heurdata) );
 
       /* call three-phase as long as 'inst' contains uncovered rows */
       if( core->nactiveconstraints > SCIPhashtableGetNElements(inst->rowscovered) )
@@ -2983,7 +2979,7 @@ SCIP_RETCODE setCoveringHeuristic(
       SCIPdebugMessage("final solution has costs %f\n", heurdata->bestub);
 
    /* report the final solution to SCIP */
-   SCIP_CALL( reportSolution(scip, core, inst, heurdata->bestubsol, heur) );
+   SCIP_CALL( reportSolution(scip, inst, heurdata->bestubsol, heur) );
 
    /* release all memory that was allocated before */
    SCIP_CALL( pqueue_destroy(scip, &heurdata->greedyqueue) );
@@ -3042,7 +3038,7 @@ SCIP_DECL_HEURFREE(heurFreeSetcover)
 /** execution method of primal heuristic */
 static
 SCIP_DECL_HEUREXEC(heurExecSetcover)
-{
+{ /*lint --e{715}*/
    SCIP *origprob;
    SCIP_HEURDATA *heurdata;
 
