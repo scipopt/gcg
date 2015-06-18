@@ -2180,7 +2180,7 @@ SCIP_RETCODE subgradientOptimization(
       for( i = 0; i < core->nconstraints; i++ )
          norm = norm + last_mult.subgradient[i] * last_mult.subgradient[i]; /* we have subgradient[i] = 0.0 if row i is not to be considered */
 
-      assert( !SCIPisZero(scip, norm) );
+      assert(!SCIPisZero(scip, norm));
 
       /* Held-Karp update */
       for( i = 0; i < core->nconstraints; i++ )
