@@ -209,13 +209,15 @@ SCIP_RETCODE useSCIP(SCIP* scip){
    SCIP_CALL( SCIPreadProb(subscip, SCIPgetProbName( scip ), NULL) );
 
    /* remove old SCIP */
-   SCIP_CALL( SCIPfree( &scip ) );
+   SCIP_CALL( SCIPfree(&scip) );
 
    /* Continue solving pure SCIP */
    SCIP_CALL( SCIPtransformProb(subscip) );
    SCIP_CALL( SCIPpresolve(subscip) );
 
    SCIP_CALL( SCIPsolve(subscip) );
+
+   SCIP_CALL( SCIPfree(&scip) );
 
    return SCIP_OKAY;
 }
