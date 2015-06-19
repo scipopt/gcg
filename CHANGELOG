@@ -1,10 +1,17 @@
-GCG Version 2.1
+GCG Version 2.1.0
 =================
 
 features
-- numerical tolerances of the original problem are used in the master and pricing problems
+- column pool
 - new set covering heuristic
- 
+- basis cuts separator
+- numerical tolerances of the original problem are used in the master and pricing problems
+- new compiler flag CPLEXSOLVER to solve pricing problems with CPLEX
+
+code cleanup
+- re-organized constraint handlers for managing branching decisions in original and master problems
+- simplified code and reduced memory consumption in cutpacking detector
+
 bug fixes
 - GCG columns are freed correctly in the pricer
 

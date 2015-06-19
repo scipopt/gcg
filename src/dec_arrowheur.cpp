@@ -73,7 +73,7 @@ using gcg::Weights;
 #define DEC_DESC              "enforces arrowhead structures using graph partitioning" /**< description of detector */
 #define DEC_PRIORITY          1000           /**< priority of the detector */
 #define DEC_DECCHAR           'a'            /**< display character of detector */
-#define DEC_ENABLED           TRUE           /**< should detector be called by default */
+#define DEC_ENABLED           FALSE          /**< should detector be called by default */
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 
 /* Default parameter settings */

@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.0.1
+VERSION         :=	2.1.0
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -56,11 +56,11 @@ MASTERSETTINGS	=	default
 
 VALGRIND	=	false
 MODE		=	readdec
-GTEST		=	true
+GTEST		=	false
 PARASCIP	= 	true
-BLISS       	=   	true
-OPENMP          =       false
-GSL             =       false
+BLISS      	=   false
+OPENMP      =   false
+GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 
