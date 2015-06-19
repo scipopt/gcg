@@ -136,7 +136,7 @@ SCIP_RETCODE GCGconsMasterbranchAddCopiedVarBndchg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< masterbranch constraint to which the bound change is added */
    SCIP_VAR*             var,                /**< variable on which the bound change was performed */
-   SCIP_BOUNDTYPE        boundtype,          /**< bound type of the bound change */
+   GCG_BOUNDTYPE         boundtype,          /**< bound type of the bound change */
    SCIP_Real             newbound            /**< new bound of the variable after the bound change */
    );
 
