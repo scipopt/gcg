@@ -53,7 +53,7 @@
  * - \ref RELEASENOTES "Release notes"
  * - \ref LICENSE      "Licensing information"
  *
- * @version  2.0.1
+ * @version  2.1.0
  *
  * <b>Further Documentation</b>
  * - \ref IMPORTANTMETHODS "Methods you should know for writing GCG plug-ins"
