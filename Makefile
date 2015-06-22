@@ -56,9 +56,9 @@ MASTERSETTINGS	=	default
 
 VALGRIND	=	false
 MODE		=	readdec
-GTEST		=	false
+GTEST		=	true
 PARASCIP	= 	true
-BLISS      	=   false
+BLISS      	=   true
 OPENMP      =   false
 GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
