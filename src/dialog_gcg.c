@@ -202,22 +202,19 @@ SCIP_RETCODE useSCIP(SCIP* scip){
 
    SCIP* subscip = NULL;
 
-   /* start another SCIP instance without GCG plugins */
+
+   /* start another SCIP instance on the same problem without GCG plugins */
    SCIP_CALL( SCIPcreate(&subscip) );
    SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
 
    SCIP_CALL( SCIPreadProb(subscip, SCIPgetProbName( scip ), NULL) );
 
-   /* remove old SCIP */
-   SCIP_CALL( SCIPfree(&scip) );
-
-   /* Continue solving pure SCIP */
    SCIP_CALL( SCIPtransformProb(subscip) );
    SCIP_CALL( SCIPpresolve(subscip) );
 
    SCIP_CALL( SCIPsolve(subscip) );
 
-   SCIP_CALL( SCIPfree(&scip) );
+   SCIP_CALL( SCIPfree(&subscip) );
 
    return SCIP_OKAY;
 }
@@ -438,17 +435,18 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          if( result == SCIP_DIDNOTFIND )
          {
             assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
-            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will be used for solving.\n");
-
+            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected.\n");
+            SCIPdialogMessage(scip, NULL, "SCIP will reload and solve.\n\n");
             /* if there is no decomp remove all GCG-specific characteristics and solve with scip */
             SCIP_CALL( useSCIP(scip) );
             break;
          }
+
       }
       else if( DECgetBestDecomp(scip) == NULL )
       {
          assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
-         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will be used for solving.\n");
+         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will reload and solve.\n");
          SCIP_CALL( useSCIP(scip) );
          break;
       }
