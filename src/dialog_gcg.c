@@ -207,7 +207,7 @@ SCIP_RETCODE useSCIP(SCIP* scip){
    SCIP_CALL( SCIPcreate(&subscip) );
    SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
 
-   SCIP_CALL( SCIPreadProb(subscip, SCIPgetProbName( scip ), NULL) );
+   SCIP_CALL( SCIPcopyOrigProb( scip, subscip, NULL, NULL, "prob" ) );
 
    SCIP_CALL( SCIPtransformProb(subscip) );
    SCIP_CALL( SCIPpresolve(subscip) );
