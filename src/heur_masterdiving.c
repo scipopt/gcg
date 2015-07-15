@@ -439,7 +439,10 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
    /* initialize arrays */
    for( i = 0; i < heurdata->maxdiscdepth; ++i )
+   {
       discrepancies[i] = 0;
+      selectedvars[i] = NULL;
+   }
    for( i = 0; i < heurdata->maxdiscrepancy; ++i )
       tabulist[i] = NULL;
 
@@ -628,8 +631,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             lpsolstat = SCIPgetLPSolstat(scip);
          }
 
-         /* if infeasibility is encountered, perform Farkas pricing
-          * in order to reach feasibility again */
+         /* If infeasibility is encountered, perform Farkas pricing
+          * in order to reach feasibility again
+          */
          if( lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE && heurdata->usefarkasonly
             && !farkaspricing && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds)
             && !backtracked )
@@ -640,10 +644,12 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
          else
             farkaspricing = FALSE;
 
-         /* perform backtracking if a cutoff was detected */
-         if( cutoff && !backtracked && heurdata->backtrack && !farkaspricing )
+         /* perform backtracking if a cutoff or an infeasibility was detected
+          * and if Farkas pricing did not help
+          */
+         if( (lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE || cutoff) && !backtracked && heurdata->maxdiscrepancy > 0 && !farkaspricing )
          {
-            SCIPdebugMessage("  *** cutoff detected at level %d - backtracking\n", SCIPgetProbingDepth(scip));
+            SCIPdebugMessage("  *** cutoff or infeasibility detected at level %d - backtracking\n", SCIPgetProbingDepth(scip));
 
             /* go back until the search can differ from the previous search tree */
             do
@@ -659,7 +665,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
             /* add variable selected previously at this depth to the tabu list */
             tabulist[discrepancies[divedepth]] = selectedvars[divedepth];
-
             ++discrepancies[divedepth];
             for( i = divedepth + 1; i < heurdata->maxdiscdepth; ++i )
                discrepancies[i] = discrepancies[divedepth];
@@ -1073,7 +1078,7 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
    SCIP_CALL( SCIPaddIntParam(scip,
         paramname,
         "maximal depth until which a limited discrepancy search is performed",
-        &heurdata->maxdiscdepth, FALSE, DEFAULT_MAXDISCDEPTH, 0, INT_MAX, NULL, NULL) );
+        &heurdata->maxdiscdepth, FALSE, DEFAULT_MAXDISCDEPTH, 1, INT_MAX, NULL, NULL) );
 
 #ifdef SCIP_STATISTIC
    /* register the diving heuristic to the masterdiving event handler */
