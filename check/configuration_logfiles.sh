@@ -1,16 +1,28 @@
 #!/usr/bin/env bash
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
-#*                  This file is part of the program and library             *
+#*                  This file is part of the program                         *
+#*          GCG --- Generic Column Generation                                *
+#*                  a Dantzig-Wolfe decomposition based extension            *
+#*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#*    Copyright (C) 2002-2015 Konrad-Zuse-Zentrum                            *
-#*                            fuer Informationstechnik Berlin                *
+#* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       *
+#*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
-#*  SCIP is distributed under the terms of the ZIB Academic License.         *
+#* This program is free software; you can redistribute it and/or             *
+#* modify it under the terms of the GNU Lesser General Public License        *
+#* as published by the Free Software Foundation; either version 3            *
+#* of the License, or (at your option) any later version.                    *
 #*                                                                           *
-#*  You should have received a copy of the ZIB Academic License              *
-#*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      *
+#* This program is distributed in the hope that it will be useful,           *
+#* but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+#* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
+#* GNU Lesser General Public License for more details.                       *
+#*                                                                           *
+#* You should have received a copy of the GNU Lesser General Public License  *
+#* along with this program; if not, write to the Free Software               *
+#* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
@@ -26,7 +38,7 @@
 ### FILENAME - the basename of the local files (.out, .tmp, and .err)
 ### EVALFILE - evaluation file to glue single output and error files together
 ### SKIPINSTANCE - should the instance be skipped because it was already evaluated in a previous setting?
-### BASENAME - $SCIPPATH/results/$FILENAME cf. FILENAME argument
+### BASENAME - $GCGPATH/results/$FILENAME cf. FILENAME argument
 ### TMPFILE  - the batch file name to pass for solver instructions
 ### SETFILE  - the name of the settings file to save solver settings to
 
@@ -41,7 +53,7 @@ MSETNAME=$7  # the name of the master setting
 TSTNAME=$8   # the name of the testset
 CONTINUE=$9  # should test continue an existing run
 # optional variables
-QUEUE=$10     # the queue name
+QUEUE=${10}   # the queue name
 p=${11}       # the index of the current permutation - only needed if permutations are used
 
 if test "$QUEUE" = ""
