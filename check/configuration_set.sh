@@ -1,16 +1,28 @@
 #!/usr/bin/env bash
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
-#*                  This file is part of the program and library             *
+#*                  This file is part of the program                         *
+#*          GCG --- Generic Column Generation                                *
+#*                  a Dantzig-Wolfe decomposition based extension            *
+#*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#*    Copyright (C) 2002-2014 Konrad-Zuse-Zentrum                            *
-#*                            fuer Informationstechnik Berlin                *
+#* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       *
+#*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
-#*  SCIP is distributed under the terms of the ZIB Academic License.         *
+#* This program is free software; you can redistribute it and/or             *
+#* modify it under the terms of the GNU Lesser General Public License        *
+#* as published by the Free Software Foundation; either version 3            *
+#* of the License, or (at your option) any later version.                    *
 #*                                                                           *
-#*  You should have received a copy of the ZIB Academic License              *
-#*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      *
+#* This program is distributed in the hope that it will be useful,           *
+#* but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+#* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
+#* GNU Lesser General Public License for more details.                       *
+#*                                                                           *
+#* You should have received a copy of the GNU Lesser General Public License  *
+#* along with this program; if not, write to the Free Software               *
+#* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
@@ -19,7 +31,7 @@
 # This script cancels the process if required variables are not correctly set
 
 # new environment variables defined by this script:
-#    SCIPPATH - absolute path to invocation working directory
+#    GCGPATH - absolute path to invocation working directory
 #    SETTINGS - settings file
 #    MSETTINGS - master settings file
 #    SETCUTOFF - should optimal solution value (from solu file) be passed as objective limit?
@@ -54,10 +66,10 @@ then
 fi
 
 # create settings directory if non-existent
-if test ! -d $SCIPPATH/../settings/
+if test ! -d $GCGPATH/../settings/
 then
     echo Create directory settings
-    mkdir $SCIPPATH/../settings
+    mkdir $GCGPATH/../settings
 fi
 
 SETTINGS=$GCGPATH/../settings/$SETNAME.set
@@ -129,7 +141,7 @@ else
 fi
 
 #check if additional instance paths are given
-POSSIBLEPATHS=$SCIPPATH
+POSSIBLEPATHS=$GCGPATH
 if test -e paths.txt
 then
     POSSIBLEPATHS="${POSSIBLEPATHS} `cat paths.txt`"

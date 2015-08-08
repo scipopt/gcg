@@ -84,6 +84,7 @@ then
     echo "MEMLIMIT      = $MEMLIMIT"
     echo "THREADS       = $THREADS"
     echo "FEASTOL       = $FEASTOL"
+    echo "LPS           = $LPS"
     echo "DISPFREQ      = $DISPFREQ"
     echo "CONTINUE      = $CONTINUE"
     echo "QUEUETYPE     = $QUEUETYPE"
@@ -149,8 +150,8 @@ do
 	    DECFILE=$GCGPATH/`echo $INSTANCE|cut -d";" -f2`
 
         # check if problem instance exists
-	    if ! test -f $PROB
-	    else
+	    if [ ! -f $PROB ]
+	    then
 	        echo "input file "$PROB" not found!"
             continue
 	    fi
@@ -213,7 +214,7 @@ do
     if test  "$QUEUETYPE" = "bsub"
     then
 		cp runcluster_aachen.sh runcluster_tmp.sh
-		TLIMIT=`expr $HARDTIMELIMIT / 60`
+        TLIMIT=`echo $HARDTIMELIMIT | awk '{ n = split($0,a,":"); print 60*a[1]+a[2];}'`
 		ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
 		sed -i 's,\$CLIENTTMPDIR,$TMP,' runcluster_tmp.sh
 		sed -i "s,\$CONTINUE,$CONTINUE," runcluster_tmp.sh
