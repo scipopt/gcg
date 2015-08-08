@@ -14,11 +14,11 @@
 # more information, see "http://www.zib.de/cluster-user/view/Main/Hardware"
 #
 # To get the result files call "./evalcheck_cluster.sh
-# results/check.$TSTNAME.$BINNMAE.$SETNAME.eval in directory check/
+# results/check.$TSTNAME.$BINNMAE.$SETNAME.$MSETNAME.eval in directory check/
 # This leads to result files
-#  - results/check.$TSTNAME.$BINNMAE.$SETNAME.out
-#  - results/check.$TSTNAME.$BINNMAE.$SETNAME.res
-#  - results/check.$TSTNAME.$BINNMAE.$SETNAME.err
+#  - results/check.$TSTNAME.$BINNMAE.$SETNAME.$MSETNAME.out
+#  - results/check.$TSTNAME.$BINNMAE.$SETNAME.$MSETNAME.res
+#  - results/check.$TSTNAME.$BINNMAE.$SETNAME.$MSETNAME.err
 #
 # number of needed core at a certain cluster node
 #  - PPN=8 means we need 8 core, therefore time measuring is possible if we use 1 node of queue "ib"
