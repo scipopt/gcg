@@ -137,7 +137,14 @@ SCIP_RETCODE createGraph(
 
       SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars1, ncurvars1) );
 
+      for( v = 0; v < ncurvars1; ++v )
+      {
+         curvars1[v] = SCIPvarGetProbvar(curvars1[v]);
+         assert( SCIPvarIsActive(curvars1[v]) );
+      }
+
       SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
+
       for( j = i+1; j < nconss; ++j )
       {
          SCIP_VAR** curvars2;
@@ -148,17 +155,16 @@ SCIP_RETCODE createGraph(
 
          SCIP_CALL( GCGconsGetVars(scip, conss[j], curvars2, ncurvars2) );
 
-         SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
          for( v = 0; v < ncurvars2; ++v )
          {
             int pos;
 
-            if( !SCIPvarIsActive(curvars2[v]) )
-               continue;
+            SCIP_VAR* probvar = SCIPvarGetProbvar(curvars2[v]);
+            assert(SCIPvarIsActive(probvar));
 
-            if( SCIPsortedvecFindPtr((void*)curvars1, cmp, curvars2[v], ncurvars1, &pos) )
+            if( SCIPsortedvecFindPtr((void*)curvars1, cmp, probvar, ncurvars1, &pos) )
             {
-               assert(curvars1[pos] == curvars2[v]);
+               assert(curvars1[pos] == probvar);
                TCLIQUE_CALL( tcliqueAddEdge(*graph, i, j) );
                break;
             }
@@ -171,6 +177,7 @@ SCIP_RETCODE createGraph(
 
    TCLIQUE_CALL( tcliqueFlush(*graph) );
    SCIPdebug(tcliquePrintGraph(*graph));
+
    return SCIP_OKAY;
 }
 
