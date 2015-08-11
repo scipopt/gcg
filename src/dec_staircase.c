@@ -153,6 +153,9 @@ SCIP_RETCODE createGraph(
          {
             int pos;
 
+            if( !SCIPvarIsActive(curvars2[v]) )
+               continue;
+
             if( SCIPsortedvecFindPtr((void*)curvars1, cmp, curvars2[v], ncurvars1, &pos) )
             {
                assert(curvars1[pos] == curvars2[v]);
