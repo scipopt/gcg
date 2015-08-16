@@ -666,7 +666,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
                backtracked = TRUE;
             }
-            else if( heurdata->maxdiscrepancy > 0 )
+            else if( heurdata->maxdiscdepth > 0 && heurdata->maxdiscrepancy > 0 )
             {
                SCIPdebugMessage("  *** cutoff or infeasibility detected at level %d - performing discrepancy search\n", SCIPgetProbingDepth(scip));
                /* go back until the search can differ from the previous search tree */
@@ -1100,7 +1100,7 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
    SCIP_CALL( SCIPaddIntParam(scip,
         paramname,
         "maximal depth until which a limited discrepancy search is performed",
-        &heurdata->maxdiscdepth, FALSE, DEFAULT_MAXDISCDEPTH, 1, INT_MAX, NULL, NULL) );
+        &heurdata->maxdiscdepth, FALSE, DEFAULT_MAXDISCDEPTH, 0, INT_MAX, NULL, NULL) );
 
 #ifdef SCIP_STATISTIC
    /* register the diving heuristic to the masterdiving event handler */
