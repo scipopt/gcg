@@ -62,7 +62,7 @@
 #define DEFAULT_MAXDIVEUBQUOTNOSOL  0.1 /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOTNOSOL 0.0 /**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_BACKTRACK          TRUE /**< use one level of backtracking if infeasibility is encountered? */
-#define DEFAULT_MAXDISCREPANCY        3 /**< maximal discrepancy in limited discrepancy search */
+#define DEFAULT_MAXDISCREPANCY        3 /**< maximal discrepancy allowed in backtracking */
 #define DEFAULT_MAXDISCDEPTH          3 /**< maximal depth until which a limited discrepancy search is performed */
 
 #define MINLPITER                 10000 /**< minimal number of LP iterations allowed in each LP solving call */
@@ -100,7 +100,7 @@ struct SCIP_HeurData
    SCIP_Real             maxdiveubquotnosol; /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
    SCIP_Real             maxdiveavgquotnosol;/**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
    SCIP_Bool             backtrack;          /**< use one level of backtracking if infeasibility is encountered? */
-   int                   maxdiscrepancy;     /**< maximal discrepancy in limited discrepancy search */
+   int                   maxdiscrepancy;     /**< maximal discrepancy allowed in backtracking */
    int                   maxdiscdepth;       /**< maximal depth until which a limited discrepancy search is performed */
    SCIP_Longint          nlpiterations;      /**< LP iterations used in this heuristic */
    SCIP_Longint          npricerounds;       /**< pricing rounds used in this heuristic */
@@ -649,11 +649,11 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
          /* perform backtracking if a cutoff or an infeasibility was detected
           * and if Farkas pricing did not help
           */
-         if( (lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE || cutoff) && !backtracked && !farkaspricing )
+         if( (lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE || cutoff) && discrepancy < heurdata->maxdiscrepancy && !backtracked && !farkaspricing )
          {
-            backtracked = FALSE;
+            assert(heurdata->maxdiscrepancy > 0);
 
-            if( heurdata->backtrack && divedepth > heurdata->maxdiscdepth && discrepancy < heurdata->maxdiscrepancy )
+            if( heurdata->backtrack && divedepth > heurdata->maxdiscdepth )
             {
                SCIPdebugMessage("  *** cutoff or infeasibility detected at level %d - backtracking one node\n", SCIPgetProbingDepth(scip));
 
@@ -666,7 +666,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
                backtracked = TRUE;
             }
-            else if( heurdata->maxdiscdepth > 0 && heurdata->maxdiscrepancy > 0 )
+            else if( heurdata->maxdiscdepth > 0 )
             {
                SCIPdebugMessage("  *** cutoff or infeasibility detected at level %d - performing discrepancy search\n", SCIPgetProbingDepth(scip));
                /* go back until the search can differ from the previous search tree */
@@ -1094,7 +1094,7 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiscrepancy", name);
    SCIP_CALL( SCIPaddIntParam(scip,
         paramname,
-        "maximal discrepancy in limited discrepancy search",
+        "maximal discrepancy allowed in backtracking",
         &heurdata->maxdiscrepancy, FALSE, DEFAULT_MAXDISCREPANCY, 0, INT_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiscdepth", name);
    SCIP_CALL( SCIPaddIntParam(scip,
