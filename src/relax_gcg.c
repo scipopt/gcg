@@ -1492,6 +1492,7 @@ SCIP_RETCODE createPricingprobConss(
    SCIP_CONS*** subscipconss;
    int* nsubscipconss;
    SCIP_CONS* newcons;
+   SCIP_HASHMAP* hashorig2pricingconstmp;
    int nblocks;
    int b;
    int c;
@@ -1504,6 +1505,8 @@ SCIP_RETCODE createPricingprobConss(
    subscipconss = DECdecompGetSubscipconss(relaxdata->decdecomp);
    nsubscipconss = DECdecompGetNSubscipconss(relaxdata->decdecomp);
    nblocks = DECdecompGetNBlocks(relaxdata->decdecomp);
+
+   SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), SCIPcalcHashtableSize(5 *SCIPgetNConss(scip))) ); /*lint !e613*/
 
    for( b = 0; b < nblocks; ++b )
    {
@@ -1522,7 +1525,7 @@ SCIP_RETCODE createPricingprobConss(
          /* copy the constraint */
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", b, SCIPconsGetName(subscipconss[b][c]));
          SCIP_CALL( SCIPgetConsCopy(scip, relaxdata->pricingprobs[b], subscipconss[b][c], &newcons, SCIPconsGetHdlr(subscipconss[b][c]),
-               hashorig2pricingvar[b], NULL, name,
+               hashorig2pricingvar[b], hashorig2pricingconstmp, name,
                TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, &success) );
 
          /* constraint was successfully copied */
@@ -1555,6 +1558,8 @@ SCIP_RETCODE createPricingprobConss(
          SCIP_CALL( SCIPreleaseCons(relaxdata->pricingprobs[b], &newcons) );
       }
    }
+
+   SCIPhashmapFree(&hashorig2pricingconstmp);
 
    return SCIP_OKAY;
 }
