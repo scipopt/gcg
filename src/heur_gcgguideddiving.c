@@ -390,7 +390,17 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
       SCIP_Real solval;
       SCIP_Real bestsolval;
 
+      int i;
+
       var = lpcands[c];
+
+      /* if the variable is on the tabu list, do not choose it */
+       for( i = 0; i < tabulistsize; ++i )
+          if( tabulist[i] == var )
+             break;
+       if( i < tabulistsize )
+          continue;
+
       mayrounddown = SCIPvarMayRoundDown(var);
       mayroundup = SCIPvarMayRoundUp(var);
       solval = lpcandssol[c];

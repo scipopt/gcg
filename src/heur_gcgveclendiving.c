@@ -444,6 +444,15 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgveclendiving) /*lint --e{715}*/
       SCIP_Real score;
       SCIP_Bool roundup;
 
+      int i;
+
+      /* if the variable is on the tabu list, do not choose it */
+       for( i = 0; i < tabulistsize; ++i )
+          if( tabulist[i] == lpcands[c] )
+             break;
+       if( i < tabulistsize )
+          continue;
+
       /* calculate score */
       if( divingdata->usemasterscores )
       {

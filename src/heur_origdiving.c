@@ -63,6 +63,9 @@
 #define DEFAULT_MAXDIVEUBQUOTNOSOL  0.1 /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOTNOSOL 0.0 /**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_BACKTRACK          TRUE /**< use one level of backtracking if infeasibility is encountered? */
+#define DEFAULT_MAXDISCREPANCY        3 /**< maximal discrepancy allowed in backtracking */
+#define DEFAULT_MAXDISCDEPTH          3 /**< maximal depth until which a limited discrepancy search is performed */
+#define DEFAULT_OTHERDIRECTION     TRUE /**< try to branch the diving variable in the other direction in case of infeasibility */
 
 #define MINLPITER                 10000 /**< minimal number of LP iterations allowed in each LP solving call */
 
@@ -99,6 +102,9 @@ struct SCIP_HeurData
    SCIP_Real             maxdiveubquotnosol; /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
    SCIP_Real             maxdiveavgquotnosol;/**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
    SCIP_Bool             backtrack;          /**< use one level of backtracking if infeasibility is encountered? */
+   int                   maxdiscrepancy;     /**< maximal discrepancy allowed in backtracking */
+   int                   maxdiscdepth;       /**< maximal depth until which a limited discrepancy search is performed */
+   SCIP_Bool             otherdirection;     /**< try to branch the diving variable in the other direction in case of infeasibility */
    SCIP_Longint          nlpiterations;      /**< LP iterations used in this heuristic */
    SCIP_Longint          npricerounds;       /**< pricing rounds used in this heuristic */
    int                   nsuccess;           /**< number of runs that produced at least one feasible solution */
@@ -323,6 +329,9 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    SCIP_CONS* probingcons;
    SCIP_LPSOLSTAT lpsolstat;
    SCIP_NODE* probingnode;
+   SCIP_VAR** selectedvars;
+   SCIP_VAR** tabulist;
+   int* discrepancies;
    SCIP_Real searchubbound;
    SCIP_Real searchavgbound;
    SCIP_Real searchbound;
@@ -344,6 +353,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    int maxdepth;
    int maxdivedepth;
    int divedepth;
+   int discrepancy;
 
 #ifdef NDEBUG
    SCIP_RETCODE retstat;
@@ -354,6 +364,8 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    SCIP_Longint totallpiters;          /* lp iterations performed in one call of the heuristic */
    SCIP_CLOCK* lptime;                 /* time spent for solving diving LPs */
 #endif
+
+   int i;
 
    assert(heur != NULL);
    assert(scip != NULL);
@@ -469,7 +481,21 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    maxdivedepth = MIN(maxdivedepth, maxdepth);
    maxdivedepth *= 10;
 
+   /* allocate memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, &discrepancies, heurdata->maxdiscdepth) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &tabulist, heurdata->maxdiscrepancy) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &selectedvars, heurdata->maxdiscdepth) );
+
    SCIPstatistic( SCIP_CALL( SCIPcreateClock(scip, &lptime) ) );
+
+   /* initialize arrays */
+   for( i = 0; i < heurdata->maxdiscdepth; ++i )
+   {
+      discrepancies[i] = 0;
+      selectedvars[i] = NULL;
+   }
+   for( i = 0; i < heurdata->maxdiscrepancy; ++i )
+      tabulist[i] = NULL;
 
    /* diving rule specific initialization */
    if( heurdata->divinginitexec != NULL )
@@ -509,6 +535,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    lperror = FALSE;
    cutoff = FALSE;
    divedepth = 0;
+   discrepancy = 0;
    npricerounds = 0;
    totalpricerounds = 0;
    startnlpcands = nlpcands;
@@ -531,6 +558,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 
       SCIP_Bool backtracked;
       SCIP_Bool farkaspricing;
+      SCIP_Bool otherdirection;
 
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;
@@ -547,7 +575,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
       bestcandroundup = FALSE;
 
       /* choose a variable to dive on */
-      SCIP_CALL( heurdata->divingselectvar(scip, heur, &bestcand, &bestcandmayround, &bestcandroundup) );
+      SCIP_CALL( heurdata->divingselectvar(scip, heur, tabulist, heurdata->maxdiscrepancy, &bestcand, &bestcandmayround, &bestcandroundup) );
 
       /* if no variable could be chosen, abort diving */
       if( bestcand == NULL )
@@ -559,6 +587,10 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 
       bestcandsol = SCIPgetSolVal(scip, heurdata->sol, bestcand);
       bestfrac = SCIPfeasFrac(scip, bestcandsol);
+
+      /* memorize selected variables up to the maximal depth for discrepancy search */
+      if( divedepth-1 < heurdata->maxdiscdepth )
+         selectedvars[divedepth-1] = bestcand;
 
       /* if all candidates are roundable, try to round the solution */
       if( bestcandmayround )
@@ -593,10 +625,11 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 
       backtracked = FALSE;
       farkaspricing = FALSE;
+      otherdirection = FALSE;
       do
       {
          /* if the variable is already fixed or if the solution value is outside the domain, numerical troubles may have
-          * occured or variable was fixed by propagation while backtracking => Abort diving!
+          * occurred or variable was fixed by propagation while backtracking => Abort diving!
           */
          if( SCIPvarGetLbLocal(bestcand) >= SCIPvarGetUbLocal(bestcand) - 0.5 )
          {
@@ -609,16 +642,16 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
          {
             SCIPdebugMessage("selected variable's <%s> solution value is outside the domain [%g,%g] (solval: %.9f), diving aborted\n",
                SCIPvarGetName(bestcand), SCIPvarGetLbLocal(bestcand), SCIPvarGetUbLocal(bestcand), bestcandsol);
-            assert(backtracked);
+            assert(otherdirection);
             break;
          }
 
          probingnode = SCIPgetCurrentNode(scip);
 
          /* apply rounding of best candidate */
-         if( !farkaspricing )
+         if( !farkaspricing && !backtracked )
          {
-            if( bestcandroundup == !backtracked )
+            if( bestcandroundup == !otherdirection )
             {
                /* round variable up */
                SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
@@ -650,7 +683,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 
          /* apply domain propagation */
          SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
-         if( !cutoff || farkaspricing )
+         if( !cutoff || backtracked || farkaspricing )
          {
             /* resolve the diving LP */
             /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
@@ -701,10 +734,11 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
          }
 
          /* if infeasibility is encountered, perform Farkas pricing
-          * in order to reach feasibility again */
+          * in order to reach feasibility again
+          */
          if( lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE && heurdata->usefarkasonly
             && !farkaspricing && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds)
-            && !backtracked )
+            && !backtracked && !otherdirection )
          {
             SCIPdebugMessage("  *** infeasibility detected at level %d - perform Farkas pricing\n", SCIPgetProbingDepth(scip));
             farkaspricing = TRUE;
@@ -712,19 +746,73 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
          else
             farkaspricing = FALSE;
 
-         /* perform backtracking if a cutoff was detected */
-         if( cutoff && !backtracked && heurdata->backtrack && !farkaspricing )
+         /* perform backtracking if a cutoff was detected
+          * and if Farkas pricing did not help
+          */
+         if( (lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE || cutoff) && !farkaspricing )
          {
-            SCIPdebugMessage("  *** cutoff detected at level %d - backtracking\n", SCIPgetProbingDepth(scip));
-            SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
-            SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)) );
-            SCIP_CALL( SCIPnewProbingNode(scip) );
-            backtracked = TRUE;
+            /* First, try to branch the variable into the other direction */
+            if( heurdata->otherdirection && !backtracked && !otherdirection )
+            {
+               SCIPdebugMessage("  *** cutoff detected at level %d - branch in other direction\n", SCIPgetProbingDepth(scip));
+               SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
+               SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)) );
+               SCIP_CALL( SCIPnewProbingNode(scip) );
+               otherdirection = TRUE;
+            }
+            else
+               otherdirection = FALSE;
+
+            /* If branching in the other direction did not work or has not been tried, choose another variable */
+            if( !otherdirection && !backtracked )
+            {
+               if( heurdata->backtrack && divedepth > heurdata->maxdiscdepth && discrepancy < heurdata->maxdiscrepancy )
+               {
+                  SCIPdebugMessage("  *** cutoff detected at level %d - backtrack one node\n", SCIPgetProbingDepth(scip));
+                  SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
+                  SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)) );
+                  --divedepth;
+
+                  tabulist[discrepancy] = bestcand;
+                  ++discrepancy;
+
+                  backtracked = TRUE;
+               }
+               else if( heurdata->maxdiscdepth > 0 )
+               {
+                  SCIPdebugMessage("  *** cutoff or infeasibility detected at level %d - performing discrepancy search\n", SCIPgetProbingDepth(scip));
+
+                  /* go back until the search can differ from the previous search tree */
+                  do
+                  {
+                     SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
+                     SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)) );
+                     --divedepth;
+                  }
+                  while( divedepth >= heurdata->maxdiscdepth || discrepancies[divedepth] >= heurdata->maxdiscrepancy );
+
+                  assert(divedepth < heurdata->maxdiscdepth);
+
+                  if( divedepth >= 0 )
+                  {
+                     /* add variable selected previously at this depth to the tabu list */
+                     tabulist[discrepancies[divedepth]] = selectedvars[divedepth];
+                     ++discrepancies[divedepth];
+                     discrepancy = discrepancies[divedepth];
+                     for( i = discrepancy; i < heurdata->maxdiscrepancy; ++i )
+                        tabulist[i] = NULL;
+                     for( i = divedepth + 1; i < heurdata->maxdiscdepth; ++i )
+                        discrepancies[i] = discrepancies[divedepth];
+
+                     backtracked = TRUE;
+                  }
+               }
+            }
+            else
+               backtracked = FALSE;
          }
-         else
-            backtracked = FALSE;
       }
-      while( backtracked || farkaspricing );
+      while( backtracked || farkaspricing || otherdirection );
 
       if( !lperror && !cutoff && lpsolstat == SCIP_LPSOLSTAT_OPTIMAL )
       {
@@ -823,6 +911,9 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
       SCIP_CALL( heurdata->divingexitexec(scip, heur) );
    }
    SCIPstatistic( SCIP_CALL( SCIPfreeClock(scip, &lptime) ) );
+   SCIPfreeBufferArray(scip, &selectedvars);
+   SCIPfreeBufferArray(scip, &tabulist);
+   SCIPfreeBufferArray(scip, &discrepancies);
 
    SCIPdebugMessage("(node %"SCIP_LONGINT_FORMAT") finished %s heuristic: %d fractionals, dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d, objval=%g/%g, lpsolstat=%d, cutoff=%u\n",
       SCIPgetNNodes(scip), SCIPheurGetName(heur), nlpcands, divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, heurdata->maxpricerounds,
@@ -1132,6 +1223,21 @@ SCIP_RETCODE GCGincludeDivingHeurOrig(
         paramname,
         "use one level of backtracking if infeasibility is encountered?",
         &heurdata->backtrack, FALSE, DEFAULT_BACKTRACK, NULL, NULL) );
+   (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiscdepth", name);
+   SCIP_CALL( SCIPaddIntParam(scip,
+        paramname,
+        "maximal depth until which a limited discrepancy search is performed",
+        &heurdata->maxdiscdepth, FALSE, DEFAULT_MAXDISCDEPTH, 0, INT_MAX, NULL, NULL) );
+   (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiscrepancy", name);
+   SCIP_CALL( SCIPaddIntParam(scip,
+        paramname,
+        "maximal discrepancy allowed in backtracking",
+        &heurdata->maxdiscrepancy, FALSE, DEFAULT_MAXDISCREPANCY, 0, INT_MAX, NULL, NULL) );
+   (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/otherdirection", name);
+   SCIP_CALL( SCIPaddBoolParam(scip,
+        paramname,
+        "try to branch the diving variable in the other direction in case of infeasibility",
+        &heurdata->otherdirection, FALSE, DEFAULT_OTHERDIRECTION, NULL, NULL) );
 
    return SCIP_OKAY;
 }
