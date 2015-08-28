@@ -495,7 +495,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       && (divedepth < 10
          || nlpcands <= startnlpcands - divedepth/2
          || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations && objval < searchbound))
-      && (divedepth >= heurdata->maxdiscdepth || discrepancies[divedepth] <= heurdata->maxdiscrepancy)
       && !SCIPisStopped(scip) )
    {
       SCIP_VAR* bestcand;
@@ -649,11 +648,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
          /* perform backtracking if a cutoff or an infeasibility was detected
           * and if Farkas pricing did not help
           */
-         if( (lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE || cutoff) && discrepancy < heurdata->maxdiscrepancy && !backtracked && !farkaspricing )
+         if( (lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE || cutoff) && !backtracked && !farkaspricing )
          {
-            assert(heurdata->maxdiscrepancy > 0);
-
-            if( heurdata->backtrack && divedepth > heurdata->maxdiscdepth )
+            if( heurdata->backtrack && divedepth > heurdata->maxdiscdepth && discrepancy < heurdata->maxdiscrepancy )
             {
                SCIPdebugMessage("  *** cutoff or infeasibility detected at level %d - backtracking one node\n", SCIPgetProbingDepth(scip));
 
@@ -669,28 +666,30 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             else if( heurdata->maxdiscdepth > 0 )
             {
                SCIPdebugMessage("  *** cutoff or infeasibility detected at level %d - performing discrepancy search\n", SCIPgetProbingDepth(scip));
+
                /* go back until the search can differ from the previous search tree */
                do
                {
                   SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
                   --divedepth;
                }
-               while( divedepth > 0
-                  && (divedepth >= heurdata->maxdiscdepth
-                     || discrepancies[divedepth] >= heurdata->maxdiscrepancy) );
+               while( divedepth >= heurdata->maxdiscdepth || discrepancies[divedepth] >= heurdata->maxdiscrepancy );
 
                assert(divedepth < heurdata->maxdiscdepth);
 
-               /* add variable selected previously at this depth to the tabu list */
-               tabulist[discrepancies[divedepth]] = selectedvars[divedepth];
-               ++discrepancies[divedepth];
-               discrepancy = discrepancies[divedepth];
-               for( i = discrepancy; i < heurdata->maxdiscrepancy; ++i )
-                  tabulist[i] = NULL;
-               for( i = divedepth + 1; i < heurdata->maxdiscdepth; ++i )
-                  discrepancies[i] = discrepancies[divedepth];
+               if( divedepth >= 0 )
+               {
+                  /* add variable selected previously at this depth to the tabu list */
+                  tabulist[discrepancies[divedepth]] = selectedvars[divedepth];
+                  ++discrepancies[divedepth];
+                  discrepancy = discrepancies[divedepth];
+                  for( i = discrepancy; i < heurdata->maxdiscrepancy; ++i )
+                     tabulist[i] = NULL;
+                  for( i = divedepth + 1; i < heurdata->maxdiscdepth; ++i )
+                     discrepancies[i] = discrepancies[divedepth];
 
-               backtracked = TRUE;
+                  backtracked = TRUE;
+               }
             }
          }
          else
