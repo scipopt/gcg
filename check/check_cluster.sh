@@ -43,9 +43,9 @@
 # To get the result files call "./evalcheck_cluster.sh
 # results/check.$TSTNAME.$BINNAME.$SETNAME.eval in directory check/
 # This leads to result files
-#  - results/check.$TSTNAME.$BINNMAE.$SETNAME.$MSETNAME.out
-#  - results/check.$TSTNAME.$BINNMAE.$SETNAME.$MSETNAME.res
-#  - results/check.$TSTNAME.$BINNMAE.$SETNAME.$MSETNAME.err
+#  - results/check.$TSTNAME.$BINNAME.$SETNAME.$MSETNAME.out
+#  - results/check.$TSTNAME.$BINNAME.$SETNAME.$MSETNAME.res
+#  - results/check.$TSTNAME.$BINNAME.$SETNAME.$MSETNAME.err
 
 TSTNAME=$1
 BINNAME=$2
@@ -178,7 +178,7 @@ do
         fi
 
         # call tmp file configuration for GCG
-        . ./configuration_tmpfile_setup_gcg.sh $INSTANCE $GCGPATH $TMPFILE $SETNAME $MSETNAME $SETFILE $THREADS $SETCUTOFF $FEASTOL $TIMELIMIT $MEMLIMIT $NODELIMIT $LPS $DISPFREQ false $CLIENTTMPDIR $FILENAME
+        . ./configuration_tmpfile_setup_gcg.sh $INSTANCE $GCGPATH $TMPFILE $SETNAME $MSETNAME $SETFILE $THREADS $FEASTOL $TIMELIMIT $MEMLIMIT $NODELIMIT $LPS $DISPFREQ false $CLIENTTMPDIR $FILENAME
 
         # additional environment variables needed by runcluster.sh
 	    export SOLVERPATH=$GCGPATH

@@ -34,7 +34,6 @@
 #    GCGPATH - absolute path to invocation working directory
 #    SETTINGS - settings file
 #    MSETTINGS - master settings file
-#    SETCUTOFF - should optimal solution value (from solu file) be passed as objective limit?
 #    SOLUFILE - .solu file for this test set, for parsing optimal solution values
 #    VALGRINDCMD - the valgrind command to use
 
