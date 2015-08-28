@@ -345,7 +345,17 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgfracdiving) /*lint --e{715}*/
       SCIP_Real upfrac;
       SCIP_Real obj;
 
+      int i;
+
       var = lpcands[c];
+
+      /* if the variable is on the tabu list, do not choose it */
+       for( i = 0; i < tabulistsize; ++i )
+          if( tabulist[i] == var )
+             break;
+       if( i < tabulistsize )
+          continue;
+
       mayrounddown = SCIPvarMayRoundDown(var);
       mayroundup = SCIPvarMayRoundUp(var);
       SCIP_CALL( getMasterDownFrac(scip, var, &downfrac) );
