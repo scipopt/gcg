@@ -673,11 +673,12 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
                   SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
                   --divedepth;
                }
-               while( divedepth >= heurdata->maxdiscdepth || discrepancies[divedepth] >= heurdata->maxdiscrepancy );
+               while( divedepth > 0 &&
+                  (divedepth >= heurdata->maxdiscdepth || discrepancies[divedepth] >= heurdata->maxdiscrepancy) );
 
                assert(divedepth < heurdata->maxdiscdepth);
 
-               if( divedepth >= 0 )
+               if( discrepancies[divedepth] < heurdata->maxdiscrepancy )
                {
                   /* add variable selected previously at this depth to the tabu list */
                   tabulist[discrepancies[divedepth]] = selectedvars[divedepth];
@@ -689,6 +690,10 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
                      discrepancies[i] = discrepancies[divedepth];
 
                   backtracked = TRUE;
+               }
+               else
+               {
+                  assert(divedepth == 0);
                }
             }
          }

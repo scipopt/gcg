@@ -741,6 +741,10 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             && !backtracked && !otherdirection )
          {
             SCIPdebugMessage("  *** infeasibility detected at level %d - perform Farkas pricing\n", SCIPgetProbingDepth(scip));
+
+            /* Go back one node in the master problem, since a new probing node is created in the next loop */
+            SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)-1) );
+
             farkaspricing = TRUE;
          }
          else
@@ -770,7 +774,8 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                {
                   SCIPdebugMessage("  *** cutoff detected at level %d - backtrack one node\n", SCIPgetProbingDepth(scip));
                   SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
-                  SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)) );
+                  /* Go back one node further in the master problem, since a new probing node is created in the next loop */
+                  SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)-1) );
                   --divedepth;
 
                   tabulist[discrepancy] = bestcand;
@@ -789,11 +794,14 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                      SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)) );
                      --divedepth;
                   }
-                  while( divedepth >= heurdata->maxdiscdepth || discrepancies[divedepth] >= heurdata->maxdiscrepancy );
+                  while( divedepth > 0 &&
+                     (divedepth >= heurdata->maxdiscdepth || discrepancies[divedepth] >= heurdata->maxdiscrepancy) );
+                  /* Go back one node further in the master problem, since a new probing node is created in the next loop */
+                  SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)-1) );
 
                   assert(divedepth < heurdata->maxdiscdepth);
 
-                  if( divedepth >= 0 )
+                  if( discrepancies[divedepth] < heurdata->maxdiscrepancy )
                   {
                      /* add variable selected previously at this depth to the tabu list */
                      tabulist[discrepancies[divedepth]] = selectedvars[divedepth];
@@ -805,6 +813,10 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                         discrepancies[i] = discrepancies[divedepth];
 
                      backtracked = TRUE;
+                  }
+                  else
+                  {
+                     assert(divedepth == 0);
                   }
                }
             }
