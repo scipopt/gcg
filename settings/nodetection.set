@@ -21,7 +21,6 @@ detectors/random/enabled = FALSE
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/isomorph/enabled = FALSE
 
-
 # flag to indicate whether detector <colors> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/colors/enabled = FALSE
@@ -33,3 +32,4 @@ detectors/cutpacking/enabled = FALSE
 # flag to indicate whether detector <stairheur> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/stairheur/enabled = FALSE
+

@@ -46,6 +46,7 @@
 #include "scip/relax.h"
 #include "scip/heur.h"
 #include "scip/scipdefplugins.h"
+#include "scip/clock.h"
 
 #include "gcg.h"
 
@@ -198,16 +199,34 @@ SCIP_RETCODE writeAllDecompositions(
  *       - \ref SCIP_STAGE_PRESOLVED
  */
 static
-SCIP_RETCODE useSCIP(SCIP* scip){
-
+SCIP_RETCODE useSCIP( SCIP* scip )
+{
+   SCIP_CONSHDLR** conshdlrs;
+   int i;
+   double time;
    SCIP* subscip = NULL;
+   SCIP_Bool valid = FALSE;
 
+   /* get decomposition detection time */
+   conshdlrs = SCIPgetConshdlrs( scip );
+   for( i = 0; i < SCIPgetNConshdlrs( scip ); i++ ){
+      if( SCIPconshdlrGetName( conshdlrs[i] ) == (char*)"decomp" )
+      {
+         time = (double)( SCIPclockGetTime( conshdlrs[i]->conshdlrdata->detectorclock ) );
+      }
+   }
+   assert( time != 0 );
+   /* TODO add decomposition time to solving time */
 
    /* start another SCIP instance on the same problem without GCG plugins */
    SCIP_CALL( SCIPcreate(&subscip) );
    SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
 
+   SCIP_CALL( SCIPcopyParamSettings(scip, subscip) );
    SCIP_CALL( SCIPcopyOrigProb( scip, subscip, NULL, NULL, "prob" ) );
+   SCIP_CALL( SCIPcopyOrigVars( scip, subscip, NULL, NULL ) );
+   SCIP_CALL( SCIPcopyOrigConss( scip, subscip, NULL, NULL, TRUE, &valid) );
+   assert(valid);
 
    SCIP_CALL( SCIPtransformProb(subscip) );
    SCIP_CALL( SCIPpresolve(subscip) );
@@ -437,6 +456,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
             assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
             SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected.\n");
             SCIPdialogMessage(scip, NULL, "SCIP will reload and solve.\n\n");
+
             /* if there is no decomp remove all GCG-specific characteristics and solve with scip */
             SCIP_CALL( useSCIP(scip) );
             break;
