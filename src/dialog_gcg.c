@@ -201,9 +201,9 @@ SCIP_RETCODE writeAllDecompositions(
 static
 SCIP_RETCODE useSCIP( SCIP* scip )
 {
-   SCIP_Real time;
    SCIP* newscip = NULL;
-   SCIP_Real memory = 0;
+   SCIP_Real timelimit;
+   SCIP_Real memlimit;
    SCIP_Bool valid = FALSE;
 
    /* start another SCIP instance on the same problem without GCG plugins */
@@ -211,13 +211,10 @@ SCIP_RETCODE useSCIP( SCIP* scip )
    SCIP_CALL( SCIPincludeDefaultPlugins(newscip) );
    SCIP_CALL( SCIPcopyParamSettings(scip, newscip) );
 
-   time = SCIPgetTotalTime( scip );
-   assert( time != 0 );
-   /* TODO find getter/setter for time limit*/
-   newscip->set->limit_time = scip->set->limit_time - time;
-   /* TODO same as time limit */
-   memory = SCIPgetMemUsed( scip );
-   newscip->set->limit_memory = scip->set->limit_memory - memory;
+   SCIP_CALL( SCIPgetRealParam( scip, "limit_time", &timelimit ) );
+   SCIP_CALL( SCIPsetRealParam( newscip, "limit_time", timelimit - SCIPgetTotalTime( scip ) ) );
+   SCIP_CALL( SCIPgetRealParam( scip, "limit_memory", &memlimit ) );
+   SCIP_CALL( SCIPsetRealParam( newscip, "limit_memory", memlimit - SCIPgetMemUsed( scip ) ) );
 
    SCIP_CALL( SCIPcopyOrigProb( scip, newscip, NULL, NULL, "prob" ) );
    SCIP_CALL( SCIPcopyOrigVars( scip, newscip, NULL, NULL ) );
