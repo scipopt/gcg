@@ -211,8 +211,13 @@ SCIP_RETCODE useSCIP( SCIP* scip )
    SCIP_CALL( SCIPincludeDefaultPlugins(newscip) );
    SCIP_CALL( SCIPcopyParamSettings(scip, newscip) );
 
+   /* TODO wrong way to set set-parameters! fix */
    SCIP_CALL( SCIPgetRealParam( scip, "limit_time", &timelimit ) );
    SCIP_CALL( SCIPsetRealParam( newscip, "limit_time", timelimit - SCIPgetTotalTime( scip ) ) );
+   if( timelimit != 0 )
+   {
+      SCIP_CALL( SCIPsetBoolParam( newscip, "istimelimitfinite", TRUE ) );
+   }
    SCIP_CALL( SCIPgetRealParam( scip, "limit_memory", &memlimit ) );
    SCIP_CALL( SCIPsetRealParam( newscip, "limit_memory", memlimit - SCIPgetMemUsed( scip ) ) );
 
