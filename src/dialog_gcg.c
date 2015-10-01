@@ -194,46 +194,42 @@ SCIP_RETCODE writeAllDecompositions(
    return SCIP_OKAY;
 }
 
-/** starts another SCIP instance containing the same problem but no GCG-specific plugins
+/** starts another SCIP instance containing the same problem but no GCG-specific plugins.
  * @pre This method can be called if @p scip is in one of the following stages:
  *       - \ref SCIP_STAGE_PRESOLVED
  */
 static
 SCIP_RETCODE useSCIP( SCIP* scip )
 {
-   SCIP_CONSHDLR** conshdlrs;
-   int i;
-   double time;
-   SCIP* subscip = NULL;
+   SCIP_Real time;
+   SCIP* newscip = NULL;
+   SCIP_Real memory = 0;
    SCIP_Bool valid = FALSE;
 
-   /* get decomposition detection time */
-   conshdlrs = SCIPgetConshdlrs( scip );
-   for( i = 0; i < SCIPgetNConshdlrs( scip ); i++ ){
-      if( SCIPconshdlrGetName( conshdlrs[i] ) == (char*)"decomp" )
-      {
-         time = (double)( SCIPclockGetTime( conshdlrs[i]->conshdlrdata->detectorclock ) );
-      }
-   }
-   assert( time != 0 );
-   /* TODO add decomposition time to solving time */
-
    /* start another SCIP instance on the same problem without GCG plugins */
-   SCIP_CALL( SCIPcreate(&subscip) );
-   SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
+   SCIP_CALL( SCIPcreate(&newscip) );
+   SCIP_CALL( SCIPincludeDefaultPlugins(newscip) );
+   SCIP_CALL( SCIPcopyParamSettings(scip, newscip) );
 
-   SCIP_CALL( SCIPcopyParamSettings(scip, subscip) );
-   SCIP_CALL( SCIPcopyOrigProb( scip, subscip, NULL, NULL, "prob" ) );
-   SCIP_CALL( SCIPcopyOrigVars( scip, subscip, NULL, NULL ) );
-   SCIP_CALL( SCIPcopyOrigConss( scip, subscip, NULL, NULL, TRUE, &valid) );
+   time = SCIPgetTotalTime( scip );
+   assert( time != 0 );
+   /* TODO find getter/setter for time limit*/
+   newscip->set->limit_time = scip->set->limit_time - time;
+   /* TODO same as time limit */
+   memory = SCIPgetMemUsed( scip );
+   newscip->set->limit_memory = scip->set->limit_memory - memory;
+
+   SCIP_CALL( SCIPcopyOrigProb( scip, newscip, NULL, NULL, "prob" ) );
+   SCIP_CALL( SCIPcopyOrigVars( scip, newscip, NULL, NULL ) );
+   SCIP_CALL( SCIPcopyOrigConss( scip, newscip, NULL, NULL, TRUE, &valid) );
    assert(valid);
 
-   SCIP_CALL( SCIPtransformProb(subscip) );
-   SCIP_CALL( SCIPpresolve(subscip) );
+   SCIP_CALL( SCIPtransformProb(newscip) );
+   SCIP_CALL( SCIPpresolve(newscip) );
 
-   SCIP_CALL( SCIPsolve(subscip) );
+   SCIP_CALL( SCIPsolve(newscip) );
 
-   SCIP_CALL( SCIPfree(&subscip) );
+   SCIP_CALL( SCIPfree(&newscip) );
 
    return SCIP_OKAY;
 }
