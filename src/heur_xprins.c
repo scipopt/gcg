@@ -1018,8 +1018,8 @@ static SCIP_RETCODE fixVariables(
             assert(neqpts[i] <= npts[block]);
             quoteqpts = (SCIP_Real) neqpts[i] / (SCIP_Real) MAX(npts[block],1);
 
-            SCIPdebugMessage("Variable %s: %d/%d (%.2f percent) extreme points identical to relaxation solution.\n",
-                        SCIPvarGetName(var), neqpts[i], npts[block], quoteqpts * 100);
+            SCIPdebugMessage("Variable %s: %d/%d (%.2f percent) extreme points identical to relaxation solution (value=%g).\n",
+                        SCIPvarGetName(var), neqpts[i], npts[block], quoteqpts * 100, solval);
          }
          else
          {
@@ -1037,8 +1037,8 @@ static SCIP_RETCODE fixVariables(
             assert(neqpts[i] <= ntotalpts);
             quoteqpts = (SCIP_Real) neqpts[i] / (SCIP_Real) MAX(ntotalpts,1);
 
-            SCIPdebugMessage("Variable %s: %d/%d (%.2f percent) extreme points identical to relaxation solution.\n",
-                        SCIPvarGetName(var), neqpts[i], ntotalpts, quoteqpts * 100);
+            SCIPdebugMessage("Variable %s: %d/%d (%.2f percent) extreme points identical to relaxation solution (value=%g).\n",
+                        SCIPvarGetName(var), neqpts[i], ntotalpts, quoteqpts * 100, solval);
          }
 
          /* the variable can be fixed if the relaxation value is shared by enough extreme points;
@@ -1535,6 +1535,13 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
          return SCIP_OKAY;
       }
    }
+   else
+   {
+      if( heurdata->randomization )
+      {
+         SCIPwarningMessage(scip, "Randomization not supported when number of selected extreme point is not constant -- ignoring parameter\n");
+      }
+   }
 
    /* initialize the subproblem */
    SCIP_CALL( SCIPcreate(&subscip) );
@@ -1582,7 +1589,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
       goto TERMINATE;
    }
 
-   SCIPdebugMessage("XP RINS presolved subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
+   SCIPdebugMessage("XP RINS presolved subproblem: %d vars, %d conss, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
 
    allfixingrate = (SCIPgetNOrigVars(subscip) - SCIPgetNVars(subscip)) / (SCIP_Real)SCIPgetNOrigVars(subscip);
 
