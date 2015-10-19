@@ -597,9 +597,18 @@ static SCIP_RETCODE fixVariables(
          mastervar = mastervars[j];
          assert(mastervar != NULL);
          block = GCGvarGetBlock(mastervar);
-         if( block >= 0 )
-            if( nusedpts == -1 || !SCIPisZero(scip, SCIPgetSolVal(masterprob, NULL, mastervar)) )
-               ++npts[block];
+         if( block >= 0 && (nusedpts == -1 || !SCIPisZero(scip, SCIPgetSolVal(masterprob, NULL, mastervar))) )
+            ++npts[block];
+      }
+      /* We have only counted for the relevant blocks so far,
+       * so it is still necessary to set the numbers of extreme points for the other blocks
+       */
+      for( i = 0; i < nblocks; ++i )
+      {
+         int blockrep = GCGgetBlockRepresentative(scip, i);
+         assert(blockrep >= 0 && blockrep <= i);
+
+         npts[i] = npts[blockrep];
       }
    }
    else
@@ -857,10 +866,6 @@ static SCIP_RETCODE fixVariables(
       assert(GCGvarIsOriginal(var));
       block = GCGvarGetBlock(var);
       solval = SCIPgetRelaxSolVal(scip, var);
-
-      /* if the variable is represented by another one, it is not treated here */
-      if( block >= 0 && !GCGisPricingprobRelevant(scip, block) )
-         continue;
 
       /* we still need to treat variables belonging to no block (as they did not appear in any extreme point);
        * if the variable belongs to no block, fix it in a RENS-like fashion
