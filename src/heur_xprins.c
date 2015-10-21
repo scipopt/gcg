@@ -704,7 +704,9 @@ static
 void compareOneExtremePoint(
    SCIP*                 scip,               /**< original SCIP data structure                                  */
    SCIP_VAR*             mastervar,          /**< master variable representing the extreme point                */
-   int*                  neqpts              /**< for each original variable, count how many extreme points share its relaxation solution value */
+   int                   solblock,           /**< block in which the relaxation solution should be compared, or -1 if all blocks of the extreme point should be considered */
+   int*                  neqpts,             /**< for each original variable, count how many extreme points share its relaxation solution value */
+   SCIP_Bool*            zeroblocks          /**< for each block, the information whether it would be fixed entirely to zero */
    )
 {
    int block;                                /* representative block the master variable belongs to   */
@@ -763,8 +765,13 @@ void compareOneExtremePoint(
 
       for( j = 0; j < npricingorigvars; ++j )
       {
+         int origblock;
          int idx;
          SCIP_Real solval;
+
+         origblock = GCGvarGetBlock(pricingorigvars[j]);
+         if( solblock != -1 && origblock != solblock )
+            continue;
 
          idx = SCIPvarGetProbindex(pricingorigvars[j]);
          assert(SCIPvarGetType(pricingorigvars[j]) <= SCIP_VARTYPE_INTEGER);
@@ -776,12 +783,16 @@ void compareOneExtremePoint(
          if( SCIPisZero(scip, solval) )
          {
             if( !SCIPisZero(scip, origvals[i]) )
+            {
                --neqpts[idx];
+               zeroblocks[origblock] = FALSE;
+            }
          }
          else
          {
             if( SCIPisEQ(scip, solval, origvals[i]) )
                ++neqpts[idx];
+            zeroblocks[origblock] = FALSE;
          }
       }
    }
@@ -795,7 +806,8 @@ SCIP_RETCODE compareExtremePointsToRelaxSol(
    SCIP*                 scip,               /**< original SCIP data structure                                     */
    int*                  selection,          /**< selected extreme points the heuristic will use, or NULL          */
    int                   nusedpts,           /**< number of extreme points per block to be considered, or 0, or -1 */
-   int*                  neqpts              /**< for each original variable, count how many extreme points share its relaxation solution value */
+   int*                  neqpts,             /**< for each original variable, count how many extreme points share its relaxation solution value */
+   SCIP_Bool*            zeroblocks          /**< for each block, the information whether it would be fixed entirely to zero */
    )
 {
    SCIP* masterprob;                         /* master problem                         */
@@ -834,7 +846,7 @@ SCIP_RETCODE compareExtremePointsToRelaxSol(
          if( nusedpts == 0 && SCIPisZero(scip, SCIPgetSolVal(masterprob, NULL, mastervar)) )
             continue;
 
-         compareOneExtremePoint(scip, mastervar, neqpts);
+         compareOneExtremePoint(scip, mastervar, -1, neqpts, zeroblocks);
       }
    }
    else
@@ -856,7 +868,7 @@ SCIP_RETCODE compareExtremePointsToRelaxSol(
                assert(mastervar != NULL);
                assert(GCGvarGetBlock(mastervar) == GCGgetBlockRepresentative(scip, i));
 
-               compareOneExtremePoint(scip, mastervar, neqpts);
+               compareOneExtremePoint(scip, mastervar, i, neqpts, zeroblocks);
             }
          }
       }
@@ -923,19 +935,8 @@ SCIP_RETCODE fixVariables(
    SCIP_CALL( SCIPallocBufferArray(scip, &neqpts, nbinvars + nintvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &zeroblocks, nblocks) );
 
-   /* check if there is a block that would entirely be fixed to zero */
    for( i = 0; i < nblocks; ++i )
       zeroblocks[i] = TRUE;
-   for( i = 0; i < nbinvars + nintvars; ++i )
-   {
-      SCIP_VAR* var;
-      int block;
-
-      var = vars[i];
-      block = GCGvarGetBlock(var);
-      if( block >= 0 && !SCIPisZero(scip, SCIPgetRelaxSolVal(scip, var)) )
-         zeroblocks[block] = FALSE;
-   }
 
    /* initialize counters; if the relaxation solution value is different to zero,
     * we count upwards, otherwise downwards
@@ -950,7 +951,6 @@ SCIP_RETCODE fixVariables(
       var = vars[i];
       assert(var != NULL);
       block = GCGvarGetBlock(var);
-      assert(block >= -2);
       solval = SCIPgetRelaxSolVal(scip, var);
 
       if( !SCIPisZero(scip, solval) || block == -1 )
@@ -974,7 +974,7 @@ SCIP_RETCODE fixVariables(
       }
    }
 
-   SCIP_CALL( compareExtremePointsToRelaxSol(scip, selection, nusedpts, neqpts) );
+   SCIP_CALL( compareExtremePointsToRelaxSol(scip, selection, nusedpts, neqpts, zeroblocks) );
 
    /* try to fix the binary and general integer variables */
    for( i = 0; i < nbinvars + nintvars; ++i )
