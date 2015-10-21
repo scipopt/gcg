@@ -714,7 +714,7 @@ SCIP_RETCODE printExtremePoints(
 
 /** initialize the subSCIP instance: copy SCIP to subSCIP, set the parameters */
 static
-SCIP_RETCODE initializeSubproblem(
+SCIP_RETCODE setupSubproblem(
    SCIP*                 scip,               /**< original SCIP data structure                                  */
    SCIP*                 subscip,            /**< SCIP data structure for the subproblem                        */
    SCIP_VAR**            subvars,            /**< the variables of the subproblem                               */
@@ -1632,7 +1632,7 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
 
    /* initialize the subproblem */
    SCIP_CALL( SCIPcreate(&subscip) );
-   SCIP_CALL( initializeSubproblem(scip, subscip, subvars, heurdata, nstallnodes, timelimit, memorylimit) );
+   SCIP_CALL( setupSubproblem(scip, subscip, subvars, heurdata, nstallnodes, timelimit, memorylimit) );
 
    /* fix the variables of the subproblem */
    SCIP_CALL( fixVariables(scip, subscip, subvars, selection, heurdata, &intfixingrate, &zerofixingrate, &success) );
