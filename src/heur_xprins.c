@@ -630,6 +630,174 @@ SCIP_RETCODE initializeSubproblem(
 }
 
 
+/**
+ * compare an extreme point (represented by a master variable) to the relaxation solution
+ */
+static
+void compareOneExtremePoint(
+   SCIP*                 scip,               /**< original SCIP data structure                                  */
+   SCIP_VAR*             mastervar,          /**< master variable representing the extreme point                */
+   int*                  neqpts              /**< for each original variable, count how many extreme points share its relaxation solution value */
+   )
+{
+   int block;                                /* representative block the master variable belongs to   */
+   SCIP_VAR** origvars;                      /* original variables of the extreme point               */
+   SCIP_Real* origvals;                      /* values of the original variables in the extreme point */
+   int norigvars;                            /* number of original variables of the extreme point     */
+
+   int i;
+   int j;
+
+   assert(GCGvarIsMaster(mastervar));
+
+   block = GCGvarGetBlock(mastervar);
+   assert(block >= 0);
+
+   /* get the actual extreme point */
+   origvars = GCGmasterVarGetOrigvars(mastervar);
+   origvals = GCGmasterVarGetOrigvals(mastervar);
+   norigvars = GCGmasterVarGetNOrigvars(mastervar);
+
+   /* compare each extreme point value to the corresponding relaxation solution value */
+   for( i = 0; i < norigvars; ++i )
+   {
+      SCIP_VAR* pricingvar;
+      SCIP_VAR** pricingorigvars;
+      int npricingorigvars;
+
+      if( SCIPvarGetType(origvars[i]) > SCIP_VARTYPE_INTEGER )
+         continue;
+
+      /* get the corresponding pricing variable;
+       * needed to obtain original variables corresponding to the current one from other blocks
+       * (see below)
+       */
+      if( GCGoriginalVarIsLinking(origvars[i]) )
+      {
+         SCIP_VAR** linkingpricingvars;
+
+         linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[i]);
+         pricingvar = linkingpricingvars[block];
+      }
+      else
+         pricingvar = GCGoriginalVarGetPricingVar(origvars[i]);
+
+      assert(pricingvar != NULL);
+      assert(GCGvarIsPricing(pricingvar));
+
+      /* get all original variables corresponding to the current one;
+       * this is necessary since in case of identical, aggregated blocks,
+       * the extreme point may belong to multiple blocks
+       */
+      pricingorigvars = GCGpricingVarGetOrigvars(pricingvar);
+      npricingorigvars = GCGpricingVarGetNOrigvars(pricingvar);
+      assert(pricingorigvars != NULL);
+      assert(npricingorigvars >= 0);
+
+      for( j = 0; j < npricingorigvars; ++j )
+      {
+         int idx;
+         SCIP_Real solval;
+
+         idx = SCIPvarGetProbindex(pricingorigvars[j]);
+         assert(SCIPvarGetType(pricingorigvars[j]) <= SCIP_VARTYPE_INTEGER);
+         solval = SCIPgetRelaxSolVal(scip, pricingorigvars[j]);
+
+         /* If a relaxation solution value is zero, we assumed that it is zero in all extreme points,
+          * so we need to decrease the counter if this is not the case
+          */
+         if( SCIPisZero(scip, solval) )
+         {
+            if( !SCIPisZero(scip, origvals[i]) )
+               --neqpts[idx];
+         }
+         else
+         {
+            if( SCIPisEQ(scip, solval, origvals[i]) )
+               ++neqpts[idx];
+         }
+      }
+   }
+}
+
+/**
+ * compare all selected extreme points to the relaxation solution
+ */
+static
+SCIP_RETCODE compareExtremePointsToRelaxSol(
+   SCIP*                 scip,               /**< original SCIP data structure                                     */
+   int*                  selection,          /**< selected extreme points the heuristic will use, or NULL          */
+   int                   nusedpts,           /**< number of extreme points per block to be considered, or 0, or -1 */
+   int*                  neqpts              /**< for each original variable, count how many extreme points share its relaxation solution value */
+   )
+{
+   SCIP* masterprob;                         /* master problem                         */
+   SCIP_VAR** mastervars;                    /* master variables                       */
+   int nmastervars;                          /* number of master variables             */
+   int nblocks;
+
+   int i;
+   int j;
+
+   /* get master problem and its variables */
+   masterprob = GCGgetMasterprob(scip);
+   assert(masterprob != NULL);
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+   assert(mastervars != NULL);
+   assert(nmastervars >= 0);
+
+   nblocks = GCGgetNPricingprobs(scip);
+
+   if( nusedpts <= 0 )
+   {
+      assert(nusedpts == 0 || nusedpts == -1);
+
+      for( i = 0; i < nmastervars; ++i )
+      {
+         SCIP_VAR* mastervar;
+
+         /* get master variable */
+         mastervar = mastervars[i];
+
+         /* ignore master variables which are just copies from original variables and no extreme points */
+         if( GCGvarGetBlock(mastervar) == -1 )
+            continue;
+
+         /* ignore master variable if it is zero and only the nonzeroes should be considered */
+         if( nusedpts == 0 && SCIPisZero(scip, SCIPgetSolVal(masterprob, NULL, mastervar)) )
+            continue;
+
+         compareOneExtremePoint(scip, mastervar, neqpts);
+      }
+   }
+   else
+   {
+      assert(selection != NULL);
+
+      for( i = 0; i < nblocks; ++i )
+      {
+         /* compare the relaxation solution to the selected extreme points */
+         for( j = 0; j < nusedpts; ++j )
+         {
+            int selidx = i * nusedpts + j;
+            if( selection[selidx] != -1 )
+            {
+               SCIP_VAR* mastervar;
+
+               /* get master variable */
+               mastervar = mastervars[selection[selidx]];
+               assert(mastervar != NULL);
+               assert(GCGvarGetBlock(mastervar) == GCGgetBlockRepresentative(scip, i));
+
+               compareOneExtremePoint(scip, mastervar, neqpts);
+            }
+         }
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
 /** fix variables; for each variable, we evaluate the percentage of extreme points in which it has the same value
  *  as in the relaxation solution and fix it if the percentage exceeds a certain value
  */
@@ -665,8 +833,6 @@ static SCIP_RETCODE fixVariables(
 
    int i;
    int j;
-   int k;
-   int l;
    int selidx;
 
    /* check preconditions */
@@ -797,183 +963,7 @@ static SCIP_RETCODE fixVariables(
       }
    }
 
-   /* compare the relaxation solution to the extreme points */
-   if( nusedpts <= 0 )
-   {
-      assert(nusedpts == 0 || nusedpts == -1);
-
-      for( i = 0; i < nmastervars; ++i )
-      {
-         SCIP_VAR* mastervar;
-         int block;
-         SCIP_VAR** origvars;
-         SCIP_Real* origvals;
-         int norigvars;
-
-         /* get master variable and block */
-         mastervar = mastervars[i];
-         assert(GCGvarIsMaster(mastervar));
-         block = GCGvarGetBlock(mastervar);
-
-         /* ignore copied original variables */
-         if( block == -1 )
-            continue;
-         assert(block >= 0);
-
-         /* ignore master variable if it is zero and only the nonzeroes should be considered */
-         if( nusedpts == 0 && SCIPisZero(scip, SCIPgetSolVal(masterprob, NULL, mastervar)) )
-            continue;
-
-         /* get extreme point */
-         origvars = GCGmasterVarGetOrigvars(mastervar);
-         origvals = GCGmasterVarGetOrigvals(mastervar);
-         norigvars = GCGmasterVarGetNOrigvars(mastervar);
-
-         /* compare the solution values;
-          * count downwards if relaxation solution is zero, count upwards otherwise
-          */
-         for( k = 0; k < norigvars; ++k )
-         {
-            SCIP_VAR* pricingvar;
-            SCIP_VAR** pricingorigvars;
-            int npricingorigvars;
-
-            if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
-               continue;
-
-            /* get the corresponding pricing variable */
-            if( GCGoriginalVarIsLinking(origvars[k]) )
-            {
-               SCIP_VAR** linkingpricingvars;
-
-               linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
-               pricingvar = linkingpricingvars[block];
-            }
-            else
-               pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
-
-            assert(pricingvar != NULL);
-            assert(GCGvarIsPricing(pricingvar));
-
-            /* get all origvars represented by the current origvar */
-            pricingorigvars = GCGpricingVarGetOrigvars(pricingvar);
-            npricingorigvars = GCGpricingVarGetNOrigvars(pricingvar);
-            assert(pricingorigvars != NULL);
-            assert(npricingorigvars >= 0);
-
-            for( l = 0; l < npricingorigvars; ++l )
-            {
-               int idx;
-               SCIP_Real solval;
-
-               idx = SCIPvarGetProbindex(pricingorigvars[l]);
-               assert(idx < nbinvars + nintvars);
-               solval = SCIPgetRelaxSolVal(scip, pricingorigvars[l]);
-
-               if( SCIPisZero(scip, solval) )
-               {
-                  if( !SCIPisZero(scip, origvals[k]) )
-                     --neqpts[idx];
-               }
-               else
-               {
-                  if( SCIPisEQ(scip, solval, origvals[k]) )
-                     ++neqpts[idx];
-               }
-            }
-         }
-      }
-   }
-   else
-   {
-      assert(selection != NULL);
-
-      for( i = 0; i < nblocks; ++i )
-      {
-         /* compare the relaxation solution to the selected extreme points */
-         for( j = 0; j < nusedpts; ++j )
-         {
-            selidx = i * nusedpts + j;
-            if( selection[selidx] != -1 )
-            {
-               SCIP_VAR* mastervar;
-               SCIP_VAR** origvars;
-               SCIP_Real* origvals;
-               int norigvars;
-
-               /* get master variable */
-               mastervar = mastervars[selection[selidx]];
-               assert(mastervar != NULL);
-               assert(GCGvarIsMaster(mastervar));
-               assert(GCGvarGetBlock(mastervar) == GCGgetBlockRepresentative(scip, i));
-
-               /* get extreme point */
-               origvars = GCGmasterVarGetOrigvars(mastervar);
-               origvals = GCGmasterVarGetOrigvals(mastervar);
-               norigvars = GCGmasterVarGetNOrigvars(mastervar);
-
-               /* compare the solution values;
-                * count downwards if relaxation solution is zero, count upwards otherwise
-                */
-               for( k = 0; k < norigvars; ++k )
-               {
-                  SCIP_VAR* pricingvar;
-                  SCIP_VAR** pricingorigvars;
-                  int npricingorigvars;
-
-                  if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
-                     continue;
-
-                  /* get the corresponding pricing variable */
-                  if( GCGoriginalVarIsLinking(origvars[k]) )
-                  {
-                     SCIP_VAR** linkingpricingvars;
-
-                     linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
-                     pricingvar = linkingpricingvars[i];
-                  }
-                  else
-                     pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
-
-                  assert(pricingvar != NULL);
-                  assert(GCGvarIsPricing(pricingvar));
-
-                  /* get all origvars represented by the current origvar */
-                  pricingorigvars = GCGpricingVarGetOrigvars(pricingvar);
-                  npricingorigvars = GCGpricingVarGetNOrigvars(pricingvar);
-                  assert(pricingorigvars != NULL);
-                  assert(npricingorigvars >= 0);
-
-                  for( l = 0; l < npricingorigvars; ++l )
-                  {
-                     int block;
-                     int idx;
-                     SCIP_Real solval;
-
-                     block = GCGvarGetBlock(pricingorigvars[l]);
-                     if( block != i )
-                        continue;
-
-                     idx = SCIPvarGetProbindex(pricingorigvars[l]);
-                     assert(idx < nbinvars + nintvars);
-                     solval = SCIPgetRelaxSolVal(scip, pricingorigvars[l]);
-
-                     if( SCIPisZero(scip, solval) )
-                     {
-                        if( !SCIPisZero(scip, origvals[k]) )
-                           --neqpts[idx];
-                     }
-                     else
-                     {
-                        if( SCIPisEQ(scip, solval, origvals[k]) )
-                           ++neqpts[idx];
-                     }
-                  }
-               }
-            }
-         }
-      }
-   }
+   SCIP_CALL( compareExtremePointsToRelaxSol(scip, selection, nusedpts, neqpts) );
 
    /* try to fix the binary and general integer variables */
    for( i = 0; i < nbinvars + nintvars; ++i )
