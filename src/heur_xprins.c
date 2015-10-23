@@ -710,17 +710,21 @@ void compareOneExtremePoint(
    )
 {
    int block;                                /* representative block the master variable belongs to   */
+   int nblocks;
    SCIP_VAR** origvars;                      /* original variables of the extreme point               */
    SCIP_Real* origvals;                      /* values of the original variables in the extreme point */
    int norigvars;                            /* number of original variables of the extreme point     */
 
    int i;
    int j;
+   int k;
 
    assert(GCGvarIsMaster(mastervar));
 
    block = GCGvarGetBlock(mastervar);
    assert(block >= 0);
+
+   nblocks = GCGgetNPricingprobs(scip);
 
    /* get the actual extreme point */
    origvars = GCGmasterVarGetOrigvars(mastervar);
@@ -770,7 +774,10 @@ void compareOneExtremePoint(
          SCIP_Real solval;
 
          origblock = GCGvarGetBlock(pricingorigvars[j]);
-         if( solblock != -1 && origblock != solblock )
+         assert(origblock != -1);
+
+         if( solblock != -1 &&
+            ((origblock != -2 && origblock != solblock) || (origblock == -2 && !GCGisLinkingVarInBlock(pricingorigvars[j], solblock))) )
             continue;
 
          idx = SCIPvarGetProbindex(pricingorigvars[j]);
@@ -783,16 +790,24 @@ void compareOneExtremePoint(
          if( SCIPisZero(scip, solval) )
          {
             if( !SCIPisZero(scip, origvals[i]) )
-            {
                --neqpts[idx];
-               zeroblocks[origblock] = FALSE;
-            }
          }
          else
          {
             if( SCIPisEQ(scip, solval, origvals[i]) )
                ++neqpts[idx];
-            zeroblocks[origblock] = FALSE;
+
+            /* The block will not be entirely fixed to zero, since the variable has nonzero relaxation solution value */
+            if( origblock != -2 )
+               zeroblocks[origblock] = FALSE;
+            else
+            {
+               /* For a linking variable, get all blocks it appears in */
+               SCIP_VAR** linkingpricingvars = GCGlinkingVarGetPricingVars(pricingorigvars[j]);
+               for( k = 0; k < nblocks; ++k )
+                  if( linkingpricingvars[k] != NULL )
+                     zeroblocks[k] = FALSE;
+            }
          }
       }
    }
