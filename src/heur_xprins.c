@@ -520,7 +520,7 @@ SCIP_RETCODE countExtremePoints(
    SCIP*                 scip,               /**< original SCIP data structure                                     */
    int*                  selection,          /**< selected extreme points the heuristic will use, or NULL          */
    int                   nusedpts,           /**< number of extreme points per block to be considered, or 0, or -1 */
-   int*                  nactualpts          /**< number of points per block that have actually been selected     */
+   int*                  nactualpts          /**< number of points per block that have actually been selected      */
    )
 {
    SCIP* masterprob;                         /* master problem                         */
@@ -948,8 +948,12 @@ SCIP_RETCODE fixVariables(
    for( i = 0; i < nblocks; ++i )
       zeroblocks[i] = TRUE;
 
-   /* initialize counters; if the relaxation solution value is different to zero,
-    * we count upwards, otherwise downwards
+   /* initialize counters for identical solution values
+    *
+    * @note: Zero values of extreme points are not stored explicitly in the master
+    * variable data; therefore, we assume for each variable with solution value zero
+    * that each extreme point also has value zero, and we will later on decrease the
+    * counter for each point where this is not the case
     */
    for( i = 0; i < nbinvars + nintvars; ++i )
    {
@@ -994,14 +998,14 @@ SCIP_RETCODE fixVariables(
       block = GCGvarGetBlock(var);
       solval = SCIPgetRelaxSolVal(scip, var);
 
-      /* we still need to treat variables belonging to no block (as they did not appear in any extreme point);
-       * if the variable belongs to no block, fix it in a RENS-like fashion
+      /* Variables which were directly copied from the original problem do not appear in any extreme point;
+       * they are fixed like in the RENS heuristic
        */
       if( block == -1 )
       {
          if( SCIPisFeasIntegral(scip, solval) )
          {
-            /* fix variable to current relaxation solution if it is integral,
+            /* fix variable to current relaxation solution if it is integral;
              * use exact integral value, if the variable is only integral within numerical tolerances
              */
             solval = SCIPfloor(scip, solval + 0.5);
@@ -1013,6 +1017,9 @@ SCIP_RETCODE fixVariables(
                zerocounter++;
          }
       }
+      /* For variables belonging to one or more blocks, we evaluate in how many percent of the
+       * extreme points they have the same value as in the relaxation solution
+       */
       else
       {
          int ntotalpts;
@@ -1020,7 +1027,9 @@ SCIP_RETCODE fixVariables(
 
          assert(block == -2 || block >= 0);
 
-         /* evaluate percentage of extreme points having the same variable value as the relaxation solution */
+         /* Calculate in how many extreme points the variable appears;
+          * in case of linking variables, we need to consider points from all their blocks
+          */
          if( block >= 0 )
             ntotalpts = nactualpts[block];
          else
@@ -1042,7 +1051,7 @@ SCIP_RETCODE fixVariables(
          SCIPdebugMessage("Variable %s: %d/%d (%.2f percent) extreme points identical to relaxation solution (value=%g).\n",
                      SCIPvarGetName(var), neqpts[i], ntotalpts, quoteqpts * 100, solval);
 
-         /* the variable can be fixed if the relaxation value is shared by enough extreme points;
+         /* The variable can be fixed if the relaxation value is shared by enough extreme points;
           * besides, we avoid fixing entire blocks to zero
           */
          if( quoteqpts >= heurdata->equalityrate && (block < 0 || !zeroblocks[block]) )
@@ -1060,7 +1069,9 @@ SCIP_RETCODE fixVariables(
    *intfixingrate = (SCIP_Real) fixingcounter / (SCIP_Real) (MAX(nbinvars + nintvars, 1));
    *zerofixingrate = (SCIP_Real)zerocounter / MAX((SCIP_Real)fixingcounter, 1.0);
 
-   /* if not enough variables were fixed, try to fix zero blocks until the minimum fixing rate is reached */
+   /* If not enough variables were fixed, try to fix blocks which relaxation solution value zero,
+    * until the minimum fixing rate is reached
+    */
    while( *intfixingrate < heurdata->minfixingrate )
    {
       SCIPdebugMessage("  fixing rate only %5.2f --> trying to fix a zero block\n", *intfixingrate);
@@ -1301,7 +1312,7 @@ SCIP_DECL_HEURINIT(heurInitXprins)
    assert(heur != NULL);
    assert(scip != NULL);
 
-   /* get heuristic's data */
+   /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
 
@@ -1416,7 +1427,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
 
    nblocks = GCGgetNPricingprobs(scip);
 
-   /* get heuristic's data */
+   /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
 
