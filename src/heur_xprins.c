@@ -66,8 +66,6 @@
                                              * (-1: all; 0: all which contribute to current relaxation solution)
                                              */
 #define DEFAULT_RANDOMIZATION FALSE         /**< should the choice which sols to take be randomized?                 */
-#define DEFAULT_USELPROWS     FALSE         /**< should subproblem be created out of the rows in the LP rows,
-                                             * otherwise, the copy constructors of the constraints handlers are used */
 #define DEFAULT_COPYCUTS      TRUE          /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                              * of the original scip be copied to constraints of the subscip
                                              */
@@ -95,7 +93,6 @@ struct SCIP_HeurData
    SCIP_Real             minfixingrate;      /**< minimum percentage of integer variables that have to be fixed     */
    SCIP_Real             minimprove;         /**< factor by which xprins should at least improve the incumbent      */
    SCIP_Bool             randomization;      /**< should the choice which sols to take be randomized?               */
-   SCIP_Bool             uselprows;          /**< should subproblem be created out of the rows in the LP rows?      */
    SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
                                               *   to constraints in subproblem?
                                               */
@@ -586,6 +583,7 @@ SCIP_RETCODE setupSubproblem(
 
    char probname[SCIP_MAXSTRLEN];
    SCIP_HASHMAP* varmapfw;                   /* mapping of SCIP variables to subSCIP variables      */
+   SCIP_Bool valid;
 
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), SCIPcalcHashtableSize(5 * nvars)) );
@@ -604,20 +602,15 @@ SCIP_RETCODE setupSubproblem(
    /* copy all variables */
    SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, TRUE) );
 
-   /* if the lp rows are not used, also copy the constraints */
-   if( !heurdata->uselprows )
+   /* copy all constraints */
+   valid = FALSE;
+   SCIP_CALL( SCIPcopyConss(scip, subscip, varmapfw, NULL, TRUE, FALSE, &valid) );
+   if( heurdata->copycuts )
    {
-      SCIP_Bool valid;
-      valid = FALSE;
-
-      SCIP_CALL( SCIPcopyConss(scip, subscip, varmapfw, NULL, TRUE, FALSE, &valid) );
-      if( heurdata->copycuts )
-      {
-         /* copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
-         SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE, NULL) );
-      }
-      SCIPdebugMessage("Copying the SCIP constraints was %s complete.\n", valid ? "" : "not ");
+      /* copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+      SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE, NULL) );
    }
+   SCIPdebugMessage("Copying the SCIP constraints was %s complete.\n", valid ? "" : "not ");
 
    /* get the subproblem variables */
    for( i = 0; i < nvars; i++ )
@@ -1128,70 +1121,6 @@ SCIP_RETCODE fixVariables(
 }
 
 
-/** creates the rows of the subproblem by copying LP rows of the SCIP instance;
- *  only used if the uselprows parameter is TRUE */
-static
-SCIP_RETCODE createRows(
-   SCIP*                 scip,               /**< original SCIP data structure                                  */
-   SCIP*                 subscip,            /**< SCIP data structure for the subproblem                        */
-   SCIP_VAR**            subvars             /**< the variables of the subproblem                               */
-   )
-{
-   SCIP_ROW** rows;                          /* original scip rows                       */
-   SCIP_CONS* cons;                          /* new constraint                           */
-   SCIP_VAR** consvars;                      /* new constraint's variables               */
-   SCIP_COL** cols;                          /* original row's columns                   */
-
-   SCIP_Real constant;                       /* constant added to the row                */
-   SCIP_Real lhs;                            /* left hand side of the row                */
-   SCIP_Real rhs;                            /* left right side of the row               */
-   SCIP_Real* vals;                          /* variables' coefficient values of the row */
-
-   int nrows;
-   int nnonz;
-   int i;
-   int j;
-
-   /* get the rows and their number */
-   SCIP_CALL( SCIPgetLPRowsData(scip, &rows, &nrows) );
-
-   /* copy all rows to linear constraints */
-   for( i = 0; i < nrows; i++ )
-   {
-      /* ignore rows that are only locally valid */
-      if( SCIProwIsLocal(rows[i]) )
-         continue;
-
-      /* get the row's data */
-      constant = SCIProwGetConstant(rows[i]);
-      lhs = SCIProwGetLhs(rows[i]) - constant;
-      rhs = SCIProwGetRhs(rows[i]) - constant;
-      vals = SCIProwGetVals(rows[i]);
-      nnonz = SCIProwGetNNonz(rows[i]);
-      cols = SCIProwGetCols(rows[i]);
-
-      assert(lhs <= rhs);
-
-      /* allocate memory array to be filled with the corresponding subproblem variables */
-      SCIP_CALL( SCIPallocBufferArray(scip, &consvars, nnonz) );
-      for( j = 0; j < nnonz; j++ )
-         consvars[j] = subvars[SCIPvarGetProbindex(SCIPcolGetVar(cols[j]))];
-
-      /* create a new linear constraint and add it to the subproblem */
-      SCIP_CALL( SCIPcreateConsLinear(subscip, &cons, SCIProwGetName(rows[i]), nnonz, consvars, vals, lhs, rhs,
-            TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE) );
-      SCIP_CALL( SCIPaddCons(subscip, cons) );
-
-      SCIP_CALL( SCIPreleaseCons(subscip, &cons) );
-
-      /* free temporary memory */
-      SCIPfreeBufferArray(scip, &consvars);
-   }
-
-   return SCIP_OKAY;
-}
-
-
 /** creates a new solution for the original problem by copying the solution of the subproblem */
 static
 SCIP_RETCODE createNewSol(
@@ -1583,12 +1512,6 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
    heurdata->avgzerorate += zerofixingrate;
 #endif
 
-   /* if enough variables could be fixed, create rows of the subproblem */
-   if( heurdata->uselprows )
-   {
-      SCIP_CALL( createRows(scip, subscip, subvars) );
-   }
-
    /* presolve the subproblem */
    retcode = SCIPpresolve(subscip);
 
@@ -1754,10 +1677,6 @@ SCIP_RETCODE SCIPincludeHeurXprins(
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/randomization",
          "should the choice which sols to take be randomized?",
          &heurdata->randomization, TRUE, DEFAULT_RANDOMIZATION, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/uselprows",
-         "should subproblem be created out of the rows in the LP rows?",
-         &heurdata->uselprows, TRUE, DEFAULT_USELPROWS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
          "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
