@@ -747,9 +747,7 @@ void compareOneExtremePoint(
        */
       if( GCGoriginalVarIsLinking(origvars[i]) )
       {
-         SCIP_VAR** linkingpricingvars;
-
-         linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[i]);
+         SCIP_VAR** linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[i]);
          pricingvar = linkingpricingvars[block];
       }
       else
@@ -911,8 +909,6 @@ SCIP_RETCODE fixVariables(
    SCIP_VAR** vars;                          /* original scip variables                     */
 
    int nblocks;                              /* number of blocks                                   */
-   int nusedpts;                             /* number of extreme points per block                 */
-   int nvars;                                /* number of original variables                       */
    int nbinvars;                             /* number of binary variables in the original problem */
    int nintvars;                             /* number of general integer variables                */
 
@@ -937,10 +933,9 @@ SCIP_RETCODE fixVariables(
    assert(success != NULL);
 
    /* get required data of the original problem */
-   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, &nbinvars, &nintvars, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(scip, &vars, NULL, &nbinvars, &nintvars, NULL, NULL) );
 
    nblocks = GCGgetNPricingprobs(scip);
-   nusedpts = heurdata->nusedpts;
    fixingcounter = 0;
    zerocounter = 0;
 
@@ -972,11 +967,7 @@ SCIP_RETCODE fixVariables(
          neqpts[i] = 0;
       else if( block == -2 )
       {
-         SCIP_VAR** linkingpricingvars;
-
-         assert(GCGoriginalVarIsLinking(var));
-         linkingpricingvars = GCGlinkingVarGetPricingVars(var);
-
+         SCIP_VAR** linkingpricingvars = GCGlinkingVarGetPricingVars(var);
          neqpts[i] = 0;
          for( j = 0; j < nblocks; ++j )
             if( linkingpricingvars[j] != NULL )
@@ -989,7 +980,7 @@ SCIP_RETCODE fixVariables(
       }
    }
 
-   SCIP_CALL( compareExtremePointsToRelaxSol(scip, selection, nusedpts, neqpts, zeroblocks) );
+   SCIP_CALL( compareExtremePointsToRelaxSol(scip, selection, heurdata->nusedpts, neqpts, zeroblocks) );
 
    /* try to fix the binary and general integer variables */
    for( i = 0; i < nbinvars + nintvars; ++i )
@@ -1024,23 +1015,17 @@ SCIP_RETCODE fixVariables(
       }
       else
       {
+         int ntotalpts;
          SCIP_Real quoteqpts;
 
          assert(block == -2 || block >= 0);
 
          /* evaluate percentage of extreme points having the same variable value as the relaxation solution */
          if( block >= 0 )
-         {
-            assert(neqpts[i] <= nactualpts[block]);
-            quoteqpts = (SCIP_Real) neqpts[i] / (SCIP_Real) MAX(nactualpts[block],1);
-
-            SCIPdebugMessage("Variable %s: %d/%d (%.2f percent) extreme points identical to relaxation solution (value=%g).\n",
-                        SCIPvarGetName(var), neqpts[i], nactualpts[block], quoteqpts * 100, solval);
-         }
+            ntotalpts = nactualpts[block];
          else
          {
             SCIP_VAR** linkingpricingvars;
-            int ntotalpts;
 
             assert(GCGoriginalVarIsLinking(var));
             linkingpricingvars = GCGlinkingVarGetPricingVars(var);
@@ -1049,13 +1034,13 @@ SCIP_RETCODE fixVariables(
             for( j = 0; j < nblocks; ++j )
                if( linkingpricingvars[j] != NULL )
                   ntotalpts += nactualpts[j];
-
-            assert(neqpts[i] <= ntotalpts);
-            quoteqpts = (SCIP_Real) neqpts[i] / (SCIP_Real) MAX(ntotalpts,1);
-
-            SCIPdebugMessage("Variable %s: %d/%d (%.2f percent) extreme points identical to relaxation solution (value=%g).\n",
-                        SCIPvarGetName(var), neqpts[i], ntotalpts, quoteqpts * 100, solval);
          }
+
+         assert(neqpts[i] <= ntotalpts);
+         quoteqpts = (SCIP_Real) neqpts[i] / (SCIP_Real) MAX(ntotalpts,1);
+
+         SCIPdebugMessage("Variable %s: %d/%d (%.2f percent) extreme points identical to relaxation solution (value=%g).\n",
+                     SCIPvarGetName(var), neqpts[i], ntotalpts, quoteqpts * 100, solval);
 
          /* the variable can be fixed if the relaxation value is shared by enough extreme points;
           * besides, we avoid fixing entire blocks to zero
