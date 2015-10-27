@@ -764,8 +764,14 @@ SCIP_RETCODE setupSubproblem(
    /* do not abort subproblem on CTRL-C */
    SCIP_CALL( SCIPsetBoolParam(subscip, "misc/catchctrlc", FALSE) );
 
+#ifdef SCIP_DEBUG
+   /* for debugging RENS, enable MIP output */
+   SCIP_CALL( SCIPsetIntParam(subscip, "display/verblevel", 5) );
+   SCIP_CALL( SCIPsetIntParam(subscip, "display/freq", 100000000) );
+#else
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(subscip, "display/verblevel", 0) );
+#endif
 
    /* set limits for the subproblem */
    SCIP_CALL( SCIPsetLongintParam(subscip, "limits/nodes", nstallnodes) );
@@ -832,7 +838,7 @@ SCIP_RETCODE fixVariables(
    SCIP*                 scip,               /**< original SCIP data structure                                  */
    SCIP*                 subscip,            /**< SCIP data structure for the subproblem                        */
    SCIP_VAR**            subvars,            /**< the variables of the subproblem                               */
-   int*                  selection,          /**< pool of solutions crossover will use                          */
+   int*                  selection,          /**< selected extreme points the heuristic will use                */
    SCIP_HEURDATA*        heurdata,           /**< primal heuristic data                                         */
    SCIP_Real*            intfixingrate,      /**< percentage of integers that get actually fixed                */
    SCIP_Real*            zerofixingrate,     /**< percentage of variables fixed to zero                         */
@@ -1558,6 +1564,7 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
    /* initialize the subproblem */
    SCIP_CALL( SCIPcreate(&subscip) );
    SCIP_CALL( setupSubproblem(scip, subscip, subvars, heurdata, nstallnodes, timelimit, memorylimit) );
+   SCIPdebugMessage("XP Crossover subproblem: %d vars, %d conss\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip));
 
    /* fix the variables of the subproblem */
    SCIP_CALL( fixVariables(scip, subscip, subvars, selection, heurdata, &intfixingrate, &zerofixingrate, &success) );
@@ -1595,7 +1602,7 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
       goto TERMINATE;
    }
 
-   SCIPdebugMessage("XP Crossover presolved subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
+   SCIPdebugMessage("XP Crossover presolved subproblem: %d vars, %d conss, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
 
    allfixingrate = (SCIPgetNOrigVars(subscip) - SCIPgetNVars(subscip)) / (SCIP_Real)SCIPgetNOrigVars(subscip);
 

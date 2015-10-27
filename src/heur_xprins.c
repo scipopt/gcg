@@ -234,9 +234,9 @@ SCIP_RETCODE selectExtremePoints(
          /* insert the extreme point in the selection (should be the only point for this block) */
          j = identblock[block] * nusedpts;
          assert(selection[j] == -1);
-         assert(nactualpts[block] == 0);
+         assert(nactualpts[identblock[block]] == 0);
 
-         nactualpts[block] = 1;
+         nactualpts[identblock[block]] = 1;
          selection[j] = i;
          selvalue[j] = 1.0;
 
@@ -308,7 +308,7 @@ SCIP_RETCODE selectExtremePoints(
                selvalue[j+1] = selvalue[j];
             }
          }
-         if( j < (identblock[block] * nusedpts) + nactualpts[identblock[block]] - 1 )
+         if( j < (identblock[block] * nusedpts) + nusedpts - 1 )
          {
             selection[j+1] = i;
             selvalue[j+1] = value;
@@ -342,6 +342,8 @@ SCIP_RETCODE selectExtremePoints(
          }
       }
    }
+
+   *success = TRUE;
 
    /* free memory */
    SCIPfreeBufferArray(scip, &identblock);
@@ -623,8 +625,14 @@ SCIP_RETCODE setupSubproblem(
    /* do not abort subproblem on CTRL-C */
    SCIP_CALL( SCIPsetBoolParam(subscip, "misc/catchctrlc", FALSE) );
 
+#ifdef SCIP_DEBUG
+   /* for debugging RENS, enable MIP output */
+   SCIP_CALL( SCIPsetIntParam(subscip, "display/verblevel", 5) );
+   SCIP_CALL( SCIPsetIntParam(subscip, "display/freq", 100000000) );
+#else
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(subscip, "display/verblevel", 0) );
+#endif
 
    /* set limits for the subproblem */
    SCIP_CALL( SCIPsetLongintParam(subscip, "limits/nodes", nstallnodes) );
@@ -1472,6 +1480,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
 
          /* free memory */
          SCIPfreeBufferArray(scip, &selection);
+         SCIPfreeBufferArray(scip, &nactualpts);
          SCIPfreeBufferArray(scip, &subvars);
 
          return SCIP_OKAY;
@@ -1490,6 +1499,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
    /* initialize the subproblem */
    SCIP_CALL( SCIPcreate(&subscip) );
    SCIP_CALL( setupSubproblem(scip, subscip, subvars, heurdata, nstallnodes, timelimit, memorylimit) );
+   SCIPdebugMessage("XP RINS subproblem: %d vars, %d conss\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip));
 
    /* fix variables the variables of the subproblem */
    SCIP_CALL( fixVariables(scip, subscip, subvars, selection, nactualpts, heurdata, &intfixingrate, &zerofixingrate, &success) );
