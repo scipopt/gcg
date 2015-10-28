@@ -902,8 +902,20 @@ SCIP_RETCODE fixVariables(
    SCIP_CALL( SCIPallocBufferArray(scip, &ptcounter, nbinvars + nintvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &zeroblocks, nblocks) );
 
-   /* calculate fixing values for original variables;
-    * by default, each original variable can be fixed to zero
+   /* initialize fixing information for original variables
+    *
+    * @note: Zero values of extreme points are not stored explicitly in the master
+    * variable data; therefore
+    *    * we assume for each variable that it can be fixed to zero
+    *    * we assume a fixing value different from zero if we find
+    *      a nonzero entry in the first extreme point (so the first point serves
+    *      as a 'reference point')
+    *    * we mark the variable as unfixable if we find a nonzero entry for it which
+    *      differs from the current fixing value
+    * It still may happen that a variable is still marked as fixable although it
+    * appears nonzero in only some, but not all extreme points; this will be corrected
+    * later on (this is why we remember the number of points in which a variable appears
+    * nonzero)
     */
    for( i = 0; i < nbinvars + nintvars; ++i )
    {
@@ -1002,7 +1014,11 @@ SCIP_RETCODE fixVariables(
 
                   firstblock = TRUE;
 
-                  /* search the right original variable (in case of aggregation) */
+                  /* from all original variables corresponding to the current one,
+                   * get the one which belongs to the current block;
+                   * this is necessary since in case of identical, aggregated blocks,
+                   * the extreme point may belong to multiple blocks
+                   */
                   npricingorigvars = GCGpricingVarGetNOrigvars(pricingvar);
                   pricingorigvars = GCGpricingVarGetOrigvars(pricingvar);
                   origvar = NULL;
@@ -1049,15 +1065,15 @@ SCIP_RETCODE fixVariables(
       assert(GCGvarIsOriginal(var));
       block = GCGvarGetBlock(var);
 
-      /* we still need to treat variables belonging to no block (as they did not appear in any extreme point)
-       * if the variable belongs to no block, fix it in a RENS-like fashion
+      /* Variables which were directly copied from the original problem do not appear in any extreme point;
+       * they are fixed like in the RENS heuristic
        */
       if( block == -1 )
       {
          fixvals[i] = SCIPgetRelaxSolVal(scip, var);
          if( SCIPisFeasIntegral(scip, fixvals[i]) )
          {
-            /* fix variable to current relaxation solution if it is integral,
+            /* fix variable to current relaxation solution if it is integral;
              * use exact integral value, if the variable is only integral within numerical tolerances
              */
             fixvals[i] = SCIPfloor(scip, fixvals[i] + 0.5);
@@ -1066,7 +1082,9 @@ SCIP_RETCODE fixVariables(
             fixable[i] = FALSE;
       }
 
-      /* if the variable is assigned to a block, check whether it was equal in all extreme points */
+      /* If the variable is assigned to a block, it is fixed it has the same value
+       * in all selected extreme points of its blocks
+       */
       else
       {
          int nlinkblocks;
@@ -1075,18 +1093,16 @@ SCIP_RETCODE fixVariables(
          nlinkblocks = GCGoriginalVarIsLinking(var) ? GCGlinkingVarGetNBlocks(var) : 1;
          assert(ptcounter[i] <= nusedpts * nlinkblocks);
 
-         /* a variable which has appeared nonzero in some points
-          * should have appeared nonzero in all extreme points in order to be fixed
+         /* This case has not been treated yet:
+          * A variable which has appeared nonzero in only some, but not all points
+          * is not fixed
           */
-         if( ptcounter[i] > 0 )
-         {
-            if( ptcounter[i] < nusedpts * nlinkblocks )
-               fixable[i] = FALSE;
-         }
+         if( ptcounter[i] > 0 && ptcounter[i] < nusedpts * nlinkblocks )
+            fixable[i] = FALSE;
 
-         /* if the variable has not appeared in any extreme point, it should be fixed to zero */
+         /* If the variable has not appeared in any extreme point, it should be fixed to zero */
 #ifdef SCIP_DEBUG
-         else
+         if( ptcounter[i] == 0 )
          {
             assert(fixable[i]);
             assert(SCIPisZero(scip, fixvals[i]));
@@ -1098,11 +1114,11 @@ SCIP_RETCODE fixVariables(
       lb = SCIPvarGetLbGlobal(var);
       ub = SCIPvarGetUbGlobal(var);
 
-      /* fixing value can be outside transformed global bounds */
+      /* The fixing value can be outside transformed global bounds */
       if( fixable[i] && (lb > fixvals[i] || fixvals[i] > ub) )
          fixable[i] = FALSE;
 
-      /* the variable can be fixed if it has not been marked unfixable, which is the case if
+      /* The variable can be fixed if it has not been marked unfixable, which is the case if
        *  - it was directly transferred to the master problem and has integer value or
        *  - it appeared zero in all extreme points
        *  - it did not appear zero in some extreme pts and nonzero in other extreme pts;
@@ -1182,7 +1198,7 @@ SCIP_RETCODE createNewSol(
    SCIP*                 scip,               /**< original SCIP data structure                        */
    SCIP*                 subscip,            /**< SCIP structure of the subproblem                    */
    SCIP_VAR**            subvars,            /**< the variables of the subproblem                     */
-   SCIP_HEUR*            heur,               /**< crossover heuristic structure                       */
+   SCIP_HEUR*            heur,               /**< primal heuristic structure                          */
    SCIP_SOL*             subsol,             /**< solution of the subproblem                          */
    SCIP_Bool*            success             /**< used to store whether new solution was found or not */
    )
@@ -1288,7 +1304,7 @@ SCIP_DECL_HEURINIT(heurInitXpcrossover)
    assert(heur != NULL);
    assert(scip != NULL);
 
-   /* get heuristic's data */
+   /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
 
