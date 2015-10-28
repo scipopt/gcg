@@ -1,3 +1,12 @@
+GCG Version
+=================
+
+code cleanup
+- cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
+
+bug fixes
+- changed/corrected variable fixing behaviour of Extreme Point RINS in case of aggregated blocks
+
 GCG Version 2.1.0
 =================
 
