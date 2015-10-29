@@ -1,8 +1,8 @@
 =opt= acc-tight4                        0
 =opt= acc-tight5                        0
 =opt= acc-tight6                        0
-=unkn= bnatt350          
-=unkn= ex10              
+=unkn= bnatt350
+=unkn= ex10
 =opt= ex9                              81
 =opt= lectsched-1                       0
 =opt= lectsched-2                       0
@@ -23,7 +23,7 @@
 =opt= neos-824695                      31
 =opt= neos-826694                      58
 =opt= neos-826812                  58.011
-=unkn= neos-849702       
+=unkn= neos-849702
 =opt= neos-885086                    -243
 =opt= neos-885524               12320.092
 =opt= neos-932816                   15376
