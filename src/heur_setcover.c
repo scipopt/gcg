@@ -2180,7 +2180,9 @@ SCIP_RETCODE subgradientOptimization(
       for( i = 0; i < core->nconss; i++ )
          norm = norm + last_mult.subgradient[i] * last_mult.subgradient[i]; /* we have subgradient[i] = 0.0 if row i is not to be considered */
 
-      assert(!SCIPisZero(scip, norm));
+      /* the norm is zero if an optimal solution (to the restricted instance) was found */
+      if( SCIPisZero(scip, norm) )
+         break;
 
       /* Held-Karp update */
       for( i = 0; i < core->nconss; i++ )
@@ -2512,7 +2514,9 @@ SCIP_RETCODE exploreNeighborhood(
       for( i = 0; i < core->nconss; i++ )
          norm = norm + mult.subgradient[i] * mult.subgradient[i];
 
-      assert(!SCIPisZero(scip, norm));
+      /* the norm is zero if an optimal solution (to the restricted instance) was found */
+      if( SCIPisZero(scip, norm) )
+         break;
 
       /* Held-Karp update */
       for( i = 0; i < core->nconss; i++ )
