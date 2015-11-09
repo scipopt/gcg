@@ -368,7 +368,7 @@ SCIP_RETCODE GCGconsGetVals(
       if( nvals < nvars )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vals, SCIPgetValsLinear(scip, cons), nvals);
+      BMScopyMemoryArray(vals, SCIPgetValsLinear(scip, cons), nvars);
    }
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
