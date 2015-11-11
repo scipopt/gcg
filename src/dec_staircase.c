@@ -193,25 +193,6 @@ SCIP_RETCODE createGraph(
    return SCIP_OKAY;
 }
 
-
-/** returns the distance between vertex i and j based on the distance matrix */
-static
-int getDistance(
-   int                   i,                  /**< vertex i */
-   int                   j,                  /**< vertex j */
-   int**                 distance            /**< triangular distance matrix */
-   )
-{
-   assert(distance != NULL);
-
-   if( i >= j )
-      return distance[i][j];
-   else if (i < j)
-      return distance[j][i];
-   else
-      return 0;
-}
-
 /** finds the diameter of the graph and computes all distances from some vertex of maximum eccentricity to all other vertices */
 static
 SCIP_RETCODE findDiameter(
@@ -381,179 +362,6 @@ SCIP_RETCODE findDiameter(
    return SCIP_OKAY;
 }
 
-/** perform BFS on the graph, storing distance information in the user supplied array */
-static
-SCIP_RETCODE doBFS(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   int                   startnode,          /**< starting node */
-   int**                 distances           /**< triangular matrix to store the distance when starting from node i */
-   )
-{
-   int *queue;
-   int nnodes;
-   SCIP_Bool* marked;
-   int squeue;
-   int equeue;
-   int i;
-   int* node;
-
-   TCLIQUE_GRAPH* graph;
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(distances != NULL);
-   assert(detectordata->graph != NULL);
-   graph = detectordata->graph;
-   nnodes = tcliqueGetNNodes(graph);
-
-   assert(startnode < tcliqueGetNNodes(graph));
-
-   squeue = 0;
-   equeue = 0;
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, nnodes) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &marked, nnodes) );
-
-   for( i = 0; i < nnodes; ++i )
-   {
-      marked[i] = FALSE;
-   }
-
-   queue[equeue] = startnode;
-   ++equeue;
-
-   distances[startnode][startnode] = 0;
-   marked[startnode] = TRUE;
-
-   while( equeue > squeue )
-   {
-      int currentnode;
-      int* lastneighbour;
-
-      /* dequeue new node */
-      currentnode = queue[squeue];
-
-      assert(currentnode < nnodes);
-      ++squeue;
-
-      lastneighbour = tcliqueGetLastAdjedge(graph, currentnode);
-      /* go through all neighbours */
-      for( node = tcliqueGetFirstAdjedge(graph, currentnode); node <= lastneighbour; ++node )
-      {
-         if( !marked[*node] )
-         {
-            int curdistance;
-
-            curdistance = getDistance(startnode, currentnode, distances);
-
-            marked[*node] = TRUE;
-            queue[equeue] = *node;
-            if( *node < startnode )
-               distances[startnode][*node] = curdistance+1;
-            else if( *node > startnode )
-               distances[*node][startnode] = curdistance+1;
-
-            ++equeue;
-         }
-      }
-   }
-
-   SCIPfreeMemoryArray(scip, &queue);
-   SCIPfreeMemoryArray(scip, &marked);
-
-   return SCIP_OKAY;
-}
-
-/** finds the maximal shortest path by inspecting the distance array and returns the path in start and end*/
-static
-SCIP_RETCODE findMaximalPath(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   int**                 distance,           /**< distance matrix of the maximal s-t path starting from s to any node t*/
-   int*                  start,              /**< start vertex */
-   int*                  end                 /**< end vertex */
-   )
-{
-   int i;
-   int j;
-   int max;
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(distance != NULL);
-   assert(start != NULL);
-   assert(end != NULL);
-
-   max = -1;
-   *start = -1;
-   *end = -1;
-
-   for( i = 0; i < tcliqueGetNNodes(detectordata->graph); ++i )
-   {
-      for( j = 0; j < i; ++j )
-      {
-         if( distance[i][j] > max )
-         {
-            max = distance[i][j];
-            *start = i;
-            *end = j;
-         }
-      }
-   }
-   assert(*start >= 0);
-   assert(*end >= 0);
-
-   SCIPdebugMessage("Path from %d to %d is longest %d.\n", *start, *end, max);
-   detectordata->nblocks = max+1;
-
-   return SCIP_OKAY;
-}
-
-/** this method will construct the cuts based on the longest shortest path and the distance matrix */
-static
-SCIP_RETCODE constructCuts(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   int                   start,              /**< start vertex */
-   int                   end,                /**< end vertex */
-   int**                 distance,           /**< distance matrix giving the distance from any constraint to any constraint */
-   SCIP_VAR****          cuts                /**< which variables should be in the cuts */
-   )
-{
-
-   int nnodes;
-   SCIP_CONS** conss;
-   int i;
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(start >= 0);
-   assert(end >= 0);
-   assert(distance != NULL);
-   assert(cuts != NULL);
-
-   assert(detectordata->graph != NULL);
-   nnodes = tcliqueGetNNodes(detectordata->graph);
-   conss = SCIPgetConss(scip);
-   assert(start < nnodes);
-   assert(end < nnodes);
-
-   /* The cuts will be generated on a trivial basis:
-    * The vertices  of distance i will be in block i
-    */
-
-   for( i = 0; i < nnodes; ++i )
-   {
-      int dist;
-      dist = getDistance(start, i, distance);
-      SCIPdebugPrintf("from %d to %d = %d (%s = %d)\n", start, i, dist, SCIPconsGetName(conss[i]), dist+1 );
-      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*) (size_t) (dist+1)) );
-   }
-
-   return SCIP_OKAY;
-}
-
 /** finds connected components of the graph */
 static
 SCIP_RETCODE findConnectedComponents(
@@ -586,7 +394,7 @@ SCIP_RETCODE findConnectedComponents(
    for( i = 0; i < nnodes; ++i )
       component[i] = -1;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &queue, nnodes) );
 
    for( i = 0; i < nnodes; ++i )
    {
@@ -599,6 +407,7 @@ SCIP_RETCODE findConnectedComponents(
       equeue = 1;
       queue[0] = i;
       curcomp = ncomps++;
+      component[i] = curcomp;
 
       while( equeue > squeue )
       {
@@ -615,8 +424,9 @@ SCIP_RETCODE findConnectedComponents(
          {
             assert(*node < nnodes);
 
-            if( component[*node] == -1 )
+            if( component[*node] < 0 )
             {
+               assert(equeue < nnodes);
                component[*node] = curcomp;
                queue[equeue++] = *node;
             }
@@ -627,61 +437,9 @@ SCIP_RETCODE findConnectedComponents(
    detectordata->ncomponents = ncomps;
    SCIPdebugMessage("found %i components\n", ncomps);
 
-   SCIPfreeMemoryArray(scip, &queue);
+   SCIPfreeBufferArray(scip, &queue);
    return SCIP_OKAY;
 }
-
-/** looks for staircase components in the constraints in detectordata */
-static
-SCIP_RETCODE findStaircaseComponents(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
-   )
-{
-   int nconss;
-   int** distance;
-   int i;
-   int start;
-   int end;
-   SCIP_VAR*** cuts;
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(result != NULL);
-
-   nconss = SCIPgetNConss(scip);
-
-   /* allocate triangular distance matrix */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &distance, nconss) );
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(distance[i]), (size_t)i+1) ); /*lint !e866*/
-      BMSclearMemoryArray(distance[i], (size_t)i+1); /*lint !e866*/
-   }
-
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIP_CALL( doBFS(scip, detectordata, i, distance) );
-   }
-
-   SCIP_CALL( findMaximalPath(scip, detectordata, distance, &start, &end) );
-   SCIP_CALL( constructCuts(scip, detectordata, start, end, distance, &cuts) );
-
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIPfreeMemoryArray(scip, &distance[i]);
-   }
-   SCIPfreeMemoryArray(scip, &distance);
-
-   if( detectordata->nblocks > 1 )
-      *result = SCIP_SUCCESS;
-   else
-      *result = SCIP_DIDNOTFIND;
-
-   return SCIP_OKAY;
-}
-
 
 /* copy conshdldata data to decdecomp */
 static
