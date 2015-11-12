@@ -3277,7 +3277,7 @@ SCIP_RETCODE performProbing(
    /* create master constraint that captures the branching decision in the original instance */
    mprobingnode = SCIPgetCurrentNode(masterscip);
    assert(GCGconsMasterbranchGetActiveCons(masterscip) != NULL);
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, "probingcons", mprobingnode,
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, "mprobingcons", mprobingnode,
       GCGconsMasterbranchGetActiveCons(masterscip), NULL, NULL, NULL, 0) );
    SCIP_CALL( SCIPaddConsNode(masterscip, mprobingnode, mprobingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterscip, &mprobingcons) );
@@ -3329,6 +3329,7 @@ SCIP_RETCODE performProbing(
          SCIPdebugMessage("lpobjval = %g\n", SCIPgetLPObjval(masterscip));
          *lpobjvalue = SCIPgetLPObjval(masterscip);
          *lpsolved = TRUE;
+         SCIP_CALL( GCGrelaxUpdateCurrentSol(scip) );
       }
    }
    else
@@ -3480,7 +3481,8 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
 
 /** transforms the current solution of the master problem into the original problem's space
- *  and saves this solution as currentsol in the relaxator's data */
+ *  and saves this solution as currentsol in the relaxator's data
+ */
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP*                 scip                /**< SCIP data structure */
    )
