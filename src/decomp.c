@@ -1488,35 +1488,56 @@ SCIP_RETCODE DECdecompAddRemainingConss(
 
    for( c = 0; c < SCIPgetNConss(scip); ++c )
    {
-      SCIP_CONS * cons = SCIPgetConss(scip)[c];
+      SCIP_CONS* cons = SCIPgetConss(scip)[c];
 
-      if( !GCGisConsGCGCons(cons) )
+      if( !GCGisConsGCGCons(cons) && !SCIPhashmapExists(DECdecompGetConstoblock(decdecomp), cons) )
       {
-         if( !SCIPhashmapExists(DECdecompGetConstoblock(decdecomp), cons) )
+         int block;
+         SCIP_CALL( DECdetermineConsBlock(scip, decdecomp, cons, &block) );
+         SCIPdebugMessage("cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
+
+         if( block == DECdecompGetNBlocks(decdecomp) )
          {
-            int block;
-            SCIP_CALL( DECdetermineConsBlock(scip, decdecomp, cons, &block) );
-            SCIPdebugMessage("cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
-            if( block == DECdecompGetNBlocks(decdecomp) )
+            if( decdecomp->nlinkingconss == 0 )
             {
-               int oldsize = SCIPcalcMemGrowSize(scip,decdecomp->nlinkingconss);
-               int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss+1);
-               SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss, oldsize, newsize) );
-               decdecomp->linkingconss[decdecomp->nlinkingconss] = cons;
-               decdecomp->nlinkingconss += 1;
-               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (DECdecompGetNBlocks(decdecomp)+1)) );
+               int newsize = SCIPcalcMemGrowSize(scip, 1);
+               SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decdecomp->linkingconss, newsize));
+
+               switch( decdecomp->type )
+               {
+               case DEC_DECTYPE_DIAGONAL:
+                  decdecomp->type = DEC_DECTYPE_BORDERED;
+                  SCIPwarningMessage(scip, "Decomposition type changed to 'diagonal' due to an added constraint.\n");
+                  break;
+               case DEC_DECTYPE_STAIRCASE:
+                  decdecomp->type = DEC_DECTYPE_ARROWHEAD;
+                  SCIPwarningMessage(scip, "Decomposition type changed to 'arrowhead' due to an added constraint.\n");
+                  break;
+               default:
+                  break;
+               }
             }
             else
             {
-               int oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]);
-               int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]+1);
-               SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block], oldsize, newsize) ); /*lint !e866*/
-               decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
-               decdecomp->nsubscipconss[block] += 1;
-               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)) );
+               int oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss);
+               int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss+1);
+               SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss, oldsize, newsize) );
             }
-            SCIP_CALL( SCIPcaptureCons(scip, cons) );
+            decdecomp->linkingconss[decdecomp->nlinkingconss] = cons;
+            decdecomp->nlinkingconss += 1;
+            SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (DECdecompGetNBlocks(decdecomp)+1)) );
          }
+         else
+         {
+            int oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]);
+            int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]+1);
+            assert(decdecomp->nsubscipconss[block] > 0);
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block], oldsize, newsize) ); /*lint !e866*/
+            decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
+            decdecomp->nsubscipconss[block] += 1;
+            SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)) );
+         }
+         SCIP_CALL( SCIPcaptureCons(scip, cons) );
       }
    }
 
@@ -3137,6 +3158,7 @@ int DECfilterSimilarDecompositions(
 }
 
 /** returns the number of the block that the constraint is with respect to the decomposition */
+/** @todo: maybe this is possible in such a way that a staircase structure is preserved */
 SCIP_RETCODE DECdetermineConsBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
