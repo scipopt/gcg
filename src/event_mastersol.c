@@ -97,8 +97,11 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
    if( SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED &&
       (SCIPsolGetHeur(sol) != NULL || (discretization && SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED)) )
    {
+      SCIPdebugMessage("Original feasible solution found by <%s> -- transferring to master problem\n",
+         SCIPsolGetHeur(sol) == NULL ? "relaxation" : SCIPheurGetName(SCIPsolGetHeur(sol)));
       SCIP_CALL( GCGmasterTransOrigSolToMasterVars(masterprob, sol, NULL) );
    }
+
    return SCIP_OKAY;
 }
 

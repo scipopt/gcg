@@ -3201,6 +3201,8 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       for( i = 0; i < norigsols; ++i )
       {
          assert(origsols[i] != NULL);
+         SCIPdebugMessage("Transferring original feasible solution found by <%s> to master problem\n",
+            SCIPsolGetHeur(origsols[i]) == NULL ? "relaxation" : SCIPheurGetName(SCIPsolGetHeur(origsols[i])));
          SCIP_CALL( GCGmasterTransOrigSolToMasterVars(scip, origsols[i], NULL) );
       }
       /* return if we transferred solutions as the master should be feasible */
@@ -3787,7 +3789,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 
    /* get solution values */
    SCIP_CALL( SCIPgetSolVals(scip, origsol, norigvars, origvars, origsolvals) );
-   SCIP_CALL( SCIPcreateSol(scip, &mastersol, SCIPgetSolHeur(origprob, origsol)) );
+   SCIP_CALL( SCIPcreateSol(scip, &mastersol, NULL) );
 
    /* store variables and solutions into arrays */
    for( i = 0; i < norigvars; i++ )
