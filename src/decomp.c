@@ -1507,7 +1507,7 @@ SCIP_RETCODE DECdecompAddRemainingConss(
                {
                case DEC_DECTYPE_DIAGONAL:
                   decdecomp->type = DEC_DECTYPE_BORDERED;
-                  SCIPwarningMessage(scip, "Decomposition type changed to 'diagonal' due to an added constraint.\n");
+                  SCIPwarningMessage(scip, "Decomposition type changed to 'bordered' due to an added constraint.\n");
                   break;
                case DEC_DECTYPE_STAIRCASE:
                   decdecomp->type = DEC_DECTYPE_ARROWHEAD;
