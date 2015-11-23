@@ -1112,11 +1112,11 @@ SCIP_RETCODE fixVariables(
    /* if all variables were fixed or amount of fixed variables is insufficient, abort immediately */
    if( *intfixingrate < heurdata->minfixingrate )
    {
-      SCIPstatisticPrintf("XP RINS statistic: fixed only %5.2f (%5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
+      SCIPstatisticPrintf("XP RINS statistic: fixed only %5.2f ( %5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
    }
    if( fixingcounter == nbinvars + nintvars )
    {
-      SCIPstatisticPrintf("XP RINS statistic: fixed all (%5.2f zero) integer variables --> abort \n", *zerofixingrate);
+      SCIPstatisticPrintf("XP RINS statistic: fixed all ( %5.2f zero) integer variables --> abort \n", *zerofixingrate);
    }
 
    *success = TRUE;
@@ -1592,8 +1592,8 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
             *result = SCIP_FOUNDSOL;
       }
 
-      SCIPstatisticPrintf("XP RINS statistic: fixed %6.3f integer variables (%6.3f zero), %6.3f all variables, needed %6.1f seconds, %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
-         intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetNNodes(subscip), nsubsols,
+      SCIPstatisticPrintf("XP RINS statistic: fixed %6.3f integer variables ( %6.3f zero), %6.3f all variables, needed %6.1f sec (SCIP time: %6.1f sec), %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
+         intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetSolvingTime(scip), SCIPgetNNodes(subscip), nsubsols,
          success ? SCIPgetPrimalbound(scip) : SCIPinfinity(scip), nsubsols > 0 ? SCIPsolGetNodenum(SCIPgetBestSol(subscip)) : -1 );
 
       if( !success )
@@ -1605,7 +1605,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
    }
    else
    {
-      SCIPstatisticPrintf("XP RINS statistic: fixed only %6.3f integer variables (%6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
+      SCIPstatisticPrintf("XP RINS statistic: fixed only %6.3f integer variables ( %6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
    }
 
 TERMINATE:

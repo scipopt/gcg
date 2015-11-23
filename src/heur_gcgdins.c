@@ -1022,8 +1022,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
       }
 
 #ifdef SCIP_STATISTIC
-      SCIPstatisticPrintf("GCG DINS statistic: fixed %6.3f integer variables (%6.3f zero), %6.3f all variables, needed %6.1f seconds, %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
-         intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetNNodes(subscip), nsubsols,
+      SCIPstatisticPrintf("GCG DINS statistic: fixed %6.3f integer variables ( %6.3f zero), %6.3f all variables, needed %6.1f sec (SCIP time: %6.1f sec), %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
+         intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetSolvingTime(scip), SCIPgetNNodes(subscip), nsubsols,
          success ? SCIPgetPrimalbound(scip) : SCIPinfinity(scip), nsubsols > 0 ? SCIPsolGetNodenum(SCIPgetBestSol(subscip)) : -1 );
 #endif
 

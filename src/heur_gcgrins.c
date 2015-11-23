@@ -182,7 +182,7 @@ SCIP_RETCODE createSubproblem(
    if( *intfixingrate < minfixingrate )
    {
       *success = FALSE;
-      SCIPstatisticPrintf("GCG RINS statistic: fixed only %5.2f (%5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
+      SCIPstatisticPrintf("GCG RINS statistic: fixed only %5.2f ( %5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
       return SCIP_OKAY;
    }
 
@@ -725,13 +725,13 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
             *result = SCIP_FOUNDSOL;
       }
 
-      SCIPstatisticPrintf("GCG RINS statistic: fixed %6.3f integer variables (%6.3f zero), %6.3f all variables, needed %6.1f seconds, %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
-            intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetNNodes(subscip), nsubsols,
-            success ? SCIPgetPrimalbound(scip) : SCIPinfinity(scip), nsubsols > 0 ? SCIPsolGetNodenum(SCIPgetBestSol(subscip)) : -1 );
+      SCIPstatisticPrintf("GCG RINS statistic: fixed %6.3f integer variables ( %6.3f zero), %6.3f all variables, needed %6.1f sec (SCIP time: %6.1f sec), %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
+         intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetSolvingTime(scip), SCIPgetNNodes(subscip), nsubsols,
+         success ? SCIPgetPrimalbound(scip) : SCIPinfinity(scip), nsubsols > 0 ? SCIPsolGetNodenum(SCIPgetBestSol(subscip)) : -1 );
    }
    else
    {
-      SCIPstatisticPrintf("GCG RINS statistic: fixed only %6.3f integer variables (%6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
+      SCIPstatisticPrintf("GCG RINS statistic: fixed only %6.3f integer variables ( %6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
    }
 
  TERMINATE:
