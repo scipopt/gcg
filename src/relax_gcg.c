@@ -1345,6 +1345,9 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/lpfeastol", lpfeastol) );
    SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/dualfeastol", dualfeastol) );
 
+   /* do not modify the time limit after solving the master problem */
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "reoptimization/commontimelimit", FALSE) );
+
    return SCIP_OKAY;
 }
 
