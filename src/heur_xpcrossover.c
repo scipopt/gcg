@@ -100,6 +100,7 @@ struct SCIP_HeurData
    POINTTUPLE*           lasttuple;          /**< last tuple of extreme points                                      */
 
 #ifdef SCIP_STATISTIC
+   SCIP_Longint          nfixfails;          /**< number of abortions due to a bad fixing rate                      */
    SCIP_Real             avgfixrate;         /**< average rate of variables that are fixed                          */
    SCIP_Real             avgzerorate;        /**< average rate of fixed variables that are zero                     */
    SCIP_Longint          totalsols;          /**< total number of subSCIP solutions (including those which have not
@@ -1173,11 +1174,11 @@ SCIP_RETCODE fixVariables(
    /* if all variables were fixed or amount of fixed variables is insufficient, abort immediately */
    if( *intfixingrate < heurdata->minfixingrate )
    {
-      SCIPstatisticPrintf("XP Crossover statistic: fixed only %5.2f ( %5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
+      SCIPstatisticPrintf("xpcrossover statistic: fixed only %5.2f ( %5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
    }
    if( fixingcounter == nbinvars + nintvars )
    {
-      SCIPstatisticPrintf("XP Crossover statistic: fixed all ( %5.2f zero) integer variables --> abort \n", *zerofixingrate);
+      SCIPstatisticPrintf("xpcrossover statistic: fixed all ( %5.2f zero) integer variables --> abort \n", *zerofixingrate);
    }
 
    *success = TRUE;
@@ -1245,7 +1246,7 @@ SCIP_RETCODE createNewSol(
    if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )
       heurdata->bestprimalbd = SCIPgetSolTransObj(scip, newsol);
 
-   SCIPstatisticPrintf("XP Crossover statistic: Solution %13.6e found at node %"SCIP_LONGINT_FORMAT"\n",
+   SCIPstatisticPrintf("xpcrossover statistic: Solution %13.6e found at node %"SCIP_LONGINT_FORMAT"\n",
       SCIPgetSolOrigObj(scip, newsol), SCIPsolGetNodenum(subsol));
 #endif
 
@@ -1400,8 +1401,9 @@ SCIP_DECL_HEUREXITSOL(heurExitsolXpcrossover)
    heurdata->avgzerorate /= MAX((SCIP_Real)ncalls, 1.0);
 
    /* print detailed statistics */
-   SCIPstatisticPrintf("LNS Statistics -- Extreme Point Crossover:\n");
+   SCIPstatisticPrintf("LNS Statistics -- %s:\n", SCIPheurGetName(heur));
    SCIPstatisticPrintf("Calls            : %13"SCIP_LONGINT_FORMAT"\n", ncalls);
+   SCIPstatisticPrintf("Failed Fixings   : %13"SCIP_LONGINT_FORMAT"\n", heurdata->nfixfails);
    SCIPstatisticPrintf("Sols             : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNSolsFound(heur));
    SCIPstatisticPrintf("Improving Sols   : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNBestSolsFound(heur));
    SCIPstatisticPrintf("Total Sols       : %13"SCIP_LONGINT_FORMAT"\n", heurdata->totalsols);
@@ -1582,26 +1584,31 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
    SCIP_CALL( setupSubproblem(scip, subscip, subvars, heurdata, nstallnodes, timelimit, memorylimit) );
    SCIPdebugMessage("XP Crossover subproblem: %d vars, %d conss\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip));
 
+   SCIPstatisticPrintf("xpcrossover statistic: called at node %"SCIP_LONGINT_FORMAT"\n", SCIPgetNNodes(scip));
+
    /* fix the variables of the subproblem */
    SCIP_CALL( fixVariables(scip, subscip, subvars, selection, heurdata, &intfixingrate, &zerofixingrate, &success) );
-
-   /* if creation of subscip was aborted (e.g. due to number of fixings), free subscip and abort */
-   if( !success )
-   {
-      /* this run will be counted as a failure since no new solution tuple could be generated or the neighborhood of the
-       * solution was not fruitful in the sense that it was too big
-       */
-      updateFailureStatistic(scip, heurdata);
-      goto TERMINATE;
-   }
-
-   *result = SCIP_DIDNOTFIND;
 
 #ifdef SCIP_STATISTIC
    /* for final statistics */
    heurdata->avgfixrate += intfixingrate;
    heurdata->avgzerorate += zerofixingrate;
 #endif
+
+   /* if creation of subscip was aborted (e.g. due to number of fixings), free subscip and abort */
+   if( !success )
+   {
+      /* this run will be counted as a failure since the neighborhood of the
+       * solution was not fruitful in the sense that it was too big
+       */
+      updateFailureStatistic(scip, heurdata);
+#ifdef SCIP_STATISTIC
+      ++heurdata->nfixfails;
+#endif
+      goto TERMINATE;
+   }
+
+   *result = SCIP_DIDNOTFIND;
 
    /* presolve the subproblem */
    retcode = SCIPpresolve(subscip);
@@ -1673,7 +1680,7 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
             *result = SCIP_FOUNDSOL;
       }
 
-      SCIPstatisticPrintf("XP Crossover statistic: fixed %6.3f integer variables ( %6.3f zero), %6.3f all variables, needed %6.1f sec (SCIP time: %6.1f sec), %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
+      SCIPstatisticPrintf("xpcrossover statistic: fixed %6.3f integer variables ( %6.3f zero), %6.3f all variables, needed %6.1f sec (SCIP time: %6.1f sec), %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
          intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetSolvingTime(scip), SCIPgetNNodes(subscip), nsubsols,
          success ? SCIPgetPrimalbound(scip) : SCIPinfinity(scip), nsubsols > 0 ? SCIPsolGetNodenum(SCIPgetBestSol(subscip)) : -1 );
 
@@ -1686,7 +1693,7 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
    }
    else
    {
-      SCIPstatisticPrintf("XP Crossover statistic: fixed only %6.3f integer variables ( %6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
+      SCIPstatisticPrintf("xpcrossover statistic: fixed only %6.3f integer variables ( %6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
    }
 
 TERMINATE:

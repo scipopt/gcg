@@ -88,6 +88,7 @@ struct SCIP_HeurData
                                               *   to constraints in subproblem?
                                               */
 #ifdef SCIP_STATISTIC
+   SCIP_Longint          nfixfails;          /**< number of abortions due to a bad fixing rate                      */
    SCIP_Real             avgfixrate;         /**< average rate of variables that are fixed                            */
    SCIP_Real             avgzerorate;        /**< average rate of fixed variables that are zero                       */
    SCIP_Longint          totalsols;          /**< total number of subSCIP solutions (including those which have not
@@ -182,7 +183,7 @@ SCIP_RETCODE createSubproblem(
    if( *intfixingrate < minfixingrate )
    {
       *success = FALSE;
-      SCIPstatisticPrintf("GCG RINS statistic: fixed only %5.2f ( %5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
+      SCIPstatisticPrintf("gcgrins statistic: fixed only %5.2f ( %5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
       return SCIP_OKAY;
    }
 
@@ -390,8 +391,9 @@ SCIP_DECL_HEUREXITSOL(heurExitsolGcgrins)
    heurdata->avgzerorate /= MAX((SCIP_Real)ncalls, 1.0);
 
    /* print detailed statistics */
-   SCIPstatisticPrintf("LNS Statistics -- GCG RINS:\n");
+   SCIPstatisticPrintf("LNS Statistics -- %s:\n", SCIPheurGetName(heur));
    SCIPstatisticPrintf("Calls            : %13"SCIP_LONGINT_FORMAT"\n", ncalls);
+   SCIPstatisticPrintf("Failed Fixings   : %13"SCIP_LONGINT_FORMAT"\n", heurdata->nfixfails);
    SCIPstatisticPrintf("Sols             : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNSolsFound(heur));
    SCIPstatisticPrintf("Improving Sols   : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNBestSolsFound(heur));
    SCIPstatisticPrintf("Total Sols       : %13"SCIP_LONGINT_FORMAT"\n", heurdata->totalsols);
@@ -575,13 +577,23 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
 
    success = FALSE;
 
+   SCIPstatisticPrintf("gcgrins statistic: called at node %"SCIP_LONGINT_FORMAT"\n", SCIPgetNNodes(scip));
+
    /* create a new problem, which fixes variables with same value in bestsol and LP relaxation */
    SCIP_CALL( createSubproblem(scip, subscip, subvars, heurdata->minfixingrate, heurdata->uselprows, &intfixingrate, &zerofixingrate, &success) );
    SCIPdebugMessage("RINS subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
 
+#ifdef SCIP_STATISTIC
+   heurdata->avgfixrate += intfixingrate;
+   heurdata->avgzerorate += zerofixingrate;
+#endif
+
    if( !success )
    {
       *result = SCIP_DIDNOTRUN;
+#ifdef SCIP_STATISTIC
+      ++heurdata->nfixfails;
+#endif
       goto TERMINATE;
    }
 
@@ -655,11 +667,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
    cutoff = MIN(upperbound, cutoff );
    SCIP_CALL( SCIPsetObjlimit(subscip, cutoff) );
 
-#ifdef SCIP_STATISTIC
-   heurdata->avgfixrate += intfixingrate;
-   heurdata->avgzerorate += zerofixingrate;
-#endif
-
    /* presolve the subproblem */
    retcode = SCIPpresolve(subscip);
 
@@ -725,13 +732,13 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
             *result = SCIP_FOUNDSOL;
       }
 
-      SCIPstatisticPrintf("GCG RINS statistic: fixed %6.3f integer variables ( %6.3f zero), %6.3f all variables, needed %6.1f sec (SCIP time: %6.1f sec), %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
+      SCIPstatisticPrintf("gcgrins statistic: fixed %6.3f integer variables ( %6.3f zero), %6.3f all variables, needed %6.1f sec (SCIP time: %6.1f sec), %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
          intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetSolvingTime(scip), SCIPgetNNodes(subscip), nsubsols,
          success ? SCIPgetPrimalbound(scip) : SCIPinfinity(scip), nsubsols > 0 ? SCIPsolGetNodenum(SCIPgetBestSol(subscip)) : -1 );
    }
    else
    {
-      SCIPstatisticPrintf("GCG RINS statistic: fixed only %6.3f integer variables ( %6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
+      SCIPstatisticPrintf("gcgrins statistic: fixed only %6.3f integer variables ( %6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
    }
 
  TERMINATE:
