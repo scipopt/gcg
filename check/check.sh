@@ -223,10 +223,10 @@ do
             then
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
-                mkdir -p decs/$TSTNAME.$SETTINGS
-                mkdir -p images/$TSTNAME.$SETTINGS
+                mkdir -p decs/$TSTNAME.$SETNAME
+                mkdir -p images/$TSTNAME.$SETNAME
                 echo write all decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
-		echo write all images\/$TSTNAME.$SETNAME gp >> $TMPFILE
+                echo write all images\/$TSTNAME.$SETNAME gp >> $TMPFILE
             else
                 if test $MODE = "readdec"
                 then
