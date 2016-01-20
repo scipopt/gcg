@@ -193,7 +193,7 @@ SCIP_RETCODE createGraph(
    return SCIP_OKAY;
 }
 
-/** finds the diameter of the graph and computes all distances from some vertex of maximum eccentricity to all other vertices */
+/** finds the diameter of a connected component of a graph and computes all distances from some vertex of maximum eccentricity to all other vertices */
 static
 SCIP_RETCODE findDiameter(
    SCIP *scip,
@@ -222,6 +222,18 @@ SCIP_RETCODE findDiameter(
    int j;
    int k = 50;          /* number of low-degree vertices that are visited before high-degree vertices are visited */
 
+   /* This method computes the diameter of a connected component by starting BFS at each vertex and memorizing the depth of the search tree.
+    * If a tree has greater depth than any other tree that was computed before, the vertices itself and their distances to the root of the
+    * tree are stored in 'vertices' and 'distances', respectively.
+    *
+    * As these steps require $O(nm)$ time in the worst case, we apply a simple heuristic that stops BFS from vertices that do not have
+    * maximum eccentricity, and in some cases it even prevents starting BFS at such vertices.
+    * a) For each vertex 'v' there is an upper bound 'eccentricity[v]' on the actual eccentricity of 'v'. Initially, this is set to a very large number.
+    * b) Whenever a BFS with root 'v' has finished, 'eccentricity[v]' contains the actual eccentricity of 'v'.
+    * c) If during a BFS with root 'v' a vertex 'u' is discovered, then dist(v, u) + eccentricty[u] is an upper bound on the eccentricity of 'v',
+    *    and therefore the BFS is stopped if dist(v, u) + eccentricity[u] <= diameter_lb, where diameter_lb is the greatest eccentricity known so far.
+    */
+
    assert(scip != NULL);
    assert(detectordata != NULL);
    assert(detectordata->graph != NULL);
@@ -234,12 +246,12 @@ SCIP_RETCODE findDiameter(
    graph = detectordata->graph;
    nnodes = tcliqueGetNNodes(graph);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, nnodes) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &marked, nnodes) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &eccentricity, nnodes) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &dist, nnodes) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &degree, nnodes) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &degreepos, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &queue, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &marked, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &eccentricity, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &dist, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &degree, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &degreepos, nnodes) );
 
    /* get degrees of vertices and initialize all eccentricities of vertices to values representing upper bounds */
    origdegree = tcliqueGetDegrees(graph);
@@ -352,17 +364,17 @@ SCIP_RETCODE findDiameter(
       }
    }
 
-   SCIPfreeMemoryArray(scip, &queue);
-   SCIPfreeMemoryArray(scip, &marked);
-   SCIPfreeMemoryArray(scip, &eccentricity);
-   SCIPfreeMemoryArray(scip, &dist);
-   SCIPfreeMemoryArray(scip, &degree);
-   SCIPfreeMemoryArray(scip, &degreepos);
+   SCIPfreeBufferArray(scip, &degreepos);
+   SCIPfreeBufferArray(scip, &degree);
+   SCIPfreeBufferArray(scip, &dist);
+   SCIPfreeBufferArray(scip, &eccentricity);
+   SCIPfreeBufferArray(scip, &marked);
+   SCIPfreeBufferArray(scip, &queue);
 
    return SCIP_OKAY;
 }
 
-/** finds connected components of the graph */
+/** finds the connected components of the row graph. a staircase decomposition will be built for each component separately. */
 static
 SCIP_RETCODE findConnectedComponents(
    SCIP*                 scip,               /** SCIP data structure */
@@ -387,10 +399,12 @@ SCIP_RETCODE findConnectedComponents(
    graph = detectordata->graph;
    nnodes = tcliqueGetNNodes(graph);
 
+   /* for each vertex the 'component' array contains a number from [0, ncomponents) */
    assert(detectordata->components == NULL);
    SCIP_CALL( SCIPallocBufferArray(scip, &(detectordata->components), nnodes) );
    component = detectordata->components;
 
+   /* component[i] == -1 if and only if vertex i has not been assigned to a component yet */
    for( i = 0; i < nnodes; ++i )
       component[i] = -1;
 
@@ -398,7 +412,7 @@ SCIP_RETCODE findConnectedComponents(
 
    for( i = 0; i < nnodes; ++i )
    {
-      /* find first node that has not been visited yet */
+      /* find first node that has not been visited yet and start BFS */
       if( component[i] >= 0 )
          continue;
 
@@ -409,6 +423,7 @@ SCIP_RETCODE findConnectedComponents(
       curcomp = ncomps++;
       component[i] = curcomp;
 
+      /* dequeue a vertex as long as the queue is not empty */
       while( equeue > squeue )
       {
          int curnode;
@@ -419,6 +434,7 @@ SCIP_RETCODE findConnectedComponents(
 
          assert(curnode < nnodes);
 
+         /* add unvisited neighbors of this vertex to the queue */
          lastneighbour = tcliqueGetLastAdjedge(graph, curnode);
          for( node = tcliqueGetFirstAdjedge(graph, curnode); node <= lastneighbour; ++node )
          {
@@ -532,7 +548,7 @@ DEC_DECL_DETECTSTRUCTURE(detectStaircase)
    {
       nnodes = tcliqueGetNNodes(detectordata->graph);
 
-      /* find connected components of the graph */
+      /* find connected components of the graph. the result will be stored in 'detectordata->components' */
       SCIP_CALL( findConnectedComponents(scip, detectordata) );
 
       SCIP_CALL( SCIPallocBufferArray(scip, &nodes, nnodes) );
@@ -542,7 +558,7 @@ DEC_DECL_DETECTSTRUCTURE(detectStaircase)
       for( i = 0; i < nnodes; ++i)
          blocks[i] = -1;
 
-      /* find the diameter for each component */
+      /* find the diameter of each connected component */
       for( i = 0; i < detectordata->ncomponents; ++i )
       {
          int diameter = 0;
