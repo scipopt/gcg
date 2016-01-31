@@ -1202,7 +1202,14 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
    return SCIP_OKAY;
 }
 
-/** completely fills out decomposition structure from only the constraint partition */
+/** completely fills out decomposition structure from only the constraint partition in the following manner:
+ *  given constraint block/border assignment (by constotblock), one gets the following assignment of probvars:
+ *  let C(j) be the set of constraints containing variable j, set block of j to
+ *  (i)   constoblock(i) iff constoblock(i1) == constoblock(i2) for all i1,i2 in C(j) && constoblock(i) != nblocks+1 for all i in  C(j)
+ *  (ii)  nblocks+2 ["linking var"] iff exists i1,i2 with constoblock(i1) != constoblock(i2)
+ *  (iii) nblocks+1 ["master var"] iff exists i1 with constoblock(i1) == nblocks+1 and for all i1,i2 with constoblock(i1) != constoblock(i2) is constoblock(i1) = nblocks+1 or constoblock(i2) = nblocks+1
+
+ *  */
 SCIP_RETCODE DECfilloutDecompFromConstoblock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
@@ -1275,7 +1282,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
             SCIPdebugMessage(" var <%s> not been handled before, adding to block %d\n", SCIPvarGetName(probvar), consblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) consblock) );
          }
-         else if( varblock != consblock && consblock <= nblocks )
+         else if(varblock == nblocks + 2 ||  (varblock != consblock && consblock <= nblocks) )
          {
             SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
