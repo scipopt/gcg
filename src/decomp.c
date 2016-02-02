@@ -1203,13 +1203,12 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
 }
 
 /** completely fills out decomposition structure from only the constraint partition in the following manner:
- *  given constraint block/border assignment (by constotblock), one gets the following assignment of probvars:
+ *  given constraint block/border assignment (by constoblock), one gets the following assignment of probvars:
  *  let C(j) be the set of constraints containing variable j, set block of j to
- *  (i)   constoblock(i) iff constoblock(i1) == constoblock(i2) for all i1,i2 in C(j) && constoblock(i) != nblocks+1 for all i in  C(j)
- *  (ii)  nblocks+2 ["linking var"] iff exists i1,i2 with constoblock(i1) != constoblock(i2)
- *  (iii) nblocks+1 ["master var"] iff exists i1 with constoblock(i1) == nblocks+1 and for all i1,i2 with constoblock(i1) != constoblock(i2) is constoblock(i1) = nblocks+1 or constoblock(i2) = nblocks+1
-
- *  */
+ *  (i)   constoblock(i) iff constoblock(i1) == constoblock(i2) for all i1,i2 in C(j) with constoblock(i1) != nblocks+1 && constoblock(i2) != nblocks+1
+ *  (ii)  nblocks+2 ["linking var"] iff exists i1,i2 with constoblock(i1) != constoblock(i2) && constoblock(i1) != nblocks+1 && constoblock(i2) != nblocks+1
+ *  (iii) nblocks+1 ["master var"] iff constoblock(i) == nblocks+1 for all i in C(j)
+ */
 SCIP_RETCODE DECfilloutDecompFromConstoblock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
@@ -1266,6 +1265,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
       assert(success);
       SCIPdebugMessage("cons <%s> (%d vars) is in block %d.\n", SCIPconsGetName(conss[i]), ncurvars, consblock);
+      assert(consblock <= nblocks);
 
       for( j = 0; j < ncurvars; ++j )
       {
@@ -1277,20 +1277,15 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
          else
             varblock = nblocks+1;
          /** if the constraint is in a block and the variable is not in the same block */
-         if( !SCIPhashmapExists(vartoblock, probvar) && consblock <= nblocks )
+         if( !SCIPhashmapExists(vartoblock, probvar) )
          {
             SCIPdebugMessage(" var <%s> not been handled before, adding to block %d\n", SCIPvarGetName(probvar), consblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) consblock) );
          }
-         else if(varblock == nblocks + 2 ||  (varblock != consblock && consblock <= nblocks) )
+         else if( varblock == nblocks + 2 || varblock != consblock )
          {
             SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
-         }
-         else if( consblock == nblocks+1 )
-         {
-            SCIPdebugMessage(" var <%s> not handled and current cons linking, var is master.\n", SCIPvarGetName(probvar));
-            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
          }
          else
          {
