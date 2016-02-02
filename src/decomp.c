@@ -1276,14 +1276,17 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
             varblock = (int) (size_t) SCIPhashmapGetImage(vartoblock, probvar); /*lint !e507*/
          else
             varblock = nblocks+1;
-         /** if the constraint is in a block and the variable is not in the same block */
-         if( !SCIPhashmapExists(vartoblock, probvar) )
+
+         /* The variable is currently in no block */
+         if( varblock == nblocks+1 )
          {
             SCIPdebugMessage(" var <%s> not been handled before, adding to block %d\n", SCIPvarGetName(probvar), consblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) consblock) );
          }
-         else if( varblock == nblocks + 2 || varblock != consblock )
+         /* The variable is already in a different block */
+         else if( varblock != consblock )
          {
+            assert(varblock <= nblocks || varblock == nblocks+2);
             SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
          }
@@ -1297,6 +1300,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       SCIPfreeBufferArray(scip, &curvars);
    }
 
+   /* Handle variables that do not appear in any pricing problem, those will be copied directly to the master */
    for( i = 0; i < nvars; ++i )
    {
       if( !SCIPhashmapExists(vartoblock, vars[i]) )
