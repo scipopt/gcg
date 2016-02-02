@@ -1311,7 +1311,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
    }
 
    retcode = DECfilloutDecompFromHashmaps(scip, decomp, vartoblock, constoblock, nblocks, staircase);
-   if(retcode != SCIP_OKAY)
+   if( retcode != SCIP_OKAY )
    {
       SCIPhashmapFree(&vartoblock);
       return retcode;
