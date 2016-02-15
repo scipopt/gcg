@@ -1202,7 +1202,13 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
    return SCIP_OKAY;
 }
 
-/** completely fills out decomposition structure from only the constraint partition */
+/** completely fills out decomposition structure from only the constraint partition in the following manner:
+ *  given constraint block/border assignment (by constoblock), one gets the following assignment of probvars:
+ *  let C(j) be the set of constraints containing variable j, set block of j to
+ *  (i)   constoblock(i) iff constoblock(i1) == constoblock(i2) for all i1,i2 in C(j) with constoblock(i1) != nblocks+1 && constoblock(i2) != nblocks+1
+ *  (ii)  nblocks+2 ["linking var"] iff exists i1,i2 with constoblock(i1) != constoblock(i2) && constoblock(i1) != nblocks+1 && constoblock(i2) != nblocks+1
+ *  (iii) nblocks+1 ["master var"] iff constoblock(i) == nblocks+1 for all i in C(j)
+ */
 SCIP_RETCODE DECfilloutDecompFromConstoblock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
@@ -1259,6 +1265,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
       assert(success);
       SCIPdebugMessage("cons <%s> (%d vars) is in block %d.\n", SCIPconsGetName(conss[i]), ncurvars, consblock);
+      assert(consblock <= nblocks);
 
       for( j = 0; j < ncurvars; ++j )
       {
@@ -1269,21 +1276,19 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
             varblock = (int) (size_t) SCIPhashmapGetImage(vartoblock, probvar); /*lint !e507*/
          else
             varblock = nblocks+1;
-         /** if the constraint is in a block and the variable is not in the same block */
-         if( !SCIPhashmapExists(vartoblock, probvar) && consblock <= nblocks )
+
+         /* The variable is currently in no block */
+         if( varblock == nblocks+1 )
          {
             SCIPdebugMessage(" var <%s> not been handled before, adding to block %d\n", SCIPvarGetName(probvar), consblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) consblock) );
          }
-         else if( varblock != consblock && consblock <= nblocks )
+         /* The variable is already in a different block */
+         else if( varblock != consblock )
          {
+            assert(varblock <= nblocks || varblock == nblocks+2);
             SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
-         }
-         else if( consblock == nblocks+1 )
-         {
-            SCIPdebugMessage(" var <%s> not handled and current cons linking, var is master.\n", SCIPvarGetName(probvar));
-            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
          }
          else
          {
@@ -1295,6 +1300,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       SCIPfreeBufferArray(scip, &curvars);
    }
 
+   /* Handle variables that do not appear in any pricing problem, those will be copied directly to the master */
    for( i = 0; i < nvars; ++i )
    {
       if( !SCIPhashmapExists(vartoblock, vars[i]) )
@@ -1305,7 +1311,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
    }
 
    retcode = DECfilloutDecompFromHashmaps(scip, decomp, vartoblock, constoblock, nblocks, staircase);
-   if(retcode != SCIP_OKAY)
+   if( retcode != SCIP_OKAY )
    {
       SCIPhashmapFree(&vartoblock);
       return retcode;
