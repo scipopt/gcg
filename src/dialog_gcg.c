@@ -199,34 +199,32 @@ SCIP_RETCODE writeAllDecompositions(
  *       - \ref SCIP_STAGE_PRESOLVED
  */
 static
-SCIP_RETCODE useSCIP( SCIP* scip )
+SCIP_RETCODE createOneBlock( SCIP* scip )
 {
-   SCIP* newscip = NULL;
-   SCIP_Real timelimit;
-   SCIP_Real memlimit;
-   SCIP_Bool valid = FALSE;
+   SCIP_HASHMAP* newconstoblock;
+   DEC_DECOMP* newdecomp;
+   SCIP_CONS** conss;
+   int nconss;
+   int i;
+   int nblocks = 1;
 
-   /* start another SCIP instance on the same problem without GCG plugins */
-   SCIP_CALL( SCIPcreate(&newscip) );
-   SCIP_CALL( SCIPincludeDefaultPlugins(newscip) );
-   SCIP_CALL( SCIPcopyParamSettings(scip, newscip) );
+   conss = SCIPgetConss(scip);
+   nconss = SCIPgetNConss(scip);
 
-   SCIP_CALL( SCIPgetRealParam( scip, "limits/time", &timelimit ) );
-   SCIP_CALL( SCIPsetRealParam( newscip, "limits/time", timelimit - SCIPgetTotalTime( scip ) ) );
-   SCIP_CALL( SCIPgetRealParam( scip, "limits/memory", &memlimit ) );
-   SCIP_CALL( SCIPsetRealParam( newscip, "limits/memory", memlimit - SCIPgetMemUsed( scip ) ) );
+   SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), nconss ) );
 
-   SCIP_CALL( SCIPcopyOrigProb( scip, newscip, NULL, NULL, "prob" ) );
-   SCIP_CALL( SCIPcopyOrigVars( scip, newscip, NULL, NULL ) );
-   SCIP_CALL( SCIPcopyOrigConss( scip, newscip, NULL, NULL, TRUE, &valid) );
-   assert(valid);
+   for( i = 0; i < nconss; i++ )
+   {
+      assert(!SCIPhashmapExists ( newconstoblock, conss[i] ) );
+      SCIP_CALL( SCIPhashmapInsert( newconstoblock, conss[i], (void*) (size_t) nblocks ) );
+   }
 
-   SCIP_CALL( SCIPtransformProb(newscip) );
-   SCIP_CALL( SCIPpresolve(newscip) );
+   DECdecompCreate( scip, &newdecomp );
+   assert( newdecomp != ((void *)0) );
+   SCIP_CALL( DECfilloutDecompFromConstoblock( scip, newdecomp, newconstoblock, nblocks, FALSE) );
 
-   SCIP_CALL( SCIPsolve(newscip) );
+   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, newdecomp) );
 
-   SCIP_CALL( SCIPfree(&newscip) );
 
    return SCIP_OKAY;
 }
@@ -447,11 +445,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          if( result == SCIP_DIDNOTFIND )
          {
             assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
-            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected.\n");
-            SCIPdialogMessage(scip, NULL, "SCIP will reload and solve.\n\n");
-
-            /* if there is no decomp remove all GCG-specific characteristics and solve with scip */
-            SCIP_CALL( useSCIP(scip) );
+            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will assert one single block.\n");
+            SCIP_CALL( createOneBlock(scip) );
             break;
          }
 
@@ -459,8 +454,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       else if( DECgetBestDecomp(scip) == NULL )
       {
          assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
-         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will reload and solve.\n");
-         SCIP_CALL( useSCIP(scip) );
+         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will assert one single block.\n");
+         SCIP_CALL( createOneBlock(scip) );
          break;
       }
       /*lint -fallthrough*/
