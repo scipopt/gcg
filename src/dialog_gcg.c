@@ -225,7 +225,6 @@ SCIP_RETCODE createOneBlock( SCIP* scip )
 
    SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, newdecomp) );
 
-
    return SCIP_OKAY;
 }
 
