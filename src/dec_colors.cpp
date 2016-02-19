@@ -371,9 +371,9 @@ SCIP_RETCODE findColorsComponents(
 
 
 
-/** destructor of detector to free detector data (called when SCIP is exiting) */
+/** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_EXITDETECTOR(exitColors)
+DEC_DECL_FREEDETECTOR(freeColors)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -390,19 +390,7 @@ DEC_DECL_EXITDETECTOR(exitColors)
    return SCIP_OKAY;
 }
 
-/** detection initialization function of detector (called before solving is about to begin) */
-static
-DEC_DECL_INITDETECTOR(initColors)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(detector != NULL);
-
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   return SCIP_OKAY;
-}
-
-/** detection function of detector */
+/** detector structure detection method, tries to detect a structure in the problem */
 static
 DEC_DECL_DETECTSTRUCTURE(detectColors)
 { /*lint -e715*/
@@ -451,7 +439,8 @@ SCIP_RETCODE SCIPincludeDetectionColors(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectColors, initColors, exitColors) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectColors, freeColors, NULL, NULL) );
 
    /* add colors constraint handler parameters */
 

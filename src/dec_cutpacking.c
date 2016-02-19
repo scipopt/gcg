@@ -1728,7 +1728,24 @@ SCIP_RETCODE callMetis(
  * detector callback methods
  */
 
-/** detection initialization function of detector (called when detection is about to begin) */
+/** detector deinitialization method (called before the transformed problem is freed) */
+static
+DEC_DECL_FREEDETECTOR(freeCutpacking)
+{
+   DEC_DETECTORDATA* detectordata;
+
+   assert(scip != NULL);
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   SCIPfreeMemory(scip, &detectordata);
+
+   return SCIP_OKAY;
+}
+
+/** detector initialization method (called after problem was transformed) */
 static
 DEC_DECL_INITDETECTOR(initCutpacking)
 {
@@ -1885,7 +1902,7 @@ DEC_DECL_INITDETECTOR(initCutpacking)
    return SCIP_OKAY;
 }
 
-/** detection deinitialization method of detector (called when detection is finished) */
+/** detector deinitialization method (called before the transformed problem is freed) */
 static
 DEC_DECL_EXITDETECTOR(exitCutpacking)
 {
@@ -1898,15 +1915,7 @@ DEC_DECL_EXITDETECTOR(exitCutpacking)
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
-   /* copy data to decomp structure */
-   if( !detectordata->found )
-   {
-      SCIPfreeMemory(scip, &detectordata);
-      return SCIP_OKAY;
-   }
-
-   /* free presolver data */
-
+   /* free detector data */
    for( i = 0; i < detectordata->nrelconss; ++i )
    {
       SCIPfreeMemoryArray(scip, &detectordata->subscipconss[i]);
@@ -1936,12 +1945,11 @@ DEC_DECL_EXITDETECTOR(exitCutpacking)
       SCIPfreeMemoryArray(scip, &detectordata->mergedconss[i]);
    }
    SCIPfreeMemoryArray(scip, &detectordata->mergedconss);
-   SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
 }
 
-/** detection function of detector */
+/** detector structure detection method, tries to detect a structure in the problem */
 static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
 {
@@ -2029,7 +2037,7 @@ SCIP_RETCODE SCIPincludeDetectionCutpacking(
    /* include structure detector */
    SCIP_CALL( DECincludeDetector(scip,
       DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectAndBuildCutpacking, initCutpacking, exitCutpacking) );
+      detectordata, detectAndBuildCutpacking, freeCutpacking, initCutpacking, exitCutpacking) );
 
    /* add cutpacking detector parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/algorithm",

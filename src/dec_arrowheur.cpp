@@ -38,7 +38,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+
 #include "dec_arrowheur.h"
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -148,9 +148,24 @@ struct DEC_DetectorData
  * Local methods
  */
 
-/* put your local methods here, and declare them static */
+/** destructor of detector to free user data (called when GCG is exiting) */
+static
+DEC_DECL_FREEDETECTOR(freeArrowheur)
+{
+   DEC_DETECTORDATA* detectordata;
 
-/** detector initialization method */
+   assert(scip != NULL);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   SCIPfreeMemory(scip, &detectordata);
+
+   return SCIP_OKAY;
+}
+
+/** detector initialization method (called after problem was transformed) */
 static
 DEC_DECL_INITDETECTOR(initArrowheur)
 {
@@ -170,7 +185,7 @@ DEC_DECL_INITDETECTOR(initArrowheur)
    return SCIP_OKAY;
 }
 
-/** presolving deinitialization method of presolver (called after presolving has been finished) */
+/** detector deinitialization method (called before the transformed problem is freed) */
 static
 DEC_DECL_EXITDETECTOR(exitArrowheur)
 {
@@ -182,15 +197,8 @@ DEC_DECL_EXITDETECTOR(exitArrowheur)
    assert(detectordata != NULL);
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-   /* copy data to decomp structure */
-   if( !detectordata->found )
-   {
-      SCIPfreeMemory(scip, &detectordata);
-      return SCIP_OKAY;
-   }
 
    SCIP_CALL( SCIPfreeClock(scip, &detectordata->metisclock) );
-   SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
 }
@@ -325,7 +333,7 @@ SCIP_RETCODE createMetisFile(
    return SCIP_OKAY;
 }
 
-/** detection callback method */
+/** detector structure detection method, tries to detect a structure in the problem */
 static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 {
@@ -428,7 +436,8 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    detectordata->found = FALSE;
    detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectAndBuildArrowhead, freeArrowheur, initArrowheur, exitArrowheur) );
 
 
    /* add arrowheur presolver parameters */

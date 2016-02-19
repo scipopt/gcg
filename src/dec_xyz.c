@@ -29,6 +29,7 @@
  * @ingroup DETECTORS
  * @brief  detector xyz (put your description here)
  * @author Martin Bergner
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -67,13 +68,13 @@ struct DEC_DetectorData
  * detector callback methods
  */
 
-/** destructor of detector to free detector data (called before the solving process begins) */
+/** destructor of detector to free user data (called when GCG is exiting) */
 #if 0
 static
-DEC_DECL_EXITDETECTOR(exitXyz)
+DEC_DECL_FREEDETECTOR(freeXyz)
 {  /*lint --e{715}*/
 
-   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
+   SCIPerrorMessage("Free function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
    SCIPABORT();
 
    return SCIP_OKAY;
@@ -82,7 +83,7 @@ DEC_DECL_EXITDETECTOR(exitXyz)
 #define exitXyz NULL
 #endif
 
-/** detection initialization function of detector (called before solving is about to begin) */
+/** detector initialization method (called after problem was transformed) */
 #if 0
 static
 DEC_DECL_INITDETECTOR(initXyz)
@@ -95,6 +96,21 @@ DEC_DECL_INITDETECTOR(initXyz)
 }
 #else
 #define initXyz NULL
+#endif
+
+/** detector deinitialization method (called before the transformed problem is freed) */
+#if 0
+static
+DEC_DECL_EXITDETECTOR(exitXyz)
+{  /*lint --e{715}*/
+
+   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
+   SCIPABORT();
+
+   return SCIP_OKAY;
+}
+#else
+#define exitXyz NULL
 #endif
 
 /** detection function of detector */
@@ -115,7 +131,7 @@ DEC_DECL_DETECTSTRUCTURE(detectXyz)
  */
 
 /** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionXyz(
+SCIP_RETCODE SCIPincludeDetectorXyz(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -124,7 +140,8 @@ SCIP_RETCODE SCIPincludeDetectionXyz(
    /**@todo create xyz detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectXyz, initXyz, exitXyz) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectXyz, initXyz, exitXyz) );
 
    /**@todo add xyz detector parameters */
 

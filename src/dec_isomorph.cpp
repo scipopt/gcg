@@ -289,7 +289,8 @@ SCIP_RETCODE setuparrays(
 }
 
 /** create a graph out of an array of scips */
-static SCIP_RETCODE createGraph(
+static
+SCIP_RETCODE createGraph(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR             colorinfo,          /**< result pointer to indicate success or failure */
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
@@ -405,8 +406,9 @@ static SCIP_RETCODE createGraph(
    return SCIP_OKAY;
 }
 
-/** destructor of detector to free detector data (called when SCIP is exiting) */
-static DEC_DECL_EXITDETECTOR(exitIsomorphism)
+/** destructor of detector to free user data (called when GCG is exiting) */
+static
+DEC_DECL_FREEDETECTOR(freeIsomorphism)
 { /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -423,8 +425,9 @@ static DEC_DECL_EXITDETECTOR(exitIsomorphism)
    return SCIP_OKAY;
 }
 
-/** detection initialization function of detector (called before solving is about to begin) */
-static DEC_DECL_INITDETECTOR(initIsomorphism)
+/** detector initialization method (called after problem was transformed) */
+static
+DEC_DECL_INITDETECTOR(initIsomorphism)
 { /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -536,8 +539,9 @@ SCIP_RETCODE filterPermutation(
    return SCIP_OKAY;
 }
 
-/** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
+/** detector structure detection method, tries to detect a structure in the problem */
+static
+DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
 { /*lint -esym(429,ptrhook)*/
    bliss::Graph graph;
    bliss::Stats bstats;
@@ -687,7 +691,8 @@ SCIP_RETCODE SCIPincludeDetectionIsomorphism(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectIsomorphism, initIsomorphism, exitIsomorphism) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectIsomorphism, freeIsomorphism, initIsomorphism, NULL) );
 
    /* add connected constraint handler parameters */
    return SCIP_OKAY;

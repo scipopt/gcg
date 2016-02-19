@@ -242,9 +242,9 @@ SCIP_RETCODE findConnectedComponents(
 
 
 
-/** destructor of detector to free detector data (called when SCIP is exiting) */
+/** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_EXITDETECTOR(exitConnected)
+DEC_DECL_FREEDETECTOR(freeConnected)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -281,7 +281,7 @@ DEC_DECL_INITDETECTOR(initConnected)
    return SCIP_OKAY;
 }
 
-/** detection function of detector */
+/** detector structure detection method, tries to detect a structure in the problem */
 static
 DEC_DECL_DETECTSTRUCTURE(detectConnected)
 {
@@ -355,7 +355,8 @@ SCIP_RETCODE SCIPincludeDetectionConnected(
 
    detectordata->blockdiagonal = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectConnected, initConnected, exitConnected) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectConnected, freeConnected, initConnected, NULL) );
 
    /* add connected constraint handler parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );

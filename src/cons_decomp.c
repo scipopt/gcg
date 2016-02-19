@@ -29,6 +29,7 @@
  * @ingroup CONSHDLRS
  * @brief  constraint handler for structure detection
  * @author Martin Bergner
+ * @author Christian Puchert
  *
  * This constraint handler will run all registered structure detectors in
  * increasing priority until the first detector finds a suitable structure.
@@ -50,7 +51,7 @@
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
-#define CONSHDLR_DESC          "constraint handler template"
+#define CONSHDLR_DESC          "constraint handler for structure detection"
 #define CONSHDLR_ENFOPRIORITY         0 /**< priority of the constraint handler for constraint enforcing */
 #define CONSHDLR_CHECKPRIORITY        0 /**< priority of the constraint handler for checking feasibility */
 #define CONSHDLR_EAGERFREQ           -1 /**< frequency for using all instead of only the useful constraints in separation,
@@ -101,7 +102,16 @@ SCIP_DECL_CONSINIT(consInitDecomp)
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      SCIP_CALL( SCIPresetClock(scip, conshdlrdata->detectors[i]->dectime) );
+      DEC_DETECTOR *detector;
+      detector = conshdlrdata->detectors[i];
+      assert(detector != NULL);
+
+      SCIP_CALL( SCIPresetClock(scip, detector->dectime) );
+      if( detector->initDetector != NULL )
+      {
+         SCIPdebugMessage("Calling initDetector of %s\n", detector->name);
+         SCIP_CALL( (*detector->initDetector)(scip, detector) );
+      }
    }
 
    return SCIP_OKAY;
@@ -134,8 +144,17 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      conshdlrdata->detectors[i]->ndecomps = 0;
-      SCIPfreeMemoryArrayNull(scip, &(conshdlrdata->detectors[i]->decomps));
+      DEC_DETECTOR *detector;
+      detector = conshdlrdata->detectors[i];
+      assert(detector != NULL);
+
+      detector->ndecomps = 0;
+      SCIPfreeMemoryArrayNull(scip, &detector->decomps);
+      if( detector->exitDetector != NULL )
+      {
+         SCIPdebugMessage("Calling exitDetector of %s\n", detector->name);
+         SCIP_CALL( (*detector->exitDetector)(scip, detector) );
+      }
    }
 
    return SCIP_OKAY;
@@ -157,15 +176,17 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       DEC_DETECTOR *detector;
       detector = conshdlrdata->detectors[i];
       assert(detector != NULL);
-      if( detector->exitDetection != NULL )
+
+      if( detector->freeDetector != NULL )
       {
-         SCIPdebugMessage("Calling exitDetection of %s\n", detector->name);
-         SCIP_CALL( (*detector->exitDetection)(scip, detector) );
+         SCIPdebugMessage("Calling freeDetection of %s\n", detector->name);
+         SCIP_CALL( (*detector->freeDetector)(scip, detector) );
       }
-      SCIP_CALL( SCIPfreeClock(scip, &(conshdlrdata->detectors[i]->dectime)) );
-      SCIPfreeBlockMemory(scip, &(conshdlrdata->detectors[i])); /*lint !e866 */
+      SCIP_CALL( SCIPfreeClock(scip, &detector->dectime) );
+      SCIPfreeBlockMemory(scip, &detector);
    }
 
+   /* @todo: This is also done in consExitDecomp() and therefore probably makes no sense here. */
    if( conshdlrdata->ndecomps > 0 )
    {
       for( i = 0; i < conshdlrdata->ndecomps; ++i )
@@ -174,7 +195,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
    }
-
 
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
@@ -391,6 +411,7 @@ SCIP_RETCODE DECincludeDetector(
    SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure */
    DEC_DETECTORDATA*     detectordata,       /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)), /**< the method that will detect the structure (must not be NULL)*/
+   DEC_DECL_FREEDETECTOR((*freeDetector)),   /**< destructor of detector (or NULL) */
    DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL) */
    DEC_DECL_EXITDETECTOR((*exitDetector))    /**< deinitialization method of detector (or NULL) */
    )
@@ -430,12 +451,12 @@ SCIP_RETCODE DECincludeDetector(
    detector->decdata = detectordata;
    detector->name = name;
    detector->description = description;
-
-   detector->detectStructure = detectStructure;
-
-   detector->initDetection = initDetector;
-   detector->exitDetection = exitDetector;
    detector->decchar = decchar;
+
+   detector->freeDetector = freeDetector;
+   detector->initDetector = initDetector;
+   detector->exitDetector = exitDetector;
+   detector->detectStructure = detectStructure;
 
    detector->priority = priority;
    detector->enabled = enabled;
@@ -541,11 +562,6 @@ SCIP_RETCODE DECdetectStructure(
          assert(detector != NULL);
          if( !detector->enabled )
             continue;
-         if( detector->initDetection != NULL )
-         {
-            SCIPdebugMessage("Calling initDetection of %s\n", detector->name);
-            SCIP_CALL( (*detector->initDetection)(scip, detector) );
-         }
          decdecomps = NULL;
 
          SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
