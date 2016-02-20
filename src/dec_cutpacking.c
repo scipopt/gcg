@@ -147,7 +147,6 @@ struct DEC_DetectorData
    SCIP_Real             metisubfactor;
    SCIP_Bool             metisverbose;
    SCIP_Bool             metisuseptyperb;
-   SCIP_Bool             found;
 
 };
 
@@ -2010,7 +2009,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
         SCIP_CALL( getLinkingVars(scip, detectordata, (*decdecomps)[0]) );
    }
 
-   detectordata->found = TRUE;
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d blocks.\n", DECdecompGetNBlocks((*decdecomps)[0]));
 
    SCIP_CALL( freeData(scip, detectordata) );
@@ -2032,7 +2030,6 @@ SCIP_RETCODE SCIPincludeDetectionCutpacking(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
 
    assert(detectordata != NULL);
-   detectordata->found = FALSE;
    detectordata->partition = NULL;
    detectordata->nblocks = -1;
 
