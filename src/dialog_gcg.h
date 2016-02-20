@@ -91,6 +91,10 @@ SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsFast);
 extern
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsOff);
 
+/** dialog execution method for the set detectors default command */
+extern
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsDefault);
+
 /** dialog execution method for the set detectors aggressive command */
 extern
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsAggressive);

@@ -870,9 +870,15 @@ SCIP_RETCODE setDetectionDefault(
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
       char paramname[SCIP_MAXSTRLEN];
+      SCIP_Bool paramval;
       (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
 
       SCIP_CALL( SCIPresetParam(scip, paramname) );
+      if( !quiet )
+      {
+         SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+         SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+      }
    }
 
    return SCIP_OKAY;
@@ -910,6 +916,10 @@ SCIP_RETCODE setDetectionOff(
       (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
 
       SCIP_CALL( SCIPsetBoolParam(scip, paramname, FALSE) );
+      if( !quiet )
+      {
+         SCIPinfoMessage(scip, NULL, "%s = FALSE\n", paramname);
+      }
    }
 
    return SCIP_OKAY;
@@ -953,20 +963,22 @@ SCIP_RETCODE GCGsetDetection(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
    assert(scip != NULL);
-   SCIP_CALL( setDetectionDefault(scip, conshdlrdata, quiet) );
 
    switch( paramsetting )
    {
    case SCIP_PARAMSETTING_AGGRESSIVE:
+      SCIP_CALL( setDetectionDefault(scip, conshdlrdata, quiet) );
       SCIP_CALL( setDetectionAggressive(scip, conshdlrdata, quiet) );
       break;
    case SCIP_PARAMSETTING_OFF:
       SCIP_CALL( setDetectionOff(scip, conshdlrdata, quiet) );
       break;
    case SCIP_PARAMSETTING_FAST:
+      SCIP_CALL( setDetectionDefault(scip, conshdlrdata, quiet) );
       SCIP_CALL( setDetectionFast(scip, conshdlrdata, quiet) );
       break;
    case SCIP_PARAMSETTING_DEFAULT:
+      SCIP_CALL( setDetectionDefault(scip, conshdlrdata, quiet) );
       break;
    default:
       SCIPerrorMessage("The given paramsetting is invalid!\n");

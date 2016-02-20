@@ -513,7 +513,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteStatistics)
 
    return SCIP_OKAY;
 }
-/** dialog execution method for the set detector aggressive command */
+/** dialog execution method for the set detectors aggressive command */
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsAggressive)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
@@ -525,7 +525,19 @@ SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsAggressive)
    return SCIP_OKAY;
 }
 
-/** dialog execution method for the set detector off command */
+/** dialog execution method for the set detectors default command */
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsDefault)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_DEFAULT, FALSE) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set detectors off command */
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsOff)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
@@ -537,7 +549,7 @@ SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsOff)
    return SCIP_OKAY;
 }
 
-/** dialog execution method for the set detector fast command */
+/** dialog execution method for the set detectors fast command */
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsFast)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
@@ -800,6 +812,16 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
             NULL, SCIPdialogExecSetDetectorsAggressive, NULL, NULL,
             "aggressive", "sets detectors <aggressive>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set detectors emphasis default */
+   if( !SCIPdialogHasEntry(emphasismenu, "default") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL, SCIPdialogExecSetDetectorsDefault, NULL, NULL,
+         "default", "sets detectors <default>", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
