@@ -408,7 +408,7 @@ SCIP_RETCODE createGraph(
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeIsomorphism)
+DEC_DECL_FREEDETECTOR(detectorFreeIsomorph)
 { /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -427,7 +427,7 @@ DEC_DECL_FREEDETECTOR(freeIsomorphism)
 
 /** detector initialization method (called after problem was transformed) */
 static
-DEC_DECL_INITDETECTOR(initIsomorphism)
+DEC_DECL_INITDETECTOR(detectorInitIsomorph)
 { /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -541,7 +541,7 @@ SCIP_RETCODE filterPermutation(
 
 /** detector structure detection method, tries to detect a structure in the problem */
 static
-DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
 { /*lint -esym(429,ptrhook)*/
    bliss::Graph graph;
    bliss::Stats bstats;
@@ -692,7 +692,7 @@ SCIP_RETCODE SCIPincludeDetectionIsomorphism(
    assert(detectordata != NULL);
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectIsomorphism, freeIsomorphism, initIsomorphism, NULL) );
+      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, NULL) );
 
    /* add connected constraint handler parameters */
    return SCIP_OKAY;

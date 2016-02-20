@@ -150,7 +150,7 @@ struct DEC_DetectorData
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeArrowheur)
+DEC_DECL_FREEDETECTOR(detectorFreeArrowheur)
 {
    DEC_DETECTORDATA* detectordata;
 
@@ -167,7 +167,7 @@ DEC_DECL_FREEDETECTOR(freeArrowheur)
 
 /** detector initialization method (called after problem was transformed) */
 static
-DEC_DECL_INITDETECTOR(initArrowheur)
+DEC_DECL_INITDETECTOR(detectorInitArrowheur)
 {
    int nconss;
    DEC_DETECTORDATA* detectordata;
@@ -187,7 +187,7 @@ DEC_DECL_INITDETECTOR(initArrowheur)
 
 /** detector deinitialization method (called before the transformed problem is freed) */
 static
-DEC_DECL_EXITDETECTOR(exitArrowheur)
+DEC_DECL_EXITDETECTOR(detectorExitArrowheur)
 {
    DEC_DETECTORDATA* detectordata;
 
@@ -335,7 +335,7 @@ SCIP_RETCODE createMetisFile(
 
 /** detector structure detection method, tries to detect a structure in the problem */
 static
-DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectArrowheur)
 {
    int i;
    int j;
@@ -437,7 +437,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    detectordata->blocks = -1;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectAndBuildArrowhead, freeArrowheur, initArrowheur, exitArrowheur) );
+      detectordata, detectorDetectArrowheur, detectorFreeArrowheur, detectorInitArrowheur, detectorExitArrowheur) );
 
 
    /* add arrowheur presolver parameters */

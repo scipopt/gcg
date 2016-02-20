@@ -1932,7 +1932,7 @@ SCIP_RETCODE callMetis(
 
 /** detector deinitialization method (called before the transformed problem is freed) */
 static
-DEC_DECL_FREEDETECTOR(freeCutpacking)
+DEC_DECL_FREEDETECTOR(detectorFreeCutpacking)
 {
    DEC_DETECTORDATA* detectordata;
 
@@ -1949,7 +1949,7 @@ DEC_DECL_FREEDETECTOR(freeCutpacking)
 
 /** detector structure detection method, tries to detect a structure in the problem */
 static
-DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectCutpacking)
 {
    int i;
 
@@ -2036,7 +2036,7 @@ SCIP_RETCODE SCIPincludeDetectionCutpacking(
    /* include structure detector */
    SCIP_CALL( DECincludeDetector(scip,
       DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectAndBuildCutpacking, freeCutpacking, NULL, NULL) );
+      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, NULL, NULL) );
 
    /* add cutpacking detector parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/algorithm",

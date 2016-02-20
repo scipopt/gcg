@@ -373,7 +373,7 @@ SCIP_RETCODE findColorsComponents(
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeColors)
+DEC_DECL_FREEDETECTOR(detectorFreeColors)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -392,7 +392,7 @@ DEC_DECL_FREEDETECTOR(freeColors)
 
 /** detector structure detection method, tries to detect a structure in the problem */
 static
-DEC_DECL_DETECTSTRUCTURE(detectColors)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectColors)
 { /*lint -e715*/
    *result = SCIP_DIDNOTFIND;
 
@@ -440,7 +440,7 @@ SCIP_RETCODE SCIPincludeDetectionColors(
    assert(detectordata != NULL);
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectColors, freeColors, NULL, NULL) );
+      detectordata, detectorDetectColors, detectorFreeColors, NULL, NULL) );
 
    /* add colors constraint handler parameters */
 

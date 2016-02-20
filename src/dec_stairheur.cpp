@@ -1404,7 +1404,7 @@ SCIP_RETCODE blocking(
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeStairheur)
+DEC_DECL_FREEDETECTOR(detectorFreeStairheur)
 {
    DEC_DETECTORDATA* detectordata;
 
@@ -1421,7 +1421,7 @@ DEC_DECL_FREEDETECTOR(freeStairheur)
 
 /** initialization method of stairheur detector */
 static
-DEC_DECL_INITDETECTOR(initStairheur)
+DEC_DECL_INITDETECTOR(detectorInitStairheur)
 {
    DEC_DETECTORDATA* detectordata;
 
@@ -1463,7 +1463,7 @@ DEC_DECL_INITDETECTOR(initStairheur)
 
 /** deinitialization method of detector (called after detection has been finished) */
 static
-DEC_DECL_EXITDETECTOR(exitStairheur)
+DEC_DECL_EXITDETECTOR(detectorExitStairheur)
 {
    DEC_DETECTORDATA* detectordata;
 
@@ -1497,7 +1497,7 @@ DEC_DECL_EXITDETECTOR(exitStairheur)
 
 /** detection method of stairheur detector */
 static
-DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectStairheur)
 {
    int i;
    int nconss; /* number of constraints in the problem */
@@ -1633,7 +1633,7 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    detectordata->blockedAfterrow = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectAndBuildStair, freeStairheur, initStairheur, exitStairheur) );
+      detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur) );
 
    /* add stairheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/nconssperblock",

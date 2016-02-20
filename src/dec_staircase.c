@@ -436,7 +436,7 @@ SCIP_RETCODE copyToDecdecomp(
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeStaircase)
+DEC_DECL_FREEDETECTOR(detectorFreeStaircase)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -459,7 +459,7 @@ DEC_DECL_FREEDETECTOR(freeStaircase)
 
 /** detector initialization method (called after the problem has been transformed) */
 static
-DEC_DECL_INITDETECTOR(initStaircase)
+DEC_DECL_INITDETECTOR(detectorInitStaircase)
 {  /*lint --e{715}*/
 
    DEC_DETECTORDATA *detectordata;
@@ -482,7 +482,7 @@ DEC_DECL_INITDETECTOR(initStaircase)
 
 /** detector structure detection method, tries to detect a structure in the problem */
 static
-DEC_DECL_DETECTSTRUCTURE(detectStaircase)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircase)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -537,7 +537,7 @@ SCIP_RETCODE SCIPincludeDetectionStaircase(
    detectordata->vartoblock = NULL;
    detectordata->nblocks = 0;
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectStaircase, freeStaircase, initStaircase, NULL) );
+      detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, NULL) );
 
    return SCIP_OKAY;
 }

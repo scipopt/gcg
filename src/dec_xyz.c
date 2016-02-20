@@ -71,7 +71,7 @@ struct DEC_DetectorData
 /** destructor of detector to free user data (called when GCG is exiting) */
 #if 0
 static
-DEC_DECL_FREEDETECTOR(freeXyz)
+DEC_DECL_FREEDETECTOR(detectorFreeXyz)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Free function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
@@ -80,13 +80,13 @@ DEC_DECL_FREEDETECTOR(freeXyz)
    return SCIP_OKAY;
 }
 #else
-#define exitXyz NULL
+#define detectorFreeXyz NULL
 #endif
 
 /** detector initialization method (called after problem was transformed) */
 #if 0
 static
-DEC_DECL_INITDETECTOR(initXyz)
+DEC_DECL_INITDETECTOR(detectorInitXyz)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
@@ -95,13 +95,13 @@ DEC_DECL_INITDETECTOR(initXyz)
    return SCIP_OKAY;
 }
 #else
-#define initXyz NULL
+#define detectorInitXyz NULL
 #endif
 
 /** detector deinitialization method (called before the transformed problem is freed) */
 #if 0
 static
-DEC_DECL_EXITDETECTOR(exitXyz)
+DEC_DECL_EXITDETECTOR(detectorExitXyz)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
@@ -110,12 +110,12 @@ DEC_DECL_EXITDETECTOR(exitXyz)
    return SCIP_OKAY;
 }
 #else
-#define exitXyz NULL
+#define detectorExitXyz NULL
 #endif
 
 /** detection function of detector */
 static
-DEC_DECL_DETECTSTRUCTURE(detectXyz)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectXyz)
 { /*lint --e{715}*/
    *result = SCIP_DIDNOTFIND;
 
@@ -141,7 +141,7 @@ SCIP_RETCODE SCIPincludeDetectorXyz(
    detectordata = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectXyz, initXyz, exitXyz) );
+      detectordata, detectorDetectXyz, detectorFreeXyz, detectorInitXyz, detectorExitXyz) );
 
    /**@todo add xyz detector parameters */
 

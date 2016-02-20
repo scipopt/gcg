@@ -158,7 +158,7 @@ SCIP_RETCODE findRandomPartition(
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeRandom)
+DEC_DECL_FREEDETECTOR(detectorFreeRandom)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -177,7 +177,7 @@ DEC_DECL_FREEDETECTOR(freeRandom)
 
 /** detector initialization method (called after problem was transformed) */
 static
-DEC_DECL_INITDETECTOR(initRandom)
+DEC_DECL_INITDETECTOR(detectorInitRandom)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -199,7 +199,7 @@ DEC_DECL_INITDETECTOR(initRandom)
 
 /** detection function of detector */
 static
-DEC_DECL_DETECTSTRUCTURE(detectRandom)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectRandom)
 { /*lint --e{715}*/
    *result = SCIP_DIDNOTFIND;
 
@@ -251,7 +251,7 @@ SCIP_RETCODE SCIPincludeDetectionRandom(
    assert(detectordata != NULL);
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectRandom, freeRandom, initRandom, NULL) );
+      detectordata, detectorDetectRandom, detectorFreeRandom, detectorInitRandom, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/seed", "random seed for the random number generator, -1 is the current time",
       &detectordata->seed, FALSE, DEFAULT_SEED, -1, INT_MAX, NULL, NULL ) );
