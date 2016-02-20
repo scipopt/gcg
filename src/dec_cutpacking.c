@@ -1152,7 +1152,7 @@ SCIP_RETCODE getMergedConss(
 static
 SCIP_RETCODE getConsIndex(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
    DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
 )
 {
@@ -1280,7 +1280,7 @@ SCIP_RETCODE getConsIndex(
 static
 SCIP_RETCODE getLinkingVars(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
    DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
    )
 {
@@ -1385,7 +1385,7 @@ SCIP_RETCODE getLinkingVars(
 static
 SCIP_RETCODE fixedBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
    DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
    )
 {
@@ -1465,7 +1465,7 @@ SCIP_RETCODE fixedBlocks(
 static
 SCIP_RETCODE applyStoerWagner(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata        /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata        /**< detector data data structure */
    )
 {
    int i;
@@ -1739,7 +1739,7 @@ SCIP_RETCODE applyStoerWagner(
 static
 SCIP_RETCODE callMetis(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    SCIP_RESULT*          result              /**< result pointer */
    )
 {

@@ -324,7 +324,7 @@ static void checkConsistencyOfIndexarrays(DEC_DETECTORDATA* detectordata, int nv
 /* debug ? */
 /** creates a data and a gnuplot file for the initial problem.
  * @param scip < SCIP data structure
- * @param detectordata < presolver data data structure
+ * @param detectordata < detector data data structure
  * @param filename name of the output files (without any filename extension) */
 static
 SCIP_RETCODE plotInitialProblem(
@@ -395,7 +395,7 @@ SCIP_RETCODE plotInitialProblem(
 }
 
 /** creates a data and a gnuplot file for the graph representing the array minV (number of linking variables).
- * @param detectordata < presolver data data structure
+ * @param detectordata < detector data data structure
  * @param filename name of the output files (without any filename extension) */
 static
 void plotMinV(
@@ -481,7 +481,7 @@ void plotMinV(
 static
 SCIP_RETCODE createRowindexList(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    SCIP_HASHMAP*         indexcons,          /**< hashmap index -> constraint */
    SCIP_HASHMAP*         varindex,           /**< hashmap variable -> index*/
    vector<vector<int> >  &rowindices         /**< vector to store the row indices vector*/
@@ -684,7 +684,7 @@ SCIP_Bool arraysAreEqual(
 static
 SCIP_RETCODE rankOrderClusteringIteration(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    INDEXMAP*             inputmap,           /**< indexmap for input */
    INDEXMAP*             outputmap           /**< indexmap for output */
    )
@@ -1090,7 +1090,7 @@ void checkParameterConsistency(
 static
 SCIP_RETCODE blockingDynamic(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    int                   tau,                /**< desired number of blocks */
    int                   nvars               /**< number of variables in the problem*/
    )
@@ -1164,7 +1164,7 @@ SCIP_RETCODE blockingDynamic(
 static
 SCIP_RETCODE blockingStatic(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata        /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata        /**< detector data data structure */
    )
 {
    int nblocks;
@@ -1221,7 +1221,7 @@ SCIP_RETCODE blockingStatic(
 static
 SCIP_RETCODE blockingAsSoonAsPossible(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    int                   desired_blocks,     /**< desired number of blocks */
    int                   nvars               /**< number of variables in the problem*/
 )
@@ -1606,7 +1606,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStairheur)
    return SCIP_OKAY;
 }
 
-/** creates the stairheur presolver and includes it in SCIP */
+/** creates the stairheur detector and includes it in SCIP */
 extern "C"
 SCIP_RETCODE SCIPincludeDetectorStairheur(
    SCIP*                 scip              /**< SCIP data structure */
@@ -1635,7 +1635,7 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
       detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur) );
 
-   /* add stairheur presolver parameters */
+   /* add stairheur detector parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/nconssperblock",
       "The number of constraints per block (static blocking only)",
       &detectordata->nconssperblock, FALSE, DEFAULT_NCONSSPERBLOCK, 2, 1000000, NULL, NULL) );

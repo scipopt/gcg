@@ -207,7 +207,7 @@ DEC_DECL_EXITDETECTOR(detectorExitArrowheur)
 static
 SCIP_RETCODE callMetis(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    SCIP_RESULT*          result              /**< result indicating whether the detection was successful */
    )
 {
@@ -420,7 +420,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectArrowheur)
 }
 #endif
 
-/** creates the arrowheur presolver and includes it in SCIP */
+/** creates the arrowheur detector and includes it in SCIP */
 extern "C"
 SCIP_RETCODE SCIPincludeDetectorArrowheur(
    SCIP*                 scip                /**< SCIP data structure */
@@ -440,7 +440,7 @@ SCIP_RETCODE SCIPincludeDetectorArrowheur(
       detectordata, detectorDetectArrowheur, detectorFreeArrowheur, detectorInitArrowheur, detectorExitArrowheur) );
 
 
-   /* add arrowheur presolver parameters */
+   /* add arrowheur detector parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
