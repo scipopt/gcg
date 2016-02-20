@@ -341,7 +341,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectConnected)
  */
 
 /** creates the handler for connected constraints and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionConnected(
+SCIP_RETCODE SCIPincludeDetectorConnected(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

@@ -239,7 +239,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectRandom)
  */
 
 /** creates the handler for random detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionRandom(
+SCIP_RETCODE SCIPincludeDetectorRandom(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

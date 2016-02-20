@@ -427,7 +427,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectColors)
 
 /** creates the handler for colors constraints and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectionColors(
+SCIP_RETCODE SCIPincludeDetectorColors(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

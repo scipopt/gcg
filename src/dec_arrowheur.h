@@ -44,7 +44,7 @@ extern "C" {
 
 /** creates the arrowheur presolver and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
+SCIP_RETCODE SCIPincludeDetectorArrowheur(
    SCIP* scip                 /**< SCIP data structure */
    );
 

@@ -43,7 +43,7 @@ extern "C" {
 
 /** creates the handler for staircase constraints and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectionStaircase(
+SCIP_RETCODE SCIPincludeDetectorStaircase(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

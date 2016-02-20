@@ -521,7 +521,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircase)
  */
 
 /** creates the handler for staircase constraints and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionStaircase(
+SCIP_RETCODE SCIPincludeDetectorStaircase(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

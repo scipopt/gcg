@@ -1608,7 +1608,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStairheur)
 
 /** creates the stairheur presolver and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectionStairheur(
+SCIP_RETCODE SCIPincludeDetectorStairheur(
    SCIP*                 scip              /**< SCIP data structure */
    )
 {

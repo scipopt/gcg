@@ -2019,7 +2019,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectCutpacking)
 #endif
 
 /** creates the cutpacking detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionCutpacking(
+SCIP_RETCODE SCIPincludeDetectorCutpacking(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

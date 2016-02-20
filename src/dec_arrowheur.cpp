@@ -422,7 +422,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectArrowheur)
 
 /** creates the arrowheur presolver and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
+SCIP_RETCODE SCIPincludeDetectorArrowheur(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

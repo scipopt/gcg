@@ -679,7 +679,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
 
 /** creates the handler for isomorph subproblems and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectionIsomorphism(
+SCIP_RETCODE SCIPincludeDetectorIsomorphism(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
