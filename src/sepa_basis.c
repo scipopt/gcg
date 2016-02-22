@@ -843,10 +843,7 @@ SCIP_DECL_SEPAFREE(sepaFreeBasis)
    SCIP_SEPADATA* sepadata;
 
    sepadata = SCIPsepaGetData(sepa);
-
-   SCIPfreeMemoryArrayNull(scip, &(sepadata->origcuts));
-   SCIPfreeMemoryArrayNull(scip, &(sepadata->mastercuts));
-   SCIPfreeMemoryArrayNull(scip, &(sepadata->newcuts));
+   assert(sepadata != NULL);
 
    SCIPfreeMemory(scip, &sepadata);
 
@@ -887,11 +884,21 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
    enable = sepadata->enable;
    enableobj = sepadata->enableobj;
 
+   sepadata->maxcuts = STARTMAXCUTS;
+   sepadata->norigcuts = 0;
+   sepadata->maxnewcuts = 0;
+   sepadata->nnewcuts = 0;
+   sepadata->objrow = NULL;
+
    /* if separator is disabled do nothing */
    if( !enable )
    {
       return SCIP_OKAY;
    }
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->origcuts), STARTMAXCUTS) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->newcuts), STARTMAXCUTS) ); /*lint !e506*/
 
    /* if objective row is enabled create row with objective coefficients */
    if( enableobj )
@@ -942,22 +949,26 @@ SCIP_DECL_SEPAEXIT(sepaExitBasis)
    if( enableobj )
       SCIP_CALL( SCIPreleaseRow(origscip, &(sepadata->objrow)) );
 
+   SCIPfreeMemoryArrayNull(scip, &(sepadata->origcuts));
+   SCIPfreeMemoryArrayNull(scip, &(sepadata->mastercuts));
+   SCIPfreeMemoryArrayNull(scip, &(sepadata->newcuts));
+
    return SCIP_OKAY;
 }
 
 /** solving process initialization method of separator (called when branch and bound process is about to begin) */
-#if 0
 static
 SCIP_DECL_SEPAINITSOL(sepaInitsolBasis)
 {  /*lint --e{715}*/
-   SCIPerrorMessage("method of basis separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
+   SCIP_SEPADATA* sepadata;
+
+   sepadata = SCIPsepaGetData(sepa);
+   assert(sepadata != NULL);
+
+   sepadata->nmastercuts = 0;
 
    return SCIP_OKAY;
 }
-#else
-#define sepaInitsolBasis NULL
-#endif
 
 
 /** solving process deinitialization method of separator (called before branch and bound process data is freed) */
@@ -1534,20 +1545,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
    /* create master separator data */
    SCIP_CALL( SCIPallocMemory(scip, &sepadata) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->origcuts), STARTMAXCUTS) ); /*lint !e506*/
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) ); /*lint !e506*/
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->newcuts), STARTMAXCUTS) ); /*lint !e506*/
-   sepadata->maxcuts = STARTMAXCUTS;
-   sepadata->norigcuts = 0;
-   sepadata->nmastercuts = 0;
-   sepadata->maxnewcuts = 0;
-   sepadata->nnewcuts = 0;
-   sepadata->objrow = NULL;
-
    /* include separator */
-   /* use SCIPincludeSepa() if you want to set all callbacks explicitly and realize (by getting compiler errors) when
-    * new callbacks are added in future SCIP versions
-    */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
          SEPA_USESSUBSCIP, SEPA_DELAY,
          sepaCopyBasis, sepaFreeBasis, sepaInitBasis, sepaExitBasis, sepaInitsolBasis, sepaExitsolBasis, sepaExeclpBasis, sepaExecsolBasis,
