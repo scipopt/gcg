@@ -194,40 +194,6 @@ SCIP_RETCODE writeAllDecompositions(
    return SCIP_OKAY;
 }
 
-/** starts another SCIP instance containing the same problem but no GCG-specific plugins.
- * @pre This method can be called if @p scip is in one of the following stages:
- *       - \ref SCIP_STAGE_PRESOLVED
- */
-static
-SCIP_RETCODE createOneBlock( SCIP* scip )
-{
-   SCIP_HASHMAP* newconstoblock;
-   DEC_DECOMP* newdecomp;
-   SCIP_CONS** conss;
-   int nconss;
-   int i;
-   int nblocks = 1;
-
-   conss = SCIPgetConss(scip);
-   nconss = SCIPgetNConss(scip);
-
-   SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), nconss ) );
-
-   for( i = 0; i < nconss; i++ )
-   {
-      assert(!SCIPhashmapExists ( newconstoblock, conss[i] ) );
-      SCIP_CALL( SCIPhashmapInsert( newconstoblock, conss[i], (void*) (size_t) nblocks ) );
-   }
-
-   DECdecompCreate( scip, &newdecomp );
-   assert( newdecomp != ((void *)0) );
-   SCIP_CALL( DECfilloutDecompFromConstoblock( scip, newdecomp, newconstoblock, nblocks, FALSE) );
-
-   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, newdecomp) );
-
-   return SCIP_OKAY;
-}
-
 /** dialog execution method for the display statistics command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
 {  /*lint --e{715}*/
@@ -444,17 +410,14 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          if( result == SCIP_DIDNOTFIND )
          {
             assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
-            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will assert one single block.\n");
-            SCIP_CALL( createOneBlock(scip) );
+            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
             break;
          }
-
       }
       else if( DECgetBestDecomp(scip) == NULL )
       {
          assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
-         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. SCIP will assert one single block.\n");
-         SCIP_CALL( createOneBlock(scip) );
+         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
          break;
       }
       /*lint -fallthrough*/
