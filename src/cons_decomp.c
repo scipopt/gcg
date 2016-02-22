@@ -179,7 +179,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 
       if( detector->freeDetector != NULL )
       {
-         SCIPdebugMessage("Calling freeDetection of %s\n", detector->name);
+         SCIPdebugMessage("Calling freeDetector of %s\n", detector->name);
          SCIP_CALL( (*detector->freeDetector)(scip, detector) );
       }
       SCIP_CALL( SCIPfreeClock(scip, &detector->dectime) );
