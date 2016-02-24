@@ -41,13 +41,9 @@
       structures where no linking constraints are present and linking variables
       only occur between two consecutive blocks. <br />
       With applications such as bin packing, capacitated p-median and
-      generalized assignment problems in mind, we included a detector that only
-      assigns set partitioning and set covering constraints to the master
-      problem. <br />
-      Note that after removing all set partitioning or covering constraints
-      from the problem, the pricing problems need to be disjoint, e.g. share no
-      common variables. Only in these cases, GCG can detect the structure
-      automatically.
+      generalized assignment problems in mind, we furthermore included a
+      detector that only assigns set partitioning and set covering constraints
+      to the master problem.
    </p>
 
     <p class="q">
