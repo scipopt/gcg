@@ -324,7 +324,7 @@ static void checkConsistencyOfIndexarrays(DEC_DETECTORDATA* detectordata, int nv
 /* debug ? */
 /** creates a data and a gnuplot file for the initial problem.
  * @param scip < SCIP data structure
- * @param detectordata < presolver data data structure
+ * @param detectordata < detector data data structure
  * @param filename name of the output files (without any filename extension) */
 static
 SCIP_RETCODE plotInitialProblem(
@@ -395,7 +395,7 @@ SCIP_RETCODE plotInitialProblem(
 }
 
 /** creates a data and a gnuplot file for the graph representing the array minV (number of linking variables).
- * @param detectordata < presolver data data structure
+ * @param detectordata < detector data data structure
  * @param filename name of the output files (without any filename extension) */
 static
 void plotMinV(
@@ -481,7 +481,7 @@ void plotMinV(
 static
 SCIP_RETCODE createRowindexList(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    SCIP_HASHMAP*         indexcons,          /**< hashmap index -> constraint */
    SCIP_HASHMAP*         varindex,           /**< hashmap variable -> index*/
    vector<vector<int> >  &rowindices         /**< vector to store the row indices vector*/
@@ -684,7 +684,7 @@ SCIP_Bool arraysAreEqual(
 static
 SCIP_RETCODE rankOrderClusteringIteration(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    INDEXMAP*             inputmap,           /**< indexmap for input */
    INDEXMAP*             outputmap           /**< indexmap for output */
    )
@@ -1090,7 +1090,7 @@ void checkParameterConsistency(
 static
 SCIP_RETCODE blockingDynamic(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    int                   tau,                /**< desired number of blocks */
    int                   nvars               /**< number of variables in the problem*/
    )
@@ -1164,7 +1164,7 @@ SCIP_RETCODE blockingDynamic(
 static
 SCIP_RETCODE blockingStatic(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata        /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata        /**< detector data data structure */
    )
 {
    int nblocks;
@@ -1221,7 +1221,7 @@ SCIP_RETCODE blockingStatic(
 static
 SCIP_RETCODE blockingAsSoonAsPossible(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    int                   desired_blocks,     /**< desired number of blocks */
    int                   nvars               /**< number of variables in the problem*/
 )
@@ -1402,16 +1402,35 @@ SCIP_RETCODE blocking(
    return SCIP_OKAY;
 }
 
+/** destructor of detector to free user data (called when GCG is exiting) */
+static
+DEC_DECL_FREEDETECTOR(detectorFreeStairheur)
+{
+   DEC_DETECTORDATA* detectordata;
+
+   assert(scip != NULL);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   SCIPfreeMemory(scip, &detectordata);
+   return SCIP_OKAY;
+}
+
 /** initialization method of stairheur detector */
 static
-DEC_DECL_INITDETECTOR(initStairheur)
+DEC_DECL_INITDETECTOR(detectorInitStairheur)
 {
+   DEC_DETECTORDATA* detectordata;
 
    int i;
    int nvars;
    int nconss;
-   DEC_DETECTORDATA* detectordata;
+
    assert(scip != NULL);
+
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
@@ -1444,7 +1463,7 @@ DEC_DECL_INITDETECTOR(initStairheur)
 
 /** deinitialization method of detector (called after detection has been finished) */
 static
-DEC_DECL_EXITDETECTOR(exitStairheur)
+DEC_DECL_EXITDETECTOR(detectorExitStairheur)
 {
    DEC_DETECTORDATA* detectordata;
 
@@ -1455,40 +1474,30 @@ DEC_DECL_EXITDETECTOR(exitStairheur)
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
-   if(detectordata->indexmap != NULL)
-   {
-      indexmapFree(scip, &detectordata->indexmap);
-   }
+   indexmapFree(scip, &detectordata->indexmap);
 
-   SCIPfreeMemoryArrayNull(scip, &detectordata->ibegin);
-   SCIPfreeMemoryArrayNull(scip, &detectordata->iend);
-   SCIPfreeMemoryArrayNull(scip, &detectordata->jbegin);
-   SCIPfreeMemoryArrayNull(scip, &detectordata->jend);
-   SCIPfreeMemoryArrayNull(scip, &detectordata->jmin);
-   SCIPfreeMemoryArrayNull(scip, &detectordata->jmax);
-   SCIPfreeMemoryArrayNull(scip, &detectordata->minV);
-   SCIPfreeMemoryArrayNull(scip, &detectordata->width);
-   SCIPfreeMemoryArrayNull(scip, &detectordata->hashmapindices);
    /* delete vectors */
-   /* data had to be deleted before because of SCIP memory management */
-   if(detectordata->rowsWithConstrictions != NULL)
-   {
-      delete detectordata->rowsWithConstrictions;
-      detectordata->rowsWithConstrictions = NULL;
-   }
-   if( detectordata->blockedAfterrow )
-   {
-      delete detectordata->blockedAfterrow;
-      detectordata->blockedAfterrow = NULL;
-   }
+   delete detectordata->rowsWithConstrictions;
+   detectordata->rowsWithConstrictions = NULL;
+   delete detectordata->blockedAfterrow;
+   detectordata->blockedAfterrow = NULL;
 
-   SCIPfreeMemory(scip, &detectordata);
+   SCIPfreeMemoryArray(scip, &detectordata->ibegin);
+   SCIPfreeMemoryArray(scip, &detectordata->iend);
+   SCIPfreeMemoryArray(scip, &detectordata->jbegin);
+   SCIPfreeMemoryArray(scip, &detectordata->jend);
+   SCIPfreeMemoryArray(scip, &detectordata->jmin);
+   SCIPfreeMemoryArray(scip, &detectordata->jmax);
+   SCIPfreeMemoryArray(scip, &detectordata->minV);
+   SCIPfreeMemoryArray(scip, &detectordata->width);
+   SCIPfreeMemoryArray(scip, &detectordata->hashmapindices);
+
    return SCIP_OKAY;
 }
 
 /** detection method of stairheur detector */
 static
-DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectStairheur)
 {
    int i;
    int nconss; /* number of constraints in the problem */
@@ -1597,9 +1606,9 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    return SCIP_OKAY;
 }
 
-/** creates the stairheur presolver and includes it in SCIP */
+/** creates the stairheur detector and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectionStairheur(
+SCIP_RETCODE SCIPincludeDetectorStairheur(
    SCIP*                 scip              /**< SCIP data structure */
    )
 {
@@ -1607,8 +1616,8 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
-
    assert(detectordata != NULL);
+
    detectordata->constoblock = NULL;
    detectordata->ibegin = NULL;
    detectordata->iend = NULL;
@@ -1623,18 +1632,36 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    detectordata->rowsWithConstrictions = NULL;
    detectordata->blockedAfterrow = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildStair, initStairheur, exitStairheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur) );
 
-   /* add stairheur presolver parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/nconssperblock", "The number of constraints per block (static blocking only)", &detectordata->nconssperblock, FALSE, DEFAULT_NCONSSPERBLOCK, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/desiredblocks", "The desired number of blocks. 0 means automatic determination of the number of blocks.", &detectordata->desiredblocks, FALSE, DEFAULT_DESIREDBLOCKS, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/dynamicblocking", "Enable blocking type 'dynamic'", &detectordata->dynamicblocking, FALSE, DEFAULT_DYNAMICBLOCKING, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/staticblocking", "Enable blocking type 'static'", &detectordata->staticblocking, FALSE, DEFAULT_STATICBLOCKING, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/blockingassoonaspossible", "Enable blocking type 'as soon as possible", &detectordata->blockingassoonaspossible, FALSE, DEFAULT_BLOCKINGASSOONASPOSSIBLE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/multipledecomps", "Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks", &detectordata->multipledecomps, FALSE, DEFAULT_MULTIPLEDECOMPS, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxiterationsROC", "The maximum number of iterations of the ROC-algorithm. -1 for no limit", &detectordata->maxiterationsROC, FALSE, DEFAULT_MAXITERATIONSROC, -1, 1000000, NULL, NULL) );
+   /* add stairheur detector parameters */
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/nconssperblock",
+      "The number of constraints per block (static blocking only)",
+      &detectordata->nconssperblock, FALSE, DEFAULT_NCONSSPERBLOCK, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxblocks",
+      "The maximal number of blocks",
+      &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/minblocks", "The minimal number of blocks",
+      &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/desiredblocks",
+      "The desired number of blocks. 0 means automatic determination of the number of blocks.",
+      &detectordata->desiredblocks, FALSE, DEFAULT_DESIREDBLOCKS, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/dynamicblocking",
+      "Enable blocking type 'dynamic'",
+      &detectordata->dynamicblocking, FALSE, DEFAULT_DYNAMICBLOCKING, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/staticblocking",
+      "Enable blocking type 'static'",
+      &detectordata->staticblocking, FALSE, DEFAULT_STATICBLOCKING, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/blockingassoonaspossible",
+      "Enable blocking type 'as soon as possible", &detectordata->blockingassoonaspossible,
+      FALSE, DEFAULT_BLOCKINGASSOONASPOSSIBLE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/multipledecomps",
+      "Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks",
+      &detectordata->multipledecomps, FALSE, DEFAULT_MULTIPLEDECOMPS, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxiterationsROC",
+      "The maximum number of iterations of the ROC-algorithm. -1 for no limit",
+      &detectordata->maxiterationsROC, FALSE, DEFAULT_MAXITERATIONSROC, -1, 1000000, NULL, NULL) );
 
    return SCIP_OKAY;
 }

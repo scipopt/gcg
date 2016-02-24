@@ -95,8 +95,9 @@ SCIP_RETCODE DECincludeDetector(
    SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure   */
    DEC_DETECTORDATA      *detectordata,      /**< the associated detector data (or NULL)                             */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)), /**< the method that will detect the structure (must not be NULL)   */
-   DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL)                        */
-   DEC_DECL_EXITDETECTOR((*exitDetector))    /**< deinitialization method of detector (or NULL)                      */
+   DEC_DECL_FREEDETECTOR((*freeDetector)),   /**< destructor of detector (or NULL) */
+   DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL) */
+   DEC_DECL_EXITDETECTOR((*exitDetector))    /**< deinitialization method of detector (or NULL) */
    );
 
 /** returns the remaning time of scip that the decomposition may use */

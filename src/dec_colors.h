@@ -43,7 +43,7 @@ extern "C" {
 
 /** creates the handler for colors constraints and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectionColors(
+SCIP_RETCODE SCIPincludeDetectorColors(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
