@@ -95,7 +95,7 @@
 \endverbatim
  * The GCG binary can now be found in <code>scipoptsuite-[version]/gcg-[version]/bin</code>. Also, more detailed instructions on how to compile the SCIP Optimization Suite can be found at <a href="http://scip.zib.de/doc/html/">here</a>.
  *
- * Furthermore, the optional dependencies <a href="http://glaros.dtc.umn.edu/gkhome/metis/hmetis/overview">hMETIS</a> and <a href="http://www.tcs.hut.fi/Software/bliss/">Bliss</a> can be included to enable additional \ref DETECTORS. For simplicity, we assume that <code>hmetis-[version]-linux.tar.gz</code> and <code>bliss-[version].zip</code> are saved within <code>scipoptsuite-[version]/</code>.
+ * Furthermore, the optional dependencies <a href="http://glaros.dtc.umn.edu/gkhome/metis/hmetis/overview">hMETIS</a> and <a href="http://www.tcs.hut.fi/Software/bliss/">Bliss</a> can be included to enable additional \ref DETECTORS. Additionaly,  Bliss is used to detect whether pricing problems can be aggregated. For simplicity, we assume that <code>hmetis-[version]-linux.tar.gz</code> and <code>bliss-[version].zip</code> are saved within <code>scipoptsuite-[version]/</code>.
  *
  * hMETIS is only distributed as a binary and therefore a simple link to the GCG folder is enough to enable it.
 \verbatim

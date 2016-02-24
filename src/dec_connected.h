@@ -43,7 +43,7 @@ extern "C" {
 
 /** creates the handler for connected constraints and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectionConnected(
+SCIP_RETCODE SCIPincludeDetectorConnected(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

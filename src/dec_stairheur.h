@@ -52,8 +52,8 @@ enum Blockingtype
 typedef enum Blockingtype BLOCKINGTYPE;
 
 extern
-/** creates the stairheur presolver and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionStairheur(
+/** creates the stairheur detector and includes it in SCIP */
+SCIP_RETCODE SCIPincludeDetectorStairheur(
       SCIP*              scip                /**< SCIP data structure */
    );
 

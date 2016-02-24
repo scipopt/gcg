@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the handler for random detector and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectionRandom(
+SCIP_RETCODE SCIPincludeDetectorRandom(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

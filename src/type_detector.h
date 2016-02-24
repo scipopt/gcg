@@ -29,6 +29,7 @@
  * @ingroup TYPEDEFINITIONS
  * @brief  type definitions for detectors in GCG projects
  * @author Martin Bergner
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -48,10 +49,17 @@ extern "C" {
 typedef struct DEC_Detector DEC_DETECTOR;
 typedef struct DEC_DetectorData DEC_DETECTORDATA;
 
+/** destructor of detector to free user data (called when GCG is exiting)
+ *
+ *  input:
+ *  - scip            : SCIP main data structure
+ *  - detector        : detector data structure
+ */
+#define DEC_DECL_FREEDETECTOR(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector)
+
 /**
- * detector initialization method. This method is called when detection is
- * about to begin. It can be used to fill the detector data with needed
- * information. The implementation is optional.
+ * detector initialization method (called after problem was transformed)
+ * It can be used to fill the detector data with needed information. The implementation is optional.
  *
  * input:
  *  - scip            : SCIP data structure
@@ -60,9 +68,8 @@ typedef struct DEC_DetectorData DEC_DETECTORDATA;
 #define DEC_DECL_INITDETECTOR(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector)
 
 /**
- * detector deinitialization method. This method is called when the detection
- * is finished. It can be used to clean up the data created in
- * DEC_DECL_INITDETECTOR. The implementation is optional.
+ * detector deinitialization method (called before the transformed problem is freed)
+ * It can be used to clean up the data created in DEC_DECL_INITDETECTOR. The implementation is optional.
  *
  * input:
  *  - scip            : SCIP data structure
@@ -71,8 +78,8 @@ typedef struct DEC_DetectorData DEC_DETECTORDATA;
 #define DEC_DECL_EXITDETECTOR(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector)
 
 /**
- * detects the structure of a the problem. This mandatory method is called
- * when the detector should detect the structure.
+ * detector structure detection method, tries to detect a structure in the problem.
+ * This mandatory method is called when the detector should detect the structure.
  *
  * input:
  *  - scip            : SCIP data structure

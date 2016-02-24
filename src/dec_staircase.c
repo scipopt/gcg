@@ -36,7 +36,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
 
 #include <assert.h>
 #include <string.h>
@@ -435,32 +434,9 @@ SCIP_RETCODE copyToDecdecomp(
    return SCIP_OKAY;
 }
 
-/** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
+/** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_INITDETECTOR(initStaircase)
-{  /*lint --e{715}*/
-
-   DEC_DETECTORDATA *detectordata;
-
-   assert(scip != NULL);
-   assert(detector != NULL);
-
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
-
-   detectordata->constoblock = NULL;
-   detectordata->vartoblock = NULL;
-
-   detectordata->nblocks = 0;
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
-   return SCIP_OKAY;
-}
-
-/** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
-static
-DEC_DECL_EXITDETECTOR(exitStaircase)
+DEC_DECL_FREEDETECTOR(detectorFreeStaircase)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -481,14 +457,39 @@ DEC_DECL_EXITDETECTOR(exitStaircase)
    return SCIP_OKAY;
 }
 
+/** detector initialization method (called after the problem has been transformed) */
 static
-DEC_DECL_DETECTSTRUCTURE(detectStaircase)
+DEC_DECL_INITDETECTOR(detectorInitStaircase)
+{  /*lint --e{715}*/
+
+   DEC_DETECTORDATA *detectordata;
+
+   assert(scip != NULL);
+   assert(detector != NULL);
+
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+
+   detectordata->constoblock = NULL;
+   detectordata->vartoblock = NULL;
+
+   detectordata->nblocks = 0;
+
+   return SCIP_OKAY;
+}
+
+/** detector structure detection method, tries to detect a structure in the problem */
+static
+DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircase)
 {
    *result = SCIP_DIDNOTFIND;
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");
 
    SCIP_CALL( createGraph(scip, &(detectordata->graph)) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    SCIP_CALL( findStaircaseComponents(scip, detectordata, result) );
 
@@ -509,6 +510,8 @@ DEC_DECL_DETECTSTRUCTURE(detectStaircase)
          SCIPhashmapFree(&detectordata->vartoblock);
    }
 
+   tcliqueFree(&detectordata->graph);
+
    return SCIP_OKAY;
 }
 
@@ -518,7 +521,7 @@ DEC_DECL_DETECTSTRUCTURE(detectStaircase)
  */
 
 /** creates the handler for staircase constraints and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionStaircase(
+SCIP_RETCODE SCIPincludeDetectorStaircase(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -533,7 +536,8 @@ SCIP_RETCODE SCIPincludeDetectionStaircase(
    detectordata->constoblock = NULL;
    detectordata->vartoblock = NULL;
    detectordata->nblocks = 0;
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectStaircase, initStaircase, exitStaircase) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, NULL) );
 
    return SCIP_OKAY;
 }
