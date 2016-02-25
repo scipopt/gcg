@@ -212,7 +212,7 @@ SCIP_RETCODE pqueue_init(
 static
 SCIP_RETCODE pqueue_clear(
    SCIP *scip,                               /**< original SCIP data structure                                    */
-   PQUEUE *queue                             /** priority queue instance                                          */
+   PQUEUE *queue                             /**< priority queue instance                                          */
    )
 {
    queue->size = 0;
@@ -238,7 +238,7 @@ SCIP_RETCODE pqueue_destroy(
    return SCIP_OKAY;
 }
 
-/** Inserts an element with key 'key' and value 'elem' into the queue.
+/** inserts an element with key 'key' and value 'elem' into the queue.
  *  If 'position' is not NULL, the referenced memory location will always contain the internal position of the element
  * */
 static
@@ -293,7 +293,7 @@ SCIP_RETCODE pqueue_insert(
    return SCIP_OKAY;
 }
 
-/** Decreases the key to 'key' of the element that is currently at position 'pos' */
+/** decreases the key to 'key' of the element that is currently at position 'pos' */
 static
 SCIP_RETCODE pqueue_decrease_key(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -338,7 +338,7 @@ SCIP_RETCODE pqueue_decrease_key(
    return SCIP_OKAY;
 }
 
-/** Increases the key to 'key' of the element that is currently at position 'pos' */
+/** increases the key to 'key' of the element that is currently at position 'pos' */
 static
 SCIP_RETCODE pqueue_increase_key(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -446,7 +446,7 @@ SCIP_RETCODE pqueue_increase_key(
    return SCIP_OKAY;
 }
 
-/** Returns the value of a minimum element in 'elem'. Sets 'elem' to -1 if the queue is empty */
+/** returns the value of a minimum element in 'elem'. Sets 'elem' to -1 if the queue is empty */
 static
 SCIP_RETCODE pqueue_get_min(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -531,7 +531,7 @@ SCIP_DECL_HASHKEYVAL(hashKeyValIntPtr)
    return *var;
 }
 
-/** Allocates memory for a lagrange multiplier and a set covering solution */
+/** allocates memory for a lagrange multiplier and a set covering solution */
 static
 SCIP_RETCODE allocateMemoryForSolution(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -709,7 +709,7 @@ SCIP_RETCODE getConsVars(
    return SCIP_OKAY;
 }
 
-/** Releases all memory of a lagrange multiplier */
+/** releases all memory of a lagrange multiplier */
 static
 SCIP_RETCODE freeMemoryForSolution(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -725,7 +725,7 @@ SCIP_RETCODE freeMemoryForSolution(
    return SCIP_OKAY;
 }
 
-/** Creates a set covering solution. Adds all fixed variables of 'inst' and all variables of 'source' to 'dest'.
+/** creates a set covering solution. Adds all fixed variables of 'inst' and all variables of 'source' to 'dest'.
  *  'destcosts' contains the total costs of the solution.
  */
 static
@@ -761,7 +761,7 @@ SCIP_RETCODE copySetCoverSolution(
    return SCIP_OKAY;
 }
 
-/** Copies all data of the lagrange multiplier 'source' to the lagrange multiplier 'dest' */
+/** copies all data of the lagrange multiplier 'source' to the lagrange multiplier 'dest' */
 static
 SCIP_RETCODE copySolution(
    SCP_CORE *core,                           /**< SCP core data structure                                         */
@@ -791,7 +791,7 @@ SCIP_RETCODE copySolution(
    return SCIP_OKAY;
 }
 
-/** Initializes an instance where no variables are fixed and no rows are covered */
+/** initializes an instance where no variables are fixed and no rows are covered */
 static
 SCIP_RETCODE initInstance(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -804,7 +804,7 @@ SCIP_RETCODE initInstance(
    return SCIP_OKAY;
 }
 
-/** Copies the fixed variables from 'source' to 'dest', but not the set of covered rows. this must be done separately. */
+/** copies the fixed variables from 'source' to 'dest', but not the set of covered rows. this must be done separately. */
 static
 SCIP_RETCODE copyInstance(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -831,7 +831,7 @@ SCIP_RETCODE copyInstance(
    return SCIP_OKAY;
 }
 
-/** Releases all memory used by an instance */
+/** releases all memory used by an instance */
 static
 SCIP_RETCODE freeInstance(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -843,7 +843,7 @@ SCIP_RETCODE freeInstance(
    return SCIP_OKAY;
 }
 
-/** Initializes a tentative core: for each row the first few columns covering this row are added to the core */
+/** initializes a tentative core: for each row the first few columns covering this row are added to the core */
 static
 SCIP_RETCODE initTentativeCore(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -960,7 +960,7 @@ SCIP_RETCODE initTentativeCore(
    return SCIP_OKAY;
 }
 
-/** Adds all fixed variables of 'inst' to a set covering solution 'solution' */
+/** adds all fixed variables of 'inst' to a set covering solution 'solution' */
 static
 SCIP_RETCODE extendSolution(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -984,7 +984,7 @@ SCIP_RETCODE extendSolution(
    return SCIP_OKAY;
 }
 
-/** Constructs rows of all constraints, but only includes core variables */
+/** constructs rows of all constraints, but only includes core variables */
 static
 SCIP_RETCODE computeCoreRows(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -1060,7 +1060,7 @@ SCIP_RETCODE computeCoreRows(
    return SCIP_OKAY;
 }
 
-/** Constructs columns of core variables to provide faster access */
+/** constructs columns of core variables to provide faster access */
 static
 SCIP_RETCODE computeCoreColumns(
    SCIP *scip,                               /**< original SCIP data structure                                    */
@@ -2250,7 +2250,7 @@ SCIP_RETCODE subgradientOptimization(
           *    if the absolute difference is smaller than param_stop_crit_diff and
           *       the ratio lb_now / lb_old is at least stop_crit_ration
           *    then we stop */
-         if( (iter > 0) && (best_mult_lb->lblagrangelocal - stop_crit_lb <= heurdata->param_stop_crit_diff)
+         if( (iter > 0) && (best_mult_lb->lblagrangelocal - stop_crit_lb <= heurdata->param_stop_crit_diff )
             && (stop_crit_lb / best_mult_lb->lblagrangelocal >= heurdata->param_stop_crit_ratio) )
          {
             break;
@@ -2694,7 +2694,7 @@ SCIP_RETCODE reportSolution(
    return SCIP_OKAY;
 }
 
-/** The three-phase procedure from the paper. It tries to find near-optimal lagrange multipliers and
+/** the three-phase procedure from the paper. It tries to find near-optimal lagrange multipliers and
  * reduces the size of an instance by fixing variables that are likely to be in an optimal solution. */
 static
 SCIP_RETCODE threePhase(

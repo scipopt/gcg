@@ -989,7 +989,7 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
 
    /* jonas' stuff */
-   if(enableppcuts)
+   if( enableppcuts )
    {
       int pscost;
       int prop;

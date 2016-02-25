@@ -262,7 +262,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
       /* If a branching decision on an original variable was made, apply it */
       if( !enforcebycons && branchrule != NULL && strcmp(SCIPbranchruleGetName(branchrule), "orig") == 0 )
       {
-         SCIP_CALL( applyOriginalBranching(scip, childnode, masterbranchchildcons)  );
+         SCIP_CALL( applyOriginalBranching(scip, childnode, masterbranchchildcons) );
       }
 
       /* @fixme: this should actually be an assertion */

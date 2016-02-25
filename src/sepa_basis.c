@@ -531,8 +531,8 @@ SCIP_RETCODE getEqualityMatrixGsl(
    ndelvars = 0;
    nvar2col = 0;
 
-   SCIPallocBufferArray(scip, &var2col, nlpcols);
-   SCIPallocBufferArray(scip, &delvars, nlpcols);
+   SCIP_CALL( SCIPallocBufferArray(scip, &var2col, nlpcols) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &delvars, nlpcols) );
 
    /* loop over lp cols and check if it is at one of its bounds */
    for( i = 0; i < nlpcols; ++i )
@@ -544,7 +544,7 @@ SCIP_RETCODE getEqualityMatrixGsl(
 
       lpvar = SCIPcolGetVar(lpcol);
 
-      if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetUb(lpcol))
+      if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetUb(lpcol) )
          || SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetLb(lpcol)) )
       {
          int ind;
@@ -709,7 +709,7 @@ SCIP_RETCODE getEqualityRankGsl(
 }
 #endif
 
-/** Add cuts which are due to the latest objective function of the pricing problems
+/** add cuts which are due to the latest objective function of the pricing problems
  *  (reduced cost non-negative) */
 static
 SCIP_RETCODE addPPObjConss(
@@ -813,7 +813,7 @@ SCIP_RETCODE addPPObjConss(
 
 
       }
-      SCIP_CALL(SCIPreleaseRow(scip, &origcut) );
+      SCIP_CALL( SCIPreleaseRow(scip, &origcut) );
    }
 
    return SCIP_OKAY;
@@ -1059,7 +1059,7 @@ SCIP_RETCODE initConvObj(
       else if( SCIPisGT(origscip, objnormnull, 0.0) )
          SCIP_CALL( chgProbingObjAddingOrigObj(origscip, (1.0 - convex) * objnormcurrent, objnormnull) );
    }
-   else if(SCIPisEQ(origscip, convex, 1.0))
+   else if( SCIPisEQ(origscip, convex, 1.0) )
    {
       SCIP_CALL( initProbingObjUsingVarBounds(origscip, sepadata, origsol, !genericconv && sepadata->enableobj, 1.0) );
       SCIP_CALL( chgProbingObjUsingRows(origscip, sepadata, origsol, 1.0, 1.0) );
@@ -1221,7 +1221,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          SCIPdebugMessage("add reduced cost cut for relevant pricing problems\n");
 
-         SCIP_CALL( SCIPallocMemoryArray(scip, &dualsolconv, GCGgetNPricingprobs(origscip)));
+         SCIP_CALL( SCIPallocMemoryArray(scip, &dualsolconv, GCGgetNPricingprobs(origscip)) );
          SCIP_CALL( GCGsetPricingObjs(scip, dualsolconv) );
 
          for( i = 0; i < GCGgetNPricingprobs(origscip); ++i )
@@ -1490,7 +1490,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
    SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + nlprows - nlprowsstart) );
 
-   for( i = nlprowsstart; i < nlprows; ++i)
+   for( i = nlprowsstart; i < nlprows; ++i )
    {
       if( SCIProwGetOrigintype(lprows[i]) == SCIP_ROWORIGINTYPE_SEPA )
 	   {
@@ -1718,7 +1718,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
    cols = SCIProwGetCols(cut);
    vals = SCIProwGetVals(cut);
 
-   if(nvars == 0)
+   if( nvars == 0 )
    {
       return SCIP_OKAY;
    }
@@ -1779,7 +1779,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
    return SCIP_OKAY;
 }
 
-/** Add cuts which are due to the latest objective function of the pricing problems
+/** add cuts which are due to the latest objective function of the pricing problems
  *  (reduced cost non-negative) */
 SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
    SCIP*                scip,               /**< SCIP data structure */

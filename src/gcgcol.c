@@ -107,7 +107,7 @@ SCIP_RETCODE GCGcreateGcgCol(
    SCIPsortPtrReal((void**)(*gcgcol)->vars, (double*)(*gcgcol)->vals, SCIPvarComp, nnonz);
 
 #ifndef NDEBUG
-   for(i = 1 ; i < (*gcgcol)->nvars; ++i )
+   for( i = 1 ; i < (*gcgcol)->nvars; ++i )
    {
       assert( SCIPvarCompare((*gcgcol)->vars[i-1], (*gcgcol)->vars[i]) != 0 );
    }
@@ -242,13 +242,13 @@ SCIP_Bool GCGcolIsEq(
    probnr1 = GCGcolGetProbNr(gcgcol1);
    probnr2 = GCGcolGetProbNr(gcgcol2);
 
-   if(probnr1 != probnr2)
+   if( probnr1 != probnr2 )
       return FALSE;
 
    nvars1 = GCGcolGetNVars(gcgcol1);
    nvars2 = GCGcolGetNVars(gcgcol2);
 
-   if(nvars1 != nvars2)
+   if( nvars1 != nvars2 )
       return FALSE;
 
    pricingprob = GCGcolGetPricingProb(gcgcol1);
@@ -258,7 +258,7 @@ SCIP_Bool GCGcolIsEq(
    vals1 = GCGcolGetVals(gcgcol1);
    vals2 = GCGcolGetVals(gcgcol2);
 
-   for( i = 0; i < nvars1; ++i)
+   for( i = 0; i < nvars1; ++i )
    {
       SCIP_VAR* var1;
       SCIP_VAR* var2;
@@ -282,7 +282,7 @@ SCIP_Bool GCGcolIsEq(
 
 }
 
-/** Get pricing problem index of gcg column */
+/** get pricing problem index of gcg column */
 int GCGcolGetProbNr(
    GCG_COL*             gcgcol
    )
@@ -290,7 +290,7 @@ int GCGcolGetProbNr(
    return gcgcol->probnr;
 }
 
-/** Get pricing problem of gcg column */
+/** get pricing problem of gcg column */
 SCIP* GCGcolGetPricingProb(
    GCG_COL*             gcgcol
    )
@@ -298,7 +298,7 @@ SCIP* GCGcolGetPricingProb(
    return gcgcol->pricingprob;
 }
 
-/** Get variables of gcg column */
+/** get variables of gcg column */
 SCIP_VAR** GCGcolGetVars(
    GCG_COL*             gcgcol
    )
@@ -306,7 +306,7 @@ SCIP_VAR** GCGcolGetVars(
    return gcgcol->vars;
 }
 
-/** Get values of gcg column */
+/** get values of gcg column */
 SCIP_Real* GCGcolGetVals(
    GCG_COL*             gcgcol
    )
@@ -314,7 +314,7 @@ SCIP_Real* GCGcolGetVals(
    return gcgcol->vals;
 }
 
-/** Get number of variables of gcg column */
+/** get number of variables of gcg column */
 int GCGcolGetNVars(
    GCG_COL*             gcgcol
    )
@@ -322,7 +322,7 @@ int GCGcolGetNVars(
    return gcgcol->nvars;
 }
 
-/** Is gcg column a ray? */
+/** is gcg column a ray? */
 SCIP_Bool GCGcolIsRay(
    GCG_COL*             gcgcol
    )
@@ -330,7 +330,7 @@ SCIP_Bool GCGcolIsRay(
    return gcgcol->isray;
 }
 
-/** Get reduced cost of gcg column */
+/** get reduced cost of gcg column */
 SCIP_Real GCGcolGetRedcost(
    GCG_COL*             gcgcol
    )
@@ -338,7 +338,7 @@ SCIP_Real GCGcolGetRedcost(
    return gcgcol->redcost;
 }
 
-/** Get age of gcg column */
+/** get age of gcg column */
 int GCGcolGetAge(
    GCG_COL*             gcgcol
    )

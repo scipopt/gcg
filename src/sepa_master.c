@@ -248,7 +248,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    sepas = SCIPgetSepas(origscip);
    nsepas = SCIPgetNSepas(origscip);
 
-   for(i = 0; i < nsepas; ++i)
+   for( i = 0; i < nsepas; ++i )
    {
       const char* sepaname;
       char paramname[SCIP_MAXSTRLEN];

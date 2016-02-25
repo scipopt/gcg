@@ -81,7 +81,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
    SCIP_ROW*            cut                 /**< cut to be added */
    );
 
-/** Add cuts which are due to the latest objective function of the pricing problems
+/** add cuts which are due to the latest objective function of the pricing problems
  *  (reduced cost non-negative) */
 extern
 SCIP_RETCODE SCIPsepaBasisAddPPObjConss(

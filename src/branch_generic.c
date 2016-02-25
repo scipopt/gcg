@@ -2459,7 +2459,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          if( checked )
             continue;
          /* else the block has not been checked and the variable is in it , we have a candidate */
-         else if( GCGisMasterVarInBlock(mastervar, j))
+         else if( GCGisMasterVarInBlock(mastervar, j) )
          {
 #ifndef NDEBUG
             foundblocknr = TRUE;

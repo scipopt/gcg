@@ -194,7 +194,7 @@ SCIP_RETCODE solveKnapsack(
 
    for( i = 0; i < nconsvars; i++ )
    {
-      if( inferbounds && SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])))
+      if( inferbounds && SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])) )
       {
          SCIP_Real newbound = SCIPfloor(pricingprob, ABS((SCIP_Real)prelcapacity/consvals[i]));
          SCIPdebugMessage("newbound: %.2f/%.2f = %.2f\n", (SCIP_Real)prelcapacity, consvals[i], newbound);

@@ -554,7 +554,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
              *  - the master variable is a copied linking variable and the bound change was performed
              *    in one of the blocks that the variable is linking
              */
-            if( (bndchgblocknr != blocknr)
+            if( (bndchgblocknr != blocknr )
                && !(GCGmasterVarIsLinking(vars[i]) && GCGisLinkingVarInBlock(origvars[0], bndchgblocknr)) )
                continue;
 

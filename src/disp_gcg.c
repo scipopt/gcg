@@ -1024,7 +1024,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
    /* this is the gap calculation from SCIPgetGap() */
    if( SCIPisEQ(scip, primalbound, dualbound) )
       gap = 0.0;
-   else if( SCIPisZero(scip, dualbound)
+   else if( SCIPisZero(scip, dualbound )
       || SCIPisZero(scip, primalbound)
       || SCIPisInfinity(scip, REALABS(primalbound))
       || SCIPisInfinity(scip, REALABS(dualbound))
