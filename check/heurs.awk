@@ -227,7 +227,7 @@ BEGIN {
 }
 
 # time
-/^  solving          :/ { tottime = $3 } 
+/^  solving          :/ { tottime = $3 }
 
 /^=ready=/ {
    if( (!onlyinsolufile || solstatus[prob] != "") &&

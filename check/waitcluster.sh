@@ -40,7 +40,7 @@ do
   QUEUED=`qstat -u $USER | grep -c " $QUEUE "`
   RUNNING=`qstat -u $USER | grep -c " R "`
 
-  # display current user load and total load 
+  # display current user load and total load
   echo jobs in progress: $RUNNING / $QUEUED "("$ALLQUEUED")"
  
   if test $ALLQUEUED -le 1990
