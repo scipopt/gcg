@@ -484,7 +484,9 @@ SCIP_Real DECgetRemainingTime(
  *       - \ref SCIP_STAGE_PRESOLVED
  */
 static
-SCIP_RETCODE createOneBlock( SCIP* scip )
+SCIP_RETCODE createOneBlock(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
 {
    SCIP_HASHMAP* newconstoblock;
    DEC_DECOMP* newdecomp;
@@ -500,12 +502,12 @@ SCIP_RETCODE createOneBlock( SCIP* scip )
 
    for( i = 0; i < nconss; i++ )
    {
-      assert(!SCIPhashmapExists ( newconstoblock, conss[i] ) );
-      SCIP_CALL( SCIPhashmapInsert( newconstoblock, conss[i], (void*) (size_t) nblocks ) );
+      assert(!SCIPhashmapExists(newconstoblock, conss[i]));
+      SCIP_CALL( SCIPhashmapInsert(newconstoblock, conss[i], (void*) (size_t) nblocks) );
    }
 
    DECdecompCreate( scip, &newdecomp );
-   assert( newdecomp != ((void *)0) );
+   assert(newdecomp != NULL);
    SCIP_CALL( DECfilloutDecompFromConstoblock( scip, newdecomp, newconstoblock, nblocks, FALSE) );
 
    SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, newdecomp) );

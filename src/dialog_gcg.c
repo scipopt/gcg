@@ -42,11 +42,6 @@
 #include "scip/pub_dialog.h"
 #include "scip/type_dialog.h"
 #include "scip/dialog_default.h"
-#include "scip/cons.h"
-#include "scip/relax.h"
-#include "scip/heur.h"
-#include "scip/scipdefplugins.h"
-#include "scip/clock.h"
 
 #include "gcg.h"
 
@@ -361,10 +356,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    {
       SCIP_CALL( DECdetectStructure(scip, &result) );
       if( result == SCIP_SUCCESS )
-      {
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was successful.\n");
-
-      }
       else
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was not successful.\n");
    }
