@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -39,7 +39,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
 
 #include <assert.h>
 #include <string.h>
@@ -920,7 +919,14 @@ SCIP_RETCODE checkIdenticalBlocks(
 static
 SCIP_RETCODE setPricingProblemParameters(
    SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
-   int                   clocktype           /**< clocktype to use in the pricing problem */
+   int                   clocktype,          /**< clocktype to use in the pricing problem */
+   SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
+   SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the pricing problem */
+   SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the pricing problem */
+   SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
+   SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
+   SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
+   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_basis */
    )
 {
    assert(scip != NULL);
@@ -975,7 +981,25 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/finitesolutionstore", TRUE) );
 
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/infinity", infinity) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/epsilon", epsilon) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/sumepsilon", sumepsilon) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/feastol", feastol) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/lpfeastol", lpfeastol) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
 
+   /* jonas' stuff */
+   if(enableppcuts)
+   {
+      int pscost;
+      int prop;
+
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/pscost/priority", &pscost) );
+      SCIP_CALL( SCIPgetIntParam(scip, "propagating/maxroundsroot", &prop) );
+      SCIP_CALL( SCIPsetIntParam(scip, "branching/pscost/priority", 11000) );
+      SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
+      SCIP_CALL( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+   }
    return SCIP_OKAY;
 }
 
@@ -1294,7 +1318,13 @@ static
 SCIP_RETCODE createMasterProblem(
    SCIP*                 masterscip,         /**< SCIP data structure of master problem */
    const char*           name,               /**< name of the master problem */
-   int                   clocktype           /**< clocktype to use in the master SCIP */
+   int                   clocktype,          /**< clocktype to use in the master problem */
+   SCIP_Real             infinity,           /**< values larger than this are considered infinity in the master problem */
+   SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the master problem */
+   SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the master problem */
+   SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the master problem */
+   SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the master problem */
+   SCIP_Real             dualfeastol         /**< feasibility tolerance for reduced costs in LP solution in the master problem */
    )
 {
    assert(masterscip != NULL);
@@ -1306,6 +1336,17 @@ SCIP_RETCODE createMasterProblem(
    /* set clocktype */
    SCIP_CALL( SCIPsetIntParam(masterscip, "timing/clocktype", clocktype) );
 
+   /* set numerical tolerances */
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/infinity", infinity) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/epsilon", epsilon) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/sumepsilon", sumepsilon) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/feastol", feastol) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/lpfeastol", lpfeastol) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/dualfeastol", dualfeastol) );
+
+   /* do not modify the time limit after solving the master problem */
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "reoptimization/commontimelimit", FALSE) );
+
    return SCIP_OKAY;
 }
 
@@ -1315,7 +1356,14 @@ static
 SCIP_RETCODE createPricingProblem(
    SCIP**                pricingscip,        /**< Pricing scip data structure */
    const char*           name,               /**< name of the pricing problem */
-   int                   clocktype           /**< clocktype to use in the pricing problem */
+   int                   clocktype,          /**< clocktype to use in the pricing problem */
+   SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
+   SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the pricing problem */
+   SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the pricing problem */
+   SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
+   SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
+   SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
+   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_basis */
    )
 {
    assert(pricingscip != NULL);
@@ -1323,7 +1371,7 @@ SCIP_RETCODE createPricingProblem(
 
    SCIP_CALL( SCIPcreate(pricingscip) );
    SCIP_CALL( SCIPincludeDefaultPlugins(*pricingscip) );
-   SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype) );
+   SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts) );
    SCIP_CALL( SCIPcreateProb(*pricingscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    return SCIP_OKAY;
@@ -1446,6 +1494,7 @@ SCIP_RETCODE createPricingprobConss(
    SCIP_CONS*** subscipconss;
    int* nsubscipconss;
    SCIP_CONS* newcons;
+   SCIP_HASHMAP* hashorig2pricingconstmp;
    int nblocks;
    int b;
    int c;
@@ -1458,6 +1507,8 @@ SCIP_RETCODE createPricingprobConss(
    subscipconss = DECdecompGetSubscipconss(relaxdata->decdecomp);
    nsubscipconss = DECdecompGetNSubscipconss(relaxdata->decdecomp);
    nblocks = DECdecompGetNBlocks(relaxdata->decdecomp);
+
+   SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), SCIPcalcHashtableSize(5 *SCIPgetNConss(scip))) ); /*lint !e613*/
 
    for( b = 0; b < nblocks; ++b )
    {
@@ -1476,7 +1527,7 @@ SCIP_RETCODE createPricingprobConss(
          /* copy the constraint */
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", b, SCIPconsGetName(subscipconss[b][c]));
          SCIP_CALL( SCIPgetConsCopy(scip, relaxdata->pricingprobs[b], subscipconss[b][c], &newcons, SCIPconsGetHdlr(subscipconss[b][c]),
-               hashorig2pricingvar[b], NULL, name,
+               hashorig2pricingvar[b], hashorig2pricingconstmp, name,
                TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, &success) );
 
          /* constraint was successfully copied */
@@ -1510,6 +1561,8 @@ SCIP_RETCODE createPricingprobConss(
       }
    }
 
+   SCIPhashmapFree(&hashorig2pricingconstmp);
+
    return SCIP_OKAY;
 }
 
@@ -1522,8 +1575,15 @@ SCIP_RETCODE createMaster(
 {
    int npricingprobs;
    SCIP_HASHMAP** hashorig2pricingvar;
+   SCIP_Bool enableppcuts;
    char name[SCIP_MAXSTRLEN];
    int clocktype;
+   SCIP_Real infinity;
+   SCIP_Real epsilon;
+   SCIP_Real sumepsilon;
+   SCIP_Real feastol;
+   SCIP_Real lpfeastol;
+   SCIP_Real dualfeastol;
    int i;
 
    assert(scip != NULL);
@@ -1549,16 +1609,26 @@ SCIP_RETCODE createMaster(
    /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
    SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype) );
 
+   /* get numerical tolerances of the original SCIP instance in order to use the same numerical tolerances in master and pricing problems */
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/infinity", &infinity) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/epsilon", &epsilon) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/sumepsilon", &sumepsilon) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/feastol", &feastol) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/lpfeastol", &lpfeastol) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/dualfeastol", &dualfeastol) );
+
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
-   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype) );
+   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
+
+   enableppcuts = FALSE;
+   SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
 
    /* create the pricing problems */
    for( i = 0; i < npricingprobs; i++ )
    {
       relaxdata->convconss[i] = NULL;
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
-
-      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype) );
+      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts) );
       SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
    }
 
@@ -1662,7 +1732,7 @@ SCIP_RETCODE combineSolutions(
       int block;
 
       pricingvar = GCGoriginalVarGetPricingVar(vars[v]);
-      block = GCGvarGetBlock(vars[v]);
+      block = GCGvarGetBlock(pricingvar);
       assert(block >= 0);
       assert(block < nprobs);
       assert(probs[block] != NULL);
@@ -1700,12 +1770,16 @@ SCIP_RETCODE setPricingObjsOriginal(
 
       assert(GCGvarIsOriginal(vars[v]));
       origvar = SCIPvarGetProbvar(vars[v]);
+
+      if( !GCGisPricingprobRelevant(scip, GCGvarGetBlock(origvar)) )
+         continue;
+
       pricingvar = GCGoriginalVarGetPricingVar(origvar);
       assert(pricingvar != NULL);
 
       objvalue = SCIPvarGetObj(origvar);
       /* SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar));*/
-      SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(origvar)], pricingvar, objvalue) );
+      SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(pricingvar)], pricingvar, objvalue) );
    }
    return SCIP_OKAY;
 }
@@ -1747,14 +1821,31 @@ SCIP_RETCODE solveDiagonalBlocks(
 
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Solving block %i.\n", i+1);
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+
       /* give the pricing problem 2% more time then the original scip has left */
       if( SCIPgetStage(relaxdata->pricingprobs[i]) > SCIP_STAGE_PROBLEM )
       {
-         pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(relaxdata->pricingprobs[i]);
+         if( SCIPisInfinity(scip, timelimit) )
+         {
+            pricingtimelimit = SCIPinfinity(relaxdata->pricingprobs[i]);
+         }
+         else
+         {
+            pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(relaxdata->pricingprobs[i]);
+            pricingtimelimit = MIN(SCIPinfinity(relaxdata->pricingprobs[i]), pricingtimelimit); /*lint !e666*/
+         }
       }
       else
       {
-         pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02;
+         if( SCIPisInfinity(scip, timelimit) )
+         {
+            pricingtimelimit = SCIPinfinity(relaxdata->pricingprobs[i]);
+         }
+         else
+         {
+            pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02;
+            pricingtimelimit = MIN(SCIPinfinity(relaxdata->pricingprobs[i]), pricingtimelimit); /*lint !e666*/
+         }
       }
       SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit) );
 
@@ -2147,7 +2238,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    if( !relaxdata->relaxisinitialized )
    {
       SCIP_CALL( initRelaxator(scip, relax) );
-      SCIP_CALL( SCIPconsOrigbranchAddRootCons(scip) );
+      SCIP_CALL( GCGconsOrigbranchAddRootCons(scip) );
       relaxdata->relaxisinitialized = TRUE;
       assert(relaxdata->decdecomp != NULL);
    }
@@ -2155,15 +2246,13 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
 
-   SCIPdebugMessage("solving node %lld's relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
-
    /* construct the LP in the original problem */
    SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
    assert(!cutoff);
    SCIP_CALL( SCIPflushLP(scip) );
 
    /* solve the next node in the master problem */
-   SCIPdebugMessage("Solve master LP.\n");
+   SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
@@ -2197,10 +2286,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
             mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
             SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
 
-            SCIPdebugMessage("Orig left: %f, limit for master %f, left %f\n",
-                  timelimit - SCIPgetSolvingTime(scip),
+            SCIPdebugMessage("  time limit for master: %f, left: %f, left for original problem: %f\n",
                   mastertimelimit,
-                  mastertimelimit - SCIPgetSolvingTime(masterprob));
+                  mastertimelimit - SCIPgetSolvingTime(masterprob),
+                  timelimit - SCIPgetSolvingTime(scip));
          }
 
          /* if we have a blockdetection, see whether the node is block diagonal */
@@ -2226,7 +2315,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          }
 
          if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
-            SCIPinfoMessage(scip, NULL, "Masterprob was to short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
+            SCIPinfoMessage(scip, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
       }
       if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
       {
@@ -2239,7 +2328,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          *lowerbound = SCIPgetLocalDualbound(masterprob);
       else
       {
-         SCIPdebugMessage("Stage: %d\n", SCIPgetStage(masterprob));
+         SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
          assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
          if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
@@ -2261,13 +2350,13 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          }
          else
          {
-            SCIPwarningMessage(scip, "Stage <%d> is not handled\n!", SCIPgetStage(masterprob));
+            SCIPwarningMessage(scip, "Stage <%d> is not handled!\n", SCIPgetStage(masterprob));
             *result = SCIP_DIDNOTRUN;
             return SCIP_OKAY;
          }
       }
 
-      SCIPdebugMessage("Update lower bound (value = %g).\n", *lowerbound);
+      SCIPdebugMessage("  update lower bound (value = %g).\n", *lowerbound);
 
       if( relaxdata->currentorigsol != NULL )
       {
@@ -2298,7 +2387,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          SCIP_CALL( SCIPfreeSol(scip, &newsol) );
 
          if( stored )
-            SCIPdebugMessage("updated current best primal feasible solution!\n");
+            SCIPdebugMessage("  updated current best primal feasible solution.\n");
       }
 
       if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL )
@@ -2962,8 +3051,9 @@ SCIP_CONS** GCGgetOrigMasterConss(
 }
 
 /** returns the linear counterpart of the contraints in the original problem that correspond
- * to the constraints in the master problem */
-SCIP_CONS** GCGrgetLinearOrigMasterConss(
+ * to the constraints in the master problem
+ */
+SCIP_CONS** GCGgetLinearOrigMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -3187,7 +3277,8 @@ SCIP_RETCODE performProbing(
    /* create master constraint that captures the branching decision in the original instance */
    mprobingnode = SCIPgetCurrentNode(masterscip);
    assert(GCGconsMasterbranchGetActiveCons(masterscip) != NULL);
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, mprobingnode, GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, "mprobingcons", mprobingnode,
+      GCGconsMasterbranchGetActiveCons(masterscip), NULL, NULL, NULL, 0) );
    SCIP_CALL( SCIPaddConsNode(masterscip, mprobingnode, mprobingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterscip, &mprobingcons) );
 
@@ -3238,6 +3329,7 @@ SCIP_RETCODE performProbing(
          SCIPdebugMessage("lpobjval = %g\n", SCIPgetLPObjval(masterscip));
          *lpobjvalue = SCIPgetLPObjval(masterscip);
          *lpsolved = TRUE;
+         SCIP_CALL( GCGrelaxUpdateCurrentSol(scip) );
       }
    }
    else
@@ -3389,7 +3481,8 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
 
 /** transforms the current solution of the master problem into the original problem's space
- *  and saves this solution as currentsol in the relaxator's data */
+ *  and saves this solution as currentsol in the relaxator's data
+ */
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP*                 scip                /**< SCIP data structure */
    )

@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.0.1
+VERSION         :=	2.1.0
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -56,10 +56,12 @@ MASTERSETTINGS	=	default
 
 VALGRIND	=	false
 MODE		=	readdec
+PROJECT		=	none
 GTEST		=	true
 PARASCIP	= 	true
-BLISS       	=   	true
-OPENMP          =       false
+BLISS      	=   true
+OPENMP      =   false
+GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 
@@ -67,6 +69,12 @@ LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 ifeq ($(OPENMP),true)
 override PARASCIP=true
 endif
+
+# overriding SCIP LPS setting if compiled with CPLEXSOLVER
+ifeq ($(CPLEXSOLVER),true)
+override LPS =  cpx
+endif
+
 
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
@@ -94,10 +102,18 @@ LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, 
 endif
 
 #-----------------------------------------------------------------------------
+# GSL
+#-----------------------------------------------------------------------------
+ifeq ($(GSL),true)
+LDFLAGS                +=      -lgsl -lgslcblas -lm
+FLAGS		           +=	   -DGSL
+endif
+
+#-----------------------------------------------------------------------------
 # CPLEX pricing solver
 #-----------------------------------------------------------------------------
 
-ifeq ($(LPS),cpx)
+ifeq ($(CPLEXSOLVER),true)
 FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/cpxinc
 else
 FLAGS		+=	-DNCPLEXSOLVER
@@ -144,6 +160,7 @@ LIBOBJ		=	reader_blk.o \
 			heur_origdiving.o \
 			heur_relaxcolsel.o \
 			heur_restmaster.o \
+			heur_setcover.o \
 			heur_xpcrossover.o \
 			heur_xprins.o \
 			branch_empty.o \
@@ -151,6 +168,7 @@ LIBOBJ		=	reader_blk.o \
 			masterplugins.o \
 			nodesel_master.o \
 			sepa_master.o \
+			sepa_basis.o \
 			disp_gcg.o \
 			disp_master.o \
 			dialog_gcg.o \
@@ -185,7 +203,9 @@ LIBOBJ		=	reader_blk.o \
 			stat.o \
 			objdialog.o \
 			dialog_graph.o \
-			gcgcol.o
+			gcgpqueue.o \
+			gcgcol.o \
+			class_colpool.o 
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
@@ -193,7 +213,7 @@ LIBOBJ		+=	bliss_automorph.o \
 			bliss.o
 endif
 
-ifeq ($(LPS),cpx)
+ifeq ($(CPLEXSOLVER),true)
 LIBOBJ		+=	solver_cplex.o
 endif
 
@@ -462,7 +482,7 @@ $(DIRECTORIES):
 
 .PHONY: touchexternal
 touchexternal: | $(LIBOBJDIR)
-ifneq ($(LAST_LPS),$(LPS))
+ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
 		@-touch $(SRCDIR)/solver_cplex.c
 endif
 ifneq ($(LAST_BLISS),$(BLISS))
@@ -511,6 +531,7 @@ endif
 		@echo "LAST_USRARFLAGS=$(USRARFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRDFLAGS=$(USRDFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_OPENMP=$(OPENMP)" >> $(LASTSETTINGS)
+		@echo "LAST_CPLEXSOLVER=$(CPLEXSOLVER)" >> $(LASTSETTINGS)
 
 .PHONY: $(SOFTLINKS)
 $(SOFTLINKS):

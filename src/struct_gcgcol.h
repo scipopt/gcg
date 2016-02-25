@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -38,6 +38,8 @@
 #include "scip/def.h"
 #include "scip/type_misc.h"
 #include "scip/scip.h"
+
+#include "type_gcgcol.h"
 
 #ifdef __cplusplus
 extern "C" {

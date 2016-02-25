@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -51,17 +51,10 @@
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
 #define CONSHDLR_DESC          "constraint handler template"
-#define CONSHDLR_SEPAPRIORITY         0 /**< priority of the constraint handler for separation */
 #define CONSHDLR_ENFOPRIORITY         0 /**< priority of the constraint handler for constraint enforcing */
 #define CONSHDLR_CHECKPRIORITY        0 /**< priority of the constraint handler for checking feasibility */
-#define CONSHDLR_SEPAFREQ            -1 /**< frequency for separating cuts; zero means to separate only in the root node */
-#define CONSHDLR_PROPFREQ            -1 /**< frequency for propagating domains; zero means only preprocessing propagation */
 #define CONSHDLR_EAGERFREQ           -1 /**< frequency for using all instead of only the useful constraints in separation,
                                           *   propagation and enforcement, -1 for no eager evaluations, 0 for first only */
-#define CONSHDLR_MAXPREROUNDS         0 /**< maximal number of presolving rounds the constraint handler participates in (-1: no limit) */
-#define CONSHDLR_DELAYSEPA         TRUE /**< should separation method be delayed, if other separators found cuts? */
-#define CONSHDLR_DELAYPROP         TRUE /**< should propagation method be delayed, if other propagators found reductions? */
-#define CONSHDLR_DELAYPRESOL       TRUE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS        FALSE /**< should the constraint handler be skipped, if no constraints are available? */
 
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
@@ -94,28 +87,6 @@ struct SCIP_ConshdlrData
 /*
  * Callback methods of constraint handler
  */
-
-#define conshdlrCopyDecomp NULL
-#define consInitpreDecomp NULL
-#define consExitpreDecomp NULL
-#define consDeleteDecomp NULL
-#define consTransDecomp NULL
-#define consInitlpDecomp NULL
-#define consSepalpDecomp NULL
-#define consSepasolDecomp NULL
-#define consPropDecomp NULL
-#define consPresolDecomp NULL
-#define consRespropDecomp NULL
-#define consActiveDecomp NULL
-#define consDeactiveDecomp NULL
-#define consEnableDecomp NULL
-#define consDisableDecomp NULL
-#define consDelvarsDecomp NULL
-#define consPrintDecomp NULL
-#define consCopyDecomp NULL
-#define consParseDecomp NULL
-#define consGetVarsDecomp NULL
-#define consGetNVarsDecomp NULL
 
 /** initialization method of constraint handler (called after problem was transformed) */
 static
@@ -213,21 +184,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    return SCIP_OKAY;
 }
 
-/** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
-static
-SCIP_DECL_CONSINITSOL(consInitsolDecomp)
-{  /*lint --e{715}*/
-   return SCIP_OKAY;
-}
-
-
-/** solving process deinitialization method of constraint handler (called before branch and bound process data is freed) */
-static
-SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
-{  /*lint --e{715}*/
-   return SCIP_OKAY;
-}
-
 
 /** constraint enforcing method of constraint handler for LP solutions */
 static
@@ -275,6 +231,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
    /* create decomp constraint handler data */
@@ -291,21 +248,15 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPcreateWallClock(scip, &conshdlrdata->detectorclock) );
 
    /* include constraint handler */
-   SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
-         CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
-         CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS,
-         CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
-         SCIP_PROPTIMING_AFTERLPNODE, conshdlrCopyDecomp,
-         consFreeDecomp, consInitDecomp, consExitDecomp,
-         consInitpreDecomp, consExitpreDecomp, consInitsolDecomp, consExitsolDecomp,
-         consDeleteDecomp, consTransDecomp, consInitlpDecomp,
-         consSepalpDecomp, consSepasolDecomp, consEnfolpDecomp, consEnfopsDecomp, consCheckDecomp,
-         consPropDecomp, consPresolDecomp, consRespropDecomp, consLockDecomp,
-         consActiveDecomp, consDeactiveDecomp,
-         consEnableDecomp, consDisableDecomp,
-         consDelvarsDecomp, consPrintDecomp, consCopyDecomp, consParseDecomp,
-         consGetVarsDecomp, consGetNVarsDecomp,
+   SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
+         CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,
+         consEnfolpDecomp, consEnfopsDecomp, consCheckDecomp, consLockDecomp,
          conshdlrdata) );
+   assert(conshdlr != FALSE);
+
+   SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeDecomp) );
+   SCIP_CALL( SCIPsetConshdlrInit(scip, conshdlr, consInitDecomp) );
+   SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
 

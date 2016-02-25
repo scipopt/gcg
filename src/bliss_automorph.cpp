@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -422,7 +422,7 @@ SCIP_RETCODE setuparrays(
    }
 
    /* add color information for master constraints */
-   SCIP_CONS** origmasterconss = GCGrgetLinearOrigMasterConss(origscip);
+   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
    int nmasterconss = GCGgetNMasterConss(origscip);
 
    SCIP_CALL( reallocMemory(origscip, colorinfo, nmasterconss, SCIPgetNVars(origscip)) );
@@ -496,7 +496,7 @@ SCIP_RETCODE createGraph(
    BMSclearMemoryArray(nnodesoffset, nscips);
    BMSclearMemoryArray(mastercoefindex, nscips);
 
-   SCIP_CONS** origmasterconss = GCGrgetLinearOrigMasterConss(origscip);
+   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
    int nmasterconss = GCGgetNMasterConss(origscip);
 
    for( s = 0; s < nscips && *result == SCIP_SUCCESS; ++s)

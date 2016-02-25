@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -47,13 +47,6 @@ extern "C" {
 extern
 SCIP_RETCODE SCIPincludeBranchruleEmpty(
    SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** creates the origbranchnode for the given masterbranchnode */
-extern
-SCIP_RETCODE GCGcreateConsOrigbranchNode(
-   SCIP*                 scip,                 /**< SCIP data structure */
-   SCIP_CONS*            masterbranchchildcons /**< corresponding masterbranchcons */
    );
 
 #ifdef __cplusplus

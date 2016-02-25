@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -181,6 +181,14 @@ SCIP_RETCODE GCGmasterPrintSimplexIters(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
    );
+
+/** set pricing objectives */
+extern
+SCIP_RETCODE GCGsetPricingObjs(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real*            dualsolconv         /**< array of dual solutions corresponding to convexity constraints */
+   );
+
 
 #ifdef __cplusplus
 }

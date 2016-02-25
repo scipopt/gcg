@@ -1,3 +1,30 @@
+GCG Version
+=================
+
+code cleanup
+- cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
+
+bug fixes
+- changed/corrected variable fixing behaviour of Extreme Point RINS in case of aggregated blocks
+
+GCG Version 2.1.0
+=================
+
+features
+- column pool
+- new set covering heuristic
+- basis cuts separator
+- numerical tolerances of the original problem are used in the master and pricing problems
+- new compiler flag CPLEXSOLVER to solve pricing problems with CPLEX
+
+code cleanup
+- re-organized constraint handlers for managing branching decisions in original and master problems
+- simplified code and reduced memory consumption in cutpacking detector
+
+bug fixes
+- GCG columns are freed correctly in the pricer
+
+
 GCG Version 2.0.1
 =================
 

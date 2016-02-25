@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -59,8 +59,8 @@
 
 #define SOLVER_NAME          "cplex"
 #define SOLVER_DESC          "cplex solver for pricing problems"
-#define SOLVER_PRIORITY      1010
-#define SOLVER_ENABLED        FALSE  /**< indicates whether the solver should be enabled */
+#define SOLVER_PRIORITY       100
+#define SOLVER_ENABLED        TRUE  /**< indicates whether the solver should be enabled */
 
 #define DEFAULT_CHECKSOLS     TRUE   /**< should solutions of the pricing MIPs be checked for duplicity? */
 #define DEFAULT_THREADS       1      /**< number of threads the CPLEX pricing solver is allowed to use (0: automatic) */
@@ -784,44 +784,53 @@ SCIP_RETCODE solveCplex(
     */
    for( s = 0; s < nsolscplex && *ncols < maxcols; ++s )
    {
+      SCIP_SOL* sol;
+      SCIP_Bool feasible;
+
       CHECK_ZERO( CPXgetsolnpoolobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], s, &objective) );
 
       CHECK_ZERO( CPXgetsolnpoolx(solverdata->cpxenv[probnr], solverdata->lp[probnr], s, cplexsolvals, 0, numcols - 1) );
 
-      /* create potentially new column */
-      SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[*ncols], probnr, solverdata->pricingvars[probnr], cplexsolvals, numcols, FALSE, SCIPinfinity(pricingprob)) );
+      SCIP_CALL( SCIPcreateSol(pricingprob, &sol, NULL) );
+      SCIP_CALL( SCIPsetSolVals(pricingprob, sol, numcols, solverdata->pricingvars[probnr], cplexsolvals) );
 
-      /* check whether the column is equal to one of the previous solutions */
-      if( !solverdata->checksols || colIsNew(pricingprob, cols, *ncols, cols[*ncols]) )
+      feasible = FALSE;
+
+      /* check whether the solution is feasible */
+      if( !solverdata->checksols )
       {
-         SCIP_SOL* sol;
-         SCIP_Bool feasible;
-
-         SCIP_CALL( SCIPcreateSol(pricingprob, &sol, NULL) );
-         SCIP_CALL( SCIPsetSolVals(pricingprob, sol, numcols, solverdata->pricingvars[probnr], cplexsolvals) );
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, sol, &feasible, FALSE, FALSE) );
 
-         if( !feasible )
+         /* if the optimal solution is not feasible, we return SCIP_UNKNOWN as result */
+         if( !feasible && s == 0 )
          {
-            SCIP_CALL( GCGfreeGcgCol(&cols[*ncols]) );
-
-            /* the optimal solution is not feasible, we return SCIP_UNKNOWN as result */
-            if( s == 0 )
-            {
-               *result = SCIP_STATUS_UNKNOWN;
-            }
+            *result = SCIP_STATUS_UNKNOWN;
          }
-         else
-         {
-            ++(*ncols);
-         }
-         SCIP_CALL( SCIPfreeSol(pricingprob, &sol) );
       }
       else
       {
-         SCIP_CALL( GCGfreeGcgCol(&cols[*ncols]) );
+         feasible = TRUE;
       }
+
+      if( feasible )
+      {
+         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &cols[*ncols], probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
+
+         /* check whether the column is equal to one of the previous solutions */
+         if( colIsNew(pricingprob, cols, *ncols, cols[*ncols]) )
+         {
+            ++(*ncols);
+         }
+         else
+         {
+            SCIP_CALL( GCGfreeGcgCol(&cols[*ncols]) );
+         }
+      }
+
+      SCIP_CALL( SCIPfreeSol(pricingprob, &sol) );
    }
+
+   assert( *result != SCIP_STATUS_OPTIMAL || *ncols > 0 );
  TERMINATE:
    if( predisabled )
    {
