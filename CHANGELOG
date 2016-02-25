@@ -1,3 +1,18 @@
+GCG Version 2.1.1
+=================
+
+code cleanup
+- simplified logic when assigning variables to blocks
+
+bug fixes
+- use only one hashmap when initializing pricing problems
+- small bugfix in set covering heuristic
+- fixed a bug in original variable diving heuristics
+- fixed a time limit issue concerning the master problem that was introduced by the SCIP reoptimization feature
+- reorganized detector callbacks and thus fixed memory leaks when reading a new instance
+- fixed memory allocation in basis separator
+
+
 GCG Version 2.1.0
 =================
 
