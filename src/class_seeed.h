@@ -26,8 +26,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   class_Seeed.h
- * @brief  class with functions for column pool
- * @author Jonas Witt
+ * @brief  class with functions for seeed
+ * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -48,12 +48,17 @@ class Seeed
 {
 
 private:
-   int					id;							/**< id of the seeed */
-   int 					nBlocks;					/**< number of blocks the decomposition currently has */
-   std::vector<int>		masterconss;				/**< vector containing indices of master constraints */
-   std::vector<int>		mastervars;					/**< vector containing indices of master variables */
-   std::vector<std::vector<int>> conssForBlocks; 	/**< conssForBlocks[k] contains a vector of indices of all constraints assigned to block k */
-   std::vector<std::vector<int>> varsForBlocks; 	/**< varsForBlocks[k] contains a vector of indices of all variables assigned to block k */
+   int								id;						/**< id of the seeed */
+   int 								nBlocks;				/**< number of blocks the decomposition currently has */
+   std::vector<int>					masterconss;			/**< vector containing indices of master constraints */
+   std::vector<int>					mastervars;				/**< vector containing indices of master variables */
+   std::vector<std::vector<int>> 	conssForBlocks; 		/**< conssForBlocks[k] contains a vector of indices of all constraints assigned to block k */
+   std::vector<std::vector<int>> 	varsForBlocks; 			/**< varsForBlocks[k] contains a vector of indices of all variables assigned to block k */
+   std::vector<int> 				linkingVars;			/**< vector containing indices of linking variables */
+   std::vector<int> 				stairlinkingVars;		/**< vector containing indices of staircase linking variables */
+   std::vector<int> 				openVars;				/**< vector containing indices of  variables that are not assigned yet*/
+   std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
+   std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
 
 
 
@@ -61,71 +66,52 @@ public:
 
    /** constructor */
    Seeed(
-      SCIP*             scip,               /**< SCIP data structure */
-      int               agelimit,           /**< maximum age a column can reach before it is deleted from the pool */
-      int               maxncolssoft,       /**< soft maximal number of columns stored in the pool at the same time */
-      int               maxncolshard        /**< hard maximal number of columns stored in the pool at the same time */
+	  int               id,      		   	/**< id that is given to this seeed */
+	  int               nDetectors,         /**< number of detectors */
+	  int				nConss,				/**number of constraints */
+	  int 				nVars				/**number of variables */
       );
 
    ~Seeed();
 
-   /** add gcg column to column pool */
-   SCIP_RETCODE addCol(
-      GCG_COL*          gcgcol,             /**< gcg column to add */
-      SCIP_Bool*        success             /**< bool returns if colum was succesfully added (number of columns is not bigger than maxncols) */
+
+   /** check the consistency of this seeed */
+   bool checkConsistency(
    );
 
-   /** return if column already exists in column pool */
-   SCIP_Bool existsCol(
-      GCG_COL*          gcgcol
-      );
-
-   /**< get best column in column pool and remove it from column pool */
-   SCIP_RETCODE getBestCol(
-      GCG_COL**         gcgcol              /**< pointer to store gcg column */
-      );
-
-   /**< get best column's reduced cost */
-   SCIP_Real getBestColRedcost();
-
-   /**< get best column's probnr */
-   int getBestColProbNr();
-
-   /**< get age of column at specific postition */
-   int getColAge(
-      int               pos                 /**< position of column */
+   /** add a constraint to the master constraints */
+   SCIP_RETCODE setConsToMaster(
+		   int consToMaster
    );
 
-   /**< get reduced cost of column at specific postition */
-   SCIP_Real getColRedcost(
-      int               pos                 /**< position of column */
-      );
+   /** add a variable to the master variables (every constraint consisting it is in master ) */
+   SCIP_RETCODE setVarToMaster(
+		   int varToMaster
+   );
 
-   /**< get number of columns in column pool */
-   int getNCols();
+   /** add a constraint to a block */
+   SCIP_RETCODE setConsToBlock(
+		   int consToBlock,
+		   int block
+   );
 
-   /**< delete all columns that are older than agelimit */
-   SCIP_RETCODE deleteOldColumns();
+   /** add a variable to a block */
+   SCIP_RETCODE setVarToBlock(
+		   int varToBlock,
+		   int block
+   );
 
-   /**< delete the oldest columns such that number of columns in Seeed is
-    *   lower than or equal to maxncolssoft */
-   SCIP_RETCODE deleteOldestColumns();
+   /** add a variable to the linking variables */
+   SCIP_RETCODE setVarToLinking(
+		   int varToLinking
+   );
 
-   /**< delete all columns in Seeed */
-   SCIP_RETCODE deleteAllColumns();
+   /** add a variable to the stair linking variables */
+   SCIP_RETCODE setVarToStairlinking(
+		   int varToStairLinking
+   );
 
-   /**< resort columns (after reduce cost have changed) */
-   SCIP_RETCODE resortColumns();
 
-   /**< get columns in column pool */
-   GCG_COL** getCols();
-
-   SCIP_RETCODE setSoftlimit(
-      int               newsoftlimit
-      );
-
-   SCIP_RETCODE updateNode(
-      );
 
 private:
 
