@@ -81,7 +81,41 @@ struct SCIP_ConshdlrData
  * Local methods
  */
 
-/* put your local methods here, and declare them static */
+/** starts another SCIP instance containing the same problem but no GCG-specific plugins.
+ * @pre This method can be called if @p scip is in one of the following stages:
+ *       - \ref SCIP_STAGE_PRESOLVED
+ */
+static
+SCIP_RETCODE createOneBlock(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_HASHMAP* newconstoblock;
+   DEC_DECOMP* newdecomp;
+   SCIP_CONS** conss;
+   int nconss;
+   int i;
+   int nblocks = 1;
+
+   conss = SCIPgetConss(scip);
+   nconss = SCIPgetNConss(scip);
+
+   SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), nconss ) );
+
+   for( i = 0; i < nconss; i++ )
+   {
+      assert(!SCIPhashmapExists(newconstoblock, conss[i]));
+      SCIP_CALL( SCIPhashmapInsert(newconstoblock, conss[i], (void*) (size_t) nblocks) );
+   }
+
+   DECdecompCreate( scip, &newdecomp );
+   assert(newdecomp != NULL);
+   SCIP_CALL( DECfilloutDecompFromConstoblock( scip, newdecomp, newconstoblock, nblocks, FALSE) );
+
+   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, newdecomp) );
+
+   return SCIP_OKAY;
+}
 
 
 /*
@@ -477,42 +511,6 @@ SCIP_Real DECgetRemainingTime(
    if( !SCIPisInfinity(scip, timelimit) )
       timelimit -= SCIPgetSolvingTime(scip);
    return timelimit;
-}
-
-/** starts another SCIP instance containing the same problem but no GCG-specific plugins.
- * @pre This method can be called if @p scip is in one of the following stages:
- *       - \ref SCIP_STAGE_PRESOLVED
- */
-static
-SCIP_RETCODE createOneBlock(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_HASHMAP* newconstoblock;
-   DEC_DECOMP* newdecomp;
-   SCIP_CONS** conss;
-   int nconss;
-   int i;
-   int nblocks = 1;
-
-   conss = SCIPgetConss(scip);
-   nconss = SCIPgetNConss(scip);
-
-   SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), nconss ) );
-
-   for( i = 0; i < nconss; i++ )
-   {
-      assert(!SCIPhashmapExists(newconstoblock, conss[i]));
-      SCIP_CALL( SCIPhashmapInsert(newconstoblock, conss[i], (void*) (size_t) nblocks) );
-   }
-
-   DECdecompCreate( scip, &newdecomp );
-   assert(newdecomp != NULL);
-   SCIP_CALL( DECfilloutDecompFromConstoblock( scip, newdecomp, newconstoblock, nblocks, FALSE) );
-
-   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, newdecomp) );
-
-   return SCIP_OKAY;
 }
 
 /** interface method to detect the structure */
