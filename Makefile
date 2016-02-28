@@ -205,7 +205,9 @@ LIBOBJ		=	reader_blk.o \
 			dialog_graph.o \
 			gcgpqueue.o \
 			gcgcol.o \
-			class_colpool.o 
+			class_colpool.o \
+			class_seeed.o \
+			class_seeedpool
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

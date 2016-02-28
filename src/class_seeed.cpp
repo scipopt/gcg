@@ -33,9 +33,11 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+
 #include "class_seeed.h"
 #include "gcg.h"
 
+#include <iostream>
 #include <exception>
 
 #define SCIP_CALL_EXC(x)   do                                                                                  \
@@ -53,11 +55,11 @@ namespace gcg {
 
 /** constructor(s) */
  Seeed::Seeed(
-	  int               id,      		   	/**< id that is given to this seeed */
-	  int               nDetectors,         /**< number of detectors */
-	  int				nConss,				/**number of constraints */
-	  int 				nVars				/**number of variables */
-    ): id(id), nBlocks(0),nVars(nVars), nConss(nConss), propagatedByDetector(std::vector<bool>(nDetectors, false)){
+	  int               givenId,      		   	/**< id that is given to this seeed */
+	  int               givenNDetectors,         /**< number of detectors */
+	  int				givenNConss,				/**number of constraints */
+	  int 				givenNVars				/**number of variables */
+    ): id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)){
 
 	 }
 
@@ -289,7 +291,7 @@ namespace gcg {
 	  }
 
 
-	  return openVars;
+	  return openVarsVec;
   }
 
   /** returns vector containing constraints not assigned yet */
@@ -316,7 +318,7 @@ namespace gcg {
 	  }
 
 
-	  return openConss;
+	  return openConssVec;
   }
 
   /** returns whether this seeed was propagated by certain detector */

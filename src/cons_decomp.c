@@ -43,6 +43,7 @@
 #include "dec_connected.h"
 #include "gcg.h"
 #include "struct_detector.h"
+#include "class_seeedpool.h"
 #include "string.h"
 #include "scip_misc.h"
 #include "scip/clock.h"
@@ -518,6 +519,8 @@ SCIP_RETCODE DECdetectStructure(
 
    if( conshdlrdata->ndecomps == 0 )
    {
+	   Seeedpool seeedpool(scip);
+
       for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
          DEC_DETECTOR *detector;

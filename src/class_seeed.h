@@ -36,6 +36,7 @@
 #define GCG_CLASS_SEEED_H__
 
 #include "objscip/objscip.h"
+
 #include <vector>
 
 

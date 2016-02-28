@@ -35,99 +35,59 @@
 #ifndef GCG_CLASS_SEEEDPOOL_H__
 #define GCG_CLASS_SEEEDPOOL_H__
 
-#include "objscip/objscip.h"
-#include "class_pricingtype.h"
+//#include "objscip/objscip.h"
+//#include "class_pricingtype.h"
 #include <vector>
-#include <boost/shared_ptr.hpp>
+
+
+#include "gcg.h"
+
+
+//#include <tr1/unordered_map> //c++ hashmap
+//#include <boost/shared_ptr.hpp>
 #include "class_seeed.h"
 
 
 namespace gcg {
 
-typedef boost::shared_ptr<Seeed> SeeedPtr;
+//typedef boost::shared_ptr<Seeed> SeeedPtr;
+typedef Seeed* SeeedPtr;
+
 
 class Seeedpool
 {   /*lint -esym(1712,Seeedpool)*/
 
 private:
-   SCIP*                 scip;               /**< SCIP data structure */
-   std::vector<SeeedPtr> seeeds;             /**< vector of current (open) seeeds */
-   int                  agelimit;           /**< maximum age a column can reach before it is deleted from the pool */
-   int                  maxncolssoft;       /**< soft maximal number of columns stored in the pool at the same time */
-   int                  maxncolshard;       /**< hard maximal number of columns stored in the pool at the same time */
-   int                  nodenr;             /**< node at which columns in Seeedpool respect branching decisions */
+   SCIP*                 						scip;              	/**< SCIP data structure */
+   std::vector<SeeedPtr> 						seeeds;				/**< vector of current (open) seeeds */
+
+   std::vector<std::vector<int>> 				varsForConss; 		/** stores for every constraint the indices of variables that are contained in the constraint */
+   std::vector<std::vector<int>> 				conssForVars; 		/** stores for every variable the indices of constraints containing this variable */
+
+   std::vector<SCIP_CONS*> 						consToScipConss;	/** stores the corresponding scip constraints pointer */
+   std::vector<SCIP_VAR*> 						varToScipVar;		/** stores the corresponding scip variable pointer */
+   std::vector<DEC_DETECTOR*> 					detectorToScipDetector; /** stores the corresponding SCIP detector pinter */
+   std::tr1::unordered_map<SCIP_CONS*, int> 	scipConsToIndex;	/** maps SCIP_CONS* to the corresponding index */
+   std::tr1::unordered_map<SCIP_VAR*, int>  	scipVarToIndex;		/** maps SCIP_VAR* to the corresponding index */
+   std::tr1::unordered_map<DEC_DETECTOR*, int>  scipDetectorToIndex;		/** maps SCIP_VAR* to the corresponding index */
+
+   int 											nVars;
+   int 											nConss;
+   int											nDetectors;
+
 
 public:
 
    /** constructor */
    Seeedpool(
       SCIP*             scip,               /**< SCIP data structure */
-      int               agelimit,           /**< maximum age a column can reach before it is deleted from the pool */
-      int               maxncolssoft,       /**< soft maximal number of columns stored in the pool at the same time */
-      int               maxncolshard        /**< hard maximal number of columns stored in the pool at the same time */
       );
 
    ~Seeedpool();
 
-   /** add gcg column to column pool */
-   SCIP_RETCODE addCol(
-      GCG_COL*          gcgcol,             /**< gcg column to add */
-      SCIP_Bool*        success             /**< bool returns if colum was succesfully added (number of columns is not bigger than maxncols) */
+   /** finds decompositions  */
+   DEC_DECOMP**       	findDecompostions(
    );
-
-   /** return if column already exists in column pool */
-   SCIP_Bool existsCol(
-      GCG_COL*          gcgcol
-      );
-
-   /**< get best column in column pool and remove it from column pool */
-   SCIP_RETCODE getBestCol(
-      GCG_COL**         gcgcol              /**< pointer to store gcg column */
-      );
-
-   /**< get best column's reduced cost */
-   SCIP_Real getBestColRedcost();
-
-   /**< get best column's probnr */
-   int getBestColProbNr();
-
-   /**< get age of column at specific postition */
-   int getColAge(
-      int               pos                 /**< position of column */
-   );
-
-   /**< get reduced cost of column at specific postition */
-   SCIP_Real getColRedcost(
-      int               pos                 /**< position of column */
-      );
-
-   /**< get number of columns in column pool */
-   int getNCols();
-
-   /**< delete all columns that are older than agelimit */
-   SCIP_RETCODE deleteOldColumns();
-
-   /**< delete the oldest columns such that number of columns in Seeedpool is
-    *   lower than or equal to maxncolssoft */
-   SCIP_RETCODE deleteOldestColumns();
-
-   /**< delete all columns in Seeedpool */
-   SCIP_RETCODE deleteAllColumns();
-
-   /**< resort columns (after reduce cost have changed) */
-   SCIP_RETCODE resortColumns();
-
-   /**< get columns in column pool */
-   GCG_COL** getCols();
-
-   SCIP_RETCODE setSoftlimit(
-      int               newsoftlimit
-      );
-
-   SCIP_RETCODE updateNode(
-      );
-
-private:
 
 
 
