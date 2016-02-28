@@ -37,7 +37,7 @@
 
 #include "objscip/objscip.h"
 #include <vector>
-#include <tr1/unordered_map> //c++ hashmap
+//#include <tr1/unordered_map> //c++ hashmap
 
 #include "gcg.h"
 
@@ -63,9 +63,9 @@ private:
    std::vector<SCIP_CONS*> 						consToScipConss;	/** stores the corresponding scip constraints pointer */
    std::vector<SCIP_VAR*> 						varToScipVar;		/** stores the corresponding scip variable pointer */
    std::vector<DEC_DETECTOR*> 					detectorToScipDetector; /** stores the corresponding SCIP detector pinter */
-   std::tr1::unordered_map<SCIP_CONS*, int> 	scipConsToIndex;	/** maps SCIP_CONS* to the corresponding index */
-   std::tr1::unordered_map<SCIP_VAR*, int>  	scipVarToIndex;		/** maps SCIP_VAR* to the corresponding index */
-   std::tr1::unordered_map<DEC_DETECTOR*, int>  scipDetectorToIndex;		/** maps SCIP_VAR* to the corresponding index */
+//   std::tr1::unordered_map<SCIP_CONS*, int> 	scipConsToIndex;	/** maps SCIP_CONS* to the corresponding index */
+//   std::tr1::unordered_map<SCIP_VAR*, int>  	scipVarToIndex;		/** maps SCIP_VAR* to the corresponding index */
+//   std::tr1::unordered_map<DEC_DETECTOR*, int>  scipDetectorToIndex;		/** maps SCIP_VAR* to the corresponding index */
 
    int 											nVars;
    int 											nConss;

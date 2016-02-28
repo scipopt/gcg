@@ -56,7 +56,9 @@ namespace gcg {
 /** constructor */
  Seeedpool::Seeedpool(
     SCIP*             givenScip               /**< SCIP data structure */
-    ):scip(givenScip), seeeds(0), scipVarToIndex(), scipDetectorToIndex(){
+    ):scip(givenScip), seeeds(0)
+ //, scipVarToIndex(), scipDetectorToIndex()
+ {
 
  }
 
