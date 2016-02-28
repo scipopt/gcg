@@ -64,7 +64,7 @@ private:
 
 public:
 
-   /** constructor */
+   /** constructor(s) */
    Seeed(
 	  int               id,      		   	/**< id that is given to this seeed */
 	  int               nDetectors,         /**< number of detectors */
@@ -74,10 +74,18 @@ public:
 
    ~Seeed();
 
+   /**check-methods */
 
    /** check the consistency of this seeed */
    bool checkConsistency(
    );
+
+   /** set-methods */
+
+   /** set number of blocks, atm only increasing number of blocks  */
+      SCIP_RETCODE setNBlocks(
+	   int nBlocks
+      );
 
    /** add a constraint to the master constraints */
    SCIP_RETCODE setConsToMaster(
@@ -109,6 +117,49 @@ public:
    /** add a variable to the stair linking variables */
    SCIP_RETCODE setVarToStairlinking(
 		   int varToStairLinking
+   );
+
+
+   /** get-methods */
+
+   /** returns vector containing master conss */
+   std::vector<int> const & getMasterconss(
+   );
+
+
+   /** returns vector containing master vars (every constraint containing a master var is in master )*/
+   std::vector<int> const & getMastervars(
+   );
+
+   /** returns vector containing master conss */
+   std::vector<int> const & getConssForBlock(
+		   int block
+   );
+
+   /** returns vector containing vars of a certain block */
+   std::vector<int> const & getVarsForBlock(
+		   int block
+   );
+
+   /** returns vector containing linking vars */
+   std::vector<int> const & getLinkingvars(
+   );
+
+   /** returns vector containing stairlinking vars */
+   std::vector<int> const & getStairlinkingvars(
+   );
+
+   /** returns vector containing variables not assigned yet */
+   std::vector<int> const & getOpenvars(
+   );
+
+   /** returns vector containing constraints not assigned yet */
+   std::vector<int> const & getOpenconss(
+   );
+
+   /** returns whether this seeed was propagated by certain detector */
+   bool isPropagatedBy(
+		   int detectorID
    );
 
 

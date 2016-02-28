@@ -52,297 +52,134 @@
 
 namespace gcg {
 
-   Colpool::Colpool(
-      SCIP*             scip_,               /**< SCIP data structure */
-      int               agelimit_,           /**< maximum age a column can reach before it is deleted from the pool */
-      int               maxncolssoft_,       /**< soft maximal number of columns stored in the pool at the same time */
-      int               maxncolshard_        /**< hard maximal number of columns stored in the pool at the same time */
-      ):scip(scip_), pqueue((GCG_PQueue*) NULL), agelimit(agelimit_), maxncolssoft(maxncolssoft_), maxncolshard(maxncolshard_), nodenr(-1)
-   {
-      SCIP_CALL_EXC( GCGpqueueCreate(&pqueue, maxncolshard, (SCIP_Real) sizeof(GCG_COL*), GCGcolCompRedcost) );
-   }
-   Colpool::~Colpool()
-   {
-      GCG_COL** gcgcols;
-      int ngcgcols;
-
-      int i;
-
-      ngcgcols = getNCols();
-      gcgcols = getCols();
-
-      for( i = 0; i < ngcgcols; ++i )
-      {
-         SCIP_CALL_EXC( GCGfreeGcgCol(&(gcgcols[i])) );
-      }
-      GCGpqueueFree(&pqueue);
-      pqueue = NULL;
-   }
-
-   /** add gcg column to column pool */
-   SCIP_RETCODE Colpool::addCol(
-      GCG_COL*          gcgcol,             /**< gcg column to add */
-      SCIP_Bool*        success             /**< bool returns if colum was succesfully added
-                                                 (number of columns is not bigger than maxncols or column already exists) */
-   )
-   {
-      *success = FALSE;
-
-      if( GCGpqueueNElems(pqueue) >= maxncolshard )
-      {
-         return SCIP_OKAY;
-      }
-
-
-      if( !existsCol(gcgcol) )
-      {
-         SCIP_CALL( GCGpqueueInsert(pqueue, (void*) gcgcol) );
-         *success = TRUE;
-      }
-
-      return SCIP_OKAY;
-   }
-
-   /** return if column already exists in column pool */
-   SCIP_Bool Colpool::existsCol(
-      GCG_COL*          newcol
-      )
-   {
-      GCG_COL** cols;
-      int ncols;
-      int i;
-
-      cols = getCols();
-      ncols = getNCols();
-
-      for( i = 0; i < ncols; ++i)
-      {
-         GCG_COL* col;
-
-         col = cols[i];
-
-         if( GCGcolIsEq(newcol, col) )
-         {
-            return TRUE;
-         }
-      }
-
-      return FALSE;
-   }
-
-   /**< get best column in column pool and remove it from column pool */
-   SCIP_RETCODE Colpool::getBestCol(
-      GCG_COL**         gcgcol              /**< pointer to store gcg column */
-   )
-   {
-      *gcgcol = (GCG_COL*) GCGpqueueRemove(pqueue);
-
-      return SCIP_OKAY;
-   }
-
-
-   /**< get best column's reduced cost */
-   SCIP_Real Colpool::getBestColRedcost()
-   {
-      GCG_COL* gcgcol;
-      SCIP_Real redcost;
-
-      gcgcol = (GCG_COL*) GCGpqueueFirst(pqueue);
-
-      if( gcgcol != NULL )
-      {
-         redcost = GCGcolGetRedcost(gcgcol);
-      }
-      else
-      {
-         redcost = SCIPinfinity(scip);
-      }
-
-      return redcost;
-   }
-
-   /**< get best column's probnr (or -1 if colpool is empty) */
-   int Colpool::getBestColProbNr()
-   {
-      GCG_COL* gcgcol;
-      int probnr;
-
-      gcgcol = (GCG_COL*) GCGpqueueFirst(pqueue);
-
-      if( gcgcol != NULL)
-      {
-         probnr = GCGcolGetProbNr(gcgcol);
-      }
-      else
-      {
-         probnr = -1;
-      }
-      return probnr;
-   }
+/** constructor(s) */
+ Seeed::Seeed(
+	  int               id,      		   	/**< id that is given to this seeed */
+	  int               nDetectors,         /**< number of detectors */
+	  int				nConss,				/**number of constraints */
+	  int 				nVars				/**number of variables */
+    ): id(id), nBlocks(0), propagatedByDetector(std::vector<bool>(nDetectors, false)){
 
-   /**< get reduced cost of column at specific postition */
-   SCIP_Real Colpool::getColRedcost(
-      int               pos                 /**< position of column */
-   )
-   {
-      GCG_COL** gcgcols;
+	 for(int i = 0; i < nConss; ++i)
+	 {
+		 openConss.push_back(i);
+	 }
 
-      gcgcols = getCols();
+	 for(int j = 0; j < nVars; ++j)
+	 {
+		 openVars.push_back(j);
+	 }
+
+
+ }
 
-#ifdef SCIP_DEBUG
-      int ngcgcols;
+ Seeed::~Seeed(){}
+
+/** check the consistency of this seeed */
+  bool Seeed::checkConsistency(
+  ){
+	  return false;
+  }
 
 
-      ngcgcols = getNCols();
+  /** set-methods */
 
-      assert(0 <= pos && pos < ngcgcols);
-#endif
+  /** set number of blocks, atm only increasing number of blocks  */
+  SCIP_RETCODE Seeed::setNBlocks(int newNBlocks
+  ){
+	  assert(newNBlocks >= nBlocks);
 
-      return GCGcolGetRedcost(gcgcols[pos]);
-   }
+	  /** increase number of blocks in conssForBlocks and varsForBlocks */
+	  for(int b = nBlocks; b < newNBlocks; ++b )
+	  {
+		  conssForBlocks.push_back(std::vector<int>(0) );
+		  varsForBlocks.push_back(std::vector<int>(0) );
+	  }
 
-   /**< get age of column at specific postition */
-   int Colpool::getColAge(
-      int               pos                 /**< position of column */
-   )
-   {
-      GCG_COL** gcgcols;
+	  nBlocks = newNBlocks;
 
-      gcgcols = getCols();
+	  return SCIP_OKAY;
+  }
 
-#ifdef SCIP_DEBUG
-      int ngcgcols;
+  /** add a constraint to the master constraints */
+  SCIP_RETCODE Seeed::setConsToMaster(
+		   int consToMaster
+  ){
+	  masterconss.push_back(consToMaster);
 
+	  return SCIP_OKAY;
+  }
 
-      ngcgcols = getNCols();
+  /** add a variable to the master variables (every constraint consisting it is in master ) */
+  SCIP_RETCODE Seeed::setVarToMaster(
+		   int varToMaster
+  );
 
-      assert(0 <= pos && pos < ngcgcols);
-#endif
+  /** add a constraint to a block */
+  SCIP_RETCODE Seeed::setConsToBlock(
+		   int consToBlock,
+		   int block
+  );
 
-      return GCGcolGetAge(gcgcols[pos]);
-   }
+  /** add a variable to a block */
+  SCIP_RETCODE Seeed::setVarToBlock(
+		   int varToBlock,
+		   int block
+  );
 
-   /**< get columns in column pool */
-   GCG_COL** Colpool::getCols()
-   {
-      return (GCG_COL**) GCGpqueueElems(pqueue);
-   }
+  /** add a variable to the linking variables */
+  SCIP_RETCODE Seeed::setVarToLinking(
+		   int varToLinking
+  );
 
-   /**< get number of columns in column pool */
-   int Colpool::getNCols()
-   {
-      return GCGpqueueNElems(pqueue);
-   }
+  /** add a variable to the stair linking variables */
+  SCIP_RETCODE Seeed::setVarToStairlinking(
+		   int varToStairLinking
+  );
 
-   /**< delete all columns that are older than agelimit */
-   SCIP_RETCODE Colpool::deleteOldColumns()
-   {
-      GCG_COL* gcgcol;
-
-      int i;
 
-      for( i = 0; i < getNCols(); ++i )
-      {
-         if( getColAge(i) > agelimit )
-         {
-            SCIP_CALL( GCGpqueueDelete(pqueue, i, (void**) &gcgcol) );
+  /** get-methods */
 
-            SCIP_CALL( GCGfreeGcgCol(&gcgcol) );
-         }
-      }
-      return SCIP_OKAY;
-   }
+  /** returns vector containing master conss */
+  std::vector<int> const & Seeed::getMasterconss(
+  );
 
-   /**< delete the oldest columns such that number of columns in colpool is
-    *   lower than or equal to maxncolssoft */
-   SCIP_RETCODE Colpool::deleteOldestColumns()
-   {
-      if( GCGpqueueNElems(pqueue) <= maxncolssoft )
-      {
-         return SCIP_OKAY;
-      }
 
-      if( maxncolssoft == 0 )
-      {
-         SCIP_CALL( deleteAllColumns() );
+  /** returns vector containing master vars (every constraint containing a master var is in master )*/
+  std::vector<int> const & Seeed::getMastervars(
+  );
 
-         return SCIP_OKAY;
-      }
+  /** returns vector containing master conss */
+  std::vector<int> const & Seeed::getConssForBlock(
+		   int block
+  );
 
-      /* todo: get comperator of pqueue */
+  /** returns vector containing vars of a certain block */
+  std::vector<int> const & Seeed::getVarsForBlock(
+		   int block
+  );
 
-      SCIP_CALL( GCGpqueueSetComperator(pqueue, GCGcolCompAge) );
+  /** returns vector containing linking vars */
+  std::vector<int> const & Seeed::getLinkingvars(
+  );
 
-      SCIP_CALL( GCGpqueueResort(pqueue) );
+  /** returns vector containing stairlinking vars */
+  std::vector<int> const & Seeed::getStairlinkingvars(
+  );
 
-      while( GCGpqueueNElems(pqueue) > maxncolssoft )
-      {
-         GCG_COL* gcgcol;
+  /** returns vector containing variables not assigned yet */
+  std::vector<int> const & Seeed::getOpenvars(
+  );
 
-         gcgcol = (GCG_COL*) GCGpqueueRemove(pqueue);
+  /** returns vector containing constraints not assigned yet */
+  std::vector<int> const & Seeed::getOpenconss(
+  );
 
-         SCIP_CALL( GCGfreeGcgCol(&gcgcol) );
-      }
+  /** returns whether this seeed was propagated by certain detector */
+  bool Seeed::isPropagatedBy(
+		   int detectorID
+  );
 
-      /* todo: use previous comperator of pqueue */
-      SCIP_CALL( GCGpqueueSetComperator(pqueue, GCGcolCompRedcost) );
 
-      return SCIP_OKAY;
-   }
-
-   /**< delete all columns in colpool */
-   SCIP_RETCODE Colpool::deleteAllColumns()
-   {
-      GCG_COL** cols;
-
-      int ncols;
-      int i;
-
-      ncols = GCGpqueueNElems(pqueue);
-      cols = (GCG_COL**) GCGpqueueElems(pqueue);
-
-      for(i = 0; i < ncols; ++i)
-      {
-         SCIP_CALL( GCGfreeGcgCol(&(cols[i])) );
-      }
-
-      GCGpqueueClear(pqueue);
-
-      return SCIP_OKAY;
-   }
-
-   /**< resort columns (after reduce cost have changed) */
-   SCIP_RETCODE Colpool::resortColumns()
-   {
-      SCIP_CALL( GCGpqueueResort(pqueue) );
-
-      return SCIP_OKAY;
-   }
-
-   SCIP_RETCODE Colpool::setSoftlimit(
-      int               newsoftlimit
-   )
-   {
-      maxncolssoft = newsoftlimit;
-
-      return SCIP_OKAY;
-   }
-
-   SCIP_RETCODE Colpool::updateNode(
-   )
-   {
-      if( nodenr <= 0 )
-      {
-         nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
-      }
-      else if( nodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) )
-      {
-         SCIP_CALL( deleteAllColumns() );
-
-         nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
-      }
-
-      return SCIP_OKAY;
-   }
 
 } /* namespace gcg */
