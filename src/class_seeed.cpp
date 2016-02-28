@@ -36,7 +36,6 @@
 #include "class_seeed.h"
 #include "gcg.h"
 
-
 #include <exception>
 
 #define SCIP_CALL_EXC(x)   do                                                                                  \
@@ -58,27 +57,79 @@ namespace gcg {
 	  int               nDetectors,         /**< number of detectors */
 	  int				nConss,				/**number of constraints */
 	  int 				nVars				/**number of variables */
-    ): id(id), nBlocks(0), propagatedByDetector(std::vector<bool>(nDetectors, false)){
+    ): id(id), nBlocks(0),nVars(nVars), nConss(nConss), propagatedByDetector(std::vector<bool>(nDetectors, false)){
 
-	 for(int i = 0; i < nConss; ++i)
-	 {
-		 openConss.push_back(i);
 	 }
-
-	 for(int j = 0; j < nVars; ++j)
-	 {
-		 openVars.push_back(j);
-	 }
-
-
- }
 
  Seeed::~Seeed(){}
 
 /** check the consistency of this seeed */
   bool Seeed::checkConsistency(
   ){
-	  return false;
+
+	 // @TODO: check mastervars, stairlinking
+
+	  /**check variables (every variable is assigned at most once) */
+
+	  std::vector<bool> openVars(nVars, true) ;
+	  std::vector<int>  openVarsVec(0);
+	  std::vector<int>::const_iterator varIter = linkingVars.begin();
+	  std::vector<int>::const_iterator varIterEnd = linkingVars.end();
+	  for(; varIter != varIterEnd; ++varIter)
+	  {
+		  if(!openVars[*varIter])
+		  {
+			  std::cout << "Warning! Variable with index " << *varIter << "is already assigned " << std::endl;
+			  return false;
+		  }
+		  openVars[*varIter] = false;
+	  }
+	  for(int b =0; b < nBlocks; ++b)
+	  {
+		  varIter = varsForBlocks[b].begin();
+		  varIterEnd = varsForBlocks[b].end();
+		  for(; varIter != varIterEnd; ++varIter)
+		  {
+			  if(!openVars[*varIter])
+			  {
+				  std::cout << "Warning! Variable with index " << *varIter << "is already assigned " << std::endl;
+				  return false;
+			  }
+			  openVars[*varIter] = false;
+		  }
+	  }
+
+	  /** check constraints (every constraint is assigned at most once */
+	  std::vector<bool> openConss(nConss, true) ;
+	  std::vector<int>  openConssVec(0);
+	  std::vector<int>::const_iterator consIter = masterconss.begin();
+	  std::vector<int>::const_iterator consIterEnd = masterconss.end();
+	  for(; consIter != consIterEnd; ++consIter)
+	  {
+		  if(!openConss[*consIter])
+		  {
+			  std::cout << "Warning! Constraint with index " << *consIter << "is already assigned " << std::endl;
+			  return false;
+		  }
+		  openConss[*consIter] = false;
+	  }
+
+	  for(int b =0; b < nBlocks; ++b)
+	  {
+		  consIter = conssForBlocks[b].begin();
+		  consIterEnd = conssForBlocks[b].end();
+		  for(; consIter != consIterEnd; ++consIter)
+		  {
+			  if(!openConss[*consIter])
+			  {
+				  std::cout << "Warning! Constraint with index " << *consIter << "is already assigned " << std::endl;
+				  return false;
+			  }
+			  openConss[*consIter] = false;
+		  }
+	  }
+
+	  return true;
   }
 
 
@@ -112,73 +163,169 @@ namespace gcg {
 
   /** add a variable to the master variables (every constraint consisting it is in master ) */
   SCIP_RETCODE Seeed::setVarToMaster(
-		   int varToMaster
-  );
+		  int varToMaster )
+  {
+  	  mastervars.push_back(varToMaster);
+
+  	  return SCIP_OKAY;
+  }
+
+
 
   /** add a constraint to a block */
   SCIP_RETCODE Seeed::setConsToBlock(
 		   int consToBlock,
 		   int block
-  );
+  ){
+	  assert(conssForBlocks.size() > block);
+
+	  conssForBlocks[consToBlock].push_back(consToBlock);
+
+	  return SCIP_OKAY;
+  }
 
   /** add a variable to a block */
   SCIP_RETCODE Seeed::setVarToBlock(
 		   int varToBlock,
 		   int block
-  );
+  )
+  {
+	  assert(varsForBlocks.size() > block);
+
+	  varsForBlocks[block].push_back(varToBlock);
+	  return SCIP_OKAY;
+  }
 
   /** add a variable to the linking variables */
   SCIP_RETCODE Seeed::setVarToLinking(
 		   int varToLinking
-  );
+  ){
+	  linkingVars.push_back(varToLinking);
+	  return SCIP_OKAY;
+  }
 
   /** add a variable to the stair linking variables */
   SCIP_RETCODE Seeed::setVarToStairlinking(
 		   int varToStairLinking
-  );
+  ){
+	  stairlinkingVars.push_back(varToStairLinking);
+
+	  return SCIP_OKAY;
+  }
+
+  /** sets seeed to be propagated by detector with detectorID  */
+  SCIP_RETCODE Seeed::setDetectorPropagated(
+		   int detectorID
+  ){
+	  assert(propagatedByDetector.size() > detectorID );
+	  propagatedByDetector[detectorID]  = true;
+
+	  return SCIP_OKAY;
+  }
 
 
   /** get-methods */
 
   /** returns vector containing master conss */
   std::vector<int> const & Seeed::getMasterconss(
-  );
+  ){
+	  return masterconss;
+  }
 
 
   /** returns vector containing master vars (every constraint containing a master var is in master )*/
   std::vector<int> const & Seeed::getMastervars(
-  );
+  ){
+	  return mastervars;
+  }
 
   /** returns vector containing master conss */
   std::vector<int> const & Seeed::getConssForBlock(
 		   int block
-  );
+  ){
+	  return conssForBlocks[block];
+  }
 
   /** returns vector containing vars of a certain block */
   std::vector<int> const & Seeed::getVarsForBlock(
 		   int block
-  );
+  ){
+	  return varsForBlocks[block];
+  }
 
   /** returns vector containing linking vars */
   std::vector<int> const & Seeed::getLinkingvars(
-  );
+  ){
+	  return linkingVars;
+  }
 
   /** returns vector containing stairlinking vars */
   std::vector<int> const & Seeed::getStairlinkingvars(
-  );
+  ){
+	  return stairlinkingVars;
+  }
 
-  /** returns vector containing variables not assigned yet */
-  std::vector<int> const & Seeed::getOpenvars(
-  );
+  /** constructs and returns vector containing variables not assigned yet */
+  std::vector<int>  Seeed::getOpenvars(
+  ){
+	  std::vector<bool> openVars(nVars, true) ;
+	  std::vector<int>  openVarsVec(0);
+	  std::vector<int>::const_iterator varIter = linkingVars.begin();
+	  std::vector<int>::const_iterator varIterEnd = linkingVars.end();
+	  for(; varIter != varIterEnd; ++varIter)
+		  openVars[*varIter] = false;
+	  for(int b =0; b < nBlocks; ++b)
+	  {
+		  varIter = varsForBlocks[b].begin();
+		  varIterEnd = varsForBlocks[b].end();
+		  for(; varIter != varIterEnd; ++varIter)
+		  		  openVars[*varIter] = false;
+	  }
+
+	  for (int i = 0; i < nVars; ++i)
+	  {
+		  if(!openVars[i])
+			  openVarsVec.push_back(i);
+	  }
+
+
+	  return openVars;
+  }
 
   /** returns vector containing constraints not assigned yet */
-  std::vector<int> const & Seeed::getOpenconss(
-  );
+  std::vector<int>  Seeed::getOpenconss(
+  ){
+	  std::vector<bool> openConss(nConss, true) ;
+	  std::vector<int>  openConssVec(0);
+	  std::vector<int>::const_iterator consIter = masterconss.begin();
+	  std::vector<int>::const_iterator consIterEnd = masterconss.end();
+	  for(; consIter != consIterEnd; ++consIter)
+	  		  openConss[*consIter] = false;
+	  for(int b =0; b < nBlocks; ++b)
+	  {
+		  consIter = conssForBlocks[b].begin();
+		  consIterEnd = conssForBlocks[b].end();
+		  for(; consIter != consIterEnd; ++consIter)
+			  openConss[*consIter] = false;
+	  }
+
+	  for (int i = 0; i < nConss; ++i)
+	  {
+		  if(!openConss[i])
+			  openConssVec.push_back(i);
+	  }
+
+
+	  return openConss;
+  }
 
   /** returns whether this seeed was propagated by certain detector */
   bool Seeed::isPropagatedBy(
 		   int detectorID
-  );
+  ){
+	  assert(propagatedByDetector.size() > detectorID);
+	  return propagatedByDetector[detectorID];
+  }
 
 
 

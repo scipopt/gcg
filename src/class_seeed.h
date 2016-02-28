@@ -50,14 +50,16 @@ class Seeed
 private:
    int								id;						/**< id of the seeed */
    int 								nBlocks;				/**< number of blocks the decomposition currently has */
+   int 								nVars;
+   int								nConss;
    std::vector<int>					masterconss;			/**< vector containing indices of master constraints */
    std::vector<int>					mastervars;				/**< vector containing indices of master variables */
    std::vector<std::vector<int>> 	conssForBlocks; 		/**< conssForBlocks[k] contains a vector of indices of all constraints assigned to block k */
    std::vector<std::vector<int>> 	varsForBlocks; 			/**< varsForBlocks[k] contains a vector of indices of all variables assigned to block k */
    std::vector<int> 				linkingVars;			/**< vector containing indices of linking variables */
    std::vector<int> 				stairlinkingVars;		/**< vector containing indices of staircase linking variables */
-   std::vector<int> 				openVars;				/**< vector containing indices of  variables that are not assigned yet*/
-   std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
+//   std::vector<int> 				openVars;				/**< vector containing indices of  variables that are not assigned yet*/
+//   std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
 
 
@@ -119,6 +121,10 @@ public:
 		   int varToStairLinking
    );
 
+   SCIP_RETCODE setDetectorPropagated(
+   		   int detectorID
+     );
+
 
    /** get-methods */
 
@@ -150,11 +156,11 @@ public:
    );
 
    /** returns vector containing variables not assigned yet */
-   std::vector<int> const & getOpenvars(
+   std::vector<int> getOpenvars(
    );
 
    /** returns vector containing constraints not assigned yet */
-   std::vector<int> const & getOpenconss(
+   std::vector<int> getOpenconss(
    );
 
    /** returns whether this seeed was propagated by certain detector */
