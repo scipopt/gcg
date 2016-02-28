@@ -57,7 +57,6 @@ namespace gcg {
  Seeedpool::Seeedpool(
     SCIP*             givenScip               /**< SCIP data structure */
     ):scip(givenScip), seeeds(0)
- //, scipVarToIndex(), scipDetectorToIndex()
  {
 
  }
