@@ -40,7 +40,7 @@
 #include <tr1/unordered_map> //c++ hashmap
 
 #include "gcg.h"
-#include "class_seeedpool.h"
+
 #include "class_seeed.h"
 
 
