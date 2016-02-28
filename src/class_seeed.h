@@ -35,8 +35,8 @@
 #ifndef GCG_CLASS_SEEED_H__
 #define GCG_CLASS_SEEED_H__
 
-#include "objscip/objscip.h"
 
+#include "objscip/objscip.h"
 #include <vector>
 
 

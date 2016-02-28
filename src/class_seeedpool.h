@@ -35,16 +35,12 @@
 #ifndef GCG_CLASS_SEEEDPOOL_H__
 #define GCG_CLASS_SEEEDPOOL_H__
 
-//#include "objscip/objscip.h"
-//#include "class_pricingtype.h"
+#include "objscip/objscip.h"
 #include <vector>
-
+#include <tr1/unordered_map> //c++ hashmap
 
 #include "gcg.h"
-
-
-//#include <tr1/unordered_map> //c++ hashmap
-//#include <boost/shared_ptr.hpp>
+#include "class_seeedpool.h"
 #include "class_seeed.h"
 
 
@@ -80,7 +76,7 @@ public:
 
    /** constructor */
    Seeedpool(
-      SCIP*             scip,               /**< SCIP data structure */
+      SCIP*             scip /**< SCIP data structure */
       );
 
    ~Seeedpool();
