@@ -86,6 +86,11 @@ public:
    DEC_DECOMP**       	findDecompostions(
    );
 
+   /** access coefficient matrix constraint-wise */
+   std::vector<int> const & getVarsForCons(int cons);
+
+   /** access coefficient matrix variable-wise */
+   std::vector<int> const & getConssForVar(int varid);
 
 
 };

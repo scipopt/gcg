@@ -205,10 +205,6 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 		 }
 	 }
 
-
-
-
-
  }
 
  Seeedpool::~Seeedpool(){
@@ -219,7 +215,22 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
  /** finds decompositions  */
  DEC_DECOMP**    Seeedpool::findDecompostions(
  ){
+
+
 	 return NULL;
  }
+
+ /** access coefficient matrix constraint-wise */
+ std::vector<int> const & Seeedpool::getVarsForCons(int cons){
+	 return varsForConss[cons];
+ }
+
+ /** access coefficient matrix variable-wise */
+ std::vector<int> const & Seeedpool::getConssForVar(int var){
+	 return conssForVars[var];
+ }
+
+
+
 
 } /* namespace gcg */
