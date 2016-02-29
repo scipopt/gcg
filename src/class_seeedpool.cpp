@@ -36,7 +36,7 @@
 #include "gcg.h"
 #include "objscip/objscip.h"
 #include "class_seeedpool.h"
-
+#include "struct_detector.h"
 
 #include <exception>
 
@@ -51,19 +51,173 @@
                        }                                                                                      \
                        while( FALSE )
 
+/** constraint handler data */
+struct SCIP_ConshdlrData
+{
+   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
+   DEC_DETECTOR**        detectors;          /**< array of structure detectors */
+   int*                  priorities;         /**< priorities of the detectors */
+   int                   ndetectors;         /**< number of detectors */
+   SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
+   SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
+   int                   ndecomps;           /**< number of decomposition structures  */
+   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+};
+
 namespace gcg {
+
+/** local methods */
+
+SCIP_CONS* consGetRelevantRepr(SCIP* scip, SCIP_CONS* cons){
+
+		return cons;
+}
+
+SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
+
+		return var;
+}
+
 
 /** constructor */
  Seeedpool::Seeedpool(
-    SCIP*             givenScip               /**< SCIP data structure */
-    ):scip(givenScip), seeeds(0)
+    SCIP*             	givenScip, /**< SCIP data structure */
+	const char*  		conshdlrName
+    ):scip(givenScip), seeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0)
  {
+	 SCIP_CONS** conss;
+	 SCIP_VAR** vars;
+
+	 SCIP_CONSHDLR* conshdlr;  /** cons_decomp to get detectors */
+	 SCIP_CONSHDLRDATA* conshdlrdata;
+
+	 int relevantVarCounter = 0;
+	 int relevantConsCounter = 0;
+
+	 /** store all enabled detectors */
+
+	 conshdlr = SCIPfindConshdlr(scip, conshdlrName);
+	 assert(conshdlr != NULL);
+	 conshdlrdata = SCIPconshdlrGetData(conshdlr);
+	 assert(conshdlrdata != NULL);
+
+	 for(int d = 0; d < conshdlrdata->ndetectors; ++d )
+	 {
+		 DEC_DETECTOR *detector;
+		 detector = conshdlrdata->detectors[d];
+		 assert(detector != NULL);
+		 conshdlrdata->priorities[d] = detector->priority;
+	 }
+
+	 SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
+	 SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
+
+	 SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
+	 for(int d = 0; d < conshdlrdata->ndetectors; ++d )
+	 {
+		 DEC_DETECTOR* detector;
+
+		 detector = conshdlrdata->detectors[d];
+		 assert(detector != NULL);
+		 if( !detector->enabled )
+			 continue;
+
+		 scipDetectorToIndex[detector] = nDetectors;
+		 detectorToScipDetector.push_back(detector);
+		 ++nDetectors;
+
+	 }
+
+
+	 /** initilize matrix datastructures */
+	 conss = SCIPgetConss(scip);
+	 vars = SCIPgetVars(scip);
+
+	 /** assign an index to every cons and var
+	  * @TODO: are all constraints/variables relevant? (probvars etc)  */
+	 for(int i = 0; i < nConss; ++i)
+	 {
+		 SCIP_CONS* relevantCons;
+
+		 relevantCons = consGetRelevantRepr(scip, conss[i]);
+		 if( relevantCons != NULL )
+		 {
+			 scipConsToIndex[relevantCons] = relevantConsCounter ;
+			 consToScipCons.push_back(relevantCons);
+			 ++relevantConsCounter;
+		 }
+	 }
+
+	 for(int i = 0; i < nVars; ++i)
+	 {
+		 SCIP_VAR* relevantVar;
+
+		 relevantVar = varGetRelevantRepr(scip, vars[i]);
+
+		 if( relevantVar != NULL )
+		 {
+			 scipVarToIndex[relevantVar] = relevantVarCounter ;
+			 varToScipVar.push_back(relevantVar);
+			 ++relevantVarCounter;
+		 }
+	 }
+
+	 /** from here on nVars and nConss represents the relevant numbers */
+	 nVars = relevantVarCounter;
+	 nConss = relevantConsCounter;
+	 varsForConss = std::vector<std::vector<int>>(nConss);
+	 conssForVars = std::vector<std::vector<int>>(nVars);
+
+	 assert(varToScipVar.size() == nVars);
+	 assert(consToScipCons.size() == nConss);
+
+	 /** assumption: now every relevant constraint and variable has its index and is stored in the corresponding unordered_map */
+	 /** find constraint <-> variable relationships and store them in both directions */
+	 for(int i = 0; i < (int)consToScipCons.size() ; ++i)
+	 {
+		 SCIP_CONS* cons;
+		 SCIP_VAR** currVars;
+		 int 		nCurrVars;
+		 SCIP_Bool  success;
+
+		 cons = consToScipCons[i];
+
+		 SCIP_CALL_ABORT( SCIPgetConsNVars(scip, cons, &nCurrVars, &success ) );
+		 assert(success);
+
+		 SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVars, nCurrVars) );
+		 SCIPgetConsVars(scip, cons, currVars, nCurrVars, &success );
+
+		 for(int currVar = 0; currVar < nCurrVars; ++currVar)
+		 {
+			 int varIndex;
+
+			 std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar = scipVarToIndex.find(currVars[currVar]);
+
+			 if(iterVar == scipVarToIndex.end() )
+				 continue;
+
+			 varIndex = iterVar->second;
+
+			 varsForConss[i].push_back(varIndex);
+			 conssForVars[varIndex].push_back(i);
+
+		 }
+	 }
+
+
+
+
+
+ }
+
+ Seeedpool::~Seeedpool(){
 
  }
 
 
  /** finds decompositions  */
- DEC_DECOMP**       	Seeedpool::findDecompostions(
+ DEC_DECOMP**    Seeedpool::findDecompostions(
  ){
 	 return NULL;
  }

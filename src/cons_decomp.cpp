@@ -518,7 +518,7 @@ SCIP_RETCODE DECdetectStructure(
 
    if( conshdlrdata->ndecomps == 0 )
    {
-	   //Seeedpool seeedpool(scip);
+	  gcg::Seeedpool seeedpool(scip, CONSHDLR_NAME);
 
       for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
