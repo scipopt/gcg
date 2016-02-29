@@ -58,6 +58,7 @@ struct DEC_Detector {
    DEC_DECL_INITDETECTOR((*initDetection));  /**< initialization method of detector */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)); /**< structure detection method of detector */
    DEC_DECL_EXITDETECTOR((*exitDetection));  /**< deinitialization method of detector */
+   DEC_DECL_PROPAGATESEEED((*propagateSeeed));
 };
 
 #ifdef __cplusplus
