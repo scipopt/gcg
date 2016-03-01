@@ -91,7 +91,7 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
  Seeedpool::Seeedpool(
     SCIP*             	givenScip, /**< SCIP data structure */
 	const char*  		conshdlrName
-    ):scip(givenScip), seeeds(0), nSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0)
+    ):scip(givenScip), currSeeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0)
  {
 	 SCIP_CONS** conss;
 	 SCIP_VAR** vars;
@@ -215,9 +215,9 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 
 	 /* populate seeed vector with empty seeed */
 
-	 seeeds.push_back(new Seeed(nSeeeds,nDetectors,nConss,nVars) );
+	 currSeeeds.push_back(new Seeed(nTotalSeeeds,nDetectors,nConss,nVars) );
 
-	 nSeeeds++;
+	 nTotalSeeeds++;
 
 
  }//end constructor
@@ -231,10 +231,44 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
  DEC_DECOMP**    Seeedpool::findDecompostions(
  ){
 
+	 /** 1) read parameter, as there are: maxrounds
+	  *  2) loop rounds
+	  *  3) every seeed in seeeds
+	  *  4) every detector not registered yet propagetes seeed
+	  *  5)  */
+
+	 int maxRounds;
+	 SEEED_PROPAGATION_DATA* helpdata;
+
+	 maxRounds = 2;
+	 helpdata = new SEEED_PROPAGATION_DATA();
+	 helpdata->seeedpool = this;
+
+	 for(int round = 0; round < maxRounds; ++round)
+		 for(size_t s = 0; s < currSeeeds.size(); ++s )
+			 for(int d = 0; d < nDetectors; ++d)
+			 {
+				 SeeedPtr seeedPtr;
+
+				 seeedPtr= currSeeeds[s];
+				 SCIP_RESULT* result;
+
+				 if(seeedPtr->isPropagatedBy(d) )
+					 continue;
+
+				 helpdata->seeedToPropagate = seeedPtr;
+				 helpdata->newSeeeds = std::vector<SeeedPtr>(0);
+
+				 SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, helpdata, result) );
+
+				 assert(seeedPtr->isPropagatedBy(d));
+
+				 checkAndAddNewSeeeds(helpdata->newSeeeds);
+
+			 }
 
 
-
-
+	 delete helpdata;
 
 	 return NULL;
  }

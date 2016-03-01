@@ -55,9 +55,10 @@ class Seeedpool
 
 private:
    SCIP*                 						scip;              	/**< SCIP data structure */
-   std::vector<SeeedPtr> 						seeeds;				/**< vector of current (open) seeeds */
+   std::vector<SeeedPtr> 						currSeeeds;				/**< vector of current (open) seeeds */
+   std::vector<SeeedPtr> 						finishedSeeeds;				/**< vector of current (open) seeeds */
 
-   int											nSeeeds;			/**< number of created seeeeds, used to give next id */
+   int											nTotalSeeeds;			/**< number of created seeeeds, used to give next id */
    std::vector<std::vector<int>> 				varsForConss; 		/** stores for every constraint the indices of variables that are contained in the constraint */
    std::vector<std::vector<int>> 				conssForVars; 		/** stores for every variable the indices of constraints containing this variable */
 
