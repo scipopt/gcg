@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1507,7 +1507,7 @@ SCIP_RETCODE DECdecompAddRemainingConss(
             if( decdecomp->nlinkingconss == 0 )
             {
                int newsize = SCIPcalcMemGrowSize(scip, 1);
-               SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decdecomp->linkingconss, newsize));
+               SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decdecomp->linkingconss, newsize) );
 
                switch( decdecomp->type )
                {
@@ -2849,16 +2849,16 @@ SCIP_RETCODE computeConssNzeros(
       block = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), (curvar))) - 1; /*lint !e507 */
       assert(block >= 0);
 
-      if(block > DECdecompGetNBlocks(decomp) )
+      if( block > DECdecompGetNBlocks(decomp) )
       {
-         if( SCIPvarGetType(curvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(curvar) == SCIP_VARTYPE_INTEGER)
+         if( SCIPvarGetType(curvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(curvar) == SCIP_VARTYPE_INTEGER )
             *nintbzeros += 1;
 
          *nbzeros += 1;
       }
       else
       {
-         if( SCIPvarGetType(curvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(curvar) == SCIP_VARTYPE_INTEGER)
+         if( SCIPvarGetType(curvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(curvar) == SCIP_VARTYPE_INTEGER )
             *nintzeros += 1;
 
          *nzeros += 1;
@@ -2902,13 +2902,13 @@ SCIP_RETCODE computeNonzeros(
       int nsubscipconss = DECdecompGetNSubscipconss(decomp)[b];
       for( c = 0; c < nsubscipconss; ++c )
       {
-         SCIP_CALL( computeConssNzeros(scip, decomp, subscipconss[c], &(nonzeros[b]), &(intnzeros[b]), lnzeros, lintnzeros ));
+         SCIP_CALL( computeConssNzeros(scip, decomp, subscipconss[c], &(nonzeros[b]), &(intnzeros[b]), lnzeros, lintnzeros ) );
       }
    }
 
    for( c = 0; c < DECdecompGetNLinkingconss(decomp); ++c )
    {
-      SCIP_CALL( computeConssNzeros(scip, decomp, DECdecompGetLinkingconss(decomp)[c], mnzeros, mintnzeros, lnzeros, lintnzeros ));
+      SCIP_CALL( computeConssNzeros(scip, decomp, DECdecompGetLinkingconss(decomp)[c], mnzeros, mintnzeros, lnzeros, lintnzeros ) );
    }
 
    return SCIP_OKAY;
@@ -3017,7 +3017,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  blocks           : %10d\n", DECdecompGetNBlocks(decomp));
 
    nblocksrelevant = nblocks;
-   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED)
+   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED )
    {
       for( b = 0; b < nblocks; ++b )
       {
@@ -3038,7 +3038,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
       int identical = 0;
       SCIP_Bool relevant = TRUE;
 
-      if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED)
+      if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED )
       {
          relevant =  GCGisPricingprobRelevant(scip, b);
          identical = GCGgetNIdenticalBlocks(scip, b);
@@ -3479,7 +3479,7 @@ SCIP_RETCODE DECcreatePolishedDecomp(
    assert(decomp != NULL);
    assert(newdecomp != NULL);
 
-   if( DECdecompGetNBlocks(decomp) == 1)
+   if( DECdecompGetNBlocks(decomp) == 1 )
    {
       *newdecomp = NULL;
       return SCIP_OKAY;

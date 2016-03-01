@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.1.0
+VERSION         :=	2.1.1
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -57,9 +57,9 @@ MASTERSETTINGS	=	default
 VALGRIND	=	false
 MODE		=	readdec
 PROJECT		=	none
-GTEST		=	true
+GTEST		=	false
 PARASCIP	= 	true
-BLISS      	=   true
+BLISS      	=   false
 OPENMP      =   false
 GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
@@ -205,7 +205,7 @@ LIBOBJ		=	reader_blk.o \
 			dialog_graph.o \
 			gcgpqueue.o \
 			gcgcol.o \
-			class_colpool.o 
+			class_colpool.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

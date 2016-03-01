@@ -19,13 +19,13 @@
 # The queue is passed via $QUEUE (possibly defined in a local makefile in scip/make/local).
 #
 # For each run, we can specify the number of nodes reserved for a run via $PPN. If tests runs
-# with valid time measurements should be executed, this number should be chosen in such a way 
+# with valid time measurements should be executed, this number should be chosen in such a way
 # that a job is run on a single computer, i.e., in general, $PPN should equal the number of cores
 # of each computer. If course, the value depends on the specific computer/queue.
 #
 # To get the result files call "./evalcheck_cluster.sh
 # results/check.$TSTNAME.$BINNAME.$SETNAME.eval in directory check/
-# This leads to result files 
+# This leads to result files
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.out
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.res
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.err
@@ -66,7 +66,7 @@ fi
 # we add 10% to the hard time limit and additional 600 seconds in case of small time limits
 # NOTE: the jobs should have a hard running time of more than 5 minutes; if not so, these
 #       jobs get automatically assigned in the "exrpess" queue; this queue has only 4 CPUs
-#       available 
+#       available
 HARDTIMELIMIT=`expr \`expr $TIMELIMIT + 600\` + $TIMELIMIT`
 
 # since bash counts cpu time we need the time limit for each thread
@@ -109,11 +109,11 @@ do
 
   COUNT=`expr $COUNT + 1`
 
-  # in case we want to continue we check if the job was already performed 
+  # in case we want to continue we check if the job was already performed
   if test "$CONTINUE" != "false"
       then
       if test -e results/$FILENAME.out
-	  then 
+	  then
 	  echo skipping file $i due to existing output file $FILENAME.out
 	  continue
       fi

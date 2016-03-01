@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -554,7 +554,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
              *  - the master variable is a copied linking variable and the bound change was performed
              *    in one of the blocks that the variable is linking
              */
-            if( (bndchgblocknr != blocknr)
+            if( (bndchgblocknr != blocknr )
                && !(GCGmasterVarIsLinking(vars[i]) && GCGisLinkingVarInBlock(origvars[0], bndchgblocknr)) )
                continue;
 

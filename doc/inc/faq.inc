@@ -35,24 +35,35 @@
       <a name="Q3">What are the detected structures?</a>
     </p>
     <p class="a">
-      GCG has built in detection code for block diagonal problems and for
-      classical set partitioning or setcovering master problems. In order to
-      benefit from the automatic detection, your problem must contain only set
-      partitioning or set covering constraints in the master and non set
-      covering or set partitioning constraints in each of the pricing
-      subproblems. <br />
-      After removing all set partitioning or covering constraints from the
-      problem, the pricing problems need to be disjoint, e.g. they share no
-      common variables. In these cases, GCG can detect the structure
-      automatically. <br />
-      This works for bin packing, coloring, capacitated p-median, generalized
-      assignment problems as well as for cutting stock, in which the set
-      partitioning is relaxed to set partitioning with integer right hand side.
+      GCG contains several detectors to find a block diagonal structures in
+      the constraint matrix, pure ones as well as such with a
+      border. Additionally, some detectors are able to detect staircase
+      structures where no linking constraints are present and linking variables
+      only occur between two consecutive blocks. <br />
+      With applications such as bin packing, capacitated p-median and
+      generalized assignment problems in mind, we furthermore included a
+      detector that only assigns set partitioning and set covering constraints
+      to the master problem.
+   </p>
+
+    <p class="q">
+      <a name="Q3a">Why are some detectors switch off by default?</a>
+    </p>
+    <p class="a">
+      While several detectors are only experimental, others need external
+      software.
+      Some detectors rely
+      on <a href="http://glaros.dtc.umn.edu/gkhome/metis/hmetis/overview">hMETIS</a>
+      and only work under Unix based systems. To use them, you must either
+      install hMETIS from the package sources (if available there) or download it
+      and put the executable in a directory contained in the <tt>PATH</tt>
+      environment variable.
+      The Isomorphism detector needs Bliss (see <a href="#Q8">here</a>).
    </p>
 
     <h4><a name="Section2">Decomposition file related questions</a></h4>
     <p class="q">
-      <a name="Q4">Which filereaders can read decompositions</a>
+      <a name="Q4">Which filereaders can read decompositions?</a>
     </p>
     <p class="a">
       Currently GCG reads three different decomposition structure information:
@@ -64,7 +75,7 @@
     </p>
 
     <p class="q">
-      <a name="Q5">Why is presolving important for the decomposition</a>
+      <a name="Q5">Why is presolving important for the decomposition?</a>
     </p>
     <p class="a">
       As GCG uses several presolving methods from SCIP, the transformed problem
@@ -81,7 +92,7 @@
 
     <p class="q">
       <a name="Q6">After reading the decomposition file, GCG tells me that the
-	behaviour is undefined</a>
+	behaviour is undefined.</a>
     </p>
     <p class="a">
       If GCG can not detect whether your decomposition is for the presolved or
@@ -107,18 +118,20 @@
       <a name="Q8">How does aggregation work in GCG?</a>
     </p>
     <p class="a">
-       Currently, aggregation in GCG is very simple. If the same variables
-      appear in the same order with the same coefficients in the same
-      constraints for all pricing problems to be aggregated, GCG will detect
-      that. However, it currently does not do more then that e.g., trying to
-      permute the pricing problems in order to find out if they can be
-      aggregated.<br />
+       Detecting whether (some) pricing problems can be aggregated is done using 
+      <a href="http://www.tcs.hut.fi/Software/bliss/">Bliss</a>, an external 
+      tool for computing automorphism groups of graphs. After a decomposition has been 
+      selected, we check for each pair of pricing problems if they are identical
+      (and their variables have the same coefficients in the same master constraints)
+      by creating an auxiliary graph and trying to find a suitable automorphism 
+      using Bliss. Identical pricing problems are then aggregated.
+      See the <a href="INSTALL.html">installation information </a>
+      for an instruction on how to include bliss.<br />
 
-      Furthermore, aggregation is only supported if the master problem
-      consists of set partitioning or (in case of a minimization problem) set
-      covering constraints. We are currently implementing a generic branching
-      scheme as well as more sophisticated detection methods in order to
-      improve the aggregation in the future.
+       If Bliss is not included, aggregation in GCG is done very simple. If the 
+      same variables appear in the same order with the same coefficients in the same
+      constraints for all pricing problems (and with the same coefficients in the 
+      master constraints), GCG will detect that and aggregate the pricing problems.
     </p>
 </div>
 
