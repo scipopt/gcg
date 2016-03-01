@@ -58,7 +58,7 @@
 #define DEC_PRIORITY             100         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'I'         /**< display character of detector */
 
-#define DEC_ENABLED              FALSE       /**< should the detection be enabled */
+#define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 TRUE        /**< should the detector be skipped if others found decompositions */
 
 /*
