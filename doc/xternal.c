@@ -514,6 +514,8 @@ GCG> q
 
 /**@page RELEASENOTES Release notes
  *
+ * \verbinclude release-notes-2.1.1
+ *
  * \verbinclude release-notes-2.1.0
  *
  * \verbinclude release-notes-2.0.1
