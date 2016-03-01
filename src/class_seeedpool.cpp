@@ -86,6 +86,11 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 		return var;
 }
 
+SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currSeeeds, std::vector<SeeedPtr> const & finishedSeeeeds){
+
+	return TRUE;
+}
+
 
 /** constructor */
  Seeedpool::Seeedpool(
@@ -98,6 +103,7 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 
 	 SCIP_CONSHDLR* conshdlr;  /** cons_decomp to get detectors */
 	 SCIP_CONSHDLRDATA* conshdlrdata;
+
 
 	 int relevantVarCounter = 0;
 	 int relevantConsCounter = 0;
@@ -238,39 +244,52 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 	  *  5)  */
 
 	 int maxRounds;
-	 SEEED_PROPAGATION_DATA* helpdata;
+	 SEEED_PROPAGATION_DATA* seeedPropData;
+	 DEC_DECOMP** decompostions;
 
 	 maxRounds = 2;
-	 helpdata = new SEEED_PROPAGATION_DATA();
-	 helpdata->seeedpool = this;
+	 seeedPropData = new SEEED_PROPAGATION_DATA();
+	 seeedPropData->seeedpool = this;
 
 	 for(int round = 0; round < maxRounds; ++round)
 		 for(size_t s = 0; s < currSeeeds.size(); ++s )
+		 {
+			 SeeedPtr seeedPtr;
+			 seeedPtr= currSeeeds[s];
+
 			 for(int d = 0; d < nDetectors; ++d)
 			 {
-				 SeeedPtr seeedPtr;
+				 std::vector<SeeedPtr>::const_iterator newSIter;
+				 std::vector<SeeedPtr>::const_iterator newSIterEnd;
 
-				 seeedPtr= currSeeeds[s];
 				 SCIP_RESULT* result;
 
 				 if(seeedPtr->isPropagatedBy(d) )
 					 continue;
 
-				 helpdata->seeedToPropagate = seeedPtr;
-				 helpdata->newSeeeds = std::vector<SeeedPtr>(0);
+				 seeedPropData->seeedToPropagate = seeedPtr;
+				 seeedPropData->newSeeeds = std::vector<SeeedPtr>(0);
 
-				 SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, helpdata, result) );
+				 SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, seeedPropData, result) );
 
 				 assert(seeedPtr->isPropagatedBy(d));
 
-				 checkAndAddNewSeeeds(helpdata->newSeeeds);
+				 newSIter = seeedPropData->newSeeeds.begin();
+				 newSIterEnd = seeedPropData->newSeeeds.end();
 
+				 for(; newSIter != newSIterEnd; ++newSIter)
+				 {
+					 if(seeedIsNoDuplicate(*newSIter, currSeeeds, finishedSeeeds ))
+					 {
+						 currSeeeds.push_back(*newSIter);
+					 }
+				 }
 			 }
+		 }
 
+	 delete seeedPropData;
 
-	 delete helpdata;
-
-	 return NULL;
+	 return decompostions;
  }
 
  /** access coefficient matrix constraint-wise */
