@@ -41,12 +41,13 @@
 #include "scip/type_result.h"
 #include "type_decomp.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct DEC_Detector DEC_DETECTOR;
 typedef struct DEC_DetectorData DEC_DETECTORDATA;
+
+struct Seeed_Propagation_Data;
+typedef struct Seeed_Propagation_Data SEEED_PROPAGATION_DATA;
+
 
 /**
  * detector initialization method. This method is called when detection is
@@ -91,6 +92,9 @@ typedef struct DEC_DetectorData DEC_DETECTORDATA;
  */
 #define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* detectordata, DEC_DECOMP*** decdecomps, int* ndecdecomps, SCIP_RESULT* result)
 
+
+
+
 /**
  * given a seeed (incomplete decomposition) the detector
  * tries to find refined seeed and stores the
@@ -111,11 +115,9 @@ typedef struct DEC_DetectorData DEC_DETECTORDATA;
  *  - SCIP_DIDNOTRUN  : the method did not run
  */
 
-#define DEC_DECL_PROPAGATESEEED(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* detectordata, DEC_DECOMP*** decdecomps, int* ndecdecomps, SCIP_RESULT* result)
+#define DEC_DECL_PROPAGATESEEED(x) SCIP_RETCODE x (SCIP* scip, SEEED_PROPAGATION_DATA* seeedPropagationData, SCIP_RESULT* result)
 
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif

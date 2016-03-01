@@ -51,6 +51,14 @@
                        }                                                                                      \
                        while( FALSE )
 
+struct Seeed_Propagation_Data
+{
+	gcg::Seeedpool* seeedpool;
+	gcg::Seeed* seeedToPropagate;
+	std::vector<gcg::Seeed*> newSeeeds;
+};
+
+
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
@@ -83,7 +91,7 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
  Seeedpool::Seeedpool(
     SCIP*             	givenScip, /**< SCIP data structure */
 	const char*  		conshdlrName
-    ):scip(givenScip), seeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0)
+    ):scip(givenScip), seeeds(0), nSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0)
  {
 	 SCIP_CONS** conss;
 	 SCIP_VAR** vars;
@@ -119,7 +127,7 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 
 		 detector = conshdlrdata->detectors[d];
 		 assert(detector != NULL);
-		 if( !detector->enabled )
+		 if( !detector->enabled || detector->propagateSeeed == NULL)
 			 continue;
 
 		 scipDetectorToIndex[detector] = nDetectors;
@@ -205,7 +213,14 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 		 }
 	 }
 
- }
+	 /* populate seeed vector with empty seeed */
+
+	 seeeds.push_back(new Seeed(nSeeeds,nDetectors,nConss,nVars) );
+
+	 nSeeeds++;
+
+
+ }//end constructor
 
  Seeedpool::~Seeedpool(){
 
@@ -215,6 +230,10 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
  /** finds decompositions  */
  DEC_DECOMP**    Seeedpool::findDecompostions(
  ){
+
+
+
+
 
 
 	 return NULL;

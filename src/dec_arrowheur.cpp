@@ -46,6 +46,8 @@
 #include <cstring>
 #include <cerrno>
 #include <unistd.h>
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 
 #include "cons_decomp.h"
 #include "struct_decomp.h"
@@ -60,6 +62,7 @@
 #include "graph/hyperrowgraph.h"
 #include "graph/graph_tclique.h"
 #include "graph/weights.h"
+
 
 #include <set>
 
@@ -143,6 +146,9 @@ struct DEC_DetectorData
                                    constraints), 'r' row hypergraph (single bordered, no linking variables) and
                                    'a' column-row hypergraph (arrowhead) */
 };
+
+
+
 
 /*
  * Local methods

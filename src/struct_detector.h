@@ -37,9 +37,7 @@
 
 #include "type_detector.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /** detector data structure */
 struct DEC_Detector {
@@ -61,8 +59,5 @@ struct DEC_Detector {
    DEC_DECL_PROPAGATESEEED((*propagateSeeed));
 };
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif
