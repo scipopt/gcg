@@ -25,8 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   class_colpool.cpp
- * @brief  class with functions for colpool
+/**@file   class_seeed.cpp
+ * @brief  class with functions for seeed (aka incomplete decomposition )
  * @author Michael Bastubbe
  *
  */
