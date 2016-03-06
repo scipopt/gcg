@@ -89,10 +89,19 @@ public:
    );
 
    /** access coefficient matrix constraint-wise */
-   std::vector<int> const & getVarsForCons(int cons);
+   const  int *  getVarsForCons(int consIndex);
 
    /** access coefficient matrix variable-wise */
-   std::vector<int> const & getConssForVar(int varid);
+   const  int * getConssForVar(int varIndex);
+
+   SCIP_VAR* getVarForIndex(int varIndex);
+
+   SCIP_CONS* getConsForIndex(int consIndex);
+
+   int getIndexForVar(SCIP_VAR* var);
+
+   int getIndexForCons(SCIP_CONS* cons);
+
 
 
 };

@@ -25,8 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   class_colpool.cpp
- * @brief  class with functions for colpool
+/**@file   class_seeedpool.cpp
+ * @brief  class with functions for seeedpool
  * @author Michael Bastubbe
  *
  */
@@ -55,7 +55,8 @@ struct Seeed_Propagation_Data
 {
 	gcg::Seeedpool* seeedpool;
 	gcg::Seeed* seeedToPropagate;
-	std::vector<gcg::Seeed*> newSeeeds;
+	gcg::Seeed*** newSeeeds;
+	int* nNewSeeeds;
 };
 
 
@@ -245,7 +246,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 	 int maxRounds;
 	 SEEED_PROPAGATION_DATA* seeedPropData;
-	 DEC_DECOMP** decompostions;
+	 DEC_DECOMP** decompositions;
 
 	 maxRounds = 2;
 	 seeedPropData = new SEEED_PROPAGATION_DATA();
@@ -268,38 +269,58 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 					 continue;
 
 				 seeedPropData->seeedToPropagate = seeedPtr;
-				 seeedPropData->newSeeeds = std::vector<SeeedPtr>(0);
+				 gcg::Seeed** newSeeeds;
+				 int nNewSeeeds;
+				 seeedPropData->newSeeeds = &newSeeeds;
+				 seeedPropData->nNewSeeeds = &nNewSeeeds;
+
 
 				 SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, seeedPropData, result) );
 
 				 assert(seeedPtr->isPropagatedBy(d));
 
-				 newSIter = seeedPropData->newSeeeds.begin();
-				 newSIterEnd = seeedPropData->newSeeeds.end();
 
-				 for(; newSIter != newSIterEnd; ++newSIter)
+				 for(int seeed = 0; seeed<nNewSeeeds; ++seeed)
 				 {
-					 if(seeedIsNoDuplicate(*newSIter, currSeeeds, finishedSeeeds ))
+					 if(seeedIsNoDuplicate(newSeeeds[seeed], currSeeeds, finishedSeeeds ))
 					 {
-						 currSeeeds.push_back(*newSIter);
+						 currSeeeds.push_back(newSeeeds[seeed]);
 					 }
 				 }
 			 }
 		 }
 
+
 	 delete seeedPropData;
 
-	 return decompostions;
+	 return decompositions;
  }
 
- /** access coefficient matrix constraint-wise */
- std::vector<int> const & Seeedpool::getVarsForCons(int cons){
-	 return varsForConss[cons];
+ /** access coefficient matrlix constraint-wise */
+ const  int * Seeedpool::getVarsForCons(int cons){
+	 return &varsForConss[cons][0];
  }
 
  /** access coefficient matrix variable-wise */
- std::vector<int> const & Seeedpool::getConssForVar(int var){
-	 return conssForVars[var];
+ const  int * Seeedpool::getConssForVar(int var){
+	 return &conssForVars[var][0];
+ }
+
+ SCIP_VAR* Seeedpool::getVarForIndex(int varIndex){
+	 return varToScipVar[varIndex];
+ }
+
+ SCIP_CONS* Seeedpool::getConsForIndex(int consIndex)
+ {
+	 return consToScipCons[consIndex];
+ }
+
+ int Seeedpool::getIndexForVar(SCIP_VAR* var){
+	 return scipVarToIndex[var];
+ }
+
+ int Seeedpool::getIndexForCons(SCIP_CONS* cons){
+	 return scipConsToIndex[cons];
  }
 
 

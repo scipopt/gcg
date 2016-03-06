@@ -73,18 +73,18 @@ namespace gcg {
 
 	  /**check variables (every variable is assigned at most once) */
 
-	  std::vector<bool> openVars(nVars, true) ;
+	  std::vector<bool> openVarsBool(nVars, true) ;
 	  std::vector<int>  openVarsVec(0);
 	  std::vector<int>::const_iterator varIter = linkingVars.begin();
 	  std::vector<int>::const_iterator varIterEnd = linkingVars.end();
 	  for(; varIter != varIterEnd; ++varIter)
 	  {
-		  if(!openVars[*varIter])
+		  if(!openVarsBool[*varIter])
 		  {
 			  std::cout << "Warning! Variable with index " << *varIter << "is already assigned " << std::endl;
 			  return false;
 		  }
-		  openVars[*varIter] = false;
+		  openVarsBool[*varIter] = false;
 	  }
 	  for(int b =0; b < nBlocks; ++b)
 	  {
@@ -92,28 +92,28 @@ namespace gcg {
 		  varIterEnd = varsForBlocks[b].end();
 		  for(; varIter != varIterEnd; ++varIter)
 		  {
-			  if(!openVars[*varIter])
+			  if(!openVarsBool[*varIter])
 			  {
 				  std::cout << "Warning! Variable with index " << *varIter << "is already assigned " << std::endl;
 				  return false;
 			  }
-			  openVars[*varIter] = false;
+			  openVarsBool[*varIter] = false;
 		  }
 	  }
 
 	  /** check constraints (every constraint is assigned at most once */
-	  std::vector<bool> openConss(nConss, true) ;
+	  std::vector<bool> openConssBool(nConss, true) ;
 	  std::vector<int>  openConssVec(0);
 	  std::vector<int>::const_iterator consIter = masterConss.begin();
 	  std::vector<int>::const_iterator consIterEnd = masterConss.end();
 	  for(; consIter != consIterEnd; ++consIter)
 	  {
-		  if(!openConss[*consIter])
+		  if(!openConssBool[*consIter])
 		  {
 			  std::cout << "Warning! Constraint with index " << *consIter << "is already assigned " << std::endl;
 			  return false;
 		  }
-		  openConss[*consIter] = false;
+		  openConssBool[*consIter] = false;
 	  }
 
 	  for(int b =0; b < nBlocks; ++b)
@@ -122,12 +122,12 @@ namespace gcg {
 		  consIterEnd = conssForBlocks[b].end();
 		  for(; consIter != consIterEnd; ++consIter)
 		  {
-			  if(!openConss[*consIter])
+			  if(!openConssBool[*consIter])
 			  {
 				  std::cout << "Warning! Constraint with index " << *consIter << "is already assigned " << std::endl;
 				  return false;
 			  }
-			  openConss[*consIter] = false;
+			  openConssBool[*consIter] = false;
 		  }
 	  }
 
@@ -308,7 +308,7 @@ namespace gcg {
     }
 
 
-  /** returns vector containing stairlinking vars */
+  /** returns vector containing variables not assigned yet*/
   const int* Seeed::getOpenvars(
     ){
   	  if(!openVarsAndConssCalculated)
@@ -322,7 +322,7 @@ namespace gcg {
   	  return &openVars[0];
     }
 
-  /** returns vector containing stairlinking vars */
+  /** returns vector containing constraints not assigned yet */
   const int* Seeed::getOpenconss(
   ){
 	  if(!openVarsAndConssCalculated)
@@ -361,7 +361,7 @@ namespace gcg {
  	  }
  	  return (int) openVars.size();
  }
-  /** constructs and returns vector containing variables not assigned yet */
+  /** constructs vector containing variables not assigned yet */
   void Seeed::calcOpenvars(
   ){
 
@@ -390,7 +390,7 @@ namespace gcg {
 
   }
 
-  /** returns vector containing constraints not assigned yet */
+  /** calculates vector containing constraints not assigned yet */
   void  Seeed::calcOpenconss(
   ){
 	  std::vector<bool> openConssBool(nConss, true) ;
