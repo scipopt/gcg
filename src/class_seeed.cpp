@@ -361,6 +361,8 @@ namespace gcg {
  	  }
  	  return (int) openVars.size();
  }
+
+
   /** constructs vector containing variables not assigned yet */
   void Seeed::calcOpenvars(
   ){
@@ -423,6 +425,22 @@ namespace gcg {
   ){
 	  assert(propagatedByDetector.size() > detectorID);
 	  return propagatedByDetector[detectorID];
+  }
+
+  SCIP_RETCODE Seeed::completeGreedily(){
+
+	  if(!openVarsAndConssCalculated)
+	  {
+		  calcOpenconss();
+		  calcOpenvars();
+
+		  openVarsAndConssCalculated = true;
+	  }
+
+
+
+	  return SCIP_OKAY;
+
   }
 
 

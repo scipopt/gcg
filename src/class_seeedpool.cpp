@@ -274,11 +274,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 				 seeedPropData->newSeeeds = &newSeeeds;
 				 seeedPropData->nNewSeeeds = &nNewSeeeds;
 
-
+				 SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
 				 SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, seeedPropData, result) );
+				 SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
 
 				 assert(seeedPtr->isPropagatedBy(d));
-
 
 				 for(int seeed = 0; seeed<nNewSeeeds; ++seeed)
 				 {
@@ -287,7 +287,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 						 currSeeeds.push_back(newSeeeds[seeed]);
 					 }
 				 }
+				 SCIPfreeMemoryArrayNull(scip, &newSeeeds);
 			 }
+
+			 SCIP_CALL_ABORT(seeedPtr->completeGreedily() );
+
+			 finishedSeeeds.push_back(seeedPtr);
 		 }
 
 
@@ -295,6 +300,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 	 return decompositions;
  }
+
+
 
  /** access coefficient matrlix constraint-wise */
  const  int * Seeedpool::getVarsForCons(int cons){

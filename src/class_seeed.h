@@ -63,7 +63,8 @@ private:
    std::vector<int> 				openVars;				/**< vector containing indices of  variables that are not assigned yet*/
    std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
-   bool 							openVarsAndConssCalculated;
+   std::vector<int> 				detectorChain;
+   bool 							openVarsAndConssCalculated; /** are the
 
 
 public:
@@ -161,11 +162,11 @@ public:
    const int* getStairlinkingvars(
    );
 
-   /** have to be freed by caller; returns vector containing variables not assigned yet */
+   /** returns vector containing variables not assigned yet */
    const int* getOpenvars(
    );
 
-   /** have to be freed by caller; returns vector containing constraints not assigned yet */
+   /**  returns vector containing constraints not assigned yet */
    const int* getOpenconss(
    );
 
@@ -209,6 +210,7 @@ public:
 		   int detectorID
    );
 
+   SCIP_RETCODE Seeed::completeGreedily();
 
 
 private:
