@@ -38,6 +38,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
+#include <iostream>
 
 #include "cons_decomp.h"
 #include "dec_connected.h"
@@ -520,6 +521,38 @@ SCIP_RETCODE DECdetectStructure(
    {
 	  gcg::Seeedpool seeedpool(scip, CONSHDLR_NAME);
 
+	  gcg::Seeed testSeeed(0, 3,10,8);
+
+	 /* testSeeed.setConsToMaster(1);
+	  testSeeed.setConsToMaster(2);
+	  testSeeed.setConsToMaster(3);
+	  testSeeed.setConsToMaster(6);
+
+	  const int* masterconss = testSeeed.getMasterconss();
+
+	  int* copy = masterconss;
+
+	  for(int help = 0; help < testSeeed.getNMasterconss(); ++help)
+	  {
+		  std::cout << masterconss[help] << std::endl;
+		  copy[1] = 0;
+	  }
+
+	  const int helparray[5] = {7,7,7,7,7};
+
+	  //masterconss = &helparray;
+
+
+	  //masterconss = new int[5];
+	  		  std::cout << std::endl;
+
+	  for(int help = 0; help < testSeeed.getNMasterconss(); ++help)
+	  {
+		  std::cout << masterconss[help] << std::endl;
+	  }
+
+	  exit(1);
+*/
       for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
          DEC_DETECTOR *detector;

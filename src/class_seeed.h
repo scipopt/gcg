@@ -49,20 +49,21 @@ class Seeed
 {
 
 private:
+	SCIP*							scip;
    int								id;						/**< id of the seeed */
    int 								nBlocks;				/**< number of blocks the decomposition currently has */
    int 								nVars;
    int								nConss;
-   std::vector<int>					masterconss;			/**< vector containing indices of master constraints */
-   std::vector<int>					mastervars;				/**< vector containing indices of master variables */
+   std::vector<int>					masterConss;			/**< vector containing indices of master constraints */
+   std::vector<int>					masterVars;				/**< vector containing indices of master variables */
    std::vector<std::vector<int>> 	conssForBlocks; 		/**< conssForBlocks[k] contains a vector of indices of all constraints assigned to block k */
    std::vector<std::vector<int>> 	varsForBlocks; 			/**< varsForBlocks[k] contains a vector of indices of all variables assigned to block k */
    std::vector<int> 				linkingVars;			/**< vector containing indices of linking variables */
    std::vector<int> 				stairlinkingVars;		/**< vector containing indices of staircase linking variables */
-//   std::vector<int> 				openVars;				/**< vector containing indices of  variables that are not assigned yet*/
-//   std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
+   std::vector<int> 				openVars;				/**< vector containing indices of  variables that are not assigned yet*/
+   std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
-
+   bool 							openVarsAndConssCalculated;
 
 
 public:
@@ -129,39 +130,78 @@ public:
 
    /** get-methods */
 
-   /** returns vector containing master conss */
-   std::vector<int> const & getMasterconss(
+   /** returns array containing master conss */
+   const int* getMasterconss(
+   );
+
+   /** returns size of array containing master conss */
+   int getNMasterconss(
    );
 
 
    /** returns vector containing master vars (every constraint containing a master var is in master )*/
-   std::vector<int> const & getMastervars(
+   const int* getMastervars(
    );
 
    /** returns vector containing master conss */
-   std::vector<int> const & getConssForBlock(
+   const int* getConssForBlock(
 		   int block
    );
 
    /** returns vector containing vars of a certain block */
-   std::vector<int> const & getVarsForBlock(
+   const int* getVarsForBlock(
 		   int block
    );
 
    /** returns vector containing linking vars */
-   std::vector<int> const & getLinkingvars(
+   const int* getLinkingvars(
    );
 
    /** returns vector containing stairlinking vars */
-   std::vector<int> const & getStairlinkingvars(
+   const int* getStairlinkingvars(
    );
 
-   /** returns vector containing variables not assigned yet */
-   std::vector<int> getOpenvars(
+   /** have to be freed by caller; returns vector containing variables not assigned yet */
+   const int* getOpenvars(
    );
 
-   /** returns vector containing constraints not assigned yet */
-   std::vector<int> getOpenconss(
+   /** have to be freed by caller; returns vector containing constraints not assigned yet */
+   const int* getOpenconss(
+   );
+
+   /** returns size of vector containing master vars (every constraint containing a master var is in master )*/
+   int getNMastervars(
+   );
+
+   /** returns size of vector containing master conss */
+   int getNConssForBlock(
+		   int block
+   );
+
+   /** returns size of vector containing vars of a certain block */
+   int getNVarsForBlock(
+		   int block
+   );
+
+   /** returns size ofvector containing linking vars */
+   int getNLinkingvars(
+   );
+
+   /** returns size ofvector containing stairlinking vars */
+   int getNStairlinkingvars(
+   );
+
+   void  calcOpenconss();
+
+   void  calcOpenvars();
+
+
+   /** returns size of vector containing variables not assigned yet */
+   int getNOpenvars(
+   );
+
+   /** returns size of vector containing constraints not assigned yet */
+   int getNOpenconss(
    );
 
    /** returns whether this seeed was propagated by certain detector */

@@ -59,7 +59,7 @@ namespace gcg {
 	  int               givenNDetectors,         /**< number of detectors */
 	  int				givenNConss,				/**number of constraints */
 	  int 				givenNVars				/**number of variables */
-    ): id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)){
+    ): id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false){
 
 	 }
 
@@ -104,8 +104,8 @@ namespace gcg {
 	  /** check constraints (every constraint is assigned at most once */
 	  std::vector<bool> openConss(nConss, true) ;
 	  std::vector<int>  openConssVec(0);
-	  std::vector<int>::const_iterator consIter = masterconss.begin();
-	  std::vector<int>::const_iterator consIterEnd = masterconss.end();
+	  std::vector<int>::const_iterator consIter = masterConss.begin();
+	  std::vector<int>::const_iterator consIterEnd = masterConss.end();
 	  for(; consIter != consIterEnd; ++consIter)
 	  {
 		  if(!openConss[*consIter])
@@ -158,7 +158,7 @@ namespace gcg {
   SCIP_RETCODE Seeed::setConsToMaster(
 		   int consToMaster
   ){
-	  masterconss.push_back(consToMaster);
+	  masterConss.push_back(consToMaster);
 
 	  return SCIP_OKAY;
   }
@@ -167,7 +167,7 @@ namespace gcg {
   SCIP_RETCODE Seeed::setVarToMaster(
 		  int varToMaster )
   {
-  	  mastervars.push_back(varToMaster);
+  	  masterVars.push_back(varToMaster);
 
   	  return SCIP_OKAY;
   }
@@ -229,96 +229,192 @@ namespace gcg {
   /** get-methods */
 
   /** returns vector containing master conss */
-  std::vector<int> const & Seeed::getMasterconss(
+  const int* Seeed::getMasterconss(
   ){
-	  return masterconss;
-  }
-
-
-  /** returns vector containing master vars (every constraint containing a master var is in master )*/
-  std::vector<int> const & Seeed::getMastervars(
-  ){
-	  return mastervars;
+	  return &masterConss[0];
   }
 
   /** returns vector containing master conss */
-  std::vector<int> const & Seeed::getConssForBlock(
+  int Seeed::getNMasterconss(
+    ){
+  	  return (int) masterConss.size();
+    }
+
+
+  /** returns vector containing master vars (every constraint containing a master var is in master )*/
+  const int* Seeed::getMastervars(
+  ){
+	  return &masterVars[0];
+  }
+
+  /** returns vector containing master vars (every constraint containing a master var is in master )*/
+  int Seeed::getNMastervars(
+  ){
+	  return(int) masterVars.size();
+  }
+
+
+  /** returns vector containing master conss */
+  const int* Seeed::getConssForBlock(
 		   int block
   ){
-	  return conssForBlocks[block];
+	  return &conssForBlocks[block][0];
+  }
+
+  /** returns vector containing master conss */
+  int Seeed::getNConssForBlock(
+		  int block
+  ){
+	  return (int)conssForBlocks[block].size();
   }
 
   /** returns vector containing vars of a certain block */
-  std::vector<int> const & Seeed::getVarsForBlock(
+  const int* Seeed::getVarsForBlock(
 		   int block
   ){
-	  return varsForBlocks[block];
+	  return &varsForBlocks[block][0];
   }
 
+  /** returns vector containing vars of a certain block */
+   int Seeed::getNVarsForBlock(
+  		   int block
+    ){
+  	  return (int)varsForBlocks[block].size();
+    }
+
   /** returns vector containing linking vars */
-  std::vector<int> const & Seeed::getLinkingvars(
+  const int* Seeed::getLinkingvars(
   ){
-	  return linkingVars;
+	  return &linkingVars[0];
+  }
+
+  /** returns size of vector containing linking vars */
+    int Seeed::getNLinkingvars(
+    ){
+  	  return (int)linkingVars.size();
+    }
+
+
+  /** returns vector containing stairlinking vars */
+  const int* Seeed::getStairlinkingvars(
+  ){
+	  return &stairlinkingVars[0];
   }
 
   /** returns vector containing stairlinking vars */
-  std::vector<int> const & Seeed::getStairlinkingvars(
+  int Seeed::getNStairlinkingvars(
+    ){
+  	  return (int) stairlinkingVars.size();
+    }
+
+
+  /** returns vector containing stairlinking vars */
+  const int* Seeed::getOpenvars(
+    ){
+  	  if(!openVarsAndConssCalculated)
+  	  {
+  		  calcOpenconss();
+  		  calcOpenvars();
+
+  		  openVarsAndConssCalculated = true;
+  	  }
+
+  	  return &openVars[0];
+    }
+
+  /** returns vector containing stairlinking vars */
+  const int* Seeed::getOpenconss(
   ){
-	  return stairlinkingVars;
+	  if(!openVarsAndConssCalculated)
+	  {
+		  calcOpenconss();
+		  calcOpenvars();
+
+		  openVarsAndConssCalculated = true;
+	  }
+
+	  return &openConss[0];
   }
 
+  /** returns size of vector containing variables not assigned yet */
+  int Seeed::getNOpenconss()
+  {
+	  if(!openVarsAndConssCalculated)
+	  {
+		  calcOpenconss();
+		  calcOpenvars();
+
+		  openVarsAndConssCalculated = true;
+	  }
+	  return (int) openConss.size();
+}
+
+      /** returns size of vector containing constraints not assigned yet */
+  int Seeed::getNOpenvars()
+   {
+ 	  if(!openVarsAndConssCalculated)
+ 	  {
+ 		  calcOpenconss();
+ 		  calcOpenvars();
+
+ 		  openVarsAndConssCalculated = true;
+ 	  }
+ 	  return (int) openVars.size();
+ }
   /** constructs and returns vector containing variables not assigned yet */
-  std::vector<int>  Seeed::getOpenvars(
+  void Seeed::calcOpenvars(
   ){
-	  std::vector<bool> openVars(nVars, true) ;
-	  std::vector<int>  openVarsVec(0);
+
+	  openVars = std::vector<int>(0);
+	  std::vector<bool> openVarsBool(nVars, true) ;
 	  std::vector<int>::const_iterator varIter = linkingVars.begin();
 	  std::vector<int>::const_iterator varIterEnd = linkingVars.end();
 	  for(; varIter != varIterEnd; ++varIter)
-		  openVars[*varIter] = false;
+		  openVarsBool[*varIter] = false;
 	  for(int b =0; b < nBlocks; ++b)
 	  {
 		  varIter = varsForBlocks[b].begin();
 		  varIterEnd = varsForBlocks[b].end();
 		  for(; varIter != varIterEnd; ++varIter)
-		  		  openVars[*varIter] = false;
+		  		  openVarsBool[*varIter] = false;
 	  }
 
 	  for (int i = 0; i < nVars; ++i)
 	  {
-		  if(!openVars[i])
-			  openVarsVec.push_back(i);
+		  if(!openVarsBool[i])
+			  openVars.push_back(i);
 	  }
 
 
-	  return openVarsVec;
+	  return;
+
   }
 
   /** returns vector containing constraints not assigned yet */
-  std::vector<int>  Seeed::getOpenconss(
+  void  Seeed::calcOpenconss(
   ){
-	  std::vector<bool> openConss(nConss, true) ;
-	  std::vector<int>  openConssVec(0);
-	  std::vector<int>::const_iterator consIter = masterconss.begin();
-	  std::vector<int>::const_iterator consIterEnd = masterconss.end();
+	  std::vector<bool> openConssBool(nConss, true) ;
+	  openConss = std::vector<int>(0);
+	  std::vector<int>::const_iterator consIter = masterConss.begin();
+	  std::vector<int>::const_iterator consIterEnd = masterConss.end();
 	  for(; consIter != consIterEnd; ++consIter)
-	  		  openConss[*consIter] = false;
+	  		  openConssBool[*consIter] = false;
 	  for(int b =0; b < nBlocks; ++b)
 	  {
 		  consIter = conssForBlocks[b].begin();
 		  consIterEnd = conssForBlocks[b].end();
 		  for(; consIter != consIterEnd; ++consIter)
-			  openConss[*consIter] = false;
+			  openConssBool[*consIter] = false;
 	  }
 
 	  for (int i = 0; i < nConss; ++i)
 	  {
-		  if(!openConss[i])
-			  openConssVec.push_back(i);
+		  if(!openConssBool[i])
+			  openConss.push_back(i);
 	  }
 
 
-	  return openConssVec;
+	  return;
   }
 
   /** returns whether this seeed was propagated by certain detector */
