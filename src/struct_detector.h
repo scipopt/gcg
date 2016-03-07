@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -28,6 +28,7 @@
 /**@file   struct_detector.h
  * @brief  data structures for detectors
  * @author Martin Bergner
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -55,9 +56,10 @@ struct DEC_Detector {
 
    SCIP_CLOCK*           dectime;            /**< time the detector took to find decompositions */
 
-   DEC_DECL_INITDETECTOR((*initDetection));  /**< initialization method of detector */
+   DEC_DECL_FREEDETECTOR((*freeDetector));  /**< destructor of detector */
+   DEC_DECL_INITDETECTOR((*initDetector));  /**< initialization method of detector */
+   DEC_DECL_EXITDETECTOR((*exitDetector));  /**< deinitialization method of detector */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)); /**< structure detection method of detector */
-   DEC_DECL_EXITDETECTOR((*exitDetection));  /**< deinitialization method of detector */
 };
 
 #ifdef __cplusplus

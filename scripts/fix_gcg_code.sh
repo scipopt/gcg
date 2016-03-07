@@ -20,4 +20,4 @@ sed -i 's/^\(\ *\)SCIPalloc\(.*\)(\(.*\));$/\1SCIP_CALL( SCIPalloc\2(\3) );/' sr
 sed -i 's/SCIP_CALL(\ *\(.*\)(\(.*\))\ *);$/SCIP_CALL( \1(\2) );/' src/*.c
 
 # delete all trailing whitespaces
-sed -i 's,\([^ ]\)\ *$,\1,' src/*.{c,h}
+sed -i 's,\([^ ]\)\ *$,\1,' Makefile src/*.{c,cpp,h} check/*.{awk,sh}

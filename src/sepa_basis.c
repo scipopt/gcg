@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -531,8 +531,8 @@ SCIP_RETCODE getEqualityMatrixGsl(
    ndelvars = 0;
    nvar2col = 0;
 
-   SCIPallocBufferArray(scip, &var2col, nlpcols);
-   SCIPallocBufferArray(scip, &delvars, nlpcols);
+   SCIP_CALL( SCIPallocBufferArray(scip, &var2col, nlpcols) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &delvars, nlpcols) );
 
    /* loop over lp cols and check if it is at one of its bounds */
    for( i = 0; i < nlpcols; ++i )
@@ -544,7 +544,7 @@ SCIP_RETCODE getEqualityMatrixGsl(
 
       lpvar = SCIPcolGetVar(lpcol);
 
-      if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetUb(lpcol))
+      if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetUb(lpcol) )
          || SCIPisEQ(scip, SCIPgetSolVal(scip, sol, lpvar), SCIPcolGetLb(lpcol)) )
       {
          int ind;
@@ -709,7 +709,7 @@ SCIP_RETCODE getEqualityRankGsl(
 }
 #endif
 
-/** Add cuts which are due to the latest objective function of the pricing problems
+/** add cuts which are due to the latest objective function of the pricing problems
  *  (reduced cost non-negative) */
 static
 SCIP_RETCODE addPPObjConss(
@@ -813,7 +813,7 @@ SCIP_RETCODE addPPObjConss(
 
 
       }
-      SCIP_CALL(SCIPreleaseRow(scip, &origcut) );
+      SCIP_CALL( SCIPreleaseRow(scip, &origcut) );
    }
 
    return SCIP_OKAY;
@@ -843,10 +843,7 @@ SCIP_DECL_SEPAFREE(sepaFreeBasis)
    SCIP_SEPADATA* sepadata;
 
    sepadata = SCIPsepaGetData(sepa);
-
-   SCIPfreeMemoryArrayNull(scip, &(sepadata->origcuts));
-   SCIPfreeMemoryArrayNull(scip, &(sepadata->mastercuts));
-   SCIPfreeMemoryArrayNull(scip, &(sepadata->newcuts));
+   assert(sepadata != NULL);
 
    SCIPfreeMemory(scip, &sepadata);
 
@@ -887,11 +884,21 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
    enable = sepadata->enable;
    enableobj = sepadata->enableobj;
 
+   sepadata->maxcuts = STARTMAXCUTS;
+   sepadata->norigcuts = 0;
+   sepadata->maxnewcuts = 0;
+   sepadata->nnewcuts = 0;
+   sepadata->objrow = NULL;
+
    /* if separator is disabled do nothing */
    if( !enable )
    {
       return SCIP_OKAY;
    }
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->origcuts), STARTMAXCUTS) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->newcuts), STARTMAXCUTS) ); /*lint !e506*/
 
    /* if objective row is enabled create row with objective coefficients */
    if( enableobj )
@@ -942,22 +949,26 @@ SCIP_DECL_SEPAEXIT(sepaExitBasis)
    if( enableobj )
       SCIP_CALL( SCIPreleaseRow(origscip, &(sepadata->objrow)) );
 
+   SCIPfreeMemoryArrayNull(scip, &(sepadata->origcuts));
+   SCIPfreeMemoryArrayNull(scip, &(sepadata->mastercuts));
+   SCIPfreeMemoryArrayNull(scip, &(sepadata->newcuts));
+
    return SCIP_OKAY;
 }
 
 /** solving process initialization method of separator (called when branch and bound process is about to begin) */
-#if 0
 static
 SCIP_DECL_SEPAINITSOL(sepaInitsolBasis)
 {  /*lint --e{715}*/
-   SCIPerrorMessage("method of basis separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
+   SCIP_SEPADATA* sepadata;
+
+   sepadata = SCIPsepaGetData(sepa);
+   assert(sepadata != NULL);
+
+   sepadata->nmastercuts = 0;
 
    return SCIP_OKAY;
 }
-#else
-#define sepaInitsolBasis NULL
-#endif
 
 
 /** solving process deinitialization method of separator (called before branch and bound process data is freed) */
@@ -1048,7 +1059,7 @@ SCIP_RETCODE initConvObj(
       else if( SCIPisGT(origscip, objnormnull, 0.0) )
          SCIP_CALL( chgProbingObjAddingOrigObj(origscip, (1.0 - convex) * objnormcurrent, objnormnull) );
    }
-   else if(SCIPisEQ(origscip, convex, 1.0))
+   else if( SCIPisEQ(origscip, convex, 1.0) )
    {
       SCIP_CALL( initProbingObjUsingVarBounds(origscip, sepadata, origsol, !genericconv && sepadata->enableobj, 1.0) );
       SCIP_CALL( chgProbingObjUsingRows(origscip, sepadata, origsol, 1.0, 1.0) );
@@ -1210,7 +1221,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          SCIPdebugMessage("add reduced cost cut for relevant pricing problems\n");
 
-         SCIP_CALL( SCIPallocMemoryArray(scip, &dualsolconv, GCGgetNPricingprobs(origscip)));
+         SCIP_CALL( SCIPallocMemoryArray(scip, &dualsolconv, GCGgetNPricingprobs(origscip)) );
          SCIP_CALL( GCGsetPricingObjs(scip, dualsolconv) );
 
          for( i = 0; i < GCGgetNPricingprobs(origscip); ++i )
@@ -1479,7 +1490,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
    SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + nlprows - nlprowsstart) );
 
-   for( i = nlprowsstart; i < nlprows; ++i)
+   for( i = nlprowsstart; i < nlprows; ++i )
    {
       if( SCIProwGetOrigintype(lprows[i]) == SCIP_ROWORIGINTYPE_SEPA )
 	   {
@@ -1534,20 +1545,7 @@ SCIP_RETCODE SCIPincludeSepaBasis(
    /* create master separator data */
    SCIP_CALL( SCIPallocMemory(scip, &sepadata) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->origcuts), STARTMAXCUTS) ); /*lint !e506*/
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) ); /*lint !e506*/
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->newcuts), STARTMAXCUTS) ); /*lint !e506*/
-   sepadata->maxcuts = STARTMAXCUTS;
-   sepadata->norigcuts = 0;
-   sepadata->nmastercuts = 0;
-   sepadata->maxnewcuts = 0;
-   sepadata->nnewcuts = 0;
-   sepadata->objrow = NULL;
-
    /* include separator */
-   /* use SCIPincludeSepa() if you want to set all callbacks explicitly and realize (by getting compiler errors) when
-    * new callbacks are added in future SCIP versions
-    */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
          SEPA_USESSUBSCIP, SEPA_DELAY,
          sepaCopyBasis, sepaFreeBasis, sepaInitBasis, sepaExitBasis, sepaInitsolBasis, sepaExitsolBasis, sepaExeclpBasis, sepaExecsolBasis,
@@ -1720,7 +1718,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
    cols = SCIProwGetCols(cut);
    vals = SCIProwGetVals(cut);
 
-   if(nvars == 0)
+   if( nvars == 0 )
    {
       return SCIP_OKAY;
    }
@@ -1781,7 +1779,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
    return SCIP_OKAY;
 }
 
-/** Add cuts which are due to the latest objective function of the pricing problems
+/** add cuts which are due to the latest objective function of the pricing problems
  *  (reduced cost non-negative) */
 SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
    SCIP*                scip,               /**< SCIP data structure */

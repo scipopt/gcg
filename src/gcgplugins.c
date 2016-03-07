@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -333,17 +333,17 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    /* Detectors and decompositions */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
-   SCIP_CALL( SCIPincludeDetectionConnected(scip) );
-   SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
-   SCIP_CALL( SCIPincludeDetectionStairheur(scip) );
-   SCIP_CALL( SCIPincludeDetectionStaircase(scip) );
-   SCIP_CALL( SCIPincludeDetectionRandom(scip) );
-   SCIP_CALL( SCIPincludeDetectionColors(scip) );
-   SCIP_CALL( SCIPincludeDetectionCutpacking(scip) );
+   SCIP_CALL( SCIPincludeDetectorConnected(scip) );
+   SCIP_CALL( SCIPincludeDetectorArrowheur(scip) );
+   SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
+   SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
+   SCIP_CALL( SCIPincludeDetectorRandom(scip) );
+   SCIP_CALL( SCIPincludeDetectorColors(scip) );
+   SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
 
 
 #ifndef NBLISS
-   SCIP_CALL( SCIPincludeDetectionIsomorphism(scip) );
+   SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
 #endif
 
    /* Christian's heuristics */
