@@ -448,10 +448,6 @@ DEC_DECL_FREEDETECTOR(detectorFreeStaircase)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   if( detectordata->graph != NULL )
-   {
-      tcliqueFree(&detectordata->graph);
-   }
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
@@ -472,10 +468,32 @@ DEC_DECL_INITDETECTOR(detectorInitStaircase)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
+   detectordata->graph = NULL;
    detectordata->constoblock = NULL;
    detectordata->vartoblock = NULL;
-
    detectordata->nblocks = 0;
+
+   return SCIP_OKAY;
+}
+
+/** detector deinitialization method (called before the transformed problem is freed) */
+static
+DEC_DECL_EXITDETECTOR(detectorExitStaircase)
+{  /*lint --e{715}*/
+   DEC_DETECTORDATA *detectordata;
+
+   assert(scip != NULL);
+   assert(detector != NULL);
+
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+
+   if( detectordata->graph != NULL )
+   {
+      tcliqueFree(&detectordata->graph);
+   }
 
    return SCIP_OKAY;
 }
@@ -532,12 +550,9 @@ SCIP_RETCODE SCIPincludeDetectorStaircase(
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
-   detectordata->graph = NULL;
-   detectordata->constoblock = NULL;
-   detectordata->vartoblock = NULL;
-   detectordata->nblocks = 0;
+
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, NULL) );
+      detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, detectorExitStaircase) );
 
    return SCIP_OKAY;
 }

@@ -177,6 +177,9 @@ DEC_DECL_INITDETECTOR(detectorInitArrowheur)
    assert(detectordata != NULL);
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
+   detectordata->found = FALSE;
+   detectordata->blocks = -1;
+
    nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
@@ -431,10 +434,8 @@ SCIP_RETCODE SCIPincludeDetectorArrowheur(
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
-
    assert(detectordata != NULL);
-   detectordata->found = FALSE;
-   detectordata->blocks = -1;
+
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
       detectordata, detectorDetectArrowheur, detectorFreeArrowheur, detectorInitArrowheur, detectorExitArrowheur) );

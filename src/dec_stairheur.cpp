@@ -1491,6 +1491,7 @@ DEC_DECL_FREEDETECTOR(detectorFreeStairheur)
 }
 
 /** detector initialization method (called after problem was transformed) */
+static
 DEC_DECL_INITDETECTOR(detectorInitStairheur)
 {
    DEC_DETECTORDATA* detectordata;
