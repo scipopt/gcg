@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -368,7 +368,7 @@ SCIP_RETCODE GCGconsGetVals(
       if( nvals < nvars )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vals, SCIPgetValsLinear(scip, cons), nvals);
+      BMScopyMemoryArray(vals, SCIPgetValsLinear(scip, cons), nvars);
    }
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {

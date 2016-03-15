@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -38,7 +38,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+
 #include "dec_arrowheur.h"
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -148,11 +148,26 @@ struct DEC_DetectorData
  * Local methods
  */
 
-/* put your local methods here, and declare them static */
-
-/** detector initialization method */
+/** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_INITDETECTOR(initArrowheur)
+DEC_DECL_FREEDETECTOR(detectorFreeArrowheur)
+{
+   DEC_DETECTORDATA* detectordata;
+
+   assert(scip != NULL);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   SCIPfreeMemory(scip, &detectordata);
+
+   return SCIP_OKAY;
+}
+
+/** detector initialization method (called after problem was transformed) */
+static
+DEC_DECL_INITDETECTOR(detectorInitArrowheur)
 {
    int nconss;
    DEC_DETECTORDATA* detectordata;
@@ -170,9 +185,9 @@ DEC_DECL_INITDETECTOR(initArrowheur)
    return SCIP_OKAY;
 }
 
-/** presolving deinitialization method of presolver (called after presolving has been finished) */
+/** detector deinitialization method (called before the transformed problem is freed) */
 static
-DEC_DECL_EXITDETECTOR(exitArrowheur)
+DEC_DECL_EXITDETECTOR(detectorExitArrowheur)
 {
    DEC_DETECTORDATA* detectordata;
 
@@ -182,15 +197,8 @@ DEC_DECL_EXITDETECTOR(exitArrowheur)
    assert(detectordata != NULL);
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-   /* copy data to decomp structure */
-   if( !detectordata->found )
-   {
-      SCIPfreeMemory(scip, &detectordata);
-      return SCIP_OKAY;
-   }
 
    SCIP_CALL( SCIPfreeClock(scip, &detectordata->metisclock) );
-   SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
 }
@@ -199,7 +207,7 @@ DEC_DECL_EXITDETECTOR(exitArrowheur)
 static
 SCIP_RETCODE callMetis(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    SCIP_RESULT*          result              /**< result indicating whether the detection was successful */
    )
 {
@@ -325,9 +333,9 @@ SCIP_RETCODE createMetisFile(
    return SCIP_OKAY;
 }
 
-/** detection callback method */
+/** detector structure detection method, tries to detect a structure in the problem */
 static
-DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectArrowheur)
 {
    int i;
    int j;
@@ -412,9 +420,9 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 }
 #endif
 
-/** creates the arrowheur presolver and includes it in SCIP */
+/** creates the arrowheur detector and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
+SCIP_RETCODE SCIPincludeDetectorArrowheur(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -428,10 +436,11 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    detectordata->found = FALSE;
    detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectorDetectArrowheur, detectorFreeArrowheur, detectorInitArrowheur, detectorExitArrowheur) );
 
 
-   /* add arrowheur presolver parameters */
+   /* add arrowheur detector parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );

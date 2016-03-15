@@ -1,5 +1,5 @@
 =opt= 10teams 924
-=opt= aflow30a 1158 
+=opt= aflow30a 1158
 =opt= aflow40b 1168
 =opt= fiber 405935
 =opt= fixnet6 3983
@@ -10,12 +10,12 @@
 =opt= manna81 -13164
 =opt= mkc -563.846
 =opt= modglob 20740508.1
-=opt= noswot -41  
+=opt= noswot -41
 =opt= opt1217 -16
 =opt= p2756 3124
-=opt= pp08a 7350 
-=opt= pp08aCUTS 7350 
-=opt= rout 1077.56 
+=opt= pp08a 7350
+=opt= pp08aCUTS 7350
+=opt= rout 1077.56
 =opt= set1ch 54537.8
 =opt= timtab1 764772
 =opt= timtab2 1096557

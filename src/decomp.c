@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1202,7 +1202,13 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
    return SCIP_OKAY;
 }
 
-/** completely fills out decomposition structure from only the constraint partition */
+/** completely fills out decomposition structure from only the constraint partition in the following manner:
+ *  given constraint block/border assignment (by constoblock), one gets the following assignment of probvars:
+ *  let C(j) be the set of constraints containing variable j, set block of j to
+ *  (i)   constoblock(i) iff constoblock(i1) == constoblock(i2) for all i1,i2 in C(j) with constoblock(i1) != nblocks+1 && constoblock(i2) != nblocks+1
+ *  (ii)  nblocks+2 ["linking var"] iff exists i1,i2 with constoblock(i1) != constoblock(i2) && constoblock(i1) != nblocks+1 && constoblock(i2) != nblocks+1
+ *  (iii) nblocks+1 ["master var"] iff constoblock(i) == nblocks+1 for all i in C(j)
+ */
 SCIP_RETCODE DECfilloutDecompFromConstoblock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
@@ -1259,6 +1265,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
       assert(success);
       SCIPdebugMessage("cons <%s> (%d vars) is in block %d.\n", SCIPconsGetName(conss[i]), ncurvars, consblock);
+      assert(consblock <= nblocks);
 
       for( j = 0; j < ncurvars; ++j )
       {
@@ -1269,21 +1276,19 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
             varblock = (int) (size_t) SCIPhashmapGetImage(vartoblock, probvar); /*lint !e507*/
          else
             varblock = nblocks+1;
-         /** if the constraint is in a block and the variable is not in the same block */
-         if( !SCIPhashmapExists(vartoblock, probvar) && consblock <= nblocks )
+
+         /* The variable is currently in no block */
+         if( varblock == nblocks+1 )
          {
             SCIPdebugMessage(" var <%s> not been handled before, adding to block %d\n", SCIPvarGetName(probvar), consblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) consblock) );
          }
-         else if( varblock != consblock && consblock <= nblocks )
+         /* The variable is already in a different block */
+         else if( varblock != consblock )
          {
+            assert(varblock <= nblocks || varblock == nblocks+2);
             SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
-         }
-         else if( consblock == nblocks+1 )
-         {
-            SCIPdebugMessage(" var <%s> not handled and current cons linking, var is master.\n", SCIPvarGetName(probvar));
-            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
          }
          else
          {
@@ -1295,6 +1300,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       SCIPfreeBufferArray(scip, &curvars);
    }
 
+   /* Handle variables that do not appear in any pricing problem, those will be copied directly to the master */
    for( i = 0; i < nvars; ++i )
    {
       if( !SCIPhashmapExists(vartoblock, vars[i]) )
@@ -1305,7 +1311,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
    }
 
    retcode = DECfilloutDecompFromHashmaps(scip, decomp, vartoblock, constoblock, nblocks, staircase);
-   if(retcode != SCIP_OKAY)
+   if( retcode != SCIP_OKAY )
    {
       SCIPhashmapFree(&vartoblock);
       return retcode;
@@ -1488,35 +1494,56 @@ SCIP_RETCODE DECdecompAddRemainingConss(
 
    for( c = 0; c < SCIPgetNConss(scip); ++c )
    {
-      SCIP_CONS * cons = SCIPgetConss(scip)[c];
+      SCIP_CONS* cons = SCIPgetConss(scip)[c];
 
-      if( !GCGisConsGCGCons(cons) )
+      if( !GCGisConsGCGCons(cons) && !SCIPhashmapExists(DECdecompGetConstoblock(decdecomp), cons) )
       {
-         if( !SCIPhashmapExists(DECdecompGetConstoblock(decdecomp), cons) )
+         int block;
+         SCIP_CALL( DECdetermineConsBlock(scip, decdecomp, cons, &block) );
+         SCIPdebugMessage("cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
+
+         if( block == DECdecompGetNBlocks(decdecomp) )
          {
-            int block;
-            SCIP_CALL( DECdetermineConsBlock(scip, decdecomp, cons, &block) );
-            SCIPdebugMessage("cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
-            if( block == DECdecompGetNBlocks(decdecomp) )
+            if( decdecomp->nlinkingconss == 0 )
             {
-               int oldsize = SCIPcalcMemGrowSize(scip,decdecomp->nlinkingconss);
-               int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss+1);
-               SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss, oldsize, newsize) );
-               decdecomp->linkingconss[decdecomp->nlinkingconss] = cons;
-               decdecomp->nlinkingconss += 1;
-               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (DECdecompGetNBlocks(decdecomp)+1)) );
+               int newsize = SCIPcalcMemGrowSize(scip, 1);
+               SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decdecomp->linkingconss, newsize) );
+
+               switch( decdecomp->type )
+               {
+               case DEC_DECTYPE_DIAGONAL:
+                  decdecomp->type = DEC_DECTYPE_BORDERED;
+                  SCIPwarningMessage(scip, "Decomposition type changed to 'bordered' due to an added constraint.\n");
+                  break;
+               case DEC_DECTYPE_STAIRCASE:
+                  decdecomp->type = DEC_DECTYPE_ARROWHEAD;
+                  SCIPwarningMessage(scip, "Decomposition type changed to 'arrowhead' due to an added constraint.\n");
+                  break;
+               default:
+                  break;
+               }
             }
             else
             {
-               int oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]);
-               int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]+1);
-               SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block], oldsize, newsize) ); /*lint !e866*/
-               decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
-               decdecomp->nsubscipconss[block] += 1;
-               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)) );
+               int oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss);
+               int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss+1);
+               SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss, oldsize, newsize) );
             }
-            SCIP_CALL( SCIPcaptureCons(scip, cons) );
+            decdecomp->linkingconss[decdecomp->nlinkingconss] = cons;
+            decdecomp->nlinkingconss += 1;
+            SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (DECdecompGetNBlocks(decdecomp)+1)) );
          }
+         else
+         {
+            int oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]);
+            int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]+1);
+            assert(decdecomp->nsubscipconss[block] > 0);
+            SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block], oldsize, newsize) ); /*lint !e866*/
+            decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
+            decdecomp->nsubscipconss[block] += 1;
+            SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)) );
+         }
+         SCIP_CALL( SCIPcaptureCons(scip, cons) );
       }
    }
 
@@ -2822,16 +2849,16 @@ SCIP_RETCODE computeConssNzeros(
       block = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), (curvar))) - 1; /*lint !e507 */
       assert(block >= 0);
 
-      if(block > DECdecompGetNBlocks(decomp) )
+      if( block > DECdecompGetNBlocks(decomp) )
       {
-         if( SCIPvarGetType(curvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(curvar) == SCIP_VARTYPE_INTEGER)
+         if( SCIPvarGetType(curvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(curvar) == SCIP_VARTYPE_INTEGER )
             *nintbzeros += 1;
 
          *nbzeros += 1;
       }
       else
       {
-         if( SCIPvarGetType(curvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(curvar) == SCIP_VARTYPE_INTEGER)
+         if( SCIPvarGetType(curvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(curvar) == SCIP_VARTYPE_INTEGER )
             *nintzeros += 1;
 
          *nzeros += 1;
@@ -2875,13 +2902,13 @@ SCIP_RETCODE computeNonzeros(
       int nsubscipconss = DECdecompGetNSubscipconss(decomp)[b];
       for( c = 0; c < nsubscipconss; ++c )
       {
-         SCIP_CALL( computeConssNzeros(scip, decomp, subscipconss[c], &(nonzeros[b]), &(intnzeros[b]), lnzeros, lintnzeros ));
+         SCIP_CALL( computeConssNzeros(scip, decomp, subscipconss[c], &(nonzeros[b]), &(intnzeros[b]), lnzeros, lintnzeros ) );
       }
    }
 
    for( c = 0; c < DECdecompGetNLinkingconss(decomp); ++c )
    {
-      SCIP_CALL( computeConssNzeros(scip, decomp, DECdecompGetLinkingconss(decomp)[c], mnzeros, mintnzeros, lnzeros, lintnzeros ));
+      SCIP_CALL( computeConssNzeros(scip, decomp, DECdecompGetLinkingconss(decomp)[c], mnzeros, mintnzeros, lnzeros, lintnzeros ) );
    }
 
    return SCIP_OKAY;
@@ -2990,7 +3017,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  blocks           : %10d\n", DECdecompGetNBlocks(decomp));
 
    nblocksrelevant = nblocks;
-   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED)
+   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED )
    {
       for( b = 0; b < nblocks; ++b )
       {
@@ -3011,7 +3038,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
       int identical = 0;
       SCIP_Bool relevant = TRUE;
 
-      if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED)
+      if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED )
       {
          relevant =  GCGisPricingprobRelevant(scip, b);
          identical = GCGgetNIdenticalBlocks(scip, b);
@@ -3137,6 +3164,7 @@ int DECfilterSimilarDecompositions(
 }
 
 /** returns the number of the block that the constraint is with respect to the decomposition */
+/** @todo: maybe this is possible in such a way that a staircase structure is preserved */
 SCIP_RETCODE DECdetermineConsBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
@@ -3451,7 +3479,7 @@ SCIP_RETCODE DECcreatePolishedDecomp(
    assert(decomp != NULL);
    assert(newdecomp != NULL);
 
-   if( DECdecompGetNBlocks(decomp) == 1)
+   if( DECdecompGetNBlocks(decomp) == 1 )
    {
       *newdecomp = NULL;
       return SCIP_OKAY;

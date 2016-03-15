@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -558,7 +558,7 @@ SCIP_DECL_HEUREXITSOL(heurExitsolGcgdins)
    heurdata->avgzerorate /= MAX((SCIP_Real)ncalls, 1.0);
 
    /* print detailed statistics */
-   SCIPstatisticPrintf("LNS Statistics -- GCG DINS:\n");
+   SCIPstatisticPrintf("LNS Statistics -- %s:\n", SCIPheurGetName(heur));
    SCIPstatisticPrintf("Calls            : %13"SCIP_LONGINT_FORMAT"\n", ncalls);
    SCIPstatisticPrintf("Sols             : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNSolsFound(heur));
    SCIPstatisticPrintf("Improving Sols   : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNBestSolsFound(heur));
@@ -750,6 +750,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
 
    fixingcounter = 0;
    zerocounter = 0;
+
+   SCIPstatisticMessage("gcgdins statistic: called at node %"SCIP_LONGINT_FORMAT"\n", SCIPgetNNodes(scip));
 
    /* create variables and rebound them if their bounds differ by more than 0.5 */
    SCIP_CALL( createSubproblem(scip, subscip, vars, subvars, nbinvars, nintvars, heurdata->uselprows, &fixingcounter, &zerocounter) );
@@ -1022,8 +1024,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
       }
 
 #ifdef SCIP_STATISTIC
-      SCIPstatisticPrintf("GCG DINS statistic: fixed %6.3f integer variables (%6.3f zero), %6.3f all variables, needed %6.1f seconds, %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
-         intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetNNodes(subscip), nsubsols,
+      SCIPstatisticPrintf("gcgdins statistic: fixed %6.3f integer variables ( %6.3f zero), %6.3f all variables, needed %6.1f sec (SCIP time: %6.1f sec), %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
+         intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetSolvingTime(scip), SCIPgetNNodes(subscip), nsubsols,
          success ? SCIPgetPrimalbound(scip) : SCIPinfinity(scip), nsubsols > 0 ? SCIPsolGetNodenum(SCIPgetBestSol(subscip)) : -1 );
 #endif
 

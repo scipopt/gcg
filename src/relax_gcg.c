@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -39,7 +39,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
 
 #include <assert.h>
 #include <string.h>
@@ -990,7 +989,7 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
 
    /* jonas' stuff */
-   if(enableppcuts)
+   if( enableppcuts )
    {
       int pscost;
       int prop;
@@ -1344,6 +1343,9 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/feastol", feastol) );
    SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/lpfeastol", lpfeastol) );
    SCIP_CALL( SCIPsetRealParam(masterscip, "numerics/dualfeastol", dualfeastol) );
+
+   /* do not modify the time limit after solving the master problem */
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "reoptimization/commontimelimit", FALSE) );
 
    return SCIP_OKAY;
 }
@@ -2244,15 +2246,13 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
 
-   SCIPdebugMessage("solving node %lld's relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
-
    /* construct the LP in the original problem */
    SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
    assert(!cutoff);
    SCIP_CALL( SCIPflushLP(scip) );
 
    /* solve the next node in the master problem */
-   SCIPdebugMessage("Solve master LP.\n");
+   SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
@@ -2286,10 +2286,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
             mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
             SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
 
-            SCIPdebugMessage("Orig left: %f, limit for master %f, left %f\n",
-                  timelimit - SCIPgetSolvingTime(scip),
+            SCIPdebugMessage("  time limit for master: %f, left: %f, left for original problem: %f\n",
                   mastertimelimit,
-                  mastertimelimit - SCIPgetSolvingTime(masterprob));
+                  mastertimelimit - SCIPgetSolvingTime(masterprob),
+                  timelimit - SCIPgetSolvingTime(scip));
          }
 
          /* if we have a blockdetection, see whether the node is block diagonal */
@@ -2315,7 +2315,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          }
 
          if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
-            SCIPinfoMessage(scip, NULL, "Masterprob was to short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
+            SCIPinfoMessage(scip, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
       }
       if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
       {
@@ -2328,7 +2328,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          *lowerbound = SCIPgetLocalDualbound(masterprob);
       else
       {
-         SCIPdebugMessage("Stage: %d\n", SCIPgetStage(masterprob));
+         SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
          assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
          if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
@@ -2350,13 +2350,13 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          }
          else
          {
-            SCIPwarningMessage(scip, "Stage <%d> is not handled\n!", SCIPgetStage(masterprob));
+            SCIPwarningMessage(scip, "Stage <%d> is not handled!\n", SCIPgetStage(masterprob));
             *result = SCIP_DIDNOTRUN;
             return SCIP_OKAY;
          }
       }
 
-      SCIPdebugMessage("Update lower bound (value = %g).\n", *lowerbound);
+      SCIPdebugMessage("  update lower bound (value = %g).\n", *lowerbound);
 
       if( relaxdata->currentorigsol != NULL )
       {
@@ -2387,7 +2387,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          SCIP_CALL( SCIPfreeSol(scip, &newsol) );
 
          if( stored )
-            SCIPdebugMessage("updated current best primal feasible solution!\n");
+            SCIPdebugMessage("  updated current best primal feasible solution.\n");
       }
 
       if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL )
@@ -3277,7 +3277,7 @@ SCIP_RETCODE performProbing(
    /* create master constraint that captures the branching decision in the original instance */
    mprobingnode = SCIPgetCurrentNode(masterscip);
    assert(GCGconsMasterbranchGetActiveCons(masterscip) != NULL);
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, "probingcons", mprobingnode,
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, "mprobingcons", mprobingnode,
       GCGconsMasterbranchGetActiveCons(masterscip), NULL, NULL, NULL, 0) );
    SCIP_CALL( SCIPaddConsNode(masterscip, mprobingnode, mprobingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterscip, &mprobingcons) );
@@ -3329,6 +3329,7 @@ SCIP_RETCODE performProbing(
          SCIPdebugMessage("lpobjval = %g\n", SCIPgetLPObjval(masterscip));
          *lpobjvalue = SCIPgetLPObjval(masterscip);
          *lpsolved = TRUE;
+         SCIP_CALL( GCGrelaxUpdateCurrentSol(scip) );
       }
    }
    else
@@ -3480,7 +3481,8 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
 
 /** transforms the current solution of the master problem into the original problem's space
- *  and saves this solution as currentsol in the relaxator's data */
+ *  and saves this solution as currentsol in the relaxator's data
+ */
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP*                 scip                /**< SCIP data structure */
    )

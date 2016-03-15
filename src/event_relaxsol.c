@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -29,7 +29,7 @@
  * @brief  eventhandler to update the relaxation solution in the original problem when the master LP has been solved
  * @author Christian Puchert
  */
-#define SCIP_DEBUG
+
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "event_relaxsol.h"
@@ -75,6 +75,25 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
    /* get original problem */
    origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
+
+   /* Only transfer the master solution if it is an LP solution or if it is a feasible solution that
+    * comes from a master heuristic; otherwise it is assumed to already come from the original problem
+    */
+   if( (SCIPeventGetType(event) & SCIP_EVENTTYPE_SOLFOUND) && SCIPsolGetHeur(SCIPeventGetSol(event)) == NULL )
+      return SCIP_OKAY;
+
+#ifdef SCIP_DEBUG
+   if( SCIPeventGetType(event) & SCIP_EVENTTYPE_LPSOLVED )
+   {
+      SCIPdebugMessage("Transferring master LP solution to the original problem\n");
+   }
+   else if( SCIPeventGetType(event) & SCIP_EVENTTYPE_SOLFOUND )
+   {
+      SCIP_SOL* sol = SCIPeventGetSol(event);
+      SCIPdebugMessage("Master feasible solution found by <%s> -- transferring to original problem\n",
+         SCIPsolGetHeur(sol) == NULL ? "relaxation" : SCIPheurGetName(SCIPsolGetHeur(sol)));
+   }
+#endif
 
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origprob) );
 
