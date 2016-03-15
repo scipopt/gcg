@@ -1947,6 +1947,22 @@ DEC_DECL_FREEDETECTOR(detectorFreeCutpacking)
    return SCIP_OKAY;
 }
 
+/** detector initialization method (called after problem was transformed) */
+static
+DEC_DECL_INITDETECTOR(detectorInitCutpacking)
+{
+   DEC_DETECTORDATA* detectordata;
+
+   assert(scip != NULL);
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+
+   detectordata->partition = NULL;
+   detectordata->nblocks = -1;
+
+   return SCIP_OKAY;
+}
+
 /** detector structure detection method, tries to detect a structure in the problem */
 static
 DEC_DECL_DETECTSTRUCTURE(detectorDetectCutpacking)
@@ -2028,15 +2044,13 @@ SCIP_RETCODE SCIPincludeDetectorCutpacking(
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
-
    assert(detectordata != NULL);
-   detectordata->partition = NULL;
-   detectordata->nblocks = -1;
+
 
    /* include structure detector */
    SCIP_CALL( DECincludeDetector(scip,
       DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, NULL, NULL) );
+      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, NULL) );
 
    /* add cutpacking detector parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/algorithm",
