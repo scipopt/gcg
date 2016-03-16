@@ -62,7 +62,7 @@
 #define DEFAULT_MAXDIVEUBQUOTNOSOL  0.1 /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOTNOSOL 0.0 /**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_BACKTRACK          TRUE /**< use one level of backtracking if infeasibility is encountered? */
-#define DEFAULT_MAXDISCREPANCY        3 /**< maximal discrepancy allowed in backtracking */
+#define DEFAULT_MAXDISCREPANCY        2 /**< maximal discrepancy allowed in backtracking */
 #define DEFAULT_MAXDISCDEPTH          3 /**< maximal depth until which a limited discrepancy search is performed */
 
 #define MINLPITER                 10000 /**< minimal number of LP iterations allowed in each LP solving call */
