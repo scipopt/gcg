@@ -1226,6 +1226,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
    int nconss;
    SCIP_VAR** curvars;
    int ncurvars;
+   SCIP_Bool haslinking;
    SCIP_Bool success;
    SCIP_RETCODE retcode;
 
@@ -1245,6 +1246,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
    assert(nconss > 0);
 
    SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nvars) );
+   haslinking = FALSE;
    for( i = 0; i < nconss; ++i )
    {
       int consblock;
@@ -1289,6 +1291,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
             assert(varblock <= nblocks || varblock == nblocks+2);
             SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
+            haslinking = TRUE;
          }
          else
          {
@@ -1310,7 +1313,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       }
    }
 
-   retcode = DECfilloutDecompFromHashmaps(scip, decomp, vartoblock, constoblock, nblocks, staircase);
+   retcode = DECfilloutDecompFromHashmaps(scip, decomp, vartoblock, constoblock, nblocks, staircase && haslinking);
    if( retcode != SCIP_OKAY )
    {
       SCIPhashmapFree(&vartoblock);
