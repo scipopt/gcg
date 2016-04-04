@@ -252,6 +252,8 @@ SCIP_RETCODE setuparrays(
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       SCIP_Real* curvals = NULL;
+      SCIP_VAR** curvars = NULL;
+
       int ncurvars = GCGconsGetNVars(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
@@ -264,12 +266,21 @@ SCIP_RETCODE setuparrays(
       if( !added )
          delete scons;
 
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
       SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
+
+      SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
       SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
+
       //save the properties of variables of the constraints in a struct array and in a sorted pointer array
       for( j = 0; j < ncurvars; j++ )
       {
+         SCIP_Real constant;
          added = FALSE;
+
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
+            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
+
          scoef = new AUT_COEF(scip, curvals[j]);
          //test, whether the coefficient is not zero
          if( !SCIPisZero(scip, scoef->getVal()) )
@@ -283,6 +294,7 @@ SCIP_RETCODE setuparrays(
             delete scoef;
 
       }
+      SCIPfreeBufferArray(scip, &curvars);
       SCIPfreeBufferArray(scip, &curvals);
    }
    return SCIP_OKAY;
@@ -294,7 +306,8 @@ SCIP_RETCODE createGraph(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR             colorinfo,          /**< result pointer to indicate success or failure */
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
-   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
+   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
+   SCIP_Bool             extended_iso        /**< Boolean to indicate whether extended_iso is used (true -> set the same color to all coefficient nodes) */
    )
 {
    int i;
@@ -368,10 +381,20 @@ SCIP_RETCODE createGraph(
 
       for( j = 0; j < ncurvars; j++ )
       {
+         SCIP_Real constant;
+
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
+            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
+
          AUT_COEF scoef(scip, curvals[j]);
          AUT_VAR svar(scip, curvars[j]);
 
-         color = colorinfo.get(scoef);
+         // Use isomorph detector to detect a similar structure (does not consider different colors for coefficients -> give all coef nodes the same color)
+         if(extended_iso)
+            color = 100;
+         else
+            color = colorinfo.get(scoef);
+
          if( color == -1 )
          {
             *result = SCIP_DIDNOTFIND;
@@ -539,9 +562,146 @@ SCIP_RETCODE filterPermutation(
    return SCIP_OKAY;
 }
 
-/** detector structure detection method, tries to detect a structure in the problem */
-static
-DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
+/** extended detection function of detector (give all coefficient nodes the same color) */
+static SCIP_Bool extendedDetection(
+   int*                   ndecdecomps,
+   DEC_DECOMP***          decdecomps,
+   bliss::Stats           bstats,
+   AUT_HOOK*              ptrhook,
+   DEC_DETECTORDATA*      detectordata,
+   SCIP*                  scip,
+   SCIP_RESULT*           result
+)
+{
+   bliss::Graph graph;
+   AUT_COLOR *colorinfo;
+
+   int nconss = SCIPgetNConss(scip);
+   int i;
+   int unique;
+   SCIP_Bool extendedDetect = true; // give all coefficient nodes the same color
+   detectordata->result = SCIP_SUCCESS;
+
+   colorinfo = new AUT_COLOR();
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
+   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
+   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, extendedDetect) );
+
+   //ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
+   //for( i = 0; i < nconss; i++ )
+   //{
+   //   ptrhook->conssperm[i] = -1;
+   //}
+
+   graph.find_automorphisms(bstats, fhook, ptrhook);
+
+   if( !ptrhook->getBool() )
+      detectordata->result = SCIP_DIDNOTFIND;
+
+   if( detectordata->result == SCIP_SUCCESS )
+   {
+      int nperms;
+      DEC_DECOMP* newdecomp;
+      int nmasterconss;
+      SCIP_CONS** masterconss = NULL;
+      int p;
+
+      // assign to a permutation circle only one number
+      collapsePermutation(ptrhook->conssperm, nconss);
+      // renumbering from 0 to number of permutations
+      nperms = renumberPermutations(ptrhook->conssperm, nconss);
+
+      // filter decomposition with largest orbit
+      if( detectordata->numofsol == 1)
+         SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
+
+      SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
+
+      int pos = *ndecdecomps;
+      for( p = *ndecdecomps; p < (nperms+(*ndecdecomps)) && pos < detectordata->numofsol; ++p )
+      {
+         SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
+
+         //nmasterconss = 0;
+         for( i = 0; i < nconss; i++ )
+         {
+            if( p != ptrhook->conssperm[i] )
+            {
+               masterconss[nmasterconss] = SCIPgetConss(scip)[i];
+               SCIPdebugMessage("%s\n", SCIPconsGetName(masterconss[nmasterconss]));
+               nmasterconss++;
+            }
+         }
+         SCIPdebugMessage("%d\n", nmasterconss);
+
+         if( nmasterconss < SCIPgetNConss(scip) )
+         {
+            SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[pos]), masterconss, nmasterconss) );
+
+            SCIPfreeMemoryArray(scip, &masterconss);
+         }
+         else
+         {
+            SCIPfreeMemoryArray(scip, &masterconss);
+
+            continue;
+         }
+
+
+         SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[pos], &newdecomp) );
+         if( newdecomp != NULL )
+         {
+            SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[pos])) );
+            (*decdecomps)[pos] = newdecomp;
+         }
+
+         ++pos;
+      }
+      *ndecdecomps = pos;
+
+      if( *ndecdecomps > 0 )
+      {
+         unique = DECfilterSimilarDecompositions(scip, *decdecomps, *ndecdecomps);
+      }
+      else
+      {
+         unique = *ndecdecomps;
+      }
+
+      for( p = unique; p < *ndecdecomps; ++p )
+      {
+         SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[p])) );
+         (*decdecomps)[p] = NULL;
+      }
+
+      *ndecdecomps = unique;
+
+      if( *ndecdecomps > 0 )
+      {
+         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
+      }
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d decompositions.\n", *ndecdecomps);
+   }
+   else
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "not found.\n");
+   }
+
+   if( *ndecdecomps == 0 )
+   {
+      SCIPfreeMemoryArrayNull(scip, decdecomps);
+   }
+
+   delete ptrhook;
+   delete colorinfo;
+   *result = detectordata->result;
+   return true;
+}
+
+
+/** detection function of detector */
+static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
 { /*lint -esym(429,ptrhook)*/
    bliss::Graph graph;
    bliss::Stats bstats;
@@ -554,11 +714,12 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
    int nconss = SCIPgetNConss(scip);
    int i;
    int unique;
+   SCIP_Bool extendedDetect = false;
 
    colorinfo = new AUT_COLOR();
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
    SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
-   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result) );
+   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, extendedDetect) );
 
    ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
    for( i = 0; i < nconss; i++ )
@@ -666,8 +827,16 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
       SCIPfreeMemoryArrayNull(scip, decdecomps);
    }
 
-   delete ptrhook;
    delete colorinfo;
+
+   delete ptrhook;
+
+   ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
+
+   extendedDetection(ndecdecomps, decdecomps, bstats, ptrhook, detectordata, scip, result);
+
+   delete ptrhook;
+
    *result = detectordata->result;
 
    return SCIP_OKAY;
