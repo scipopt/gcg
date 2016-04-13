@@ -353,7 +353,7 @@ SCIP_RETCODE setuparrays(
       {
          AUT_VAR* svar = new AUT_VAR(scip, vars[i]);
          //add to pointer array iff it doesn't exist
-         SCIP_CALL( colorinfo->insert(svar, &added) );
+         SCIP_CALL( colorinfo->insert(svar, FALSE, &added) );
          if( s > 0 && added)
          {
            *result = SCIP_DIDNOTFIND;
@@ -372,7 +372,7 @@ SCIP_RETCODE setuparrays(
             continue;
          AUT_CONS* scons = new AUT_CONS(scip, conss[i]);
          //add to pointer array iff it doesn't exist
-         SCIP_CALL( colorinfo->insert(scons, &added) );
+         SCIP_CALL( colorinfo->insert(scons, FALSE, &added) );
          if( s > 0 && added)
          {
            *result = SCIP_DIDNOTFIND;
@@ -392,7 +392,7 @@ SCIP_RETCODE setuparrays(
             if( !SCIPisZero(scip, scoef->getVal()) )
             {
                //add to pointer array iff it doesn't exist
-               SCIP_CALL( colorinfo->insert(scoef, &added) );
+               SCIP_CALL( colorinfo->insert(scoef, FALSE, &added) );
                if( s > 0 && added)
                {
                   *result = SCIP_DIDNOTFIND;
@@ -435,7 +435,7 @@ SCIP_RETCODE setuparrays(
 
       /* add right color for master constraint */
       AUT_CONS* scons = new AUT_CONS(origscip, mastercons);
-      SCIP_CALL( colorinfo->insert(scons, &added) );
+      SCIP_CALL( colorinfo->insert(scons, FALSE, &added) );
 
       /* if it hasn't been added, it is already present */
       if(!added)
@@ -449,7 +449,7 @@ SCIP_RETCODE setuparrays(
 
          if( !SCIPisZero(origscip, scoef->getVal()) )
          {
-            SCIP_CALL( colorinfo->insert(scoef, &added) );
+            SCIP_CALL( colorinfo->insert(scoef, FALSE, &added) );
          }
 
          if( !added )
@@ -519,7 +519,7 @@ SCIP_RETCODE createGraph(
          if( ncurvars == 0 )
             continue;
 
-         color = colorinfo.get( AUT_CONS(scip, conss[i]) );
+         color = colorinfo.get( AUT_CONS(scip, conss[i]), FALSE );
 
          if(color == -1) {
             *result = SCIP_DIDNOTFIND;
@@ -533,7 +533,7 @@ SCIP_RETCODE createGraph(
       //add a node for every variable
       for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
       {
-         color = colorinfo.get( AUT_VAR(scip, vars[i]) );
+         color = colorinfo.get( AUT_VAR(scip, vars[i]), FALSE );
 
          if(color == -1) {
             *result = SCIP_DIDNOTFIND;
@@ -547,7 +547,7 @@ SCIP_RETCODE createGraph(
       //it is necessary, since only nodes have colors
       for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
       {
-         int conscolor = colorinfo.get(AUT_CONS(scip, conss[i]));
+         int conscolor = colorinfo.get(AUT_CONS(scip, conss[i]), FALSE);
          ncurvars = GCGconsGetNVars(scip, conss[i]);
          if( ncurvars == 0 )
             continue;
@@ -557,8 +557,8 @@ SCIP_RETCODE createGraph(
          SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
          for( j = 0; j < ncurvars; j++ )
          {
-            int varcolor = colorinfo.get( AUT_VAR(scip, curvars[j] ) ) + colorinfo.getLenCons(); /*lint !e864 */
-            color = colorinfo.get( AUT_COEF(scip, curvals[j] ) );
+            int varcolor = colorinfo.get( AUT_VAR(scip, curvars[j] ), FALSE ) + colorinfo.getLenCons(); /*lint !e864 */
+            color = colorinfo.get( AUT_COEF(scip, curvals[j] ), FALSE );
             if( color == -1 )
             {
                *result = SCIP_DIDNOTFIND;
@@ -612,7 +612,7 @@ SCIP_RETCODE createGraph(
             }
 
 
-            color = colorinfo.get(AUT_COEF(origscip, curvals[j]));
+            color = colorinfo.get(AUT_COEF(origscip, curvals[j]), FALSE);
             assert(color != -1);
             color += colorinfo.getLenCons() + colorinfo.getLenVar(); /*lint !e864 */
 
@@ -641,7 +641,7 @@ SCIP_RETCODE createGraph(
       SCIPdebugMessage("Handling cons <%s>\n", SCIPconsGetName(mastercons));
 
       /* create node for masterconss and get right color */
-      int conscolor = colorinfo.get(AUT_CONS(origscip, mastercons));
+      int conscolor = colorinfo.get(AUT_CONS(origscip, mastercons), FALSE);
       assert(conscolor != -1);
       (void) h->add_vertex((unsigned int) conscolor);
       int masterconsnode = nnodes;
@@ -676,7 +676,7 @@ SCIP_RETCODE createGraph(
             continue;
          }
 
-         color = colorinfo.get(AUT_COEF(origscip, curvals[j]));
+         color = colorinfo.get(AUT_COEF(origscip, curvals[j]), FALSE);
          assert(color != -1);
          color += colorinfo.getLenCons() + colorinfo.getLenVar(); /*lint !e864 */
          SCIP_VAR* pricingvar = GCGoriginalVarGetPricingVar(curvars[j]);
@@ -685,7 +685,7 @@ SCIP_RETCODE createGraph(
          int coefnodeindex = nnodesoffset[ind] + SCIPgetNVars(pricingscip) + SCIPgetNConss(pricingscip) + pricingnonzeros[ind] + mastercoefindex[ind];
          ++(mastercoefindex[ind]);
 
-         int varcolor = colorinfo.get(AUT_VAR(pricingscip, pricingvar));
+         int varcolor = colorinfo.get(AUT_VAR(pricingscip, pricingvar), FALSE);
          assert(varcolor != -1);
          varcolor += colorinfo.getLenCons();
 

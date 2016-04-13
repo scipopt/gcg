@@ -61,8 +61,8 @@
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 TRUE        /**< should the detector be skipped if others found decompositions */
 
-#define DEFAULT_NUMOFSOL         100         /**< default number of solutions */
-#define DEFAULT_EXACT            TRUE        /**< default value using exact coefficients for detection */
+#define DEFAULT_NUMOFSOL         10          /**< default number of solutions */
+#define DEFAULT_EXACT            FALSE       /**< default value using exact coefficients for detection */
 #define DEFAULT_EXTEND           TRUE        /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
 
 /*
@@ -248,8 +248,8 @@ SCIP_RETCODE setuparrays(
    {
       AUT_VAR* svar = new AUT_VAR(scip, vars[i]);
       //add to pointer array iff it doesn't exist
-      SCIP_CALL( colorinfo->insert(svar, &added) );
-      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
+      SCIP_CALL( colorinfo->insert(svar, onlysign, &added) );
+      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar, onlysign), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
          delete svar;
@@ -267,8 +267,8 @@ SCIP_RETCODE setuparrays(
       scons = new AUT_CONS(scip, conss[i]);
       //add to pointer array iff it doesn't exist
       SCIPdebugMessage("nconss %d %d\n", nconss, *result);
-      SCIP_CALL( colorinfo->insert(scons, &added) );
-      SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons), colorinfo->color);
+      SCIP_CALL( colorinfo->insert(scons, onlysign, &added) );
+      SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons, onlysign), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
          delete scons;
@@ -306,8 +306,8 @@ SCIP_RETCODE setuparrays(
          if( !SCIPisZero(scip, scoef->getVal()) )
          {
             //add to pointer array iff it doesn't exist
-            SCIP_CALL( colorinfo->insert(scoef, &added) );
-            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
+            SCIP_CALL( colorinfo->insert(scoef, onlysign, &added) );
+            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef, onlysign), colorinfo->color);
          }
          //otherwise free allocated memory
          if( !added )
@@ -360,7 +360,7 @@ SCIP_RETCODE createGraph(
          continue;
 
       AUT_CONS scons(scip, conss[i]);
-      color = colorinfo.get(scons);
+      color = colorinfo.get(scons, onlysign);
 
       if( color == -1 )
       {
@@ -376,7 +376,7 @@ SCIP_RETCODE createGraph(
    for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
    {
       AUT_VAR svar(scip, vars[i]);
-      color = colorinfo.get(svar);
+      color = colorinfo.get(svar, onlysign);
 
       if( color == -1 )
       {
@@ -425,7 +425,7 @@ SCIP_RETCODE createGraph(
          AUT_COEF scoef(scip, val);
          AUT_VAR svar(scip, curvars[j]);
 
-         color = colorinfo.get(scoef);
+         color = colorinfo.get(scoef, onlysign);
 
          if( color == -1 )
          {
@@ -440,11 +440,11 @@ SCIP_RETCODE createGraph(
          h->add_edge((unsigned int) (nconss + nvars + z), (unsigned int) (nconss + curvar));
          SCIPdebugMessage(
                "nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
-               SCIPconsGetName(conss[i]), i, colorinfo.get(scons),
+               SCIPconsGetName(conss[i]), i, colorinfo.get(scons, onlysign),
                nconss + nvars + z, scoef.getVal(),
                color + colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
                SCIPvarGetName(curvars[j]), nconss + curvar,
-               colorinfo.get(svar) + colorinfo.getLenCons());  /*lint !e864 */
+               colorinfo.get(svar, onlysign) + colorinfo.getLenCons());  /*lint !e864 */
          z++;
 
       }
@@ -617,7 +617,10 @@ SCIP_RETCODE detectIsomorph(
 
    oldndecdecomps = *ndecdecomps;
 
+   detectordata->result = SCIP_SUCCESS;
+
    colorinfo = new AUT_COLOR();
+
    if( !onlysign )
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
    else
@@ -664,10 +667,12 @@ SCIP_RETCODE detectIsomorph(
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
 
+         SCIPdebugMessage("masterconss of decomp %d:\n", p);
+
          nmasterconss = 0;
          for( i = 0; i < nconss; i++ )
          {
-            if( p != ptrhook->conssperm[i] )
+            if( p - *ndecdecomps != ptrhook->conssperm[i] )
             {
                masterconss[nmasterconss] = SCIPgetConss(scip)[i];
                SCIPdebugMessage("%s\n", SCIPconsGetName(masterconss[nmasterconss]));

@@ -123,13 +123,13 @@ struct struct_colorinformation
    struct_colorinformation();
 
    /** insert a variable to its pointer array */
-   SCIP_RETCODE insert( AUT_VAR* svar, SCIP_Bool* added);
+   SCIP_RETCODE insert( AUT_VAR* svar, SCIP_Bool onlysign, SCIP_Bool* added);
 
    /** insert a constraint to its pointer array */
-   SCIP_RETCODE insert( AUT_CONS* scons, SCIP_Bool* added);
+   SCIP_RETCODE insert( AUT_CONS* scons, SCIP_Bool onlysign, SCIP_Bool* added);
 
    /** insert a coefficient to its pointer array */
-   SCIP_RETCODE insert( AUT_COEF* scoef, SCIP_Bool* added);
+   SCIP_RETCODE insert( AUT_COEF* scoef, SCIP_Bool onlysign, SCIP_Bool* added);
 
    /** getter for the length of the variable array */
    int getLenVar();
@@ -138,13 +138,13 @@ struct struct_colorinformation
    int getLenCons();
 
    /** getter for the variable struct */
-   int get( AUT_VAR svar );
+   int get( AUT_VAR svar, SCIP_Bool onlysign );
 
    /** getter for the constraint struct */
-   int get( AUT_CONS scons );
+   int get( AUT_CONS scons, SCIP_Bool onlysign );
 
    /** getter for the coefficient struct */
-   int get( AUT_COEF scoef );
+   int get( AUT_COEF scoef, SCIP_Bool onlysign );
 };
 #endif
 

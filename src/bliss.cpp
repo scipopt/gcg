@@ -41,17 +41,47 @@
 #include "scip_misc.h"
 #include <cstring>
 
+static
+int getSign(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real             val                 /**< value */
+   )
+{
+   if( SCIPisNegative(scip, val) )
+      return -1;
+   if( SCIPisPositive(scip, val) )
+      return 1;
+   else
+      return 0;
+}
+
 /** compare two values of two scips */
 static
 int comp(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_Real             val1,               /**< value 1 to compare */
-   SCIP_Real             val2                /**< value 2 to compare */
+   SCIP_Real             val2,               /**< value 2 to compare */
+   SCIP_Bool             onlysign            /**< use sign of values instead of values? */
    )
 {
-   if( SCIPisLT(scip, val1, val2) )
+   SCIP_Real compval1;
+   SCIP_Real compval2;
+
+   if( onlysign )
+   {
+      compval1 = getSign(scip, val1);
+      compval2 = getSign(scip, val2);
+   }
+   else
+   {
+      compval1 = val1;
+      compval2 = val2;
+   }
+
+
+   if( SCIPisLT(scip, compval1, compval2) )
       return -1;
-   if( SCIPisGT(scip, val1, val2) )
+   if( SCIPisGT(scip, compval1, compval2) )
       return 1;
    else
       return 0;
@@ -62,16 +92,21 @@ static
 int comp(
    SCIP*                 scip,               /**< SCIP data structure */
    AUT_CONS*             cons1,              /**< constraint 1 to compare */
-   AUT_CONS*             cons2               /**< constraint 2 to compare */
+   AUT_CONS*             cons2,              /**< constraint 2 to compare */
+   SCIP_Bool             onlysign            /**< use sign of values instead of values? */
    )
 {
-   if( comp(scip, GCGconsGetRhs(scip, cons1->getCons()), GCGconsGetRhs(scip, cons2->getCons())) != 0 )
-      return comp(scip, GCGconsGetRhs(scip, cons1->getCons()), GCGconsGetRhs(scip, cons2->getCons()));
-   assert(SCIPisEQ(scip, GCGconsGetRhs(scip, cons1->getCons()), GCGconsGetRhs(scip, cons2->getCons())));
+   if( comp(scip, GCGconsGetRhs(scip, cons1->getCons()), GCGconsGetRhs(scip, cons2->getCons()), onlysign) != 0 )
+      return comp(scip, GCGconsGetRhs(scip, cons1->getCons()), GCGconsGetRhs(scip, cons2->getCons()), onlysign);
+   assert(SCIPisEQ(scip, GCGconsGetRhs(scip, cons1->getCons()), GCGconsGetRhs(scip, cons2->getCons())) || onlysign);
 
-   if( comp(scip, GCGconsGetLhs(scip, cons1->getCons()), GCGconsGetLhs(scip, cons2->getCons())) != 0 )
-      return comp(scip, GCGconsGetLhs(scip, cons1->getCons()), GCGconsGetLhs(scip, cons2->getCons()));
-   assert(SCIPisEQ(scip, GCGconsGetLhs(scip, cons1->getCons()), GCGconsGetLhs(scip, cons2->getCons())));
+   if( comp(scip, GCGconsGetLhs(scip, cons1->getCons()), GCGconsGetLhs(scip, cons2->getCons()), onlysign) != 0 )
+      return comp(scip, GCGconsGetLhs(scip, cons1->getCons()), GCGconsGetLhs(scip, cons2->getCons()), onlysign);
+   assert(SCIPisEQ(scip, GCGconsGetLhs(scip, cons1->getCons()), GCGconsGetLhs(scip, cons2->getCons())) || onlysign);
+
+   if( comp(scip, GCGconsGetNVars(scip, cons1->getCons()), GCGconsGetNVars(scip, cons2->getCons()), FALSE) != 0 )
+      return comp(scip, GCGconsGetNVars(scip, cons1->getCons()), GCGconsGetNVars(scip, cons2->getCons()), FALSE);
+   assert(SCIPisEQ(scip, GCGconsGetNVars(scip, cons1->getCons()), GCGconsGetNVars(scip, cons2->getCons())));
 
    return strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons1->getCons())), SCIPconshdlrGetName(SCIPconsGetHdlr(cons2->getCons())));
 }
@@ -82,7 +117,8 @@ static
 int comp(
    SCIP*                 scip,               /**< SCIP data structure */
    AUT_VAR*              var1,               /**< variable 1 to compare */
-   AUT_VAR*              var2                /**< variable 2 to compare */
+   AUT_VAR*              var2,               /**< variable 2 to compare */
+   SCIP_Bool             onlysign            /**< use sign of values instead of values? */
    )
 {
    SCIP_VAR* origvar1;
@@ -98,17 +134,17 @@ int comp(
       else
          origvar2 = var2->getVar();
 
-   if( comp(scip, SCIPvarGetUbGlobal(origvar1), SCIPvarGetUbGlobal(origvar2)) != 0 )
-      return comp(scip, SCIPvarGetUbGlobal(origvar1), SCIPvarGetUbGlobal(origvar2));
-   assert(SCIPisEQ(scip, SCIPvarGetUbGlobal(origvar1), SCIPvarGetUbGlobal(origvar2)));
+   if( comp(scip, SCIPvarGetUbGlobal(origvar1), SCIPvarGetUbGlobal(origvar2), onlysign) != 0 )
+      return comp(scip, SCIPvarGetUbGlobal(origvar1), SCIPvarGetUbGlobal(origvar2), onlysign);
+   assert(SCIPisEQ(scip, SCIPvarGetUbGlobal(origvar1), SCIPvarGetUbGlobal(origvar2)) || onlysign);
 
-   if( comp(scip, SCIPvarGetLbGlobal(origvar1), SCIPvarGetLbGlobal(origvar2)) != 0 )
-      return comp(scip, SCIPvarGetLbGlobal(origvar1), SCIPvarGetLbGlobal(origvar2));
-   assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(origvar1), SCIPvarGetLbGlobal(origvar2)));
+   if( comp(scip, SCIPvarGetLbGlobal(origvar1), SCIPvarGetLbGlobal(origvar2), onlysign) != 0 )
+      return comp(scip, SCIPvarGetLbGlobal(origvar1), SCIPvarGetLbGlobal(origvar2), onlysign);
+   assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(origvar1), SCIPvarGetLbGlobal(origvar2)) || onlysign);
 
-   if( comp(scip, SCIPvarGetObj((origvar1)), SCIPvarGetObj(origvar2)) != 0 )
-      return comp(scip, SCIPvarGetObj(origvar1), SCIPvarGetObj(origvar2));
-   assert(SCIPisEQ(scip, SCIPvarGetObj(origvar1), SCIPvarGetObj(origvar2)));
+   if( comp(scip, SCIPvarGetObj((origvar1)), SCIPvarGetObj(origvar2), onlysign) != 0 )
+      return comp(scip, SCIPvarGetObj(origvar1), SCIPvarGetObj(origvar2), onlysign);
+   assert(SCIPisEQ(scip, SCIPvarGetObj(origvar1), SCIPvarGetObj(origvar2)) || onlysign);
 
    if( SCIPvarGetType(origvar1) < SCIPvarGetType(origvar2) )
       return -1;
@@ -123,7 +159,16 @@ SCIP_DECL_SORTPTRCOMP(sortptrcons)
 {
    AUT_CONS* aut1 = (AUT_CONS*) elem1;
    AUT_CONS* aut2 = (AUT_CONS*) elem2;
-   return comp(aut1->getScip(), aut1, aut2);
+   return comp(aut1->getScip(), aut1, aut2, FALSE);
+}
+
+/** SCIP interface method for sorting the constraints */
+static
+SCIP_DECL_SORTPTRCOMP(sortptrconssign)
+{
+   AUT_CONS* aut1 = (AUT_CONS*) elem1;
+   AUT_CONS* aut2 = (AUT_CONS*) elem2;
+   return comp(aut1->getScip(), aut1, aut2, TRUE);
 }
 
 /** SCIP interface method for sorting the variables */
@@ -132,7 +177,16 @@ SCIP_DECL_SORTPTRCOMP(sortptrvar)
 {
    AUT_VAR* aut1 = (AUT_VAR*) elem1;
    AUT_VAR* aut2 = (AUT_VAR*) elem2;
-   return comp(aut1->getScip(), aut1, aut2);
+   return comp(aut1->getScip(), aut1, aut2, FALSE);
+}
+
+/** SCIP interface method for sorting the variables */
+static
+SCIP_DECL_SORTPTRCOMP(sortptrvarsign)
+{
+   AUT_VAR* aut1 = (AUT_VAR*) elem1;
+   AUT_VAR* aut2 = (AUT_VAR*) elem2;
+   return comp(aut1->getScip(), aut1, aut2, TRUE);
 }
 
 /** SCIP interface method for sorting the constraint coefficients*/
@@ -141,8 +195,18 @@ SCIP_DECL_SORTPTRCOMP(sortptrval)
 {
    AUT_COEF* aut1 = (AUT_COEF*) elem1;
    AUT_COEF* aut2 = (AUT_COEF*) elem2;
-   return comp(aut1->getScip(), aut1->getVal(), aut2->getVal()); /*lint !e864*/
+   return comp(aut1->getScip(), aut1->getVal(), aut2->getVal(), FALSE); /*lint !e864*/
 }
+
+/** SCIP interface method for sorting the constraint coefficients*/
+static
+SCIP_DECL_SORTPTRCOMP(sortptrvalsign)
+{
+   AUT_COEF* aut1 = (AUT_COEF*) elem1;
+   AUT_COEF* aut2 = (AUT_COEF*) elem2;
+   return comp(aut1->getScip(), aut1->getVal(), aut2->getVal(), TRUE); /*lint !e864*/
+}
+
 
 /** default constructor */
 struct_colorinformation::struct_colorinformation()
@@ -155,18 +219,35 @@ ptrarraycoefs(NULL), ptrarrayvars(NULL), ptrarrayconss(NULL)
 /** inserts a variable to the pointer array of colorinformation */
 SCIP_RETCODE struct_colorinformation::insert(
    AUT_VAR*              svar,               /**< variable which is to add */
-   SCIP_Bool*            added               /**< true if a variable was added */
+   SCIP_Bool             onlysign,           /**< use sign of values instead of values? */
+   SCIP_Bool*            added               /**< true if a var was added */
    )
 {
    int pos;
-   if( !SCIPsortedvecFindPtr(ptrarrayvars, sortptrvar, svar, lenvarsarray, &pos) )
+
+   if( !onlysign )
    {
-      SCIPsortedvecInsertPtr(ptrarrayvars, sortptrvar, svar, &lenvarsarray, NULL);
-      *added = TRUE;
-      color++;
+      if( !SCIPsortedvecFindPtr(ptrarrayvars, sortptrvar, svar, lenvarsarray, &pos) )
+      {
+         SCIPsortedvecInsertPtr(ptrarrayvars, sortptrvar, svar, &lenvarsarray, NULL);
+         *added = TRUE;
+         color++;
+      }
+      else
+         *added = FALSE;
    }
    else
-      *added = FALSE;
+   {
+      if( !SCIPsortedvecFindPtr(ptrarrayvars, sortptrvarsign, svar, lenvarsarray, &pos) )
+      {
+         SCIPsortedvecInsertPtr(ptrarrayvars, sortptrvarsign, svar, &lenvarsarray, NULL);
+         *added = TRUE;
+         color++;
+      }
+      else
+         *added = FALSE;
+   }
+
 
    return SCIP_OKAY;
 }
@@ -174,20 +255,38 @@ SCIP_RETCODE struct_colorinformation::insert(
 /** inserts a constraint to the pointer array of colorinformation */
 SCIP_RETCODE struct_colorinformation::insert(
    AUT_CONS*             scons,              /**< constraint which is to add */
+   SCIP_Bool             onlysign,           /**< use sign of values instead of values? */
    SCIP_Bool*            added               /**< true if a constraint was added */
    )
 {
    int pos;
-   if( !SCIPsortedvecFindPtr(ptrarrayconss, sortptrcons, scons,
-         lenconssarray, &pos) )
+
+   if( !onlysign )
    {
-      SCIPsortedvecInsertPtr(ptrarrayconss, sortptrcons, scons,
-            &lenconssarray, NULL);
-      *added = TRUE;
-      color++;
+      if( !SCIPsortedvecFindPtr(ptrarrayconss, sortptrcons, scons,
+            lenconssarray, &pos) )
+      {
+         SCIPsortedvecInsertPtr(ptrarrayconss, sortptrcons, scons,
+               &lenconssarray, NULL);
+         *added = TRUE;
+         color++;
+      }
+      else
+         *added = FALSE;
    }
    else
-      *added = FALSE;
+   {
+      if( !SCIPsortedvecFindPtr(ptrarrayconss, sortptrconssign, scons,
+            lenconssarray, &pos) )
+      {
+         SCIPsortedvecInsertPtr(ptrarrayconss, sortptrconssign, scons,
+               &lenconssarray, NULL);
+         *added = TRUE;
+         color++;
+      }
+      else
+         *added = FALSE;
+   }
 
    return SCIP_OKAY;
 }
@@ -195,56 +294,91 @@ SCIP_RETCODE struct_colorinformation::insert(
 /** inserts a coefficient to the pointer array of colorinformation */
 SCIP_RETCODE struct_colorinformation::insert(
    AUT_COEF*             scoef,              /**< coefficient which is to add */
+   SCIP_Bool             onlysign,           /**< use sign of values instead of values? */
    SCIP_Bool*            added               /**< true if a coefficient was added */
    )
 {
    int pos;
-   if( !SCIPsortedvecFindPtr(ptrarraycoefs, sortptrval, scoef, lencoefsarray, &pos) )
-   {
-      int size = SCIPcalcMemGrowSize(scoef->getScip(), alloccoefsarray+1);
-      if( alloccoefsarray == 0 || lencoefsarray % alloccoefsarray == 0)
-      {
-         SCIP_CALL( SCIPreallocMemoryArray(scip, &ptrarraycoefs, size) );
-         alloccoefsarray = size;
-      }
 
-      SCIPsortedvecInsertPtr(ptrarraycoefs, sortptrval, scoef, &lencoefsarray, NULL);
-      *added = TRUE;
-      color++;
+   if( !onlysign )
+   {
+      if( !SCIPsortedvecFindPtr(ptrarraycoefs, sortptrval, scoef, lencoefsarray, &pos) )
+      {
+         int size = SCIPcalcMemGrowSize(scoef->getScip(), alloccoefsarray+1);
+         if( alloccoefsarray == 0 || lencoefsarray % alloccoefsarray == 0)
+         {
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &ptrarraycoefs, size) );
+            alloccoefsarray = size;
+         }
+
+         SCIPsortedvecInsertPtr(ptrarraycoefs, sortptrval, scoef, &lencoefsarray, NULL);
+         *added = TRUE;
+         color++;
+      }
+      else
+         *added = FALSE;
    }
    else
-      *added = FALSE;
+   {
+      if( !SCIPsortedvecFindPtr(ptrarraycoefs, sortptrvalsign, scoef, lencoefsarray, &pos) )
+      {
+         int size = SCIPcalcMemGrowSize(scoef->getScip(), alloccoefsarray+1);
+         if( alloccoefsarray == 0 || lencoefsarray % alloccoefsarray == 0)
+         {
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &ptrarraycoefs, size) );
+            alloccoefsarray = size;
+         }
+
+         SCIPsortedvecInsertPtr(ptrarraycoefs, sortptrvalsign, scoef, &lencoefsarray, NULL);
+         *added = TRUE;
+         color++;
+      }
+      else
+         *added = FALSE;
+   }
 
    return SCIP_OKAY;
 }
 
 int struct_colorinformation::get(
-   AUT_VAR               svar                /**< variable whose pointer you want */
+   AUT_VAR               svar,               /**< variable whose pointer you want */
+   SCIP_Bool             onlysign            /**< use sign of values instead of values? */
    )
 {
    int pos;
    SCIP_Bool found;
-   found = SCIPsortedvecFindPtr(ptrarrayvars, sortptrvar, &svar, lenvarsarray, &pos);
+   if( !onlysign )
+      found = SCIPsortedvecFindPtr(ptrarrayvars, sortptrvar, &svar, lenvarsarray, &pos);
+   else
+      found = SCIPsortedvecFindPtr(ptrarrayvars, sortptrvarsign, &svar, lenvarsarray, &pos);
    return found ? pos : -1;
 }
 
 int struct_colorinformation::get(
-   AUT_CONS              scons               /**< constraint whose pointer you want */
+   AUT_CONS              scons,              /**< constraint whose pointer you want */
+   SCIP_Bool             onlysign            /**< use sign of values instead of values? */
    )
 {
    int pos;
    SCIP_Bool found;
-   found = SCIPsortedvecFindPtr(ptrarrayconss, sortptrcons, &scons, lenconssarray, &pos);
+   if( !onlysign )
+      found = SCIPsortedvecFindPtr(ptrarrayconss, sortptrcons, &scons, lenconssarray, &pos);
+   else
+      found = SCIPsortedvecFindPtr(ptrarrayconss, sortptrconssign, &scons, lenconssarray, &pos);
    return found ? pos : -1;
 }
 
 int struct_colorinformation::get(
-   AUT_COEF              scoef               /**< coefficient whose pointer you want */
+   AUT_COEF              scoef,              /**< coefficient whose pointer you want */
+   SCIP_Bool             onlysign            /**< use sign of values instead of values? */
    )
 {
    int pos;
    SCIP_Bool found;
-   found = SCIPsortedvecFindPtr(ptrarraycoefs, sortptrval, &scoef, lencoefsarray, &pos);
+   if( !onlysign )
+      found = SCIPsortedvecFindPtr(ptrarraycoefs, sortptrval, &scoef, lencoefsarray, &pos);
+   else
+      found = SCIPsortedvecFindPtr(ptrarraycoefs, sortptrvalsign, &scoef, lencoefsarray, &pos);
    return found ? pos : -1;
 }
 
