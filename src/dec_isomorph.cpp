@@ -61,6 +61,10 @@
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 TRUE        /**< should the detector be skipped if others found decompositions */
 
+#define DEFAULT_NUMOFSOL         100         /**< default number of solutions */
+#define DEFAULT_EXACT            TRUE        /**< default value using exact coefficients for detection */
+#define DEFAULT_EXTEND           TRUE        /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
+
 /*
  * Data structures
  */
@@ -68,8 +72,10 @@
 /** constraint handler data */
 struct DEC_DetectorData
 {
-   SCIP_RESULT result;                       /**< result pointer to indicate success or failure */
-   int numofsol;                             /**< number of solutions */
+   SCIP_RESULT          result;             /**< result pointer to indicate success or failure */
+   int                  numofsol;           /**< number of solutions */
+   SCIP_Bool            exact;              /**< Use exact coefficients for detection? */
+   SCIP_Bool            extend;             /**< Extend detection by using the sign of the coefficients instead of the coefficients? */
 };
 
 typedef struct struct_hook AUT_HOOK;
@@ -216,7 +222,7 @@ SCIP_RETCODE setuparrays(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   SCIP_Bool             diffcoeffs          /**< differenciate coefficients? */
+   SCIP_Bool             onlysign            /**< use only sign of coefficients instead of coefficients? */
    )
 { /*lint -esym(593,scoef) */
    int i;
@@ -282,14 +288,16 @@ SCIP_RETCODE setuparrays(
          if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
             SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
 
-         if( diffcoeffs )
+         if( !onlysign )
          {
             scoef = new AUT_COEF(scip, curvals[j]);
          }
          else
          {
-            if( !SCIPisZero(scip, curvals[j]) )
+            if( SCIPisPositive(scip, curvals[j]) )
                scoef = new AUT_COEF(scip, 1.0);
+            else if( SCIPisNegative(scip, curvals[j]) )
+               scoef = new AUT_COEF(scip, -1.0);
             else
                scoef = new AUT_COEF(scip, 0.0);
          }
@@ -319,7 +327,7 @@ SCIP_RETCODE createGraph(
    AUT_COLOR             colorinfo,          /**< result pointer to indicate success or failure */
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   SCIP_Bool             diffcoeffs          /**< differenciate coefficients? */
+   SCIP_Bool             onlysign            /**< use only sign of coefficients instead of coefficients? */
    )
 {
    int i;
@@ -400,14 +408,16 @@ SCIP_RETCODE createGraph(
 
          SCIP_Real val;
 
-         if( diffcoeffs )
+         if( !onlysign )
          {
             val = curvals[j];
          }
          else
          {
-            if( !SCIPisZero(scip, curvals[j]) )
+            if( SCIPisPositive(scip, curvals[j]) )
                val = 1.0;
+            else if( SCIPisNegative(scip, curvals[j]) )
+               val = -1.0;
             else
                val = 0.0;
          }
@@ -485,7 +495,7 @@ DEC_DECL_INITDETECTOR(detectorInitIsomorph)
    assert(detectordata != NULL);
 
    detectordata->result = SCIP_SUCCESS;
-   detectordata->numofsol = 1;
+   detectordata->numofsol = DEFAULT_NUMOFSOL;
 
    return SCIP_OKAY;
 }
@@ -584,168 +594,37 @@ SCIP_RETCODE filterPermutation(
    return SCIP_OKAY;
 }
 
-/** extended detection function of detector (give all coefficient nodes the same color) */
-SCIP_RETCODE extendedDetection(
-   int*                   ndecdecomps,
-   DEC_DECOMP***          decdecomps,
-   bliss::Stats           bstats,
-   AUT_HOOK*              ptrhook,
-   DEC_DETECTORDATA*      detectordata,
-   SCIP*                  scip,
-   SCIP_RESULT*           result
+/** detection function of isomorph detector */
+static
+SCIP_RETCODE detectIsomorph(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int*                  ndecdecomps,        /**< pointer to store number of decompositions */
+   DEC_DECOMP***         decdecomps,         /**< pointer to store decompositions */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   SCIP_RESULT*          result,             /**< pointer to store result */
+   SCIP_Bool             onlysign            /**< use only sign of coefficients instead of coefficients? */
 )
 {
-   bliss::Graph graph;
-   AUT_COLOR *colorinfo;
-
-   int nconss = SCIPgetNConss(scip);
-   int i;
-   int unique;
-
-   detectordata->result = SCIP_SUCCESS;
-
-   colorinfo = new AUT_COLOR();
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting almost aggregatable structure: ");
-   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result, FALSE) );
-   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, FALSE) );
-
-   ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
-   for( i = 0; i < nconss; i++ )
-   {
-      ptrhook->conssperm[i] = -1;
-   }
-
-   graph.find_automorphisms(bstats, fhook, ptrhook);
-
-   if( !ptrhook->getBool() )
-   {
-      detectordata->result = SCIP_DIDNOTFIND;
-   }
-
-   if( detectordata->result == SCIP_SUCCESS )
-   {
-      int nperms;
-      DEC_DECOMP* newdecomp;
-      int nmasterconss;
-      SCIP_CONS** masterconss = NULL;
-      int p;
-
-      // assign to a permutation circle only one number
-      collapsePermutation(ptrhook->conssperm, nconss);
-      // renumbering from 0 to number of permutations
-      nperms = renumberPermutations(ptrhook->conssperm, nconss);
-
-      // filter decomposition with largest orbit
-      if( detectordata->numofsol == 1)
-         SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
-
-      SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
-
-      int pos = *ndecdecomps;
-      for( p = *ndecdecomps; p < (nperms+(*ndecdecomps)) && pos < detectordata->numofsol; ++p )
-      {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
-
-         //nmasterconss = 0;
-         for( i = 0; i < nconss; i++ )
-         {
-            if( p != ptrhook->conssperm[i] )
-            {
-               masterconss[nmasterconss] = SCIPgetConss(scip)[i];
-               SCIPdebugMessage("%s\n", SCIPconsGetName(masterconss[nmasterconss]));
-               nmasterconss++;
-            }
-         }
-         SCIPdebugMessage("%d\n", nmasterconss);
-
-         if( nmasterconss < SCIPgetNConss(scip) )
-         {
-            SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[pos]), masterconss, nmasterconss) );
-
-            SCIPfreeMemoryArray(scip, &masterconss);
-         }
-         else
-         {
-            SCIPfreeMemoryArray(scip, &masterconss);
-
-            continue;
-         }
-
-
-         SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[pos], &newdecomp) );
-         if( newdecomp != NULL )
-         {
-            SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[pos])) );
-            (*decdecomps)[pos] = newdecomp;
-         }
-
-         ++pos;
-      }
-      *ndecdecomps = pos;
-
-      if( *ndecdecomps > 0 )
-      {
-         unique = DECfilterSimilarDecompositions(scip, *decdecomps, *ndecdecomps);
-      }
-      else
-      {
-         unique = *ndecdecomps;
-      }
-
-      for( p = unique; p < *ndecdecomps; ++p )
-      {
-         SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[p])) );
-         (*decdecomps)[p] = NULL;
-      }
-
-      *ndecdecomps = unique;
-
-      if( *ndecdecomps > 0 )
-      {
-         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
-      }
-
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d decompositions.\n", *ndecdecomps);
-   }
-   else
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "not found.\n");
-   }
-
-   if( *ndecdecomps == 0 )
-   {
-      SCIPfreeMemoryArrayNull(scip, decdecomps);
-   }
-
-   delete colorinfo;
-
-   *result = detectordata->result;
-
-   delete ptrhook;
-
-   return SCIP_OKAY;
-}
-
-
-/** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
-{ /*lint -esym(429,ptrhook)*/
    bliss::Graph graph;
    bliss::Stats bstats;
    AUT_HOOK *ptrhook;
    AUT_COLOR *colorinfo;
 
-   *ndecdecomps = 0;
-   *decdecomps = NULL;
-
    int nconss = SCIPgetNConss(scip);
    int i;
    int unique;
+   int oldndecdecomps;
+
+   oldndecdecomps = *ndecdecomps;
 
    colorinfo = new AUT_COLOR();
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
-   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result, FALSE) );
-   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, FALSE) );
+   if( !onlysign )
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
+   else
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting almost aggregatable structure: ");
+
+   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result, onlysign) );
+   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, onlysign) );
 
    ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
    for( i = 0; i < nconss; i++ )
@@ -775,10 +654,13 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
       if( detectordata->numofsol == 1)
          SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
 
-      SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
+      if( *ndecdecomps == 0 )
+         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
+      else
+         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
 
-      int pos = 0;
-      for( p = 0; p < nperms && pos < detectordata->numofsol; ++p )
+      int pos = *ndecdecomps;
+      for( p = *ndecdecomps; p < *ndecdecomps + nperms && pos < detectordata->numofsol; ++p )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
 
@@ -841,7 +723,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
          SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
       }
 
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d decompositions.\n", *ndecdecomps);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d (new) decompositions.\n", *ndecdecomps - oldndecdecomps);
    }
    else
    {
@@ -857,9 +739,26 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
 
    delete ptrhook;
 
-   //extendedDetection(ndecdecomps, decdecomps, bstats, ptrhook, detectordata, scip, result);
-
    *result = detectordata->result;
+
+   return SCIP_OKAY;
+}
+
+
+/** detection function of detector */
+static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
+{ /*lint -esym(429,ptrhook)*/
+
+   *result = SCIP_DIDNOTFIND;
+
+   *ndecdecomps = 0;
+   *decdecomps = NULL;
+
+   if( detectordata->extend )
+      SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, TRUE) );
+
+   if( detectordata->exact )
+      SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, FALSE) );
 
    return SCIP_OKAY;
 }
@@ -886,5 +785,13 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
       detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, NULL) );
 
    /* add connected constraint handler parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomporph/exact",
+      "Use exact coefficients for detection?", &detectordata->exact, FALSE,
+         DEFAULT_EXACT, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomporph/extend",
+      "Extend detection by using the sign of the coefficients instead of the coefficients?", &detectordata->extend, FALSE,
+      DEFAULT_EXTEND, NULL, NULL) );
+
+
    return SCIP_OKAY;
 }
