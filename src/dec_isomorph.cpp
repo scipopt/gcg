@@ -215,7 +215,8 @@ static
 SCIP_RETCODE setuparrays(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
-   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
+   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
+   SCIP_Bool             diffcoeffs          /**< differenciate coefficients? */
    )
 { /*lint -esym(593,scoef) */
    int i;
@@ -242,7 +243,7 @@ SCIP_RETCODE setuparrays(
       AUT_VAR* svar = new AUT_VAR(scip, vars[i]);
       //add to pointer array iff it doesn't exist
       SCIP_CALL( colorinfo->insert(svar, &added) );
-//      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
+      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
          delete svar;
@@ -259,9 +260,9 @@ SCIP_RETCODE setuparrays(
          continue;
       scons = new AUT_CONS(scip, conss[i]);
       //add to pointer array iff it doesn't exist
-      //SCIPdebugMessage("nconss %d %d\n", nconss, *result);
+      SCIPdebugMessage("nconss %d %d\n", nconss, *result);
       SCIP_CALL( colorinfo->insert(scons, &added) );
-  //    SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons), colorinfo->color);
+      SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
          delete scons;
@@ -281,13 +282,24 @@ SCIP_RETCODE setuparrays(
          if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
             SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
 
-         scoef = new AUT_COEF(scip, curvals[j]);
+         if( diffcoeffs )
+         {
+            scoef = new AUT_COEF(scip, curvals[j]);
+         }
+         else
+         {
+            if( !SCIPisZero(scip, curvals[j]) )
+               scoef = new AUT_COEF(scip, 1.0);
+            else
+               scoef = new AUT_COEF(scip, 0.0);
+         }
+
          //test, whether the coefficient is not zero
          if( !SCIPisZero(scip, scoef->getVal()) )
          {
             //add to pointer array iff it doesn't exist
             SCIP_CALL( colorinfo->insert(scoef, &added) );
-//            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
+            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
          }
          //otherwise free allocated memory
          if( !added )
@@ -307,7 +319,7 @@ SCIP_RETCODE createGraph(
    AUT_COLOR             colorinfo,          /**< result pointer to indicate success or failure */
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   SCIP_Bool             extended_iso        /**< Boolean to indicate whether extended_iso is used (true -> set the same color to all coefficient nodes) */
+   SCIP_Bool             diffcoeffs          /**< differenciate coefficients? */
    )
 {
    int i;
@@ -386,14 +398,24 @@ SCIP_RETCODE createGraph(
          if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
             SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
 
-         AUT_COEF scoef(scip, curvals[j]);
+         SCIP_Real val;
+
+         if( diffcoeffs )
+         {
+            val = curvals[j];
+         }
+         else
+         {
+            if( !SCIPisZero(scip, curvals[j]) )
+               val = 1.0;
+            else
+               val = 0.0;
+         }
+
+         AUT_COEF scoef(scip, val);
          AUT_VAR svar(scip, curvars[j]);
 
-         // Use isomorph detector to detect a similar structure (does not consider different colors for coefficients -> give all coef nodes the same color)
-         if(extended_iso)
-            color = 100;
-         else
-            color = colorinfo.get(scoef);
+         color = colorinfo.get(scoef);
 
          if( color == -1 )
          {
@@ -563,7 +585,7 @@ SCIP_RETCODE filterPermutation(
 }
 
 /** extended detection function of detector (give all coefficient nodes the same color) */
-static SCIP_Bool extendedDetection(
+SCIP_RETCODE extendedDetection(
    int*                   ndecdecomps,
    DEC_DECOMP***          decdecomps,
    bliss::Stats           bstats,
@@ -579,24 +601,26 @@ static SCIP_Bool extendedDetection(
    int nconss = SCIPgetNConss(scip);
    int i;
    int unique;
-   SCIP_Bool extendedDetect = true; // give all coefficient nodes the same color
+
    detectordata->result = SCIP_SUCCESS;
 
    colorinfo = new AUT_COLOR();
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
-   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
-   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, extendedDetect) );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting almost aggregatable structure: ");
+   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result, FALSE) );
+   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, FALSE) );
 
-   //ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
-   //for( i = 0; i < nconss; i++ )
-   //{
-   //   ptrhook->conssperm[i] = -1;
-   //}
+   ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
+   for( i = 0; i < nconss; i++ )
+   {
+      ptrhook->conssperm[i] = -1;
+   }
 
    graph.find_automorphisms(bstats, fhook, ptrhook);
 
    if( !ptrhook->getBool() )
+   {
       detectordata->result = SCIP_DIDNOTFIND;
+   }
 
    if( detectordata->result == SCIP_SUCCESS )
    {
@@ -693,10 +717,13 @@ static SCIP_Bool extendedDetection(
       SCIPfreeMemoryArrayNull(scip, decdecomps);
    }
 
-   delete ptrhook;
    delete colorinfo;
+
    *result = detectordata->result;
-   return true;
+
+   delete ptrhook;
+
+   return SCIP_OKAY;
 }
 
 
@@ -714,12 +741,11 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
    int nconss = SCIPgetNConss(scip);
    int i;
    int unique;
-   SCIP_Bool extendedDetect = false;
 
    colorinfo = new AUT_COLOR();
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
-   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
-   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, extendedDetect) );
+   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result, FALSE) );
+   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, FALSE) );
 
    ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
    for( i = 0; i < nconss; i++ )
@@ -831,11 +857,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
 
    delete ptrhook;
 
-   ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
-
-   extendedDetection(ndecdecomps, decdecomps, bstats, ptrhook, detectordata, scip, result);
-
-   delete ptrhook;
+   //extendedDetection(ndecdecomps, decdecomps, bstats, ptrhook, detectordata, scip, result);
 
    *result = detectordata->result;
 
