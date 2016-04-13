@@ -701,7 +701,7 @@ static SCIP_Bool extendedDetection(
 
 
 /** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
+static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
 { /*lint -esym(429,ptrhook)*/
    bliss::Graph graph;
    bliss::Stats bstats;
