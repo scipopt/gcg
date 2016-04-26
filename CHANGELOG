@@ -1,6 +1,9 @@
 GCG Version
 =================
 
+features
+- solve the problem with one single block if no decomposition is available ('SCIP mode')
+
 code cleanup
 - cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
 
