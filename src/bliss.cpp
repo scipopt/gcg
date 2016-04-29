@@ -30,6 +30,7 @@
  *
  * @author  Martin Bergner
  * @author  Daniel Peters
+ * @author  Jonas Witt
  *
  */
 
@@ -211,7 +212,7 @@ SCIP_DECL_SORTPTRCOMP(sortptrvalsign)
 /** default constructor */
 struct_colorinformation::struct_colorinformation()
  : color(0), lenconssarray(0), lenvarsarray(0), lencoefsarray(0), alloccoefsarray(0),
-ptrarraycoefs(NULL), ptrarrayvars(NULL), ptrarrayconss(NULL)
+ptrarraycoefs(NULL), ptrarrayvars(NULL), ptrarrayconss(NULL), onlysign(FALSE)
 {
 
 }
@@ -219,7 +220,6 @@ ptrarraycoefs(NULL), ptrarrayvars(NULL), ptrarrayconss(NULL)
 /** inserts a variable to the pointer array of colorinformation */
 SCIP_RETCODE struct_colorinformation::insert(
    AUT_VAR*              svar,               /**< variable which is to add */
-   SCIP_Bool             onlysign,           /**< use sign of values instead of values? */
    SCIP_Bool*            added               /**< true if a var was added */
    )
 {
@@ -255,7 +255,6 @@ SCIP_RETCODE struct_colorinformation::insert(
 /** inserts a constraint to the pointer array of colorinformation */
 SCIP_RETCODE struct_colorinformation::insert(
    AUT_CONS*             scons,              /**< constraint which is to add */
-   SCIP_Bool             onlysign,           /**< use sign of values instead of values? */
    SCIP_Bool*            added               /**< true if a constraint was added */
    )
 {
@@ -294,7 +293,6 @@ SCIP_RETCODE struct_colorinformation::insert(
 /** inserts a coefficient to the pointer array of colorinformation */
 SCIP_RETCODE struct_colorinformation::insert(
    AUT_COEF*             scoef,              /**< coefficient which is to add */
-   SCIP_Bool             onlysign,           /**< use sign of values instead of values? */
    SCIP_Bool*            added               /**< true if a coefficient was added */
    )
 {
@@ -341,8 +339,7 @@ SCIP_RETCODE struct_colorinformation::insert(
 }
 
 int struct_colorinformation::get(
-   AUT_VAR               svar,               /**< variable whose pointer you want */
-   SCIP_Bool             onlysign            /**< use sign of values instead of values? */
+   AUT_VAR               svar                /**< variable whose pointer you want */
    )
 {
    int pos;
@@ -355,8 +352,7 @@ int struct_colorinformation::get(
 }
 
 int struct_colorinformation::get(
-   AUT_CONS              scons,              /**< constraint whose pointer you want */
-   SCIP_Bool             onlysign            /**< use sign of values instead of values? */
+   AUT_CONS              scons               /**< constraint whose pointer you want */
    )
 {
    int pos;
@@ -369,8 +365,7 @@ int struct_colorinformation::get(
 }
 
 int struct_colorinformation::get(
-   AUT_COEF              scoef,              /**< coefficient whose pointer you want */
-   SCIP_Bool             onlysign            /**< use sign of values instead of values? */
+   AUT_COEF              scoef               /**< coefficient whose pointer you want */
    )
 {
    int pos;
@@ -381,6 +376,22 @@ int struct_colorinformation::get(
       found = SCIPsortedvecFindPtr(ptrarraycoefs, sortptrvalsign, &scoef, lencoefsarray, &pos);
    return found ? pos : -1;
 }
+
+SCIP_RETCODE struct_colorinformation::setOnlySign(
+   SCIP_Bool            onlysign_            /**< new value for onlysign bool */
+   )
+{
+   onlysign = onlysign_;
+
+   return SCIP_OKAY;
+}
+
+
+SCIP_Bool struct_colorinformation::getOnlySign()
+{
+   return onlysign;
+}
+
 
 int struct_colorinformation::getLenVar()
 {

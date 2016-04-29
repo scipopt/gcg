@@ -30,6 +30,7 @@
  * @brief  detector for pricing problems that can be aggregated (uses bliss)
  * @author Martin Bergner
  * @author Daniel Peters
+ * @author Jonas Witt
  *
  * This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving
  * automorphisms and bliss.
@@ -61,9 +62,9 @@
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 TRUE        /**< should the detector be skipped if others found decompositions */
 
-#define DEFAULT_NUMOFSOL         10          /**< default number of solutions */
-#define DEFAULT_EXACT            FALSE       /**< default value using exact coefficients for detection */
-#define DEFAULT_EXTEND           TRUE        /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
+#define DEFAULT_NUMOFSOL         1          /**< default number of solutions */
+#define DEFAULT_EXACT            TRUE       /**< default value using exact coefficients for detection */
+#define DEFAULT_EXTEND           FALSE      /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
 
 /*
  * Data structures
@@ -221,8 +222,7 @@ static
 SCIP_RETCODE setuparrays(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
-   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   SCIP_Bool             onlysign            /**< use only sign of coefficients instead of coefficients? */
+   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
 { /*lint -esym(593,scoef) */
    int i;
@@ -234,6 +234,7 @@ SCIP_RETCODE setuparrays(
    AUT_COEF* scoef;
    AUT_CONS* scons;
    SCIP_Bool added;
+   SCIP_Bool onlysign;
 
    //allocate max n of coefarray, varsarray, and boundsarray in scip
    nconss = SCIPgetNConss(scip);
@@ -243,13 +244,15 @@ SCIP_RETCODE setuparrays(
    conss = SCIPgetConss(scip);
    vars = SCIPgetVars(scip);
 
+   onlysign = colorinfo->getOnlySign();
+
    //save the properties of variables in a struct array and in a sorted pointer array
    for( i = 0; i < nvars; i++ )
    {
       AUT_VAR* svar = new AUT_VAR(scip, vars[i]);
       //add to pointer array iff it doesn't exist
-      SCIP_CALL( colorinfo->insert(svar, onlysign, &added) );
-      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar, onlysign), colorinfo->color);
+      SCIP_CALL( colorinfo->insert(svar, &added) );
+      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
          delete svar;
@@ -267,8 +270,8 @@ SCIP_RETCODE setuparrays(
       scons = new AUT_CONS(scip, conss[i]);
       //add to pointer array iff it doesn't exist
       SCIPdebugMessage("nconss %d %d\n", nconss, *result);
-      SCIP_CALL( colorinfo->insert(scons, onlysign, &added) );
-      SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons, onlysign), colorinfo->color);
+      SCIP_CALL( colorinfo->insert(scons, &added) );
+      SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
          delete scons;
@@ -306,8 +309,8 @@ SCIP_RETCODE setuparrays(
          if( !SCIPisZero(scip, scoef->getVal()) )
          {
             //add to pointer array iff it doesn't exist
-            SCIP_CALL( colorinfo->insert(scoef, onlysign, &added) );
-            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef, onlysign), colorinfo->color);
+            SCIP_CALL( colorinfo->insert(scoef, &added) );
+            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
          }
          //otherwise free allocated memory
          if( !added )
@@ -326,8 +329,7 @@ SCIP_RETCODE createGraph(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR             colorinfo,          /**< result pointer to indicate success or failure */
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
-   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   SCIP_Bool             onlysign            /**< use only sign of coefficients instead of coefficients? */
+   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
 {
    int i;
@@ -343,6 +345,8 @@ SCIP_RETCODE createGraph(
    SCIP_VAR** curvars = NULL;
    SCIP_Real* curvals = NULL;
    unsigned int nnodes;
+   SCIP_Bool onlysign;
+
    nnodes = 0;
    //building the graph out of the arrays
    bliss::Graph* h = graph;
@@ -351,6 +355,7 @@ SCIP_RETCODE createGraph(
    conss = SCIPgetConss(scip);
    vars = SCIPgetVars(scip);
    z = 0;
+   onlysign = colorinfo.getOnlySign();
 
    //add a node for every constraint
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
@@ -360,7 +365,7 @@ SCIP_RETCODE createGraph(
          continue;
 
       AUT_CONS scons(scip, conss[i]);
-      color = colorinfo.get(scons, onlysign);
+      color = colorinfo.get(scons);
 
       if( color == -1 )
       {
@@ -376,7 +381,7 @@ SCIP_RETCODE createGraph(
    for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
    {
       AUT_VAR svar(scip, vars[i]);
-      color = colorinfo.get(svar, onlysign);
+      color = colorinfo.get(svar);
 
       if( color == -1 )
       {
@@ -425,7 +430,7 @@ SCIP_RETCODE createGraph(
          AUT_COEF scoef(scip, val);
          AUT_VAR svar(scip, curvars[j]);
 
-         color = colorinfo.get(scoef, onlysign);
+         color = colorinfo.get(scoef);
 
          if( color == -1 )
          {
@@ -440,11 +445,11 @@ SCIP_RETCODE createGraph(
          h->add_edge((unsigned int) (nconss + nvars + z), (unsigned int) (nconss + curvar));
          SCIPdebugMessage(
                "nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
-               SCIPconsGetName(conss[i]), i, colorinfo.get(scons, onlysign),
+               SCIPconsGetName(conss[i]), i, colorinfo.get(scons),
                nconss + nvars + z, scoef.getVal(),
                color + colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
                SCIPvarGetName(curvars[j]), nconss + curvar,
-               colorinfo.get(svar, onlysign) + colorinfo.getLenCons());  /*lint !e864 */
+               colorinfo.get(svar) + colorinfo.getLenCons());  /*lint !e864 */
          z++;
 
       }
@@ -621,13 +626,15 @@ SCIP_RETCODE detectIsomorph(
 
    colorinfo = new AUT_COLOR();
 
+   colorinfo->setOnlySign(onlysign);
+
    if( !onlysign )
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
    else
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting almost aggregatable structure: ");
 
-   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result, onlysign) );
-   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, onlysign) );
+   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
+   SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result) );
 
    ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
    for( i = 0; i < nconss; i++ )
