@@ -163,6 +163,8 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
 
       var = vars[i];
       assert(var != NULL);
+      assert(SCIPvarIsActive(var));
+
       if( !SCIPhashmapExists(vartoblock, var) )
          block = nblocks+1;
       else
@@ -1142,6 +1144,9 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
          {
             SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[j]);
 
+            if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+               continue;
+
             /* if the variable is linking */
             if( (int)(size_t)SCIPhashmapGetImage(vartoblock, probvar) >= nblocks+1 ) /*lint !e507*/
             {
@@ -1271,7 +1276,12 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       {
          int varblock;
          SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[j]);
-         assert( SCIPvarIsActive(probvar) );
+
+         if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+            continue;
+
+         assert(SCIPvarIsActive(probvar));
+
          if( SCIPhashmapExists(vartoblock, probvar) )
             varblock = (int) (size_t) SCIPhashmapGetImage(vartoblock, probvar); /*lint !e507*/
          else
@@ -1589,6 +1599,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
          SCIP_VAR** curvars;
          int ncurvars;
          SCIP_CONS* cons = DECdecompGetSubscipconss(decdecomp)[b][c];
+
          SCIPdebugMessage("Cons <%s> in block %d = %d\n", SCIPconsGetName(cons), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1);  /*lint !e507*/
          assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
          assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1 == b); /*lint !e507*/
@@ -1600,8 +1611,13 @@ SCIP_RETCODE DECdecompCheckConsistency(
          {
             int varblock;
             SCIP_VAR* var = SCIPvarGetProbvar(curvars[v]);
+
+            if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+               continue;
+
             varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1;  /*lint !e507*/
             SCIPdebugMessage("\tVar <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
+
             assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
             assert(SCIPvarIsActive(var));
             assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp)+1 );
@@ -1797,6 +1813,10 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
          probvar = SCIPvarGetProbvar(curvars[j]);
          assert(probvar != NULL);
 
+         /* ignore variables which have been fixed during presolving */
+         if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+            continue;
+
          varindex = SCIPvarGetProbindex(probvar);
          assert(varindex >= 0);
          assert(varindex < SCIPgetNVars(scip));
@@ -1852,7 +1872,13 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
          probvar = SCIPvarGetProbvar(curvars[j]);
          assert(probvar != NULL);
 
+         /* ignore variables which have been fixed during presolving */
+         if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+            continue;
+
          varindex = SCIPvarGetProbindex(probvar);
+         assert(varindex >= 0);
+         assert(varindex < SCIPgetNVars(scip));
 
          oldblock = vartoblock[varindex];
          assert((oldblock > 0) && (oldblock <= *nextblock));
@@ -2240,15 +2266,21 @@ SCIP_RETCODE DECgetDensityData(
             SCIP_VAR* var;
             int block;
             int probindex;
+
             var = curvars[v];
             var = SCIPvarGetProbvar(var);
             probindex = SCIPvarGetProbindex(var);
+
+            if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+               continue;
+
             assert(probindex >= 0);
             assert(probindex < nvars);
             varsubproblemdensity[probindex] += 1;
             assert(varsubproblemdensity[probindex] > 0);
             block = (int) (size_t) SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
             assert(block > 0);
+
             if( block <= DECdecompGetNBlocks(decomp) )
             {
                conssubproblemdensity[c] +=1;
@@ -2282,9 +2314,14 @@ SCIP_RETCODE DECgetDensityData(
       {
          SCIP_VAR* var;
          int probindex;
+
          var = curvars[v];
          var = SCIPvarGetProbvar(var);
          probindex = SCIPvarGetProbindex(var);
+
+         if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+            continue;
+
          assert(probindex >= 0);
          assert(probindex < nvars);
          varmasterdensity[probindex] += 1;
@@ -2412,13 +2449,18 @@ SCIP_RETCODE DECgetVarLockData(
          {
             SCIP_VAR* var;
             int probindex;
+
             var = curvars[v];
             var = SCIPvarGetProbvar(var);
             probindex = SCIPvarGetProbindex(var);
+
+            if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+               continue;
+
             assert(probindex >= 0);
             assert(probindex < nvars);
-
             assert(SCIPhashmapExists(DECdecompGetVartoblock(decomp), var));
+
             increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
          }
 
@@ -2447,11 +2489,17 @@ SCIP_RETCODE DECgetVarLockData(
       {
          SCIP_VAR* var;
          int probindex;
+
          var = curvars[v];
          var = SCIPvarGetProbvar(var);
          probindex = SCIPvarGetProbindex(var);
+
+         if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+            continue;
+
          assert(probindex >= 0);
          assert(probindex < nvars);
+
          increaseLock(scip, lhs, curvals[v], rhs, &(masterlocksdown[probindex]), &(masterlocksup[probindex]));
       }
 
@@ -2850,6 +2898,9 @@ SCIP_RETCODE computeConssNzeros(
 
       curvar = SCIPvarGetProbvar(curvars[v]);
 
+      if( SCIPvarGetStatus(curvar) == SCIP_VARSTATUS_FIXED )
+         continue;
+
       block = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), (curvar))) - 1; /*lint !e507 */
       assert(block >= 0);
 
@@ -3210,10 +3261,16 @@ SCIP_RETCODE DECdetermineConsBlock(
 
    for( i = 0; i < ncurvars && *block != nblocks; ++i )
    {
+      SCIP_VAR* var;
       int varblock;
 
-      assert(SCIPhashmapExists(vartoblock, SCIPvarGetProbvar(curvars[i])));
-      varblock = ((int) (size_t) SCIPhashmapGetImage(vartoblock, SCIPvarGetProbvar(curvars[i])))-1; /*lint !e507 */
+      var = SCIPvarGetProbvar(curvars[i]);
+
+      if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+         continue;
+
+      assert(SCIPhashmapExists(vartoblock, var));
+      varblock = ((int) (size_t) SCIPhashmapGetImage(vartoblock, var))-1; /*lint !e507 */
 
       /* if variable is linking skip*/
       if( varblock == nblocks+1 )
@@ -3292,6 +3349,10 @@ SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
    for( v = 0; v < ncurvars; ++v )
    {
       SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[v]);
+
+      if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+         continue;
+
       assert(SCIPhashmapExists(decomp->vartoblock, probvar));
       /* if variable is in master only, move to subproblem */
       if( (int) (size_t) SCIPhashmapGetImage(decomp->vartoblock, probvar) == decomp->nblocks+1 ) /*lint !e507 */
