@@ -1734,14 +1734,14 @@ int processBlockRepresentatives(
 /** */
 static
 SCIP_RETCODE assignConstraintsToRepresentatives(
-   SCIP*                 scip,               /**< */
-   SCIP_CONS**           conss,              /**< */
-   int                   nconss,             /**< */
-   SCIP_Bool*            consismaster,       /**< */
-   SCIP_HASHMAP*         constoblock,        /**< */
-   int*                  vartoblock,         /**< */
-   int*                  nextblock,          /**< */
-   int*                  blockrepresentative /**< */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS**           conss,              /**< array of all constraints */
+   int                   nconss,             /**< number of constraints */
+   SCIP_Bool*            consismaster,       /**< array of flags whether a constraint belongs to the master problem */
+   SCIP_HASHMAP*         constoblock,        /**< hashmap from constraints to block numbers, to be filled */
+   int*                  vartoblock,         /**< array mapping variables to block numbers, initially all -1, to be set */
+   int*                  nextblock,          /**< index of next free block to which no constraints have been assigned yet */
+   int*                  blockrepresentative /**<  */
    )
 {
 
@@ -1806,7 +1806,7 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
          varblock = vartoblock[varindex];
 
          SCIPdebugMessage("\tVar %s (%d): ", SCIPvarGetName(probvar), varblock);
-         /* if variable is assigned to a block, assign constraint to that block */
+         /* if variable is already assigned to a block, assign constraint to that block */
          if( varblock > -1 && varblock != consblock )
          {
             consblock = MIN(consblock, blockrepresentative[varblock]);
