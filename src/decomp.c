@@ -277,9 +277,12 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    {
       int block;
       SCIP_CONS* cons;
+      int nvars;
+      SCIP_Bool success;
 
       cons = conss[i];
       assert(cons != NULL);
+
       if( !SCIPhashmapExists(decomp->constoblock, cons) )
       {
          block = nblocks+1;
@@ -291,6 +294,11 @@ SCIP_RETCODE fillOutConsFromConstoblock(
       }
 
       assert(block > 0 && block <= nblocks+1);
+
+      SCIP_CALL( SCIPgetConsNVars(scip, cons, &nvars, &success) );
+      assert(success);
+      if( nvars == 0 )
+         continue;
 
       /* if constraint belongs to a block */
       if( block <= nblocks )
@@ -1254,6 +1262,12 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
    {
       int consblock;
 
+      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
+      assert(success);
+
+      if( ncurvars == 0 )
+         continue;
+
       consblock = (int)(size_t)SCIPhashmapGetImage(constoblock, conss[i]);  /*lint !e507*/
 
       assert(consblock > 0 && consblock <= nblocks+1);
@@ -1262,8 +1276,6 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
          SCIPdebugMessage("cons <%s> is linking and need not be handled\n", SCIPconsGetName(conss[i]));
          continue;
       }
-      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
-      assert(success);
 
       SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
 
@@ -1490,7 +1502,57 @@ SCIP_RETCODE DECdecompTransform(
 }
 
 /**
- * Adds all those constraints that were added to the problem after the decomposition as created
+ * Remove all those constraints that were removed from the problem after the decomposition had been created
+ */
+SCIP_RETCODE DECdecompRemoveDeletedConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   )
+{
+   int block;
+
+   int c;
+   int pos;
+
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+
+   for( block = 0; block < decdecomp->nblocks; ++block )
+   {
+      for( c = 0, pos = 0; c < decdecomp->nsubscipconss[block]; ++c )
+      {
+         if( !SCIPconsIsDeleted(decdecomp->subscipconss[block][c]) )
+         {
+            decdecomp->subscipconss[block][pos] = decdecomp->subscipconss[block][c];
+            ++pos;
+         }
+         else
+         {
+            SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->subscipconss[block][c]) );
+         }
+      }
+      decdecomp->nsubscipconss[block] = pos;
+   }
+
+   for( c = 0, pos = 0; c < decdecomp->nlinkingconss; ++c )
+   {
+      if( !SCIPconsIsDeleted(decdecomp->linkingconss[c]) )
+      {
+         decdecomp->linkingconss[pos] = decdecomp->linkingconss[c];
+         ++pos;
+      }
+      else
+      {
+         SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->linkingconss[c]) );
+      }
+   }
+   decdecomp->nlinkingconss = pos;
+
+   return SCIP_OKAY;
+}
+
+/**
+ * Adds all those constraints that were added to the problem after the decomposition had been created
  */
 SCIP_RETCODE DECdecompAddRemainingConss(
    SCIP*                 scip,               /**< SCIP data structure */
