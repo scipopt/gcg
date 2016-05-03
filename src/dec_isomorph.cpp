@@ -44,7 +44,6 @@
 #include "scip_misc.h"
 
 #include "graph.hh"
-#include "bliss_automorph.h"
 #include "pub_gcgvar.h"
 #include <cstring>
 #include <cassert>
@@ -65,7 +64,7 @@
  * Data structures
  */
 
-/** constraint handler data */
+/** detector data */
 struct DEC_DetectorData
 {
    SCIP_RESULT result;                       /**< result pointer to indicate success or failure */
@@ -212,7 +211,7 @@ void freeMemory(
 
 /** set up a help structure for graph creation */
 static
-SCIP_RETCODE setuparrays(
+SCIP_RETCODE setupArrays(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
@@ -292,7 +291,7 @@ SCIP_RETCODE setuparrays(
 static
 SCIP_RETCODE createGraph(
    SCIP*                 scip,               /**< SCIP to compare */
-   AUT_COLOR             colorinfo,          /**< result pointer to indicate success or failure */
+   AUT_COLOR             colorinfo,          /**< data structure to save intermediate data */
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
@@ -555,7 +554,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
 
    colorinfo = new AUT_COLOR();
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
-   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
+   SCIP_CALL( setupArrays(scip, colorinfo, &detectordata->result) );
    SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result) );
 
    ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
@@ -586,7 +585,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
       if( detectordata->numofsol == 1)
          SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
 
-      SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
 
       int pos = 0;
       for( p = 0; p < nperms && pos < detectordata->numofsol; ++p )
@@ -683,7 +682,6 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 {
    DEC_DETECTORDATA* detectordata;
 
-   /* create connected constraint handler data */
    detectordata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
@@ -692,6 +690,5 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
       detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, NULL) );
 
-   /* add connected constraint handler parameters */
    return SCIP_OKAY;
 }
