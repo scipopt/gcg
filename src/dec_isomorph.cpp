@@ -323,8 +323,6 @@ SCIP_RETCODE createGraph(
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       ncurvars = GCGconsGetNVars(scip, conss[i]);
-      if( ncurvars == 0 )
-         continue;
 
       AUT_CONS scons(scip, conss[i]);
       color = colorinfo.get(scons);
