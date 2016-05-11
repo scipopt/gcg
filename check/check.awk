@@ -921,7 +921,7 @@ BEGIN {
          reltol = 1e-5 * max(abs(pb),1.0);
          abstol = 1e-4;
 
-         if( timeout || gapreached || sollimitreached || memlimit || nodelimit ) {
+         if( timeout || gapreached || sollimitreached || memlimitreached || nodelimitreached ) {
 	    if( timeout )
 	       status = "timeout";
 	    else if( gapreached )
