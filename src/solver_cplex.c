@@ -1023,24 +1023,24 @@ SCIP_RETCODE GCGincludeSolverCplex(
    )
 {
 #ifdef CPLEXSOLVER
-   GCG_SOLVERDATA* data;
+   GCG_SOLVERDATA* solverdata;
 
-   SCIP_CALL( SCIPallocMemory(scip, &data) );
-   data->origprob = GCGmasterGetOrigprob(scip);
-   data->masterprob = scip;
+   SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
+   solverdata->origprob = GCGmasterGetOrigprob(scip);
+   solverdata->masterprob = scip;
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
          SOLVER_ENABLED,
          solverSolveCplex, solverSolveHeurCplex, solverFreeCplex, solverInitCplex,
-         solverExitCplex, solverInitsolCplex, solverExitsolCplex, data));
+         solverExitCplex, solverInitsolCplex, solverExitsolCplex, solverdata));
 
-   SCIP_CALL( SCIPaddBoolParam(data->origprob, "pricingsolver/cplex/checksols",
+   SCIP_CALL( SCIPaddBoolParam(solverdata->origprob, "pricingsolver/cplex/checksols",
          "should solutions of the pricing MIPs be checked for duplicity?",
-         &data->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL));
+         &solverdata->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL));
 
-   SCIP_CALL( SCIPaddIntParam(data->origprob, "pricingsolver/cplex/threads",
+   SCIP_CALL( SCIPaddIntParam(solverdata->origprob, "pricingsolver/cplex/threads",
          "number of threads the CPLEX pricing solver is allowed to use (0: automatic)",
-         &data->threads, TRUE, DEFAULT_THREADS, 0, INT_MAX, NULL, NULL));
+         &solverdata->threads, TRUE, DEFAULT_THREADS, 0, INT_MAX, NULL, NULL));
 #endif
    return SCIP_OKAY;
 }

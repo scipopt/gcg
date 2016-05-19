@@ -569,34 +569,34 @@ SCIP_RETCODE GCGincludeSolverMip(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   GCG_SOLVERDATA* data;
+   GCG_SOLVERDATA* solverdata;
 
-   SCIP_CALL( SCIPallocMemory(scip, &data) );
-   data->settingsfile = NULL;
+   SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
+   solverdata->settingsfile = NULL;
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
          solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
-         solverInitsolMip, solverExitsolMip, data) );
+         solverInitsolMip, solverExitsolMip, solverdata) );
 
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/checksols",
          "should solutions of the pricing MIPs be checked for duplicity?",
-         &data->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
+         &solverdata->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddLongintParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/heurnodelimit",
          "node limit for heuristic pricing",
-         &data->heurnodelimit, TRUE, DEFAULT_HEURNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
+         &solverdata->heurnodelimit, TRUE, DEFAULT_HEURNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddLongintParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/heurstallnodelimit",
          "stall node limit for heuristic pricing",
-         &data->heurstallnodelimit, TRUE, DEFAULT_HEURSTALLNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
+         &solverdata->heurstallnodelimit, TRUE, DEFAULT_HEURSTALLNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/heurgaplimit",
          "gap limit for heuristic pricing",
-         &data->heurgaplimit, TRUE, DEFAULT_HEURGAPLIMIT, 0.0, 1.0, NULL, NULL) );
+         &solverdata->heurgaplimit, TRUE, DEFAULT_HEURGAPLIMIT, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/settingsfile",
          "settings file for pricing problems",
-         &data->settingsfile, TRUE, DEFAULT_SETTINGSFILE, NULL, NULL) );
+         &solverdata->settingsfile, TRUE, DEFAULT_SETTINGSFILE, NULL, NULL) );
 
 
    return SCIP_OKAY;
