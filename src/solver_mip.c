@@ -569,7 +569,10 @@ SCIP_RETCODE GCGincludeSolverMip(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   SCIP* origprob;
    GCG_SOLVERDATA* solverdata;
+
+   origprob = GCGmasterGetOrigprob(scip);
 
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
    solverdata->settingsfile = NULL;
@@ -578,23 +581,23 @@ SCIP_RETCODE GCGincludeSolverMip(
          solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
          solverInitsolMip, solverExitsolMip, solverdata) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/checksols",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/mip/checksols",
          "should solutions of the pricing MIPs be checked for duplicity?",
          &solverdata->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/heurnodelimit",
+   SCIP_CALL( SCIPaddLongintParam(origprob, "pricingsolver/mip/heurnodelimit",
          "node limit for heuristic pricing",
          &solverdata->heurnodelimit, TRUE, DEFAULT_HEURNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/heurstallnodelimit",
+   SCIP_CALL( SCIPaddLongintParam(origprob, "pricingsolver/mip/heurstallnodelimit",
          "stall node limit for heuristic pricing",
          &solverdata->heurstallnodelimit, TRUE, DEFAULT_HEURSTALLNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/heurgaplimit",
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/mip/heurgaplimit",
          "gap limit for heuristic pricing",
          &solverdata->heurgaplimit, TRUE, DEFAULT_HEURGAPLIMIT, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddStringParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/settingsfile",
+   SCIP_CALL( SCIPaddStringParam(origprob, "pricingsolver/mip/settingsfile",
          "settings file for pricing problems",
          &solverdata->settingsfile, TRUE, DEFAULT_SETTINGSFILE, NULL, NULL) );
 
