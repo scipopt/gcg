@@ -1775,7 +1775,7 @@ SCIP_Bool  ObjPricerGcg::canPricingBeAborted() const
       canabort = TRUE;
    }
 
-   if( !canabort && pricerdata->abortpricinggap > 0 )
+   if( !canabort && pricerdata->abortpricinggap > 0.0 )
    {
       SCIP_Real gap;
       gap = (SCIPgetLPObjval(scip_) - SCIPgetNodeLowerbound(scip_, SCIPgetCurrentNode(scip_)))/SCIPgetNodeLowerbound(scip_, SCIPgetCurrentNode(scip_));
