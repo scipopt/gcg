@@ -53,13 +53,19 @@
 
 #define SOLVER_ENABLED      TRUE  /**< indicates whether the solver should be enabled */
 
-#define DEFAULT_CHECKSOLS    TRUE
-#define DEFAULT_SETTINGSFILE "-"
+#define DEFAULT_CHECKSOLS           TRUE
+#define DEFAULT_HEURNODELIMIT       1000LL
+#define DEFAULT_HEURSTALLNODELIMIT  100LL
+#define DEFAULT_HEURGAPLIMIT        0.2
+#define DEFAULT_SETTINGSFILE        "-"
 
 /** branching data for branching decisions */
 struct GCG_SolverData
 {
    SCIP_Bool             checksols;          /**< should solutions be checked extensively */
+   SCIP_Longint          heurnodelimit;      /**< node limit for heuristic pricing */
+   SCIP_Longint          heurstallnodelimit; /**< stall node limit for heuristic pricing */
+   SCIP_Real             heurgaplimit;       /**< gap limit for heuristic pricing */
    char*                 settingsfile;       /**< settings file to be applied in pricing problems */
 };
 
@@ -538,9 +544,9 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", 100LL) );
-   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", 1000LL) );
-   SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", 0.2) );
+   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", solverdata->heurstallnodelimit) );
+   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", solverdata->heurnodelimit) );
+   SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", solverdata->heurgaplimit) );
    /*SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/bestsol", 5) );*/ /* TODO: do we want a solution limit? */
 
    SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, cols, maxcols, ncols, lowerbound, result) );
@@ -575,6 +581,18 @@ SCIP_RETCODE GCGincludeSolverMip(
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/checksols",
          "should solutions of the pricing MIPs be checked for duplicity?",
          &data->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddLongintParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/heurnodelimit",
+         "node limit for heuristic pricing",
+         &data->heurnodelimit, TRUE, DEFAULT_HEURNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddLongintParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/heurstallnodelimit",
+         "stall node limit for heuristic pricing",
+         &data->heurstallnodelimit, TRUE, DEFAULT_HEURSTALLNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/heurgaplimit",
+         "gap limit for heuristic pricing",
+         &data->heurgaplimit, TRUE, DEFAULT_HEURGAPLIMIT, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/settingsfile",
          "settings file for pricing problems",
