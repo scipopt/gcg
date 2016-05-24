@@ -38,6 +38,7 @@
 #include "class_seeedpool.h"
 #include "struct_detector.h"
 
+
 #include <exception>
 
 #define SCIP_CALL_EXC(x)   do                                                                                  \
@@ -87,9 +88,96 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 		return var;
 }
 
-SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currSeeeds, std::vector<SeeedPtr> const & finishedSeeeeds){
+SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> const & seeeds, bool sort){
 
-	return TRUE;
+   for( int i = 0; i < seeeds.size; ++i )
+   {
+
+      /** compares the number of master conss, master vars, blocks, linking vars and stairlinking vars */
+      if( compseeed->getNMasterconss != seeeds[i]->getNMasterconss || compseeed->getNMastervars != seeeds[i]->getNMastervars ||
+         compseeed->getNBlocks != seeeds[i]->getNBlocks || compseeed->getNLinkingvars != seeeds[i]->getNLinkingvars ||
+         compseeed->getNStairlinkingvars != seeeds[i]->getNStairlinkingvars )
+         continue;
+
+      /** compares the number of constraints and variables in the blocks*/
+      for( int j = 0; j < compseeed->getNBlocks; ++j )
+      {
+         if( (compseeed->getNVarsForBlock(j) != seeeds[i]->getNVarsForBlock(j)) || (compseeed->getNConssForBlock(j) != seeeds[i]->getNConssForBlock(j)) )
+            goto noDuplicate;
+      }
+
+      /** sorts the the master conss, master vars, conss in blocks, vars in blocks, linking vars and stairlinking vars */
+      if( sort )
+      {
+         compseeed->sortMasterconss;
+         seeeds[i]->sortMasterconss;
+         compseeed->sortMastervars;
+         seeeds[i]->sortMastervars;
+         for( int j = 0; j < compseeed->getNBlocks; ++j)
+         {
+            compseeed->sortConssForBlock(j);
+            seeeds[i]->sortConssForBlock(j);
+            compseeed->sortVarsForBlock(j);
+            seeeds[i]->sortVarsForBlock(j);
+         }
+         compseeed->sortLinkingvars;
+         seeeds[i]->sortLinkingvars;
+         compseeed->sortStairlinkingvars;
+         seeeds[i]->sortStairlinkingvars;
+      }
+
+      /** compares the master cons */
+      for( int j = 0; j < compseeed->getNMasterconss; ++j)
+      {
+         if( compseeed->getMasterconss[j] != seeeds[i]->getMasterconss[j] )
+            goto noDuplicate;
+      }
+
+      /** compares the master vars */
+      for( int j = 0; j < compseeed->getNMastervars; ++j)
+      {
+         if( compseeed->getMastervars[j] != seeeds[i]->getMastervars[j] )
+            goto noDuplicate;
+      }
+
+      /** compares the constrains and variables in the blocks */
+      for( int j = 0; j < compseeed->getNBlocks; ++j )
+      {
+         for( int k = 0; k < compseeed->getNConssForBlock(j); ++k)
+         {
+            if( compseeed->getConssForBlock(j)[k] != compseeed->getConssForBlock(j)[k] )
+               goto noDuplicate;
+         }
+         for( int k = 0; k < compseeed->getNVarsForBlock(j); ++k)
+         {
+            if( compseeed->getVarsForBlock(j)[k] != compseeed->getVarsForBlock(j)[k] )
+               goto noDuplicate;
+         }
+      }
+
+      /** compares the linking vars */
+      for( int j = 0; j < compseeed->getNLinkingvars; ++j)
+      {
+         if( compseeed->getLinkingvars[j] != seeeds[i]->getLinkingvars[j] )
+            goto noDuplicate;
+      }
+
+      /** compares the stairlinking vars */
+      for( int j = 0; j < compseeed->getNStairlinkingvars; ++j)
+      {
+         if( compseeed->getStairlinkingvars[j] != seeeds[i]->getStairlinkingvars[j] )
+            goto noDuplicate;
+      }
+
+      return FALSE;
+
+      noDuplicate: continue;
+   }
+   return TRUE;
+}
+
+SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currSeeeds, std::vector<SeeedPtr> const & finishedSeeeds, bool sort){
+   return ( seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, sort) && seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, sort) );
 }
 
 
@@ -116,6 +204,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	 conshdlrdata = SCIPconshdlrGetData(conshdlr);
 	 assert(conshdlrdata != NULL);
 
+	 /** store priorities of the detectors */
 	 for(int d = 0; d < conshdlrdata->ndetectors; ++d )
 	 {
 		 DEC_DETECTOR *detector;
@@ -125,9 +214,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	 }
 
 	 SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
+
+	 /** sort the detectors according their priorities */
 	 SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
 
 	 SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
+
 	 for(int d = 0; d < conshdlrdata->ndetectors; ++d )
 	 {
 		 DEC_DETECTOR* detector;

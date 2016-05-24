@@ -240,6 +240,12 @@ namespace gcg {
   	  return (int) masterConss.size();
     }
 
+  /** sorts master conss */
+  void Seeed::sortMasterconss(
+    ){
+     std::sort(masterConss.begin(), masterConss.end());
+     return;
+    }
 
   /** returns vector containing master vars (every constraint containing a master var is in master )*/
   const int* Seeed::getMastervars(
@@ -253,6 +259,18 @@ namespace gcg {
 	  return(int) masterVars.size();
   }
 
+  /** sorts master vars */
+  void Seeed::sortMastervars(
+  ){
+     std::sort(masterVars.begin(), masterVars.end());
+     return;
+  }
+
+  /** returns number of blocks */
+  int Seeed::getNBlocks(
+  ){
+     return nBlocks;
+  }
 
   /** returns vector containing master conss */
   const int* Seeed::getConssForBlock(
@@ -266,6 +284,14 @@ namespace gcg {
 		  int block
   ){
 	  return (int)conssForBlocks[block].size();
+  }
+
+  /** sorts cons of a certain block */
+  void Seeed::sortConssForBlock(
+        int block
+  ){
+     std::sort(conssForBlocks[block].begin(), conssForBlocks[block].end());
+     return;
   }
 
   /** returns vector containing vars of a certain block */
@@ -282,6 +308,14 @@ namespace gcg {
   	  return (int)varsForBlocks[block].size();
     }
 
+   /** sorts cons of a certain block */
+   void Seeed::sortVarsForBlock(
+         int block
+   ){
+      std::sort(varsForBlocks[block].begin(), varsForBlocks[block].end());
+      return;
+   }
+
   /** returns vector containing linking vars */
   const int* Seeed::getLinkingvars(
   ){
@@ -294,6 +328,12 @@ namespace gcg {
   	  return (int)linkingVars.size();
     }
 
+    /** sorts linking vars */
+    void Seeed::sortLinkingvars(
+    ){
+       std::sort(linkingVars.begin(), linkingVars.end());
+       return;
+    }
 
   /** returns vector containing stairlinking vars */
   const int* Seeed::getStairlinkingvars(
@@ -307,6 +347,12 @@ namespace gcg {
   	  return (int) stairlinkingVars.size();
     }
 
+  /** sorts stairlinking vars */
+  void Seeed::sortStairlinkingvars(
+  ){
+     std::sort(stairlinkingVars.begin(), stairlinkingVars.end());
+     return;
+  }
 
   /** returns vector containing variables not assigned yet*/
   const int* Seeed::getOpenvars(

@@ -28,6 +28,7 @@
 /**@file   class_Seeed.h
  * @brief  class with functions for seeed
  * @author Michael Bastubbe
+ * @author Hannah Hechenrieder
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -64,7 +65,7 @@ private:
    std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
    std::vector<int> 				detectorChain;
-   bool 							openVarsAndConssCalculated; /** are the
+   bool 							openVarsAndConssCalculated; /** are the */
 
 
 public:
@@ -139,9 +140,24 @@ public:
    int getNMasterconss(
    );
 
+   /** sorts master conss */
+   void sortMasterconss(
+   );
 
    /** returns vector containing master vars (every constraint containing a master var is in master )*/
    const int* getMastervars(
+   );
+
+   /** returns size of array containing master vars */
+   int getNMastervars(
+   );
+
+   /** sorts master vars */
+   void Seeed::sortMastervars(
+   );
+
+   /** returns number of blocks */
+   int getNBlocks(
    );
 
    /** returns vector containing master conss */
@@ -149,17 +165,35 @@ public:
 		   int block
    );
 
+   /** sorts cons of a certain block */
+   void sortConssForBlock(
+         int block
+   );
+
    /** returns vector containing vars of a certain block */
    const int* getVarsForBlock(
 		   int block
+   );
+
+   /** sorts vars of a certain block */
+   void sortVarsForBlock(
+         int block
    );
 
    /** returns vector containing linking vars */
    const int* getLinkingvars(
    );
 
+   /** sorts linking vars */
+   void Seeed::sortLinkingvars(
+   );
+
    /** returns vector containing stairlinking vars */
    const int* getStairlinkingvars(
+   );
+
+   /** sorts stairlinking vars */
+   void Seeed::sortStairlinkingvars(
    );
 
    /** returns vector containing variables not assigned yet */
