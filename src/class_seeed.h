@@ -204,10 +204,6 @@ public:
    const int* getOpenconss(
    );
 
-   /** returns size of vector containing master vars (every constraint containing a master var is in master )*/
-   int getNMastervars(
-   );
-
    /** returns size of vector containing master conss */
    int getNConssForBlock(
 		   int block
