@@ -819,13 +819,16 @@ void DECprintListOfDetectors(
 
    ndetectors = conshdlrdata->ndetectors;
 
-   SCIPdialogMessage(scip, NULL, " detector             priority char  description\n --------------       -------- ----  -----------\n");
+   SCIPdialogMessage(scip, NULL, " detector             char priority enabled  description\n");
+   SCIPdialogMessage(scip, NULL, " --------------       ---- -------- -------  -----------\n");
 
    for( i = 0; i < ndetectors; ++i )
    {
       SCIPdialogMessage(scip, NULL,  " %-20s", conshdlrdata->detectors[i]->name);
-      SCIPdialogMessage(scip, NULL,  " %8d    %c ", conshdlrdata->detectors[i]->priority, conshdlrdata->detectors[i]->decchar);
-      SCIPdialogMessage(scip, NULL,  " %s\n", conshdlrdata->detectors[i]->description);
+      SCIPdialogMessage(scip, NULL,  "    %c", conshdlrdata->detectors[i]->decchar);
+      SCIPdialogMessage(scip, NULL,  " %8d", conshdlrdata->detectors[i]->priority);
+      SCIPdialogMessage(scip, NULL,  " %7s", conshdlrdata->detectors[i]->enabled ? "TRUE" : "FALSE");
+      SCIPdialogMessage(scip, NULL,  "  %s\n", conshdlrdata->detectors[i]->description);
    }
 }
 
