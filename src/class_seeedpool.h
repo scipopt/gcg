@@ -46,6 +46,7 @@
 
 namespace gcg {
 
+
 //typedef boost::shared_ptr<Seeed> SeeedPtr;
 typedef Seeed* SeeedPtr;
 
@@ -94,13 +95,22 @@ public:
    /** access coefficient matrix variable-wise */
    const  int * getConssForVar(int varIndex);
 
+   int getNVarsForCons(int consIndex);
+
+   int getNConssForVar(int varIndex);
+
    SCIP_VAR* getVarForIndex(int varIndex);
 
    SCIP_CONS* getConsForIndex(int consIndex);
 
+   DEC_DETECTOR* getDetectorForIndex(int detectorIndex);
+
    int getIndexForVar(SCIP_VAR* var);
 
    int getIndexForCons(SCIP_CONS* cons);
+
+   int getIndexForDetector(DEC_DETECTOR* detector);
+
 
 
 

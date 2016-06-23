@@ -42,8 +42,11 @@
 
 
 
+
+
 namespace gcg {
 
+class Seeedpool;
 
 
 class Seeed
@@ -60,7 +63,7 @@ private:
    std::vector<std::vector<int>> 	conssForBlocks; 		/**< conssForBlocks[k] contains a vector of indices of all constraints assigned to block k */
    std::vector<std::vector<int>> 	varsForBlocks; 			/**< varsForBlocks[k] contains a vector of indices of all variables assigned to block k */
    std::vector<int> 				linkingVars;			/**< vector containing indices of linking variables */
-   std::vector<int> 				stairlinkingVars;		/**< vector containing indices of staircase linking variables */
+   std::vector<std::vector<int>> 	stairlinkingVars;		/**< vector containing indices of staircase linking variables of the blocks */
    std::vector<int> 				openVars;				/**< vector containing indices of  variables that are not assigned yet*/
    std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
@@ -122,7 +125,7 @@ public:
 
    /** add a variable to the stair linking variables */
    SCIP_RETCODE setVarToStairlinking(
-		   int varToStairLinking
+		   int varToStairLinking, int block1, int block2
    );
 
    SCIP_RETCODE setDetectorPropagated(
@@ -153,7 +156,7 @@ public:
    );
 
    /** sorts master vars */
-   void Seeed::sortMastervars(
+   void sortMastervars(
    );
 
    /** returns number of blocks */
@@ -185,15 +188,17 @@ public:
    );
 
    /** sorts linking vars */
-   void Seeed::sortLinkingvars(
+   void sortLinkingvars(
    );
 
    /** returns vector containing stairlinking vars */
    const int* getStairlinkingvars(
+         int block
    );
 
    /** sorts stairlinking vars */
-   void Seeed::sortStairlinkingvars(
+   void sortStairlinkingvars(
+         int block
    );
 
    /** returns vector containing variables not assigned yet */
@@ -218,8 +223,9 @@ public:
    int getNLinkingvars(
    );
 
-   /** returns size ofvector containing stairlinking vars */
+   /** returns size of vector containing stairlinking vars */
    int getNStairlinkingvars(
+      int block
    );
 
    void  calcOpenconss();
@@ -240,8 +246,42 @@ public:
 		   int detectorID
    );
 
-   SCIP_RETCODE Seeed::completeGreedily();
+   /** assigns the open cons and open vars */
+   SCIP_RETCODE completeGreedily(
+         Seeedpool* seeedpool
+   );
 
+   /** returns whether the var is a linking var */
+   bool isVarLinkingvar(
+         int var
+   );
+
+   /** return whether the var is a var of the block */
+   bool isVarBlockvarOfBlock(
+         int var, int block
+   );
+
+   /** returns whether the var is a master var */
+   bool isVarMastervar(
+         int var
+   );
+
+   /** returns whether the var is an open var */
+   bool isVarOpenvar(
+         int var
+   );
+
+   /** returns whether all cons are assigned and deletes the vector open cons if all are assigned */
+   bool checkAllConsAssigned(
+   );
+
+   /** returns the detectorchain */
+   int* getDetectorchain(
+   );
+
+   /** returns the number of detectors the seeed is propagated by */
+   int getNDetectors(
+   );
 
 private:
 
