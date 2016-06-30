@@ -25,40 +25,30 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_detector.h
- * @brief  data structures for detectors
+/**@file   dec_compgreedily.h
+ * @brief  compgreedily detector
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_DETECTOR_H__
-#define GCG_STRUCT_DETECTOR_H__
+#ifndef GCG_DEC_COMPGREEDILY_H__
+#define GCG_DEC_COMPGREEDILY_H__
 
-#include "type_detector.h"
+#include "scip/scip.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+/** creates the handler for compgreedily detector and includes it in SCIP */
+extern
+SCIP_RETCODE SCIPincludeDetectionCompgreedily(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
-/** detector data structure */
-struct DEC_Detector {
-   const char*           name;               /**< name of the detector */
-   DEC_DETECTORDATA*     decdata;            /**< custom data structure of the detectors */
-   char                  decchar;            /**< display character of detector */
-   const char*           description;        /**< description of the detector */
-   int                   priority;           /**< detector priority */
-   SCIP_Bool             enabled;            /**< flag to indicate whether detector is enabled */
-   SCIP_Bool             skip;               /**< should detector be skipped if other detectors found decompositions */
-   DEC_DECOMP**          decomps;            /**< decompositions this detector has found */
-   int                   ndecomps;           /**< number of decompositions the detector has found */
-
-   SCIP_CLOCK*           dectime;            /**< time the detector took to find decompositions */
-
-   DEC_DECL_INITDETECTOR((*initDetection));  /**< initialization method of detector */
-   DEC_DECL_DETECTSTRUCTURE((*detectStructure)); /**< structure detection method of detector */
-   DEC_DECL_EXITDETECTOR((*exitDetection));  /**< deinitialization method of detector */
-   DEC_DECL_PROPAGATESEEED((*propagateSeeed));
-
-};
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif

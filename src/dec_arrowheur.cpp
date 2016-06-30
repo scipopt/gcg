@@ -418,6 +418,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 }
 #endif
 
+#define propagateSeeedArrowheur NULL
+
 /** creates the arrowheur presolver and includes it in SCIP */
 extern "C"
 SCIP_RETCODE SCIPincludeDetectionArrowheur(
@@ -434,7 +436,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    detectordata->found = FALSE;
    detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur, propagateSeeedArrowheur) );
 
 
    /* add arrowheur presolver parameters */

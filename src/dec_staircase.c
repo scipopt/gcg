@@ -512,6 +512,7 @@ DEC_DECL_DETECTSTRUCTURE(detectStaircase)
    return SCIP_OKAY;
 }
 
+#define propagateSeeedStaircase NULL
 
 /*
  * constraint specific interface methods
@@ -533,7 +534,7 @@ SCIP_RETCODE SCIPincludeDetectionStaircase(
    detectordata->constoblock = NULL;
    detectordata->vartoblock = NULL;
    detectordata->nblocks = 0;
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectStaircase, initStaircase, exitStaircase) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectStaircase, initStaircase, exitStaircase, propagateSeeedStaircase) );
 
    return SCIP_OKAY;
 }

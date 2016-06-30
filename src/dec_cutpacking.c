@@ -2010,6 +2010,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
 }
 #endif
 
+#define propagateSeeedCutpacking NULL
+
 /** creates the cutpacking detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionCutpacking(
    SCIP*                 scip                /**< SCIP data structure */
@@ -2029,7 +2031,7 @@ SCIP_RETCODE SCIPincludeDetectionCutpacking(
    /* include structure detector */
    SCIP_CALL( DECincludeDetector(scip,
       DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectAndBuildCutpacking, initCutpacking, exitCutpacking) );
+      detectordata, detectAndBuildCutpacking, initCutpacking, exitCutpacking, propagateSeeedCutpacking) );
 
    /* add cutpacking detector parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/algorithm",

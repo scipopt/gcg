@@ -234,6 +234,7 @@ DEC_DECL_DETECTSTRUCTURE(detectRandom)
    return SCIP_OKAY;
 }
 
+#define propagateSeeedRandom NULL
 
 /*
  * detector specific interface methods
@@ -254,7 +255,7 @@ SCIP_RETCODE SCIPincludeDetectionRandom(
    detectordata->constoblock = NULL;
    detectordata->nblocks = 0;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectRandom, initRandom, exitRandom) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectRandom, initRandom, exitRandom, propagateSeeedRandom) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/seed", "random seed for the random number generator, -1 is the current time", &detectordata->seed, FALSE, DEFAULT_SEED, -1, INT_MAX, NULL, NULL ) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/maxblocks", "the maximal number of blocks, -1 defaults to avgconsperblock", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, -1, INT_MAX, NULL, NULL ) );

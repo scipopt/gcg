@@ -207,7 +207,8 @@ LIBOBJ		=	reader_blk.o \
 			gcgcol.o \
 			class_colpool.o \
 			class_seeed.o \
-			class_seeedpool.o
+			class_seeedpool.o \
+			dec_compgreedily.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

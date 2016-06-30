@@ -57,13 +57,34 @@ namespace gcg {
 
 /** constructor(s) */
  Seeed::Seeed(
+     SCIP*             scip,
 	  int               givenId,      		   	/**< id that is given to this seeed */
 	  int               givenNDetectors,         /**< number of detectors */
 	  int				givenNConss,				/**number of constraints */
 	  int 				givenNVars				/**number of variables */
-    ): id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false){
+    ): scip(scip), id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false){
 
 	 }
+
+ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
+ {
+    scip = (seeedToCopy->scip);
+    id = seeedpool->getNewId();
+    nBlocks = seeedToCopy->nBlocks;
+    nVars = seeedToCopy->nVars;
+    nConss = seeedToCopy->nConss;
+    masterConss = seeedToCopy->masterConss;
+    masterVars = seeedToCopy->masterVars;
+    conssForBlocks = seeedToCopy->conssForBlocks;
+    varsForBlocks = seeedToCopy->varsForBlocks;
+    linkingVars = seeedToCopy->linkingVars;
+    stairlinkingVars = seeedToCopy->stairlinkingVars;
+    openVars = seeedToCopy->openVars;
+    openConss = seeedToCopy->openConss;
+    propagatedByDetector = seeedToCopy->propagatedByDetector;
+    detectorChain = seeedToCopy->detectorChain;
+    openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
+ }
 
  Seeed::~Seeed(){}
 

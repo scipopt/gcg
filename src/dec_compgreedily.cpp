@@ -25,24 +25,28 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_xyz.c
+/**@file   dec_compgreedily.c
  * @ingroup DETECTORS
- * @brief  detector xyz (put your description here)
+ * @brief  detector compgreedily (put your description here)
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_xyz.h"
+#include "dec_compgreedily.h"
 #include "cons_decomp.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "xyz"       /**< name of detector */
-#define DEC_DESC                 "detector xyz" /**< description of detector*/
+#define DEC_DETECTORNAME         "compgreedily"       /**< name of detector */
+#define DEC_DESC                 "detector compgreedily" /**< description of detector*/
 #define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              '?'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
+
+
 
 /*
  * Data structures
@@ -70,7 +74,7 @@ struct DEC_DetectorData
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0
 static
-DEC_DECL_EXITDETECTOR(exitXyz)
+DEC_DECL_EXITDETECTOR(exitCompgreedily)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
@@ -79,13 +83,13 @@ DEC_DECL_EXITDETECTOR(exitXyz)
    return SCIP_OKAY;
 }
 #else
-#define exitXyz NULL
+#define exitCompgreedily NULL
 #endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
 #if 0
 static
-DEC_DECL_INITDETECTOR(initXyz)
+DEC_DECL_INITDETECTOR(initCompgreedily)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
@@ -94,12 +98,12 @@ DEC_DECL_INITDETECTOR(initXyz)
    return SCIP_OKAY;
 }
 #else
-#define initXyz NULL
+#define initCompgreedily NULL
 #endif
 
 /** detection function of detector */
 static
-DEC_DECL_DETECTSTRUCTURE(detectXyz)
+DEC_DECL_DETECTSTRUCTURE(detectCompgreedily)
 { /*lint --e{715}*/
    *result = SCIP_DIDNOTFIND;
 
@@ -109,24 +113,39 @@ DEC_DECL_DETECTSTRUCTURE(detectXyz)
    return SCIP_OKAY;
 }
 
-#define propagateSeeedXyz NULL
+
+static
+DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
+{
+   *result = SCIP_DIDNOTFIND;
+   gcg::Seeed* seeed;
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed->completeGreedily(seeedPropagationData->seeedpool);
+ //  seeed->setDetectorPropagated()
+   SCIP_CALL( SCIPallocMemoryArray(scip, seeedPropagationData->newSeeeds, 1));
+   (*seeedPropagationData->newSeeeds)[0] = seeed;
+   (*seeedPropagationData->nNewSeeeds) = 1;
+   *result = SCIP_SUCCESS;
+
+   return SCIP_OKAY;
+}
 /*
  * detector specific interface methods
  */
 
-/** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionXyz(
+/** creates the handler for compgreedily detector and includes it in SCIP */
+SCIP_RETCODE SCIPincludeDetectionCompgreedily(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    DEC_DETECTORDATA* detectordata;
 
-   /**@todo create xyz detector data here*/
+   /**@todo create compgreedily detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectXyz, initXyz, exitXyz, propagateSeeedXyz) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectCompgreedily, initCompgreedily, exitCompgreedily, propagateSeeedCompgreedily) );
 
-   /**@todo add xyz detector parameters */
+   /**@todo add compgreedily detector parameters */
 
    return SCIP_OKAY;
 }

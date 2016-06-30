@@ -1597,6 +1597,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    return SCIP_OKAY;
 }
 
+#define propagateSeeedStairheur NULL
+
 /** creates the stairheur presolver and includes it in SCIP */
 extern "C"
 SCIP_RETCODE SCIPincludeDetectionStairheur(
@@ -1623,7 +1625,7 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    detectordata->rowsWithConstrictions = NULL;
    detectordata->blockedAfterrow = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildStair, initStairheur, exitStairheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildStair, initStairheur, exitStairheur, propagateSeeedStairheur) );
 
    /* add stairheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/nconssperblock", "The number of constraints per block (static blocking only)", &detectordata->nconssperblock, FALSE, DEFAULT_NCONSSPERBLOCK, 2, 1000000, NULL, NULL) );

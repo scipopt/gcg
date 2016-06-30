@@ -44,11 +44,23 @@
 #include "class_seeed.h"
 
 
+
+struct Seeed_Propagation_Data
+{
+   gcg::Seeedpool* seeedpool;
+   gcg::Seeed* seeedToPropagate;
+   gcg::Seeed*** newSeeeds;
+   int* nNewSeeeds;
+};
+
 namespace gcg {
 
 
 //typedef boost::shared_ptr<Seeed> SeeedPtr;
 typedef Seeed* SeeedPtr;
+
+
+
 
 
 class Seeedpool
@@ -74,6 +86,9 @@ private:
    int 											nConss;
    int											nDetectors;
 
+   DEC_DECOMP**                        decompositions;
+   int                                 ndecompositions;
+
 
 public:
 
@@ -86,7 +101,7 @@ public:
    ~Seeedpool();
 
    /** finds decompositions  */
-   DEC_DECOMP**       	findDecompostions(
+   void       	findDecompostions(
    );
 
    /** access coefficient matrix constraint-wise */
@@ -111,7 +126,11 @@ public:
 
    int getIndexForDetector(DEC_DETECTOR* detector);
 
+   int getNewId();
 
+   DEC_DECOMP** getDecompositions();
+
+   int getNDecompositions();
 
 
 };

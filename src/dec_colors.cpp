@@ -432,6 +432,7 @@ DEC_DECL_DETECTSTRUCTURE(detectColors)
    return SCIP_OKAY;
 }
 
+#define propagateSeeedColors NULL
 
 /*
  * detector specific interface methods
@@ -451,7 +452,7 @@ SCIP_RETCODE SCIPincludeDetectionColors(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectColors, initColors, exitColors) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectColors, initColors, exitColors,propagateSeeedColors) );
 
    /* add colors constraint handler parameters */
 

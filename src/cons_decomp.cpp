@@ -393,7 +393,8 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DETECTORDATA*     detectordata,       /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)), /**< the method that will detect the structure (must not be NULL)*/
    DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL) */
-   DEC_DECL_EXITDETECTOR((*exitDetector))    /**< deinitialization method of detector (or NULL) */
+   DEC_DECL_EXITDETECTOR((*exitDetector)),    /**< deinitialization method of detector (or NULL) */
+   DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector))
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -436,6 +437,7 @@ SCIP_RETCODE DECincludeDetector(
 
    detector->initDetection = initDetector;
    detector->exitDetection = exitDetector;
+   detector->propagateSeeed = propagateSeeedDetector;
    detector->decchar = decchar;
 
    detector->priority = priority;
@@ -521,7 +523,12 @@ SCIP_RETCODE DECdetectStructure(
    {
 	  gcg::Seeedpool seeedpool(scip, CONSHDLR_NAME);
 
-	  gcg::Seeed testSeeed(0, 3,10,8);
+	  seeedpool.findDecompostions();
+	  conshdlrdata->decdecomps = seeedpool.getDecompositions();
+	  conshdlrdata->ndecomps = seeedpool.getNDecompositions();
+   }
+
+	//  gcg::Seeed testSeeed(0, 3,10,8);
 
 	 /* testSeeed.setConsToMaster(1);
 	  testSeeed.setConsToMaster(2);
@@ -553,77 +560,79 @@ SCIP_RETCODE DECdetectStructure(
 
 	  exit(1);
 */
-      for( i = 0; i < conshdlrdata->ndetectors; ++i )
-      {
-         DEC_DETECTOR *detector;
-         detector = conshdlrdata->detectors[i];
-         assert(detector != NULL);
-         conshdlrdata->priorities[i] = detector->priority;
-      }
+//      for( i = 0; i < conshdlrdata->ndetectors; ++i )
+//      {
+//         DEC_DETECTOR *detector;
+//         detector = conshdlrdata->detectors[i];
+//         assert(detector != NULL);
+//         conshdlrdata->priorities[i] = detector->priority;
+//      }
+//
+//      SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
+//      SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
+//
+//      SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
+//      for( i = 0; i < conshdlrdata->ndetectors; ++i )
+//      {
+//         DEC_DETECTOR* detector;
+//         DEC_DECOMP** decdecomps;
+//         int ndecdecomps;
+//
+//         ndecdecomps = -1;
+//         detector = conshdlrdata->detectors[i];
+//         assert(detector != NULL);
+//         if( !detector->enabled )
+//            continue;
+//         if( detector->initDetection != NULL )
+//         {
+//            SCIPdebugMessage("Calling initDetection of %s\n", detector->name);
+//            SCIP_CALL( (*detector->initDetection)(scip, detector) );
+//         }
+//         decdecomps = NULL;
+//
+//         SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
+//         SCIP_CALL( SCIPstartClock(scip, detector->dectime) );
+//         SCIP_CALL( (*detector->detectStructure)(scip, detector->decdata, &decdecomps, &ndecdecomps,  result) );
+//         SCIP_CALL( SCIPstopClock(scip, detector->dectime) );
+//         SCIPdebugPrintf("(time %.6f) ", SCIPclockGetTime(detector->dectime));
+//
+//         if( *result == SCIP_SUCCESS )
+//         {
+//            int j;
+//            assert(ndecdecomps >= 0);
+//            assert(decdecomps != NULL || ndecdecomps == 0);
+//
+//            SCIPdebugMessage("We originally have %d decompositions, ", ndecdecomps);
+//            for( j = 0; j < ndecdecomps; ++j )
+//            {
+//               assert(decdecomps != NULL);
+//               DECdecompSetDetector(decdecomps[j], detector);
+//            }
+//            if( ndecdecomps > 2 )
+//            {
+//               ndecdecomps = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+//            }
+//            SCIPdebugPrintf("%d after filtering!\n", ndecdecomps);
+//
+//            SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), ((size_t)conshdlrdata->ndecomps+ndecdecomps)) );
+//            BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps); /*lint !e866*/
+//            conshdlrdata->ndecomps += ndecdecomps;
+//            detector->ndecomps = ndecdecomps;
+//            SCIP_CALL( SCIPduplicateMemoryArray(scip, &detector->decomps, decdecomps, detector->ndecomps) );
+//         }
+//         else
+//         {
+//            SCIPdebugPrintf("Failure!\n");
+//         }
+//         SCIPfreeMemoryArrayNull(scip, &decdecomps);
+//      }
+//   }
+//   else
+//   {
+//      SCIP_CALL( DECdecompTransform(scip, conshdlrdata->decdecomps[0]) );
+//   }
 
-      SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
-      SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
 
-      SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
-      for( i = 0; i < conshdlrdata->ndetectors; ++i )
-      {
-         DEC_DETECTOR* detector;
-         DEC_DECOMP** decdecomps;
-         int ndecdecomps;
-
-         ndecdecomps = -1;
-         detector = conshdlrdata->detectors[i];
-         assert(detector != NULL);
-         if( !detector->enabled )
-            continue;
-         if( detector->initDetection != NULL )
-         {
-            SCIPdebugMessage("Calling initDetection of %s\n", detector->name);
-            SCIP_CALL( (*detector->initDetection)(scip, detector) );
-         }
-         decdecomps = NULL;
-
-         SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
-         SCIP_CALL( SCIPstartClock(scip, detector->dectime) );
-         SCIP_CALL( (*detector->detectStructure)(scip, detector->decdata, &decdecomps, &ndecdecomps,  result) );
-         SCIP_CALL( SCIPstopClock(scip, detector->dectime) );
-         SCIPdebugPrintf("(time %.6f) ", SCIPclockGetTime(detector->dectime));
-
-         if( *result == SCIP_SUCCESS )
-         {
-            int j;
-            assert(ndecdecomps >= 0);
-            assert(decdecomps != NULL || ndecdecomps == 0);
-
-            SCIPdebugMessage("We originally have %d decompositions, ", ndecdecomps);
-            for( j = 0; j < ndecdecomps; ++j )
-            {
-               assert(decdecomps != NULL);
-               DECdecompSetDetector(decdecomps[j], detector);
-            }
-            if( ndecdecomps > 2 )
-            {
-               ndecdecomps = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
-            }
-            SCIPdebugPrintf("%d after filtering!\n", ndecdecomps);
-
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), ((size_t)conshdlrdata->ndecomps+ndecdecomps)) );
-            BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps); /*lint !e866*/
-            conshdlrdata->ndecomps += ndecdecomps;
-            detector->ndecomps = ndecdecomps;
-            SCIP_CALL( SCIPduplicateMemoryArray(scip, &detector->decomps, decdecomps, detector->ndecomps) );
-         }
-         else
-         {
-            SCIPdebugPrintf("Failure!\n");
-         }
-         SCIPfreeMemoryArrayNull(scip, &decdecomps);
-      }
-   }
-   else
-   {
-      SCIP_CALL( DECdecompTransform(scip, conshdlrdata->decdecomps[0]) );
-   }
    /* evaluate all decompositions and sort them by score */
    SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
    for( i = 0; i < conshdlrdata->ndecomps; ++i )

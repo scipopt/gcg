@@ -335,6 +335,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
    return SCIP_OKAY;
 }
 
+#define propagateSeeedConnected NULL
 
 /*
  * detector specific interface methods
@@ -355,7 +356,7 @@ SCIP_RETCODE SCIPincludeDetectionConnected(
 
    detectordata->blockdiagonal = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectConnected, initConnected, exitConnected) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectConnected, initConnected, exitConnected, propagateSeeedConnected) );
 
    /* add connected constraint handler parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );

@@ -669,6 +669,8 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
    return SCIP_OKAY;
 }
 
+#define propagateSeeedIsomorph NULL
+
 /*
  * detector specific interface methods
  */
@@ -687,7 +689,7 @@ SCIP_RETCODE SCIPincludeDetectionIsomorphism(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectIsomorphism, initIsomorphism, exitIsomorphism) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectIsomorphism, initIsomorphism, exitIsomorphism, propagateSeeedIsomorph) );
 
    /* add connected constraint handler parameters */
    return SCIP_OKAY;

@@ -75,11 +75,15 @@ public:
 
    /** constructor(s) */
    Seeed(
+      SCIP*          scip,
 	  int               id,      		   	/**< id that is given to this seeed */
 	  int               nDetectors,         /**< number of detectors */
 	  int				nConss,				/**number of constraints */
 	  int 				nVars				/**number of variables */
       );
+
+
+   Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool);
 
    ~Seeed();
 
