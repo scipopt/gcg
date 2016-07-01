@@ -37,6 +37,7 @@
 #include "cons_decomp.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include <iostream>
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "compgreedily"       /**< name of detector */
@@ -121,7 +122,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
    seeed->completeGreedily(seeedPropagationData->seeedpool);
- //  seeed->setDetectorPropagated()
+   seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    SCIP_CALL( SCIPallocMemoryArray(scip, seeedPropagationData->newSeeeds, 1));
    (*seeedPropagationData->newSeeeds)[0] = seeed;
    (*seeedPropagationData->nNewSeeeds) = 1;

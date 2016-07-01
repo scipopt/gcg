@@ -115,7 +115,7 @@ typedef struct Seeed_Propagation_Data SEEED_PROPAGATION_DATA;
  *  - SCIP_DIDNOTRUN  : the method did not run
  */
 
-#define DEC_DECL_PROPAGATESEEED(x) SCIP_RETCODE x (SCIP* scip, SEEED_PROPAGATION_DATA* seeedPropagationData, SCIP_RESULT* result)
+#define DEC_DECL_PROPAGATESEEED(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SEEED_PROPAGATION_DATA* seeedPropagationData, SCIP_RESULT* result)
 
 
 

@@ -69,7 +69,7 @@ namespace gcg {
  Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
  {
     scip = (seeedToCopy->scip);
-    id = seeedpool->getNewId();
+    id = seeedpool->getNewIdForSeeed();
     nBlocks = seeedToCopy->nBlocks;
     nVars = seeedToCopy->nVars;
     nConss = seeedToCopy->nConss;
@@ -517,7 +517,7 @@ namespace gcg {
 		  openVarsAndConssCalculated = true;
 	  }
 
-
+     //std::cout << "     complete greedily with "<< openVars.size() << " open vars and " << openConss.size() << " open cons" << std::endl;
 	  /** check if the openVars can found in a constraint yet */
 	  for( size_t i = 0; i < openVars.size(); ++i )
 	  {

@@ -126,7 +126,7 @@ public:
 
    int getIndexForDetector(DEC_DETECTOR* detector);
 
-   int getNewId();
+   int getNewIdForSeeed();
 
    DEC_DECOMP** getDecompositions();
 

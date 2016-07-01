@@ -367,17 +367,19 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 	 for(int round = 0; round < maxRounds; ++round)
 	 {
-	    std::cout << "start of round " << round << std::endl;
+	    //std::cout << "start of round " << round << std::endl;
+	    //std::cout << "number of seeeds: " << currSeeeds.size() << std::endl;
 		 for(size_t s = 0; s < currSeeeds.size(); ++s )
 		 {
-		    std::cout << "  start of seeed " << s+1 << std::endl;
+		    //std::cout << "  start of seeed " << s+1 << std::endl;
 			 SeeedPtr seeedPtr;
 			 seeedPtr= currSeeeds[s];
+			 //std::cout << "  seeed: " << seeedPtr << std::endl;
 
 			 /** the current seeed is handled by all detectors */
 			 for(int d = 0; d < nDetectors; ++d)
 			 {
-			    std::cout << "    start of detector " << d+1 << std::endl;
+			    //std::cout << "    start of detector " << d+1 << std::endl;
 				 std::vector<SeeedPtr>::const_iterator newSIter;
 				 std::vector<SeeedPtr>::const_iterator newSIterEnd;
 
@@ -395,42 +397,58 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 				 seeedPropData->newSeeeds = &newSeeeds;
 				 seeedPropData->nNewSeeeds = &nNewSeeeds;
 
-				 std::cout << "     stop 1 " << std::endl;
+				 //std::cout << "     call detectors " << std::endl;
 				 /** new seeeds are created by the current detector */
 				 SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
-				 SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, seeedPropData, &result) );
+				 SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
 				 SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
 
-				 std::cout << "     stop 2 " << std::endl;
+
 				 assert(seeedPtr->isPropagatedBy(d));
 
 				 /** if the new seeeds are no duplicate they're added to the currSeeeds */
+				 //std::cout << "     number of new Seeeds: " << nNewSeeeds << std::endl;
 				 for(int seeed = 0; seeed<nNewSeeeds; ++seeed)
 				 {
 					 if(seeedIsNoDuplicate(newSeeeds[seeed], currSeeeds, finishedSeeeds, false))
 					 {
 						 currSeeeds.push_back(newSeeeds[seeed]);
+						 //std::cout << "       newSeeed " << seeed +1 << " is no duplicate." << std::endl;
+					 }
+					 else
+					 {
+					    //std::cout << "       newSeeed " << seeed +1 << " is a duplicate." << std::endl;
 					 }
 				 }
 				 SCIPfreeMemoryArrayNull(scip, &newSeeeds);
 			 }
-			 std::cout << "complete greedily" << round << std::endl;
 
 			 SCIP_CALL_ABORT(seeedPtr->completeGreedily( seeedPropData->seeedpool ) );
 
-			 finishedSeeeds.push_back(seeedPtr);
+
+
+		   if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, true))
+			 {
+		      finishedSeeeds.push_back(seeedPtr);
+			 }
 		 }
 
 	 }
+
+
 	 /** fill out the decompositions */
 
 	 SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions, (int) finishedSeeeds.size()));
 	 for( size_t i = 0; i < finishedSeeeds.size(); ++i )
 	 {
+	    //std::cout << "find decomposition " << i+1 << std::endl;
+	    //std::cout << "  data of seeed: nblocks: " << finishedSeeeds[i]->getNBlocks() << "; nmasterconss: " << finishedSeeeds[i]->getNMasterconss() << "; nlinkingvars: " << finishedSeeeds[i]->getNLinkingvars() << std::endl;
 	    SeeedPtr seeed = finishedSeeeds[i];
 
 	    /** set nblocks */
 	    int nblocks = seeed->getNBlocks();
+	    SCIP_CALL_ABORT( DECdecompCreate(scip, &(decompositions[i])) );
+	    decompositions[i]->type = DEC_DECTYPE_ARROWHEAD;
 	    decompositions[i]->nblocks = nblocks;
 
 	    /** set subscipvars and subscipcons */
@@ -596,6 +614,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    }
 
 	    ndecompositions++;
+
+	    //std::cout << "  found decomposition " << i+1 << std::endl;
+	    //std::cout << "  blocks: " << decompositions[i]->nblocks << "; nlinkingcons: " << decompositions[i]->nlinkingconss << "; nlinkingvars: " << decompositions[i]->nlinkingvars << std::endl;
 	 }
 
 	 delete seeedPropData;
@@ -655,7 +676,7 @@ const  int * Seeedpool::getVarsForCons(int cons){
     return scipDetectorToIndex[detector];
  }
 
- int Seeedpool::getNewId(){
+ int Seeedpool::getNewIdForSeeed(){
     nTotalSeeeds++;
     return nTotalSeeeds;
  }
