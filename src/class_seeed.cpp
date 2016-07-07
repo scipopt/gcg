@@ -456,7 +456,7 @@ namespace gcg {
 
 	  for (int i = 0; i < nVars; ++i)
 	  {
-		  if(!openVarsBool[i])
+		  if(openVarsBool[i])
 			  openVars.push_back(i);
 	  }
 
@@ -484,7 +484,7 @@ namespace gcg {
 
 	  for (int i = 0; i < nConss; ++i)
 	  {
-		  if(!openConssBool[i])
+		  if(openConssBool[i])
 			  openConss.push_back(i);
 	  }
 
@@ -509,6 +509,8 @@ namespace gcg {
      std::vector<int> oldOpenvars = openVars;
      bool found;
 
+
+
 	  if(!openVarsAndConssCalculated)
 	  {
 		  calcOpenconss();
@@ -517,7 +519,6 @@ namespace gcg {
 		  openVarsAndConssCalculated = true;
 	  }
 
-     //std::cout << "     complete greedily with "<< openVars.size() << " open vars and " << openConss.size() << " open cons" << std::endl;
 	  /** check if the openVars can found in a constraint yet */
 	  for( size_t i = 0; i < openVars.size(); ++i )
 	  {
@@ -817,6 +818,11 @@ int* Seeed::getDetectorchain()
 int Seeed::getNDetectors()
 {
    return (int) detectorChain.size();
+}
+
+int Seeed::getID()
+{
+   return id;
 }
 
 } /* namespace gcg */

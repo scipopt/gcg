@@ -287,6 +287,10 @@ public:
    int getNDetectors(
    );
 
+   /** returns the id of the seeed */
+   int getID(
+   );
+
 private:
 
 
