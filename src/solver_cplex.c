@@ -66,7 +66,6 @@
 #define DEFAULT_THREADS       1      /**< number of threads the CPLEX pricing solver is allowed to use (0: automatic) */
 
 #define DEFAULT_HEURNODELIMIT       1000LL
-#define DEFAULT_HEURSTALLNODELIMIT  100LL
 #define DEFAULT_HEURGAPLIMIT        0.2
 
 
@@ -98,7 +97,6 @@ struct GCG_SolverData
     * limits for heuristic pricer
     */
    SCIP_Longint          heurnodelimit;      /**< node limit for heuristic pricing */
-   SCIP_Longint          heurstallnodelimit; /**< stall node limit for heuristic pricing */
    SCIP_Real             heurgaplimit;       /**< gap limit for heuristic pricing */
 };
 
@@ -1003,19 +1001,16 @@ static GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
       SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
    }
 
-   CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_POLISHAFTERNODE, solverdata->heurstallnodelimit) );
-   CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPXPARAM_MIP_Limits_Nodes, solverdata->heurnodelimit) );
+   CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, solverdata->heurnodelimit) );
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPAGAP, solverdata->heurgaplimit) );
 
    /* solve the pricing problem and evaluate solution */
    SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, result) );
    assert(*result != SCIP_STATUS_OPTIMAL || *ncols > 0);
 
-   CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_POLISHAFTERNODE, -1LL) );
-   CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPXPARAM_MIP_Limits_Nodes, -1LL) );
+   CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, -1LL) );
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, 0.0) );
-   CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_BBINTERVAL, 1) ); /*set to 1 to always select best bound node*/
-                                                                                      /*set to 0 to always select best estimate instead*/
+
    return SCIP_OKAY;
 }
 
@@ -1076,10 +1071,6 @@ SCIP_RETCODE GCGincludeSolverCplex(
    SCIP_CALL( SCIPaddLongintParam(origprob, "pricingsolver/cplex/heurnodelimit",
             "node limit for heuristic pricing",
             &solverdata->heurnodelimit, TRUE, DEFAULT_HEURNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddLongintParam(origprob, "pricingsolver/cplex/heurstallnodelimit",
-         "stall node limit for heuristic pricing",
-         &solverdata->heurstallnodelimit, TRUE, DEFAULT_HEURSTALLNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cplex/heurgaplimit",
          "gap limit for heuristic pricing",
