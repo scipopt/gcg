@@ -297,6 +297,10 @@ public:
    int getID(
    );
 
+   /** get number of conss */
+   int getNConss(
+   );
+
    /** get number of vars */
    int getNVars(
    );

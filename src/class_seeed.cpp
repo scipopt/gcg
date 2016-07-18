@@ -955,6 +955,11 @@ int Seeed::getID()
    return id;
 }
 
+int Seeed::getNConss()
+{
+  return nConss;
+}
+
 int Seeed::getNVars()
 {
    return nVars;
