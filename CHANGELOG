@@ -1,3 +1,9 @@
+GCG Version
+===========
+
+bug fixes
+- fixed handling of fixed variables in decompositions
+
 GCG Version 2.1.1
 =================
 

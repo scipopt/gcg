@@ -42,7 +42,8 @@ SCIP_Bool GCGisVarRelevant(
    )
 {
    assert(var != NULL);
-   return SCIPvarIsActive(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_AGGREGATED || SCIPvarGetStatus(var) == SCIP_VARSTATUS_MULTAGGR || SCIPvarGetStatus(var) == SCIP_VARSTATUS_NEGATED;
+   return (SCIPvarGetStatus(var) != SCIP_VARSTATUS_FIXED)
+      && (SCIPvarIsActive(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_AGGREGATED || SCIPvarGetStatus(var) == SCIP_VARSTATUS_MULTAGGR || SCIPvarGetStatus(var) == SCIP_VARSTATUS_NEGATED);
 }
 
 /** returns the type of an arbitrary SCIP constraint */

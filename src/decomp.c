@@ -163,6 +163,8 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
 
       var = vars[i];
       assert(var != NULL);
+      assert(SCIPvarIsActive(var));
+
       if( !SCIPhashmapExists(vartoblock, var) )
          block = nblocks+1;
       else
@@ -275,9 +277,12 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    {
       int block;
       SCIP_CONS* cons;
+      int nvars;
+      SCIP_Bool success;
 
       cons = conss[i];
       assert(cons != NULL);
+
       if( !SCIPhashmapExists(decomp->constoblock, cons) )
       {
          block = nblocks+1;
@@ -289,6 +294,11 @@ SCIP_RETCODE fillOutConsFromConstoblock(
       }
 
       assert(block > 0 && block <= nblocks+1);
+
+      SCIP_CALL( SCIPgetConsNVars(scip, cons, &nvars, &success) );
+      assert(success);
+      if( nvars == 0 )
+         continue;
 
       /* if constraint belongs to a block */
       if( block <= nblocks )
@@ -1142,6 +1152,9 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
          {
             SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[j]);
 
+            if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+               continue;
+
             /* if the variable is linking */
             if( (int)(size_t)SCIPhashmapGetImage(vartoblock, probvar) >= nblocks+1 ) /*lint !e507*/
             {
@@ -1249,6 +1262,12 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
    {
       int consblock;
 
+      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
+      assert(success);
+
+      if( ncurvars == 0 )
+         continue;
+
       consblock = (int)(size_t)SCIPhashmapGetImage(constoblock, conss[i]);  /*lint !e507*/
 
       assert(consblock > 0 && consblock <= nblocks+1);
@@ -1257,8 +1276,6 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
          SCIPdebugMessage("cons <%s> is linking and need not be handled\n", SCIPconsGetName(conss[i]));
          continue;
       }
-      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
-      assert(success);
 
       SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
 
@@ -1271,7 +1288,12 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       {
          int varblock;
          SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[j]);
-         assert( SCIPvarIsActive(probvar) );
+
+         if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+            continue;
+
+         assert(SCIPvarIsActive(probvar));
+
          if( SCIPhashmapExists(vartoblock, probvar) )
             varblock = (int) (size_t) SCIPhashmapGetImage(vartoblock, probvar); /*lint !e507*/
          else
@@ -1480,7 +1502,57 @@ SCIP_RETCODE DECdecompTransform(
 }
 
 /**
- * Adds all those constraints that were added to the problem after the decomposition as created
+ * Remove all those constraints that were removed from the problem after the decomposition had been created
+ */
+SCIP_RETCODE DECdecompRemoveDeletedConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   )
+{
+   int block;
+
+   int c;
+   int pos;
+
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+
+   for( block = 0; block < decdecomp->nblocks; ++block )
+   {
+      for( c = 0, pos = 0; c < decdecomp->nsubscipconss[block]; ++c )
+      {
+         if( !SCIPconsIsDeleted(decdecomp->subscipconss[block][c]) )
+         {
+            decdecomp->subscipconss[block][pos] = decdecomp->subscipconss[block][c];
+            ++pos;
+         }
+         else
+         {
+            SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->subscipconss[block][c]) );
+         }
+      }
+      decdecomp->nsubscipconss[block] = pos;
+   }
+
+   for( c = 0, pos = 0; c < decdecomp->nlinkingconss; ++c )
+   {
+      if( !SCIPconsIsDeleted(decdecomp->linkingconss[c]) )
+      {
+         decdecomp->linkingconss[pos] = decdecomp->linkingconss[c];
+         ++pos;
+      }
+      else
+      {
+         SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->linkingconss[c]) );
+      }
+   }
+   decdecomp->nlinkingconss = pos;
+
+   return SCIP_OKAY;
+}
+
+/**
+ * Adds all those constraints that were added to the problem after the decomposition had been created
  */
 SCIP_RETCODE DECdecompAddRemainingConss(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -1589,6 +1661,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
          SCIP_VAR** curvars;
          int ncurvars;
          SCIP_CONS* cons = DECdecompGetSubscipconss(decdecomp)[b][c];
+
          SCIPdebugMessage("Cons <%s> in block %d = %d\n", SCIPconsGetName(cons), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1);  /*lint !e507*/
          assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
          assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1 == b); /*lint !e507*/
@@ -1600,8 +1673,13 @@ SCIP_RETCODE DECdecompCheckConsistency(
          {
             int varblock;
             SCIP_VAR* var = SCIPvarGetProbvar(curvars[v]);
+
+            if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+               continue;
+
             varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1;  /*lint !e507*/
             SCIPdebugMessage("\tVar <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
+
             assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
             assert(SCIPvarIsActive(var));
             assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp)+1 );
@@ -1711,12 +1789,12 @@ int processBlockRepresentatives(
    SCIPdebugPrintf("Blocks: ");
 
    /* postprocess blockrepresentatives */
-   for (i = 1; i < maxblock; ++i)
+   for( i = 1; i < maxblock; ++i )
    {
       /* forward replace the representatives */
       assert(blockrepresentative[i] >= 0);
       assert(blockrepresentative[i] < maxblock);
-      if (blockrepresentative[i] != i)
+      if( blockrepresentative[i] != i )
          blockrepresentative[i] = blockrepresentative[blockrepresentative[i]];
       else
       {
@@ -1734,20 +1812,19 @@ int processBlockRepresentatives(
 /** */
 static
 SCIP_RETCODE assignConstraintsToRepresentatives(
-   SCIP*                 scip,               /**< */
-   SCIP_CONS**           conss,              /**< */
-   int                   nconss,             /**< */
-   SCIP_Bool*            consismaster,       /**< */
-   SCIP_HASHMAP*         constoblock,        /**< */
-   int*                  vartoblock,         /**< */
-   int*                  nextblock,          /**< */
-   int*                  blockrepresentative /**< */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS**           conss,              /**< array of all constraints */
+   int                   nconss,             /**< number of constraints */
+   SCIP_Bool*            consismaster,       /**< array of flags whether a constraint belongs to the master problem */
+   SCIP_HASHMAP*         constoblock,        /**< hashmap from constraints to block numbers, to be filled */
+   int*                  vartoblock,         /**< array mapping variables to block numbers, initially all -1, to be set */
+   int*                  nextblock,          /**< index of next free block to which no constraints have been assigned yet */
+   int*                  blockrepresentative /**<  */
    )
 {
 
    int i;
    int j;
-   int k;
    SCIP_VAR** curvars;
    int ncurvars;
 
@@ -1755,22 +1832,22 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
    nconss = SCIPgetNConss(scip);
 
    /* go through the all constraints */
-   for (i = 0; i < nconss; ++i)
+   for( i = 0; i < nconss; ++i )
    {
       int consblock;
       SCIP_CONS* cons = conss[i];
 
       assert(cons != NULL);
-      if (GCGisConsGCGCons(cons))
+      if( GCGisConsGCGCons(cons) )
          continue;
 
-      if (consismaster[i])
+      if( consismaster[i] )
          continue;
 
-      /* get variables of constraint */
+      /* get variables of constraint; ignore empty constraints */
       ncurvars = GCGconsGetNVars(scip, cons);
       curvars = NULL;
-      if (ncurvars > 0)
+      if( ncurvars > 0 )
       {
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
@@ -1782,13 +1859,13 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
       assert(SCIPhashmapGetImage(constoblock, cons) == NULL);
 
       /* if there are no variables, put it in the first block, otherwise put it in the next block */
-      if (ncurvars == 0)
+      if( ncurvars == 0 )
          consblock = -1;
       else
          consblock = *nextblock;
 
       /* go through all variables */
-      for (j = 0; j < ncurvars; ++j)
+      for( j = 0; j < ncurvars; ++j )
       {
          SCIP_VAR* probvar;
          int varindex;
@@ -1797,6 +1874,10 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
          assert(curvars != NULL);
          probvar = SCIPvarGetProbvar(curvars[j]);
          assert(probvar != NULL);
+
+         /* ignore variables which have been fixed during presolving */
+         if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+            continue;
 
          varindex = SCIPvarGetProbindex(probvar);
          assert(varindex >= 0);
@@ -1807,13 +1888,13 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
          varblock = vartoblock[varindex];
 
          SCIPdebugMessage("\tVar %s (%d): ", SCIPvarGetName(probvar), varblock);
-         /* if variable is assigned to a block, assign constraint to that block */
-         if (varblock > -1 && varblock != consblock)
+         /* if variable is already assigned to a block, assign constraint to that block */
+         if( varblock > -1 && varblock != consblock )
          {
             consblock = MIN(consblock, blockrepresentative[varblock]);
             SCIPdebugPrintf("still in block %d.\n", varblock);
          }
-         else if (varblock == -1)
+         else if( varblock == -1 )
          {
             /* if variable is free, assign it to the new block for this constraint */
             varblock = consblock;
@@ -1821,7 +1902,8 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
             assert(varblock <= *nextblock);
             vartoblock[varindex] = varblock;
             SCIPdebugPrintf("new in block %d.\n", varblock);
-         } else
+         }
+         else
          {
             assert((varblock > 0) && (consblock == varblock));
             SCIPdebugPrintf("no change.\n");
@@ -1831,7 +1913,7 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
       }
 
       /* if the constraint belongs to a new block, mark it as such */
-      if (consblock == *nextblock)
+      if( consblock == *nextblock )
       {
          assert(consblock > 0);
          blockrepresentative[consblock] = consblock;
@@ -1842,32 +1924,42 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
 
       SCIPdebugMessage("Cons %s will be in block %d (next %d)\n", SCIPconsGetName(cons), consblock, *nextblock);
 
-      for (k = 0; k < ncurvars; ++k)
+      for( j = 0; j < ncurvars; ++j )
       {
-         int curvarindex;
-         SCIP_VAR* curprobvar;
+         SCIP_VAR* probvar;
+         int varindex;
          int oldblock;
-         assert(curvars != NULL);
-         curprobvar = SCIPvarGetProbvar(curvars[k]);
-         curvarindex = SCIPvarGetProbindex(curprobvar);
 
-         oldblock = vartoblock[curvarindex];
+         assert(curvars != NULL);
+         probvar = SCIPvarGetProbvar(curvars[j]);
+         assert(probvar != NULL);
+
+         /* ignore variables which have been fixed during presolving */
+         if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+            continue;
+
+         varindex = SCIPvarGetProbindex(probvar);
+         assert(varindex >= 0);
+         assert(varindex < SCIPgetNVars(scip));
+
+         oldblock = vartoblock[varindex];
          assert((oldblock > 0) && (oldblock <= *nextblock));
-         SCIPdebugMessage("\tVar %s ", SCIPvarGetName(curprobvar));
-         if (oldblock != consblock)
+
+         SCIPdebugMessage("\tVar %s ", SCIPvarGetName(probvar));
+         if( oldblock != consblock )
          {
             SCIPdebugPrintf("reset from %d to block %d.\n", oldblock, consblock);
-            vartoblock[curvarindex] = consblock;
-            SCIPdebugPrintf("VARINDEX: %d (%d)\n", curvarindex, consblock);
+            vartoblock[varindex] = consblock;
+            SCIPdebugPrintf("VARINDEX: %d (%d)\n", varindex, consblock);
 
-            if ((blockrepresentative[oldblock] != -1) && (blockrepresentative[oldblock] > blockrepresentative[consblock]))
+            if( (blockrepresentative[oldblock] != -1) && (blockrepresentative[oldblock] > blockrepresentative[consblock]) )
             {
                int oldrepr;
                oldrepr = blockrepresentative[oldblock];
                SCIPdebugMessage("\t\tBlock representative from block %d changed from %d to %d.\n", oldblock, blockrepresentative[oldblock], consblock);
                assert(consblock > 0);
                blockrepresentative[oldblock] = consblock;
-               if ((oldrepr != consblock) && (oldrepr != oldblock))
+               if( (oldrepr != consblock) && (oldrepr != oldblock) )
                {
                   blockrepresentative[oldrepr] = consblock;
                   SCIPdebugMessage("\t\tBlock representative from block %d changed from %d to %d.\n", oldrepr, blockrepresentative[oldrepr], consblock);
@@ -1885,7 +1977,7 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
       assert(consblock <= *nextblock);
 
       /* store the constraint block */
-      if (consblock != -1)
+      if( consblock != -1 )
       {
          SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(cons), consblock);
          SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
@@ -2236,15 +2328,21 @@ SCIP_RETCODE DECgetDensityData(
             SCIP_VAR* var;
             int block;
             int probindex;
+
             var = curvars[v];
             var = SCIPvarGetProbvar(var);
             probindex = SCIPvarGetProbindex(var);
+
+            if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+               continue;
+
             assert(probindex >= 0);
             assert(probindex < nvars);
             varsubproblemdensity[probindex] += 1;
             assert(varsubproblemdensity[probindex] > 0);
             block = (int) (size_t) SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
             assert(block > 0);
+
             if( block <= DECdecompGetNBlocks(decomp) )
             {
                conssubproblemdensity[c] +=1;
@@ -2278,9 +2376,14 @@ SCIP_RETCODE DECgetDensityData(
       {
          SCIP_VAR* var;
          int probindex;
+
          var = curvars[v];
          var = SCIPvarGetProbvar(var);
          probindex = SCIPvarGetProbindex(var);
+
+         if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+            continue;
+
          assert(probindex >= 0);
          assert(probindex < nvars);
          varmasterdensity[probindex] += 1;
@@ -2408,13 +2511,18 @@ SCIP_RETCODE DECgetVarLockData(
          {
             SCIP_VAR* var;
             int probindex;
+
             var = curvars[v];
             var = SCIPvarGetProbvar(var);
             probindex = SCIPvarGetProbindex(var);
+
+            if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+               continue;
+
             assert(probindex >= 0);
             assert(probindex < nvars);
-
             assert(SCIPhashmapExists(DECdecompGetVartoblock(decomp), var));
+
             increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
          }
 
@@ -2443,11 +2551,17 @@ SCIP_RETCODE DECgetVarLockData(
       {
          SCIP_VAR* var;
          int probindex;
+
          var = curvars[v];
          var = SCIPvarGetProbvar(var);
          probindex = SCIPvarGetProbindex(var);
+
+         if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+            continue;
+
          assert(probindex >= 0);
          assert(probindex < nvars);
+
          increaseLock(scip, lhs, curvals[v], rhs, &(masterlocksdown[probindex]), &(masterlocksup[probindex]));
       }
 
@@ -2846,6 +2960,9 @@ SCIP_RETCODE computeConssNzeros(
 
       curvar = SCIPvarGetProbvar(curvars[v]);
 
+      if( SCIPvarGetStatus(curvar) == SCIP_VARSTATUS_FIXED )
+         continue;
+
       block = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), (curvar))) - 1; /*lint !e507 */
       assert(block >= 0);
 
@@ -3206,10 +3323,16 @@ SCIP_RETCODE DECdetermineConsBlock(
 
    for( i = 0; i < ncurvars && *block != nblocks; ++i )
    {
+      SCIP_VAR* var;
       int varblock;
 
-      assert(SCIPhashmapExists(vartoblock, SCIPvarGetProbvar(curvars[i])));
-      varblock = ((int) (size_t) SCIPhashmapGetImage(vartoblock, SCIPvarGetProbvar(curvars[i])))-1; /*lint !e507 */
+      var = SCIPvarGetProbvar(curvars[i]);
+
+      if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+         continue;
+
+      assert(SCIPhashmapExists(vartoblock, var));
+      varblock = ((int) (size_t) SCIPhashmapGetImage(vartoblock, var))-1; /*lint !e507 */
 
       /* if variable is linking skip*/
       if( varblock == nblocks+1 )
@@ -3288,6 +3411,10 @@ SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
    for( v = 0; v < ncurvars; ++v )
    {
       SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[v]);
+
+      if( SCIPvarGetStatus(probvar) == SCIP_VARSTATUS_FIXED )
+         continue;
+
       assert(SCIPhashmapExists(decomp->vartoblock, probvar));
       /* if variable is in master only, move to subproblem */
       if( (int) (size_t) SCIPhashmapGetImage(decomp->vartoblock, probvar) == decomp->nblocks+1 ) /*lint !e507 */

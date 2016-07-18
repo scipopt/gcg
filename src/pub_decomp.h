@@ -312,6 +312,15 @@ SCIP_RETCODE DECdecompTransform(
    );
 
 /**
+ * Remove all those constraints that were removed from the problem after the decomposition had been created
+ */
+extern
+SCIP_RETCODE DECdecompRemoveDeletedConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   );
+
+/**
  *  Adds all those constraints that were added to the problem after the decomposition as created
  */
 extern
