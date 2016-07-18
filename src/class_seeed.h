@@ -69,6 +69,7 @@ private:
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
    std::vector<int> 				detectorChain;
    bool 							openVarsAndConssCalculated; /** are the */
+   bool                    completedGreedily;
 
 
 public:
@@ -275,6 +276,11 @@ public:
          int var
    );
 
+   /** returns index of the Openvar in the vector */
+   int getIndexOfOpenvar(
+         int var
+   );
+
    /** returns whether all cons are assigned and deletes the vector open cons if all are assigned */
    bool checkAllConsAssigned(
    );
@@ -289,6 +295,14 @@ public:
 
    /** returns the id of the seeed */
    int getID(
+   );
+
+   /** get number of vars */
+   int getNVars(
+   );
+
+   /** returns wheter the seeed is completed greedily */
+   bool isSeeedCompletedGreedily(
    );
 
 private:

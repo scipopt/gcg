@@ -49,8 +49,8 @@ struct Seeed_Propagation_Data
 {
    gcg::Seeedpool* seeedpool;
    gcg::Seeed* seeedToPropagate;
-   gcg::Seeed*** newSeeeds;
-   int* nNewSeeeds;
+   gcg::Seeed** newSeeeds;
+   int nNewSeeeds;
 };
 
 namespace gcg {

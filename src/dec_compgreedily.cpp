@@ -123,9 +123,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
    seeed->completeGreedily(seeedPropagationData->seeedpool);
-   SCIP_CALL( SCIPallocMemoryArray(scip, seeedPropagationData->newSeeeds, 1));
-   (*seeedPropagationData->newSeeeds)[0] = seeed;
-   (*seeedPropagationData->nNewSeeeds) = 1;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1));
+   seeedPropagationData->newSeeeds[0] = seeed;
+   seeedPropagationData->nNewSeeeds = 1;
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;

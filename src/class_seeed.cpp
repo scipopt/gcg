@@ -62,8 +62,7 @@ namespace gcg {
 	  int               givenNDetectors,         /**< number of detectors */
 	  int				givenNConss,				/**number of constraints */
 	  int 				givenNVars				/**number of variables */
-    ): scip(scip), id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false){
-
+    ): scip(scip), id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), completedGreedily(false){
 	 }
 
  Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
@@ -84,6 +83,65 @@ namespace gcg {
     propagatedByDetector = seeedToCopy->propagatedByDetector;
     detectorChain = seeedToCopy->detectorChain;
     openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
+    completedGreedily = seeedToCopy->completedGreedily;
+
+//    masterConss = std::vector<int>(0);
+//    for( size_t i = 0; i < seeedToCopy->masterConss.size(); ++i)
+//       masterConss.push_back(seeedToCopy->masterConss[i]);
+//
+//    masterVars = std::vector<int>(0);
+//    for( size_t i = 0; i < seeedToCopy->masterVars.size(); ++i)
+//       masterVars.push_back(seeedToCopy->masterVars[i]);
+//
+//    linkingVars = std::vector<int>(0);
+//    for( size_t i = 0; i < seeedToCopy->linkingVars.size(); ++i)
+//       linkingVars.push_back(seeedToCopy->linkingVars[i]);
+//
+//    openVars = std::vector<int>(0);
+//    for( size_t i = 0; i < seeedToCopy->openVars.size(); ++i)
+//       openVars.push_back(seeedToCopy->openVars[i]);
+//
+//    openConss = std::vector<int>(0);
+//    for( size_t i = 0; i < seeedToCopy->openConss.size(); ++i)
+//       openConss.push_back(seeedToCopy->openConss[i]);
+//
+//    detectorChain = std::vector<int>(0);
+//    for( size_t i = 0; i < seeedToCopy->detectorChain.size(); ++i)
+//       detectorChain.push_back(seeedToCopy->detectorChain[i]);
+//
+//    propagatedByDetector = std::vector<bool>(0);
+//    for( size_t i = 0; i < seeedToCopy->propagatedByDetector.size(); ++i)
+//       propagatedByDetector.push_back(seeedToCopy->propagatedByDetector[i]);
+//
+//    stairlinkingVars = std::vector<std::vector<int>>(0);
+//    std::vector<int> vec = std::vector<int>(0);
+//    for( int b = 0; b < nBlocks; ++b)
+//       stairlinkingVars.push_back(vec);
+//    for( size_t i; i < seeedToCopy->stairlinkingVars.size(); ++i )
+//    {
+//       for( size_t j; j < seeedToCopy->stairlinkingVars[i].size(); ++j)
+//          stairlinkingVars[i].push_back(seeedToCopy->stairlinkingVars[i][j]);
+//    }
+//
+//    conssForBlocks = std::vector<std::vector<int>>(0);
+//    //std::vector<int> vec = std::vector<int>(0);
+//    for( int b = 0; b < nBlocks; ++b)
+//       conssForBlocks.push_back(vec);
+//    for( size_t i; i < seeedToCopy->conssForBlocks.size(); ++i )
+//    {
+//       for( size_t j; j < seeedToCopy->conssForBlocks[i].size(); ++j)
+//          conssForBlocks[i].push_back(seeedToCopy->conssForBlocks[i][j]);
+//    }
+//
+//    varsForBlocks = std::vector<std::vector<int>>(0);
+//    //std::vector<int> vec = std::vector<int>(0);
+//    for( int b = 0; b < nBlocks; ++b)
+//       varsForBlocks.push_back(vec);
+//    for( size_t i; i < seeedToCopy->varsForBlocks.size(); ++i )
+//    {
+//       for( size_t j; j < seeedToCopy->varsForBlocks[i].size(); ++j)
+//          varsForBlocks[i].push_back(seeedToCopy->varsForBlocks[i][j]);
+//    }
  }
 
  Seeed::~Seeed(){}
@@ -204,7 +262,7 @@ namespace gcg {
   ){
 	  assert(conssForBlocks.size() > block);
 
-	  conssForBlocks[consToBlock].push_back(consToBlock);
+	  conssForBlocks[block].push_back(consToBlock);
 
 	  return SCIP_OKAY;
   }
@@ -505,11 +563,10 @@ namespace gcg {
 
      std::vector<int> assignedOpenvars; /** stores the assigned open vars */
 
-     /** tools to get the updated openVars */
-     std::vector<int> oldOpenvars = openVars;
+     /** tools to update openVars */
+     std::vector<int> oldOpenvars;
      bool found;
-
-
+     bool notassigned;
 
 	  if(!openVarsAndConssCalculated)
 	  {
@@ -519,10 +576,36 @@ namespace gcg {
 		  openVarsAndConssCalculated = true;
 	  }
 
+	  if(nBlocks == 0)
+	  {
+	     nBlocks = 1;
+	     std::vector<int> vec = std::vector<int>(0);
+	     conssForBlocks.push_back(vec);
+	     varsForBlocks.push_back(vec);
+	     stairlinkingVars.push_back(vec);
+	     if(nBlocks == 0 && openConss.size()!=0)
+	     {
+	        setConsToBlock(openConss[0], 0);
+	        openConss.erase(openConss.begin());
+	     }
+	     else if(nBlocks == 0 && openConss.size() == 0 && masterConss.size() !=0)
+	     {
+	        setConsToBlock(masterConss[0], 0);
+	        masterConss.erase(masterConss.begin());
+	     }
+	     else if(openConss.size() == 0 && masterConss.size() ==0)
+	     {
+	        assert(false);
+	     }
+
+	  }
+
+
+
 	  /** check if the openVars can found in a constraint yet */
 	  for( size_t i = 0; i < openVars.size(); ++i )
 	  {
-	     bool checkVar = true; /** if the var has to be check any more */
+	     bool checkVar = true; /** if the var has to be checked any more */
 	     bool varInBlock; /** if the var can be found in the block */
 	     std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
 
@@ -596,7 +679,6 @@ namespace gcg {
 	        }
 	     }
 
-
 	     /** test if the variable can be found in a master constraint yet */
 	     for( size_t j = 0; j < masterConss.size() && checkVar; ++j )
 	     {
@@ -614,6 +696,7 @@ namespace gcg {
 
 	  }
 	  /** delete the assigned open vars */
+	  oldOpenvars = openVars;
 	  openVars.clear();
 	  for ( size_t i = 0; i < oldOpenvars.size(); ++i)
 	  {
@@ -632,6 +715,7 @@ namespace gcg {
 	     }
 	  }
 	  oldOpenvars.clear();
+	  assignedOpenvars.clear();
 
 
 	  /** assign open conss greedily */
@@ -671,25 +755,57 @@ namespace gcg {
 	              assignedOpenvars.push_back(vecOpenvarsOfBlock[k]);
 	           }
 	           vecOpenvarsOfBlock.clear();
+
+	           /** delete the assigned open vars */
+	           oldOpenvars = openVars;
+	           openVars.clear();
+	           for ( size_t l = 0; l < oldOpenvars.size(); ++l)
+	           {
+	              found = false;
+	              for ( size_t m = 0; m < assignedOpenvars.size(); ++m )
+	              {
+	                 if( oldOpenvars[l] == assignedOpenvars[m] )
+	                 {
+	                    found = true;
+	                    break;
+	                 }
+	              }
+	              if( !found ) /** var is still open var */
+	              {
+	                 openVars.push_back(oldOpenvars[l]);
+	              }
+	           }
+	           oldOpenvars.clear();
+	           assignedOpenvars.clear();
+
 	           break;
 	        }
 	     }
 
+
 	     if( !consGotBlockcons ) /** the constraint can not be assigned to a block, set it to master cons */
 	     {
 	        setConsToMaster(openConss[i]);
-	        /** set the open vars of the constraint to master vars */
-	        for( int k = 0; k < seeedpool->getNVarsForCons(openConss[i]); ++k )
+	     }
+	  }
+
+	  for(size_t i = 0; i < openVars.size(); i++)
+	  {
+	     notassigned = true;
+	     //setVarToMaster(openVars[i]);
+	     for(size_t j = 0; j < masterConss.size() && notassigned; ++j)
+	     {
+	        for(int k = 0; k < seeedpool->getNVarsForCons(masterConss[j]) && notassigned ; ++k)
 	        {
-	           if ( isVarOpenvar(seeedpool->getVarsForCons(openConss[i])[k]) )
+	           if(openVars[i] == seeedpool->getVarsForCons(masterConss[j])[k])
 	           {
-	              setVarToMaster(seeedpool->getVarsForCons(openConss[i])[k]);
-	              assignedOpenvars.push_back(seeedpool->getVarsForCons(openConss[i])[k]);
+	              setVarToMaster(openVars[i]);
+	              assignedOpenvars.push_back(openVars[i]);
+	              notassigned = false;
 	           }
 	        }
 	     }
 	  }
-
 	  /** delete the assigned open vars */
 	  oldOpenvars = openVars;
 	  openVars.clear();
@@ -709,6 +825,8 @@ namespace gcg {
 	        openVars.push_back(oldOpenvars[i]);
 	     }
 	  }
+	  oldOpenvars.clear();
+	  assignedOpenvars.clear();
 
 	  /** check if the open cons are all assigned */
 	  if( ! checkAllConsAssigned() )
@@ -724,7 +842,7 @@ namespace gcg {
 	     assert(false);
 	  }
 
-
+	  completedGreedily = true;
 	  return SCIP_OKAY;
 
   }
@@ -777,6 +895,18 @@ namespace gcg {
      return false;
   }
 
+  /** returns indes of the openvar in the vector */
+  int Seeed::getIndexOfOpenvar(int var){
+     for( size_t i = 0;  i < openVars.size(); ++i)
+     {
+        if( var == openVars[i])
+        {
+           return i;
+        }
+     }
+     return -1;
+  }
+
  /** returns whether all cons are assigned and deletes the vector open cons if all are assigned */
 bool Seeed::checkAllConsAssigned(){
    for( size_t i = 0; i < openConss.size(); ++i)
@@ -823,6 +953,16 @@ int Seeed::getNDetectors()
 int Seeed::getID()
 {
    return id;
+}
+
+int Seeed::getNVars()
+{
+   return nVars;
+}
+
+bool Seeed::isSeeedCompletedGreedily()
+{
+   return completedGreedily;
 }
 
 } /* namespace gcg */

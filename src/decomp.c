@@ -466,6 +466,7 @@ SCIP_RETCODE DECdecompFree(
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->stairlinkingvars, decomp->nblocks);
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->nstairlinkingvars,decomp->nblocks);
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->linkingconss, SCIPcalcMemGrowSize(scip, decomp->nlinkingconss));
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorchain,decomp->sizeDetectorchain);
    SCIPfreeMemoryNull(scip, decdecomp);
 
    return SCIP_OKAY;
