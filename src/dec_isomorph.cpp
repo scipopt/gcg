@@ -45,7 +45,6 @@
 #include "scip_misc.h"
 
 #include "graph.hh"
-#include "bliss_automorph.h"
 #include "pub_gcgvar.h"
 #include <cstring>
 #include <cassert>
@@ -70,7 +69,7 @@
  * Data structures
  */
 
-/** constraint handler data */
+/** detector data */
 struct DEC_DetectorData
 {
    SCIP_RESULT          result;             /**< result pointer to indicate success or failure */
@@ -219,7 +218,7 @@ void freeMemory(
 
 /** set up a help structure for graph creation */
 static
-SCIP_RETCODE setuparrays(
+SCIP_RETCODE setupArrays(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
@@ -327,7 +326,7 @@ SCIP_RETCODE setuparrays(
 static
 SCIP_RETCODE createGraph(
    SCIP*                 scip,               /**< SCIP to compare */
-   AUT_COLOR             colorinfo,          /**< result pointer to indicate success or failure */
+   AUT_COLOR             colorinfo,          /**< data structure to save intermediate data */
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
@@ -361,8 +360,6 @@ SCIP_RETCODE createGraph(
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       ncurvars = GCGconsGetNVars(scip, conss[i]);
-      if( ncurvars == 0 )
-         continue;
 
       AUT_CONS scons(scip, conss[i]);
       color = colorinfo.get(scons);
@@ -633,7 +630,7 @@ SCIP_RETCODE detectIsomorph(
    else
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting almost aggregatable structure: ");
 
-   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
+   SCIP_CALL( setupArrays(scip, colorinfo, &detectordata->result) );
    SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result) );
 
    ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
@@ -665,9 +662,9 @@ SCIP_RETCODE detectIsomorph(
          SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
 
       if( *ndecdecomps == 0 )
-         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
       else
-         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
 
       int pos = *ndecdecomps;
       for( p = *ndecdecomps; p < *ndecdecomps + nperms && pos < detectordata->numofsol; ++p )
@@ -787,7 +784,6 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 {
    DEC_DETECTORDATA* detectordata;
 
-   /* create connected constraint handler data */
    detectordata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
@@ -796,14 +792,13 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
       detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, NULL) );
 
-   /* add connected constraint handler parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomporph/exact",
+   /* add isomorph constraint handler parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/exact",
       "Use exact coefficients for detection?", &detectordata->exact, FALSE,
          DEFAULT_EXACT, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomporph/extend",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/extend",
       "Extend detection by using the sign of the coefficients instead of the coefficients?", &detectordata->extend, FALSE,
       DEFAULT_EXTEND, NULL, NULL) );
-
 
    return SCIP_OKAY;
 }

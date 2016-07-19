@@ -11,6 +11,7 @@ code cleanup
 
 bug fixes
 - changed/corrected variable fixing behaviour of Extreme Point RINS in case of aggregated blocks
+- fixed handling of fixed variables in decompositions
 
 GCG Version 2.1.1
 =================

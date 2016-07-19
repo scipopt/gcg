@@ -79,6 +79,7 @@ struct GCG_PricingVarData
 {
    SCIP_VAR**            origvars;           /**< corresponding variables in the original program */
    int                   norigvars;          /**< number of corresponding variables in the original program */
+   int                   maxorigvars;        /**< length of origvars array */
 };
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 
