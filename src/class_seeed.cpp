@@ -57,12 +57,12 @@ namespace gcg {
 
 /** constructor(s) */
  Seeed::Seeed(
-     SCIP*             scip,
-	  int               givenId,      		   	/**< id that is given to this seeed */
-	  int               givenNDetectors,         /**< number of detectors */
-	  int				givenNConss,				/**number of constraints */
-	  int 				givenNVars				/**number of variables */
-    ): scip(scip), id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), completedGreedily(false){
+    SCIP*             _scip,
+	  int               givenId,      		  /**< id that is given to this seeed */
+	  int               givenNDetectors,    /**< number of detectors */
+	  int				        givenNConss,				/**number of constraints */
+	  int 				      givenNVars				  /**number of variables */
+    ): scip(_scip), id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), completedGreedily(false){
 	 }
 
  Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
@@ -302,9 +302,9 @@ namespace gcg {
   {
     int i;
     int j;
-    int* varcons;
+    const int* varcons;
     bool isMasterVar;
-    int* lvars = getLinkingvars();
+    const int* lvars = getLinkingvars();
     std::vector<int> foundMasterVarIndices;
     
     // sort Master constraints for binary search
@@ -316,7 +316,7 @@ namespace gcg {
       varcons = seeedpool->getConssForVar(lvars[i]);
       for(j = 0; j < seeedpool->getNConssForVar(lvars[i]); ++j)
       {
-        if (!std::binary_search(masterConss.begin(), masterConss.end(), varcons[j])
+        if (!std::binary_search(masterConss.begin(), masterConss.end(), varcons[j]))
         {
           isMasterVar = false;
           break;
@@ -329,17 +329,17 @@ namespace gcg {
       }
     }
 
-    for (std::vector<int>::iterator it = foundMasterVarIndices.rbegin(); it != foundMasterVarIndices.rend(); ++it)
+    for (std::vector<int>::reverse_iterator it = foundMasterVarIndices.rbegin(); it != foundMasterVarIndices.rend(); ++it)
     {
       masterVars.push_back(lvars[*it]);
-      linkingVars.erase(*it);
+      linkingVars.erase(linkingVars.begin() + *it);
     }
 
     return SCIP_OKAY;
   }
   
-  /** finds linking-variables that are actually stairlinking-ariables. I.e. the variable is adjacent to constraints in exactly two block (not adjacent to open cons and master-cons). */
-  SCIP_RETCODE Seeed::findVarsLinkingToStairlinking(Seeedpool* seedpool)
+  /** finds linking-variables that are actually stairlinking-variables. I.e. the variable is adjacent to constraints in exactly two block (not adjacent to open cons and master-cons). */
+  SCIP_RETCODE Seeed::findVarsLinkingToStairlinking(Seeedpool* seeedpool)
   {
     int i;
     int j;
@@ -349,8 +349,8 @@ namespace gcg {
     int block1 = -1;
     int block2 = -1;
 
-    int* varcons;
-    int* lvars = getLinkingvars();
+    const int* varcons;
+    const int* lvars = getLinkingvars();
 
     std::vector<int> foundMasterVarIndices;
 
@@ -410,10 +410,12 @@ namespace gcg {
       }
     }
 
-    for (std::vector<int>::iterator it = foundMasterVarIndices.rbegin(); it != foundMasterVarIndices.rend(); ++it)
+    for (std::vector<int>::reverse_iterator it = foundMasterVarIndices.rbegin(); it != foundMasterVarIndices.rend(); ++it)
     {
-      linkingVars.erase(*it);
+      linkingVars.erase(linkingVars.begin() + *it);
     }
+
+    return SCIP_OKAY;
   }
 
   /** sets seeed to be propagated by detector with detectorID  */
