@@ -297,6 +297,125 @@ namespace gcg {
 	  return SCIP_OKAY;
   }
 
+  /** finds linking-variables that are actually master-variables. I.e. the variable is adjacent to only master-constraints. */
+  SCIP_RETCODE Seeed::findVarsLinkingToMaster(Seeedpool* seeedpool)
+  {
+    int i;
+    int j;
+    int* varcons;
+    bool isMasterVar;
+    int* lvars = getLinkingvars();
+    std::vector<int> foundMasterVarIndices;
+    
+    // sort Master constraints for binary search
+    sortMasterconss();
+
+    for (i = 0; i < getNLinkingvars(); ++i)
+    {
+      isMasterVar = true;
+      varcons = seeedpool->getConssForVar(lvars[i]);
+      for(j = 0; j < seeedpool->getNConssForVar(lvars[i]); ++j)
+      {
+        if (!std::binary_search(masterConss.begin(), masterConss.end(), varcons[j])
+        {
+          isMasterVar = false;
+          break;
+        }
+      }
+
+      if (isMasterVar)
+      {
+        foundMasterVarIndices.push_back(i);
+      }
+    }
+
+    for (std::vector<int>::iterator it = foundMasterVarIndices.rbegin(); it != foundMasterVarIndices.rend(); ++it)
+    {
+      masterVars.push_back(lvars[*it]);
+      linkingVars.erase(*it);
+    }
+
+    return SCIP_OKAY;
+  }
+  
+  /** finds linking-variables that are actually stairlinking-ariables. I.e. the variable is adjacent to constraints in exactly two block (not adjacent to open cons and master-cons). */
+  SCIP_RETCODE Seeed::findVarsLinkingToStairlinking(Seeedpool* seedpool)
+  {
+    int i;
+    int j;
+    int k;
+   
+    int consblock;
+    int block1 = -1;
+    int block2 = -1;
+
+    int* varcons;
+    int* lvars = getLinkingvars();
+
+    std::vector<int> foundMasterVarIndices;
+
+    for(i = 0; i < getNBlocks(); ++i)
+    {
+      sortConssForBlock(i);
+    }
+
+    for(i = 0; i < getNLinkingvars(); ++i)
+    {
+      block1 = -1; block2 = -1;
+      varcons = seeedpool->getConssForVar(lvars[i]); 
+      for (j = 0; j < seeedpool->getNConssForVar(lvars[i]); ++j)
+      {
+        consblock = -1;
+        for (k = 0; k < nBlocks; ++k)
+        {
+          if (std::binary_search(conssForBlocks[k].begin(), conssForBlocks[k].end(), varcons[j]))
+          {
+            consblock = k;
+            break;
+          }
+        }
+
+        if (consblock == -1)
+        {
+          block1 = -1;
+          block2 = -1;
+          break;
+        }
+        else if (block1 == consblock || block2 == consblock)
+        {
+          continue;
+        }
+        else if (block1 == -1)
+        {
+          block1 = consblock;
+          continue;
+        }
+        else if (block2 == -1)
+        {
+          block2 = consblock;
+          continue;
+        }
+        else
+        {
+          block1 = -1;
+          block2 = -1;
+          break;
+        }
+      }
+
+      if (block1 != -1 && block2 != -1)
+      {
+        setVarToStairlinking(lvars[i], block1, block2);
+        foundMasterVarIndices.push_back(i);
+      }
+    }
+
+    for (std::vector<int>::iterator it = foundMasterVarIndices.rbegin(); it != foundMasterVarIndices.rend(); ++it)
+    {
+      linkingVars.erase(*it);
+    }
+  }
+
   /** sets seeed to be propagated by detector with detectorID  */
   SCIP_RETCODE Seeed::setDetectorPropagated(
 		   int detectorID
