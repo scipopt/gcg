@@ -69,7 +69,6 @@ private:
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
    std::vector<int> 				detectorChain;
    bool 							openVarsAndConssCalculated; /** are the */
-   bool                    completedGreedily;
 
 
 public:
@@ -301,8 +300,15 @@ public:
    int getNVars(
    );
 
-   /** returns wheter the seeed is completed greedily */
-   bool isSeeedCompletedGreedily(
+   /** sets open setppc constraints to Master */
+   SCIP_RETCODE setPpcConssToMaster(
+         Seeedpool* seeedpool
+   );
+
+   SCIP_RETCODE filloutSeeedFromConstoblock(
+         SCIP_HASHMAP* constoblock,
+         int givenNBlocks,
+         Seeedpool* seeedpool
    );
 
 private:

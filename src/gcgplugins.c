@@ -342,6 +342,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionColors(scip) );
    SCIP_CALL( SCIPincludeDetectionCutpacking(scip) );
    SCIP_CALL( SCIPincludeDetectionCompgreedily(scip) );
+   SCIP_CALL( SCIPincludeDetectionMastersetppc(scip) );
 
 
 #ifndef NBLISS

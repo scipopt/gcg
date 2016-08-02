@@ -101,7 +101,7 @@ public:
    ~Seeedpool();
 
    /** finds decompositions  */
-   void       	findDecompostions(
+   void findDecompostions(
    );
 
    /** access coefficient matrix constraint-wise */
@@ -131,6 +131,12 @@ public:
    DEC_DECOMP** getDecompositions();
 
    int getNDecompositions();
+
+   int getNDetectors();
+
+   int getNVars();
+
+   int getNConss();
 
 
 };

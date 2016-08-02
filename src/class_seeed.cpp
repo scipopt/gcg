@@ -37,6 +37,9 @@
 #include "class_seeed.h"
 #include "gcg.h"
 #include "class_seeedpool.h"
+#include "scip/cons_setppc.h"
+#include "scip/scip.h"
+#include "scip_misc.h"
 
 #include <iostream>
 #include <exception>
@@ -62,7 +65,7 @@ namespace gcg {
 	  int               givenNDetectors,         /**< number of detectors */
 	  int				givenNConss,				/**number of constraints */
 	  int 				givenNVars				/**number of variables */
-    ): scip(scip), id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), completedGreedily(false){
+    ): scip(scip), id(givenId), nBlocks(0),nVars(givenNVars), nConss(givenNConss), propagatedByDetector(std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false){
 	 }
 
  Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
@@ -83,65 +86,6 @@ namespace gcg {
     propagatedByDetector = seeedToCopy->propagatedByDetector;
     detectorChain = seeedToCopy->detectorChain;
     openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
-    completedGreedily = seeedToCopy->completedGreedily;
-
-//    masterConss = std::vector<int>(0);
-//    for( size_t i = 0; i < seeedToCopy->masterConss.size(); ++i)
-//       masterConss.push_back(seeedToCopy->masterConss[i]);
-//
-//    masterVars = std::vector<int>(0);
-//    for( size_t i = 0; i < seeedToCopy->masterVars.size(); ++i)
-//       masterVars.push_back(seeedToCopy->masterVars[i]);
-//
-//    linkingVars = std::vector<int>(0);
-//    for( size_t i = 0; i < seeedToCopy->linkingVars.size(); ++i)
-//       linkingVars.push_back(seeedToCopy->linkingVars[i]);
-//
-//    openVars = std::vector<int>(0);
-//    for( size_t i = 0; i < seeedToCopy->openVars.size(); ++i)
-//       openVars.push_back(seeedToCopy->openVars[i]);
-//
-//    openConss = std::vector<int>(0);
-//    for( size_t i = 0; i < seeedToCopy->openConss.size(); ++i)
-//       openConss.push_back(seeedToCopy->openConss[i]);
-//
-//    detectorChain = std::vector<int>(0);
-//    for( size_t i = 0; i < seeedToCopy->detectorChain.size(); ++i)
-//       detectorChain.push_back(seeedToCopy->detectorChain[i]);
-//
-//    propagatedByDetector = std::vector<bool>(0);
-//    for( size_t i = 0; i < seeedToCopy->propagatedByDetector.size(); ++i)
-//       propagatedByDetector.push_back(seeedToCopy->propagatedByDetector[i]);
-//
-//    stairlinkingVars = std::vector<std::vector<int>>(0);
-//    std::vector<int> vec = std::vector<int>(0);
-//    for( int b = 0; b < nBlocks; ++b)
-//       stairlinkingVars.push_back(vec);
-//    for( size_t i; i < seeedToCopy->stairlinkingVars.size(); ++i )
-//    {
-//       for( size_t j; j < seeedToCopy->stairlinkingVars[i].size(); ++j)
-//          stairlinkingVars[i].push_back(seeedToCopy->stairlinkingVars[i][j]);
-//    }
-//
-//    conssForBlocks = std::vector<std::vector<int>>(0);
-//    //std::vector<int> vec = std::vector<int>(0);
-//    for( int b = 0; b < nBlocks; ++b)
-//       conssForBlocks.push_back(vec);
-//    for( size_t i; i < seeedToCopy->conssForBlocks.size(); ++i )
-//    {
-//       for( size_t j; j < seeedToCopy->conssForBlocks[i].size(); ++j)
-//          conssForBlocks[i].push_back(seeedToCopy->conssForBlocks[i][j]);
-//    }
-//
-//    varsForBlocks = std::vector<std::vector<int>>(0);
-//    //std::vector<int> vec = std::vector<int>(0);
-//    for( int b = 0; b < nBlocks; ++b)
-//       varsForBlocks.push_back(vec);
-//    for( size_t i; i < seeedToCopy->varsForBlocks.size(); ++i )
-//    {
-//       for( size_t j; j < seeedToCopy->varsForBlocks[i].size(); ++j)
-//          varsForBlocks[i].push_back(seeedToCopy->varsForBlocks[i][j]);
-//    }
  }
 
  Seeed::~Seeed(){}
@@ -563,6 +507,11 @@ namespace gcg {
 
      std::vector<int> assignedOpenvars; /** stores the assigned open vars */
 
+     /** tools to check if the openVars can still be found in a constraint yet*/
+     bool checkVar;
+     bool varInBlock;
+     std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
+
      /** tools to update openVars */
      std::vector<int> oldOpenvars;
      bool found;
@@ -605,9 +554,7 @@ namespace gcg {
 	  /** check if the openVars can found in a constraint yet */
 	  for( size_t i = 0; i < openVars.size(); ++i )
 	  {
-	     bool checkVar = true; /** if the var has to be checked any more */
-	     bool varInBlock; /** if the var can be found in the block */
-	     std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
+	     varInBlocks.clear();
 
 	     /** test if the variable can be found in blocks */
 	     for( int b = 0; b < nBlocks; ++b )
@@ -617,7 +564,7 @@ namespace gcg {
 	        {
 	           for( int l = 0; l < seeedpool->getNVarsForCons(conssForBlocks[b][k]); ++l )
 	           {
-	              if( openVars[i] == *(seeedpool->getVarsForCons(conssForBlocks[b][k])) )
+	              if( openVars[i] == seeedpool->getVarsForCons(conssForBlocks[b][k])[l] )
 	              {
 	                 varInBlocks.push_back(b);
 	                 varInBlock = true;
@@ -637,16 +584,12 @@ namespace gcg {
 	        if ( varInBlocks[0] + 1 == varInBlocks[1] )
 	        {
 	           setVarToStairlinking(openVars[i], varInBlocks[0], varInBlocks[1]);
-	           setVarToBlock(openVars[i], varInBlocks[0]);
-	           setVarToBlock(openVars[i], varInBlocks[1]);
 	           assignedOpenvars.push_back(openVars[i]);
 	           continue; /** the variable openVars[i] does'nt need to be checked any more */
 	        }
 	        else
 	        {
 	           setVarToLinking(openVars[i]);
-	           setVarToBlock(openVars[i], varInBlocks[0]);
-	           setVarToBlock(openVars[i], varInBlocks[1]);
 	           assignedOpenvars.push_back(openVars[i]);
 	           continue; /** the variable openVars[i] does'nt need to be checked any more */
 	        }
@@ -654,10 +597,6 @@ namespace gcg {
 	     else if( varInBlocks.size() > 2 ) /** if the variable can be found in more than two blocks it is a linking var */
 	     {
 	        setVarToLinking(openVars[i]);
-	        for( size_t k = 0; k < varInBlocks.size(); k++ )
-	        {
-	           setVarToBlock(openVars[i], varInBlocks[k]);
-	        }
 	        assignedOpenvars.push_back(openVars[i]);
 	        continue; /** the variable openVars[i] does'nt need to be checked any more */
 	     }
@@ -842,7 +781,6 @@ namespace gcg {
 	     assert(false);
 	  }
 
-	  completedGreedily = true;
 	  return SCIP_OKAY;
 
   }
@@ -940,29 +878,177 @@ bool Seeed::checkAllConsAssigned(){
    return true;
 }
 
+/** returns the detectorchain */
 int* Seeed::getDetectorchain()
 {
    return &detectorChain[0];
 }
 
+/** returns the number of detectors the seeed is propagated by */
 int Seeed::getNDetectors()
 {
    return (int) detectorChain.size();
 }
 
+/** returns the id of the seeed */
 int Seeed::getID()
 {
    return id;
 }
 
+/** get number of vars */
 int Seeed::getNVars()
 {
    return nVars;
 }
 
-bool Seeed::isSeeedCompletedGreedily()
+/** sets open setppc constraints to Master */
+SCIP_RETCODE Seeed::setPpcConssToMaster( Seeedpool* seeedpool )
 {
-   return completedGreedily;
+   std::vector<int> assignedOpenconss = std::vector<int>(0);
+   std::vector<int> oldOpenconss = std::vector<int>(0);
+   bool found;
+   SCIP_CONS* cons;
+   SCIP_SETPPCTYPE setppctype;
+
+
+   if(!openVarsAndConssCalculated)
+   {
+      calcOpenconss();
+      calcOpenvars();
+
+      openVarsAndConssCalculated = true;
+   }
+
+   /** set open setppc constraints to Master */
+   for( size_t i = 0; i < openConss.size(); ++i)
+   {
+      cons = seeedpool->getConsForIndex(openConss[i]);
+      if( GCGgetConsIsSetppc( scip, cons, &setppctype ))
+      {
+         setConsToMaster( openConss[i] );
+         assignedOpenconss.push_back( openConss[i] );
+      }
+   }
+
+   /** delete the assigned open conss */
+   oldOpenconss = openConss;
+   openConss.clear();
+   for ( size_t i = 0; i < oldOpenconss.size(); ++i)
+   {
+      found = false;
+      for ( size_t j = 0; j < assignedOpenconss.size(); ++j )
+      {
+         if( oldOpenconss[i] == assignedOpenconss[j] )
+         {
+            found = true;
+            break;
+         }
+      }
+      if( !found ) /** var is still open var */
+      {
+         openConss.push_back(oldOpenconss[i]);
+      }
+   }
+
+
+   return SCIP_OKAY;
+
 }
+
+SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )
+{
+   nBlocks = givenNBlocks;
+   int consnum;
+   int consblock;
+   int varnum;
+   SCIP_CONS** conss = SCIPgetConss(scip);
+   SCIP_VAR** vars = SCIPgetVars(scip);
+   bool varInBlock;
+   std::vector<int> varInBlocks;
+   std::vector <int> emptyVector = std::vector<int>(0);
+
+   for(int b = (int) conssForBlocks.size(); b < nBlocks; b++)
+   {
+      conssForBlocks.push_back(emptyVector);
+   }
+
+   for(int b = (int) varsForBlocks.size(); b < nBlocks; b++)
+   {
+      varsForBlocks.push_back(emptyVector);
+   }
+
+   for(int b = (int) stairlinkingVars.size(); b < nBlocks; b++)
+   {
+      stairlinkingVars.push_back(emptyVector);
+   }
+
+   for( int i = 0; i < nConss; ++i)
+   {
+      consnum = seeedpool->getIndexForCons(conss[i]);
+      consblock = ((int)(size_t)SCIPhashmapGetImage(constoblock, conss[i])) - 1;
+      assert(consblock >= 0 && consblock <= nBlocks);
+      if(consblock == nBlocks)
+      {
+         setConsToMaster(consnum);
+      }
+      else
+      {
+         setConsToBlock(consnum, consblock);
+      }
+   }
+
+   for( int i = 0; i < nVars; ++i )
+   {
+      varInBlocks.clear();
+      varnum = seeedpool->getIndexForVar(vars[i]);
+
+      /** test if the variable can be found in blocks */
+      for( int b = 0; b < nBlocks; ++b )
+      {
+         varInBlock = false;
+         for( size_t k = 0; k < conssForBlocks[b].size() && !varInBlock; ++k)
+         {
+            for( int l = 0; l < seeedpool->getNVarsForCons(conssForBlocks[b][k]); ++l )
+            {
+               if( varnum == (seeedpool->getVarsForCons(conssForBlocks[b][k]))[l] )
+               {
+                  varInBlocks.push_back(b);
+                  varInBlock = true;
+                  break;
+               }
+            }
+         }
+      }
+      if( varInBlocks.size() == 1 ) /** if the var can be found in one block set the var to block var */
+      {
+         setVarToBlock(varnum, varInBlocks[0]);
+         continue;
+      }
+      else if( varInBlocks.size() == 2 ) /** if the variable can be found in two blocks check if it is a linking var or a stairlinking var*/
+      {
+         if ( varInBlocks[0] + 1 == varInBlocks[1] )
+         {
+            setVarToStairlinking(varnum, varInBlocks[0], varInBlocks[1]);
+         }
+         else
+         {
+            setVarToLinking(varnum);
+         }
+      }
+      else if( varInBlocks.size() > 2 ) /** if the variable can be found in more than two blocks it is a linking var */
+      {
+         setVarToLinking(varnum);
+      }
+      else
+      {
+         setVarToMaster(varnum);
+      }
+
+   }
+
+   return SCIP_OKAY;
+}
+
 
 } /* namespace gcg */

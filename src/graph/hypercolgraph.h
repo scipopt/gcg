@@ -37,6 +37,8 @@
 
 #include "matrixgraph.h"
 #include "hypergraph.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 
 namespace gcg
 {
@@ -108,6 +110,11 @@ public:
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**          decomp           /**< decomposition structure to generate */
+      );
+
+   virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed**      seeed,              /**< decomposition structure to generate */
+      Seeedpool*  seeedpool
       );
 };
 

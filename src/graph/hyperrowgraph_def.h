@@ -41,8 +41,11 @@
 
 #include "hyperrowgraph.h"
 #include "scip_misc.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 #include <set>
 #include <algorithm>
+#include <iostream>
 
 namespace gcg
 {
@@ -197,6 +200,76 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
    else {
       SCIPhashmapFree(&constoblock);
       *decomp = NULL;
+   }
+
+   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
+   Seeed**      seeed,            /**< decomposition structure to generate */
+   Seeedpool*  seeedpool
+   )
+{
+   int nblocks;
+   SCIP_HASHMAP* constoblock;
+
+   int *nsubscipconss;
+   int i;
+   SCIP_CONS **conss;
+   SCIP_Bool emptyblocks = FALSE;
+   std::vector<int> partition = graph.getPartition();
+   conss = SCIPgetConss(this->scip_);
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
+
+   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   BMSclearMemoryArray(nsubscipconss, nblocks);
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+
+   /* assign constraints to partition */
+   for( i = 0; i < this->nconss; i++ )
+   {
+
+      std::set<int> blocks;
+      std::vector<int> neighbors = getHyperedgeNodes(i);
+      for( size_t k = 0; k < neighbors.size(); ++k )
+      {
+         if( partition[neighbors[k]] >= 0 )
+            blocks.insert(partition[neighbors[k]]);
+      }
+      if( blocks.size() > 1 )
+      {
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks+1)) );
+      }
+      else
+      {
+         int block = *(blocks.begin());
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
+         ++(nsubscipconss[block]);
+      }
+   }
+
+   /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
+   for( i = 0; i < nblocks; ++i )
+   {
+      if( nsubscipconss[i] == 0 )
+      {
+         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+         emptyblocks = TRUE;
+      }
+   }
+
+   if( !emptyblocks )
+   {
+      (*seeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
+      SCIP_CALL( (*seeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIPhashmapFree(&constoblock);
+   }
+   else {
+      SCIPhashmapFree(&constoblock);
+      seeed = NULL;
    }
 
    SCIPfreeBufferArray(this->scip_, &nsubscipconss);

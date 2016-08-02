@@ -42,6 +42,8 @@
 #include "pub_decomp.h"
 #include "bridge.h"
 #include "graph_interface.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 #include <exception>
 #include <vector>
 #include <string>
@@ -85,6 +87,14 @@ public:
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+   )
+   {
+      return SCIP_ERROR;
+   }
+
+   virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed**       seeed,
+      Seeedpool*   seeedpool
    )
    {
       return SCIP_ERROR;

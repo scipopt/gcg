@@ -25,29 +25,27 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_compgreedily.c
+/**@file   dec_mastersetppc.c
  * @ingroup DETECTORS
- * @brief  detector compgreedily (put your description here)
+ * @brief  detector mastersetppc (put your description here)
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_compgreedily.h"
+#include "dec_mastersetppc.h"
 #include "cons_decomp.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
 #include <iostream>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "compgreedily"       /**< name of detector */
-#define DEC_DESC                 "detector compgreedily" /**< description of detector*/
+#define DEC_DETECTORNAME         "mastersetppc"       /**< name of detector */
+#define DEC_DESC                 "detector mastersetppc" /**< description of detector*/
 #define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              '?'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
-
-
 
 /*
  * Data structures
@@ -60,13 +58,11 @@ struct DEC_DetectorData
 {
 };
 
-
 /*
  * Local methods
  */
 
 /* put your local methods here, and declare them static */
-
 
 /*
  * detector callback methods
@@ -75,8 +71,8 @@ struct DEC_DetectorData
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0
 static
-DEC_DECL_EXITDETECTOR(exitCompgreedily)
-{  /*lint --e{715}*/
+DEC_DECL_EXITDETECTOR(exitMastersetppc)
+{ /*lint --e{715}*/
 
    SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
    SCIPABORT();
@@ -84,14 +80,14 @@ DEC_DECL_EXITDETECTOR(exitCompgreedily)
    return SCIP_OKAY;
 }
 #else
-#define exitCompgreedily NULL
+#define exitMastersetppc NULL
 #endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
 #if 0
 static
-DEC_DECL_INITDETECTOR(initCompgreedily)
-{  /*lint --e{715}*/
+DEC_DECL_INITDETECTOR(initMastersetppc)
+{ /*lint --e{715}*/
 
    SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
    SCIPABORT();
@@ -99,30 +95,28 @@ DEC_DECL_INITDETECTOR(initCompgreedily)
    return SCIP_OKAY;
 }
 #else
-#define initCompgreedily NULL
+#define initMastersetppc NULL
 #endif
 
 /** detection function of detector */
-static
-DEC_DECL_DETECTSTRUCTURE(detectCompgreedily)
+static DEC_DECL_DETECTSTRUCTURE(detectMastersetppc)
 { /*lint --e{715}*/
    *result = SCIP_DIDNOTFIND;
 
-   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();  /*lint --e{527}*/
+   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
+;   SCIPABORT(); /*lint --e{527}*/
 
    return SCIP_OKAY;
 }
 
-
-static
-DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
+static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetppc)
 {
    *result = SCIP_DIDNOTFIND;
+
    seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->completeGreedily(seeedPropagationData->seeedpool);
+   seeed->setPpcConssToMaster(seeedPropagationData->seeedpool);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
@@ -134,19 +128,19 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
  * detector specific interface methods
  */
 
-/** creates the handler for compgreedily detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionCompgreedily(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
+/** creates the handler for mastersetppc detector and includes it in SCIP */
+SCIP_RETCODE SCIPincludeDetectionMastersetppc(SCIP* scip /**< SCIP data structure */
+)
 {
    DEC_DETECTORDATA* detectordata;
 
-   /**@todo create compgreedily detector data here*/
+   /**@todo create mastersetppc detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectCompgreedily, initCompgreedily, exitCompgreedily, propagateSeeedCompgreedily) );
+   SCIP_CALL(
+      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectMastersetppc, initMastersetppc, exitMastersetppc, propagateSeeedMastersetppc));
 
-   /**@todo add compgreedily detector parameters */
+   /**@todo add mastersetppc detector parameters */
 
    return SCIP_OKAY;
 }

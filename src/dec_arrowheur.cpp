@@ -46,8 +46,8 @@
 #include <cstring>
 #include <cerrno>
 #include <unistd.h>
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include <iostream>
+
 
 #include "cons_decomp.h"
 #include "struct_decomp.h"
@@ -62,6 +62,8 @@
 #include "graph/hyperrowgraph.h"
 #include "graph/graph_tclique.h"
 #include "graph/weights.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 
 
 #include <set>
@@ -418,7 +420,115 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 }
 #endif
 
-#define propagateSeeedArrowheur NULL
+static
+DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
+{
+   *result = SCIP_DIDNOTFIND;
+   seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   int nconss = SCIPgetNConss(scip);
+   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
+
+
+   SCIP_CALL( SCIPcreateWallClock(scip, &detectordata->metisclock) );
+
+   /* add arrowheur presolver parameters */
+
+   int i;
+   int j;
+   int seeed;
+   int nMaxSeeeds;
+   int nNewSeeeds = 0;
+   gcg::Seeed** newSeeeds;
+
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+
+   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+   nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
+   //*ndecdecomps = 0;
+
+   /* allocate space for output data */
+   assert(detectordata->maxblocks >= detectordata->minblocks);
+   //SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), nMaxSeeeds) );
+
+   /* build the hypergraph structure from the original problem */
+
+   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
+   switch(detectordata->type)
+   {
+      case 'c':
+         detectordata->graph = new HypercolGraph<gcg::GraphTclique>(scip, w);
+         break;
+      case 'r':
+         detectordata->graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
+         break;
+      case 'a':
+         detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
+         break;
+
+      default:
+         SCIPerrorMessage("Wrong type: '%c'\n", detectordata->type);
+         return SCIP_INVALIDCALL;
+   }
+
+   SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+   SCIP_CALL( createMetisFile(scip, detectordata) );
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
+   for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
+   {
+      SCIP_RETCODE retcode;
+      detectordata->blocks = i;
+      /* get the partitions for the new variables from metis */
+      retcode = callMetis(scip, detectordata, result);
+
+      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY )
+      {
+         continue;
+      }
+
+      SCIP_CALL( detectordata->graph->createSeeedFromPartition(&newSeeeds[j], seeedPropagationData->seeedpool) );
+      if( (newSeeeds)[j] != NULL )
+      {
+         nNewSeeeds++;
+         ++j;
+         detectordata->found = TRUE;
+      }
+   }
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
+
+   delete detectordata->graph;
+   detectordata->graph = NULL;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
+   seeedPropagationData->nNewSeeeds = nNewSeeeds;
+   for(j = 0, seeed = 0, j = 0; j < nNewSeeeds; ++j)
+   {
+      if(newSeeeds[j] != NULL)
+      {
+         seeedPropagationData->newSeeeds[seeed] = newSeeeds[j];
+         ++seeed;
+      }
+   }
+   SCIPfreeBufferArray(scip, &newSeeeds);
+
+   if( detectordata->tidy )
+   {
+      int status = remove( detectordata->tempfile );
+      if( status == -1 )
+      {
+         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
+         return SCIP_WRITEERROR;
+      }
+   }
+
+   *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
+   delete detectordata;
+   return SCIP_OKAY;
+}
+
+//#define propagateSeeedArrowheur NULL
 
 /** creates the arrowheur presolver and includes it in SCIP */
 extern "C"

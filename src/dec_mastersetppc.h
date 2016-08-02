@@ -25,83 +25,40 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   hyperrowcolgraph.h
- * @brief  A hypergraph with row and column nodes
+/**@file   dec_mastersetppc.h
+ * @brief  setpartitioning detector
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_HYPERROWCOLGRAPH_H_
-#define GCG_HYPERROWCOLGRAPH_H_
+#ifndef DEC_MASTERSETPPC_H_
+#define DEC_MASTERSETPPC_H_
 
-#include "matrixgraph.h"
-#include "hypergraph.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
+#include "scip/scip.h"
 
-namespace gcg {
-template <class T>
-class HyperrowcolGraph: public MatrixGraph<T>
-{
-private:
-   Graph<T> graph;
-public:
-   HyperrowcolGraph(
-         SCIP*                 scip,              /**< SCIP data structure */
-         Weights               w                  /**< weights for the given graph */
-      );
-   virtual ~HyperrowcolGraph();
-   SCIP_RETCODE createFromMatrix(
-      SCIP_CONS**           conss,              /**< constraints for which graph should be created */
-      SCIP_VAR**            vars,               /**< variables for which graph should be created */
-      int                   nconss,             /**< number of constraints */
-      int                   nvars               /**< number of variables */
-      );
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-   /** writes the graph to the given file.
-    *  The format is graph dependent
-    */
-   virtual SCIP_RETCODE writeToFile(
-      int                fd,                  /**< file descriptor where the graph should be written to */
-      SCIP_Bool          writeweights        /**< whether to write weights */
-    );
-
-
-   virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
-      );
-
-   virtual SCIP_RETCODE createSeeedFromPartition(
-      Seeed**           seeed,              /**< decomposition structure to generate */
-      Seeedpool*       seeedpool
-      );
-
-   /**
-    * reads the partition from the given file.
-    * The format is graph dependent. The default is a file with one line for each node a
-    */
-   virtual SCIP_RETCODE readPartition(
-      const char*        filename            /**< filename where the partition is stored */
+/** creates the handler for mastersetppc detector and includes it in SCIP */
+extern
+SCIP_RETCODE SCIPincludeDetectionMastersetppc(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
-   virtual std::vector<int> getNeighbors(
-         int i
-      );
+#ifdef __cplusplus
+}
+#endif
 
-   virtual std::vector<int> getHyperedgeNodes(
-         int i
-      );
 
-   std::vector<int> getConsNonzeroNodes(
-         int i
-   );
 
-   std::vector<int> getVarNonzeroNodes(
-         int i
-   );
+#endif /* DEC_MASTERSETPPC_H_ */
 
-};
 
-} /* namespace gcg */
-#endif /* GCG_HYPERROWCOLGRAPH_H_ */
+
+
+
+
+
+

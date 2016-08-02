@@ -39,6 +39,8 @@
 #define GCG_HYPERCOLGRAPH_DEF_H_
 
 #include "hypercolgraph.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 #include <set>
 #include <algorithm>
 #include <vector>
@@ -245,6 +247,38 @@ SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
 
    SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
    SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
+   Seeed**      seeed,            /**< decomposition structure to generate */
+   Seeedpool*  seeedpool
+   )
+{
+   SCIP_HASHMAP* constoblock;
+   SCIP_CONS** conss;
+   int nblocks;
+
+   std::vector<int> partition = this->getPartition();
+   conss = SCIPgetConss(this->scip_);
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+
+   assert((size_t)SCIPgetNConss(this->scip_) == partition.size());
+   nblocks = 1+*std::max_element(partition.begin(), partition.end() );
+
+   for( int c = 0; c < this->nconss; ++c )
+   {
+      int consblock = partition[c]+1;
+
+      SCIP_CALL( SCIPhashmapInsert(constoblock, conss[c], (void*) (size_t) consblock) );
+   }
+
+   (*seeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
+   SCIP_CALL((*seeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool));
+   SCIPhashmapFree(&constoblock);
 
    return SCIP_OKAY;
 }
