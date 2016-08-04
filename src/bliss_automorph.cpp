@@ -29,6 +29,7 @@
  * @brief   automorphism recognition of SCIPs
  * @author  Daniel Peters
  * @author  Martin Bergner
+ * @author  Jonas Witt
  *
  */
 
@@ -341,6 +342,7 @@ SCIP_RETCODE setuparrays(
    nconss = SCIPgetNConss(scips[0]);
    nvars = SCIPgetNVars(scips[0]);
    SCIP_CALL( allocMemory(origscip, colorinfo, nconss, nvars) );
+   colorinfo->setOnlySign(FALSE);
 
    for( s = 0; s < nscips && *result == SCIP_SUCCESS; ++s )
    {
@@ -557,8 +559,8 @@ SCIP_RETCODE createGraph(
          SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
          for( j = 0; j < ncurvars; j++ )
          {
-            int varcolor = colorinfo.get( AUT_VAR(scip, curvars[j] ) ) + colorinfo.getLenCons(); /*lint !e864 */
-            color = colorinfo.get( AUT_COEF(scip, curvals[j] ) );
+            int varcolor = colorinfo.get( AUT_VAR(scip, curvars[j] )) + colorinfo.getLenCons(); /*lint !e864 */
+            color = colorinfo.get( AUT_COEF(scip, curvals[j] ));
             if( color == -1 )
             {
                *result = SCIP_DIDNOTFIND;

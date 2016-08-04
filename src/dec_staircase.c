@@ -130,13 +130,17 @@ SCIP_RETCODE createGraph(
    useprobvars = ( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED );
 
    /* Be aware: the following has n*n*m*log(m) complexity but doesn't need any additional memory
-      With additional memory, we can get it down to probably n*m + m*m*n  */
+    * With additional memory, we can get it down to probably n*m + m*m*n
+    */
    for( i = 0; i < nconss; ++i )
    {
       SCIP_VAR** curvars1;
       int ncurvars1;
 
       ncurvars1 = GCGconsGetNVars(scip, conss[i]);
+      if( ncurvars1 == 0 )
+         continue;
+
       SCIP_CALL( SCIPallocBufferArray(scip, &curvars1, ncurvars1) );
 
       SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars1, ncurvars1) );
@@ -159,6 +163,9 @@ SCIP_RETCODE createGraph(
          int ncurvars2;
 
          ncurvars2 = GCGconsGetNVars(scip, conss[j]);
+         if( ncurvars2 == 0 )
+            continue;
+
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars2, ncurvars2) );
 
          SCIP_CALL( GCGconsGetVars(scip, conss[j], curvars2, ncurvars2) );

@@ -30,6 +30,7 @@
  * @brief  detector for pricing problems that can be aggregated (uses bliss)
  * @author Martin Bergner
  * @author Daniel Peters
+ * @author Jonas Witt
  *
  * This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving
  * automorphisms and bliss.
@@ -44,7 +45,6 @@
 #include "scip_misc.h"
 
 #include "graph.hh"
-#include "bliss_automorph.h"
 #include "pub_gcgvar.h"
 #include <cstring>
 #include <cassert>
@@ -61,15 +61,21 @@
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 TRUE        /**< should the detector be skipped if others found decompositions */
 
+#define DEFAULT_NUMOFSOL         1          /**< default number of solutions */
+#define DEFAULT_EXACT            TRUE       /**< default value using exact coefficients for detection */
+#define DEFAULT_EXTEND           FALSE      /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
+
 /*
  * Data structures
  */
 
-/** constraint handler data */
+/** detector data */
 struct DEC_DetectorData
 {
-   SCIP_RESULT result;                       /**< result pointer to indicate success or failure */
-   int numofsol;                             /**< number of solutions */
+   SCIP_RESULT          result;             /**< result pointer to indicate success or failure */
+   int                  numofsol;           /**< number of solutions */
+   SCIP_Bool            exact;              /**< Use exact coefficients for detection? */
+   SCIP_Bool            extend;             /**< Extend detection by using the sign of the coefficients instead of the coefficients? */
 };
 
 typedef struct struct_hook AUT_HOOK;
@@ -212,7 +218,7 @@ void freeMemory(
 
 /** set up a help structure for graph creation */
 static
-SCIP_RETCODE setuparrays(
+SCIP_RETCODE setupArrays(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
@@ -227,6 +233,7 @@ SCIP_RETCODE setuparrays(
    AUT_COEF* scoef;
    AUT_CONS* scons;
    SCIP_Bool added;
+   SCIP_Bool onlysign;
 
    //allocate max n of coefarray, varsarray, and boundsarray in scip
    nconss = SCIPgetNConss(scip);
@@ -236,13 +243,15 @@ SCIP_RETCODE setuparrays(
    conss = SCIPgetConss(scip);
    vars = SCIPgetVars(scip);
 
+   onlysign = colorinfo->getOnlySign();
+
    //save the properties of variables in a struct array and in a sorted pointer array
    for( i = 0; i < nvars; i++ )
    {
       AUT_VAR* svar = new AUT_VAR(scip, vars[i]);
       //add to pointer array iff it doesn't exist
       SCIP_CALL( colorinfo->insert(svar, &added) );
-//      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
+      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
          delete svar;
@@ -252,37 +261,62 @@ SCIP_RETCODE setuparrays(
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       SCIP_Real* curvals = NULL;
+      SCIP_VAR** curvars = NULL;
+
       int ncurvars = GCGconsGetNVars(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
       scons = new AUT_CONS(scip, conss[i]);
       //add to pointer array iff it doesn't exist
-      //SCIPdebugMessage("nconss %d %d\n", nconss, *result);
+      SCIPdebugMessage("nconss %d %d\n", nconss, *result);
       SCIP_CALL( colorinfo->insert(scons, &added) );
-  //    SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons), colorinfo->color);
+      SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
          delete scons;
 
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
       SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
+
+      SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
       SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
+
       //save the properties of variables of the constraints in a struct array and in a sorted pointer array
       for( j = 0; j < ncurvars; j++ )
       {
+         SCIP_Real constant;
          added = FALSE;
-         scoef = new AUT_COEF(scip, curvals[j]);
+
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
+            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
+
+         if( !onlysign )
+         {
+            scoef = new AUT_COEF(scip, curvals[j]);
+         }
+         else
+         {
+            if( SCIPisPositive(scip, curvals[j]) )
+               scoef = new AUT_COEF(scip, 1.0);
+            else if( SCIPisNegative(scip, curvals[j]) )
+               scoef = new AUT_COEF(scip, -1.0);
+            else
+               scoef = new AUT_COEF(scip, 0.0);
+         }
+
          //test, whether the coefficient is not zero
          if( !SCIPisZero(scip, scoef->getVal()) )
          {
             //add to pointer array iff it doesn't exist
             SCIP_CALL( colorinfo->insert(scoef, &added) );
-//            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
+            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
          }
          //otherwise free allocated memory
          if( !added )
             delete scoef;
 
       }
+      SCIPfreeBufferArray(scip, &curvars);
       SCIPfreeBufferArray(scip, &curvals);
    }
    return SCIP_OKAY;
@@ -292,7 +326,7 @@ SCIP_RETCODE setuparrays(
 static
 SCIP_RETCODE createGraph(
    SCIP*                 scip,               /**< SCIP to compare */
-   AUT_COLOR             colorinfo,          /**< result pointer to indicate success or failure */
+   AUT_COLOR             colorinfo,          /**< data structure to save intermediate data */
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
@@ -310,6 +344,8 @@ SCIP_RETCODE createGraph(
    SCIP_VAR** curvars = NULL;
    SCIP_Real* curvals = NULL;
    unsigned int nnodes;
+   SCIP_Bool onlysign;
+
    nnodes = 0;
    //building the graph out of the arrays
    bliss::Graph* h = graph;
@@ -318,13 +354,12 @@ SCIP_RETCODE createGraph(
    conss = SCIPgetConss(scip);
    vars = SCIPgetVars(scip);
    z = 0;
+   onlysign = colorinfo.getOnlySign();
 
    //add a node for every constraint
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       ncurvars = GCGconsGetNVars(scip, conss[i]);
-      if( ncurvars == 0 )
-         continue;
 
       AUT_CONS scons(scip, conss[i]);
       color = colorinfo.get(scons);
@@ -368,10 +403,32 @@ SCIP_RETCODE createGraph(
 
       for( j = 0; j < ncurvars; j++ )
       {
-         AUT_COEF scoef(scip, curvals[j]);
+         SCIP_Real constant;
+
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
+            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
+
+         SCIP_Real val;
+
+         if( !onlysign )
+         {
+            val = curvals[j];
+         }
+         else
+         {
+            if( SCIPisPositive(scip, curvals[j]) )
+               val = 1.0;
+            else if( SCIPisNegative(scip, curvals[j]) )
+               val = -1.0;
+            else
+               val = 0.0;
+         }
+
+         AUT_COEF scoef(scip, val);
          AUT_VAR svar(scip, curvars[j]);
 
          color = colorinfo.get(scoef);
+
          if( color == -1 )
          {
             *result = SCIP_DIDNOTFIND;
@@ -440,7 +497,7 @@ DEC_DECL_INITDETECTOR(detectorInitIsomorph)
    assert(detectordata != NULL);
 
    detectordata->result = SCIP_SUCCESS;
-   detectordata->numofsol = 1;
+   detectordata->numofsol = DEFAULT_NUMOFSOL;
 
    return SCIP_OKAY;
 }
@@ -539,25 +596,41 @@ SCIP_RETCODE filterPermutation(
    return SCIP_OKAY;
 }
 
-/** detector structure detection method, tries to detect a structure in the problem */
+/** detection function of isomorph detector */
 static
-DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
-{ /*lint -esym(429,ptrhook)*/
+SCIP_RETCODE detectIsomorph(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int*                  ndecdecomps,        /**< pointer to store number of decompositions */
+   DEC_DECOMP***         decdecomps,         /**< pointer to store decompositions */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   SCIP_RESULT*          result,             /**< pointer to store result */
+   SCIP_Bool             onlysign            /**< use only sign of coefficients instead of coefficients? */
+)
+{
    bliss::Graph graph;
    bliss::Stats bstats;
    AUT_HOOK *ptrhook;
    AUT_COLOR *colorinfo;
 
-   *ndecdecomps = 0;
-   *decdecomps = NULL;
-
    int nconss = SCIPgetNConss(scip);
    int i;
    int unique;
+   int oldndecdecomps;
+
+   oldndecdecomps = *ndecdecomps;
+
+   detectordata->result = SCIP_SUCCESS;
 
    colorinfo = new AUT_COLOR();
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
-   SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
+
+   colorinfo->setOnlySign(onlysign);
+
+   if( !onlysign )
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
+   else
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting almost aggregatable structure: ");
+
+   SCIP_CALL( setupArrays(scip, colorinfo, &detectordata->result) );
    SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result) );
 
    ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
@@ -588,17 +661,22 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
       if( detectordata->numofsol == 1)
          SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
 
-      SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, MIN(detectordata->numofsol,nperms)) ); /*lint !e506*/
+      if( *ndecdecomps == 0 )
+         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+      else
+         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
 
-      int pos = 0;
-      for( p = 0; p < nperms && pos < detectordata->numofsol; ++p )
+      int pos = *ndecdecomps;
+      for( p = *ndecdecomps; p < *ndecdecomps + nperms && pos < detectordata->numofsol; ++p )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
+
+         SCIPdebugMessage("masterconss of decomp %d:\n", p);
 
          nmasterconss = 0;
          for( i = 0; i < nconss; i++ )
          {
-            if( p != ptrhook->conssperm[i] )
+            if( p - *ndecdecomps != ptrhook->conssperm[i] )
             {
                masterconss[nmasterconss] = SCIPgetConss(scip)[i];
                SCIPdebugMessage("%s\n", SCIPconsGetName(masterconss[nmasterconss]));
@@ -654,7 +732,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
          SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
       }
 
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d decompositions.\n", *ndecdecomps);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d (new) decompositions.\n", *ndecdecomps - oldndecdecomps);
    }
    else
    {
@@ -666,9 +744,30 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
       SCIPfreeMemoryArrayNull(scip, decdecomps);
    }
 
-   delete ptrhook;
    delete colorinfo;
+
+   delete ptrhook;
+
    *result = detectordata->result;
+
+   return SCIP_OKAY;
+}
+
+
+/** detection function of detector */
+static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
+{ /*lint -esym(429,ptrhook)*/
+
+   *result = SCIP_DIDNOTFIND;
+
+   *ndecdecomps = 0;
+   *decdecomps = NULL;
+
+   if( detectordata->extend )
+      SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, TRUE) );
+
+   if( detectordata->exact )
+      SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, FALSE) );
 
    return SCIP_OKAY;
 }
@@ -685,7 +784,6 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 {
    DEC_DETECTORDATA* detectordata;
 
-   /* create connected constraint handler data */
    detectordata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
@@ -694,6 +792,13 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
       detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, NULL) );
 
-   /* add connected constraint handler parameters */
+   /* add isomorph constraint handler parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/exact",
+      "Use exact coefficients for detection?", &detectordata->exact, FALSE,
+         DEFAULT_EXACT, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/extend",
+      "Extend detection by using the sign of the coefficients instead of the coefficients?", &detectordata->extend, FALSE,
+      DEFAULT_EXTEND, NULL, NULL) );
+
    return SCIP_OKAY;
 }
