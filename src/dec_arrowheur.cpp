@@ -446,7 +446,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
 
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
    nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
-   //*ndecdecomps = 0;
 
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
@@ -524,8 +523,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
    }
 
    *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
-   delete detectordata;
+   //delete detectordata;
    return SCIP_OKAY;
+
 }
 
 //#define propagateSeeedArrowheur NULL

@@ -368,6 +368,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	 {
 		 for(size_t s = 0; s < currSeeeds.size(); ++s )
 		 {
+		    std::cout << "start seeed " << s+1 << " of "<< (int) currSeeeds.size() << std::endl;
 			 SeeedPtr seeedPtr;
 			 seeedPtr= currSeeeds[s];
 

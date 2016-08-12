@@ -253,7 +253,7 @@ SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
 
 template <class T>
 SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
-   Seeed**      seeed,            /**< decomposition structure to generate */
+   Seeed**      seeed,
    Seeedpool*  seeedpool
    )
 {

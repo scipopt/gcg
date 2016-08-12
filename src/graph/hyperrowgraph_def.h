@@ -208,7 +208,7 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
 
 template <class T>
 SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
-   Seeed**      seeed,            /**< decomposition structure to generate */
+   Seeed**      seeed,
    Seeedpool*  seeedpool
    )
 {

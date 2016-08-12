@@ -959,6 +959,8 @@ SCIP_RETCODE Seeed::setPpcConssToMaster( Seeedpool* seeedpool )
 SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )
 {
    nBlocks = givenNBlocks;
+   nVars = SCIPgetNVars(scip);
+   nConss = SCIPgetNConss(scip);
    int consnum;
    int consblock;
    int varnum;
