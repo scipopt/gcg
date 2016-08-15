@@ -132,6 +132,16 @@ public:
 		   int varToStairLinking, int block1, int block2
    );
 
+   /** finds linking-variables that are actually master-variables. I.e. the variable is adjacent to only master-constraints. */
+   SCIP_RETCODE findVarsLinkingToMaster(
+       Seeedpool* seeedpool
+   );
+
+   /** finds linking-variables that are actually stairlinking-ariables. I.e. the variable is adjacent to constraints in exactly two block. */
+   SCIP_RETCODE findVarsLinkingToStairlinking(
+       Seeedpool* seeedpool
+   );
+
    SCIP_RETCODE setDetectorPropagated(
    		   int detectorID
      );
@@ -294,6 +304,10 @@ public:
 
    /** returns the id of the seeed */
    int getID(
+   );
+
+   /** get number of conss */
+   int getNConss(
    );
 
    /** get number of vars */
