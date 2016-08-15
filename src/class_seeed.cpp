@@ -1047,6 +1047,8 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
          setVarToMaster(varnum);
       }
 
+
+
    }
 
    return SCIP_OKAY;
