@@ -25,29 +25,32 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_compgreedily.cpp
+/**@file   dec_mastersetpart.cpp
  * @ingroup DETECTORS
- * @brief  detector compgreedily (put your description here)
+ * @brief  detector mastersetpart (put your description here)
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_compgreedily.h"
+#include "dec_mastersetpart.h"
 #include "cons_decomp.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "gcg.h"
+#include "scip/cons_setppc.h"
+#include "scip/scip.h"
+#include "scip_misc.h"
+
 #include <iostream>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "compgreedily"       /**< name of detector */
-#define DEC_DESC                 "detector compgreedily" /**< description of detector*/
+#define DEC_DETECTORNAME         "mastersetpart"       /**< name of detector */
+#define DEC_DESC                 "detector mastersetpart" /**< description of detector*/
 #define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              '?'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
-
-
 
 /*
  * Data structures
@@ -60,13 +63,11 @@ struct DEC_DetectorData
 {
 };
 
-
 /*
  * Local methods
  */
 
 /* put your local methods here, and declare them static */
-
 
 /*
  * detector callback methods
@@ -75,8 +76,8 @@ struct DEC_DetectorData
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0
 static
-DEC_DECL_EXITDETECTOR(exitCompgreedily)
-{  /*lint --e{715}*/
+DEC_DECL_EXITDETECTOR(exitMastersetpart)
+{ /*lint --e{715}*/
 
    SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
    SCIPABORT();
@@ -84,14 +85,14 @@ DEC_DECL_EXITDETECTOR(exitCompgreedily)
    return SCIP_OKAY;
 }
 #else
-#define exitCompgreedily NULL
+#define exitMastersetpart NULL
 #endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
 #if 0
 static
-DEC_DECL_INITDETECTOR(initCompgreedily)
-{  /*lint --e{715}*/
+DEC_DECL_INITDETECTOR(initMastersetpart)
+{ /*lint --e{715}*/
 
    SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
    SCIPABORT();
@@ -99,34 +100,52 @@ DEC_DECL_INITDETECTOR(initCompgreedily)
    return SCIP_OKAY;
 }
 #else
-#define initCompgreedily NULL
+#define initMastersetpart NULL
 #endif
 
 /** detection function of detector */
-static
-DEC_DECL_DETECTSTRUCTURE(detectCompgreedily)
+static DEC_DECL_DETECTSTRUCTURE(detectMastersetpart)
 { /*lint --e{715}*/
    *result = SCIP_DIDNOTFIND;
 
-   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-   SCIPABORT();  /*lint --e{527}*/
+   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
+;   SCIPABORT(); /*lint --e{527}*/
 
    return SCIP_OKAY;
 }
 
-
-static
-DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
+static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpart)
 {
    *result = SCIP_DIDNOTFIND;
+
+   SCIP_CONS* cons;
+
    seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->completeGreedily(seeedPropagationData->seeedpool);
+
+
+   if(!seeed->areOpenVarsAndConssCalculated())
+   {
+      seeed->calcOpenconss();
+      seeed->calcOpenvars();
+      seeed->setOpenVarsAndConssCalculated(true);
+   }
+
+   /** set open setpartitioning constraints to Master */
+   for( size_t i = 0; i < seeed->getNOpenconss(); ++i)
+   {
+      cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+      if( GCGconsGetType   (cons) == setpartitioning )
+      {
+         seeed->setConsToMaster(seeed->getOpenconss()[i]);
+         seeed->deleteOpencons(seeed->getOpenconss()[i]);
+      }
+   }
+
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -135,19 +154,23 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
  * detector specific interface methods
  */
 
-/** creates the handler for compgreedily detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionCompgreedily(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
+/** creates the handler for mastersetpart detector and includes it in SCIP */
+SCIP_RETCODE SCIPincludeDetectionMastersetpart(SCIP* scip /**< SCIP data structure */
+)
 {
    DEC_DETECTORDATA* detectordata;
 
-   /**@todo create compgreedily detector data here*/
+   /**@todo create mastersetpart detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectCompgreedily, initCompgreedily, exitCompgreedily, propagateSeeedCompgreedily) );
+   SCIP_CALL(
+      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectMastersetpart, initMastersetpart, exitMastersetpart, propagateSeeedMastersetpart));
 
-   /**@todo add compgreedily detector parameters */
+   /**@todo add mastersetpart detector parameters */
 
    return SCIP_OKAY;
 }
+
+
+
+

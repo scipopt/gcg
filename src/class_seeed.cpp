@@ -372,6 +372,14 @@ namespace gcg {
 	  return SCIP_OKAY;
   }
 
+  /** sets open vars and conss to be calculated  */
+  SCIP_RETCODE Seeed::setOpenVarsAndConssCalculated(
+        bool value
+  ){
+     openVarsAndConssCalculated = value;
+     return SCIP_OKAY;
+  }
+
 
   /** get-methods */
 
@@ -621,6 +629,12 @@ namespace gcg {
   ){
 	  assert(propagatedByDetector.size() > detectorID);
 	  return propagatedByDetector[detectorID];
+  }
+
+  /** returns if the open vars and conss are calculated */
+  bool Seeed::areOpenVarsAndConssCalculated(
+  ){
+     return openVarsAndConssCalculated;
   }
 
   /** assigns the open cons and open vars */
@@ -1017,74 +1031,18 @@ int Seeed::getID()
    return id;
 }
 
-<<<<<<< HEAD
 /** get number of vars */
-=======
 int Seeed::getNConss()
 {
   return nConss;
 }
 
->>>>>>> 5465728f6f38842a3b3e74a2e2b200e2963f1d10
 int Seeed::getNVars()
 {
    return nVars;
 }
 
-/** sets open setppc constraints to Master */
-SCIP_RETCODE Seeed::setPpcConssToMaster( Seeedpool* seeedpool )
-{
-   std::vector<int> assignedOpenconss = std::vector<int>(0);
-   std::vector<int> oldOpenconss = std::vector<int>(0);
-   bool found;
-   SCIP_CONS* cons;
-   SCIP_SETPPCTYPE setppctype;
-
-
-   if(!openVarsAndConssCalculated)
-   {
-      calcOpenconss();
-      calcOpenvars();
-
-      openVarsAndConssCalculated = true;
-   }
-
-   /** set open setppc constraints to Master */
-   for( size_t i = 0; i < openConss.size(); ++i)
-   {
-      cons = seeedpool->getConsForIndex(openConss[i]);
-      if( GCGgetConsIsSetppc( scip, cons, &setppctype ))
-      {
-         setConsToMaster( openConss[i] );
-         assignedOpenconss.push_back( openConss[i] );
-      }
-   }
-
-   /** delete the assigned open conss */
-   oldOpenconss = openConss;
-   openConss.clear();
-   for ( size_t i = 0; i < oldOpenconss.size(); ++i)
-   {
-      found = false;
-      for ( size_t j = 0; j < assignedOpenconss.size(); ++j )
-      {
-         if( oldOpenconss[i] == assignedOpenconss[j] )
-         {
-            found = true;
-            break;
-         }
-      }
-      if( !found ) /** var is still open var */
-      {
-         openConss.push_back(oldOpenconss[i]);
-      }
-   }
-
-
-   return SCIP_OKAY;
-
-}
-
+/** fills out a seeed with the hashmap constoblock */
 SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )
 {
    nBlocks = givenNBlocks;
@@ -1183,5 +1141,26 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
    return SCIP_OKAY;
 }
 
+/** deletes an open var */
+SCIP_RETCODE Seeed::deleteOpenvar(
+      int openvar )
+{
+   std::vector<int>::iterator it;
+   it = find (openVars.begin(), openVars.end(), openvar);
+   assert( it != openVars.end() );
+   openVars.erase(it);
+   return SCIP_OKAY;
+}
+
+/** deletes an open conss */
+SCIP_RETCODE Seeed::deleteOpencons(
+      int opencons )
+{
+   std::vector<int>::iterator it;
+   it = find (openConss.begin(), openConss.end(), opencons);
+   assert( it != openConss.end() );
+   openConss.erase(it);
+   return SCIP_OKAY;
+}
 
 } /* namespace gcg */

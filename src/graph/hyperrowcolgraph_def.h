@@ -398,7 +398,6 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
 
    if( !emptyblocks )
    {
-      (*seeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
       SCIP_CALL( (*seeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
       (*seeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool);
       SCIPhashmapFree(&constoblock);

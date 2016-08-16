@@ -146,6 +146,10 @@ public:
    		   int detectorID
      );
 
+   SCIP_RETCODE setOpenVarsAndConssCalculated(
+            bool value
+   );
+
 
    /** get-methods */
 
@@ -260,6 +264,10 @@ public:
 		   int detectorID
    );
 
+   /** returns if the open vars and conss are calculated */
+   bool areOpenVarsAndConssCalculated(
+   );
+
    /** assigns the open cons and open vars */
    SCIP_RETCODE completeGreedily(
          Seeedpool* seeedpool
@@ -314,16 +322,23 @@ public:
    int getNVars(
    );
 
-   /** sets open setppc constraints to Master */
-   SCIP_RETCODE setPpcConssToMaster(
-         Seeedpool* seeedpool
-   );
-
+   /** fills out a seeed with the hashmap constoblock */
    SCIP_RETCODE filloutSeeedFromConstoblock(
          SCIP_HASHMAP* constoblock,
          int givenNBlocks,
          Seeedpool* seeedpool
    );
+
+   /** deletes an open var */
+   SCIP_RETCODE deleteOpenvar(
+         int openvar
+   );
+
+   /** deletes an open conss */
+   SCIP_RETCODE deleteOpencons(
+         int opencons
+   );
+
 
 private:
 

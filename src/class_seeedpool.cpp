@@ -368,7 +368,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	 {
 		 for(size_t s = 0; s < currSeeeds.size(); ++s )
 		 {
-		    std::cout << "start seeed " << s+1 << " of "<< (int) currSeeeds.size() << std::endl;
 			 SeeedPtr seeedPtr;
 			 seeedPtr= currSeeeds[s];
 
@@ -401,7 +400,16 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 				 {
 					 if(seeedIsNoDuplicate(seeedPropData->newSeeeds[seeed], currSeeeds, finishedSeeeds, false))
 					 {
-						 currSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
+					    seeedPropData->newSeeeds[seeed]->calcOpenconss();
+					    seeedPropData->newSeeeds[seeed]->calcOpenvars();
+					    if(seeedPropData->newSeeeds[seeed]->getNOpenconss() == 0 && seeedPropData->newSeeeds[seeed]->getNOpenvars() == 0)
+					    {
+					       finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
+					    }
+					    else
+					    {
+					       currSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
+					    }
 					 }
 					 else
 					 {
@@ -425,7 +433,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	 }
 
 
-
 	 /** fill out the decompositions */
 
 	 SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
@@ -437,31 +444,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    int nblocks = seeed->getNBlocks();
 	    SCIP_CALL_ABORT( DECdecompCreate(scip, &(decompositions[i])) );
 	    decompositions[i]->nblocks = nblocks;
-
-	    /** set subscipvars and subscipcons */
-	    for( int j = 0; j < nblocks; ++j )
-	    {
-
-	       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipvars, nblocks) ); /** free in decomp.c:461 */
-	       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->nsubscipvars, nblocks) ); /** free in decomp.c:462 */
-	       int nsubscipvars = seeed->getNVarsForBlock(j);
-	       decompositions[i]->nsubscipvars[j] = nsubscipvars;
-	       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipvars[j], nsubscipvars) ); /** free in decomp.c:405 */
-	       for( int k = 0; k < nsubscipvars; ++k )
-	       {
-	          decompositions[i]->subscipvars[j][k] = SCIPvarGetProbvar( getVarForIndex(seeed->getVarsForBlock(j)[k]) );
-	       }
-
-	       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipconss, nblocks) ); /** free in decomp.c:463 */
-	       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->nsubscipconss, nblocks) ); /** free in decomp.c:464 */
-	       int nsubscipconss = seeed->getNConssForBlock(j);
-	       decompositions[i]->nsubscipconss[j] = nsubscipconss;
-	       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipconss[j], nsubscipconss) ); /** free in decomp.c:416 */
-	       for( int k = 0; k < nsubscipconss; ++k )
-	       {
-	          decompositions[i]->subscipconss[j][k] = getConsForIndex(seeed->getConssForBlock(j)[k]);
-	       }
-	    }
 
 	    /** set linkingconss */
 	    int nlinkingconss = seeed->getNMasterconss();
@@ -505,14 +487,19 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    SCIP_CALL_ABORT( SCIPhashmapCreate( &decompositions[i]->consindex, SCIPblkmem(scip), nVars ) );
 
 
+	    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipconss, nblocks) ); /** free in decomp.c:463 */
+	    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->nsubscipconss, nblocks) ); /** free in decomp.c:464 */
 	    /** add block conss */
 	    for( int b = 0; b < nblocks; ++b )
 	    {
 	       currblock = b+1;
+	       decompositions[i]->nsubscipconss[b] = seeed->getNConssForBlock(b);
+	       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipconss[b], decompositions[i]->nsubscipconss[b]) ); /** free in decomp.c:416 */
 	       for ( int j = 0; j < seeed->getNConssForBlock(b); ++j)
 	       {
 	          cindex++;
 	          cons = getConsForIndex((seeed->getConssForBlock(b))[j]);
+	          decompositions[i]->subscipconss[b][j] = cons;
 	          SCIPdebugMessage("cons %d is cons of block %d\n", cindex, currblock );
 	          SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->constoblock, cons, (void*) (size_t) currblock) );
 	          SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->consindex, (void*) (size_t) cindex, (void*) (size_t) currblock) );
@@ -535,14 +522,19 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    SCIP_CALL_ABORT( SCIPhashmapCreate( &decompositions[i]->vartoblock, SCIPblkmem(scip), nVars ) );
 	    SCIP_CALL_ABORT( SCIPhashmapCreate( &decompositions[i]->varindex, SCIPblkmem(scip), nVars ) );
 
+	    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipvars, nblocks) ); /** free in decomp.c:461 */
+	    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->nsubscipvars, nblocks) ); /** free in decomp.c:462 */
 	    /** add block vars and stairlinkingvars */
 	    for( int b = 0; b < nblocks; ++b)
 	    {
 	       currblock = b+1;
+	       decompositions[i]->nsubscipvars[b] = seeed->getNVarsForBlock(b);
+	       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipvars[b], decompositions[i]->nsubscipvars[b]) ); /** free in decomp.c:405 */
 	       for ( int j = 0; j < seeed->getNVarsForBlock(b); ++j )
 	       {
 	          vindex++;
 	          probvar = SCIPvarGetProbvar( getVarForIndex(seeed->getVarsForBlock(b)[j]) );
+	          decompositions[i]->subscipvars[b][j] = probvar;
 	          if( SCIPhashmapExists(decompositions[i]->vartoblock, probvar) )
 	          {
 	             SCIPdebugMessage("var <%s> has been handled before, it should not been add to block %d\n", SCIPvarGetName(probvar), currblock);
@@ -624,6 +616,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    }
 
 	    ndecompositions++;
+	    assert(!SCIPhashmapIsEmpty(decompositions[i]->constoblock));
+	    assert(!SCIPhashmapIsEmpty(decompositions[i]->vartoblock));
 	 }
 
 	 /** delete the seeeds */
@@ -748,6 +742,7 @@ const  int * Seeedpool::getVarsForCons(int cons){
  int Seeedpool::getNConss(){
     return nConss;
  }
+
 
 
 } /* namespace gcg */

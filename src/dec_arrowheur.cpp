@@ -415,6 +415,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
       }
    }
 
+
    *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
    return SCIP_OKAY;
 }
@@ -449,7 +450,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
 
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
-   //SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
    SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), nMaxSeeeds) );
 
    /* build the hypergraph structure from the original problem */
@@ -488,6 +488,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
          continue;
       }
 
+
       SCIP_CALL( detectordata->graph->createSeeedFromPartition(&newSeeeds[j], seeedPropagationData->seeedpool) );
       if( (newSeeeds)[j] != NULL )
       {
@@ -507,6 +508,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
       if(newSeeeds[j] != NULL)
       {
          seeedPropagationData->newSeeeds[seeed] = newSeeeds[j];
+         seeedPropagationData->newSeeeds[seeed]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
          ++seeed;
       }
    }
@@ -523,7 +525,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
    }
 
    *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
-   //delete detectordata;
    return SCIP_OKAY;
 
 }
