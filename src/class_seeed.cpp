@@ -94,23 +94,24 @@ namespace gcg {
   bool Seeed::checkConsistency(
   ){
 
-	 // @TODO: check mastervars, stairlinking
-
 	  /**check variables (every variable is assigned at most once) */
 
 	  std::vector<bool> openVarsBool(nVars, true) ;
-	  std::vector<int>  openVarsVec(0);
+	  std::vector<int>  stairlinkingvarsvec(0);
+	  int firstFound;
 	  std::vector<int>::const_iterator varIter = linkingVars.begin();
 	  std::vector<int>::const_iterator varIterEnd = linkingVars.end();
+
 	  for(; varIter != varIterEnd; ++varIter)
 	  {
 		  if(!openVarsBool[*varIter])
 		  {
-			  std::cout << "Warning! Variable with index " << *varIter << "is already assigned " << std::endl;
+			  std::cout << "Warning! Variable with index " << *varIter << " is already assigned." << std::endl;
 			  return false;
 		  }
 		  openVarsBool[*varIter] = false;
 	  }
+
 	  for(int b =0; b < nBlocks; ++b)
 	  {
 		  varIter = varsForBlocks[b].begin();
@@ -119,18 +120,104 @@ namespace gcg {
 		  {
 			  if(!openVarsBool[*varIter])
 			  {
-				  std::cout << "Warning! Variable with index " << *varIter << "is already assigned " << std::endl;
+				  std::cout << "Warning! Variable with index " << *varIter << " is already assigned." << std::endl;
 				  return false;
 			  }
 			  openVarsBool[*varIter] = false;
 		  }
 	  }
 
-	  /** check constraints (every constraint is assigned at most once */
+	  varIter = masterVars.begin();
+	  varIterEnd = masterVars.end();
+	  for(; varIter != varIterEnd; ++varIter)
+	  {
+	     if(!openVarsBool[*varIter])
+	     {
+	        std::cout << "Warning! Variable with index " << *varIter << " is already assigned." << std::endl;
+	        return false;
+	     }
+	     openVarsBool[*varIter] = false;
+	  }
+
+	  /** vector of of all stairlinkingvars */
+	  for( int b = 0; b < nBlocks; ++b)
+	  {
+	     for( size_t i; i < stairlinkingVars[b].size(); ++i)
+	     {
+	        if(find(stairlinkingvarsvec.begin(), stairlinkingvarsvec.end(), stairlinkingVars[b][i]) == stairlinkingvarsvec.end())
+	        {
+	           stairlinkingvarsvec.push_back(stairlinkingVars[b][i]);
+	        }
+	     }
+	  }
+
+	  varIter = stairlinkingvarsvec.begin();
+	  varIterEnd = stairlinkingvarsvec.end();
+	  for(;varIter != varIterEnd; ++varIter )
+	  {
+	     firstFound = -1;
+	     for( int b = 0; b < nBlocks; ++b)
+	     {
+	        if(isVarStairlinkingvarOfBlock(*varIter, b))
+	        {
+	           firstFound = b;
+	           openVarsBool[*varIter] = false;
+	           break;
+	        }
+	     }
+	     if(firstFound == -1)
+	     {
+	        std::cout << "Warning! Variable with index " << *varIter << " is assigned to the stairlinkingvars but can not be found in a block" << std::endl;
+	        return false;
+	     }
+	     if( firstFound == nBlocks - 1 || !isVarStairlinkingvarOfBlock(*varIter, firstFound + 1))
+	     {
+	        std::cout << "Warning! Variable with index " << *varIter << " is assigned to the stairlinkingvars but doens't link blocks" << std::endl;
+	        return false;
+	     }
+	     for( int b = firstFound + 2; b < nBlocks; ++b)
+	     {
+	        if(isVarBlockvarOfBlock(*varIter, b))
+	        {
+	           std::cout << "Warning! Variable with index " << *varIter << " is assigned to the stairlinkingvars but can be found in more than two blocks" << std::endl;
+	           return false;
+	        }
+	     }
+	  }
+
+	   if(!openVarsAndConssCalculated)
+	   {
+	      calcOpenconss();
+	      calcOpenvars();
+
+	      openVarsAndConssCalculated = true;
+	   }
+
+	   /** check if all not assigned variables are open vars */
+	   for( int v = 0; v < nVars; ++v )
+	   {
+	      if( openVarsBool[v] == true && isVarOpenvar(v) == false )
+	      {
+	         std::cout << "Warning! Variable with index " << v << " is not assigned and not an open var." << std::endl;
+	      }
+	   }
+
+	   /** check if all open vars are not assigned */
+	   for( size_t i; i < openVars.size(); ++i)
+	   {
+	      if( openVarsBool[openVars[i]] == false )
+	      {
+	         std::cout << "Warning! Variable with index " << openVars[i] << " is an open var but assigned." << std::endl;
+	      }
+	   }
+
+
+	  /** check constraints (every constraint is assigned at most once) */
 	  std::vector<bool> openConssBool(nConss, true) ;
 	  std::vector<int>  openConssVec(0);
 	  std::vector<int>::const_iterator consIter = masterConss.begin();
 	  std::vector<int>::const_iterator consIterEnd = masterConss.end();
+
 	  for(; consIter != consIterEnd; ++consIter)
 	  {
 		  if(!openConssBool[*consIter])
@@ -149,12 +236,30 @@ namespace gcg {
 		  {
 			  if(!openConssBool[*consIter])
 			  {
-				  std::cout << "Warning! Constraint with index " << *consIter << "is already assigned " << std::endl;
+				  std::cout << "Warning! Constraint with index " << *consIter << " is already assigned " << std::endl;
 				  return false;
 			  }
 			  openConssBool[*consIter] = false;
 		  }
 	  }
+
+     /** check if all not assigned constraints are open cons */
+     for( int v = 0; v < nConss; ++v )
+     {
+        if( openConssBool[v] == true && isConsOpencons(v) == false )
+        {
+           std::cout << "Warning! Constraint with index " << v << " is not assigned and not an open cons." << std::endl;
+        }
+     }
+
+     /** check if all open conss are not assigned */
+     for( size_t i; i < openConss.size(); ++i)
+     {
+        if( openVarsBool[openConss[i]] == false )
+        {
+           std::cout << "Warning! Constraint with index " << openConss[i] << " is an open cons but assigned." << std::endl;
+        }
+     }
 
 	  return true;
   }
@@ -573,10 +678,17 @@ namespace gcg {
 
 	  openVars = std::vector<int>(0);
 	  std::vector<bool> openVarsBool(nVars, true) ;
+
 	  std::vector<int>::const_iterator varIter = linkingVars.begin();
 	  std::vector<int>::const_iterator varIterEnd = linkingVars.end();
 	  for(; varIter != varIterEnd; ++varIter)
 		  openVarsBool[*varIter] = false;
+
+	  varIter = masterVars.begin();
+	  varIterEnd = masterVars.end();
+	  for(; varIter != varIterEnd; ++varIter)
+	     openVarsBool[*varIter] = false;
+
 	  for(int b =0; b < nBlocks; ++b)
 	  {
 		  varIter = varsForBlocks[b].begin();
@@ -584,6 +696,15 @@ namespace gcg {
 		  for(; varIter != varIterEnd; ++varIter)
 		  		  openVarsBool[*varIter] = false;
 	  }
+
+	  for(int b =0; b < nBlocks; ++b)
+	  {
+	     varIter = stairlinkingVars[b].begin();
+	     varIterEnd = stairlinkingVars[b].end();
+	     for(; varIter != varIterEnd; ++varIter)
+	        openVarsBool[*varIter] = false;
+	  }
+
 
 	  for (int i = 0; i < nVars; ++i)
 	  {
@@ -641,282 +762,232 @@ namespace gcg {
   SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool){
 
      std::vector<int> assignedOpenvars; /** stores the assigned open vars */
-
-     /** tools to check if the openVars can still be found in a constraint yet*/
      bool checkVar;
      bool varInBlock;
+
+     /** tools to check if the openVars can still be found in a constraint yet*/
      std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
 
      /** tools to update openVars */
      std::vector<int> oldOpenvars;
-     bool found;
+     std::vector<int> oldOpenconss;
+
      bool notassigned;
 
-	  if(!openVarsAndConssCalculated)
-	  {
-		  calcOpenconss();
-		  calcOpenvars();
+     if(!openVarsAndConssCalculated)
+     {
+        calcOpenconss();
+        calcOpenvars();
 
-		  openVarsAndConssCalculated = true;
-	  }
-
-	  if(nBlocks == 0)
-	  {
-	     nBlocks = 1;
-	     std::vector<int> vec = std::vector<int>(0);
-	     conssForBlocks.push_back(vec);
-	     varsForBlocks.push_back(vec);
-	     stairlinkingVars.push_back(vec);
-	     if(nBlocks == 0 && openConss.size()!=0)
-	     {
-	        setConsToBlock(openConss[0], 0);
-	        openConss.erase(openConss.begin());
-	     }
-	     else if(nBlocks == 0 && openConss.size() == 0 && masterConss.size() !=0)
-	     {
-	        setConsToBlock(masterConss[0], 0);
-	        masterConss.erase(masterConss.begin());
-	     }
-	     else if(openConss.size() == 0 && masterConss.size() ==0)
-	     {
-	        assert(false);
-	     }
-
-	  }
+        openVarsAndConssCalculated = true;
+     }
 
 
+     assert(conssForBlocks.size() == nBlocks);
+     assert(varsForBlocks.size() == nBlocks);
+     assert(stairlinkingVars.size() == nBlocks);
+     if(nBlocks == 0)
+     {
+        nBlocks = 1;
+        std::vector<int> vec = std::vector<int>(0);
+        conssForBlocks.push_back(vec);
+        varsForBlocks.push_back(vec);
+        stairlinkingVars.push_back(vec);
+        if(nBlocks == 0 && openConss.size()!=0)
+        {
+           setConsToBlock(openConss[0], 0);
+           openConss.erase(openConss.begin());
+        }
+        else if(nBlocks == 0 && openConss.size() == 0 && masterConss.size() !=0)
+        {
+           setConsToBlock(masterConss[0], 0);
+           masterConss.erase(masterConss.begin());
+        }
+        else if(openConss.size() == 0 && masterConss.size() ==0)
+        {
+           assert(false);
+        }
 
-	  /** check if the openVars can found in a constraint yet */
-	  for( size_t i = 0; i < openVars.size(); ++i )
-	  {
-	     varInBlocks.clear();
-
-	     /** test if the variable can be found in blocks */
-	     for( int b = 0; b < nBlocks; ++b )
-	     {
-	        varInBlock = false;
-	        for( size_t k = 0; k < conssForBlocks[b].size() && !varInBlock; ++k)
-	        {
-	           for( int l = 0; l < seeedpool->getNVarsForCons(conssForBlocks[b][k]); ++l )
-	           {
-	              if( openVars[i] == seeedpool->getVarsForCons(conssForBlocks[b][k])[l] )
-	              {
-	                 varInBlocks.push_back(b);
-	                 varInBlock = true;
-	                 break;
-	              }
-	           }
-	        }
-	     }
-	     if( varInBlocks.size() == 1) /** if the variable can be found in one block set the variable to a variable of the block*/
-	     {
-	        setVarToBlock(openVars[i], varInBlocks[0]);
-	        assignedOpenvars.push_back(openVars[i]);
-	        continue; /** the variable openVars[i] does'nt need to be checked any more */
-	     }
-	     else if( varInBlocks.size() == 2) /** if the variable can be found in two blocks check if it is a linking var or a stairlinking var*/
-	     {
-	        if ( varInBlocks[0] + 1 == varInBlocks[1] )
-	        {
-	           setVarToStairlinking(openVars[i], varInBlocks[0], varInBlocks[1]);
-	           assignedOpenvars.push_back(openVars[i]);
-	           continue; /** the variable openVars[i] does'nt need to be checked any more */
-	        }
-	        else
-	        {
-	           setVarToLinking(openVars[i]);
-	           assignedOpenvars.push_back(openVars[i]);
-	           continue; /** the variable openVars[i] does'nt need to be checked any more */
-	        }
-	     }
-	     else if( varInBlocks.size() > 2 ) /** if the variable can be found in more than two blocks it is a linking var */
-	     {
-	        setVarToLinking(openVars[i]);
-	        assignedOpenvars.push_back(openVars[i]);
-	        continue; /** the variable openVars[i] does'nt need to be checked any more */
-	     }
-
-	     /** if the variable can be found in an open constraint it is still an open var */
-	     for( size_t j = 0; j < openConss.size(); ++j )
-	     {
-	        for( int k = 0; k < seeedpool->getNVarsForCons(j); ++k)
-	        {
-	           if( openVars[i] == seeedpool->getVarsForCons(j)[k])
-	           {
-	              checkVar = false;
-	              break;
-	           }
-	        }
-	        if ( !checkVar )
-	        {
-	           break;
-	        }
-	     }
-
-	     /** test if the variable can be found in a master constraint yet */
-	     for( size_t j = 0; j < masterConss.size() && checkVar; ++j )
-	     {
-	        for ( int k = 0; k < seeedpool->getNVarsForCons(masterConss[j]); ++k )
-	        {
-	           if( openVars[i] == seeedpool->getVarsForCons(masterConss[j])[k] )
-	           {
-	              setVarToMaster(openVars[i]);
-	              assignedOpenvars.push_back(openVars[i]);
-	              checkVar = false; /** the variable openVars[i] does'nt need to be checked any more */
-	              break;
-	           }
-	        }
-	     }
-
-	  }
-	  /** delete the assigned open vars */
-	  oldOpenvars = openVars;
-	  openVars.clear();
-	  for ( size_t i = 0; i < oldOpenvars.size(); ++i)
-	  {
-	     found = false;
-	     for ( size_t j = 0; j < assignedOpenvars.size(); ++j )
-	     {
-	        if( oldOpenvars[i] == assignedOpenvars[j] )
-	        {
-	           found = true;
-	           break;
-	        }
-	     }
-	     if( !found ) /** var is still open var */
-	     {
-	        openVars.push_back(oldOpenvars[i]);
-	     }
-	  }
-	  oldOpenvars.clear();
-	  assignedOpenvars.clear();
+     }
 
 
-	  /** assign open conss greedily */
-	  for( size_t i = 0; i < openConss.size(); ++i)
-	  {
-	     std::vector<int> vecOpenvarsOfBlock; /** stores the open vars of the blocks */
-	     bool consGotBlockcons = false; /** if the constraint can be assigned to a block */
 
-	     /** check if the constraint can be assigned to a block */
-	     for ( int j = 0; j < nBlocks; ++j )
-	     {
-	        /** check if all vars of the constraint are a block var of the current block, an open var, a linkingvar or a mastervar*/
-	        consGotBlockcons = true;
-	        for( int k = 0; k < seeedpool->getNVarsForCons(i) ; ++k )
-	        {
-	           if ( isVarBlockvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j) || isVarMastervar(seeedpool->getVarsForCons(openConss[i])[k]) ||
-	              isVarOpenvar(seeedpool->getVarsForCons(openConss[i])[k]) )
-	           {
-	              if ( isVarOpenvar(seeedpool->getVarsForCons(openConss[i])[k]) )
-	              {
-	                 vecOpenvarsOfBlock.push_back(seeedpool->getVarsForCons(openConss[i])[k]); /**!!!*/
-	              }
-	           }
-	           else
-	           {
-	              vecOpenvarsOfBlock.clear(); /** the open vars do'nt get vars of the block */
-	              consGotBlockcons = false; /** the constraint can't be constraint of the block, check the next block */
-	              break;
-	           }
-	        }
-	        if ( consGotBlockcons ) /** the constraint can be assigned to the current block */
-	        {
-	           setConsToBlock(openConss[i], j);
-	           for( size_t k = 0; k < vecOpenvarsOfBlock.size(); ++k) /** the openvars in the constraint get block vars */
-	           {
-	              setVarToBlock(vecOpenvarsOfBlock[k], j);
-	              assignedOpenvars.push_back(vecOpenvarsOfBlock[k]);
-	           }
-	           vecOpenvarsOfBlock.clear();
+   /** check if the openVars can found in a constraint yet */
+   oldOpenvars = openVars;
+   for( size_t i = 0; i < oldOpenvars.size(); ++i )
+   {
+      varInBlocks.clear();
 
-	           /** delete the assigned open vars */
-	           oldOpenvars = openVars;
-	           openVars.clear();
-	           for ( size_t l = 0; l < oldOpenvars.size(); ++l)
-	           {
-	              found = false;
-	              for ( size_t m = 0; m < assignedOpenvars.size(); ++m )
-	              {
-	                 if( oldOpenvars[l] == assignedOpenvars[m] )
-	                 {
-	                    found = true;
-	                    break;
-	                 }
-	              }
-	              if( !found ) /** var is still open var */
-	              {
-	                 openVars.push_back(oldOpenvars[l]);
-	              }
-	           }
-	           oldOpenvars.clear();
-	           assignedOpenvars.clear();
+      /** test if the variable can be found in blocks */
+      for( int b = 0; b < nBlocks; ++b )
+      {
+         varInBlock = false;
+         for( size_t k = 0; k < conssForBlocks[b].size() && !varInBlock; ++k)
+         {
+            for( int l = 0; l < seeedpool->getNVarsForCons(conssForBlocks[b][k]); ++l )
+            {
+               if( oldOpenvars[i] == seeedpool->getVarsForCons(conssForBlocks[b][k])[l] )
+               {
+                  varInBlocks.push_back(b);
+                  varInBlock = true;
+                  break;
+               }
+            }
+         }
+      }
+      if( varInBlocks.size() == 1) /** if the variable can be found in one block set the variable to a variable of the block*/
+      {
+         setVarToBlock(oldOpenvars[i], varInBlocks[0]);
+         deleteOpenvar(oldOpenvars[i]);
+         continue; /** the variable does'nt need to be checked any more */
+      }
+      else if( varInBlocks.size() == 2) /** if the variable can be found in two blocks check if it is a linking var or a stairlinking var*/
+      {
+         if ( varInBlocks[0] + 1 == varInBlocks[1] )
+         {
+            setVarToStairlinking(oldOpenvars[i], varInBlocks[0], varInBlocks[1]);
+            deleteOpenvar(oldOpenvars[i]);
+            continue; /** the variable does'nt need to be checked any more */
+         }
+         else
+         {
+            setVarToLinking(oldOpenvars[i]);
+            deleteOpenvar(oldOpenvars[i]);
+            continue; /** the variable does'nt need to be checked any more */
+         }
+      }
+      else if( varInBlocks.size() > 2 ) /** if the variable can be found in more than two blocks it is a linking var */
+      {
+         setVarToLinking(oldOpenvars[i]);
+         deleteOpenvar(oldOpenvars[i]);
+         continue; /** the variable does'nt need to be checked any more */
+      }
 
-	           break;
-	        }
-	     }
+      /** if the variable can be found in an open constraint it is still an open var */
+      for( size_t j = 0; j < openConss.size(); ++j )
+      {
+         for( int k = 0; k < seeedpool->getNVarsForCons(j); ++k)
+         {
+            if( oldOpenvars[i] == seeedpool->getVarsForCons(j)[k])
+            {
+               checkVar = false;
+               break;
+            }
+         }
+         if ( !checkVar )
+         {
+            break;
+         }
+      }
+
+      /** test if the variable can be found in a master constraint yet */
+      for( size_t j = 0; j < masterConss.size() && checkVar; ++j )
+      {
+         for ( int k = 0; k < seeedpool->getNVarsForCons(masterConss[j]); ++k )
+         {
+            if( oldOpenvars[i] == seeedpool->getVarsForCons(masterConss[j])[k] )
+            {
+               setVarToMaster(oldOpenvars[i]);
+               deleteOpenvar(oldOpenvars[i]);
+               checkVar = false; /** the variable does'nt need to be checked any more */
+               break;
+            }
+         }
+      }
+
+   }
+
+   /** assign open conss greedily */
+   oldOpenconss = openConss;
+   for( size_t i = 0; i < oldOpenconss.size(); ++i)
+   {
+      std::vector<int> vecOpenvarsOfBlock; /** stores the open vars of the blocks */
+      bool consGotBlockcons = false; /** if the constraint can be assigned to a block */
+
+      /** check if the constraint can be assigned to a block */
+      for ( int j = 0; j < nBlocks; ++j )
+      {
+         /** check if all vars of the constraint are a block var of the current block, an open var, a linkingvar or a mastervar*/
+         consGotBlockcons = true;
+         for( int k = 0; k < seeedpool->getNVarsForCons(oldOpenconss[i]) ; ++k )
+         {
+            if ( isVarBlockvarOfBlock(seeedpool->getVarsForCons(oldOpenconss[i])[k], j) ||
+               isVarOpenvar(seeedpool->getVarsForCons(oldOpenconss[i])[k]) || isVarLinkingvar(seeedpool->getVarsForCons(oldOpenconss[i])[k]) || isVarStairlinkingvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j))
+            {
+               if ( isVarOpenvar(seeedpool->getVarsForCons(oldOpenconss[i])[k]) )
+               {
+                  vecOpenvarsOfBlock.push_back(seeedpool->getVarsForCons(oldOpenconss[i])[k]); /**!!!*/
+               }
+            }
+            else
+            {
+               vecOpenvarsOfBlock.clear(); /** the open vars do'nt get vars of the block */
+               consGotBlockcons = false; /** the constraint can't be constraint of the block, check the next block */
+               break;
+            }
+           }
+           if ( consGotBlockcons ) /** the constraint can be assigned to the current block */
+           {
+              setConsToBlock(oldOpenconss[i], j);
+              deleteOpencons(oldOpenconss[i]);
+              for( size_t k = 0; k < vecOpenvarsOfBlock.size(); ++k) /** the openvars in the constraint get block vars */
+              {
+                 setVarToBlock(vecOpenvarsOfBlock[k], j);
+                 deleteOpenvar(vecOpenvarsOfBlock[k]);
+              }
+              vecOpenvarsOfBlock.clear();
 
 
-	     if( !consGotBlockcons ) /** the constraint can not be assigned to a block, set it to master cons */
-	     {
-	        setConsToMaster(openConss[i]);
-	     }
-	  }
+              break;
+           }
+        }
 
-	  for(size_t i = 0; i < openVars.size(); i++)
-	  {
-	     notassigned = true;
-	     //setVarToMaster(openVars[i]);
-	     for(size_t j = 0; j < masterConss.size() && notassigned; ++j)
-	     {
-	        for(int k = 0; k < seeedpool->getNVarsForCons(masterConss[j]) && notassigned ; ++k)
-	        {
-	           if(openVars[i] == seeedpool->getVarsForCons(masterConss[j])[k])
-	           {
-	              setVarToMaster(openVars[i]);
-	              assignedOpenvars.push_back(openVars[i]);
-	              notassigned = false;
-	           }
-	        }
-	     }
-	  }
-	  /** delete the assigned open vars */
-	  oldOpenvars = openVars;
-	  openVars.clear();
-	  for ( size_t i = 0; i < oldOpenvars.size(); ++i)
-	  {
-	     found = false;
-	     for ( size_t j = 0; j < assignedOpenvars.size(); ++j )
-	     {
-	        if( oldOpenvars[i] == assignedOpenvars[j] )
-	        {
-	           found = true;
-	           break;
-	        }
-	     }
-	     if( !found ) /** var is still open var */
-	     {
-	        openVars.push_back(oldOpenvars[i]);
-	     }
-	  }
-	  oldOpenvars.clear();
-	  assignedOpenvars.clear();
 
-	  /** check if the open cons are all assigned */
-	  if( ! checkAllConsAssigned() )
-	  {
-	     std::cout << "ERROR: Something went wrong, there are still open cons, although all should have been assigned ";
-	     assert(false);
-	  }
+        if( !consGotBlockcons ) /** the constraint can not be assigned to a block, set it to master */
+        {
+           setConsToMaster(oldOpenconss[i]);
+           deleteOpencons(oldOpenconss[i]);
+        }
+     }
 
-	  /** check if the open vars are all assigned */
-	  if( ! openVars.empty() )
-	  {
-	     std::cout << "ERROR: Something went wrong, there are still open vars, although all should have been assigned ";
-	     assert(false);
-	  }
 
-	  return SCIP_OKAY;
+     /** assign open vars greedily */
+     oldOpenvars = openVars;
+     for(size_t i = 0; i < oldOpenvars.size(); ++i)
+     {
+        notassigned = true;
+        for(size_t j = 0; j < masterConss.size() && notassigned; ++j)
+        {
+           for(int k = 0; k < seeedpool->getNVarsForCons(masterConss[j]); ++k)
+           {
+              if(oldOpenvars[i] == seeedpool->getVarsForCons(masterConss[j])[k])
+              {
+                 setVarToMaster(oldOpenvars[i]);
+                 deleteOpenvar(oldOpenvars[i]);
+                 notassigned = false;
+                 break;
+              }
+           }
+        }
+     }
+
+     /** check if the open cons are all assigned */
+     if( ! checkAllConsAssigned() )
+     {
+        std::cout << "ERROR: Something went wrong, there are still open cons, although all should have been assigned ";
+        assert(false);
+     }
+
+     /** check if the open vars are all assigned */
+     if( ! openVars.empty() )
+     {
+        std::cout << "ERROR: Something went wrong, there are still open vars, although all should have been assigned ";
+        assert(false);
+     }
+
+     assert(checkConsistency());
+
+     return SCIP_OKAY;
 
   }
 
@@ -944,6 +1015,18 @@ namespace gcg {
      return false;
   }
 
+  /** returns whether the var is a stairlinkingvar of the block */
+  bool Seeed::isVarStairlinkingvarOfBlock(int var, int block){
+     for( size_t i = 0;  i < stairlinkingVars[block].size(); ++i)
+     {
+        if( var == stairlinkingVars[block][i])
+        {
+           return true;
+        }
+     }
+     return false;
+  }
+
   /** returns whether the var is a master var */
   bool Seeed::isVarMastervar(int var){
      for( size_t i = 0;  i < masterVars.size(); ++i)
@@ -961,6 +1044,30 @@ namespace gcg {
      for( size_t i = 0;  i < openVars.size(); ++i)
      {
         if( var == openVars[i])
+        {
+           return true;
+        }
+     }
+     return false;
+  }
+
+  /** returns whether the cons is a master cons*/
+  bool Seeed::isConsMastercons(int cons){
+     for( size_t i = 0;  i < masterConss.size(); ++i)
+     {
+        if( cons == masterConss[i])
+        {
+           return true;
+        }
+     }
+     return false;
+  }
+
+  /** return whether the cons is an open conss */
+  bool Seeed::isConsOpencons(int cons){
+     for( size_t i = 0;  i < openConss.size(); ++i)
+     {
+        if( cons == openConss[i])
         {
            return true;
         }
@@ -1134,6 +1241,9 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
          setVarToMaster(varnum);
       }
 
+      openVars = std::vector<int>(0);
+      openConss = std::vector<int>(0);
+      openVarsAndConssCalculated = true;
 
 
    }

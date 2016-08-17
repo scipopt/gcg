@@ -278,8 +278,13 @@ public:
          int var
    );
 
-   /** return whether the var is a var of the block */
+   /** returns whether the var is a var of the block */
    bool isVarBlockvarOfBlock(
+         int var, int block
+   );
+
+   /** returns whether the var is a stairlinkingvar of the block */
+   bool isVarStairlinkingvarOfBlock(
          int var, int block
    );
 
@@ -291,6 +296,16 @@ public:
    /** returns whether the var is an open var */
    bool isVarOpenvar(
          int var
+   );
+
+   /** returns whether the cons is a master cons*/
+   bool isConsMastercons(
+         int cons
+   );
+
+   /** return whether the cons is an open conss */
+   bool isConsOpencons(
+         int cons
    );
 
    /** returns index of the Openvar in the vector */

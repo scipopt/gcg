@@ -364,6 +364,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	 bool duplicate;
 	 std::vector<SeeedPtr> delSeeeds = std::vector<SeeedPtr>(0);
 
+
 	 for(int round = 0; round < maxRounds; ++round)
 	 {
 		 for(size_t s = 0; s < currSeeeds.size(); ++s )
