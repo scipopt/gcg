@@ -3213,6 +3213,8 @@ SCIP_Bool DECdecompositionsAreEqual(
    int nconss;
 
    SCIP_VAR** vars;
+   int nvars;
+
    int i;
 
    assert(scip != NULL);
@@ -3228,6 +3230,7 @@ SCIP_Bool DECdecompositionsAreEqual(
    nconss = SCIPgetNConss(scip);
 
    vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
 
    constoblock1 = DECdecompGetConstoblock(decomp1);
    constoblock2 = DECdecompGetConstoblock(decomp2);
@@ -3245,7 +3248,7 @@ SCIP_Bool DECdecompositionsAreEqual(
          return FALSE;
    }
 
-   for( i = 0; i < nconss; ++i )
+   for( i = 0; i < nvars; ++i )
    {
       if( SCIPhashmapGetImage(vartoblock1, vars[i]) != SCIPhashmapGetImage(vartoblock2, vars[i]) )
          return FALSE;
