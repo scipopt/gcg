@@ -93,7 +93,8 @@ public:
    }
 
    virtual SCIP_RETCODE createSeeedFromPartition(
-      Seeed**       seeed,
+      Seeed**      firstSeeed,
+      Seeed**      secondSeeed,
       Seeedpool*   seeedpool
    )
    {

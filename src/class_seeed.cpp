@@ -142,7 +142,7 @@ namespace gcg {
 	  /** vector of of all stairlinkingvars */
 	  for( int b = 0; b < nBlocks; ++b)
 	  {
-	     for( size_t i; i < stairlinkingVars[b].size(); ++i)
+	     for( size_t i = 0; i < stairlinkingVars[b].size(); ++i)
 	     {
 	        if(find(stairlinkingvarsvec.begin(), stairlinkingvarsvec.end(), stairlinkingVars[b][i]) == stairlinkingvarsvec.end())
 	        {
@@ -203,7 +203,7 @@ namespace gcg {
 	   }
 
 	   /** check if all open vars are not assigned */
-	   for( size_t i; i < openVars.size(); ++i)
+	   for( size_t i = 0; i < openVars.size(); ++i)
 	   {
 	      if( openVarsBool[openVars[i]] == false )
 	      {
@@ -253,7 +253,7 @@ namespace gcg {
      }
 
      /** check if all open conss are not assigned */
-     for( size_t i; i < openConss.size(); ++i)
+     for( size_t i = 0; i < openConss.size(); ++i)
      {
         if( openVarsBool[openConss[i]] == false )
         {
@@ -761,9 +761,9 @@ namespace gcg {
   /** assigns the open cons and open vars */
   SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool){
 
-     std::vector<int> assignedOpenvars; /** stores the assigned open vars */
      bool checkVar;
      bool varInBlock;
+     bool notassigned;
 
      /** tools to check if the openVars can still be found in a constraint yet*/
      std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
@@ -772,7 +772,7 @@ namespace gcg {
      std::vector<int> oldOpenvars;
      std::vector<int> oldOpenconss;
 
-     bool notassigned;
+
 
      if(!openVarsAndConssCalculated)
      {
@@ -782,10 +782,10 @@ namespace gcg {
         openVarsAndConssCalculated = true;
      }
 
+     assert( (int) conssForBlocks.size() == nBlocks );
+     assert( (int) varsForBlocks.size() == nBlocks );
+     assert( (int) stairlinkingVars.size() == nBlocks );
 
-     assert(conssForBlocks.size() == nBlocks);
-     assert(varsForBlocks.size() == nBlocks);
-     assert(stairlinkingVars.size() == nBlocks);
      if(nBlocks == 0)
      {
         nBlocks = 1;
@@ -1248,6 +1248,45 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
 
    }
 
+   return SCIP_OKAY;
+}
+
+/** fills out the border of a seeed with the hashmap constoblock */
+SCIP_RETCODE Seeed::filloutBorderFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )
+{
+   nBlocks = givenNBlocks;
+   nVars = SCIPgetNVars(scip);
+   nConss = SCIPgetNConss(scip);
+   int consnum;
+   int consblock;
+   int varnum;
+   SCIP_CONS** conss = SCIPgetConss(scip);
+   SCIP_VAR** vars = SCIPgetVars(scip);
+   std::vector <int> emptyVector = std::vector<int>(0);
+
+
+   for( int i = 0; i < nConss; ++i)
+   {
+      consnum = seeedpool->getIndexForCons(conss[i]);
+      consblock = ((int)(size_t)SCIPhashmapGetImage(constoblock, conss[i])) - 1;
+      assert(consblock >= 0 && consblock <= nBlocks);
+      if(consblock == nBlocks)
+      {
+         setConsToMaster(consnum);
+      }
+      else
+      {
+         openConss.push_back(consnum);
+      }
+   }
+
+   for( int i = 0; i < nVars; ++i )
+   {
+      varnum = seeedpool->getIndexForVar(vars[i]);
+      openVars.push_back(varnum);
+   }
+
+   nBlocks = 0;
    return SCIP_OKAY;
 }
 

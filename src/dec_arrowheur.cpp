@@ -450,7 +450,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
 
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
-   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), nMaxSeeeds) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
 
    /* build the hypergraph structure from the original problem */
 
@@ -476,7 +476,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
-   for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
+   for(i = detectordata->minblocks, j = 0; i <= detectordata->maxblocks; ++i )
    {
       SCIP_RETCODE retcode;
       detectordata->blocks = i;
@@ -489,11 +489,11 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
       }
 
 
-      SCIP_CALL( detectordata->graph->createSeeedFromPartition(&newSeeeds[j], seeedPropagationData->seeedpool) );
+      SCIP_CALL( detectordata->graph->createSeeedFromPartition(&newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
+      j = j + 2;
       if( (newSeeeds)[j] != NULL )
       {
-         nNewSeeeds++;
-         ++j;
+         nNewSeeeds = nNewSeeeds + 2;
          detectordata->found = TRUE;
       }
    }
@@ -529,7 +529,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
 
 }
 
-//#define propagateSeeedArrowheur NULL
 
 /** creates the arrowheur presolver and includes it in SCIP */
 extern "C"

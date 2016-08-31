@@ -344,6 +344,12 @@ public:
          Seeedpool* seeedpool
    );
 
+   SCIP_RETCODE filloutBorderFromConstoblock(
+      SCIP_HASHMAP* constoblock,
+      int givenNBlocks,
+      Seeedpool* seeedpool
+   );
+
    /** deletes an open var */
    SCIP_RETCODE deleteOpenvar(
          int openvar

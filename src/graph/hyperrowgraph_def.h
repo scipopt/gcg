@@ -208,7 +208,8 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
 
 template <class T>
 SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
-   Seeed**      seeed,
+   Seeed**     firstSeeed,
+   Seeed**     secondSeeed,
    Seeedpool*  seeedpool
    )
 {
@@ -263,13 +264,16 @@ SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
 
    if( !emptyblocks )
    {
-      (*seeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
-      SCIP_CALL( (*seeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+      (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
+      SCIP_CALL( (*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+      (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
+      SCIP_CALL( (*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool) );
       SCIPhashmapFree(&constoblock);
    }
    else {
       SCIPhashmapFree(&constoblock);
-      seeed = NULL;
+      firstSeeed = NULL;
+      secondSeeed = NULL;
    }
 
    SCIPfreeBufferArray(this->scip_, &nsubscipconss);

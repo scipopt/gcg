@@ -73,7 +73,8 @@ public:
       );
 
    virtual SCIP_RETCODE createSeeedFromPartition(
-      Seeed**           seeed,              /**< decomposition structure to generate */
+      Seeed**          firstSeeed,
+      Seeed**          seconsSeeed,
       Seeedpool*       seeedpool
       );
 
