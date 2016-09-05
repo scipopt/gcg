@@ -618,7 +618,15 @@ SCIP_RETCODE DECdetectStructure(
             }
             if( ndecdecomps > 2 )
             {
-               ndecdecomps = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+               int nunique = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+
+               for( j = nunique; j < ndecdecomps; ++j )
+               {
+                  SCIP_CALL( DECdecompFree(scip, &(decdecomps[j])) );
+                  decdecomps[j] = NULL;
+               }
+
+               ndecdecomps = nunique;
             }
             SCIPdebugPrintf("%d after filtering!\n", ndecdecomps);
 
