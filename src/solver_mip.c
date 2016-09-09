@@ -71,7 +71,7 @@ struct GCG_SolverData
 
 /** extracts ray from pricing problem */
 static
-SCIP_RETCODE createSolutionFromRay(
+SCIP_RETCODE createColumnFromRay(
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    int                   probnr,             /**< problem number */
    GCG_COL**             newcol              /**< column pointer to store new column */
@@ -220,21 +220,26 @@ SCIP_Bool problemIsInterrupted(
 {
    return SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT ||
           SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT ||
+          SCIPgetStatus(pricingprob) == SCIP_STATUS_NODELIMIT ||
           SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT ||
           SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT ||
+          SCIPgetStatus(pricingprob) == SCIP_STATUS_TOTALNODELIMIT ||
           SCIPgetStatus(pricingprob) == SCIP_STATUS_UNKNOWN;
 }
 
-/** returns whether the solution process finished */
+/** returns whether the pricing problem is guaranteed to have at least one feasible solution */
 static
 SCIP_Bool problemIsFeasible(
    SCIP*                 pricingprob         /**< pricing problem SCIP data structure */
    )
 {
-   return SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT;
+   return SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL ||
+      SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT ||
+      SCIPgetStatus(pricingprob) == SCIP_STATUS_SOLLIMIT ||
+      SCIPgetStatus(pricingprob) == SCIP_STATUS_BESTSOLLIMIT;
 }
 
-/** returns whether the solution has an infinite value for at least one variable */
+/** returns whether the pricing problem's incumbent has an infinite value for at least one variable */
 static
 SCIP_Bool problemHasUnboundedSolution(
    SCIP*                 pricingprob         /**< pricing problem SCIP data structure */
@@ -242,12 +247,12 @@ SCIP_Bool problemHasUnboundedSolution(
 {
    int i;
    SCIP_SOL* sol;
-   sol = SCIPgetBestSol(pricingprob);
-   assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT );
-   /* assert(!SCIPisInfinity(pricingprob, SCIPsolGetOrigObj(sol))); */
 
-   if( sol == NULL )
+   if( SCIPgetNSols(pricingprob) == 0 )
       return FALSE;
+
+   sol = SCIPgetBestSol(pricingprob);
+   assert(sol != NULL);
 
    for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
    {
@@ -258,6 +263,62 @@ SCIP_Bool problemHasUnboundedSolution(
    }
 
    return FALSE;
+}
+
+/** transforms feasible solutions of the pricing problem into columns */
+static
+SCIP_RETCODE getColumnsFromPricingprob(
+   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   int                   probnr,             /**< problem number */
+   SCIP_Bool             checksols,          /**< should solutions be checked extensively */
+   int                   maxcols,            /**< size of preallocated column array */
+   GCG_COL**             cols,               /**< array of columns corresponding to solutions */
+   int                   *ncols,             /**< number of columns */
+   SCIP_STATUS*          status              /**< pointer to store pricing problem status */
+)
+{
+   SCIP_SOL** probsols;
+   int nprobsols;
+
+   int s;
+
+   probsols = SCIPgetSols(pricingprob);
+   nprobsols = SCIPgetNSols(pricingprob);
+
+   *status = SCIP_STATUS_UNKNOWN;
+   *ncols = 0;
+
+   for( s = 0; s < nprobsols && s < maxcols; s++ )
+   {
+      SCIP_Bool feasible;
+      assert(probsols[s] != NULL);
+      SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, FALSE, FALSE) );
+
+      if( !feasible )
+      {
+         SCIPwarningMessage(pricingprob, "solution of pricing problem %d not feasible:\n", probnr);
+         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
+      }
+      /* if the best solution is feasible, we set the status to OPTIMAL */
+      else if( s == 0 )
+         *status = SCIP_STATUS_OPTIMAL;
+
+      /* check whether the solution is equal to one of the previous solutions */
+      if( checksols )
+      {
+         SCIP_Bool newsol;
+
+         SCIP_CALL( checkSolNew(pricingprob, probsols, s, &newsol) );
+
+         if( !newsol )
+            continue;
+      }
+
+      SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &(cols[*ncols]), probnr, probsols[s], FALSE, SCIPinfinity(pricingprob)) );
+      ++(*ncols);
+   }
+
+   return SCIP_OKAY;
 }
 
 /** removes wrong solutions from returned solutions */
@@ -314,16 +375,12 @@ SCIP_RETCODE solveProblem(
    int                   probnr,             /**< problem number */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    GCG_COL**             cols,               /**< array of columns corresponding to solutions */
-   int                   maxcols,            /**< size of preallocated array */
+   int                   maxcols,            /**< size of preallocated column array */
    int*                  ncols,              /**< pointer to store number of columns */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
    SCIP_STATUS*          status              /**< pointer to store pricing problem status */
    )
 {
-   SCIP_Bool newsol;
-
-   int s;
-
    SCIP_RETCODE retcode;
 
    assert(pricingprob != NULL);
@@ -355,12 +412,12 @@ SCIP_RETCODE solveProblem(
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT);
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_TOTALNODELIMIT
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_SOLLIMIT
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_BESTSOLLIMIT);
    /* @todo: can UNKNOWN happen, too? */
 
-   /* the pricing problem was declared to be (infeasible or) unbounded and we should have a primal ray at hand,
-    * so copy the primal ray into the solution structure and mark it to be a primal ray
-    */
 
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE )
    {
@@ -369,88 +426,55 @@ SCIP_RETCODE solveProblem(
       return SCIP_OKAY;
    }
 
-   if( problemIsUnbounded(pricingprob) && !SCIPhasPrimalRay(pricingprob) )
-   {
-      SCIP_CALL( resolvePricingWithoutPresolving(pricingprob) );
-   }
-
+   /* The pricing problem was declared to be unbounded and we should have a primal ray at hand,
+    * so copy the primal ray into the solution structure and mark it to be a primal ray
+    */
    if( problemIsUnbounded(pricingprob) )
    {
-      SCIP_CALL( createSolutionFromRay(pricingprob, probnr, &cols[0]) );
+      if( !SCIPhasPrimalRay(pricingprob) )
+      {
+         SCIP_CALL( resolvePricingWithoutPresolving(pricingprob) );
+      }
+
+      SCIP_CALL( createColumnFromRay(pricingprob, probnr, &cols[0]) );
 
       *ncols = 1;
       *status = SCIP_STATUS_UNBOUNDED;
    }
-   /* the solving process was interrupted, so we have no solutions and set the status pointer accordingly */
-   else if( problemIsInterrupted(pricingprob) )
+   else if( problemIsInterrupted(pricingprob) || problemIsFeasible(pricingprob) )
    {
-      *ncols = 0;
-      *status = SCIP_STATUS_UNKNOWN;
-   }
-   /* the pricing problem has an unbounded solution but finite solution, resolve it and extract a finite solution if necessary */
-   else if( problemHasUnboundedSolution(pricingprob) )
-   {
-      SCIP_SOL* sol = NULL;
-      SCIP_Bool success = FALSE;
+      assert(SCIPgetNSols(pricingprob) > 0 || !problemIsFeasible(pricingprob));
 
-      SCIPdebugMessage("solution has infinite values, create a copy with finite values\n");
-
-      SCIP_CALL( SCIPcreateFiniteSolCopy(pricingprob, &sol, SCIPgetBestSol(pricingprob), &success) );
-      assert(success);
-      assert(sol != NULL);
-
-      SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &cols[0], probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
-      *ncols = 1;
-      *status = SCIP_STATUS_OPTIMAL;
-   }
-   /* the pricing problem was solved to optimality, copy all solutions found into the solution arrays */
-   else if( problemIsFeasible(pricingprob) )
-   {
-      SCIP_SOL** probsols = SCIPgetSols(pricingprob);
-      int nprobsols = SCIPgetNSols(pricingprob);;
-
-      *ncols = 0;
-      *status = SCIP_STATUS_OPTIMAL;
-
-      for( s = 0; s < nprobsols && s < maxcols; s++ )
+      /* The pricing problem has a solution with infinite values, resolve it and extract a finite solution if necessary */
+      if( problemHasUnboundedSolution(pricingprob) )
       {
-         SCIP_Bool feasible;
-         assert(probsols[s] != NULL);
-         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, FALSE, FALSE) );
+         SCIP_SOL* sol = NULL;
+         SCIP_Bool success = FALSE;
 
-         if( !feasible )
-         {
-            SCIPwarningMessage(pricingprob, "solution of pricing problem %d not feasible:\n", probnr);
-            SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
+         SCIPdebugMessage("solution has infinite values, create a copy with finite values\n");
 
-            /* if the best solution is not feasible, we set the status to UNKNOWN */
-            if( s == 0 )
-            {
-               *status = SCIP_STATUS_UNKNOWN;
-            }
-         }
+         SCIP_CALL( SCIPcreateFiniteSolCopy(pricingprob, &sol, SCIPgetBestSol(pricingprob), &success) );
+         assert(success);
+         assert(sol != NULL);
 
-         /* check whether the solution is equal to one of the previous solutions */
-         if( solverdata->checksols )
-         {
-            SCIP_CALL( checkSolNew(pricingprob, probsols, s, &newsol) );
-
-            if( !newsol )
-               continue;
-         }
-
-         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &(cols[*ncols]), probnr, probsols[s], FALSE, SCIPinfinity(pricingprob)) );
-         ++(*ncols);
+         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &cols[0], probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
+         *ncols = 1;
+         *status = SCIP_STATUS_OPTIMAL;
       }
+      /* Transform at most maxcols many solutions from the pricing problem into columns */
+      else
+      {
+         SCIP_CALL( getColumnsFromPricingprob(pricingprob, probnr, solverdata->checksols, maxcols, cols, ncols, status) );
 
-      if( (SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL) || (SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT) )
-         *lowerbound = SCIPgetDualbound(pricingprob);
+         if( problemIsFeasible(pricingprob) )
+            *lowerbound = SCIPgetDualbound(pricingprob);
 
-      SCIPdebugMessage("pricingproblem found %d sols, lowerbound = %.4g!\n", *ncols, *lowerbound);
+         SCIPdebugMessage("pricingproblem found %d cols, lowerbound = %.4g!\n", *ncols, *lowerbound);
+      }
    }
    else
    {
-      SCIPerrorMessage("invalid status of pricing problem %d: %d", probnr, SCIPgetStatus(pricingprob));
+      SCIPerrorMessage("invalid status of pricing problem %d: %d\n", probnr, SCIPgetStatus(pricingprob));
       *status = SCIP_STATUS_UNKNOWN;
    }
 
