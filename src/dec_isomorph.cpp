@@ -61,7 +61,7 @@
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 TRUE        /**< should the detector be skipped if others found decompositions */
 
-#define DEFAULT_NUMOFSOL         1          /**< default number of solutions */
+#define DEFAULT_MAXDECOMPS       1          /**< default maximum number of decompositions */
 #define DEFAULT_EXACT            TRUE       /**< default value using exact coefficients for detection */
 #define DEFAULT_EXTEND           FALSE      /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
 
@@ -73,7 +73,7 @@
 struct DEC_DetectorData
 {
    SCIP_RESULT          result;             /**< result pointer to indicate success or failure */
-   int                  numofsol;           /**< number of solutions */
+   int                  maxdecomps;         /**< maximum number of decompositions */
    SCIP_Bool            exact;              /**< Use exact coefficients for detection? */
    SCIP_Bool            extend;             /**< Extend detection by using the sign of the coefficients instead of the coefficients? */
 };
@@ -497,7 +497,6 @@ DEC_DECL_INITDETECTOR(detectorInitIsomorph)
    assert(detectordata != NULL);
 
    detectordata->result = SCIP_SUCCESS;
-   detectordata->numofsol = DEFAULT_NUMOFSOL;
 
    return SCIP_OKAY;
 }
@@ -658,16 +657,16 @@ SCIP_RETCODE detectIsomorph(
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
       // filter decomposition with largest orbit
-      if( detectordata->numofsol == 1)
+      if( detectordata->maxdecomps == 1)
          SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
 
       if( *ndecdecomps == 0 )
-         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->maxdecomps, nperms)) ); /*lint !e506*/
       else
-         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->maxdecomps, nperms)) ); /*lint !e506*/
 
       int pos = *ndecdecomps;
-      for( p = *ndecdecomps; p < *ndecdecomps + nperms && pos < detectordata->numofsol; ++p )
+      for( p = *ndecdecomps; p < *ndecdecomps + nperms && pos < detectordata->maxdecomps; ++p )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
 
@@ -793,6 +792,9 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
       detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, NULL) );
 
    /* add isomorph constraint handler parameters */
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecomps",
+      "Maximum number of solutions/decompositions", &detectordata->maxdecomps, FALSE,
+      DEFAULT_MAXDECOMPS, 1, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/exact",
       "Use exact coefficients for detection?", &detectordata->exact, FALSE,
          DEFAULT_EXACT, NULL, NULL) );
