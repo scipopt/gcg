@@ -29,6 +29,7 @@
  * @brief  pricing solver solving the pricing problem as a sub-MIP, using SCIP
  * @author Gerald Gamrath
  * @author Martin Bergner
+ * @author Christian Puchert
  *
  */
 
@@ -370,10 +371,10 @@ SCIP_RETCODE solveProblem(
 
    if( retcode != SCIP_OKAY )
    {
-      SCIPwarningMessage(pricingprob, "Encountered non recoverable issues solving pricingproblem, ignoring problem\n");
+      SCIPwarningMessage(pricingprob, "Pricing problem %d terminated with retcode = %d, ignoring\n", probnr, retcode);
       return SCIP_OKAY;
    }
-   SCIPdebugMessage("MIP pricing solver: status = %d\n", SCIPgetStatus(pricingprob));
+   SCIPdebugMessage("  -> status = %d\n", SCIPgetStatus(pricingprob));
 
    /* all SCIP statuses handled so far */
    assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
@@ -392,7 +393,7 @@ SCIP_RETCODE solveProblem(
 
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE )
    {
-      SCIPdebugMessage("Pricing is infeasible, abort immediately.\n");
+      SCIPdebugMessage("  -> infeasible, abort immediately.\n");
       *status = SCIP_STATUS_INFEASIBLE;
       return SCIP_OKAY;
    }
@@ -407,6 +408,7 @@ SCIP_RETCODE solveProblem(
          SCIP_CALL( resolvePricingWithoutPresolving(pricingprob) );
       }
 
+      SCIPdebugMessage("  -> unbounded, creating column from ray\n");
       SCIP_CALL( createColumnFromRay(pricingprob, probnr, &cols[0]) );
 
       *ncols = 1;
@@ -416,13 +418,20 @@ SCIP_RETCODE solveProblem(
    {
       assert(SCIPgetNSols(pricingprob) > 0 || !problemIsFeasible(pricingprob));
 
+#ifdef SCIP_DEBUG
+      if( problemIsInterrupted(pricingprob) )
+      {
+         SCIPdebugMessage("  -> interrupted, %d solutions found\n", SCIPgetNSols(pricingprob));
+      }
+#endif
+
       /* Transform at most maxcols many solutions from the pricing problem into columns */
       SCIP_CALL( getColumnsFromPricingprob(pricingprob, probnr, solverdata->checksols, maxcols, cols, ncols, status) );
 
       if( problemIsFeasible(pricingprob) )
          *lowerbound = SCIPgetDualbound(pricingprob);
 
-      SCIPdebugMessage("pricingproblem found %d cols, lowerbound = %.4g!\n", *ncols, *lowerbound);
+      SCIPdebugMessage("  -> found %d columns, lowerbound = %.4g\n", *ncols, *lowerbound);
    }
    else
    {
@@ -483,7 +492,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 #endif
 
    *lowerbound = -SCIPinfinity(pricingprob);
-   SCIPdebugMessage("solving pricing %d (pointer: %p)\n", probnr, (void*)pricingprob);
+   SCIPdebugMessage("Solving pricing %d (pointer: %p)\n", probnr, (void*)pricingprob);
    SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, cols, maxcols, ncols, lowerbound, result) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
@@ -514,6 +523,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", solverdata->heurgaplimit) );
    /*SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/bestsol", 5) );*/ /* TODO: do we want a solution limit? */
 
+   SCIPdebugMessage("Solving pricing %d heuristically (pointer: %p)\n", probnr, (void*)pricingprob);
    SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, cols, maxcols, ncols, lowerbound, result) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
