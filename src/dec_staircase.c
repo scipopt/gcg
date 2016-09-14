@@ -72,10 +72,12 @@
 /** constraint handler data */
 struct DEC_DetectorData
 {
-   SCIP_HASHMAP* constoblock;
-   SCIP_HASHMAP* vartoblock;
+   SCIP_HASHMAP*  constoblock;
+   SCIP_HASHMAP*  vartoblock;
    TCLIQUE_GRAPH* graph;
-   int nblocks;
+   int*           components;
+   int            ncomponents;
+   int            nblocks;
 };
 
 
@@ -109,6 +111,7 @@ SCIP_RETCODE createGraph(
    int v;
    int nconss;
    SCIP_CONS** conss;
+   SCIP_Bool useprobvars = FALSE;
 
    assert(scip != NULL);
    assert(graph != NULL);
@@ -124,37 +127,62 @@ SCIP_RETCODE createGraph(
       TCLIQUE_CALL( tcliqueAddNode(*graph, i, 0) );
    }
 
+   useprobvars = ( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED );
+
    /* Be aware: the following has n*n*m*log(m) complexity but doesn't need any additional memory
-      With additional memory, we can get it down to probably n*m + m*m*n  */
+    * With additional memory, we can get it down to probably n*m + m*m*n
+    */
    for( i = 0; i < nconss; ++i )
    {
       SCIP_VAR** curvars1;
       int ncurvars1;
 
       ncurvars1 = GCGconsGetNVars(scip, conss[i]);
+      if( ncurvars1 == 0 )
+         continue;
+
       SCIP_CALL( SCIPallocBufferArray(scip, &curvars1, ncurvars1) );
 
       SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars1, ncurvars1) );
 
+      if( useprobvars )
+      {
+         /* replace all variables by probvars */
+         for( v = 0; v < ncurvars1; ++v )
+         {
+            curvars1[v] = SCIPvarGetProbvar(curvars1[v]);
+            assert( SCIPvarIsActive(curvars1[v]) );
+         }
+      }
+
       SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
+
       for( j = i+1; j < nconss; ++j )
       {
          SCIP_VAR** curvars2;
          int ncurvars2;
 
          ncurvars2 = GCGconsGetNVars(scip, conss[j]);
+         if( ncurvars2 == 0 )
+            continue;
+
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars2, ncurvars2) );
 
          SCIP_CALL( GCGconsGetVars(scip, conss[j], curvars2, ncurvars2) );
 
-         SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
          for( v = 0; v < ncurvars2; ++v )
          {
             int pos;
 
+            if( useprobvars )
+            {
+               curvars2[v] = SCIPvarGetProbvar(curvars2[v]);
+               assert( SCIPvarIsActive(curvars2[v]) );
+            }
+
             if( SCIPsortedvecFindPtr((void*)curvars1, cmp, curvars2[v], ncurvars1, &pos) )
             {
-               assert(curvars1[pos] == curvars2[v]);
+               assert( curvars1[pos] == curvars2[v] );
                TCLIQUE_CALL( tcliqueAddEdge(*graph, i, j) );
                break;
             }
@@ -166,255 +194,274 @@ SCIP_RETCODE createGraph(
    }
 
    TCLIQUE_CALL( tcliqueFlush(*graph) );
-   SCIPdebug(tcliquePrintGraph(*graph));
+   /*SCIPdebug(tcliquePrintGraph(*graph));*/
+
    return SCIP_OKAY;
 }
 
-
-/** returns the distance between vertex i and j based on the distance matrix */
+/** finds the diameter of a connected component of a graph and computes all distances from some vertex of maximum eccentricity to all other vertices */
 static
-int getDistance(
-   int                   i,                  /**< vertex i */
-   int                   j,                  /**< vertex j */
-   int**                 distance            /**< triangular distance matrix */
-   )
-{
-   assert(distance != NULL);
-
-   if( i >= j )
-      return distance[i][j];
-   else if (i < j)
-      return distance[j][i];
-   else
-      return 0;
-}
-
-
-/** perform BFS on the graph, storing distance information in the user supplied array */
-static
-SCIP_RETCODE doBFS(
-   SCIP*                 scip,               /**< SCIP data structure */
+SCIP_RETCODE findDiameter(
+   SCIP *scip,
    DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   int                   startnode,          /**< starting node */
-   int**                 distances           /**< triangular matrix to store the distance when starting from node i */
-   )
+   int*                  maxdistance,        /**< diameter of the graph */
+   int*                  ncomp,              /**< number of vertices the component contains */
+   int*                  vertices,           /**< */
+   int*                  distances,          /**< distances of vertices to some vertex of maximum eccentricity */
+   int                   component
+)
 {
-   int *queue;
-   int nnodes;
-   SCIP_Bool* marked;
-   int squeue;
-   int equeue;
-   int i;
-   int* node;
-
    TCLIQUE_GRAPH* graph;
+   int diameter = -1;
+   int* queue;          /* queue, first entry is queue[squeue], last entry is queue[equeue] */
+   int squeue;          /* index of first entry of the queue */
+   int equeue;          /* index of last entry of the queue */
+   int nnodes;          /* number of vertices the graph contains */
+   int ncompnodes = 0;  /* number of vertices the component contains */
+   SCIP_Bool* marked;
+   int* eccentricity;   /* upper bounds on the eccentricities */
+   int* dist;           /* distances from some start vertex to all other vertices (gets updated in each BFS) */
+   int* origdegree;     /* degrees of the vertices */
+   int* degree;         /* degrees of the vertices sorted in decreasing order */
+   int* degreepos;
+   int i;
+   int j;
+   int k = 50;          /* number of low-degree vertices that are visited before high-degree vertices are visited */
+
+   /* This method computes the diameter of a connected component by starting BFS at each vertex and memorizing the depth of the search tree.
+    * If a tree has greater depth than any other tree that was computed before, the vertices itself and their distances to the root of the
+    * tree are stored in 'vertices' and 'distances', respectively.
+    *
+    * As these steps require $O(nm)$ time in the worst case, we apply a simple heuristic that stops BFS from vertices that do not have
+    * maximum eccentricity, and in some cases it even prevents starting BFS at such vertices.
+    * a) For each vertex 'v' there is an upper bound 'eccentricity[v]' on the actual eccentricity of 'v'. Initially, this is set to a very large number.
+    * b) Whenever a BFS with root 'v' has finished, 'eccentricity[v]' contains the actual eccentricity of 'v'.
+    * c) If during a BFS with root 'v' a vertex 'u' is discovered, then dist(v, u) + eccentricty[u] is an upper bound on the eccentricity of 'v',
+    *    and therefore the BFS is stopped if dist(v, u) + eccentricity[u] <= diameter_lb, where diameter_lb is the greatest eccentricity known so far.
+    */
 
    assert(scip != NULL);
    assert(detectordata != NULL);
-   assert(distances != NULL);
    assert(detectordata->graph != NULL);
+   assert(detectordata->components != NULL);
+   assert(maxdistance != NULL);
+   assert(vertices != NULL);
+   assert(distances != NULL);
+   assert(ncomp != NULL);
+
    graph = detectordata->graph;
    nnodes = tcliqueGetNNodes(graph);
 
-   assert(startnode < tcliqueGetNNodes(graph));
+   SCIP_CALL( SCIPallocBufferArray(scip, &queue, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &marked, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &eccentricity, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &dist, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &degree, nnodes) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &degreepos, nnodes) );
 
-   squeue = 0;
-   equeue = 0;
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, nnodes) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &marked, nnodes) );
-
+   /* get degrees of vertices and initialize all eccentricities of vertices to values representing upper bounds */
+   origdegree = tcliqueGetDegrees(graph);
    for( i = 0; i < nnodes; ++i )
    {
-      marked[i] = FALSE;
+      if( detectordata->components[i] != component )
+         continue;
+
+      eccentricity[i] = 2 * nnodes; /* do not use INT_MAX because it could lead to an overflow when adding values */
+      degree[ncompnodes] = origdegree[i];    /* we copy the degree array because we are going to sort it */
+      degreepos[ncompnodes] = i;
+
+      ++ncompnodes;
    }
 
-   queue[equeue] = startnode;
-   ++equeue;
+   /* sort vertices by their degrees in decreasing order */
+   SCIPsortDownIntInt(degree, degreepos, ncompnodes);
 
-   distances[startnode][startnode] = 0;
-   marked[startnode] = TRUE;
+   if( ncompnodes < k )
+      k = ncompnodes;
 
-   while( equeue > squeue )
+   /* for each vertex a BFS will be performed */
+   for( j = 0; j < ncompnodes; j++ )
    {
-      int currentnode;
-      int* lastneighbour;
+      int eccent = 0; /* eccentricity of this vertex, only valid if vertex has not been pruned */
+      int startnode;
+      SCIP_Bool pruned = FALSE;
 
-      /* dequeue new node */
-      currentnode = queue[squeue];
+      /* change order in which BFSes are performed: first start at 'k' low-degree vertices, then start BFS at high-degree vertices */
+      if(j < k)
+         startnode = degreepos[ncompnodes - k + j];
+      else
+         startnode = degreepos[j - k];
 
-      assert(currentnode < nnodes);
-      ++squeue;
+      /* eccentricity[startnode] always represents an UPPER BOUND on the actual eccentricity! */
+      if( eccentricity[startnode] <= diameter )
+         continue;
 
-      lastneighbour = tcliqueGetLastAdjedge(graph, currentnode);
-      /* go through all neighbours */
-      for( node = tcliqueGetFirstAdjedge(graph, currentnode); node <= lastneighbour; ++node )
+      /* unmark all vertices */
+      BMSclearMemoryArray(marked, nnodes);
+
+      /* add 'startnode' to the queue */
+      queue[0] = startnode;
+      equeue = 1;
+      squeue = 0;
+      marked[startnode] = TRUE;
+      dist[startnode] = 0;
+
+      /* continue BFS until vertex gets pruned or all vertices have been visited */
+      while( !pruned && (equeue > squeue) )
       {
-         if( !marked[*node] )
+         int currentnode;
+         int currentdistance;
+         int* lastneighbour;
+         int* node;
+
+         /* dequeue new node */
+         currentnode = queue[squeue];
+         currentdistance = dist[currentnode];
+         ++squeue;
+
+         lastneighbour = tcliqueGetLastAdjedge(graph, currentnode);
+         /* go through all neighbours */
+         for( node = tcliqueGetFirstAdjedge(graph, currentnode); !pruned && (node <= lastneighbour); ++node )
          {
-            int curdistance;
+            const int v = *node;
+            /* visit 'v' if it has not been visited yet */
+            if( !marked[v] )
+            {
+               /* mark 'v' and add it to the queue */
+               marked[v] = TRUE;
+               queue[equeue] = v;
+               dist[v] = currentdistance + 1;
+               ++equeue;
 
-            curdistance = getDistance(startnode, currentnode, distances);
+               /* if 'v' is further away from the startnode than any other vertex, update the eccentricity */
+               if( dist[v] > eccent )
+                  eccent = dist[v];
 
-            marked[*node] = TRUE;
-            queue[equeue] = *node;
-            if( *node < startnode )
-               distances[startnode][*node] = curdistance+1;
-            else if( *node > startnode )
-               distances[*node][startnode] = curdistance+1;
+               /* prune the startnode if its eccentricity will certainly not lead to a new upper bound */
+               if( eccentricity[v] + dist[v] <= diameter )
+               {
+                  pruned = TRUE;
+                  eccent = eccentricity[v] + dist[v];
+               }
 
-            ++equeue;
+               /* update upper bound on eccentricity of 'v' */
+               /*if( eccentricity[currentnode] + dist[v] < eccentricity[v] )
+                  eccentricity[v] = eccentricity[currentnode] + dist[v];*/
+            }
+         }
+      }
+
+      eccentricity[startnode] = eccent;
+
+      if( eccent > diameter )
+      {
+         SCIPdebugMessage("new incumbent in component %i: path of length %i starts at %i\n", component, eccent, startnode);
+         diameter = eccent;
+
+         *maxdistance = diameter;
+         *ncomp = ncompnodes;
+         /*detectordata->nblocks = diameter + 1;*/
+
+         for( i = 0; i < ncompnodes; ++i )
+         {
+            vertices[i] = queue[i];
+            distances[i] = dist[queue[i]];
          }
       }
    }
 
-   SCIPfreeMemoryArray(scip, &queue);
-   SCIPfreeMemoryArray(scip, &marked);
+   SCIPfreeBufferArray(scip, &degreepos);
+   SCIPfreeBufferArray(scip, &degree);
+   SCIPfreeBufferArray(scip, &dist);
+   SCIPfreeBufferArray(scip, &eccentricity);
+   SCIPfreeBufferArray(scip, &marked);
+   SCIPfreeBufferArray(scip, &queue);
 
    return SCIP_OKAY;
 }
 
-/** finds the maximal shortest path by inspecting the distance array and returns the path in start and end*/
+/** finds the connected components of the row graph. a staircase decomposition will be built for each component separately. */
 static
-SCIP_RETCODE findMaximalPath(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   int**                 distance,           /**< distance matrix of the maximal s-t path starting from s to any node t*/
-   int*                  start,              /**< start vertex */
-   int*                  end                 /**< end vertex */
+SCIP_RETCODE findConnectedComponents(
+   SCIP*                 scip,               /** SCIP data structure */
+   DEC_DETECTORDATA*     detectordata        /** constraint handler data structure */
    )
 {
    int i;
-   int j;
-   int max;
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(distance != NULL);
-   assert(start != NULL);
-   assert(end != NULL);
-
-   max = -1;
-   *start = -1;
-   *end = -1;
-
-   for( i = 0; i < tcliqueGetNNodes(detectordata->graph); ++i )
-   {
-      for( j = 0; j < i; ++j )
-      {
-         if( distance[i][j] > max )
-         {
-            max = distance[i][j];
-            *start = i;
-            *end = j;
-         }
-      }
-   }
-   assert(*start >= 0);
-   assert(*end >= 0);
-
-   SCIPdebugMessage("Path from %d to %d is longest %d.\n", *start, *end, max);
-   detectordata->nblocks = max+1;
-
-   return SCIP_OKAY;
-}
-
-/** this method will construct the cuts based on the longest shortest path and the distance matrix */
-static
-SCIP_RETCODE constructCuts(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   int                   start,              /**< start vertex */
-   int                   end,                /**< end vertex */
-   int**                 distance,           /**< distance matrix giving the distance from any constraint to any constraint */
-   SCIP_VAR****          cuts                /**< which variables should be in the cuts */
-   )
-{
-
    int nnodes;
-   SCIP_CONS** conss;
-   int i;
+   int ncomps = 0;
+   int curcomp;
+   int* queue;
+   int squeue;
+   int equeue;
+   TCLIQUE_GRAPH* graph;
+   int* component;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
-   assert(start >= 0);
-   assert(end >= 0);
-   assert(distance != NULL);
-   assert(cuts != NULL);
-
    assert(detectordata->graph != NULL);
-   nnodes = tcliqueGetNNodes(detectordata->graph);
-   conss = SCIPgetConss(scip);
-   assert(start < nnodes);
-   assert(end < nnodes);
+   assert(tcliqueGetNNodes(detectordata->graph) >= 0);
 
-   /* The cuts will be generated on a trivial basis:
-    * The vertices  of distance i will be in block i
-    */
+   graph = detectordata->graph;
+   nnodes = tcliqueGetNNodes(graph);
+
+   /* for each vertex the 'component' array contains a number from [0, ncomponents) */
+   assert(detectordata->components == NULL);
+   SCIP_CALL( SCIPallocBufferArray(scip, &(detectordata->components), nnodes) );
+   component = detectordata->components;
+
+   /* component[i] == -1 if and only if vertex i has not been assigned to a component yet */
+   for( i = 0; i < nnodes; ++i )
+      component[i] = -1;
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &queue, nnodes) );
 
    for( i = 0; i < nnodes; ++i )
    {
-      int dist;
-      dist = getDistance(start, i, distance);
-      SCIPdebugPrintf("from %d to %d = %d (%s = %d)\n", start, i, dist, SCIPconsGetName(conss[i]), dist+1 );
-      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*) (size_t) (dist+1)) );
+      /* find first node that has not been visited yet and start BFS */
+      if( component[i] >= 0 )
+         continue;
+
+      SCIPdebugMessage("found new component; starting at %i\n", i);
+      squeue = 0;
+      equeue = 1;
+      queue[0] = i;
+      curcomp = ncomps++;
+      component[i] = curcomp;
+
+      /* dequeue a vertex as long as the queue is not empty */
+      while( equeue > squeue )
+      {
+         int curnode;
+         int* lastneighbour;
+         int* node;
+
+         curnode = queue[squeue++];
+
+         assert(curnode < nnodes);
+
+         /* add unvisited neighbors of this vertex to the queue */
+         lastneighbour = tcliqueGetLastAdjedge(graph, curnode);
+         for( node = tcliqueGetFirstAdjedge(graph, curnode); node <= lastneighbour; ++node )
+         {
+            assert(*node < nnodes);
+
+            if( component[*node] < 0 )
+            {
+               assert(equeue < nnodes);
+               component[*node] = curcomp;
+               queue[equeue++] = *node;
+            }
+         }
+      }
    }
 
+   detectordata->ncomponents = ncomps;
+   SCIPdebugMessage("found %i components\n", ncomps);
+
+   SCIPfreeBufferArray(scip, &queue);
    return SCIP_OKAY;
 }
-
-
-/** looks for staircase components in the constraints in detectordata */
-static
-SCIP_RETCODE findStaircaseComponents(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   SCIP_RESULT*          result              /**< result pointer to indicate success oder failuer */
-   )
-{
-   int nconss;
-   int** distance;
-   int i;
-   int start;
-   int end;
-   SCIP_VAR*** cuts;
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(result != NULL);
-
-   nconss = SCIPgetNConss(scip);
-
-   /* allocate triangular distance matrix */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &distance, nconss) );
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(distance[i]), (size_t)i+1) ); /*lint !e866*/
-      BMSclearMemoryArray(distance[i], (size_t)i+1); /*lint !e866*/
-   }
-
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIP_CALL( doBFS(scip, detectordata, i, distance) );
-   }
-
-   SCIP_CALL( findMaximalPath(scip, detectordata, distance, &start, &end) );
-   SCIP_CALL( constructCuts(scip, detectordata, start, end, distance, &cuts) );
-
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIPfreeMemoryArray(scip, &distance[i]);
-   }
-   SCIPfreeMemoryArray(scip, &distance);
-
-   if( detectordata->nblocks > 1 )
-      *result = SCIP_SUCCESS;
-   else
-      *result = SCIP_DIDNOTFIND;
-
-   return SCIP_OKAY;
-}
-
 
 /* copy conshdldata data to decdecomp */
 static
@@ -448,10 +495,6 @@ DEC_DECL_FREEDETECTOR(detectorFreeStaircase)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   if( detectordata->graph != NULL )
-   {
-      tcliqueFree(&detectordata->graph);
-   }
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
@@ -472,10 +515,39 @@ DEC_DECL_INITDETECTOR(detectorInitStaircase)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
+   detectordata->graph = NULL;
+   detectordata->components = NULL;
+   detectordata->ncomponents = 0;
    detectordata->constoblock = NULL;
    detectordata->vartoblock = NULL;
-
    detectordata->nblocks = 0;
+
+   return SCIP_OKAY;
+}
+
+/** detector deinitialization method (called before the transformed problem is freed) */
+static
+DEC_DECL_EXITDETECTOR(detectorExitStaircase)
+{  /*lint --e{715}*/
+   DEC_DETECTORDATA *detectordata;
+
+   assert(scip != NULL);
+   assert(detector != NULL);
+
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+
+   if( detectordata->graph != NULL )
+   {
+      tcliqueFree(&detectordata->graph);
+   }
+
+   if( detectordata->components != NULL )
+   {
+      SCIPfreeBufferArray(scip, &detectordata->components);
+   }
 
    return SCIP_OKAY;
 }
@@ -484,6 +556,14 @@ DEC_DECL_INITDETECTOR(detectorInitStaircase)
 static
 DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircase)
 {
+   int i;
+   int j;
+   int* nodes;
+   int nnodes;
+   int* distances;
+   int* blocks;
+   int nblocks = 0;
+
    *result = SCIP_DIDNOTFIND;
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");
@@ -491,17 +571,71 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircase)
    SCIP_CALL( createGraph(scip, &(detectordata->graph)) );
    SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
-   SCIP_CALL( findStaircaseComponents(scip, detectordata, result) );
-
-   if( *result == SCIP_SUCCESS )
+   if( tcliqueGetNNodes(detectordata->graph) > 0 )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
-      SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
-      SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
-      SCIP_CALL( copyToDecdecomp(scip, detectordata, (*decdecomps)[0]) );
-      *ndecdecomps = 1;
+      nnodes = tcliqueGetNNodes(detectordata->graph);
+
+      /* find connected components of the graph. the result will be stored in 'detectordata->components' */
+      SCIP_CALL( findConnectedComponents(scip, detectordata) );
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &nodes, nnodes) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &distances, nnodes) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nnodes) );
+
+      for( i = 0; i < nnodes; ++i)
+         blocks[i] = -1;
+
+      /* find the diameter of each connected component */
+      for( i = 0; i < detectordata->ncomponents; ++i )
+      {
+         int diameter = 0;
+         int ncompsize = 0;
+
+         SCIP_CALL( findDiameter(scip, detectordata, &diameter, &ncompsize, nodes, distances, i) );
+         SCIPdebugMessage("component %i has %i vertices and diameter %i\n", i, ncompsize, diameter);
+
+         for( j = 0; j < ncompsize; j++ )
+         {
+            assert(nodes[j] >= 0);
+            assert(nodes[j] < nnodes);
+            assert(distances[j] >= 0);
+            assert(distances[j] <= diameter);
+            assert(distances[j] + nblocks < nnodes);
+
+            blocks[nodes[j]] = nblocks + distances[j];
+            SCIPdebugMessage("\tnode %i to block %i\n", nodes[j], nblocks + distances[j]);
+         }
+
+         nblocks += (diameter + 1);
+      }
+
+      if( nblocks > 0 )
+      {
+         SCIP_CONS** conss = SCIPgetConss(scip);
+
+         detectordata->nblocks = nblocks;
+
+         for( i = 0; i < nnodes; ++i )
+         {
+            assert(blocks[i] >= 0);
+            SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*) (size_t) (blocks[i] + 1)) );
+         }
+
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
+         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
+         SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
+         SCIP_CALL( copyToDecdecomp(scip, detectordata, (*decdecomps)[0]) );
+         *ndecdecomps = 1;
+         *result = SCIP_SUCCESS;
+      }
+
+      SCIPfreeBufferArray(scip, &blocks);
+      SCIPfreeBufferArray(scip, &nodes);
+      SCIPfreeBufferArray(scip, &distances);
+      SCIPfreeBufferArray(scip, &(detectordata->components));
    }
-   else
+
+   if( *result != SCIP_SUCCESS )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
       if( detectordata->constoblock != NULL )
@@ -532,12 +666,9 @@ SCIP_RETCODE SCIPincludeDetectorStaircase(
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
-   detectordata->graph = NULL;
-   detectordata->constoblock = NULL;
-   detectordata->vartoblock = NULL;
-   detectordata->nblocks = 0;
+
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, NULL) );
+      detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, detectorExitStaircase) );
 
    return SCIP_OKAY;
 }

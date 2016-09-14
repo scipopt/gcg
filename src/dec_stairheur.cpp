@@ -123,7 +123,6 @@ struct DEC_DetectorData
  * Local methods
  */
 
-/* put your local methods here, and declare them static */
 
 /* debugging methods */
 void printnested(
@@ -461,6 +460,78 @@ void plotMinV(
 
 #endif
 
+
+
+/** initialization method of detector data */
+static
+SCIP_RETCODE initData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
+   )
+{
+   int i;
+   int nvars;
+   int nconss;
+
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+
+   nvars = SCIPgetNVars(scip);
+   nconss = SCIPgetNConss(scip);
+   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->ibegin, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->iend, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->jbegin, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->jend, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->jmin, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->jmax, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->minV, nconss-1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->width, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->hashmapindices, (size_t)MAX(nvars, nconss) + 1) );
+   for( i = 0; i < MAX(nvars, nconss)+1; ++i )
+   {
+      detectordata->hashmapindices[i] = i;
+   }
+   detectordata->rowsWithConstrictions = new vector<int>();
+   detectordata->blockedAfterrow = new vector<int>();
+
+   /* create hash tables */
+   SCIP_CALL( indexmapCreate(scip, &detectordata->indexmap, nconss, nvars) );
+
+   return SCIP_OKAY;
+}
+
+/** deinitialization method of detector data (called after detection has been finished) */
+static
+SCIP_RETCODE freeData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
+   )
+{
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+
+   indexmapFree(scip, &detectordata->indexmap);
+
+   /* delete vectors */
+   delete detectordata->rowsWithConstrictions;
+   detectordata->rowsWithConstrictions = NULL;
+   delete detectordata->blockedAfterrow;
+   detectordata->blockedAfterrow = NULL;
+
+   SCIPfreeMemoryArray(scip, &detectordata->ibegin);
+   SCIPfreeMemoryArray(scip, &detectordata->iend);
+   SCIPfreeMemoryArray(scip, &detectordata->jbegin);
+   SCIPfreeMemoryArray(scip, &detectordata->jend);
+   SCIPfreeMemoryArray(scip, &detectordata->jmin);
+   SCIPfreeMemoryArray(scip, &detectordata->jmax);
+   SCIPfreeMemoryArray(scip, &detectordata->minV);
+   SCIPfreeMemoryArray(scip, &detectordata->width);
+   SCIPfreeMemoryArray(scip, &detectordata->hashmapindices);
+
+   return SCIP_OKAY;
+}
 
 /** creates a nested vector with the indices of the nonzero entries of each row.
  *
@@ -1419,78 +1490,30 @@ DEC_DECL_FREEDETECTOR(detectorFreeStairheur)
    return SCIP_OKAY;
 }
 
-/** initialization method of stairheur detector */
+/** detector initialization method (called after problem was transformed) */
 static
 DEC_DECL_INITDETECTOR(detectorInitStairheur)
 {
    DEC_DETECTORDATA* detectordata;
 
-   int i;
-   int nvars;
-   int nconss;
-
-   assert(scip != NULL);
-
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   nvars = SCIPgetNVars(scip);
-   nconss = SCIPgetNConss(scip);
-   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->ibegin, nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->iend, nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->jbegin, nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->jend, nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->jmin, nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->jmax, nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->minV, nconss-1) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->width, nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->hashmapindices, (size_t)MAX(nvars, nconss) + 1) );
-   for( i = 0; i < MAX(nvars, nconss)+1; ++i )
-   {
-      detectordata->hashmapindices[i] = i;
-   }
-   detectordata->rowsWithConstrictions = new vector<int>();
-   detectordata->blockedAfterrow = new vector<int>();
-
-   /* create hash tables */
-   SCIP_CALL( indexmapCreate(scip, &detectordata->indexmap, nconss, nvars) );
-
-   return SCIP_OKAY;
-}
-
-/** deinitialization method of detector (called after detection has been finished) */
-static
-DEC_DECL_EXITDETECTOR(detectorExitStairheur)
-{
-   DEC_DETECTORDATA* detectordata;
-
    assert(scip != NULL);
 
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   indexmapFree(scip, &detectordata->indexmap);
-
-   /* delete vectors */
-   delete detectordata->rowsWithConstrictions;
+   detectordata->constoblock = NULL;
+   detectordata->ibegin = NULL;
+   detectordata->iend = NULL;
+   detectordata->jbegin = NULL;
+   detectordata->jend = NULL;
+   detectordata->jmin = NULL;
+   detectordata->jmax = NULL;
+   detectordata->minV = NULL;
+   detectordata->width = NULL;
+   detectordata->hashmapindices = NULL;
+   detectordata->indexmap = NULL;
    detectordata->rowsWithConstrictions = NULL;
-   delete detectordata->blockedAfterrow;
    detectordata->blockedAfterrow = NULL;
-
-   SCIPfreeMemoryArray(scip, &detectordata->ibegin);
-   SCIPfreeMemoryArray(scip, &detectordata->iend);
-   SCIPfreeMemoryArray(scip, &detectordata->jbegin);
-   SCIPfreeMemoryArray(scip, &detectordata->jend);
-   SCIPfreeMemoryArray(scip, &detectordata->jmin);
-   SCIPfreeMemoryArray(scip, &detectordata->jmax);
-   SCIPfreeMemoryArray(scip, &detectordata->minV);
-   SCIPfreeMemoryArray(scip, &detectordata->width);
-   SCIPfreeMemoryArray(scip, &detectordata->hashmapindices);
 
    return SCIP_OKAY;
 }
@@ -1518,6 +1541,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStairheur)
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting stairheur structure:");
 
+   SCIP_CALL( initData(scip, detectordata) );
 
    checkParameterConsistency(detectordata, result);
    ndecs = calculateNdecompositions(detectordata);
@@ -1602,6 +1626,8 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStairheur)
 
    SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
 
+   SCIP_CALL( freeData(scip, detectordata) );
+
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
@@ -1618,22 +1644,8 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   detectordata->constoblock = NULL;
-   detectordata->ibegin = NULL;
-   detectordata->iend = NULL;
-   detectordata->jbegin = NULL;
-   detectordata->jend = NULL;
-   detectordata->jmin = NULL;
-   detectordata->jmax = NULL;
-   detectordata->minV = NULL;
-   detectordata->width = NULL;
-   detectordata->hashmapindices = NULL;
-   detectordata->indexmap = NULL;
-   detectordata->rowsWithConstrictions = NULL;
-   detectordata->blockedAfterrow = NULL;
-
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur) );
+      detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, NULL) );
 
    /* add stairheur detector parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/nconssperblock",

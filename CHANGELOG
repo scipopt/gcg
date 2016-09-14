@@ -1,11 +1,17 @@
 GCG Version
 =================
 
+features
+- solve the problem with one single block if no decomposition is available ('SCIP mode')
+- extended isomorph detector by the possibility to identify blocks which are identical
+  w.r.t. signs (but not necessarily values) of coefficients.
+
 code cleanup
 - cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
 
 bug fixes
 - changed/corrected variable fixing behaviour of Extreme Point RINS in case of aggregated blocks
+- fixed handling of fixed variables in decompositions
 
 GCG Version 2.1.1
 =================

@@ -82,7 +82,41 @@ struct SCIP_ConshdlrData
  * Local methods
  */
 
-/* put your local methods here, and declare them static */
+/**
+ * create a 'decomposition' consisting of only one single block; used if no other decomposition was found
+ */
+static
+SCIP_RETCODE createOneBlockDecomp(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_HASHMAP* newconstoblock;
+   DEC_DECOMP* newdecomp;
+   SCIP_CONS** conss;
+   int nconss;
+   int i;
+
+   conss = SCIPgetConss(scip);
+   nconss = SCIPgetNConss(scip);
+
+   SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), nconss ) );
+
+   /* assign each constraint to (the only) block 1 */
+   for( i = 0; i < nconss; i++ )
+   {
+      assert(!SCIPhashmapExists(newconstoblock, conss[i]));
+      SCIP_CALL( SCIPhashmapInsert(newconstoblock, conss[i], (void*) (size_t) 1) );
+   }
+
+   /* create the decomposition data structure and add it to SCIP */
+   SCIP_CALL( DECdecompCreate(scip, &newdecomp) );
+   assert(newdecomp != NULL);
+   SCIP_CALL( DECfilloutDecompFromConstoblock(scip, newdecomp, newconstoblock, 1, FALSE) );
+
+   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, newdecomp) );
+
+   return SCIP_OKAY;
+}
 
 
 /*
@@ -584,7 +618,15 @@ SCIP_RETCODE DECdetectStructure(
             }
             if( ndecdecomps > 2 )
             {
-               ndecdecomps = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+               int nunique = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+
+               for( j = nunique; j < ndecdecomps; ++j )
+               {
+                  SCIP_CALL( DECdecompFree(scip, &(decdecomps[j])) );
+                  decdecomps[j] = NULL;
+               }
+
+               ndecdecomps = nunique;
             }
             SCIPdebugPrintf("%d after filtering!\n", ndecdecomps);
 
@@ -630,8 +672,10 @@ SCIP_RETCODE DECdetectStructure(
    }
    else
    {
-      *result = SCIP_DIDNOTFIND;
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "No decomposition found!\n");
+      assert(conshdlrdata->ndecomps == 0);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "No decomposition found -- solving with one single block.\n");
+      SCIP_CALL( createOneBlockDecomp(scip) );
+      *result = SCIP_SUCCESS;
    }
    SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
 
@@ -783,13 +827,16 @@ void DECprintListOfDetectors(
 
    ndetectors = conshdlrdata->ndetectors;
 
-   SCIPdialogMessage(scip, NULL, " detector             priority char  description\n --------------       -------- ----  -----------\n");
+   SCIPdialogMessage(scip, NULL, " detector             char priority enabled  description\n");
+   SCIPdialogMessage(scip, NULL, " --------------       ---- -------- -------  -----------\n");
 
    for( i = 0; i < ndetectors; ++i )
    {
       SCIPdialogMessage(scip, NULL,  " %-20s", conshdlrdata->detectors[i]->name);
-      SCIPdialogMessage(scip, NULL,  " %8d    %c ", conshdlrdata->detectors[i]->priority, conshdlrdata->detectors[i]->decchar);
-      SCIPdialogMessage(scip, NULL,  " %s\n", conshdlrdata->detectors[i]->description);
+      SCIPdialogMessage(scip, NULL,  "    %c", conshdlrdata->detectors[i]->decchar);
+      SCIPdialogMessage(scip, NULL,  " %8d", conshdlrdata->detectors[i]->priority);
+      SCIPdialogMessage(scip, NULL,  " %7s", conshdlrdata->detectors[i]->enabled ? "TRUE" : "FALSE");
+      SCIPdialogMessage(scip, NULL,  "  %s\n", conshdlrdata->detectors[i]->description);
    }
 }
 

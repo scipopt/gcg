@@ -71,6 +71,7 @@ BEGIN {
    NEWSOLUFILE = "new_solufile.solu";
    infty = +1e+20;
    headerprinted = 0;
+   namelength = 18;             # maximal length of instance names (can be increased)
 
 
    nprobs = 0;
@@ -156,8 +157,8 @@ BEGIN {
    for( i = 2; i < m; ++i )
       prob = prob "." b[i];
 
-   if( useshortnames && length(prob) > 12 )
-      shortprob = substr(prob, length(prob)-11, 12);
+   if( useshortnames && length(prob) > namelength )
+      shortprob = substr(prob, length(prob)-namelength-1, namelength);
    else
       shortprob = prob;
 
@@ -579,9 +580,20 @@ BEGIN {
       }
 
       #print header of table when this regular expression is matched for the first time
-      tablehead1 = "------------+----+--- Original --+-- Presolved --+----------+------- Decomposition -------+--------------+--------------+------+-------- Pricing ------+---- Master ----+-------+-------+";
-      tablehead2 = "Name        |Type| Conss |  Vars | Conss |  Vars | Detector |Blocks| Rel. | MConss| MVars |  Dual Bound  | Primal Bound | Gap%% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
-      tablehead3 = "------------+----+-------+-------+-------+-------+----------+------+------+-------+-------+--------------+--------------+------+-------+-------+-------+-------+--------+-------+-------+";
+
+      # prepare header
+      hyphenstr = "";
+      for (i = 0; i < namelength; ++i)
+         hyphenstr = sprintf("%s-", hyphenstr);
+
+      # first part: name of given length
+      tablehead1 = hyphenstr;
+      tablehead2 = sprintf("Name%*s", namelength-4, " ");
+      tablehead3 = hyphenstr;
+
+      tablehead1 = tablehead1"+----+--- Original --+-- Presolved --+----------+------- Decomposition -------+--------------+--------------+------+-------- Pricing ------+---- Master ----+-------+-------+";
+      tablehead2 = tablehead2"|Type| Conss |  Vars | Conss |  Vars | Detector |Blocks| Rel. | MConss| MVars |  Dual Bound  | Primal Bound | Gap%% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
+      tablehead3 = tablehead3"+----+-------+-------+-------+-------+----------+------+------+-------+-------+--------------+--------------+------+-------+-------+-------+-------+--------+-------+-------+";
 
       if( printsoltimes == 1 ) {
          tablehead1 = tablehead1"----------+---------+";
@@ -921,7 +933,7 @@ BEGIN {
          reltol = 1e-5 * max(abs(pb),1.0);
          abstol = 1e-4;
 
-         if( timeout || gapreached || sollimitreached || memlimit || nodelimit ) {
+         if( timeout || gapreached || sollimitreached || memlimitreached || nodelimitreached ) {
 	    if( timeout )
 	       status = "timeout";
 	    else if( gapreached )
@@ -968,15 +980,15 @@ BEGIN {
       #write output to both the tex file and the console depending on whether printsoltimes is activated or not
       if( !onlypresolvereductions || origcons > cons || origvars > vars ) {
          if (TEXFILE != "") {
-            printf("%-16s & %6d & %6d & %16.9g & %16.9g & %6s &  %6d &  %6d &  %6d & %7.1f & %7.1f & %s%8d &%s%7.1f",
-                   pprob, cons, vars, db, pb, gapstr, pricecall, npriceprobs, pricevars, pricetime, lptime,
+            printf("%-*s & %6d & %6d & %16.9g & %16.9g & %6s &  %6d &  %6d &  %6d & %7.1f & %7.1f & %s%8d &%s%7.1f",
+                   namelength, pprob, cons, vars, db, pb, gapstr, pricecall, npriceprobs, pricevars, pricetime, lptime,
                    markersym, bbnodes, markersym, tottime) >TEXFILE;
             if( printsoltimes )
                printf(" & %7.1f & %7.1f", timetofirst, timetobest) > TEXFILE;
             printf("\\\\\n") > TEXFILE;
          }
-         printf("%-12s %-4s %7d %7d %7d %7d %-10s %6d %6d %7d %7d %14.9g %14.9g %6s %7d %7d %7.1f %7.1f %8d %7d %7.1f ",
-                shortprob, probtype, origcons, origvars, cons, vars, detector, blocks, rel, linkconss, linkvars, db, pb, gapstr,
+         printf("%-*s %-4s %7d %7d %7d %7d %-10s %6d %6d %7d %7d %14.9g %14.9g %6s %7d %7d %7.1f %7.1f %8d %7d %7.1f ",
+                namelength, shortprob, probtype, origcons, origvars, cons, vars, detector, blocks, rel, linkconss, linkvars, db, pb, gapstr,
                 pricecall, pricevars, pricetime, lptime, simpiters, bbnodes, tottime);
          if( printsoltimes )
             printf("%9.1f %9.1f ", timetofirst, timetobest);

@@ -186,13 +186,13 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
          SCIP_VAR* var1;
          int varIndex1;
 
-         if( !GCGisVarRelevant(curvars1[k]) )
-            continue;
-
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
             var1 = SCIPvarGetProbvar(curvars1[k]);
          else
             var1 = curvars1[k];
+
+         if( !GCGisVarRelevant(var1) )
+            continue;
 
          assert(var1 != NULL);
          varIndex1 = SCIPvarGetProbindex(var1);
