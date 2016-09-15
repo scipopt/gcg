@@ -38,6 +38,7 @@
 #include "class_seeedpool.h"
 #include "struct_detector.h"
 #include "struct_decomp.h"
+#include "decomp.h"
 #include <algorithm>
 #include <iostream>
 
@@ -88,6 +89,7 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
 
    for( size_t i = 0; i < seeeds.size(); ++i )
    {
+      bool noDuplicate = false;
 
       /** compares the number of master conss, master vars, blocks, linking vars and stairlinking vars */
       if( compseeed->getNMasterconss() != seeeds[i]->getNMasterconss() || compseeed->getNMastervars() != seeeds[i]->getNMastervars() ||
@@ -98,18 +100,18 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
       for( int b = 0; b < compseeed->getNBlocks(); ++b)
       {
          if( compseeed->getNStairlinkingvars(b) != seeeds[i]->getNStairlinkingvars(b))
-            goto noDuplicate;
+            noDuplicate = true;;
       }
 
       /** compares the number of constraints and variables in the blocks*/
-      for( int j = 0; j < compseeed->getNBlocks(); ++j )
+      for( int j = 0; j < compseeed->getNBlocks() && !noDuplicate ; ++j )
       {
          if( (compseeed->getNVarsForBlock(j) != seeeds[i]->getNVarsForBlock(j)) || (compseeed->getNConssForBlock(j) != seeeds[i]->getNConssForBlock(j)) )
-            goto noDuplicate;
+            noDuplicate = true;
       }
 
       /** sorts the the master conss, master vars, conss in blocks, vars in blocks, linking vars and stairlinking vars */
-      if( sort )
+      if( sort && !noDuplicate)
       {
          compseeed->sortMasterconss();
          seeeds[i]->sortMasterconss();
@@ -132,54 +134,53 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
       }
 
       /** compares the master cons */
-      for( int j = 0; j < compseeed->getNMasterconss(); ++j)
+      for( int j = 0; j < compseeed->getNMasterconss() && !noDuplicate; ++j)
       {
          if( compseeed->getMasterconss()[j] != seeeds[i]->getMasterconss()[j] )
-            goto noDuplicate;
+            noDuplicate = true;
       }
 
       /** compares the master vars */
-      for( int j = 0; j < compseeed->getNMastervars(); ++j)
+      for( int j = 0; j < compseeed->getNMastervars() && !noDuplicate; ++j)
       {
          if( compseeed->getMastervars()[j] != seeeds[i]->getMastervars()[j] )
-            goto noDuplicate;
+            noDuplicate = true;
       }
 
       /** compares the constrains and variables in the blocks */
-      for( int j = 0; j < compseeed->getNBlocks(); ++j )
+      for( int j = 0; j < compseeed->getNBlocks() && !noDuplicate; ++j )
       {
-         for( int k = 0; k < compseeed->getNConssForBlock(j); ++k)
+         for( int k = 0; k < compseeed->getNConssForBlock(j) && !noDuplicate; ++k)
          {
             if( compseeed->getConssForBlock(j)[k] != compseeed->getConssForBlock(j)[k] )
-               goto noDuplicate;
+               noDuplicate = true;
          }
-         for( int k = 0; k < compseeed->getNVarsForBlock(j); ++k)
+         for( int k = 0; k < compseeed->getNVarsForBlock(j) && !noDuplicate; ++k)
          {
             if( compseeed->getVarsForBlock(j)[k] != compseeed->getVarsForBlock(j)[k] )
-               goto noDuplicate;
+               noDuplicate = true;
          }
       }
 
       /** compares the linking vars */
-      for( int j = 0; j < compseeed->getNLinkingvars(); ++j)
+      for( int j = 0; j < compseeed->getNLinkingvars() && !noDuplicate; ++j)
       {
          if( compseeed->getLinkingvars()[j] != seeeds[i]->getLinkingvars()[j] )
-            goto noDuplicate;
+            noDuplicate = true;
       }
 
       /** compares the stairlinking vars */
-      for( int b = 0; b < compseeed->getNBlocks(); ++b)
+      for( int b = 0; b < compseeed->getNBlocks() && !noDuplicate; ++b)
       {
-         for( int j = 0; j < compseeed->getNStairlinkingvars(b); ++j)
+         for( int j = 0; j < compseeed->getNStairlinkingvars(b) && !noDuplicate; ++j)
          {
             if( compseeed->getStairlinkingvars(b)[j] != seeeds[i]->getStairlinkingvars(b)[j] )
-               goto noDuplicate;
+               noDuplicate = true;
          }
       }
 
-      return FALSE;
-
-      noDuplicate: continue;
+      if(!noDuplicate)
+         return FALSE;
    }
    return TRUE;
 }
@@ -367,7 +368,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 	 for(int round = 0; round < maxRounds; ++round)
 	 {
-		 for(size_t s = 0; s < currSeeeds.size(); ++s )
+		 for(size_t s = 0; s < currSeeeds.size() && s < 8; ++s )
 		 {
 			 SeeedPtr seeedPtr;
 			 seeedPtr= currSeeeds[s];
@@ -403,9 +404,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 					 {
 					    seeedPropData->newSeeeds[seeed]->calcOpenconss();
 					    seeedPropData->newSeeeds[seeed]->calcOpenvars();
+					    seeedPropData->newSeeeds[seeed]->setOpenVarsAndConssCalculated(true);
 					    if(seeedPropData->newSeeeds[seeed]->getNOpenconss() == 0 && seeedPropData->newSeeeds[seeed]->getNOpenvars() == 0)
 					    {
 					       finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
+
 					    }
 					    else
 					    {
@@ -440,6 +443,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	 for( size_t i = 0; i < finishedSeeeds.size(); ++i )
 	 {
 	    SeeedPtr seeed = finishedSeeeds[i];
+	    assert(seeed->checkConsistency());
+	    assert(seeed->checkVarsAndConssConsistency(this));
 
 	    /** set nblocks */
 	    int nblocks = seeed->getNBlocks();
@@ -472,10 +477,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    /** set stairlinkingvars */
 	    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->stairlinkingvars, nblocks) ); /** free in decomp.c:466 */
 	    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->nstairlinkingvars, nblocks) ); /** free in decomp.c:467 */
-	    for ( int j = 0; j < nblocks; ++j )
+	    for( int j = 0; j < nblocks; ++j )
 	    {
 	       int nstairlinkingvars = seeed->getNStairlinkingvars(j);
-	       decompositions[i]->nstairlinkingvars[j]=nstairlinkingvars;
+	       decompositions[i]->nstairlinkingvars[j] = nstairlinkingvars;
 	       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->stairlinkingvars[j], nstairlinkingvars) ); /** free in decomp.c:444 */
 	       for ( int k = 0; k < nstairlinkingvars; ++k )
 	       {
@@ -484,8 +489,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    }
 
 	    /** create hashmap constoblock and consindex */
-	    SCIP_CALL_ABORT( SCIPhashmapCreate( &decompositions[i]->constoblock, SCIPblkmem(scip), nVars ) );
-	    SCIP_CALL_ABORT( SCIPhashmapCreate( &decompositions[i]->consindex, SCIPblkmem(scip), nVars ) );
+	    SCIP_CALL_ABORT( SCIPhashmapCreate( &decompositions[i]->constoblock, SCIPblkmem(scip), nConss ) );
+	    SCIP_CALL_ABORT( SCIPhashmapCreate( &decompositions[i]->consindex, SCIPblkmem(scip), nConss ) );
 
 
 	    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipconss, nblocks) ); /** free in decomp.c:463 */
@@ -560,7 +565,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	             SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->varindex, (void*) (size_t) vindex, (void*) (size_t) (nblocks+2)) );
 	             SCIP_CALL_ABORT( SCIPcaptureVar(scip, probvar) );
 	          }
-	          assert( ((size_t) SCIPhashmapGetImage(decompositions[i]->vartoblock, probvar)) == nblocks+2);
 	       }
 	    }
 
@@ -568,6 +572,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    for( int j = 0; j < seeed->getNLinkingvars(); ++j )
 	    {
 	       vindex++;
+	       probvar = SCIPvarGetProbvar( getVarForIndex(seeed->getLinkingvars()[j]) );
 	       SCIPdebugMessage("var <%s> is linkingvar\n", SCIPvarGetName(probvar));
 	       SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
 	       SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->varindex, (void*) (size_t) vindex, (void*) (size_t) (nblocks+2)) );
@@ -619,6 +624,20 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    ndecompositions++;
 	    assert(!SCIPhashmapIsEmpty(decompositions[i]->constoblock));
 	    assert(!SCIPhashmapIsEmpty(decompositions[i]->vartoblock));
+
+	    std::cout << "\ncheck consistency of the decomposition " << i << std::endl;
+	    std::cout << "nMasterconss: " << finishedSeeeds[i]->getNMasterconss() << std::endl;
+	    std::cout << "nMastervars: " << finishedSeeeds[i]->getNMastervars() << std::endl;
+	    std::cout << "nLinkingvars: " << finishedSeeeds[i]->getNLinkingvars() << std::endl;
+	    std::cout << "nBlocks: " << finishedSeeeds[i]->getNBlocks() << std::endl;
+	    for(int b = 0; b < finishedSeeeds[i]->getNBlocks(); ++b)
+	    {
+	       std::cout << "Block " << b << std::endl;
+	       std::cout << "\tnConss: " << finishedSeeeds[i]->getNConssForBlock(b) << std::endl;
+	       std::cout << "\tnVars: " << finishedSeeeds[i]->getNVarsForBlock(b) << std::endl;
+	       std::cout << "\tnStairlinkingvars: " << finishedSeeeds[i]->getNStairlinkingvars(b) << std::endl;
+	    }
+	    DECdecompCheckConsistency(scip, decompositions[i]);
 	 }
 
 	 /** delete the seeeds */

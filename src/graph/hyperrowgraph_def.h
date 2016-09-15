@@ -272,8 +272,8 @@ SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
    }
    else {
       SCIPhashmapFree(&constoblock);
-      firstSeeed = NULL;
-      secondSeeed = NULL;
+      *firstSeeed = NULL;
+      *secondSeeed = NULL;
    }
 
    SCIPfreeBufferArray(this->scip_, &nsubscipconss);

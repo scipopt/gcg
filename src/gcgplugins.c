@@ -176,7 +176,6 @@
 #include "dec_isomorph.h"
 #endif
 
-#include "dec_arrowheur.h"
 #include "dec_stairheur.h"
 #include "dec_staircase.h"
 #include "dec_random.h"
@@ -335,7 +334,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectionConnected(scip) );
-   SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
    SCIP_CALL( SCIPincludeDetectionStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectionStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectionRandom(scip) );
@@ -345,6 +343,11 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionMastersetcover(scip) );
    SCIP_CALL( SCIPincludeDetectionMastersetpack(scip) );
    SCIP_CALL( SCIPincludeDetectionMastersetpart(scip) );
+//   SCIP_CALL( SCIPincludeDetectionHcgpartition(scip) );
+//   SCIP_CALL( SCIPincludeDetectionHrgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectionHrcgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectionConnectedbase(scip) );
+   SCIP_CALL( SCIPincludeDetectionConnected_noNewLinkingVars(scip) );
 
 
 #ifndef NBLISS

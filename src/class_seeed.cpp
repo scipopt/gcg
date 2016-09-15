@@ -346,6 +346,17 @@ namespace gcg {
 	  return SCIP_OKAY;
   }
 
+  /** add a block, returns the number of the new block */
+  int Seeed::addBlock()
+  {
+     std::vector<int> vector = std::vector<int>(0);
+     conssForBlocks.push_back(vector);
+     varsForBlocks.push_back(vector);
+     stairlinkingVars.push_back(vector);
+     nBlocks ++;
+     return nBlocks - 1;
+  }
+
   /** finds linking-variables that are actually master-variables. I.e. the variable is adjacent to only master-constraints. */
   SCIP_RETCODE Seeed::findVarsLinkingToMaster(Seeedpool* seeedpool)
   {
@@ -991,6 +1002,93 @@ namespace gcg {
 
   }
 
+  /** assigns the open cons which are implicit assigned */
+  SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
+  {
+     int cons;
+     int var;
+     std::vector<int> blocksWithCommonVars;
+     std::vector<int> blocksOfOpenvar;
+     std::vector<int> assignedOpenvars;
+     bool foundInBlock;
+
+     if(!openVarsAndConssCalculated)
+     {
+        calcOpenvars();
+        calcOpenconss();
+        openVarsAndConssCalculated = true;
+     }
+
+     /** set openConss with blockvars to the correspondent block or to master */
+     for(size_t c = 0; c < openConss.size(); ++c)
+     {
+        blocksWithCommonVars.clear();
+        cons = openConss[c];
+
+        for(int b = 0; b < nBlocks; ++b)
+        {
+           for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
+           {
+              var = seeedpool->getVarsForCons(cons)[v];
+              if(isVarBlockvarOfBlock(var, b))
+              {
+                 blocksWithCommonVars.push_back(b);
+              }
+           }
+        }
+
+        if(blocksWithCommonVars.size() == 1)
+        {
+           setConsToBlock(cons, blocksWithCommonVars[0]);
+           deleteOpencons(cons);
+        }
+        else if(blocksWithCommonVars.size() > 1)
+        {
+           setConsToMaster(cons);
+           deleteOpencons(cons);
+        }
+     }
+
+     /** set vars to linking, if they can be found in more than one block */
+     for(size_t i = 0; i < openVars.size(); ++i)
+     {
+        blocksOfOpenvar.clear();
+        foundInBlock = false;
+        var = openVars[i];
+        for(int b = 0; b < nBlocks; ++b)
+        {
+           for(int c = 0; c < getNConssForBlock(b) && !foundInBlock; ++c)
+           {
+              cons = conssForBlocks[b][c];
+              for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !foundInBlock; ++v)
+              {
+                 if(seeedpool->getVarsForCons(cons)[v] == var)
+                 {
+                    blocksOfOpenvar.push_back(b);
+                 }
+              }
+           }
+        }
+        if(blocksOfOpenvar.size() == 2 && blocksOfOpenvar[0] + 1 != blocksOfOpenvar[1])
+        {
+           setVarToLinking(var);
+           assignedOpenvars.push_back(var);
+        }
+        else if(blocksOfOpenvar.size() > 2)
+        {
+           setVarToLinking(var);
+           assignedOpenvars.push_back(var);
+        }
+     }
+
+     for(size_t i = 0; i < assignedOpenvars.size(); ++i)
+     {
+        deleteOpenvar(assignedOpenvars[i]);
+     }
+
+     return SCIP_OKAY;
+  }
+
   /** returns whether the var is a linking var */
   bool Seeed::isVarLinkingvar(int var){
      for( size_t i = 0;  i < linkingVars.size(); ++i)
@@ -1152,6 +1250,7 @@ int Seeed::getNVars()
 /** fills out a seeed with the hashmap constoblock */
 SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )
 {
+   assert(givenNBlocks >= 0);
    nBlocks = givenNBlocks;
    nVars = SCIPgetNVars(scip);
    nConss = SCIPgetNConss(scip);
@@ -1161,8 +1260,19 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
    SCIP_CONS** conss = SCIPgetConss(scip);
    SCIP_VAR** vars = SCIPgetVars(scip);
    bool varInBlock;
-   std::vector<int> varInBlocks;
+   std::vector<int> varInBlocks = std::vector<int>(0);
    std::vector <int> emptyVector = std::vector<int>(0);
+
+   for( int c = 0; c < nConss; ++c )
+   {
+      if( !GCGisConsGCGCons(SCIPgetConss(scip)[c]) )
+      {
+         assert(SCIPhashmapExists(constoblock, SCIPgetConss(scip)[c]));
+         assert( (int)(size_t)SCIPhashmapGetImage(constoblock, conss[c]) -1 <= nBlocks);
+         assert( (int)(size_t)SCIPhashmapGetImage(constoblock, conss[c]) -1 >= 0);
+      }
+   }
+
 
    for(int b = (int) conssForBlocks.size(); b < nBlocks; b++)
    {
@@ -1178,6 +1288,7 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
    {
       stairlinkingVars.push_back(emptyVector);
    }
+
 
    for( int i = 0; i < nConss; ++i)
    {
@@ -1205,13 +1316,12 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
          varInBlock = false;
          for( size_t k = 0; k < conssForBlocks[b].size() && !varInBlock; ++k)
          {
-            for( int l = 0; l < seeedpool->getNVarsForCons(conssForBlocks[b][k]); ++l )
+            for( int l = 0; l < seeedpool->getNVarsForCons(conssForBlocks[b][k]) && !varInBlock; ++l )
             {
                if( varnum == (seeedpool->getVarsForCons(conssForBlocks[b][k]))[l] )
                {
                   varInBlocks.push_back(b);
                   varInBlock = true;
-                  break;
                }
             }
          }
@@ -1219,7 +1329,6 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
       if( varInBlocks.size() == 1 ) /** if the var can be found in one block set the var to block var */
       {
          setVarToBlock(varnum, varInBlocks[0]);
-         continue;
       }
       else if( varInBlocks.size() == 2 ) /** if the variable can be found in two blocks check if it is a linking var or a stairlinking var*/
       {
@@ -1238,15 +1347,16 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
       }
       else
       {
+         assert( varInBlocks.size() == 0);
          setVarToMaster(varnum);
       }
-
-      openVars = std::vector<int>(0);
-      openConss = std::vector<int>(0);
-      openVarsAndConssCalculated = true;
-
-
    }
+   openVars = std::vector<int>(0);
+   openConss = std::vector<int>(0);
+   openVarsAndConssCalculated = true;
+
+   assert(checkConsistency());
+   assert(checkVarsAndConssConsistency(seeedpool));
 
    return SCIP_OKAY;
 }
@@ -1262,7 +1372,6 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock( SCIP_HASHMAP* constoblock, int
    int varnum;
    SCIP_CONS** conss = SCIPgetConss(scip);
    SCIP_VAR** vars = SCIPgetVars(scip);
-   std::vector <int> emptyVector = std::vector<int>(0);
 
 
    for( int i = 0; i < nConss; ++i)
@@ -1310,6 +1419,37 @@ SCIP_RETCODE Seeed::deleteOpencons(
    assert( it != openConss.end() );
    openConss.erase(it);
    return SCIP_OKAY;
+}
+
+bool Seeed::checkVarsAndConssConsistency(Seeedpool* seeedpool)
+{
+   std::vector<int>::const_iterator consIter;
+   std::vector<int>::const_iterator consIterEnd;
+   int var;
+
+   for(int b =0; b < nBlocks; ++b)
+   {
+      consIter = conssForBlocks[b].begin();
+      consIterEnd = conssForBlocks[b].end();
+      for(; consIter != consIterEnd; ++consIter)
+      {
+         for(int v = 0; v < seeedpool->getNVarsForCons(*consIter); ++v)
+         {
+//            SCIP_CONS* cons = seeedpool->getConsForIndex(*consIter);
+//            if (SCIPconsGetName(cons) ==  "Capacity_2")
+//               std::cout <<  v <<  " , " ;
+            var = seeedpool->getVarsForCons(*consIter)[v];
+            if(!isVarMastervar(var) && !isVarBlockvarOfBlock(var, b) && !isVarStairlinkingvarOfBlock(var, b) && !isVarLinkingvar(var) && !isVarOpenvar(var))
+            {
+               return false;
+            }
+//            if (SCIPconsGetName(cons) ==  "Capacity_2")
+//              std::cout <<  std::endl ;
+
+         }
+      }
+   }
+   return true;
 }
 
 } /* namespace gcg */

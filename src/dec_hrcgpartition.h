@@ -25,15 +25,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
+/**@file   dec_hrcgpartition.h
  * @brief  arrowhead and bordered detector via graph partitioning (uses hmetis)
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
+#ifndef GCG_DEC_HRCGPARTITION_H__
+#define GCG_DEC_HRCGPARTITION_H__
 
 #include "scip/scip.h"
 #include "type_decomp.h"
@@ -42,9 +42,9 @@
 extern "C" {
 #endif
 
-/** creates the arrowheur presolver and includes it in SCIP */
+/** creates the hrcgpartition presolver and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
+SCIP_RETCODE SCIPincludeDetectionHrcgpartition(
    SCIP* scip                 /**< SCIP data structure */
    );
 

@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.cpp
+/**@file   dec_hrcgpartition.cpp
  * @brief  arrowhead and bordered detector via graph partitioning (uses hmetis)
  * @ingroup DETECTORS
  * @author Martin Bergner
@@ -39,7 +39,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
-#include "dec_arrowheur.h"
+#include "dec_hrcgpartition.h"
 
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <cassert>
@@ -57,9 +57,7 @@
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
 #include "graph/matrixgraph.h"
-#include "graph/hypercolgraph.h"
 #include "graph/hyperrowcolgraph.h"
-#include "graph/hyperrowgraph.h"
 #include "graph/graph_tclique.h"
 #include "graph/weights.h"
 #include "class_seeed.h"
@@ -69,12 +67,10 @@
 #include <set>
 
 using gcg::HyperrowcolGraph;
-using gcg::HyperrowGraph;
-using gcg::HypercolGraph;
 using gcg::MatrixGraph;
 using gcg::Weights;
 
-#define DEC_DETECTORNAME      "arrowheur"    /**< name of the detector */
+#define DEC_DETECTORNAME      "hrcgpartition"    /**< name of the detector */
 #define DEC_DESC              "enforces arrowhead structures using graph partitioning" /**< description of detector */
 #define DEC_PRIORITY          1000           /**< priority of the detector */
 #define DEC_DECCHAR           'a'            /**< display character of detector */
@@ -160,7 +156,7 @@ struct DEC_DetectorData
 
 /** detector initialization method */
 static
-DEC_DECL_INITDETECTOR(initArrowheur)
+DEC_DECL_INITDETECTOR(initHrcgpartition)
 {
    int nconss;
    DEC_DETECTORDATA* detectordata;
@@ -180,7 +176,7 @@ DEC_DECL_INITDETECTOR(initArrowheur)
 
 /** presolving deinitialization method of presolver (called after presolving has been finished) */
 static
-DEC_DECL_EXITDETECTOR(exitArrowheur)
+DEC_DECL_EXITDETECTOR(exitHrcgpartition)
 {
    DEC_DETECTORDATA* detectordata;
 
@@ -357,22 +353,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    /* build the hypergraph structure from the original problem */
 
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   switch(detectordata->type)
-   {
-   case 'c':
-      detectordata->graph = new HypercolGraph<gcg::GraphTclique>(scip, w);
-      break;
-   case 'r':
-      detectordata->graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
-      break;
-   case 'a':
-      detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
-      break;
-
-   default:
-      SCIPerrorMessage("Wrong type: '%c'\n", detectordata->type);
-      return SCIP_INVALIDCALL;
-   }
+   detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
 
    SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
@@ -422,7 +403,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 #endif
 
 static
-DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
+DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
 {
    *result = SCIP_DIDNOTFIND;
    seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
@@ -433,14 +414,15 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
 
    SCIP_CALL( SCIPcreateWallClock(scip, &detectordata->metisclock) );
 
-   /* add arrowheur presolver parameters */
+   /* add hrcgpartition presolver parameters */
 
-   int i;
+   int k;
    int j;
    int seeed;
    int nMaxSeeeds;
    int nNewSeeeds = 0;
    gcg::Seeed** newSeeeds;
+   std::vector<int> numberOfBlocks = {2, 4, 8, 12, 20, 32};
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -455,47 +437,32 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
    /* build the hypergraph structure from the original problem */
 
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   switch(detectordata->type)
-   {
-      case 'c':
-         detectordata->graph = new HypercolGraph<gcg::GraphTclique>(scip, w);
-         break;
-      case 'r':
-         detectordata->graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
-         break;
-      case 'a':
-         detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
-         break;
-
-      default:
-         SCIPerrorMessage("Wrong type: '%c'\n", detectordata->type);
-         return SCIP_INVALIDCALL;
-   }
+   detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
 
    SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
-   for(i = detectordata->minblocks, j = 0; i <= detectordata->maxblocks; ++i )
+   for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
    {
       SCIP_RETCODE retcode;
-      detectordata->blocks = i;
-      /* get the partitions for the new variables from metis */
+      detectordata->blocks = numberOfBlocks[k];
       retcode = callMetis(scip, detectordata, result);
 
-      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY )
+      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
       {
          continue;
       }
 
-
       SCIP_CALL( detectordata->graph->createSeeedFromPartition(&newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
-      j = j + 2;
+
+
       if( (newSeeeds)[j] != NULL )
       {
          nNewSeeeds = nNewSeeeds + 2;
          detectordata->found = TRUE;
       }
+      j = j + 2;
    }
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
 
@@ -505,7 +472,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
    seeedPropagationData->nNewSeeeds = nNewSeeeds;
    for(j = 0, seeed = 0, j = 0; j < nNewSeeeds; ++j)
    {
-      if(newSeeeds[j] != NULL)
+      if((newSeeeds)[j] != NULL)
       {
          seeedPropagationData->newSeeeds[seeed] = newSeeeds[j];
          seeedPropagationData->newSeeeds[seeed]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
@@ -530,9 +497,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedArrowheur)
 }
 
 
-/** creates the arrowheur presolver and includes it in SCIP */
+/** creates the hrcgpartition presolver and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
+SCIP_RETCODE SCIPincludeDetectionHrcgpartition(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -546,29 +513,32 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    detectordata->found = FALSE;
    detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur, propagateSeeedArrowheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildArrowhead, initHrcgpartition, exitHrcgpartition, propagateSeeedHrcgpartition) );
 
 
-   /* add arrowheur presolver parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/alpha", "factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/varWeight", "Weight of a variable hyperedge", &detectordata->varWeight, FALSE, DEFAULT_VARWEIGHT, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/varWeightBinary", "Weight of a binary variable hyperedge", &detectordata->varWeightBinary, FALSE, DEFAULT_VARWEIGHTBIN, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/varWeightContinous", "Weight of a continuos variable hyperedge", &detectordata->varWeightContinous, FALSE, DEFAULT_VARWEIGHTCONT, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/varWeightImplint", "Weight of a implicit integer variable hyperedge", &detectordata->varWeightImplint, FALSE, DEFAULT_VARWEIGHTIMPL, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/varWeightInteger", "Weight of a integer variable hyperedge", &detectordata->varWeightInteger, FALSE, DEFAULT_VARWEIGHTINT, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/consWeight", "Weight of a constraint hyperedge", &detectordata->consWeight, FALSE, DEFAULT_CONSWEIGHT, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/tidy", "Whether to clean up temporary files", &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/randomseed", "random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/dummynodes", "percentage of dummy nodes for metis", &detectordata->dummynodes, FALSE, DEFAULT_DUMMYNODES, 0.0, 1.0, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/consWeightSetppc", "Weight for constraint hyperedges that are setpartitioning or covering constraints", &detectordata->consWeightSetppc, FALSE, DEFAULT_CONSWEIGHT_SETPPC, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/realname", "Should the problem be used for metis files or a temporary name", &detectordata->realname, FALSE, DEFAULT_REALNAME, NULL, NULL) );
-   SCIP_CALL( SCIPaddCharParam(scip, "detectors/arrowheur/type", "Type of the graph: 'c' column hypergraph, 'r' row hypergraph, 'a' column-row hypergraph", &detectordata->type, FALSE, DEFAULT_TYPE, "cra", NULL, NULL) );
+   /* add hrcgpartition presolver parameters */
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/hrcgpartition/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/hrcgpartition/alpha", "factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/varWeight", "Weight of a variable hyperedge", &detectordata->varWeight, FALSE, DEFAULT_VARWEIGHT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/varWeightBinary", "Weight of a binary variable hyperedge", &detectordata->varWeightBinary, FALSE, DEFAULT_VARWEIGHTBIN, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/varWeightContinous", "Weight of a continuos variable hyperedge", &detectordata->varWeightContinous, FALSE, DEFAULT_VARWEIGHTCONT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/varWeightImplint", "Weight of a implicit integer variable hyperedge", &detectordata->varWeightImplint, FALSE, DEFAULT_VARWEIGHTIMPL, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/varWeightInteger", "Weight of a integer variable hyperedge", &detectordata->varWeightInteger, FALSE, DEFAULT_VARWEIGHTINT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/consWeight", "Weight of a constraint hyperedge", &detectordata->consWeight, FALSE, DEFAULT_CONSWEIGHT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/hrcgpartition/tidy", "Whether to clean up temporary files", &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/randomseed", "random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/hrcgpartition/dummynodes", "percentage of dummy nodes for metis", &detectordata->dummynodes, FALSE, DEFAULT_DUMMYNODES, 0.0, 1.0, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/consWeightSetppc", "Weight for constraint hyperedges that are setpartitioning or covering constraints", &detectordata->consWeightSetppc, FALSE, DEFAULT_CONSWEIGHT_SETPPC, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/hrcgpartition/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/hrcgpartition/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/hrcgpartition/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/hrcgpartition/realname", "Should the problem be used for metis files or a temporary name", &detectordata->realname, FALSE, DEFAULT_REALNAME, NULL, NULL) );
 #endif
    return SCIP_OKAY;
 }
+
+
+
+
