@@ -158,7 +158,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
                    int                                                                  nvars_              /**< number of variables */
      ){
 
-         int i;
+     int i;
      int j;
      SCIP_Bool success;
      std::tr1::unordered_map<int, int> oldToNewVarIndex;
@@ -169,7 +169,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      assert(nvars_ > 0);
      assert(nconss_ > 0);
      this->nvars = openVars.size();
-     this->nconss = openConss.size;
+     this->nconss = openConss.size();
 
      std::vector<int>::const_iterator varIter = openVars.begin();
      std::vector<int>::const_iterator varIterEnd = openVars.end();
@@ -181,24 +181,24 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
 
 
      /** add node for every var */
-     for( int i = 0 ; i < openVars.size(); ++i )
+     for( i = 0 ; i < openVars.size(); ++i )
      {
          TCLIQUE_WEIGHT weight;
 
          /* note that the first nvars nodes correspond to variables */
-         weight = this->weights.calculate(varToScipVar(openVars[i]) );
+         weight = this->weights.calculate(varToScipVar[openVars[i]] );
          oldToNewVarIndex.insert({ openVars[i],i});
          this->graph.addNode(i, weight);
      }
 
 
      /** add node for every cons */
-     for( int j = 0 ; j < openConss.size(); ++j  )
+     for(  j = 0 ; j < openConss.size(); ++j  )
      {
         TCLIQUE_WEIGHT weight;
 
         /* note that the first nvars nodes correspond to variables (legacy implementation) */
-        weight = this->weights.calculate(consToScipCons(openConss[j] ) );
+        weight = this->weights.calculate(consToScipCons[openConss[j] ] );
         oldToNewVarIndex.insert({ openConss[j], j});
         this->graph.addNode( this->nvars + j, weight);
      }
