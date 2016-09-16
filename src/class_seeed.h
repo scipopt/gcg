@@ -316,6 +316,11 @@ public:
          int cons
    );
 
+   /** returns whether the cons is a cons of the block */
+   bool isConsBlockconsOfBlock(
+         int cons, int block
+   );
+
    /** returns index of the Openvar in the vector */
    int getIndexOfOpenvar(
          int var

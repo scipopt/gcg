@@ -422,8 +422,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    int nMaxSeeeds;
    int nNewSeeeds = 0;
    gcg::Seeed** newSeeeds;
-//   std::vector<int> numberOfBlocks = {2, 4, 8, 12, 20, 32};
-   std::vector<int> numberOfBlocks = {2};
+   std::vector<int> numberOfBlocks = {2, 4, 8, 12, 20, 32};
 
    assert(scip != NULL);
    assert(detectordata != NULL);

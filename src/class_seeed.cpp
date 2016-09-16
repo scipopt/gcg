@@ -1173,6 +1173,20 @@ namespace gcg {
      return false;
   }
 
+
+  /** returns whether the cons is a cons of the block */
+  bool Seeed::isConsBlockconsOfBlock(int cons, int block)
+  {
+     for( size_t i = 0;  i < conssForBlocks[block].size(); ++i)
+     {
+        if( cons == conssForBlocks[block][i])
+        {
+           return true;
+        }
+     }
+     return false;
+  }
+
   /** returns indes of the openvar in the vector */
   int Seeed::getIndexOfOpenvar(int var){
      for( size_t i = 0;  i < openVars.size(); ++i)
@@ -1252,8 +1266,8 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
 {
    assert(givenNBlocks >= 0);
    nBlocks = givenNBlocks;
-   nVars = SCIPgetNVars(scip);
-   nConss = SCIPgetNConss(scip);
+   nVars = seeedpool->getNVars();
+   nConss = seeedpool->getNConss();
    int consnum;
    int consblock;
    int varnum;
@@ -1365,8 +1379,8 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
 SCIP_RETCODE Seeed::filloutBorderFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )
 {
    nBlocks = givenNBlocks;
-   nVars = SCIPgetNVars(scip);
-   nConss = SCIPgetNConss(scip);
+   nVars = seeedpool->getNVars();
+   nConss = seeedpool->getNConss();
    int consnum;
    int consblock;
    int varnum;
@@ -1435,16 +1449,11 @@ bool Seeed::checkVarsAndConssConsistency(Seeedpool* seeedpool)
       {
          for(int v = 0; v < seeedpool->getNVarsForCons(*consIter); ++v)
          {
-//            SCIP_CONS* cons = seeedpool->getConsForIndex(*consIter);
-//            if (SCIPconsGetName(cons) ==  "Capacity_2")
-//               std::cout <<  v <<  " , " ;
             var = seeedpool->getVarsForCons(*consIter)[v];
             if(!isVarMastervar(var) && !isVarBlockvarOfBlock(var, b) && !isVarStairlinkingvarOfBlock(var, b) && !isVarLinkingvar(var) && !isVarOpenvar(var))
             {
                return false;
             }
-//            if (SCIPconsGetName(cons) ==  "Capacity_2")
-//              std::cout <<  std::endl ;
 
          }
       }

@@ -133,7 +133,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
    }
 
    /** set open setcovering constraints to Master */
-   for( size_t i = 0; i < seeed->getNOpenconss(); ++i)
+   for( int i = 0; i < seeed->getNOpenconss(); ++i)
    {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
       if( GCGconsGetType   (cons) == setcovering )

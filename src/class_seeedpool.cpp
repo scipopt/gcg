@@ -82,7 +82,7 @@ SCIP_CONS* consGetRelevantRepr(SCIP* scip, SCIP_CONS* cons){
 
 SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 
-		return var;
+		return SCIPvarGetProbvar(var);
 }
 
 SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> const & seeeds, bool sort){
@@ -299,6 +299,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 		 cons = consToScipCons[i];
 
 		 SCIP_CALL_ABORT( SCIPgetConsNVars(scip, cons, &nCurrVars, &success ) );
+		 std::cout << "\n\nConstraint: " << SCIPconsGetName(cons) << " with " << nCurrVars << " variables" << std::endl;
 		 assert(success);
 
 		 SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVars, nCurrVars) ); /** free in line 321 */
@@ -306,17 +307,20 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 		 for(int currVar = 0; currVar < nCurrVars; ++currVar)
 		 {
+
 			 int varIndex;
 
+			 std::cout << " try ("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
 			 std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar = scipVarToIndex.find(currVars[currVar]);
 
 			 if(iterVar == scipVarToIndex.end() )
-				 continue;
+			    continue;
 
 			 varIndex = iterVar->second;
 
 			 varsForConss[i].push_back(varIndex);
 			 conssForVars[varIndex].push_back(i);
+			 std::cout << "("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
 
 		 }
 		 SCIPfreeBufferArray(scip, &currVars) ;
@@ -445,6 +449,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    SeeedPtr seeed = finishedSeeeds[i];
 	    assert(seeed->checkConsistency());
 	    assert(seeed->checkVarsAndConssConsistency(this));
+	    assert(seeed->getNOpenvars() == 0 && seeed->getNOpenconss() == 0);
 
 	    /** set nblocks */
 	    int nblocks = seeed->getNBlocks();
@@ -538,7 +543,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipvars[b], decompositions[i]->nsubscipvars[b]) ); /** free in decomp.c:405 */
 	       for ( int j = 0; j < seeed->getNVarsForBlock(b); ++j )
 	       {
-	          vindex++;
 	          probvar = SCIPvarGetProbvar( getVarForIndex(seeed->getVarsForBlock(b)[j]) );
 	          decompositions[i]->subscipvars[b][j] = probvar;
 	          if( SCIPhashmapExists(decompositions[i]->vartoblock, probvar) )
@@ -547,6 +551,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	          }
 	          else
 	          {
+	             vindex++;
 	             SCIPdebugMessage("var <%s> has not been handled before, adding to block %d\n", SCIPvarGetName(probvar), currblock );
 	             SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->vartoblock, probvar, (void*) (size_t) currblock) );
 	             SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->varindex, (void*) (size_t) vindex, (void*) (size_t) currblock) );
@@ -624,19 +629,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 	    ndecompositions++;
 	    assert(!SCIPhashmapIsEmpty(decompositions[i]->constoblock));
 	    assert(!SCIPhashmapIsEmpty(decompositions[i]->vartoblock));
-
-	    std::cout << "\ncheck consistency of the decomposition " << i << std::endl;
-	    std::cout << "nMasterconss: " << finishedSeeeds[i]->getNMasterconss() << std::endl;
-	    std::cout << "nMastervars: " << finishedSeeeds[i]->getNMastervars() << std::endl;
-	    std::cout << "nLinkingvars: " << finishedSeeeds[i]->getNLinkingvars() << std::endl;
-	    std::cout << "nBlocks: " << finishedSeeeds[i]->getNBlocks() << std::endl;
-	    for(int b = 0; b < finishedSeeeds[i]->getNBlocks(); ++b)
-	    {
-	       std::cout << "Block " << b << std::endl;
-	       std::cout << "\tnConss: " << finishedSeeeds[i]->getNConssForBlock(b) << std::endl;
-	       std::cout << "\tnVars: " << finishedSeeeds[i]->getNVarsForBlock(b) << std::endl;
-	       std::cout << "\tnStairlinkingvars: " << finishedSeeeds[i]->getNStairlinkingvars(b) << std::endl;
-	    }
 	    DECdecompCheckConsistency(scip, decompositions[i]);
 	 }
 
@@ -761,6 +753,18 @@ const  int * Seeedpool::getVarsForCons(int cons){
 
  int Seeedpool::getNConss(){
     return nConss;
+ }
+
+bool Seeedpool::isVarInCons(int var, int cons)
+ {
+    for(int i = 0; i < getNVarsForCons(cons); ++i)
+    {
+       if(var == getVarsForCons(cons)[i])
+       {
+          return true;
+       }
+    }
+    return false;
  }
 
 

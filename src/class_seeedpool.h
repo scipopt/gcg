@@ -138,6 +138,8 @@ public:
 
    int getNConss();
 
+   bool isVarInCons(int var, int cons);
+
 
 };
 
