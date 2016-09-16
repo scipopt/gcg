@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -25,15 +25,14 @@
 #* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-##
+#
 #@file    cmpres.awk
-#@brief   SCIP Check Comparison Report Generator
+#@brief   SCIP Check Comparison Report Generator (with modifications for GCG)
 #@author  Tobias Achterberg
 #@author  Robert Waniek
 #@author  Marc Pfetsch
 #@author  Timo Berthold
 #@author  Christian Puchert
-#@author  Martin Bergner
 #
 function abs(x)
 {
@@ -48,6 +47,11 @@ function min(x,y)
 function max(x,y)
 {
    return (x) > (y) ? (x) : (y);
+}
+
+function max3(x,y,z)
+{
+   return (x) >= (y) ? max(x,z) : max(y,z);
 }
 
 function ceil(x)
@@ -68,6 +72,11 @@ function fracceil(x,f)
 function fracfloor(x,f)
 {
    return floor(x/f)*f;
+}
+
+function sign(x)
+{
+   return (x >= 0 ? 1.0 : -1.0);
 }
 
 function mod(x,m)
@@ -182,6 +191,266 @@ function texsolvername(s, sname)
 
    return sname;
 }
+
+# McNemar statistical test
+#
+# input: two arrays of Boolean values whose difference should be tested for statistical significance and the length of
+#        both arrays
+#
+# output: the chi_squared value, (which needs to be transformed to the desired p-value, see also function chi_to_p
+function mcnemar(ref_array, solver_array, problistlen)
+{
+   chi_squared = 0.0;
+   b = 0;
+   c = 0;
+
+   # count the number of entries for which both arrays differ,
+   # separately for both possible differences (TRUE/FALSE and FALSE/TRUE)
+   for( i = 0; i < problistlen; ++i )
+   {
+      if( ref_array[i] && !solver_array[i] )
+	 b++;
+      else if( !ref_array[i] && solver_array[i] )
+	 c++;
+   }
+
+   # textbook McNemar formula, the square of the differences of both counters divided by their sum is supposed to be
+   # chi-square distributed for a random experiment
+   if( b + c > 0 )
+      chi_squared = (b-c)*(b-c)/(1.0*(b+c));
+
+   return chi_squared;
+}
+
+# check significance of chi-square distribution with degree 1 using quantiles
+function chi_to_p(chi)
+{
+   if ( chi < 3.841 )
+      printf(", 0.05 < p           X");
+   else if ( 3.841 <= chi && chi < 5.024 )  # quantile for 1 - 0.05 = 0.95
+      printf(", p ~ (0.025, 0.05]  !");
+   else if ( 5.024 <= chi && chi < 6.635 )  # quantile for 1 - 0.025 = 0.975
+      printf(", p ~ (0.01, 0.025] !!");
+   else if ( 6.635 <= chi && chi < 7.879 )  # quantile for 1 - 0.01 = 0.99
+      printf(", p ~ (0.005, 0.01]!!!");
+   else if ( 7.879 <= chi && chi < 12.116 ) # quantile for 1 - 0.005 = 0.995
+      printf(", p ~(0.0005,0.005]!!!");
+   else # quantile for 1 - 0.0005 = 0.9995
+      printf(", p <= 0.0005      !!!");
+}
+
+# swaps position i and j of array a
+function swap(a, i, j) {
+   t = a[i]; a[i] = a[j]; a[j] = t;
+}
+
+
+# quicksort algorithm that sorts by the absolute values in non-increasing order
+function qsort(a, left, right)
+{
+   # stop recursion
+   if (left >= right)
+      return;
+
+   # use a random pivot element
+   swap(a, left, left+int((right-left+1)*rand()));
+   last = left;
+
+   for( i = left+1; i <= right; i++ )
+   {
+      if( abs(a[i]) < abs(a[left]) )
+	 swap(a, ++last, i);
+   }
+
+   # swap back pivot, recursive calls
+   swap(a, left, last);
+   qsort(a, left, last-1);
+   qsort(a, last+1, right);
+}
+
+# copy time array
+function parse_time(ref_array,solver_array,time,o,printorder,probidx,problistlen)
+{
+   s = printorder[o];
+   p0 = printorder[0];
+   n = 0;
+
+   for( i = 0; i < problistlen; i++ )
+   {
+      p = problist[i];
+      if(probidx[p,p0] != "" && probidx[p,s] != "")
+      {
+	 ref_array[n] = time[p0,probidx[p,p0]];
+	 solver_array[n] = time[s,probidx[p,s]];
+	 n++;
+      }
+   }
+}
+
+# copy node array
+function parse_nodes(ref_array,solver_array,nodes,o,probidx,problistlen,status,infinity)
+{
+   s = printorder[o];
+   p0 = printorder[0];
+   n = 0;
+
+   for( i = 0; i < problistlen; i++ )
+   {
+      p = problist[i];
+      if(probidx[p,p0] != "" && probidx[p,s] != "")
+      {
+	 if( status[p0,probidx[p,p0]] == "timeout" || status[p0,probidx[p,p0]] == "memlimit" )
+	    ref_array[n] = infinity;
+	 else
+	    ref_array[n] = nodes[p0,probidx[p,p0]];
+
+	 if( status[s,probidx[p,s]] == "timeout" || status[s,probidx[p,s]] == "memlimit" )
+	    solver_array[n] = infinity;
+	 else
+	    solver_array[n] = nodes[s,probidx[p,s]];
+
+	 n++;
+      }
+   }
+}
+
+# filter results for Wilcoxon test, only keep data for instances for which both, the relative difference and the
+# absolute difference are larger than the given thresholds rel_epsilon and abs_delta
+function filter(ref_array, solver_array, problistlen, rel_epsilon, abs_delta)
+{
+   n = 0;
+
+   for( i = 0; i < problistlen; i++ )
+   {
+      diff = abs(solver_array[i] - ref_array[i]);
+      if( diff > abs_delta && diff / max3(abs(solver_array[i]), abs(ref_array[i]), 1.0) > rel_epsilon )
+      {
+	 ref_array[n] = ref_array[i];
+	 solver_array[n] = solver_array[i];
+	 n++;
+      }
+   }
+
+   return n;
+}
+
+# computes the improvement/degradation factors (always >= 1) and marks them by opposite signs
+# (negative sign if solver_array[i] is faster than ref_array[i])
+function factorize(ref_array, solver_array, n, maxval)
+{
+   for( i = 0; i < n; ++i )
+   {
+      if( ref_array[i] >= maxval && solver_array[i] < maxval )
+	 ref_array[i] = -1.0 * maxval;
+      else if( ref_array[i] < maxval && solver_array[i] >= maxval )
+	 ref_array[i] = 1.0 * maxval;
+      else if( ref_array[i] == 0.0 && solver_array[i] == 0.0 )
+         ref_array[i] = 0.0;
+      else if( ref_array[i] == 0.0 )
+	 ref_array[i] = 1.0 * maxval;
+      else if( solver_array[i] == 0.0 )
+	 ref_array[i] = -1.0 * maxval;
+      else if( solver_array[i] / ref_array[i]  < 1.0 )
+	 ref_array[i] = -1.0 * ref_array[i] / solver_array[i];
+       else
+	 ref_array[i] = solver_array[i] / ref_array[i];
+
+      solver_array[i] = 0.0;
+   }
+}
+
+
+# Wilcoxon signed rank test
+#
+# input: two arrays of real values whose difference should be tested for statistical significance, the length of
+#        both arrays, and the employed timelimit (to rank instances for which one solver hit the timelimit equally)
+#
+# output: the z value, (which needs to be transformed to the desired p-value, see also function z_to_p
+#
+# note: to get meaningful results, some form of filtering should be applied to remove nearly-identical results from the
+#       test set, see also the filter() function
+function wilcoxon(ref_array, solver_array, problistlen, timelimit)
+{
+   w_minus = 0;
+   w_plus = 0;
+
+   # avoid degenerate case
+   if ( problistlen == 0 )
+      return 0.0;
+
+   # calculate difference
+   for( i = 0; i < problistlen; i++ )
+   {
+      differences[i] = ref_array[i] - solver_array[i];
+      if( (ref_array[i] >= timelimit) != (solver_array[i] >= timelimit) )
+	 differences[i] = sign(differences[i]) * timelimit;
+   }
+
+   # sort differences by their absolute values
+   qsort(differences, 0, problistlen-1);
+
+   i = 0;
+
+   # calculate rank sums
+   while( i < problistlen )
+   {
+      i_start = i;
+      i_end = i;
+      i_sum = 0;
+
+      # use average in case of tied samples (identical differences) - always executed once
+      while ( i_end < problistlen && abs((abs(differences[i_start]) - abs(differences[i_end]))) < 1e-06 )
+      {
+	 i_sum += i_end;
+	 i_end++;
+      }
+
+      i_sum = i_sum/(i_end - i_start);
+
+      # add (average) rank values to rank sums
+      #
+      # in the default case that the value is unique, this loop and the previous loop are traversed exactly once, s.t.
+      # the value is simply added to one of the sums
+      while ( i < i_end )
+      {
+	 if( differences[i] < 0 )
+	    w_minus += (i_sum+1);
+	 else if( differences[i] > 0 )
+	    w_plus += (i_sum+1);
+	 i++;
+      }
+   }
+
+   # apply Wilcoxon formula
+   w = 1.0 * min(w_minus, w_plus);
+
+   # apply correction for small number of instances
+   if ( problistlen <= 60 )
+      z = (abs(w - 0.25 * problistlen * (problistlen + 1.0)) - 0.5) / sqrt(problistlen * (problistlen+1) * (2*problistlen + 1.0)/24.0);
+   else
+      z = (w - 0.25 * problistlen * (problistlen + 1.0)) / sqrt(problistlen * (problistlen + 1.0) * (2*problistlen + 1.0)/24.0);
+
+   return z;
+}
+
+# check significance of z-value with respect to the normal distribution with mean 0 and variance 1
+function z_to_p(z)
+{
+   # check whether z lies in (1 - 0.05) quantile -> null hypothesis is accepted
+   if ( -1.960 <= z && z <= 1.960 )       # quantile for 1 - 0.05
+      printf(", 0.05 <= p          X");
+   else if ( -2.241 <= z && z <= 2.241 ) # quantile for 1 - 0.025
+      printf(", p ~ [0.025, 0.05)  !");
+   else if ( - 2.576 <= z && z <= 2.576 ) # quantile for 1 - 0.01
+      printf(", p ~ [0.01, 0.025) !!");
+   else if ( - 2.807 <= z && z <= 2.807 ) # quantile for 1 - 0.005
+      printf(", p ~ [0.005, 0.01)!!!");
+   else if ( - 3.481 <= z && z <= 3.481 ) # quantile for 1 - 0.0005
+      printf(", p ~[0.0005,0.005)!!!");
+   else # quantile for 1 - 0.0005 = 0.9995
+      printf(", p < 0.0005       !!!");
+}
+
 
 BEGIN {
 
@@ -358,7 +627,24 @@ BEGIN {
       validline = 1;
    }
 
-   if( $22 in statuses ) # GCG
+   if( $21 in statuses ) # GCG < 2.0 without solution times to first/last
+   {
+      # collect data (line with problem type, original and presolved problem size and simplex iterations)
+      type[nsolver,nprobs[nsolver]] = $2;
+      conss[nsolver,nprobs[nsolver]] = $5;
+      vars[nsolver,nprobs[nsolver]] = $6;
+      dualbound[nsolver,nprobs[nsolver]] = max(min($10, +infinity), -infinity);
+      primalbound[nsolver,nprobs[nsolver]] = max(min($11, +infinity), -infinity);
+      gap[nsolver,nprobs[nsolver]] = $12;
+      iters[nsolver,nprobs[nsolver]] = $18;
+      nodes[nsolver,nprobs[nsolver]] = max($19,1);
+      time[nsolver,nprobs[nsolver]] = fracceil(max($20,mintime),0.1);
+      status[nsolver,nprobs[nsolver]] = $21;
+      printsoltimes = 0; # additional output is only available for SCIP-.res files
+      validline = 1;
+   }
+
+   if( $22 in statuses ) # GCG >= 2.0 without solution times to first/last
    {
       # collect data (line with problem type, original and presolved problem size and simplex iterations)
       type[nsolver,nprobs[nsolver]] = $2;
@@ -375,7 +661,25 @@ BEGIN {
       validline = 1;
    }
 
-   if( $24 in statuses ) # GCG with solution times to first/last
+   if( $23 in statuses ) # GCG < 2.0 with solution times to first/last
+   {
+      # collect data (line with problem type, original and presolved problem size and simplex iterations)
+      type[nsolver,nprobs[nsolver]] = $2;
+      conss[nsolver,nprobs[nsolver]] = $5;
+      vars[nsolver,nprobs[nsolver]] = $6;
+      dualbound[nsolver,nprobs[nsolver]] = max(min($10, +infinity), -infinity);
+      primalbound[nsolver,nprobs[nsolver]] = max(min($11, +infinity), -infinity);
+      gap[nsolver,nprobs[nsolver]] = $12;
+      iters[nsolver,nprobs[nsolver]] = $18;
+      nodes[nsolver,nprobs[nsolver]] = max($19,1);
+      time[nsolver,nprobs[nsolver]] = fracceil(max($20,mintime),0.1);
+      timetofirst[nsolver,nprobs[nsolver]] = fracceil(max($21,mintime),0.1);
+      timetobest[nsolver, nprobs[nsolver]] = fracceil(max($22, mintime), 0.1);
+      status[nsolver,nprobs[nsolver]] = $23;
+      validline = 1;
+   }
+
+   if( $24 in statuses ) # GCG >= 2.0 with solution times to first/last
    {
       # collect data (line with problem type, original and presolved problem size and simplex iterations)
       type[nsolver,nprobs[nsolver]] = $2;
@@ -493,14 +797,10 @@ END {
    bestfeasibles = 0;
 
    # calculate the order in which the columns should be printed: CPLEX < SCIP, default < non-default
-   # ignore the first column as this is the reference column
-   printorder[0] = 0;
-   for( s = 1; s < nsolver; ++s )
-#   for( s = 0; s < nsolver; ++s )
+   for( s = 0; s < nsolver; ++s )
    {
       sname = solvername[s];
-      for( o = 1; o < s; ++o )
-#      for( o = 0; o < s; ++o )
+      for( o = 0; o < s; ++o )
       {
          i = printorder[o];
          iname = solvername[i];
@@ -532,38 +832,49 @@ END {
    # print headers
    for( o = 0; o < nsolver; ++o )
    {
-      s = printorder[o];
-      if( o == 0 )
-      {
-        if( printsoltimes )
-          printf(" %58s |", solvername[s]);
-        else
-          printf(" %39s |", solvername[s])
-      }
-      else
-      {
-         if( short )
-         {
-            if( length(solvername[s]) <= 19 )
-               printf("%19s |", solvername[s]);
-            else
-               printf("%20s|", solvername[s]);
-         }
-         else if( printsoltimes )
-         {
-            if( length(solvername[s]) <= 47 )
-               printf("%47s |", solvername[s]);
-            else
-               printf("%48s|", solvername[s]);
-         }
-         else
-         {
-            if( length(solvername[s]) <= 33 )
-               printf("%33s |", solvername[s]);
-            else
-               printf("%34s|", solvername[s]);
-         }
-      }
+       s = printorder[o];
+       sname = solvername[s];
+       if( o == 0 )
+       {
+	   if( printsoltimes )
+	   {
+	       if ( length(sname) <= 58 )
+		   printf(" %58s |", sname);
+	       else
+		   printf(" *%57s |", substr(sname, length(sname)-58));
+	   }
+	   else
+	   {
+	       if ( length(sname) <= 39 )
+		   printf(" %39s |", sname)
+	       else
+		   printf(" *%38s |", substr(sname, length(sname)-39));
+	   }
+       }
+       else
+       {
+	   if( short )
+	   {
+	       if( length(sname) <= 19 )
+		   printf("%19s |", sname);
+	       else
+		   printf("*%16s |", substr(sname, length(sname)-17));
+	   }
+	   else if( printsoltimes )
+	   {
+	       if( length(sname) <= 47 )
+		   printf("%47s |", sname);
+	       else
+		   printf("*%46s |", substr(sname, length(sname)-47));
+	   }
+	   else
+	   {
+	       if( length(sname) <= 33 )
+		   printf("%31s |", sname);
+	       else
+		   printf("*%30s |", substr(sname, length(sname)-31));
+	   }
+       }
    }
    printf("\n");
    printhline(nsolver,short, printsoltimes);
@@ -660,6 +971,7 @@ END {
       ismini = 0;
       ismaxi = 0;
       mark = " ";
+      marker = " ";
       countprob = 1;
       notimeout = 1;
 
@@ -784,6 +1096,10 @@ END {
          pidx = probidx[p,s];
          processed = (pidx != "");
 
+	 # arrays for applying McNemar tests
+	 solfound[s,pidx] = 0;
+	 optproven[s,pidx] = 0;
+
          if( processed && name[s,pidx] != p )
             printf("Error: solver %d, probidx %d, <%s> != <%s>\n", solvername[s], pidx, name[s,pidx], p);
 
@@ -800,6 +1116,8 @@ END {
                   nsolved[s,0]++;
                   nsolved[s,category[s]]++;
                   nthissolved++;
+		  # fill array for  McNemar test "optimality proven?"
+		  optproven[s,pidx] = 1;
                }
             }
             else if( hitlimit[s,pidx] )
@@ -833,7 +1151,11 @@ END {
          }
 
          if( primalbound[s,pidx] < infinity )
+	 {
             feasmark = " ";
+	    # fill the array for McNemar test "solution found?"
+	    solfound[s,pidx] = 1;
+	 }
          else
             feasmark = "#";
 
@@ -1275,6 +1597,102 @@ END {
    besttimeshiftedgeom = max(besttimeshiftedgeom, 1.0);
 
    printf("\n");
+   printhline(nsolver,short, printsoltimes);
+
+   # compute and print result for McNemar test to "solution found?"  w.r.t. reference setting
+   printf("%-20s ","McNemar (feas)");
+   printf("%-18s  ","               ");
+   for( o = 1; o < nsolver; ++o )
+   {
+      # copy two-indexed arrays to one-indexed arrays
+      for( i = 0; i < problistlen; ++i )
+      {
+	 s = printorder[o];
+	 ref_array[i] = solfound[printorder[0],i];
+	 solver_array[i] = solfound[s,i];
+      }
+
+      # compute chi-squared value and convert to p-value
+      chi_squared = mcnemar(ref_array, solver_array, problistlen);
+      printf("   x2 %7.4f",chi_squared);
+      chi_to_p(chi_squared);
+   }
+   printf("\n");
+
+   # compute and print result for McNemar test to "optimality proven?" w.r.t. reference setting
+   printf("%-20s ","McNemar (opt)");
+   printf("%-18s  ","               ");
+   for( o = 1; o < nsolver; ++o )
+   {
+      # copy two-indexed arrays to one-indexed arrays
+      for( i = 0; i < problistlen; ++i )
+      {
+	 s = printorder[o];
+	 ref_array[i] = optproven[printorder[0],i];
+	 solver_array[i] = optproven[s,i];
+      }
+
+      # compute chi-squared value and convert to p-value
+      chi_squared = mcnemar(ref_array, solver_array, problistlen);
+      printf("   x2 %7.4f",chi_squared);
+      chi_to_p(chi_squared);
+   }
+   printf("\n");
+
+   # compute and print result for Wilcoxon signed rank test for time to optimality w.r.t. reference setting
+   printf("%-20s ","Wilcoxon (time)");
+   printf("%-18s  ","               ");
+   for( o = 1; o < nsolver; ++o )
+   {
+      s = printorder[o];
+
+      parse_time(ref_array,solver_array,time,o,printorder,probidx,problistlen);
+      n = filter(ref_array, solver_array, problistlen, 0.01, 0.01);
+      factorize(ref_array, solver_array, n, timelimit[s])
+
+      z = wilcoxon(ref_array, solver_array, n, timelimit[s]);
+      printf("   z %8.4f",z);
+      z_to_p(z);
+   }
+   printf("\n");
+
+
+   # compute and print result for Wilcoxon signed rank test for time to first solution w.r.t. reference setting
+   if( printsoltimes )
+   {
+      printf("%-20s ","Wilcoxon (first)");
+      printf("%-18s  ","               ");
+      for( o = 1; o < nsolver; ++o )
+      {
+	 s = printorder[o];
+
+	 parse_time(ref_array,solver_array,timetofirst,o,printorder,probidx,problistlen);
+	 n = filter(ref_array, solver_array, problistlen, 0.01, 0.01);
+	 factorize(ref_array, solver_array, n, timelimit[s])
+
+	 z = wilcoxon(ref_array, solver_array, n, timelimit[s]);
+	 printf("   z %8.4f",z);
+	 z_to_p(z);
+      }
+      printf("\n");
+   }
+
+   # compute and print result for Wilcoxon signed rank test for number of nodes w.r.t. reference setting
+   printf("%-20s ","Wilcoxon (nodes)");
+   printf("%-18s  ","               ");
+   for( o = 1; o < nsolver; ++o )
+   {
+      parse_nodes(ref_array,solver_array,nodes,o,probidx,problistlen,status,infinity);
+      n = filter(ref_array, solver_array, problistlen, 0.01, 0.01);
+      factorize(ref_array, solver_array, n, infinity)
+
+      z = wilcoxon(ref_array, solver_array, n, infinity);
+      printf("   z %8.4f",z);
+      z_to_p(z);
+   }
+   printf("\n");
+
+
 
    #since the rows of the quotients are not printed, print the quotients of the geometric means
    if( short )
@@ -1333,7 +1751,7 @@ END {
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f", texint(nodetotal[s,0]/nevalprobs[s,0]), timetotal[s,0]/nevalprobs[s,0]) > texcmpfile;
+         printf("& %8s & %8.1f", texint(nodetotal[s,0]/max(1,nevalprobs[s,0])), timetotal[s,0]/max(1,nevalprobs[s,0])) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
 
@@ -1358,7 +1776,7 @@ END {
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
-         printf("& %8s & %8.1f", texint(nodetotal[s,-1]/nevalprobs[s,-1]), timetotal[s,-1]/nevalprobs[s,-1]) > texcmpfile;
+         printf("& %8s & %8.1f", texint(nodetotal[s,-1]/max(1,nevalprobs[s,-1])), timetotal[s,-1]/max(1,nevalprobs[s,-1])) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
       printf("\\bottomrule\n") > texcmpfile;
@@ -1381,6 +1799,7 @@ END {
          for( o = 0; o < nsolver; ++o )
          {
             s = printorder[o];
+	    sname = solvername[s];
             if( o == 0 )
             {
                nodegeomcomp = nodegeom[s,cat];
@@ -1390,8 +1809,13 @@ END {
             }
             if( (o > 0 || cat == 0 || cat == -1) && nevalprobs[s,cat] > 0 )
             {
-               printf("%-50s %4d %4d %4d %4d %4d %4d", solvername[s], nprocessedprobs[s,cat], nevalprobs[s,cat], nfails[s,cat],
-                      ntimeouts[s,cat], nsolved[s,cat], wins[s,cat]);
+	       if ( length(sname) <= 50 )
+		  printf("%-50s %4d %4d %4d %4d %4d %4d", sname, nprocessedprobs[s,cat], nevalprobs[s,cat], nfails[s,cat],
+			 ntimeouts[s,cat], nsolved[s,cat], wins[s,cat]);
+	       else
+		  printf("*%-49s %4d %4d %4d %4d %4d %4d", substr(sname, length(sname)-48), nprocessedprobs[s,cat], nevalprobs[s,cat], nfails[s,cat],
+			 ntimeouts[s,cat], nsolved[s,cat], wins[s,cat]);
+
                printf(" %4d %4d", better[s,cat], worse[s,cat]);
                printf(" %4d %4d %4d %9d %9d %9.2f %9.2f %7.1f %7.1f %7.2f %7.2f %7.2f\n",
                   betterobj[s,cat], worseobj[s,cat], feasibles[s,cat],
@@ -1421,6 +1845,7 @@ END {
       for( o = 0; o < nsolver; ++o )
       {
          s = printorder[o];
+	 sname = solvername[s];
          if( o == 0 )
          {
             nodegeomcomp = nodegeom[s,cat];
@@ -1430,8 +1855,12 @@ END {
          }
          if( (o > 0 || cat == 0 || cat == -1) && nevalprobs[s,cat] > 0 )
          {
-            printf("%-50s %4d %4d %4d %4d %4d %4d", solvername[s], nprocessedprobs[s,cat], nevalprobs[s,cat], nfails[s,cat],
-                   ntimeouts[s,cat], nsolved[s,cat], wins[s,cat]);
+	    if ( length(sname) <= 50 )
+	       printf("%-50s %4d %4d %4d %4d %4d %4d", sname, nprocessedprobs[s,cat], nevalprobs[s,cat], nfails[s,cat],
+		      ntimeouts[s,cat], nsolved[s,cat], wins[s,cat]);
+	    else
+	       printf("*%-49s %4d %4d %4d %4d %4d %4d", substr(sname, length(sname)-48), nprocessedprobs[s,cat], nevalprobs[s,cat], nfails[s,cat],
+		      ntimeouts[s,cat], nsolved[s,cat], wins[s,cat]);
             printf(" %4d %4d", better[s,cat], worse[s,cat]);
             printf(" %4d %4d %4d %9d %9d %9.2f %9.2f %7.1f %7.1f %7.2f %7.2f %7.2f\n",
                    betterobj[s,cat], worseobj[s,cat], feasibles[s,cat],

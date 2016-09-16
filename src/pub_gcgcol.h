@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -85,49 +85,49 @@ SCIP_RETCODE GCGcreateGcgColFromSol(
    SCIP_Real            redcost             /**< last known reduced cost */
 );
 
-/** Get pricing problem index of gcg column */
+/** get pricing problem index of gcg column */
 extern
 int GCGcolGetProbNr(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get pricing problem of gcg column */
+/** get pricing problem of gcg column */
 extern
 SCIP* GCGcolGetPricingProb(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get variables of gcg column */
+/** get variables of gcg column */
 extern
 SCIP_VAR** GCGcolGetVars(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get values of gcg column */
+/** get values of gcg column */
 extern
 SCIP_Real* GCGcolGetVals(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get number of variables of gcg column */
+/** get number of variables of gcg column */
 extern
 int GCGcolGetNVars(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Is gcg column a ray? */
+/** is gcg column a ray? */
 extern
 SCIP_Bool GCGcolIsRay(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get reduced cost of gcg column */
+/** get reduced cost of gcg column */
 extern
 SCIP_Real GCGcolGetRedcost(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get age of gcg column */
+/** get age of gcg column */
 extern
 int GCGcolGetAge(
    GCG_COL*             gcgcol              /**< gcg column structure */

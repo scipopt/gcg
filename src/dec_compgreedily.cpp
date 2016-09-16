@@ -72,6 +72,24 @@ struct DEC_DetectorData
  * detector callback methods
  */
 
+/** destructor of detector to free user data (called when GCG is exiting) */
+static
+DEC_DECL_FREEDETECTOR(freeCompgreedily)
+{
+   DEC_DETECTORDATA* detectordata;
+
+   assert(scip != NULL);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   SCIPfreeMemory(scip, &detectordata);
+
+   return SCIP_OKAY;
+}
+
+
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0
 static
@@ -145,7 +163,7 @@ SCIP_RETCODE SCIPincludeDetectionCompgreedily(
    /**@todo create compgreedily detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectCompgreedily, initCompgreedily, exitCompgreedily, propagateSeeedCompgreedily) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectCompgreedily, freeCompgreedily,initCompgreedily, exitCompgreedily, propagateSeeedCompgreedily) );
 
    /**@todo add compgreedily detector parameters */
 

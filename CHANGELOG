@@ -1,11 +1,31 @@
 GCG Version
 =================
 
+features
+- solve the problem with one single block if no decomposition is available ('SCIP mode')
+- extended isomorph detector by the possibility to identify blocks which are identical
+  w.r.t. signs (but not necessarily values) of coefficients.
+
 code cleanup
 - cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
 
 bug fixes
 - changed/corrected variable fixing behaviour of Extreme Point RINS in case of aggregated blocks
+- fixed handling of fixed variables in decompositions
+
+GCG Version 2.1.1
+=================
+
+code cleanup
+- simplified logic when assigning variables to blocks
+
+bug fixes
+- use only one hashmap when initializing pricing problems
+- small bugfix in set covering heuristic
+- fixed a bug in original variable diving heuristics
+- fixed a time limit issue concerning the master problem that was introduced by the SCIP reoptimization feature
+- reorganized detector callbacks and thus fixed memory leaks when reading a new instance
+- fixed memory allocation in basis separator
 
 GCG Version 2.1.0
 =================

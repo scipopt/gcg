@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.1.0
+VERSION         :=	2.1.1
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -61,7 +61,7 @@ GTEST		=	true
 PARASCIP	= 	true
 BLISS      	=   true
 OPENMP      =   false
-GSL         =   false
+GSL         =   true
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 
@@ -189,6 +189,13 @@ LIBOBJ		=	reader_blk.o \
 			dec_staircase.o \
 			dec_random.o \
 			dec_colors.o \
+			dec_dbscan.o \
+			dec_mst.o \
+			dec_mcl.o \
+			dec_compgreedily.o \
+			dec_mastersetcover.o \
+			dec_mastersetpack.o \
+			dec_mastersetpart.o \
 			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \
@@ -200,6 +207,7 @@ LIBOBJ		=	reader_blk.o \
 			graph/weights.o \
 			graph/inst.o \
 			graph/graph_tclique.o \
+			graph/graph_gcg.o \
 			stat.o \
 			objdialog.o \
 			dialog_graph.o \
@@ -207,11 +215,7 @@ LIBOBJ		=	reader_blk.o \
 			gcgcol.o \
 			class_colpool.o \
 			class_seeed.o \
-			class_seeedpool.o \
-			dec_compgreedily.o \
-			dec_mastersetcover.o \
-			dec_mastersetpack.o \
-			dec_mastersetpart.o
+			class_seeedpool.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

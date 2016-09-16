@@ -74,8 +74,7 @@ private:
    int											nTotalSeeeds;			/**< number of created seeeeds, used to give next id */
    std::vector<std::vector<int>> 				varsForConss; 		/** stores for every constraint the indices of variables that are contained in the constraint */
    std::vector<std::vector<int>> 				conssForVars; 		/** stores for every variable the indices of constraints containing this variable */
-
-   std::vector<SCIP_CONS*> 						consToScipCons;	/** stores the corresponding scip constraints pointer */
+   std::vector<SCIP_CONS*> 						consToScipCons;	    /** stores the corresponding scip constraints pointer */
    std::vector<SCIP_VAR*> 						varToScipVar;		/** stores the corresponding scip variable pointer */
    std::vector<DEC_DETECTOR*> 					detectorToScipDetector; /** stores the corresponding SCIP detector pinter */
    std::tr1::unordered_map<SCIP_CONS*, int> 	scipConsToIndex;	/** maps SCIP_CONS* to the corresponding index */

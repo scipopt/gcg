@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -124,13 +124,13 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
          SCIP_VAR* var;
          int varIndex;
 
-         if( !GCGisVarRelevant(curvars[j]) )
-            continue;
-
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
             var = SCIPvarGetProbvar(curvars[j]);
          else
             var = curvars[j];
+
+         if( !GCGisVarRelevant(var) )
+            continue;
 
          assert(var != NULL);
          varIndex = SCIPvarGetProbindex(var);
@@ -145,6 +145,86 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
    this->graph.flush();
    return SCIP_OKAY;
 }
+
+template <class T>
+SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
+                   std::vector<std::vector<int>>                                varsForConss,           /** stores for every constraint the indices of variables that are contained in the constraint */
+                   std::vector<std::vector<int>>                                conssForVars,           /** stores for every variable the indices of constraints containing this variable */
+                   std::vector<int>                                                     openVars,           /**< vector of variable indices that are not assigned yet */
+                   std::vector<int>                                                     openConss,          /**< vector of constraint indices that are not assigned yet */
+                   std::vector<SCIP_CONS*>                                              consToScipCons,     /** stores the corresponding scip constraints pointer */
+                   std::vector<SCIP_VAR*>                                               varToScipVar,           /** stores the corresponding scip variable pointer */
+                   int                                                                  nconss_,            /**< number of constraints */
+                   int                                                                  nvars_              /**< number of variables */
+     ){
+
+         int i;
+     int j;
+     SCIP_Bool success;
+     std::tr1::unordered_map<int, int> oldToNewVarIndex;
+     std::tr1::unordered_map<int, int> oldToNewConsIndex;
+
+     assert(varsForConss.size() == nconss_);
+     assert(conssForVars.size() == nvars_);
+     assert(nvars_ > 0);
+     assert(nconss_ > 0);
+     this->nvars = openVars.size();
+     this->nconss = openConss.size;
+
+     std::vector<int>::const_iterator varIter = openVars.begin();
+     std::vector<int>::const_iterator varIterEnd = openVars.end();
+
+     std::vector<int>::const_iterator consIter = openConss.begin();
+     std::vector<int>::const_iterator consIterEnd = openConss.end();
+
+
+
+
+     /** add node for every var */
+     for( int i = 0 ; i < openVars.size(); ++i )
+     {
+         TCLIQUE_WEIGHT weight;
+
+         /* note that the first nvars nodes correspond to variables */
+         weight = this->weights.calculate(varToScipVar(openVars[i]) );
+         oldToNewVarIndex.insert({ openVars[i],i});
+         this->graph.addNode(i, weight);
+     }
+
+
+     /** add node for every cons */
+     for( int j = 0 ; j < openConss.size(); ++j  )
+     {
+        TCLIQUE_WEIGHT weight;
+
+        /* note that the first nvars nodes correspond to variables (legacy implementation) */
+        weight = this->weights.calculate(consToScipCons(openConss[j] ) );
+        oldToNewVarIndex.insert({ openConss[j], j});
+        this->graph.addNode( this->nvars + j, weight);
+     }
+
+     /* go through all open constraints */
+     for( i = 0; i < openConss.size(); ++i )
+     {
+        int oldConsId = openConss[i];
+
+        std::vector<int>::const_iterator curVarIter = varsForConss[oldConsId].begin();
+        std::vector<int>::const_iterator curVarIterEnd = varsForConss[oldConsId].end();
+
+        for( ; curVarIter != curVarIterEnd; ++curVarIter )
+        {
+                if (oldToNewVarIndex.find(*curVarIter) == oldToNewVarIndex.end() )
+                        continue;
+                SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[*curVarIter], this->nvars+i) );
+        }
+     }
+
+     this->graph.flush();
+     return SCIP_OKAY;
+  }
+
+
+
 
 template <class T>
 int BipartiteGraph<T>::getNConsNodes()

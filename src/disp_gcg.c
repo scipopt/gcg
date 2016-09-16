@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1024,7 +1024,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
    /* this is the gap calculation from SCIPgetGap() */
    if( SCIPisEQ(scip, primalbound, dualbound) )
       gap = 0.0;
-   else if( SCIPisZero(scip, dualbound)
+   else if( SCIPisZero(scip, dualbound )
       || SCIPisZero(scip, primalbound)
       || SCIPisInfinity(scip, REALABS(primalbound))
       || SCIPisInfinity(scip, REALABS(dualbound))

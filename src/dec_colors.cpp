@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -371,9 +371,9 @@ SCIP_RETCODE findColorsComponents(
 
 
 
-/** destructor of detector to free detector data (called when SCIP is exiting) */
+/** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_EXITDETECTOR(exitColors)
+DEC_DECL_FREEDETECTOR(detectorFreeColors)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -390,21 +390,9 @@ DEC_DECL_EXITDETECTOR(exitColors)
    return SCIP_OKAY;
 }
 
-/** detection initialization function of detector (called before solving is about to begin) */
+/** detector structure detection method, tries to detect a structure in the problem */
 static
-DEC_DECL_INITDETECTOR(initColors)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(detector != NULL);
-
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   return SCIP_OKAY;
-}
-
-/** detection function of detector */
-static
-DEC_DECL_DETECTSTRUCTURE(detectColors)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectColors)
 { /*lint -e715*/
    *result = SCIP_DIDNOTFIND;
 
@@ -432,15 +420,16 @@ DEC_DECL_DETECTSTRUCTURE(detectColors)
    return SCIP_OKAY;
 }
 
-#define propagateSeeedColors NULL
-
+#define detectorPropagateSeeedColors NULL
+#define detectorExitColors NULL
+#define detectorInitColors NULL
 /*
  * detector specific interface methods
  */
 
 /** creates the handler for colors constraints and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectionColors(
+SCIP_RETCODE SCIPincludeDetectorColors(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -452,7 +441,9 @@ SCIP_RETCODE SCIPincludeDetectionColors(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectColors, initColors, exitColors,propagateSeeedColors) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+         detectordata, detectorDetectColors, detectorFreeColors, detectorInitColors, detectorExitColors, detectorPropagateSeeedColors) );
+
 
    /* add colors constraint handler parameters */
 

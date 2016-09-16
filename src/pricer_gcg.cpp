@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -85,7 +85,7 @@ using namespace scip;
 #define DEFAULT_MAXSOLSPROB              INT_MAX    /**< maximal number of solution per pricing problem*/
 #define DEFAULT_USEHEURPRICING           FALSE      /**< should heuristic pricing be used */
 #define DEFAULT_ABORTPRICINGINT          TRUE       /**< should the pricing be aborted when integral */
-#define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap at which the pricing is aborted */
+#define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap between dual bound and RMP objective at which pricing is aborted */
 #define DEFAULT_SUCCESSFULMIPSREL        1.0        /**< factor of successful mips to be solved */
 #define DEFAULT_DISPINFOS                FALSE      /**< should additional information be displayed */
 #define DEFAULT_DISABLECUTOFF            2          /**< should the cutoffbound be applied in master LP solving? (0: on, 1:off, 2:auto) */
@@ -167,7 +167,7 @@ struct SCIP_PricerData
    SCIP_Bool             dispinfos;          /**< should pricing information be displayed? */
    int                   disablecutoff;      /**< should the cutoffbound be applied in master LP solving (0: on, 1:off, 2:auto)? */
    SCIP_Real             successfulmipsrel;  /**< Factor of successful MIPs solved until pricing be aborted */
-   SCIP_Real             abortpricinggap;    /**< Gap at which pricing should be aborted */
+   SCIP_Real             abortpricinggap;    /**< gap between dual bound and RMP objective at which pricing is aborted */
    SCIP_Bool             stabilization;      /**< should stabilization be used */
    int                   colpoolsize;        /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
@@ -1775,7 +1775,7 @@ SCIP_Bool  ObjPricerGcg::canPricingBeAborted() const
       canabort = TRUE;
    }
 
-   if( !canabort && pricerdata->abortpricinggap > 0 )
+   if( !canabort && pricerdata->abortpricinggap > 0.0 )
    {
       SCIP_Real gap;
       gap = (SCIPgetLPObjval(scip_) - SCIPgetNodeLowerbound(scip_, SCIPgetCurrentNode(scip_)))/SCIPgetNodeLowerbound(scip_, SCIPgetCurrentNode(scip_));
@@ -3303,7 +3303,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
          &pricerdata->abortpricingint, TRUE, DEFAULT_ABORTPRICINGINT, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/abortpricinggap",
-         "should pricing be aborted due to small gap between dual bound and RMP objective?",
+         "gap between dual bound and RMP objective at which pricing is aborted",
          &pricerdata->abortpricinggap, TRUE, DEFAULT_ABORTPRICINGGAP, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/successfulsubmipsrel",

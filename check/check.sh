@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -59,16 +59,16 @@ then
     mkdir locks
 fi
 
-LOCKFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.lock
-RUNFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.run.$BINID
-DONEFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.done
+LOCKFILE=locks/$TSTNAME.$SETNAME.$MSETNAME.$VERSION.$LPS.lock
+RUNFILE=locks/$TSTNAME.$SETNAME.$MSETNAME.$VERSION.$LPS.run.$BINID
+DONEFILE=locks/$TSTNAME.$SETNAME.$MSETNAME.$VERSION.$LPS.done
 
-OUTFILE=results/check.$TSTNAME.$BINID.$SETNAME.out
-ERRFILE=results/check.$TSTNAME.$BINID.$SETNAME.err
-RESFILE=results/check.$TSTNAME.$BINID.$SETNAME.res
-TEXFILE=results/check.$TSTNAME.$BINID.$SETNAME.tex
-TMPFILE=results/check.$TSTNAME.$BINID.$SETNAME.tmp
-SETFILE=results/check.$TSTNAME.$BINID.$SETNAME.set
+OUTFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.out
+ERRFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.err
+RESFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.res
+TEXFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.tex
+TMPFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.tmp
+SETFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.set
 
 SETTINGS=$SETDIR/$SETNAME.set
 MSETTINGS=$SETDIR/$MSETNAME.set
@@ -213,7 +213,7 @@ do
             then
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
-                echo display statistics            >> $TMPFILE
+ #               echo display statistics            >> $TMPFILE
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
@@ -223,10 +223,10 @@ do
             then
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
-                mkdir -p decs/$TSTNAME.$SETTINGS
-                mkdir -p images/$TSTNAME.$SETTINGS
+                mkdir -p decs/$TSTNAME.$SETNAME
+                mkdir -p images/$TSTNAME.$SETNAME
                 echo write all decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
-		echo write all images\/$TSTNAME.$SETNAME gp >> $TMPFILE
+                echo write all images\/$TSTNAME.$SETNAME gp >> $TMPFILE
             else
                 if test $MODE = "readdec"
                 then
@@ -251,6 +251,8 @@ EOF
                         echo read $BLKFILE         >> $TMPFILE
                     fi
                 fi
+                GP_BASE=`basename $DECFILE .dec`
+#               echo write problem $HOME\/Desktop\/results\/gps\/$GP_BASE.gp >> $TMPFILE
                 echo optimize                      >> $TMPFILE
                 echo display statistics            >> $TMPFILE
 #               echo display additionalstatistics  >> $TMPFILE

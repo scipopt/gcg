@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -29,6 +29,7 @@
  * @ingroup DETECTORS
  * @brief  detector xyz (put your description here)
  * @author Martin Bergner
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -67,25 +68,25 @@ struct DEC_DetectorData
  * detector callback methods
  */
 
-/** destructor of detector to free detector data (called before the solving process begins) */
+/** destructor of detector to free user data (called when GCG is exiting) */
 #if 0
 static
-DEC_DECL_EXITDETECTOR(exitXyz)
+DEC_DECL_FREEDETECTOR(detectorFreeXyz)
 {  /*lint --e{715}*/
 
-   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
+   SCIPerrorMessage("Free function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
    SCIPABORT();
 
    return SCIP_OKAY;
 }
 #else
-#define exitXyz NULL
+#define detectorFreeXyz NULL
 #endif
 
-/** detection initialization function of detector (called before solving is about to begin) */
+/** detector initialization method (called after problem was transformed) */
 #if 0
 static
-DEC_DECL_INITDETECTOR(initXyz)
+DEC_DECL_INITDETECTOR(detectorInitXyz)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
@@ -94,12 +95,27 @@ DEC_DECL_INITDETECTOR(initXyz)
    return SCIP_OKAY;
 }
 #else
-#define initXyz NULL
+#define detectorInitXyz NULL
+#endif
+
+/** detector deinitialization method (called before the transformed problem is freed) */
+#if 0
+static
+DEC_DECL_EXITDETECTOR(detectorExitXyz)
+{  /*lint --e{715}*/
+
+   SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
+   SCIPABORT();
+
+   return SCIP_OKAY;
+}
+#else
+#define detectorExitXyz NULL
 #endif
 
 /** detection function of detector */
 static
-DEC_DECL_DETECTSTRUCTURE(detectXyz)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectXyz)
 { /*lint --e{715}*/
    *result = SCIP_DIDNOTFIND;
 
@@ -115,7 +131,7 @@ DEC_DECL_DETECTSTRUCTURE(detectXyz)
  */
 
 /** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionXyz(
+SCIP_RETCODE SCIPincludeDetectorXyz(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -124,7 +140,7 @@ SCIP_RETCODE SCIPincludeDetectionXyz(
    /**@todo create xyz detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectXyz, initXyz, exitXyz, propagateSeeedXyz) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectorDetectXyz, detectorInitXyz, detectorExitXyz, detectorPropagateSeeedXyz) );
 
    /**@todo add xyz detector parameters */
 

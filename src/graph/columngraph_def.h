@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -268,13 +268,13 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
          SCIP_VAR* var1;
          int varIndex1;
 
-         if( !GCGisVarRelevant(curvars[j]) )
-            continue;
-
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
             var1 = SCIPvarGetProbvar(curvars[j]);
          else
             var1 = curvars[j];
+
+         if( var1 )
+            continue;
 
          assert(var1 != NULL);
          varIndex1 = SCIPvarGetProbindex(var1);
@@ -286,13 +286,13 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
             SCIP_VAR* var2;
             int varIndex2;
 
-            if( !GCGisVarRelevant(curvars[k]) )
-               continue;
-
             if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
                var2 = SCIPvarGetProbvar(curvars[k]);
             else
                var2 = curvars[k];
+
+            if( !GCGisVarRelevant(var2) )
+               continue;
 
             assert(var2 != NULL);
             varIndex2 = SCIPvarGetProbindex(var2);

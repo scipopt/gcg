@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -44,6 +44,7 @@
 #include "scip/cons_linear.h"
 
 #define STARTMAXMASTERVARS 8
+#define STARTMAXORIGVARS 1
 
 /*
  * Vardata methods
@@ -98,7 +99,7 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
    if( (*vardata)->vartype == GCG_VARTYPE_PRICING )
    {
       assert((*vardata)->data.pricingvardata.norigvars >= 1);
-      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.pricingvardata.origvars), (*vardata)->data.pricingvardata.norigvars);
+      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.pricingvardata.origvars), (*vardata)->data.pricingvardata.maxorigvars);
    }
    assert((*vardata)->vartype != GCG_VARTYPE_MASTER);
    SCIPfreeBlockMemory(scip, vardata);
@@ -432,11 +433,18 @@ SCIP_RETCODE GCGpricingVarAddOrigVar(
    assert(vardata->data.pricingvardata.origvars != NULL);
    assert(vardata->data.pricingvardata.origvars[0] != NULL);
    assert(vardata->blocknr >= 0); /* variable belongs to exactly one block */
-   if( vardata->data.pricingvardata.norigvars >= 1 )
+
+   /* realloc origvars array of the pricing variable, if needed */
+   if( vardata->data.pricingvardata.maxorigvars == vardata->data.pricingvardata.norigvars )
    {
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars),
-            vardata->data.pricingvardata.norigvars, (size_t)vardata->data.pricingvardata.norigvars + 1) );
+      int newsize = SCIPcalcMemGrowSize(scip, vardata->data.pricingvardata.norigvars+1);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.maxorigvars,
+            newsize) );
+      SCIPdebugMessage("origvars array of var %s resized from %d to %d\n", SCIPvarGetName(origvar),
+         vardata->data.pricingvardata.maxorigvars, newsize);
+      vardata->data.pricingvardata.maxorigvars = newsize;
    }
+
    vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars] = origvar;
    vardata->data.pricingvardata.norigvars++;
 
@@ -1001,7 +1009,8 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
    vardata->vartype = GCG_VARTYPE_PRICING;
    vardata->blocknr = pricingprobnr;
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars), 1) ); /*lint !e506*/
+   vardata->data.pricingvardata.maxorigvars = STARTMAXORIGVARS;
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.maxorigvars) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
 
@@ -1038,7 +1047,8 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemory(pricingscip, &vardata) );
    vardata->vartype = GCG_VARTYPE_PRICING;
    vardata->blocknr = pricingprobnr;
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), 1) ); /*lint !e506*/
+   vardata->data.pricingvardata.maxorigvars = STARTMAXORIGVARS;
+   SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.maxorigvars) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
 

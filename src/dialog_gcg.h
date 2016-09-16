@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -90,6 +90,10 @@ SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsFast);
 /** dialog execution method for the set detectors off command */
 extern
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsOff);
+
+/** dialog execution method for the set detectors default command */
+extern
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsDefault);
 
 /** dialog execution method for the set detectors aggressive command */
 extern

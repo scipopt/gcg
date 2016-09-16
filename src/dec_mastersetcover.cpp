@@ -73,6 +73,23 @@ struct DEC_DetectorData
  * detector callback methods
  */
 
+/** destructor of detector to free user data (called when GCG is exiting) */
+static
+DEC_DECL_FREEDETECTOR(freeMastersetcover)
+{
+   DEC_DETECTORDATA* detectordata;
+
+   assert(scip != NULL);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   SCIPfreeMemory(scip, &detectordata);
+
+   return SCIP_OKAY;
+}
+
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0
 static
@@ -133,7 +150,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
    }
 
    /** set open setcovering constraints to Master */
-   for( size_t i = 0; i < seeed->getNOpenconss(); ++i)
+   for( int i = 0; i < seeed->getNOpenconss(); ++i)
    {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
       if( GCGconsGetType   (cons) == setcovering )
@@ -154,6 +171,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
  * detector specific interface methods
  */
 
+
+
 /** creates the handler for mastersetcover detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionMastersetcover(SCIP* scip /**< SCIP data structure */
 )
@@ -164,7 +183,7 @@ SCIP_RETCODE SCIPincludeDetectionMastersetcover(SCIP* scip /**< SCIP data struct
    detectordata = NULL;
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectMastersetcover, initMastersetcover, exitMastersetcover, propagateSeeedMastersetcover));
+      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectMastersetcover, freeMastersetcover, initMastersetcover, exitMastersetcover, propagateSeeedMastersetcover));
 
    /**@todo add mastersetcover detector parameters */
 

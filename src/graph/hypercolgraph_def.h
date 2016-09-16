@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -188,13 +188,13 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
          SCIP_VAR* var1;
          int varIndex1;
 
-         if( !GCGisVarRelevant(curvars1[k]) )
-            continue;
-
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
             var1 = SCIPvarGetProbvar(curvars1[k]);
          else
             var1 = curvars1[k];
+
+         if( !GCGisVarRelevant(var1) )
+            continue;
 
          assert(var1 != NULL);
          varIndex1 = SCIPvarGetProbindex(var1);

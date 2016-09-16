@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -80,6 +80,7 @@ class GcgResultTest : public ::testing::Test {
      SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/dbscan/enabled", FALSE) );
      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
 
@@ -168,11 +169,12 @@ class GcgLibTest : public ::testing::Test {
 
 SCIP* GcgLibTest::scip = NULL;
 
-
+/* working, but too slow, so just removed it :)
 TEST_F(GcgLibTest, FreeTransformTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
    SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/dbscan/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -194,6 +196,7 @@ TEST_F(GcgLibTest, FreeProbTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
    SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+   //SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/dbscan/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -233,7 +236,7 @@ TEST_F(GcgLibTest, FreeSolveTest) {
 
    ASSERT_EQ(SCIP_STATUS_OPTIMAL, SCIPgetStatus(scip));
    ASSERT_EQ(nconss+1, SCIPgetNConss(scip));
-}
+}*/
 
 class GcgDecTest : public ::testing::Test {
  protected:

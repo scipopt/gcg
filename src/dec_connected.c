@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -242,9 +242,9 @@ SCIP_RETCODE findConnectedComponents(
 
 
 
-/** destructor of detector to free detector data (called when SCIP is exiting) */
+/** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_EXITDETECTOR(exitConnected)
+DEC_DECL_FREEDETECTOR(detectorFreeConnected)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -263,7 +263,7 @@ DEC_DECL_EXITDETECTOR(exitConnected)
 
 /** detection initialization function of detector (called before solving is about to begin) */
 static
-DEC_DECL_INITDETECTOR(initConnected)
+DEC_DECL_INITDETECTOR(detectorInitConnected)
 {  /*lint --e{715}*/
 
    DEC_DETECTORDATA *detectordata;
@@ -281,9 +281,9 @@ DEC_DECL_INITDETECTOR(initConnected)
    return SCIP_OKAY;
 }
 
-/** detection function of detector */
+/** detector structure detection method, tries to detect a structure in the problem */
 static
-DEC_DECL_DETECTSTRUCTURE(detectConnected)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectConnected)
 {
    int runs;
    int i;
@@ -335,14 +335,16 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
    return SCIP_OKAY;
 }
 
-#define propagateSeeedConnected NULL
+#define detectorExitConnected NULL
+#define detectorPropagateSeeedConnected NULL
+
 
 /*
  * detector specific interface methods
  */
 
 /** creates the handler for connected constraints and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionConnected(
+SCIP_RETCODE SCIPincludeDetectorConnected(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -356,7 +358,9 @@ SCIP_RETCODE SCIPincludeDetectionConnected(
 
    detectordata->blockdiagonal = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectConnected, initConnected, exitConnected, propagateSeeedConnected) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectorDetectConnected, detectorFreeConnected, detectorInitConnected, detectorExitConnected, detectorPropagateSeeedConnected) );
+
 
    /* add connected constraint handler parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );

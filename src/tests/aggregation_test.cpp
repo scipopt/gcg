@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -123,6 +123,8 @@ TEST_F(GcgAggregationTest, WrongObjTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x1>[I] +<x3>[I] == 1") );
 
    SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/dbscan/enabled", FALSE) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/mst/enabled", FALSE) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    ASSERT_EQ(SCIP_SUCCESS, result);
 

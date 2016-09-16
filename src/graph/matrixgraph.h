@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -85,6 +85,7 @@ public:
       return SCIP_OKAY;
    }
 
+
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
    )
@@ -134,6 +135,17 @@ public:
       SCIP_VAR**            vars,               /**< variables for which graph should be created */
       int                   nconss_,             /**< number of constraints */
       int                   nvars_               /**< number of variables */
+      ) { return SCIP_ERROR; }
+
+   virtual SCIP_RETCODE createFromPartialMatrix(
+                   std::vector<std::vector<int>>                                varsForConss,           /** stores for every constraint the indices of variables that are contained in the constraint */
+                   std::vector<std::vector<int>>                                conssForVars,           /** stores for every variable the indices of constraints containing this variable */
+                   std::vector<int>                                                     openVars,           /**< vector of variable indices that are not assigned yet */
+                   std::vector<int>                                                     openConss,          /**< vector of constraint indices that are not assigned yet */
+                   std::vector<SCIP_CONS*>                                              consToScipCons,     /** stores the corresponding scip constraints pointer */
+                   std::vector<SCIP_VAR*>                                               varToScipVar,           /** stores the corresponding scip variable pointer */
+                   int                                                                  nconss_,            /**< number of constraints */
+                   int                                                                  nvars_              /**< number of variables */
       ) { return SCIP_ERROR; }
 
 
