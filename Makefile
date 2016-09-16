@@ -182,7 +182,6 @@ LIBOBJ		=	reader_blk.o \
 			solver_knapsack.o \
 			cons_decomp.o \
 			decomp.o \
-			dec_arrowheur.o \
 			dec_stairheur.o \
 			dec_connected.o \
 			dec_cutpacking.o \
@@ -215,7 +214,16 @@ LIBOBJ		=	reader_blk.o \
 			gcgcol.o \
 			class_colpool.o \
 			class_seeed.o \
-			class_seeedpool.o
+			class_seeedpool.o \
+			dec_compgreedily.o \
+			dec_mastersetcover.o \
+			dec_mastersetpack.o \
+			dec_mastersetpart.o \
+			dec_hcgpartition.o \
+			dec_hrgpartition.o \
+			dec_hrcgpartition.o \
+			dec_connectedbase.o \
+			dec_connected_noNewLinkingVars.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

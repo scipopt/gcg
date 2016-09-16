@@ -154,7 +154,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
  */
 
 /** creates the handler for compgreedily detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionCompgreedily(
+SCIP_RETCODE SCIPincludeDetectorCompgreedily(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

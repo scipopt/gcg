@@ -45,7 +45,7 @@ extern "C" {
 
 extern
 /** creates the DBSCAN presolver and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionDBSCAN(
+SCIP_RETCODE SCIPincludeDetectorDBSCAN(
       SCIP*              scip                /**< SCIP data structure */
    );
 

@@ -25,15 +25,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_compgreedily.h
- * @brief  compgreedily detector
+/**@file   dec_connected_noNewLinkingVars.h
+ * @brief  connected_noNewLinkingVars detector
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_COMPGREEDILY_H__
-#define GCG_DEC_COMPGREEDILY_H__
+#ifndef GCG_DEC_CONNECTED_NONEWLINKINGVARS_H__
+#define GCG_DEC_CONNECTED_NONEWLINKINGVARS_H__
 
 #include "scip/scip.h"
 
@@ -41,9 +41,9 @@
 extern "C" {
 #endif
 
-/** creates the handler for compgreedily detector and includes it in SCIP */
+/** creates the handler for connected_noNewLinkingVars detector and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectorCompgreedily(
+SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

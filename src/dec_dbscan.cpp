@@ -360,7 +360,7 @@ DEC_DECL_DETECTSTRUCTURE(detectDBSCAN)
  */
 
 /** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionDBSCAN(
+SCIP_RETCODE SCIPincludeDetectorDBSCAN(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

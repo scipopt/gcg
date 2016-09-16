@@ -25,26 +25,27 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_compgreedily.h
- * @brief  compgreedily detector
+/**@file   dec_hrgpartition.h
+ * @brief  arrowhead and bordered detector via graph partitioning (uses hmetis)
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_COMPGREEDILY_H__
-#define GCG_DEC_COMPGREEDILY_H__
+#ifndef GCG_DEC_HRGPARTITION_H__
+#define GCG_DEC_HRGPARTITION_H__
 
 #include "scip/scip.h"
+#include "type_decomp.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** creates the handler for compgreedily detector and includes it in SCIP */
+/** creates the hrgpartition presolver and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectorCompgreedily(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE SCIPincludeDetectorHrgpartition(
+   SCIP* scip                 /**< SCIP data structure */
    );
 
 #ifdef __cplusplus

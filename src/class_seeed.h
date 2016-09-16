@@ -132,6 +132,9 @@ public:
 		   int varToStairLinking, int block1, int block2
    );
 
+   /** add a block, returns the number of the new block */
+   int addBlock();
+
    /** finds linking-variables that are actually master-variables. I.e. the variable is adjacent to only master-constraints. */
    SCIP_RETCODE findVarsLinkingToMaster(
        Seeedpool* seeedpool
@@ -273,6 +276,11 @@ public:
          Seeedpool* seeedpool
    );
 
+   /** assigns the open cons which are implicit assigned */
+   SCIP_RETCODE considerImplicits(
+         Seeedpool* seeedpool
+   );
+
    /** returns whether the var is a linking var */
    bool isVarLinkingvar(
          int var
@@ -306,6 +314,11 @@ public:
    /** return whether the cons is an open conss */
    bool isConsOpencons(
          int cons
+   );
+
+   /** returns whether the cons is a cons of the block */
+   bool isConsBlockconsOfBlock(
+         int cons, int block
    );
 
    /** returns index of the Openvar in the vector */
@@ -359,6 +372,12 @@ public:
    SCIP_RETCODE deleteOpencons(
          int opencons
    );
+
+   bool checkVarsAndConssConsistency(
+         Seeedpool* seeedpool
+   );
+
+
 
 
 private:

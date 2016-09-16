@@ -312,7 +312,7 @@ DEC_DECL_DETECTSTRUCTURE(detectMCL)
  */
 
 /** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionMCL(
+SCIP_RETCODE SCIPincludeDetectorMCL(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

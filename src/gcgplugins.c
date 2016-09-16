@@ -176,7 +176,6 @@
 #include "dec_isomorph.h"
 #endif
 
-#include "dec_arrowheur.h"
 #include "dec_stairheur.h"
 #include "dec_staircase.h"
 #include "dec_random.h"
@@ -340,23 +339,26 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    /* Detectors and decompositions */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
-
    SCIP_CALL( SCIPincludeDetectorConnected(scip) );
-   SCIP_CALL( SCIPincludeDetectorArrowheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );
    SCIP_CALL( SCIPincludeDetectorColors(scip) );
    SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
-   SCIP_CALL( SCIPincludeDetectionDBSCAN(scip) );
-   SCIP_CALL( SCIPincludeDetectionMST(scip) );
+   SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
+   SCIP_CALL( SCIPincludeDetectorMST(scip) );
 #ifdef GSL
-   SCIP_CALL( SCIPincludeDetectionMCL(scip) );
+   SCIP_CALL( SCIPincludeDetectorMCL(scip) );
 #endif
-   SCIP_CALL( SCIPincludeDetectionCompgreedily(scip) );
-   SCIP_CALL( SCIPincludeDetectionMastersetcover(scip) );
-   SCIP_CALL( SCIPincludeDetectionMastersetpack(scip) );
-   SCIP_CALL( SCIPincludeDetectionMastersetpart(scip) );
+   SCIP_CALL( SCIPincludeDetectorCompgreedily(scip) );
+   SCIP_CALL( SCIPincludeDetectorMastersetcover(scip) );
+   SCIP_CALL( SCIPincludeDetectorMastersetpack(scip) );
+   SCIP_CALL( SCIPincludeDetectorMastersetpart(scip) );
+   SCIP_CALL( SCIPincludeDetectorHcgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectorHrgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectorHrcgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectorConnectedbase(scip) );
+   SCIP_CALL( SCIPincludeDetectorConnected_noNewLinkingVars(scip) );
 
 
 

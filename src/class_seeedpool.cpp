@@ -39,6 +39,8 @@
 #include "struct_detector.h"
 #include "struct_decomp.h"
 #include "cons_decomp.h"
+#include "decomp.h"
+
 #include <algorithm>
 #include <iostream>
 
@@ -82,13 +84,14 @@ SCIP_CONS* consGetRelevantRepr(SCIP* scip, SCIP_CONS* cons){
 
 SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 
-                return var;
+        return SCIPvarGetProbvar(var);
 }
 
 SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> const & seeeds, bool sort){
 
    for( size_t i = 0; i < seeeds.size(); ++i )
    {
+      bool noDuplicate = false;
 
       /** compares the number of master conss, master vars, blocks, linking vars and stairlinking vars */
       if( compseeed->getNMasterconss() != seeeds[i]->getNMasterconss() || compseeed->getNMastervars() != seeeds[i]->getNMastervars() ||
@@ -99,18 +102,18 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
       for( int b = 0; b < compseeed->getNBlocks(); ++b)
       {
          if( compseeed->getNStairlinkingvars(b) != seeeds[i]->getNStairlinkingvars(b))
-            goto noDuplicate;
+            noDuplicate = true;;
       }
 
       /** compares the number of constraints and variables in the blocks*/
-      for( int j = 0; j < compseeed->getNBlocks(); ++j )
+      for( int j = 0; j < compseeed->getNBlocks() && !noDuplicate ; ++j )
       {
          if( (compseeed->getNVarsForBlock(j) != seeeds[i]->getNVarsForBlock(j)) || (compseeed->getNConssForBlock(j) != seeeds[i]->getNConssForBlock(j)) )
-            goto noDuplicate;
+            noDuplicate = true;
       }
 
       /** sorts the the master conss, master vars, conss in blocks, vars in blocks, linking vars and stairlinking vars */
-      if( sort )
+      if( sort && !noDuplicate)
       {
          compseeed->sortMasterconss();
          seeeds[i]->sortMasterconss();
@@ -133,54 +136,53 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
       }
 
       /** compares the master cons */
-      for( int j = 0; j < compseeed->getNMasterconss(); ++j)
+      for( int j = 0; j < compseeed->getNMasterconss() && !noDuplicate; ++j)
       {
          if( compseeed->getMasterconss()[j] != seeeds[i]->getMasterconss()[j] )
-            goto noDuplicate;
+            noDuplicate = true;
       }
 
       /** compares the master vars */
-      for( int j = 0; j < compseeed->getNMastervars(); ++j)
+      for( int j = 0; j < compseeed->getNMastervars() && !noDuplicate; ++j)
       {
          if( compseeed->getMastervars()[j] != seeeds[i]->getMastervars()[j] )
-            goto noDuplicate;
+            noDuplicate = true;
       }
 
       /** compares the constrains and variables in the blocks */
-      for( int j = 0; j < compseeed->getNBlocks(); ++j )
+      for( int j = 0; j < compseeed->getNBlocks() && !noDuplicate; ++j )
       {
-         for( int k = 0; k < compseeed->getNConssForBlock(j); ++k)
+         for( int k = 0; k < compseeed->getNConssForBlock(j) && !noDuplicate; ++k)
          {
             if( compseeed->getConssForBlock(j)[k] != compseeed->getConssForBlock(j)[k] )
-               goto noDuplicate;
+               noDuplicate = true;
          }
-         for( int k = 0; k < compseeed->getNVarsForBlock(j); ++k)
+         for( int k = 0; k < compseeed->getNVarsForBlock(j) && !noDuplicate; ++k)
          {
             if( compseeed->getVarsForBlock(j)[k] != compseeed->getVarsForBlock(j)[k] )
-               goto noDuplicate;
+               noDuplicate = true;
          }
       }
 
       /** compares the linking vars */
-      for( int j = 0; j < compseeed->getNLinkingvars(); ++j)
+      for( int j = 0; j < compseeed->getNLinkingvars() && !noDuplicate; ++j)
       {
          if( compseeed->getLinkingvars()[j] != seeeds[i]->getLinkingvars()[j] )
-            goto noDuplicate;
+            noDuplicate = true;
       }
 
       /** compares the stairlinking vars */
-      for( int b = 0; b < compseeed->getNBlocks(); ++b)
+      for( int b = 0; b < compseeed->getNBlocks() && !noDuplicate; ++b)
       {
-         for( int j = 0; j < compseeed->getNStairlinkingvars(b); ++j)
+         for( int j = 0; j < compseeed->getNStairlinkingvars(b) && !noDuplicate; ++j)
          {
             if( compseeed->getStairlinkingvars(b)[j] != seeeds[i]->getStairlinkingvars(b)[j] )
-               goto noDuplicate;
+               noDuplicate = true;
          }
       }
 
-      return FALSE;
-
-      noDuplicate: continue;
+      if(!noDuplicate)
+         return FALSE;
    }
    return TRUE;
 }
@@ -299,6 +301,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  cons = consToScipCons[i];
 
                  SCIP_CALL_ABORT( SCIPgetConsNVars(scip, cons, &nCurrVars, &success ) );
+                 std::cout << "\n\nConstraint: " << SCIPconsGetName(cons) << " with " << nCurrVars << " variables" << std::endl;
                  assert(success);
 
                  SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVars, nCurrVars) ); /** free in line 321 */
@@ -306,17 +309,21 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                  for(int currVar = 0; currVar < nCurrVars; ++currVar)
                  {
-                         int varIndex;
 
+                     int varIndex;
+
+                         std::cout << " try ("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
                          std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar = scipVarToIndex.find(currVars[currVar]);
 
                          if(iterVar == scipVarToIndex.end() )
                                  continue;
 
+
                          varIndex = iterVar->second;
 
                          varsForConss[i].push_back(varIndex);
                          conssForVars[varIndex].push_back(i);
+                         std::cout << "("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
 
                  }
                  SCIPfreeBufferArray(scip, &currVars) ;
@@ -752,6 +759,18 @@ const  int * Seeedpool::getVarsForCons(int cons){
 
  int Seeedpool::getNConss(){
     return nConss;
+ }
+
+bool Seeedpool::isVarInCons(int var, int cons)
+ {
+    for(int i = 0; i < getNVarsForCons(cons); ++i)
+    {
+       if(var == getVarsForCons(cons)[i])
+       {
+          return true;
+       }
+    }
+    return false;
  }
 
 

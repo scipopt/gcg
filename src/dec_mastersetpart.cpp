@@ -172,7 +172,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpart)
  */
 
 /** creates the handler for mastersetpart detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionMastersetpart(SCIP* scip /**< SCIP data structure */
+SCIP_RETCODE SCIPincludeDetectorMastersetpart(SCIP* scip /**< SCIP data structure */
 )
 {
    DEC_DETECTORDATA* detectordata;

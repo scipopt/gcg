@@ -43,7 +43,7 @@ extern "C" {
 
 /** creates the handler for mastersetpart detector and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectionMastersetpart(
+SCIP_RETCODE SCIPincludeDetectorMastersetpart(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

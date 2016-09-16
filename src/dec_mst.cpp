@@ -359,7 +359,7 @@ DEC_DECL_DETECTSTRUCTURE(detectMST)
  */
 
 /** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionMST(
+SCIP_RETCODE SCIPincludeDetectorMST(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
