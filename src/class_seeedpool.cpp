@@ -366,6 +366,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          int cindex = 0;
          int vindex = 0;
          int currblock;
+         bool displaySeeeds = false;
 
          ndecompositions = 0;
          maxRounds = 2;
@@ -436,7 +437,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                             }
                                             else
                                             {
-                                                std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to next round seeeds!" << std::endl;
+                                               std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to next round seeeds!" << std::endl;
                                                nextSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
                                             }
                                          }

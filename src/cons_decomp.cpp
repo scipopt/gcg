@@ -580,7 +580,7 @@ SCIP_RETCODE DECdetectStructure(
    {
 	  gcg::Seeedpool seeedpool(scip, CONSHDLR_NAME);
 
-	  seeedpool.findDecompostions();
+	  seeedpool.findDecompositions();
 	  conshdlrdata->decdecomps = seeedpool.getDecompositions();
 	  conshdlrdata->ndecomps = seeedpool.getNDecompositions();
    }

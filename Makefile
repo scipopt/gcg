@@ -223,7 +223,8 @@ LIBOBJ		=	reader_blk.o \
 			dec_hrgpartition.o \
 			dec_hrcgpartition.o \
 			dec_connectedbase.o \
-			dec_connected_noNewLinkingVars.o
+			dec_connected_noNewLinkingVars.o \
+			dec_generalmastersetpack.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
