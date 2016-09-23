@@ -100,7 +100,7 @@ public:
    ~Seeedpool();
 
    /** finds decompositions  */
-   void findDecompostions(
+   void findDecompositions(
    );
 
    /** access coefficient matrix constraint-wise */

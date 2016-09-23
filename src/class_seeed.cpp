@@ -1065,6 +1065,7 @@ namespace gcg {
                  if(seeedpool->getVarsForCons(cons)[v] == var)
                  {
                     blocksOfOpenvar.push_back(b);
+                    foundInBlock=true;
                  }
               }
            }
@@ -1072,12 +1073,14 @@ namespace gcg {
         if(blocksOfOpenvar.size() == 2 && blocksOfOpenvar[0] + 1 != blocksOfOpenvar[1])
         {
            setVarToLinking(var);
+           std::cout << "1. setVarToLinking: " << var << "blocks: " << blocksOfOpenvar[0] << blocksOfOpenvar[1] << std::endl;
            assignedOpenvars.push_back(var);
         }
         else if(blocksOfOpenvar.size() > 2)
         {
            setVarToLinking(var);
            assignedOpenvars.push_back(var);
+           std::cout << "2. setVarToLinking: " << var << std::endl;
         }
      }
 
@@ -1088,6 +1091,177 @@ namespace gcg {
 
      return SCIP_OKAY;
   }
+
+  /** assigns openVars to Stairlinking if they can be found in two consecutive  blocks*/
+  SCIP_RETCODE Seeed::considerImplicitsStairlinkingvars(
+        Seeedpool*       seeedpool
+  )
+  {
+     std::vector<int> blocksOfOpenvar;
+     std::vector<int> assignedOpenvars;
+     bool foundInBlock;
+     int var;
+     int cons;
+
+     if(!openVarsAndConssCalculated)
+     {
+        calcOpenvars();
+        calcOpenconss();
+        openVarsAndConssCalculated = true;
+     }
+
+     /** set vars to linking, if they can be found in more than one block */
+     for(int i = 0; i < getNOpenvars(); ++i)
+     {
+        blocksOfOpenvar.clear();
+        foundInBlock = false;
+        var = openVars[i];
+        for(int b = 0; b < nBlocks; ++b)
+        {
+           for(int c = 0; c < getNConssForBlock(b) && !foundInBlock; ++c)
+           {
+              cons = conssForBlocks[b][c];
+              for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !foundInBlock; ++v)
+              {
+                 if(seeedpool->getVarsForCons(cons)[v] == var)
+                 {
+                    blocksOfOpenvar.push_back(b);
+                 }
+              }
+           }
+        }
+        if(blocksOfOpenvar.size() == 2 && blocksOfOpenvar[0] + 1 == blocksOfOpenvar[1])
+        {
+           setVarToStairlinking(var, blocksOfOpenvar[0], blocksOfOpenvar[1]);
+           assignedOpenvars.push_back(var);
+        }
+     }
+
+     for(size_t i = 0; i < assignedOpenvars.size(); ++i)
+     {
+        deleteOpenvar(assignedOpenvars[i]);
+     }
+     return SCIP_OKAY;
+  }
+
+  /** assigns the open conss which have common open vars with blockconss and no stairlinkingvars and assigns the vars */
+  SCIP_RETCODE Seeed::considerImplicitsNoLinking(
+        Seeedpool*       seeedpool
+  )
+  {
+     bool assigned;
+     int cons;
+     int var;
+     std::vector<int> dependentConss; /** the conss with stairlinkingvars can not be assigned independently */
+     std::vector<int> independentConss; /** this conss can be assigned independently of the the seeed */
+     std::vector<int>::iterator it;
+
+     if(!openVarsAndConssCalculated)
+     {
+        calcOpenvars();
+        calcOpenconss();
+        openVarsAndConssCalculated = true;
+     }
+
+     /** conss with stairlinkingvars are still openconss */
+     for(int i = 0; i < getNOpenconss(); ++i)
+     {
+        assigned = false;
+        cons = openConss[i];
+        for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !assigned; ++v)
+        {
+           var = seeedpool->getVarsForCons(cons)[v];
+           for(int b = 0; b < nBlocks && !assigned; ++b)
+           {
+              if(isVarStairlinkingvarOfBlock(var, b))
+              {
+                 dependentConss.push_back(cons);
+                 assigned = true;
+              }
+           }
+        }
+     }
+
+     for(int i = 0; i < getNOpenconss(); ++i)
+     {
+        cons = openConss[i];
+        if(find(dependentConss.begin(), dependentConss.end(), cons) == dependentConss.end())
+           independentConss.push_back(cons);
+     }
+
+     /** assign the open conss which have common open vars with blockconss and assign the var */
+     for(size_t i = 0; i < independentConss.size(); ++i)
+     {
+        assigned = false;
+        cons = independentConss[i];
+        for(int j = 0; j < seeedpool->getNVarsForCons(cons) && !assigned; ++j)
+        {
+           var = seeedpool->getVarsForCons(cons)[j];
+           if(!isVarOpenvar(var))
+              continue;
+           for(int b = 0; b < nBlocks && !assigned; ++b)
+           {
+              for(int c = 0; c < getNConssForBlock(b) && !assigned; ++c)
+              {
+                 for(int v = 0; v < seeedpool->getNVarsForCons(getConssForBlock(b)[c]) && !assigned; ++v)
+                 {
+                    if(var == seeedpool->getVarsForCons(getConssForBlock(b)[c])[v])
+                    {
+                       setConsToBlock(cons, b);
+                       deleteOpencons(cons);
+                       setVarToBlock(var, b);
+                       deleteOpenvar(var);
+                       considerImplicits(seeedpool);
+                       considerImplicitsStairlinkingvars(seeedpool);
+                       assigned = true;
+                    }
+                 }
+              }
+           }
+        }
+     }
+     return SCIP_OKAY;
+  }
+
+  /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+   std::vector<int> Seeed::getIndependentConss(
+         Seeedpool*       seeedpool
+   )
+   {
+      std::vector<int> independentConss = std::vector<int>(0);
+      bool independent;
+      int cons;
+      int var;
+
+      considerImplicitsNoLinking(seeedpool);
+
+      for(int c = 0; c < getNOpenconss(); ++c)
+      {
+         cons = openConss[c];
+         independent = true;
+         for( int v = 0; v < seeedpool->getNVarsForCons(cons) && independent; ++v )
+         {
+            var = seeedpool->getVarsForCons(cons)[v];
+            for(int b = 0; b < nBlocks; ++b)
+            {
+               assert(!isVarBlockvarOfBlock(var, b));
+               if(isVarStairlinkingvarOfBlock(var, b))
+                  independent = false;
+            }
+         }
+         if(independent)
+            independentConss.push_back(cons);
+      }
+
+      return independentConss;
+   }
+
+   /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+   int Seeed::getNIndependentConss(Seeedpool*    seeedpool)
+   {
+      return (int) getIndependentConss(seeedpool).size();
+   }
+
 
   /** returns whether the var is a linking var */
   bool Seeed::isVarLinkingvar(int var){
@@ -1459,6 +1633,141 @@ bool Seeed::checkVarsAndConssConsistency(Seeedpool* seeedpool)
       }
    }
    return true;
+}
+
+/** displays the relevant information of the seeed */
+SCIP_RETCODE Seeed::displaySeeed()
+{
+   std::cout << "ID: " << id << std::endl;
+   std::cout << "number of blocks: " << nBlocks << std::endl;
+
+   for(int b = 0; b < nBlocks; ++b)
+   {
+      std::cout  << getNConssForBlock(b) << " constraint(s) in block " << b << std::endl;
+      std::cout << getNVarsForBlock(b) << " variable(s) in block " << b << std::endl;
+      std::cout << getNStairlinkingvars(b) << " stairlinkingvariable(s) in block " << b << std::endl;
+   }
+
+   std::cout << getNLinkingvars() << " linkingvariable(s)" << std::endl;
+   std::cout << getNMasterconss() << " mastercontraint(s)" << std::endl;
+   std::cout << getNMastervars() << " mastervariable(s)" << std::endl;
+   std::cout << getNOpenconss() << " open constraint(s)" << std::endl;
+   std::cout << getNOpenvars() << " open variable(s)" << std::endl;
+   std::cout << getNDetectors() << " detector(s)";
+   if(getNDetectors() != 0)
+   {
+      std::cout << ": " << detectorChain[0];
+      for( int d = 1; d < getNDetectors(); ++d )
+         std::cout << ", " << detectorChain[d];
+   }
+   std::cout << "\n";
+
+   return SCIP_OKAY;
+}
+
+/** displays the assignments of the conss */
+SCIP_RETCODE Seeed::displayConss()
+{
+   for(int b = 0; b < nBlocks; ++b)
+   {
+      if(getNConssForBlock(b) != 0)
+      {
+         std::cout << "constraint(s) in block " << b << ": ";
+         std::cout << getConssForBlock(b)[0];
+         for( int c = 1; c < getNConssForBlock(b); ++c )
+            std::cout << ", " << getConssForBlock(b)[c];
+         std::cout << "\n";
+      }
+      else
+         std::cout << "0 constraints in block " << b << std::endl;
+   }
+
+   if(getNMasterconss() != 0)
+   {
+      std::cout << "masterconstraint(s): ";
+      std::cout << masterConss[0];
+      for( int c = 1; c < getNMasterconss(); ++c )
+         std::cout << ", " << masterConss[c];
+      std::cout << "\n";
+   }
+   else
+      std::cout << "0 masterconstraints" << std::endl;
+
+   if(getNOpenconss() != 0)
+   {
+      std::cout << "open constraint(s): ";
+      std::cout << openConss[0];
+      for( int c = 1; c < getNOpenconss(); ++c )
+         std::cout << ", " << openConss[c];
+      std::cout << "\n";
+      }
+   else
+      std::cout << "0 open constraints" << std::endl;
+
+   return SCIP_OKAY;
+}
+
+/** displays the assignments of the vars */
+SCIP_RETCODE Seeed::displayVars()
+{
+   for(int b = 0; b < nBlocks; ++b)
+   {
+      if(getNVarsForBlock(b) != 0)
+      {
+         std::cout << "variable(s) in block " << b << ": ";
+         std::cout << getVarsForBlock(b)[0];
+         for( int c = 1; c < getNVarsForBlock(b); ++c )
+            std::cout << ", " << getVarsForBlock(b)[c];
+         std::cout << "\n";
+      }
+      else
+         std::cout << "0 variables in block " << b << std::endl;
+      if(getNStairlinkingvars(b) != 0)
+      {
+         std::cout << "stairlinkingvariable(s) in block " << b << ": ";
+         std::cout << getStairlinkingvars(b)[0];
+         for( int c = 1; c < getNStairlinkingvars(b); ++c )
+            std::cout << ", " << getStairlinkingvars(b)[c];
+         std::cout << "\n";
+      }
+      else
+         std::cout << "0 stairlinkingvariables in block " << b << std::endl;
+   }
+
+   if(getNLinkingvars() != 0)
+   {
+      std::cout << "linkingvariable(s): ";
+      std::cout << linkingVars[0];
+      for( int c = 1; c < getNLinkingvars(); ++c )
+         std::cout << ", " << linkingVars[c];
+      std::cout << "\n";
+   }
+   else
+      std::cout << "0 linkingvariables" << std::endl;
+
+   if(getNMastervars() != 0)
+   {
+      std::cout << "mastervariable(s): ";
+      std::cout << masterVars[0];
+      for( int c = 1; c < getNMastervars(); ++c )
+         std::cout << ", " << masterVars[c];
+      std::cout << "\n";
+   }
+   else
+      std::cout << "0 mastervariables" << std::endl;
+
+   if(getNOpenvars() != 0)
+   {
+      std::cout << "open variable(s): ";
+      std::cout << openVars[0];
+      for( int c = 1; c < getNOpenvars(); ++c )
+         std::cout << ", " << openVars[c];
+      std::cout << "\n";
+      }
+   else
+      std::cout << "0 open variables" << std::endl;
+
+   return SCIP_OKAY;
 }
 
 } /* namespace gcg */

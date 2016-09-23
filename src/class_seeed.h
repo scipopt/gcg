@@ -281,6 +281,39 @@ public:
          Seeedpool* seeedpool
    );
 
+   /** assigns openVars to stairlinking if they can be found in two consecutive  blocks*/
+   SCIP_RETCODE considerImplicitsStairlinkingvars(
+         Seeedpool*       seeedpool
+   );
+
+   /** assigns the open conss which have common open vars with blockconss and no stairlinkingvars and assigns the vars, returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+   int* considerImplicitsNoLinking(
+         Seeedpool*       seeedpool,
+         int*             numberOfConssToAssign /** stores the number of conss without stairlinkingvars (conss which can be assigned independently of the other assignments */
+   );
+
+   /** assigns the open conss which have common open vars with blockconss and no stairlinkingvars and assigns the vars, returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+   SCIP_RETCODE considerImplicitsNoLinking(
+         Seeedpool*       seeedpool
+   );
+
+  /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+   int getIndependentCons(
+         Seeedpool*       seeedpool,
+         int              index,
+         int*             numberOfindependentConss /** stores the number of conss without stairlinkingvars (conss which can be assigned independently of the other assignments */
+   );
+
+   /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+    std::vector<int> getIndependentConss(
+          Seeedpool*       seeedpool
+    );
+
+    /** returns the number of open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+    int getNIndependentConss(
+           Seeedpool*    seeedpool
+    );
+
    /** returns whether the var is a linking var */
    bool isVarLinkingvar(
          int var
@@ -375,6 +408,18 @@ public:
 
    bool checkVarsAndConssConsistency(
          Seeedpool* seeedpool
+   );
+
+   /** displays the relevant information of the seeed */
+   SCIP_RETCODE displaySeeed(
+   );
+
+   /** displays the assignments of the conss */
+   SCIP_RETCODE displayConss(
+   );
+
+   /** displays the assignments of the vars */
+   SCIP_RETCODE displayVars(
    );
 
 

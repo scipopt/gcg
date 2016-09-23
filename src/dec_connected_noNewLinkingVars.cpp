@@ -205,70 +205,18 @@ SCIP_RETCODE bfs(
    return SCIP_OKAY;
 }
 
-/** assigns openVars to Stairlinking if they can be found in two consecutive  blocks*/
-static
-SCIP_RETCODE considerImplicitsWithStairlinkingvars(
-   gcg::Seeed*           seeed,
-   gcg::Seeedpool*       seeedpool
-   )
-{
-   std::vector<int> blocksOfOpenvar;
-   std::vector<int> assignedOpenvars;
-   bool foundInBlock;
-   int var;
-   int cons;
-
-   seeed->considerImplicits(seeedpool);
-
-   /** set vars to linking, if they can be found in more than one block */
-   for(int i = 0; i < seeed->getNOpenvars(); ++i)
-   {
-      blocksOfOpenvar.clear();
-      foundInBlock = false;
-      var = seeed->getOpenvars()[i];
-      for(int b = 0; b < seeed->getNBlocks(); ++b)
-      {
-         for(int c = 0; c < seeed->getNConssForBlock(b) && !foundInBlock; ++c)
-         {
-            cons = seeed->getConssForBlock(b)[c];
-            for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !foundInBlock; ++v)
-            {
-               if(seeedpool->getVarsForCons(cons)[v] == var)
-               {
-                  blocksOfOpenvar.push_back(b);
-               }
-            }
-         }
-      }
-      if(blocksOfOpenvar.size() == 2 && blocksOfOpenvar[0] + 1 == blocksOfOpenvar[1])
-      {
-         seeed->setVarToStairlinking(var, blocksOfOpenvar[0], blocksOfOpenvar[1]);
-         assignedOpenvars.push_back(var);
-      }
-   }
-
-   for(size_t i = 0; i < assignedOpenvars.size(); ++i)
-   {
-      seeed->deleteOpenvar(assignedOpenvars[i]);
-   }
-   return SCIP_OKAY;
-}
 
 static
 DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
 {
    *result = SCIP_DIDNOTFIND;
-   int cons;
-   int var;
-   bool assigned;
-   std::vector<int> newOpenConss;
+   int* conssToAssign;
    std::vector<int> conssForBfs;
-   std::vector<int> assignedConssForBfs;
-   std::vector<int>::iterator it;
    std::vector<std::vector<int>> visitedConss = std::vector<std::vector<int>>(0); /** vector of vector with connected constraints */
    std::vector<int> emptyVector = std::vector<int>(0);
    int newBlocks = 0;
    int block;
+   int nConssForBfs;
 
    seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    gcg::Seeed* seeed;
@@ -281,73 +229,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
       seeed->setOpenVarsAndConssCalculated(true);
    }
 
-   considerImplicitsWithStairlinkingvars(seeed, seeedPropagationData->seeedpool);
-   assert(seeedPropagationData->seeedToPropagate->checkConsistency());
-
-   /** conss with stairlinkingvars are still openconss */
-   for(int i = 0; i < seeed->getNOpenconss(); ++i)
-   {
-      assigned = false;
-      cons = seeed->getOpenconss()[i];
-      for(int v = 0; v < seeedPropagationData->seeedpool->getNVarsForCons(cons) && !assigned; ++v)
-      {
-         var = seeedPropagationData->seeedpool->getVarsForCons(cons)[v];
-         for(int b = 0; b < seeed->getNBlocks() && !assigned; ++b)
-         {
-            if(seeed->isVarStairlinkingvarOfBlock(var, b))
-            {
-               newOpenConss.push_back(cons);
-               assigned = true;
-            }
-         }
-      }
-   }
-
-   for(int i = 0; i < seeed->getNOpenconss(); ++i)
-   {
-      cons = seeed->getOpenconss()[i];
-      if(find(newOpenConss.begin(), newOpenConss.end(), cons) != newOpenConss.end())
-         conssForBfs.push_back(cons);
-   }
-
-   /** assign the open conss which have common open vars with blockconss and assign the var */
-   for(size_t i = 0; i < conssForBfs.size(); ++i)
-   {
-      assigned = false;
-      cons = conssForBfs[i];
-      for(int j = 0; j < seeedPropagationData->seeedpool->getNVarsForCons(cons) && !assigned; ++j)
-      {
-         var = seeedPropagationData->seeedpool->getVarsForCons(cons)[j];
-         if(!seeed->isVarOpenvar(var))
-            continue;
-         for(int b = 0; b < seeed->getNBlocks() && !assigned; ++b)
-         {
-            for(int c = 0; c < seeed->getNConssForBlock(b) && !assigned; ++c)
-            {
-               for(int v = 0; v < seeedPropagationData->seeedpool->getNVarsForCons(seeed->getConssForBlock(b)[c]) && !assigned; ++v)
-               {
-                  if(var == seeedPropagationData->seeedpool->getVarsForCons(seeed->getConssForBlock(b)[c])[v])
-                  {
-                     seeed->setConsToBlock(cons, b);
-                     seeed->deleteOpencons(cons);
-                     seeed->setVarToBlock(var, b);
-                     seeed->deleteOpenvar(var);
-                     considerImplicitsWithStairlinkingvars(seeed, seeedPropagationData->seeedpool);
-                     assignedConssForBfs.push_back(cons);
-                     assigned = true;
-                  }
-               }
-            }
-         }
-      }
-   }
-
-
-   for(size_t i = 0; i < assignedConssForBfs.size(); ++i)
-   {
-      it = find(conssForBfs.begin(), conssForBfs.end(), assignedConssForBfs[i]);
-      conssForBfs.erase(it);
-   }
+   conssForBfs = seeed->getIndependentConss(seeedPropagationData->seeedpool);
 
    while(!conssForBfs.empty())
    {
@@ -374,9 +256,10 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
       }
 
       seeed->considerImplicits(seeedPropagationData->seeedpool);
+      seeedPropagationData->nNewSeeeds = 1;
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
       seeedPropagationData->newSeeeds[0] = seeed;
       seeed->checkConsistency();
-      seeedPropagationData->nNewSeeeds = 1;
    }
 
    *result = SCIP_SUCCESS;

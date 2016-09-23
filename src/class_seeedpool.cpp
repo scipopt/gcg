@@ -182,7 +182,10 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
       }
 
       if(!noDuplicate)
+      {
+         std::cout << "seeed " << compseeed->getID() << " is a duplicate of seeed " << seeeds[i]->getID() << std::endl;
          return FALSE;
+      }
    }
    return TRUE;
 }
@@ -347,7 +350,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
  /** finds decompositions  */
   /** access coefficient matrlix constraint-wise */
- void    Seeedpool::findDecompostions(
+ void    Seeedpool::findDecompositions(
  ){
 
          /** 1) read parameter, as there are: maxrounds
@@ -400,9 +403,20 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                                  /** new seeeds are created by the current detector */
                                  SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
-                                 std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " started to propagate seeed " << s << " in round " << round << std::endl;
+                                 std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round+1 << std::endl;
                                  SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
-                                 std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found " << seeedPropData->nNewSeeeds << "  new seeeds " << std::endl;
+
+                                 if(seeedPropData->nNewSeeeds != 0)
+                                 {
+                                    std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found " << seeedPropData->nNewSeeeds << " new seeed(s): ";
+                                    std::cout << seeedPropData->newSeeeds[0]->getID();
+                                    for( int j = 1; j < seeedPropData->nNewSeeeds; ++j )
+                                       std::cout << ", " << seeedPropData->newSeeeds[j]->getID();
+                                    std::cout << "\n";
+                                 }
+                                 else
+                                    std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds";
+
                                  SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
 
 
@@ -417,18 +431,17 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                             seeedPropData->newSeeeds[seeed]->calcOpenvars();
                                             if(seeedPropData->newSeeeds[seeed]->getNOpenconss() == 0 && seeedPropData->newSeeeds[seeed]->getNOpenvars() == 0)
                                             {
-                                                std::cout << "addded to finished seeeds!" << std::endl;
+                                               std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to finished seeeds!" << std::endl;
                                                finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
                                             }
                                             else
                                             {
-                                                std::cout << "addded to next round seeeds!" << std::endl;
+                                                std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to next round seeeds!" << std::endl;
                                                nextSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
                                             }
                                          }
                                          else
                                          {
-                                                std::cout << "seeed is a duplicate of an old one " << std::endl;
                                             delete seeedPropData->newSeeeds[seeed];
                                          }
                                  }
@@ -440,7 +453,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 
 
-                   if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, true))
+                   if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false))
                    {
                       finishedSeeeds.push_back(seeedPtr);
                    }
@@ -478,7 +491,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->linkingvars, nlinkingvars) ); /** free in decomp.c:465 */
             for( int j = 0; j < seeed->getNLinkingvars(); ++j )
             {
-               decompositions[i]->linkingvars[j] = SCIPvarGetProbvar( getVarForIndex(seeed->getLinkingvars()[j]));
+               decompositions[i]->linkingvars[j] = SCIPvarGetProbvar( getVarForIndex(seeed->getLinkingvars()[j]) );
             }
             for( int j = 0; j < seeed->getNMastervars(); ++j )
             {
