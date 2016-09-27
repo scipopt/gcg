@@ -101,6 +101,7 @@ namespace gcg {
 	  int firstFound;
 	  std::vector<int>::const_iterator varIter = linkingVars.begin();
 	  std::vector<int>::const_iterator varIterEnd = linkingVars.end();
+	  int value;
 
 	  for(; varIter != varIterEnd; ++varIter)
 	  {
@@ -249,6 +250,7 @@ namespace gcg {
         if( openConssBool[v] == true && isConsOpencons(v) == false )
         {
            std::cout << "Warning! Constraint with index " << v << " is not assigned and not an open cons." << std::endl;
+           return false;
         }
      }
 
@@ -258,6 +260,75 @@ namespace gcg {
         if( openVarsBool[openConss[i]] == false )
         {
            std::cout << "Warning! Constraint with index " << openConss[i] << " is an open cons but assigned." << std::endl;
+           return false;
+        }
+     }
+
+     /** check if the seeed is sorted */
+     for( int b = 0; b < nBlocks; ++b )
+     {
+        value = -1;
+        for( int v = 0; v < getNVarsForBlock(b); ++v )
+        {
+           if(!(value < getVarsForBlock(b)[v]) )
+           {
+              std::cout << "Warning! Variables of block " << b << " are not sorted." << std::endl;
+              return false;
+           }
+           value = getVarsForBlock(b)[v];
+        }
+     }
+     for( int b = 0; b < nBlocks; ++b )
+     {
+        value = -1;
+        for( int v = 0; v < getNStairlinkingvars(b); ++v )
+        {
+           if(!(value < getStairlinkingvars(b)[v]) )
+           {
+              std::cout << "Warning! Stairlinkingvariables of block " << b << " are not sorted." << std::endl;
+              return false;
+           }
+           value = getStairlinkingvars(b)[v];
+        }
+     }
+     value = -1;
+     for( int v = 0; v < getNLinkingvars(); ++v )
+     {
+        if(!(value < getLinkingvars()[v]))
+        {
+           std::cout << "Warning! Linkingvariables are not sorted." << std::endl;
+           return false;
+        }
+     }
+     value = -1;
+     for( int v = 0; v < getNMastervars(); ++v )
+     {
+        if(!(value < getMastervars()[v]))
+        {
+           std::cout << "Warning! Mastervariables are not sorted." << std::endl;
+           return false;
+        }
+     }
+     for( int b = 0; b < nBlocks; ++b )
+     {
+        value = -1;
+        for( int v = 0; v < getNConssForBlock(b); ++v )
+        {
+           if(!(value < getConssForBlock(b)[v]) )
+           {
+              std::cout << "Warning! Constraints of block " << b << " are not sorted." << std::endl;
+              return false;
+           }
+           value = getConssForBlock(b)[v];
+        }
+     }
+     value = -1;
+     for( int v = 0; v < getNMasterconss(); ++v )
+     {
+        if(!(value < getMasterconss()[v]))
+        {
+           std::cout << "Warning! Masterconstraints are not sorted." << std::endl;
+           return false;
         }
      }
 
@@ -368,7 +439,7 @@ namespace gcg {
     std::vector<int> foundMasterVarIndices;
     
     // sort Master constraints for binary search
-    sortMasterconss();
+    sort();
 
     for (i = 0; i < getNLinkingvars(); ++i)
     {
@@ -414,10 +485,7 @@ namespace gcg {
 
     std::vector<int> foundMasterVarIndices;
 
-    for(i = 0; i < getNBlocks(); ++i)
-    {
-      sortConssForBlock(i);
-    }
+    sort();
 
     for(i = 0; i < getNLinkingvars(); ++i)
     {
@@ -484,6 +552,7 @@ namespace gcg {
   ){
 	  assert(propagatedByDetector.size() > detectorID );
 	  propagatedByDetector[detectorID]  = true;
+	  detectorChain.push_back(detectorID);
 
 	  return SCIP_OKAY;
   }
@@ -511,13 +580,6 @@ namespace gcg {
   	  return (int) masterConss.size();
     }
 
-  /** sorts master conss */
-  void Seeed::sortMasterconss(
-    ){
-     std::sort(masterConss.begin(), masterConss.end());
-     return;
-    }
-
   /** returns vector containing master vars (every constraint containing a master var is in master)*/
   const int* Seeed::getMastervars(
   ){
@@ -528,13 +590,6 @@ namespace gcg {
   int Seeed::getNMastervars(
   ){
 	  return(int) masterVars.size();
-  }
-
-  /** sorts master vars */
-  void Seeed::sortMastervars(
-  ){
-     std::sort(masterVars.begin(), masterVars.end());
-     return;
   }
 
   /** returns number of blocks */
@@ -557,14 +612,6 @@ namespace gcg {
 	  return (int)conssForBlocks[block].size();
   }
 
-  /** sorts cons of a certain block */
-  void Seeed::sortConssForBlock(
-        int block
-  ){
-     std::sort(conssForBlocks[block].begin(), conssForBlocks[block].end());
-     return;
-  }
-
   /** returns vector containing vars of a certain block */
   const int* Seeed::getVarsForBlock(
 		   int block
@@ -579,14 +626,6 @@ namespace gcg {
   	  return (int)varsForBlocks[block].size();
     }
 
-   /** sorts cons of a certain block */
-   void Seeed::sortVarsForBlock(
-         int block
-   ){
-      std::sort(varsForBlocks[block].begin(), varsForBlocks[block].end());
-      return;
-   }
-
   /** returns vector containing linking vars */
   const int* Seeed::getLinkingvars(
   ){
@@ -597,13 +636,6 @@ namespace gcg {
     int Seeed::getNLinkingvars(
     ){
   	  return (int)linkingVars.size();
-    }
-
-    /** sorts linking vars */
-    void Seeed::sortLinkingvars(
-    ){
-       std::sort(linkingVars.begin(), linkingVars.end());
-       return;
     }
 
   /** returns vector containing stairlinking vars */
@@ -619,14 +651,6 @@ namespace gcg {
     ){
   	  return (int) stairlinkingVars[block].size();
     }
-
-  /** sorts stairlinking vars */
-  void Seeed::sortStairlinkingvars(
-     int block
-  ){
-     std::sort(stairlinkingVars[block].begin(), stairlinkingVars[block].end());
-     return;
-  }
 
   /** returns vector containing variables not assigned yet*/
   const int* Seeed::getOpenvars(
@@ -753,6 +777,20 @@ namespace gcg {
 
 
 	  return;
+  }
+
+  /** sorts the vars and conss according their numbers */
+  void Seeed::sort()
+  {
+     for(int b = 0; b < nBlocks; ++b)
+     {
+        std::sort(varsForBlocks[b].begin(), varsForBlocks[b].end());
+        std::sort(stairlinkingVars[b].begin(), stairlinkingVars[b].end());
+        std::sort(conssForBlocks[b].begin(), conssForBlocks[b].end());
+     }
+     std::sort(linkingVars.begin(), linkingVars.end());
+     std::sort(masterVars.begin(), masterVars.end());
+     std::sort(masterConss.begin(), masterConss.end());
   }
 
   /** returns whether this seeed was propagated by certain detector */
@@ -996,6 +1034,7 @@ namespace gcg {
         assert(false);
      }
 
+     sort();
      assert(checkConsistency());
 
      return SCIP_OKAY;
@@ -1254,6 +1293,39 @@ namespace gcg {
       }
 
       return independentConss;
+   }
+
+   /** fills the array with open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+   SCIP_RETCODE Seeed::getIndependentConss(
+      Seeedpool*       seeedpool,
+      int              arrayForIndependentConss[]
+   )
+   {
+      std::vector<int> independentConss = std::vector<int>(0);
+      bool independent;
+      int cons;
+      int var;
+
+      considerImplicitsNoLinking(seeedpool);
+
+      for(int c = 0; c < getNOpenconss(); ++c)
+      {
+         cons = openConss[c];
+         independent = true;
+         for( int v = 0; v < seeedpool->getNVarsForCons(cons) && independent; ++v )
+         {
+            var = seeedpool->getVarsForCons(cons)[v];
+            for(int b = 0; b < nBlocks; ++b)
+            {
+               assert(!isVarBlockvarOfBlock(var, b));
+               if(isVarStairlinkingvarOfBlock(var, b))
+                  independent = false;
+            }
+         }
+         if(independent)
+            arrayForIndependentConss[c] = cons;
+      }
+      return SCIP_OKAY;
    }
 
    /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
@@ -1539,6 +1611,7 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
          setVarToMaster(varnum);
       }
    }
+   sort();
    openVars = std::vector<int>(0);
    openConss = std::vector<int>(0);
    openVarsAndConssCalculated = true;
@@ -1584,6 +1657,8 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock( SCIP_HASHMAP* constoblock, int
    }
 
    nBlocks = 0;
+   sort();
+   assert(checkConsistency());
    return SCIP_OKAY;
 }
 
@@ -1769,5 +1844,7 @@ SCIP_RETCODE Seeed::displayVars()
 
    return SCIP_OKAY;
 }
+
+
 
 } /* namespace gcg */

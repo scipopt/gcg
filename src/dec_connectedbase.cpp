@@ -275,6 +275,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
       seeed = new gcg::Seeed(scip, seeedPropagationData->seeedpool->getNewIdForSeeed(), seeedPropagationData->seeedpool->getNDetectors(), seeedPropagationData->seeedpool->getNConss(), seeedPropagationData->seeedpool->getNVars());
       seeed->filloutSeeedFromConstoblock(constoblock, seeedPropagationData->seeedToPropagate->getNBlocks() + newBlocks, seeedPropagationData->seeedpool);
       SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
+      seeed->sort();
       seeedPropagationData->newSeeeds[0] = seeed;
       seeed->checkConsistency();
       seeedPropagationData->nNewSeeeds = 1;

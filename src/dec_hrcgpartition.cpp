@@ -492,6 +492,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    {
       if((newSeeeds)[j] != NULL)
       {
+         newSeeeds[j]->sort();
          seeedPropagationData->newSeeeds[seeed] = newSeeeds[j];
          seeedPropagationData->newSeeeds[seeed]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
          ++seeed;

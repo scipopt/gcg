@@ -162,7 +162,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
          seeed->setConsToMaster(seeed->getOpenconss()[i]);
          seeed->deleteOpencons(seeed->getOpenconss()[i]);
       }
-      else if(GCGconsGetType(cons) != logicor || GCGconsGetType(cons) != setcovering || GCGconsGetType(cons) != setpartitioning )
+      else if(GCGconsGetType(cons) != logicor && GCGconsGetType(cons) != setcovering && GCGconsGetType(cons) != setpartitioning )
       {
          nvars = GCGconsGetNVars(scip, cons);
          vars = NULL;
@@ -206,6 +206,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
    }
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
+   seeed->sort();
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
    *result = SCIP_SUCCESS;

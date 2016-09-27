@@ -360,6 +360,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorConnectedbase(scip) );
    SCIP_CALL( SCIPincludeDetectorConnected_noNewLinkingVars(scip) );
    SCIP_CALL( SCIPincludeDetectorGeneralmastersetpack(scip) );
+   SCIP_CALL( SCIPincludeDetectorGeneralmastersetpart(scip) );
+   SCIP_CALL( SCIPincludeDetectorGeneralmastersetcover(scip) );
 
 
 

@@ -115,24 +115,8 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
       /** sorts the the master conss, master vars, conss in blocks, vars in blocks, linking vars and stairlinking vars */
       if( sort && !noDuplicate)
       {
-         compseeed->sortMasterconss();
-         seeeds[i]->sortMasterconss();
-         compseeed->sortMastervars();
-         seeeds[i]->sortMastervars();
-         for( int j = 0; j < compseeed->getNBlocks(); ++j)
-         {
-            compseeed->sortConssForBlock(j);
-            seeeds[i]->sortConssForBlock(j);
-            compseeed->sortVarsForBlock(j);
-            seeeds[i]->sortVarsForBlock(j);
-         }
-         compseeed->sortLinkingvars();
-         seeeds[i]->sortLinkingvars();
-         for( int b = 0; b < compseeed->getNBlocks(); ++b)
-         {
-            compseeed->sortStairlinkingvars(b);
-            seeeds[i]->sortStairlinkingvars(b);
-         }
+         compseeed->sort();
+         seeeds[i]->sort();
       }
 
       /** compares the master cons */
@@ -329,6 +313,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                          std::cout << "("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
 
                  }
+                 std::cout << "\n" << std::endl;
                  SCIPfreeBufferArray(scip, &currVars) ;
          }
 
@@ -376,6 +361,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          bool duplicate;
          std::vector<SeeedPtr> delSeeeds = std::vector<SeeedPtr>(0);
 
+         for(size_t s = 0; s < currSeeeds.size(); ++s)
+         {
+            currSeeeds[s]->sort();
+         }
 
          for(int round = 0; round < maxRounds; ++round)
          {
@@ -385,6 +374,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  {
                          SeeedPtr seeedPtr;
                          seeedPtr= currSeeeds[s];
+                         if(displaySeeeds)
+                         {
+                            std::cout << "Start to propagate seeed " << seeedPtr->getID() << " in round " << round << ":" << std::endl;
+                            seeedPtr->displaySeeed();
+                         }
 
                          /** the current seeed is handled by all detectors */
                          for(int d = 0; d < nDetectors; ++d)
@@ -414,6 +408,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                     for( int j = 1; j < seeedPropData->nNewSeeeds; ++j )
                                        std::cout << ", " << seeedPropData->newSeeeds[j]->getID();
                                     std::cout << "\n";
+
+                                    if(displaySeeeds)
+                                    {
+                                       for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
+                                          seeedPropData->newSeeeds[j]->displaySeeed();
+                                    }
                                  }
                                  else
                                     std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds";
@@ -462,6 +462,16 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                  currSeeeds = nextSeeeds;
 
+         }
+
+         std::cout << (int) finishedSeeeds.size() << " finished seeeds are found." << std::endl;
+         if(displaySeeeds)
+         {
+            for(size_t i = 0; i < finishedSeeeds.size(); ++i)
+            {
+               std::cout << i << ". finished seeed: " << std::endl;
+               finishedSeeeds[i]->displaySeeed();
+            }
          }
 
 

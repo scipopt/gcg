@@ -164,20 +164,12 @@ public:
    int getNMasterconss(
    );
 
-   /** sorts master conss */
-   void sortMasterconss(
-   );
-
    /** returns vector containing master vars (every constraint containing a master var is in master )*/
    const int* getMastervars(
    );
 
    /** returns size of array containing master vars */
    int getNMastervars(
-   );
-
-   /** sorts master vars */
-   void sortMastervars(
    );
 
    /** returns number of blocks */
@@ -189,36 +181,17 @@ public:
 		   int block
    );
 
-   /** sorts cons of a certain block */
-   void sortConssForBlock(
-         int block
-   );
-
    /** returns vector containing vars of a certain block */
    const int* getVarsForBlock(
 		   int block
-   );
-
-   /** sorts vars of a certain block */
-   void sortVarsForBlock(
-         int block
    );
 
    /** returns vector containing linking vars */
    const int* getLinkingvars(
    );
 
-   /** sorts linking vars */
-   void sortLinkingvars(
-   );
-
    /** returns vector containing stairlinking vars */
    const int* getStairlinkingvars(
-         int block
-   );
-
-   /** sorts stairlinking vars */
-   void sortStairlinkingvars(
          int block
    );
 
@@ -253,6 +226,9 @@ public:
 
    void  calcOpenvars();
 
+   /** sorts the vars and conss according their numbers */
+   void sort(
+   );
 
    /** returns size of vector containing variables not assigned yet */
    int getNOpenvars(
@@ -297,17 +273,17 @@ public:
          Seeedpool*       seeedpool
    );
 
-  /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-   int getIndependentCons(
-         Seeedpool*       seeedpool,
-         int              index,
-         int*             numberOfindependentConss /** stores the number of conss without stairlinkingvars (conss which can be assigned independently of the other assignments */
-   );
-
-   /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+   /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed), only for c++ */
     std::vector<int> getIndependentConss(
           Seeedpool*       seeedpool
     );
+
+    /** fills the array with open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+    SCIP_RETCODE getIndependentConss(
+       Seeedpool*       seeedpool,
+       int              arrayForIndependentConss[] /** array with nIndependentConss positions */
+    );
+
 
     /** returns the number of open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
     int getNIndependentConss(
