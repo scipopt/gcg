@@ -29,14 +29,11 @@
  * @ingroup DETECTORS
  * @brief  detector for classical and blockdiagonal problems
  * @author Martin Bergner
- * @todo allow decompositions with only one pricing problem by just removing generalized covering and
- *       partitioning constraints
- * The detector will detect block diagonal matrix structures as wells as generalized
- * set partitioning or covering master problems.
+ *
+ * The detector will detect a structure depending on the name of constraints
  *
  * It works as follows:
- * - give regular expression
- * - all constraints whose names match the regular expression go into the master
+ * - given a regular expression, all constraints whose names match the regular expression will be master constraints
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -53,13 +50,13 @@
 #include "pub_decomp.h"
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "consname"         /**< name of detector */
+#define DEC_DETECTORNAME         "consname"     /**< name of detector */
 #define DEC_DESC                 "Build master constraints by name" /**< description of detector*/
 #define DEC_PRIORITY             0              /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'N'            /**< display character of detector */
 
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
-#define DEFAULT_REGEX            "(capacity)(.*)"         /**< default regular expression that is used to decide mastercons */
+#define DEFAULT_REGEX            "(consname)(.*)" /**< default regular expression that is used to decide mastercons */
 #define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
 
 #define DEFAULT_SETPPCINMASTER   TRUE           /**< should the extended structure be detected */
