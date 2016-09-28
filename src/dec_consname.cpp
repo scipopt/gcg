@@ -27,13 +27,16 @@
 
 /**@file   dec_consname.c
  * @ingroup DETECTORS
- * @brief  detector for classical and blockdiagonal problems
- * @author Martin Bergner
+ * @brief  structure detection by constraint names (via regular expressions)
+ * @author Jonas Witt
  *
  * The detector will detect a structure depending on the name of constraints
  *
  * It works as follows:
- * - given a regular expression, all constraints whose names match the regular expression will be master constraints
+ * - given a regular expression,
+ * - all constraints whose names match the regular expression will be master constraints,
+ * - the pricing problems correspond to connected components in the remaining graph.
+ *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -55,7 +58,7 @@
 #define DEC_PRIORITY             0              /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'N'            /**< display character of detector */
 
-#define DEC_ENABLED              TRUE           /**< should the detection be enabled */
+#define DEC_ENABLED              FALSE          /**< should the detection be enabled */
 #define DEFAULT_REGEX            "(consname)(.*)" /**< default regular expression that is used to decide mastercons */
 #define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
 
