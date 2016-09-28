@@ -32,8 +32,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef DEC_CONSNAME_H__
-#define DEC_CONSNAME_H__
+#ifndef GCG_DEC_CONSNAME_H__
+#define GCG_DEC_CONSNAME_H__
 
 #include "scip/scip.h"
 
@@ -50,4 +50,4 @@ SCIP_RETCODE SCIPincludeDetectorConsname(
 #ifdef __cplusplus
 }
 #endif
-#endif /* DEC_CONSNAME_H__ */
+#endif /* GCG_DEC_CONSNAME_H__ */

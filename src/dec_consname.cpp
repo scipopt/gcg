@@ -62,7 +62,6 @@
 #define DEFAULT_REGEX            "(consname)(.*)" /**< default regular expression that is used to decide mastercons */
 #define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
 
-#define DEFAULT_SETPPCINMASTER   TRUE           /**< should the extended structure be detected */
 
 /*
  * Data structures
@@ -72,8 +71,6 @@
 struct DEC_DetectorData
 {
    char* regex;                              /**< regular expression that is used to decide mastercons */
-   SCIP_Bool blockdiagonal;                  /**< flag to indicate whether the problem is block diagonal */
-   SCIP_Bool setppcinmaster;                 /**< flag to indicate whether setppc constraints should always be in the master */
 };
 
 
@@ -223,26 +220,6 @@ DEC_DECL_FREEDETECTOR(detectorFreeConsname)
    return SCIP_OKAY;
 }
 
-/** detection initialization function of detector (called before solving is about to begin) */
-static
-DEC_DECL_INITDETECTOR(detectorInitConsname)
-{  /*lint --e{715}*/
-
-   DEC_DETECTORDATA *detectordata;
-
-   assert(scip != NULL);
-   assert(detector != NULL);
-
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
-
-   detectordata->blockdiagonal = FALSE;
-
-   return SCIP_OKAY;
-}
-
 /** detection function of detector */
 static
 DEC_DECL_DETECTSTRUCTURE(detectorDetectConsname)
@@ -268,7 +245,6 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectConsname)
       }
 
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found with %d blocks.\n", DECdecompGetNBlocks((*decdecomps)[0]));
-      detectordata->blockdiagonal = DECdecompGetType((*decdecomps)[0]) == DEC_DECTYPE_DIAGONAL;
       *ndecdecomps = 1;
    }
    else
@@ -302,13 +278,10 @@ SCIP_RETCODE SCIPincludeDetectorConsname(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   detectordata->blockdiagonal = FALSE;
-
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
-      detectordata, detectorDetectConsname, detectorFreeConsname, detectorInitConsname, NULL) );
+      detectordata, detectorDetectConsname, detectorFreeConsname, NULL, NULL) );
 
    /* add consname constraint handler parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/consname/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );
    SCIP_CALL( SCIPaddStringParam(scip, "detectors/consname/regex", "All cons whose name match this regular expression will be mastercons", &detectordata->regex, FALSE, DEFAULT_REGEX, NULL, NULL) );
 
    return SCIP_OKAY;
