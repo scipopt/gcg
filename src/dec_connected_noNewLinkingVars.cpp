@@ -256,7 +256,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
       seeed->considerImplicits(seeedPropagationData->seeedpool);
       seeedPropagationData->nNewSeeeds = 1;
       SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-      seeed->sort();
       seeedPropagationData->newSeeeds[0] = seeed;
       seeed->checkConsistency();
    }

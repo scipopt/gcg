@@ -252,24 +252,28 @@ public:
          Seeedpool* seeedpool
    );
 
-   /** assigns the open cons which are implicit assigned */
+   /** assigns the open cons and open vars which are implicit assigned */
    SCIP_RETCODE considerImplicits(
          Seeedpool* seeedpool
    );
 
-   /** assigns openVars to stairlinking if they can be found in two consecutive  blocks*/
-   SCIP_RETCODE considerImplicitsStairlinkingvars(
+   /** assigns open conss if they includes blockvars, returns true if open conss are assigned */
+   bool assignHittingOpenconss(
+         Seeedpool* seeedpool
+   );
+
+   /** assigns open vars if they can be found in one block, returns true if open vars are assigned */
+   bool assignHittingOpenvars(
+         Seeedpool* seeedpool
+   );
+
+   /** assigns open vars to stairlinking if they can be found in two consecutive  blocks, returns true if stairlinkingvars are assigned */
+   bool assignCurrentStairlinking(
          Seeedpool*       seeedpool
    );
 
-   /** assigns the open conss which have common open vars with blockconss and no stairlinkingvars and assigns the vars, returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-   int* considerImplicitsNoLinking(
-         Seeedpool*       seeedpool,
-         int*             numberOfConssToAssign /** stores the number of conss without stairlinkingvars (conss which can be assigned independently of the other assignments */
-   );
-
-   /** assigns the open conss which have common open vars with blockconss and no stairlinkingvars and assigns the vars, returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-   SCIP_RETCODE considerImplicitsNoLinking(
+   /** assigns open conss and vars if they can be found in blocks */
+   SCIP_RETCODE assignAllDependent(
          Seeedpool*       seeedpool
    );
 
@@ -279,16 +283,16 @@ public:
     );
 
     /** fills the array with open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-    SCIP_RETCODE getIndependentConss(
+   SCIP_RETCODE getIndependentConss(
        Seeedpool*       seeedpool,
        int              arrayForIndependentConss[] /** array with nIndependentConss positions */
-    );
+   );
 
 
-    /** returns the number of open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-    int getNIndependentConss(
+   /** returns the number of open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+   int getNIndependentConss(
            Seeedpool*    seeedpool
-    );
+   );
 
    /** returns whether the var is a linking var */
    bool isVarLinkingvar(

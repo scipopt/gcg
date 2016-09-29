@@ -351,7 +351,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          int cindex = 0;
          int vindex = 0;
          int currblock;
-         bool displaySeeeds = false;
+         bool displaySeeeds = true;
 
          ndecompositions = 0;
          maxRounds = 2;
@@ -364,6 +364,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          for(size_t s = 0; s < currSeeeds.size(); ++s)
          {
             currSeeeds[s]->sort();
+            currSeeeds[s]->considerImplicits(this);
          }
 
          for(int round = 0; round < maxRounds; ++round)
@@ -400,6 +401,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
                                  std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round+1 << std::endl;
                                  SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
+
+                                 for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
+                                 {
+                                    seeedPropData->newSeeeds[j]->considerImplicits(this);
+                                    seeedPropData->newSeeeds[j]->sort();
+                                 }
 
                                  if(seeedPropData->nNewSeeeds != 0)
                                  {
@@ -785,17 +792,6 @@ const  int * Seeedpool::getVarsForCons(int cons){
     return nConss;
  }
 
-bool Seeedpool::isVarInCons(int var, int cons)
- {
-    for(int i = 0; i < getNVarsForCons(cons); ++i)
-    {
-       if(var == getVarsForCons(cons)[i])
-       {
-          return true;
-       }
-    }
-    return false;
- }
 
 
 

@@ -161,7 +161,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpack)
    }
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeed->sort();
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
    *result = SCIP_SUCCESS;
