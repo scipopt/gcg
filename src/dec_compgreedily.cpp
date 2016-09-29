@@ -144,7 +144,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;

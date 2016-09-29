@@ -150,8 +150,7 @@ template <class T>
 SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
                    std::vector<std::vector<int>>                                varsForConss,           /** stores for every constraint the indices of variables that are contained in the constraint */
                    std::vector<std::vector<int>>                                conssForVars,           /** stores for every variable the indices of constraints containing this variable */
-                   std::vector<int>                                                     openVars,           /**< vector of variable indices that are not assigned yet */
-                   std::vector<int>                                                     openConss,          /**< vector of constraint indices that are not assigned yet */
+                   Seeed*                                                       seeed,
                    std::vector<SCIP_CONS*>                                              consToScipCons,     /** stores the corresponding scip constraints pointer */
                    std::vector<SCIP_VAR*>                                               varToScipVar,           /** stores the corresponding scip variable pointer */
                    int                                                                  nconss_,            /**< number of constraints */
@@ -168,45 +167,37 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      assert(conssForVars.size() == nvars_);
      assert(nvars_ > 0);
      assert(nconss_ > 0);
-     this->nvars = openVars.size();
-     this->nconss = openConss.size();
-
-     std::vector<int>::const_iterator varIter = openVars.begin();
-     std::vector<int>::const_iterator varIterEnd = openVars.end();
-
-     std::vector<int>::const_iterator consIter = openConss.begin();
-     std::vector<int>::const_iterator consIterEnd = openConss.end();
-
-
+     this->nvars = seeed->getNOpenvars();
+     this->nconss = seeed->getNOpenconss();
 
 
      /** add node for every var */
-     for( i = 0 ; i < openVars.size(); ++i )
+     for( i = 0 ; i < seeed->getNOpenvars(); ++i )
      {
          TCLIQUE_WEIGHT weight;
 
          /* note that the first nvars nodes correspond to variables */
-         weight = this->weights.calculate(varToScipVar[openVars[i]] );
-         oldToNewVarIndex.insert({ openVars[i],i});
+         weight = this->weights.calculate(varToScipVar[seeed->getOpenvars()[i]] );
+         oldToNewVarIndex.insert({ seeed->getOpenvars()[i],i});
          this->graph.addNode(i, weight);
      }
 
 
      /** add node for every cons */
-     for(  j = 0 ; j < openConss.size(); ++j  )
+     for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
      {
         TCLIQUE_WEIGHT weight;
 
         /* note that the first nvars nodes correspond to variables (legacy implementation) */
-        weight = this->weights.calculate(consToScipCons[openConss[j] ] );
-        oldToNewVarIndex.insert({ openConss[j], j});
+        weight = this->weights.calculate(consToScipCons[seeed->getOpenconss()[j] ] );
+        oldToNewVarIndex.insert({ seeed->getOpenconss()[j], j});
         this->graph.addNode( this->nvars + j, weight);
      }
 
      /* go through all open constraints */
-     for( i = 0; i < openConss.size(); ++i )
+     for( i = 0; i < seeed->getNOpenconss(); ++i )
      {
-        int oldConsId = openConss[i];
+        int oldConsId = seeed->getOpenconss()[i];
 
         std::vector<int>::const_iterator curVarIter = varsForConss[oldConsId].begin();
         std::vector<int>::const_iterator curVarIterEnd = varsForConss[oldConsId].end();

@@ -138,12 +138,12 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
       {
          for( int k = 0; k < compseeed->getNConssForBlock(j) && !noDuplicate; ++k)
          {
-            if( compseeed->getConssForBlock(j)[k] != compseeed->getConssForBlock(j)[k] )
+            if( compseeed->getConssForBlock(j)[k] != seeeds[i]->getConssForBlock(j)[k] )
                noDuplicate = true;
          }
          for( int k = 0; k < compseeed->getNVarsForBlock(j) && !noDuplicate; ++k)
          {
-            if( compseeed->getVarsForBlock(j)[k] != compseeed->getVarsForBlock(j)[k] )
+            if( compseeed->getVarsForBlock(j)[k] != seeeds[i]->getVarsForBlock(j)[k] )
                noDuplicate = true;
          }
       }
@@ -351,7 +351,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          int cindex = 0;
          int vindex = 0;
          int currblock;
-         bool displaySeeeds = true;
+         bool displaySeeeds = false;
 
          ndecompositions = 0;
          maxRounds = 2;

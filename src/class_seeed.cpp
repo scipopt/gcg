@@ -1050,7 +1050,8 @@ namespace gcg {
      std::vector<int> blocksOfOpenvar;
      std::vector<int> assignedOpenvars;
      std::vector<int> assignedOpenconss;
-     bool foundInBlock;
+     bool found;
+     bool master;
 
      if(!openVarsAndConssCalculated)
      {
@@ -1063,13 +1064,20 @@ namespace gcg {
      for(size_t c = 0; c < openConss.size(); ++c)
      {
         blocksWithCommonVars.clear();
+        master = false;
         cons = openConss[c];
 
-        for(int b = 0; b < nBlocks; ++b)
+        for(int b = 0; b < nBlocks && !master; ++b)
         {
-           for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
+           for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !master; ++v)
            {
               var = seeedpool->getVarsForCons(cons)[v];
+              if(isVarMastervar(var))
+              {
+                 master = true;
+                 setConsToMaster(cons);
+                 assignedOpenconss.push_back(cons);
+              }
               if(isVarBlockvarOfBlock(var, b))
               {
                  blocksWithCommonVars.push_back(b);
@@ -1077,7 +1085,7 @@ namespace gcg {
            }
         }
 
-        if(blocksWithCommonVars.size() > 1)
+        if(blocksWithCommonVars.size() > 1 && !master)
         {
            setConsToMaster(cons);
            assignedOpenconss.push_back(cons);
@@ -1093,16 +1101,16 @@ namespace gcg {
         var = openVars[i];
         for(int b = 0; b < nBlocks; ++b)
         {
-           foundInBlock = false;
-           for(int c = 0; c < getNConssForBlock(b) && !foundInBlock; ++c)
+           found = false;
+           for(int c = 0; c < getNConssForBlock(b) && !found; ++c)
            {
               cons = conssForBlocks[b][c];
-              for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !foundInBlock; ++v)
+              for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !found; ++v)
               {
                  if(seeedpool->getVarsForCons(cons)[v] == var)
                  {
                     blocksOfOpenvar.push_back(b);
-                    foundInBlock=true;
+                    found=true;
                  }
               }
            }
