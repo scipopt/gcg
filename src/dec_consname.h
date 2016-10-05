@@ -26,8 +26,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_consname.h
- * @brief  consname compontent detector
- * @author Martin Bergner
+ * @brief  structure detection by constraint names (via regular expressions)
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -41,7 +41,7 @@
 extern "C" {
 #endif
 
-/** creates the handler for consname constraints and includes it in SCIP */
+/** creates the consname detector and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeDetectorConsname(
    SCIP*                 scip                /**< SCIP data structure */
