@@ -192,6 +192,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_colors.o \
 			gcggithash.o \
 			reader_gp.o \
+			reader_pdf.o \
 			scip_misc.o \
 			misc.o \
 			gcgheur.o \
