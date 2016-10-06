@@ -189,6 +189,39 @@ SCIP_RETCODE writeAllDecompositions(
    return SCIP_OKAY;
 }
 
+/** writes out all decompositions currently known to cons_decomp */
+static
+SCIP_RETCODE reportAllDecompositions(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_DIALOG*          dialog,             /**< dialog menu */
+   SCIP_DIALOGHDLR*      dialoghdlr,         /**< dialog handler */
+   SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
+   )
+{
+   char* dirname;
+   SCIP_Bool endoffile;
+
+   if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
+   {
+      SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory: ", &dirname, &endoffile) );
+   if( SCIPdialoghdlrIsBufferEmpty(dialoghdlr) )
+   {
+      dirname = NULL;
+   }
+   else
+      SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
+
+   /*@todo implement reader, then call SCIP_RETCODE retcode = DECwriteAllDecomps(scip, dirname, extension);*/
+
+   return SCIP_OKAY;
+}
+
 /** dialog execution method for the display statistics command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
 {  /*lint --e{715}*/
@@ -470,7 +503,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecReportAllDecompositions)
 
    if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
    {
-      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog) );
+      SCIP_CALL( reportAllDecompositions(scip, dialog, dialoghdlr, nextdialog) );
    }
    else
       SCIPdialogMessage(scip, NULL, "no problem available\n");
