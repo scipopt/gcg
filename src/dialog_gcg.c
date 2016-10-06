@@ -462,6 +462,24 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteAllDecompositions)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for reporting all known decompositions in a PDF file */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecReportAllDecompositions)
+{
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
+   {
+      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog) );
+   }
+   else
+      SCIPdialogMessage(scip, NULL, "no problem available\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
 /** dialog execution method for writing problem statistics */
 static
 SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteStatistics)
@@ -915,11 +933,22 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteAllDecompositions, NULL, NULL,
             "alldecompositions",
-            "write all known decompostions to file (format is given by file extension, e.g., {dec,blk,ref})",
+            "write all known decompositions to files (format is given by file extension, e.g., {dec,blk,ref})",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+   /* write reportdecompositions */
+      if( !SCIPdialogHasEntry(submenu, "reportdecompositions") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecReportAllDecompositions, NULL, NULL,
+               "reportdecompositions",
+               "write report of all known decompositions to PDF file ",
+               FALSE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      }
 
    /* write statistics */
    if( !SCIPdialogHasEntry(submenu, "statistics") )
