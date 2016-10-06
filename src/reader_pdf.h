@@ -55,7 +55,7 @@ SCIP_RETCODE SCIPincludeReaderPdf(
    );
 
 
-/* reads problem from file */
+/* the reader cannot read files, will return an error if used */
 extern
 SCIP_RETCODE GCGreadPdf(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -64,11 +64,12 @@ SCIP_RETCODE GCGreadPdf(
    );
 
 
-/** write a DEC file for a given decomposition */
+/** write a visualization PDF file for a given set of decomposition using intermediate LaTeX code */
 SCIP_RETCODE GCGwriteDecompsToPdf(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP**          decomps             /**< Decomposition array pointer */
+   DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
+   int*                  ndecomps             /**< Number of decompositions */
    );
 
 #ifdef __cplusplus

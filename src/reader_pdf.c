@@ -55,7 +55,7 @@
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-
+   const char*   filename;
 };
 
 
@@ -96,10 +96,14 @@ SCIP_DECL_READERREAD(readerReadPdf)
 static
 SCIP_DECL_READERWRITE(readerWritePdf)
 {  /*lint --e{715}*/
+   int ndecomps;
+
    assert(scip != NULL);
    assert(reader != NULL);
 
-   SCIP_CALL( GCGwriteDecompToPdf(scip, file) );
+   ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
+
+   SCIP_CALL( GCGwriteDecompsToPdf(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -127,15 +131,14 @@ SCIPincludeReaderPdf(
    return SCIP_OKAY;
 }
 
-/* reads problem from file */
+/* the reader is not supposed to read files */
 SCIP_RETCODE GCGreadPdf(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
    )
 {
-
-   return SCIP_OKAY;
+   return SCIP_READERROR;
 }
 
 /** write LaTeX code for one decomposition */
@@ -149,14 +152,25 @@ SCIP_RETCODE writeDecompCode(
    return SCIP_OKAY;
 }
 
-/** write a DEC file for a given decomposition */
+/** write a visualization PDF file for a given set of decomposition using intermediate LaTeX code */
 SCIP_RETCODE GCGwriteDecompsToPdf(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP**          decomps             /**< Decomposition array pointer */
+   DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
+   int*                  ndecomps             /**< Number of decompositions */
    )
 {
+   int i;
+
    assert(scip != NULL);
+   assert(ndecomps > 0);
+
+   /*@todo sort decomps*/
+
+   for(i=0;i<*ndecomps;i++)
+   {
+      /*@todo writeDecompCode for all in decomps*/
+   }
 
    return SCIP_OKAY;
 }

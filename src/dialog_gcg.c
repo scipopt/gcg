@@ -189,7 +189,7 @@ SCIP_RETCODE writeAllDecompositions(
    return SCIP_OKAY;
 }
 
-/** writes out all decompositions currently known to cons_decomp */
+/** writes out visualizations of all decompositions currently known to cons_decomp to a PDF file */
 static
 SCIP_RETCODE reportAllDecompositions(
    SCIP*                 scip,               /**< SCIP data structure */
