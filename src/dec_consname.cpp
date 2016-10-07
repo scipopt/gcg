@@ -86,7 +86,7 @@ SCIP_Bool isConsMaster(
 {
    assert(scip != NULL);
    assert(cons != NULL);
-   char* consname;
+   const char* consname;
    std::regex expr(detectordata->regex);
    consname = SCIPconsGetName(cons);
 
