@@ -277,22 +277,22 @@ public:
          Seeedpool*       seeedpool
    );
 
-   /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed), only for c++ */
-    std::vector<int> getIndependentConss(
-          Seeedpool*       seeedpool
-    );
-
-    /** fills the array with open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-   SCIP_RETCODE getIndependentConss(
-       Seeedpool*       seeedpool,
-       int              arrayForIndependentConss[] /** array with nIndependentConss positions */
-   );
-
-
-   /** returns the number of open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-   int getNIndependentConss(
-           Seeedpool*    seeedpool
-   );
+//   /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed), only for c++ */
+//    std::vector<int> getIndependentConss(
+//          Seeedpool*       seeedpool
+//    );
+//
+//    /** fills the array with open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+//   SCIP_RETCODE getIndependentConss(
+//       Seeedpool*       seeedpool,
+//       int              arrayForIndependentConss[] /** array with nIndependentConss positions */
+//   );
+//
+//
+//   /** returns the number of open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+//   int getNIndependentConss(
+//           Seeedpool*    seeedpool
+//   );
 
    /** returns whether the var is a linking var */
    bool isVarLinkingvar(
@@ -371,6 +371,19 @@ public:
    );
 
    SCIP_RETCODE filloutBorderFromConstoblock(
+      SCIP_HASHMAP* constoblock,
+      int givenNBlocks,
+      Seeedpool* seeedpool
+   );
+
+   /** fills out a seeed with the hashmap constoblock */
+   SCIP_RETCODE assignSeeedFromConstoblock(
+         SCIP_HASHMAP* constoblock,
+         int givenNBlocks,
+         Seeedpool* seeedpool
+   );
+
+   SCIP_RETCODE assignBorderFromConstoblock(
       SCIP_HASHMAP* constoblock,
       int givenNBlocks,
       Seeedpool* seeedpool

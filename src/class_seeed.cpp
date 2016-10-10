@@ -107,7 +107,7 @@ namespace gcg {
 	  {
 		  if(!openVarsBool[*varIter])
 		  {
-			  std::cout << "Warning! Variable with index " << *varIter << " is already assigned." << std::endl;
+			  std::cout << "Warning! (seeed " << id <<  ") Variable with index " << *varIter << " is already assigned." << std::endl;
 			  return false;
 		  }
 		  openVarsBool[*varIter] = false;
@@ -121,7 +121,7 @@ namespace gcg {
 		  {
 			  if(!openVarsBool[*varIter])
 			  {
-				  std::cout << "Warning! Variable with index " << *varIter << " is already assigned." << std::endl;
+				  std::cout << "Warning! (seeed " << id <<  ") Variable with index " << *varIter << " is already assigned." << std::endl;
 				  return false;
 			  }
 			  openVarsBool[*varIter] = false;
@@ -134,7 +134,7 @@ namespace gcg {
 	  {
 	     if(!openVarsBool[*varIter])
 	     {
-	        std::cout << "Warning! Variable with index " << *varIter << " is already assigned." << std::endl;
+	        std::cout << "Warning! (seeed " << id <<  ") Variable with index " << *varIter << " is already assigned." << std::endl;
 	        return false;
 	     }
 	     openVarsBool[*varIter] = false;
@@ -168,19 +168,19 @@ namespace gcg {
 	     }
 	     if(firstFound == -1)
 	     {
-	        std::cout << "Warning! Variable with index " << *varIter << " is assigned to the stairlinkingvars but can not be found in a block" << std::endl;
+	        std::cout << "Warning! (seeed " << id <<  ") Variable with index " << *varIter << " is assigned to the stairlinkingvars but can not be found in a block" << std::endl;
 	        return false;
 	     }
 	     if( firstFound == nBlocks - 1 || !isVarStairlinkingvarOfBlock(*varIter, firstFound + 1))
 	     {
-	        std::cout << "Warning! Variable with index " << *varIter << " is assigned to the stairlinkingvars but doens't link blocks" << std::endl;
+	        std::cout << "Warning! (seeed " << id <<  ") Variable with index " << *varIter << " is assigned to the stairlinkingvars but doens't link blocks" << std::endl;
 	        return false;
 	     }
 	     for( int b = firstFound + 2; b < nBlocks; ++b)
 	     {
 	        if(isVarBlockvarOfBlock(*varIter, b))
 	        {
-	           std::cout << "Warning! Variable with index " << *varIter << " is assigned to the stairlinkingvars but can be found in more than two blocks" << std::endl;
+	           std::cout << "Warning! (seeed " << id <<  ") Variable with index " << *varIter << " is assigned to the stairlinkingvars but can be found in more than two blocks" << std::endl;
 	           return false;
 	        }
 	     }
@@ -199,7 +199,7 @@ namespace gcg {
 	   {
 	      if( openVarsBool[v] == true && isVarOpenvar(v) == false )
 	      {
-	         std::cout << "Warning! Variable with index " << v << " is not assigned and not an open var." << std::endl;
+	         std::cout << "Warning! (seeed " << id <<  ") Variable with index " << v << " is not assigned and not an open var." << std::endl;
 	      }
 	   }
 
@@ -208,7 +208,7 @@ namespace gcg {
 	   {
 	      if( openVarsBool[openVars[i]] == false )
 	      {
-	         std::cout << "Warning! Variable with index " << openVars[i] << " is an open var but assigned." << std::endl;
+	         std::cout << "Warning! (seeed " << id <<  ") Variable with index " << openVars[i] << " is an open var but assigned." << std::endl;
 	      }
 	   }
 
@@ -223,7 +223,7 @@ namespace gcg {
 	  {
 		  if(!openConssBool[*consIter])
 		  {
-			  std::cout << "Warning! Constraint with index " << *consIter << "is already assigned " << std::endl;
+			  std::cout << "Warning! (seeed " << id <<  ") Constraint with index " << *consIter << "is already assigned " << std::endl;
 			  return false;
 		  }
 		  openConssBool[*consIter] = false;
@@ -237,7 +237,7 @@ namespace gcg {
 		  {
 			  if(!openConssBool[*consIter])
 			  {
-				  std::cout << "Warning! Constraint with index " << *consIter << " is already assigned " << std::endl;
+				  std::cout << "Warning! (seeed " << id <<  ") Constraint with index " << *consIter << " is already assigned " << std::endl;
 				  return false;
 			  }
 			  openConssBool[*consIter] = false;
@@ -249,7 +249,7 @@ namespace gcg {
      {
         if( openConssBool[v] == true && isConsOpencons(v) == false )
         {
-           std::cout << "Warning! Constraint with index " << v << " is not assigned and not an open cons." << std::endl;
+           std::cout << "Warning! (seeed " << id <<  ") Constraint with index " << v << " is not assigned and not an open cons." << std::endl;
            return false;
         }
      }
@@ -259,7 +259,7 @@ namespace gcg {
      {
         if( openVarsBool[openConss[i]] == false )
         {
-           std::cout << "Warning! Constraint with index " << openConss[i] << " is an open cons but assigned." << std::endl;
+           std::cout << "Warning! (seeed " << id <<  ") Constraint with index " << openConss[i] << " is an open cons but assigned." << std::endl;
            return false;
         }
      }
@@ -272,7 +272,7 @@ namespace gcg {
         {
            if(!(value < getVarsForBlock(b)[v]) )
            {
-              std::cout << "Warning! Variables of block " << b << " are not sorted." << std::endl;
+              std::cout << "Warning! (seeed " << id <<  ") Variables of block " << b << " are not sorted." << std::endl;
               return false;
            }
            value = getVarsForBlock(b)[v];
@@ -285,7 +285,7 @@ namespace gcg {
         {
            if(!(value < getStairlinkingvars(b)[v]) )
            {
-              std::cout << "Warning! Stairlinkingvariables of block " << b << " are not sorted." << std::endl;
+              std::cout << "Warning! (seeed " << id <<  ") Stairlinkingvariables of block " << b << " are not sorted." << std::endl;
               return false;
            }
            value = getStairlinkingvars(b)[v];
@@ -296,7 +296,7 @@ namespace gcg {
      {
         if(!(value < getLinkingvars()[v]))
         {
-           std::cout << "Warning! Linkingvariables are not sorted." << std::endl;
+           std::cout << "Warning! (seeed " << id <<  ") Linkingvariables are not sorted." << std::endl;
            return false;
         }
      }
@@ -305,7 +305,7 @@ namespace gcg {
      {
         if(!(value < getMastervars()[v]))
         {
-           std::cout << "Warning! Mastervariables are not sorted." << std::endl;
+           std::cout << "Warning! (seeed " << id <<  ") Mastervariables are not sorted." << std::endl;
            return false;
         }
      }
@@ -316,7 +316,7 @@ namespace gcg {
         {
            if(!(value < getConssForBlock(b)[v]) )
            {
-              std::cout << "Warning! Constraints of block " << b << " are not sorted." << std::endl;
+              std::cout << "Warning! (seeed " << id <<  ") Constraints of block " << b << " are not sorted." << std::endl;
               return false;
            }
            value = getConssForBlock(b)[v];
@@ -327,7 +327,7 @@ namespace gcg {
      {
         if(!(value < getMasterconss()[v]))
         {
-           std::cout << "Warning! Masterconstraints are not sorted." << std::endl;
+           std::cout << "Warning! (seeed " << id <<  ") Masterconstraints are not sorted." << std::endl;
            return false;
         }
      }
@@ -1046,10 +1046,10 @@ namespace gcg {
   {
      int cons;
      int var;
-     std::vector<int> blocksWithCommonVars;
-     std::vector<int> blocksOfOpenvar;
-     std::vector<int> assignedOpenvars;
-     std::vector<int> assignedOpenconss;
+     std::vector<int> blocksOfBlockvars;  /** blocks with blockvars which can be found in the cons */
+     std::vector<int> blocksOfOpenvar;    /** blocks in which the open var can be found */
+     std::vector<int> assignedOpenvars;   /** stores the assigned open vars */
+     std::vector<int> assignedOpenconss;  /** stores the assgined open conss */
      bool found;
      bool master;
 
@@ -1063,15 +1063,15 @@ namespace gcg {
      /** set openConss with more than two blockvars to master */
      for(size_t c = 0; c < openConss.size(); ++c)
      {
-        blocksWithCommonVars.clear();
+        blocksOfBlockvars.clear();
         master = false;
         cons = openConss[c];
 
-        for(int b = 0; b < nBlocks && !master; ++b)
+        for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !master; ++v)
         {
-           for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !master; ++v)
+           var = seeedpool->getVarsForCons(cons)[v];
+           for(int b = 0; b < nBlocks && !master; ++b)
            {
-              var = seeedpool->getVarsForCons(cons)[v];
               if(isVarMastervar(var))
               {
                  master = true;
@@ -1080,12 +1080,12 @@ namespace gcg {
               }
               if(isVarBlockvarOfBlock(var, b))
               {
-                 blocksWithCommonVars.push_back(b);
+                 blocksOfBlockvars.push_back(b);
               }
            }
         }
 
-        if(blocksWithCommonVars.size() > 1 && !master)
+        if(blocksOfBlockvars.size() > 1 && !master)
         {
            setConsToMaster(cons);
            assignedOpenconss.push_back(cons);
@@ -1131,11 +1131,92 @@ namespace gcg {
   /** assigns open conss if they includes blockvars, returns true if open conss are assigned */
   bool Seeed::assignHittingOpenconss(Seeedpool* seeedpool)
   {
+//     int cons;
+//     int var;
+//     std::vector<int> blocksOfBlockvars;
+//     std::vector<int> assignedOpenconss;
+//     std::vector<int> blocksOfStairlinkingvars;
+//     bool assigned = false;
+//     bool master;
+//
+//     if(!openVarsAndConssCalculated)
+//     {
+//        calcOpenvars();
+//        calcOpenconss();
+//        openVarsAndConssCalculated = true;
+//     }
+//
+//     for(size_t c = 0; c < openConss.size(); ++c)
+//     {
+//        blocksOfBlockvars.clear();
+//        blocksOfStairlinkingvars.clear();
+//        cons = openConss[c];
+//        for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
+//        {
+//           var = seeedpool->getVarsForCons(cons)[v];
+//           for(int b = 0; b < nBlocks; ++b)
+//           {
+//              if(isVarBlockvarOfBlock(var, b))
+//              {
+//                 blocksOfBlockvars.push_back(b);
+//                 break;
+//              }
+//           }
+//           for(int b = 0; b < nBlocks; ++b)
+//           {
+//              if(isVarStairlinkingvarOfBlock(var, b))
+//              {
+//                 blocksOfStairlinkingvars.push_back(b);
+//                 break;
+//              }
+//           }
+//        }
+//
+//        if(blocksOfBlockvars.size() == 1)
+//        {
+//           master = false;
+//           for(size_t i = 0; i < blocksOfStairlinkingvars.size(); ++i)
+//           {
+//              if(blocksOfBlockvars[0] != blocksOfStairlinkingvars[i] && blocksOfBlockvars[0] != blocksOfStairlinkingvars[i]+1)
+//              {
+//                 setConsToMaster(cons);
+//                 assignedOpenconss.push_back(cons);
+//                 assigned = true;
+//                 master = true;
+//                 break;
+//              }
+//           }
+//           if(!master)
+//           {
+//              setConsToBlock(cons, blocksOfBlockvars[0]);
+//              assignedOpenconss.push_back(cons);
+//              assigned = true;
+//           }
+//        }
+//        else if(blocksOfBlockvars.size() > 1)
+//        {
+//           setConsToMaster(cons);
+//           assignedOpenconss.push_back(cons);
+//           assigned = true;
+//        }
+//     }
+//     for(size_t i = 0; i < assignedOpenconss.size(); ++i)
+//             deleteOpencons(assignedOpenconss[i]);
+//
+//     return assigned;
+
      int cons;
      int var;
-     std::vector<int> blocksWithCommonVars;
-     std::vector<int> assignedOpenconss;
-     bool assigned = false;
+     int block;
+     bool stairlinking;                         /** true if the cons includes stairlinkingvars */
+     bool assigned = false;                     /** true if open conss are assigned in the function */
+     std::vector<int>::iterator it;
+     std::vector<int> blocksOfStairlinkingvars; /** first block of stairlinkingvars which can be found in the cons */
+     std::vector<int> blocksOfBlockvars;        /** blocks with blockvars which can be found in the cons */
+     std::vector<int> blocks;                   /** cons can be assigned to the blocks stored in this vector */
+     std::vector<int> eraseBlock;
+     std::vector<int> assignedOpenconss;        /** stores assigned open conss */
+
 
      if(!openVarsAndConssCalculated)
      {
@@ -1144,37 +1225,115 @@ namespace gcg {
         openVarsAndConssCalculated = true;
      }
 
-
      for(size_t c = 0; c < openConss.size(); ++c)
      {
-        blocksWithCommonVars.clear();
         cons = openConss[c];
+        stairlinking = false;
 
-        for(int b = 0; b < nBlocks; ++b)
+        blocksOfBlockvars.clear();
+        blocks.clear();
+        blocksOfStairlinkingvars.clear();
+        eraseBlock.clear();
+
+        /** fill out blocksOfStairlinkingvars and blocksOfBlockvars */
+        for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
         {
-           for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
+           var = seeedpool->getVarsForCons(cons)[v];
+           for( int b = 0; b < nBlocks; ++b )
            {
-              var = seeedpool->getVarsForCons(cons)[v];
               if(isVarBlockvarOfBlock(var, b))
               {
-                 blocksWithCommonVars.push_back(b);
+                 blocksOfBlockvars.push_back(b);
+                 break;
+              }
+           }
+           for( int b = 0; b < nBlocks; ++b )
+           {
+              if(isVarStairlinkingvarOfBlock(var, b))
+              {
+                 stairlinking = true;
+                 blocksOfStairlinkingvars.push_back(b);
+                 break;
               }
            }
         }
 
-        if(blocksWithCommonVars.size() == 1)
+        /** fill out blocks */
+        if(stairlinking && blocksOfBlockvars.size() < 2)
         {
-           setConsToBlock(cons, blocksWithCommonVars[0]);
-           assignedOpenconss.push_back(cons);
-           assigned = true;
+           if(blocksOfBlockvars.size() == 0)
+           {
+              blocks.push_back(blocksOfStairlinkingvars[0]);
+              blocks.push_back(blocksOfStairlinkingvars[0]+1);
+              for( size_t i = 1; i < blocksOfStairlinkingvars.size(); ++i )
+              {
+                 it = blocks.begin();
+                 for( ; it != blocks.end(); ++it )
+                 {
+                    if( *it != blocksOfStairlinkingvars[i] && *it != blocksOfStairlinkingvars[i]+1 )
+                       eraseBlock.push_back(*it);
+                 }
+                 for(size_t j = 0; j < eraseBlock.size(); ++j)
+                 {
+                    it = find(blocks.begin(), blocks.end(), eraseBlock[j]);
+                    assert(it != blocks.end());
+                    blocks.erase(it);
+                 }
+              }
+           }
+           else
+           {
+              blocks.push_back(blocksOfBlockvars[0]);
+              for(size_t i = 0; i < blocksOfStairlinkingvars.size(); ++i)
+              {
+                 if( blocks[0] != blocksOfStairlinkingvars[i] && blocks[0] != blocksOfStairlinkingvars[i]+1 )
+                 {
+                    blocks.clear();
+                    break;
+                 }
+              }
+           }
+
         }
-        else if(blocksWithCommonVars.size() > 1)
+
+        if(blocksOfBlockvars.size() > 1)
         {
            setConsToMaster(cons);
            assignedOpenconss.push_back(cons);
            assigned = true;
         }
+        else if(stairlinking == false && blocksOfBlockvars.size() == 1)
+        {
+           setConsToBlock(cons, blocksOfBlockvars[0]);
+           assignedOpenconss.push_back(cons);
+           assigned = true;
+        }
+        else if(stairlinking == true && blocks.size() == 0)
+        {
+           setConsToMaster(cons);
+           assignedOpenconss.push_back(cons);
+           assigned = true;
+        }
+        else if(stairlinking == true && blocks.size() == 1)
+        {
+           setConsToBlock(cons, blocks[0]);
+           assignedOpenconss.push_back(cons);
+           assigned = true;
+        }
+        else if(stairlinking == true && blocks.size() > 1)
+        {
+           block = blocks[0];
+           for(size_t i = 1; i < blocks.size(); ++i)
+           {
+              if( getNConssForBlock(i) < getNConssForBlock(block) )
+                 block = i;
+           }
+           setConsToBlock(cons, block);
+           assignedOpenconss.push_back(cons);
+           assigned = true;
+        }
      }
+
      for(size_t i = 0; i < assignedOpenconss.size(); ++i)
              deleteOpencons(assignedOpenconss[i]);
 
@@ -1187,6 +1346,7 @@ namespace gcg {
      int cons;
      int var;
      std::vector<int> assignedOpenvars;
+     std::vector<int> blocksOfOpenvar;
      bool found;
      bool assigned = false;
 
@@ -1197,7 +1357,6 @@ namespace gcg {
         openVarsAndConssCalculated = true;
      }
 
-     std::vector<int> blocksOfOpenvar;
      /** set vars to linking, if they can be found in more than one block */
      for(size_t i = 0; i < openVars.size(); ++i)
      {
@@ -1301,77 +1460,77 @@ namespace gcg {
      return SCIP_OKAY;
   }
 
-  /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-   std::vector<int> Seeed::getIndependentConss(
-         Seeedpool*       seeedpool
-   )
-   {
-      std::vector<int> independentConss = std::vector<int>(0);
-      bool independent;
-      int cons;
-      int var;
-
-      assignAllDependent(seeedpool);
-
-      for(int c = 0; c < getNOpenconss(); ++c)
-      {
-         cons = openConss[c];
-         independent = true;
-         for( int v = 0; v < seeedpool->getNVarsForCons(cons) && independent; ++v )
-         {
-            var = seeedpool->getVarsForCons(cons)[v];
-            for(int b = 0; b < nBlocks; ++b)
-            {
-               assert(!isVarBlockvarOfBlock(var, b));
-               if(isVarStairlinkingvarOfBlock(var, b))
-                  independent = false;
-            }
-         }
-         if(independent)
-            independentConss.push_back(cons);
-      }
-
-      return independentConss;
-   }
-
-   /** fills the array with open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-   SCIP_RETCODE Seeed::getIndependentConss(
-      Seeedpool*       seeedpool,
-      int              arrayForIndependentConss[]
-   )
-   {
-      std::vector<int> independentConss = std::vector<int>(0);
-      bool independent;
-      int cons;
-      int var;
-
-      assignAllDependent(seeedpool);
-
-      for(int c = 0; c < getNOpenconss(); ++c)
-      {
-         cons = openConss[c];
-         independent = true;
-         for( int v = 0; v < seeedpool->getNVarsForCons(cons) && independent; ++v )
-         {
-            var = seeedpool->getVarsForCons(cons)[v];
-            for(int b = 0; b < nBlocks; ++b)
-            {
-               assert(!isVarBlockvarOfBlock(var, b));
-               if(isVarStairlinkingvarOfBlock(var, b))
-                  independent = false;
-            }
-         }
-         if(independent)
-            arrayForIndependentConss[c] = cons;
-      }
-      return SCIP_OKAY;
-   }
-
-   /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-   int Seeed::getNIndependentConss(Seeedpool*    seeedpool)
-   {
-      return (int) getIndependentConss(seeedpool).size();
-   }
+//  /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+//   std::vector<int> Seeed::getIndependentConss(
+//         Seeedpool*       seeedpool
+//   )
+//   {
+//      std::vector<int> independentConss = std::vector<int>(0);
+//      bool independent;
+//      int cons;
+//      int var;
+//
+//      assignAllDependent(seeedpool);
+//
+//      for(int c = 0; c < getNOpenconss(); ++c)
+//      {
+//         cons = openConss[c];
+//         independent = true;
+//         for( int v = 0; v < seeedpool->getNVarsForCons(cons) && independent; ++v )
+//         {
+//            var = seeedpool->getVarsForCons(cons)[v];
+//            for(int b = 0; b < nBlocks; ++b)
+//            {
+//               assert(!isVarBlockvarOfBlock(var, b));
+//               if(isVarStairlinkingvarOfBlock(var, b))
+//                  independent = false;
+//            }
+//         }
+//         if(independent)
+//            independentConss.push_back(cons);
+//      }
+//
+//      return independentConss;
+//   }
+//
+//   /** fills the array with open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+//   SCIP_RETCODE Seeed::getIndependentConss(
+//      Seeedpool*       seeedpool,
+//      int              arrayForIndependentConss[]
+//   )
+//   {
+//      std::vector<int> independentConss = std::vector<int>(0);
+//      bool independent;
+//      int cons;
+//      int var;
+//
+//      assignAllDependent(seeedpool);
+//
+//      for(int c = 0; c < getNOpenconss(); ++c)
+//      {
+//         cons = openConss[c];
+//         independent = true;
+//         for( int v = 0; v < seeedpool->getNVarsForCons(cons) && independent; ++v )
+//         {
+//            var = seeedpool->getVarsForCons(cons)[v];
+//            for(int b = 0; b < nBlocks; ++b)
+//            {
+//               assert(!isVarBlockvarOfBlock(var, b));
+//               if(isVarStairlinkingvarOfBlock(var, b))
+//                  independent = false;
+//            }
+//         }
+//         if(independent)
+//            arrayForIndependentConss[c] = cons;
+//      }
+//      return SCIP_OKAY;
+//   }
+//
+//   /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
+//   int Seeed::getNIndependentConss(Seeedpool*    seeedpool)
+//   {
+//      return (int) getIndependentConss(seeedpool).size();
+//   }
 
 
   /** returns whether the var is a linking var */
@@ -1517,6 +1676,116 @@ int Seeed::getNVars()
 /** fills out a seeed with the hashmap constoblock */
 SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )
 {
+//   assert(givenNBlocks >= 0);
+//   nBlocks = givenNBlocks;
+//   nVars = seeedpool->getNVars();
+//   nConss = seeedpool->getNConss();
+//   int consnum;
+//   int consblock;
+//   int varnum;
+//   SCIP_CONS** conss = SCIPgetConss(scip);
+//   SCIP_VAR** vars = SCIPgetVars(scip);
+//   bool varInBlock;
+//   std::vector<int> varInBlocks = std::vector<int>(0);
+//   std::vector <int> emptyVector = std::vector<int>(0);
+//
+//   for( int c = 0; c < nConss; ++c )
+//   {
+//      if( !GCGisConsGCGCons(SCIPgetConss(scip)[c]) )
+//      {
+//         assert(SCIPhashmapExists(constoblock, SCIPgetConss(scip)[c]));
+//         assert( (int)(size_t)SCIPhashmapGetImage(constoblock, conss[c]) -1 <= nBlocks);
+//         assert( (int)(size_t)SCIPhashmapGetImage(constoblock, conss[c]) -1 >= 0);
+//      }
+//   }
+//
+//
+//   for(int b = (int) conssForBlocks.size(); b < nBlocks; b++)
+//   {
+//      conssForBlocks.push_back(emptyVector);
+//   }
+//
+//   for(int b = (int) varsForBlocks.size(); b < nBlocks; b++)
+//   {
+//      varsForBlocks.push_back(emptyVector);
+//   }
+//
+//   for(int b = (int) stairlinkingVars.size(); b < nBlocks; b++)
+//   {
+//      stairlinkingVars.push_back(emptyVector);
+//   }
+//
+//
+//   for( int i = 0; i < nConss; ++i)
+//   {
+//      consnum = seeedpool->getIndexForCons(conss[i]);
+//      consblock = ((int)(size_t)SCIPhashmapGetImage(constoblock, conss[i])) - 1;
+//      assert(consblock >= 0 && consblock <= nBlocks);
+//      if(consblock == nBlocks)
+//      {
+//         setConsToMaster(consnum);
+//      }
+//      else
+//      {
+//         setConsToBlock(consnum, consblock);
+//      }
+//   }
+//
+//   for( int i = 0; i < nVars; ++i )
+//   {
+//      varInBlocks.clear();
+//      varnum = seeedpool->getIndexForVar(vars[i]);
+//
+//      /** test if the variable can be found in blocks */
+//      for( int b = 0; b < nBlocks; ++b )
+//      {
+//         varInBlock = false;
+//         for( size_t k = 0; k < conssForBlocks[b].size() && !varInBlock; ++k)
+//         {
+//            for( int l = 0; l < seeedpool->getNVarsForCons(conssForBlocks[b][k]) && !varInBlock; ++l )
+//            {
+//               if( varnum == (seeedpool->getVarsForCons(conssForBlocks[b][k]))[l] )
+//               {
+//                  varInBlocks.push_back(b);
+//                  varInBlock = true;
+//               }
+//            }
+//         }
+//      }
+//      if( varInBlocks.size() == 1 ) /** if the var can be found in one block set the var to block var */
+//      {
+//         setVarToBlock(varnum, varInBlocks[0]);
+//      }
+//      else if( varInBlocks.size() == 2 ) /** if the variable can be found in two blocks check if it is a linking var or a stairlinking var*/
+//      {
+//         if ( varInBlocks[0] + 1 == varInBlocks[1] )
+//         {
+//            setVarToStairlinking(varnum, varInBlocks[0], varInBlocks[1]);
+//         }
+//         else
+//         {
+//            setVarToLinking(varnum);
+//         }
+//      }
+//      else if( varInBlocks.size() > 2 ) /** if the variable can be found in more than two blocks it is a linking var */
+//      {
+//         setVarToLinking(varnum);
+//      }
+//      else
+//      {
+//         assert( varInBlocks.size() == 0);
+//         setVarToMaster(varnum);
+//      }
+//   }
+//   sort();
+//   openVars = std::vector<int>(0);
+//   openConss = std::vector<int>(0);
+//   openVarsAndConssCalculated = true;
+//
+//   assert(checkConsistency());
+//   assert(checkVarsAndConssConsistency(seeedpool));
+//
+//   return SCIP_OKAY;
    assert(givenNBlocks >= 0);
    nBlocks = givenNBlocks;
    nVars = seeedpool->getNVars();
@@ -1524,20 +1793,15 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
    int consnum;
    int consblock;
    int varnum;
-   SCIP_CONS** conss = SCIPgetConss(scip);
-   SCIP_VAR** vars = SCIPgetVars(scip);
    bool varInBlock;
    std::vector<int> varInBlocks = std::vector<int>(0);
    std::vector <int> emptyVector = std::vector<int>(0);
 
    for( int c = 0; c < nConss; ++c )
    {
-      if( !GCGisConsGCGCons(SCIPgetConss(scip)[c]) )
-      {
-         assert(SCIPhashmapExists(constoblock, SCIPgetConss(scip)[c]));
-         assert( (int)(size_t)SCIPhashmapGetImage(constoblock, conss[c]) -1 <= nBlocks);
-         assert( (int)(size_t)SCIPhashmapGetImage(constoblock, conss[c]) -1 >= 0);
-      }
+      assert(SCIPhashmapExists(constoblock, (void*) (size_t) c));
+      assert( (int)(size_t)SCIPhashmapGetImage(constoblock, (void*) (size_t) c) -1 <= nBlocks);
+      assert( (int)(size_t)SCIPhashmapGetImage(constoblock, (void*) (size_t) c) -1 >= 0);
    }
 
 
@@ -1559,8 +1823,8 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
 
    for( int i = 0; i < nConss; ++i)
    {
-      consnum = seeedpool->getIndexForCons(conss[i]);
-      consblock = ((int)(size_t)SCIPhashmapGetImage(constoblock, conss[i])) - 1;
+      consnum = i;
+      consblock = ((int)(size_t)SCIPhashmapGetImage(constoblock, (void*) (size_t) i)) - 1;
       assert(consblock >= 0 && consblock <= nBlocks);
       if(consblock == nBlocks)
       {
@@ -1575,7 +1839,7 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
    for( int i = 0; i < nVars; ++i )
    {
       varInBlocks.clear();
-      varnum = seeedpool->getIndexForVar(vars[i]);
+      varnum = i;
 
       /** test if the variable can be found in blocks */
       for( int b = 0; b < nBlocks; ++b )
@@ -1632,20 +1896,53 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int 
 /** fills out the border of a seeed with the hashmap constoblock */
 SCIP_RETCODE Seeed::filloutBorderFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )
 {
+//   nBlocks = givenNBlocks;
+//   nVars = seeedpool->getNVars();
+//   nConss = seeedpool->getNConss();
+//   int consnum;
+//   int consblock;
+//   int varnum;
+//   SCIP_CONS** conss = SCIPgetConss(scip);
+//   SCIP_VAR** vars = SCIPgetVars(scip);
+//
+//
+//   for( int i = 0; i < nConss; ++i)
+//   {
+//      consnum = seeedpool->getIndexForCons(conss[i]);
+//      consblock = ((int)(size_t)SCIPhashmapGetImage(constoblock, conss[i])) - 1;
+//      assert(consblock >= 0 && consblock <= nBlocks);
+//      if(consblock == nBlocks)
+//      {
+//         setConsToMaster(consnum);
+//      }
+//      else
+//      {
+//         openConss.push_back(consnum);
+//      }
+//   }
+//
+//   for( int i = 0; i < nVars; ++i )
+//   {
+//      varnum = seeedpool->getIndexForVar(vars[i]);
+//      openVars.push_back(varnum);
+//   }
+//
+//   nBlocks = 0;
+//   sort();
+//   assert(checkConsistency());
+//   return SCIP_OKAY;
    nBlocks = givenNBlocks;
    nVars = seeedpool->getNVars();
    nConss = seeedpool->getNConss();
    int consnum;
    int consblock;
    int varnum;
-   SCIP_CONS** conss = SCIPgetConss(scip);
-   SCIP_VAR** vars = SCIPgetVars(scip);
 
 
    for( int i = 0; i < nConss; ++i)
    {
-      consnum = seeedpool->getIndexForCons(conss[i]);
-      consblock = ((int)(size_t)SCIPhashmapGetImage(constoblock, conss[i])) - 1;
+      consnum = i;
+      consblock = ((int)(size_t)SCIPhashmapGetImage(constoblock, (void*)(size_t) i)) - 1;
       assert(consblock >= 0 && consblock <= nBlocks);
       if(consblock == nBlocks)
       {
@@ -1659,11 +1956,77 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock( SCIP_HASHMAP* constoblock, int
 
    for( int i = 0; i < nVars; ++i )
    {
-      varnum = seeedpool->getIndexForVar(vars[i]);
+      varnum = i;
       openVars.push_back(varnum);
    }
 
    nBlocks = 0;
+   sort();
+   assert(checkConsistency());
+   return SCIP_OKAY;
+}
+
+/** fills out a the seeed with the hashmap constoblock */
+SCIP_RETCODE Seeed::assignSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )
+{
+   int oldNBlocks = nBlocks;
+   int consblock;
+   std::vector<int> assignedOpenconss;
+   int cons;
+
+   assert(givenNBlocks >= 0);
+
+   for(int b = 0; b < givenNBlocks; ++b)
+      addBlock();
+
+   for( int i = 0; i < getNOpenconss(); ++i)
+   {
+      cons = openConss[i];
+      if(!SCIPhashmapExists(constoblock, (void*)(size_t) cons))
+         continue;
+      consblock = oldNBlocks + ((int)(size_t)SCIPhashmapGetImage(constoblock, (void*)(size_t) cons) - 1);
+      assert(consblock >= oldNBlocks && consblock <= nBlocks);
+      if(consblock == nBlocks)
+      {
+         setConsToMaster(cons);
+         assignedOpenconss.push_back(cons);
+      }
+      else
+      {
+         setConsToBlock(cons, consblock);
+         assignedOpenconss.push_back(cons);
+      }
+   }
+   for( size_t c = 0; c < assignedOpenconss.size(); ++c )
+      deleteOpencons(assignedOpenconss[c]);
+
+   sort();
+   assert(checkConsistency());
+   return SCIP_OKAY;
+
+
+}
+
+/** fills out a the seeed with the hashmap constoblock */
+SCIP_RETCODE Seeed::assignBorderFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )
+{
+   std::vector<int> assignedOpenconss;
+   int cons;
+
+   for( int i = 0; i < getNOpenconss(); ++i)
+   {
+      cons = openConss[i];
+      if(!SCIPhashmapExists(constoblock, (void*)(size_t) cons))
+         continue;
+      if((int)(size_t)SCIPhashmapGetImage(constoblock, (void*)(size_t) cons) - 1 == givenNBlocks )
+      {
+         setConsToMaster(cons);
+         assignedOpenconss.push_back(cons);
+      }
+   }
+   for( size_t c = 0; c < assignedOpenconss.size(); ++c )
+      deleteOpencons(assignedOpenconss[c]);
+
    sort();
    assert(checkConsistency());
    return SCIP_OKAY;

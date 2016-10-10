@@ -399,13 +399,14 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                                  /** new seeeds are created by the current detector */
                                  SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
-                                 std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round+1 << std::endl;
+                                 std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d]) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round+1 << std::endl;
                                  SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
 
                                  for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
                                  {
                                     seeedPropData->newSeeeds[j]->considerImplicits(this);
                                     seeedPropData->newSeeeds[j]->sort();
+                                    seeedPropData->newSeeeds[j]->checkConsistency();
                                  }
 
                                  if(seeedPropData->nNewSeeeds != 0)
@@ -476,7 +477,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          {
             for(size_t i = 0; i < finishedSeeeds.size(); ++i)
             {
-               std::cout << i << ". finished seeed: " << std::endl;
+               std::cout << i+1 << ". finished seeed: " << std::endl;
                finishedSeeeds[i]->displaySeeed();
             }
          }
