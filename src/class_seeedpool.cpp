@@ -168,8 +168,15 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
       if(!noDuplicate)
       {
          std::cout << "seeed " << compseeed->getID() << " is a duplicate of seeed " << seeeds[i]->getID() << std::endl;
+         if(compseeed->getHashValue() != seeeds[i]->getHashValue() )
+         {
+             compseeed->displaySeeed();
+             seeeds[i]->displaySeeed();
+         }
+         assert(compseeed->getHashValue() == seeeds[i]->getHashValue() );
          return FALSE;
       }
+      assert(compseeed->getHashValue() != seeeds[i]->getHashValue() );
    }
    return TRUE;
 }
@@ -365,6 +372,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          {
             currSeeeds[s]->sort();
             currSeeeds[s]->considerImplicits(this);
+            currSeeeds[s]->calcHashvalue();
          }
 
          for(int round = 0; round < maxRounds; ++round)
@@ -407,6 +415,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                     seeedPropData->newSeeeds[j]->considerImplicits(this);
                                     seeedPropData->newSeeeds[j]->sort();
                                     seeedPropData->newSeeeds[j]->checkConsistency();
+                                    seeedPropData->newSeeeds[j]->calcHashvalue();
+
                                  }
 
                                  if(seeedPropData->nNewSeeeds != 0)
@@ -459,7 +469,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                          }
 
                          SCIP_CALL_ABORT(seeedPtr->completeGreedily( seeedPropData->seeedpool ) );
-
+                         seeedPtr->calcHashvalue();
 
 
                    if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false))

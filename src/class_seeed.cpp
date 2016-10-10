@@ -58,6 +58,15 @@
 
 namespace gcg {
 
+const int Seeed::primes[] =  {2,     3,     5,     7,    11,    13,    17,    19,    23,    29,    31,    37,    41,    43,
+ 47,    53,    59,    61,    67,    71,    73,    79,    83,    89,    97,   101,   103,   107,
+109,   113,   127,   131,   137,   139,   149,   151,   157,   163,   167,   173,   179,   181,
+191,   193,   197,   199,   211,   223,   227,   229,   233,   239,   241,   251,   257,   263,
+269,   271,   277,   281,   283,   293,   307,   311,   313,   317,   331,   337,   347,   349};
+
+const int Seeed::nPrimes = 70;
+
+
 /** constructor(s) */
  Seeed::Seeed(
     SCIP*             _scip,
@@ -650,7 +659,16 @@ namespace gcg {
      int block
     ){
   	  return (int) stairlinkingVars[block].size();
-    }
+  }
+
+
+  /** returns the calculated has value of this seeed */
+     long Seeed::getHashValue(
+    ){
+         return this->hashvalue;
+     }
+
+
 
   /** returns vector containing variables not assigned yet*/
   const int* Seeed::getOpenvars(
@@ -692,6 +710,9 @@ namespace gcg {
 	  }
 	  return (int) openConss.size();
 }
+
+
+
 
       /** returns size of vector containing constraints not assigned yet */
   int Seeed::getNOpenvars()
@@ -778,6 +799,8 @@ namespace gcg {
 
 	  return;
   }
+
+
 
   /** sorts the vars and conss according their numbers */
   void Seeed::sort()
@@ -2080,11 +2103,59 @@ bool Seeed::checkVarsAndConssConsistency(Seeedpool* seeedpool)
    return true;
 }
 
+  bool compare_blocks(  std::pair<int, int> const & a,  std::pair<int, int> const & b) {
+      return (a.second < b.second);
+  }
+
+
+void Seeed::calcHashvalue(
+){
+    std::vector<std::pair<int,int>> blockorder = std::vector<std::pair<int,int> >(0);
+    long hashval = 0;
+    long borderval = 0;
+
+    /** find sorting for blocks (non decreasing according smallest row index) */
+    for(int i = 0; i < this->nBlocks; ++i)
+    {
+        blockorder.push_back(std::pair<int,int>(i, this->conssForBlocks[i][0]));
+    }
+
+    std::sort(blockorder.begin(), blockorder.end(), compare_blocks);
+
+    for(int i = 0; i < nBlocks; ++i)
+    {
+        long blockval = 0;
+
+        for (int tau = 0; tau < conssForBlocks[i].size(); ++tau)
+        {
+            blockval += (2*conssForBlocks[i][tau] + 1) * pow(2, tau % 16 );
+        }
+
+        hashval += primes[i % (nPrimes-1)]*blockval;
+    }
+
+    for (int tau = 0; tau < masterConss.size(); ++tau)
+    {
+        borderval += (2*masterConss[tau] + 1) * pow(2, tau % 16 );
+    }
+
+    hashval += primes[nBlocks % nPrimes]*borderval;
+
+    hashval += primes[(nBlocks + 1) % nPrimes]*openVars.size();
+
+    this->hashvalue = hashval;
+
+    return;
+}
+
+
+
 /** displays the relevant information of the seeed */
 SCIP_RETCODE Seeed::displaySeeed()
 {
    std::cout << "ID: " << id << std::endl;
    std::cout << "number of blocks: " << nBlocks << std::endl;
+   std::cout << "hashvalue: " << hashvalue << std::endl;
 
    for(int b = 0; b < nBlocks; ++b)
    {

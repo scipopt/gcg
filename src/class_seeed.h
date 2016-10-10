@@ -69,7 +69,10 @@ private:
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
    std::vector<int> 				detectorChain;
    bool 							openVarsAndConssCalculated; /** are the */
+   long                             hashvalue;
 
+   const static int                primes[];
+   const static int                nPrimes;
 
 public:
 
@@ -221,6 +224,10 @@ public:
    int getNStairlinkingvars(
       int block
    );
+
+   /** returns the calculated has value of this seeed */
+   long getHashValue(
+           );
 
    void  calcOpenconss();
 
@@ -399,6 +406,11 @@ public:
          int opencons
    );
 
+
+
+   void calcHashvalue(
+   );
+
    bool checkVarsAndConssConsistency(
          Seeedpool* seeedpool
    );
@@ -420,7 +432,7 @@ public:
 
 private:
 
-
+ //  bool compare_blocks(int a, int b);
 
 };
 
