@@ -149,7 +149,7 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
    this->nvars = nvars_;
    this->nconss = nconss_;
 
-   /* go through all variables */
+   /* go through all constraints */
    for( i = 0; i < this->nconss; ++i )
    {
       TCLIQUE_WEIGHT weight;
@@ -221,6 +221,73 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
 
    return SCIP_OKAY;
 }
+
+template <class T>
+SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
+      Seeedpool*        seeedpool,
+      Seeed*            seeed
+   )
+{
+   int i;
+   int j;
+   TCLIQUE_WEIGHT weight;
+   std::vector< std::vector<int> > hyperedges;
+   std::tr1::unordered_map<int, int> oldToNewConsIndex;
+   std::tr1::unordered_map<int, int> oldToNewVarIndex;
+
+   this->nvars = seeed->getNOpenvars();
+   this->nconss = seeed->getNOpenconss();
+
+   /* go through all open constraints */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      int oldConsId = seeed->getOpenconss()[i];
+
+      /* calculate weight of node */
+      weight = this->weights.calculate(seeedpool->getConsForIndex(oldConsId));
+
+      oldToNewConsIndex.insert({oldConsId,i});
+
+      this->graph.addNode(i, weight);
+   }
+
+   for( j = 0; j < this->nvars; ++j )
+   {
+      int oldVarId = seeed->getOpenvars()[j];
+      oldToNewVarIndex.insert({oldVarId,j});
+   }
+   hyperedges.resize(this->nvars);
+
+
+   /* go through all open constraints */
+   for( i = 0; i < seeed->getNOpenconss(); ++i )
+   {
+      int oldConsId = seeed->getOpenconss()[i];
+      for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
+      {
+         int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
+         if(!seeed->isVarOpenvar(oldVarId))
+            continue;
+         hyperedges[oldToNewVarIndex[oldVarId]].insert(hyperedges[oldToNewVarIndex[oldVarId]].end(), oldToNewConsIndex[oldConsId]);
+      }
+   }
+
+   /* go through all variables */
+   for( i = 0; i < this->nvars; ++i )
+   {
+      int oldVarId = seeed->getOpenvars()[i];
+
+      /* calculate weight of node */
+      weight = this->weights.calculate(seeedpool->getVarForIndex(oldVarId));
+
+      this->graph.addHyperedge(hyperedges[i], weight);
+   }
+   this->graph.flush();
+
+   return SCIP_OKAY;
+}
+
+
 template <class T>
 SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
    DEC_DECOMP**          decomp           /**< decomposition structure to generate */
@@ -275,13 +342,45 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
    {
       int consblock = partition[c]+1;
 
-      SCIP_CALL( SCIPhashmapInsert(constoblock, conss[c], (void*) (size_t) consblock) );
+      SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) seeedpool->getIndexForCons(conss[c]), (void*) (size_t) consblock) );
    }
 
    (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
    SCIP_CALL((*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool));
    (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
    SCIP_CALL((*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool));
+   SCIPhashmapFree(&constoblock);
+
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
+   Seeed*      oldSeeed,
+   Seeed**     firstSeeed,
+   Seeed**     secondSeeed,
+   Seeedpool*  seeedpool
+   )
+{
+   SCIP_HASHMAP* constoblock;
+   int nblocks;
+
+   std::vector<int> partition = this->getPartition();
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   nblocks = 1+*std::max_element(partition.begin(), partition.end() );
+
+   for( int c = 0; c < this->nconss; ++c )
+   {
+      int consblock = partition[c]+1;
+
+      SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) oldSeeed->getOpenconss()[c], (void*) (size_t) consblock) );
+   }
+
+   (*firstSeeed) = new Seeed(oldSeeed, seeedpool);
+   SCIP_CALL((*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool));
+   (*secondSeeed) = new Seeed(oldSeeed, seeedpool);
+   SCIP_CALL((*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks, seeedpool));
    SCIPhashmapFree(&constoblock);
 
    return SCIP_OKAY;

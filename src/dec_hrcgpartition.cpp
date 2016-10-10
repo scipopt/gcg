@@ -457,6 +457,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
    detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
 
+//   SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeedPropagationData->seeedToPropagate) );
    SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
@@ -472,6 +473,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
          continue;
       }
 
+//      SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeedPropagationData->seeedToPropagate, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
       SCIP_CALL( detectordata->graph->createSeeedFromPartition(&newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
 
 

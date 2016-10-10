@@ -242,12 +242,12 @@ SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
       }
       if( blocks.size() > 1 )
       {
-         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks+1)) );
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t)seeedpool->getIndexForCons(conss[i]), (void*) (size_t) (nblocks+1)) );
       }
       else
       {
          int block = *(blocks.begin());
-         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t)seeedpool->getIndexForCons(conss[i]), (void*) (size_t) (block +1)) );
          ++(nsubscipconss[block]);
       }
    }
@@ -280,6 +280,78 @@ SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
    return SCIP_OKAY;
 }
 
+template <class T>
+SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
+   Seeed*      oldSeeed,
+   Seeed**     firstSeeed,
+   Seeed**     secondSeeed,
+   Seeedpool*  seeedpool
+   )
+{
+   int nblocks;
+   SCIP_HASHMAP* constoblock;
+
+   int *nsubscipconss;
+   int i;
+   SCIP_Bool emptyblocks = FALSE;
+   std::vector<int> partition = graph.getPartition();
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
+
+   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   BMSclearMemoryArray(nsubscipconss, nblocks);
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+
+   /* assign constraints to partition */
+   for( i = 0; i < this->nconss; i++ )
+   {
+
+      std::set<int> blocks;
+      std::vector<int> neighbors = getHyperedgeNodes(i);
+      for( size_t k = 0; k < neighbors.size(); ++k )
+      {
+         if( partition[neighbors[k]] >= 0 )
+            blocks.insert(partition[neighbors[k]]);
+      }
+      if( blocks.size() > 1 )
+      {
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) oldSeeed->getOpenconss()[i], (void*) (size_t) (nblocks+1)) );
+      }
+      else
+      {
+         int block = *(blocks.begin());
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) oldSeeed->getOpenconss()[i], (void*) (size_t) (block +1)) );
+         ++(nsubscipconss[block]);
+      }
+   }
+
+   /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
+   for( i = 0; i < nblocks; ++i )
+   {
+      if( nsubscipconss[i] == 0 )
+      {
+         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+         emptyblocks = TRUE;
+      }
+   }
+
+   if( !emptyblocks )
+   {
+      (*firstSeeed) = new Seeed(oldSeeed, seeedpool);
+      SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+      (*secondSeeed) = new Seeed(oldSeeed, seeedpool);
+      SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIPhashmapFree(&constoblock);
+   }
+   else {
+      SCIPhashmapFree(&constoblock);
+      *firstSeeed = NULL;
+      *secondSeeed = NULL;
+   }
+
+   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   return SCIP_OKAY;
+}
 
 template <class T>
 SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
@@ -368,6 +440,57 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
 
    this->graph.flush();
    return SCIP_OKAY;
+}
+
+
+
+template <class T>
+SCIP_RETCODE HyperrowGraph<T>::createFromPartialMatrix(
+                   Seeedpool*                                                   seeedpool,
+                   Seeed*                                                       seeed
+     ){
+     int i;
+     int j;
+     std::tr1::unordered_map<int, int> oldToNewVarIndex;
+     TCLIQUE_WEIGHT weight;
+
+     this->nvars = seeed->getNOpenvars();
+     this->nconss = seeed->getNOpenconss();
+
+     /* go through all variables */
+     for( i = 0; i < this->nvars; ++i )
+     {
+        int oldVarId = seeed->getOpenvars()[i];
+
+        /* calculate weight of node */
+        weight = this->weights.calculate(seeedpool->getVarForIndex(oldVarId));
+
+        oldToNewVarIndex.insert({oldVarId,i});
+        this->graph.addNode(i, weight);
+     }
+
+     /* go through all open constraints */
+     for( i = 0; i < seeed->getNOpenconss(); ++i )
+     {
+        std::vector<int> hyperedge;
+        int oldConsId = seeed->getOpenconss()[i];
+
+        for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
+        {
+           int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
+           if(!seeed->isVarOpenvar(oldVarId))
+              continue;
+           hyperedge.insert(hyperedge.end(), oldToNewVarIndex[oldVarId]);
+        }
+
+        /* calculate weight of hyperedge */
+        weight = this->weights.calculate(seeedpool->getConsForIndex(oldConsId));
+        this->graph.addHyperedge(hyperedge, weight);
+     }
+
+
+     this->graph.flush();
+     return SCIP_OKAY;
 }
 
 

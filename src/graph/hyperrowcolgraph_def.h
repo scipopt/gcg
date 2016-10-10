@@ -167,6 +167,74 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
    return SCIP_OKAY;
 }
 
+template <class T>
+SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
+   Seeedpool*         seeedpool,
+   Seeed*             seeed
+   )
+{
+   int i;
+   int j;
+   std::tr1::unordered_map<int, int> oldToNewConsIndex;
+   std::tr1::unordered_map<int, int> oldToNewVarIndex;
+
+   this->nvars = seeed->getNOpenvars();
+   this->nconss = seeed->getNOpenconss();
+
+
+   /** add node for every var */
+   for( i = 0 ; i < seeed->getNOpenvars(); ++i )
+   {
+      int oldVarId = seeed->getOpenvars()[i];
+      TCLIQUE_WEIGHT weight;
+
+      /* note that the first nvars nodes correspond to variables */
+      weight = this->weights.calculate( seeedpool->getVarForIndex(oldVarId) );
+      oldToNewVarIndex.insert({ oldVarId ,i});
+
+      this->graph.addNode(i, weight);
+   }
+
+
+   /** add node for every cons */
+   for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
+   {
+      int oldConsId = seeed->getOpenconss()[j];
+      TCLIQUE_WEIGHT weight;
+
+      /* note that the first nvars nodes correspond to variables (legacy implementation) */
+      weight = this->weights.calculate( seeedpool->getConsForIndex(oldConsId) );
+      oldToNewConsIndex.insert({ oldConsId, j});
+      this->graph.addNode( this->nvars + j, weight);
+   }
+
+   this->nnonzeroes = 0;
+   /* go through all open constraints */
+   for( i = 0; i < seeed->getNOpenconss(); ++i )
+   {
+      int oldConsId = seeed->getOpenconss()[i];
+
+      for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
+      {
+         int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
+         if(!seeed->isVarOpenvar(oldVarId))
+            continue;
+         SCIPdebugMessage("Cons <%s> (%d), var <%s> (%d), nonzero %d\n", SCIPconsGetName(seeedpool->getConsForIndex(oldConsId)), i, SCIPvarGetName(seeedpool->getVarForIndex(oldVarId)), oldToNewVarIndex[oldVarId], this->nnonzeroes);
+         /* add nonzero node and edge to variable and constraint) */;
+         SCIP_CALL( this->graph.addNode( this->nvars+this->nconss+this->nnonzeroes, 0) );
+         SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[oldVarId], this->nvars+this->nconss+this->nnonzeroes) );
+         SCIP_CALL( this->graph.addEdge(this->nvars+oldToNewConsIndex[oldConsId], this->nvars+this->nconss+this->nnonzeroes) );
+
+         this->nnonzeroes++;
+      }
+   }
+
+
+   this->graph.flush();
+   return SCIP_OKAY;
+}
+
+
 /** writes the graph to the given file.
  *  The format is graph dependent
  */
@@ -350,6 +418,69 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
    Seeedpool*  seeedpool
    )
 {
+//   int nblocks;
+//   SCIP_HASHMAP* constoblock;
+//
+//   int *nsubscipconss;
+//   int i;
+//   SCIP_CONS **conss;
+//   SCIP_Bool emptyblocks = FALSE;
+//   std::vector<int> partition = graph.getPartition();
+//   conss = SCIPgetConss(this->scip_);
+//
+//   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
+//   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+//   BMSclearMemoryArray(nsubscipconss, nblocks);
+//
+//   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+//
+//   /* assign constraints to partition */
+//   for( i = 0; i < this->nconss; i++ )
+//   {
+//      std::set<int> blocks;
+//      std::vector<int> nonzeros = getConsNonzeroNodes(i);
+//      for( size_t k = 0; k < nonzeros.size(); ++k )
+//      {
+//         blocks.insert(partition[nonzeros[k]]);
+//      }
+//      if( blocks.size() > 1 )
+//      {
+//         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks+1)) );
+//      }
+//      else
+//      {
+//         int block = *(blocks.begin());
+//         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
+//         ++(nsubscipconss[block]);
+//      }
+//   }
+//
+//   /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
+//   for( i = 0; i < nblocks; ++i )
+//   {
+//      if( nsubscipconss[i] == 0 )
+//      {
+//         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+//         emptyblocks = TRUE;
+//      }
+//   }
+//
+//   if( !emptyblocks )
+//   {
+//      (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
+//      SCIP_CALL( (*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+//      (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
+//      SCIP_CALL( (*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool) );
+//      SCIPhashmapFree(&constoblock);
+//   }
+//   else {
+//      SCIPhashmapFree(&constoblock);
+//      (*firstSeeed) = NULL;
+//      (*secondSeeed) = NULL;
+//   }
+//
+//   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+//   return SCIP_OKAY;
    int nblocks;
    SCIP_HASHMAP* constoblock;
 
@@ -377,12 +508,12 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
       }
       if( blocks.size() > 1 )
       {
-         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks+1)) );
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t)seeedpool->getIndexForCons(conss[i]), (void*) (size_t) (nblocks+1)) );
       }
       else
       {
          int block = *(blocks.begin());
-         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) seeedpool->getIndexForCons(conss[i]), (void*) (size_t) (block +1)) );
          ++(nsubscipconss[block]);
       }
    }
@@ -403,6 +534,77 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
       SCIP_CALL( (*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
       (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
       SCIP_CALL( (*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool) );
+      SCIPhashmapFree(&constoblock);
+   }
+   else {
+      SCIPhashmapFree(&constoblock);
+      (*firstSeeed) = NULL;
+      (*secondSeeed) = NULL;
+   }
+
+   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
+   Seeed*       oldSeeed,
+   Seeed**      firstSeeed,
+   Seeed**      secondSeeed,
+   Seeedpool*   seeedpool
+   )
+{
+   int nblocks;
+   SCIP_HASHMAP* constoblock;
+
+   int *nsubscipconss;
+   int i;
+   SCIP_Bool emptyblocks = FALSE;
+   std::vector<int> partition = graph.getPartition();
+
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
+   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   BMSclearMemoryArray(nsubscipconss, nblocks);
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+
+   /* assign constraints to partition */
+   for( i = 0; i < this->nconss; i++ )
+   {
+      std::set<int> blocks;
+      std::vector<int> nonzeros = getConsNonzeroNodes(i);
+      for( size_t k = 0; k < nonzeros.size(); ++k )
+      {
+         blocks.insert(partition[nonzeros[k]]);
+      }
+      if( blocks.size() > 1 )
+      {
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) oldSeeed->getOpenconss()[i], (void*) (size_t) (nblocks+1)) );
+      }
+      else
+      {
+         int block = *(blocks.begin());
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) oldSeeed->getOpenconss()[i], (void*) (size_t) (block +1)) );
+         ++(nsubscipconss[block]);
+      }
+   }
+
+   /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
+   for( i = 0; i < nblocks; ++i )
+   {
+      if( nsubscipconss[i] == 0 )
+      {
+         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+         emptyblocks = TRUE;
+      }
+   }
+
+   if( !emptyblocks )
+   {
+      (*firstSeeed) = new Seeed(oldSeeed, seeedpool);
+      SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
+      (*secondSeeed) = new Seeed(oldSeeed, seeedpool);
+      SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks, seeedpool) );
       SCIPhashmapFree(&constoblock);
    }
    else {

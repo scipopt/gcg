@@ -110,6 +110,13 @@ public:
       );
 
    virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed*      oldSeeed,
+      Seeed**     firstSeeed,
+      Seeed**     secondSeeed,
+      Seeedpool*  seeedpool
+      );
+
+   virtual SCIP_RETCODE createSeeedFromPartition(
       Seeed**     firstSeeed,
       Seeed**     secondSeeed,
       Seeedpool*  seeedpool
@@ -121,6 +128,11 @@ public:
       int                   nconss_,             /**< number of constraints */
       int                   nvars_               /**< number of variables */
       );
+
+   virtual SCIP_RETCODE createFromPartialMatrix(
+     Seeedpool*                              seeedpool,
+     Seeed*                                  seeed
+   );
 
 };
 

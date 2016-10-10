@@ -190,7 +190,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
 
         /* note that the first nvars nodes correspond to variables (legacy implementation) */
         weight = this->weights.calculate(consToScipCons[seeed->getOpenconss()[j] ] );
-        oldToNewVarIndex.insert({ seeed->getOpenconss()[j], j});
+        oldToNewConsIndex.insert({ seeed->getOpenconss()[j], j});
         this->graph.addNode( this->nvars + j, weight);
      }
 
@@ -214,7 +214,63 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      return SCIP_OKAY;
   }
 
-
+//template <class T>
+//SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
+//                   Seeedpool*                                                   seeedpool,
+//                   Seeed*                                                       seeed
+//     ){
+//
+//     int i;
+//     int j;
+//     std::tr1::unordered_map<int, int> oldToNewVarIndex;
+//     std::tr1::unordered_map<int, int> oldToNewConsIndex;
+//
+//     this->nvars = seeed->getNOpenvars();
+//     this->nconss = seeed->getNOpenconss();
+//
+//
+//     /** add node for every var */
+//     for( i = 0 ; i < seeed->getNOpenvars(); ++i )
+//     {
+//         TCLIQUE_WEIGHT weight;
+//         int var = seeed->getOpenvars()[i];
+//
+//         /* note that the first nvars nodes correspond to variables */
+//         weight = this->weights.calculate(seeedpool->getVarForIndex(var));
+//         oldToNewVarIndex.insert({ var,i});
+//         this->graph.addNode(i, weight);
+//     }
+//
+//
+//     /** add node for every cons */
+//     for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
+//     {
+//        TCLIQUE_WEIGHT weight;
+//        int cons = seeed->getOpenconss()[j];
+//
+//        /* note that the first nvars nodes correspond to variables (legacy implementation) */
+//        weight = this->weights.calculate( seeedpool->getConsForIndex(cons) );
+//        oldToNewConsIndex.insert({ cons, j});
+//        this->graph.addNode( this->nvars + j, weight);
+//     }
+//
+//     /* go through all open constraints */
+//     for( i = 0; i < seeed->getNOpenconss(); ++i )
+//     {
+//        int oldConsId = seeed->getOpenconss()[i];
+//
+//        for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
+//        {
+//           int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
+//           if(! seeed->isVarOpenvar(oldVarId))
+//              continue;
+//           SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[oldVarId], this->nvars+i) );
+//        }
+//     }
+//
+//     this->graph.flush();
+//     return SCIP_OKAY;
+//  }
 
 
 template <class T>

@@ -108,6 +108,11 @@ public:
       int                   nvars_           /**< number of variables */
       );
 
+   virtual SCIP_RETCODE createFromPartialMatrix(
+      Seeedpool*           seeedpool,
+      Seeed*               seeed
+      );
+
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**          decomp           /**< decomposition structure to generate */
       );
@@ -115,6 +120,13 @@ public:
    virtual SCIP_RETCODE createSeeedFromPartition(
       Seeed**      firstSeeed,
       Seeed**      secondSeeed,
+      Seeedpool*   seeedpool
+      );
+
+   virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed*      oldSeeed,
+      Seeed**     firstSeeed,
+      Seeed**     secondSeeed,
       Seeedpool*  seeedpool
       );
 };

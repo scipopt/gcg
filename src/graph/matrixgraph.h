@@ -101,6 +101,17 @@ public:
    {
       return SCIP_ERROR;
    }
+
+   virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed*       oldSeeed,
+      Seeed**      firstSeeed,
+      Seeed**      secondSeeed,
+      Seeedpool*   seeedpool
+   )
+   {
+      return SCIP_ERROR;
+   }
+
    /**
     * reads the partition from the given file.
     * The format is graph dependent. The default is a file with one line for each node a
@@ -138,14 +149,8 @@ public:
       ) { return SCIP_ERROR; }
 
    virtual SCIP_RETCODE createFromPartialMatrix(
-                   std::vector<std::vector<int>>                                varsForConss,           /** stores for every constraint the indices of variables that are contained in the constraint */
-                   std::vector<std::vector<int>>                                conssForVars,           /** stores for every variable the indices of constraints containing this variable */
-                   std::vector<int>                                                     openVars,           /**< vector of variable indices that are not assigned yet */
-                   std::vector<int>                                                     openConss,          /**< vector of constraint indices that are not assigned yet */
-                   std::vector<SCIP_CONS*>                                              consToScipCons,     /** stores the corresponding scip constraints pointer */
-                   std::vector<SCIP_VAR*>                                               varToScipVar,           /** stores the corresponding scip variable pointer */
-                   int                                                                  nconss_,            /**< number of constraints */
-                   int                                                                  nvars_              /**< number of variables */
+      Seeedpool*            seeedpool,
+      Seeed*                seeed
       ) { return SCIP_ERROR; }
 
 

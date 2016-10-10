@@ -227,7 +227,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
       seeed->setOpenVarsAndConssCalculated(true);
    }
 
-   conssForBfs = seeed->getIndependentConss(seeedPropagationData->seeedpool);
+   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+   for( int i = 0; i < seeed->getNOpenconss(); ++i )
+      conssForBfs.push_back(seeed->getOpenconss()[i]);
 
    while(!conssForBfs.empty())
    {
@@ -257,7 +259,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
       seeedPropagationData->nNewSeeeds = 1;
       SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
       seeedPropagationData->newSeeeds[0] = seeed;
-      seeed->checkConsistency();
    }
 
    *result = SCIP_SUCCESS;

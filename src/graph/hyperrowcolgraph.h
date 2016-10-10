@@ -52,11 +52,17 @@ public:
          Weights               w                  /**< weights for the given graph */
       );
    virtual ~HyperrowcolGraph();
+
    SCIP_RETCODE createFromMatrix(
       SCIP_CONS**           conss,              /**< constraints for which graph should be created */
       SCIP_VAR**            vars,               /**< variables for which graph should be created */
       int                   nconss,             /**< number of constraints */
       int                   nvars               /**< number of variables */
+      );
+
+   virtual SCIP_RETCODE createFromPartialMatrix(
+      Seeedpool*           seeedpool,
+      Seeed*               seeed
       );
 
    /** writes the graph to the given file.
@@ -73,6 +79,13 @@ public:
       );
 
    virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed**          firstSeeed,
+      Seeed**          seconsSeeed,
+      Seeedpool*       seeedpool
+      );
+
+   virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed*           oldSeeed,
       Seeed**          firstSeeed,
       Seeed**          seconsSeeed,
       Seeedpool*       seeedpool

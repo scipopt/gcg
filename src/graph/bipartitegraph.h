@@ -68,6 +68,11 @@ public:
 	  int                   						nvars_              /**< number of variables */
    );
 
+//   virtual SCIP_RETCODE createFromPartialMatrix(
+//     Seeedpool*                              seeedpool,
+//     Seeed*                                  seeed
+//   );
+
    int getNConsNodes();
    int getNVarNodes();
 };
