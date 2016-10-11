@@ -217,53 +217,6 @@ DEC_DECL_EXITDETECTOR(exitHrcgpartition)
    return SCIP_OKAY;
 }
 
-static
-bool f (gcg::Seeed* seeed, gcg::Seeedpool* seeedpool)
-{
-   bool b;
-   for(int i = 0; i < seeed->getNOpenvars(); ++i)
-   {
-      b = false;
-      for(int c = 0; c < seeed->getNOpenconss() && !b; ++c)
-      {
-         int cons = seeed->getOpenconss()[c];
-         for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
-         {
-            int var = seeedpool->getVarsForCons(cons)[v];
-            if(var == seeed->getOpenvars()[i])
-            {
-               b = true;
-               break;
-            }
-         }
-      }
-      if(!b)
-         return false;
-   }
-
-   for(int i = 0; i < seeed->getNOpenconss(); ++i)
-   {
-      b = false;
-      for(int v = 0; v < seeed->getNOpenvars() && !b; ++v)
-      {
-         int var = seeed->getOpenvars()[v];
-         for(int c = 0; c < seeedpool->getNConssForVar(var); ++c)
-         {
-            int cons = seeedpool->getConssForVar(var)[c];
-            if(cons == seeed->getOpenconss()[i])
-            {
-               b = true;
-               break;
-            }
-         }
-      }
-      if(!b)
-         return false;
-   }
-
-   return true;
-}
-
 /** will call hmetis via a system call */
 static
 SCIP_RETCODE callMetis(

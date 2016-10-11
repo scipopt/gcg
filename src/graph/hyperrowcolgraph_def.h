@@ -248,18 +248,6 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
          }
       }
    }
-   this->nvars = 0;
-   this->nconss = 0;
-   for(i = 0; i < seeed->getNOpenvars(); ++i)
-   {
-      if(openVarsBool[i] == true)
-         this->nvars++;
-   }
-   for(j = 0; j < seeed->getNOpenconss(); ++j)
-   {
-      if(openConssBool[j] == true)
-         this->nconss++;
-   }
 
    varCounter = 0;
    /** add node for every var */
@@ -276,10 +264,10 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
       oldToNewVarIndex.insert({ oldVarId ,varCounter});
 
       this->graph.addNode(varCounter, weight);
-      std::cout << varCounter << ", ";
       varCounter ++;
 
    }
+   this->nvars = varCounter;
 
    conssCounter = 0;
    /** add node for every cons */
@@ -298,8 +286,8 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
       conssCounter ++;
    }
 
-   std::cout << "\nnvars: " << this->nvars << std::endl;
-   std::cout << "nconss: " << this->nconss << std::endl;
+   this->nconss = conssCounter;
+
    this->nnonzeroes = 0;
    /* go through all open constraints */
    for( i = 0; i < seeed->getNOpenconss(); ++i )
