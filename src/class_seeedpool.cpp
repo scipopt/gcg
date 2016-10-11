@@ -40,6 +40,7 @@
 #include "struct_decomp.h"
 #include "cons_decomp.h"
 #include "decomp.h"
+#include "scip_misc.h"
 
 #include <algorithm>
 #include <iostream>
@@ -294,12 +295,14 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                  cons = consToScipCons[i];
 
-                 SCIP_CALL_ABORT( SCIPgetConsNVars(scip, cons, &nCurrVars, &success ) );
+//                 SCIP_CALL_ABORT( SCIPgetConsNVars(scip, cons, &nCurrVars, &success ) );
+                 nCurrVars = GCGconsGetNVars(scip, cons);
                  std::cout << "\n\nConstraint: " << SCIPconsGetName(cons) << " with " << nCurrVars << " variables" << std::endl;
-                 assert(success);
+//                 assert(success);
 
                  SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVars, nCurrVars) ); /** free in line 321 */
-                 SCIPgetConsVars(scip, cons, currVars, nCurrVars, &success );
+//                 SCIPgetConsVars(scip, cons, currVars, nCurrVars, &success );
+                 SCIP_CALL_ABORT(GCGconsGetVars(scip, cons, currVars, nCurrVars));
 
                  for(int currVar = 0; currVar < nCurrVars; ++currVar)
                  {
@@ -434,7 +437,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                     }
                                  }
                                  else
-                                    std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds";
+                                    std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds" << std::endl;
 
                                  SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
 

@@ -178,46 +178,142 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
    std::tr1::unordered_map<int, int> oldToNewConsIndex;
    std::tr1::unordered_map<int, int> oldToNewVarIndex;
 
-   this->nvars = seeed->getNOpenvars();
-   this->nconss = seeed->getNOpenconss();
 
+//   /** add node for every var */
+//   for( i = 0 ; i < seeed->getNOpenvars(); ++i )
+//   {
+//      int oldVarId = seeed->getOpenvars()[i];
+//      TCLIQUE_WEIGHT weight;
+//
+//      /* note that the first nvars nodes correspond to variables */
+//      weight = this->weights.calculate( seeedpool->getVarForIndex(oldVarId) );
+//      oldToNewVarIndex.insert({ oldVarId ,i});
+//
+//      this->graph.addNode(i, weight);
+//
+//   }
+//
+//
+//   /** add node for every cons */
+//   for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
+//   {
+//      int oldConsId = seeed->getOpenconss()[j];
+//      TCLIQUE_WEIGHT weight;
+//
+//      /* note that the first nvars nodes correspond to variables (legacy implementation) */
+//      weight = this->weights.calculate( seeedpool->getConsForIndex(oldConsId) );
+//      oldToNewConsIndex.insert({ oldConsId, j});
+//      this->graph.addNode( this->nvars + j, weight);
+//   }
+//
+//   this->nnonzeroes = 0;
+//   /* go through all open constraints */
+//   for( i = 0; i < seeed->getNOpenconss(); ++i )
+//   {
+//      int oldConsId = seeed->getOpenconss()[i];
+//
+//      for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
+//      {
+//         int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
+//         if(!seeed->isVarOpenvar(oldVarId))
+//            continue;
+//         SCIPdebugMessage("Cons <%s> (%d), var <%s> (%d), nonzero %d\n", SCIPconsGetName(seeedpool->getConsForIndex(oldConsId)), i, SCIPvarGetName(seeedpool->getVarForIndex(oldVarId)), oldToNewVarIndex[oldVarId], this->nnonzeroes);
+//         /* add nonzero node and edge to variable and constraint) */;
+//         SCIP_CALL( this->graph.addNode( this->nvars+this->nconss+this->nnonzeroes, 0) );
+//         SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[oldVarId], this->nvars+this->nconss+this->nnonzeroes) );
+//         SCIP_CALL( this->graph.addEdge(this->nvars+oldToNewConsIndex[oldConsId], this->nvars+this->nconss+this->nnonzeroes) );
+//
+//         this->nnonzeroes++;
+//      }
+//   }
 
+   std::vector<bool> openVarsBool(seeed->getNOpenvars(), false) ;
+   std::vector<bool> openConssBool(seeed->getNOpenconss(), false) ;
+   int varCounter;
+   int conssCounter;
+
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      {
+         int var = seeed->getOpenvars()[v];
+         for(i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               openVarsBool[v] = true;
+               openConssBool[c] = true;
+            }
+         }
+      }
+   }
+   this->nvars = 0;
+   this->nconss = 0;
+   for(i = 0; i < seeed->getNOpenvars(); ++i)
+   {
+      if(openVarsBool[i] == true)
+         this->nvars++;
+   }
+   for(j = 0; j < seeed->getNOpenconss(); ++j)
+   {
+      if(openConssBool[j] == true)
+         this->nconss++;
+   }
+
+   varCounter = 0;
    /** add node for every var */
    for( i = 0 ; i < seeed->getNOpenvars(); ++i )
    {
       int oldVarId = seeed->getOpenvars()[i];
       TCLIQUE_WEIGHT weight;
 
+      if(openVarsBool[i] == false)
+         continue;
+
       /* note that the first nvars nodes correspond to variables */
       weight = this->weights.calculate( seeedpool->getVarForIndex(oldVarId) );
-      oldToNewVarIndex.insert({ oldVarId ,i});
+      oldToNewVarIndex.insert({ oldVarId ,varCounter});
 
-      this->graph.addNode(i, weight);
+      this->graph.addNode(varCounter, weight);
+      std::cout << varCounter << ", ";
+      varCounter ++;
+
    }
 
-
+   conssCounter = 0;
    /** add node for every cons */
    for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
    {
       int oldConsId = seeed->getOpenconss()[j];
       TCLIQUE_WEIGHT weight;
 
+      if(openConssBool[j] == false)
+         continue;
+
       /* note that the first nvars nodes correspond to variables (legacy implementation) */
       weight = this->weights.calculate( seeedpool->getConsForIndex(oldConsId) );
-      oldToNewConsIndex.insert({ oldConsId, j});
-      this->graph.addNode( this->nvars + j, weight);
+      oldToNewConsIndex.insert({ oldConsId, conssCounter});
+      this->graph.addNode( this->nvars + conssCounter, weight);
+      conssCounter ++;
    }
 
+   std::cout << "\nnvars: " << this->nvars << std::endl;
+   std::cout << "nconss: " << this->nconss << std::endl;
    this->nnonzeroes = 0;
    /* go through all open constraints */
    for( i = 0; i < seeed->getNOpenconss(); ++i )
    {
       int oldConsId = seeed->getOpenconss()[i];
+      if(!openConssBool[i])
+         continue;
 
       for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
       {
          int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
          if(!seeed->isVarOpenvar(oldVarId))
+            continue;
+         if(!openVarsBool[seeed->getIndexOfOpenvar(oldVarId)])
             continue;
          SCIPdebugMessage("Cons <%s> (%d), var <%s> (%d), nonzero %d\n", SCIPconsGetName(seeedpool->getConsForIndex(oldConsId)), i, SCIPvarGetName(seeedpool->getVarForIndex(oldVarId)), oldToNewVarIndex[oldVarId], this->nnonzeroes);
          /* add nonzero node and edge to variable and constraint) */;

@@ -1360,6 +1360,9 @@ const int Seeed::nPrimes = 70;
      for(size_t i = 0; i < assignedOpenconss.size(); ++i)
              deleteOpencons(assignedOpenconss[i]);
 
+     if(assigned)
+        sort();
+
      return assigned;
   }
 
@@ -1418,6 +1421,9 @@ const int Seeed::nPrimes = 70;
         deleteOpenvar(assignedOpenvars[i]);
 
 
+     if(assigned)
+        sort();
+
      return assigned;
   }
 
@@ -1469,6 +1475,9 @@ const int Seeed::nPrimes = 70;
      {
         deleteOpenvar(assignedOpenvars[i]);
      }
+
+     if(assigned)
+        sort();
      return assigned;
   }
 
@@ -1482,78 +1491,6 @@ const int Seeed::nPrimes = 70;
 
      return SCIP_OKAY;
   }
-
-//  /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-//   std::vector<int> Seeed::getIndependentConss(
-//         Seeedpool*       seeedpool
-//   )
-//   {
-//      std::vector<int> independentConss = std::vector<int>(0);
-//      bool independent;
-//      int cons;
-//      int var;
-//
-//      assignAllDependent(seeedpool);
-//
-//      for(int c = 0; c < getNOpenconss(); ++c)
-//      {
-//         cons = openConss[c];
-//         independent = true;
-//         for( int v = 0; v < seeedpool->getNVarsForCons(cons) && independent; ++v )
-//         {
-//            var = seeedpool->getVarsForCons(cons)[v];
-//            for(int b = 0; b < nBlocks; ++b)
-//            {
-//               assert(!isVarBlockvarOfBlock(var, b));
-//               if(isVarStairlinkingvarOfBlock(var, b))
-//                  independent = false;
-//            }
-//         }
-//         if(independent)
-//            independentConss.push_back(cons);
-//      }
-//
-//      return independentConss;
-//   }
-//
-//   /** fills the array with open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-//   SCIP_RETCODE Seeed::getIndependentConss(
-//      Seeedpool*       seeedpool,
-//      int              arrayForIndependentConss[]
-//   )
-//   {
-//      std::vector<int> independentConss = std::vector<int>(0);
-//      bool independent;
-//      int cons;
-//      int var;
-//
-//      assignAllDependent(seeedpool);
-//
-//      for(int c = 0; c < getNOpenconss(); ++c)
-//      {
-//         cons = openConss[c];
-//         independent = true;
-//         for( int v = 0; v < seeedpool->getNVarsForCons(cons) && independent; ++v )
-//         {
-//            var = seeedpool->getVarsForCons(cons)[v];
-//            for(int b = 0; b < nBlocks; ++b)
-//            {
-//               assert(!isVarBlockvarOfBlock(var, b));
-//               if(isVarStairlinkingvarOfBlock(var, b))
-//                  independent = false;
-//            }
-//         }
-//         if(independent)
-//            arrayForIndependentConss[c] = cons;
-//      }
-//      return SCIP_OKAY;
-//   }
-//
-//   /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-//   int Seeed::getNIndependentConss(Seeedpool*    seeedpool)
-//   {
-//      return (int) getIndependentConss(seeedpool).size();
-//   }
 
 
   /** returns whether the var is a linking var */

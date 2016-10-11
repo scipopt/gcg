@@ -439,12 +439,12 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
 
    int k;
    int j;
-   int seeed;
+   int s;
    int nMaxSeeeds;
    int nNewSeeeds = 0;
+   gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
-//   std::vector<int> numberOfBlocks = {2, 4, 8, 12, 20, 32};
-   std::vector<int> numberOfBlocks = {8};
+   std::vector<int> numberOfBlocks = {2, 4, 8, 12, 20, 32};
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -461,8 +461,19 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
    detectordata->graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
 
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+   if(seeed->getNOpenconss() == 0 || seeed->getNOpenvars() == 0)
+   {
+      delete seeed;
+      seeedPropagationData->nNewSeeeds = 0;
+      SCIPfreeBufferArray(scip, &newSeeeds);
+      *result = SCIP_SUCCESS;
+      return SCIP_OKAY;
+   }
+   SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeedPropagationData->seeedToPropagate) );
 
-   SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+//   SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
@@ -477,7 +488,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
          continue;
       }
 
-      SCIP_CALL( detectordata->graph->createSeeedFromPartition(&newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
+      SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
+//      SCIP_CALL( detectordata->graph->createSeeedFromPartition(&newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
 
       if( (newSeeeds)[j] != NULL )
       {
@@ -490,15 +502,16 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
 
    delete detectordata->graph;
    detectordata->graph = NULL;
+   delete seeed;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
    seeedPropagationData->nNewSeeeds = nNewSeeeds;
-   for(j = 0, seeed = 0, j = 0; j < nNewSeeeds; ++j)
+   for(j = 0, s = 0, j = 0; j < nNewSeeeds; ++j)
    {
       if(newSeeeds[j] != NULL)
       {
-         seeedPropagationData->newSeeeds[seeed] = newSeeeds[j];
-         seeedPropagationData->newSeeeds[seeed]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
-         ++seeed;
+         seeedPropagationData->newSeeeds[s] = newSeeeds[j];
+         seeedPropagationData->newSeeeds[s]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+         ++s;
       }
    }
    SCIPfreeBufferArray(scip, &newSeeeds);

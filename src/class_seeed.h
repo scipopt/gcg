@@ -284,23 +284,6 @@ public:
          Seeedpool*       seeedpool
    );
 
-//   /** returns the open conss without stairlinkingvars (conss which can be assigned independently of the seeed), only for c++ */
-//    std::vector<int> getIndependentConss(
-//          Seeedpool*       seeedpool
-//    );
-//
-//    /** fills the array with open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-//   SCIP_RETCODE getIndependentConss(
-//       Seeedpool*       seeedpool,
-//       int              arrayForIndependentConss[] /** array with nIndependentConss positions */
-//   );
-//
-//
-//   /** returns the number of open conss without stairlinkingvars (conss which can be assigned independently of the seeed) */
-//   int getNIndependentConss(
-//           Seeedpool*    seeedpool
-//   );
-
    /** returns whether the var is a linking var */
    bool isVarLinkingvar(
          int var

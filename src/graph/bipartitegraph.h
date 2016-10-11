@@ -58,20 +58,11 @@ public:
       int                   nvars_               /**< number of variables */
    );
 
-   virtual SCIP_RETCODE createFromPartialMatrix(
-	  std::vector<std::vector<int>> 				varsForConss, 		/** stores for every constraint the indices of variables that are contained in the constraint */
-	  std::vector<std::vector<int>> 				conssForVars, 		/** stores for every variable the indices of constraints containing this variable */
-	  Seeed*                                  seeed,
-	  std::vector<SCIP_CONS*> 						consToScipCons,	    /** stores the corresponding scip constraints pointer */
-	  std::vector<SCIP_VAR*> 						varToScipVar,		/** stores the corresponding scip variable pointer */
-	  int                   						nconss_,            /**< number of constraints */
-	  int                   						nvars_              /**< number of variables */
-   );
 
-//   virtual SCIP_RETCODE createFromPartialMatrix(
-//     Seeedpool*                              seeedpool,
-//     Seeed*                                  seeed
-//   );
+   virtual SCIP_RETCODE createFromPartialMatrix(
+     Seeedpool*                              seeedpool,
+     Seeed*                                  seeed
+   );
 
    int getNConsNodes();
    int getNVarNodes();

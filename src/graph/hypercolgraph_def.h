@@ -275,6 +275,8 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
    /* go through all variables */
    for( i = 0; i < this->nvars; ++i )
    {
+      if(hyperedges[i].size() == 0)
+         continue;
       int oldVarId = seeed->getOpenvars()[i];
 
       /* calculate weight of node */

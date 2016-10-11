@@ -146,27 +146,18 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
    return SCIP_OKAY;
 }
 
+
 template <class T>
 SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
-                   std::vector<std::vector<int>>                                varsForConss,           /** stores for every constraint the indices of variables that are contained in the constraint */
-                   std::vector<std::vector<int>>                                conssForVars,           /** stores for every variable the indices of constraints containing this variable */
-                   Seeed*                                                       seeed,
-                   std::vector<SCIP_CONS*>                                              consToScipCons,     /** stores the corresponding scip constraints pointer */
-                   std::vector<SCIP_VAR*>                                               varToScipVar,           /** stores the corresponding scip variable pointer */
-                   int                                                                  nconss_,            /**< number of constraints */
-                   int                                                                  nvars_              /**< number of variables */
+                   Seeedpool*                                                   seeedpool,
+                   Seeed*                                                       seeed
      ){
 
      int i;
      int j;
-     SCIP_Bool success;
      std::tr1::unordered_map<int, int> oldToNewVarIndex;
      std::tr1::unordered_map<int, int> oldToNewConsIndex;
 
-     assert(varsForConss.size() == nconss_);
-     assert(conssForVars.size() == nvars_);
-     assert(nvars_ > 0);
-     assert(nconss_ > 0);
      this->nvars = seeed->getNOpenvars();
      this->nconss = seeed->getNOpenconss();
 
@@ -175,10 +166,11 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      for( i = 0 ; i < seeed->getNOpenvars(); ++i )
      {
          TCLIQUE_WEIGHT weight;
+         int var = seeed->getOpenvars()[i];
 
          /* note that the first nvars nodes correspond to variables */
-         weight = this->weights.calculate(varToScipVar[seeed->getOpenvars()[i]] );
-         oldToNewVarIndex.insert({ seeed->getOpenvars()[i],i});
+         weight = this->weights.calculate(seeedpool->getVarForIndex(var));
+         oldToNewVarIndex.insert({ var,i});
          this->graph.addNode(i, weight);
      }
 
@@ -187,10 +179,11 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
      {
         TCLIQUE_WEIGHT weight;
+        int cons = seeed->getOpenconss()[j];
 
         /* note that the first nvars nodes correspond to variables (legacy implementation) */
-        weight = this->weights.calculate(consToScipCons[seeed->getOpenconss()[j] ] );
-        oldToNewConsIndex.insert({ seeed->getOpenconss()[j], j});
+        weight = this->weights.calculate( seeedpool->getConsForIndex(cons) );
+        oldToNewConsIndex.insert({ cons, j});
         this->graph.addNode( this->nvars + j, weight);
      }
 
@@ -199,78 +192,18 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      {
         int oldConsId = seeed->getOpenconss()[i];
 
-        std::vector<int>::const_iterator curVarIter = varsForConss[oldConsId].begin();
-        std::vector<int>::const_iterator curVarIterEnd = varsForConss[oldConsId].end();
-
-        for( ; curVarIter != curVarIterEnd; ++curVarIter )
+        for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
         {
-                if (oldToNewVarIndex.find(*curVarIter) == oldToNewVarIndex.end() )
-                        continue;
-                SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[*curVarIter], this->nvars+i) );
+           int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
+           if(! seeed->isVarOpenvar(oldVarId))
+              continue;
+           SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[oldVarId], this->nvars+i) );
         }
      }
 
      this->graph.flush();
      return SCIP_OKAY;
   }
-
-//template <class T>
-//SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
-//                   Seeedpool*                                                   seeedpool,
-//                   Seeed*                                                       seeed
-//     ){
-//
-//     int i;
-//     int j;
-//     std::tr1::unordered_map<int, int> oldToNewVarIndex;
-//     std::tr1::unordered_map<int, int> oldToNewConsIndex;
-//
-//     this->nvars = seeed->getNOpenvars();
-//     this->nconss = seeed->getNOpenconss();
-//
-//
-//     /** add node for every var */
-//     for( i = 0 ; i < seeed->getNOpenvars(); ++i )
-//     {
-//         TCLIQUE_WEIGHT weight;
-//         int var = seeed->getOpenvars()[i];
-//
-//         /* note that the first nvars nodes correspond to variables */
-//         weight = this->weights.calculate(seeedpool->getVarForIndex(var));
-//         oldToNewVarIndex.insert({ var,i});
-//         this->graph.addNode(i, weight);
-//     }
-//
-//
-//     /** add node for every cons */
-//     for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
-//     {
-//        TCLIQUE_WEIGHT weight;
-//        int cons = seeed->getOpenconss()[j];
-//
-//        /* note that the first nvars nodes correspond to variables (legacy implementation) */
-//        weight = this->weights.calculate( seeedpool->getConsForIndex(cons) );
-//        oldToNewConsIndex.insert({ cons, j});
-//        this->graph.addNode( this->nvars + j, weight);
-//     }
-//
-//     /* go through all open constraints */
-//     for( i = 0; i < seeed->getNOpenconss(); ++i )
-//     {
-//        int oldConsId = seeed->getOpenconss()[i];
-//
-//        for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
-//        {
-//           int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
-//           if(! seeed->isVarOpenvar(oldVarId))
-//              continue;
-//           SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[oldVarId], this->nvars+i) );
-//        }
-//     }
-//
-//     this->graph.flush();
-//     return SCIP_OKAY;
-//  }
 
 
 template <class T>

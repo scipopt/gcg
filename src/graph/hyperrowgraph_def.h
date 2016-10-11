@@ -483,6 +483,9 @@ SCIP_RETCODE HyperrowGraph<T>::createFromPartialMatrix(
            hyperedge.insert(hyperedge.end(), oldToNewVarIndex[oldVarId]);
         }
 
+        if(hyperedge.size() == 0)
+           continue;
+
         /* calculate weight of hyperedge */
         weight = this->weights.calculate(seeedpool->getConsForIndex(oldConsId));
         this->graph.addHyperedge(hyperedge, weight);
