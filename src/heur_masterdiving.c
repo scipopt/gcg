@@ -54,16 +54,16 @@
 #define DEFAULT_MAXLPITERQUOT      0.05 /**< maximal fraction of diving LP iterations compared to node LP iterations */
 #define DEFAULT_MAXLPITEROFS       1000 /**< additional number of allowed LP iterations */
 #define DEFAULT_MAXPRICEROUNDS        0 /**< maximal number of allowed pricing rounds (-1: no limit) */
-#define DEFAULT_USEFARKASONLY      TRUE /**< perform pricing only if infeasibility is encountered */
+#define DEFAULT_USEFARKASONLY     FALSE /**< perform pricing only if infeasibility is encountered */
 #define DEFAULT_MAXDIVEUBQUOT       0.8 /**< maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound)
                                          *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOT      0.0 /**< maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound)
                                          *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEUBQUOTNOSOL  0.1 /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOTNOSOL 0.0 /**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
-#define DEFAULT_BACKTRACK          TRUE /**< single backtracking by choosing another variable in case of infeasibility */
+#define DEFAULT_BACKTRACK         FALSE /**< single backtracking by choosing another variable in case of infeasibility */
 #define DEFAULT_MAXDISCREPANCY        2 /**< maximal discrepancy allowed in backtracking and limited discrepancy search */
-#define DEFAULT_MAXDISCDEPTH          3 /**< maximal depth until which a limited discrepancy search is performed */
+#define DEFAULT_MAXDISCDEPTH          0 /**< maximal depth until which a limited discrepancy search is performed */
 
 #define MINLPITER                 10000 /**< minimal number of LP iterations allowed in each LP solving call */
 
@@ -1067,7 +1067,7 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
    SCIP_CALL( SCIPaddBoolParam(scip,
         paramname,
         "perform pricing only if infeasibility is encountered",
-        &heurdata->usefarkasonly, FALSE, DEFAULT_USEFARKASONLY, NULL, NULL) );
+        &heurdata->usefarkasonly, TRUE, DEFAULT_USEFARKASONLY, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiveubquot", name);
    SCIP_CALL( SCIPaddRealParam(scip,
         paramname,
@@ -1092,17 +1092,17 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
    SCIP_CALL( SCIPaddBoolParam(scip,
         paramname,
         "single backtracking by choosing another variable in case of infeasibility",
-        &heurdata->backtrack, FALSE, DEFAULT_BACKTRACK, NULL, NULL) );
+        &heurdata->backtrack, TRUE, DEFAULT_BACKTRACK, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiscrepancy", name);
    SCIP_CALL( SCIPaddIntParam(scip,
         paramname,
         "maximal discrepancy allowed in backtracking and limited discrepancy search",
-        &heurdata->maxdiscrepancy, FALSE, DEFAULT_MAXDISCREPANCY, 0, INT_MAX, NULL, NULL) );
+        &heurdata->maxdiscrepancy, TRUE, DEFAULT_MAXDISCREPANCY, 0, INT_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiscdepth", name);
    SCIP_CALL( SCIPaddIntParam(scip,
         paramname,
         "maximal depth until which a limited discrepancy search is performed",
-        &heurdata->maxdiscdepth, FALSE, DEFAULT_MAXDISCDEPTH, 0, INT_MAX, NULL, NULL) );
+        &heurdata->maxdiscdepth, TRUE, DEFAULT_MAXDISCDEPTH, 0, INT_MAX, NULL, NULL) );
 
 #ifdef SCIP_STATISTIC
    /* register the diving heuristic to the masterdiving event handler */
