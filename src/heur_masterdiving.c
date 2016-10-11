@@ -41,7 +41,7 @@
 #include "relax_gcg.h"
 
 
-#define HEUR_TIMING           SCIP_HEURTIMING_AFTERLPLOOP
+#define HEUR_TIMING           SCIP_HEURTIMING_AFTERLPPLUNGE
 #define HEUR_USESSUBSCIP      FALSE  /**< does the heuristic use a secondary SCIP instance? */
 
 
