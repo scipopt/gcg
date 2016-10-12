@@ -60,6 +60,7 @@ public:
       int                   nvars               /**< number of variables */
       );
 
+   /** creates a graph with open constraints and open variables of the seeed */
    virtual SCIP_RETCODE createFromPartialMatrix(
       Seeedpool*           seeedpool,
       Seeed*               seeed
@@ -78,17 +79,19 @@ public:
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
       );
 
+   /** creates a new seeed by dint of a graph created with all constraints and variables */
    virtual SCIP_RETCODE createSeeedFromPartition(
-      Seeed**          firstSeeed,
-      Seeed**          seconsSeeed,
-      Seeedpool*       seeedpool
+      Seeed**      firstSeeed,         /**< pointer to buffer the new seeed created by dint of the graph */
+      Seeed**      secondSeeed,        /**< pointer to buffer the new seeed whose border is amplified by dint of the graph */
+      Seeedpool*   seeedpool
       );
 
+   /** amplifies a seeed by dint of a graph created with open constraints and open variables of the seeed */
    virtual SCIP_RETCODE createSeeedFromPartition(
-      Seeed*           oldSeeed,
-      Seeed**          firstSeeed,
-      Seeed**          seconsSeeed,
-      Seeedpool*       seeedpool
+      Seeed*      oldSeeed,            /**< seeed which should be amplifies */
+      Seeed**     firstSeeed,          /**< pointer to buffer the new seeed amplified by dint of the graph */
+      Seeed**     secondSeeed,         /**< pinter to buffer the new seeed whose border is amplified by dint of the graph */
+      Seeedpool*  seeedpool
       );
 
    /**

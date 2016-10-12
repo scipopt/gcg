@@ -376,6 +376,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             currSeeeds[s]->sort();
             currSeeeds[s]->considerImplicits(this);
             currSeeeds[s]->calcHashvalue();
+//            currSeeeds[s]->identifyFreeConssAndVars(this);
          }
 
          for(int round = 0; round < maxRounds; ++round)
@@ -417,6 +418,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  {
                                     seeedPropData->newSeeeds[j]->considerImplicits(this);
                                     seeedPropData->newSeeeds[j]->sort();
+//                                    seeedPropData->newSeeeds[j]->identifyFreeConssAndVars(this);
                                     seeedPropData->newSeeeds[j]->checkConsistency();
                                     seeedPropData->newSeeeds[j]->calcHashvalue();
 

@@ -66,6 +66,8 @@ private:
    std::vector<std::vector<int>> 	stairlinkingVars;		/**< vector containing indices of staircase linking variables of the blocks */
    std::vector<int> 				openVars;				/**< vector containing indices of  variables that are not assigned yet*/
    std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
+   std::vector<int>           freeVars;            /**< vector containing indices of variables that can be assigned independently */
+   std::vector<int>           freeConss;          /**< vector containing indices of constraints that can be assigned independently */
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
    std::vector<int> 				detectorChain;
    bool 							openVarsAndConssCalculated; /** are the */
@@ -204,6 +206,22 @@ public:
 
    /**  returns vector containing constraints not assigned yet */
    const int* getOpenconss(
+   );
+
+   /** returns vector containing free variables */
+   const int* getFreevars(
+   );
+
+   /** returns size of vector containing free variables */
+   int getNFreevars(
+   );
+
+   /** returns vector containing free constraints */
+   const int* getFreeconss(
+   );
+
+   /** returns size of vector containing free constraints */
+   int getNFreeconss(
    );
 
    /** returns size of vector containing master conss */
@@ -389,7 +407,10 @@ public:
          int opencons
    );
 
-
+   /** fills out the vectors for free conss and free vars */
+   SCIP_RETCODE identifyFreeConssAndVars(
+         Seeedpool* seeedpool
+   );
 
    void calcHashvalue(
    );
