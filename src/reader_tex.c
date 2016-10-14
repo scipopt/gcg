@@ -25,8 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_pdf.c
- * @brief  PDF file reader for writing to PDF
+/**@file   reader_tex.c
+ * @brief  tex file reader for writing decomposition details to LaTeX files
  * @author Hanna Franzen
  */
 
@@ -47,9 +47,9 @@
 #include "cons_decomp.h"
 #include "pub_decomp.h"
 
-#define READER_NAME             "pdfreader"
-#define READER_DESC             "file reader for writing to PDF"
-#define READER_EXTENSION        "pdf"
+#define READER_NAME             "texreader"
+#define READER_DESC             "file reader for writing decomposition details to LaTeX files"
+#define READER_EXTENSION        "tex"
 
 
 /** data for dec reader */
@@ -65,7 +65,7 @@ struct SCIP_ReaderData
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
 static
-SCIP_DECL_READERFREE(readerFreePdf)
+SCIP_DECL_READERFREE(readerFreeTex)
 {
    SCIP_READERDATA* readerdata;
 
@@ -79,7 +79,7 @@ SCIP_DECL_READERFREE(readerFreePdf)
 
 /** problem reading method of reader */
 static
-SCIP_DECL_READERREAD(readerReadPdf)
+SCIP_DECL_READERREAD(readerReadTex)
 {  /*lint --e{715}*/
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
@@ -94,7 +94,7 @@ SCIP_DECL_READERREAD(readerReadPdf)
 
 /** problem writing method of reader */
 static
-SCIP_DECL_READERWRITE(readerWritePdf)
+SCIP_DECL_READERWRITE(readerWriteTex)
 {  /*lint --e{715}*/
    int ndecomps;
 

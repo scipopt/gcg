@@ -25,20 +25,20 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_pdf.h
- * @brief  PDF file reader for writing to PDF
+/**@file   reader_tex.h
+ * @brief  tex file reader for writing decomposition details to LaTeX files
  * @author Hanna Franzen
  * @ingroup FILEREADERS
 
- * This reader can write reports of decompositions to a PDF file.
+ * This reader can write reports of decompositions to a tex file.
  * The gp reader is required for visualizations.
 
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_READER_PDF_H__
-#define GCG_READER_PDF_H__
+#ifndef GCG_READER_TEX_H__
+#define GCG_READER_TEX_H__
 
 
 #include "scip/scip.h"
@@ -50,14 +50,14 @@ extern "C" {
 
 /** includes the dec file reader into SCIP */
 extern
-SCIP_RETCODE SCIPincludeReaderPdf(
+SCIP_RETCODE SCIPincludeReaderTex(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 
 /* the reader cannot read files, will return an error if used */
 extern
-SCIP_RETCODE GCGreadPdf(
+SCIP_RETCODE GCGreadTex(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
@@ -65,7 +65,7 @@ SCIP_RETCODE GCGreadPdf(
 
 
 /** write a visualization PDF file for a given set of decomposition using intermediate LaTeX code */
-SCIP_RETCODE GCGwriteDecompsToPdf(
+SCIP_RETCODE GCGwriteDecompsToTex(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
