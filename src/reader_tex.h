@@ -48,7 +48,7 @@
 extern "C" {
 #endif
 
-/** includes the dec file reader into SCIP */
+/** includes the tex file reader into SCIP */
 extern
 SCIP_RETCODE SCIPincludeReaderTex(
    SCIP*                 scip                /**< SCIP data structure */
@@ -64,12 +64,12 @@ SCIP_RETCODE GCGreadTex(
    );
 
 
-/** write a visualization PDF file for a given set of decomposition using intermediate LaTeX code */
+/** write a tex file for the visualization & statistics of a given set of decomposition */
 SCIP_RETCODE GCGwriteDecompsToTex(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
-   int*                  ndecomps             /**< Number of decompositions */
+   int*                  ndecomps            /**< Number of decompositions */
    );
 
 #ifdef __cplusplus

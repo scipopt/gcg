@@ -39,6 +39,7 @@
 #include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
 #endif
 #include <ctype.h>
+#include <stdio.h>
 
 #include "reader_tex.h"
 #include "scip_misc.h"
@@ -51,17 +52,17 @@
 #define READER_DESC             "file reader for writing decomposition details to LaTeX files"
 #define READER_EXTENSION        "tex"
 
+#if defined(_WIN32) || defined(_WIN64)
+#define LINEBREAK "\r\n"
+#else
+#define LINEBREAK "\n"
+#endif
 
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-   const char*   filename;
+   FILE*   currentfile;
 };
-
-
-/*
- * Callback methods of reader
- */
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
 static
@@ -109,11 +110,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
    return SCIP_OKAY;
 }
 
-/*
- * reader specific interface methods
- */
-
-/** includes the dec file reader in SCIP */
+/** includes the tex file reader in SCIP */
 SCIP_RETCODE
 SCIPincludeReaderTex(
    SCIP*                 scip                /**< SCIP data structure */
@@ -131,7 +128,8 @@ SCIPincludeReaderTex(
    return SCIP_OKAY;
 }
 
-/* the reader is not supposed to read files */
+/* the reader is not supposed to read files,
+ * returns a reading error */
 SCIP_RETCODE GCGreadTex(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
@@ -141,23 +139,119 @@ SCIP_RETCODE GCGreadTex(
    return SCIP_READERROR;
 }
 
+/** write LaTeX code header & begin of document */
+static
+SCIP_RETCODE writeHeaderCode(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file                /**< File pointer to write to */
+   )
+{
+   SCIPinfoMessage(scip, file, "% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *                  This file is part of the program                         * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *          GCG --- Generic Column Generation                                * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *                  a Dantzig-Wolfe decomposition based extension            * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *                  of the branch-cut-and-price framework                    * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *         SCIP --- Solving Constraint Integer Programs                      * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *                         Zuse Institute Berlin (ZIB)                       * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * This program is free software; you can redistribute it and/or             * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * modify it under the terms of the GNU Lesser General Public License        * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * as published by the Free Software Foundation; either version 3            * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * of the License, or (at your option) any later version.                    * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * This program is distributed in the hope that it will be useful,           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * but WITHOUT ANY WARRANTY; without even the implied warranty of            * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * GNU Lesser General Public License for more details.                       * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * You should have received a copy of the GNU Lesser General Public License  * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * along with this program; if not, write to the Free Software               * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.* %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%                                                                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% @author Hanna Franzen                                                         %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\documentclass[a4paper,10pt]{article}                                          %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "% packages                                                                      %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                    %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{document}                                                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+
+   return SCIP_OKAY;
+}
+
+/** write LaTeX code for general decomposition statistics */
+static
+SCIP_RETCODE writeGeneralStatsticsCode(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file,               /**< File pointer to write to */
+   DEC_DECOMP**         decomps,            /**< Decompositions structure */
+   int*                 ndecomps            /**< Number of decompositions */
+   )
+{
+
+   SCIPinfoMessage(scip, file, "\\section*{Detection Statistics}                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Detection Statistics}                           %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & %s \\\\                                                  %s", SCIPgetProbName(scip), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of found decompositions: & %s \\\\                                     %s", SCIPconshdlrDecompGetNDecdecomps(scip), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                %s", *ndecomps, LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
+
+   GCGprintDetectorStatistics(scip, file);
+
+   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
+
+   /*@todo get and output more statistics*/
+
+   return SCIP_OKAY;
+}
+
 /** write LaTeX code for one decomposition */
 static
 SCIP_RETCODE writeDecompCode(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decomp              /**< Decomposition pointer */
+   DEC_DECOMP*           decomp              /**< Decomposition array pointer */
    )
 {
+   SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Detection Statistics}                           %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   /*@todo get and output statistics*/
+
    return SCIP_OKAY;
 }
 
-/** write a visualization PDF file for a given set of decomposition using intermediate LaTeX code */
+/** write LaTeX code for end of document */
+static
+SCIP_RETCODE writeEndCode(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< File pointer to write to */
+   )
+{
+   SCIPinfoMessage(scip, file, "\\end{document}                                                                  %s", LINEBREAK);
+
+   return SCIP_OKAY;
+}
+
+/** write a tex file for the visualization & statistics of a given set of decomposition */
 SCIP_RETCODE GCGwriteDecompsToTex(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
-   int*                  ndecomps             /**< Number of decompositions */
+   int*                  ndecomps            /**< Number of decompositions */
    )
 {
    int i;
@@ -167,10 +261,16 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    /*@todo sort decomps*/
 
-   for(i=0;i<*ndecomps;i++)
+   SCIP_CALL( writeHeaderCode(scip,file) );
+
+   SCIP_CALL( writeGeneralStatsticsCode(scip,file,decomps,ndecomps) );
+
+   for( i=0; i<*ndecomps; i++ )
    {
-      /*@todo writeDecompCode for all in decomps*/
+      SCIP_CALL( writeDecompCode(scip,file,decomps[i]) );
    }
+
+   SCIP_CALL( writeEndCode(scip,file) );
 
    return SCIP_OKAY;
 }
