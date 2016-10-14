@@ -41,8 +41,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/* #define SCIP_DEBUG */
-
 #include <cstring>
 #include <cassert>
 #include <regex>
@@ -78,8 +76,6 @@ struct DEC_DetectorData
  * Local methods
  */
 
-/* put your local methods here, and declare them static */
-
 /* returns true if the constraint should be a master constraint and false otherwise */
 static
 SCIP_Bool isConsMaster(
@@ -90,7 +86,7 @@ SCIP_Bool isConsMaster(
 {
    assert(scip != NULL);
    assert(cons != NULL);
-   char* consname;
+   const char* consname;
    std::regex expr(detectordata->regex);
    consname = SCIPconsGetName(cons);
 
@@ -264,7 +260,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectConsname)
  * detector specific interface methods
  */
 
-/** creates the handler for consname constraints and includes it in SCIP */
+/** creates the consmname detector and includes it in SCIP */
 extern "C"
 SCIP_RETCODE SCIPincludeDetectorConsname(
    SCIP*                 scip                /**< SCIP data structure */
@@ -272,7 +268,7 @@ SCIP_RETCODE SCIPincludeDetectorConsname(
 {
    DEC_DETECTORDATA* detectordata;
 
-   /* create consname constraint handler data */
+   /* create consname detector data */
    detectordata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
@@ -281,7 +277,7 @@ SCIP_RETCODE SCIPincludeDetectorConsname(
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
       detectordata, detectorDetectConsname, detectorFreeConsname, NULL, NULL) );
 
-   /* add consname constraint handler parameters */
+   /* add consname detector parameters */
    SCIP_CALL( SCIPaddStringParam(scip, "detectors/consname/regex", "All cons whose name match this regular expression will be mastercons", &detectordata->regex, FALSE, DEFAULT_REGEX, NULL, NULL) );
 
    return SCIP_OKAY;
