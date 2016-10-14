@@ -40,7 +40,7 @@
 #endif
 #include <ctype.h>
 
-#include "reader_pdf.h"
+#include "reader_tex.h"
 #include "scip_misc.h"
 #include "pub_gcgvar.h"
 
@@ -87,7 +87,7 @@ SCIP_DECL_READERREAD(readerReadTex)
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( GCGreadPdf(scip, filename, result) );
+   SCIP_CALL( GCGreadTex(scip, filename, result) );
 
    return SCIP_OKAY;
 }
@@ -103,7 +103,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 
    ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
 
-   SCIP_CALL( GCGwriteDecompsToPdf(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps) );
+   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -115,7 +115,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 
 /** includes the dec file reader in SCIP */
 SCIP_RETCODE
-SCIPincludeReaderPdf(
+SCIPincludeReaderTex(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -126,13 +126,13 @@ SCIPincludeReaderPdf(
 
    /* include dec reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
-           readerFreePdf, readerReadPdf, readerWritePdf, readerdata));
+           readerFreeTex, readerReadTex, readerWriteTex, readerdata));
 
    return SCIP_OKAY;
 }
 
 /* the reader is not supposed to read files */
-SCIP_RETCODE GCGreadPdf(
+SCIP_RETCODE GCGreadTex(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
@@ -153,7 +153,7 @@ SCIP_RETCODE writeDecompCode(
 }
 
 /** write a visualization PDF file for a given set of decomposition using intermediate LaTeX code */
-SCIP_RETCODE GCGwriteDecompsToPdf(
+SCIP_RETCODE GCGwriteDecompsToTex(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
