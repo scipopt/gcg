@@ -58,10 +58,12 @@
 #define LINEBREAK "\n"
 #endif
 
+#define CONSHDLR_DEFAULT        "decomp"
+
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-   FILE*   currentfile;
+   const char*       conshdlr; /** constraint handler containing decomposition data */
 };
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
@@ -106,24 +108,6 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 
    SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps) );
    *result = SCIP_SUCCESS;
-
-   return SCIP_OKAY;
-}
-
-/** includes the tex file reader in SCIP */
-SCIP_RETCODE
-SCIPincludeReaderTex(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_READERDATA* readerdata;
-
-   /* create dec reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-
-   /* include dec reader */
-   SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
-           readerFreeTex, readerReadTex, readerWriteTex, readerdata));
 
    return SCIP_OKAY;
 }
@@ -189,7 +173,7 @@ SCIP_RETCODE writeHeaderCode(
 
 /** write LaTeX code for general decomposition statistics */
 static
-SCIP_RETCODE writeGeneralStatsticsCode(
+SCIP_RETCODE writeGeneralStatisticsCode(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file,               /**< File pointer to write to */
    DEC_DECOMP**         decomps,            /**< Decompositions structure */
@@ -213,6 +197,8 @@ SCIP_RETCODE writeGeneralStatsticsCode(
    SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
 
    /*@todo get and output more statistics*/
+
+
 
    return SCIP_OKAY;
 }
@@ -254,16 +240,17 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    int*                  ndecomps            /**< Number of decompositions */
    )
 {
+   DEC_DECOMP** sorteddecomps;
    int i;
 
    assert(scip != NULL);
    assert(ndecomps > 0);
 
-   /*@todo sort decomps*/
+   /*@todo sort decomps into sorteddecomps (just rearrange pointers)*/
 
    SCIP_CALL( writeHeaderCode(scip,file) );
 
-   SCIP_CALL( writeGeneralStatsticsCode(scip,file,decomps,ndecomps) );
+   SCIP_CALL( writeGeneralStatisticsCode(scip,file,sorteddecomps,ndecomps) );
 
    for( i=0; i<*ndecomps; i++ )
    {
@@ -271,6 +258,28 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    }
 
    SCIP_CALL( writeEndCode(scip,file) );
+
+   return SCIP_OKAY;
+}
+
+/** includes the tex file reader in SCIP */
+SCIP_RETCODE
+SCIPincludeReaderTex(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_READERDATA* readerdata;
+
+   /* create dec reader data */
+   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+
+   /* include dec reader */
+   SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
+           readerFreeTex, readerReadTex, readerWriteTex, readerdata));
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+         "reading/texreader/parameters", "constraint handler containing decomposition data",
+         NULL, FALSE, CONSHDLR_DEFAULT, NULL, NULL) );
 
    return SCIP_OKAY;
 }
