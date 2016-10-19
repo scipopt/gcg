@@ -41,7 +41,7 @@
 extern "C" {
 #endif
 
-/** creates the handler for xyz detector and includes it in SCIP */
+/** creates the xyz detector and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeDetectorXyz(
    SCIP*                 scip                /**< SCIP data structure */
