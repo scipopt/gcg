@@ -177,60 +177,10 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
    int j;
    std::tr1::unordered_map<int, int> oldToNewConsIndex;
    std::tr1::unordered_map<int, int> oldToNewVarIndex;
-
-
-//   /** add node for every var */
-//   for( i = 0 ; i < seeed->getNOpenvars(); ++i )
-//   {
-//      int oldVarId = seeed->getOpenvars()[i];
-//      TCLIQUE_WEIGHT weight;
-//
-//      /* note that the first nvars nodes correspond to variables */
-//      weight = this->weights.calculate( seeedpool->getVarForIndex(oldVarId) );
-//      oldToNewVarIndex.insert({ oldVarId ,i});
-//
-//      this->graph.addNode(i, weight);
-//
-//   }
-//
-//
-//   /** add node for every cons */
-//   for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
-//   {
-//      int oldConsId = seeed->getOpenconss()[j];
-//      TCLIQUE_WEIGHT weight;
-//
-//      /* note that the first nvars nodes correspond to variables (legacy implementation) */
-//      weight = this->weights.calculate( seeedpool->getConsForIndex(oldConsId) );
-//      oldToNewConsIndex.insert({ oldConsId, j});
-//      this->graph.addNode( this->nvars + j, weight);
-//   }
-//
-//   this->nnonzeroes = 0;
-//   /* go through all open constraints */
-//   for( i = 0; i < seeed->getNOpenconss(); ++i )
-//   {
-//      int oldConsId = seeed->getOpenconss()[i];
-//
-//      for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
-//      {
-//         int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
-//         if(!seeed->isVarOpenvar(oldVarId))
-//            continue;
-//         SCIPdebugMessage("Cons <%s> (%d), var <%s> (%d), nonzero %d\n", SCIPconsGetName(seeedpool->getConsForIndex(oldConsId)), i, SCIPvarGetName(seeedpool->getVarForIndex(oldVarId)), oldToNewVarIndex[oldVarId], this->nnonzeroes);
-//         /* add nonzero node and edge to variable and constraint) */;
-//         SCIP_CALL( this->graph.addNode( this->nvars+this->nconss+this->nnonzeroes, 0) );
-//         SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[oldVarId], this->nvars+this->nconss+this->nnonzeroes) );
-//         SCIP_CALL( this->graph.addEdge(this->nvars+oldToNewConsIndex[oldConsId], this->nvars+this->nconss+this->nnonzeroes) );
-//
-//         this->nnonzeroes++;
-//      }
-//   }
-
    std::vector<bool> openVarsBool(seeed->getNOpenvars(), false) ;
    std::vector<bool> openConssBool(seeed->getNOpenconss(), false) ;
    int varCounter;
-   int conssCounter;
+   int consCounter;
 
    for(int c = 0; c < seeed->getNOpenconss(); ++c)
    {
@@ -269,7 +219,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
    }
    this->nvars = varCounter;
 
-   conssCounter = 0;
+   consCounter = 0;
    /** add node for every cons */
    for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
    {
@@ -281,12 +231,12 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
 
       /* note that the first nvars nodes correspond to variables (legacy implementation) */
       weight = this->weights.calculate( seeedpool->getConsForIndex(oldConsId) );
-      oldToNewConsIndex.insert({ oldConsId, conssCounter});
-      this->graph.addNode( this->nvars + conssCounter, weight);
-      conssCounter ++;
+      oldToNewConsIndex.insert({ oldConsId, consCounter});
+      this->graph.addNode( this->nvars + consCounter, weight);
+      consCounter ++;
    }
 
-   this->nconss = conssCounter;
+   this->nconss = consCounter;
 
    this->nnonzeroes = 0;
    /* go through all open constraints */

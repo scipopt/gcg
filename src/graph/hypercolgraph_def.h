@@ -233,57 +233,72 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
    TCLIQUE_WEIGHT weight;
    std::vector< std::vector<int> > hyperedges;
    std::tr1::unordered_map<int, int> oldToNewConsIndex;
-   std::tr1::unordered_map<int, int> oldToNewVarIndex;
+   std::vector<bool> openVarsBool(seeed->getNOpenvars(), false) ;
+   std::vector<bool> openConssBool(seeed->getNOpenconss(), false) ;
+   int varCounter;
+   int consCounter;
 
-   this->nvars = seeed->getNOpenvars();
-   this->nconss = seeed->getNOpenconss();
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      {
+         int var = seeed->getOpenvars()[v];
+         for(i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               openVarsBool[v] = true;
+               openConssBool[c] = true;
+            }
+         }
+      }
+   }
 
    /* go through all open constraints */
-   for( i = 0; i < this->nconss; ++i )
+   consCounter = 0;
+   for( i = 0; i < seeed->getNOpenconss(); ++i )
    {
       int oldConsId = seeed->getOpenconss()[i];
+
+      if(openConssBool[i] == false)
+         continue;
 
       /* calculate weight of node */
       weight = this->weights.calculate(seeedpool->getConsForIndex(oldConsId));
 
-      oldToNewConsIndex.insert({oldConsId,i});
+      oldToNewConsIndex.insert({oldConsId,consCounter});
 
       this->graph.addNode(i, weight);
+      consCounter++;
    }
+   this->nconss = consCounter;
 
-   for( j = 0; j < this->nvars; ++j )
+
+   /* go through all open variables */
+   varCounter = 0;
+   for( i = 0; i < seeed->getNOpenvars(); ++i )
    {
-      int oldVarId = seeed->getOpenvars()[j];
-      oldToNewVarIndex.insert({oldVarId,j});
-   }
-   hyperedges.resize(this->nvars);
-
-
-   /* go through all open constraints */
-   for( i = 0; i < seeed->getNOpenconss(); ++i )
-   {
-      int oldConsId = seeed->getOpenconss()[i];
-      for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
-      {
-         int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
-         if(!seeed->isVarOpenvar(oldVarId))
-            continue;
-         hyperedges[oldToNewVarIndex[oldVarId]].insert(hyperedges[oldToNewVarIndex[oldVarId]].end(), oldToNewConsIndex[oldConsId]);
-      }
-   }
-
-   /* go through all variables */
-   for( i = 0; i < this->nvars; ++i )
-   {
-      if(hyperedges[i].size() == 0)
-         continue;
+      std::vector<int> hyperedge;
       int oldVarId = seeed->getOpenvars()[i];
 
-      /* calculate weight of node */
-      weight = this->weights.calculate(seeedpool->getVarForIndex(oldVarId));
+      if(openVarsBool[i] == false)
+         continue;
 
-      this->graph.addHyperedge(hyperedges[i], weight);
+      for( j = 0; j < seeedpool->getNConssForVar(oldVarId); ++j )
+      {
+         int oldConsId = seeedpool->getConssForVar(oldVarId)[j];
+         if(!seeed->isConsOpencons(oldConsId))
+            continue;
+         hyperedge.insert(hyperedge.end(), oldToNewConsIndex[oldConsId]);
+      }
+      /* calculate weight of hyperedge */
+      weight = this->weights.calculate(seeedpool->getVarForIndex(oldVarId));
+      this->graph.addHyperedge(hyperedge, weight);
+      varCounter ++;
    }
+
+   this->nvars = varCounter;
    this->graph.flush();
 
    return SCIP_OKAY;

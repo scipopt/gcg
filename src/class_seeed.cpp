@@ -195,19 +195,6 @@ const int Seeed::nPrimes = 70;
 	     }
 	  }
 
-	   varIter = freeVars.begin();
-	   varIterEnd = freeVars.end();
-	   for(; varIter != varIterEnd; ++varIter)
-	   {
-	      if(!openVarsBool[*varIter])
-	      {
-	         std::cout << "Warning! (seeed " << id <<  ") Variable with index " << *varIter << " is already assigned." << std::endl;
-	         return false;
-	      }
-	      openVarsBool[*varIter] = false;
-	   }
-
-
 	   if(!openVarsAndConssCalculated)
 	   {
 	      calcOpenconss();
@@ -265,18 +252,6 @@ const int Seeed::nPrimes = 70;
 			  openConssBool[*consIter] = false;
 		  }
 	  }
-
-	   consIter = freeConss.begin();
-	   consIterEnd = freeConss.end();
-	   for(; consIter != consIterEnd; ++consIter)
-	   {
-	      if(!openConssBool[*consIter])
-	      {
-	         std::cout << "Warning! (seeed " << id <<  ") Constraint with index " << *consIter << "is already assigned " << std::endl;
-	         return false;
-	      }
-	      openConssBool[*consIter] = false;
-	   }
 
      /** check if all not assigned constraints are open cons */
      for( int v = 0; v < nConss; ++v )
@@ -749,31 +724,6 @@ const int Seeed::nPrimes = 70;
  	  return (int) openVars.size();
   }
 
-  /** returns vector containing free variables */
-  const int* Seeed::getFreevars()
-  {
-     return &freeVars[0];
-  }
-
-  /** returns size of vector containing free variables */
-  int Seeed::getNFreevars()
-  {
-     return (int) freeVars.size();
-  }
-
-  /** returns vector containing free constraints */
-  const int* Seeed::getFreeconss()
-  {
-     return &freeConss[0];
-  }
-
-  /** returns size of vector containing free constraints */
-  int Seeed::getNFreeconss()
-  {
-     return (int) freeConss.size();
-  }
-
-
   /** constructs vector containing variables not assigned yet */
   void Seeed::calcOpenvars(
   ){
@@ -1103,34 +1053,6 @@ const int Seeed::nPrimes = 70;
         assert(false);
      }
 
-     /** assign the freeVars to the block with the minimum of blockvars */
-     for(size_t v = 0; v < freeVars.size(); ++v)
-     {
-        /** calculate the block with the minimum of blockvars */
-        int block = 0;
-        for(int b = 1; b < nBlocks; ++b)
-        {
-           if(getNVarsForBlock(b) < getNVarsForBlock(block))
-              block = b;
-        }
-        setVarToBlock(freeVars[v], block);
-     }
-     freeVars.clear();
-
-     /** assign the freeConss to the block with the minimum of blockconss */
-     for(size_t c = 0; c < freeConss.size(); ++c)
-     {
-        /** calculate the block with the minimum of blockconss */
-        int block = 0;
-        for(int b = 1; b < nBlocks; ++b)
-        {
-           if(getNConssForBlock(b) < getNConssForBlock(block))
-              block = b;
-        }
-        setConsToBlock(freeConss[c], block);
-     }
-     freeConss.clear();
-
      sort();
      assert(checkConsistency());
 
@@ -1228,80 +1150,6 @@ const int Seeed::nPrimes = 70;
   /** assigns open conss if they includes blockvars, returns true if open conss are assigned */
   bool Seeed::assignHittingOpenconss(Seeedpool* seeedpool)
   {
-//     int cons;
-//     int var;
-//     std::vector<int> blocksOfBlockvars;
-//     std::vector<int> assignedOpenconss;
-//     std::vector<int> blocksOfStairlinkingvars;
-//     bool assigned = false;
-//     bool master;
-//
-//     if(!openVarsAndConssCalculated)
-//     {
-//        calcOpenvars();
-//        calcOpenconss();
-//        openVarsAndConssCalculated = true;
-//     }
-//
-//     for(size_t c = 0; c < openConss.size(); ++c)
-//     {
-//        blocksOfBlockvars.clear();
-//        blocksOfStairlinkingvars.clear();
-//        cons = openConss[c];
-//        for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
-//        {
-//           var = seeedpool->getVarsForCons(cons)[v];
-//           for(int b = 0; b < nBlocks; ++b)
-//           {
-//              if(isVarBlockvarOfBlock(var, b))
-//              {
-//                 blocksOfBlockvars.push_back(b);
-//                 break;
-//              }
-//           }
-//           for(int b = 0; b < nBlocks; ++b)
-//           {
-//              if(isVarStairlinkingvarOfBlock(var, b))
-//              {
-//                 blocksOfStairlinkingvars.push_back(b);
-//                 break;
-//              }
-//           }
-//        }
-//
-//        if(blocksOfBlockvars.size() == 1)
-//        {
-//           master = false;
-//           for(size_t i = 0; i < blocksOfStairlinkingvars.size(); ++i)
-//           {
-//              if(blocksOfBlockvars[0] != blocksOfStairlinkingvars[i] && blocksOfBlockvars[0] != blocksOfStairlinkingvars[i]+1)
-//              {
-//                 setConsToMaster(cons);
-//                 assignedOpenconss.push_back(cons);
-//                 assigned = true;
-//                 master = true;
-//                 break;
-//              }
-//           }
-//           if(!master)
-//           {
-//              setConsToBlock(cons, blocksOfBlockvars[0]);
-//              assignedOpenconss.push_back(cons);
-//              assigned = true;
-//           }
-//        }
-//        else if(blocksOfBlockvars.size() > 1)
-//        {
-//           setConsToMaster(cons);
-//           assignedOpenconss.push_back(cons);
-//           assigned = true;
-//        }
-//     }
-//     for(size_t i = 0; i < assignedOpenconss.size(); ++i)
-//             deleteOpencons(assignedOpenconss[i]);
-//
-//     return assigned;
-
      int cons;
      int var;
      int block;
@@ -2089,105 +1937,6 @@ SCIP_RETCODE Seeed::deleteOpencons(
    return SCIP_OKAY;
 }
 
-/** fills out the vectors for free conss and free vars */
-SCIP_RETCODE Seeed::identifyFreeConssAndVars(
-      Seeedpool* seeedpool
-)
-{
-//   std::vector<bool> openVarsBool(getNOpenvars(), false);
-//   std::vector<bool> openConssBool(getNOpenconss(), false);
-//   std::vector<int> assignedVars;
-//   std::vector<int> assignedConss;
-////   std::vector<int>::iterator it;
-//   bool assigned;
-//   int cons;
-//   int var;
-//
-//   for(int i = 0; i < getNOpenvars(); ++i)
-//   {
-//      for(int c = 0; c < getNOpenconss(); ++c)
-//      {
-//         cons = openConss[c];
-//         for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
-//         {
-//            var = seeedpool->getVarsForCons(cons)[v];
-//            if(var == openVars[i])
-//            {
-//               openVarsBool[i] = true;
-//               openConssBool[c] = true;
-//            }
-//         }
-//      }
-//   }
-//
-//   for(int v = 0; v < getNOpenvars(); ++v)
-//   {
-//      if(openVarsBool[v] == false)
-//         freeVars.push_back(openVars[v]);
-//   }
-//   for(size_t v = 0; v < freeVars.size(); ++v)
-//      deleteOpenvar(freeVars[v]);
-//
-//   for(int c = 0; c < getNOpenconss(); ++c)
-//   {
-//      if(openConssBool[c] == false)
-//         freeConss.push_back(openConss[c]);
-//   }
-//   for(size_t c = 0; c < freeConss.size(); ++c)
-//      deleteOpencons(freeConss[c]);
-
-//   for(size_t v = 0; v < freeVars.size(); ++v)
-//   {
-//      var = freeVars[v];
-//      assigned = false;
-//      for(int c = 0; c < seeedpool->getNConssForVar(var) && !assigned; ++c)
-//      {
-//         cons = seeedpool->getConssForVar(var)[c];
-//         for( int b = 0; b < nBlocks && !assigned; ++b )
-//         {
-//            if(isConsBlockconsOfBlock(cons, b))
-//            {
-//               openVars.push_back(var);
-//               assignedVars.push_back(var);
-//            }
-//         }
-//      }
-//   }
-//
-//   for(size_t v = 0; v < assignedVars.size(); ++v)
-//   {
-//      it = find (freeVars.begin(), freeVars.end(), assignedVars[v]);
-//      assert( it != freeVars.end() );
-//      freeVars.erase(it);
-//   }
-//
-//   for(size_t c = 0; c < freeConss.size(); ++c)
-//   {
-//      cons = freeConss[c];
-//      assigned = false;
-//      for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !assigned; ++v)
-//      {
-//         var = seeedpool->getVarsForCons(cons)[v];
-//         for( int b = 0; b < nBlocks && !assigned; ++b )
-//         {
-//            if(isVarBlockvarOfBlock(var, b) || isVarStairlinkingvarOfBlock(var, b))
-//            {
-//               openConss.push_back(cons);
-//               assignedConss.push_back(cons);
-//            }
-//         }
-//      }
-//   }
-//
-//   for(size_t c = 0; c < assignedConss.size(); ++c)
-//   {
-//      it = find (freeConss.begin(), freeConss.end(), assignedVars[c]);
-//      assert( it != freeConss.end() );
-//      freeConss.erase(it);
-//   }
-
-   return SCIP_OKAY;
-}
 
 bool Seeed::checkVarsAndConssConsistency(Seeedpool* seeedpool)
 {

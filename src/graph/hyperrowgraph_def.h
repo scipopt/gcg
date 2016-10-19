@@ -454,26 +454,55 @@ SCIP_RETCODE HyperrowGraph<T>::createFromPartialMatrix(
      std::tr1::unordered_map<int, int> oldToNewVarIndex;
      TCLIQUE_WEIGHT weight;
 
-     this->nvars = seeed->getNOpenvars();
-     this->nconss = seeed->getNOpenconss();
+
+     std::vector<bool> openVarsBool(seeed->getNOpenvars(), false) ;
+     std::vector<bool> openConssBool(seeed->getNOpenconss(), false) ;
+     int varCounter;
+     int consCounter;
+
+     for(int c = 0; c < seeed->getNOpenconss(); ++c)
+     {
+        int cons = seeed->getOpenconss()[c];
+        for(int v = 0; v < seeed->getNOpenvars(); ++v)
+        {
+           int var = seeed->getOpenvars()[v];
+           for(i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+           {
+              if(var == seeedpool->getVarsForCons(cons)[i])
+              {
+                 openVarsBool[v] = true;
+                 openConssBool[c] = true;
+              }
+           }
+        }
+     }
 
      /* go through all variables */
-     for( i = 0; i < this->nvars; ++i )
+     varCounter = 0;
+     for( i = 0; i < seeed->getNOpenvars(); ++i )
      {
         int oldVarId = seeed->getOpenvars()[i];
+        if(openVarsBool[i] == false)
+           continue;
 
         /* calculate weight of node */
         weight = this->weights.calculate(seeedpool->getVarForIndex(oldVarId));
 
-        oldToNewVarIndex.insert({oldVarId,i});
-        this->graph.addNode(i, weight);
+        oldToNewVarIndex.insert({oldVarId,varCounter});
+        this->graph.addNode(varCounter, weight);
+        varCounter++;
      }
+     this->nvars = varCounter;
 
      /* go through all open constraints */
+     consCounter = 0;
      for( i = 0; i < seeed->getNOpenconss(); ++i )
      {
         std::vector<int> hyperedge;
         int oldConsId = seeed->getOpenconss()[i];
+
+        if(openConssBool[i] == false)
+           continue;
 
         for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
         {
@@ -482,14 +511,13 @@ SCIP_RETCODE HyperrowGraph<T>::createFromPartialMatrix(
               continue;
            hyperedge.insert(hyperedge.end(), oldToNewVarIndex[oldVarId]);
         }
-
-        if(hyperedge.size() == 0)
-           continue;
-
         /* calculate weight of hyperedge */
         weight = this->weights.calculate(seeedpool->getConsForIndex(oldConsId));
         this->graph.addHyperedge(hyperedge, weight);
+        consCounter ++;
      }
+
+     this->nconss = consCounter;
 
 
      this->graph.flush();
