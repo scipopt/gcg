@@ -130,7 +130,7 @@ SCIP_RETCODE writeHeaderCode(
    FILE*                file                /**< File pointer to write to */
    )
 {
-   SCIPinfoMessage(scip, file, "% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
+/*   SCIPinfoMessage(scip, file, "% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "% *                  This file is part of the program                         * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "% *          GCG --- Generic Column Generation                                * %s", LINEBREAK);
@@ -167,7 +167,7 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{document}                                                               %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-
+ */
    return SCIP_OKAY;
 }
 
@@ -181,7 +181,7 @@ SCIP_RETCODE writeGeneralStatisticsCode(
    )
 {
 
-   SCIPinfoMessage(scip, file, "\\section*{Detection Statistics}                                                %s", LINEBREAK);
+/*   SCIPinfoMessage(scip, file, "\\section*{Detection Statistics}                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Detection Statistics}                           %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
@@ -191,11 +191,11 @@ SCIP_RETCODE writeGeneralStatisticsCode(
    SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-
+*/
    GCGprintDetectorStatistics(scip, file);
-
+/*
    SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-
+*/
    /*@todo get and output more statistics*/
 
 
@@ -211,13 +211,14 @@ SCIP_RETCODE writeDecompCode(
    DEC_DECOMP*           decomp              /**< Decomposition array pointer */
    )
 {
+   /*
    SCIPinfoMessage(scip, file, "\\newline                                                                       %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Detection Statistics}                           %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   /*@todo get and output statistics*/
-
+   @todo get and output statistics
+*/
    return SCIP_OKAY;
 }
 
@@ -228,8 +229,9 @@ SCIP_RETCODE writeEndCode(
    FILE*                 file                /**< File pointer to write to */
    )
 {
+   /*
    SCIPinfoMessage(scip, file, "\\end{document}                                                                  %s", LINEBREAK);
-
+*/
    return SCIP_OKAY;
 }
 
@@ -246,9 +248,10 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    int i;
 
    assert(scip != NULL);
-   assert(ndecomps > 0);
+   assert(*ndecomps > 0);
 
    /*@todo sort decomps into sorteddecomps (just rearrange pointers)*/
+   sorteddecomps = decomps;
 
    SCIP_CALL( writeHeaderCode(scip,file) );
 

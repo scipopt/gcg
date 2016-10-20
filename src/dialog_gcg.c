@@ -198,9 +198,12 @@ SCIP_RETCODE reportAllDecompositions(
    SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
    )
 {
+   char** pname;
    char* dirname;
+   char* ppath;
    const char* extension = "tex";
    char outname[SCIP_MAXSTRLEN];
+   SCIP_RETCODE retcode;
    SCIP_Bool endoffile;
    int ndecomps;
 
@@ -214,17 +217,40 @@ SCIP_RETCODE reportAllDecompositions(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory: ", &dirname, &endoffile) );
-   if( SCIPdialoghdlrIsBufferEmpty(dialoghdlr) )
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter an existing directory: ", &dirname, &endoffile) );
+   if( endoffile )
    {
-      dirname = NULL;
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
+
+   ppath = (char*) SCIPgetProbName(scip);
+   pname = NULL;
+   SCIPsplitFilename(ppath, NULL, pname, NULL, NULL);
+
+   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/report_%s.%s", dirname, "testproblem", extension);
+
+   retcode = SCIPwriteTransProblem(scip, outname, extension, FALSE);
+   if( retcode == SCIP_FILECREATEERROR )
+   {
+      SCIPdialogMessage(scip, NULL, "error creating files\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+   }
+   else if( retcode == SCIP_WRITEERROR )
+   {
+      SCIPdialogMessage(scip, NULL, "error writing files\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
    }
    else
-      SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
+   {
+      /* check for unexpected errors */
+      SCIP_CALL( retcode );
 
-   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/report_%s.%s", dirname, SCIPgetProbName(scip), extension);
-
-   SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
+      /* print result message if writing was successful */
+      SCIPdialogMessage(scip, NULL, "report is written %s\n", extension);
+   }
 
    return SCIP_OKAY;
 }
