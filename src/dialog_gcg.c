@@ -199,9 +199,14 @@ SCIP_RETCODE reportAllDecompositions(
    )
 {
    char* dirname;
+   const char* extension = "tex";
+   char outname[SCIP_MAXSTRLEN];
    SCIP_Bool endoffile;
+   int ndecomps;
 
-   if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
+   ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
+
+   if( ndecomps == 0 )
    {
       SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
@@ -217,7 +222,9 @@ SCIP_RETCODE reportAllDecompositions(
    else
       SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
-   /*@todo implement reader, then call SCIP_RETCODE retcode = DECwriteAllDecomps(scip, dirname, extension);*/
+   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/report_%s.%s", dirname, SCIPgetProbName(scip), extension);
+
+   SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
    return SCIP_OKAY;
 }

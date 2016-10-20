@@ -69,7 +69,8 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
-   int*                  ndecomps            /**< Number of decompositions */
+   int*                  ndecomps,           /**< Number of decompositions */
+   SCIP_Bool             statistics          /**< if true detection statistics are included in report */
    );
 
 #ifdef __cplusplus

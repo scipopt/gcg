@@ -106,7 +106,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 
    ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
 
-   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps) );
+   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -211,6 +211,7 @@ SCIP_RETCODE writeDecompCode(
    DEC_DECOMP*           decomp              /**< Decomposition array pointer */
    )
 {
+   SCIPinfoMessage(scip, file, "\\newline                                                                       %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Detection Statistics}                           %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
@@ -237,7 +238,8 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
-   int*                  ndecomps            /**< Number of decompositions */
+   int*                  ndecomps,           /**< Number of decompositions */
+   SCIP_Bool             statistics          /**< if true detection statistics are included in report */
    )
 {
    DEC_DECOMP** sorteddecomps;
@@ -250,7 +252,10 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    SCIP_CALL( writeHeaderCode(scip,file) );
 
-   SCIP_CALL( writeGeneralStatisticsCode(scip,file,sorteddecomps,ndecomps) );
+   if(statistics)
+   {
+      SCIP_CALL( writeGeneralStatisticsCode(scip,file,sorteddecomps,ndecomps) );
+   }
 
    for( i=0; i<*ndecomps; i++ )
    {
