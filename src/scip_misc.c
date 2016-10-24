@@ -104,8 +104,13 @@ SCIP_Real GCGconsGetRhs(
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    )
 {
+   int nconsvars;
+   SCIP_VAR** consvars;
    SCIP_CONSHDLR* conshdlr;
    const char * conshdlrname;
+   SCIP_Longint * w;
+   SCIP_Real rhs;
+   int i;
 
    assert(scip != NULL);
    assert(cons != NULL);
@@ -122,7 +127,19 @@ SCIP_Real GCGconsGetRhs(
       switch ( SCIPgetTypeSetppc(scip, cons) ) {
       case SCIP_SETPPCTYPE_PARTITIONING: /* fall through desired */
       case SCIP_SETPPCTYPE_PACKING:
-         return 1.0;
+         rhs = 1.0;
+
+         nconsvars = SCIPgetNVarsSetppc(scip, cons);
+         consvars = SCIPgetVarsSetppc(scip, cons);
+
+         for( i = 0; i < nconsvars; i++ )
+         {
+            if( SCIPvarIsNegated(consvars[i]) )
+               rhs -= 1.0;
+         }
+
+         return rhs;
+
       case SCIP_SETPPCTYPE_COVERING:
          return SCIPinfinity(scip);
       }
@@ -133,11 +150,32 @@ SCIP_Real GCGconsGetRhs(
    }
    else if( strcmp(conshdlrname, "knapsack") == 0 )
    {
-      return SCIPgetCapacityKnapsack(scip, cons);
+      rhs = SCIPgetCapacityKnapsack(scip, cons);
+
+      /* copy Longint array to SCIP_Real array */
+      w = SCIPgetWeightsKnapsack(scip, cons);
+      consvars = SCIPgetVarsKnapsack(scip, cons);
+      nconsvars = SCIPgetNVarsKnapsack(scip, cons);
+
+      for( i = 0; i < nconsvars; i++ )
+      {
+         if( SCIPvarIsNegated(consvars[i]) )
+            rhs -= w[i];
+      }
+
+      return rhs;
    }
    else if( strcmp(conshdlrname, "varbound") == 0 )
    {
-      return SCIPgetRhsVarbound(scip, cons);
+      rhs = SCIPgetRhsVarbound(scip, cons);
+
+      if( SCIPvarIsNegated(SCIPgetVarVarbound(scip, cons)) && !SCIPisInfinity(scip, rhs) )
+         rhs -= 1.0;
+
+      if( SCIPvarIsNegated(SCIPgetVbdvarVarbound(scip, cons)) && !SCIPisInfinity(scip, rhs) )
+         rhs -= SCIPgetVbdcoefVarbound(scip, cons);
+
+      return rhs;
    }
    else if( strcmp(conshdlrname, "SOS1") == 0 )
    {
@@ -162,6 +200,11 @@ SCIP_Real GCGconsGetLhs(
 {
    SCIP_CONSHDLR* conshdlr;
    const char * conshdlrname;
+   int nconsvars;
+   SCIP_VAR** consvars;
+   SCIP_Real lhs;
+   int i;
+
 
    assert(scip != NULL);
    assert(cons != NULL);
@@ -178,13 +221,37 @@ SCIP_Real GCGconsGetLhs(
       switch ( SCIPgetTypeSetppc(scip, cons) ) {
       case SCIP_SETPPCTYPE_PARTITIONING: /* fall through desired */
       case SCIP_SETPPCTYPE_COVERING:
-         return 1.0;
+         lhs = 1.0;
+
+         nconsvars = SCIPgetNVarsSetppc(scip, cons);
+         consvars = SCIPgetVarsSetppc(scip, cons);
+
+         for( i = 0; i < nconsvars; i++ )
+         {
+            if( SCIPvarIsNegated(consvars[i]) )
+               lhs -= 1.0;
+         }
+
+         return lhs;
+
       case SCIP_SETPPCTYPE_PACKING:
          return -SCIPinfinity(scip);
-      }}
+      }
+   }
    else if( strcmp(conshdlrname, "logicor") == 0 )
    {
-      return 1.0;
+      lhs = 1.0;
+
+      nconsvars = SCIPgetNVarsLogicor(scip, cons);
+      consvars = SCIPgetVarsLogicor(scip, cons);
+
+      for( i = 0; i < nconsvars; i++ )
+      {
+         if( SCIPvarIsNegated(consvars[i]) )
+            lhs -= 1.0;
+      }
+
+      return lhs;
    }
    else if( strcmp(conshdlrname, "knapsack") == 0 )
    {
@@ -192,7 +259,15 @@ SCIP_Real GCGconsGetLhs(
    }
    else if( strcmp(conshdlrname, "varbound") == 0 )
    {
-      return SCIPgetLhsVarbound(scip, cons);
+      lhs = SCIPgetLhsVarbound(scip, cons);
+
+      if( SCIPvarIsNegated(SCIPgetVarVarbound(scip, cons)) && !SCIPisInfinity(scip, -lhs) )
+         lhs -= 1.0;
+
+      if( SCIPvarIsNegated(SCIPgetVbdvarVarbound(scip, cons)) && !SCIPisInfinity(scip, -lhs) )
+         lhs -= SCIPgetVbdcoefVarbound(scip, cons);
+
+      return lhs;
    }
    else if( strcmp(conshdlrname, "SOS1") == 0 )
    {
@@ -208,6 +283,130 @@ SCIP_Real GCGconsGetLhs(
    }
    return SCIPinfinity(scip);
 }
+
+/** returns the dual farkas sol of an arbitrary SCIP constraint */
+extern
+SCIP_Real GCGconsGetDualfarkas(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get left hand side for */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   const char * conshdlrname;
+
+   assert(scip != NULL);
+   assert(cons != NULL);
+   conshdlr = SCIPconsGetHdlr(cons);
+   assert(conshdlr != NULL);
+   conshdlrname = SCIPconshdlrGetName(conshdlr);
+
+   if( strcmp(conshdlrname, "linear") == 0 )
+   {
+      return SCIPgetDualfarkasLinear(scip, cons);
+   }
+   else if( strcmp(conshdlrname, "setppc") == 0 )
+   {
+      return SCIPgetDualfarkasSetppc(scip, cons);
+   }
+   else if( strcmp(conshdlrname, "logicor") == 0 )
+   {
+      return SCIPgetDualfarkasLogicor(scip, cons);
+   }
+   else if( strcmp(conshdlrname, "knapsack") == 0 )
+   {
+      return SCIPgetDualfarkasKnapsack(scip, cons);
+   }
+   else if( strcmp(conshdlrname, "varbound") == 0 )
+   {
+      return SCIPgetDualfarkasVarbound(scip, cons);
+   }
+   else if( strcmp(conshdlrname, "SOS1") == 0 )
+   {
+      SCIPdebugMessage("WARNING: SOS1 NOT IMPLEMENTED\n");
+   }
+   else if( strcmp(conshdlrname, "SOS2") == 0 )
+   {
+      SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
+   }
+   else if( strcmp(conshdlrname, "origbranch") == 0 )
+   {
+      SCIPdebugMessage("origbranch: return dualfarkas 0\n");
+      return 0.0;
+   }
+   else if( strcmp(conshdlrname, "masterbranch") == 0 )
+   {
+      SCIPdebugMessage("masterbranch: return dualsol 0\n");
+      return 0.0;
+   }
+   else
+   {
+      SCIPdebugMessage("WARNING: NOT IMPLEMENTED");
+   }
+   return SCIPinfinity(scip);
+}
+
+/** returns the dual sol of an arbitrary SCIP constraint */
+extern
+SCIP_Real GCGconsGetDualsol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get left hand side for */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   const char * conshdlrname;
+
+   assert(scip != NULL);
+   assert(cons != NULL);
+   conshdlr = SCIPconsGetHdlr(cons);
+   assert(conshdlr != NULL);
+   conshdlrname = SCIPconshdlrGetName(conshdlr);
+
+   if( strcmp(conshdlrname, "linear") == 0 )
+   {
+      return SCIPgetDualsolLinear(scip, cons);
+   }
+   else if( strcmp(conshdlrname, "setppc") == 0 )
+   {
+      return SCIPgetDualsolSetppc(scip, cons);
+   }
+   else if( strcmp(conshdlrname, "logicor") == 0 )
+   {
+      return SCIPgetDualsolLogicor(scip, cons);
+   }
+   else if( strcmp(conshdlrname, "knapsack") == 0 )
+   {
+      return SCIPgetDualsolKnapsack(scip, cons);
+   }
+   else if( strcmp(conshdlrname, "varbound") == 0 )
+   {
+      return SCIPgetDualsolVarbound(scip, cons);
+   }
+   else if( strcmp(conshdlrname, "SOS1") == 0 )
+   {
+      SCIPdebugMessage("WARNING: SOS1 NOT IMPLEMENTED\n");
+   }
+   else if( strcmp(conshdlrname, "SOS2") == 0 )
+   {
+      SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
+   }
+   else if( strcmp(conshdlrname, "origbranch") == 0 )
+   {
+      SCIPdebugMessage("origbranch: return Dualsol 0\n");
+      return 0.0;
+   }
+   else if( strcmp(conshdlrname, "masterbranch") == 0 )
+   {
+      SCIPdebugMessage("masterbranch: return dualsol 0\n");
+      return 0.0;
+   }
+   else
+   {
+      SCIPdebugMessage("WARNING: NOT IMPLEMENTED");
+   }
+   return SCIPinfinity(scip);
+}
+
+
 
 /** returns the number of variables in an arbitrary SCIP constraint */
 int GCGconsGetNVars(
@@ -270,6 +469,7 @@ SCIP_RETCODE GCGconsGetVars(
 
    SCIP_CONSHDLR* conshdlr;
    const char * conshdlrname;
+   int i;
 
    assert(scip != NULL);
    assert(cons != NULL);
@@ -289,32 +489,69 @@ SCIP_RETCODE GCGconsGetVars(
    }
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
-      if( nvars < SCIPgetNVarsSetppc(scip, cons) )
+      SCIP_VAR** consvars;
+      int nconsvars;
+
+      consvars = SCIPgetVarsSetppc(scip, cons);
+      nconsvars = SCIPgetNVarsSetppc(scip, cons);
+
+      if( nvars < nconsvars )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsSetppc(scip, cons), SCIPgetNVarsSetppc(scip, cons));
+      for( i = 0; i < nconsvars; i++ )
+         if( !SCIPvarIsNegated(consvars[i]) )
+            vars[i] = consvars[i];
+         else
+            vars[i] = SCIPvarGetNegatedVar(consvars[i]);
    }
    else if( strcmp(conshdlrname, "logicor") == 0 )
    {
-      if( nvars < SCIPgetNVarsLogicor(scip, cons) )
+      SCIP_VAR** consvars;
+      int nconsvars;
+
+      consvars = SCIPgetVarsLogicor(scip, cons);
+      nconsvars = SCIPgetNVarsLogicor(scip, cons);
+
+      if( nvars < nconsvars )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsLogicor(scip, cons), SCIPgetNVarsLogicor(scip, cons));
+      for( i = 0; i < nconsvars; i++ )
+         if( !SCIPvarIsNegated(consvars[i]) )
+            vars[i] = consvars[i];
+         else
+            vars[i] = SCIPvarGetNegatedVar(consvars[i]);
    }
    else if( strcmp(conshdlrname, "knapsack") == 0 )
    {
-      if( nvars < SCIPgetNVarsKnapsack(scip, cons) )
+      SCIP_VAR** consvars;
+      int nconsvars;
+
+      consvars = SCIPgetVarsKnapsack(scip, cons);
+      nconsvars = SCIPgetNVarsKnapsack(scip, cons);
+
+      if( nvars < nconsvars )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsKnapsack(scip, cons), SCIPgetNVarsKnapsack(scip, cons));
+      for( i = 0; i < nconsvars; i++ )
+         if( !SCIPvarIsNegated(consvars[i]) )
+            vars[i] = consvars[i];
+         else
+            vars[i] = SCIPvarGetNegatedVar(consvars[i]);
    }
    else if( strcmp(conshdlrname, "varbound") == 0 )
    {
       if( nvars < 2 )
          return SCIP_INVALIDDATA;
 
-      vars[0] = SCIPgetVarVarbound(scip, cons);
-      vars[1] = SCIPgetVbdvarVarbound(scip, cons);
+      if( !SCIPvarIsNegated(SCIPgetVarVarbound(scip, cons)) )
+         vars[0] = SCIPgetVarVarbound(scip, cons);
+      else
+         vars[0] = SCIPvarGetNegatedVar(SCIPgetVarVarbound(scip, cons));
+
+      if( !SCIPvarIsNegated(SCIPgetVbdvarVarbound(scip, cons)) )
+         vars[1] = SCIPgetVbdvarVarbound(scip, cons);
+      else
+         vars[1] = SCIPvarGetNegatedVar(SCIPgetVbdvarVarbound(scip, cons));
    }
    else if( strcmp(conshdlrname, "SOS1") == 0 )
    {
@@ -373,33 +610,52 @@ SCIP_RETCODE GCGconsGetVals(
    }
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
+      SCIP_VAR** vars;
+      vars = SCIPgetVarsSetppc(scip, cons);
       nvars = SCIPgetNVarsSetppc(scip, cons);
       if( nvals < nvars )
          return SCIP_INVALIDDATA;
 
       for( i = 0; i < nvals; i++ )
-         vals[i] = 1.0;
+         if( !SCIPvarIsNegated(vars[i]) )
+            vals[i] = 1.0;
+         else
+            vals[i] = -1.0;
    }
    else if( strcmp(conshdlrname, "logicor") == 0 )
    {
+      SCIP_VAR** vars;
+      vars = SCIPgetVarsLogicor(scip, cons);
       nvars = SCIPgetNVarsLogicor(scip, cons);
       if( nvals < nvars )
          return SCIP_INVALIDDATA;
 
       for( i = 0; i < nvals; i++ )
-         vals[i] = 1.0;
+      {
+         if( !SCIPvarIsNegated(vars[i]) )
+            vals[i] = 1.0;
+         else
+            vals[i] = -1.0;
+      }
    }
    else if( strcmp(conshdlrname, "knapsack") == 0 )
    {
+      SCIP_VAR** vars;
 
       /* copy Longint array to SCIP_Real array */
       SCIP_Longint * w = SCIPgetWeightsKnapsack(scip, cons);
+      vars = SCIPgetVarsKnapsack(scip, cons);
       nvars = SCIPgetNVarsKnapsack(scip, cons);
       if( nvals < nvars )
          return SCIP_INVALIDDATA;
 
       for( i = 0; i < nvars; i++ )
-         vals[i] = w[i];
+      {
+         if( !SCIPvarIsNegated(vars[i]) )
+            vals[i] = w[i];
+         else
+            vals[i] = -w[i];
+      }
    }
    else if( strcmp(conshdlrname, "varbound") == 0 )
    {
@@ -407,8 +663,15 @@ SCIP_RETCODE GCGconsGetVals(
       if( nvals < nvars )
          return SCIP_INVALIDDATA;
 
-      vals[0] = 1.0;
-      vals[1] = SCIPgetVbdcoefVarbound(scip, cons);
+      if( !SCIPvarIsNegated(SCIPgetVarVarbound(scip, cons)) )
+         vals[0] = 1.0;
+      else
+         vals[0] = -1.0;
+
+      if( !SCIPvarIsNegated(SCIPgetVbdvarVarbound(scip, cons)) )
+         vals[1] = SCIPgetVbdcoefVarbound(scip, cons);
+      else
+         vals[1] = -SCIPgetVbdcoefVarbound(scip, cons);
    }
    else if( strcmp(conshdlrname, "SOS1") == 0 )
    {
