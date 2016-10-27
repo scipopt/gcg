@@ -198,9 +198,10 @@ SCIP_RETCODE reportAllDecompositions(
    SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
    )
 {
-   char** pname;
+   char* pname;
    char* dirname;
    char* ppath;
+   const char* nameinfix = "report_";
    const char* extension = "tex";
    char outname[SCIP_MAXSTRLEN];
    SCIP_RETCODE retcode;
@@ -227,20 +228,19 @@ SCIP_RETCODE reportAllDecompositions(
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
    ppath = (char*) SCIPgetProbName(scip);
-   pname = NULL;
-   SCIPsplitFilename(ppath, NULL, pname, NULL, NULL);
+   SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
-   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/report_%s.%s", dirname, "testproblem", extension);
+   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s%s.%s", dirname, nameinfix, pname, extension);
 
    retcode = SCIPwriteTransProblem(scip, outname, extension, FALSE);
    if( retcode == SCIP_FILECREATEERROR )
    {
-      SCIPdialogMessage(scip, NULL, "error creating files\n");
+      SCIPdialogMessage(scip, NULL, "error creating file\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
    }
    else if( retcode == SCIP_WRITEERROR )
    {
-      SCIPdialogMessage(scip, NULL, "error writing files\n");
+      SCIPdialogMessage(scip, NULL, "error writing file\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
    }
    else
@@ -249,7 +249,7 @@ SCIP_RETCODE reportAllDecompositions(
       SCIP_CALL( retcode );
 
       /* print result message if writing was successful */
-      SCIPdialogMessage(scip, NULL, "report is written %s\n", extension);
+      SCIPdialogMessage(scip, NULL, "report is written to file %s%s.%s in directory %s\n", nameinfix, pname, extension, dirname);
    }
 
    return SCIP_OKAY;

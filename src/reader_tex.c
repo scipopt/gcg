@@ -130,44 +130,44 @@ SCIP_RETCODE writeHeaderCode(
    FILE*                file                /**< File pointer to write to */
    )
 {
-/*   SCIPinfoMessage(scip, file, "% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *                  This file is part of the program                         * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *          GCG --- Generic Column Generation                                * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *                  a Dantzig-Wolfe decomposition based extension            * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *                  of the branch-cut-and-price framework                    * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *         SCIP --- Solving Constraint Integer Programs                      * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *                         Zuse Institute Berlin (ZIB)                       * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * This program is free software; you can redistribute it and/or             * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * modify it under the terms of the GNU Lesser General Public License        * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * as published by the Free Software Foundation; either version 3            * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * of the License, or (at your option) any later version.                    * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * This program is distributed in the hope that it will be useful,           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * but WITHOUT ANY WARRANTY; without even the implied warranty of            * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * GNU Lesser General Public License for more details.                       * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * You should have received a copy of the GNU Lesser General Public License  * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * along with this program; if not, write to the Free Software               * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.* %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%                                                                               %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% @author Hanna Franzen                                                         %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\documentclass[a4paper,10pt]{article}                                          %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "% packages                                                                      %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                    %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\begin{document}                                                               %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
- */
+   SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *                  This file is part of the program                         * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *          GCG --- Generic Column Generation                                * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *                  a Dantzig-Wolfe decomposition based extension            * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *                  of the branch-cut-and-price framework                    * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *         SCIP --- Solving Constraint Integer Programs                      * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *                         Zuse Institute Berlin (ZIB)                       * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * This program is free software; you can redistribute it and/or             * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * modify it under the terms of the GNU Lesser General Public License        * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * as published by the Free Software Foundation; either version 3            * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * of the License, or (at your option) any later version.                    * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * This program is distributed in the hope that it will be useful,           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * but WITHOUT ANY WARRANTY; without even the implied warranty of            * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * GNU Lesser General Public License for more details.                       * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * You should have received a copy of the GNU Lesser General Public License  * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * along with this program; if not, write to the Free Software               * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.* %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%%                                                                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% @author Hanna Franzen                                                         %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\documentclass[a4paper,10pt]{article}                                           %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% packages                                                                      %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{document}                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
+
    return SCIP_OKAY;
 }
 
@@ -229,9 +229,9 @@ SCIP_RETCODE writeEndCode(
    FILE*                 file                /**< File pointer to write to */
    )
 {
-   /*
+
    SCIPinfoMessage(scip, file, "\\end{document}                                                                  %s", LINEBREAK);
-*/
+
    return SCIP_OKAY;
 }
 
