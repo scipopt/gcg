@@ -63,14 +63,14 @@ SCIP_RETCODE GCGreadTex(
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
    );
 
-
 /** write a tex file for the visualization & statistics of a given set of decomposition */
 SCIP_RETCODE GCGwriteDecompsToTex(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
    int*                  ndecomps,           /**< Number of decompositions */
-   SCIP_Bool             statistics          /**< if true detection statistics are included in report */
+   SCIP_Bool             statistics,         /**< if true detection statistics are included in report */
+   SCIP_Bool             toc                 /**< if true table of contents is included */
    );
 
 #ifdef __cplusplus

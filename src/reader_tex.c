@@ -34,12 +34,14 @@
 
 #include <assert.h>
 #include <string.h>
+
 #if defined(_WIN32) || defined(_WIN64)
 #else
 #include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
 #endif
 #include <ctype.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "reader_tex.h"
 #include "scip_misc.h"
@@ -58,12 +60,13 @@
 #define LINEBREAK "\n"
 #endif
 
-#define CONSHDLR_DEFAULT        "decomp"
+#define PATH_DEFAULT            " "
+#define MAXPATHLENGHT           256
 
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-   const char*       conshdlr; /** constraint handler containing decomposition data */
+   char*       path;     /** path to main file */
 };
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
@@ -106,7 +109,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 
    ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
 
-   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE) );
+   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -127,7 +130,8 @@ SCIP_RETCODE GCGreadTex(
 static
 SCIP_RETCODE writeHeaderCode(
    SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file                /**< File pointer to write to */
+   FILE*                file,               /**< File pointer to write to */
+   SCIP_Bool            toc                 /**< if true table of contents is included */
    )
 {
    SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
@@ -168,6 +172,12 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "\\begin{document}                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
 
+   if(toc)
+   {
+      SCIPinfoMessage(scip, file, "\\tableofcontents                                                                %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
+   }
+
    return SCIP_OKAY;
 }
 
@@ -180,22 +190,27 @@ SCIP_RETCODE writeGeneralStatisticsCode(
    int*                 ndecomps            /**< Number of decompositions */
    )
 {
+   char* ppath;
+   char* pname;
 
-/*   SCIPinfoMessage(scip, file, "\\section*{Detection Statistics}                                                %s", LINEBREAK);
+   ppath = (char*) SCIPgetProbName(scip);
+   SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
+
+   SCIPinfoMessage(scip, file, "\\section*{Detection Statistics}                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Detection Statistics}                           %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & %s \\\\                                                  %s", SCIPgetProbName(scip), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of found decompositions: & %s \\\\                                     %s", SCIPconshdlrDecompGetNDecdecomps(scip), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & %s \\\\                                                  %s", pname, LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of found decompositions: &  \\\\                                     %s",  LINEBREAK);
    SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                %s", *ndecomps, LINEBREAK);
    SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-*/
+
    GCGprintDetectorStatistics(scip, file);
-/*
+
    SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-*/
+
    /*@todo get and output more statistics*/
 
 
@@ -211,14 +226,55 @@ SCIP_RETCODE writeDecompCode(
    DEC_DECOMP*           decomp              /**< Decomposition array pointer */
    )
 {
-   /*
-   SCIPinfoMessage(scip, file, "\\newline                                                                       %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Detection Statistics}                           %s", LINEBREAK);
+   char* gpfilename;
+   char* decompname;
+   char* type;
+   char* ppath;
+   char* sympath;
+   char* filepath;
+   FILE* gpfile;
+   int filedesc;
+   int success;
+
+   /* make a gnuplot file for the decomposition */
+   ppath = (char*) SCIPgetProbName(scip);
+   SCIPsplitFilename(ppath, NULL, &decompname, NULL, NULL);
+
+   /*@todo initialize gpfilename, sympath, filepath*/
+
+   filedesc = fileno(file); /* get link to file descriptor */
+   if(filedesc < 0)
+      return SCIP_FILECREATEERROR;
+   snprintf(sympath, MAXPATHLENGHT, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
+   success = readlink(sympath, filepath, (size_t) MAXPATHLENGHT); /* get actual path */
+   if(success < 0)
+      return SCIP_NOFILE;
+
+   if(decompname != NULL &&  decompname[0] != '\0')
+   {
+      strcat(filepath, "/gp_images/");
+      strcpy(gpfilename, filepath);
+      strcat(gpfilename, decompname);
+      strcat(gpfilename, ".gp");
+   }
+
+   file = fopen(filepath, "w");
+
+
+   /* gather information */
+   type = (char*) DECdecompGetType(decomp);
+
+   /* output information */
+
+   /*SCIPinfoMessage(scip, file, "\\newline                                                                       %s", LINEBREAK);
+    */
+   SCIPinfoMessage(scip, file, "\\section*{Decomposition: }                                                     %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: }                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   @todo get and output statistics
-*/
+
+   /*@todo get and output statistics*/
+
    return SCIP_OKAY;
 }
 
@@ -241,7 +297,8 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
    int*                  ndecomps,           /**< Number of decompositions */
-   SCIP_Bool             statistics          /**< if true detection statistics are included in report */
+   SCIP_Bool             statistics,         /**< if true detection statistics and are included in report */
+   SCIP_Bool             toc                 /**< if true table of contents is included */
    )
 {
    DEC_DECOMP** sorteddecomps;
@@ -253,7 +310,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    /*@todo sort decomps into sorteddecomps (just rearrange pointers)*/
    sorteddecomps = decomps;
 
-   SCIP_CALL( writeHeaderCode(scip,file) );
+   SCIP_CALL( writeHeaderCode(scip,file,TRUE) );
 
    if(statistics)
    {
@@ -285,9 +342,9 @@ SCIPincludeReaderTex(
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
            readerFreeTex, readerReadTex, readerWriteTex, readerdata));
 
-   SCIP_CALL( SCIPaddStringParam(scip,
-         "reading/texreader/parameters", "constraint handler containing decomposition data",
-         NULL, FALSE, CONSHDLR_DEFAULT, NULL, NULL) );
+  SCIP_CALL( SCIPaddStringParam(scip,
+         "reading/texreader/path", "path to tex file",
+         NULL, FALSE, PATH_DEFAULT, NULL, NULL) );
 
    return SCIP_OKAY;
 }

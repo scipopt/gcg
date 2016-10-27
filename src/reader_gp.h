@@ -68,7 +68,8 @@ SCIP_RETCODE SCIPwriteGp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
+   SCIP_Bool             writeDecomposition, /**< whether to write decomposed problem */
+   SCIP_Bool             outputPDF           /**< if true give pdf file, if false give tex file instead */
    );
 
 #ifdef __cplusplus
