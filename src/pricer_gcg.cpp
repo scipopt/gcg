@@ -1518,7 +1518,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       /* compute the objective function value of the solution */
       redcost = computeRedCost(pricetype, sol, solisray, prob, &objvalue);
 
-      if( !SCIPisSumNegative(scip, redcost) )
+      if( !SCIPisDualfeasNegative(scip, redcost) )
       {
          SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%ud) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
          *added = FALSE;
@@ -1659,7 +1659,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
       /* compute the objective function value of the solution */
       redcost = GCGcolGetRedcost(gcgcol);
 
-      if( !SCIPisSumNegative(scip, redcost) )
+      if( !SCIPisDualfeasNegative(scip, redcost) )
       {
          SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%ud) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], isray);
          *added = FALSE;
@@ -1882,7 +1882,7 @@ int ObjPricerGcg::countPricedVariables(
       SCIP_CALL_ABORT( GCGcolUpdateRedcost(cols[j], redcost, FALSE) );
 
       SCIPdebugMessage("solution %d of prob %d (%p) has reduced cost %g\n", j, prob, (void*) (cols[j]), redcost);
-      if( SCIPisNegative(scip_, redcost) )
+      if( SCIPisDualfeasNegative(scip_, redcost) )
       {
          nfoundvars += 1;
       }
@@ -2109,7 +2109,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_Real redcost = computeRedCostGcgCol(pricetype, bestcol, NULL);
    SCIP_CALL( GCGcolUpdateRedcost(bestcol, redcost, FALSE) );
 
-   if( SCIPisNegative(scip_, redcost) )
+   if( SCIPisDualfeasNegative(scip_, redcost) )
    {
       found = TRUE;
    }
@@ -2148,7 +2148,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       bestcol = cols[0];
       redcost = computeRedCostGcgCol(pricetype, bestcol, NULL);
 
-      if( SCIPisNegative(scip_, redcost) )
+      if( SCIPisDualfeasNegative(scip_, redcost) )
       {
          break;
       }
@@ -2679,7 +2679,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
       SCIPdebugMessage("bestredcost = %g\n", redcost);
 
       /** add variable only if we cannot abort */
-      if( nfoundvarsprob[probnr] <= pricerdata->maxsolsprob &&  SCIPisSumNegative(scip_, redcost) )
+      if( nfoundvarsprob[probnr] <= pricerdata->maxsolsprob &&  SCIPisDualfeasNegative(scip_, redcost) )
       {
          SCIP_Bool added;
          GCG_COL* gcgcol;

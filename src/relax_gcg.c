@@ -1593,6 +1593,21 @@ SCIP_RETCODE createMaster(
    SCIP_Real feastol;
    SCIP_Real lpfeastol;
    SCIP_Real dualfeastol;
+
+   SCIP_Real infinitym;
+   SCIP_Real epsilonm;
+   SCIP_Real sumepsilonm;
+   SCIP_Real feastolm;
+   SCIP_Real lpfeastolm;
+   SCIP_Real dualfeastolm;
+
+   SCIP_Real infinityp;
+   SCIP_Real epsilonp;
+   SCIP_Real sumepsilonp;
+   SCIP_Real feastolp;
+   SCIP_Real lpfeastolp;
+   SCIP_Real dualfeastolp;
+
    int i;
 
    assert(scip != NULL);
@@ -1641,7 +1656,7 @@ SCIP_RETCODE createMaster(
    dualfeastolp = dualfeastol;
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
-   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
+   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinitym, epsilonm, sumepsilonm, feastolm, lpfeastolm, dualfeastolm) );
 
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
@@ -1651,7 +1666,7 @@ SCIP_RETCODE createMaster(
    {
       relaxdata->convconss[i] = NULL;
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
-      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts) );
+      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype, infinityp, epsilonp, sumepsilonp, feastolp, lpfeastolp, dualfeastolp, enableppcuts) );
       SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
    }
 
