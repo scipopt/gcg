@@ -167,14 +167,19 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% packages                                                                      %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{document}                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{titlepage}                                                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\centering                                                                    %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  {\\Huge Report} \\\\ \\today                                                   %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\end{titlepage}                                                                 %s", LINEBREAK);
 
    if(toc)
    {
       SCIPinfoMessage(scip, file, "\\tableofcontents                                                                %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "\\newpage                                                                        %s", LINEBREAK);
    }
 
    return SCIP_OKAY;
@@ -199,20 +204,19 @@ SCIP_RETCODE writeGeneralStatisticsCode(
    SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Detection Statistics}                           %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & %s \\\\                                                  %s", pname, LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{0pt}                                   %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                     %s", pname, LINEBREAK);
+   SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                     %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                    %s", SCIPconshdlrDecompGetNDecdecomps(scip), LINEBREAK);
    SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                %s", *ndecomps, LINEBREAK);
    SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\newpage                                                                       %s", LINEBREAK);
+
+   /*@todo GCGprintDetectorStatistics(scip, file);
+
    SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-
-   GCGprintDetectorStatistics(scip, file);
-
-   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-
+*/
    /*@todo get and output more statistics*/
-
-
 
    return SCIP_OKAY;
 }
@@ -227,14 +231,15 @@ SCIP_RETCODE writeDecompCode(
 {
    char* filepath;
    char* pname;
+   char* ppath;
    char decompname[SCIP_MAXSTRLEN];
    char gpfilename[SCIP_MAXSTRLEN];
-   char ppath[SCIP_MAXSTRLEN];
    char sympath[SCIP_MAXSTRLEN];
    char pfile[SCIP_MAXSTRLEN];
    FILE* gpfile;
    int filedesc;
    int success;
+   DEC_SCORES scores;
 
    assert(decomp != NULL);
 
@@ -257,9 +262,10 @@ SCIP_RETCODE writeDecompCode(
    strcat(gpfilename, "/");
 
    /* get name of file and attach it to gpfilename */
-   (void) SCIPsnprintf(ppath, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+   ppath = (char*) SCIPgetProbName(scip);
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
-   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s_%c_%d", pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
+   strcat(gpfilename, pname);
+   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
    /* --- make a gnuplot file for the decomposition --- */
    if(decompname != NULL &&  decompname[0] != '\0')
    {
@@ -283,20 +289,27 @@ SCIP_RETCODE writeDecompCode(
    fclose(gpfile);
 
    /* --- gather further information & output them --- */
+   DECevaluateDecomposition(scip, decomp, &scores);
 
-   /* output information */
-   /*SCIPinfoMessage(scip, file, "\\newline                                                                       %s", LINEBREAK);
-    */
-   SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", SCIPgetProbName(scip), LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}                              %s", SCIPgetProbName(scip), LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", decompname, LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}                              %s", decompname, LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Found by detector: & %s  \\\\                                                 %s", DECdetectorGetName(DECdecompGetDetector(decomp)), LINEBREAK);
-   /*SCIPinfoMessage(scip, file, "  Type of decomposition: & %s                                                   %s", (char*) DECdecompGetType(decomp), LINEBREAK);*/
-   SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   %s", DECdecompGetNBlocks(decomp), LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{tabular}{lll}                                                           %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Found by detector: & %s & \\\\                                                %s", DECdetectorGetName(DECdecompGetDetector(decomp)), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of blocks: & %i & \\\\                                                 %s", DECdecompGetNBlocks(decomp), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Scores: & Total score: &  \\\\                                              %s", /*(double) scores->totalscore,*/ LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of linking variables: &  & \\\\                                      %s", /*DECdecompGetNBlocks(decomp),*/ LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of linking constraints: &  & \\\\                                    %s", /*DECdecompGetNBlocks(decomp),*/ LINEBREAK);
    SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{figure}                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "    %%TODO \\input{gnuplot}                                                     %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\end{center}                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\end {figure}                                                                  %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\newpage                                                                       %s", LINEBREAK);
 
    /*@todo get and output statistics*/
 

@@ -200,7 +200,7 @@ SCIP_RETCODE reportAllDecompositions(
 {
    char* pname;
    char* dirname;
-   char* ppath;
+   char ppath[SCIP_MAXSTRLEN];
    const char* nameinfix = "report_";
    const char* extension = "tex";
    char outname[SCIP_MAXSTRLEN];
@@ -227,7 +227,7 @@ SCIP_RETCODE reportAllDecompositions(
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
-   ppath = (char*) SCIPgetProbName(scip);
+   strcpy(ppath, (char*) SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s%s.%s", dirname, nameinfix, pname, extension);
