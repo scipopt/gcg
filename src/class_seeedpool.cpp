@@ -361,7 +361,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          /** 1) read parameter, as there are: maxrounds
           *  2) loop rounds
           *  3) every seeed in seeeds
-          *  4) every detector not registered yet propagetes seeed
+          *  4) every detector not registered yet propagates seeed
           *  5)  */
 
          int maxRounds;
@@ -372,14 +372,18 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          int vindex = 0;
          int currblock;
          bool displaySeeeds = false;
+         int verboseLevel;
+         std::vector<int> successDetectors;
+         std::vector<SeeedPtr> delSeeeds;
+         bool duplicate;
 
+         successDetectors = std::vector<int>(nDetectors, 0);
          ndecompositions = 0;
-         maxRounds = 2;
+         maxRounds = 4;
          seeedPropData = new SEEED_PROPAGATION_DATA();
          seeedPropData->seeedpool = this;
          seeedPropData->nNewSeeeds = 0;
-         bool duplicate;
-         std::vector<SeeedPtr> delSeeeds = std::vector<SeeedPtr>(0);
+         delSeeeds = std::vector<SeeedPtr>(0);
 
          for(size_t s = 0; s < currSeeeds.size(); ++s)
          {
@@ -390,6 +394,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          for(int round = 0; round < maxRounds; ++round)
          {
+                 std::cout << "currently in detection round " << round << std::endl;
                  std::vector<SeeedPtr> nextSeeeds = std::vector<SeeedPtr>(0);
 
                  for(size_t s = 0; s < currSeeeds.size(); ++s )
@@ -410,11 +415,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                                  SCIP_RESULT result = SCIP_DIDNOTFIND;
 
-
                                  /** if the seeed is also propageted by the detector go on with the next detector */
-                                 if(seeedPtr->isPropagatedBy(d) )
+                                 if(seeedPtr->isPropagatedBy(d)  )
                                          continue;
-
 
                                  seeedPropData->seeedToPropagate = seeedPtr;
 
@@ -429,10 +432,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                     seeedPropData->newSeeeds[j]->sort();
                                     seeedPropData->newSeeeds[j]->checkConsistency();
                                     seeedPropData->newSeeeds[j]->calcHashvalue();
-
                                  }
 
-                                 if(seeedPropData->nNewSeeeds != 0)
+                                 if(seeedPropData->nNewSeeeds != 0 && displaySeeeds)
                                  {
                                     std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found " << seeedPropData->nNewSeeeds << " new seeed(s): ";
                                     std::cout << seeedPropData->newSeeeds[0]->getID();
@@ -495,14 +497,56 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          }
 
+         /* completeGreedily() on  currseeeds (from last round) and add them to finished seeeds */
+
+         for(size_t i = 0; i < currSeeeds.size(); ++i)
+         {
+             SeeedPtr seeedPtr = currSeeeds[i];
+             SCIP_CALL_ABORT(seeedPtr->completeGreedily( seeedPropData->seeedpool ) );
+             seeedPtr->calcHashvalue();
+             if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false))
+             {
+                finishedSeeeds.push_back(seeedPtr);
+             }
+         }
+
          std::cout << (int) finishedSeeeds.size() << " finished seeeds are found." << std::endl;
+
          if(displaySeeeds)
          {
             for(size_t i = 0; i < finishedSeeeds.size(); ++i)
             {
-               std::cout << i+1 << ". finished seeed: " << std::endl;
+               std::cout << i+1 << "th finished seeed: " << std::endl;
                finishedSeeeds[i]->displaySeeed();
             }
+         }
+
+         /** count the successful refinement calls for each detector */
+
+         for(size_t i = 0; i < finishedSeeeds.size(); ++i)
+         {
+          //   std::vector<int>::const_iterator detectorIter =  finishedSeeeds.at(i)->detectorChain.begin();
+          //   std::vector<int>::const_iterator detectorIterEnd =  finishedSeeeds.at(i)->detectorChain.end();
+
+          //   for (; detectorIter != detectorIterEnd; ++detectorIter)
+          //   {
+          //       successDetectors[*detectorIter]++;
+          //   }
+
+             for(size_t d = 0; d < nDetectors; ++d)
+             {
+                 if(finishedSeeeds[i]->isPropagatedBy(d))
+                     successDetectors[d] += 1;
+             }
+         }
+
+         /** preliminary output detector stats */
+
+         std::cout << "Begin preliminary detector times: " << std::endl;
+
+         for(size_t i = 0; i < nDetectors; ++i)
+         {
+             std::cout << "Detector " << DECdetectorGetName(detectorToScipDetector[i] ) << " worked on " << successDetectors[i] << " of " << finishedSeeeds.size() << " and took a total time of " << SCIPgetClockTime(scip, detectorToScipDetector[i]->dectime)  << std::endl;
          }
 
 
