@@ -854,28 +854,26 @@ const int Seeed::nPrimes = 70;
      assert( (int) varsForBlocks.size() == nBlocks );
      assert( (int) stairlinkingVars.size() == nBlocks );
 
-     if(nBlocks == 0)
+
+     if( nBlocks == 0 && openConss.size() > 0)
      {
         nBlocks = 1;
         std::vector<int> vec = std::vector<int>(0);
         conssForBlocks.push_back(vec);
         varsForBlocks.push_back(vec);
         stairlinkingVars.push_back(vec);
-        if(nBlocks == 0 && openConss.size()!=0)
+        if(openConss.size()!=0 )
         {
            setConsToBlock(openConss[0], 0);
            openConss.erase(openConss.begin());
         }
-        else if(nBlocks == 0 && openConss.size() == 0 && masterConss.size() !=0)
+        else if( masterConss.size() !=0)
         {
            setConsToBlock(masterConss[0], 0);
            masterConss.erase(masterConss.begin());
         }
-        else if(openConss.size() == 0 && masterConss.size() ==0)
-        {
-           assert(false);
-        }
-
+        else
+            assert(!(openConss.size() == 0 && masterConss.size() ==0 ));
      }
 
 
