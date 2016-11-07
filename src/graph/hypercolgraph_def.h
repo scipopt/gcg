@@ -349,17 +349,40 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
 
    std::vector<int> partition = this->getPartition();
    conss = SCIPgetConss(this->scip_);
+   std::vector<bool> isEmptyBlock;
+   std::vector<int> nEmptyBlocksBefore;
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
 
    assert((size_t)SCIPgetNConss(this->scip_) == partition.size());
    nblocks = 1+*std::max_element(partition.begin(), partition.end() );
 
+   /** add data structures to handle empty blocks */
+
+   isEmptyBlock = std::vector<bool>(nblocks, true);
+   nEmptyBlocksBefore = std::vector<int>(nblocks, 0);
+
    for( int c = 0; c < this->nconss; ++c )
    {
       int consblock = partition[c]+1;
+      isEmptyBlock[consblock-1] = false;
+   }
 
-      SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) seeedpool->getIndexForCons(conss[c]), (void*) (size_t) consblock) );
+   for(int b1 = 0; b1 < nblocks; ++b1)
+   {
+       if (isEmptyBlock[b1] )
+       {
+           for(int b2 = b1+1; b2 < nBlocks; ++b2)
+               nEmptyBlocksBefore[b2]++;
+       }
+   }
+
+
+   for( int c = 0; c < this->nconss; ++c )
+   {
+       int consblock = partition[c]+1;
+       consblock -= nEmptyBlocksBefore[partition[c] ];
+       SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) seeedpool->getIndexForCons(conss[c]), (void*) (size_t) consblock) );
    }
 
    (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
