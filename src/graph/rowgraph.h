@@ -58,6 +58,14 @@ public:
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
       );
 
+   /** amplifies a seeed by dint of a graph created with open constraints and open variables of the seeed */
+   virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed*      oldSeeed,            /**< seeed which should be amplifies */
+      Seeed**     firstSeeed,          /**< pointer to buffer the new seeed amplified by dint of the graph */
+      Seeed**     secondSeeed,         /**< pinter to buffer the new seeed whose border is amplified by dint of the graph */
+      Seeedpool*  seeedpool
+      );
+
    virtual SCIP_RETCODE createFromMatrix(
       SCIP_CONS**           conss,              /**< constraints for which graph should be created */
       SCIP_VAR**            vars,               /**< variables for which graph should be created */

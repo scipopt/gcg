@@ -4762,7 +4762,8 @@ $(LIBOBJDIR)/class_seeedpool.o: src/class_seeedpool.cpp src/gcg.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
  src/class_seeedpool.h src/class_seeed.h src/struct_detector.h \
- src/struct_decomp.h src/cons_decomp.h src/decomp.h
+ src/struct_decomp.h src/cons_decomp.h src/decomp.h src/scip_misc.h \
+ lib/scip/src/scip/cons_setppc.h
 $(LIBOBJDIR)/dec_compgreedily.o: src/dec_compgreedily.cpp src/dec_compgreedily.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \

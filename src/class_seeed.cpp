@@ -1410,8 +1410,7 @@ const int Seeed::nPrimes = 70;
 
      while(success)
         success = assignHittingOpenconss(seeedpool) || assignHittingOpenvars(seeedpool);
-
-//     identifyFreeConssAndVars(seeedpool);
+     sort();
      return SCIP_OKAY;
   }
 
@@ -1555,6 +1554,58 @@ int Seeed::getNVars()
 {
    return nVars;
 }
+
+///** returns conss including open vars */
+//std::vector<int> Seeed::getConssForGraph(
+//   Seeedpool* seeedpool
+//)
+//{
+//   std::vector<int> conss;
+//   bool found;
+//
+//   for(int c = 0; c < getNOpenconss(); ++c)
+//   {
+//      int cons = openConss[c];
+//      found = false;
+//      for(int v = 0; v < seeedpool->getNVarsForCons(cons) && !found; ++v)
+//      {
+//         int var = seeedpool->getVarsForCons(cons)[v];
+//         if(isVarOpenvar(var))
+//         {
+//            found = true;
+//            conss.push_back(cons);
+//         }
+//      }
+//   }
+//
+//   return conss;
+//}
+//
+///** returns vars included in open conss */
+//std::vector<int> Seeed::getVarsForGraph(
+//   Seeedpool* seeedpool
+//)
+//{
+//   std::vector<int> vars;
+//   bool found;
+//
+//   for(int v = 0; v < getNOpenvars(); ++v)
+//   {
+//      int var = openVars[v];
+//      found = false;
+//      for(int c = 0; c < seeedpool->getNConssForVar(var) && !found; ++c)
+//      {
+//         int cons = seeedpool->getConssForVar(var)[c];
+//         if(isConsOpencons(cons))
+//         {
+//            found = true;
+//            vars.push_back(var);
+//         }
+//      }
+//   }
+//   return vars;
+//}
+
 
 /** fills out a seeed with the hashmap constoblock */
 SCIP_RETCODE Seeed::filloutSeeedFromConstoblock( SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool )

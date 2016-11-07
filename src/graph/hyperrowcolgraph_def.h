@@ -177,11 +177,13 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
    int j;
    std::tr1::unordered_map<int, int> oldToNewConsIndex;
    std::tr1::unordered_map<int, int> oldToNewVarIndex;
-   std::vector<bool> openVarsBool(seeed->getNOpenvars(), false) ;
-   std::vector<bool> openConssBool(seeed->getNOpenconss(), false) ;
-   int varCounter;
-   int consCounter;
+   vector<int> conssForGraph; /** stores the conss included by the graph */
+   vector<int> varsForGraph; /** stores the vars included by the graph */
+   vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
+   vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
 
+
+   //fillout conssForGraph and varsForGraph
    for(int c = 0; c < seeed->getNOpenconss(); ++c)
    {
       int cons = seeed->getOpenconss()[c];
@@ -192,66 +194,67 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromPartialMatrix(
          {
             if(var == seeedpool->getVarsForCons(cons)[i])
             {
-               openVarsBool[v] = true;
-               openConssBool[c] = true;
+               varsBool[var] = true;
+               conssBool[cons] = true;
             }
          }
       }
    }
 
-   varCounter = 0;
-   /** add node for every var */
-   for( i = 0 ; i < seeed->getNOpenvars(); ++i )
+   for(int v = 0; v < seeed->getNOpenvars(); ++v)
    {
-      int oldVarId = seeed->getOpenvars()[i];
-      TCLIQUE_WEIGHT weight;
+      int var = seeed->getOpenvars()[v];
+      if(varsBool[var])
+         varsForGraph.push_back(var);
+   }
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      if(conssBool[cons])
+         conssForGraph.push_back(cons);
+   }
 
-      if(openVarsBool[i] == false)
-         continue;
+   this->nconss = (int)conssForGraph.size();
+   this->nvars = (int)varsForGraph.size();
+
+   /** add node for every var */
+   for( i = 0 ; i < (int)varsForGraph.size(); ++i )
+   {
+      int oldVarId = varsForGraph[i];
+      assert(varsBool[oldVarId]);
+      TCLIQUE_WEIGHT weight;
 
       /* note that the first nvars nodes correspond to variables */
       weight = this->weights.calculate( seeedpool->getVarForIndex(oldVarId) );
-      oldToNewVarIndex.insert({ oldVarId ,varCounter});
+      oldToNewVarIndex.insert({oldVarId ,i});
 
-      this->graph.addNode(varCounter, weight);
-      varCounter ++;
-
+      this->graph.addNode(i, weight);
    }
-   this->nvars = varCounter;
 
-   consCounter = 0;
    /** add node for every cons */
-   for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
+   for(  j = 0 ; j < (int)conssForGraph.size(); ++j  )
    {
-      int oldConsId = seeed->getOpenconss()[j];
+      int oldConsId = conssForGraph[j];
+      assert(conssBool[oldConsId]);
       TCLIQUE_WEIGHT weight;
 
-      if(openConssBool[j] == false)
-         continue;
 
       /* note that the first nvars nodes correspond to variables (legacy implementation) */
       weight = this->weights.calculate( seeedpool->getConsForIndex(oldConsId) );
-      oldToNewConsIndex.insert({ oldConsId, consCounter});
-      this->graph.addNode( this->nvars + consCounter, weight);
-      consCounter ++;
+      oldToNewConsIndex.insert({ oldConsId, j});
+      this->graph.addNode( this->nvars + j, weight);
    }
-
-   this->nconss = consCounter;
 
    this->nnonzeroes = 0;
    /* go through all open constraints */
-   for( i = 0; i < seeed->getNOpenconss(); ++i )
+   for( i = 0; i < (int)conssForGraph.size(); ++i )
    {
-      int oldConsId = seeed->getOpenconss()[i];
-      if(!openConssBool[i])
-         continue;
+      int oldConsId = conssForGraph[i];
 
       for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
       {
          int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
-         if(!seeed->isVarOpenvar(oldVarId))
-            continue;
-         if(!openVarsBool[seeed->getIndexOfOpenvar(oldVarId)])
+         if(!varsBool[oldVarId])
             continue;
          SCIPdebugMessage("Cons <%s> (%d), var <%s> (%d), nonzero %d\n", SCIPconsGetName(seeedpool->getConsForIndex(oldConsId)), i, SCIPvarGetName(seeedpool->getVarForIndex(oldVarId)), oldToNewVarIndex[oldVarId], this->nnonzeroes);
          /* add nonzero node and edge to variable and constraint) */;
@@ -594,6 +597,14 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
    int *nsubscipconss;
    int i;
    SCIP_Bool emptyblocks = FALSE;
+
+   if(this->nconss == 0)
+   {
+      (*firstSeeed) = NULL;
+      (*secondSeeed) = NULL;
+      return SCIP_OKAY;
+   }
+
    std::vector<int> partition = graph.getPartition();
 
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
@@ -601,6 +612,37 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+
+   //fillout conssForGraph
+   vector<int> conssForGraph; /** stores the conss included by the graph */
+   vector<bool> conssBool(oldSeeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   bool found;
+
+   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   {
+      int cons = oldSeeed->getOpenconss()[c];
+      found = false;
+      for(int v = 0; v < oldSeeed->getNOpenvars() && !found; ++v)
+      {
+         int var = oldSeeed->getOpenvars()[v];
+         for(i = 0; i < seeedpool->getNVarsForCons(cons) && !found; ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               conssBool[cons] = true;
+               found = true;
+            }
+         }
+      }
+   }
+
+   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   {
+      int cons = oldSeeed->getOpenconss()[c];
+      if(conssBool[cons])
+         conssForGraph.push_back(cons);
+   }
+
 
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
@@ -613,12 +655,12 @@ SCIP_RETCODE HyperrowcolGraph<T>::createSeeedFromPartition(
       }
       if( blocks.size() > 1 )
       {
-         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) oldSeeed->getOpenconss()[i], (void*) (size_t) (nblocks+1)) );
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) conssForGraph[i], (void*) (size_t) (nblocks+1)) );
       }
       else
       {
          int block = *(blocks.begin());
-         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) oldSeeed->getOpenconss()[i], (void*) (size_t) (block +1)) );
+         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) conssForGraph[i], (void*) (size_t) (block +1)) );
          ++(nsubscipconss[block]);
       }
    }

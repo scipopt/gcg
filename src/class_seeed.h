@@ -371,6 +371,16 @@ public:
    int getNVars(
    );
 
+//   /** returns conss including open vars */
+//   std::vector<int> getConssForGraph(
+//      Seeedpool* seeedpool
+//   );
+//
+//   /** returns vars included in open conss */
+//   std::vector<int> getVarsForGraph(
+//      Seeedpool* seeedpool
+//   );
+
    /** fills out a seeed with the hashmap constoblock */
    SCIP_RETCODE filloutSeeedFromConstoblock(
          SCIP_HASHMAP* constoblock,

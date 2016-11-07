@@ -345,6 +345,31 @@ SCIP_RETCODE createMetisFile(
    return SCIP_OKAY;
 }
 
+/** are there conss and vars to be included by the graph */
+static
+bool graphCompletible(
+   gcg::Seeedpool*  seeedpool,
+   gcg::Seeed*      seeed
+   )
+{
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      {
+         int var = seeed->getOpenvars()[v];
+         for(int i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               return true;
+            }
+         }
+      }
+   }
+   return false;
+}
+
 /** detector structure detection method, tries to detect a structure in the problem */
 static
 DEC_DECL_DETECTSTRUCTURE(detectHcgpartition)
@@ -420,7 +445,6 @@ DEC_DECL_DETECTSTRUCTURE(detectHcgpartition)
 
 
 static
-
 DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
 {
    *result = SCIP_DIDNOTFIND;
@@ -452,15 +476,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
-
-   /* build the hypergraph structure from the original problem */
-
-   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   detectordata->graph = new HypercolGraph<gcg::GraphTclique>(scip, w);
-
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
-   if(seeed->getNOpenconss() == 0 || seeed->getNOpenvars() == 0)
+   if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
@@ -469,8 +487,14 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
       return SCIP_OKAY;
    }
 
+   /* build the hypergraph structure from the original problem */
+
+   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
+   detectordata->graph = new HypercolGraph<gcg::GraphTclique>(scip, w);
+
+
+
    SCIP_CALL(detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed));
-//   SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
@@ -486,7 +510,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
       }
 
       SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed,&newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool));
-//      SCIP_CALL( detectordata->graph->createSeeedFromPartition(&newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
       if( (newSeeeds)[j] != NULL )
       {
          nNewSeeeds = nNewSeeeds + 2;
@@ -501,7 +524,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    delete seeed;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
    seeedPropagationData->nNewSeeeds = nNewSeeeds;
-   for(j = 0, s = 0; j < nNewSeeeds; ++j)
+   for(j = 0, s = 0; s < nNewSeeeds; ++j)
    {
       if(newSeeeds[j] != NULL)
       {

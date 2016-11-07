@@ -171,6 +171,48 @@ void fhook(
    }
 }
 
+/** hook function to save the permutation of the graph */
+static
+void fhookForSeeeds(
+   void*                 user_param,         /**< data structure to save hashmaps with permutation */
+   unsigned int          N,                  /**< number of permutations */
+   const unsigned int*   aut,                /**< array of permutations */
+   gcg::Seeed*           seeed,
+   gcg::Seeedpool*       seeedpool
+   )
+{ /*lint -e715*/
+   int i;
+   int nconss;
+   AUT_HOOK* hook = (AUT_HOOK*) user_param;
+   int auti;
+   int ind;
+
+   nconss = seeed->getNOpenconss();
+
+   for( i = 0; i < nconss; i++ )
+   {
+      SCIP_CONS* cons = seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+      assert(aut[i] < INT_MAX);
+      if( (size_t) i != aut[i])
+      {
+         auti = (int) aut[i];
+
+         SCIPdebugMessage("%d <%s> <-> %d <%s>\n", i, SCIPconsGetName(cons), auti, SCIPconsGetName(seeedpool->getConsForIndex(seeed->getOpenconss()[auti])));
+
+         ind = MIN(i, auti);
+
+         if( hook->conssperm[i] != -1)
+            ind = MIN(ind, hook->conssperm[i]);
+         if( hook->conssperm[auti] != -1 )
+            ind = MIN(ind, hook->conssperm[auti]);
+
+         hook->conssperm[i] = ind;
+         hook->conssperm[auti] = ind;
+         hook->setBool(TRUE);
+      }
+   }
+}
+
 static
 SCIP_RETCODE allocMemory(
     SCIP*                scip,               /**< SCIP data structure */
@@ -280,6 +322,115 @@ SCIP_RETCODE setupArrays(
 
       SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
       SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
+
+      //save the properties of variables of the constraints in a struct array and in a sorted pointer array
+      for( j = 0; j < ncurvars; j++ )
+      {
+         SCIP_Real constant;
+         added = FALSE;
+
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
+            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
+
+         if( !onlysign )
+         {
+            scoef = new AUT_COEF(scip, curvals[j]);
+         }
+         else
+         {
+            if( SCIPisPositive(scip, curvals[j]) )
+               scoef = new AUT_COEF(scip, 1.0);
+            else if( SCIPisNegative(scip, curvals[j]) )
+               scoef = new AUT_COEF(scip, -1.0);
+            else
+               scoef = new AUT_COEF(scip, 0.0);
+         }
+
+         //test, whether the coefficient is not zero
+         if( !SCIPisZero(scip, scoef->getVal()) )
+         {
+            //add to pointer array iff it doesn't exist
+            SCIP_CALL( colorinfo->insert(scoef, &added) );
+            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
+         }
+         //otherwise free allocated memory
+         if( !added )
+            delete scoef;
+
+      }
+      SCIPfreeBufferArray(scip, &curvars);
+      SCIPfreeBufferArray(scip, &curvals);
+   }
+   return SCIP_OKAY;
+}
+
+/** set up a help structure for graph creation */
+static
+SCIP_RETCODE setupArrays(
+   SCIP*                 scip,               /**< SCIP to compare */
+   AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
+   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
+   gcg::Seeed*           seeed,
+   gcg::Seeedpool*       seeedpool
+   )
+{ /*lint -esym(593,scoef) */
+   int i;
+   int j;
+   int nconss;
+   int nvars;
+   //SCIP_CONS** conss;
+   //SCIP_VAR** vars;
+   AUT_COEF* scoef;
+   AUT_CONS* scons;
+   SCIP_Bool added;
+   SCIP_Bool onlysign;
+
+   //allocate max n of coefarray, varsarray, and boundsarray in scip
+   nconss = seeed->getNOpenconss();
+   nvars = seeed->getNVars();
+   SCIP_CALL( allocMemory(scip, colorinfo, nconss, nvars) );
+
+   onlysign = colorinfo->getOnlySign();
+
+   //save the properties of variables in a struct array and in a sorted pointer array
+   for( i = 0; i < nvars; i++ )
+   {
+      SCIP_VAR* var = seeedpool->getVarForIndex(i);
+      AUT_VAR* svar = new AUT_VAR(scip, var);
+      //add to pointer array iff it doesn't exist
+      SCIP_CALL( colorinfo->insert(svar, &added) );
+      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(var), colorinfo->get(*svar), colorinfo->color);
+      //otherwise free allocated memory
+      if( !added )
+         delete svar;
+   }
+
+   //save the properties of constraints in a struct array and in a sorted pointer array
+   for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
+   {
+      SCIP_Real* curvals = NULL;
+      SCIP_VAR** curvars = NULL;
+
+      SCIP_CONS* cons = seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+
+      int ncurvars = GCGconsGetNVars(scip, cons);
+      if( ncurvars == 0 )
+         continue;
+
+      scons = new AUT_CONS(scip, cons);
+      //add to pointer array iff it doesn't exist
+      SCIPdebugMessage("nconss %d %d\n", nconss, *result);
+      SCIP_CALL( colorinfo->insert(scons, &added) );
+      SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(cons), colorinfo->get(*scons), colorinfo->color);
+      //otherwise free allocated memory
+      if( !added )
+         delete scons;
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
+
+      SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
+      SCIP_CALL( GCGconsGetVals(scip, cons, curvals, ncurvars) );
 
       //save the properties of variables of the constraints in a struct array and in a sorted pointer array
       for( j = 0; j < ncurvars; j++ )
@@ -460,6 +611,168 @@ SCIP_RETCODE createGraph(
 
    //free all allocated memory
    freeMemory(scip, &colorinfo);
+   return SCIP_OKAY;
+}
+
+/** create a graph out of an array of scips */
+static
+SCIP_RETCODE createGraph(
+   SCIP*                 scip,               /**< SCIP to compare */
+   AUT_COLOR             colorinfo,          /**< data structure to save intermediate data */
+   bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
+   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
+   gcg::Seeed*           seeed,
+   gcg::Seeedpool*       seeedpool
+   )
+{
+   int i;
+   int j;
+   int z;
+   int nvars;
+   int nconss;
+   int ncurvars;
+   int curvar;
+   int color;
+//   SCIP_CONS** conss;
+//   SCIP_VAR** vars;
+//   SCIP_VAR** curvars = NULL;
+//   SCIP_Real* curvals = NULL;
+   unsigned int nnodes;
+   SCIP_Bool onlysign;
+
+   nnodes = 0;
+   //building the graph out of the arrays
+   bliss::Graph* h = graph;
+   nconss = seeed->getNOpenconss();
+   nvars = seeed->getNVars();
+   z = 0;
+   onlysign = colorinfo.getOnlySign();
+
+   //add a node for every constraint
+   for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
+   {
+      ncurvars = seeedpool->getNVarsForCons(seeed->getOpenconss()[i]);
+      SCIP_CONS* cons = seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+
+      AUT_CONS scons(scip, cons);
+      color = colorinfo.get(scons);
+
+      if( color == -1 )
+      {
+         *result = SCIP_DIDNOTFIND;
+         break;
+      }
+
+      assert(color >= 0);
+      (void)h->add_vertex((unsigned int) color);
+      nnodes++;
+   }
+   //add a node for every variable
+   for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
+   {
+      SCIP_VAR* var = seeedpool->getVarForIndex(i);
+      AUT_VAR svar(scip, var);
+      color = colorinfo.get(svar);
+
+      if( color == -1 )
+      {
+         *result = SCIP_DIDNOTFIND;
+         break;
+      }
+      (void) h->add_vertex((unsigned int) (colorinfo.getLenCons() + color));
+      nnodes++;
+   }
+   //connecting the nodes with an additional node in the middle
+   //it is necessary, since only nodes have colors
+   for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
+   {
+      SCIP_CONS* cons = seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+      AUT_CONS scons(scip, cons);
+      ncurvars = seeedpool->getNVarsForCons(seeed->getOpenconss()[i]);
+      if( ncurvars == 0 )
+         continue;
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
+      SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
+
+      for( j = 0; j < ncurvars; j++ )
+      {
+         SCIP_Real constant;
+
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
+            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
+
+         SCIP_Real val;
+
+         if( !onlysign )
+         {
+            val = curvals[j];
+         }
+         else
+         {
+            if( SCIPisPositive(scip, curvals[j]) )
+               val = 1.0;
+            else if( SCIPisNegative(scip, curvals[j]) )
+               val = -1.0;
+            else
+               val = 0.0;
+         }
+
+         AUT_COEF scoef(scip, val);
+         AUT_VAR svar(scip, curvars[j]);
+
+         color = colorinfo.get(scoef);
+
+         if( color == -1 )
+         {
+            *result = SCIP_DIDNOTFIND;
+
+            break;
+         }
+         curvar = SCIPvarGetProbindex(curvars[j]);
+         (void) h->add_vertex((unsigned int) (colorinfo.getLenCons() + colorinfo.getLenVar() + color)); /*lint !e864 */
+         nnodes++;
+         h->add_edge((unsigned int)i, (unsigned int) (nconss + nvars + z));
+         h->add_edge((unsigned int) (nconss + nvars + z), (unsigned int) (nconss + curvar));
+         SCIPdebugMessage(
+               "nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
+               SCIPconsGetName(conss[i]), i, colorinfo.get(scons),
+               nconss + nvars + z, scoef.getVal(),
+               color + colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
+               SCIPvarGetName(curvars[j]), nconss + curvar,
+               colorinfo.get(svar) + colorinfo.getLenCons());  /*lint !e864 */
+         z++;
+
+      }
+
+      SCIPfreeBufferArray(scip, &curvals);
+      SCIPfreeBufferArray(scip, &curvars);
+
+   }
+   SCIPdebugMessage("Iteration 1: nnodes = %ud, Cons = %d, Vars = %d\n", nnodes, colorinfo.getLenCons(), colorinfo.getLenVar()); /*lint !e864 */
+   assert(*result == SCIP_SUCCESS && nnodes == h->get_nof_vertices());
+
+   //free all allocated memory
+   freeMemory(scip, &colorinfo);
+   return SCIP_OKAY;
+}
+
+
+/** creates a seeed with provided constraints in the master
+ * The function will put the remaining constraints in one or more pricing problems
+ * depending on whether the subproblems decompose with no variables in common.
+ */
+SCIP_RETCODE SeeedCreateFromMasterconss(
+   SCIP*                 scip,                /**< SCIP data structure */
+   DEC_DECOMP**          decomp,              /**< decomposition data structure */
+   SCIP_CONS**           masterconss,         /**< constraints to be put in the master */
+   int                   nmasterconss,        /**< number of constraints in the master */
+   gcg::Seeed*           seeed,
+   gcg::Seeedpool*       seeedpool
+   )
+{
+
    return SCIP_OKAY;
 }
 
@@ -754,7 +1067,167 @@ SCIP_RETCODE detectIsomorph(
 }
 
 
-#define detectorPropagateSeeedIsomorph NULL
+//#define detectorPropagateSeeedIsomorph NULL
+DEC_DECL_PROPAGATESEEED(propagateSeeedIsomorph)
+{
+   bliss::Graph graph;
+   bliss::Stats bstats;
+   AUT_HOOK *ptrhook;
+   AUT_COLOR *colorinfo;
+   bool onlysign; /**@TODO: set bool*/
+   gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
+   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   int nNewSeeeds;
+
+   if(seeed->getNBlocks != 0 || seeed->getNVars != seeed->getNOpenvars())
+   {
+      seeedPropagationData->nNewSeeeds = 0;
+      *result = SCIP_SUCCESS;
+      return SCIP_OKAY;
+   }
+   int nconss = seeed->getNOpenconss();
+   int i;
+   int unique;
+   //int oldndecdecomps;
+
+
+   //oldndecdecomps = *ndecdecomps;
+
+   result = SCIP_SUCCESS;
+
+   colorinfo = new AUT_COLOR();
+
+   colorinfo->setOnlySign(onlysign);
+
+   if( !onlysign )
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
+   else
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting almost aggregatable structure: ");
+
+   SCIP_CALL( setupArrays(scip, colorinfo, result, seeed, seeedPropagationData->seeedpool) );
+   SCIP_CALL( createGraph(scip, *colorinfo, &graph, result, seeed, seeedPropagationData->seeedpool) );
+
+   ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip);
+   for( i = 0; i < nconss; i++ )
+   {
+      ptrhook->conssperm[i] = -1;
+   }
+
+   graph.find_automorphisms(bstats, fhookForSeeeds, ptrhook);
+
+   if( !ptrhook->getBool() )
+      *result = SCIP_DIDNOTFIND;
+
+   if( *result == SCIP_SUCCESS )
+   {
+      int nperms;
+      //DEC_DECOMP* newdecomp;
+      int nmasterconss;
+      //SCIP_CONS** masterconss = NULL;
+      int* masterconss = NULL;
+      int p;
+
+      // assign to a permutation circle only one number
+      collapsePermutation(ptrhook->conssperm, nconss);
+      // renumbering from 0 to number of permutations
+      nperms = renumberPermutations(ptrhook->conssperm, nconss);
+
+      // filter decomposition with largest orbit
+      if( detectordata->numofsol == 1)
+         SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
+
+//      if( *ndecdecomps == 0 )
+//         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+//      else
+//         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), MIN(detectordata->numofsol, nperms)) );
+      //int pos = *ndecdecomps;
+      int pos = 0;
+      for( p = 0; p < nperms < detectordata->numofsol; ++p )
+      {
+         SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
+
+         SCIPdebugMessage("masterconss of decomp %d:\n", p);
+
+         nmasterconss = 0;
+         for( i = 0; i < nconss; i++ )
+         {
+            if( p != ptrhook->conssperm[i] )
+            {
+               masterconss[nmasterconss] = seeed->getOpenconss()[i];
+               SCIPdebugMessage("%s\n", SCIPconsGetName(seeedPropagationData->seeedpool->getConsForIndex(masterconss[nmasterconss])));
+               nmasterconss++;
+            }
+         }
+         SCIPdebugMessage("%d\n", nmasterconss);
+
+         if( nmasterconss < nconss )
+         {
+            SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[pos]), masterconss, nmasterconss) );
+
+            SCIPfreeMemoryArray(scip, &masterconss);
+         }
+         else
+         {
+            SCIPfreeMemoryArray(scip, &masterconss);
+
+            continue;
+         }
+
+
+         SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[pos], &newdecomp) );
+         if( newdecomp != NULL )
+         {
+            SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[pos])) );
+            (*decdecomps)[pos] = newdecomp;
+         }
+
+         ++pos;
+      }
+      nNewSeeeds = pos;
+
+//      if( *ndecdecomps > 0 )
+//      {
+//         unique = DECfilterSimilarDecompositions(scip, *decdecomps, *ndecdecomps);
+//      }
+//      else
+//      {
+//         unique = *ndecdecomps;
+//      }
+//
+//      for( p = unique; p < *ndecdecomps; ++p )
+//      {
+//         SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[p])) );
+//         (*decdecomps)[p] = NULL;
+//      }
+//
+//      *ndecdecomps = unique;
+
+      if( nNewSeeeds > 0 )
+      {
+         SCIP_CALL( SCIPreallocMemoryArray(scip, seeedPropagationData->newSeeeds, nNewSeeeds) );
+      }
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d (new) decompositions.\n", nNewSeeeds);
+   }
+   else
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "not found.\n");
+   }
+
+   if( nNewSeeeds == 0 )
+   {
+      SCIPfreeMemoryArrayNull(scip, seeedPropagationData->newSeeeds);
+   }
+   seeedPropagationData->nNewSeeeds = nNewSeeeds;
+
+   delete colorinfo;
+
+   delete ptrhook;
+
+   return SCIP_OKAY;
+}
 #define detectorExitIsomorph NULL
 
 

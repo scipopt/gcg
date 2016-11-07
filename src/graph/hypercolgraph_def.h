@@ -233,11 +233,12 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
    TCLIQUE_WEIGHT weight;
    std::vector< std::vector<int> > hyperedges;
    std::tr1::unordered_map<int, int> oldToNewConsIndex;
-   std::vector<bool> openVarsBool(seeed->getNOpenvars(), false) ;
-   std::vector<bool> openConssBool(seeed->getNOpenconss(), false) ;
-   int varCounter;
-   int consCounter;
+   vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
+   vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   vector<int> conssForGraph; /** stores the conss included by the graph */
+   vector<int> varsForGraph; /** stores the vars included by the graph */
 
+   //fillout conssForGraph and varsForGraph
    for(int c = 0; c < seeed->getNOpenconss(); ++c)
    {
       int cons = seeed->getOpenconss()[c];
@@ -248,57 +249,63 @@ SCIP_RETCODE HypercolGraph<T>::createFromPartialMatrix(
          {
             if(var == seeedpool->getVarsForCons(cons)[i])
             {
-               openVarsBool[v] = true;
-               openConssBool[c] = true;
+               varsBool[var] = true;
+               conssBool[cons] = true;
             }
          }
       }
    }
 
-   /* go through all open constraints */
-   consCounter = 0;
-   for( i = 0; i < seeed->getNOpenconss(); ++i )
+   for(int v = 0; v < seeed->getNOpenvars(); ++v)
    {
-      int oldConsId = seeed->getOpenconss()[i];
+      int var = seeed->getOpenvars()[v];
+      if(varsBool[var])
+         varsForGraph.push_back(var);
+   }
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      if(conssBool[cons])
+         conssForGraph.push_back(cons);
+   }
 
-      if(openConssBool[i] == false)
-         continue;
+   this->nconss = (int)conssForGraph.size();
+   this->nvars = (int)varsForGraph.size();
+
+   /* go through all open constraints */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      int oldConsId = conssForGraph[i];
 
       /* calculate weight of node */
       weight = this->weights.calculate(seeedpool->getConsForIndex(oldConsId));
 
-      oldToNewConsIndex.insert({oldConsId,consCounter});
+      oldToNewConsIndex.insert({oldConsId,i});
 
       this->graph.addNode(i, weight);
-      consCounter++;
    }
-   this->nconss = consCounter;
+
 
 
    /* go through all open variables */
-   varCounter = 0;
-   for( i = 0; i < seeed->getNOpenvars(); ++i )
+   for( i = 0; i < this->nvars; ++i )
    {
       std::vector<int> hyperedge;
-      int oldVarId = seeed->getOpenvars()[i];
-
-      if(openVarsBool[i] == false)
-         continue;
+      int oldVarId = varsForGraph[i];
 
       for( j = 0; j < seeedpool->getNConssForVar(oldVarId); ++j )
       {
          int oldConsId = seeedpool->getConssForVar(oldVarId)[j];
-         if(!seeed->isConsOpencons(oldConsId))
+         if(!conssBool[oldConsId])
             continue;
          hyperedge.insert(hyperedge.end(), oldToNewConsIndex[oldConsId]);
       }
       /* calculate weight of hyperedge */
       weight = this->weights.calculate(seeedpool->getVarForIndex(oldVarId));
       this->graph.addHyperedge(hyperedge, weight);
-      varCounter ++;
    }
 
-   this->nvars = varCounter;
+
    this->graph.flush();
 
    return SCIP_OKAY;
@@ -382,7 +389,44 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
    SCIP_HASHMAP* constoblock;
    int nblocks;
 
+   if(this->nconss == 0)
+   {
+      (*firstSeeed) = NULL;
+      (*secondSeeed) = NULL;
+      return SCIP_OKAY;
+   }
+
    std::vector<int> partition = this->getPartition();
+
+   //fillout conssForGraph
+   vector<int> conssForGraph; /** stores the conss included by the graph */
+   vector<bool> conssBool(oldSeeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   bool found;
+
+   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   {
+      int cons = oldSeeed->getOpenconss()[c];
+      found = false;
+      for(int v = 0; v < oldSeeed->getNOpenvars() && !found; ++v)
+      {
+         int var = oldSeeed->getOpenvars()[v];
+         for(int i = 0; i < seeedpool->getNVarsForCons(cons) && !found; ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               conssBool[cons] = true;
+               found = true;
+            }
+         }
+      }
+   }
+
+   for(int c = 0; c < oldSeeed->getNOpenconss(); ++c)
+   {
+      int cons = oldSeeed->getOpenconss()[c];
+      if(conssBool[cons])
+         conssForGraph.push_back(cons);
+   }
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
    nblocks = 1+*std::max_element(partition.begin(), partition.end() );
@@ -391,7 +435,7 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
    {
       int consblock = partition[c]+1;
 
-      SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) oldSeeed->getOpenconss()[c], (void*) (size_t) consblock) );
+      SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) conssForGraph[c], (void*) (size_t) consblock) );
    }
 
    (*firstSeeed) = new Seeed(oldSeeed, seeedpool);

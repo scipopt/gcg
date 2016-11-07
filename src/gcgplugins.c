@@ -345,8 +345,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );
    SCIP_CALL( SCIPincludeDetectorColors(scip) );
    SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
-   SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
-   SCIP_CALL( SCIPincludeDetectorMST(scip) );
+   //SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
+   //SCIP_CALL( SCIPincludeDetectorMST(scip) );
 #ifdef GSL
    SCIP_CALL( SCIPincludeDetectorMCL(scip) );
 #endif
