@@ -226,6 +226,7 @@ static
 SCIP_RETCODE writeDecompCode(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
+   FILE*                 makefile,           /**< File pointer to corresponding makefile */
    DEC_DECOMP*           decomp              /**< Decomposition array pointer */
    )
 {
@@ -243,7 +244,7 @@ SCIP_RETCODE writeDecompCode(
 
    assert(decomp != NULL);
 
-   /* --- make a gnuplot file for the decomposition --- */
+   /* --- create a gnuplot file for the decomposition --- */
 
    /* get path to write to and put it into gpfilename */
    filedesc = fileno(file); /* get link to file descriptor */
@@ -264,9 +265,12 @@ SCIP_RETCODE writeDecompCode(
    /* get name of file and attach it to gpfilename */
    ppath = (char*) SCIPgetProbName(scip);
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
-   strcat(gpfilename, pname);
+   if(pname != NULL &&  pname[0] != '\0')
+   {
+      strcat(gpfilename, pname);
+      strcat(gpfilename, "-");
+   }
    (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
-   /* --- make a gnuplot file for the decomposition --- */
    if(decompname != NULL &&  decompname[0] != '\0')
    {
       strcat(gpfilename, decompname);
@@ -289,6 +293,7 @@ SCIP_RETCODE writeDecompCode(
    fclose(gpfile);
 
    /* --- gather further information & output them --- */
+
    DECevaluateDecomposition(scip, decomp, &scores);
 
    SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", decompname, LINEBREAK);
@@ -329,7 +334,9 @@ SCIP_RETCODE writeEndCode(
    return SCIP_OKAY;
 }
 
-/** write a tex file for the visualization & statistics of a given set of decomposition */
+/** writes tex files for the visualization & statistics of a given set of decomposition
+ * and writes a Makefile to compile the files with
+ */
 SCIP_RETCODE GCGwriteDecompsToTex(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
@@ -340,10 +347,55 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    )
 {
    DEC_DECOMP** sorteddecomps;
+   FILE* makefile;
+   char* filepath;
+   char* filename;
+   const char* makelinebreak = "\n";
+   char sympath[SCIP_MAXSTRLEN];
+   char pfile[SCIP_MAXSTRLEN];
+   char makefilename[SCIP_MAXSTRLEN];
+   int filedesc;
+   int success;
    int i;
 
    assert(scip != NULL);
    assert(*ndecomps > 0);
+
+   /* --- create a Makefile --- */
+
+   /* get path to write to and put it into gpfilename */
+   filedesc = fileno(file); /* get link to file descriptor */
+   if(filedesc < 0)
+   {
+      return SCIP_FILECREATEERROR;
+   }
+   snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
+   success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
+   if(success < 0)
+   {
+      return SCIP_NOFILE;
+   }
+   SCIPsplitFilename(pfile, &filepath, &filename, NULL, NULL);
+   strcpy(makefilename, filepath);
+   strcat(makefilename, "/");
+   strcat(makefilename, "Makefile");
+
+   /* open and write first lines of makefile */
+   makefile = fopen(makefilename, "w");
+   if(makefile == NULL)
+   {
+      return SCIP_FILECREATEERROR;
+   }
+
+   SCIPinfoMessage(scip, makefile, "# LaTeX code might have to be compiled several times                         %s", filename, makelinebreak);
+   SCIPinfoMessage(scip, makefile, ".PHONY: %s.pdf all clean                                                     %s", filename, makelinebreak);
+
+
+   /*@todo write into makefile */
+
+
+
+   /* --- make the tex files --- */
 
    /*@todo sort decomps into sorteddecomps (just rearrange pointers)*/
    sorteddecomps = decomps;
@@ -359,11 +411,13 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    {
       if(decomps[i] != NULL)
       {
-         SCIP_CALL( writeDecompCode(scip,file,decomps[i]) );
+         SCIP_CALL( writeDecompCode(scip,file,makefile,decomps[i]) );
       }
    }
 
    SCIP_CALL( writeEndCode(scip,file) );
+
+   fclose(makefile);
 
    return SCIP_OKAY;
 }
