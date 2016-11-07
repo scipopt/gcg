@@ -125,14 +125,59 @@ SCIP_RETCODE GCGreadTex(
    return SCIP_READERROR;
 }
 
+/** write LaTeX code for general decomposition statistics */
+static
+SCIP_RETCODE writeGeneralStatisticsCode(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file,               /**< File pointer to write to */
+   DEC_DECOMP**         decomps,            /**< Decompositions structure */
+   int*                 ndecomps            /**< Number of decompositions */
+   )
+{
+   char* ppath;
+   char* pname;
+
+   ppath = (char*) SCIPgetProbName(scip);
+   SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
+
+   SCIPinfoMessage(scip, file, "\\section*{Detection Statistics}                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Detection Statistics}                           %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{0pt}                                   %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                     %s", pname, LINEBREAK);
+   SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                     %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                    %s", SCIPconshdlrDecompGetNDecdecomps(scip), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                %s", *ndecomps, LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\newpage                                                                       %s", LINEBREAK);
+
+   /*@todo GCGprintDetectorStatistics(scip, file);
+
+   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
+*/
+   /*@todo get and output more statistics*/
+
+   return SCIP_OKAY;
+}
+
 /** write LaTeX code header & begin of document */
 static
 SCIP_RETCODE writeHeaderCode(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file,               /**< File pointer to write to */
+   SCIP_Bool            statistics,         /**< if true detection statistics and are included in report */
+   DEC_DECOMP**         decomps,            /**< Decompositions structure */
+   int*                 ndecomps,           /**< Number of decompositions */
    SCIP_Bool            toc                 /**< if true table of contents is included */
    )
 {
+   char* pname;
+   char* ppath;
+
+   ppath = (char*) SCIPgetProbName(scip);
+   SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
+
    SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% *                  This file is part of the program                         * %s", LINEBREAK);
@@ -173,8 +218,13 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{titlepage}                                                               %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  \\centering                                                                    %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  {\\Huge Report} \\\\ \\today                                                   %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  {\\Huge Report: %s} \\\\ \\today                                               %s", pname, LINEBREAK);
    SCIPinfoMessage(scip, file, "\\end{titlepage}                                                                 %s", LINEBREAK);
+
+   if(statistics)
+   {
+      SCIP_CALL( writeGeneralStatisticsCode(scip,file,decomps,ndecomps) );
+   }
 
    if(toc)
    {
@@ -185,48 +235,11 @@ SCIP_RETCODE writeHeaderCode(
    return SCIP_OKAY;
 }
 
-/** write LaTeX code for general decomposition statistics */
-static
-SCIP_RETCODE writeGeneralStatisticsCode(
-   SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file,               /**< File pointer to write to */
-   DEC_DECOMP**         decomps,            /**< Decompositions structure */
-   int*                 ndecomps            /**< Number of decompositions */
-   )
-{
-   char* ppath;
-   char* pname;
-
-   ppath = (char*) SCIPgetProbName(scip);
-   SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
-
-   SCIPinfoMessage(scip, file, "\\section*{Detection Statistics}                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Detection Statistics}                           %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{0pt}                                   %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                     %s", pname, LINEBREAK);
-   SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                     %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                    %s", SCIPconshdlrDecompGetNDecdecomps(scip), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                %s", *ndecomps, LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\newpage                                                                       %s", LINEBREAK);
-
-   /*@todo GCGprintDetectorStatistics(scip, file);
-
-   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-*/
-   /*@todo get and output more statistics*/
-
-   return SCIP_OKAY;
-}
-
 /** write LaTeX code for one decomposition */
 static
 SCIP_RETCODE writeDecompCode(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   FILE*                 makefile,           /**< File pointer to corresponding makefile */
    DEC_DECOMP*           decomp              /**< Decomposition array pointer */
    )
 {
@@ -235,6 +248,7 @@ SCIP_RETCODE writeDecompCode(
    char* ppath;
    char decompname[SCIP_MAXSTRLEN];
    char gpfilename[SCIP_MAXSTRLEN];
+   char gpname[SCIP_MAXSTRLEN];
    char sympath[SCIP_MAXSTRLEN];
    char pfile[SCIP_MAXSTRLEN];
    FILE* gpfile;
@@ -274,12 +288,13 @@ SCIP_RETCODE writeDecompCode(
    if(decompname != NULL &&  decompname[0] != '\0')
    {
       strcat(gpfilename, decompname);
-      strcat(gpfilename, ".gp");
    }
    else
    {
       return SCIP_FILECREATEERROR;
    }
+   strcpy(gpname, gpfilename);
+   strcat(gpfilename, ".gp");
 
    /* write gp file for decomp using the gp reader (using the tex output option) */
    gpfile = fopen(gpfilename, "w");
@@ -300,20 +315,23 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}                              %s", decompname, LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                                           %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                                           %s", pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\end{center}                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\end {figure}                                                                  %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{tabular}{lll}                                                           %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  Found by detector: & %s & \\\\                                                %s", DECdetectorGetName(DECdecompGetDetector(decomp)), LINEBREAK);
    SCIPinfoMessage(scip, file, "  Number of blocks: & %i & \\\\                                                 %s", DECdecompGetNBlocks(decomp), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Scores: & Total score: &  \\\\                                              %s", /*(double) scores->totalscore,*/ LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of linking variables: &  & \\\\                                      %s", /*DECdecompGetNBlocks(decomp),*/ LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of linking constraints: &  & \\\\                                    %s", /*DECdecompGetNBlocks(decomp),*/ LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of linking variables: & %i & \\\\                                      %s", DECdecompGetNLinkingvars(decomp), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i & \\\\                                    %s", DECdecompGetNLinkingconss(decomp), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Scores: & Total score: & %f \\\\                                              %s", scores.totalscore, LINEBREAK);
+   SCIPinfoMessage(scip, file, "  & Block density score: & %f \\\\                                              %s", scores.densityscore, LINEBREAK);
+   SCIPinfoMessage(scip, file, "  & Interlinking blocks score: & %f \\\\                                        %s", scores.linkingscore, LINEBREAK);
+   SCIPinfoMessage(scip, file, "  & Border score: & %f \\\\                                                     %s", scores.borderscore, LINEBREAK);
    SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\begin{figure}                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "    %%TODO \\input{gnuplot}                                                     %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\end{center}                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\end {figure}                                                                  %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\newpage                                                                       %s", LINEBREAK);
 
    /*@todo get and output statistics*/
@@ -347,77 +365,27 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    )
 {
    DEC_DECOMP** sorteddecomps;
-   FILE* makefile;
-   char* filepath;
-   char* filename;
-   const char* makelinebreak = "\n";
-   char sympath[SCIP_MAXSTRLEN];
-   char pfile[SCIP_MAXSTRLEN];
-   char makefilename[SCIP_MAXSTRLEN];
-   int filedesc;
-   int success;
    int i;
 
    assert(scip != NULL);
    assert(*ndecomps > 0);
-
-   /* --- create a Makefile --- */
-
-   /* get path to write to and put it into gpfilename */
-   filedesc = fileno(file); /* get link to file descriptor */
-   if(filedesc < 0)
-   {
-      return SCIP_FILECREATEERROR;
-   }
-   snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
-   success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
-   if(success < 0)
-   {
-      return SCIP_NOFILE;
-   }
-   SCIPsplitFilename(pfile, &filepath, &filename, NULL, NULL);
-   strcpy(makefilename, filepath);
-   strcat(makefilename, "/");
-   strcat(makefilename, "Makefile");
-
-   /* open and write first lines of makefile */
-   makefile = fopen(makefilename, "w");
-   if(makefile == NULL)
-   {
-      return SCIP_FILECREATEERROR;
-   }
-
-   SCIPinfoMessage(scip, makefile, "# LaTeX code might have to be compiled several times                         %s", filename, makelinebreak);
-   SCIPinfoMessage(scip, makefile, ".PHONY: %s.pdf all clean                                                     %s", filename, makelinebreak);
-
-
-   /*@todo write into makefile */
-
-
 
    /* --- make the tex files --- */
 
    /*@todo sort decomps into sorteddecomps (just rearrange pointers)*/
    sorteddecomps = decomps;
 
-   SCIP_CALL( writeHeaderCode(scip,file,TRUE) );
-
-   if(statistics)
-   {
-      SCIP_CALL( writeGeneralStatisticsCode(scip,file,sorteddecomps,ndecomps) );
-   }
+   SCIP_CALL( writeHeaderCode(scip,file,statistics,sorteddecomps,ndecomps,toc) );
 
    for( i=0; i<*ndecomps; i++ )
    {
       if(decomps[i] != NULL)
       {
-         SCIP_CALL( writeDecompCode(scip,file,makefile,decomps[i]) );
+         SCIP_CALL( writeDecompCode(scip,file,decomps[i]) );
       }
    }
 
    SCIP_CALL( writeEndCode(scip,file) );
-
-   fclose(makefile);
 
    return SCIP_OKAY;
 }
