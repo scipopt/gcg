@@ -71,11 +71,15 @@ private:
     */
    virtual SCIP_RETCODE postProcess(std::vector<int>& labels, bool enabled);
 
+   virtual SCIP_RETCODE postProcessForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, std::vector<int>& labels, bool enabled);
+
    /** removes the colliding rows from the clusters (should be used just after clustering)
     *  Method: solve the stable set problem with greedy heuristic
     *  NOTE: this function is obsolete because the new version of postProcess has the same results, and is faster
     */
    virtual SCIP_RETCODE postProcessStableSet(std::vector<int>& labels, bool enabled);
+
+   virtual SCIP_RETCODE postProcessStableSetForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, std::vector<int>& labels, bool enabled);
 
 public:
    RowGraphWeighted(
@@ -96,6 +100,16 @@ public:
       WEIGHT_TYPE           w_type              /**< Depending on the algorithm we can build distance or similarity graph */
       );
 
+   // we need this to avoid the warning of hidding the parent function
+   using gcg::RowGraph<T>::createFromPartialMatrix;
+
+   /** creates a graph with open constraints and open variables of the seeed */
+   virtual SCIP_RETCODE createFromPartialMatrix(
+      Seeedpool*           seeedpool,
+      Seeed*               seeed,
+      DISTANCE_MEASURE      dist,               /**< Here we define the distance measure between two rows */
+      WEIGHT_TYPE           w_type             /**< Depending on the algorithm we can build distance or similarity graph */
+      );
 
    static double calculateSimilarity(
       int a,               /**< number of common variables in two rows */
@@ -109,11 +123,20 @@ public:
    /** return a partition of the nodes with the help of DBSCAN */
    virtual SCIP_RETCODE computePartitionDBSCAN(double eps, bool postprocenable);
 
+   /** return a partition of the nodes with the help of DBSCAN */
+   virtual SCIP_RETCODE computePartitionDBSCANForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, double eps, bool postprocenable);
+
    /** return a partition of the nodes with the help of MST */
    virtual SCIP_RETCODE computePartitionMST(double eps, bool postprocenable);
 
    /** return a partition of the nodes with the help of MST */
+   virtual SCIP_RETCODE computePartitionMSTForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, double eps, bool postprocenable);
+
+   /** return a partition of the nodes with the help of MST */
    virtual SCIP_RETCODE computePartitionMCL(int& stoppedAfter, double inflatefactor, bool postprocenable);
+
+   /** return a partition of the nodes with the help of MST */
+   virtual SCIP_RETCODE computePartitionMCLForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, int& stoppedAfter, double inflatefactor, bool postprocenable);
 
    /** return the number of clusters after post-processing */
    virtual SCIP_RETCODE getNBlocks(int& _n_blocks);

@@ -295,13 +295,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                  cons = consToScipCons[i];
 
-//                 SCIP_CALL_ABORT( SCIPgetConsNVars(scip, cons, &nCurrVars, &success ) );
                  nCurrVars = GCGconsGetNVars(scip, cons);
-                 std::cout << "\n\nConstraint: " << SCIPconsGetName(cons) << " with " << nCurrVars << " variables" << std::endl;
-//                 assert(success);
+//                 std::cout << "\n\nConstraint: " << SCIPconsGetName(cons) << " with " << nCurrVars << " variables" << std::endl;
 
                  SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVars, nCurrVars) ); /** free in line 321 */
-//                 SCIPgetConsVars(scip, cons, currVars, nCurrVars, &success );
                  SCIP_CALL_ABORT(GCGconsGetVars(scip, cons, currVars, nCurrVars));
 
                  for(int currVar = 0; currVar < nCurrVars; ++currVar)
@@ -310,15 +307,14 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                      int varIndex;
                      std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
 
-                         std::cout << " try ("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
-                         if(!SCIPvarIsNegated(currVars[currVar]))
-                         {
-                             iterVar = scipVarToIndex.find(currVars[currVar]);
-                         }
-                         else
-                         {
-                            iterVar = scipVarToIndex.find(SCIPvarGetNegatedVar(currVars[currVar]));
-                         }
+//                         std::cout << " try ("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
+
+                     /** because of the bug of GCGconsGet*()-methods some variables have to be negated */
+                     if(!SCIPvarIsNegated(currVars[currVar]))
+                        iterVar = scipVarToIndex.find(currVars[currVar]);
+                     else
+                        iterVar = scipVarToIndex.find(SCIPvarGetNegatedVar(currVars[currVar]));
+
 
 
 
@@ -330,10 +326,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                          varsForConss[i].push_back(varIndex);
                          conssForVars[varIndex].push_back(i);
-                         std::cout << "("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
+//                         std::cout << "("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
 
                  }
-                 std::cout << "\n" << std::endl;
+//                 std::cout << "\n" << std::endl;
                  SCIPfreeBufferArray(scip, &currVars) ;
          }
 

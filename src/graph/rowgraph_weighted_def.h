@@ -42,6 +42,8 @@
 #include "graphalgorithms.h"
 #include "priority_graph.h"
 #include <algorithm>
+#include <iostream>
+#include <vector>
 #include <map>
 #include <set>
 #include <climits>
@@ -210,6 +212,153 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
    SCIP_CALL( this->graph.flush() );
 
    assert(this->graph.getNNodes() == nconss_);
+
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE RowGraphWeighted<T>::createFromPartialMatrix(
+   Seeedpool*            seeedpool,
+   Seeed*                seeed,
+   DISTANCE_MEASURE      dist,               /**< Here we define the distance measure between two rows */
+   WEIGHT_TYPE           w_type             /**< Depending on the algorithm we can build distance or similarity graph */
+   )
+{
+
+   int i;
+   int j;
+   int k;
+   int l;
+   int m;
+   vector<int> conssForGraph; /** stores the conss included by the graph */
+   vector<int> varsForGraph; /** stores the vars included by the graph */
+   vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
+   vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+   tr1::unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
+   tr1::unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
+
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      {
+         int var = seeed->getOpenvars()[v];
+         for(i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               varsBool[var] = true;
+               conssBool[cons] = true;
+            }
+         }
+      }
+   }
+
+   for(int v = 0; v < seeed->getNOpenvars(); ++v)
+   {
+      int var = seeed->getOpenvars()[v];
+      if(varsBool[var])
+         varsForGraph.push_back(var);
+   }
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      if(conssBool[cons])
+         conssForGraph.push_back(cons);
+   }
+
+   this->nvars = (int)varsForGraph.size();
+   this->nconss = (int)conssForGraph.size();
+   assert(this->nconss > 0);
+   assert(this->nvars > 0);
+
+   for(int v = 0; v < (int)varsForGraph.size(); ++v)
+   {
+      int oldVarId = varsForGraph[v];
+      oldToNewVarIndex.insert({oldVarId,v});
+   }
+   for(int c = 0; c < (int)conssForGraph.size(); ++c)
+   {
+      int oldConsId = conssForGraph[c];
+      oldToNewConsIndex.insert({oldConsId,c});
+   }
+
+
+
+   SCIP_CALL( this->graph.addNNodes(this->nconss) );
+
+   /* go through all constraints */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      int cons1 = conssForGraph[i];
+      assert(conssBool[cons1]);
+
+      /* go through all constraints again */
+      for( j = 0; j < i; ++j )
+      {
+         int cons2 = conssForGraph[j];
+
+         int a = 0;   // number of common variables
+         int b = 0;   // number of variables that appear ONLY in the second row
+         int c = 0;   // number of variables that appear ONLY in the first row
+
+
+         for( k = 0; k < seeedpool->getNVarsForCons(cons1); ++k)
+         {
+            int var1 = seeedpool->getVarsForCons(cons1)[k];
+            if(!varsBool[var1])
+               continue;
+            assert(varsBool[var1]);
+
+            for(l = 0; l < seeedpool->getNVarsForCons(cons2); ++l)
+            {
+               int var2 = seeedpool->getVarsForCons(cons2)[l];
+               if(!varsBool[var2])
+                  continue;
+
+               if(var1 == var2)
+               {
+                  a++;
+                  break;   // stop comparing the variable from the 1st const. with the rest of vars. in the 2nd const.
+               }
+            }
+            for(m = 0; m < seeedpool->getNVarsForCons(cons2); ++m)
+            {
+               int var = seeedpool->getVarsForCons(cons2)[m];
+               if(varsBool[var])
+                  b++;
+            }
+            b = b - a;
+
+            for(m = 0; m < seeedpool->getNVarsForCons(cons1); ++m)
+            {
+               int var = seeedpool->getVarsForCons(cons1)[m];
+               if(varsBool[var])
+                  c++;
+            }
+            c = c - a;
+
+            assert(a >= 0);   // number of common var
+            assert(b >= 0);   // number of variables in the second conss
+            assert(c >= 0);   // number of variables in the first conss
+            if(a != 0){
+               double edge_weight = calculateSimilarity(a, b, c, dist, w_type, i==j);
+               this->graph.addEdge(oldToNewConsIndex[cons1], oldToNewConsIndex[cons2], edge_weight);
+            }
+         }
+      }
+   }
+
+   if(dist == INTERSECTION)
+   {
+      this->graph.normalize();
+      if(w_type == DIST)
+      {
+         return SCIP_INVALIDCALL;
+      }
+   }
+
+   SCIP_CALL( this->graph.flush() );
 
    return SCIP_OKAY;
 }
@@ -476,7 +625,213 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
    return SCIP_OKAY;
 }
 
+template <>
+SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, vector<int>& labels, bool enabled)
+{
+   assert((int)labels.size() == graph.getNNodes());
+   set<int> diff_blocks_beginning;
+   for(auto curr_int = labels.begin(), end = labels.end(); curr_int != end; ++curr_int)
+   {
+      diff_blocks_beginning.insert(*curr_int);
+   }
+   //std::cout << "diff_blocks_beginning: " << diff_blocks_beginning.size() << std::endl;
+   bool skip_me = false;
+   if(diff_blocks_beginning.size() == labels.size())
+   {
+      skip_me = true;
+   }
+   // If the post processing is enabled, remove the coliding conss, otherwise just set the partition
+   if(enabled && !skip_me)
+    {
+      //fillout conssForGraph and varsForGraph
+      vector<int> conssForGraph; /** stores the conss included by the graph */
+      vector<int> varsForGraph; /** stores the vars included by the graph */
+      vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
+      vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+      tr1::unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
+      tr1::unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
 
+      for(int c = 0; c < seeed->getNOpenconss(); ++c)
+      {
+         int cons = seeed->getOpenconss()[c];
+         for(int v = 0; v < seeed->getNOpenvars(); ++v)
+         {
+            int var = seeed->getOpenvars()[v];
+            for(int i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+            {
+               if(var == seeedpool->getVarsForCons(cons)[i])
+               {
+                  varsBool[var] = true;
+                  conssBool[cons] = true;
+               }
+            }
+         }
+      }
+
+      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      {
+         int var = seeed->getOpenvars()[v];
+         if(varsBool[var] == true)
+            varsForGraph.push_back(var);
+      }
+      for(int c = 0; c < seeed->getNOpenconss(); ++c)
+      {
+         int cons = seeed->getOpenconss()[c];
+         if(conssBool[cons] == true)
+            conssForGraph.push_back(cons);
+      }
+
+       assert(this->nvars == (int) varsForGraph.size());
+       assert(this->nconss == (int) conssForGraph.size());
+
+       sort(conssForGraph.begin(), conssForGraph.end());
+       sort(varsForGraph.begin(), varsForGraph.end());
+
+       //fillout oldToNewVarIndex and oldToNewConsIndex
+       for(int v = 0; v < this->nvars; ++v)
+       {
+          int oldVarId = varsForGraph[v];
+          oldToNewVarIndex.insert({oldVarId,v});
+       }
+
+       for(int c = 0; c < this->nconss; ++c)
+       {
+          int oldConsId = conssForGraph[c];
+          oldToNewConsIndex.insert({oldConsId,c});
+       }
+
+       this->non_cl = (int)labels.size();
+       // for each column in the conss matrix we save labels of all the constraints where the variable appears
+       vector< vector<int> > all_labels_in_col(this->nvars);
+
+       // for each column in the conss matrix we count the number of occurrences of each label
+       vector< map<int, int> > all_label_occ_in_col(this->nvars);
+
+       // item i saves number which appears most often in the all_labels_in_col[i]
+       vector<int> col_labels(this->nvars, -1);
+
+
+       // For each var save the labels of all the constraints where this var appears.
+       for(size_t c = 0; c < conssForGraph.size(); c++)
+       {
+          int cons = conssForGraph[c];
+          int consIndex = oldToNewConsIndex[cons];
+          assert(consIndex >= 0);
+          assert(consIndex < this->nconss);
+          for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
+          {
+             int var = seeedpool->getVarsForCons(cons)[v];
+             if(find(varsForGraph.begin(), varsForGraph.end(), var) == varsForGraph.end())
+                continue;
+             int varIndex = oldToNewVarIndex[var];
+             assert(varIndex >= 0);
+             assert(varIndex < this->nvars);
+             all_labels_in_col[varIndex].push_back(labels[consIndex]);
+          }
+       }
+
+       // fill the col_labels
+       for(size_t v = 0; v < varsForGraph.size(); ++v)
+       {
+          int var = varsForGraph[v];
+          int varIndex = oldToNewVarIndex[var];
+          assert(varIndex >= 0);
+          assert(varIndex < this->nvars);
+
+          auto pr = max_element
+          (
+              all_label_occ_in_col[varIndex].begin(), all_label_occ_in_col[varIndex].end(),
+              [] (const pair<int,int> & p1, const pair<int,int> & p2) {
+                  return p1.second < p2.second;
+              }
+          );
+          col_labels[varIndex] = pr->first;
+       }
+
+
+       // Iterate all the conss and remove them (i.e. set label to -1) if necessary
+       for(size_t c = 0; c < conssForGraph.size(); ++c)
+       {
+          int cons = conssForGraph[c];
+          assert(cons >= 0);
+          int consIndex = oldToNewConsIndex[cons];
+          assert(consIndex >= 0);
+          assert(consIndex < this->nconss);
+          for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
+          {
+             int var = seeedpool->getVarsForCons(cons)[v];
+             if(find(varsForGraph.begin(), varsForGraph.end(), var) == varsForGraph.end())
+                continue;
+             int varIndex = oldToNewVarIndex[var];
+             assert(varIndex >= 0);
+             assert(varIndex < this->nvars);
+             // Check if in a conss we have found a var with different label than the conss label.
+             // This means that this var is mostly belonging to some other block, so remove it
+             if(col_labels[varIndex] != labels[consIndex])
+             {
+                labels.at(consIndex) = -1;
+
+                // this is new part
+                //       it updates the column labels each time after eliminating some conss
+                all_label_occ_in_col[varIndex][labels[consIndex]]--;
+                auto pr = max_element
+                (
+                    all_label_occ_in_col[varIndex].begin(), all_label_occ_in_col[varIndex].end(),
+                    [] (const pair<int,int> & p1, const pair<int,int> & p2) {
+                        return p1.second < p2.second;
+                    }
+                );
+                col_labels[varIndex] = pr->first;
+             }
+          }
+       }
+    }
+
+   if(!skip_me)
+   {
+      // Fix the labeling so that it starts from 0 without skipping the enumeration order
+      // And set the graph partition accordingly.
+      set<int> diff_blocks;
+
+      for(auto curr_int = labels.begin(), end = labels.end(); curr_int != end; ++curr_int)
+      {
+         diff_blocks.insert(*curr_int);
+      }
+
+      const int non_cl_pts = count(labels.begin(), labels.end(), -1);
+      if(non_cl_pts > 0)
+      {
+         this->n_blocks = diff_blocks.size() - 1;
+      }
+      else
+      {
+         this->n_blocks = diff_blocks.size();
+      }
+      this->non_cl = non_cl_pts;
+
+      map<int,int> labels_fix;
+      int new_label;
+      if(this->non_cl > 0) new_label = -1;
+      else                 new_label =  0;
+
+      for(int old_label: diff_blocks)
+      {
+         labels_fix[old_label] = new_label;
+         new_label++;
+      }
+      for(int i = 0; i < (int)labels.size(); i++)
+      {
+         labels[i] = labels_fix[labels[i]];
+      }
+   }
+
+   // put the labels as the partition...
+   for(int i = 0; i < (int)labels.size(); i++)
+   {
+      this->graph.setPartition(i, labels[i]);
+   }
+   return SCIP_OKAY;
+}
 
 
 // this function is obsolete
@@ -494,6 +849,8 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
    {
       skip_me = true;
    }
+
+
    // If the post processing is enabled, remove the coliding conss, otherwise just set the partition
    if(enabled && !skip_me)
    {
@@ -677,6 +1034,218 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
    return SCIP_OKAY;
 }
 
+// this function is obsolete
+template <>
+SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSetForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, vector<int>& labels, bool enabled)
+{
+   assert((int)labels.size() == graph.getNNodes());
+   set<int> diff_blocks_beginning;
+   for(auto curr_int = labels.begin(), end = labels.end(); curr_int != end; ++curr_int)
+   {
+      diff_blocks_beginning.insert(*curr_int);
+   }
+   bool skip_me = false;
+   if(diff_blocks_beginning.size() == labels.size())
+   {
+      skip_me = true;
+   }
+
+
+
+   // If the post processing is enabled, remove the coliding conss, otherwise just set the partition
+   if(enabled && !skip_me)
+   {
+      //fillout conssForGraph and varsForGraph
+      vector<int> conssForGraph; /** stores the conss included by the graph */
+      vector<int> varsForGraph; /** stores the vars included by the graph */
+      vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
+      vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+      tr1::unordered_map<int, int> oldToNewConsIndex; /** stores new index of the conss */
+      tr1::unordered_map<int, int> oldToNewVarIndex; /** stores new index of the vars */
+
+      for(int c = 0; c < seeed->getNOpenconss(); ++c)
+      {
+         int cons = seeed->getOpenconss()[c];
+         for(int v = 0; v < seeed->getNOpenvars(); ++v)
+         {
+            int var = seeed->getOpenvars()[v];
+            for(int i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+            {
+               if(var == seeedpool->getVarsForCons(cons)[i])
+               {
+                  varsBool[var] = true;
+                  conssBool[cons] = true;
+               }
+            }
+         }
+      }
+
+      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      {
+         int var = seeed->getOpenvars()[v];
+         if(varsBool[var] == true)
+            varsForGraph.push_back(var);
+      }
+      for(int c = 0; c < seeed->getNOpenconss(); ++c)
+      {
+         int cons = seeed->getOpenconss()[c];
+         if(conssBool[cons] == true)
+            conssForGraph.push_back(cons);
+      }
+
+      assert(this->nvars == (int) varsForGraph.size());
+      assert(this->nconss == (int) conssForGraph.size());
+
+      sort(conssForGraph.begin(), conssForGraph.end());
+      sort(varsForGraph.begin(), varsForGraph.end());
+
+      //fillout oldToNewVarIndex and oltToNewConsIndex
+      for(int v = 0; v < this->nvars; ++v)
+      {
+         int oldVarId = varsForGraph[v];
+         oldToNewVarIndex.insert({oldVarId,v});
+      }
+
+      for(int c = 0; c < this->nconss; ++c)
+      {
+         int oldConsId = conssForGraph[c];
+         oldToNewConsIndex.insert({oldConsId,c});
+      }
+
+      priority_graph stable_set_graph;
+      this->non_cl = (int)labels.size();
+      // for each column in the conss matrix we save labels of all the constraints where the variable appears
+      vector< vector<int> > all_ind_in_col(this->nvars);
+
+      /* go through all constraints */
+      for(int c = 0; c < this->nconss; ++c)
+      {
+         int cons1 = conssForGraph[c];
+         int consIndex1 = oldToNewConsIndex[cons1];
+         assert(consIndex1 >= 0);
+         assert(consIndex1 < this->nconss);
+
+         /*
+          * may work as is, as we are copying the constraint later regardless
+          * if there are variables in it or not
+          */
+
+         /* go through all constraints */
+         for(int d = 0; d < c; ++d )
+         {
+            int cons2 = conssForGraph[d];
+            int consIndex2 = oldToNewConsIndex[cons2];
+            assert(consIndex2 >= 0);
+            assert(consIndex2 < this->nconss);
+            if(labels[consIndex1] == labels[consIndex2])
+               continue;
+            SCIP_Bool continueloop = FALSE;
+            /*
+             * may work as is, as we are copying the constraint later regardless
+             * if there are variables in it or not
+             */
+
+            /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
+            /** @todo Do more then one entry per variable actually work? */
+            for(int v = 0; v < seeedpool->getNVarsForCons(cons1); ++v)
+            {
+               int var1 = seeedpool->getVarsForCons(cons1)[v];
+               if(find(varsForGraph.begin(), varsForGraph.end(), var1) == varsForGraph.end())
+                  continue;
+               int varIndex1 = oldToNewVarIndex[var1];
+               assert(varIndex1 >= 0);
+               assert(varIndex1 < this->nvars);
+               for(int w = 0; w < seeedpool->getNVarsForCons(cons2); ++w)
+               {
+                  int var2 = seeedpool->getVarsForCons(cons2)[w];
+                     if(find(varsForGraph.begin(), varsForGraph.end(), var2) == varsForGraph.end())
+                        continue;
+                     int varIndex2 = oldToNewVarIndex[var2];
+                     assert(varIndex2 >= 0);
+                     assert(varIndex2 < this->nvars);
+                  if(varIndex1 == varIndex2)
+                  {
+                     stable_set_graph.addNode(consIndex1);
+                     stable_set_graph.addNode(consIndex2);
+                     stable_set_graph.addEdge(consIndex1, consIndex2);
+                     continueloop = TRUE;
+                     break;
+                  }
+               }
+               if(continueloop)
+                  break;
+            }
+         }
+      }
+
+      // run greedy heuristic for stable set
+      vector<int> stable_set;
+      vector<int> no_stable_set;
+      while(!stable_set_graph.empty()){
+         int current = stable_set_graph.top().first;
+         stable_set.push_back(current);
+         set<int> neighbors = stable_set_graph.getNeighbors(current);
+         stable_set_graph.pop();
+         for(auto neighbor : neighbors){
+            stable_set_graph.removeNode(neighbor, no_stable_set);
+         }
+      }
+
+
+      // Iterate all the conss and remove them (i.e. set label to -1) if necessary
+      for(int to_remove : no_stable_set)
+      {
+         //SCIPverbMessage(this->scip_, SCIP_VERBLEVEL_NORMAL, NULL, " to_remove: %d \n", to_remove);
+         labels[to_remove] = -1;
+      }
+   }
+
+
+   if(!skip_me)
+   {
+      // Fix the labeling so that it starts from 0 without skipping the enumeration order
+      // And set the graph partition accordingly.
+      set<int> diff_blocks;
+      for(auto curr_int = labels.begin(), end = labels.end(); curr_int != end; ++curr_int)
+      {
+         diff_blocks.insert(*curr_int);
+      }
+
+      const int non_cl_pts = count(labels.begin(), labels.end(), -1);
+      if(non_cl_pts > 0)
+      {
+         this->n_blocks = diff_blocks.size() - 1;
+      }
+      else
+      {
+         this->n_blocks = diff_blocks.size();
+      }
+      this->non_cl = non_cl_pts;
+
+      map<int,int> labels_fix;
+      int new_label;
+      if(this->non_cl > 0) new_label = -1;
+      else                 new_label =  0;
+
+      for(int old_label: diff_blocks)
+      {
+         labels_fix[old_label] = new_label;
+         new_label++;
+      }
+      for(int i = 0; i < (int)labels.size(); i++)
+      {
+         labels[i] = labels_fix[labels[i]];
+      }
+   }
+
+   // put the labels as the partition...
+   for(int i = 0; i < (int)labels.size(); i++)
+   {
+      this->graph.setPartition(i, labels[i]);
+   }
+   return SCIP_OKAY;
+}
+
 template <>
 SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionDBSCAN(double eps, bool postprocenable)
 {
@@ -685,6 +1254,17 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionDBSCAN(double eps, bool
    assert((int)labels.size() == graph.getNNodes());
 
    SCIP_CALL( postProcess(labels, postprocenable) );
+   return SCIP_OKAY;
+}
+
+template <>
+SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionDBSCANForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, double eps, bool postprocenable)
+{
+   vector<int> labels;
+   labels = GraphAlgorithms<GraphGCG>::dbscan(graph, eps);
+   assert((int)labels.size() == graph.getNNodes());
+
+   SCIP_CALL( postProcessForPartialGraph(seeedpool, seeed, labels, postprocenable) );
    return SCIP_OKAY;
 }
 
@@ -701,6 +1281,17 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMST(double eps, bool po
 }
 
 template <>
+SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMSTForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, double eps, bool postprocenable)
+{
+   vector<int> labels;
+   labels = GraphAlgorithms<GraphGCG>::mst(graph, eps);
+   assert((int)labels.size() == graph.getNNodes());
+
+   SCIP_CALL( postProcessForPartialGraph(seeedpool, seeed, labels, postprocenable) );
+   return SCIP_OKAY;
+}
+
+template <>
 SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMCL(int& stoppedAfter, double inflatefactor, bool postprocenable)
 {
    vector<int> labels;
@@ -708,6 +1299,17 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMCL(int& stoppedAfter, 
    assert((int)labels.size() == graph.getNNodes());
 
    SCIP_CALL( postProcess(labels, postprocenable) );
+   return SCIP_OKAY;
+}
+
+template <>
+SCIP_RETCODE RowGraphWeighted<GraphGCG>::computePartitionMCLForPartialGraph(gcg::Seeedpool* seeedpool, gcg::Seeed* seeed, int& stoppedAfter, double inflatefactor, bool postprocenable)
+{
+   vector<int> labels;
+   labels = GraphAlgorithms<GraphGCG>::mcl(graph, stoppedAfter, inflatefactor);
+   assert((int)labels.size() == graph.getNNodes());
+
+   SCIP_CALL( postProcessForPartialGraph(seeedpool, seeed, labels, postprocenable) );
    return SCIP_OKAY;
 }
 

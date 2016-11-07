@@ -187,6 +187,31 @@ DEC_DECL_INITDETECTOR(initMST)
    return SCIP_OKAY;
 }
 
+/** are there conss and vars to be included by the graph */
+static
+bool graphCompletible(
+   gcg::Seeedpool*  seeedpool,
+   gcg::Seeed*      seeed
+   )
+{
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      {
+         int var = seeed->getOpenvars()[v];
+         for(int i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               return true;
+            }
+         }
+      }
+   }
+   return false;
+}
+
 /** detection function of detector */
 static
 DEC_DECL_DETECTSTRUCTURE(detectMST)
@@ -352,6 +377,191 @@ DEC_DECL_DETECTSTRUCTURE(detectMST)
 }
 
 #define propagateSeeedMST NULL
+
+//static
+//DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
+//{ /*lint --e{715}*/
+//
+//   int nNewSeeeds;
+//   gcg::Seeed* seeed;
+//   gcg::Seeed** newSeeeds;
+//   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+//
+//   seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+//   assert(scip != NULL);
+//   assert(detectordata != NULL);
+//   *result = SCIP_DIDNOTFIND;
+//
+//   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+//   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+//
+//   if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
+//   {
+//      delete seeed;
+//      seeedPropagationData->nNewSeeeds = 0;
+//      *result = SCIP_SUCCESS;
+//      return SCIP_OKAY;
+//   }
+//   Weights w(1, 1, 1, 1, 1, 1);
+//
+//   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting MST structure:");
+//
+//   time_t start, cp0, cp1, d_s, d_e;
+//   time(&start);
+//
+//   std::vector<std::string> sim;
+//
+//   if(detectordata->johnsonenable)
+//   {
+//      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
+//      SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed, gcg::DISTANCE_MEASURE::JOHNSON, gcg::WEIGHT_TYPE::DIST));
+//      detectordata->graphs->push_back(g);
+//      sim.push_back("Johnson");
+//   }
+//   if(detectordata->intersectionenable)
+//   {
+//      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
+//      SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed, gcg::DISTANCE_MEASURE::INTERSECTION, gcg::WEIGHT_TYPE::DIST));
+//      detectordata->graphs->push_back(g);
+//      sim.push_back("Intersection");
+//   }
+//   if(detectordata->jaccardenable)
+//   {
+//      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
+//      SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed, gcg::DISTANCE_MEASURE::JACCARD, gcg::WEIGHT_TYPE::DIST));
+//      detectordata->graphs->push_back(g);
+//      sim.push_back("Jaccard");
+//   }
+//   if(detectordata->cosineenable)
+//   {
+//      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
+//      SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed,gcg::DISTANCE_MEASURE::COSINE, gcg::WEIGHT_TYPE::DIST));
+//      detectordata->graphs->push_back(g);
+//      sim.push_back("Cosine");
+//   }
+//   if(detectordata->simpsonenable)
+//   {
+//      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
+//      SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed,gcg::DISTANCE_MEASURE::SIMPSON, gcg::WEIGHT_TYPE::DIST));
+//      detectordata->graphs->push_back(g);
+//      sim.push_back("Simspon");
+//   }
+//   time(&cp0);
+//   detectordata->n_similarities = (int) detectordata->graphs->size();
+//
+//   double q = 10; // quantile to search for the percentile needed for the mid of the eps list
+//   std::vector<double> mids(detectordata->graphs->size());      // middle values for each eps list
+//   std::vector<std::vector<double> > epsLists(detectordata->graphs->size());
+//   for(int i = 0; i < (int)detectordata->graphs->size(); i++)
+//   {
+//      mids[i] = detectordata->graphs->at(i)->getEdgeWeightPercentile(q);
+//      if(i == 1 && detectordata->intersectionenable)
+//      {
+//         epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], true); // case for intersection
+//      }
+//      else
+//      {
+//         epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], false); // case for all except intersection
+//      }
+//
+//   }
+//
+//   time(&cp1);
+//
+//   int nMaxSeeeds = detectordata->n_iterations * detectordata->graphs->size();
+//   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
+//
+//   const int max_blocks = std::min((int)round(0.3 * SCIPgetNConss(scip)), MAX_N_BLOCKS);
+//
+//   int n_seeeds_found = 0;
+//   nNewSeeeds = 0;
+//   time(&d_s);
+//   for(int i = 0; i < (int)detectordata->graphs->size(); i++)
+//   {
+//      RowGraphWeighted<GraphGCG>* graph = detectordata->graphs->at(i);
+//      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n  %s similarity: ", sim[i].c_str());
+//      int old_n_blocks = -1;
+//      int old_non_cl = -1;
+//      for(int j = 0; j < (int)epsLists[i].size() ; j++ )
+//      {
+//         double eps = epsLists[i][j];
+//         if(eps <= 0.0)
+//         {
+//            continue;
+//         }
+//         if(eps >= 1.0)
+//         {
+//            break;
+//         }
+//
+//         // run MST with different eps
+//         SCIP_CALL( graph->computePartitionMSTForPartialGraph(seeedPropagationData->seeedpool, seeed, eps, detectordata->postprocenable) );
+//
+//
+//         int n_blocks;
+//         SCIP_CALL( graph->getNBlocks(n_blocks) );
+//         int non_cl;
+//
+//         SCIP_CALL( graph->nonClustered(non_cl) );
+//
+//         // skip the case if we have too many blocks (it means we must increase eps) or if the clustering is the same as the last one
+//         if( n_blocks > max_blocks || n_blocks == 0 || (n_blocks == old_n_blocks && non_cl == old_non_cl) )
+//         {
+//            continue;
+//         }
+//         // stop. eps is already too big
+//         if( n_blocks == 1 && non_cl == 0)
+//         {
+//            break;
+//         }
+//         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n    Blocks: %d, Master Conss: %d/%d, ", n_blocks, non_cl, SCIPgetNConss(scip));
+//         old_n_blocks = n_blocks;
+//         old_non_cl = non_cl;
+//
+//
+//         SCIP_CALL( graph->createSeeedFromPartition(seeed,&newSeeeds[n_seeeds_found], &newSeeeds[n_seeeds_found+1], seeedPropagationData->seeedpool));
+//
+//         if((newSeeeds)[n_seeeds_found] != NULL)
+//         {
+//            nNewSeeeds += 2;
+//            detectordata->found = TRUE;
+//         }
+//         n_seeeds_found += 2;
+//      }
+//      delete detectordata->graphs->at(i);
+//      detectordata->graphs->at(i) = NULL;
+//   }
+//
+//   delete seeed;
+//   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
+//   seeedPropagationData->nNewSeeeds = nNewSeeeds;
+//   for(int j = 0, s = 0; s < n_seeeds_found; ++j)
+//   {
+//      if(newSeeeds[j] != NULL)
+//      {
+//         seeedPropagationData->newSeeeds[s] = newSeeeds[j];
+//         seeedPropagationData->newSeeeds[s]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+//         ++s;
+//      }
+//   }
+//   SCIPfreeBufferArray(scip, &newSeeeds);
+//
+//   detectordata->graphs->clear();
+//   time(&d_e);
+//   double elapsed_graphs = difftime(cp0, start);
+//   double elapsed_mst = difftime(d_e, d_s);
+//
+//   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d similarities used, %d decompositions found.\n", detectordata->n_similarities, nNewSeeeds);
+//   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "MST runtime: graphs: %.2lf, mst: %.2lf. \n", elapsed_graphs, elapsed_mst);
+//
+//   *result = nNewSeeeds > 0 ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
+//   if( nNewSeeeds == 0 )
+//   {
+//      SCIPfreeMemoryArrayNull(scip, &(seeedPropagationData->newSeeeds));
+//   }
+//
+//   return SCIP_OKAY;
+//}
 
 
 /*

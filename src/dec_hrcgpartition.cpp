@@ -347,6 +347,31 @@ SCIP_RETCODE createMetisFile(
    return SCIP_OKAY;
 }
 
+/** are there conss and vars to be included by the graph */
+static
+bool graphCompletible(
+   gcg::Seeedpool*  seeedpool,
+   gcg::Seeed*      seeed
+   )
+{
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons = seeed->getOpenconss()[c];
+      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      {
+         int var = seeed->getOpenvars()[v];
+         for(int i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         {
+            if(var == seeedpool->getVarsForCons(cons)[i])
+            {
+               return true;
+            }
+         }
+      }
+   }
+   return false;
+}
+
 /** detection callback method */
 static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
@@ -451,16 +476,10 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
-
-   /* build the hypergraph structure from the original problem */
-
-   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
-
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
-   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
-   if(seeed->getNOpenconss() == 0 || seeed->getNOpenvars() == 0)
+
+   if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
@@ -468,8 +487,14 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
+
+   /* build the hypergraph structure from the original problem */
+
+   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
+   detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
+
+
    SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeedPropagationData->seeedToPropagate) );
-//   SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
@@ -485,7 +510,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
       }
 
       SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
-//      SCIP_CALL( detectordata->graph->createSeeedFromPartition(&newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
 
 
       if( (newSeeeds)[j] != NULL )
@@ -502,7 +526,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    detectordata->graph = NULL;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
    seeedPropagationData->nNewSeeeds = nNewSeeeds;
-   for(j = 0, s = 0, j = 0; j < nNewSeeeds; ++j)
+   for(j = 0, s = 0; s < nNewSeeeds; ++j)
    {
       if((newSeeeds)[j] != NULL)
       {

@@ -157,45 +157,80 @@ SCIP_RETCODE BipartiteGraph<T>::createFromPartialMatrix(
      int j;
      std::tr1::unordered_map<int, int> oldToNewVarIndex;
      std::tr1::unordered_map<int, int> oldToNewConsIndex;
+     std::vector<bool> varsBool(seeed->getNVars(), false); /**< true, if the var will be part of the graph */
+     std::vector<bool> conssBool(seeed->getNConss(), false); /**< true, if the cons will be part of the graph */
+     std::vector<int> conssForGraph; /** stores the conss included by the graph */
+     std::vector<int> varsForGraph; /** stores the vars included by the graph */
 
-     this->nvars = seeed->getNOpenvars();
-     this->nconss = seeed->getNOpenconss();
+     //fillout conssForGraph and varsForGraph
+     for(int c = 0; c < seeed->getNOpenconss(); ++c)
+     {
+        int cons = seeed->getOpenconss()[c];
+        for(int v = 0; v < seeed->getNOpenvars(); ++v)
+        {
+           int var = seeed->getOpenvars()[v];
+           for(i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+           {
+              if(var == seeedpool->getVarsForCons(cons)[i])
+              {
+                 varsBool[var] = true;
+                 conssBool[cons] = true;
+              }
+           }
+        }
+     }
+
+     for(int v = 0; v < seeed->getNOpenvars(); ++v)
+     {
+        int var = seeed->getOpenvars()[v];
+        if(varsBool[var])
+           varsForGraph.push_back(var);
+     }
+     for(int c = 0; c < seeed->getNOpenconss(); ++c)
+     {
+        int cons = seeed->getOpenconss()[c];
+        if(conssBool[cons])
+           conssForGraph.push_back(cons);
+     }
+
+     this->nconss = (int)conssForGraph.size();
+     this->nvars = (int)varsForGraph.size();
 
 
      /** add node for every var */
-     for( i = 0 ; i < seeed->getNOpenvars(); ++i )
+     for( i = 0 ; i < this->nvars; ++i )
      {
          TCLIQUE_WEIGHT weight;
-         int var = seeed->getOpenvars()[i];
+         int var = varsForGraph[i];
 
          /* note that the first nvars nodes correspond to variables */
          weight = this->weights.calculate(seeedpool->getVarForIndex(var));
-         oldToNewVarIndex.insert({ var,i});
+         oldToNewVarIndex.insert({var,i});
          this->graph.addNode(i, weight);
      }
 
 
      /** add node for every cons */
-     for(  j = 0 ; j < seeed->getNOpenconss(); ++j  )
+     for(  j = 0 ; j < this->nconss; ++j  )
      {
         TCLIQUE_WEIGHT weight;
-        int cons = seeed->getOpenconss()[j];
+        int cons = conssForGraph[j];
 
         /* note that the first nvars nodes correspond to variables (legacy implementation) */
         weight = this->weights.calculate( seeedpool->getConsForIndex(cons) );
-        oldToNewConsIndex.insert({ cons, j});
+        oldToNewConsIndex.insert({cons, j});
         this->graph.addNode( this->nvars + j, weight);
      }
 
      /* go through all open constraints */
-     for( i = 0; i < seeed->getNOpenconss(); ++i )
+     for( i = 0; i < this->nconss; ++i )
      {
-        int oldConsId = seeed->getOpenconss()[i];
+        int oldConsId = conssForGraph[i];
 
         for( j = 0; j < seeedpool->getNVarsForCons(oldConsId); ++j )
         {
            int oldVarId = seeedpool->getVarsForCons(oldConsId)[j];
-           if(! seeed->isVarOpenvar(oldVarId))
+           if(!varsBool[oldVarId])
               continue;
            SCIP_CALL( this->graph.addEdge(oldToNewVarIndex[oldVarId], this->nvars+i) );
         }
