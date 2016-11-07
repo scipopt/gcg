@@ -204,6 +204,7 @@ SCIP_RETCODE writeHeaderCode(
 
    if(toc)
    {
+      SCIPinfoMessage(scip, file, "\\thispagestyle{empty}                                                           %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "\\tableofcontents                                                                %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "\\newpage                                                                        %s", LINEBREAK);
    }
@@ -216,6 +217,7 @@ static
 SCIP_RETCODE writeDecompCode(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
+   FILE*                 makefile,           /**< File pointer to corresponding makefile */
    DEC_DECOMP*           decomp              /**< Decomposition array pointer */
    )
 {
@@ -341,10 +343,60 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    )
 {
    DEC_DECOMP** sorteddecomps;
+   FILE* makefile;
+   char* filepath;
+   char* filename;
+   char sympath[SCIP_MAXSTRLEN];
+   char pfile[SCIP_MAXSTRLEN];
+   char makefilename[SCIP_MAXSTRLEN];
+   int filedesc;
+   int success;
    int i;
 
    assert(scip != NULL);
    assert(*ndecomps > 0);
+
+   /* --- create a Makefile --- */
+
+   /* get path to write to and put it into gpfilename */
+   filedesc = fileno(file); /* get link to file descriptor */
+      if(filedesc < 0)
+   {
+   return SCIP_FILECREATEERROR;
+   }
+   snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
+   success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
+   if(success < 0)
+   {
+   return SCIP_NOFILE;
+   }
+   SCIPsplitFilename(pfile, &filepath, &filename, NULL, NULL);
+   strcpy(makefilename, filepath);
+   strcat(makefilename, "/");
+   strcat(makefilename, "Makefile");
+
+   /* open and write first lines of makefile */
+   makefile = fopen(makefilename, "w");
+   if(makefile == NULL)
+   {
+      return SCIP_FILECREATEERROR;
+   }
+
+   SCIPinfoMessage(scip, makefile, "# LaTeX code might have to be compiled several times                         %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, ".PHONY: %s.pdf all clean                                                     %s", filename, LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "# dependencies, gp etc here                                                  %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex                                                               %s", filename, filename, LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\tlatexmk -pdf -pdflatex=\"pdflatex -interaction=nonstopmode\" -use-make %s.tex %s", filename, LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "clean:                                                                       %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\tlatexmk -CA                                                               %s", LINEBREAK);
+
+
+   /*@todo write into makefile */
+
 
    /* --- make the tex files --- */
 
@@ -357,7 +409,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    {
       if(decomps[i] != NULL)
       {
-         SCIP_CALL( writeDecompCode(scip,file,decomps[i]) );
+         SCIP_CALL( writeDecompCode(scip,file,makefile,decomps[i]) );
       }
    }
 
