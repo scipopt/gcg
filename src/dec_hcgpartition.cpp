@@ -424,7 +424,6 @@ static
 DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
 {
    *result = SCIP_DIDNOTFIND;
-   seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
    int nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
@@ -459,6 +458,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    detectordata->graph = new HypercolGraph<gcg::GraphTclique>(scip, w);
 
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
    if(seeed->getNOpenconss() == 0 || seeed->getNOpenvars() == 0)
    {

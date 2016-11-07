@@ -216,9 +216,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
    int newBlocks = 0;
    int block;
 
-   seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector) );
 
    if(!seeed->areOpenVarsAndConssCalculated())
    {

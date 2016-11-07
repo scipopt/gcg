@@ -424,7 +424,6 @@ static
 DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
 {
    *result = SCIP_DIDNOTFIND;
-   seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
    int nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
@@ -460,6 +459,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
 
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
+   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    if(seeed->getNOpenconss() == 0 || seeed->getNOpenvars() == 0)
    {
       delete seeed;

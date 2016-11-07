@@ -137,10 +137,10 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
 
    SCIP_CONS* cons;
 
-   seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-
+   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
    if(!seeed->areOpenVarsAndConssCalculated())
    {
