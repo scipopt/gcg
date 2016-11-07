@@ -69,14 +69,15 @@ private:
 //   std::vector<int>           freeVars;            /**< vector containing indices of variables that can be assigned independently */
 //   std::vector<int>           freeConss;          /**< vector containing indices of constraints that can be assigned independently */
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
-   std::vector<int> 				detectorChain;
-   bool 							openVarsAndConssCalculated; /** are the */
+      bool 							openVarsAndConssCalculated; /** are the */
    long                             hashvalue;
 
    const static int                primes[];
    const static int                nPrimes;
 
 public:
+
+   std::vector<int>                 detectorChain;
 
    /** constructor(s) */
    Seeed(

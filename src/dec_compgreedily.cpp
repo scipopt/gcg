@@ -137,10 +137,10 @@ static
 DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
 {
    *result = SCIP_DIDNOTFIND;
-   seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
    seeed->completeGreedily(seeedPropagationData->seeedpool);
+   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;

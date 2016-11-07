@@ -218,7 +218,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    SCIP_HASHMAP* constoblock;
    int cons;
 
-   seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+   //seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+
    if(!seeedPropagationData->seeedToPropagate->areOpenVarsAndConssCalculated())
    {
       seeedPropagationData->seeedToPropagate->calcOpenconss();
@@ -273,6 +274,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
 
       gcg::Seeed* seeed;
       seeed = new gcg::Seeed(scip, seeedPropagationData->seeedpool->getNewIdForSeeed(), seeedPropagationData->seeedpool->getNDetectors(), seeedPropagationData->seeedpool->getNConss(), seeedPropagationData->seeedpool->getNVars());
+      seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
       seeed->filloutSeeedFromConstoblock(constoblock, seeedPropagationData->seeedToPropagate->getNBlocks() + newBlocks, seeedPropagationData->seeedpool);
       SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
       seeedPropagationData->newSeeeds[0] = seeed;

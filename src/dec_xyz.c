@@ -125,7 +125,20 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectXyz)
    return SCIP_OKAY;
 }
 
-#define propagateSeeedXyz NULL
+/** propagate Seeed function of detector */
+#if 0
+static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedXyz)
+{  /*lint --e{715}*/
+
+   SCIPerrorMessage("Propagate Seeed function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
+   SCIPABORT();
+
+   return SCIP_OKAY;
+}
+#else
+#define detectorPropagateSeeedXyz NULL
+#endif
+
 /*
  * detector specific interface methods
  */
