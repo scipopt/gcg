@@ -379,7 +379,7 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
    {
        if (isEmptyBlock[b1] )
        {
-           for(int b2 = b1+1; b2 < nBlocks; ++b2)
+           for(int b2 = b1+1; b2 < nblocks; ++b2)
                nEmptyBlocksBefore[b2]++;
        }
    }
