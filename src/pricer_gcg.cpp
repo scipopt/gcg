@@ -3159,7 +3159,7 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
 
    SCIP_CALL( reducedcostpricing->startClock() );
    retcode = priceNewVariables(reducedcostpricing, result, lowerbound);
-   SCIP_CALL( reducedcostpricing->startClock() );
+   SCIP_CALL( reducedcostpricing->stopClock() );
 
    return retcode;
 }
