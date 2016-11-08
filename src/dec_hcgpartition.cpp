@@ -29,6 +29,7 @@
  * @brief  arrowhead and bordered detector via graph partitioning (uses hmetis)
  * @ingroup DETECTORS
  * @author Martin Bergner
+ * @author Michael Bastubbe
  *
  * Detects arrowhead (double bordered) decompositions as well as decompositions
  * with only linking variables or linking constraints.
@@ -285,6 +286,7 @@ SCIP_RETCODE callMetis(
 
       SCIPerrorMessage("Calling hmetis unsuccessful! See the above error message for more details.\n");
       SCIPerrorMessage("Call was %s\n", metiscall);
+      assert(false);
    }
 
    /* exit gracefully in case of errors */
@@ -476,9 +478,11 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+
+
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
-   if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
+
+   if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
@@ -501,6 +505,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
    {
       SCIP_RETCODE retcode;
+      if(numberOfBlocks[k] > seeedPropagationData->seeedToPropagate->getNOpenconss() )
+          continue;
+
       detectordata->blocks = numberOfBlocks[k];
       retcode = callMetis(scip, detectordata, result);
 

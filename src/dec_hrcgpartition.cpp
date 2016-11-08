@@ -479,7 +479,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
 
-   if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
+   if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;

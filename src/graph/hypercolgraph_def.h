@@ -379,6 +379,7 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
    {
        if (isEmptyBlock[b1] )
        {
+           std::cout << "block  " << b1 << "  is an empty block " << std::endl;
            for(int b2 = b1+1; b2 < nblocks; ++b2)
                nEmptyBlocksBefore[b2]++;
        }
@@ -411,6 +412,9 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
 {
    SCIP_HASHMAP* constoblock;
    int nblocks;
+   std::vector<bool> isEmptyBlock;
+   std::vector<int> nEmptyBlocksBefore;
+   int nEmptyBlocks = 0;
 
    if(this->nconss == 0)
    {
@@ -453,13 +457,36 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
    nblocks = 1+*std::max_element(partition.begin(), partition.end() );
+   /** add data structures to handle empty blocks */
+
+   isEmptyBlock = std::vector<bool>(nblocks, true);
+   nEmptyBlocksBefore = std::vector<int>(nblocks, 0);
 
    for( int c = 0; c < this->nconss; ++c )
    {
-      int consblock = partition[c]+1;
-
-      SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) conssForGraph[c], (void*) (size_t) consblock) );
+       int consblock = partition[c]+1;
+       isEmptyBlock[consblock-1] = false;
    }
+
+   for(int b1 = 0; b1 < nblocks; ++b1)
+   {
+       if (isEmptyBlock[b1] )
+       {
+           nEmptyBlocks++;
+           std::cout << "block  " << b1 << "  is an empty block " << std::endl;
+           for(int b2 = b1+1; b2 < nblocks; ++b2)
+               nEmptyBlocksBefore[b2]++;
+       }
+   }
+
+   for( int c = 0; c < this->nconss; ++c )
+   {
+       int consblock = partition[c]+1;
+       consblock -= nEmptyBlocksBefore[partition[c] ];
+       SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) conssForGraph[c], (void*) (size_t) consblock) );
+   }
+
+   nblocks -= nEmptyBlocks;
 
    (*firstSeeed) = new Seeed(oldSeeed, seeedpool);
    SCIP_CALL((*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool));

@@ -308,6 +308,11 @@ SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
    SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
+   for(int b = 0; b < nblocks; ++b)
+   {
+       nsubscipconss[b] = 0;
+   }
+
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
 
    //fillout conssForGraph

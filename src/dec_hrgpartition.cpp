@@ -485,8 +485,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
 
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
-   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
-   if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
+   if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
