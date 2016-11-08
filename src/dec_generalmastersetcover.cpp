@@ -157,7 +157,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetcover)
    for( int i = 0; i < seeed->getNOpenconss(); ++i)
    {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
-      if( GCGconsGetType(cons) == setcovering )
+      if( GCGconsGetType(cons) == setcovering || GCGconsGetType(cons) == logicor )
       {
          seeed->setConsToMaster(seeed->getOpenconss()[i]);
          seeed->deleteOpencons(seeed->getOpenconss()[i]);

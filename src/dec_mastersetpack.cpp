@@ -137,9 +137,13 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpack)
 
    SCIP_CONS* cons;
 
-   gcg::Seeed* seeed;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+  gcg::Seeed* seeed;
+  std::vector<int> tempMasterConss;
+
+  seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+  tempMasterConss = std::vector<int>(0);
+
+  seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
    if(!seeed->areOpenVarsAndConssCalculated())
    {
@@ -149,15 +153,21 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpack)
    }
 
    /** set open setpacking constraints to Master */
-   for( int i = 0; i < seeed->getNOpenconss(); ++i)
-   {
-      cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
-      if( GCGconsGetType   (cons) == setpacking )
+   for( size_t i = 0; i < seeed->getNOpenconss(); ++i)
       {
-         seeed->setConsToMaster(seeed->getOpenconss()[i]);
-         seeed->deleteOpencons(seeed->getOpenconss()[i]);
+         cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+         if( GCGconsGetType   (cons) == setcovering || GCGconsGetType   (cons) == logicor )
+         {
+             tempMasterConss.push_back(seeed->getOpenconss()[i]);
+         }
       }
-   }
+
+   for (size_t i = 0; i < tempMasterConss.size(); ++i )
+     {
+         seeed->setConsToMaster(tempMasterConss[i]);
+         seeed->deleteOpencons(tempMasterConss[i]);
+     }
+
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
