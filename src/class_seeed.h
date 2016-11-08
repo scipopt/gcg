@@ -209,6 +209,8 @@ public:
    const int* getOpenconss(
    );
 
+   bool alreadyAssignedConssToBlocks();
+
 //   /** returns vector containing free variables */
 //   const int* getFreeVars(
 //   );

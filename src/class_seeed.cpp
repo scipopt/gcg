@@ -103,14 +103,40 @@ const int Seeed::nPrimes = 70;
   bool Seeed::checkConsistency(
   ){
 
-	  /**check variables (every variable is assigned at most once) */
-
 	  std::vector<bool> openVarsBool(nVars, true) ;
 	  std::vector<int>  stairlinkingvarsvec(0);
 	  int firstFound;
 	  std::vector<int>::const_iterator varIter = linkingVars.begin();
 	  std::vector<int>::const_iterator varIterEnd = linkingVars.end();
 	  int value;
+
+	  /** check if nblocks is set appropriate */
+	  if(nBlocks != conssForBlocks.size() )
+	  {
+	      std::cout << "Warning! In (seeed " << id <<  ") nBlocks " << nBlocks << " and size of conssForBlocks" << conssForBlocks.size() << " are not identical" << std::endl;
+	      return false;
+	  }
+
+	  if(nBlocks != varsForBlocks.size() )
+	  {
+	            std::cout << "Warning! In (seeed " << id <<  ") nBlocks " << nBlocks << " and size of varsForBlocks" << varsForBlocks.size() << " are not identical" << std::endl;
+	            return false;
+	  }
+
+
+	  /** check for empty (row- and col-wise) blocks */
+
+	  for(int b = 0; b < nBlocks; ++b)
+	  {
+	      if(conssForBlocks[b].size() == 0 && varsForBlocks[b].size() == 0 )
+	      {
+	          std::cout << "Warning! In (seeed " << id <<  ") block " << b << " is empty!"  << std::endl;
+	          this->displaySeeed();
+	          return false;
+	      }
+	  }
+
+	  /**check variables (every variable is assigned at most once) */
 
 	  for(; varIter != varIterEnd; ++varIter)
 	  {
@@ -723,6 +749,15 @@ const int Seeed::nPrimes = 70;
  	  }
  	  return (int) openVars.size();
   }
+
+  bool Seeed::alreadyAssignedConssToBlocks(){
+
+      for (int b = 0; b < this->nBlocks; ++b)
+          if(conssForBlocks[b].size() != 0)
+              return true;
+      return false;
+  }
+
 
   /** constructs vector containing variables not assigned yet */
   void Seeed::calcOpenvars(

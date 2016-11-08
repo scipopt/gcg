@@ -429,7 +429,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  {
                                     seeedPropData->newSeeeds[j]->considerImplicits(this);
                                     seeedPropData->newSeeeds[j]->sort();
-                                    seeedPropData->newSeeeds[j]->checkConsistency();
+                                    if(!seeedPropData->newSeeeds[j]->checkConsistency())
+                                    {
+                                        seeedPropData->newSeeeds[j]->displaySeeed();
+                                        assert(false);
+                                    }
                                     seeedPropData->newSeeeds[j]->calcHashvalue();
                                  }
 
@@ -454,7 +458,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
 
 
-                                 assert(seeedPtr->isPropagatedBy(d));
+                             //    assert(seeedPtr->isPropagatedBy(d));
 
                                  /** if the new seeeds are no duplicate they're added to the currSeeeds */
                                  for(int seeed = 0; seeed<seeedPropData->nNewSeeeds; ++seeed)
