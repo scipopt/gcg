@@ -66,6 +66,7 @@ private:
    std::vector<std::vector<int>> 	stairlinkingVars;		/**< vector containing indices of staircase linking variables of the blocks */
    std::vector<int> 				openVars;				/**< vector containing indices of  variables that are not assigned yet*/
    std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
+   std::vector<int>                 bookedAsMasterConss;     /**< vector containing indices of  constraints that are not assigned yet but booked as master conss */
 //   std::vector<int>           freeVars;            /**< vector containing indices of variables that can be assigned independently */
 //   std::vector<int>           freeConss;          /**< vector containing indices of constraints that can be assigned independently */
    std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
@@ -110,6 +111,17 @@ public:
    SCIP_RETCODE setConsToMaster(
 		   int consToMaster
    );
+
+
+   /** book a constraint to be added to the master constraints (after calling flushBooked)*/
+   SCIP_RETCODE bookAsMasterCons(
+           int consToMaster
+   );
+
+   /** add all booked constraints to master and delete them from opencons*/
+   SCIP_RETCODE flushBooked(
+   );
+
 
    /** add a variable to the master variables (every constraint consisting it is in master ) */
    SCIP_RETCODE setVarToMaster(

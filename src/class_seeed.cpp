@@ -235,6 +235,7 @@ const int Seeed::nPrimes = 70;
 	      if( openVarsBool[v] == true && isVarOpenvar(v) == false )
 	      {
 	         std::cout << "Warning! (seeed " << id <<  ") Variable with index " << v << " is not assigned and not an open var." << std::endl;
+	         return false;
 	      }
 	   }
 
@@ -244,6 +245,7 @@ const int Seeed::nPrimes = 70;
 	      if( openVarsBool[openVars[i]] == false )
 	      {
 	         std::cout << "Warning! (seeed " << id <<  ") Variable with index " << openVars[i] << " is an open var but assigned." << std::endl;
+	         return false;
 	      }
 	   }
 
@@ -292,9 +294,10 @@ const int Seeed::nPrimes = 70;
      /** check if all open conss are not assigned */
      for( size_t i = 0; i < openConss.size(); ++i)
      {
-        if( openVarsBool[openConss[i]] == false )
+        if( openConssBool[openConss[i]] == false )
         {
            std::cout << "Warning! (seeed " << id <<  ") Constraint with index " << openConss[i] << " is an open cons but assigned." << std::endl;
+           assert(FALSE);
            return false;
         }
      }
@@ -398,6 +401,32 @@ const int Seeed::nPrimes = 70;
 
 	  return SCIP_OKAY;
   }
+
+  /** book a constraint to be added to the master constraints (after calling flushBooked)*/
+  SCIP_RETCODE Seeed::bookAsMasterCons(
+          int consToMaster
+  ){
+      bookedAsMasterConss.push_back(consToMaster);
+      return SCIP_OKAY;
+  }
+
+  /** add all booked constraints to master and delete them from opencons*/
+  SCIP_RETCODE Seeed::flushBooked(
+  ){
+      std::vector<int>::const_iterator bookedIter = bookedAsMasterConss.begin();
+      std::vector<int>::const_iterator bookedIterEnd = bookedAsMasterConss.end();
+
+      for(; bookedIter != bookedIterEnd; ++bookedIter)
+      {
+          masterConss.push_back(*bookedIter);
+          deleteOpencons(*bookedIter);
+      }
+
+      bookedAsMasterConss.clear();
+
+      return SCIP_OKAY;
+  }
+
 
   /** add a variable to the master variables (every constraint consisting it is in master ) */
   SCIP_RETCODE Seeed::setVarToMaster(

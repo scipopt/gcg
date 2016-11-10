@@ -158,16 +158,11 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpack)
          cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
          if( GCGconsGetType   (cons) == setcovering || GCGconsGetType   (cons) == logicor )
          {
-             tempMasterConss.push_back(seeed->getOpenconss()[i]);
+             seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
          }
       }
 
-   for (size_t i = 0; i < tempMasterConss.size(); ++i )
-     {
-         seeed->setConsToMaster(tempMasterConss[i]);
-         seeed->deleteOpencons(tempMasterConss[i]);
-     }
-
+   seeed->flushBooked();
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;

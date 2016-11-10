@@ -458,7 +458,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
 
 
-                             //    assert(seeedPtr->isPropagatedBy(d));
 
                                  /** if the new seeeds are no duplicate they're added to the currSeeeds */
                                  for(int seeed = 0; seeed<seeedPropData->nNewSeeeds; ++seeed)

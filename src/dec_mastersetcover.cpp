@@ -138,10 +138,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
    SCIP_CONS* cons;
 
    gcg::Seeed* seeed;
-   std::vector<int> tempMasterConss;
 
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   tempMasterConss = std::vector<int>(0);
 
    seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
@@ -156,21 +154,17 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
 
 
    /** set open setcovering constraints to Master */
-   for( size_t i = 0; i < seeed->getNOpenconss(); ++i)
+   for( int i = 0; i < seeed->getNOpenconss(); ++i)
    {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
       if( GCGconsGetType   (cons) == setcovering || GCGconsGetType   (cons) == logicor )
       {
-          tempMasterConss.push_back(seeed->getOpenconss()[i]);
+ //         std::cout << "boook " << seeed->getOpenconss()[i] << " as master constraint" << std::endl;
+          seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
       }
    }
 
-  for (size_t i = 0; i < tempMasterConss.size(); ++i )
-  {
-      seeed->setConsToMaster(tempMasterConss[i]);
-      seeed->deleteOpencons(tempMasterConss[i]);
-  }
-
+   seeed->flushBooked();
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
