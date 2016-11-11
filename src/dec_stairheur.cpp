@@ -54,9 +54,13 @@
 #define DEC_DETECTORNAME      "stairheur"    /**< name of the detector */
 #define DEC_DESC              "detects staircase matrices via matrix reordering" /**< detector description */
 #define DEC_PRIORITY          1200           /**< priority of the detector */
+#define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_DECCHAR           's'            /**< display character of detector */
 #define DEC_ENABLED           FALSE          /**< should detector be called by default */
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
+#define DEC_USEFULRECALL      FALSE          /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 /* Default parameter settings*/
 #define DEFAULT_NCONSSPERBLOCK               32       /**< number of constraints per block (static blocking only) */
@@ -1648,7 +1652,7 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagateSeeedStairheur) );
 
 

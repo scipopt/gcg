@@ -441,13 +441,13 @@ SCIP_RETCODE DECincludeDetector(
    const char*           name,               /**< name of the detector */
    const char            decchar,            /**< display character of the detector */
    const char*           description,        /**< description of the detector */
-   int                   priority,           /**< priority of the detector */
-   int                   minCallRound,       /** first round the detector gets called (offset in detection loop) */
-   int                   maxCallRound,       /** last round the detector gets called                              */
    int                   freqCallRound,      /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-   SCIP_Bool             enabled,            /**< whether the detector should be enabled by default */
-   SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure */
-   SCIP_Bool             usefulRecalls,      /** is it useful to call this detector on a descendant of the propagated seeed */
+   int                   maxCallRound,       /** last round the detector gets called                              */
+   int                   minCallRound,       /** first round the detector gets called (offset in detection loop) */
+   int                   priority,           /**< priority of the detector                                           */
+   SCIP_Bool             enabled,            /**< whether the detector should be enabled by default                  */
+   SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure   */
+   SCIP_Bool             usefulRecall,       /** is it useful to call this detector on a descendant of the propagated seeed */
    DEC_DETECTORDATA*     detectordata,       /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)), /**< the method that will detect the structure (must not be NULL)*/
    DEC_DECL_FREEDETECTOR((*freeDetector)),   /**< destructor of detector (or NULL) */
@@ -501,9 +501,13 @@ SCIP_RETCODE DECincludeDetector(
    detector->propagateSeeed = propagateSeeedDetector;
    detector->decchar = decchar;
 
+   detector->freqCallRound = freqCallRound;
+   detector->maxCallRound = maxCallRound;
+   detector->minCallRound = minCallRound;
    detector->priority = priority;
    detector->enabled = enabled;
    detector->skip = skip;
+   detector->usefulRecall = usefulRecall;
    detector->ndecomps = 0;
    detector->decomps = NULL;
    SCIP_CALL( SCIPcreateWallClock(scip, &(detector->dectime)) );
@@ -516,9 +520,27 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> should be skipped if others found decompositions", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->skip), FALSE, skip, NULL, NULL) );
 
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/usefulRecall", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> should be called on descendants of the current seeed", name);
+   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->usefulRecall), FALSE, usefulRecall, NULL, NULL) );
+
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqCallRound", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <%s>", name);
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->freqCallRound), FALSE, freqCallRound, 0, INT_MAX, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxCallRound", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "maximum round the detector gets called in detection loop <%s>", name);
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->maxCallRound), FALSE, maxCallRound, 0, INT_MAX, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/minCallRound", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "minimum round the detector gets called in detection loop <%s>", name);
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->minCallRound), FALSE, minCallRound, 0, INT_MAX, NULL, NULL) );
+
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/priority", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "priority of detector <%s>", name);
    SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->priority), FALSE, priority, INT_MIN, INT_MAX, NULL, NULL) );
+
 
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, (size_t)conshdlrdata->ndetectors+1) );
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->priorities,(size_t) conshdlrdata->ndetectors+1) );

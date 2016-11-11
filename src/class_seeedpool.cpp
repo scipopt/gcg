@@ -408,14 +408,24 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                          /** the current seeed is handled by all detectors */
                          for(int d = 0; d < nDetectors; ++d)
                          {
+                                 DEC_DETECTOR* detector;
                                  std::vector<SeeedPtr>::const_iterator newSIter;
                                  std::vector<SeeedPtr>::const_iterator newSIterEnd;
 
-                                 SCIP_RESULT result = SCIP_DIDNOTFIND;
 
-                                 /** if the seeed is also propageted by the detector go on with the next detector */
-                                 if(seeedPtr->isPropagatedBy(d)  )
+                                 SCIP_RESULT result = SCIP_DIDNOTFIND;
+                                 detector = detectorToScipDetector[d];
+
+                                 /** if the seeed is also propagated by the detector go on with the next detector */
+                                 if(seeedPtr->isPropagatedBy(d) && !detector->usefulRecall )
                                          continue;
+
+                                 /** check if detector is callable in current detection round */
+                                 if(detector->maxCallRound < round || detector->minCallRound > round)
+                                     continue;
+
+                                 if( (round - detector->minCallRound) % detector->freqCallRound != 0 )
+                                     continue;
 
                                  seeedPropData->seeedToPropagate = seeedPtr;
 

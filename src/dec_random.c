@@ -51,9 +51,13 @@
 #define DEC_DETECTORNAME         "random"    /**< name of detector */
 #define DEC_DESC                 "Random structure detection" /**< description of detector*/
 #define DEC_PRIORITY             -10         /**< priority of the constraint handler for separation */
+#define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_DECCHAR              'r'         /**< display character of detector */
 #define DEC_ENABLED              FALSE       /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if others found detections */
+#define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 #define DEFAULT_MAXBLOCKS        -1          /**< the maximal number of blocks, -1 defaults to average number of constraints */
 #define DEFAULT_AVGCONSPERBLOCK  100         /**< average constraints per block to limit the maximal block number */
@@ -253,7 +257,7 @@ SCIP_RETCODE SCIPincludeDetectorRandom(
    assert(detectordata != NULL);
 
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, detectorDetectRandom, detectorFreeRandom, detectorInitRandom, detectorExitRandom, detectorPropagateSeeedRandom) );
 
 

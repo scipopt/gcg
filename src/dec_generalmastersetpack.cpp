@@ -47,10 +47,15 @@
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "generalmastersetpack"       /**< name of detector */
 #define DEC_DESC                 "detector generalmastersetpack" /**< description of detector*/
+#define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              '?'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
+#define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+
 
 /*
  * Data structures
@@ -226,7 +231,7 @@ SCIP_RETCODE SCIPincludeDetectorGeneralmastersetpack(SCIP* scip /**< SCIP data s
    detectordata = NULL;
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectGeneralmastersetpack, freeGeneralmastersetpack, initGeneralmastersetpack, exitGeneralmastersetpack, propagateSeeedGeneralmastersetpack));
+      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectGeneralmastersetpack, freeGeneralmastersetpack, initGeneralmastersetpack, exitGeneralmastersetpack, propagateSeeedGeneralmastersetpack));
 
    /**@todo add generalmastersetpack detector parameters */
 

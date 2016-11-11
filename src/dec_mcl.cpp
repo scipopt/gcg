@@ -48,6 +48,9 @@ using gcg::GraphGCG;
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "mcl"                               /**< name of detector */
 #define DEC_DESC                 "detector based on mcl clustering"  /**< description of detector*/
+#define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_PRIORITY             910         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'L'         /**< display character of detector */
 #ifdef GSL
@@ -56,6 +59,7 @@ using gcg::GraphGCG;
 #define DEC_ENABLED              FALSE        /**< should the detection be enabled */
 #endif
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
+#define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 /* Default parameter settings*/
 #define DEFAULT_N_ITERATIONS              13
@@ -519,7 +523,7 @@ SCIP_RETCODE SCIPincludeDetectorMCL(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, detectMCL, freeMCL, initMCL, exitMCL, propagateSeeedMCL) );
 
    /* add arrowheur presolver parameters */

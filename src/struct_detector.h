@@ -46,10 +46,10 @@ struct DEC_Detector {
    DEC_DETECTORDATA*     decdata;            /**< custom data structure of the detectors */
    char                  decchar;            /**< display character of detector */
    const char*           description;        /**< description of the detector */
-   int                   priority;           /**< detector priority */
-   int                   minCallRound;       /** first round the detector gets called (offset in detection loop) */
-   int                   maxCallRound;       /** last round the detector gets called                              */
    int                   freqCallRound;      /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+   int                   maxCallRound;       /** last round the detector gets called                              */
+   int                   minCallRound;       /** first round the detector gets called (offset in detection loop) */
+   int                   priority;           /**< detector priority */
    SCIP_Bool             enabled;            /**< flag to indicate whether detector is enabled */
    SCIP_Bool             skip;               /**< should detector be skipped if other detectors found decompositions */
    SCIP_Bool             usefulRecall;       /** is it useful to call this detector on a descendant of the propagated seeed */

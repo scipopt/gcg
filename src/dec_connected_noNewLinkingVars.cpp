@@ -48,10 +48,14 @@
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "connected_noNewLinkingVars"       /**< name of detector */
 #define DEC_DESC                 "detector connected_noNewLinkingVars" /**< description of detector*/
+#define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              '?'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
+#define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 /*
  * Data structures
@@ -279,7 +283,7 @@ SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
    /**@todo create connected_noNewLinkingVars detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectConnected_noNewLinkingVars, freeConnected_noNewLinkingVars, initConnected_noNewLinkingVars, exitConnected_noNewLinkingVars, propagateSeeedConnected_noNewLinkingVars) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConnected_noNewLinkingVars, freeConnected_noNewLinkingVars, initConnected_noNewLinkingVars, exitConnected_noNewLinkingVars, propagateSeeedConnected_noNewLinkingVars) );
 
    /**@todo add connected_noNewLinkingVars detector parameters */
 

@@ -50,10 +50,13 @@
 #define DEC_DETECTORNAME         "staircase"    /**< name of detector */
 #define DEC_DESC                 "Staircase detection via shortest paths" /**< description of detector */
 #define DEC_PRIORITY             200            /**< priority of the detector */
+#define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_DECCHAR              'S'            /**< display character of detector */
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
-
+#define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 #define TCLIQUE_CALL(x) do                                                                                    \
                        {                                                                                      \
@@ -672,7 +675,7 @@ SCIP_RETCODE SCIPincludeDetectorStaircase(
    detectordata->vartoblock = NULL;
    detectordata->nblocks = 0;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, detectorExitStaircase, detectorPropagateSeeedStaircase) );
 
 
