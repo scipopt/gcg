@@ -606,7 +606,17 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgpscostdiving) /*lint --e{715}*/
       SCIP_Real pscostquot;
       SCIP_Real rootsolval;
 
+      int i;
+
       var = lpcands[c];
+
+      /* if the variable is on the tabu list, do not choose it */
+       for( i = 0; i < tabulistsize; ++i )
+          if( tabulist[i] == var )
+             break;
+       if( i < tabulistsize )
+          continue;
+
       mayrounddown = SCIPvarMayRoundDown(var);
       mayroundup = SCIPvarMayRoundUp(var);
       primsol = lpcandssol[c];

@@ -181,6 +181,7 @@
 #include "dec_staircase.h"
 #include "dec_random.h"
 #include "dec_colors.h"
+#include "dec_consname.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -340,6 +341,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );
    SCIP_CALL( SCIPincludeDetectorColors(scip) );
    SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
+   SCIP_CALL( SCIPincludeDetectorConsname(scip) );
 
 
 #ifndef NBLISS

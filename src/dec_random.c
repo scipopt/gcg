@@ -226,10 +226,10 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectRandom)
    }
    else
    {
+      SCIPhashmapFree(&detectordata->constoblock);
+      detectordata->constoblock = NULL;
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
    }
-
-   SCIPhashmapFree(&detectordata->constoblock);
 
    return SCIP_OKAY;
 }

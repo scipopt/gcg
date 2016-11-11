@@ -37,10 +37,10 @@
 #include "dec_xyz.h"
 #include "cons_decomp.h"
 
-/* constraint handler properties */
+/* detector properties */
 #define DEC_DETECTORNAME         "xyz"       /**< name of detector */
 #define DEC_DESC                 "detector xyz" /**< description of detector*/
-#define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
+#define DEC_PRIORITY             0           /**< priority of detector */
 #define DEC_DECCHAR              '?'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
@@ -130,7 +130,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectXyz)
  * detector specific interface methods
  */
 
-/** creates the handler for xyz detector and includes it in SCIP */
+/** creates the xyz detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectorXyz(
    SCIP*                 scip                /**< SCIP data structure */
    )

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,15 +25,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_xyz.h
- * @brief  xyz detector
- * @author Martin Bergner
+/**@file   dec_consname.h
+ * @brief  structure detection by constraint names (via regular expressions)
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_XYZ_H__
-#define GCG_DEC_XYZ_H__
+#ifndef GCG_DEC_CONSNAME_H__
+#define GCG_DEC_CONSNAME_H__
 
 #include "scip/scip.h"
 
@@ -41,14 +41,13 @@
 extern "C" {
 #endif
 
-/** creates the xyz detector and includes it in SCIP */
+/** creates the consname detector and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectorXyz(
+SCIP_RETCODE SCIPincludeDetectorConsname(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif
+#endif /* GCG_DEC_CONSNAME_H__ */
