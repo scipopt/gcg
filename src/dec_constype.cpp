@@ -173,7 +173,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
 
   for( size_t i = 0; i < seeedOrig->getNOpenconss(); ++i)
   {
-      cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+      cons = seeedPropagationData->seeedpool->getConsForIndex(seeedOrig->getOpenconss()[i]);
       consType cT = GCGconsGetType(cons);
 
       /** find constype or not */
