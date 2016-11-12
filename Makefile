@@ -182,6 +182,7 @@ LIBOBJ		=	reader_blk.o \
 			solver_knapsack.o \
 			cons_decomp.o \
 			decomp.o \
+			dec_constype.o \
 			dec_stairheur.o \
 			dec_connected.o \
 			dec_cutpacking.o \

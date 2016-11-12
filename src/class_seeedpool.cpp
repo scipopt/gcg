@@ -494,8 +494,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                             delete seeedPropData->newSeeeds[seeed];
                                          }
                                  }
+                                 /** cleanup propagation data structure */
                                  SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
-
+                                 seeedPropData->nNewSeeeds = 0;
                          }
 
                          SCIP_CALL_ABORT(seeedPtr->completeGreedily( seeedPropData->seeedpool ) );

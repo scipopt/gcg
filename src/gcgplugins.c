@@ -176,6 +176,7 @@
 #include "dec_isomorph.h"
 #endif
 
+#include "dec_constype.h"
 #include "dec_stairheur.h"
 #include "dec_staircase.h"
 #include "dec_random.h"
@@ -340,6 +341,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectorConnected(scip) );
+   SCIP_CALL( SCIPincludeDetectorConstype(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );
