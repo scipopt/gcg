@@ -37,7 +37,9 @@
 #include <set>
 #include "graph_gcg.h"
 
+#ifdef GSL
 #include <gsl/gsl_errno.h>
+#endif
 
 using namespace std;
 
