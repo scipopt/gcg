@@ -837,7 +837,7 @@ const int Seeed::nPrimes = 70;
   void  Seeed::calcOpenconss(
   ){
 	  std::vector<bool> openConssBool(nConss, true) ;
-	  openConss = std::vector<int>(0);
+	  openConss.clear();
 	  std::vector<int>::const_iterator consIter = masterConss.begin();
 	  std::vector<int>::const_iterator consIterEnd = masterConss.end();
 	  for(; consIter != consIterEnd; ++consIter)

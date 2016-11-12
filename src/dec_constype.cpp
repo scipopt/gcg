@@ -167,11 +167,23 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   std::vector<consType> foundConstypes(0);
   std::vector<int> constypesIndices(0);
 
-  for( size_t i = 0; i < seeed->getNOpenconss(); ++i)
+  seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+  seeedOrig->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+
+
+  for( size_t i = 0; i < seeedOrig->getNOpenconss(); ++i)
   {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
       consType cT = GCGconsGetType(cons);
-      std::vector<consType>::const_iterator constypeIter = std::find( foundConstypes.begin(), foundConstypes.end(), cT );
+
+      /** find constype or not */
+      std::vector<consType>::const_iterator constypeIter = foundConstypes.begin();
+      for(; constypeIter != foundConstypes.end(); ++constypeIter)
+      {
+    	  if(*constypeIter == cT)
+    		  break;
+      }
+
       if( constypeIter  == foundConstypes.end()  )
       {
          foundConstypes.push_back(GCGconsGetType(cons) );
@@ -188,8 +200,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), subsetsOfConstypes.size() - 1) );
   seeedPropagationData->nNewSeeeds = subsetsOfConstypes.size() - 1;
 
-  seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-  seeedOrig->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
   if(!seeedOrig->areOpenVarsAndConssCalculated())
   {
@@ -210,7 +220,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
           for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
 	  {
 	    cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
-	    if( GCGconsGetType   (cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] );
+	    if( GCGconsGetType   (cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
 	    {
               seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
 	    }
