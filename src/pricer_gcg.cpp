@@ -801,6 +801,11 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
       SCIP_CALL( solversolve(pricerdata->pricingprobs[prob], solver, prob, pricerdata->dualsolconv[prob],
             lowerbound, cols, maxcols, ncols, status) );
 
+      assert(*status == SCIP_STATUS_OPTIMAL
+         || *status == SCIP_STATUS_INFEASIBLE
+         || *status == SCIP_STATUS_UNBOUNDED
+         || *status == SCIP_STATUS_UNKNOWN);
+
       if( optimal )
       {
          #pragma omp atomic
@@ -817,6 +822,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
          SCIP_CALL_ABORT( SCIPstopClock(scip_, clock) );
       }
 
+      /* @todo: Why do 'UNKNOWN' calls not count? */
       if( *status != SCIP_STATUS_UNKNOWN )
       {
          #pragma omp atomic

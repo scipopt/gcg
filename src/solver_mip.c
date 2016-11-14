@@ -376,20 +376,27 @@ SCIP_RETCODE solveProblem(
    }
    SCIPdebugMessage("  -> status = %d\n", SCIPgetStatus(pricingprob));
 
-   /* all SCIP statuses handled so far */
-   assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_TOTALNODELIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_SOLLIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_BESTSOLLIMIT);
-   /* @todo: can UNKNOWN happen, too? */
+   /* all SCIP statuses handled so far; these are currently:
+    *    SCIP_STATUS_USERINTERRUPT
+    *    SCIP_STATUS_NODELIMIT
+    *    SCIP_STATUS_TOTALNODELIMIT
+    *    SCIP_STATUS_STALLNODELIMIT
+    *    SCIP_STATUS_TIMELIMIT
+    *    SCIP_STATUS_MEMLIMIT
+    *    SCIP_STATUS_GAPLIMIT
+    *    SCIP_STATUS_SOLLIMIT
+    *    SCIP_STATUS_BESTSOLLIMIT
+    *    SCIP_STATUS_OPTIMAL
+    *    SCIP_STATUS_INFEASIBLE
+    *    SCIP_STATUS_UNBOUNDED
+    *    SCIP_STATUS_INFORUNBD
+    */
+   /* @todo: can SCIP_STATUS_UNKNOWN happen, too? */
+   assert((SCIPgetStatus(pricingprob) >= SCIP_STATUS_USERINTERRUPT && SCIPgetStatus(pricingprob) <= SCIP_STATUS_BESTSOLLIMIT)
+          || SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
+          || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
+          || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
+          || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD);
 
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE )
    {
