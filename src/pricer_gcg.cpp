@@ -2120,7 +2120,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       if( bestcol != NULL )
       {
          /* todo: add columns to column pool */
-         for(int j = 0; j < *ncols; ++j)
+         for( int j = 0; j < *ncols; ++j )
          {
             SCIP_CALL( GCGfreeGcgCol(&cols[j]) );
          }
@@ -2132,26 +2132,21 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 
       SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, cols, 1, ncols, status) ); /**@todo change 1 to maxsols if implemented */
 
-      if( *status == SCIP_STATUS_INFEASIBLE) /** @todo handle remaining status */
+      if( *status == SCIP_STATUS_INFEASIBLE ) /** @todo handle remaining statuses */
       {
          SCIPdebugMessage("The problem is infeasible\n");
          break;
       }
       /* can happen, e.g., due to time limit in pricing solver */
       if( *status != SCIP_STATUS_OPTIMAL )
-      {
          break;
-      }
-
 
       /* update objvalue for new solution */
       bestcol = cols[0];
       redcost = computeRedCostGcgCol(pricetype, bestcol, NULL);
 
       if( SCIPisNegative(scip_, redcost) )
-      {
          break;
-      }
    }
 
    SCIPfreeMemoryArrayNull(scip_, &branchconss);
@@ -2601,10 +2596,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    *pnfoundvars = nfoundvars;
 
    if( infeasible )
-   {
       *result = SCIP_SUCCESS;
-   }
-   else if( *pnfoundvars > 0)
+   else if( *pnfoundvars > 0 )
       *result = SCIP_SUCCESS;
    else if( pricinghaserror )
       *result = SCIP_DIDNOTRUN;
