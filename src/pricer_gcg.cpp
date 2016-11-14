@@ -2180,7 +2180,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Real dualconvsum;
    SCIP_RETCODE retcode;
    SCIP_Bool infeasible;
-   SCIP_Bool pricinghaserror;
+   SCIP_Bool unknown;
    SCIP_Bool stabilized;
    SCIP_Bool added;
    SCIP_Bool colpoolupdated;
@@ -2193,10 +2193,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    int i;
    int j;
    int nfoundvars;
-
-#ifndef NDEBUG
-   int oldnfoundvars;
-#endif
 
    assert(pricerdata != NULL);
    assert(stabilization != NULL);
@@ -2214,7 +2210,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    *pnfoundvars = 0;
    nfoundvars = 0;
    infeasible = FALSE;
-   pricinghaserror = FALSE;
+   unknown = FALSE;
    dualconvsum = 0.0;
    pricinglowerbound = -SCIPinfinity(scip_);
    if(lowerbound != NULL)
@@ -2297,13 +2293,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          colpoolupdated = TRUE;
       }
 
-      #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, cols, ncols, maxcols,pricetype,bestredcost, beststabobj,bestredcostvalid,nfoundvars,successfulmips,infeasible,pricinghaserror) reduction(+:solvedmips) schedule(static,1)
+      #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, cols, ncols, maxcols,pricetype,bestredcost, beststabobj,bestredcostvalid,nfoundvars,successfulmips,infeasible,unknown) reduction(+:solvedmips) schedule(static,1)
       for( i = 0; i < pricerdata->npricingprobs; i++ )
       {
          int prob;
          SCIP_RETCODE private_retcode;
 
-         int nvarsfound = nfoundvars;
+         int oldnfoundvars = nfoundvars;
          prob = pricerdata->permu[i];
 
          #pragma omp flush(retcode)
@@ -2326,7 +2322,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             infeasible |= ( pricingstatus[prob] == SCIP_STATUS_INFEASIBLE); /*lint !e514*/
 
             #pragma omp atomic
-            pricinghaserror |= (pricingstatus[prob] == SCIP_STATUS_UNKNOWN); /*lint !e514*/
+            unknown |= (pricingstatus[prob] == SCIP_STATUS_UNKNOWN); /*lint !e514*/
 
             if( !infeasible )
             {
@@ -2334,7 +2330,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                nfoundvars += countPricedVariables(pricetype, prob, cols[prob], ncols[prob] );
             }
 
-            if( nvarsfound < nfoundvars )
+            if( oldnfoundvars < nfoundvars )
             {
                #pragma omp atomic
                ++successfulmips;
@@ -2501,10 +2497,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    }
    while( stabilized && nfoundvars == 0 );
 
-#ifndef NDEBUG
-   oldnfoundvars = nfoundvars;
-#endif
-
 #ifdef _OPENMP
    SCIPdebugMessage("We are here with currently %d threads.\n", omp_get_num_threads());
 #endif
@@ -2550,8 +2542,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       }
 
    }
-
-   assert(oldnfoundvars >= nfoundvars);
 
    for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
@@ -2605,7 +2595,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       *result = SCIP_SUCCESS;
    else if( *pnfoundvars > 0 )
       *result = SCIP_SUCCESS;
-   else if( pricinghaserror )
+   else if( unknown )
       *result = SCIP_DIDNOTRUN;
 
    return SCIP_OKAY;
