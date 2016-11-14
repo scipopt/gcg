@@ -48,7 +48,7 @@
 #define DEC_DETECTORNAME         "constype"       /**< name of detector */
 #define DEC_DESC                 "detector constype" /**< description of detector*/
 #define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
+#define DEC_MAXCALLROUND         0           /** last round the detector gets called                              */
 #define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              '?'         /**< display character of detector */
@@ -218,13 +218,13 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
       for( size_t i = 0; i < seeed->getNOpenconss(); ++i)
       {
           for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
-	  {
-	    cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
-	    if( GCGconsGetType   (cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
-	    {
-              seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
-	    }
-	  }
+          {
+              cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+              if( GCGconsGetType   (cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
+              {
+                  seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+              }
+          }
       }
       seeed->flushBooked();
       seeedPropagationData->newSeeeds[seeedCounter] = seeed;
