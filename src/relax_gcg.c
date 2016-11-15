@@ -1626,6 +1626,20 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPgetRealParam(scip, "numerics/lpfeastol", &lpfeastol) );
    SCIP_CALL( SCIPgetRealParam(scip, "numerics/dualfeastol", &dualfeastol) );
 
+   infinitym = infinity;
+   epsilonm =  epsilon;
+   sumepsilonm = sumepsilon;
+   feastolm = 1e-03 *feastol;
+   lpfeastolm = 1e-03 * lpfeastol;
+   dualfeastolm = dualfeastol;
+
+   infinityp = infinity;
+   epsilonp =  epsilon;
+   sumepsilonp = sumepsilon;
+   feastolp = 1e-03 *feastol;
+   lpfeastolp = 1e-03 * lpfeastol;
+   dualfeastolp = dualfeastol;
+
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
    SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
 

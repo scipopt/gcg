@@ -309,9 +309,15 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 
       for( i = 0; i < nmastervars; i++ )
       {
-         solval += mastervals[i] * SCIPgetSolVal(scip, sol, mastervars[i]);
+         SCIP_Real varsolval;
+
+         varsolval = SCIPgetSolVal(scip, sol, mastervars[i]);
+
+         if( SCIPisFeasPositive(scip, varsolval) )
+            solval += mastervals[i] * varsolval;
       }
-      if( !SCIPisFeasIntegral(scip, solval) )
+
+      if( !SCIPisFeasIntegral(origprob, solval) )
       {
          *result = SCIP_INFEASIBLE;
 
