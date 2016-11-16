@@ -155,24 +155,51 @@ DEC_DECL_INITDETECTOR(initMCL)
    return SCIP_OKAY;
 }
 
-/** are there conss and vars to be included by the graph */
+/** are there conss and vars to be included by the graph and have the conss common vars included by the graph */
 static
 bool graphCompletible(
    gcg::Seeedpool*  seeedpool,
    gcg::Seeed*      seeed
    )
 {
-   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   bool completible;
+
+   //have the open conss open vars?
+   for(int c = 0; c < seeed->getNOpenconss() && !completible; ++c)
    {
       int cons = seeed->getOpenconss()[c];
-      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      for(int v = 0; v < seeed->getNOpenvars() && !completible; ++v)
       {
          int var = seeed->getOpenvars()[v];
-         for(int i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         for(int i = 0; i < seeedpool->getNVarsForCons(cons) && !completible; ++i)
          {
             if(var == seeedpool->getVarsForCons(cons)[i])
             {
-               return true;
+               completible = true;
+            }
+         }
+      }
+   }
+   if(!completible)
+      return false;
+
+   //have the open conss common open vars?
+   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   {
+      int cons1 = seeed->getOpenconss()[c];
+      for(int d = c + 1; d < seeed->getNOpenconss(); ++d)
+      {
+         int cons2 = seeed->getOpenconss()[d];
+         for(int v = 0; v < seeedpool->getNVarsForCons(cons1); ++v)
+         {
+            int var1 = seeedpool->getVarsForCons(cons1)[v];
+            if(!seeed->isVarOpenvar(var1))
+               continue;
+            for(int w = 0; w < seeedpool->getNVarsForCons(cons2); ++w)
+            {
+               int var2 = seeedpool->getVarsForCons(cons2)[w];
+               if(var1 == var2)
+                  return true;
             }
          }
       }
