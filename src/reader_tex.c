@@ -224,6 +224,16 @@ SCIP_RETCODE writeTikz(
    DEC_DECOMP*           decomp              /**< Decomposition array pointer */
    )
 {
+   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                                          %s", LINEBREAK);
+   /*SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (x,y) rectangle (z,v);                                   %s", LINEBREAK); */
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                                            %s", LINEBREAK);
+
+
    return SCIP_OKAY;
 }
 
@@ -313,18 +323,18 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", decompname, LINEBREAK);
    SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}                              %s", decompname, LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                                           %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
    if(useGp)
    {
-      SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                                           %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                                           %s", pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp), LINEBREAK);
-      SCIPinfoMessage(scip, file, "  \\end{center}                                                                 %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "\\end {figure}                                                                  %s", LINEBREAK);
    }
    else
    {
       writeTikz(scip, file, decomp);
    }
+   SCIPinfoMessage(scip, file, "  \\end{center}                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\end {figure}                                                                  %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{tabular}{lll}                                                           %s", LINEBREAK);
