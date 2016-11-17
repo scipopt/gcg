@@ -108,7 +108,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 
    ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
 
-   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE) );
+   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE, TRUE) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -133,7 +133,8 @@ SCIP_RETCODE writeHeaderCode(
    SCIP_Bool            statistics,         /**< if true detection statistics and are included in report */
    DEC_DECOMP**         decomps,            /**< Decompositions structure */
    int*                 ndecomps,           /**< Number of decompositions */
-   SCIP_Bool            toc                 /**< if true table of contents is included */
+   SCIP_Bool            toc,                /**< if true table of contents is included */
+   SCIP_Bool            useGp               /**< if true Gnuplot will be used for visualization */
    )
 {
    char* pname;
@@ -178,7 +179,10 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                   %s", LINEBREAK);
+   if(useGp)
+   {
+      SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                   %s", LINEBREAK);
+   }
    SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{document}                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
@@ -212,13 +216,25 @@ SCIP_RETCODE writeHeaderCode(
    return SCIP_OKAY;
 }
 
+/** writes the code for a Tikz visualization of the decomposition into the file */
+static
+SCIP_RETCODE writeTikz(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File pointer to write to */
+   DEC_DECOMP*           decomp              /**< Decomposition array pointer */
+   )
+{
+   return SCIP_OKAY;
+}
+
 /** write LaTeX code for one decomposition */
 static
 SCIP_RETCODE writeDecompCode(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
    FILE*                 makefile,           /**< File pointer to corresponding makefile */
-   DEC_DECOMP*           decomp              /**< Decomposition array pointer */
+   DEC_DECOMP*           decomp,             /**< Decomposition array pointer */
+   SCIP_Bool             useGp               /**< if true Gnuplot will be used for visualization */
    )
 {
    char* filepath;
@@ -236,54 +252,59 @@ SCIP_RETCODE writeDecompCode(
 
    assert(decomp != NULL);
 
-   /* --- create a gnuplot file for the decomposition --- */
+   if(useGp)
+   {
+      /* --- create a gnuplot file for the decomposition --- */
 
-   /* get path to write to and put it into gpfilename */
-   filedesc = fileno(file); /* get link to file descriptor */
-   if(filedesc < 0)
-   {
-      return SCIP_FILECREATEERROR;
-   }
-   snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
-   success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
-   if(success < 0)
-   {
-      return SCIP_NOFILE;
-   }
-   SCIPsplitFilename(pfile, &filepath, NULL, NULL, NULL);
-   strcpy(gpfilename, filepath);
-   strcat(gpfilename, "/");
+      /* get path to write to and put it into gpfilename */
+      filedesc = fileno(file); /* get link to file descriptor */
+      if(filedesc < 0)
+      {
+         return SCIP_FILECREATEERROR;
+      }
+      snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
+      success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
+      if(success < 0)
+      {
+         return SCIP_NOFILE;
+      }
+      SCIPsplitFilename(pfile, &filepath, NULL, NULL, NULL);
+      strcpy(gpfilename, filepath);
+      strcat(gpfilename, "/");
 
-   /* get name of file and attach it to gpfilename */
-   ppath = (char*) SCIPgetProbName(scip);
-   SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
-   if(pname != NULL &&  pname[0] != '\0')
-   {
-      strcat(gpfilename, pname);
-      strcat(gpfilename, "-");
-   }
-   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
-   if(decompname != NULL &&  decompname[0] != '\0')
-   {
-      strcat(gpfilename, decompname);
-   }
-   else
-   {
-      return SCIP_FILECREATEERROR;
-   }
-   strcpy(gpname, gpfilename);
-   strcat(gpfilename, ".gp");
+      /* get name of file and attach it to gpfilename */
+      ppath = (char*) SCIPgetProbName(scip);
+      SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
+      if(pname != NULL &&  pname[0] != '\0')
+      {
+         strcat(gpfilename, pname);
+         strcat(gpfilename, "-");
+      }
+      (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
+      if(decompname != NULL &&  decompname[0] != '\0')
+      {
+         strcat(gpfilename, decompname);
+      }
+      else
+      {
+         return SCIP_FILECREATEERROR;
+      }
+      strcpy(gpname, gpfilename);
+      strcat(gpfilename, ".gp");
 
-   /* write gp file for decomp using the gp reader (using the tex output option) */
-   gpfile = fopen(gpfilename, "w");
-   if(gpfile == NULL)
-   {
-      return SCIP_FILECREATEERROR;
+      /* write gp file for decomp using the gp reader (using the tex output option) */
+      gpfile = fopen(gpfilename, "w");
+      if(gpfile == NULL)
+      {
+         return SCIP_FILECREATEERROR;
+      }
+
+      SCIPwriteGp(scip, gpfile, decomp, TRUE, FALSE);
+
+      fclose(gpfile);
+
+      /*@todo add tex of gnuplot file to makefile*/
    }
-
-   SCIPwriteGp(scip, gpfile, decomp, TRUE, FALSE);
-
-   fclose(gpfile);
 
    /* --- gather further information & output them --- */
 
@@ -292,11 +313,18 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", decompname, LINEBREAK);
    SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}                              %s", decompname, LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                                           %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                                           %s", pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\end{center}                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\end {figure}                                                                  %s", LINEBREAK);
+   if(useGp)
+   {
+      SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                                           %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                                           %s", pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp), LINEBREAK);
+      SCIPinfoMessage(scip, file, "  \\end{center}                                                                 %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "\\end {figure}                                                                  %s", LINEBREAK);
+   }
+   else
+   {
+      writeTikz(scip, file, decomp);
+   }
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{tabular}{lll}                                                           %s", LINEBREAK);
@@ -339,7 +367,8 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
    int*                  ndecomps,           /**< Number of decompositions */
    SCIP_Bool             statistics,         /**< if true detection statistics and are included in report */
-   SCIP_Bool             toc                 /**< if true table of contents is included */
+   SCIP_Bool             toc,                /**< if true table of contents is included */
+   SCIP_Bool             useGp               /**< if true Gnuplot will be used for visualization */
    )
 {
    DEC_DECOMP** sorteddecomps;
@@ -403,13 +432,13 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    /*@todo sort decomps into sorteddecomps (just rearrange pointers)*/
    sorteddecomps = decomps;
 
-   SCIP_CALL( writeHeaderCode(scip,file,statistics,sorteddecomps,ndecomps,toc) );
+   SCIP_CALL( writeHeaderCode(scip,file,statistics,sorteddecomps,ndecomps,toc,useGp) );
 
    for( i=0; i<*ndecomps; i++ )
    {
       if(decomps[i] != NULL)
       {
-         SCIP_CALL( writeDecompCode(scip,file,makefile,decomps[i]) );
+         SCIP_CALL( writeDecompCode(scip,file,makefile,decomps[i], useGp) );
       }
    }
 

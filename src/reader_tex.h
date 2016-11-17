@@ -70,7 +70,8 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
    int*                  ndecomps,           /**< Number of decompositions */
    SCIP_Bool             statistics,         /**< if true detection statistics are included in report */
-   SCIP_Bool             toc                 /**< if true table of contents is included */
+   SCIP_Bool             toc,                /**< if true table of contents is included */
+   SCIP_Bool             useGp               /**< if true Gnuplot will be used for visualization */
    );
 
 #ifdef __cplusplus
