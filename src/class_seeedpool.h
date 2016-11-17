@@ -71,11 +71,12 @@ private:
    std::vector<SeeedPtr> 						currSeeeds;				/**< vector of current (open) seeeds */
    std::vector<SeeedPtr> 						finishedSeeeds;				/**< vector of current (open) seeeds */
 
-   int											nTotalSeeeds;			/**< number of created seeeeds, used to give next id */
+   int											      nTotalSeeeds;   	/**< number of created seeeeds, used to give next id */
    std::vector<std::vector<int>> 				varsForConss; 		/** stores for every constraint the indices of variables that are contained in the constraint */
+   std::vector<std::vector<double>>          valsForConss;     /** stores for every constraint the coefficients of variables that are contained in the constraint (i.e. have a nonzero coefficient) */
    std::vector<std::vector<int>> 				conssForVars; 		/** stores for every variable the indices of constraints containing this variable */
    std::vector<SCIP_CONS*> 						consToScipCons;	    /** stores the corresponding scip constraints pointer */
-   std::vector<SCIP_VAR*> 						varToScipVar;		/** stores the corresponding scip variable pointer */
+   std::vector<SCIP_VAR*> 				    		varToScipVar;		/** stores the corresponding scip variable pointer */
    std::vector<DEC_DETECTOR*> 					detectorToScipDetector; /** stores the corresponding SCIP detector pinter */
    std::tr1::unordered_map<SCIP_CONS*, int> 	scipConsToIndex;	/** maps SCIP_CONS* to the corresponding index */
    std::tr1::unordered_map<SCIP_VAR*, int>  	scipVarToIndex;		/** maps SCIP_VAR* to the corresponding index */
@@ -103,8 +104,12 @@ public:
    void findDecompositions(
    );
 
-   /** access coefficient matrix constraint-wise */
+   /** access the variable indices of matrix constraint-wise */
    const  int *  getVarsForCons(int consIndex);
+
+   /** access the coefficients constraint-wise */
+    const  SCIP_Real *  getValsForCons(int consIndex);
+
 
    /** access coefficient matrix variable-wise */
    const  int * getConssForVar(int varIndex);

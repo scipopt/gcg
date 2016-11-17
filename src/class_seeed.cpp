@@ -65,10 +65,11 @@ const int Seeed::nPrimes = 70;
 
 /** constructor(s) */
 Seeed::Seeed(
-   SCIP* _scip, int givenId,       /**< id that is given to this seeed */
-   int givenNDetectors,            /**< number of detectors */
-   int givenNConss,                /**number of constraints */
-   int givenNVars                  /**number of variables */
+   SCIP*       _scip,
+   int         givenId,                    /**< id that is given to this seeed */
+   int         givenNDetectors,            /**< number of detectors */
+   int         givenNConss,                /**number of constraints */
+   int         givenNVars                  /**number of variables */
 ) :
    scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), propagatedByDetector(
       std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false)
@@ -1186,6 +1187,8 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
 
    return SCIP_OKAY;
 }
+
+
 
 /** assigns open conss if they includes blockvars, returns true if open conss are assigned */
 bool Seeed::assignHittingOpenconss(Seeedpool* seeedpool)

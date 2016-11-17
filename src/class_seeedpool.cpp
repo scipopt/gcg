@@ -279,6 +279,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          nVars = relevantVarCounter;
          nConss = relevantConsCounter;
          varsForConss = std::vector<std::vector<int>>(nConss);
+         valsForConss = std::vector<std::vector<SCIP_Real>>(nConss);
          conssForVars = std::vector<std::vector<int>>(nVars);
 
          assert(varToScipVar.size() == nVars);
@@ -290,6 +291,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          {
                  SCIP_CONS* cons;
                  SCIP_VAR** currVars;
+                 SCIP_Real* currVals;
                  int            nCurrVars;
                  SCIP_Bool  success;
 
@@ -299,7 +301,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 //                 std::cout << "\n\nConstraint: " << SCIPconsGetName(cons) << " with " << nCurrVars << " variables" << std::endl;
 
                  SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVars, nCurrVars) ); /** free in line 321 */
+                 SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVals, nCurrVars) ); /** free in line 321 */
                  SCIP_CALL_ABORT(GCGconsGetVars(scip, cons, currVars, nCurrVars));
+                 SCIP_CALL_ABORT(GCGconsGetVals(scip, cons, currVals, nCurrVars));
 
                  for(int currVar = 0; currVar < nCurrVars; ++currVar)
                  {
@@ -326,7 +330,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                          varsForConss[i].push_back(varIndex);
                          conssForVars[varIndex].push_back(i);
-//                         std::cout << "("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
+                         valsForConss[i].push_back(currVals[currVar]);
+
+                         std::cout << "("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << " with coeff " << currVals[currVar] << "\t";
 
                  }
 //                 std::cout << "\n" << std::endl;
@@ -813,6 +819,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 const  int * Seeedpool::getVarsForCons(int cons){
          return &varsForConss[cons][0];
  }
+
+const  SCIP_Real * Seeedpool::getValsForCons(int cons){
+         return &valsForConss[cons][0];
+ }
+
 
  /** access coefficient matrix variable-wise */
  const  int * Seeedpool::getConssForVar(int var){
