@@ -45,16 +45,16 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/type_mem.h lib/scip/src/scip/type_primal.h \
  lib/scip/src/scip/type_pricestore.h lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/set.h lib/scip/src/scip/struct_set.h \
- lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
- lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/type_branchgcg.h src/type_decomp.h src/pricer_gcg.h \
- src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
- src/cons_decomp.h src/type_detector.h src/reader_blk.h src/reader_dec.h \
- src/pub_decomp.h lib/scip/src/scip/cons_linear.h src/gcg.h \
- src/pub_gcgvar.h src/pub_decomp.h src/tests/test.h \
- lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
- lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/message.h lib/scip/src/scip/debug.h \
+ lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
+ lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
+ lib/scip/src/scip/struct_event.h src/type_branchgcg.h src/type_decomp.h \
+ src/pricer_gcg.h src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h \
+ src/struct_gcgcol.h src/cons_decomp.h src/type_detector.h \
+ src/reader_blk.h src/reader_dec.h src/pub_decomp.h \
+ lib/scip/src/scip/cons_linear.h src/gcg.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/tests/test.h lib/scip/src/objscip/objscip.h \
+ lib/scip/src/objscip/objbranchrule.h lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -215,10 +215,10 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/type_mem.h lib/scip/src/scip/type_primal.h \
  lib/scip/src/scip/type_pricestore.h lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/set.h lib/scip/src/scip/struct_set.h \
- lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
- lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/message.h lib/scip/src/scip/debug.h \
+ lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
+ lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
+ lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -382,9 +382,10 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -550,9 +551,10 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -718,9 +720,10 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -886,9 +889,10 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -1053,9 +1057,10 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -1216,9 +1221,10 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -1383,9 +1389,10 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -1547,10 +1554,10 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/type_mem.h lib/scip/src/scip/type_primal.h \
  lib/scip/src/scip/type_pricestore.h lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/set.h lib/scip/src/scip/struct_set.h \
- lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
- lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/message.h lib/scip/src/scip/debug.h \
+ lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
+ lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
+ lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -1716,10 +1723,10 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/type_mem.h lib/scip/src/scip/type_primal.h \
  lib/scip/src/scip/type_pricestore.h lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/set.h lib/scip/src/scip/struct_set.h \
- lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
- lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/message.h lib/scip/src/scip/debug.h \
+ lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
+ lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
+ lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -1885,9 +1892,10 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -2050,9 +2058,10 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -2215,9 +2224,10 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -2382,9 +2392,10 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -2551,9 +2562,10 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
- lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
- lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -2717,12 +2729,12 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/type_mem.h lib/scip/src/scip/type_primal.h \
  lib/scip/src/scip/type_pricestore.h lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/set.h lib/scip/src/scip/struct_set.h \
- lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
- lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/type_gcgcol.h src/pub_gcgcol.h src/tests/test.h \
- lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
- lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/message.h lib/scip/src/scip/debug.h \
+ lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
+ lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
+ lib/scip/src/scip/struct_event.h src/type_gcgcol.h src/pub_gcgcol.h \
+ src/tests/test.h lib/scip/src/objscip/objscip.h \
+ lib/scip/src/objscip/objbranchrule.h lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \

@@ -123,7 +123,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
             for( j = 0; j < norigvars; j++ )
             {
                if( SCIPisZero(scip, origvals[j]) )
-                  break;
+                  continue;
 
                assert(!SCIPisZero(scip, origvals[j]));
 
@@ -166,7 +166,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
             int norigpricingvars;
             SCIP_VAR** origpricingvars;
             if( SCIPisZero(scip, origvals[j]) )
-               break;
+               continue;
             assert(!SCIPisZero(scip, origvals[j]));
 
             /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */
