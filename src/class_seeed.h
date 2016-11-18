@@ -53,40 +53,38 @@ class Seeed
 {
 
 private:
-	SCIP*							scip;
-   int								id;						/**< id of the seeed */
-   int 								nBlocks;				/**< number of blocks the decomposition currently has */
-   int 								nVars;
-   int								nConss;
-   std::vector<int>					masterConss;			/**< vector containing indices of master constraints */
-   std::vector<int>					masterVars;				/**< vector containing indices of master variables */
-   std::vector<std::vector<int>> 	conssForBlocks; 		/**< conssForBlocks[k] contains a vector of indices of all constraints assigned to block k */
-   std::vector<std::vector<int>> 	varsForBlocks; 			/**< varsForBlocks[k] contains a vector of indices of all variables assigned to block k */
-   std::vector<int> 				linkingVars;			/**< vector containing indices of linking variables */
-   std::vector<std::vector<int>> 	stairlinkingVars;		/**< vector containing indices of staircase linking variables of the blocks */
-   std::vector<int> 				openVars;				/**< vector containing indices of  variables that are not assigned yet*/
-   std::vector<int> 				openConss;				/**< vector containing indices of  constraints that are not assigned yet*/
-   std::vector<int>                 bookedAsMasterConss;     /**< vector containing indices of  constraints that are not assigned yet but booked as master conss */
-//   std::vector<int>           freeVars;            /**< vector containing indices of variables that can be assigned independently */
-//   std::vector<int>           freeConss;          /**< vector containing indices of constraints that can be assigned independently */
-   std::vector<bool> 				propagatedByDetector;	/**< propagatedByDetector[i] is this seeed propagated by detector i */
-      bool 							openVarsAndConssCalculated; /** are the */
+	SCIP*							         scip;
+   int								      id;						         /**< id of the seeed */
+   int 								      nBlocks;				            /**< number of blocks the decomposition currently has */
+   int 								      nVars;                        /**< number of variables */
+   int								      nConss;                       /**< numver of constraints */
+   std::vector<int>					   masterConss;			         /**< vector containing indices of master constraints */
+   std::vector<int>					   masterVars;				         /**< vector containing indices of master variables */
+   std::vector<std::vector<int>>    conssForBlocks; 		         /**< conssForBlocks[k] contains a vector of indices of all constraints assigned to block k */
+   std::vector<std::vector<int>>    varsForBlocks; 			      /**< varsForBlocks[k] contains a vector of indices of all variables assigned to block k */
+   std::vector<int> 				      linkingVars;			         /**< vector containing indices of linking variables */
+   std::vector<std::vector<int>>    stairlinkingVars;		         /**< vector containing indices of staircase linking variables of the blocks */
+   std::vector<int> 				      openVars;				         /**< vector containing indices of  variables that are not assigned yet*/
+   std::vector<int> 				      openConss;				         /**< vector containing indices of  constraints that are not assigned yet*/
+   std::vector<int>                 bookedAsMasterConss;          /**< vector containing indices of  constraints that are not assigned yet but booked as master conss */
+   std::vector<std::pair<int, int>> bookedAsBlockConss;           /**< vector containing indices of constraints that are not assigned yet but booked as block conss and the refering block */
+   std::vector<bool> 				   propagatedByDetector;	      /**< propagatedByDetector[i] is this seeed propagated by detector i */
+   bool 							         openVarsAndConssCalculated;   /**< are the openVars and openCons calculated */
    long                             hashvalue;
 
-   const static int                primes[];
-   const static int                nPrimes;
+   const static int              primes[];
+   const static int              nPrimes;
 
 public:
-
-   std::vector<int>                 detectorChain;
+   std::vector<int>                 detectorChain;             /**< vector containing detectors */
 
    /** constructor(s) */
    Seeed(
       SCIP*          scip,
-	  int               id,      		   	/**< id that is given to this seeed */
-	  int               nDetectors,         /**< number of detectors */
-	  int				nConss,				/**number of constraints */
-	  int 				nVars				/**number of variables */
+	  int             id,      		   	/**< id that is given to this seeed */
+	  int             nDetectors,          /**< number of detectors */
+	  int				   nConss,				   /**number of constraints */
+	  int 				nVars				      /**number of variables */
       );
 
 
@@ -113,17 +111,23 @@ public:
    );
 
 
-   /** book a constraint to be added to the master constraints (after calling flushBooked)*/
+   /** book a constraint to be added to the master constraints (after calling flushBooked) */
    SCIP_RETCODE bookAsMasterCons(
            int consToMaster
    );
 
-   /** add all booked constraints to master and delete them from opencons*/
+   /** book a constraint to be added to the block constraints of the given block (after calling flushBookes) */
+   SCIP_RETCODE bookAsBlockCons(
+           int consToBlock,
+           int block
+   );
+
+   /** add all booked constraints to master and delete them from openConss */
    SCIP_RETCODE flushBooked(
    );
 
 
-   /** add a variable to the master variables (every constraint consisting it is in master ) */
+   /** add a variable to the master variables (every constraint consisting it is in master) */
    SCIP_RETCODE setVarToMaster(
 		   int varToMaster
    );
@@ -223,22 +227,6 @@ public:
 
    bool alreadyAssignedConssToBlocks();
 
-//   /** returns vector containing free variables */
-//   const int* getFreeVars(
-//   );
-//
-//   /** returns size of vector containing free variables */
-//   int getNFreeVars(
-//   );
-//
-//   /** returns vector containing free constraints */
-//   const int* getFreeConss(
-//   );
-//
-//   /** returns size of vector containing free constraints */
-//   int getNFreeConss(
-//   );
-
    /** returns size of vector containing master conss */
    int getNConssForBlock(
 		   int block
@@ -260,10 +248,12 @@ public:
 
    /** returns the calculated has value of this seeed */
    long getHashValue(
-           );
+   );
 
+   /** calculates vector containing constraints not assigned yet */
    void  calcOpenconss();
 
+   /** constructs vector containing variables not assigned yet */
    void  calcOpenvars();
 
    /** sorts the vars and conss according their numbers */
@@ -386,16 +376,6 @@ public:
    int getNVars(
    );
 
-//   /** returns conss including open vars */
-//   std::vector<int> getConssForGraph(
-//      Seeedpool* seeedpool
-//   );
-//
-//   /** returns vars included in open conss */
-//   std::vector<int> getVarsForGraph(
-//      Seeedpool* seeedpool
-//   );
-
    /** fills out a seeed with the hashmap constoblock */
    SCIP_RETCODE filloutSeeedFromConstoblock(
          SCIP_HASHMAP* constoblock,
@@ -403,19 +383,21 @@ public:
          Seeedpool* seeedpool
    );
 
+   /** fills out the border of the seeed with the hashmap constoblock */
    SCIP_RETCODE filloutBorderFromConstoblock(
       SCIP_HASHMAP* constoblock,
       int givenNBlocks,
       Seeedpool* seeedpool
    );
 
-   /** fills out a seeed with the hashmap constoblock */
+   /** fills out the seeed with the hashmap constoblock if there are still assigned conss and vars */
    SCIP_RETCODE assignSeeedFromConstoblock(
          SCIP_HASHMAP* constoblock,
          int givenNBlocks,
          Seeedpool* seeedpool
    );
 
+   /** fills out the vorder of the seeed with the hashmap constoblock if there are still assigned conss and vars */
    SCIP_RETCODE assignBorderFromConstoblock(
       SCIP_HASHMAP* constoblock,
       int givenNBlocks,
@@ -432,11 +414,16 @@ public:
          int opencons
    );
 
+   /** deletes empty blocks */
+   SCIP_RETCODE deleteEmptyBlocks(
+   );
+
    /** fills out the vectors for free conss and free vars */
    SCIP_RETCODE identifyFreeConssAndVars(
          Seeedpool* seeedpool
    );
 
+   /** calculates the hashvalue of the seeed for comparing */
    void calcHashvalue(
    );
 

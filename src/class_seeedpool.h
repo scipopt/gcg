@@ -67,27 +67,27 @@ class Seeedpool
 {   /*lint -esym(1712,Seeedpool)*/
 
 private:
-   SCIP*                 						scip;              	/**< SCIP data structure */
-   std::vector<SeeedPtr> 						currSeeeds;				/**< vector of current (open) seeeds */
-   std::vector<SeeedPtr> 						finishedSeeeds;				/**< vector of current (open) seeeds */
+   SCIP*                 						      scip;              	   /**< SCIP data structure */
+   std::vector<SeeedPtr> 						      currSeeeds;				   /**< vector of current (open) seeeds */
+   std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of current (open) seeeds */
 
-   int											      nTotalSeeeds;   	/**< number of created seeeeds, used to give next id */
-   std::vector<std::vector<int>> 				varsForConss; 		/** stores for every constraint the indices of variables that are contained in the constraint */
-   std::vector<std::vector<double>>          valsForConss;     /** stores for every constraint the coefficients of variables that are contained in the constraint (i.e. have a nonzero coefficient) */
-   std::vector<std::vector<int>> 				conssForVars; 		/** stores for every variable the indices of constraints containing this variable */
-   std::vector<SCIP_CONS*> 						consToScipCons;	    /** stores the corresponding scip constraints pointer */
-   std::vector<SCIP_VAR*> 				    		varToScipVar;		/** stores the corresponding scip variable pointer */
-   std::vector<DEC_DETECTOR*> 					detectorToScipDetector; /** stores the corresponding SCIP detector pinter */
-   std::tr1::unordered_map<SCIP_CONS*, int> 	scipConsToIndex;	/** maps SCIP_CONS* to the corresponding index */
-   std::tr1::unordered_map<SCIP_VAR*, int>  	scipVarToIndex;		/** maps SCIP_VAR* to the corresponding index */
-   std::tr1::unordered_map<DEC_DETECTOR*, int>  scipDetectorToIndex;		/** maps SCIP_VAR* to the corresponding index */
+   int											         nTotalSeeeds;        	/**< number of created seeeeds, used to give next id */
+   std::vector<std::vector<int>> 				   varsForConss; 	   	   /**< stores for every constraint the indices of variables that are contained in the constraint */
+   std::vector<std::vector<double>>             valsForConss;           /**< stores for every constraint the coefficients of variables that are contained in the constraint (i.e. have a nonzero coefficient) */
+   std::vector<std::vector<int>>    				conssForVars;      		/**< stores for every variable the indices of constraints containing this variable */
+   std::vector<SCIP_CONS*> 			   			consToScipCons;	      /**< stores the corresponding scip constraints pointer */
+   std::vector<SCIP_VAR*> 				       		varToScipVar;		      /**< stores the corresponding scip variable pointer */
+   std::vector<DEC_DETECTOR*> 				   	detectorToScipDetector; /**< stores the corresponding SCIP detector pinter */
+   std::tr1::unordered_map<SCIP_CONS*, int> 	   scipConsToIndex;	      /**< maps SCIP_CONS* to the corresponding index */
+   std::tr1::unordered_map<SCIP_VAR*, int>  	   scipVarToIndex;		   /**< maps SCIP_VAR* to the corresponding index */
+   std::tr1::unordered_map<DEC_DETECTOR*, int>  scipDetectorToIndex;		/**< maps SCIP_VAR* to the corresponding index */
 
-   int 											nVars;
-   int 											nConss;
-   int											nDetectors;
+   int 										         	nVars;                  /**< number of variables */
+   int 										         	nConss;                 /**< number of constraints */
+   int										         	nDetectors;             /**< number of detectors */
 
-   DEC_DECOMP**                        decompositions;
-   int                                 ndecompositions;
+   DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
+   int                                          ndecompositions;        /**< number of decompositions found by the detectors */
 
 
 public:
@@ -114,8 +114,10 @@ public:
    /** access coefficient matrix variable-wise */
    const  int * getConssForVar(int varIndex);
 
+   /** returns the number of variables for the given constraint */
    int getNVarsForCons(int consIndex);
 
+   /** returns the number of constraints for the given variable */
    int getNConssForVar(int varIndex);
 
    SCIP_VAR* getVarForIndex(int varIndex);
@@ -141,8 +143,6 @@ public:
    int getNVars();
 
    int getNConss();
-
-   bool isVarInCons(int var, int cons);
 
 
 };

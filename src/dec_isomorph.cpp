@@ -104,7 +104,7 @@ struct struct_hook
       SCIP*              scip                /**< scip to search for automorphisms */
    );
 
-   /** constructor for the hooc struct with a seeed */
+   /** constructor for the hook struct with a seeed */
    struct_hook(SCIP_Bool aut,  /**< true if there is an automorphism */
       unsigned int       n,                  /**< number of permutations */
       SCIP*              scip,               /**< scip to search for automorphisms */
@@ -420,7 +420,7 @@ SCIP_RETCODE setupArrays(
    return SCIP_OKAY;
 }
 
-/** set up a help structure for graph creation */
+/** set up a help structure for graph creation (for seeeeds) */
 static
 SCIP_RETCODE setupArrays(
    SCIP*                 scip,               /**< SCIP to compare */
@@ -670,7 +670,7 @@ SCIP_RETCODE createGraph(
    return SCIP_OKAY;
 }
 
-/** create a graph out of an array of scips */
+/** create a graph out of an array of scips (for seeeds) */
 static
 SCIP_RETCODE createGraph(
    SCIP*                 scip,               /**< SCIP to compare */
@@ -689,8 +689,6 @@ SCIP_RETCODE createGraph(
    int ncurvars;
    int curvar;
    int color;
-//   SCIP_CONS** conss;
-//   SCIP_VAR** vars;
    SCIP_VAR** curvars = NULL;
    SCIP_Real* curvals = NULL;
    unsigned int nnodes;
@@ -824,7 +822,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
    gcg::Seeed**          newSeeed,            /**< seeed data structure */
    int*                  masterconss,         /**< constraints to be put in the master */
    int                   nmasterconss,        /**< number of constraints in the master */
-   gcg::Seeed*           seeed,               /**< seeed */
+   gcg::Seeed*           seeed,               /**< seeed to propagate */
    gcg::Seeedpool*       seeedpool            /**< seeedpool */
    )
 {
@@ -1055,7 +1053,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
       SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(seeedpool->getConsForIndex(cons)));
    }
    (*newSeeed) = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
-   SCIP_CALL( (*newSeeed)->filloutSeeedFromConstoblock(newconstoblock, nblocks, seeedpool) );
+   SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblock(newconstoblock, nblocks, seeedpool) );
 
    SCIPfreeBufferArray(scip, &vartoblock);
    SCIPfreeBufferArray(scip, &consismaster);
@@ -1376,7 +1374,6 @@ SCIP_RETCODE detectIsomorph(
 
    int nconss = seeed->getNOpenconss();
    int i;
-   //int unique;
    int oldnseeeds;
 
    oldnseeeds = *nNewSeeeds;
@@ -1461,32 +1458,9 @@ SCIP_RETCODE detectIsomorph(
             continue;
          }
 
-//            SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[pos], &newdecomp) );
-//            if( newdecomp != NULL )
-//            {
-//               SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[pos])) );
-//               (*decdecomps)[pos] = newdecomp;
-//            }
-
          ++pos;
       }
       *nNewSeeeds = pos;
-
-//      if( *ndecdecomps > 0 )
-//         {
-//            unique = DECfilterSimilarDecompositions(scip, *decdecomps, *ndecdecomps);
-//         }
-//         else
-//         {
-//            unique = *ndecdecomps;
-//         }
-//
-//         for( p = unique; p < *ndecdecomps; ++p )
-//         {
-//            SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[p])) );
-//            (*decdecomps)[p] = NULL;
-//         }
-//         *ndecdecomps = unique;
 
       if( *nNewSeeeds > 0 )
       {

@@ -336,7 +336,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                  }
 //                 std::cout << "\n" << std::endl;
-                 SCIPfreeBufferArray(scip, &currVars) ;
+                 SCIPfreeBufferArray(scip, &currVars);
+                 SCIPfreeBufferArray(scip, &currVals);
          }
 
          /* populate seeed vector with empty seeed */
