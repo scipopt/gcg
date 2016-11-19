@@ -1141,7 +1141,7 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
 
 }
 
-/** assigns the open cons and open vars which are implicit assigned */
+/** assigns the open cons and open vars which are implicitly assigned, i.e. constraints having variables in more than one block or having variables only in one block and no open vars; vice versa for variables */
 SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
 {
    int cons;
@@ -1152,6 +1152,9 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
    std::vector<int> assignedOpenconss; /** stores the assgined open conss */
    bool found;
    bool master;
+   bool hitsOpenVar;
+   bool hitsOpenCons;
+
 
    if( !openVarsAndConssCalculated )
    {
@@ -1165,22 +1168,34 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
    {
       blocksOfBlockvars.clear();
       master = false;
+      hitsOpenVar = false;
       cons = openConss[c];
+
 
       for( int v = 0; v < seeedpool->getNVarsForCons(cons) && !master; ++v )
       {
          var = seeedpool->getVarsForCons(cons)[v];
+
+         if ( isVarOpenvar(var) )
+         {
+            hitsOpenVar = true;
+            continue;
+         }
+
+         if( isVarMastervar(var) )
+         {
+            master = true;
+            setConsToMaster(cons);
+            assignedOpenconss.push_back(cons);
+            continue;
+         }
+
          for( int b = 0; b < nBlocks && !master; ++b )
          {
-            if( isVarMastervar(var) )
-            {
-               master = true;
-               setConsToMaster(cons);
-               assignedOpenconss.push_back(cons);
-            }
             if( isVarBlockvarOfBlock(var, b) )
             {
                blocksOfBlockvars.push_back(b);
+               break;
             }
          }
       }
@@ -1190,34 +1205,50 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
          setConsToMaster(cons);
          assignedOpenconss.push_back(cons);
       }
+
+      /* also assign open constraints that have only vars assigned to one single block and no open vars*/
+      if( blocksOfBlockvars.size() == 1 && !hitsOpenVar && !master)
+      {
+         setConsToBlock(cons, blocksOfBlockvars[0]);
+         assignedOpenconss.push_back(cons);
+      }
+
    }
    for( size_t i = 0; i < assignedOpenconss.size(); ++i )
       deleteOpencons(assignedOpenconss[i]);
 
-   /** set vars to linking, if they can be found in more than one block */
+   /** set open var to linking, if it can be found in more than one block or set it to a block if it has only constraints in that block and no opnen constriants */
    for( size_t i = 0; i < openVars.size(); ++i )
    {
       blocksOfOpenvar.clear();
       var = openVars[i];
-      for( int b = 0; b < nBlocks; ++b )
+      hitsOpenCons = false;
+
+      for( int c = 0; c < seeedpool->getNConssForVar(var); ++c )
       {
-         found = false;
-         for( int c = 0; c < getNConssForBlock(b) && !found; ++c )
+         cons = seeedpool->getConssForVar(var)[c];
+         if( isConsOpencons(cons) )
          {
-            cons = conssForBlocks[b][c];
-            for( int v = 0; v < seeedpool->getNVarsForCons(cons) && !found; ++v )
-            {
-               if( seeedpool->getVarsForCons(cons)[v] == var )
-               {
-                  blocksOfOpenvar.push_back(b);
-                  found = true;
-               }
-            }
+            hitsOpenCons = true;
+            continue;
          }
+         for( int b = 0; b < nBlocks; ++b )
+         {
+            if( isConsBlockconsOfBlock(cons,b) )
+               blocksOfOpenvar.push_back(b);
+         }
+
       }
       if( blocksOfOpenvar.size() > 1 )
       {
          setVarToLinking(var);
+         assignedOpenvars.push_back(var);
+         continue;
+      }
+
+      if( blocksOfOpenvar.size() == 1 && !hitsOpenCons )
+      {
+         setVarToBlock(var, blocksOfOpenvar[0]);
          assignedOpenvars.push_back(var);
       }
    }
