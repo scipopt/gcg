@@ -216,7 +216,8 @@ SCIP_RETCODE writeHeaderCode(
    return SCIP_OKAY;
 }
 
-/** writes the code for a Tikz visualization of the decomposition into the file */
+/** writes the code for a Tikz visualization of the decomposition into the file
+ * works analogously to the SCIPwriteGp function in reader_gp.c */
 static
 SCIP_RETCODE writeTikz(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -224,28 +225,50 @@ SCIP_RETCODE writeTikz(
    DEC_DECOMP*           decomp              /**< Decomposition array pointer */
    )
 {
+   SCIP_VAR*** subscipvars;
+   SCIP_CONS*** subscipconss;
+   SCIP_VAR** linkingvars;
+   SCIP_CONS** linkingconss;
+   SCIP_CONS** conss;
+   SCIP_VAR* resvar;
+   SCIP_CONS* rescons;
+   SCIP_HASHMAP* varindexmap;
+   SCIP_HASHMAP* consindexmap;
    int* nsubscipvars;
    int* nsubscipconss;
    int* nstairlinkingvars;
+   size_t varindex = 1;
+   size_t consindex = 1;
    int startx = 0;
    int starty = 0;
    int endx = 0;
    int endy = 0;
-   int i;
    int nlinkingvars;
    int nlinkingconss;
+   int i;
+   int j;
+   int nconss;
+   double radius = 0.5;
 
+   assert(scip != NULL);
+
+   subscipvars = DECdecompGetSubscipvars(decomp);
    nsubscipvars = DECdecompGetNSubscipvars(decomp);
+   subscipconss = DECdecompGetSubscipconss(decomp);
    nsubscipconss = DECdecompGetNSubscipconss(decomp);
+   linkingvars = DECdecompGetLinkingvars(decomp);
    nlinkingvars = DECdecompGetNLinkingvars(decomp);
+   linkingconss = DECdecompGetLinkingconss(decomp);
    nlinkingconss = DECdecompGetNLinkingconss(decomp);
+   conss = SCIPgetConss(scip);
+   nconss = SCIPgetNConss(scip);
 
    /* --- write header --- */
 
    SCIPinfoMessage(scip, file, "  \\resizebox{\\textwidth}{!}{                                                  %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                                          %s", LINEBREAK);
 
-   /* --- draw grey rectangles for the blocks --- */
+   /* --- draw grey rectangles with standard outline (black) for the blocks --- */
 
    if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED )
    {
@@ -282,9 +305,105 @@ SCIP_RETCODE writeTikz(
       }
    }
 
-   /* --- draw --- */
+   /* --- draw black dots for the constraints --- */
 
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   /* compute indices */
+   varindexmap = NULL;
+   consindexmap = NULL;
+
+   if( decomp != NULL )
+   {
+      /* if we don't have staircase, but something else, go through the blocks and create the indices */
+      if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED || DECdecompGetType(decomp) == DEC_DECTYPE_DIAGONAL )
+      {
+         SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+         SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+
+         for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
+         {
+            for( j = 0; j < nsubscipvars[i]; ++j )
+            {
+               assert(subscipvars[i][j] != NULL);
+               SCIP_CALL( SCIPhashmapInsert(varindexmap, subscipvars[i][j], (void*)varindex) );
+               varindex++;
+            }
+            for( j = 0; j < nsubscipconss[i]; ++j )
+            {
+               assert(subscipconss[i][j] != NULL);
+               SCIP_CALL( SCIPhashmapInsert(consindexmap, subscipconss[i][j], (void*)consindex) );
+               consindex++;
+            }
+         }
+
+         for( j = 0; j < nlinkingvars; ++j )
+         {
+            assert(linkingvars[j] != NULL);
+            SCIP_CALL( SCIPhashmapInsert(varindexmap, linkingvars[j], (void*)varindex) );
+            varindex++;
+         }
+         for( j = 0; j < nlinkingconss; ++j )
+         {
+            assert(linkingconss[j] != NULL);
+            SCIP_CALL( SCIPhashmapInsert(consindexmap, linkingconss[j], (void*)consindex) );
+            consindex++;
+         }
+      }
+      else if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
+      {
+         /* in case of staircase get the original indices */
+         varindexmap = DECdecompGetVarindex(decomp);
+         consindexmap = DECdecompGetVarindex(decomp);
+
+         assert(varindexmap != NULL);
+         assert(consindexmap != NULL);
+      }
+   }
+
+   /* draw the dots */
+   for( i = 0; i < nconss; i++ )
+   {
+      int ncurvars = GCGconsGetNVars(scip, conss[i]);
+      SCIP_VAR** curvars = NULL;
+
+      if( ncurvars > 0 )
+      {
+         SCIP_CALL( SCIPallocBufferArray( scip, &curvars, ncurvars) );
+         SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
+      }
+
+      for( j = 0; j < ncurvars; j++ )
+      {
+         /* if the problem has been created, output the whole model */
+         if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
+         {
+            SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+            SCIPinfoMessage(scip, file, "    \\draw [fill] (%f,%f) circle [radius=%f];                                   %s", SCIPvarGetIndex(curvars[j]), i, radius, LINEBREAK);
+         }
+         else
+         {
+            /* if there is no decomposition, output the presolved model! */
+            if( decomp == NULL || DECdecompGetType(decomp) == DEC_DECTYPE_UNKNOWN )
+            {
+               SCIPinfoMessage(scip, file, "    \\draw [fill] (%f,%f) circle [radius=%f];                                   %s", SCIPvarGetIndex(curvars[j]), i, radius, LINEBREAK);
+            }
+            /* if there is a decomposition, output the indices derived from the decomposition above*/
+            else
+            {
+               assert(varindexmap != NULL);
+               assert(consindexmap != NULL);
+               assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL);
+               assert(SCIPhashmapGetImage(consindexmap, conss[i]) != NULL);
+               resvar = SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j]));
+               rescons = SCIPhashmapGetImage(consindexmap, conss[i]);
+               /*SCIPinfoMessage(scip, file, "    \\draw [fill] (%f,%f) circle [radius=%f];                                   %s", resvar, rescons, radius, LINEBREAK);*/
+            }
+         }
+      }
+
+      SCIPfreeBufferArrayNull(scip, &curvars);
+   }
+
+
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
@@ -293,6 +412,12 @@ SCIP_RETCODE writeTikz(
 
    SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                                            %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  }                                                                             %s", LINEBREAK);
+
+   if( decomp != NULL && DECdecompGetType(decomp) != DEC_DECTYPE_STAIRCASE )
+   {
+      SCIPhashmapFree(&varindexmap);
+      SCIPhashmapFree(&consindexmap);
+   }
 
    return SCIP_OKAY;
 }
