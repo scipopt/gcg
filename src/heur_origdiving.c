@@ -37,7 +37,6 @@
 #include <string.h>
 
 #include "heur_origdiving.h"
-#include "cons_origbranch.h"
 #include "relax_gcg.h"
 #include "gcg.h"
 
@@ -326,9 +325,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    SCIP_EVENTHDLRDATA* eventhdlrdata;
 #endif
    SCIP_HEURDATA* heurdata;
-   SCIP_CONS* probingcons;
    SCIP_LPSOLSTAT lpsolstat;
-   SCIP_NODE* probingnode;
    SCIP_VAR** selectedvars;
    SCIP_VAR** tabulist;
    int* discrepancies;
@@ -513,7 +510,6 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 #endif
 
    /* start diving */
-   SCIP_CALL( SCIPstartProbing(scip) );
    SCIP_CALL( GCGrelaxStartProbing(scip, heur) );
 
    /* enables collection of variable statistics during probing */
@@ -560,7 +556,6 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
       SCIP_Bool farkaspricing;
       SCIP_Bool otherdirection;
 
-      SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;
 
 #ifdef SCIP_STATISTIC
@@ -646,11 +641,12 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             break;
          }
 
-         probingnode = SCIPgetCurrentNode(scip);
 
          /* apply rounding of best candidate */
          if( !farkaspricing && !backtracked )
          {
+            SCIP_CALL( GCGrelaxNewProbingnodeOrig(scip) );
+
             if( bestcandroundup == !otherdirection )
             {
                /* round variable up */
@@ -658,11 +654,6 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                   divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, heurdata->maxpricerounds,
                   SCIPvarGetName(bestcand), bestcandsol, SCIPvarGetLbLocal(bestcand), SCIPvarGetUbLocal(bestcand),
                   SCIPfeasCeil(scip, bestcandsol), SCIPvarGetUbLocal(bestcand));
-
-               SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
-                  GCGconsOrigbranchGetActiveCons(scip), NULL, NULL) );
-               SCIP_CALL( SCIPaddConsNode(scip, probingnode, probingcons, NULL) );
-               SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
                SCIP_CALL( SCIPchgVarLbProbing(scip, bestcand, SCIPfeasCeil(scip, bestcandsol)) );
             }
             else
@@ -672,13 +663,10 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                   divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, heurdata->maxpricerounds,
                   SCIPvarGetName(bestcand), bestcandsol, SCIPvarGetLbLocal(bestcand), SCIPvarGetUbLocal(bestcand),
                   SCIPvarGetLbLocal(bestcand), SCIPfeasFloor(scip, bestcandsol));
-
-               SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
-                  GCGconsOrigbranchGetActiveCons(scip), NULL, NULL) );
-               SCIP_CALL( SCIPaddConsNode(scip, probingnode, probingcons, NULL) );
-               SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
                SCIP_CALL( SCIPchgVarUbProbing(scip, bestcand, SCIPfeasFloor(scip, bestcandsol)) );
             }
+
+            SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
          }
 
          /* apply domain propagation */
@@ -689,7 +677,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
              * Hence in optimized mode, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
              */
-            assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob)+1);
+            assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob));
             SCIPstatistic( SCIP_CALL( SCIPstartClock(scip, lptime) ) );
 #ifdef NDEBUG
             if( (!heurdata->usefarkasonly || farkaspricing )
@@ -742,11 +730,6 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             && !backtracked && !otherdirection )
          {
             SCIPdebugMessage("  *** infeasibility detected at level %d - perform Farkas pricing\n", SCIPgetProbingDepth(scip));
-
-            /* Go back one node in the master problem, since a new probing node is created in the next loop */
-            SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)-1) );
-            assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob)+1);
-
             farkaspricing = TRUE;
          }
          else
@@ -759,10 +742,8 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             if( heurdata->otherdirection && !backtracked && !otherdirection )
             {
                SCIPdebugMessage("  *** cutoff detected at level %d - branch in other direction\n", SCIPgetProbingDepth(scip));
-               SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
-               SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)) );
-               SCIP_CALL( SCIPnewProbingNode(scip) );
-               assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob)+1);
+               SCIP_CALL( GCGrelaxBacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
+               assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob));
                otherdirection = TRUE;
             }
             else
@@ -775,10 +756,8 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                if( heurdata->backtrack && divedepth > heurdata->maxdiscdepth && discrepancy < heurdata->maxdiscrepancy )
                {
                   SCIPdebugMessage("  *** cutoff detected at level %d - backtrack one node\n", SCIPgetProbingDepth(scip));
-                  SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
-                  /* Go back one node further in the master problem, since a new probing node is created in the next loop */
-                  SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)-1) );
-                  assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob)+1);
+                  SCIP_CALL( GCGrelaxBacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
+                  assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob));
                   --divedepth;
 
                   tabulist[discrepancy] = bestcand;
@@ -794,16 +773,13 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                   /* go back until the search can differ from the previous search tree */
                   do
                   {
-                     SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
-                     SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)) );
+                     SCIP_CALL( GCGrelaxBacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
                      --divedepth;
                   }
                   while( divedepth > 0 &&
                      (divedepth >= heurdata->maxdiscdepth || discrepancies[divedepth] >= heurdata->maxdiscrepancy) );
-                  /* Go back one node further in the master problem, since a new probing node is created in the next loop */
-                  SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)-1) );
-                  assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob)+1);
 
+                  assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob));
                   assert(divedepth < heurdata->maxdiscdepth);
 
                   if( discrepancies[divedepth] < heurdata->maxdiscrepancy )
@@ -911,7 +887,6 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    }
 
    /* end diving */
-   SCIP_CALL( SCIPendProbing(scip) );
    SCIP_CALL( GCGrelaxEndProbing(scip) );
 
    if( *result == SCIP_FOUNDSOL )
