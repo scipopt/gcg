@@ -108,7 +108,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 
    ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
 
-   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE, TRUE) );
+   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE, FALSE) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -224,15 +224,75 @@ SCIP_RETCODE writeTikz(
    DEC_DECOMP*           decomp              /**< Decomposition array pointer */
    )
 {
-   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                                          %s", LINEBREAK);
-   /*SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (x,y) rectangle (z,v);                                   %s", LINEBREAK); */
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                                            %s", LINEBREAK);
+   int* nsubscipvars;
+   int* nsubscipconss;
+   int* nstairlinkingvars;
+   int startx = 0;
+   int starty = 0;
+   int endx = 0;
+   int endy = 0;
+   int i;
+   int nlinkingvars;
+   int nlinkingconss;
 
+   nsubscipvars = DECdecompGetNSubscipvars(decomp);
+   nsubscipconss = DECdecompGetNSubscipconss(decomp);
+   nlinkingvars = DECdecompGetNLinkingvars(decomp);
+   nlinkingconss = DECdecompGetNLinkingconss(decomp);
+
+   /* --- write header --- */
+
+   SCIPinfoMessage(scip, file, "  \\resizebox{\\textwidth}{!}{                                                  %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                                          %s", LINEBREAK);
+
+   /* --- draw grey rectangles for the blocks --- */
+
+   if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED )
+   {
+      for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
+      {
+         endx += nsubscipvars[i];
+         endy += nsubscipconss[i];
+         SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", startx+0.5, starty+0.5, endx+0.5, endy+0.5, LINEBREAK);
+         startx = endx;
+         starty = endy;
+      }
+      endx += nlinkingvars;
+      endy += nlinkingconss;
+      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", 0.5, starty+0.5, endx+0.5, endy+0.5, LINEBREAK);
+      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", startx+0.5, +0.5, endx+0.5, endy+0.5, LINEBREAK);
+      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", startx+0.5, starty+0.5, endx+0.5, endy+0.5, LINEBREAK);
+   }
+   else
+   {
+      if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
+      {
+         nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
+         for( i = 0; i < DECdecompGetNBlocks(decomp)-1; ++i )
+         {
+            endx += nsubscipvars[i]+nstairlinkingvars[i];
+            endy += nsubscipconss[i];
+            SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", startx+0.5, starty+0.5, endx+0.5, endy+0.5, LINEBREAK);
+            startx = endx-nstairlinkingvars[i];
+            starty = endy;
+         }
+         endx += nsubscipvars[i];
+         endy += nsubscipconss[i];
+         SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", startx+0.5, starty+0.5, endx+0.5, endy+0.5, LINEBREAK);
+      }
+   }
+
+   /* --- draw --- */
+
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+
+   /* --- write closing --- */
+
+   SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                                            %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  }                                                                             %s", LINEBREAK);
 
    return SCIP_OKAY;
 }
@@ -261,6 +321,7 @@ SCIP_RETCODE writeDecompCode(
    DEC_SCORES scores;
 
    assert(decomp != NULL);
+   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
 
    if(useGp)
    {
@@ -290,7 +351,7 @@ SCIP_RETCODE writeDecompCode(
          strcat(gpfilename, pname);
          strcat(gpfilename, "-");
       }
-      (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
+
       if(decompname != NULL &&  decompname[0] != '\0')
       {
          strcat(gpfilename, decompname);
