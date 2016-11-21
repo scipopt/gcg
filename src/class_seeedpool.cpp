@@ -382,7 +382,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          successDetectors = std::vector<int>(nDetectors, 0);
          ndecompositions = 0;
-         maxRounds = 2;
+         maxRounds = 1;
          seeedPropData = new SEEED_PROPAGATION_DATA();
          seeedPropData->seeedpool = this;
          seeedPropData->nNewSeeeds = 0;
@@ -525,7 +525,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          for(size_t i = 0; i < currSeeeds.size(); ++i)
          {
              SeeedPtr seeedPtr = currSeeeds[i];
-             SCIP_CALL_ABORT(seeedPtr->completeGreedily( seeedPropData->seeedpool ) );
+//             SCIP_CALL_ABORT(seeedPtr->completeGreedily( seeedPropData->seeedpool ) );
+             SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
              seeedPtr->calcHashvalue();
              if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false))
              {

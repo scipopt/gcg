@@ -79,14 +79,14 @@ std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
     std::vector<int> empty;
     subset.push_back( empty );
 
-    for (int i = 0; i < set.size(); i++)
+    for ( size_t i = 0; i < set.size(); ++i )
     {
         std::vector< std::vector<int> > subsetTemp = subset;
 
-        for (int j = 0; j < subsetTemp.size(); j++)
+        for (size_t j = 0; j < subsetTemp.size(); ++j)
             subsetTemp[j].push_back( set[i] );
 
-        for (int j = 0; j < subsetTemp.size(); j++)
+        for (size_t j = 0; j < subsetTemp.size(); ++j)
             subset.push_back( subsetTemp[j] );
     }
     return subset;
@@ -171,7 +171,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   seeedOrig->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
 
-  for( size_t i = 0; i < seeedOrig->getNOpenconss(); ++i)
+  for( int i = 0; i < seeedOrig->getNOpenconss(); ++i)
   {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeedOrig->getOpenconss()[i]);
       consType cT = GCGconsGetType(cons);
@@ -190,7 +190,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
       }
   }
 
-  for(int i = 0; i < foundConstypes.size(); ++i)
+  for(size_t i = 0; i < foundConstypes.size(); ++i)
   {
       constypesIndices.push_back(i);
   }
@@ -215,7 +215,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
 
       seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
          /** set open cons that have type of the current subset to Master */
-      for( size_t i = 0; i < seeed->getNOpenconss(); ++i)
+      for( int i = 0; i < seeed->getNOpenconss(); ++i)
       {
           for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
           {

@@ -43,6 +43,7 @@
 #include <iostream>
 #include <exception>
 #include <algorithm>
+#include <queue>
 
 #define SCIP_CALL_EXC(x)   do                                                                                  \
                        {                                                                                      \
@@ -420,6 +421,7 @@ SCIP_RETCODE Seeed::setNBlocks(int newNBlocks)
    {
       conssForBlocks.push_back(std::vector<int>(0));
       varsForBlocks.push_back(std::vector<int>(0));
+      stairlinkingVars.push_back(std::vector<int>(0));
    }
 
    nBlocks = newNBlocks;
@@ -1141,6 +1143,157 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
 
 }
 
+/** assigns the open cons and open vars */
+SCIP_RETCODE Seeed::completeByConnected(Seeedpool* seeedpool)
+{
+
+   bool checkVar;
+   bool varInBlock;
+   bool notassigned;
+   int cons;
+   int var;
+
+
+   /** tools to check if the openVars can still be found in a constraint yet*/
+   std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
+
+   /** tools to update openVars */
+   std::vector<int> openvarsToDelete(0);
+   std::vector<int> oldOpenconss;
+
+   std::vector<bool> isConsOpen(nConss, false);
+   std::vector<bool> isConsVisited(nConss, false);
+
+   std::vector<bool> isVarOpen(nVars, false);
+   std::vector<bool> isVarVisited(nVars, false);
+
+   std::queue<int> helpqueue = std::queue<int>();
+   std::vector<int> neighborConss(0);
+   std::vector<int> neighborVars(0);
+
+   if( !openVarsAndConssCalculated )
+   {
+      calcOpenconss();
+      calcOpenvars();
+      openVarsAndConssCalculated = true;
+   }
+
+   assert((int ) conssForBlocks.size() == nBlocks);
+   assert((int ) varsForBlocks.size() == nBlocks);
+   assert((int ) stairlinkingVars.size() == nBlocks);
+
+   SCIP_CALL( refineToMaster(seeedpool) );
+
+   if(nBlocks < 0)
+      nBlocks = 0;
+
+   /** initialize data structures */
+   for( size_t c = 0; c < openConss.size(); ++c )
+   {
+        cons = openConss[c];
+        isConsOpen[cons] = true;
+   }
+
+   for( size_t v = 0; v < openVars.size(); ++v )
+   {
+        var = openVars[v];
+        isVarOpen[var] = true;
+   }
+
+   /** do breadth first search */
+   while( !openConss.empty() )
+   {
+      int newBlockNr;
+
+      assert(helpqueue.empty());
+      helpqueue.push(openConss[0]);
+      neighborConss.clear();
+      neighborConss.push_back(openConss[0]);
+      isConsVisited[openConss[0] ] = true;
+      neighborVars.clear();
+
+      while( !helpqueue.empty() )
+      {
+         int nodeCons = helpqueue.front();
+         assert( isConsOpencons(nodeCons) );
+         helpqueue.pop();
+         for( int v = 0; v < seeedpool->getNVarsForCons(nodeCons) ; ++v )
+         {
+            var = seeedpool->getVarsForCons(nodeCons)[v];
+            assert( isVarOpenvar(var) || isVarLinkingvar(var ) );
+
+            if( isVarVisited[var] )
+               continue;
+
+            for( int c = 0; c < seeedpool->getNConssForVar(var) ; ++c )
+            {
+               int otherNodeCons  = seeedpool->getConssForVar(var)[c];
+               if( !isConsOpen[otherNodeCons] || isConsVisited[otherNodeCons] )
+               {
+                  continue;
+               }
+               assert(isConsOpencons(otherNodeCons) );
+               isConsVisited[otherNodeCons] = true;
+               neighborConss.push_back(otherNodeCons);
+               helpqueue.push(otherNodeCons);
+            }
+            isVarVisited[var] = true;
+            neighborVars.push_back(var);
+         }
+      } //endwhile(!queue.empty() )
+
+      newBlockNr = getNBlocks() + 1;
+      setNBlocks(newBlockNr);
+      for ( size_t i = 0; i < neighborConss.size(); ++i )
+      {
+         cons = neighborConss[i];
+
+         assert(isConsOpencons(cons) );
+         setConsToBlock(cons, newBlockNr-1);
+
+         deleteOpencons(cons);
+      }
+      for ( size_t i = 0; i < neighborVars.size(); ++i )
+      {
+         var = neighborVars[i];
+         setVarToBlock(var, newBlockNr-1);
+         assert(isVarOpenvar(var) );
+         deleteOpenvar(var);
+      }
+
+   } // endwhile( !openConss.empty() )
+
+
+   for ( size_t i = 0; i < openVars.size(); ++i )
+   {
+      var = openVars[i];
+      if(getNBlocks() != 0)
+         setVarToBlock(var, 0);
+      else
+         setVarToMaster(var);
+      openvarsToDelete.push_back(var);
+   }
+
+   for ( size_t i = 0; i < openvarsToDelete.size(); ++i )
+   {
+         var = openvarsToDelete[i];
+         deleteOpenvar(var);
+    }
+
+
+   assert(openConss.empty());
+   assert(openVars.empty());
+
+   sort();
+   assert(checkConsistency());
+
+   return SCIP_OKAY;
+
+}
+
+
+
+
 /** assigns the open cons and open vars which are implicitly assigned, i.e. constraints having variables in more than one block or having variables only in one block and no open vars; vice versa for variables */
 SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
 {
@@ -1525,6 +1678,163 @@ SCIP_RETCODE Seeed::assignAllDependent(Seeedpool* seeedpool)
    sort();
    return SCIP_OKAY;
 }
+
+
+/** assign open conss (and vars) that hits a block and other open vars (or cons) to border */
+SCIP_RETCODE Seeed::assignOpenPartialHittingToMaster(
+   Seeedpool*       seeedpool
+)
+{
+   assignOpenPartialHittingConsToMaster(seeedpool);
+   assignOpenPartialHittingVarsToMaster(seeedpool);
+
+return SCIP_OKAY;
+}
+
+/** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments assignOpenPartialHittingToMaster() */
+ SCIP_RETCODE Seeed::refineToMaster(
+    Seeedpool*       seeedpool
+ ){
+    SCIP_CALL( considerImplicits(seeedpool) );
+    SCIP_CALL( assignOpenPartialHittingToMaster(seeedpool) );
+
+    return SCIP_OKAY;
+ }
+
+
+/** assign open conss that hits a block and other open vars that to border */
+SCIP_RETCODE Seeed::assignOpenPartialHittingConsToMaster(
+   Seeedpool*       seeedpool
+)
+{
+   int cons;
+   int var;
+   std::vector<int> blocksOfBlockvars; /** blocks with blockvars which can be found in the cons */
+   std::vector<int> blocksOfOpenvar; /** blocks in which the open var can be found */
+   std::vector<int> assignedOpenvars; /** stores the assigned open vars */
+   std::vector<int> assignedOpenconss; /** stores the assgined open conss */
+   bool found;
+   bool master;
+   bool hitsOpenVar;
+
+
+   if( !openVarsAndConssCalculated )
+   {
+      calcOpenvars();
+      calcOpenconss();
+      openVarsAndConssCalculated = true;
+   }
+
+   /** set openConss with more than two blockvars to master */
+   for( size_t c = 0; c < openConss.size(); ++c )
+   {
+      blocksOfBlockvars.clear();
+      master = false;
+      hitsOpenVar = false;
+      cons = openConss[c];
+
+      for( int v = 0; v < seeedpool->getNVarsForCons(cons) && !master; ++v )
+      {
+         var = seeedpool->getVarsForCons(cons)[v];
+
+         if ( isVarOpenvar(var) )
+         {
+            hitsOpenVar = true;
+            continue;
+         }
+
+         if( isVarMastervar(var) )
+         {
+            master = true;
+            bookAsMasterCons(cons);
+            continue;
+         }
+
+         for( int b = 0; b < nBlocks; ++b )
+         {
+            if( isVarBlockvarOfBlock(var, b) )
+            {
+               blocksOfBlockvars.push_back(b);
+               break;
+            }
+         }
+      }
+      if( blocksOfBlockvars.size() == 1 && hitsOpenVar )
+      {
+         bookAsMasterCons(cons);
+      }
+   }
+
+   flushBooked();
+
+   return SCIP_OKAY;
+}
+
+/** assign open vars that hits a block and other open cons that to border */
+SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
+   Seeedpool*       seeedpool
+)
+{
+
+   int cons;
+   int var;
+   std::vector<int> blocksOfBlockvars; /** blocks with blockvars which can be found in the cons */
+   std::vector<int> blocksOfOpenvar; /** blocks in which the open var can be found */
+   std::vector<int> assignedOpenvars; /** stores the assigned open vars */
+   std::vector<int> assignedOpenconss; /** stores the assgined open conss */
+   bool found;
+   bool master;
+   bool hitsOpenCons;
+
+
+   if( !openVarsAndConssCalculated )
+   {
+      calcOpenvars();
+      calcOpenconss();
+      openVarsAndConssCalculated = true;
+   }
+
+    /** set open var to linking if it can be found in one block an open constraint */
+    for( size_t i = 0; i < openVars.size(); ++i )
+    {
+       blocksOfOpenvar.clear();
+       var = openVars[i];
+       hitsOpenCons = false;
+
+       for( int c = 0; c < seeedpool->getNConssForVar(var); ++c )
+       {
+          cons = seeedpool->getConssForVar(var)[c];
+          if( isConsOpencons(cons) )
+          {
+             hitsOpenCons = true;
+             continue;
+          }
+          for( int b = 0; b < nBlocks; ++b )
+          {
+             if( isConsBlockconsOfBlock(cons,b) )
+                blocksOfOpenvar.push_back(b);
+          }
+
+       }
+
+       if( blocksOfOpenvar.size() == 1 && hitsOpenCons )
+       {
+          setVarToLinking(var);
+          assignedOpenvars.push_back(var);
+       }
+    }
+
+    for( size_t i = 0; i < assignedOpenvars.size(); ++i )
+       deleteOpenvar(assignedOpenvars[i]);
+
+    return SCIP_OKAY;
+
+
+return SCIP_OKAY;
+}
+
+
+
 
 /** returns whether the var is a linking var */
 bool Seeed::isVarLinkingvar(int var)

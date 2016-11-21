@@ -164,12 +164,14 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
       if( GCGconsGetType   (cons) == setcovering || GCGconsGetType   (cons) == logicor )
       {
- //         std::cout << "boook " << seeed->getOpenconss()[i] << " as master constraint" << std::endl;
+          //std::cout << "boook " << seeed->getOpenconss()[i] << " as master constraint" << std::endl;
           seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
       }
    }
 
    seeed->flushBooked();
+
+   //assert(false);
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;

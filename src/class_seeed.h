@@ -282,6 +282,12 @@ public:
          Seeedpool* seeedpool
    );
 
+   /** assigns the open cons and open vars */
+   SCIP_RETCODE completeByConnected(
+         Seeedpool* seeedpool
+   );
+
+
    /** assigns the open cons and open vars which are implicit assigned */
    SCIP_RETCODE considerImplicits(
          Seeedpool* seeedpool
@@ -306,6 +312,12 @@ public:
    SCIP_RETCODE assignAllDependent(
          Seeedpool*       seeedpool
    );
+
+   /** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments assignOpenPartialHittingToMaster() */
+   SCIP_RETCODE refineToMaster(
+      Seeedpool*       seeedpool
+   );
+
 
    /** returns whether the var is a linking var */
    bool isVarLinkingvar(
@@ -447,6 +459,22 @@ public:
 
 
 private:
+
+   /** assign open conss (and vars) that hits a block and other open vars (or cons)  that are open to border */
+   SCIP_RETCODE assignOpenPartialHittingToMaster(
+         Seeedpool*       seeedpool
+   );
+
+   /** assign open conss  that hits a block and other open vars  that are open to border */
+     SCIP_RETCODE assignOpenPartialHittingConsToMaster(
+           Seeedpool*       seeedpool
+     );
+
+     /** assign open vars  that hits a block and other open conss  that are open to border */
+     SCIP_RETCODE assignOpenPartialHittingVarsToMaster(
+        Seeedpool*       seeedpool
+     );
+
 
  //  bool compare_blocks(int a, int b);
 

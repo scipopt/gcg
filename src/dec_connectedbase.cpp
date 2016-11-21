@@ -215,77 +215,15 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
 {
    *result = SCIP_DIDNOTFIND;
 
-   int newBlocks = 0;
-   std::vector<std::vector<int>> visitedConss = std::vector<std::vector<int>>(0); /** vector of vector with connected constraints */
-   std::vector<int> emptyVector = std::vector<int>(0);
-   std::vector<int> openConss;
-   SCIP_HASHMAP* constoblock;
-   int cons;
 
-   //seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+   gcg::Seeed* seeed;
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool );
+   seeed->completeByConnected(seeedPropagationData->seeedpool );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
+   seeedPropagationData->newSeeeds[0] = seeed;
+   seeedPropagationData->nNewSeeeds = 1;
+   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
-   if(!seeedPropagationData->seeedToPropagate->areOpenVarsAndConssCalculated())
-   {
-      seeedPropagationData->seeedToPropagate->calcOpenconss();
-      seeedPropagationData->seeedToPropagate->calcOpenvars();
-      seeedPropagationData->seeedToPropagate->setOpenVarsAndConssCalculated(true);
-   }
-   assert(seeedPropagationData->seeedToPropagate->checkConsistency());
-
-   for(int j = 0; j < seeedPropagationData->seeedToPropagate->getNOpenconss(); ++j)
-   {
-      openConss.push_back(seeedPropagationData->seeedToPropagate->getOpenconss()[j]);
-   }
-
-   while(!openConss.empty())
-   {
-      visitedConss.push_back(emptyVector);
-      bfs(&visitedConss[newBlocks], &openConss, seeedPropagationData->seeedpool); /** Breadth First Search */
-      ++newBlocks;
-   }
-
-   if(newBlocks < 2)
-   {
-      seeedPropagationData->nNewSeeeds = 0;
-   }
-   else
-   {
-      SCIP_CALL(SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), seeedPropagationData->seeedpool->getNConss()));
-
-      for( int b = 0; b < seeedPropagationData->seeedToPropagate->getNBlocks(); ++b )
-      {
-         for( int c = 0; c < seeedPropagationData->seeedToPropagate->getNConssForBlock(b); ++c )
-         {
-            cons = seeedPropagationData->seeedToPropagate->getConssForBlock(b)[c];
-            SCIP_CALL( SCIPhashmapSetImage( constoblock, (void*) (size_t)cons, (void*) (size_t) b+1) );
-         }
-      }
-
-      for( int i = 0; i < newBlocks; ++i)
-      {
-         for( size_t c = 0; c < visitedConss[i].size(); ++c )
-         {
-            cons = visitedConss[i][c];
-            SCIP_CALL( SCIPhashmapSetImage( constoblock, (void*) (size_t)cons, (void*) (size_t) seeedPropagationData->seeedToPropagate->getNBlocks() + i + 1));
-         }
-      }
-
-      for( int j = 0; j < seeedPropagationData->seeedToPropagate->getNMasterconss(); ++j)
-      {
-         cons = seeedPropagationData->seeedToPropagate->getMasterconss()[j];
-         SCIP_CALL( SCIPhashmapSetImage( constoblock, (void*) (size_t)cons, (void*) (size_t) seeedPropagationData->seeedToPropagate->getNBlocks() + newBlocks + 1));
-      }
-
-      gcg::Seeed* seeed;
-      seeed = new gcg::Seeed(scip, seeedPropagationData->seeedpool->getNewIdForSeeed(), seeedPropagationData->seeedpool->getNDetectors(), seeedPropagationData->seeedpool->getNConss(), seeedPropagationData->seeedpool->getNVars());
-      seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
-      seeed->filloutSeeedFromConstoblock(constoblock, seeedPropagationData->seeedToPropagate->getNBlocks() + newBlocks, seeedPropagationData->seeedpool);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-      seeedPropagationData->newSeeeds[0] = seeed;
-      seeedPropagationData->nNewSeeeds = 1;
-      seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
-      SCIPhashmapFree(&constoblock);
-   }
 
    *result = SCIP_SUCCESS;
 
