@@ -3193,7 +3193,12 @@ SCIP_RETCODE GCGrelaxStartProbing(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   assert(!relaxdata->masterinprobing);
+
+   if( relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("already in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
 
    masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
@@ -3255,7 +3260,18 @@ SCIP_RETCODE GCGrelaxNewProbingnodeOrig(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   assert(relaxdata->masterinprobing);
+
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   if( SCIPgetProbingDepth(scip) != SCIPgetProbingDepth(GCGgetMasterprob(scip)) )
+   {
+      SCIPerrorMessage("original and master problem not at same probing depth\n");
+      return SCIP_INVALIDCALL;
+   }
 
    /* add a probing node in the original problem together with an original branching constraint */
    SCIP_CALL( SCIPnewProbingNode(scip) );
@@ -3292,10 +3308,21 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   assert(relaxdata->masterinprobing);
+
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
 
    masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
+
+   if( SCIPgetProbingDepth(scip) != SCIPgetProbingDepth(masterprob) + 1 )
+   {
+      SCIPerrorMessage("master probing node must be created after original probing node\n");
+      return SCIP_INVALIDCALL;
+   }
 
    /* add a probing node in the master problem together with a master branching constraint */
    SCIP_CALL( SCIPnewProbingNode(masterprob) );
@@ -3329,7 +3356,12 @@ SCIP_RETCODE GCGrelaxBacktrackProbing(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   assert(relaxdata->masterinprobing);
+
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
 
    masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
@@ -3373,7 +3405,12 @@ SCIP_RETCODE performProbing(
    /* get the relaxator data */
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   assert(relaxdata->masterinprobing);
+
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
 
    /* get master problem */
    masterprob = relaxdata->masterprob;
@@ -3496,7 +3533,12 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   assert(relaxdata->masterinprobing);
+
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
 
    masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
