@@ -1222,7 +1222,7 @@ SCIP_RETCODE Seeed::completeByConnected(Seeedpool* seeedpool)
             var = seeedpool->getVarsForCons(nodeCons)[v];
             assert( isVarOpenvar(var) || isVarLinkingvar(var ) );
 
-            if( isVarVisited[var] )
+            if( isVarVisited[var] || isVarLinkingvar(var) )
                continue;
 
             for( int c = 0; c < seeedpool->getNConssForVar(var) ; ++c )

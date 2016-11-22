@@ -80,7 +80,7 @@ namespace gcg {
 
 SCIP_CONS* consGetRelevantRepr(SCIP* scip, SCIP_CONS* cons){
 
-                return cons;
+   return cons;
 }
 
 SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
@@ -382,7 +382,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          successDetectors = std::vector<int>(nDetectors, 0);
          ndecompositions = 0;
-         maxRounds = 1;
+         maxRounds = 2;
          seeedPropData = new SEEED_PROPAGATION_DATA();
          seeedPropData->seeedpool = this;
          seeedPropData->nNewSeeeds = 0;
