@@ -134,7 +134,7 @@ soplex:
 		@$(MAKE) -C lib/soplex-git OPT=opt
 
 .PHONY: deps
-deps:		bliss googletest scip soplex
+deps:		bliss googletest soplex scip
 
 .PHONY: tests
 tests::		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK) $(GCGLIBFILE)
