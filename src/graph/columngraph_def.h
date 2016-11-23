@@ -273,7 +273,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
          else
             var1 = curvars[j];
 
-         if( var1 )
+         if( !GCGisVarRelevant(var1) )
             continue;
 
          assert(var1 != NULL);
