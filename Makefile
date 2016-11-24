@@ -187,6 +187,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_connected.o \
 			dec_cutpacking.o \
 			dec_staircase.o \
+			dec_staircase_lsp.o \
 			dec_random.o \
 			dec_colors.o \
 			dec_dbscan.o \
