@@ -64,10 +64,14 @@ private:
    std::vector<std::vector<int>>    varsForBlocks; 			      /**< varsForBlocks[k] contains a vector of indices of all variables assigned to block k */
    std::vector<int> 				      linkingVars;			         /**< vector containing indices of linking variables */
    std::vector<std::vector<int>>    stairlinkingVars;		         /**< vector containing indices of staircase linking variables of the blocks */
-   std::vector<int> 				      openVars;				         /**< vector containing indices of  variables that are not assigned yet*/
-   std::vector<int> 				      openConss;				         /**< vector containing indices of  constraints that are not assigned yet*/
-   std::vector<int>                 bookedAsMasterConss;          /**< vector containing indices of  constraints that are not assigned yet but booked as master conss */
-   std::vector<std::pair<int, int>> bookedAsBlockConss;           /**< vector containing indices of constraints that are not assigned yet but booked as block conss and the refering block */
+   std::vector<int> 				      openVars;				         /**< vector containing indices of variables that are not assigned yet*/
+   std::vector<int> 				      openConss;				         /**< vector containing indices of constraints that are not assigned yet*/
+   std::vector<int>                 bookedAsMasterConss;          /**< vector containing indices of constraints that are not assigned yet but booked as master conss */
+   std::vector<std::pair<int, int>> bookedAsBlockConss;           /**< vector containing indices of constraints that are not assigned yet but booked as block conss and the block */
+   std::vector<int>                 bookedAsLinkingVars;          /**< vector containing indices of variables that are not assigned yet but booked as linking vars */
+   std::vector<int>                 bookedAsMasterVars;           /**< vector containing indices of variables that are not assigned yet but booked as master vars */
+   std::vector<std::pair<int, int>> bookedAsBlockVars;            /**< vector containing indices of variables that are not assigned yet but booked as block vars and the block */
+   std::vector<std::pair<int, int>> bookedAsStairlinkingVars;     /**< vector containing indices of variables that are not assigned yet but booked as stairlinking vars and the first block of the stairlinking var */
    std::vector<bool> 				   propagatedByDetector;	      /**< propagatedByDetector[i] is this seeed propagated by detector i */
    bool 							         openVarsAndConssCalculated;   /**< are the openVars and openCons calculated */
    long                             hashvalue;
@@ -92,205 +96,32 @@ public:
 
    ~Seeed();
 
-   /**check-methods */
-
-   /** check the consistency of this seeed */
-   bool checkConsistency(
-   );
-
-   /** set-methods */
-
-   /** set number of blocks, atm only increasing number of blocks  */
-      SCIP_RETCODE setNBlocks(
-	   int nBlocks
-      );
-
-   /** add a constraint to the master constraints */
-   SCIP_RETCODE setConsToMaster(
-		   int consToMaster
-   );
-
-
-   /** book a constraint to be added to the master constraints (after calling flushBooked) */
-   SCIP_RETCODE bookAsMasterCons(
-           int consToMaster
-   );
-
-   /** book a constraint to be added to the block constraints of the given block (after calling flushBookes) */
-   SCIP_RETCODE bookAsBlockCons(
-           int consToBlock,
-           int block
-   );
-
-   /** add all booked constraints to master and delete them from openConss */
-   SCIP_RETCODE flushBooked(
-   );
-
-
-   /** add a variable to the master variables (every constraint consisting it is in master) */
-   SCIP_RETCODE setVarToMaster(
-		   int varToMaster
-   );
-
-   /** add a constraint to a block */
-   SCIP_RETCODE setConsToBlock(
-		   int consToBlock,
-		   int block
-   );
-
-   /** add a variable to a block */
-   SCIP_RETCODE setVarToBlock(
-		   int varToBlock,
-		   int block
-   );
-
-   /** add a variable to the linking variables */
-   SCIP_RETCODE setVarToLinking(
-		   int varToLinking
-   );
-
-   /** add a variable to the stair linking variables */
-   SCIP_RETCODE setVarToStairlinking(
-		   int varToStairLinking, int block1, int block2
-   );
 
    /** add a block, returns the number of the new block */
    int addBlock();
 
-   /** finds linking-variables that are actually master-variables. I.e. the variable is adjacent to only master-constraints. */
-   SCIP_RETCODE findVarsLinkingToMaster(
-       Seeedpool* seeedpool
-   );
-
-   /** finds linking-variables that are actually stairlinking-ariables. I.e. the variable is adjacent to constraints in exactly two block. */
-   SCIP_RETCODE findVarsLinkingToStairlinking(
-       Seeedpool* seeedpool
-   );
-
-   SCIP_RETCODE setDetectorPropagated(
-   		   int detectorID
-     );
-
-   SCIP_RETCODE setOpenVarsAndConssCalculated(
-            bool value
-   );
-
-
-   /** get-methods */
-
-   /** returns array containing master conss */
-   const int* getMasterconss(
-   );
-
-   /** returns size of array containing master conss */
-   int getNMasterconss(
-   );
-
-   /** returns vector containing master vars (every constraint containing a master var is in master )*/
-   const int* getMastervars(
-   );
-
-   /** returns size of array containing master vars */
-   int getNMastervars(
-   );
-
-   /** returns number of blocks */
-   int getNBlocks(
-   );
-
-   /** returns vector containing master conss */
-   const int* getConssForBlock(
-		   int block
-   );
-
-   /** returns vector containing vars of a certain block */
-   const int* getVarsForBlock(
-		   int block
-   );
-
-   /** returns vector containing linking vars */
-   const int* getLinkingvars(
-   );
-
-   /** returns vector containing stairlinking vars */
-   const int* getStairlinkingvars(
-         int block
-   );
-
-   /** returns vector containing variables not assigned yet */
-   const int* getOpenvars(
-   );
-
-   /**  returns vector containing constraints not assigned yet */
-   const int* getOpenconss(
-   );
-
+   /** are already assigned constraints to blocks */
    bool alreadyAssignedConssToBlocks();
-
-   /** returns size of vector containing master conss */
-   int getNConssForBlock(
-		   int block
-   );
-
-   /** returns size of vector containing vars of a certain block */
-   int getNVarsForBlock(
-		   int block
-   );
-
-   /** returns size ofvector containing linking vars */
-   int getNLinkingvars(
-   );
-
-   /** returns size of vector containing stairlinking vars */
-   int getNStairlinkingvars(
-      int block
-   );
-
-   /** returns the calculated has value of this seeed */
-   long getHashValue(
-   );
-
-   /** calculates vector containing constraints not assigned yet */
-   void  calcOpenconss();
-
-   /** constructs vector containing variables not assigned yet */
-   void  calcOpenvars();
-
-   /** sorts the vars and conss according their numbers */
-   void sort(
-   );
-
-   /** returns size of vector containing variables not assigned yet */
-   int getNOpenvars(
-   );
-
-   /** returns size of vector containing constraints not assigned yet */
-   int getNOpenconss(
-   );
-
-   /** returns whether this seeed was propagated by certain detector */
-   bool isPropagatedBy(
-		   int detectorID
-   );
 
    /** returns if the open vars and conss are calculated */
    bool areOpenVarsAndConssCalculated(
    );
 
-   /** assigns the open cons and open vars */
-   SCIP_RETCODE completeGreedily(
+   /** assigns open conss and vars if they can be found in blocks */
+   SCIP_RETCODE assignAllDependent(
+         Seeedpool*       seeedpool
+   );
+
+   /** fills out the vorder of the seeed with the hashmap constoblock if there are still assigned conss and vars */
+   SCIP_RETCODE assignBorderFromConstoblock(
+         SCIP_HASHMAP* constoblock,
+         int givenNBlocks,
          Seeedpool* seeedpool
    );
 
-   /** assigns the open cons and open vars */
-   SCIP_RETCODE completeByConnected(
-         Seeedpool* seeedpool
-   );
-
-
-   /** assigns the open cons and open vars which are implicit assigned */
-   SCIP_RETCODE considerImplicits(
-         Seeedpool* seeedpool
+   /** assigns open vars to stairlinking if they can be found in two consecutive  blocks, returns true if stairlinkingvars are assigned */
+   bool assignCurrentStairlinking(
+         Seeedpool*       seeedpool
    );
 
    /** assigns open conss if they includes blockvars, returns true if open conss are assigned */
@@ -303,45 +134,241 @@ public:
          Seeedpool* seeedpool
    );
 
-   /** assigns open vars to stairlinking if they can be found in two consecutive  blocks, returns true if stairlinkingvars are assigned */
-   bool assignCurrentStairlinking(
-         Seeedpool*       seeedpool
+   /** fills out the seeed with the hashmap constoblock if there are still assigned conss and vars */
+   SCIP_RETCODE assignSeeedFromConstoblock(
+         SCIP_HASHMAP* constoblock,
+         int givenNBlocks,
+         Seeedpool* seeedpool
    );
 
-   /** assigns open conss and vars if they can be found in blocks */
-   SCIP_RETCODE assignAllDependent(
-         Seeedpool*       seeedpool
+   /** book a constraint to be added to the block constraints of the given block (after calling flushBookes) */
+   SCIP_RETCODE bookAsBlockCons(
+          int consToBlock,
+          int block
    );
 
-   /** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments assignOpenPartialHittingToMaster() */
-   SCIP_RETCODE refineToMaster(
-      Seeedpool*       seeedpool
+   /** book a variable to be added to the block constraints of the given block (after calling flushBookes) */
+   SCIP_RETCODE bookAsBlockVar(
+         int varToBlock,
+         int block
+   );
+
+   /** book a constraint to be added to the master constraints (after calling flushBooked) */
+   SCIP_RETCODE bookAsMasterCons(
+         int consToMaster
+   );
+
+   /** book a variable to be added to the master variables (after calling flushBooked) */
+   SCIP_RETCODE bookAsMasterVar(
+         int varToMaster
+   );
+
+   /** book a variable to be added to the master variables (after calling flushBooked) */
+   SCIP_RETCODE bookAsLinkingVar(
+         int varToLinking
+   );
+
+   /** book a varialbe to be added to the stairlinking variables of the given block and the following block (after calling flushBookes) */
+   SCIP_RETCODE bookAsStairlinkingVar(
+         int varToStairlinking,
+         int firstBlock
+   );
+
+   /** calculates the hashvalue of the seeed for comparing */
+   void calcHashvalue(
+   );
+
+   /** calculates vector containing constraints not assigned yet */
+   void  calcOpenconss(
+   );
+
+   /** constructs vector containing variables not assigned yet */
+   void  calcOpenvars(
+   );
+
+   /** returns whether all cons are assigned and deletes the vector open cons if all are assigned */
+   bool checkAllConsAssigned(
    );
 
 
-   /** returns whether the var is a linking var */
-   bool isVarLinkingvar(
-         int var
+   /** check the consistency of this seeed */
+   bool checkConsistency(
    );
 
-   /** returns whether the var is a var of the block */
-   bool isVarBlockvarOfBlock(
-         int var, int block
+   bool checkVarsAndConssConsistency(
+         Seeedpool* seeedpool
    );
 
-   /** returns whether the var is a stairlinkingvar of the block */
-   bool isVarStairlinkingvarOfBlock(
-         int var, int block
+   /** assigns the open cons and open vars */
+   SCIP_RETCODE completeByConnected(
+         Seeedpool* seeedpool
    );
 
-   /** returns whether the var is a master var */
-   bool isVarMastervar(
-         int var
+   /** assigns the open cons and open vars */
+   SCIP_RETCODE completeGreedily(
+         Seeedpool* seeedpool
    );
 
-   /** returns whether the var is an open var */
-   bool isVarOpenvar(
-         int var
+   /** assigns the open cons and open vars which are implicit assigned */
+   SCIP_RETCODE considerImplicits(
+         Seeedpool* seeedpool
+   );
+
+   /** deletes empty blocks */
+   SCIP_RETCODE deleteEmptyBlocks(
+   );
+
+   /** deletes an open conss */
+   SCIP_RETCODE deleteOpencons(
+         int opencons
+   );
+
+   /** deletes an open var */
+   SCIP_RETCODE deleteOpenvar(
+         int openvar
+   );
+
+   /** displays the assignments of the conss */
+   SCIP_RETCODE displayConss(
+   );
+
+   /** displays the relevant information of the seeed */
+   SCIP_RETCODE displaySeeed(
+   );
+
+   /** displays the assignments of the vars */
+   SCIP_RETCODE displayVars(
+   );
+
+   /** fills out the border of the seeed with the hashmap constoblock */
+   SCIP_RETCODE filloutBorderFromConstoblock(
+         SCIP_HASHMAP* constoblock,
+         int givenNBlocks,
+         Seeedpool* seeedpool
+   );
+
+   /** fills out a seeed with the hashmap constoblock */
+   SCIP_RETCODE filloutSeeedFromConstoblock(
+         SCIP_HASHMAP* constoblock,
+         int givenNBlocks,
+         Seeedpool* seeedpool
+   );
+
+   /** finds linking-variables that are actually master-variables. I.e. the variable is adjacent to only master-constraints. */
+   SCIP_RETCODE findVarsLinkingToMaster(
+       Seeedpool* seeedpool
+   );
+
+   /** finds linking-variables that are actually stairlinking-ariables. I.e. the variable is adjacent to constraints in exactly two block. */
+   SCIP_RETCODE findVarsLinkingToStairlinking(
+       Seeedpool* seeedpool
+   );
+
+   /** add all booked constraints to master and delete them from openConss */
+   SCIP_RETCODE flushBooked(
+   );
+
+   /** returns vector containing master conss */
+   const int* getConssForBlock(
+         int block
+   );
+
+   /** returns the detectorchain */
+   int* getDetectorchain(
+   );
+
+   /** returns the calculated has value of this seeed */
+   long getHashValue(
+   );
+
+   /** returns the id of the seeed */
+   int getID(
+   );
+
+   /** returns vector containing linking vars */
+   const int* getLinkingvars(
+   );
+
+   /** returns array containing master conss */
+   const int* getMasterconss(
+   );
+
+   /** returns vector containing master vars (every constraint containing a master var is in master )*/
+   const int* getMastervars(
+   );
+
+   /** returns number of blocks */
+   int getNBlocks(
+   );
+
+   /** get number of conss */
+   int getNConss(
+   );
+
+   /** returns size of vector containing master conss */
+   int getNConssForBlock(
+         int block
+   );
+
+   /** returns the number of detectors the seeed is propagated by */
+   int getNDetectors(
+   );
+
+   /** returns size ofvector containing linking vars */
+   int getNLinkingvars(
+   );
+
+   /** returns size of array containing master conss */
+   int getNMasterconss(
+   );
+
+   /** returns size of array containing master vars */
+   int getNMastervars(
+   );
+
+   /** returns size of vector containing constraints not assigned yet */
+   int getNOpenconss(
+   );
+
+   /** returns size of vector containing variables not assigned yet */
+   int getNOpenvars(
+   );
+
+   /** returns size of vector containing stairlinking vars */
+   int getNStairlinkingvars(
+         int block
+   );
+
+   /** get number of vars */
+   int getNVars(
+   );
+
+   /** returns size of vector containing vars of a certain block */
+   int getNVarsForBlock(
+         int block
+   );
+
+   /**  returns vector containing constraints not assigned yet */
+   const int* getOpenconss(
+   );
+
+   /** returns vector containing variables not assigned yet */
+   const int* getOpenvars(
+   );
+
+   /** returns vector containing stairlinking vars */
+   const int* getStairlinkingvars(
+         int block
+   );
+
+   /** returns vector containing vars of a certain block */
+   const int* getVarsForBlock(
+         int block
+   );
+
+   /** returns whether the cons is a cons of the block */
+   bool isConsBlockconsOfBlock(
+         int cons, int block
    );
 
    /** returns whether the cons is a master cons*/
@@ -354,108 +381,90 @@ public:
          int cons
    );
 
-   /** returns whether the cons is a cons of the block */
-   bool isConsBlockconsOfBlock(
-         int cons, int block
+   /** returns whether this seeed was propagated by certain detector */
+   bool isPropagatedBy(
+         int detectorID
    );
 
-   /** returns index of the Openvar in the vector */
-   int getIndexOfOpenvar(
+   /** returns whether the var is a var of the block */
+   bool isVarBlockvarOfBlock(
+         int var, int block
+   );
+
+   /** returns whether the var is a linking var */
+   bool isVarLinkingvar(
          int var
    );
 
-   /** returns whether all cons are assigned and deletes the vector open cons if all are assigned */
-   bool checkAllConsAssigned(
+   /** returns whether the var is a master var */
+   bool isVarMastervar(
+         int var
    );
 
-   /** returns the detectorchain */
-   int* getDetectorchain(
+   /** returns whether the var is an open var */
+   bool isVarOpenvar(
+         int var
    );
 
-   /** returns the number of detectors the seeed is propagated by */
-   int getNDetectors(
+   /** returns whether the var is a stairlinkingvar of the block */
+   bool isVarStairlinkingvarOfBlock(
+         int var,
+         int block
    );
 
-   /** returns the id of the seeed */
-   int getID(
+   /** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments assignOpenPartialHittingToMaster() */
+   SCIP_RETCODE refineToMaster(
+      Seeedpool*       seeedpool
    );
 
-   /** get number of conss */
-   int getNConss(
+   /** add a constraint to a block */
+   SCIP_RETCODE setConsToBlock(
+         int consToBlock,
+         int block
    );
 
-   /** get number of vars */
-   int getNVars(
+   /** add a constraint to the master constraints */
+   SCIP_RETCODE setConsToMaster(
+         int consToMaster
    );
 
-   /** fills out a seeed with the hashmap constoblock */
-   SCIP_RETCODE filloutSeeedFromConstoblock(
-         SCIP_HASHMAP* constoblock,
-         int givenNBlocks,
-         Seeedpool* seeedpool
+   SCIP_RETCODE setDetectorPropagated(
+         int detectorID
    );
 
-   /** fills out the border of the seeed with the hashmap constoblock */
-   SCIP_RETCODE filloutBorderFromConstoblock(
-      SCIP_HASHMAP* constoblock,
-      int givenNBlocks,
-      Seeedpool* seeedpool
+   /** set number of blocks, atm only increasing number of blocks  */
+   SCIP_RETCODE setNBlocks(
+         int nBlocks
    );
 
-   /** fills out the seeed with the hashmap constoblock if there are still assigned conss and vars */
-   SCIP_RETCODE assignSeeedFromConstoblock(
-         SCIP_HASHMAP* constoblock,
-         int givenNBlocks,
-         Seeedpool* seeedpool
+   SCIP_RETCODE setOpenVarsAndConssCalculated(
+         bool value
    );
 
-   /** fills out the vorder of the seeed with the hashmap constoblock if there are still assigned conss and vars */
-   SCIP_RETCODE assignBorderFromConstoblock(
-      SCIP_HASHMAP* constoblock,
-      int givenNBlocks,
-      Seeedpool* seeedpool
+   /** add a variable to a block */
+   SCIP_RETCODE setVarToBlock(
+         int varToBlock,
+         int block
    );
 
-   /** deletes an open var */
-   SCIP_RETCODE deleteOpenvar(
-         int openvar
+   /** add a variable to the linking variables */
+   SCIP_RETCODE setVarToLinking(
+         int varToLinking
    );
 
-   /** deletes an open conss */
-   SCIP_RETCODE deleteOpencons(
-         int opencons
+   /** add a variable to the master variables (every constraint consisting it is in master) */
+   SCIP_RETCODE setVarToMaster(
+         int varToMaster
    );
 
-   /** deletes empty blocks */
-   SCIP_RETCODE deleteEmptyBlocks(
+   /** add a variable to the stair linking variables */
+   SCIP_RETCODE setVarToStairlinking(
+         int varToStairLinking, int block1, int block2
    );
 
-   /** fills out the vectors for free conss and free vars */
-   SCIP_RETCODE identifyFreeConssAndVars(
-         Seeedpool* seeedpool
+   /** sorts the vars and conss according their numbers */
+   void sort(
    );
-
-   /** calculates the hashvalue of the seeed for comparing */
-   void calcHashvalue(
-   );
-
-   bool checkVarsAndConssConsistency(
-         Seeedpool* seeedpool
-   );
-
-   /** displays the relevant information of the seeed */
-   SCIP_RETCODE displaySeeed(
-   );
-
-   /** displays the assignments of the conss */
-   SCIP_RETCODE displayConss(
-   );
-
-   /** displays the assignments of the vars */
-   SCIP_RETCODE displayVars(
-   );
-
-
 
 
 private:
