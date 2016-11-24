@@ -182,6 +182,8 @@
 #include "dec_random.h"
 #include "dec_colors.h"
 #include "dec_compgreedily.h"
+#include "dec_staircase_lsp.h"
+
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -345,6 +347,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );
+   SCIP_CALL( SCIPincludeDetectorStaircaseLsp(scip) );
    SCIP_CALL( SCIPincludeDetectorColors(scip) );
    SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
    //SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );

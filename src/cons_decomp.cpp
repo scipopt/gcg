@@ -30,6 +30,7 @@
  * @brief  constraint handler for structure detection
  * @author Martin Bergner
  * @author Christian Puchert
+ * @author Michael Bastubbe
  *
  * This constraint handler will run all registered structure detectors in
  * increasing priority until the first detector finds a suitable structure.

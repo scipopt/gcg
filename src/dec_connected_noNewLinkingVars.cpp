@@ -231,39 +231,13 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
       seeed->setOpenVarsAndConssCalculated(true);
    }
 
+   seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
-   for( int i = 0; i < seeed->getNOpenconss(); ++i )
-      conssForBfs.push_back(seeed->getOpenconss()[i]);
+   seeed->completeByConnected(seeedPropagationData->seeedpool);
 
-   while(!conssForBfs.empty())
-   {
-      visitedConss.push_back(emptyVector);
-      bfs(&visitedConss[newBlocks], &conssForBfs, seeedPropagationData->seeedpool); /** Breadth First Search */
-      ++newBlocks;
-   }
-
-   if(newBlocks < 2)
-   {
-      seeedPropagationData->nNewSeeeds = 0;
-      delete seeed;
-   }
-   else
-   {
-      for(size_t i = 0; i < visitedConss.size(); ++i)
-      {
-         block = seeed->addBlock();
-         for(size_t c = 0; c < visitedConss[i].size(); ++c)
-         {
-            seeed->setConsToBlock(visitedConss[i][c], block);
-            seeed->deleteOpencons(visitedConss[i][c]);
-         }
-      }
-
-      seeed->considerImplicits(seeedPropagationData->seeedpool);
-      seeedPropagationData->nNewSeeeds = 1;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-      seeedPropagationData->newSeeeds[0] = seeed;
-   }
+   seeedPropagationData->nNewSeeeds = 1;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
+   seeedPropagationData->newSeeeds[0] = seeed;
 
    *result = SCIP_SUCCESS;
 

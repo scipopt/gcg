@@ -332,7 +332,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                          conssForVars[varIndex].push_back(i);
                          valsForConss[i].push_back(currVals[currVar]);
 
-                         std::cout << "("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << " with coeff " << currVals[currVar] << "\t";
+      //                   std::cout << "("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << " with coeff " << currVals[currVar] << "\t";
 
                  }
 //                 std::cout << "\n" << std::endl;
@@ -388,7 +388,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          seeedPropData->nNewSeeeds = 0;
          delSeeeds = std::vector<SeeedPtr>(0);
 
-         verboseLevel = 0;
+ //        verboseLevel = 3;
 
          for(size_t s = 0; s < currSeeeds.size(); ++s)
          {
@@ -415,6 +415,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                          /** the current seeed is handled by all detectors */
                          for(int d = 0; d < nDetectors; ++d)
                          {
+
+
                                  DEC_DETECTOR* detector;
                                  std::vector<SeeedPtr>::const_iterator newSIter;
                                  std::vector<SeeedPtr>::const_iterator newSIterEnd;
@@ -422,6 +424,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                                  SCIP_RESULT result = SCIP_DIDNOTFIND;
                                  detector = detectorToScipDetector[d];
+
+//                                 if(DECdetectorGetName(detectorToScipDetector[d]) == "staircase_lsp")
+//                                    verboseLevel = 3;
+//                                 else verboseLevel = 0;
 
                                  /** if the seeed is also propagated by the detector go on with the next detector */
                                  if(seeedPtr->isPropagatedBy(d) && !detector->usefulRecall )
@@ -506,7 +512,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  seeedPropData->nNewSeeeds = 0;
                          }
 
-                         SCIP_CALL_ABORT(seeedPtr->completeGreedily( seeedPropData->seeedpool ) );
+                         SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
                          seeedPtr->calcHashvalue();
 
 

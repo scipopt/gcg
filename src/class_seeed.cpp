@@ -2142,8 +2142,10 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int gi
 
    assert(givenNBlocks >= 0);
 
+
    for( int b = 0; b < givenNBlocks; ++b )
       addBlock();
+
 
    for( int i = 0; i < getNOpenconss(); ++i )
    {
@@ -2166,8 +2168,11 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int gi
    for( size_t c = 0; c < assignedOpenconss.size(); ++c )
       deleteOpencons(assignedOpenconss[c]);
 
+
    deleteEmptyBlocks();
+
    sort();
+
    assert(checkConsistency());
    return SCIP_OKAY;
 
@@ -2242,17 +2247,17 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks()
          std::vector<std::vector<int>>::iterator it;
 
          it = stairlinkingVars.begin();
-         for( b = 0; b < block + 1; ++b)
+         for( b = 0; b < block; ++b)
             it++;
          stairlinkingVars.erase(it);
 
          it = conssForBlocks.begin();
-         for( b = 0; b < block + 1; ++b)
+         for( b = 0; b < block; ++b)
             it++;
          conssForBlocks.erase(it);
 
          it = varsForBlocks.begin();
-         for( b = 0; b < block + 1; ++b)
+         for( b = 0; b < block; ++b)
             it++;
          varsForBlocks.erase(it);
       }

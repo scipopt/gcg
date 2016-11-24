@@ -156,11 +156,11 @@ static DEC_DECL_DETECTSTRUCTURE(detectConstype)
 
 static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
 {
-   *result = SCIP_DIDNOTFIND;
+  *result = SCIP_DIDNOTFIND;
 
-   SCIP_CONS* cons;
+  SCIP_CONS* cons;
 
-   int seeedCounter = 0;
+  int seeedCounter = 0;
   gcg::Seeed* seeedOrig;
   gcg::Seeed* seeed;
 
@@ -229,11 +229,10 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
       seeed->flushBooked();
       seeedPropagationData->newSeeeds[seeedCounter] = seeed;
       seeedCounter++;
-
   }
 
   delete seeedOrig;
-   *result = SCIP_SUCCESS;
+  *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 }
