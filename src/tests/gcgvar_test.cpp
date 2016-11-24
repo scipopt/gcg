@@ -253,10 +253,11 @@ TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenNonempty) {
    vardata.blocknr = 0;
    vardata.data.pricingvardata.origvars = vars;
    vardata.data.pricingvardata.norigvars = 1;
+   vardata.data.pricingvardata.maxorigvars = 1;
 
    SCIP_CALL_EXPECT(GCGpricingVarAddOrigVar(scip, &var, &ovar));
    ASSERT_EQ(2, GCGpricingVarGetNOrigvars(&var));
-   SCIPfreeBlockMemoryArray(scip, &vardata.data.pricingvardata.origvars, vardata.data.pricingvardata.norigvars);
+   SCIPfreeBlockMemoryArray(scip, &vardata.data.pricingvardata.origvars, vardata.data.pricingvardata.maxorigvars);
 }
 
 TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenEmpty) {
@@ -270,10 +271,11 @@ TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenEmpty) {
    vardata.blocknr = 0;
    vardata.data.pricingvardata.origvars = vars;
    vardata.data.pricingvardata.norigvars = 0;
+   vardata.data.pricingvardata.maxorigvars = 1;
 
    SCIP_CALL_EXPECT(GCGpricingVarAddOrigVar(scip, &var, &ovar));
    ASSERT_EQ(1, GCGpricingVarGetNOrigvars(&var));
-   SCIPfreeBlockMemoryArray(scip, &vardata.data.pricingvardata.origvars, vardata.data.pricingvardata.norigvars);
+   SCIPfreeBlockMemoryArray(scip, &vardata.data.pricingvardata.origvars, vardata.data.pricingvardata.maxorigvars);
 }
 
 TEST_F(GcgVarTest, OriginalVarGetNMastervars) {
@@ -710,6 +712,7 @@ TEST_F(GcgVarTest, CreateMasterVar)
    mvardata = SCIPvarGetData(newvar);
    SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvals, mvardata->data.mastervardata.norigvars);
    SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvars, mvardata->data.mastervardata.norigvars);
+   SCIPfreeBlockMemory(scip, &mvardata);
 
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &newvar));
 
@@ -751,6 +754,7 @@ TEST_F(GcgVarTest, CreateInitialLinkingMasterVar)
    mvardata = SCIPvarGetData(mvar);
    SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvals, mvardata->data.mastervardata.norigvars);
    SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvars, mvardata->data.mastervardata.norigvars);
+   SCIPfreeBlockMemory(scip, &mvardata);
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &mvar));
 }
 
