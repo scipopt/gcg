@@ -2163,7 +2163,7 @@ int Seeed::getNConss()
 /** returns vector containing master conss */
 int Seeed::getNConssForBlock(int block)
 {
-   assert(block <= 0 && block < nBlocks);
+   assert(block >= 0 && block < nBlocks);
    return (int)conssForBlocks[block].size();
 }
 
