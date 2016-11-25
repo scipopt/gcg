@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -157,7 +157,22 @@ struct DEC_DetectorData
  * Local methods
  */
 
-/* put your local methods here, and declare them static */
+/** destructor of detector to free user data (called when GCG is exiting) */
+static
+DEC_DECL_FREEDETECTOR(detectorFreeArrowheur)
+{
+   DEC_DETECTORDATA* detectordata;
+
+   assert(scip != NULL);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   SCIPfreeMemory(scip, &detectordata);
+
+   return SCIP_OKAY;
+}
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static
@@ -189,6 +204,9 @@ DEC_DECL_INITDETECTOR(initHrcgpartition)
    assert(detectordata != NULL);
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
+   detectordata->found = FALSE;
+   detectordata->blocks = -1;
+
    nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
@@ -197,7 +215,7 @@ DEC_DECL_INITDETECTOR(initHrcgpartition)
    return SCIP_OKAY;
 }
 
-/** presolving deinitialization method of presolver (called after presolving has been finished) */
+/** detector deinitialization method (called before the transformed problem is freed) */
 static
 DEC_DECL_EXITDETECTOR(exitHrcgpartition)
 {
@@ -209,15 +227,8 @@ DEC_DECL_EXITDETECTOR(exitHrcgpartition)
    assert(detectordata != NULL);
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-   /* copy data to decomp structure */
-   if( !detectordata->found )
-   {
-      SCIPfreeMemory(scip, &detectordata);
-      return SCIP_OKAY;
-   }
 
    SCIP_CALL( SCIPfreeClock(scip, &detectordata->metisclock) );
-   SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
 }
@@ -226,7 +237,7 @@ DEC_DECL_EXITDETECTOR(exitHrcgpartition)
 static
 SCIP_RETCODE callMetis(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
    SCIP_RESULT*          result              /**< result indicating whether the detection was successful */
    )
 {
@@ -379,7 +390,7 @@ bool graphCompletible(
 
 /** detection callback method */
 static
-DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
+DEC_DECL_DETECTSTRUCTURE(detectHrcgpartition)
 {
    int i;
    int j;
@@ -569,12 +580,9 @@ SCIP_RETCODE SCIPincludeDetectorHrcgpartition(
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
-
    assert(detectordata != NULL);
-   detectordata->found = FALSE;
-   detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectAndBuildArrowhead, freeHrcgpartition, initHrcgpartition, exitHrcgpartition, propagateSeeedHrcgpartition) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectHrcgpartition, freeHrcgpartition, initHrcgpartition, exitHrcgpartition, propagateSeeedHrcgpartition) );
 
 
    /* add hrcgpartition presolver parameters */

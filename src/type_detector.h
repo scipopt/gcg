@@ -59,7 +59,6 @@ typedef struct Seeed_Propagation_Data SEEED_PROPAGATION_DATA;
  */
 #define DEC_DECL_FREEDETECTOR(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector)
 
-
 /**
  * detector initialization method (called after problem was transformed)
  * It can be used to fill the detector data with needed information. The implementation is optional.

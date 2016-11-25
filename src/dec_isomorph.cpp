@@ -73,6 +73,10 @@
 #define DEFAULT_EXACT            TRUE       /**< default value using exact coefficients for detection */
 #define DEFAULT_EXTEND           FALSE      /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
 
+#define DEFAULT_MAXDECOMPS       1          /**< default maximum number of decompositions */
+#define DEFAULT_EXACT            TRUE       /**< default value using exact coefficients for detection */
+#define DEFAULT_EXTEND           FALSE      /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
+
 /*
  * Data structures
  */
@@ -82,6 +86,7 @@ struct DEC_DetectorData
 {
    SCIP_RESULT          result;             /**< result pointer to indicate success or failure */
    int                  numofsol;           /**< number of solutions */
+   int                  maxdecomps;         /**< maximum number of decompositions */
    SCIP_Bool            exact;              /**< Use exact coefficients for detection? */
    SCIP_Bool            extend;             /**< Extend detection by using the sign of the coefficients instead of the coefficients? */
 };
@@ -379,44 +384,44 @@ SCIP_RETCODE setupArrays(
       SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
       SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
 
-      //save the properties of variables of the constraints in a struct array and in a sorted pointer array
-      for( j = 0; j < ncurvars; j++ )
+   //save the properties of variables of the constraints in a struct array and in a sorted pointer array
+   for( j = 0; j < ncurvars; j++ )
+   {
+      SCIP_Real constant;
+      added = FALSE;
+
+      if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
+         SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
+
+      if( !onlysign )
       {
-         SCIP_Real constant;
-         added = FALSE;
-
-         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
-            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
-
-         if( !onlysign )
-         {
-            scoef = new AUT_COEF(scip, curvals[j]);
-         }
-         else
-         {
-            if( SCIPisPositive(scip, curvals[j]) )
-               scoef = new AUT_COEF(scip, 1.0);
-            else if( SCIPisNegative(scip, curvals[j]) )
-               scoef = new AUT_COEF(scip, -1.0);
-            else
-               scoef = new AUT_COEF(scip, 0.0);
-         }
-
-         //test, whether the coefficient is not zero
-         if( !SCIPisZero(scip, scoef->getVal()) )
-         {
-            //add to pointer array iff it doesn't exist
-            SCIP_CALL( colorinfo->insert(scoef, &added) );
-            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
-         }
-         //otherwise free allocated memory
-         if( !added )
-            delete scoef;
-
+         scoef = new AUT_COEF(scip, curvals[j]);
       }
-      SCIPfreeBufferArray(scip, &curvars);
-      SCIPfreeBufferArray(scip, &curvals);
+      else
+      {
+         if( SCIPisPositive(scip, curvals[j]) )
+            scoef = new AUT_COEF(scip, 1.0);
+         else if( SCIPisNegative(scip, curvals[j]) )
+            scoef = new AUT_COEF(scip, -1.0);
+         else
+            scoef = new AUT_COEF(scip, 0.0);
+      }
+
+      //test, whether the coefficient is not zero
+      if( !SCIPisZero(scip, scoef->getVal()) )
+      {
+         //add to pointer array iff it doesn't exist
+         SCIP_CALL( colorinfo->insert(scoef, &added) );
+         SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
+      }
+      //otherwise free allocated memory
+      if( !added )
+         delete scoef;
+
    }
+   SCIPfreeBufferArray(scip, &curvars);
+   SCIPfreeBufferArray(scip, &curvals);
+}
    return SCIP_OKAY;
 }
 
@@ -693,7 +698,6 @@ SCIP_RETCODE createGraph(
    SCIP_Real* curvals = NULL;
    unsigned int nnodes;
    SCIP_Bool onlysign;
-
    nnodes = 0;
    //building the graph out of the arrays
    bliss::Graph* h = graph;
@@ -772,6 +776,7 @@ SCIP_RETCODE createGraph(
             else
                val = 0.0;
          }
+         *result = SCIP_SUCCESS;
 
          AUT_COEF scoef(scip, val);
          AUT_VAR svar(scip, curvars[j]);
@@ -1259,16 +1264,16 @@ SCIP_RETCODE detectIsomorph(
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
       // filter decomposition with largest orbit
-      if( detectordata->numofsol == 1)
+      if( detectordata->maxdecomps == 1)
          SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
 
       if( *ndecdecomps == 0 )
-         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->maxdecomps, nperms)) ); /*lint !e506*/
       else
-         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->maxdecomps, nperms)) ); /*lint !e506*/
 
       int pos = *ndecdecomps;
-      for( p = *ndecdecomps; p < *ndecdecomps + nperms && pos < detectordata->numofsol; ++p )
+      for( p = *ndecdecomps; p < *ndecdecomps + nperms && pos < detectordata->maxdecomps; ++p )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
 
@@ -1541,6 +1546,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
  * detector specific interface methods
  */
 
+
 /** creates the handler for isomorph subproblems and includes it in SCIP */
 extern "C"
 SCIP_RETCODE SCIPincludeDetectorIsomorphism(
@@ -1553,6 +1559,7 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
+
 
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
