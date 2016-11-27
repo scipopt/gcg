@@ -200,6 +200,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_mastersetpart.o \
 			gcggithash.o \
 			reader_gp.o \
+			reader_tex.o \
 			scip_misc.o \
 			misc.o \
 			gcgheur.o \

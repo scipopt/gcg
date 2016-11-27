@@ -25,29 +25,20 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_gp.h
- * @brief  GP file reader writing gnuplot files
- * @author Martin Bergner
+/**@file   reader_tex.h
+ * @brief  tex file reader for writing decomposition details to LaTeX files
+ * @author Hanna Franzen
  * @ingroup FILEREADERS
- *
- * This file reader will write the decomposed or original matrix to a file usuable by gnuplot. You can use this writer
- * like and other writer.
- *
- * To display your decomposition, you can write the following in the interactive shell
- * \verbatim
-GCG> write problem "prob.gp"
-\endverbatim
- * If you use this command before reading in a decomposition, you will get a picture of the original matrix. If you
- * call the writer after a decomposition was specified or detected, it will write out a picture of the structured,
- * reordered matrix  where the structure is further highlighted indicated by boxes. You can create a PDF file by then
- * calling <code>gnuplot prob.gp</code> from your systems command line. This will create a pdf file in your current
- * directory which contains the image.
+
+ * This reader can write reports of decompositions to a tex file.
+ * The gp reader is required for visualizations.
+
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_READER_GP_H__
-#define GCG_READER_GP_H__
+#ifndef GCG_READER_TEX_H__
+#define GCG_READER_TEX_H__
 
 
 #include "scip/scip.h"
@@ -57,19 +48,30 @@ GCG> write problem "prob.gp"
 extern "C" {
 #endif
 
-/** includes the gp file reader into SCIP */
+/** includes the tex file reader into SCIP */
 extern
-SCIP_RETCODE SCIPincludeReaderGp(
+SCIP_RETCODE SCIPincludeReaderTex(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** writes the decomposition to the specific file */
-SCIP_RETCODE SCIPwriteGp(
+
+/* the reader cannot read files, will return an error if used */
+extern
+SCIP_RETCODE GCGreadTex(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
+   SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
+   );
+
+/** write a tex file for the visualization & statistics of a given set of decomposition */
+SCIP_RETCODE GCGwriteDecompsToTex(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition, /**< whether to write decomposed problem */
-   SCIP_Bool             outputPDF           /**< if true give pdf file, if false give tex file instead */
+   DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
+   int*                  ndecomps,           /**< Number of decompositions */
+   SCIP_Bool             statistics,         /**< if true detection statistics are included in report */
+   SCIP_Bool             toc,                /**< if true table of contents is included */
+   SCIP_Bool             useGp               /**< if true Gnuplot will be used for visualization */
    );
 
 #ifdef __cplusplus

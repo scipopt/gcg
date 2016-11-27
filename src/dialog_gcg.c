@@ -189,6 +189,72 @@ SCIP_RETCODE writeAllDecompositions(
    return SCIP_OKAY;
 }
 
+/** writes out visualizations of all decompositions currently known to cons_decomp to a PDF file */
+static
+SCIP_RETCODE reportAllDecompositions(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_DIALOG*          dialog,             /**< dialog menu */
+   SCIP_DIALOGHDLR*      dialoghdlr,         /**< dialog handler */
+   SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
+   )
+{
+   char* pname;
+   char* dirname;
+   char ppath[SCIP_MAXSTRLEN];
+   const char* nameinfix = "report_";
+   const char* extension = "tex";
+   char outname[SCIP_MAXSTRLEN];
+   SCIP_RETCODE retcode;
+   SCIP_Bool endoffile;
+   int ndecomps;
+
+   ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
+
+   if( ndecomps == 0 )
+   {
+      SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter an existing directory: ", &dirname, &endoffile) );
+   if( endoffile )
+   {
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
+
+   strcpy(ppath, (char*) SCIPgetProbName(scip));
+   SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
+
+   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s%s.%s", dirname, nameinfix, pname, extension);
+
+   retcode = SCIPwriteTransProblem(scip, outname, extension, FALSE);
+   if( retcode == SCIP_FILECREATEERROR )
+   {
+      SCIPdialogMessage(scip, NULL, "error creating file\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+   }
+   else if( retcode == SCIP_WRITEERROR )
+   {
+      SCIPdialogMessage(scip, NULL, "error writing file\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+   }
+   else
+   {
+      /* check for unexpected errors */
+      SCIP_CALL( retcode );
+
+      /* print result message if writing was successful */
+      SCIPdialogMessage(scip, NULL, "report is written to file %s%s.%s in directory %s\n", nameinfix, pname, extension, dirname);
+   }
+
+   return SCIP_OKAY;
+}
+
 /** dialog execution method for the display statistics command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
 {  /*lint --e{715}*/
@@ -453,6 +519,24 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteAllDecompositions)
    if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
    {
       SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog) );
+   }
+   else
+      SCIPdialogMessage(scip, NULL, "no problem available\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for reporting all known decompositions in a PDF file */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecReportAllDecompositions)
+{
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
+   {
+      SCIP_CALL( reportAllDecompositions(scip, dialog, dialoghdlr, nextdialog) );
    }
    else
       SCIPdialogMessage(scip, NULL, "no problem available\n");
@@ -915,11 +999,22 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteAllDecompositions, NULL, NULL,
             "alldecompositions",
-            "write all known decompostions to file (format is given by file extension, e.g., {dec,blk,ref})",
+            "write all known decompositions to files (format is given by file extension, e.g., {dec,blk,ref})",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+   /* write reportdecompositions */
+      if( !SCIPdialogHasEntry(submenu, "reportdecompositions") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecReportAllDecompositions, NULL, NULL,
+               "reportdecompositions",
+               "write report of all known decompositions to PDF file ",
+               FALSE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      }
 
    /* write statistics */
    if( !SCIPdialogHasEntry(submenu, "statistics") )

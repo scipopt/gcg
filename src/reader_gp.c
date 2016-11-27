@@ -50,6 +50,8 @@
 #define READERGP_GNUPLOT_RANGES(xmax, ymax) "set xrange [0:%d]\nset yrange[%d:0]\n", (xmax), (ymax)
 #define READERGP_GNUPLOT_PLOTCMD "plot \"-\" using 1:2:3 with circles fc rgb \"black\"\n"
 
+#define READERGP_GNUPLOT_HEADER_TEX(outputname) "set terminal tikz\nset output \"%s.tex\"\nunset xtics\nunset ytics\nunset border\nunset key\nset style fill solid 1.0 noborder\nset size ratio -1\n", (outputname)
+
 /*
  * Local methods
  */
@@ -59,11 +61,16 @@ static
 SCIP_RETCODE writeFileHeader(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   const char*           outname             /**< the name of the gnuplot outputname */
+   const char*           outname,            /**< the name of the gnuplot outputname */
+   SCIP_Bool             outputPDF           /**< if true give pdf file, if false give tex file instead */
    )
 {
 
-   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_HEADER(outname));
+   if(outputPDF)
+      SCIPinfoMessage(scip, file, READERGP_GNUPLOT_HEADER(outname));
+   else
+      SCIPinfoMessage(scip, file, READERGP_GNUPLOT_HEADER_TEX(outname));
+
    SCIPinfoMessage(scip, file, READERGP_GNUPLOT_RANGES(SCIPgetNVars(scip)+1, SCIPgetNConss(scip)+1));
    return SCIP_OKAY;
 }
@@ -334,7 +341,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    /*lint --e{715}*/
    assert(scip != NULL);
 
-   SCIP_CALL( SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE) );
+   SCIP_CALL( SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE, TRUE) );
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -350,7 +357,8 @@ SCIP_RETCODE SCIPwriteGp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
+   SCIP_Bool             writeDecomposition, /**< whether to write decomposed problem */
+   SCIP_Bool             outputPDF           /**< if true give pdf file, if false give tex file instead */
    )
 {
    char probname[SCIP_MAXSTRLEN];
@@ -373,9 +381,14 @@ SCIP_RETCODE SCIPwriteGp(
    if( decdecomp == NULL )
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
    else
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d", name, DECdetectorGetChar(decdecomp->detector), decdecomp->nblocks);
+   {
+      if(outputPDF)
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d", name, DECdetectorGetChar(decdecomp->detector), decdecomp->nblocks);
+      else
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%c-%d", name, DECdetectorGetChar(decdecomp->detector), decdecomp->nblocks);
+   }
 
-   SCIP_CALL( writeFileHeader(scip, file, outname) );
+   SCIP_CALL( writeFileHeader(scip, file, outname, outputPDF) );
 
    /* write decomp information such as rectangles */
    if( writeDecomposition )

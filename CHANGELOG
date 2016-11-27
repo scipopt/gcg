@@ -8,6 +8,8 @@ features
 - extended backtracking mechanism in diving heuristics:
   single backtracking in addition to limited discrepancy search in master variable diving;
   added branching on another variable and limited disc. search to original variable diving
+- added menu item "write reportdecompositions" that creates a report of all decompositions
+  in form of a .tex file
 
 code cleanup
 - cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
