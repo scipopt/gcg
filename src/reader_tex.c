@@ -108,7 +108,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 
    ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
 
-   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE, FALSE) );
+   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE, TRUE) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -371,7 +371,7 @@ SCIP_RETCODE writeTikz(
 
       for( j = 0; j < ncurvars; j++ )
       {
-         /* if the problem has been created, output the whole model */
+         /* if the problem has been created but has not been processed yet, output the whole model */
          if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
          {
             SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
@@ -432,7 +432,7 @@ SCIP_RETCODE writeDecompCode(
 {
    char* filepath;
    char* pname;
-   char* ppath;
+   char ppath[SCIP_MAXSTRLEN];
    char decompname[SCIP_MAXSTRLEN];
    char gpfilename[SCIP_MAXSTRLEN];
    char gpname[SCIP_MAXSTRLEN];
@@ -467,7 +467,7 @@ SCIP_RETCODE writeDecompCode(
       strcat(gpfilename, "/");
 
       /* get name of file and attach it to gpfilename */
-      ppath = (char*) SCIPgetProbName(scip);
+      strcpy(ppath, (char*) SCIPgetProbName(scip));
       SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
       if(pname != NULL &&  pname[0] != '\0')
       {
