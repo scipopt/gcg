@@ -2373,6 +2373,7 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
 
 #ifdef WRITEALLOUTPUT
    int ROC_iterations;
+   assert(false); //not implemented for seeeds
 #endif
 
    if(seeed->getNOpenconss() == 0)
