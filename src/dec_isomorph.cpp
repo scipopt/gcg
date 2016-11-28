@@ -52,6 +52,7 @@
 #include <cstring>
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 
 #include "pub_bliss.h"
 
@@ -1425,6 +1426,7 @@ SCIP_RETCODE detectIsomorph(
       if( detectordata->numofsol == 1)
          SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
 
+
       if( *nNewSeeeds == 0 )
          SCIP_CALL( SCIPallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
       else
@@ -1483,6 +1485,7 @@ SCIP_RETCODE detectIsomorph(
       {
          SCIPfreeMemoryArrayNull(scip, newSeeeds);
       }
+
 
       delete colorinfo;
 

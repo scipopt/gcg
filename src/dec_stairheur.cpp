@@ -81,7 +81,7 @@ using std::find;
 using std::vector;
 using std::swap;
 
-#define WRITEALLOUTPUT
+//#define WRITEALLOUTPUT
 
 
 #ifdef WRITEALLOUTPUT
@@ -2454,6 +2454,7 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
 
    SCIP_CALL( blocking(scip, detectordata, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->newSeeeds), &(seeedPropagationData->nNewSeeeds),result) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d seeeds.\n", seeedPropagationData->nNewSeeeds);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " \tBlocks:", seeedPropagationData->nNewSeeeds);
 #ifdef WRITEALLOUTPUT
    {
       char filename[256];
