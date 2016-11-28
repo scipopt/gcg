@@ -31,6 +31,7 @@
  * @author Martin Bergner
  * @author Christian Puchert
  * @author Michael Bastubbe
+
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -38,7 +39,7 @@
 #include "dec_xyz.h"
 #include "cons_decomp.h"
 
-/* constraint handler properties */
+/* detector properties */
 #define DEC_DETECTORNAME         "xyz"       /**< name of detector */
 #define DEC_DESC                 "detector xyz" /**< description of detector*/
 #define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */

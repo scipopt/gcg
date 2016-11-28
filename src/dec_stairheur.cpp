@@ -2358,7 +2358,6 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStairheur)
    return SCIP_OKAY;
 }
 
-//#define detectorPropagateSeeedStairheur NULL
 static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
 {
    int i;
@@ -2478,7 +2477,6 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
-
 #define detectorExitStairheur NULL
 
 /** creates the stairheur detector and includes it in SCIP */
@@ -2526,7 +2524,6 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxiterationsROC",
       "The maximum number of iterations of the ROC-algorithm. -1 for no limit",
       &detectordata->maxiterationsROC, FALSE, DEFAULT_MAXITERATIONSROC, -1, 1000000, NULL, NULL) );
-
 
    return SCIP_OKAY;
 }

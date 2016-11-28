@@ -3244,6 +3244,13 @@ SCIP_Bool DECdecompositionsAreEqual(
 
    constoblock1 = DECdecompGetConstoblock(decomp1);
    constoblock2 = DECdecompGetConstoblock(decomp2);
+   assert(constoblock1 != NULL);
+   assert(constoblock2 != NULL);
+
+   vartoblock1 = DECdecompGetVartoblock(decomp1);
+   vartoblock2 = DECdecompGetVartoblock(decomp2);
+   assert(vartoblock1 != NULL);
+   assert(vartoblock2 != NULL);
 
    vartoblock1 = DECdecompGetVartoblock(decomp1);
    vartoblock2 = DECdecompGetVartoblock(decomp2);

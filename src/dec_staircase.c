@@ -678,6 +678,5 @@ SCIP_RETCODE SCIPincludeDetectorStaircase(
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, detectorExitStaircase, detectorPropagateSeeedStaircase) );
 
-
    return SCIP_OKAY;
 }

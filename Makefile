@@ -185,6 +185,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_constype.o \
 			dec_stairheur.o \
 			dec_connected.o \
+			dec_consname.o \
 			dec_cutpacking.o \
 			dec_staircase.o \
 			dec_staircase_lsp.o \

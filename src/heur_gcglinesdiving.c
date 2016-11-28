@@ -245,7 +245,17 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
       SCIP_Real solval;
       SCIP_Real rootsolval;
 
+      int i;
+
       var = lpcands[c];
+
+      /* if the variable is on the tabu list, do not choose it */
+       for( i = 0; i < tabulistsize; ++i )
+          if( tabulist[i] == var )
+             break;
+       if( i < tabulistsize )
+          continue;
+
       solval = lpcandssol[c];
       rootsolval = SCIPgetSolVal(scip, divingdata->rootsol, var);
 

@@ -183,7 +183,7 @@
 #include "dec_colors.h"
 #include "dec_compgreedily.h"
 #include "dec_staircase_lsp.h"
-
+#include "dec_consname.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"

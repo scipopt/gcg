@@ -230,6 +230,8 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectRandom)
    }
    else
    {
+      SCIPhashmapFree(&detectordata->constoblock);
+      detectordata->constoblock = NULL;
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
    }
 
@@ -255,7 +257,6 @@ SCIP_RETCODE SCIPincludeDetectorRandom(
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
-
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, detectorDetectRandom, detectorFreeRandom, detectorInitRandom, detectorExitRandom, detectorPropagateSeeedRandom) );
