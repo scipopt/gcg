@@ -118,6 +118,7 @@ TEST_F(GcgVarTest, BlockVarIsNotLinkingVar) {
    SCIP_VARDATA vardata;
    var.vardata = &vardata;
    vardata.blocknr = 1;
+   vardata.vartype = GCG_VARTYPE_ORIGINAL;
 
    ASSERT_EQ(FALSE, GCGoriginalVarIsLinking(&var));
 }
@@ -127,6 +128,7 @@ TEST_F(GcgVarTest, MasterVarIsNotLinkingVar) {
    SCIP_VARDATA vardata;
    var.vardata = &vardata;
    vardata.blocknr = -1;
+   vardata.vartype = GCG_VARTYPE_ORIGINAL;
 
    ASSERT_EQ(FALSE, GCGoriginalVarIsLinking(&var));
 }

@@ -2707,9 +2707,10 @@ $(LIBOBJDIR)/disp_gcg.o: src/disp_gcg.c src/disp_gcg.h lib/scip/src/scip/scip.h 
  lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
- src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
- src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
- src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h src/pricer_gcg.h
+ lib/scip/src/scip/disp_default.h src/gcg.h src/type_branchgcg.h \
+ src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgcol.h \
+ src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h src/pub_decomp.h \
+ src/relax_gcg.h src/pricer_gcg.h
 $(LIBOBJDIR)/disp_master.o: src/disp_master.c src/disp_master.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -3801,8 +3802,7 @@ $(LIBOBJDIR)/gcgpqueue.o: src/gcgpqueue.c src/gcgpqueue.h src/struct_gcgpqueue.h
  lib/scip/src/scip/presolve.h src/type_gcgpqueue.h src/pub_gcgpqueue.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
  src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
- src/pub_gcgvar.h src/pub_decomp.h src/scip_misc.h \
- lib/scip/src/scip/cons_setppc.h src/relax_gcg.h
+ src/pub_gcgvar.h src/pub_decomp.h
 $(LIBOBJDIR)/gcgcol.o: src/gcgcol.c src/pub_gcgcol.h src/type_gcgcol.h \
  src/struct_gcgcol.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -4394,7 +4394,7 @@ $(LIBOBJDIR)/dec_isomorph.o: src/dec_isomorph.cpp src/dec_isomorph.h \
  lib/blissinc/kstack.hh lib/blissinc/defs.hh lib/blissinc/kqueue.hh \
  lib/blissinc/heap.hh lib/blissinc/orbit.hh lib/blissinc/partition.hh \
  lib/blissinc/graph.hh lib/blissinc/bignum.hh lib/blissinc/uintseqhash.hh \
- src/bliss_automorph.h src/pub_gcgvar.h src/pub_bliss.h
+ src/pub_gcgvar.h src/pub_bliss.h
 $(LIBOBJDIR)/bliss.o: src/bliss.cpp lib/blissinc/graph.hh lib/blissinc/kstack.hh \
  lib/blissinc/defs.hh lib/blissinc/kqueue.hh lib/blissinc/heap.hh \
  lib/blissinc/orbit.hh lib/blissinc/partition.hh lib/blissinc/graph.hh \

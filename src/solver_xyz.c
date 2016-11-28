@@ -42,6 +42,8 @@
 #define SOLVER_DESC          "xyz solver for pricing problems"
 #define SOLVER_PRIORITY      0
 
+#define SOLVER_ENABLED      TRUE  /**< indicates whether the solver should be enabled */
+
 /*
  * Data structures
  */
@@ -169,7 +171,7 @@ SCIP_RETCODE GCGincludeSolverXyz(
    /* TODO: (optional) create pricing problem solver specific data here */
 
    /* include pricing problem solver */
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
          solverSolveXyz, solverSolveHeurXyz, solverFreeXyz, solverInitXyz, solverExitXyz,
          solverInitsolXyz, solverExitsolXyz, solverdata) );
 
