@@ -230,8 +230,6 @@ SCIP_RETCODE writeTikz(
    SCIP_VAR** linkingvars;
    SCIP_CONS** linkingconss;
    SCIP_CONS** conss;
-   SCIP_VAR* resvar;
-   SCIP_CONS* rescons;
    SCIP_HASHMAP* varindexmap;
    SCIP_HASHMAP* consindexmap;
    int* nsubscipvars;
@@ -391,11 +389,11 @@ SCIP_RETCODE writeTikz(
             {
                assert(varindexmap != NULL);
                assert(consindexmap != NULL);
-               assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL);
-               assert(SCIPhashmapGetImage(consindexmap, conss[i]) != NULL);
-               resvar = SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j]));
-               rescons = SCIPhashmapGetImage(consindexmap, conss[i]);
-               /*SCIPinfoMessage(scip, file, "    \\draw [fill] (%f,%f) circle [radius=%f];                                   %s", resvar, rescons, radius, LINEBREAK);*/
+               /*@todo make the following if statement into an assertion*/
+               if(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL && SCIPhashmapGetImage(consindexmap, conss[i]) != NULL)
+               {
+                  SCIPinfoMessage(scip, file, "    \\draw [fill] (%d,%d) circle [radius=%f];                                   %s", SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])), SCIPhashmapGetImage(consindexmap, conss[i]), radius, LINEBREAK);
+               }
             }
          }
       }
