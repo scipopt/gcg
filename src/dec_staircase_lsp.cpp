@@ -276,7 +276,7 @@ SCIP_RETCODE createGraphFromPartialMatrix(
          for( int c = 0; c < seeedpool->getNConssForVar(var); ++c )
          {
             int otherCons = seeedpool->getConssForVar(var)[c];
-            if( isNeighbor[otherCons] || alreadyConsidered[otherCons] || seeed->isConsMastercons(otherCons) )
+            if( isNeighbor[otherCons] || alreadyConsidered[otherCons] || !seeed->isConsOpencons(otherCons) )
                continue;
             isNeighbor[otherCons] = true;
 
