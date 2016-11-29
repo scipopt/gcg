@@ -473,7 +473,6 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
        if (isEmptyBlock[b1] )
        {
            nEmptyBlocks++;
-           std::cout << "block  " << b1 << "  is an empty block " << std::endl;
            for(int b2 = b1+1; b2 < nblocks; ++b2)
                nEmptyBlocksBefore[b2]++;
        }
