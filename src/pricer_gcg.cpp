@@ -2512,7 +2512,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    /** @todo solve all pricing problems all k iterations? */
    nfoundvars = 0;
 
-   for( i = 0; i < pricerdata->npricingprobs && !infeasible; ++i )
+   for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
       int prob;
       prob = pricerdata->permu[i];
@@ -2524,7 +2524,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       for( j = 0; j < ncols[prob]; ++j )
       {
          /** add variable only if we cannot abort */
-         if( (nfoundvarsprob <= pricerdata->maxsolsprob &&
+         if( !infeasible &&
+             (nfoundvarsprob <= pricerdata->maxsolsprob &&
              (pricetype->getType() == GCG_PRICETYPE_REDCOST || nfoundvars < pricetype->getMaxvarsround()) &&
              (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxvarsround() || GCGisRootNode(scip_) ) &&
              (nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !GCGisRootNode(scip_))))) )

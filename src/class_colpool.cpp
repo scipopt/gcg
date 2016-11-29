@@ -243,19 +243,31 @@ namespace gcg {
    /**< delete all columns that are older than agelimit */
    SCIP_RETCODE Colpool::deleteOldColumns()
    {
-      GCG_COL* gcgcol;
+      /* todo: get comperator of pqueue */
 
-      int i;
+      SCIP_CALL( GCGpqueueSetComperator(pqueue, GCGcolCompAge) );
 
-      for( i = 0; i < getNCols(); ++i )
+      SCIP_CALL( GCGpqueueResort(pqueue) );
+
+      while( GCGpqueueNElems(pqueue) > 0 )
       {
-         if( getColAge(i) > agelimit )
+         GCG_COL* gcgcol;
+
+         gcgcol = (GCG_COL*) GCGpqueueFirst(pqueue);
+
+         if( GCGcolGetAge(gcgcol) > agelimit)
          {
-            SCIP_CALL( GCGpqueueDelete(pqueue, i, (void**) &gcgcol) );
+            gcgcol = (GCG_COL*) GCGpqueueRemove(pqueue);
 
             SCIP_CALL( GCGfreeGcgCol(&gcgcol) );
          }
+         else
+            break;
       }
+
+      /* todo: use previous comperator of pqueue */
+      SCIP_CALL( GCGpqueueSetComperator(pqueue, GCGcolCompRedcost) );
+
       return SCIP_OKAY;
    }
 
@@ -337,7 +349,7 @@ namespace gcg {
    SCIP_RETCODE Colpool::updateNode(
    )
    {
-      if( nodenr <= 0 )
+      if( nodenr < 0 )
       {
          nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
       }

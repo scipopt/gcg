@@ -406,7 +406,7 @@ SCIP_RETCODE solveProblem(
       *ncols = 0;
       *status = SCIP_STATUS_OPTIMAL;
 
-      for( s = 0; s < nprobsols && s < maxcols; s++ )
+      for( s = 0; s < nprobsols && *ncols < maxcols; s++ )
       {
          SCIP_Bool feasible;
          assert(probsols[s] != NULL);
