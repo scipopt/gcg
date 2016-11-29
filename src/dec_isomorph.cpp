@@ -1012,7 +1012,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
 
    assert(maxblock >= 1);
    assert(blockrepresentative != NULL );
-   SCIPdebugPrintf("Blocks: ");
+   //SCIPdebugPrintf("Blocks: ");
 
    for( i = 1; i < maxblock; ++i )
    {
@@ -1028,9 +1028,9 @@ SCIP_RETCODE createSeeedFromMasterconss(
       }
       /* It is crucial that this condition holds */
       assert(blockrepresentative[i] <= i);
-      SCIPdebugPrintf("%d ", blockrepresentative[i]);
+ //     SCIPdebugPrintf("%d ", blockrepresentative[i]);
    }
-   SCIPdebugPrintf("\n");
+//   SCIPdebugPrintf("\n");
 
    /* convert temporary data to detectordata */
 

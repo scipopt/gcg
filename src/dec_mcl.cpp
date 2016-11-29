@@ -156,7 +156,7 @@ DEC_DECL_INITDETECTOR(initMCL)
 }
 
 /** are there conss and vars to be included by the graph and have the conss common vars included by the graph */
-static
+static inline
 bool graphCompletible(
    gcg::Seeedpool*  seeedpool,
    gcg::Seeed*      seeed

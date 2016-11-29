@@ -108,7 +108,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 
    ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
 
-   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE, FALSE) );
+   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE, TRUE) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -315,27 +315,45 @@ SCIP_RETCODE writeDecompCode(
    char gpname[SCIP_MAXSTRLEN];
    char sympath[SCIP_MAXSTRLEN];
    char pfile[SCIP_MAXSTRLEN];
+   char detectorchainstring[SCIP_MAXSTRLEN];
    FILE* gpfile;
+   DEC_DETECTOR** detectorchain;
+   int sizedetectorchain;
    int filedesc;
    int success;
+   int i;
    DEC_SCORES scores;
 
-   assert(decomp != NULL);
-   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
 
-   if(useGp)
+   /* construct detector chain string*/
+
+   detectorchain = DECdecompGetDetectorChain(decomp);
+   sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
+
+   sprintf(detectorchainstring, "%s", DECdetectorGetName(detectorchain[0]));
+
+   for( i=1; i < sizedetectorchain; ++i )
+   {
+      sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(detectorchain[i]) );
+   }
+   SCIPinfoMessage(scip, NULL, "%s %s", detectorchainstring, LINEBREAK);
+
+   assert(decomp != NULL);
+   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", detectorchainstring, DECdecompGetNBlocks(decomp));
+
+   if( useGp )
    {
       /* --- create a gnuplot file for the decomposition --- */
 
       /* get path to write to and put it into gpfilename */
       filedesc = fileno(file); /* get link to file descriptor */
-      if(filedesc < 0)
+      if( filedesc < 0 )
       {
          return SCIP_FILECREATEERROR;
       }
       snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
       success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
-      if(success < 0)
+      if( success < 0 )
       {
          return SCIP_NOFILE;
       }
@@ -346,13 +364,13 @@ SCIP_RETCODE writeDecompCode(
       /* get name of file and attach it to gpfilename */
       ppath = (char*) SCIPgetProbName(scip);
       SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
-      if(pname != NULL &&  pname[0] != '\0')
+      if( pname != NULL &&  pname[0] != '\0' )
       {
          strcat(gpfilename, pname);
          strcat(gpfilename, "-");
       }
 
-      if(decompname != NULL &&  decompname[0] != '\0')
+      if( decompname != NULL &&  decompname[0] != '\0' )
       {
          strcat(gpfilename, decompname);
       }
@@ -365,7 +383,7 @@ SCIP_RETCODE writeDecompCode(
 
       /* write gp file for decomp using the gp reader (using the tex output option) */
       gpfile = fopen(gpfilename, "w");
-      if(gpfile == NULL)
+      if( gpfile == NULL )
       {
          return SCIP_FILECREATEERROR;
       }
@@ -379,6 +397,7 @@ SCIP_RETCODE writeDecompCode(
 
    /* --- gather further information & output them --- */
 
+
    DECevaluateDecomposition(scip, decomp, &scores);
 
    SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", decompname, LINEBREAK);
@@ -386,9 +405,9 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                                           %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
-   if(useGp)
+   if( useGp )
    {
-      SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                                           %s", pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp), LINEBREAK);
+      SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                                           %s", pname, detectorchainstring, DECdecompGetNBlocks(decomp), LINEBREAK);
    }
    else
    {
@@ -399,7 +418,7 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{tabular}{lll}                                                           %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Found by detector: & %s & \\\\                                                %s", DECdetectorGetName(DECdecompGetDetector(decomp)), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Found by detectors: & %s & \\\\                                               %s", detectorchainstring, LINEBREAK);
    SCIPinfoMessage(scip, file, "  Number of blocks: & %i & \\\\                                                 %s", DECdecompGetNBlocks(decomp), LINEBREAK);
    SCIPinfoMessage(scip, file, "  Number of linking variables: & %i & \\\\                                      %s", DECdecompGetNLinkingvars(decomp), LINEBREAK);
    SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i & \\\\                                    %s", DECdecompGetNLinkingconss(decomp), LINEBREAK);
@@ -408,7 +427,7 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "  & Interlinking blocks score: & %f \\\\                                        %s", scores.linkingscore, LINEBREAK);
    SCIPinfoMessage(scip, file, "  & Border score: & %f \\\\                                                     %s", scores.borderscore, LINEBREAK);
    SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\newpage                                                                       %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\clearpage                                                                       %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
 
    /*@todo get and output statistics*/

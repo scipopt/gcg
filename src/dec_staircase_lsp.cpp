@@ -182,20 +182,12 @@ SCIP_RETCODE createGraph(
 
          for( v = 0; v < ncurvars2; ++v )
          {
-            int pos;
-
             if( useprobvars )
             {
                curvars2[v] = SCIPvarGetProbvar(curvars2[v]);
                assert( SCIPvarIsActive(curvars2[v]) );
             }
 
-//            if( SCIPsortedvecFindPtr((void*)curvars1, cmp, curvars2[v], ncurvars1, &pos) )
-//            {
-//               assert( curvars1[pos] == curvars2[v] );
-//               TCLIQUE_CALL( tcliqueAddEdge(*graph, i, j) );
-//               break;
-//            }
          }
          SCIPfreeBufferArray(scip, &curvars2);
       }
@@ -220,17 +212,10 @@ SCIP_RETCODE createGraphFromPartialMatrix(
    )
 {
    int i;
-   int j;
    int v;
-   int nconss;
-   SCIP_CONS** conss;
-   SCIP_Bool useprobvars = FALSE;
 
    assert(scip != NULL);
    assert(graph != NULL);
-
-   nconss = SCIPgetNConss(scip);
-   conss = SCIPgetConss(scip);
 
    TCLIQUE_CALL( tcliqueCreate(graph) );
    assert(*graph != NULL);
@@ -248,8 +233,6 @@ SCIP_RETCODE createGraphFromPartialMatrix(
       detectordata->newToOld[i] = cons;
       TCLIQUE_CALL( tcliqueAddNode(*graph, i, 0) );
    }
-
-   useprobvars = ( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED );
 
    /*
     *
@@ -826,9 +809,17 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
       SCIPfreeBufferArray(scip, &(detectordata->components));
    }
 
-
-
    SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks, seeedpool) );
+   currseeed->assignCurrentStairlinking(seeedpool);
+   currseeed->considerImplicits(seeedpool);
+
+
+   if(currseeed->getID() == 15)
+   {
+      currseeed->displaySeeed();
+      currseeed->displayConss();
+      currseeed->displayVars();
+   }
 
    currseeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
@@ -844,12 +835,6 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    seeedPropagationData->newSeeeds[0] = currseeed;
    seeedPropagationData->nNewSeeeds = 1;
    *result = SCIP_SUCCESS;
-
-
-   //currseeed->displaySeeed();
-   //currseeed->displayConss();
-   //currseeed->displayVars();
-
 
 
    tcliqueFree(&detectordata->graph);

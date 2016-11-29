@@ -186,6 +186,18 @@
 #include "dec_compgreedily.h"
 #include "dec_staircase_lsp.h"
 #include "dec_consname.h"
+#include "dec_mastersetpack.h"
+#include "dec_mastersetpart.h"
+#include "dec_mastersetcover.h"
+#include "dec_hrcgpartition.h"
+#include "dec_hrgpartition.h"
+#include "dec_hcgpartition.h"
+#include "dec_connectedbase.h"
+#include "dec_connected_noNewLinkingVars.h"
+#include "dec_generalmastersetcover.h"
+#include "dec_generalmastersetpack.h"
+#include "dec_generalmastersetpart.h"
+#include "dec_staircase_lsp.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -354,9 +366,9 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorStaircaseLsp(scip) );
    SCIP_CALL( SCIPincludeDetectorColors(scip) );
    SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
-   //SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
-   //SCIP_CALL( SCIPincludeDetectorMST(scip) );
 #ifdef GSL
+   SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
+   SCIP_CALL( SCIPincludeDetectorMST(scip) );
    SCIP_CALL( SCIPincludeDetectorMCL(scip) );
 #endif
    SCIP_CALL( SCIPincludeDetectorCompgreedily(scip) );

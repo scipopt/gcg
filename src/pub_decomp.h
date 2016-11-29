@@ -304,6 +304,19 @@ DEC_DETECTOR* DECdecompGetDetector(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
+/** gets the detectors for the given decomposition */
+extern
+DEC_DETECTOR** DECdecompGetDetectorChain(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** gets the number of detectors for the given decomposition */
+extern
+int DECdecompGetDetectorChainSize(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
 /** transforms all constraints and variables, updating the arrays */
 extern
 SCIP_RETCODE DECdecompTransform(

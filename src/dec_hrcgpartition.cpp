@@ -157,22 +157,6 @@ struct DEC_DetectorData
  * Local methods
  */
 
-/** destructor of detector to free user data (called when GCG is exiting) */
-static
-DEC_DECL_FREEDETECTOR(detectorFreeArrowheur)
-{
-   DEC_DETECTORDATA* detectordata;
-
-   assert(scip != NULL);
-
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   SCIPfreeMemory(scip, &detectordata);
-
-   return SCIP_OKAY;
-}
 
 /** destructor of detector to free user data (called when GCG is exiting) */
 static

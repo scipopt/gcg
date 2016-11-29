@@ -93,15 +93,7 @@ public:
       return SCIP_ERROR;
    }
 
-   /** creates a new seeed by dint of a graph created with all constraints and variables */
-   virtual SCIP_RETCODE createSeeedFromPartition(
-      Seeed**      firstSeeed,         /**< pointer to buffer the new seeed created by dint of the graph */
-      Seeed**      secondSeeed,        /**< pointer to buffer the new seeed whose border is amplified by dint of the graph */
-      Seeedpool*   seeedpool
-      )
-   {
-      return SCIP_ERROR;
-   }
+
 
    /** amplifies a seeed by dint of a graph created with open constraints and open variables of the seeed */
    virtual SCIP_RETCODE createSeeedFromPartition(

@@ -1367,6 +1367,28 @@ DEC_DETECTOR* DECdecompGetDetector(
    return decomp->detector;
 }
 
+/** gets the detectors for the given decomposition */
+DEC_DETECTOR** DECdecompGetDetectorChain(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   assert(decomp != NULL);
+
+   return decomp->detectorchain;
+}
+
+/** gets the number of detectors for the given decomposition */
+int DECdecompGetDetectorChainSize(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   assert(decomp != NULL);
+
+   return decomp->sizeDetectorchain;
+}
+
+
+
 /** transforms all constraints and variables, updating the arrays */
 SCIP_RETCODE DECdecompTransform(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -1660,6 +1682,8 @@ SCIP_RETCODE DECdecompCheckConsistency(
    /* Check whether subscipcons are correct */
    for( b = 0; b < DECdecompGetNBlocks(decdecomp); ++b )
    {
+
+
       for( c = 0; c < DECdecompGetNSubscipconss(decdecomp)[b]; ++c )
       {
          SCIP_VAR** curvars;
@@ -1690,6 +1714,9 @@ SCIP_RETCODE DECdecompCheckConsistency(
          }
          SCIPfreeBufferArray(scip, &curvars);
       }
+
+      assert((DECdecompGetSubscipvars(decdecomp)[b] == NULL) == (DECdecompGetNSubscipvars(decdecomp)[b] == 0));
+
 
       for( v = 0; v < DECdecompGetNSubscipvars(decdecomp)[b]; ++v )
       {

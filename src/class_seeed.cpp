@@ -416,7 +416,6 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingConsToMaster(
    int var;
    std::vector<int> blocksOfBlockvars; /** blocks with blockvars which can be found in the cons */
    std::vector<int> blocksOfOpenvar; /** blocks in which the open var can be found */
-   bool found;
    bool master;
    bool hitsOpenVar;
 
@@ -495,8 +494,6 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
    int var;
    std::vector<int> blocksOfBlockvars; /** blocks with blockvars which can be found in the cons */
    std::vector<int> blocksOfOpenvar; /** blocks in which the open var can be found */
-   bool found;
-   bool master;
    bool hitsOpenCons;
 
 
@@ -545,15 +542,15 @@ return SCIP_OKAY;
 }
 
 /** fills out the seeed with the hashmap constoblock if there are still assigned conss and vars */
-SCIP_RETCODE Seeed::assignSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool)
+SCIP_RETCODE Seeed::assignSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int additionalNBlocks, Seeedpool* seeedpool)
 {
    int oldNBlocks = nBlocks;
    int consblock;
    int cons;
 
-   assert(givenNBlocks >= 0);
+   assert(additionalNBlocks >= 0);
 
-   for( int b = 0; b < givenNBlocks; ++b )
+   for( int b = 0; b < additionalNBlocks; ++b )
       addBlock();
 
    for( int i = 0; i < getNOpenconss(); ++i )
@@ -654,7 +651,7 @@ void Seeed::calcHashvalue()
    {
       long blockval = 0;
 
-      for( int tau = 0; tau < conssForBlocks[i].size(); ++tau )
+      for( size_t tau = 0; tau < conssForBlocks[i].size(); ++tau )
       {
          blockval += (2 * conssForBlocks[i][tau] + 1) * pow(2, tau % 16);
       }
@@ -662,7 +659,7 @@ void Seeed::calcHashvalue()
       hashval += primes[i % (nPrimes - 1)] * blockval;
    }
 
-   for( int tau = 0; tau < masterConss.size(); ++tau )
+   for( size_t tau = 0; tau < masterConss.size(); ++tau )
    {
       borderval += (2 * masterConss[tau] + 1) * pow(2, tau % 16);
    }
@@ -791,7 +788,7 @@ bool Seeed::checkConsistency()
    int value;
 
    /** check if nblocks is set appropriate */
-   if( nBlocks != conssForBlocks.size() )
+   if( nBlocks != (int) conssForBlocks.size() )
    {
       std::cout << "Warning! In (seeed " << id << ") nBlocks " << nBlocks << " and size of conssForBlocks"
          << conssForBlocks.size() << " are not identical" << std::endl;
@@ -799,7 +796,7 @@ bool Seeed::checkConsistency()
       return false;
    }
 
-   if( nBlocks != varsForBlocks.size() )
+   if( nBlocks != (int) varsForBlocks.size() )
    {
       std::cout << "Warning! In (seeed " << id << ") nBlocks " << nBlocks << " and size of varsForBlocks"
          << varsForBlocks.size() << " are not identical" << std::endl;
@@ -1205,6 +1202,7 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
       /** if the variable can be found in an open constraint it is still an open var */
       for( size_t j = 0; j < openConss.size(); ++j )
       {
+         checkVar = true;
          for( int k = 0; k < seeedpool->getNVarsForCons(j); ++k )
          {
             if( openVars[i] == seeedpool->getVarsForCons(j)[k] )
@@ -1331,9 +1329,6 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
 SCIP_RETCODE Seeed::completeByConnected(Seeedpool* seeedpool)
 {
 
-   bool checkVar;
-   bool varInBlock;
-   bool notassigned;
    int cons;
    int var;
 
@@ -1482,7 +1477,6 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
    int var;
    std::vector<int> blocksOfBlockvars; /** blocks with blockvars which can be found in the cons */
    std::vector<int> blocksOfOpenvar; /** blocks in which the open var can be found */
-   bool found;
    bool master;
    bool hitsOpenVar;
    bool hitsOpenCons;
@@ -2185,11 +2179,24 @@ int Seeed::getNMasterconss()
    return (int)masterConss.size();
 }
 
-/** returns vector containing master vars (every constraint containing a master var is in master)*/
+/** returns number of master vars (hitting only constraints in the master) */
 int Seeed::getNMastervars()
 {
    return (int)masterVars.size();
 }
+
+
+/** returns vector containing master vars (every constraint containing a master var is in master)*/
+int Seeed::getNTotalStairlinkingvars()
+{
+   int nstairlinkingvars = 0;
+   for ( int b = 0; b < getNBlocks(); ++b)
+      nstairlinkingvars += getNStairlinkingvars(b);
+
+   return nstairlinkingvars;
+}
+
+
 
 /** returns size of vector containing variables not assigned yet */
 int Seeed::getNOpenconss()
@@ -2312,7 +2319,7 @@ bool Seeed::isConsOpencons(int cons)
 /** returns whether this seeed was propagated by certain detector */
 bool Seeed::isPropagatedBy(int detectorID)
 {
-   assert(propagatedByDetector.size() > detectorID);
+   assert((int)propagatedByDetector.size() > detectorID);
    return propagatedByDetector[detectorID];
 }
 
@@ -2383,7 +2390,7 @@ SCIP_RETCODE Seeed::setConsToBlock(int consToBlock, int block)
 {
    assert(consToBlock >= 0 && consToBlock < nConss);
    assert(block >= 0 && block < nBlocks);
-   assert(conssForBlocks.size() > block);
+   assert( (int) conssForBlocks.size() > block);
 
    conssForBlocks[block].push_back(consToBlock);
 
@@ -2402,7 +2409,7 @@ SCIP_RETCODE Seeed::setConsToMaster(int consToMaster)
 /** sets seeed to be propagated by detector with detectorID  */
 SCIP_RETCODE Seeed::setDetectorPropagated(int detectorID)
 {
-   assert(propagatedByDetector.size() > detectorID);
+   assert( (int) propagatedByDetector.size() > detectorID);
    propagatedByDetector[detectorID] = true;
    detectorChain.push_back(detectorID);
 
@@ -2442,7 +2449,7 @@ SCIP_RETCODE Seeed::setVarToBlock(int varToBlock, int block)
 {
    assert(varToBlock >= 0 && varToBlock < nVars);
    assert(block >= 0 && block < nBlocks);
-   assert(varsForBlocks.size() > block);
+   assert( (int) varsForBlocks.size() > block);
 
    varsForBlocks[block].push_back(varToBlock);
    return SCIP_OKAY;

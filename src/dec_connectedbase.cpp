@@ -142,7 +142,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnectedbase)
 }
 
 
-static
+static inline
 bool haveConssCommonVars(
    int               firstCons,
    int               secondCons,
@@ -162,53 +162,6 @@ bool haveConssCommonVars(
    return false;
 }
 
-/** Breadth First Search */
-static
-SCIP_RETCODE bfs(
-   std::vector<int>      *visited,               /** vector to store the visited conss */
-   std::vector<int>      *openConss,             /** vector with conss to be visited */
-   gcg::Seeedpool*       seeedpool
-   )
-{
-   std::queue<int> queue;
-   std::vector<int> neighborNodes;
-   int cons;
-
-   std::vector<int>::iterator varIter;
-   std::vector<int>::iterator varIterEnd;
-   std::vector<int>::iterator it;
-
-   queue.push( *(openConss->begin()) );
-   openConss->erase(openConss->begin());
-   while(!queue.empty())
-   {
-      cons = queue.front();
-      visited->push_back(cons);
-      queue.pop();
-      varIter = openConss->begin();
-      varIterEnd = openConss->end();
-
-      for(; varIter != varIterEnd; ++varIter)
-      {
-         if(haveConssCommonVars(cons, *varIter, seeedpool))
-         {
-            queue.push(*varIter);
-            neighborNodes.push_back(*varIter);
-         }
-      }
-
-      for( size_t s = 0; s < neighborNodes.size(); ++s )
-      {
-         it = find(openConss->begin(), openConss->end(), neighborNodes[s]);
-         assert( it != openConss->end() );
-         openConss->erase(it);
-      }
-
-      neighborNodes.clear();
-   }
-
-   return SCIP_OKAY;
-}
 
 static
 DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)

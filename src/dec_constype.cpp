@@ -105,10 +105,11 @@ DEC_DECL_FREEDETECTOR(freeConstype)
    assert(scip != NULL);
 
    detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
+
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
-   SCIPfreeMemory(scip, &detectordata);
+   if ( detectordata != NULL )
+      SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
 }

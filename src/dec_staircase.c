@@ -653,7 +653,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircase)
 }
 
 #define detectorPropagateSeeedStaircase NULL
-//#define detectorExitStaircase NULL
+
 /*
  * constraint specific interface methods
  */

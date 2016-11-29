@@ -326,6 +326,10 @@ public:
    int getNMastervars(
    );
 
+   /** returns total number of stairlinking vars */
+   int getNTotalStairlinkingvars(
+      );
+
    /** returns size of vector containing constraints not assigned yet */
    int getNOpenconss(
    );
