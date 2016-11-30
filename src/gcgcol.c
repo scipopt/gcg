@@ -120,9 +120,13 @@ SCIP_RETCODE GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
    )
 {
-   /* todo: release vars? */
+   assert(gcgcol != NULL);
+   assert(*gcgcol != NULL);
 
+   /* todo: release vars? */
+   assert((*gcgcol)->vars != NULL);
    SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vars);
+   assert((*gcgcol)->vals != NULL);
    SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vals);
    SCIPfreeMemory((*gcgcol)->pricingprob, gcgcol);
 

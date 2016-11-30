@@ -101,11 +101,15 @@ public:
    /**< get number of columns in column pool */
    int getNCols();
 
-   /**< delete all columns that are older than agelimit */
+   /**< delete all columns that are older than agelimit
+    * WARNING: This method changes the order in which the colums are stored.
+    * Use GCGpqueueResort() to resort the columns by reduced cost again */
    SCIP_RETCODE deleteOldColumns();
 
    /**< delete the oldest columns such that number of columns in colpool is
-    *   lower than or equal to maxncolssoft */
+    *   lower than or equal to maxncolssoft
+    * WARNING: This method changes the order in which the colums are stored.
+    * Use GCGpqueueResort() to resort the columns by reduced cost again  */
    SCIP_RETCODE deleteOldestColumns();
 
    /**< delete all columns in colpool */
