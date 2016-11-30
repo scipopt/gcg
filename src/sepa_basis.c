@@ -1545,6 +1545,16 @@ SCIP_RETCODE SCIPincludeSepaBasis(
    /* create master separator data */
    SCIP_CALL( SCIPallocMemory(scip, &sepadata) );
 
+   sepadata->mastercuts = NULL;
+   sepadata->origcuts = NULL;
+   sepadata->norigcuts = 0;
+   sepadata->nmastercuts = 0;
+   sepadata->maxcuts = 0;
+   sepadata->newcuts = NULL;
+   sepadata->nnewcuts = 0;
+   sepadata->maxnewcuts = 0;
+   sepadata->objrow = NULL;
+
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
          SEPA_USESSUBSCIP, SEPA_DELAY,
