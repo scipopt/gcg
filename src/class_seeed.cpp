@@ -1199,6 +1199,8 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
          continue; /** the variable does'nt need to be checked any more */
       }
 
+      checkVar = true;
+
       /** if the variable can be found in an open constraint it is still an open var */
       for( size_t j = 0; j < openConss.size(); ++j )
       {
@@ -1216,6 +1218,7 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
             break;
          }
       }
+
 
       /** test if the variable can be found in a master constraint yet */
       for( size_t j = 0; j < masterConss.size() && checkVar; ++j )

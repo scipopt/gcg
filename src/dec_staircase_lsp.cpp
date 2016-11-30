@@ -86,8 +86,8 @@ struct DEC_DetectorData
    int*           components;
    int            ncomponents;
    int            nblocks;
-   std::vector<int> oldToNew;
-   std::vector<int> newToOld;
+   std::vector<int>* oldToNew;
+   std::vector<int>* newToOld;
 };
 
 
@@ -220,17 +220,19 @@ SCIP_RETCODE createGraphFromPartialMatrix(
    TCLIQUE_CALL( tcliqueCreate(graph) );
    assert(*graph != NULL);
 
-   detectordata->newToOld.clear();
-   detectordata->oldToNew.clear();
+   if(detectordata->newToOld != NULL)
+      delete detectordata->newToOld;
+   if(detectordata->oldToNew != NULL)
+         delete detectordata->oldToNew;
 
-   detectordata->oldToNew = std::vector<int>(seeedpool->getNConss(), -1);
-   detectordata->newToOld = std::vector<int>(seeed->getNOpenconss(), -1);
+   detectordata->oldToNew = new std::vector<int>(seeedpool->getNConss(), -1) ;
+   detectordata->newToOld = new std::vector<int>(seeed->getNOpenconss(), -1) ;
 
    for( i = 0; i < seeed->getNOpenconss(); ++i )
    {
       int cons = seeed->getOpenconss()[i];
-      detectordata->oldToNew[cons] = i;
-      detectordata->newToOld[i] = cons;
+      detectordata->oldToNew->at(cons) = i;
+      detectordata->newToOld->at(i) = cons;
       TCLIQUE_CALL( tcliqueAddNode(*graph, i, 0) );
    }
 
@@ -259,13 +261,11 @@ SCIP_RETCODE createGraphFromPartialMatrix(
          for( int c = 0; c < seeedpool->getNConssForVar(var); ++c )
          {
             int otherCons = seeedpool->getConssForVar(var)[c];
-            if( isNeighbor[otherCons] || alreadyConsidered[otherCons] || seeed->isConsMastercons(otherCons) )
+            if( isNeighbor[otherCons] || alreadyConsidered[otherCons] || !seeed->isConsOpencons(otherCons) )
                continue;
             isNeighbor[otherCons] = true;
 
-            TCLIQUE_CALL( tcliqueAddEdge(*graph, detectordata->oldToNew[cons], detectordata->oldToNew[otherCons]) );
-
-//            std::cout << "added edge: " << detectordata->oldToNew[cons] << " and " << detectordata->oldToNew[otherCons] << std::endl;
+            TCLIQUE_CALL( tcliqueAddEdge(*graph, detectordata->oldToNew->at(cons), detectordata->oldToNew->at(otherCons)) );
          }
       }
    }
@@ -575,6 +575,9 @@ DEC_DECL_FREEDETECTOR(detectorFreeStaircaseLsp)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
+   delete detectordata->newToOld;
+   delete detectordata->oldToNew;
+
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
@@ -749,6 +752,8 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
 
    *result = SCIP_DIDNOTFIND;
 
+   currseeed->considerImplicits(seeedpool);
+   currseeed->refineToMaster(seeedpool);
 
    //SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");
 
@@ -799,7 +804,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
          for( i = 0; i < nnodes; ++i )
          {
             assert(blocks[i] >= 0);
-            SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, (void*) (size_t) detectordata->oldToNew[i], (void*) (size_t) (blocks[i] + 1)) );
+            SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, (void*) (size_t) detectordata->oldToNew->at(i), (void*) (size_t) (blocks[i] + 1)) );
          }
       }
 
@@ -813,13 +818,6 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    currseeed->assignCurrentStairlinking(seeedpool);
    currseeed->considerImplicits(seeedpool);
 
-
-   if(currseeed->getID() == 15)
-   {
-      currseeed->displaySeeed();
-      currseeed->displayConss();
-      currseeed->displayVars();
-   }
 
    currseeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
@@ -867,6 +865,9 @@ SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
    detectordata->constoblock = NULL;
    detectordata->vartoblock = NULL;
    detectordata->nblocks = 0;
+   detectordata->newToOld = NULL;
+   detectordata->oldToNew = NULL;
+
 
    SCIP_CALL( DECincludeDetector( scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
          DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,

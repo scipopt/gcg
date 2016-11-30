@@ -479,7 +479,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    assert(detectordata != NULL);
 
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+   seeed->considerImplicits(seeedPropagationData->seeedpool);
+   seeed->refineToMaster(seeedPropagationData->seeedpool);
 
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
    nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
@@ -488,8 +489,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
 
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+
    if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
       delete seeed;

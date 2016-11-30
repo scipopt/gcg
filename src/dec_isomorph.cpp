@@ -440,8 +440,6 @@ SCIP_RETCODE setupArrays(
    int j;
    int nconss;
    int nvars;
-   //SCIP_CONS** conss;
-   //SCIP_VAR** vars;
    AUT_COEF* scoef;
    AUT_CONS* scons;
    SCIP_Bool added;
@@ -470,12 +468,10 @@ SCIP_RETCODE setupArrays(
    //save the properties of constraints in a struct array and in a sorted pointer array
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
-      SCIP_Real* curvals = NULL;
-      SCIP_VAR** curvars = NULL;
+      int consindex = seeed->getOpenconss()[i];
+      SCIP_CONS* cons = seeedpool->getConsForIndex(consindex);
 
-      SCIP_CONS* cons = seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
-
-      int ncurvars = GCGconsGetNVars(scip, cons);
+      int ncurvars = seeedpool->getNVarsForCons(consindex);
       if( ncurvars == 0 )
          continue;
 
@@ -488,30 +484,24 @@ SCIP_RETCODE setupArrays(
       if( !added )
          delete scons;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
-
-      SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
-      SCIP_CALL( GCGconsGetVals(scip, cons, curvals, ncurvars) );
-
       //save the properties of variables of the constraints in a struct array and in a sorted pointer array
       for( j = 0; j < ncurvars; j++ )
       {
-         SCIP_Real constant;
          added = FALSE;
 
-         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
-            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
+
+//         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
+//            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
 
          if( !onlysign )
          {
-            scoef = new AUT_COEF(scip, curvals[j]);
+            scoef = new AUT_COEF(scip, seeedpool->getValsForCons(consindex)[j]);
          }
          else
          {
-            if( SCIPisPositive(scip, curvals[j]) )
+            if( SCIPisPositive(scip, seeedpool->getValsForCons(consindex)[j]) )
                scoef = new AUT_COEF(scip, 1.0);
-            else if( SCIPisNegative(scip, curvals[j]) )
+            else if( SCIPisNegative(scip, seeedpool->getValsForCons(consindex)[j]) )
                scoef = new AUT_COEF(scip, -1.0);
             else
                scoef = new AUT_COEF(scip, 0.0);
@@ -529,8 +519,6 @@ SCIP_RETCODE setupArrays(
             delete scoef;
 
       }
-      SCIPfreeBufferArray(scip, &curvars);
-      SCIPfreeBufferArray(scip, &curvals);
    }
    return SCIP_OKAY;
 }
@@ -695,8 +683,6 @@ SCIP_RETCODE createGraph(
    int ncurvars;
    int curvar;
    int color;
-   SCIP_VAR** curvars = NULL;
-   SCIP_Real* curvals = NULL;
    unsigned int nnodes;
    SCIP_Bool onlysign;
    nnodes = 0;
@@ -745,34 +731,33 @@ SCIP_RETCODE createGraph(
    //it is necessary, since only nodes have colors
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
-      SCIP_CONS* cons = seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+      int consindex = seeed->getOpenconss()[i];
+      SCIP_CONS* cons = seeedpool->getConsForIndex(consindex);
       AUT_CONS scons(scip, cons);
       ncurvars = seeedpool->getNVarsForCons(seeed->getOpenconss()[i]);
       if( ncurvars == 0 )
          continue;
-      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-      SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
-      SCIP_CALL( GCGconsGetVals(scip, cons, curvals, ncurvars) );
 
       for( j = 0; j < ncurvars; j++ )
       {
-         SCIP_Real constant;
+         int varindex = seeedpool->getVarsForCons(consindex)[j];
+         SCIP_VAR* var = seeedpool->getVarForIndex(varindex);
 
-         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
-            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
+
+//              if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
+//                 SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
 
          SCIP_Real val;
 
          if( !onlysign )
          {
-            val = curvals[j];
+            val = seeedpool->getValsForCons(consindex)[j];
          }
          else
          {
-            if( SCIPisPositive(scip, curvals[j]) )
+            if( SCIPisPositive(scip, seeedpool->getValsForCons(consindex)[j]) )
                val = 1.0;
-            else if( SCIPisNegative(scip, curvals[j]) )
+            else if( SCIPisNegative(scip, seeedpool->getValsForCons(consindex)[j]) )
                val = -1.0;
             else
                val = 0.0;
@@ -780,34 +765,32 @@ SCIP_RETCODE createGraph(
          *result = SCIP_SUCCESS;
 
          AUT_COEF scoef(scip, val);
-         AUT_VAR svar(scip, curvars[j]);
+         AUT_VAR svar(scip, var);
 
          color = colorinfo.get(scoef);
 
          if( color == -1 )
          {
             *result = SCIP_DIDNOTFIND;
-
             break;
          }
-         curvar = SCIPvarGetProbindex(curvars[j]);
+
+         curvar = SCIPvarGetProbindex(var);
          (void) h->add_vertex((unsigned int) (colorinfo.getLenCons() + colorinfo.getLenVar() + color)); /*lint !e864 */
          nnodes++;
          h->add_edge((unsigned int)i, (unsigned int) (nconss + nvars + z));
-         h->add_edge((unsigned int) (nconss + nvars + z), (unsigned int) (nconss + curvar));
-         SCIPdebugMessage(
-               "nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
-               SCIPconsGetName(cons), i, colorinfo.get(scons),
-               nconss + nvars + z, scoef.getVal(),
-               color + colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
-               SCIPvarGetName(curvars[j]), nconss + curvar,
-               colorinfo.get(svar) + colorinfo.getLenCons());  /*lint !e864 */
-         z++;
+              h->add_edge((unsigned int) (nconss + nvars + z), (unsigned int) (nconss + curvar));
+              SCIPdebugMessage(
+                    "nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
+                    SCIPconsGetName(cons), i, colorinfo.get(scons),
+                    nconss + nvars + z, scoef.getVal(),
+                    color + colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
+                    SCIPvarGetName(var), nconss + curvar,
+                    colorinfo.get(svar) + colorinfo.getLenCons());  /*lint !e864 */
+              z++;
 
       }
 
-      SCIPfreeBufferArray(scip, &curvals);
-      SCIPfreeBufferArray(scip, &curvars);
 
    }
    SCIPdebugMessage("Iteration 1: nnodes = %ud, Cons = %d, Vars = %d\n", nnodes, colorinfo.getLenCons(), colorinfo.getLenVar()); /*lint !e864 */
@@ -1569,6 +1552,9 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
       detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph) );
 
    /* add isomorph constraint handler parameters */
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecomps",
+      "Maximum number of solutions/decompositions", &detectordata->maxdecomps, FALSE,
+      DEFAULT_MAXDECOMPS, 1, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/exact",
       "Use exact coefficients for detection?", &detectordata->exact, FALSE,
          DEFAULT_EXACT, NULL, NULL) );
