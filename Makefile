@@ -61,7 +61,7 @@ GTEST		=	true
 PARASCIP	= 	true
 BLISS      	=   true
 OPENMP      =   false
-GSL         =   true
+GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 
