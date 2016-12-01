@@ -652,6 +652,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                for ( int k = 0; k < decompositions[i]->nstairlinkingvars[j]; ++k )
                {
                   decompositions[i]->stairlinkingvars[j][k] = SCIPvarGetProbvar( getVarForIndex(seeed->getStairlinkingvars(j)[k]) );
+                  SCIPcaptureVar(scip, decompositions[i]->stairlinkingvars[j][k]);
                }
             }
 

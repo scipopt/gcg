@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_mastersetcover.h
- * @brief  masteersetcover detector
+ * @brief  mastersetcover detector
  * @author Martin Bergner
  */
 
