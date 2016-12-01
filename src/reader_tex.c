@@ -138,9 +138,9 @@ SCIP_RETCODE writeHeaderCode(
    )
 {
    char* pname;
-   char* ppath;
+   char ppath[SCIP_MAXSTRLEN];
 
-   ppath = (char*) SCIPgetProbName(scip);
+   strcpy(ppath, (char*) SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
    SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
@@ -438,6 +438,7 @@ SCIP_RETCODE writeDecompCode(
    char gpname[SCIP_MAXSTRLEN];
    char sympath[SCIP_MAXSTRLEN];
    char pfile[SCIP_MAXSTRLEN];
+   char pfilecpy[SCIP_MAXSTRLEN];
    FILE* gpfile;
    int filedesc;
    int success;
@@ -462,7 +463,8 @@ SCIP_RETCODE writeDecompCode(
       {
          return SCIP_NOFILE;
       }
-      SCIPsplitFilename(pfile, &filepath, NULL, NULL, NULL);
+      strcpy(pfilecpy, pfile);
+      SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
       strcpy(gpfilename, filepath);
       strcat(gpfilename, "/");
 
@@ -531,7 +533,7 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "  & Interlinking blocks score: & %f \\\\                                        %s", scores.linkingscore, LINEBREAK);
    SCIPinfoMessage(scip, file, "  & Border score: & %f \\\\                                                     %s", scores.borderscore, LINEBREAK);
    SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\newpage                                                                       %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\clearpage                                                                       %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
 
    /*@todo get and output statistics*/
@@ -571,6 +573,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    char* filename;
    char sympath[SCIP_MAXSTRLEN];
    char pfile[SCIP_MAXSTRLEN];
+   char pfilecpy[SCIP_MAXSTRLEN];
    char makefilename[SCIP_MAXSTRLEN];
    int filedesc;
    int success;
@@ -593,7 +596,8 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    {
    return SCIP_NOFILE;
    }
-   SCIPsplitFilename(pfile, &filepath, &filename, NULL, NULL);
+   strcpy(pfilecpy, pfile);
+   SCIPsplitFilename(pfilecpy, &filepath, &filename, NULL, NULL);
    strcpy(makefilename, filepath);
    strcat(makefilename, "/");
    strcat(makefilename, "Makefile");
@@ -608,14 +612,18 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIPinfoMessage(scip, makefile, "# LaTeX code might have to be compiled several times                         %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, ".PHONY: %s.pdf all clean                                                     %s", filename, LINEBREAK);
    SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "# dependencies, gp etc here                                                  %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex                                                               %s", filename, filename, LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\tlatexmk -pdf -pdflatex=\"pdflatex -interaction=nonstopmode\" -use-make %s.tex %s", filename, LINEBREAK);
+   if(useGp)
+   {
+      SCIPinfoMessage(scip, makefile, "\t@echo Compiling gp files to tex                                            %s", LINEBREAK);
+      SCIPinfoMessage(scip, makefile, "\tgnuplot *.gp                                                               %s", LINEBREAK);
+   }
+   SCIPinfoMessage(scip, makefile, "\t@echo Compiling tex code. This may take a while.                           %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode\" -use-make %s.tex %s", filename, LINEBREAK);
    SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "clean:                                                                       %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\tlatexmk -CA                                                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\tlatexmk -CA                                                                %s", LINEBREAK);
 
 
    /*@todo write into makefile */
