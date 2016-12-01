@@ -957,6 +957,21 @@ int* DECdecompGetNStairlinkingvars(
    return decomp->nstairlinkingvars;
 }
 
+/** returns the total number of stairlinkingvars array of the given decomposition */
+int DECdecompGetNTotalStairlinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   int sum;
+   int b;
+
+   for ( b = 0; b < DECdecompGetNBlocks(decomp); ++b)
+         sum += DECdecompGetNStairlinkingvars(decomp)[b];
+
+   return sum;
+}
+
+
 /** sets the vartoblock hashmap of the given decomposition */
 void DECdecompSetVartoblock(
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
@@ -1753,7 +1768,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
          assert(FALSE);
       break;
    case DEC_DECTYPE_ARROWHEAD:
-      assert(DECdecompGetNLinkingvars(decdecomp) > 0);
+      assert(DECdecompGetNLinkingvars(decdecomp) > 0 || DECdecompGetNTotalStairlinkingvars(decdecomp) > 0);
       break;
    case DEC_DECTYPE_BORDERED:
       assert(DECdecompGetNLinkingvars(decdecomp) == 0 && DECdecompGetNLinkingconss(decdecomp) > 0);
