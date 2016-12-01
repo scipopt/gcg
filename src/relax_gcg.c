@@ -1174,6 +1174,7 @@ SCIP_RETCODE createPricingVariables(
          }
          else
          {
+            SCIPinfoMessage(scip, NULL, " changed block number to %d \n", tempblock );
             blocknr = tempblock; /*lint !e806*/
          }
       }

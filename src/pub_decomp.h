@@ -221,6 +221,12 @@ int* DECdecompGetNStairlinkingvars(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
+/** returns the total number of stairlinkingvars array of the given decomposition */
+int DECdecompGetNTotalStairlinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
 /** sets the vartoblock hashmap of the given decomposition */
 extern
 void DECdecompSetVartoblock(

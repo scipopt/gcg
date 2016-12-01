@@ -228,8 +228,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          /** set detection data */
          SCIP_CALL_ABORT( SCIPgetIntParam(givenScip, "detection/maxrounds", &maxndetectionrounds) );
 
-
-
          /** store priorities of the detectors */
          for(int d = 0; d < conshdlrdata->ndetectors; ++d )
          {
@@ -260,7 +258,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  ++nDetectors;
 
          }
-
 
          /** initilize matrix datastructures */
          conss = SCIPgetConss(scip);
@@ -317,7 +314,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  cons = consToScipCons[i];
 
                  nCurrVars = GCGconsGetNVars(scip, cons);
-//                 std::cout << "\n\nConstraint: " << SCIPconsGetName(cons) << " with " << nCurrVars << " variables" << std::endl;
 
                  SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVars, nCurrVars) ); /** free in line 321 */
                  SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVals, nCurrVars) ); /** free in line 321 */
@@ -326,11 +322,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                  for(int currVar = 0; currVar < nCurrVars; ++currVar)
                  {
-
                      int varIndex;
                      std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
-
-//                         std::cout << " try ("<< currVar << ")"<<varIndex << "/" << SCIPvarGetName(currVars[currVar]) << "\t";
 
                      /** because of the bug of GCGconsGet*()-methods some variables have to be negated */
                      if(!SCIPvarIsNegated(currVars[currVar]))
@@ -609,8 +602,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          {
              std::cout << "Detector " << DECdetectorGetName(detectorToScipDetector[i] ) << " worked on " << successDetectors[i] << " of " << finishedSeeeds.size() << " and took a total time of " << SCIPgetClockTime(scip, detectorToScipDetector[i]->dectime)  << std::endl;
          }
-
-
          /** fill out the decompositions */
 
          SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
@@ -619,9 +610,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             SeeedPtr seeed = finishedSeeeds[i];
             int* nstairlinkingvars;
             SCIP_VAR*** stairlinkingvars;
-
-
-
             assert(seeed->checkConsistency() );
 
             /** set nblocks */
@@ -636,6 +624,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             for( int j = 0; j < nlinkingconss; ++j )
             {
                decompositions[i]->linkingconss[j] = getConsForIndex(seeed->getMasterconss()[j]);
+               SCIPcaptureCons(scip, decompositions[i]->linkingconss[j]);
             }
 
             /** set linkingvars */
@@ -645,12 +634,13 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             for( int j = 0; j < seeed->getNLinkingvars(); ++j )
             {
                decompositions[i]->linkingvars[j] = SCIPvarGetProbvar( getVarForIndex(seeed->getLinkingvars()[j]) );
+               SCIPcaptureVar(scip, decompositions[i]->linkingvars[j]);
             }
             for( int j = 0; j < seeed->getNMastervars(); ++j )
             {
                decompositions[i]->linkingvars[j + seeed->getNLinkingvars()] = SCIPvarGetProbvar( getVarForIndex(seeed->getMastervars()[j]));
+               SCIPcaptureVar(scip, decompositions[i]->linkingvars[j + seeed->getNLinkingvars()]);
             }
-
 
             /** set stairlinkingvars */
             SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->stairlinkingvars, nblocks) ); /** free in decomp.c:466 */
@@ -773,9 +763,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             SCIPfreeBufferArrayNull(scip, &(nstairlinkingvars));
 
 
-  //          SCIP_CALL_ABORT( DECdecompSetStairlinkingvars(scip, decompositions[i], stairlinkingvars, nstairlinkingvars) );
-
-            /** add linking vars */
+              /** add linking vars */
             for( int j = 0; j < seeed->getNLinkingvars(); ++j )
             {
                vindex++;
@@ -827,7 +815,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             {
                decompositions[i]->type = DEC_DECTYPE_STAIRCASE;
             }
-            else if(decompositions[i]->nlinkingvars > 0)
+            else if(decompositions[i]->nlinkingvars > 0 || seeed->getNTotalStairlinkingvars() )
             {
                decompositions[i]->type = DEC_DECTYPE_ARROWHEAD;
             }
@@ -835,7 +823,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             {
                decompositions[i]->type = DEC_DECTYPE_BORDERED;
             }
-            else if(decompositions[i]->nlinkingconss == 0)
+            else if(decompositions[i]->nlinkingconss == 0 && seeed->getNTotalStairlinkingvars() == 0)
             {
                decompositions[i]->type = DEC_DECTYPE_DIAGONAL;
             }
