@@ -60,12 +60,14 @@
 #define LINEBREAK "\n"
 #endif
 
-#define PATH_DEFAULT            " "
+#define USEGP_DEFAULT            TRUE
+#define MAXNDECOMPS_DEFAULT      5
 
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-   char*       path;     /** path to main file */
+   SCIP_Bool       useGp;       /** if true uses gp files as intermediate step */
+   int             maxNDecomps; /** maximum number of decompositions to visualize (ones with best score first are preferred) */
 };
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
@@ -102,13 +104,16 @@ static
 SCIP_DECL_READERWRITE(readerWriteTex)
 {  /*lint --e{715}*/
    int ndecomps;
+   SCIP_READERDATA* readerdata;
 
    assert(scip != NULL);
    assert(reader != NULL);
 
    ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
 
-   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE, TRUE) );
+   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE, readerdata) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -134,7 +139,7 @@ SCIP_RETCODE writeHeaderCode(
    DEC_DECOMP**         decomps,            /**< Decompositions structure */
    int*                 ndecomps,           /**< Number of decompositions */
    SCIP_Bool            toc,                /**< if true table of contents is included */
-   SCIP_Bool            useGp               /**< if true Gnuplot will be used for visualization */
+   SCIP_READERDATA*     readerdata          /**< reader specific arguments */
    )
 {
    char* pname;
@@ -179,7 +184,7 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               %s", LINEBREAK);
-   if(useGp)
+   if(readerdata->useGp)
    {
       SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                   %s", LINEBREAK);
    }
@@ -427,7 +432,7 @@ SCIP_RETCODE writeDecompCode(
    FILE*                 file,               /**< File pointer to write to */
    FILE*                 makefile,           /**< File pointer to corresponding makefile */
    DEC_DECOMP*           decomp,             /**< Decomposition array pointer */
-   SCIP_Bool             useGp               /**< if true Gnuplot will be used for visualization */
+   SCIP_READERDATA*      readerdata          /**< reader specific arguments */
    )
 {
    char* filepath;
@@ -447,7 +452,7 @@ SCIP_RETCODE writeDecompCode(
    assert(decomp != NULL);
    (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
 
-   if(useGp)
+   if(readerdata->useGp)
    {
       /* --- create a gnuplot file for the decomposition --- */
 
@@ -511,7 +516,7 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                                           %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
-   if(useGp)
+   if(readerdata->useGp)
    {
       SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                                           %s", pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp), LINEBREAK);
    }
@@ -564,10 +569,9 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    int*                  ndecomps,           /**< Number of decompositions */
    SCIP_Bool             statistics,         /**< if true detection statistics and are included in report */
    SCIP_Bool             toc,                /**< if true table of contents is included */
-   SCIP_Bool             useGp               /**< if true Gnuplot will be used for visualization */
+   SCIP_READERDATA*      readerdata          /**< reader specific arguments */
    )
 {
-   DEC_DECOMP** sorteddecomps;
    FILE* makefile;
    char* filepath;
    char* filename;
@@ -578,6 +582,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    int filedesc;
    int success;
    int i;
+   int maxrounds;
 
    assert(scip != NULL);
    assert(*ndecomps > 0);
@@ -614,9 +619,13 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex                                                               %s", filename, filename, LINEBREAK);
-   if(useGp)
+   if(readerdata->useGp)
    {
+      SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
+      SCIPinfoMessage(scip, makefile, "\t@echo                                                                      %s", LINEBREAK);
       SCIPinfoMessage(scip, makefile, "\t@echo Compiling gp files to tex                                            %s", LINEBREAK);
+      SCIPinfoMessage(scip, makefile, "\t@echo                                                                      %s", LINEBREAK);
+      SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
       SCIPinfoMessage(scip, makefile, "\tgnuplot *.gp                                                               %s", LINEBREAK);
    }
    SCIPinfoMessage(scip, makefile, "\t@echo Compiling tex code. This may take a while.                           %s", LINEBREAK);
@@ -631,16 +640,25 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    /* --- make the tex files --- */
 
-   /*@todo sort decomps into sorteddecomps (just rearrange pointers)*/
-   sorteddecomps = decomps;
+   SCIP_CALL( writeHeaderCode(scip,file,statistics,decomps,ndecomps,toc,readerdata) );
 
-   SCIP_CALL( writeHeaderCode(scip,file,statistics,sorteddecomps,ndecomps,toc,useGp) );
+   /* check if the number of max decomps exceeds the max */
+   if(readerdata->maxNDecomps < *ndecomps)
+   {
+      maxrounds = readerdata->maxNDecomps;
+   }
+   else
+   {
+      maxrounds = *ndecomps;
+   }
 
-   for( i=0; i<*ndecomps; i++ )
+   /* write LaTeX code for each decomp starting with the highest score */
+   /* note: decomps come sorted from lowest to highest score */
+   for( i=0; i<maxrounds; i++ )
    {
       if(decomps[i] != NULL)
       {
-         SCIP_CALL( writeDecompCode(scip,file,makefile,decomps[i], useGp) );
+         SCIP_CALL( writeDecompCode(scip,file,makefile,decomps[i], readerdata) );
       }
    }
 
@@ -657,16 +675,21 @@ SCIPincludeReaderTex(
 {
    SCIP_READERDATA* readerdata;
 
-   /* create dec reader data */
+   /* create tex reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
 
-   /* include dec reader */
+   /* include tex reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
            readerFreeTex, readerReadTex, readerWriteTex, readerdata));
 
-  SCIP_CALL( SCIPaddStringParam(scip,
-         "reading/texreader/path", "path to tex file",
-         NULL, FALSE, PATH_DEFAULT, NULL, NULL) );
+   /* include possible parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip,
+         "reading/texreader/useGp", "if true uses gp files as intermediate step",
+         &readerdata->useGp, FALSE, USEGP_DEFAULT, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+         "reading/texreader/maxNDecomps", "maximum number of decompositions to visualize (ones with best score first are preferred)",
+         &readerdata->maxNDecomps, FALSE, MAXNDECOMPS_DEFAULT, 0, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }
