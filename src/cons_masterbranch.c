@@ -1750,6 +1750,14 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    mastervals = GCGoriginalVarGetMastervals(var);
 #endif
 
+   /* A global bound change might turn the current relaxation solution invalid */
+   if( SCIPisRelaxSolValid(scip)
+      && (((eventtype & SCIP_EVENTTYPE_GLBCHANGED) != 0 && SCIPisFeasLT(scip, SCIPgetRelaxSolVal(scip, var), newbound))
+      || ((eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 && SCIPisFeasGT(scip, SCIPgetRelaxSolVal(scip, var), newbound))) )
+   {
+      SCIP_CALL( SCIPmarkRelaxSolInvalid(scip) );
+   }
+
    /* deal with variables present in the pricing */
    if( blocknr >= 0 && GCGisPricingprobRelevant(scip, blocknr) )
    {

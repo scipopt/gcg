@@ -158,10 +158,13 @@ TEST_F(ColpoolTest, DeleteOldTest) {
 
    colpool->deleteOldColumns();
 
+   colpool->resortColumns();
+
    ASSERT_EQ(colpool->getNCols(), 2);
 
    colpool->getBestCol(&gcgcol);
    ASSERT_EQ(gcgcol, gcgcols[2]);
+
    GCGfreeGcgCol(&gcgcol);
 
    colpool->getBestCol(&gcgcol);
