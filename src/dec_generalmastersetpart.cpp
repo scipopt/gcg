@@ -190,12 +190,12 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpart)
             if( !SCIPvarIsIntegral(vars[j]) && !SCIPvarIsBinary(vars[j]) )
             {
                SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[j]) );
-               relevant = FALSE;
+               relevant = false;
             }
             if( !SCIPisEQ(scip, vals[j], 1.0) )
             {
                SCIPdebugPrintf("(coeff for var %s is %.2f != 1.0) ", SCIPvarGetName(vars[j]), vals[j] );
-               relevant = FALSE;
+               relevant = false;
             }
          }
          SCIPfreeBufferArrayNull(scip, &vals);

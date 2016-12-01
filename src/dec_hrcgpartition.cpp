@@ -477,7 +477,10 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+   seeed->considerImplicits(seeedPropagationData->seeedpool);
+   seeed->refineToMaster(seeedPropagationData->seeedpool);
+
+   seeedPropagationData->seeedpool->decrementSeeedcount();
 
    if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {

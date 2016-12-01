@@ -168,6 +168,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
       }
       else if(GCGconsGetType(cons) != logicor && GCGconsGetType(cons) != setcovering && GCGconsGetType(cons) != setpartitioning )
       {
+         relevant = true;
          nvars = GCGconsGetNVars(scip, cons);
          vars = NULL;
          vals = NULL;
@@ -190,12 +191,12 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
             if( !SCIPvarIsIntegral(vars[j]) && !SCIPvarIsBinary(vars[j]) )
             {
                SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[j]) );
-               relevant = FALSE;
+               relevant = false;
             }
             if( !SCIPisEQ(scip, vals[j], 1.0) )
             {
                SCIPdebugPrintf("(coeff for var %s is %.2f != 1.0) ", SCIPvarGetName(vars[j]), vals[j] );
-               relevant = FALSE;
+               relevant = false;
             }
          }
          SCIPfreeBufferArrayNull(scip, &vals);
@@ -214,6 +215,15 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
    *result = SCIP_SUCCESS;
+
+   seeed->considerImplicits(seeedPropagationData->seeedpool);
+   seeed->calcHashvalue();
+
+   std::cout << " directly before gentNMasterConss() " << std::endl;
+
+   std::cout << "getNMasterConss():  " << seeed->getNMasterconss() << std::endl;
+
+   seeed->displaySeeed();
 
    return SCIP_OKAY;
 }

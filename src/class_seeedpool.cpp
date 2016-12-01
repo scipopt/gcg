@@ -98,9 +98,13 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 
 SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> const & seeeds, bool sort){
 
+   assert(compseeed != NULL);
+
    for( size_t i = 0; i < seeeds.size(); ++i )
    {
       bool noDuplicate = false;
+
+      assert(seeeds[i] != NULL);
 
       /** compares the number of master conss, master vars, blocks, linking vars and stairlinking vars */
       if( compseeed->getNMasterconss() != seeeds[i]->getNMasterconss() || compseeed->getNMastervars() != seeeds[i]->getNMastervars() ||
@@ -191,7 +195,10 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
 }
 
 SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currSeeeds, std::vector<SeeedPtr> const & finishedSeeeds, bool sort){
-   return ( seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, sort) && seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, sort) );
+
+   bool bool1 = seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, sort);
+   bool bool2 = seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, sort);
+   return ( bool1 && bool2 );
 }
 
 
@@ -295,7 +302,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          /** assumption: now every relevant constraint and variable has its index and is stored in the corresponding unordered_map */
          /** find constraint <-> variable relationships and store them in both directions */
-         for(int i = 0; i < (int)consToScipCons.size() ; ++i)
+         for( int i = 0; i < (int)consToScipCons.size() ; ++i )
          {
                  SCIP_CONS* cons;
                  SCIP_VAR** currVars;
@@ -383,7 +390,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          successDetectors = std::vector<int>(nDetectors, 0);
          ndecompositions = 0;
-         maxRounds = 1;
+         maxRounds = 2;
          seeedPropData = new SEEED_PROPAGATION_DATA();
          seeedPropData->seeedpool = this;
          seeedPropData->nNewSeeeds = 0;
@@ -402,6 +409,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          {
                  std::cout << "currently in detection round " << round << std::endl;
                  std::vector<SeeedPtr> nextSeeeds = std::vector<SeeedPtr>(0);
+                 std::vector<SeeedPtr> currSeeedsToDelete = std::vector<SeeedPtr>(0);
 
                  for(size_t s = 0; s < currSeeeds.size(); ++s )
                  {
@@ -447,6 +455,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
                                  if(verboseLevel > 2)
                                      std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d]) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round+1 << std::endl;
+
                                  SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
 
                                  for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
@@ -461,7 +470,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                     seeedPropData->newSeeeds[j]->calcHashvalue();
                                  }
 
-                                 if(seeedPropData->nNewSeeeds != 0 && displaySeeeds)
+                                 if(seeedPropData->nNewSeeeds != 0 && (displaySeeeds ) )
                                  {
                                     std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found " << seeedPropData->nNewSeeeds << " new seeed(s): ";
                                     std::cout << seeedPropData->newSeeeds[0]->getID();
@@ -484,9 +493,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 
                                  /** if the new seeeds are no duplicate they're added to the currSeeeds */
-                                 for(int seeed = 0; seeed<seeedPropData->nNewSeeeds; ++seeed)
+                                 for( int seeed = 0; seeed < seeedPropData->nNewSeeeds; ++seeed )
                                  {
-                                         if(seeedIsNoDuplicate(seeedPropData->newSeeeds[seeed], currSeeeds, finishedSeeeds, false))
+                                         if( seeedIsNoDuplicate(seeedPropData->newSeeeds[seeed], currSeeeds, finishedSeeeds, false) )
                                          {
                                             seeedPropData->newSeeeds[seeed]->calcOpenconss();
                                             seeedPropData->newSeeeds[seeed]->calcOpenvars();
@@ -506,10 +515,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                          else
                                          {
                                             delete seeedPropData->newSeeeds[seeed];
+                                            seeedPropData->newSeeeds[seeed] = NULL;
                                          }
                                  }
                                  /** cleanup propagation data structure */
                                  SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
+                                 seeedPropData->newSeeeds = NULL;
                                  seeedPropData->nNewSeeeds = 0;
                          }
 
@@ -517,13 +528,32 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                          seeedPtr->calcHashvalue();
 
 
-                   if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false))
+                   if( seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false) )
                    {
                       finishedSeeeds.push_back(seeedPtr);
                    }
                    else
-                      delete seeedPtr;
+                   {
+                      bool isIdentical = false;
+                      for (size_t h = 0; h < finishedSeeeds.size(); ++h )
+                      {
+                         if( seeedPtr == finishedSeeeds[h] )
+                         {
+                            isIdentical = true;
+                            break;
+                         }
+                      }
+
+                      if( !isIdentical )
+                      {
+                         currSeeedsToDelete.push_back(seeedPtr);
+                      }
+
+                   }
                  }
+
+                 for(size_t s = 0; s < currSeeedsToDelete.size(); ++s )
+                    delete currSeeedsToDelete[s];
 
                  currSeeeds = nextSeeeds;
 
@@ -872,6 +902,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             delete delSeeeds[d-1];
          }
 
+         delSeeeds.clear();
+
          delete seeedPropData;
 
          return;
@@ -941,6 +973,12 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     nTotalSeeeds++;
     return (nTotalSeeeds-1);
  }
+
+ void Seeedpool::decrementSeeedcount(){
+     nTotalSeeeds--;
+     return;
+  }
+
 
  DEC_DECOMP** Seeedpool::getDecompositions(){
     return decompositions;

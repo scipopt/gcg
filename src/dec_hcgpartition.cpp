@@ -484,8 +484,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
 
-
-   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+   seeedPropagationData->seeedpool->decrementSeeedcount();
+   seeed->considerImplicits(seeedPropagationData->seeedpool);
+   seeed->refineToMaster(seeedPropagationData->seeedpool);
 
    if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {

@@ -134,6 +134,8 @@ public:
 
    int getNewIdForSeeed();
 
+   void decrementSeeedcount();
+
    DEC_DECOMP** getDecompositions();
 
    int getNDecompositions();

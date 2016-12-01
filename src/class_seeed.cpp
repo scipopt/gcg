@@ -72,8 +72,8 @@ Seeed::Seeed(
    int         givenNConss,                /**number of constraints */
    int         givenNVars                  /**number of variables */
 ) :
-   scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), propagatedByDetector(
-      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false)
+   scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
+      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), detectorChain(0)
 {
 }
 
@@ -1364,6 +1364,7 @@ SCIP_RETCODE Seeed::completeByConnected(Seeedpool* seeedpool)
    assert((int ) varsForBlocks.size() == nBlocks);
    assert((int ) stairlinkingVars.size() == nBlocks);
 
+   SCIP_CALL( considerImplicits(seeedpool) );
    SCIP_CALL( refineToMaster(seeedpool) );
 
    if(nBlocks < 0)
@@ -2179,7 +2180,7 @@ int Seeed::getNLinkingvars()
 /** returns vector containing master conss */
 int Seeed::getNMasterconss()
 {
-   return (int)masterConss.size();
+   return (int) masterConss.size();
 }
 
 /** returns number of master vars (hitting only constraints in the master) */

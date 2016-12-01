@@ -482,13 +482,14 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
+   seeedPropagationData->seeedpool->decrementSeeedcount();
+
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
    nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
 
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
-
 
    if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
