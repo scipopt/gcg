@@ -70,7 +70,7 @@ public:
       Weights               w                  /**< weights for the given graph */
    );
 
-   /** Destruktor */
+   /** Destructor */
    virtual ~MatrixGraph();
 
    /** writes the graph to the given file.

@@ -2455,8 +2455,7 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
 
    SCIP_CALL( blocking(scip, detectordata, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->newSeeeds), &(seeedPropagationData->nNewSeeeds),result) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d seeeds.\n", seeedPropagationData->nNewSeeeds);
-   //SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " \tBlocks:", seeedPropagationData->nNewSeeeds);
-#ifdef WRITEALLOUTPUT
+   #ifdef WRITEALLOUTPUT
    {
       char filename[256];
       sprintf(filename, "%s_ROC", getProbNameWithoutPath(scip));
@@ -2465,10 +2464,10 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
 #endif
    for( i = 0; i < seeedPropagationData->nNewSeeeds; ++i )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %i", seeedPropagationData->newSeeeds[i]->getNBlocks());
+ //     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %i", seeedPropagationData->newSeeeds[i]->getNBlocks());
       seeedPropagationData->newSeeeds[i]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n");
+ //  SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n");
 
    SCIP_CALL( SCIPreallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), seeedPropagationData->nNewSeeeds) );
 

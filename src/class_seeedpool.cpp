@@ -225,6 +225,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          conshdlrdata = SCIPconshdlrGetData(conshdlr);
          assert(conshdlrdata != NULL);
 
+         /** set detection data */
+         SCIP_CALL_ABORT( SCIPgetIntParam(givenScip, "detection/maxrounds", &maxndetectionrounds) );
+
+
+
          /** store priorities of the detectors */
          for(int d = 0; d < conshdlrdata->ndetectors; ++d )
          {
@@ -375,7 +380,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
           *  4) every detector not registered yet propagates seeed
           *  5)  */
 
-         int maxRounds;
+
          SEEED_PROPAGATION_DATA* seeedPropData;
          SCIP_VAR* probvar;
          SCIP_CONS* cons;
@@ -390,7 +395,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          successDetectors = std::vector<int>(nDetectors, 0);
          ndecompositions = 0;
-         maxRounds = 2;
          seeedPropData = new SEEED_PROPAGATION_DATA();
          seeedPropData->seeedpool = this;
          seeedPropData->nNewSeeeds = 0;
@@ -405,7 +409,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             currSeeeds[s]->calcHashvalue();
          }
 
-         for(int round = 0; round < maxRounds; ++round)
+         for(int round = 0; round < maxndetectionrounds; ++round)
          {
                  std::cout << "currently in detection round " << round << std::endl;
                  std::vector<SeeedPtr> nextSeeeds = std::vector<SeeedPtr>(0);
@@ -433,10 +437,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                                  SCIP_RESULT result = SCIP_DIDNOTFIND;
                                  detector = detectorToScipDetector[d];
-
-//                                 if(DECdetectorGetName(detectorToScipDetector[d]) == "staircase_lsp")
-//                                    verboseLevel = 3;
-//                                 else verboseLevel = 0;
 
                                  /** if the seeed is also propagated by the detector go on with the next detector */
                                  if(seeedPtr->isPropagatedBy(d) && !detector->usefulRecall )
@@ -559,12 +559,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          }
 
-         /* completeGreedily() on  currseeeds (from last round) and add them to finished seeeds */
+         /* completeByconnected() on  currseeeds (from last round) and add them to finished seeeds */
 
          for(size_t i = 0; i < currSeeeds.size(); ++i)
          {
              SeeedPtr seeedPtr = currSeeeds[i];
-//             SCIP_CALL_ABORT(seeedPtr->completeGreedily( seeedPropData->seeedpool ) );
              SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
              seeedPtr->calcHashvalue();
              /* currseeeds are freed later */
@@ -590,14 +589,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          for(size_t i = 0; i < finishedSeeeds.size(); ++i)
          {
-          //   std::vector<int>::const_iterator detectorIter =  finishedSeeeds.at(i)->detectorChain.begin();
-          //   std::vector<int>::const_iterator detectorIterEnd =  finishedSeeeds.at(i)->detectorChain.end();
-
-          //   for (; detectorIter != detectorIterEnd; ++detectorIter)
-          //   {
-          //       successDetectors[*detectorIter]++;
-          //   }
-
             assert(finishedSeeeds[i]->checkConsistency() );
             assert(finishedSeeeds[i]->getNOpenconss() == 0);
             assert(finishedSeeeds[i]->getNOpenvars() == 0);

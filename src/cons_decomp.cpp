@@ -61,6 +61,8 @@
 #define CONSHDLR_NEEDSCONS        FALSE /**< should the constraint handler be skipped, if no constraints are available? */
 
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+#define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
+
 /*
  * Data structures
  */
@@ -76,6 +78,7 @@ struct SCIP_ConshdlrData
    SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
    SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
    int                   ndecomps;           /**< number of decomposition structures  */
+   int                   maxndetectionrounds;/**< maximum number of detection loop rounds  */
    SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 };
 
@@ -300,6 +303,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->priorities = NULL;
    conshdlrdata->detectors = NULL;
    conshdlrdata->hasrun = FALSE;
+   conshdlrdata->maxndetectionrounds = 0;
+
 
    SCIP_CALL( SCIPcreateWallClock(scip, &conshdlrdata->detectorclock) );
 
@@ -315,6 +320,10 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
+      "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
+      DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }
@@ -610,63 +619,9 @@ SCIP_RETCODE DECdetectStructure(
 	  seeedpool.findDecompositions();
 	  conshdlrdata->decdecomps = seeedpool.getDecompositions();
 	  conshdlrdata->ndecomps = seeedpool.getNDecompositions();
-
+	  seeedpool.releasVars();
       SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
       SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
-
-//      SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
-//      for( i = 0; i < conshdlrdata->ndetectors; ++i )
-//      {
-//         DEC_DETECTOR* detector;
-//         DEC_DECOMP** decdecomps;
-//         int ndecdecomps;
-//
-//         ndecdecomps = -1;
-//         detector = conshdlrdata->detectors[i];
-//         assert(detector != NULL);
-//         if( !detector->enabled )
-//            continue;
-//         decdecomps = NULL;
-//
-//
-//         if( *result == SCIP_SUCCESS )
-//         {
-//            int j;
-//            assert(ndecdecomps >= 0);
-//            assert(decdecomps != NULL || ndecdecomps == 0);
-//
-//            SCIPdebugMessage("We originally have %d decompositions, ", ndecdecomps);
-//            for( j = 0; j < ndecdecomps; ++j )
-//            {
-//               assert(decdecomps != NULL);
-//               DECdecompSetDetector(decdecomps[j], detector);
-//            }
-//            if( ndecdecomps > 2 )
-//            {
-//               int nunique = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
-//
-//               for( j = nunique; j < ndecdecomps; ++j )
-//               {
-//                  SCIP_CALL( DECdecompFree(scip, &(decdecomps[j])) );
-//                  decdecomps[j] = NULL;
-//               }
-//
-//               ndecdecomps = nunique;
-//            }
-//            SCIPdebugPrintf("%d after filtering!\n", ndecdecomps);
-//
-//            SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), ((size_t)conshdlrdata->ndecomps+ndecdecomps)) );
-//            BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps); /*lint !e866*/
-//            conshdlrdata->ndecomps += ndecdecomps;
-//            detector->ndecomps = ndecdecomps;
-//            SCIP_CALL( SCIPduplicateMemoryArray(scip, &detector->decomps, decdecomps, detector->ndecomps) );
-//         }
-//         else
-//         {
-//            SCIPdebugPrintf("Failure!\n");
-//         }
-//         SCIPfreeMemoryArrayNull(scip, &decdecomps);
-//      }
    }
    else
    {

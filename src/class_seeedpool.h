@@ -71,6 +71,7 @@ private:
    std::vector<SeeedPtr> 						      currSeeeds;				   /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of current (open) seeeds */
 
+   int                                          maxndetectionrounds;    /**< maximum number of detection rounds */
    int											         nTotalSeeeds;        	/**< number of created seeeeds, used to give next id */
    std::vector<std::vector<int>> 				   varsForConss; 	   	   /**< stores for every constraint the indices of variables that are contained in the constraint */
    std::vector<std::vector<double>>             valsForConss;           /**< stores for every constraint the coefficients of variables that are contained in the constraint (i.e. have a nonzero coefficient) */
