@@ -471,6 +471,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    int s;
    int nMaxSeeeds;
    int nNewSeeeds = 0;
+   int givenBlocks = -1; // if givenBlocks == -1, the numbers of the following array will be used as number of blocks, else the number of givenBlocks will be used as number of blocks
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
    std::vector<int> numberOfBlocks = {2, 4, 8, 12, 20, 32};
@@ -510,26 +511,59 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
-   for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
+   if(givenBlocks != -1)
    {
-      SCIP_RETCODE retcode;
-      detectordata->blocks = numberOfBlocks[k];
-      retcode = callMetis(scip, detectordata, result);
-
-      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
+      assert(givenBlocks >= 0);
+      int blocks = givenBlocks - seeed->getNBlocks();
+      if(blocks <= 0)
       {
-         continue;
+         delete seeed;
+         seeedPropagationData->nNewSeeeds = 0;
+         SCIPfreeBufferArray(scip, &newSeeeds);
+         *result = SCIP_SUCCESS;
+         return SCIP_OKAY;
       }
-
-      SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
-
-      if( (newSeeeds)[j] != NULL )
+      else
       {
-         nNewSeeeds = nNewSeeeds + 2;
-         detectordata->found = TRUE;
+         SCIP_RETCODE retcode;
+         detectordata->blocks = blocks;
+         retcode = callMetis(scip, detectordata, result);
+         if( *result == SCIP_SUCCESS && retcode == SCIP_OKAY )
+         {
+            SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[0], &newSeeeds[1], seeedPropagationData->seeedpool) );
+            if( (newSeeeds)[0] != NULL )
+            {
+               nNewSeeeds = 2;
+               detectordata->found = TRUE;
+            }
+         }
       }
-      j = j + 2;
    }
+   else
+   {
+      for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
+      {
+         SCIP_RETCODE retcode;
+         detectordata->blocks = numberOfBlocks[k];
+         retcode = callMetis(scip, detectordata, result);
+
+         if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
+         {
+            continue;
+         }
+
+         SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
+
+         if( (newSeeeds)[j] != NULL )
+         {
+            nNewSeeeds = nNewSeeeds + 2;
+            detectordata->found = TRUE;
+         }
+         j = j + 2;
+      }
+   }
+
+
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
 
    delete detectordata->graph;

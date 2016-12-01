@@ -352,27 +352,34 @@ SCIP_RETCODE createMetisFile(
    return SCIP_OKAY;
 }
 
-/** are there conss and vars to be included by the graph */
+/** are there conss and vars to be included by the graph (min. two conss) */
 static
 bool graphCompletible(
    gcg::Seeedpool*  seeedpool,
    gcg::Seeed*      seeed
    )
 {
+   int counter = 0;
+   bool varFound;
    for(int c = 0; c < seeed->getNOpenconss(); ++c)
    {
+      varFound = false;
       int cons = seeed->getOpenconss()[c];
-      for(int v = 0; v < seeed->getNOpenvars(); ++v)
+      for(int v = 0; v < seeed->getNOpenvars() && !varFound; ++v)
       {
          int var = seeed->getOpenvars()[v];
-         for(int i = 0; i < seeedpool->getNVarsForCons(cons); ++i)
+         for(int i = 0; i < seeedpool->getNVarsForCons(cons) && !varFound; ++i)
          {
             if(var == seeedpool->getVarsForCons(cons)[i])
             {
-               return true;
+               varFound = true;
             }
          }
       }
+      if(varFound)
+         counter++;
+      if(counter == 2)
+         return true;
    }
    return false;
 }
@@ -471,6 +478,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    int nNewSeeeds = 0;
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
+   int givenBlocks = -1; // if givenBlocks == -1, the numbers of the following array will be used as number of blocks, else the number of givenBlocks will be used as number of blocks
    std::vector<int> numberOfBlocks = {2, 4, 8, 12, 20, 32};
 
    assert(scip != NULL);
@@ -508,28 +516,60 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
-   for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
+   if(givenBlocks != -1)
    {
-      SCIP_RETCODE retcode;
-      if(numberOfBlocks[k] > seeedPropagationData->seeedToPropagate->getNOpenconss() )
-          continue;
-
-      detectordata->blocks = numberOfBlocks[k];
-      retcode = callMetis(scip, detectordata, result);
-
-      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
+      assert(givenBlocks >= 0);
+      int blocks = givenBlocks - seeed->getNBlocks();
+      if(blocks <= 0)
       {
-         continue;
+         delete seeed;
+         seeedPropagationData->nNewSeeeds = 0;
+         SCIPfreeBufferArray(scip, &newSeeeds);
+         *result = SCIP_SUCCESS;
+         return SCIP_OKAY;
       }
-
-      SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed,&newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool));
-      if( (newSeeeds)[j] != NULL )
+      else
       {
-         nNewSeeeds = nNewSeeeds + 2;
-         detectordata->found = TRUE;
+         SCIP_RETCODE retcode;
+         detectordata->blocks = blocks;
+         retcode = callMetis(scip, detectordata, result);
+         if( *result == SCIP_SUCCESS && retcode == SCIP_OKAY )
+         {
+            SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[0], &newSeeeds[1], seeedPropagationData->seeedpool) );
+            if( (newSeeeds)[0] != NULL )
+            {
+               nNewSeeeds = 2;
+               detectordata->found = TRUE;
+            }
+         }
       }
-      j = j + 2;
    }
+   else
+   {
+      for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
+      {
+         SCIP_RETCODE retcode;
+         if(numberOfBlocks[k] > seeedPropagationData->seeedToPropagate->getNOpenconss() )
+             continue;
+
+         detectordata->blocks = numberOfBlocks[k];
+         retcode = callMetis(scip, detectordata, result);
+
+         if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
+         {
+            continue;
+         }
+
+         SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed,&newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool));
+         if( (newSeeeds)[j] != NULL )
+         {
+            nNewSeeeds = nNewSeeeds + 2;
+            detectordata->found = TRUE;
+         }
+         j = j + 2;
+      }
+   }
+
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
 
    delete detectordata->graph;
