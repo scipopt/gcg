@@ -511,6 +511,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
+   //if givenBlocks != -1, use givenBlocks as number of blocks
    if(givenBlocks != -1)
    {
       assert(givenBlocks >= 0);
@@ -539,6 +540,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
          }
       }
    }
+   //if givenBlocks == -1, use the number of the array numberOfBlocks as number of blocks
    else
    {
       for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)

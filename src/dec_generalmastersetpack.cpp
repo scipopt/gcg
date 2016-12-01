@@ -27,7 +27,7 @@
 
 /**@file   dec_generalmastersetpack.cpp
  * @ingroup DETECTORS
- * @brief  detector generalmastersetpack (put your description here)
+ * @brief  detector generalmastersetpack (sets setcovering  and constraint with -infinity lhs and nonnegative rhs to master)
  * @author Martin Bergner
  */
 
@@ -158,14 +158,15 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
       seeed->setOpenVarsAndConssCalculated(true);
    }
 
-   /** set open setpacking constraints to Master */
    for( int i = 0; i < seeed->getNOpenconss(); ++i)
    {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
+      /** set open setpacking constraints to master */
       if( GCGconsGetType(cons) == setpacking )
       {
           seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
       }
+      /** set constraints with -infinity lhs and nonnegative rhs to master */
       else if(GCGconsGetType(cons) != logicor && GCGconsGetType(cons) != setcovering && GCGconsGetType(cons) != setpartitioning )
       {
          relevant = true;

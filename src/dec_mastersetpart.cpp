@@ -27,7 +27,7 @@
 
 /**@file   dec_mastersetpart.cpp
  * @ingroup DETECTORS
- * @brief  detector mastersetpart (put your description here)
+ * @brief  detector mastersetpart (set setpartitioning constraints to master)
  * @author Martin Bergner
  */
 

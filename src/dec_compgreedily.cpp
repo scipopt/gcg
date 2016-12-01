@@ -27,7 +27,7 @@
 
 /**@file   dec_compgreedily.cpp
  * @ingroup DETECTORS
- * @brief  detector compgreedily (put your description here)
+ * @brief  detector compgreedily (assigns the open cons and open vars of the seeed greedily)
  * @author Martin Bergner
  */
 
@@ -143,7 +143,10 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    *result = SCIP_DIDNOTFIND;
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+
+   //assign open conss and vars greedily
    seeed->completeGreedily(seeedPropagationData->seeedpool);
+
    seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;

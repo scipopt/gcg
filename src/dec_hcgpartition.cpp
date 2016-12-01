@@ -510,12 +510,12 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
    detectordata->graph = new HypercolGraph<gcg::GraphTclique>(scip, w);
 
-
-
-   SCIP_CALL(detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed));
+   SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
+
+   //if givenBlocks != -1, use givenBlocks as number of blocks
    if(givenBlocks != -1)
    {
       assert(givenBlocks >= 0);
@@ -544,6 +544,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
          }
       }
    }
+   //if givenBlocks == -1, use the number of the array numberOfBlocks as number of blocks
    else
    {
       for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)

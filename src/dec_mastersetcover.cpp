@@ -27,7 +27,7 @@
 
 /**@file   dec_mastersetcover.cpp
  * @ingroup DETECTORS
- * @brief  detector mastersetcover (put your description here)
+ * @brief  detector mastersetcover (sets setcovering and logicor constraint to master)
  * @author Martin Bergner
  */
 
@@ -164,7 +164,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
       if( GCGconsGetType   (cons) == setcovering || GCGconsGetType   (cons) == logicor )
       {
-          //std::cout << "boook " << seeed->getOpenconss()[i] << " as master constraint" << std::endl;
           seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
       }
    }

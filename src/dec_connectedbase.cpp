@@ -27,7 +27,7 @@
 
 /**@file   dec_connectedbase.c
  * @ingroup DETECTORS
- * @brief  detector connectedbase (put your description here)
+ * @brief  detector connectedbase (completes the seeed by bfs)
  * @author Martin Bergner
  */
 
@@ -142,27 +142,6 @@ DEC_DECL_DETECTSTRUCTURE(detectConnectedbase)
 }
 
 
-static inline
-bool haveConssCommonVars(
-   int               firstCons,
-   int               secondCons,
-   gcg::Seeedpool*   seeedpool
-   )
-{
-   for( int i = 0; i < seeedpool->getNVarsForCons(firstCons); ++i )
-   {
-      for( int j = 0; j < seeedpool->getNVarsForCons(secondCons); ++j )
-      {
-         if( seeedpool->getVarsForCons(firstCons)[i] == seeedpool->getVarsForCons(secondCons)[j])
-         {
-            return true;
-         }
-      }
-   }
-   return false;
-}
-
-
 static
 DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
 {
@@ -171,7 +150,10 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
 
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool );
+
+   //complete the seeed by bfs
    seeed->completeByConnected(seeedPropagationData->seeedpool );
+
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;

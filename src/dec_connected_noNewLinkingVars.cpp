@@ -27,7 +27,7 @@
 
 /**@file   dec_connected_noNewLinkingVars.c
  * @ingroup DETECTORS
- * @brief  detector connected_noNewLinkingVars (put your description here)
+ * @brief  detector connected_noNewLinkingVars (assigns all dependent open conss and vars and completes the seeed by bfs)
  * @author Martin Bergner
  */
 
@@ -141,27 +141,6 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected_noNewLinkingVars)
 }
 
 
-static inline
-bool haveConssCommonVars(
-   int               firstCons,
-   int               secondCons,
-   gcg::Seeedpool*   seeedpool
-   )
-{
-   for( int i = 0; i < seeedpool->getNVarsForCons(firstCons); ++i )
-   {
-      for( int j = 0; j < seeedpool->getNVarsForCons(secondCons); ++j )
-      {
-         if( seeedpool->getVarsForCons(firstCons)[i] == seeedpool->getVarsForCons(secondCons)[j])
-         {
-            return true;
-         }
-      }
-   }
-   return false;
-}
-
-
 
 static
 DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
@@ -183,7 +162,11 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
    }
 
    seeed->considerImplicits(seeedPropagationData->seeedpool);
+
+   //assign all dependent open vars and conss
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
+
+   //complete the seeed by bfs
    seeed->completeByConnected(seeedPropagationData->seeedpool);
 
    seeedPropagationData->nNewSeeeds = 1;
