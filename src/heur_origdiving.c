@@ -941,7 +941,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
          heurdata->bestsolrounded = FALSE;
       }
 
-      SCIPstatisticPrintf("Origdiving statistic: %s found solution %13.6e , improving = %d , rounded = 0\n",
+      SCIPstatisticPrintf("Origdiving statistic: %s found solution %13.6e , improving = %u , rounded = 0\n",
          SCIPheurGetName(heur), SCIPgetSolTransObj(scip, heurdata->sol),
          SCIPgetSolTransObj(scip, heurdata->sol) == SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)));
 #endif
@@ -1132,7 +1132,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigdiving)
          heurdata->bestsolrounded = TRUE;
       }
 
-      SCIPstatisticPrintf("Origdiving statistic: %s found solution %13.6e , improving = %d , rounded = 1\n",
+      SCIPstatisticPrintf("Origdiving statistic: %s found solution %13.6e , improving = %u , rounded = 1\n",
          SCIPheurGetName(heur), SCIPgetSolTransObj(scip, sol), SCIPeventGetType(event) == SCIP_EVENTTYPE_BESTSOLFOUND);
    }
 
