@@ -141,10 +141,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpack)
    SCIP_CONS* cons;
 
   gcg::Seeed* seeed;
-  std::vector<int> tempMasterConss;
 
   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-  tempMasterConss = std::vector<int>(0);
 
   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 

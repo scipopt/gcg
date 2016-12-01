@@ -216,15 +216,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
    seeedPropagationData->nNewSeeeds = 1;
    *result = SCIP_SUCCESS;
 
-   seeed->considerImplicits(seeedPropagationData->seeedpool);
-   seeed->calcHashvalue();
-
-   std::cout << " directly before gentNMasterConss() " << std::endl;
-
-   std::cout << "getNMasterConss():  " << seeed->getNMasterconss() << std::endl;
-
-   seeed->displaySeeed();
-
    return SCIP_OKAY;
 }
 /*
