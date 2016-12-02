@@ -38,7 +38,10 @@
 #include "objscip/objscip.h"
 #include <vector>
 #include <tr1/unordered_map> //c++ hashmap
-
+#include <unordered_map>
+#include <functional>
+#include <string>
+#include <utility>
 #include "gcg.h"
 
 #include "class_seeed.h"
@@ -60,7 +63,18 @@ namespace gcg {
 typedef Seeed* SeeedPtr;
 
 
+// Only for pairs of std::hash-able types for simplicity.
+// You can of course template this struct to allow other hash functions
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator () (const std::pair<T1,T2> &p) const {
+        auto h1 = std::hash<T1>{}(p.first);
+        auto h2 = std::hash<T2>{}(p.second);
 
+        // overly simple hash combination
+        return h1 ^ h2;
+    }
+};
 
 
 class Seeedpool
@@ -82,6 +96,8 @@ private:
    std::tr1::unordered_map<SCIP_CONS*, int> 	   scipConsToIndex;	      /**< maps SCIP_CONS* to the corresponding index */
    std::tr1::unordered_map<SCIP_VAR*, int>  	   scipVarToIndex;		   /**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int>  scipDetectorToIndex;		/**< maps SCIP_VAR* to the corresponding index */
+
+   std::tr1::unordered_map< std::pair<int, int>, SCIP_Real, pair_hash>  valsMap;               /**< maps an entry of the matrix to its value, zeros are omitted */
 
    int 										         	nVars;                  /**< number of variables */
    int 										         	nConss;                 /**< number of constraints */
@@ -126,6 +142,8 @@ public:
    SCIP_CONS* getConsForIndex(int consIndex);
 
    DEC_DETECTOR* getDetectorForIndex(int detectorIndex);
+
+   SCIP_Real getVal(int row, int col);
 
    int getIndexForVar(SCIP_VAR* var);
 

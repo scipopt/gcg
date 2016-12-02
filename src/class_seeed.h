@@ -240,6 +240,15 @@ public:
    SCIP_RETCODE displayVars(
    );
 
+   /** displays the assignments of the vars */
+   SCIP_RETCODE writeScatterPlot(
+      Seeedpool* seeedpool,
+      const char* filename
+   );
+
+   void showScatterPlot(  Seeedpool* seeedpool );
+
+
    /** fills out the border of the seeed with the hashmap constoblock */
    SCIP_RETCODE filloutBorderFromConstoblock(
          SCIP_HASHMAP* constoblock,

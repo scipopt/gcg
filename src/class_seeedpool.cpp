@@ -45,6 +45,8 @@
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>
+#include <sstream>
+
 
 #include <exception>
 
@@ -340,7 +342,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                          varsForConss[i].push_back(varIndex);
                          conssForVars[varIndex].push_back(i);
                          valsForConss[i].push_back(currVals[currVar]);
-
+                         valsMap[std::pair<int,int>(i, varIndex)] =  currVals[currVar] ;
                  }
                  SCIPfreeBufferArray(scip, &currVars);
                  SCIPfreeBufferArray(scip, &currVals);
@@ -569,6 +571,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          std::cout << (int) finishedSeeeds.size() << " finished seeeds are found." << std::endl;
 
+
+
          if(displaySeeeds)
          {
             for(size_t i = 0; i < finishedSeeeds.size(); ++i)
@@ -602,6 +606,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          {
              std::cout << "Detector " << DECdetectorGetName(detectorToScipDetector[i] ) << " worked on " << successDetectors[i] << " of " << finishedSeeeds.size() << " and took a total time of " << SCIPgetClockTime(scip, detectorToScipDetector[i]->dectime)  << std::endl;
          }
+
+
          /** fill out the decompositions */
 
          SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
@@ -611,6 +617,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             int* nstairlinkingvars;
             SCIP_VAR*** stairlinkingvars;
             assert(seeed->checkConsistency() );
+
+            std::stringstream filename;
+
+            filename << "test_" << i << ".txt";
+
+            seeed->writeScatterPlot(this, filename.str().c_str() );
 
             /** set nblocks */
             int nblocks = seeed->getNBlocks();
@@ -645,12 +657,14 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             /** set stairlinkingvars */
             SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->stairlinkingvars, nblocks) ); /** free in decomp.c:466 */
             SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->nstairlinkingvars, nblocks) ); /** free in decomp.c:467 */
+
             for ( int j = 0; j < nblocks; ++j )
             {
-               decompositions[i]->nstairlinkingvars[j] = seeed->getNStairlinkingvars(j);
-               SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->stairlinkingvars[j], decompositions[i]->nstairlinkingvars[j]) ); /** free in decomp.c:444 */
+              decompositions[i]->nstairlinkingvars[j] = seeed->getNStairlinkingvars(j);
+              SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->stairlinkingvars[j], decompositions[i]->nstairlinkingvars[j]) ); /** free in decomp.c:444 */
                for ( int k = 0; k < decompositions[i]->nstairlinkingvars[j]; ++k )
                {
+
                   decompositions[i]->stairlinkingvars[j][k] = SCIPvarGetProbvar( getVarForIndex(seeed->getStairlinkingvars(j)[k]) );
                   SCIPcaptureVar(scip, decompositions[i]->stairlinkingvars[j][k]);
                }
@@ -808,7 +822,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 //
 //              SCIPinfoMessage(scip, NULL, "%s %s", detectorchainstring, LINEBREAK);
 
-            /** calculate number of stairlinking vars **/
 
 
             /** set dectype */
@@ -935,6 +948,16 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
  DEC_DETECTOR* Seeedpool::getDetectorForIndex(int detectorIndex){
     return detectorToScipDetector[detectorIndex];
+ }
+
+ SCIP_Real Seeedpool::getVal(int row, int col){
+
+    std::tr1::unordered_map< std::pair<int, int>, SCIP_Real, pair_hash>::const_iterator iter =  valsMap.find(std::pair<int, int>(row, col) ) ;
+
+    if ( iter == valsMap.end()  )
+       return 0;
+
+    return iter->second;
  }
 
  int Seeedpool::getIndexForVar(SCIP_VAR* var){
