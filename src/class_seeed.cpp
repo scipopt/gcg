@@ -197,10 +197,10 @@ bool Seeed::assignCurrentStairlinking(Seeedpool* seeedpool)
          for( int c = 0; c < getNConssForBlock(b) && !foundInBlock; ++c )
          {
             cons = conssForBlocks[b][c];
-            for( int v = 0; v < seeedpool->getNVarsForCons(cons) && !foundInBlock; ++v )
+            if (seeedpool->getVal(cons, var) != 0 )
             {
-               if( seeedpool->getVarsForCons(cons)[v] == var )
                   blocksOfOpenvar.push_back(b);
+                  foundInBlock = true;
             }
          }
       }
@@ -1573,6 +1573,11 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
       {
          bookAsBlockVar(var, blocksOfOpenvar[0]);
       }
+
+      if( blocksOfOpenvar.size() == 0 && !hitsOpenCons )
+      {
+         bookAsMasterVar(var);
+      }
    }
 
    flushBooked();
@@ -1885,7 +1890,7 @@ SCIP_RETCODE Seeed::writeScatterPlot(
             assert( orderToRows[row] != -1);
             assert( orderToCols[col] != -1);
             if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
-               ofs << col << " " << row <<  std::endl;
+               ofs << col+0.5 << " " << row+0.5 <<  std::endl;
          }
 
       ofs.close();
@@ -1906,36 +1911,39 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
    std::ofstream ofs;
 
    ofs.open ("helper.plg", std::ofstream::out );
-
-
-
    ofs << "set xrange [-1:" << getNVars() << "]\nset yrange[" << getNConss() << ":-1]\n";
 
-   /* write linking var */
-   ofs << "set object 1 rect from  0,0 to " << getNConss() << "," << getNLinkingvars()  << " fc rgb \"grey\"\n" ;
 
+   /* write linking var */
+   ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fc rgb \"purple\"\n" ;
    colboxcounter+=getNLinkingvars();
 
-   /* write linking cons box */
+   ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fc rgb \"yellow\"\n" ;
+   colboxcounter+=getNMastervars();
+
 
    displaySeeed();
-
    std::cout << " nmasterconss: " << getNMasterconss() << std::endl;
-   colboxcounter += getNLinkingvars();
 
-   ofs << "set object 2 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fc rgb \"grey\"\n" ;
+
+   /* write linking cons box */
+   ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fc rgb \"orange\"\n" ;
    rowboxcounter += getNMasterconss();
 
    for( int b = 0; b < getNBlocks() ; ++b )
    {
-      ofs << "set object " << b+3 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"grey\"\n" ;
+      ofs << "set object " << b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"grey\"\n" ;
       colboxcounter += getNVarsForBlock(b);
       rowboxcounter+= getNConssForBlock(b);
 
    }
 
 
-   ofs << "plot filename using 1:2:(0.3) with circles fc rgb \"black\"" << std::endl;
+   ofs << "set object " << getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"green\"\n" ;
+         colboxcounter += getNOpenvars();
+         rowboxcounter+= getNOpenconss();
+
+   ofs << "plot filename using 1:2:(0.3) with circles fc rgb \"red\"" << std::endl;
 
    ofs << "pause -1" << std::endl;
 

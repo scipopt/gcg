@@ -829,6 +829,8 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
 
    assert(currseeed->checkConsistency() );
 
+  // currseeed->showScatterPlot(seeedpool);
+
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = currseeed;
    seeedPropagationData->nNewSeeeds = 1;

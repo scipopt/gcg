@@ -575,6 +575,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    {
       if((newSeeeds)[j] != NULL)
       {
+         newSeeeds[j]->considerImplicits(seeedPropagationData->seeedpool);
+         newSeeeds[j]->refineToMaster(seeedPropagationData->seeedpool);
+//         newSeeeds[j]->showScatterPlot(seeedPropagationData->seeedpool);
          seeedPropagationData->newSeeeds[s] = newSeeeds[j];
          seeedPropagationData->newSeeeds[s]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
          ++s;
