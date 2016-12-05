@@ -49,6 +49,8 @@
 #include "reader_gp.h"
 #include "cons_decomp.h"
 #include "pub_decomp.h"
+#include "struct_decomp.h"
+
 
 #define READER_NAME             "texreader"
 #define READER_DESC             "file reader for writing decomposition details to LaTeX files"
@@ -60,8 +62,8 @@
 #define LINEBREAK "\n"
 #endif
 
-#define USEGP_DEFAULT            TRUE
-#define MAXNDECOMPS_DEFAULT      5
+#define USEGP_DEFAULT            FALSE
+#define MAXNDECOMPS_DEFAULT      50
 
 /** data for dec reader */
 struct SCIP_ReaderData
@@ -188,6 +190,8 @@ SCIP_RETCODE writeHeaderCode(
    {
       SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                   %s", LINEBREAK);
    }
+   SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{document}                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
@@ -231,6 +235,7 @@ SCIP_RETCODE writeTikz(
    )
 {
    SCIP_VAR*** subscipvars;
+   SCIP_VAR*** stairlinkingvars;
    SCIP_CONS*** subscipconss;
    SCIP_VAR** linkingvars;
    SCIP_CONS** linkingconss;
@@ -316,8 +321,8 @@ SCIP_RETCODE writeTikz(
 
    if( decomp != NULL )
    {
-      /* if we don't have staircase, but something else, go through the blocks and create the indices */
-      if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED || DECdecompGetType(decomp) == DEC_DECTYPE_DIAGONAL )
+      /* go through the blocks and create the indices */
+      if( DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN)
       {
          SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
          SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
@@ -330,6 +335,22 @@ SCIP_RETCODE writeTikz(
                SCIP_CALL( SCIPhashmapInsert(varindexmap, subscipvars[i][j], (void*)varindex) );
                varindex++;
             }
+
+
+            /* @todo add " || DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD" to this in seeed version */
+            /*if(DECdecompGetType(decomp)== DEC_DECTYPE_STAIRCASE)
+            {
+               nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
+               stairlinkingvars = DECdecompGetStairlinkingvars(decomp);
+               for( j = 0; j <  nstairlinkingvars[i]; ++j )
+               {
+                  assert(stairlinkingvars[i][j] != NULL);
+                  SCIP_CALL( SCIPhashmapInsert(varindexmap, DECdecompGetStairlinkingvars(decomp)[i][j], (void*)varindex) );
+                  varindex++;
+               }
+            } */
+            /* @todo  */
+
             for( j = 0; j < nsubscipconss[i]; ++j )
             {
                assert(subscipconss[i][j] != NULL);
@@ -350,15 +371,6 @@ SCIP_RETCODE writeTikz(
             SCIP_CALL( SCIPhashmapInsert(consindexmap, linkingconss[j], (void*)consindex) );
             consindex++;
          }
-      }
-      else if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
-      {
-         /* in case of staircase get the original indices */
-         varindexmap = DECdecompGetVarindex(decomp);
-         consindexmap = DECdecompGetVarindex(decomp);
-
-         assert(varindexmap != NULL);
-         assert(consindexmap != NULL);
       }
    }
 
@@ -614,8 +626,6 @@ SCIP_RETCODE GCGwriteDecompsToTex(
       return SCIP_FILECREATEERROR;
    }
 
-   SCIPinfoMessage(scip, makefile, "# LaTeX code might have to be compiled several times                         %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, ".PHONY: %s.pdf all clean                                                     %s", filename, LINEBREAK);
    SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex                                                               %s", filename, filename, LINEBREAK);
@@ -628,14 +638,22 @@ SCIP_RETCODE GCGwriteDecompsToTex(
       SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
       SCIPinfoMessage(scip, makefile, "\tgnuplot *.gp                                                               %s", LINEBREAK);
    }
+   SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@echo                                                                      %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@echo Compiling tex code. This may take a while.                           %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode\" -use-make %s.tex %s", filename, LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@echo                                                                      %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode -shell-escape\" -use-make %s.tex %s", filename, LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@make clean                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "clean:                                                                       %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\tlatexmk -CA                                                                %s", LINEBREAK);
-
-
-   /*@todo write into makefile */
+   SCIPinfoMessage(scip, makefile, "\t@latexmk -c                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@rm -f report_*figure*.*                                                   %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@rm -f *.auxlock                                                           %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "cleanall:                                                                    %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@latexmk -C                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@make clean                                                                %s", LINEBREAK);
 
 
    /* --- make the tex files --- */
