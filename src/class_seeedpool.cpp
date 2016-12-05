@@ -490,20 +490,26 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  /** if the new seeeds are no duplicate they're added to the currSeeeds */
                                  for( int seeed = 0; seeed < seeedPropData->nNewSeeeds; ++seeed )
                                  {
-                                         if( seeedIsNoDuplicate(seeedPropData->newSeeeds[seeed], currSeeeds, finishedSeeeds, false) )
+                                         if( !seeedPropData->newSeeeds[seeed]->isTrivial() && seeedIsNoDuplicate(seeedPropData->newSeeeds[seeed], nextSeeeds, finishedSeeeds, false) )
                                          {
                                             seeedPropData->newSeeeds[seeed]->calcOpenconss();
                                             seeedPropData->newSeeeds[seeed]->calcOpenvars();
                                             if(seeedPropData->newSeeeds[seeed]->getNOpenconss() == 0 && seeedPropData->newSeeeds[seeed]->getNOpenvars() == 0)
                                             {
                                                if(verboseLevel > 2)
+                                               {
                                                    std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to finished seeeds!" << std::endl;
-                                               finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
+                                                   seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
+                                               }
+                                                   finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
                                             }
                                             else
                                             {
                                                if(verboseLevel > 2)
+                                               {
                                                    std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to next round seeeds!" << std::endl;
+                                                   seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
+                                               }
                                                nextSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
                                             }
                                          }
