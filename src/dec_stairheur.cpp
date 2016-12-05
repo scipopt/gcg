@@ -2114,6 +2114,7 @@ SCIP_RETCODE blocking(
 
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed, seeedpool);
             SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
+            (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
 
             detectordata->constoblock = NULL;
 
@@ -2130,6 +2131,7 @@ SCIP_RETCODE blocking(
          {
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed, seeedpool);
             SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
+            (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
             detectordata->constoblock = NULL;
 
             (*nNewSeeeds) += 1;
@@ -2151,6 +2153,7 @@ SCIP_RETCODE blocking(
       {
          (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed, seeedpool);
          SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
+         (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
          detectordata->constoblock = NULL;
 
          (*nNewSeeeds) += 1;
@@ -2175,6 +2178,7 @@ SCIP_RETCODE blocking(
 
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed, seeedpool);
             SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
+            (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
             detectordata->constoblock = NULL;
 
             *nNewSeeeds += 1;
@@ -2189,6 +2193,7 @@ SCIP_RETCODE blocking(
          {
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed, seeedpool);
             SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
+            (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
             detectordata->constoblock = NULL;
 
             *nNewSeeeds += 1;

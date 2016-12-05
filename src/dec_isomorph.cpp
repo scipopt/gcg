@@ -1041,7 +1041,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
       SCIP_CALL( SCIPhashmapInsert(newconstoblock, (void*) (size_t) cons, (void*)(size_t)consblock) );
       SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(seeedpool->getConsForIndex(cons)));
    }
-   (*newSeeed) = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
+   (*newSeeed) = new gcg::Seeed(seeed, seeedpool);
    SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblock(newconstoblock, nblocks, seeedpool) );
 
    SCIPfreeBufferArray(scip, &vartoblock);
