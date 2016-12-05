@@ -965,6 +965,8 @@ int DECdecompGetNTotalStairlinkingvars(
    int sum;
    int b;
 
+   sum = 0;
+
    for ( b = 0; b < DECdecompGetNBlocks(decomp); ++b)
          sum += DECdecompGetNStairlinkingvars(decomp)[b];
 

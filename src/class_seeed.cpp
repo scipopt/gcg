@@ -39,6 +39,11 @@
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
 #include "scip_misc.h"
+#include "decomp.h"
+#include "struct_detector.h"
+#include "struct_decomp.h"
+#include "cons_decomp.h"
+
 
 #include <iostream>
 #include <exception>
@@ -597,6 +602,16 @@ SCIP_RETCODE Seeed::bookAsLinkingVar(int varToLinking)
    return SCIP_OKAY;
 }
 
+/** book a variable to be added to the master variables (after calling flushBooked) */
+SCIP_RETCODE Seeed::bookAsMasterVar(int varToMaster)
+{
+   assert(varToMaster >= 0 && varToMaster < nVars);
+   bookedAsMasterVars.push_back(varToMaster);
+   return SCIP_OKAY;
+}
+
+
+
 /** book a constraint to be added to the master constraints (after calling flushBooked)*/
 SCIP_RETCODE Seeed::bookAsMasterCons(int consToMaster)
 {
@@ -615,13 +630,6 @@ SCIP_RETCODE Seeed::bookAsBlockVar(int varToBlock, int block)
    return SCIP_OKAY;
 }
 
-/** book a variable to be added to the master variables (after calling flushBooked) */
-SCIP_RETCODE Seeed::bookAsMasterVar(int varToMaster)
-{
-   assert(varToMaster >= 0 && varToMaster < nVars);
-   bookedAsMasterVars.push_back(varToMaster);
-   return SCIP_OKAY;
-}
 
 /** book a variable to be added to the stairlinking variables of the given block and the following block (after calling flushBookes) */
 SCIP_RETCODE Seeed::bookAsStairlinkingVar(int varToStairlinking, int firstBlock)
@@ -776,6 +784,26 @@ bool Seeed::checkAllConsAssigned()
    openConss.clear();
    return true;
 }
+
+/** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
+    bool Seeed::isTrivial(
+    )
+    {
+       if( getNBlocks() == 1 && getNConssForBlock(0) == getNConss() )
+          return true;
+
+       if( getNConss() == getNMasterconss() )
+          return true;
+
+       if( getNVars() == getNMastervars() + getNLinkingvars() )
+          return true;
+
+       return false;
+    }
+
+
+
+
 
 /** check the consistency of this seeed */
 bool Seeed::checkConsistency()
@@ -1697,7 +1725,7 @@ SCIP_RETCODE Seeed::displayConss()
 }
 
 /** displays the relevant information of the seeed */
-SCIP_RETCODE Seeed::displaySeeed()
+SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
 {
    std::cout << "ID: " << id << std::endl;
    std::cout << "number of blocks: " << nBlocks << std::endl;
@@ -1718,9 +1746,17 @@ SCIP_RETCODE Seeed::displaySeeed()
    std::cout << getNDetectors() << " detector(s)";
    if( getNDetectors() != 0 )
    {
-      std::cout << ": " << detectorChain[0];
+      if(seeedpool == NULL)
+         std::cout << ": " << detectorChain[0];
+      else
+         std::cout << ": " <<  DECdetectorGetName( seeedpool->getDetectorForIndex( detectorChain[0] ) );
       for( int d = 1; d < getNDetectors(); ++d )
-         std::cout << ", " << detectorChain[d];
+      {
+         if (seeedpool == NULL)
+            std::cout << ", " << detectorChain[d];
+         else
+            std::cout << ", " << DECdetectorGetName( seeedpool->getDetectorForIndex( detectorChain[d] ) );
+      }
    }
    std::cout << "\n";
 
@@ -1837,14 +1873,6 @@ SCIP_RETCODE Seeed::writeScatterPlot(
    }
 
    /** order of variables */
-      /* master variables */
-      for ( int i = 0; i < getNMastervars() ; ++i )
-      {
-         int colidx = getMastervars()[i];
-         orderToCols[countercols] = colidx;
-         colsToOrder[colidx] = countercols;
-         ++countercols;
-      }
 
       /* linking variables */
       for ( int i = 0; i < getNLinkingvars() ; ++i )
@@ -1854,6 +1882,16 @@ SCIP_RETCODE Seeed::writeScatterPlot(
          colsToOrder[colidx] = countercols;
          ++countercols;
       }
+
+      /* master variables */
+      for ( int i = 0; i < getNMastervars() ; ++i )
+      {
+         int colidx = getMastervars()[i];
+         orderToCols[countercols] = colidx;
+         colsToOrder[colidx] = countercols;
+         ++countercols;
+      }
+
 
       /* block variables */
       for ( int b = 0; b < getNBlocks() ; ++b )
@@ -1922,8 +1960,8 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
    colboxcounter+=getNMastervars();
 
 
-   displaySeeed();
-   std::cout << " nmasterconss: " << getNMasterconss() << std::endl;
+   displaySeeed(seeedpool);
+   // std::cout << " nmasterconss: " << getNMasterconss() << std::endl;
 
 
    /* write linking cons box */
@@ -1943,7 +1981,7 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
          colboxcounter += getNOpenvars();
          rowboxcounter+= getNOpenconss();
 
-   ofs << "plot filename using 1:2:(0.3) with circles fc rgb \"red\"" << std::endl;
+   ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
 
    ofs << "pause -1" << std::endl;
 

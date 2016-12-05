@@ -1503,8 +1503,10 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
       SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, FALSE) );
 
    for( int i = 0; i < seeedPropagationData->nNewSeeeds; ++i )
+   {
       seeedPropagationData->newSeeeds[i]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
-
+      seeedPropagationData->newSeeeds[i]->refineToMaster(seeedPropagationData->seeedpool);
+   }
    return SCIP_OKAY;
 }
 #define detectorExitIsomorph NULL
