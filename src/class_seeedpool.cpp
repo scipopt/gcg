@@ -629,11 +629,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             SCIP_VAR*** stairlinkingvars;
             assert(seeed->checkConsistency() );
 
-            std::stringstream filename;
+//            std::stringstream filename;
 
-            filename << "test_" << i << ".txt";
+//            filename << "test_" << i << ".txt";
 
-            seeed->writeScatterPlot(this, filename.str().c_str() );
+ //           seeed->writeScatterPlot(this, filename.str().c_str() );
 
             /** set nblocks */
             int nblocks = seeed->getNBlocks();
@@ -675,7 +675,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
               SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->stairlinkingvars[j], decompositions[i]->nstairlinkingvars[j]) ); /** free in decomp.c:444 */
                for ( int k = 0; k < decompositions[i]->nstairlinkingvars[j]; ++k )
                {
-
                   decompositions[i]->stairlinkingvars[j][k] = SCIPvarGetProbvar( getVarForIndex(seeed->getStairlinkingvars(j)[k]) );
                   SCIPcaptureVar(scip, decompositions[i]->stairlinkingvars[j][k]);
                }
@@ -704,8 +703,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                   SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->consindex, (void*) (size_t) cindex, (void*) (size_t) currblock) );
                   SCIP_CALL_ABORT( SCIPcaptureCons(scip, cons) );
                }
-
-
             }
 
             /** add master conss */
