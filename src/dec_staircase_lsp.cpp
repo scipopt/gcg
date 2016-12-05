@@ -41,6 +41,7 @@
 #include <string.h>
 #include <iostream>
 
+
 #include "dec_staircase_lsp.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
@@ -755,6 +756,8 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    currseeed->considerImplicits(seeedpool);
    currseeed->refineToMaster(seeedpool);
 
+   //currseeed->showScatterPlot(seeedpool);
+
    //SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");
 
    SCIP_CALL( createGraphFromPartialMatrix(scip, &(detectordata->graph), currseeed, seeedpool, detectordata) );
@@ -804,7 +807,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
          for( i = 0; i < nnodes; ++i )
          {
             assert(blocks[i] >= 0);
-            SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, (void*) (size_t) detectordata->oldToNew->at(i), (void*) (size_t) (blocks[i] + 1)) );
+            SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, (void*) (size_t) detectordata->newToOld->at(i), (void*) (size_t) (blocks[i] + 1)) );
          }
       }
 
@@ -815,11 +818,19 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    }
 
    SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks, seeedpool) );
+
+  // currseeed->showScatterPlot(seeedpool);
+
+
    currseeed->assignCurrentStairlinking(seeedpool);
+   //currseeed->showScatterPlot(seeedpool);
+
    currseeed->considerImplicits(seeedpool);
 
-
    currseeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+
+ //  currseeed->showScatterPlot(seeedpool);
+
 
    if( detectordata->constoblock != NULL )
       SCIPhashmapFree(&detectordata->constoblock);

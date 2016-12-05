@@ -570,6 +570,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
              /* currseeeds are freed later */
              if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false))
              {
+                if(verboseLevel > 2)
+                {
+                   std::cout << "seeed " << seeedPtr->getID() << " is finished from next round seeeds!" << std::endl;
+                   seeedPtr->showScatterPlot(this);
+                }
                 finishedSeeeds.push_back(seeedPtr);
              }
 

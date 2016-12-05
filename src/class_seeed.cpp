@@ -179,7 +179,6 @@ SCIP_RETCODE Seeed::assignBorderFromConstoblock(SCIP_HASHMAP* constoblock, int g
 bool Seeed::assignCurrentStairlinking(Seeedpool* seeedpool)
 {
    std::vector<int> blocksOfOpenvar;
-   bool foundInBlock;
    bool assigned = false;
    int var;
    int cons;
@@ -195,17 +194,16 @@ bool Seeed::assignCurrentStairlinking(Seeedpool* seeedpool)
    for( int i = 0; i < getNOpenvars(); ++i )
    {
       blocksOfOpenvar.clear();
-      foundInBlock = false;
       var = openVars[i];
       for( int b = 0; b < nBlocks; ++b )
       {
-         for( int c = 0; c < getNConssForBlock(b) && !foundInBlock; ++c )
+         for( int c = 0; c < getNConssForBlock(b) ; ++c )
          {
             cons = conssForBlocks[b][c];
             if (seeedpool->getVal(cons, var) != 0 )
             {
                   blocksOfOpenvar.push_back(b);
-                  foundInBlock = true;
+                  break;
             }
          }
       }
@@ -575,6 +573,8 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int ad
 
    flushBooked();
 
+  // showScatterPlot(seeedpool);
+
    deleteEmptyBlocks();
    sort();
    assert(checkConsistency());
@@ -795,6 +795,10 @@ bool Seeed::checkAllConsAssigned()
        if( getNConss() == getNMasterconss() )
           return true;
 
+       if( getNConss() == getNOpenconss() && getNVars() == getNOpenvars() )
+          return true;
+
+
        if( getNVars() == getNMastervars() + getNLinkingvars() )
           return true;
 
@@ -925,6 +929,8 @@ bool Seeed::checkConsistency()
          assert(false);
          return false;
       }
+
+      /**
       if( firstFound == nBlocks - 1 || !isVarStairlinkingvarOfBlock(*varIter, firstFound + 1) )
       {
          std::cout << "Warning! (seeed " << id << ") Variable with index " << *varIter
@@ -932,6 +938,8 @@ bool Seeed::checkConsistency()
          assert(false);
          return false;
       }
+      */
+      /**
       for( int b = firstFound + 2; b < nBlocks; ++b )
       {
          if( isVarBlockvarOfBlock(*varIter, b) )
@@ -942,6 +950,7 @@ bool Seeed::checkConsistency()
             return false;
          }
       }
+      */
    }
 
    if( !openVarsAndConssCalculated )
@@ -1575,22 +1584,28 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
       blocksOfOpenvar.clear();
       var = openVars[i];
       hitsOpenCons = false;
-
       for( int c = 0; c < seeedpool->getNConssForVar(var); ++c )
       {
          cons = seeedpool->getConssForVar(var)[c];
          if( isConsOpencons(cons) )
          {
             hitsOpenCons = true;
-            continue;
+            break;
          }
-         for( int b = 0; b < nBlocks; ++b )
-         {
-            if( isConsBlockconsOfBlock(cons,b) )
-               blocksOfOpenvar.push_back(b);
-         }
-
       }
+      for( int b = 0; b < nBlocks; ++b )
+      {
+         for( int c = 0; c < seeedpool->getNConssForVar(var); ++c )
+         {
+            cons = seeedpool->getConssForVar(var)[c];
+            if( isConsBlockconsOfBlock(cons,b) )
+            {
+               blocksOfOpenvar.push_back(b);
+               break;
+            }
+         }
+      }
+
       if( blocksOfOpenvar.size() > 1 )
       {
          bookAsLinkingVar(var);
@@ -1970,14 +1985,18 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
 
    for( int b = 0; b < getNBlocks() ; ++b )
    {
-      ofs << "set object " << b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"grey\"\n" ;
+      ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"grey\"\n" ;
       colboxcounter += getNVarsForBlock(b);
-      rowboxcounter+= getNConssForBlock(b);
 
+      if ( getNStairlinkingvars(b) != 0 )
+         ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fc rgb \"pink\"\n" ;
+      colboxcounter += getNStairlinkingvars(b);
+
+      rowboxcounter+= getNConssForBlock(b);
    }
 
 
-   ofs << "set object " << getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"green\"\n" ;
+   ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"green\"\n" ;
          colboxcounter += getNOpenvars();
          rowboxcounter+= getNOpenconss();
 
@@ -2698,7 +2717,6 @@ SCIP_RETCODE Seeed::setVarToStairlinking(int varToStairlinking, int block1, int 
    assert( (block1 + 1 == block2) || (block2 + 1 == block1) );
 
    stairlinkingVars[block1].push_back(varToStairlinking);
-   stairlinkingVars[block2].push_back(varToStairlinking);
 
    return SCIP_OKAY;
 }
