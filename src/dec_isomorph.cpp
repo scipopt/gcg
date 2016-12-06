@@ -70,13 +70,8 @@
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 
-#define DEFAULT_NUMOFSOL         1          /**< default number of solutions */
-#define DEFAULT_EXACT            TRUE       /**< default value using exact coefficients for detection */
-#define DEFAULT_EXTEND           FALSE      /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
-
-#define DEFAULT_MAXDECOMPS       1          /**< default maximum number of decompositions */
-#define DEFAULT_EXACT            TRUE       /**< default value using exact coefficients for detection */
-#define DEFAULT_EXTEND           FALSE      /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
+#define DEFAULT_MAXDECOMPSEXACT  1           /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXTEND 5           /**< default maximum number of decompositions */
 
 /*
  * Data structures
@@ -86,10 +81,8 @@
 struct DEC_DetectorData
 {
    SCIP_RESULT          result;             /**< result pointer to indicate success or failure */
-   int                  numofsol;           /**< number of solutions */
-   int                  maxdecomps;         /**< maximum number of decompositions */
-   SCIP_Bool            exact;              /**< Use exact coefficients for detection? */
-   SCIP_Bool            extend;             /**< Extend detection by using the sign of the coefficients instead of the coefficients? */
+   int                  maxdecompsexact;   /**< maximum number of decompositions */
+   int                  maxdecompsextend;  /**< maximum number of decompositions */
 };
 
 typedef struct struct_hook AUT_HOOK;
@@ -1087,7 +1080,6 @@ DEC_DECL_INITDETECTOR(detectorInitIsomorph)
    assert(detectordata != NULL);
 
    detectordata->result = SCIP_SUCCESS;
-   detectordata->numofsol = DEFAULT_NUMOFSOL;
 
    return SCIP_OKAY;
 }
@@ -1194,7 +1186,8 @@ SCIP_RETCODE detectIsomorph(
    DEC_DECOMP***         decdecomps,         /**< pointer to store decompositions */
    DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
    SCIP_RESULT*          result,             /**< pointer to store result */
-   SCIP_Bool             onlysign            /**< use only sign of coefficients instead of coefficients? */
+   SCIP_Bool             onlysign,           /**< use only sign of coefficients instead of coefficients? */
+   int                   maxdecomps          /**< maximum number of new decompositions */
 )
 {
    bliss::Graph graph;
@@ -1248,16 +1241,16 @@ SCIP_RETCODE detectIsomorph(
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
       // filter decomposition with largest orbit
-      if( detectordata->maxdecomps == 1)
+      if( maxdecomps == 1)
          SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
 
       if( *ndecdecomps == 0 )
-         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->maxdecomps, nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(maxdecomps, nperms)) ); /*lint !e506*/
       else
-         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->maxdecomps, nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(maxdecomps, nperms)) ); /*lint !e506*/
 
       int pos = *ndecdecomps;
-      for( p = *ndecdecomps; p < *ndecdecomps + nperms && pos < detectordata->maxdecomps; ++p )
+      for( p = *ndecdecomps; p < *ndecdecomps + MIN(maxdecomps, nperms); ++p )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
 
@@ -1353,7 +1346,8 @@ SCIP_RETCODE detectIsomorph(
    gcg::Seeed***         newSeeeds,          /**< pointer to store seeeds */
    DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
    SCIP_RESULT*          result,             /**< pointer to store result */
-   SCIP_Bool             onlysign            /**< use only sign of coefficients instead of coefficients? */
+   SCIP_Bool             onlysign,           /**< use only sign of coefficients instead of coefficients? */
+   int                   maxdecomps          /**< maximum number of new decompositions */
 )
 {
    bliss::Graph graph;
@@ -1406,17 +1400,17 @@ SCIP_RETCODE detectIsomorph(
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
       // filter decomposition with largest orbit
-      if( detectordata->numofsol == 1)
+      if( maxdecomps == 1)
          SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
 
 
       if( *nNewSeeeds == 0 )
-         SCIP_CALL( SCIPallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(maxdecomps, nperms)) ); /*lint !e506*/
       else
-         SCIP_CALL( SCIPreallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPreallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(maxdecomps, nperms)) ); /*lint !e506*/
 
       int pos = *nNewSeeeds;
-      for( p = *nNewSeeeds; p < *nNewSeeeds + nperms && pos < detectordata->numofsol; ++p )
+      for( p = *nNewSeeeds; p < *nNewSeeeds + MIN(maxdecomps, nperms); ++p )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
 
@@ -1496,11 +1490,11 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
       return SCIP_OKAY;
    }
 
-   if( detectordata->extend )
-      SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, TRUE) );
+   if( detectordata->maxdecompsextend > 0 )
+      SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, TRUE, detectordata->maxdecompsextend) );
 
-   if( detectordata->exact )
-      SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, FALSE) );
+   if( detectordata->maxdecompsexact )
+      SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, FALSE, detectordata->maxdecompsexact) );
 
    for( int i = 0; i < seeedPropagationData->nNewSeeeds; ++i )
    {
@@ -1521,11 +1515,11 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
    *ndecdecomps = 0;
    *decdecomps = NULL;
 
-   if( detectordata->extend )
-      SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, TRUE) );
+   if( detectordata->maxdecompsextend > 0 )
+      SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, TRUE, detectordata->maxdecompsextend) );
 
-   if( detectordata->exact )
-      SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, FALSE) );
+   if( detectordata->maxdecompsexact > 0 )
+      SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, FALSE, detectordata->maxdecompsexact) );
 
    return SCIP_OKAY;
 }
@@ -1554,15 +1548,13 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
       detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph) );
 
    /* add isomorph constraint handler parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecomps",
-      "Maximum number of solutions/decompositions", &detectordata->maxdecomps, FALSE,
-      DEFAULT_MAXDECOMPS, 1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/exact",
-      "Use exact coefficients for detection?", &detectordata->exact, FALSE,
-         DEFAULT_EXACT, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/extend",
-      "Extend detection by using the sign of the coefficients instead of the coefficients?", &detectordata->extend, FALSE,
-      DEFAULT_EXTEND, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecompsexact",
+      "Maximum number of solutions/decompositions with exact detection", &detectordata->maxdecompsexact, FALSE,
+      DEFAULT_MAXDECOMPSEXACT, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecompsextend",
+      "Maximum number of solutions/decompositions with extended detection", &detectordata->maxdecompsextend, FALSE,
+      DEFAULT_MAXDECOMPSEXTEND, 0, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }
