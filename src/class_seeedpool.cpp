@@ -651,7 +651,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             /* create decomp data structure */
             SCIP_CALL_ABORT( DECdecompCreate(scip, &(decompositions[i])) );
 
-            seeed->showScatterPlot(this);
+  //          seeed->showScatterPlot(this);
 
             /** set nblocks */
             DECdecompSetNBlocks(decompositions[i], seeed->getNBlocks() );

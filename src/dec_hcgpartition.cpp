@@ -467,9 +467,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    int nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
-
-
-
    SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
 
    /* add hcgpartition presolver parameters */
