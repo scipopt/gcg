@@ -63,7 +63,7 @@ private:
    std::vector<std::vector<int>>    conssForBlocks; 		         /**< conssForBlocks[k] contains a vector of indices of all constraints assigned to block k */
    std::vector<std::vector<int>>    varsForBlocks; 			      /**< varsForBlocks[k] contains a vector of indices of all variables assigned to block k */
    std::vector<int> 				      linkingVars;			         /**< vector containing indices of linking variables */
-   std::vector<std::vector<int>>    stairlinkingVars;		         /**< vector containing indices of staircase linking variables of the blocks */
+   std::vector<std::vector<int>>    stairlinkingVars;		         /**< vector containing indices of staircase linking variables of the blocks (stairlinking variables can be found only in the vector of their first block) */
    std::vector<int> 				      openVars;				         /**< vector containing indices of variables that are not assigned yet*/
    std::vector<int> 				      openConss;				         /**< vector containing indices of constraints that are not assigned yet*/
    std::vector<int>                 bookedAsMasterConss;          /**< vector containing indices of constraints that are not assigned yet but booked as master conss */
