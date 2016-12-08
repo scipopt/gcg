@@ -3,7 +3,8 @@ GCG Version
 
 features
 - new detection scheme:
-	- detection is roundwise (new parameter detection/maxrounds, default: 2) 	- further new paramters for each detector: detector/*/{usefullrecall, freqcallround, maxcallround, mincallround}:
+	- detection is roundwise (new parameter detection/maxrounds, default: 2)
+	- further new paramters for each detector: detector/*/{usefullrecall, freqcallround, maxcallround, mincallround}:
 		-  it useful to call this detector on a descendant of the propagated seeed
 		- frequency the detector gets called (is active) in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqcallround == 0
 		- last round the detector gets called
