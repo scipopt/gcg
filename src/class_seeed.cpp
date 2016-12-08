@@ -1161,7 +1161,8 @@ bool Seeed::checkVarsAndConssConsistency(Seeedpool* seeedpool)
             var = seeedpool->getVarsForCons(*consIter)[v];
             if( !isVarMastervar(var) && !isVarBlockvarOfBlock(var, b) && !isVarStairlinkingvarOfBlock(var, b) && !isVarLinkingvar(var) && !isVarOpenvar(var) )
             {
-               return false;
+               if (b==0 || !isVarStairlinkingvarOfBlock(var, b-1) )
+                  return false;
             }
 
          }
@@ -1312,7 +1313,8 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
             if( isVarBlockvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j)
                || isVarOpenvar(seeedpool->getVarsForCons(openConss[i])[k])
                || isVarLinkingvar(seeedpool->getVarsForCons(openConss[i])[k])
-               || isVarStairlinkingvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j))
+               || isVarStairlinkingvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j)
+               || ( j!= 0 && isVarStairlinkingvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j-1) ) )
             {
                if( isVarOpenvar(seeedpool->getVarsForCons(openConss[i])[k]) )
                {
@@ -1665,7 +1667,7 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks()
       emptyBlocks = false;
       for(b = 0; b < nBlocks; ++b)
       {
-         if(conssForBlocks[b].size() == 0 && varsForBlocks[b].size() == 0)
+         if(conssForBlocks[b].size() == 0 )
          {
             emptyBlocks = true;
             block = b;
