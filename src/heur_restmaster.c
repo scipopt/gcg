@@ -253,9 +253,9 @@ SCIP_RETCODE createNewSol(
 
    /* try to add new solution to original problem and free it immediately */
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, TRUE, TRUE, TRUE, TRUE, success) );
+   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, TRUE, TRUE, TRUE, TRUE, TRUE, success) );
 #else
-   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, FALSE, TRUE, TRUE, TRUE, success) );
+   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, FALSE, FALSE, TRUE, TRUE, TRUE, success) );
 #endif
 
    /* if we found a solution for the original problem,
@@ -263,9 +263,9 @@ SCIP_RETCODE createNewSol(
    if( success )
    {
 #ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
+      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, TRUE, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
 #else
-      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
+      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, FALSE, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
 #endif
       if( !masterfeas )
       {
@@ -453,7 +453,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
       SCIP_CALL( SCIPcreateProb(restmaster, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
       /* copy all variables */
-      SCIP_CALL( SCIPcopyVars(scip, restmaster, varmapfw, NULL, TRUE) );
+      SCIP_CALL( SCIPcopyVars(scip, restmaster, varmapfw, NULL, NULL, NULL, 0, TRUE) );
    }
    else
    {

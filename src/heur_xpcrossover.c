@@ -747,7 +747,7 @@ SCIP_RETCODE initializeSubproblem(
    SCIP_CALL( SCIPcreateProb(subscip, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    /* copy all variables */
-   SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, TRUE) );
+   SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, NULL, NULL, 0, TRUE) );
 
    /* if the lp rows are not used, also copy the constraints */
    if( !heurdata->uselprows )
@@ -1292,7 +1292,7 @@ SCIP_RETCODE createNewSol(
 #ifdef SCIP_STATISTIC
    if( !*success )
 #endif
-      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, success) );
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, success) );
 
 #ifdef SCIP_STATISTIC
    if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )

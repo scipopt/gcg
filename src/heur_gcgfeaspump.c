@@ -546,7 +546,7 @@ SCIP_RETCODE createNewSols(
       SCIP_CALL( SCIPsetSolVals(scip, newsol, nvars, vars, subsolvals) );
 
       /* try to add new solution to scip and free it immediately */
-      SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, success) );
+      SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, FALSE, TRUE, TRUE, TRUE, success) );
    }
 
    SCIPfreeBufferArray(scip, &subvars);
@@ -920,7 +920,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump) /*lint --e{715}*/
       /* if the rounded solution is feasible and better, add it to SCIP */
       if( success )
       {
-         SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
+         SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
          if( success )
             *result = SCIP_FOUNDSOL;
       }
@@ -1214,7 +1214,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump) /*lint --e{715}*/
    {
       success = FALSE;
 
-      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
+      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
       if( success )
          *result = SCIP_FOUNDSOL;
    }

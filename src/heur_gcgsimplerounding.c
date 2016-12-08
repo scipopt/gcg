@@ -270,7 +270,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
        * neither integrality nor feasibility of LP rows has to be checked, because all fractional
        * variables were already moved in feasible direction to the next integer
        */
-      SCIP_CALL( SCIPtrySol(scip, sol, FALSE, FALSE, FALSE, FALSE, &stored) );
+      SCIP_CALL( SCIPtrySol(scip, sol, FALSE, FALSE, FALSE, FALSE, FALSE, &stored) );
 
       if( stored )
       {

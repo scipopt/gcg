@@ -2656,9 +2656,9 @@ SCIP_RETCODE reportSolution(
                }
 
 #ifdef SCIP_DEBUG
-               SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &foundsol) );
+               SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &foundsol) );
 #else
-               SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &foundsol) );
+               SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &foundsol) );
 #endif
                changed = TRUE;
             }
@@ -2682,9 +2682,9 @@ SCIP_RETCODE reportSolution(
    }
 
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPtrySolFree(scip, &newsol, TRUE, TRUE, TRUE, TRUE, &success) );
+   SCIP_CALL( SCIPtrySolFree(scip, &newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &success) );
 #else
-   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, &success) );
+   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &success) );
 #endif
    SCIPfreeBufferArray(scip, &solvals);
 

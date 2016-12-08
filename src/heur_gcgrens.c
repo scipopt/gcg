@@ -312,7 +312,7 @@ SCIP_RETCODE createNewSol(
 #ifdef SCIP_STATISTIC
    if( !*success || heurdata->addallsols )
 #endif
-      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, success) );
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, success) );
 
 #ifdef SCIP_STATISTIC
    if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )
@@ -420,7 +420,7 @@ SCIP_RETCODE GCGapplyGcgrens(
       SCIP_CALL( SCIPcreateProb(subscip, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
       /* copy all variables */
-      SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, TRUE) );
+      SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, NULL, NULL, 0, TRUE) );
    }
    else
    {

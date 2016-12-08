@@ -71,6 +71,7 @@
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
 #define RELAX_PRIORITY         -1
 #define RELAX_FREQ             1
+#define RELAX_INCLUDESLP       FALSE
 
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
@@ -934,8 +935,8 @@ SCIP_RETCODE setPricingProblemParameters(
 
    /* disable conflict analysis */
    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useinflp", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useboundlp", FALSE) );
+   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useinflp", 'o') );
+   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useboundlp", 'o') );
    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usesb", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usepseudo", FALSE) );
 
@@ -1448,7 +1449,7 @@ SCIP_RETCODE createMasterprobConss(
    nmasterconss = DECdecompGetNLinkingconss(relaxdata->decdecomp);
    newcons = NULL;
 
-   assert(SCIPhashmapGetNEntries(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
+   assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
    for( c = 0; c < nmasterconss; ++c )
    {
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0 )
@@ -1890,10 +1891,10 @@ SCIP_RETCODE solveDiagonalBlocks(
    else
       *lowerbound = objvalue;
 
-   SCIP_CALL( SCIPcheckSol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &isfeasible) );
+   SCIP_CALL( SCIPcheckSol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &isfeasible) );
    assert(isfeasible);
 
-   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
+   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
 
    /** @todo maybe add a constraint here to indicate that it has been decomposed */
 
@@ -1944,7 +1945,7 @@ SCIP_RETCODE initRelaxator(
    }
 
    /* permute the decomposition if the permutation seed is set */
-   SCIP_CALL( SCIPgetIntParam(scip, "misc/permutationseed", &permutationseed) );
+   SCIP_CALL( SCIPgetIntParam(scip, "randomization/permutationseed", &permutationseed) );
    if( permutationseed >= 0 )
    {
       SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, (unsigned int) permutationseed) );
@@ -2361,7 +2362,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
       if( relaxdata->currentorigsol != NULL )
       {
-         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
       }
 
       /* if a new primal solution was found in the master problem, transfer it to the original problem */
@@ -2373,9 +2374,9 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
          SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
    #ifdef SCIP_DEBUG
-         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &stored) );
+         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
    #else
-         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
    #endif
          if( !stored )
          {
@@ -2440,7 +2441,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    initRelaxdata(relaxdata);
 
    /* include relaxator */
-   SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
+   SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, RELAX_INCLUDESLP, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
          relaxExitGcg, relaxInitsolGcg, relaxExitsolGcg, relaxExecGcg, relaxdata) );
 
    /* inform the main scip, that no LPs should be solved */
@@ -3426,7 +3427,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
       SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
 
-      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
       if( !stored )
       {
          SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
