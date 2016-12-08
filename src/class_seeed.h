@@ -244,7 +244,7 @@ public:
    );
 
    /** displays the assignments of the vars */
-   SCIP_RETCODE displayVars(
+   SCIP_RETCODE displayVars( Seeedpool* seeedpool = NULL
    );
 
    /** displays the assignments of the vars */

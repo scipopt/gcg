@@ -412,8 +412,8 @@ SCIP_RETCODE DECdecompFree(
             }
          }
 
-        /** was: SCIPfreeBlockMemoryArrayNull(scip, &(decomp->subscipvars[i]), SCIPcalcMemGrowSize(scip, decomp->nsubscipvars[i])); */ /*lint !e866*/
-         SCIPfreeBlockMemoryArrayNull(scip, &(decomp->subscipvars[i]), decomp->nsubscipvars[i]); /*lint !e866*/
+         SCIPfreeBlockMemoryArrayNull(scip, &(decomp->subscipvars[i]), SCIPcalcMemGrowSize(scip, decomp->nsubscipvars[i])); /*lint !e866*/
+
       }
       if( decomp->nsubscipconss != NULL )
       {
@@ -424,8 +424,7 @@ SCIP_RETCODE DECdecompFree(
                SCIP_CALL( SCIPreleaseCons(scip, &(decomp->subscipconss[i][j])) );
             }
          }
-/** was:         SCIPfreeBlockMemoryArrayNull(scip, &decomp->subscipconss[i], SCIPcalcMemGrowSize(scip, decomp->nsubscipconss[i])); */ /*lint !e866*/
-         SCIPfreeBlockMemoryArrayNull(scip, &decomp->subscipconss[i], decomp->nsubscipconss[i]); /*lint !e866*/
+         SCIPfreeBlockMemoryArrayNull(scip, &decomp->subscipconss[i], SCIPcalcMemGrowSize(scip, decomp->nsubscipconss[i])); /*lint !e866*/
       }
    }
 
@@ -453,8 +452,7 @@ SCIP_RETCODE DECdecompFree(
                SCIP_CALL( SCIPreleaseVar(scip, &(decomp->stairlinkingvars[i][j])) );
             }
          }
-/** was:         SCIPfreeBlockMemoryArrayNull(scip, &decomp->stairlinkingvars[i], SCIPcalcMemGrowSize(scip, decomp->nstairlinkingvars[i]));*/ /*lint !e866*/
-         SCIPfreeBlockMemoryArrayNull(scip, &decomp->stairlinkingvars[i], decomp->nstairlinkingvars[i]);
+         SCIPfreeBlockMemoryArrayNull(scip, &decomp->stairlinkingvars[i], SCIPcalcMemGrowSize(scip, decomp->nstairlinkingvars[i])); /*lint !e866*/
       }
 
    /* free hashmaps if they are not NULL */
@@ -475,12 +473,10 @@ SCIP_RETCODE DECdecompFree(
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->nsubscipvars, decomp->nblocks);
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->subscipconss, decomp->nblocks);
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->nsubscipconss,  decomp->nblocks);
-/** was:   SCIPfreeBlockMemoryArrayNull(scip, &decomp->linkingvars, SCIPcalcMemGrowSize(scip, decomp->nlinkingvars)); */
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->linkingvars, decomp->nlinkingvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->linkingvars, SCIPcalcMemGrowSize(scip, decomp->nlinkingvars));
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->stairlinkingvars, decomp->nblocks);
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->nstairlinkingvars,decomp->nblocks);
-   /** was:   SCIPfreeBlockMemoryArrayNull(scip, &decomp->linkingconss, SCIPcalcMemGrowSize(scip, decomp->nlinkingconss)); */
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->linkingconss, decomp->nlinkingconss);
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->linkingconss, SCIPcalcMemGrowSize(scip, decomp->nlinkingconss));
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorchain, decomp->sizeDetectorchain);
    SCIPfreeMemoryNull(scip, decdecomp);
 

@@ -612,6 +612,12 @@ SCIP_RETCODE freeData(
    delete detectordata->blockedAfterrow;
    detectordata->blockedAfterrow = NULL;
 
+   if (detectordata->constoblock != NULL)
+   {
+      SCIPhashmapFree(&detectordata->constoblock);
+      detectordata->constoblock = NULL;
+   }
+
    SCIPfreeMemoryArray(scip, &detectordata->ibegin);
    SCIPfreeMemoryArray(scip, &detectordata->iend);
    SCIPfreeMemoryArray(scip, &detectordata->jbegin);
@@ -1961,7 +1967,7 @@ SCIP_RETCODE blocking(
 
             SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
             SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, TRUE) );
-            detectordata->constoblock = NULL;
+ //           detectordata->constoblock = NULL;
 
             (*ndecdecomps) += 1;
          }
@@ -1976,7 +1982,7 @@ SCIP_RETCODE blocking(
          {
             SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
             SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, TRUE) );
-            detectordata->constoblock = NULL;
+            //detectordata->constoblock = NULL;
 
             (*ndecdecomps) += 1;
          }
@@ -1997,7 +2003,7 @@ SCIP_RETCODE blocking(
       {
          SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
          SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, TRUE) );
-         detectordata->constoblock = NULL;
+         //detectordata->constoblock = NULL;
 
          (*ndecdecomps) += 1;
       }
@@ -2116,7 +2122,7 @@ SCIP_RETCODE blocking(
             SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
             (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
 
-            detectordata->constoblock = NULL;
+    //        detectordata->constoblock = NULL;
 
             (*nNewSeeeds) += 1;
          }
@@ -2132,7 +2138,7 @@ SCIP_RETCODE blocking(
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed, seeedpool);
             SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
             (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
-            detectordata->constoblock = NULL;
+ //           detectordata->constoblock = NULL;
 
             (*nNewSeeeds) += 1;
          }
@@ -2154,7 +2160,7 @@ SCIP_RETCODE blocking(
          (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed, seeedpool);
          SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
          (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
-         detectordata->constoblock = NULL;
+//         detectordata->constoblock = NULL;
 
          (*nNewSeeeds) += 1;
       }
@@ -2179,7 +2185,7 @@ SCIP_RETCODE blocking(
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed, seeedpool);
             SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
             (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
-            detectordata->constoblock = NULL;
+ //           detectordata->constoblock = NULL;
 
             *nNewSeeeds += 1;
          }
@@ -2214,6 +2220,12 @@ DEC_DECL_FREEDETECTOR(detectorFreeStairheur)
 
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
+
+   if (detectordata->constoblock != NULL)
+   {
+         SCIPhashmapFree(&detectordata->constoblock);
+         detectordata->constoblock = NULL;
+   }
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 

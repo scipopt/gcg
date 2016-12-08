@@ -78,21 +78,7 @@ struct DEC_DetectorData
  */
 
 /** destructor of detector to free user data (called when GCG is exiting) */
-static
-DEC_DECL_FREEDETECTOR(freeGeneralmastersetpart)
-{
-   DEC_DETECTORDATA* detectordata;
-
-   assert(scip != NULL);
-
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   SCIPfreeMemory(scip, &detectordata);
-
-   return SCIP_OKAY;
-}
+#define freeGeneralmastersetpart NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0

@@ -218,6 +218,7 @@ DEC_DECL_EXITDETECTOR(exitHcgpartition)
 
    SCIP_CALL( SCIPfreeClock(scip, &detectordata->metisclock) );
 
+
    return SCIP_OKAY;
 }
 
@@ -467,7 +468,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
 
-   SCIP_CALL( SCIPcreateWallClock(scip, &detectordata->metisclock) );
+
+
+   SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
 
    /* add hcgpartition presolver parameters */
 
