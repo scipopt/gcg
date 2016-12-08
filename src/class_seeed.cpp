@@ -1159,8 +1159,7 @@ bool Seeed::checkVarsAndConssConsistency(Seeedpool* seeedpool)
          for( int v = 0; v < seeedpool->getNVarsForCons(*consIter); ++v )
          {
             var = seeedpool->getVarsForCons(*consIter)[v];
-            if( !isVarMastervar(var) && !isVarBlockvarOfBlock(var, b) && !isVarStairlinkingvarOfBlock(var, b) && !isVarStairlinkingvarOfBlock(var, b - 1)
-               && !isVarLinkingvar(var) && !isVarOpenvar(var) )
+            if( !isVarMastervar(var) && !isVarBlockvarOfBlock(var, b) && !isVarStairlinkingvarOfBlock(var, b) && !isVarLinkingvar(var) && !isVarOpenvar(var) )
             {
                return false;
             }
@@ -1313,12 +1312,11 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
             if( isVarBlockvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j)
                || isVarOpenvar(seeedpool->getVarsForCons(openConss[i])[k])
                || isVarLinkingvar(seeedpool->getVarsForCons(openConss[i])[k])
-               || isVarStairlinkingvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j)
-               || isVarStairlinkingvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j - 1))
+               || isVarStairlinkingvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j))
             {
                if( isVarOpenvar(seeedpool->getVarsForCons(openConss[i])[k]) )
                {
-                  vecOpenvarsOfBlock.push_back(seeedpool->getVarsForCons(openConss[i])[k]); /**!!!*/
+                  vecOpenvarsOfBlock.push_back(seeedpool->getVarsForCons(openConss[i])[k]);
                }
             }
             else
@@ -1708,7 +1706,7 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks()
             for( size_t i = 0; i < stairlinkingVarsOfPreviousBlock.size(); ++i )
             {
                iter = find(stairlinkingVars[block - 1].begin(), stairlinkingVars[block - 1].end(), stairlinkingVarsOfPreviousBlock[i]);
-               assert( it != stairlinkingVars[block - 1].end() );
+               assert( iter != stairlinkingVars[block - 1].end() );
                stairlinkingVars[block - 1].erase(iter);
             }
             flushBooked();
@@ -2649,7 +2647,16 @@ bool Seeed::isVarStairlinkingvarOfBlock(int var, int block)
    if( find(stairlinkingVars[block].begin(), stairlinkingVars[block].end(), var) != stairlinkingVars[block].end() )
       return true;
    else
-      return false;
+   {
+      if( block == 0 )
+         return false;
+      else if(find(stairlinkingVars[block - 1].begin(), stairlinkingVars[block - 1].end(), var) != stairlinkingVars[block - 1].end())
+      {
+          return true;
+      }
+      else
+         return false;
+   }
 }
 
 /** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments assignOpenPartialHittingToMaster() */

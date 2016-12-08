@@ -2376,7 +2376,6 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
-
 #ifdef WRITEALLOUTPUT
    int ROC_iterations;
    assert(false); //not implemented for seeeds
