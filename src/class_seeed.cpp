@@ -2248,7 +2248,7 @@ SCIP_Real Seeed::evaluate(
 //      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
       break;
    case DEC_DECTYPE_UNKNOWN:
-      SCIPerrorMessage("unknown type, cannot compute score\n")
+      SCIPerrorMessage("unknown type, cannot compute score\n");
       assert(FALSE);
       break;
    default:
