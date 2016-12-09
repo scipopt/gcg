@@ -565,6 +565,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          for(size_t i = 0; i < currSeeeds.size(); ++i)
          {
              SeeedPtr seeedPtr = currSeeeds[i];
+
              SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
              seeedPtr->calcHashvalue();
              /* currseeeds are freed later */
