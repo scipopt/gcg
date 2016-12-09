@@ -344,8 +344,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                          valsForConss[i].push_back(currVals[currVar]);
                          valsMap[std::pair<int,int>(i, varIndex)] =  currVals[currVar] ;
                  }
-                 SCIPfreeBufferArray(scip, &currVars);
-                 SCIPfreeBufferArray(scip, &currVals);
+                 SCIPfreeBufferArrayNull(scip, &currVars);
+                 SCIPfreeBufferArrayNull(scip, &currVals);
          }
 
          /* populate seeedpool with empty seeed */

@@ -103,7 +103,7 @@ using gcg::Weights;
 #define DEFAULT_METIS_VERBOSE     FALSE      /**< should metis be verbose */
 #define DEFAULT_METISUSEPTYPE_RB  TRUE       /**< Should metis use the rb or kway partitioning algorithm */
 #define DEFAULT_REALNAME          FALSE      /**< whether the metis name should be real or temporary */
-#define DEFAULT_TYPE              'r'        /**< type of the decomposition 'c' column hypergraph (single bordered, no
+#define DEFAULT_TYPE              'a'        /**< type of the decomposition 'c' column hypergraph (single bordered, no
                                                   linking constraints), 'r' row hypergraph (single bordered, no linking
                                                   variables) and 'a' column-row hypergraph (arrowhead) */
 /*
@@ -473,7 +473,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    int givenBlocks = -1; // if givenBlocks == -1, the numbers of the following array will be used as number of blocks, else the number of givenBlocks will be used as number of blocks
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
-   std::vector<int> numberOfBlocks = {2, 8, 16, 32};
+   std::vector<int> numberOfBlocks = {2, 5, 8, 16, 32};
 
    assert(scip != NULL);
    assert(detectordata != NULL);

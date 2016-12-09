@@ -40,6 +40,7 @@
 #include "scip_misc.h"
 #include "struct_decomp.h"
 #include "cons_decomp.h"
+#include "pub_decomp.h"
 
 #define READER_NAME             "gpreader"
 #define READER_DESC             "gnuplot file writer for matrix visualization"
@@ -364,6 +365,10 @@ SCIP_RETCODE SCIPwriteGp(
    char probname[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
    char *name;
+   char detectorchainstring[SCIP_MAXSTRLEN];
+   DEC_DETECTOR** detectorchain;
+   int sizedetectorchain;
+   int i;
 
    assert(scip != NULL);
    assert(file != NULL);
@@ -377,15 +382,28 @@ SCIP_RETCODE SCIPwriteGp(
    (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
 
+   /* construct detector chain string*/
+   detectorchain = DECdecompGetDetectorChain(decdecomp);
+   sizedetectorchain = DECdecompGetDetectorChainSize(decdecomp);
+
+   sprintf(detectorchainstring, "%s", DECdetectorGetName(detectorchain[0]));
+
+   for( i=1; i < sizedetectorchain; ++i )
+   {
+      sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(detectorchain[i]) );
+   }
+   SCIPinfoMessage(scip, NULL, "%s \n", detectorchainstring);
+
+
    /* print header */
    if( decdecomp == NULL )
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
    else
    {
       if(outputPDF)
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d", name, DECdetectorGetChar(decdecomp->detector), decdecomp->nblocks);
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%s_%d", name, detectorchainstring, decdecomp->nblocks);
       else
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%c-%d", name, DECdetectorGetChar(decdecomp->detector), decdecomp->nblocks);
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%s-%d", name, detectorchainstring, decdecomp->nblocks);
    }
 
    SCIP_CALL( writeFileHeader(scip, file, outname, outputPDF) );
