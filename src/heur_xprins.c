@@ -73,6 +73,7 @@
 #define DEFAULT_COPYCUTS      TRUE          /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                              * of the original scip be copied to constraints of the subscip
                                              */
+#define DEFAULT_RANDSEED         7           /* initial random seed                                                  */
 
 
 
@@ -103,7 +104,7 @@ struct SCIP_HeurData
    SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
                                               *   to constraints in subproblem?
                                               */
-   unsigned int          randseed;           /**< seed value for random number generator                            */
+   SCIP_RANDNUMGEN*      randnumgen;         /**< random number generator                                           */
 
 #ifdef SCIP_STATISTIC
    SCIP_Real             avgfixrate;         /**< average rate of variables that are fixed                          */
@@ -366,7 +367,7 @@ SCIP_RETCODE selectExtremePointsRandomized(
          int idx;
          int selidx;
 
-         idx = SCIPgetRandomInt(nusedpts-k-1, lastpt-1, &heurdata->randseed);
+         idx = SCIPrandomGetInt(heurdata->randnumgen, nusedpts-k-1, lastpt-1);
          selidx = i * nusedpts + k;
          selection[selidx] = blockpts[idx];
          lastpt = idx;
@@ -1182,9 +1183,31 @@ SCIP_DECL_HEURINIT(heurInitXprins)
 
    /* initialize data */
    heurdata->usednodes = 0;
-   heurdata->randseed = 0;
    heurdata->nfailures = 0;
    heurdata->nextnodenumber = 0;
+
+   /* create random number generator */
+   SCIP_CALL( SCIPrandomCreate(&heurdata->randnumgen, SCIPblkmem(scip),
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+
+   return SCIP_OKAY;
+}
+
+/** deinitialization method of primal heuristic (called before transformed problem is freed) */
+static
+SCIP_DECL_HEUREXIT(heurExitXprins)
+{  /*lint --e{715}*/
+   SCIP_HEURDATA* heurdata;
+
+   assert(heur != NULL);
+   assert(scip != NULL);
+
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   /* free random number generator */
+   SCIPrandomFree(&heurdata->randnumgen);
 
    return SCIP_OKAY;
 }
@@ -1564,6 +1587,7 @@ SCIP_RETCODE SCIPincludeHeurXprins(
    /* set non-NULL pointers to callback methods */
    SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeXprins) );
    SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitXprins) );
+   SCIP_CALL( SCIPsetHeurExit(scip, heur, heurExitXprins) );
 #ifdef SCIP_STATISTIC
    SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolXprins) );
    SCIP_CALL( SCIPsetHeurExitsol(scip, heur, heurExitsolXprins) );

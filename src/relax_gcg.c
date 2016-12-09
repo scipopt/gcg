@@ -1948,7 +1948,11 @@ SCIP_RETCODE initRelaxator(
    SCIP_CALL( SCIPgetIntParam(scip, "randomization/permutationseed", &permutationseed) );
    if( permutationseed >= 0 )
    {
-      SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, (unsigned int) permutationseed) );
+      SCIP_RANDNUMGEN* randnumgen;
+
+      SCIP_CALL( SCIPrandomCreate(&randnumgen, SCIPblkmem(scip), (unsigned int) permutationseed) );
+      SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, randnumgen) );
+      SCIPrandomFree(&randnumgen);
    }
 
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
