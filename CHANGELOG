@@ -11,8 +11,6 @@ features
 
 code cleanup
 - cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
-
-code cleanup
 - reallocate memory for origvars array in pricingvardate more efficiently
 
 bug fixes
