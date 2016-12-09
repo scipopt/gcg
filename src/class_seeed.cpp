@@ -2056,7 +2056,219 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
 }
 
 
+/** computes the score of the given seeed based on the border, the average density score and the ratio of
+ * linking variables
+ */
+SCIP_Real Seeed::evaluate(
+   Seeedpool* seeedpool
+   )
+{
+   SCIP_Real             borderscore;        /**< score of the border */
+   SCIP_Real             densityscore;       /**< score of block densities */
+   SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
+   SCIP_Real             totalscore;         /**< accumulated score */
 
+   int matrixarea;
+   int borderarea;
+   int i;
+   int j;
+   int k;
+   /*   int blockarea; */
+   SCIP_Real varratio;
+   int* nzblocks;
+   int* nlinkvarsblocks;
+   int* nvarsblocks;
+   SCIP_Real* blockdensities;
+   int* blocksizes;
+   SCIP_Real density;
+
+   SCIP_Real alphaborderarea;
+   SCIP_Real alphalinking;
+   SCIP_Real alphadensity;
+
+   alphaborderarea = 0.6;
+   alphalinking = 0.2 ;
+   alphadensity  = 0.2;
+
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &nzblocks, nBlocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nlinkvarsblocks, nBlocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blockdensities, nBlocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blocksizes, nBlocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nvarsblocks, nBlocks) );
+   /*
+    * 3 Scores
+    *
+    * - Area percentage (min)
+    * - block density (max)
+    * - \pi_b {v_b|v_b is linking}/#vb (min)
+    */
+
+   /* calculate matrix area */
+   matrixarea = nVars*nConss;
+
+   /* calculate slave sizes, nonzeros and linkingvars */
+   for( i = 0; i < nBlocks; ++i )
+   {
+      //SCIP_CONS** curconss;
+
+      int ncurconss;
+      int nvarsblock;
+      SCIP_Bool *ishandled;
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &ishandled, nVars) );
+      nvarsblock = 0;
+      nzblocks[i] = 0;
+      nlinkvarsblocks[i] = 0;
+      for( j = 0; j < nVars; ++j )
+      {
+         ishandled[j] = FALSE;
+      }
+      ncurconss = getNConssForBlock(i);
+
+
+      for( j = 0; j < ncurconss; ++j )
+      {
+         int curcons = getConssForBlock(i)[j];
+         int ncurvars;
+         ncurvars = seeedpool->getNVarsForCons(curcons);
+
+         for( k = 0; k < ncurvars; ++k )
+         {
+            int curvar = seeedpool->getVarsForCons(curcons)[k];
+            int block;
+            ++(nzblocks[i]);
+            if( isVarBlockvarOfBlock(curvar, i) )
+               block = i + 1;
+            else if( isVarLinkingvar(curvar) || isVarStairlinkingvar(curvar))
+               block = nBlocks + 2;
+            else if( isVarMastervar(curvar) )
+               block = nBlocks + 1;
+            else
+            {
+               assert(isVarOpenvar(curvar));
+               continue;
+            }
+
+            if( block == nBlocks+1 && ishandled[curvar] == FALSE )
+            {
+               ++(nlinkvarsblocks[i]);
+            }
+            ishandled[curvar] = TRUE;
+         }
+      }
+
+      for( j = 0; j < nVars; ++j )
+      {
+         if( ishandled[j] )
+         {
+            ++nvarsblock;
+         }
+      }
+
+      blocksizes[i] = nvarsblock*ncurconss;
+      nvarsblocks[i] = nvarsblock;
+      if( blocksizes[i] > 0 )
+      {
+         blockdensities[i] = 1.0*nzblocks[i]/blocksizes[i];
+      }
+      else
+      {
+         blockdensities[i] = 0.0;
+      }
+
+      assert(blockdensities[i] >= 0 && blockdensities[i] <= 1.0);
+      SCIPfreeBufferArray(scip, &ishandled);
+   }
+
+//   borderarea = getNMasterconss()*nVars+getNLinkingvars()*(nConss-getNMasterconss());
+   borderarea = getNMasterconss()*(nVars - getNOpenvars()) + getNLinkingvars() * (nConss - getNMasterconss() - getNOpenconss());
+
+   density = 1E20;
+   varratio = 1.0;
+   for( i = 0; i < nBlocks; ++i )
+   {
+      density = MIN(density, blockdensities[i]);
+
+      if( getNLinkingvars() > 0 )
+      {
+         varratio *= 1.0*nlinkvarsblocks[i]/getNLinkingvars();
+      }
+      else
+      {
+         varratio = 0;
+      }
+   }
+
+   linkingscore = (0.5+0.5*varratio);
+   borderscore = (1.0*(borderarea)/matrixarea);
+   densityscore = (1-density);
+
+   DEC_DECTYPE type;
+   if(getNLinkingvars() == getNTotalStairlinkingvars() && getNMasterconss() == 0 && getNLinkingvars() > 0)
+   {
+      type = DEC_DECTYPE_STAIRCASE;
+   }
+   else if(getNLinkingvars() > 0 || getNTotalStairlinkingvars() )
+   {
+      type = DEC_DECTYPE_ARROWHEAD;
+   }
+   else if(getNMasterconss() > 0)
+   {
+      type = DEC_DECTYPE_BORDERED;
+   }
+   else if(getNMasterconss() == 0 && getNTotalStairlinkingvars() == 0)
+   {
+      type = DEC_DECTYPE_DIAGONAL;
+   }
+   else
+   {
+      type = DEC_DECTYPE_UNKNOWN;
+   }
+
+
+   switch( type )
+   {
+   case DEC_DECTYPE_ARROWHEAD:
+      totalscore = alphaborderarea*(borderscore) + alphalinking*(linkingscore) + alphadensity*(densityscore);
+//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
+      break;
+   case DEC_DECTYPE_BORDERED:
+      totalscore = alphaborderarea*(borderscore) + alphalinking*(linkingscore) + alphadensity*(densityscore);
+//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
+      break;
+   case DEC_DECTYPE_DIAGONAL:
+      if(nBlocks == 1 || nBlocks == 0)
+         totalscore = 1.0;
+      else
+         totalscore = 0.0;
+      break;
+   case DEC_DECTYPE_STAIRCASE:
+      totalscore = alphaborderarea*(borderscore) + alphalinking*(linkingscore) + 0.2*(densityscore);
+//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
+      break;
+   case DEC_DECTYPE_UNKNOWN:
+      SCIPerrorMessage("unknown type, cannot compute score\n")
+      assert(FALSE);
+      break;
+   default:
+      SCIPerrorMessage("No rule for this decomposition type, cannot compute score\n");
+      assert(FALSE);
+      break;
+   }
+   if(nBlocks == 1 || nBlocks == 0)
+      totalscore = 1.0;
+
+   if( nBlocks == 0 || nBlocks == 1)
+      totalscore = 1;
+
+   SCIPfreeBufferArray(scip, &nvarsblocks);
+   SCIPfreeBufferArray(scip, &blocksizes);
+   SCIPfreeBufferArray(scip, &blockdensities);
+   SCIPfreeBufferArray(scip, &nlinkvarsblocks);
+   SCIPfreeBufferArray(scip, &nzblocks);
+   return totalscore;
+}
 
 
 /** fills out the border of a seeed with the hashmap constoblock */
@@ -2639,6 +2851,17 @@ bool Seeed::isVarOpenvar(int var)
       return true;
    else
       return false;
+}
+
+/** returns whether the var is a stairlinking var */
+bool Seeed::isVarStairlinkingvar(int var)
+{
+   for( int b = 0; b < nBlocks; ++b )
+   {
+      if( find(stairlinkingVars[b].begin(), stairlinkingVars[b].end(), var) != stairlinkingVars[b].end() )
+         return true;
+   }
+   return false;
 }
 
 /** returns whether the var is a stairlinkingvar of the block */

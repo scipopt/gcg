@@ -272,6 +272,10 @@ public:
 
    void showScatterPlot(  Seeedpool* seeedpool );
 
+   /** computes the score of the given seeed based on the border, the average density score and the ratio of linking variables*/
+   SCIP_Real evaluate(
+      Seeedpool* seeedpool
+   );
 
    /** fills out the border of the seeed with the hashmap constoblock */
    SCIP_RETCODE filloutBorderFromConstoblock(
@@ -441,6 +445,11 @@ public:
    /** returns whether the var is an open var */
    bool isVarOpenvar(
          int var
+   );
+
+   /** returns whether the var is a stairlinking var */
+   bool isVarStairlinkingvar(
+      int var
    );
 
    /** returns whether the var is a stairlinkingvar of the block */
