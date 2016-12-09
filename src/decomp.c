@@ -477,7 +477,7 @@ SCIP_RETCODE DECdecompFree(
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->stairlinkingvars, decomp->nblocks);
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->nstairlinkingvars,decomp->nblocks);
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->linkingconss, SCIPcalcMemGrowSize(scip, decomp->nlinkingconss));
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorchain, decomp->sizeDetectorchain);
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorchain, SCIPcalcMemGrowSize(scip,decomp->sizeDetectorchain ) );
    SCIPfreeMemoryNull(scip, decdecomp);
 
    return SCIP_OKAY;
@@ -2648,6 +2648,16 @@ SCIP_RETCODE DECevaluateDecomposition(
    int* blocksizes;
    SCIP_Real density;
 
+   SCIP_Real alphaborderarea;
+   SCIP_Real alphalinking;
+   SCIP_Real alphadensity;
+
+   alphaborderarea = 0.6;
+   alphalinking = 0.2 ;
+   alphadensity  = 0.2;
+
+
+
    assert(scip != NULL);
    assert(score != NULL);
 
@@ -2779,13 +2789,18 @@ SCIP_RETCODE DECevaluateDecomposition(
    score->borderscore = (1.0*(borderarea)/matrixarea);
    score->densityscore = (1-density);
 
+
+
+
    switch( DECdecompGetType(decdecomp) )
    {
    case DEC_DECTYPE_ARROWHEAD:
-      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
+      score->totalscore = alphaborderarea*(score->borderscore) + alphalinking*(score->linkingscore) + alphadensity*(score->densityscore);
+//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
       break;
    case DEC_DECTYPE_BORDERED:
-      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
+      score->totalscore = alphaborderarea*(score->borderscore) + alphalinking*(score->linkingscore) + alphadensity*(score->densityscore);
+//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
       break;
    case DEC_DECTYPE_DIAGONAL:
       if(nblocks == 1 || nblocks == 0)
@@ -2794,8 +2809,8 @@ SCIP_RETCODE DECevaluateDecomposition(
          score->totalscore = 0.0;
       break;
    case DEC_DECTYPE_STAIRCASE:
-      SCIPwarningMessage(scip, "Decomposition type is %s, cannot compute score\n", DECgetStrType(DECdecompGetType(decdecomp)));
-      score->totalscore = 0.9;
+      score->totalscore = alphaborderarea*(score->borderscore) + alphalinking*(score->linkingscore) + 0.2*(score->densityscore);
+//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
       break;
    case DEC_DECTYPE_UNKNOWN:
       SCIPerrorMessage("Decomposition type is %s, cannot compute score\n", DECgetStrType(DECdecompGetType(decdecomp)));

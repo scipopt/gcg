@@ -2652,12 +2652,7 @@ bool Seeed::isVarStairlinkingvarOfBlock(int var, int block)
    {
       if( block == 0 )
          return false;
-      else if(find(stairlinkingVars[block - 1].begin(), stairlinkingVars[block - 1].end(), var) != stairlinkingVars[block - 1].end())
-      {
-          return true;
-      }
-      else
-         return false;
+      else return (find(stairlinkingVars[block - 1].begin(), stairlinkingVars[block - 1].end(), var) != stairlinkingVars[block - 1].end() );
    }
 }
 

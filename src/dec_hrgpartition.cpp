@@ -76,7 +76,7 @@ using gcg::Weights;
 #define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
 #define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_PRIORITY          1000           /**< priority of the detector */
-#define DEC_DECCHAR           'a'            /**< display character of detector */
+#define DEC_DECCHAR           'r'            /**< display character of detector */
 #define DEC_ENABLED           TRUE           /**< should detector be called by default */
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL      TRUE           /**< is it useful to call this detector on a descendant of the propagated seeed */
@@ -469,7 +469,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    int givenBlocks = -1; // if givenBlocks == -1, the numbers of the following array will be used as number of blocks, else the number of givenBlocks will be used as number of blocks
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
-   std::vector<int> numberOfBlocks = {2, 8, 16, 32};
+   std::vector<int> numberOfBlocks = {2, 5, 8, 16, 32};
 
    assert(scip != NULL);
    assert(detectordata != NULL);

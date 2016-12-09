@@ -76,11 +76,25 @@ private:
    bool 							         openVarsAndConssCalculated;   /**< are the openVars and openCons calculated */
    long                             hashvalue;
 
+
+
    const static int              primes[];
    const static int              nPrimes;
 
 public:
-   std::vector<int>                 detectorChain;             /**< vector containing detectors */
+
+   /** statistic information */
+   std::vector<int>                 detectorChain;             /**< vector containing detector indices that worked on that seeed */
+   std::vector<SCIP_Real>           detectorClockTimes;        /**< vector containing detector times in seconds  */
+   std::vector<SCIP_Real>           pctVarsToBorder;           /**< vector containing the fraction of variables assigned to the border for each detector working on that seeed*/
+   std::vector<SCIP_Real>           pctVarsToBlock;           /**< vector containing the fraction of variables assigned to a block for each detector working on that seeed*/
+   std::vector<SCIP_Real>           pctVarsFromFree;          /**< vector containing the fraction of variables that are not longer open for each detector working on that seeed*/
+   std::vector<SCIP_Real>           pctConssToBorder;           /**< vector containing the fraction of constraints assigned to the border for each detector working on that seeed*/
+   std::vector<SCIP_Real>           pctConssToBlock;           /**< vector containing the fraction of constraints assigned to a block for each detector working on that seeed*/
+   std::vector<SCIP_Real>           pctConssFromFree;          /**< vector containing the fraction of constraints that are not longer open for each detector working on that seeed*/
+   std::vector<int>                 nNewBlocks;             /**< vector containing detector indices that worked on that seeed */
+
+
 
    /** constructor(s) */
    Seeed(
@@ -99,6 +113,9 @@ public:
 
    /** add a block, returns the number of the new block */
    int addBlock();
+
+   /** incorporates the changes from ancestor  seeed */
+   void addDecChangesFromAncestor(Seeed* ancestor);
 
    /** are already assigned constraints to blocks */
    bool alreadyAssignedConssToBlocks();
