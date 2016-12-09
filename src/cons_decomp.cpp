@@ -703,28 +703,45 @@ SCIP_RETCODE DECwriteAllDecomps(
 
    tmp = conshdlrdata->decdecomps[0];
 
-   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   for( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
-      detector =  conshdlrdata->detectors[i];
-      assert(detector != NULL);
+      decomp = conshdlrdata->decdecomps[i];
 
-      for( j = 0; j < detector->ndecomps; ++j )
+      assert(decomp != NULL);
+      if( directory != NULL )
       {
-         decomp = detector->decomps[j];
-         assert(decomp != NULL);
-         if( directory != NULL )
-         {
-            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_%c_%d_%d.%s", directory, pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
-         }
-         else
-         {
-            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d_%d.%s", pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
-
-         }
-         conshdlrdata->decdecomps[0] = decomp;
-         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_%d.%s", directory, pname, i, extension);
       }
+      else
+      {
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d.%s", pname, i, extension);
+      }
+      conshdlrdata->decdecomps[0] = decomp;
+      SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
    }
+
+//   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+//   {
+//      detector =  conshdlrdata->detectors[i];
+//      assert(detector != NULL);
+//
+//      for( j = 0; j < detector->ndecomps; ++j )
+//      {
+//         decomp = detector->decomps[j];
+//         assert(decomp != NULL);
+//         if( directory != NULL )
+//         {
+//            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_%c_%d_%d.%s", directory, pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
+//         }
+//         else
+//         {
+//            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d_%d.%s", pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
+//
+//         }
+//         conshdlrdata->decdecomps[0] = decomp;
+//         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
+//      }
+//   }
 
    /** further, get all read in decompositions */
    for( i = 0; i < conshdlrdata->ndecomps; ++i )
