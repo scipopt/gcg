@@ -461,8 +461,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
 
-   SCIP_CALL( SCIPcreateWallClock(scip, &detectordata->metisclock) );
 
+   SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
    /* add hrcgpartition presolver parameters */
 
    int k;

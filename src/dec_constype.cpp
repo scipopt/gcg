@@ -97,22 +97,7 @@ std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
  */
 
 /** destructor of detector to free user data (called when GCG is exiting) */
-static
-DEC_DECL_FREEDETECTOR(freeConstype)
-{
-   DEC_DETECTORDATA* detectordata;
-
-   assert(scip != NULL);
-
-   detectordata = DECdetectorGetData(detector);
-
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   if ( detectordata != NULL )
-      SCIPfreeMemory(scip, &detectordata);
-
-   return SCIP_OKAY;
-}
+#define freeConstype NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0

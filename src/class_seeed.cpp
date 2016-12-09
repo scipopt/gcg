@@ -1161,7 +1161,8 @@ bool Seeed::checkVarsAndConssConsistency(Seeedpool* seeedpool)
             var = seeedpool->getVarsForCons(*consIter)[v];
             if( !isVarMastervar(var) && !isVarBlockvarOfBlock(var, b) && !isVarStairlinkingvarOfBlock(var, b) && !isVarLinkingvar(var) && !isVarOpenvar(var) )
             {
-               return false;
+               if (b==0 || !isVarStairlinkingvarOfBlock(var, b-1) )
+                  return false;
             }
 
          }
@@ -1312,7 +1313,8 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
             if( isVarBlockvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j)
                || isVarOpenvar(seeedpool->getVarsForCons(openConss[i])[k])
                || isVarLinkingvar(seeedpool->getVarsForCons(openConss[i])[k])
-               || isVarStairlinkingvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j))
+               || isVarStairlinkingvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j)
+               || ( j!= 0 && isVarStairlinkingvarOfBlock(seeedpool->getVarsForCons(openConss[i])[k], j-1) ) )
             {
                if( isVarOpenvar(seeedpool->getVarsForCons(openConss[i])[k]) )
                {
@@ -1665,7 +1667,7 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks()
       emptyBlocks = false;
       for(b = 0; b < nBlocks; ++b)
       {
-         if(conssForBlocks[b].size() == 0 && varsForBlocks[b].size() == 0)
+         if(conssForBlocks[b].size() == 0 )
          {
             emptyBlocks = true;
             block = b;
@@ -1820,16 +1822,16 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
 }
 
 /** displays the assignments of the vars */
-SCIP_RETCODE Seeed::displayVars()
+SCIP_RETCODE Seeed::displayVars(Seeedpool* seeedpool)
 {
    for( int b = 0; b < nBlocks; ++b )
    {
       if( getNVarsForBlock(b) != 0 )
       {
          std::cout << "variable(s) in block " << b << ": ";
-         std::cout << getVarsForBlock(b)[0];
+         std::cout << getVarsForBlock(b)[0] << " (" << (seeedpool != NULL ? ( SCIPvarGetName(seeedpool->getVarForIndex(getVarsForBlock(b)[0] )  )   ) : "" )<< ") ";
          for( int c = 1; c < getNVarsForBlock(b); ++c )
-            std::cout << ", " << getVarsForBlock(b)[c];
+            std::cout << ", " <<getVarsForBlock(b)[c] << " (" << (seeedpool != NULL ? ( SCIPvarGetName(seeedpool->getVarForIndex(getVarsForBlock(b)[c] )  )   ) : "" ) << ") ";
          std::cout << "\n";
       }
       else
@@ -1837,9 +1839,9 @@ SCIP_RETCODE Seeed::displayVars()
       if( getNStairlinkingvars(b) != 0 )
       {
          std::cout << "stairlinkingvariable(s) in block " << b << ": ";
-         std::cout << getStairlinkingvars(b)[0];
+         std::cout << getStairlinkingvars(b)[0] << " (" << (seeedpool != NULL ? ( SCIPvarGetName(seeedpool->getVarForIndex(getStairlinkingvars(b)[0] )  )   ) : "" )<< ") ";
          for( int c = 1; c < getNStairlinkingvars(b); ++c )
-            std::cout << ", " << getStairlinkingvars(b)[c];
+            std::cout << ", " << getStairlinkingvars(b)[c] << " (" << (seeedpool != NULL ? ( SCIPvarGetName(seeedpool->getVarForIndex(getStairlinkingvars(b)[c] )  )   ) : "" )<< ") ";
          std::cout << "\n";
       }
       else
@@ -1849,9 +1851,9 @@ SCIP_RETCODE Seeed::displayVars()
    if( getNLinkingvars() != 0 )
    {
       std::cout << "linkingvariable(s): ";
-      std::cout << linkingVars[0];
+      std::cout << linkingVars[0] << " (" << (seeedpool != NULL ? ( SCIPvarGetName(seeedpool->getVarForIndex(linkingVars[0] )  )   ) : "" ) << ") ";
       for( int c = 1; c < getNLinkingvars(); ++c )
-         std::cout << ", " << linkingVars[c];
+         std::cout << ", " << linkingVars[c] << " (" << (seeedpool != NULL ? ( SCIPvarGetName(seeedpool->getVarForIndex(linkingVars[c] )  )   ) : "") << ") ";
       std::cout << "\n";
    }
    else
@@ -1860,9 +1862,9 @@ SCIP_RETCODE Seeed::displayVars()
    if( getNMastervars() != 0 )
    {
       std::cout << "mastervariable(s): ";
-      std::cout << masterVars[0];
+      std::cout << masterVars[0] << " (" << (seeedpool != NULL ? ( SCIPvarGetName(seeedpool->getVarForIndex(masterVars[0] )  )   ) : "" )<< ") ";
       for( int c = 1; c < getNMastervars(); ++c )
-         std::cout << ", " << masterVars[c];
+         std::cout << ", " << masterVars[c] << " (" << (seeedpool != NULL ? ( SCIPvarGetName(seeedpool->getVarForIndex(masterVars[c] )  )  ) : "" )<< ") " ;
       std::cout << "\n";
    }
    else
@@ -1871,9 +1873,9 @@ SCIP_RETCODE Seeed::displayVars()
    if( getNOpenvars() != 0 )
    {
       std::cout << "open variable(s): ";
-      std::cout << openVars[0];
+      std::cout << openVars[0]<< " (" << (seeedpool != NULL ? ( SCIPvarGetName(seeedpool->getVarForIndex(openVars[0] )  )  ) : "" )<< ") " ;
       for( int c = 1; c < getNOpenvars(); ++c )
-         std::cout << ", " << openVars[c];
+         std::cout << ", " << openVars[c]<< " (" << (seeedpool != NULL ? ( SCIPvarGetName(seeedpool->getVarForIndex(openVars[c] )  )  ) : "" )<< ") " ;
       std::cout << "\n";
    }
    else

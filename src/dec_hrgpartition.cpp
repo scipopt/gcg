@@ -188,6 +188,7 @@ DEC_DECL_INITDETECTOR(initHrgpartition)
    DEC_DETECTORDATA* detectordata;
    assert(scip != NULL);
 
+
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
@@ -212,15 +213,9 @@ DEC_DECL_EXITDETECTOR(exitHrgpartition)
    assert(detectordata != NULL);
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-   /* copy data to decomp structure */
-   if( !detectordata->found )
-   {
-      SCIPfreeMemory(scip, &detectordata);
-      return SCIP_OKAY;
-   }
+
 
    SCIP_CALL( SCIPfreeClock(scip, &detectordata->metisclock) );
-   SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
 }
@@ -462,7 +457,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
 
-   SCIP_CALL( SCIPcreateWallClock(scip, &detectordata->metisclock) );
+   SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
 
    /* add hrgpartition presolver parameters */
 
