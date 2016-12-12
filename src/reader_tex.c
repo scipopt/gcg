@@ -603,6 +603,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    FILE* makefile;
    char* filepath;
    char* filename;
+   char name[SCIP_MAXSTRLEN] = "makepdf";
    char sympath[SCIP_MAXSTRLEN];
    char pfile[SCIP_MAXSTRLEN];
    char pfilecpy[SCIP_MAXSTRLEN];
@@ -633,7 +634,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIPsplitFilename(pfilecpy, &filepath, &filename, NULL, NULL);
    strcpy(makefilename, filepath);
    strcat(makefilename, "/");
-   strcat(makefilename, "Makefile");
+   strcat(makefilename, name);
 
    /* open and write first lines of makefile */
    makefile = fopen(makefilename, "w");
@@ -660,7 +661,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIPinfoMessage(scip, makefile, "\t@echo                                                                      %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode -shell-escape\" -use-make %s.tex %s", filename, LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@make clean                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@make -f %s clean                                                          %s", name, LINEBREAK);
    SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "clean:                                                                       %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@latexmk -c                                                                %s", LINEBREAK);
@@ -669,7 +670,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "cleanall:                                                                    %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@latexmk -C                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@make clean                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@make -f %s clean                                                          %s", name, LINEBREAK);
 
 
    /* --- make the tex files --- */
