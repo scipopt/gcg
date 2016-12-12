@@ -417,7 +417,7 @@ SCIP_Bool checkAggregatedVariableBounds(
 
          lb = global ? SCIPvarGetLbGlobal(identvars[i]) : SCIPvarGetLbLocal(identvars[i]);
          ub = global ? SCIPvarGetUbGlobal(identvars[i]) : SCIPvarGetUbLocal(identvars[i]);
-         bound = bndtype = SCIP_BOUNDTYPE_UPPER ? ub : lb;
+         bound = (bndtype == SCIP_BOUNDTYPE_UPPER) ? ub : lb;
 
          if( !SCIPisEQ(scip, bound, newbnd) )
          {
@@ -440,7 +440,7 @@ SCIP_Bool checkAggregatedVariableBounds(
 
       lb = global ? SCIPvarGetLbGlobal(identvars[0]) : SCIPvarGetLbLocal(identvars[0]);
       ub = global ? SCIPvarGetUbGlobal(identvars[0]) : SCIPvarGetUbLocal(identvars[0]);
-      bound = bndtype = SCIP_BOUNDTYPE_UPPER ? ub : lb;
+      bound = (bndtype == SCIP_BOUNDTYPE_UPPER) ? ub : lb;
 
       if( !SCIPisEQ(scip, bound, newbnd) )
       {
