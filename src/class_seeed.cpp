@@ -2105,7 +2105,7 @@ SCIP_Real Seeed::evaluate(
     */
 
    /* calculate matrix area */
-   matrixarea = nVars*nConss;
+   matrixarea = (nVars - getNOpenvars() ) * ( nConss - getNOpenconss() );
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++i )
@@ -2137,7 +2137,6 @@ SCIP_Real Seeed::evaluate(
          {
             int curvar = seeedpool->getVarsForCons(curcons)[k];
             int block;
-            ++(nzblocks[i]);
             if( isVarBlockvarOfBlock(curvar, i) )
                block = i + 1;
             else if( isVarLinkingvar(curvar) || isVarStairlinkingvar(curvar))
@@ -2149,6 +2148,7 @@ SCIP_Real Seeed::evaluate(
                assert(isVarOpenvar(curvar));
                continue;
             }
+            ++(nzblocks[i]);
 
             if( block == nBlocks+1 && ishandled[curvar] == FALSE )
             {
