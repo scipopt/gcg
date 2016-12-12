@@ -319,14 +319,14 @@ SCIP_RETCODE writeTikz(
    varindexmap = NULL;
    consindexmap = NULL;
 
+   SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+
    if( decomp != NULL )
    {
       /* go through the blocks and create the indices */
       if( DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN)
       {
-         SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-         SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
-
          for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
          {
             for( j = 0; j < nsubscipvars[i]; ++j )
@@ -428,11 +428,8 @@ SCIP_RETCODE writeTikz(
    SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                                            %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  }                                                                             %s", LINEBREAK);
 
-   if( decomp != NULL && DECdecompGetType(decomp) != DEC_DECTYPE_STAIRCASE )
-   {
-      SCIPhashmapFree(&varindexmap);
-      SCIPhashmapFree(&consindexmap);
-   }
+   SCIPhashmapFree(&varindexmap);
+   SCIPhashmapFree(&consindexmap);
 
    return SCIP_OKAY;
 }
