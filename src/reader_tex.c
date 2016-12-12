@@ -235,7 +235,6 @@ SCIP_RETCODE writeTikz(
    )
 {
    SCIP_VAR*** subscipvars;
-   SCIP_VAR*** stairlinkingvars;
    SCIP_CONS*** subscipconss;
    SCIP_VAR** linkingvars;
    SCIP_CONS** linkingconss;
@@ -256,7 +255,12 @@ SCIP_RETCODE writeTikz(
    int i;
    int j;
    int nconss;
-   double radius = 0.5;
+   int maxindvars = 0;
+   int maxindcons = 0;
+   int maxind = 0;
+   double radius = 5;
+   float xpoint;
+   float ypoint;
 
    assert(scip != NULL);
 
@@ -271,51 +275,8 @@ SCIP_RETCODE writeTikz(
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
 
-   /* --- write header --- */
+   /* --- compute indices for variables & constraints --- */
 
-   SCIPinfoMessage(scip, file, "  \\resizebox{\\textwidth}{!}{                                                  %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                                          %s", LINEBREAK);
-
-   /* --- draw grey rectangles with standard outline (black) for the blocks --- */
-
-   if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED )
-   {
-      for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
-      {
-         endx += nsubscipvars[i];
-         endy += nsubscipconss[i];
-         SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", startx+0.5, starty+0.5, endx+0.5, endy+0.5, LINEBREAK);
-         startx = endx;
-         starty = endy;
-      }
-      endx += nlinkingvars;
-      endy += nlinkingconss;
-      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", 0.5, starty+0.5, endx+0.5, endy+0.5, LINEBREAK);
-      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", startx+0.5, +0.5, endx+0.5, endy+0.5, LINEBREAK);
-      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", startx+0.5, starty+0.5, endx+0.5, endy+0.5, LINEBREAK);
-   }
-   else
-   {
-      if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
-      {
-         nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
-         for( i = 0; i < DECdecompGetNBlocks(decomp)-1; ++i )
-         {
-            endx += nsubscipvars[i]+nstairlinkingvars[i];
-            endy += nsubscipconss[i];
-            SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", startx+0.5, starty+0.5, endx+0.5, endy+0.5, LINEBREAK);
-            startx = endx-nstairlinkingvars[i];
-            starty = endy;
-         }
-         endx += nsubscipvars[i];
-         endy += nsubscipconss[i];
-         SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f,%f) rectangle (%f,%f);                               %s", startx+0.5, starty+0.5, endx+0.5, endy+0.5, LINEBREAK);
-      }
-   }
-
-   /* --- draw black dots for the constraints --- */
-
-   /* compute indices */
    varindexmap = NULL;
    consindexmap = NULL;
 
@@ -333,6 +294,8 @@ SCIP_RETCODE writeTikz(
             {
                assert(subscipvars[i][j] != NULL);
                SCIP_CALL( SCIPhashmapInsert(varindexmap, subscipvars[i][j], (void*)varindex) );
+               if((int)varindex > maxindvars)
+                  maxindvars = (int) varindex;
                varindex++;
             }
 
@@ -346,6 +309,8 @@ SCIP_RETCODE writeTikz(
                {
                   assert(stairlinkingvars[i][j] != NULL);
                   SCIP_CALL( SCIPhashmapInsert(varindexmap, DECdecompGetStairlinkingvars(decomp)[i][j], (void*)varindex) );
+                  if((int)varindex > maxindvars)
+                     maxindvars = (int) varindex;
                   varindex++;
                }
             } */
@@ -355,6 +320,8 @@ SCIP_RETCODE writeTikz(
             {
                assert(subscipconss[i][j] != NULL);
                SCIP_CALL( SCIPhashmapInsert(consindexmap, subscipconss[i][j], (void*)consindex) );
+               if((int)consindex > maxindcons)
+                  maxindcons = (int) consindex;
                consindex++;
             }
          }
@@ -363,16 +330,69 @@ SCIP_RETCODE writeTikz(
          {
             assert(linkingvars[j] != NULL);
             SCIP_CALL( SCIPhashmapInsert(varindexmap, linkingvars[j], (void*)varindex) );
+            if((int)varindex > maxindvars)
+               maxindvars = (int) varindex;
             varindex++;
          }
          for( j = 0; j < nlinkingconss; ++j )
          {
             assert(linkingconss[j] != NULL);
             SCIP_CALL( SCIPhashmapInsert(consindexmap, linkingconss[j], (void*)consindex) );
+            if((int)consindex > maxindcons)
+               maxindcons = (int) consindex;
             consindex++;
          }
       }
    }
+
+   maxind = maxindvars>maxindcons?maxindvars:maxindcons;
+
+   /* --- write header --- */
+
+   SCIPinfoMessage(scip, file, "  \\resizebox{\\textwidth}{!}{                                                  %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                                          %s", LINEBREAK);
+
+   /* --- draw grey rectangles with standard outline (black) for the blocks --- */
+   /* note: the picture is scaled to the page's textwidth in order to scale down large pictures.
+    * Instead of var-/consindex the value of (index/maxindex)*textwidth/height is used
+    */
+
+   if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED )
+   {
+      for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
+      {
+         endx += nsubscipvars[i];
+         endy += nsubscipconss[i];
+         SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
+         startx = endx;
+         starty = endy;
+      }
+      endx += nlinkingvars;
+      endy += nlinkingconss;
+      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
+      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (startx+0.5)/maxindvars, (+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
+      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
+   }
+   else
+   {
+      if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
+      {
+         nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
+         for( i = 0; i < DECdecompGetNBlocks(decomp)-1; ++i )
+         {
+            endx += nsubscipvars[i]+nstairlinkingvars[i];
+            endy += nsubscipconss[i];
+            SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
+            startx = endx-nstairlinkingvars[i];
+            starty = endy;
+         }
+         endx += nsubscipvars[i];
+         endy += nsubscipconss[i];
+         SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
+      }
+   }
+
+   /* --- draw black dots for the constraints --- */
 
    /* draw the dots */
    for( i = 0; i < nconss; i++ )
@@ -392,14 +412,14 @@ SCIP_RETCODE writeTikz(
          if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
          {
             SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-            SCIPinfoMessage(scip, file, "    \\draw [fill] (%f,%f) circle [radius=%f];                                   %s", SCIPvarGetIndex(curvars[j]), i, radius, LINEBREAK);
+            SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];%s", (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind, LINEBREAK);
          }
          else
          {
             /* if there is no decomposition, output the presolved model! */
             if( decomp == NULL || DECdecompGetType(decomp) == DEC_DECTYPE_UNKNOWN )
             {
-               SCIPinfoMessage(scip, file, "    \\draw [fill] (%f,%f) circle [radius=%f];                                   %s", SCIPvarGetIndex(curvars[j]), i, radius, LINEBREAK);
+               SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];%s", (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind, LINEBREAK);
             }
             /* if there is a decomposition, output the indices derived from the decomposition above*/
             else
@@ -409,7 +429,9 @@ SCIP_RETCODE writeTikz(
                /*@todo make the following if statement into an assertion*/
                if(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL && SCIPhashmapGetImage(consindexmap, conss[i]) != NULL)
                {
-                  SCIPinfoMessage(scip, file, "    \\draw [fill] (%d,%d) circle [radius=%f];                                   %s", SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])), SCIPhashmapGetImage(consindexmap, conss[i]), radius, LINEBREAK);
+                  xpoint = ( (float)(size_t)SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) )/ (float)maxindvars;
+                  ypoint = ( (float)(size_t)SCIPhashmapGetImage(consindexmap, conss[i]) )/ (float)maxindcons;
+                  SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];                                   %s", xpoint, ypoint, radius/maxind, LINEBREAK);
                }
             }
          }
@@ -418,9 +440,6 @@ SCIP_RETCODE writeTikz(
       SCIPfreeBufferArrayNull(scip, &curvars);
    }
 
-
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
 
    /* --- write closing --- */
