@@ -518,11 +518,10 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    }
 
    /* disable conflict analysis */
-   SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/useprop", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/useinflp", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/useboundlp", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/usesb", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/usepseudo", FALSE) );
+   if( !SCIPisParamFixed(restmaster, "conflict/enable") )
+   {
+      SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/enable", FALSE) );
+   }
 
    /* if the subproblem could not be created, free memory and return */
    if( !success )
