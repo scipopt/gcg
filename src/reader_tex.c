@@ -64,12 +64,14 @@
 
 #define USEGP_DEFAULT            FALSE
 #define MAXNDECOMPS_DEFAULT      50
+#define RETURNTYPE_DEFAULT       0
 
 /** data for dec reader */
 struct SCIP_ReaderData
 {
    SCIP_Bool       useGp;       /** if true uses gp files as intermediate step */
    int             maxNDecomps; /** maximum number of decompositions to visualize (ones with best score first are preferred) */
+   int             returnType;  /** output only decompositions of type 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered */
 };
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
@@ -132,6 +134,27 @@ SCIP_RETCODE GCGreadTex(
    return SCIP_READERROR;
 }
 
+/** gets number of decompositions of a certain type in a given decomposition structure */
+static
+SCIP_RETCODE getNDecompsOfType(
+   SCIP*                scip,               /**< SCIP data structure */
+   DEC_DECOMP**         decomps,            /**< Decompositions structure */
+   int*                 ndecomps,           /**< Number of decompositions in the structure */
+   DEC_DECTYPE          type,               /**< type that is to be counted */
+   int*                 number              /**< number of decomps of given type (resultpointer) */
+   )
+{
+   int i;
+
+   *number = 0;
+   for(i = 0; i < *ndecomps; i++)
+   {
+      if(DECdecompGetType(decomps[i]) == type)
+         *number = *number+1;
+   }
+   return SCIP_OKAY;
+}
+
 /** write LaTeX code header, begin of document, general statistics and table of contents */
 static
 SCIP_RETCODE writeHeaderCode(
@@ -146,6 +169,7 @@ SCIP_RETCODE writeHeaderCode(
 {
    char* pname;
    char ppath[SCIP_MAXSTRLEN];
+   int ndecompsOfType;
 
    strcpy(ppath, (char*) SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
@@ -164,7 +188,7 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "%% * This program is free software; you can redistribute it and/or             * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% * modify it under the terms of the GNU Lesser General Public License        * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% * as published by the Free Software Foundation; either version 3            * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * of the License, or (at your option) any later version.                    * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * of the LicensDECdecompGetType(decomp)e, or (at your option) any later version.                    * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% * This program is distributed in the hope that it will be useful,           * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% * but WITHOUT ANY WARRANTY; without even the implied warranty of            * %s", LINEBREAK);
@@ -209,7 +233,15 @@ SCIP_RETCODE writeHeaderCode(
       SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                      %s", pname, LINEBREAK);
       SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                      %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                     %s", SCIPconshdlrDecompGetNDecdecomps(scip), LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                 %s", *ndecomps, LINEBREAK);
+      if(readerdata->returnType != 0)
+      {
+          getNDecompsOfType(scip,decomps,ndecomps,readerdata->returnType, &ndecompsOfType);
+          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                 %s", ndecompsOfType, LINEBREAK);
+      }
+      else
+      {
+         SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                 %s", *ndecomps, LINEBREAK);
+      }
       SCIPinfoMessage(scip, file, "\\end{tabular}                                                                   %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
    }
@@ -235,6 +267,7 @@ SCIP_RETCODE writeTikz(
    )
 {
    SCIP_VAR*** subscipvars;
+   /*SCIP_VAR*** stairlinkingvars;*/
    SCIP_CONS*** subscipconss;
    SCIP_VAR** linkingvars;
    SCIP_CONS** linkingconss;
@@ -313,7 +346,7 @@ SCIP_RETCODE writeTikz(
                      maxindvars = (int) varindex;
                   varindex++;
                }
-            } */
+            }*/
             /* @todo  */
 
             for( j = 0; j < nsubscipconss[i]; ++j )
@@ -595,7 +628,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
    int*                  ndecomps,           /**< Number of decompositions */
-   SCIP_Bool             statistics,         /**< if true detection statistics and are included in report */
+   SCIP_Bool             statistics,         /**<INT_MAX if true detection statistics and are included in report */
    SCIP_Bool             toc,                /**< if true table of contents is included */
    SCIP_READERDATA*      readerdata          /**< reader specific arguments */
    )
@@ -608,10 +641,12 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    char pfile[SCIP_MAXSTRLEN];
    char pfilecpy[SCIP_MAXSTRLEN];
    char makefilename[SCIP_MAXSTRLEN];
+   SCIP_Bool writeDecomp;
    int filedesc;
    int success;
    int i;
    int maxrounds;
+   int ndecompsOfType;
 
    assert(scip != NULL);
    assert(*ndecomps > 0);
@@ -667,6 +702,10 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIPinfoMessage(scip, makefile, "\t@latexmk -c                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@rm -f report_*figure*.*                                                   %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@rm -f *.auxlock                                                           %s", LINEBREAK);
+   if(readerdata->useGp)
+   {
+      SCIPinfoMessage(scip, makefile, "\t@rm -f *.gp                                                                %s", LINEBREAK);
+   }
    SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "cleanall:                                                                    %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@latexmk -C                                                                %s", LINEBREAK);
@@ -677,8 +716,17 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    SCIP_CALL( writeHeaderCode(scip,file,statistics,decomps,ndecomps,toc,readerdata) );
 
-   /* check if the number of max decomps exceeds the max */
-   if(readerdata->maxNDecomps < *ndecomps)
+   if(readerdata->returnType != 0)
+   {
+      getNDecompsOfType(scip,decomps,ndecomps,readerdata->returnType, &ndecompsOfType);
+   }
+   else
+   {
+      ndecompsOfType = *ndecomps;
+   }
+
+   /* check if the number of max decomps exceeds the number of available outputs */
+   if(readerdata->maxNDecomps < ndecompsOfType)
    {
       maxrounds = readerdata->maxNDecomps;
    }
@@ -689,11 +737,22 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    /* write LaTeX code for each decomp starting with the highest score */
    /* note: decomps come sorted from lowest to highest score */
-   for( i=0; i<maxrounds; i++ )
+   /* only output such decompositions of the given type */
+   for( i=0; i<*ndecomps && maxrounds>0; i++ )
    {
       if(decomps[i] != NULL)
       {
-         SCIP_CALL( writeDecompCode(scip,file,makefile,decomps[i], readerdata) );
+         writeDecomp = FALSE;
+         if(readerdata->returnType == 0)
+            writeDecomp = TRUE;
+         else if((unsigned int)readerdata->returnType == DECdecompGetType(decomps[i]))
+            writeDecomp = TRUE;
+
+         if(writeDecomp == TRUE)
+         {
+            SCIP_CALL( writeDecompCode(scip,file,makefile,decomps[i], readerdata) );
+            maxrounds--;
+         }
       }
    }
 
@@ -719,12 +778,16 @@ SCIPincludeReaderTex(
 
    /* include possible parameters */
    SCIP_CALL( SCIPaddBoolParam(scip,
-         "reading/texreader/useGp", "if true uses gp files as intermediate step",
-         &readerdata->useGp, FALSE, USEGP_DEFAULT, NULL, NULL) );
+      "reading/texreader/useGp", "if true uses gp files as intermediate step",
+      &readerdata->useGp, FALSE, USEGP_DEFAULT, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-         "reading/texreader/maxNDecomps", "maximum number of decompositions to visualize (ones with best score first are preferred)",
-         &readerdata->maxNDecomps, FALSE, MAXNDECOMPS_DEFAULT, 0, INT_MAX, NULL, NULL) );
+      "reading/texreader/maxNDecomps", "maximum number of decompositions to visualize (ones with best score first are preferred)",
+      &readerdata->maxNDecomps, FALSE, MAXNDECOMPS_DEFAULT, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "reading/texreader/returnType", "output only decompositions of type 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered",
+      &readerdata->returnType, FALSE, RETURNTYPE_DEFAULT, 0, 4, NULL, NULL) );
 
    return SCIP_OKAY;
 }
