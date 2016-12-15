@@ -188,7 +188,7 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "%% * This program is free software; you can redistribute it and/or             * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% * modify it under the terms of the GNU Lesser General Public License        * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% * as published by the Free Software Foundation; either version 3            * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * of the LicensDECdecompGetType(decomp)e, or (at your option) any later version.                    * %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * of the License, or (at your option) any later version.                    * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% * This program is distributed in the hope that it will be useful,           * %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "%% * but WITHOUT ANY WARRANTY; without even the implied warranty of            * %s", LINEBREAK);
@@ -628,7 +628,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    FILE*                 file,               /**< File pointer to write to */
    DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
    int*                  ndecomps,           /**< Number of decompositions */
-   SCIP_Bool             statistics,         /**<INT_MAX if true detection statistics and are included in report */
+   SCIP_Bool             statistics,         /**< if true detection statistics and are included in report */
    SCIP_Bool             toc,                /**< if true table of contents is included */
    SCIP_READERDATA*      readerdata          /**< reader specific arguments */
    )
