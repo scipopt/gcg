@@ -1162,16 +1162,25 @@ SCIP_RETCODE filterPermutation(
    for( i = 0; i < permsize; ++i )
    {
       if( permutation[i] >= 0 )
+      {
          count[permutation[i]] += 1;
+
+         if( count[permutation[i]] > count[best] )
+            best = permutation[i];
+
+         SCIPdebugMessage("permutation[i] = %d; count %d\n", permutation[i], count[permutation[i]]);
+      }
    }
 
-   best = count-std::max_element(count, count+nperms);
+   SCIPdebugMessage("Best permutation with orbit of size %d, best = %d\n", count[best], best);
    SCIPfreeBufferArray(scip, &count);
 
    for( i = 0; i < permsize; ++i )
    {
       if( permutation[i] != best )
          permutation[i] = -1;
+      else
+         permutation[i] = 0;
    }
 
 
