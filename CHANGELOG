@@ -22,10 +22,19 @@ features
 
 code cleanup
 - cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
+- reallocate memory for origvars array in pricingvardate more efficiently
 
 bug fixes
 - changed/corrected variable fixing behaviour of Extreme Point RINS in case of aggregated blocks
 - fixed handling of fixed variables in decompositions
+- update include method of solver template
+- fix GCGconsGet*()-methods such that negated variables are handled correctly
+- fix bug in transformation of master solution to original solution
+- small bugfix in method that creates column graph from matrix
+- fixed memory errors in unit tests
+- fix memory issue with gcgcols
+- fix the deletion of old columns in the column pool
+
 
 GCG Version 2.1.1
 =================

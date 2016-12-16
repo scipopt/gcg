@@ -665,6 +665,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             int conscounter = 1; /* in consindex counting starts with 1 */
             int counterstairlinkingvars = 0;
 
+            int size;
+
             assert(seeed->checkConsistency() );
 
             /* create decomp data structure */
@@ -1019,7 +1021,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             /** set detectorchain */
             int ndetectors = seeed->getNDetectors();
             decompositions[i]->sizeDetectorchain = ndetectors;
-            SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->detectorchain, ndetectors) ); /** free in decomp.c:469 */
+            size = SCIPcalcMemGrowSize(scip, decompositions[i]->sizeDetectorchain);
+            SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->detectorchain, size) ); /** free in decomp.c:469 */
             for( int k = 0; k < ndetectors; ++k )
             {
                //          std::cout << " added detector of " << i << "-th seeed to its detetcor chain" << std::endl;

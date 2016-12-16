@@ -79,7 +79,7 @@ Seeed::Seeed(
    int         givenNVars                  /**number of variables */
 ) :
    scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
-      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), detectorChain(0)
+      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), detectorClockTimes(0), detectorChain(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0)
 {
 }
 
@@ -101,6 +101,15 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    propagatedByDetector = seeedToCopy->propagatedByDetector;
    detectorChain = seeedToCopy->detectorChain;
    openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
+   detectorClockTimes = seeedToCopy->detectorClockTimes;
+   pctVarsToBorder = seeedToCopy->pctVarsToBorder;
+   pctVarsToBlock = seeedToCopy->pctVarsToBlock;
+   pctVarsFromFree = seeedToCopy->pctVarsFromFree;
+   pctConssToBorder = seeedToCopy->pctConssToBorder;
+   pctConssToBlock = seeedToCopy->pctConssToBlock;
+   pctConssFromFree = seeedToCopy->pctConssFromFree;
+   nNewBlocks = seeedToCopy->nNewBlocks;
+
 }
 
 Seeed::~Seeed()
@@ -127,6 +136,21 @@ int Seeed::addBlock()
    nBlocks++;
    return nBlocks - 1;
 }
+
+/** incorporates the changes from ancestor  seeed */
+ void Seeed::addDecChangesFromAncestor(Seeed* ancestor){
+
+    /** add number of new blocks */
+    nNewBlocks.push_back( getNBlocks() -  ancestor->getNBlocks() );
+    pctConssFromFree.push_back( (ancestor->getNOpenconss() - getNOpenconss() ) / (SCIP_Real) getNConss() );
+    pctVarsFromFree.push_back( (ancestor->getNOpenvars() - getNOpenvars() ) / (SCIP_Real) getNVars() );
+    pctConssToBlock.push_back( (-getNOpenconss()-getNMasterconss()+ ancestor->getNOpenconss()+ ancestor->getNMasterconss() ) / getNConss() );
+    pctVarsToBlock.push_back( (-getNOpenvars()-getNMastervars() - getNLinkingvars() - getNTotalStairlinkingvars() + ancestor->getNOpenvars()+ ancestor->getNMastervars() + ancestor->getNLinkingvars() + ancestor->getNTotalStairlinkingvars() ) / getNVars() );
+    pctConssToBorder.push_back( ( getNMasterconss() - ancestor->getNMasterconss() ) / (SCIP_Real) getNConss() );
+    pctVarsToBorder.push_back( ( getNMastervars() + getNLinkingvars() + getNTotalStairlinkingvars() - ancestor->getNMastervars() - ancestor->getNLinkingvars() - ancestor->getNTotalStairlinkingvars()) / (SCIP_Real) getNVars() );
+
+ }
+
 
 /** returns if constraints are assigned to blocks */
 bool Seeed::alreadyAssignedConssToBlocks()
