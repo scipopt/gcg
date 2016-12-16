@@ -212,13 +212,6 @@ public:
    bool checkConsistency(
    );
 
-   /** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
-    bool isTrivial(
-    );
-
-
-
-
    bool checkVarsAndConssConsistency(
          Seeedpool* seeedpool
    );
@@ -263,14 +256,6 @@ public:
    /** displays the assignments of the vars */
    SCIP_RETCODE displayVars( Seeedpool* seeedpool = NULL
    );
-
-   /** displays the assignments of the vars */
-   SCIP_RETCODE writeScatterPlot(
-      Seeedpool* seeedpool,
-      const char* filename
-   );
-
-   void showScatterPlot(  Seeedpool* seeedpool );
 
    /** computes the score of the given seeed based on the border, the average density score and the ratio of linking variables*/
    SCIP_Real evaluate(
@@ -427,6 +412,10 @@ public:
          int detectorID
    );
 
+   /** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
+   bool isTrivial(
+   );
+
    /** returns whether the var is a var of the block */
    bool isVarBlockvarOfBlock(
          int var, int block
@@ -508,8 +497,16 @@ public:
          int varToStairLinking, int block1, int block2
    );
 
+   void showScatterPlot(  Seeedpool* seeedpool );
+
    /** sorts the vars and conss according their numbers */
    void sort(
+   );
+
+   /** displays the assignments of the vars */
+   SCIP_RETCODE writeScatterPlot(
+         Seeedpool* seeedpool,
+         const char* filename
    );
 
 
