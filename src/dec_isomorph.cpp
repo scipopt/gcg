@@ -241,7 +241,7 @@ SCIP_RETCODE setupArrays(
       AUT_VAR* svar = new AUT_VAR(scip, vars[i]);
       //add to pointer array iff it doesn't exist
       SCIP_CALL( colorinfo->insert(svar, &added) );
-//      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
+      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
          delete svar;
@@ -258,7 +258,7 @@ SCIP_RETCODE setupArrays(
       //add to pointer array iff it doesn't exist
       //SCIPdebugMessage("nconss %d %d\n", nconss, *result);
       SCIP_CALL( colorinfo->insert(scons, &added) );
-  //    SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons), colorinfo->color);
+      SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
          delete scons;
@@ -275,7 +275,7 @@ SCIP_RETCODE setupArrays(
          {
             //add to pointer array iff it doesn't exist
             SCIP_CALL( colorinfo->insert(scoef, &added) );
-//            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
+            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
          }
          //otherwise free allocated memory
          if( !added )
@@ -520,16 +520,25 @@ SCIP_RETCODE filterPermutation(
    for( i = 0; i < permsize; ++i )
    {
       if( permutation[i] >= 0 )
+      {
          count[permutation[i]] += 1;
+
+         if( count[permutation[i]] > count[best] )
+            best = permutation[i];
+
+         SCIPdebugMessage("permutation[i] = %d; count %d\n", permutation[i], count[permutation[i]]);
+      }
    }
 
-   best = count-std::max_element(count, count+nperms);
+   SCIPdebugMessage("Best permutation with orbit of size %d, best = %d\n", count[best], best);
    SCIPfreeBufferArray(scip, &count);
 
    for( i = 0; i < permsize; ++i )
    {
       if( permutation[i] != best )
          permutation[i] = -1;
+      else
+         permutation[i] = 0;
    }
 
 

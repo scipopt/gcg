@@ -13,6 +13,8 @@ bug fixes
 - fixed memory errors in unit tests
 - fix memory issue with gcgcols
 - fix the deletion of old columns in the column pool
+- fix bug in createPolishedDecomp()
+- fix bug in isomorph detector
 
 
 GCG Version 2.1.1
