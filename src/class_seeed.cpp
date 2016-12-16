@@ -2839,6 +2839,7 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
    char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
    int rowboxcounter = 0;
    int colboxcounter = 0;
+   bool colored = true;
 
    writeScatterPlot(seeedpool, help);
 
@@ -2849,10 +2850,16 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
 
 
    /* write linking var */
-   ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fc rgb \"purple\"\n" ;
+   if(colored)
+      ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fc rgb \"purple\"\n" ;
+   else
+      ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fillstyle solid noborder fc rgb \"grey60\"\n" ;
    colboxcounter+=getNLinkingvars();
 
-   ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fc rgb \"yellow\"\n" ;
+   if(colored)
+      ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fc rgb \"yellow\"\n" ;
+   else
+      ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fillstyle solid noborder fc rgb \"grey80\"\n" ;
    colboxcounter+=getNMastervars();
 
 
@@ -2861,27 +2868,43 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
 
 
    /* write linking cons box */
-   ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fillstyle solid noborder fc rgb \"orange\"\n" ;
+   if(colored)
+      ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fc rgb \"orange\"\n" ;
+   else
+      ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fillstyle solid noborder fc rgb \"grey40\"\n" ;
    rowboxcounter += getNMasterconss();
 
    for( int b = 0; b < getNBlocks() ; ++b )
    {
-      ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"grey\"\n" ;
+      if(colored)
+         ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"grey\"\n" ;
+      else
+         ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fillstyle solid noborder fc rgb \"grey70\"\n" ;
       colboxcounter += getNVarsForBlock(b);
 
       if ( getNStairlinkingvars(b) != 0 )
-         ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fc rgb \"pink\"\n" ;
+      {
+         if(colored)
+            ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fc rgb \"pink\"\n" ;
+         else
+            ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fillstyle solid noborder fc rgb \"grey90\"\n" ;
+      }
       colboxcounter += getNStairlinkingvars(b);
 
       rowboxcounter+= getNConssForBlock(b);
    }
 
+   if(colored)
+      ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"green\"\n" ;
+   else
+      ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fillstyle solid noborder fc rgb \"grey50\"\n" ;
 
-   ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"green\"\n" ;
          colboxcounter += getNOpenvars();
          rowboxcounter+= getNOpenconss();
-
-   ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
+   if(colored)
+      ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
+   else
+      ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
 
    ofs << "pause -1" << std::endl;
 
