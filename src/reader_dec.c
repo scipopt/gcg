@@ -1037,14 +1037,14 @@ SCIP_RETCODE writeData(
    SCIPdebugMessage("DEC_DECOMP Type: %s\n", DECgetStrType(DECdecompGetType(decdecomp)));
 
    /* at first: write meta data of decompsition as comment */
-   SCIPinfoMessage(scip, file, "%s ndetectors \n", commentchars );
-   SCIPinfoMessage(scip, file, "%s %d \n", commentchars, DECdecompGetDetectorChainSize(decdecomp) );
+   SCIPinfoMessage(scip, file, "%s%s ndetectors \n", commentchars, commentchars );
+   SCIPinfoMessage(scip, file, "%s%s %d \n", commentchars, commentchars, DECdecompGetDetectorChainSize(decdecomp) );
 
-   SCIPinfoMessage(scip, file, "%s name time nnewblocks %%ofnewborderconss %%ofnewblockconss %%ofnewlinkingvars %%ofnewblockvars  \n", commentchars );
+   SCIPinfoMessage(scip, file, "%s%s name time nnewblocks %%ofnewborderconss %%ofnewblockconss %%ofnewlinkingvars %%ofnewblockvars  \n", commentchars, commentchars );
 
    for ( i = 0; i < DECdecompGetDetectorChainSize(decdecomp) ; ++i)
    {
-      SCIPinfoMessage(scip, file, "%s %s %f %d %f %f %f %f \n", commentchars, DECdetectorGetName(DECdecompGetDetectorChain(decdecomp)[i] ), DECdecompGetDetectorClockTimes(decdecomp)[i],
+      SCIPinfoMessage(scip, file, "%s%s %s %f %d %f %f %f %f \n", commentchars, commentchars, DECdetectorGetName(DECdecompGetDetectorChain(decdecomp)[i] ), DECdecompGetDetectorClockTimes(decdecomp)[i],
       DECdecompGetNNewBlocks(decdecomp)[i], DECdecompGetDetectorPctConssToBorder(decdecomp)[i], DECdecompGetDetectorPctConssToBlock(decdecomp)[i], DECdecompGetDetectorPctVarsToBorder(decdecomp)[i],
       DECdecompGetDetectorPctVarsToBlock(decdecomp)[i]) ;
    }
