@@ -322,6 +322,135 @@ int DECdecompGetDetectorChainSize(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
+/** sets the id of the original seeed */
+extern
+void DECdecompSetSeeedID(
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   int                   seeedID
+   );
+
+/** gets the id of the original seeed */
+extern
+int DECdecompGetSeeedID(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
+/** sets the detector clock times of the detectors of the detector chain */
+extern
+void DECdecompSetDetectorClockTimes(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            detectorClockTimes
+   );
+
+/** gets the detector clock times of the detectors of the detector chain */
+extern
+SCIP_Real* DECdecompGetDetectorClockTimes(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctVarsToBorder(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctVarsToBorder
+   );
+
+/** gets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctVarsToBorder(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctConssToBorder(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctConssToBorder
+   );
+
+/** gets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctConssToBorder(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctVarsToBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctVarsToBlock
+   );
+
+/** gets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctVarsToBlock(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctConssToBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctConssToBlock
+   );
+
+/** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctConssToBlock(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
+/** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctVarsFromOpen(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctVarsFromOpen
+   );
+
+/** gets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctVarsFromOpen(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetDetectorPctConssFromOpen(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctConssToBorder
+   );
+
+/** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctConssFromOpen(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+/** sets the number of new blocks of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+void DECdecompSetNNewBlocks(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   int*                  nNewBlocks
+   );
+
+/** gets the number of new blocks corresponding detectors (of the detector chain) on this decomposition */
+extern
+int* DECdecompGetNNewBlocks(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
+
 
 /** transforms all constraints and variables, updating the arrays */
 extern

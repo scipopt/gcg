@@ -381,6 +381,18 @@ SCIP_RETCODE DECdecompCreate(
    decomp->varindex = NULL;
    decomp->detector = NULL;
 
+   decomp->detectorchain = NULL;
+   decomp->seeedID = -1;
+   decomp->detectorClockTimes = NULL;
+   decomp->pctVarsToBorder= NULL;
+   decomp->pctConssToBorder= NULL;
+   decomp->pctVarsToBlock= NULL;
+   decomp->pctConssToBlock= NULL;
+   decomp->pctVarsFromOpen= NULL;
+   decomp->pctConssFromOpen= NULL;
+   decomp->nNewBlocks= NULL;
+
+
    return SCIP_OKAY;
 }
 
@@ -478,6 +490,16 @@ SCIP_RETCODE DECdecompFree(
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->nstairlinkingvars,decomp->nblocks);
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->linkingconss, SCIPcalcMemGrowSize(scip, decomp->nlinkingconss));
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorchain, SCIPcalcMemGrowSize(scip,decomp->sizeDetectorchain ) );
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorClockTimes, SCIPcalcMemGrowSize(scip,decomp->sizeDetectorchain ) );
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctVarsToBorder, SCIPcalcMemGrowSize(scip,decomp->sizeDetectorchain ) );
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctConssToBorder, SCIPcalcMemGrowSize(scip,decomp->sizeDetectorchain ) );
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctVarsToBlock, SCIPcalcMemGrowSize(scip,decomp->sizeDetectorchain ) );
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctConssToBlock, SCIPcalcMemGrowSize(scip,decomp->sizeDetectorchain ) );
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctVarsFromOpen, SCIPcalcMemGrowSize(scip,decomp->sizeDetectorchain ) );
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctConssFromOpen, SCIPcalcMemGrowSize(scip,decomp->sizeDetectorchain ) );
+   SCIPfreeBlockMemoryArrayNull(scip, &decomp->nNewBlocks, SCIPcalcMemGrowSize(scip,decomp->sizeDetectorchain ) );
+
+
    SCIPfreeMemoryNull(scip, decdecomp);
 
    return SCIP_OKAY;
@@ -1404,6 +1426,316 @@ int DECdecompGetDetectorChainSize(
 
    return decomp->sizeDetectorchain;
 }
+
+/** sets the id of the original seeed */
+void DECdecompSetSeeedID(
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   int                   seeedID
+   )
+{
+
+   assert(decomp != NULL);
+   assert(seeedID >= 0);
+
+   decomp->seeedID = seeedID;
+
+}
+
+/** gets the id of the original seeed */
+int DECdecompGetSeeedID(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   assert(decomp != NULL);
+   return decomp->seeedID;
+}
+
+
+/** sets the detector clock times of the detectors of the detector chain */
+extern
+void DECdecompSetDetectorClockTimes(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            detectorClockTimes
+   )
+{
+   int d;
+
+   int size;
+   size = SCIPcalcMemGrowSize(scip, decomp->sizeDetectorchain);
+
+   assert(decomp->sizeDetectorchain > 0);
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->detectorClockTimes, size) );
+
+   BMSclearMemoryArray(decomp->detectorClockTimes, size);
+
+   for ( d = 0; d < decomp->sizeDetectorchain; ++d )
+   {
+      decomp->detectorClockTimes[d] = detectorClockTimes[d];
+   }
+
+   return;
+
+}
+
+/** gets the detector clock times of the detectors of the detector chain */
+SCIP_Real* DECdecompGetDetectorClockTimes(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   return decomp->detectorClockTimes;
+}
+
+/** sets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+void DECdecompSetDetectorPctVarsToBorder(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctVarsToBorder
+   )
+{
+   int d;
+   int size;
+   size = SCIPcalcMemGrowSize(scip, decomp->sizeDetectorchain);
+
+   assert(decomp->sizeDetectorchain > 0);
+
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->pctVarsToBorder, size) );
+
+   BMSclearMemoryArray(decomp->pctVarsToBorder, size);
+
+   for ( d = 0; d < decomp->sizeDetectorchain; ++d )
+   {
+      decomp->pctVarsToBorder[d] = pctVarsToBorder[d];
+   }
+
+   return;
+
+
+}
+
+/** gets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctVarsToBorder(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   return decomp->pctVarsToBorder;
+}
+
+/** sets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+void DECdecompSetDetectorPctConssToBorder(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctConssToBorder
+   )
+{
+
+   int d;
+   int size;
+   size = SCIPcalcMemGrowSize(scip, decomp->sizeDetectorchain);
+
+
+   assert(decomp->sizeDetectorchain > 0);
+
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->pctConssToBorder, size) );
+
+   BMSclearMemoryArray(decomp->pctConssToBorder, size);
+
+   for ( d = 0; d < decomp->sizeDetectorchain; ++d )
+   {
+      decomp->pctConssToBorder[d] = pctConssToBorder[d];
+   }
+
+   return;
+}
+
+/** gets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
+SCIP_Real* DECdecompGetDetectorPctConssToBorder(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   return decomp->pctConssToBorder;
+}
+
+/** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+void DECdecompSetDetectorPctVarsToBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctVarsToBlock
+   )
+{
+   int d;
+   int size;
+
+    assert(decomp->sizeDetectorchain > 0);
+
+    size = SCIPcalcMemGrowSize(scip, decomp->sizeDetectorchain);
+
+
+    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->pctVarsToBlock, size) );
+
+    BMSclearMemoryArray(decomp->pctVarsToBlock, size);
+
+    for ( d = 0; d < decomp->sizeDetectorchain; ++d )
+    {
+       decomp->pctVarsToBlock[d] = pctVarsToBlock[d];
+    }
+
+    return;
+ }
+
+/** gets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+SCIP_Real* DECdecompGetDetectorPctVarsToBlock(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   return decomp->pctVarsToBlock;
+}
+
+/** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+void DECdecompSetDetectorPctConssToBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctConssToBlock
+   )
+{
+   int d;
+
+   int size;
+
+   assert(decomp->sizeDetectorchain > 0);
+
+   size = SCIPcalcMemGrowSize(scip, decomp->sizeDetectorchain);
+
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->pctConssToBlock, size) );
+
+   BMSclearMemoryArray(decomp->pctConssToBlock, size);
+
+   for ( d = 0; d < decomp->sizeDetectorchain; ++d )
+   {
+      decomp->pctConssToBlock[d] = pctConssToBlock[d];
+      }
+
+   return;
+}
+
+/** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+extern
+SCIP_Real* DECdecompGetDetectorPctConssToBlock(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   return decomp->pctConssToBlock;
+}
+
+
+/** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+void DECdecompSetDetectorPctVarsFromOpen(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctVarsFromOpen
+   )
+{
+   int d;
+   int size;
+
+   assert(decomp->sizeDetectorchain > 0);
+
+
+   size = SCIPcalcMemGrowSize(scip, decomp->sizeDetectorchain);
+
+
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->pctVarsFromOpen, size) );
+
+   BMSclearMemoryArray(decomp->pctVarsFromOpen, size);
+
+   for ( d = 0; d < decomp->sizeDetectorchain; ++d )
+   {
+      decomp->pctVarsFromOpen[d] = pctVarsFromOpen[d];
+   }
+
+   return;
+}
+
+/** gets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+SCIP_Real* DECdecompGetDetectorPctVarsFromOpen(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   return decomp->pctVarsFromOpen;
+}
+
+/** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+void DECdecompSetDetectorPctConssFromOpen(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   SCIP_Real*            pctConssFromOpen
+   )
+{
+   int d;
+   int size;
+
+   assert(decomp->sizeDetectorchain > 0);
+
+
+   size = SCIPcalcMemGrowSize(scip, decomp->sizeDetectorchain);
+
+
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->pctConssFromOpen, size) );
+
+   BMSclearMemoryArray(decomp->pctConssFromOpen, size);
+
+   for ( d = 0; d < decomp->sizeDetectorchain; ++d )
+   {
+      decomp->pctConssFromOpen[d] = pctConssFromOpen[d];
+   }
+
+   return;
+}
+
+/** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+SCIP_Real* DECdecompGetDetectorPctConssFromOpen(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   return decomp->pctConssFromOpen;
+}
+
+/** sets the number of new blocks of the corresponding detectors (of the detector chain) on this decomposition */
+void DECdecompSetNNewBlocks(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   int*                  nNewBlocks
+   )
+{
+   int d;
+   int size;
+
+   assert(decomp->sizeDetectorchain > 0);
+
+   size = SCIPcalcMemGrowSize(scip, decomp->sizeDetectorchain);
+
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->nNewBlocks, size) );
+
+   BMSclearMemoryArray(decomp->nNewBlocks, size);
+
+   for ( d = 0; d < decomp->sizeDetectorchain; ++d )
+   {
+      decomp->nNewBlocks[d] = nNewBlocks[d];
+   }
+
+   return;
+}
+
+/** gets the number of new blocks corresponding detectors (of the detector chain) on this decomposition */
+int* DECdecompGetNNewBlocks(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   return decomp->nNewBlocks;
+}
+
+
 
 
 
@@ -2796,11 +3128,11 @@ SCIP_RETCODE DECevaluateDecomposition(
    {
    case DEC_DECTYPE_ARROWHEAD:
       score->totalscore = alphaborderarea*(score->borderscore) + alphalinking*(score->linkingscore) + alphadensity*(score->densityscore);
-//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
+/*      score->totalscore = score->borderscore*score->linkingscore*score->densityscore; */
       break;
    case DEC_DECTYPE_BORDERED:
       score->totalscore = alphaborderarea*(score->borderscore) + alphalinking*(score->linkingscore) + alphadensity*(score->densityscore);
-//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
+      /*       score->totalscore = score->borderscore*score->linkingscore*score->densityscore; */
       break;
    case DEC_DECTYPE_DIAGONAL:
       if(nblocks == 1 || nblocks == 0)
@@ -2810,7 +3142,7 @@ SCIP_RETCODE DECevaluateDecomposition(
       break;
    case DEC_DECTYPE_STAIRCASE:
       score->totalscore = alphaborderarea*(score->borderscore) + alphalinking*(score->linkingscore) + 0.2*(score->densityscore);
-//      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
+/*       score->totalscore = score->borderscore*score->linkingscore*score->densityscore; */
       break;
    case DEC_DECTYPE_UNKNOWN:
       SCIPerrorMessage("Decomposition type is %s, cannot compute score\n", DECgetStrType(DECdecompGetType(decdecomp)));

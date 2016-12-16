@@ -115,7 +115,14 @@ public:
    int addBlock();
 
    /** incorporates the changes from ancestor  seeed */
-   void addDecChangesFromAncestor(Seeed* ancestor);
+   void addDecChangesFromAncestor(
+         Seeed* ancestor
+         );
+
+   /** incorporates the the needed time of a certain detector in the detector chain */
+   void addClockTime(
+         SCIP_Real clocktime
+         );
 
    /** are already assigned constraints to blocks */
    bool alreadyAssignedConssToBlocks();
