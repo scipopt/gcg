@@ -1435,8 +1435,8 @@ SCIP_RETCODE detectIsomorph(
       // renumbering from 0 to number of permutations
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
+      // reorder decomposition (corresponding to orbit size)
       SCIP_CALL( reorderPermutations(scip, ptrhook->conssperm, nconss, nperms) );
-
 
       if( *nNewSeeeds == 0 )
          SCIP_CALL( SCIPallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(maxdecomps, nperms)) ); /*lint !e506*/
