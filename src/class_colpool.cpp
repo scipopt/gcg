@@ -240,27 +240,43 @@ namespace gcg {
       return GCGpqueueNElems(pqueue);
    }
 
-   /**< delete all columns that are older than agelimit */
+   /**< delete all columns that are older than agelimit
+    * WARNING: This method changes the order in which the colums are stored.
+    * Use GCGpqueueResort() to resort the columns by reduced cost again */
    SCIP_RETCODE Colpool::deleteOldColumns()
    {
-      GCG_COL* gcgcol;
+      /* todo: get comperator of pqueue */
 
-      int i;
+      SCIP_CALL( GCGpqueueSetComperator(pqueue, GCGcolCompAge) );
 
-      for( i = 0; i < getNCols(); ++i )
+      SCIP_CALL( GCGpqueueResort(pqueue) );
+
+      while( GCGpqueueNElems(pqueue) > 0 )
       {
-         if( getColAge(i) > agelimit )
+         GCG_COL* gcgcol;
+
+         gcgcol = (GCG_COL*) GCGpqueueFirst(pqueue);
+
+         if( GCGcolGetAge(gcgcol) > agelimit)
          {
-            SCIP_CALL( GCGpqueueDelete(pqueue, i, (void**) &gcgcol) );
+            gcgcol = (GCG_COL*) GCGpqueueRemove(pqueue);
 
             SCIP_CALL( GCGfreeGcgCol(&gcgcol) );
          }
+         else
+            break;
       }
+
+      /* todo: use previous comperator of pqueue */
+      SCIP_CALL( GCGpqueueSetComperator(pqueue, GCGcolCompRedcost) );
+
       return SCIP_OKAY;
    }
 
    /**< delete the oldest columns such that number of columns in colpool is
-    *   lower than or equal to maxncolssoft */
+    *   lower than or equal to maxncolssoft
+    * WARNING: This method changes the order in which the colums are stored.
+    * Use GCGpqueueResort() to resort the columns by reduced cost again  */
    SCIP_RETCODE Colpool::deleteOldestColumns()
    {
       if( GCGpqueueNElems(pqueue) <= maxncolssoft )
@@ -337,7 +353,7 @@ namespace gcg {
    SCIP_RETCODE Colpool::updateNode(
    )
    {
-      if( nodenr <= 0 )
+      if( nodenr < 0 )
       {
          nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
       }

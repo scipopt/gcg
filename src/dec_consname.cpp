@@ -274,6 +274,8 @@ SCIP_RETCODE SCIPincludeDetectorConsname(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
+   detectordata->regex = NULL;
+
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
       detectordata, detectorDetectConsname, detectorFreeConsname, NULL, NULL) );
 
