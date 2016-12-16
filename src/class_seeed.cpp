@@ -151,6 +151,13 @@ int Seeed::addBlock()
 
  }
 
+ /** incorporates the the needed time of a certain detector in the detector chain */
+  void Seeed::addClockTime(SCIP_Real clocktime){
+
+     /** add number of new blocks */
+     detectorClockTimes.push_back(clocktime);
+  }
+
 
 /** returns if constraints are assigned to blocks */
 bool Seeed::alreadyAssignedConssToBlocks()

@@ -57,16 +57,26 @@ struct DecDecomp
    int                   nlinkingconss;      /**< number of linking constraints */
    SCIP_VAR**            linkingvars;        /**< array of variables linking the blocks */
    int                   nlinkingvars;       /**< number of linking variables */
-   SCIP_VAR***           stairlinkingvars;   /**< array of variables staircaslinking the blocks */
-   int*                  nstairlinkingvars;  /**< number of staircaslinking variables */
+   SCIP_VAR***           stairlinkingvars;   /**< array of variables staircaselinking the blocks */
+   int*                  nstairlinkingvars;  /**< number of staircaselinking variables */
    SCIP_HASHMAP*         vartoblock;         /**< hashmap mapping variables to their blocks (from 1 to nblocks) */
    SCIP_HASHMAP*         constoblock;        /**< hashmap mapping constraints to their blocks (from 1 to nblocks) */
    SCIP_HASHMAP*         varindex;           /**< hashmap mapping variables to indices for a visual ordering */
    SCIP_HASHMAP*         consindex;          /**< hashmap mapping constraints to indices for visual ordering */
    DEC_DECTYPE           type;               /**< type of the decomposition */
-   DEC_DETECTOR**        detectorchain;      /**< detector that found this decomposition */
-   DEC_DETECTOR*         detector;      /**< detector that found this decomposition */
-   int                   sizeDetectorchain;
+   DEC_DETECTOR**        detectorchain;      /**< array of detectors that worked on this decomposition */
+   DEC_DETECTOR*         detector;           /**< detector that found this decomposition */
+   int                   sizeDetectorchain;  /**< number of detectors that worked on this decomposition */
+   int                   seeedID;            /**< id of the seeed this decomposition originates from */
+   SCIP_Real*            detectorClockTimes; /**< times of the detectors that worked on this decomposition */
+   SCIP_Real*            pctVarsToBorder;    /**< percentages of variables assigned to the border of the corresponding detectors on this decomposition */
+   SCIP_Real*            pctConssToBorder;    /**< percentages of constraints assigned to the border of the corresponding detectors on this decomposition */
+   SCIP_Real*            pctVarsToBlock;      /**< percentages of variables assigned to a block of the corresponding detectors on this decomposition */
+   SCIP_Real*            pctConssToBlock;     /**< percentages of variables assigned to a block of the corresponding detectors on this decomposition */
+   SCIP_Real*            pctVarsFromOpen;     /**< percentages of variables assigned to a block or border of the corresponding detectors on this decomposition */
+   SCIP_Real*            pctConssFromOpen;    /**< percentages of constraints assigned to a block or the border of the corresponding detectors on this decomposition */
+   int*                  nNewBlocks;          /**< number of new blocks of the corresponding detectors on this decomposition */
+
 };
 
 #ifdef __cplusplus
