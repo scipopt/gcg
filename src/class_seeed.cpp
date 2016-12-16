@@ -284,20 +284,24 @@ bool Seeed::assignHittingOpenconss(Seeedpool* seeedpool)
       eraseBlock.clear();
 
       /** fill out blocksOfStairlinkingvars and blocksOfBlockvars */
-      for( int v = 0; v < seeedpool->getNVarsForCons(cons); ++v )
+      for( int b = 0; b < nBlocks; ++b )
       {
-         var = seeedpool->getVarsForCons(cons)[v];
-         for( int b = 0; b < nBlocks; ++b )
+         for( int v = 0; v < seeedpool->getNVarsForCons(cons); ++v )
          {
+            var = seeedpool->getVarsForCons(cons)[v];
             if( isVarBlockvarOfBlock(var, b) )
             {
                blocksOfVars.push_back(b);
                break;
             }
          }
-         for( int b = 0; b < nBlocks; ++b )
+      }
+
+      for( int b = 0; b < nBlocks; ++b )
+      {
+         for( int v = 0; v < seeedpool->getNVarsForCons(cons); ++v )
          {
-            if( isVarStairlinkingvarOfBlock(var, b) )
+            if( find(stairlinkingVars[block].begin(), stairlinkingVars[block].end(), var) != stairlinkingVars[block].end() )
             {
                stairlinking = true;
                blocksOfStairlinkingvars.push_back(b);
