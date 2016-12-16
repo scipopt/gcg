@@ -29,6 +29,7 @@
  * @ingroup DECOMP
  * @brief  generic methods for working with different decomposition structures
  * @author Martin Bergner
+ * @author Michael Bastubbe
  *
  * Various methods to work with the decomp structure
  *
