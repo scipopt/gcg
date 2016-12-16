@@ -149,9 +149,8 @@ SCIP_RETCODE writeDecompositionHeader(
    int starty;
    int endx;
    int endy;
-//   int nblockvars;
    int nstairlinkingvars;
-//   int nmastervars;
+   int nmastervars;
    int nvars;
    int nconss;
    assert(scip != NULL);
@@ -170,26 +169,23 @@ SCIP_RETCODE writeDecompositionHeader(
    {
       nstairlinkingvars += decdecomp->nstairlinkingvars[b];
    }
+   nmastervars = 0;
+   for( i = 0; i < decdecomp->nlinkingvars; ++i )
+   {
+      if( (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, decdecomp->linkingvars[i]) == decdecomp->nblocks + 1)
+         nmastervars++;
+   }
       startx = 0;
       starty = 0;
       i = 1;
       /** write linking var box */
       SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, decdecomp->nlinkingvars - nstairlinkingvars + 0.5, nconss + 0.5, "purple"));
       i++;
-      startx += decdecomp->nlinkingvars - nstairlinkingvars;
-//      /** write master var box */
-//      nblockvars = 0;
-//      nstairlinkingvars = 0;
-//      for( b = 0; b < decdecomp->nblocks ; ++b )
-//      {
-//         nblockvars += decdecomp->nsubscipvars[b];
-//         if(b != decdecomp->nblocks - 1)
-//            nstairlinkingvars += decdecomp->nstairlinkingvars[b];
-//      }
-//      nmastervars = SCIPgetNVars(scip) - nblockvars - decdecomp->nlinkingvars - nstairlinkingvars;
-//      SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, 0 + 0.5, startx + nmastervars + 0.5, nconss + 0.5, "yellow"));
-//      i++;
-//      startx += nmastervars;
+      startx += decdecomp->nlinkingvars - nstairlinkingvars - nmastervars;
+      /** write master var box */
+      SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, 0 + 0.5, startx + nmastervars + 0.5, nconss + 0.5, "yellow"));
+      i++;
+      startx += nmastervars;
       /** write linking cons box */
       SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, 0 + 0.5, 0 + 0.5, nvars + 0.5, decdecomp->nlinkingconss + 0.5, "orange"));
       i++;
@@ -375,9 +371,9 @@ SCIP_RETCODE writeData(
 //
 //   return SCIP_OKAY;
    SCIP_CONS** conss;
-
    SCIP_HASHMAP* varindexmap;
    SCIP_HASHMAP* consindexmap;
+   int* stairlinkingvars;
    int nconss;
 
    int i;
@@ -399,17 +395,45 @@ SCIP_RETCODE writeData(
       SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
       SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
+      /** fillout the array stairlinkingvars */
+      SCIP_CALL( SCIPallocBufferArray(scip, &stairlinkingvars, SCIPgetNVars(scip)) );
+      for( j = 0; j < SCIPgetNVars(scip); ++j)
+         stairlinkingvars[j] = 0;
+      for( i = 0; i < decdecomp->nblocks; ++i)
+      {
+         for( j = 0; j < decdecomp->nstairlinkingvars[i]; ++j)
+         {
+            assert(stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j])] == 0);
+            stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j])] = 1;
+         }
+      }
+
+      /** fillout the hashmaps */
       for( j = 0; j < decdecomp->nlinkingconss; ++j )
       {
          assert(decdecomp->linkingconss[j] != NULL);
          SCIP_CALL( SCIPhashmapInsert(consindexmap, decdecomp->linkingconss[j], (void*)consindex) );
          consindex++;
       }
+      /** linkingvars */
       for( j = 0; j < decdecomp->nlinkingvars; ++j )
       {
          assert(decdecomp->linkingvars[j] != NULL);
-         SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
-         varindex++;
+         if( (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, decdecomp->linkingvars[i]) == decdecomp->nblocks + 2 && stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->linkingvars[i])] == 0)
+         {
+            SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
+            varindex++;
+         }
+      }
+      /** mastervars */
+      for( j = 0; j < decdecomp->nlinkingvars; ++j )
+      {
+         assert(decdecomp->linkingvars[j] != NULL);
+         if( (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, decdecomp->linkingvars[i]) == decdecomp->nblocks + 1 )
+         {
+            SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
+            varindex++;
+         }
       }
       SCIPdebugMessage("Block information:\n");
 
@@ -424,6 +448,12 @@ SCIP_RETCODE writeData(
             SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->subscipvars[i][j], (void*)varindex) );
             varindex++;
          }
+         for( j = 0; j < decdecomp->nstairlinkingvars[i]; ++j )
+         {
+            assert(decdecomp->stairlinkingvars[i][j] != NULL);
+            SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->stairlinkingvars[i][j], (void*)varindex) );
+            varindex++;
+         }
          for( j = 0; j < decdecomp->nsubscipconss[i]; ++j )
          {
             assert(decdecomp->subscipconss[i][j] != NULL);
@@ -431,6 +461,7 @@ SCIP_RETCODE writeData(
             consindex++;
          }
       }
+      SCIPfreeBufferArray(scip, &stairlinkingvars);
    }
 
    for( i = 0; i < nconss; i++ )
