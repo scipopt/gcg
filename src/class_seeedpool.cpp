@@ -499,6 +499,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                                if(verboseLevel > 2)
                                                {
                                                    std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to finished seeeds!" << std::endl;
+                                                   seeedPropData->newSeeeds[seeed]->evaluate(this);
                                                    seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
                                                }
                                                    finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
@@ -508,6 +509,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                                if(verboseLevel > 2)
                                                {
                                                    std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to next round seeeds!" << std::endl;
+                                                   seeedPropData->newSeeeds[seeed]->evaluate(this);
                                                    seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
                                                }
                                                nextSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
@@ -619,6 +621,22 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
              std::cout << "Detector " << DECdetectorGetName(detectorToScipDetector[i] ) << " \t worked on \t " << successDetectors[i] << " of " << finishedSeeeds.size() << "\t and took a total time of \t" << SCIPgetClockTime(scip, detectorToScipDetector[i]->dectime)  << std::endl;
          }
 
+         if((int)finishedSeeeds.size() != 0)
+         {
+            SCIP_Real minscore = finishedSeeeds[0]->evaluate(this);
+            SeeedPtr bestSeeed = finishedSeeeds[0];
+            for( size_t i = 1; i < finishedSeeeds.size(); ++i )
+            {
+               SCIP_Real score = finishedSeeeds[i]->evaluate(this);
+               if (score < minscore)
+               {
+                  minscore = score;
+                  bestSeeed = finishedSeeeds[i];
+               }
+            }
+            bestSeeed->showScatterPlot(this);
+         }
+
 
          /** fill out the decompositions */
 
@@ -652,7 +670,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             /* create decomp data structure */
             SCIP_CALL_ABORT( DECdecompCreate(scip, &(decompositions[i])) );
 
-  //          seeed->showScatterPlot(this);
+//            seeed->showScatterPlot(this);
 
             /** set nblocks */
             DECdecompSetNBlocks(decompositions[i], seeed->getNBlocks() );

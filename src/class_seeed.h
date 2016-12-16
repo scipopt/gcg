@@ -75,7 +75,7 @@ private:
    std::vector<bool> 				   propagatedByDetector;	      /**< propagatedByDetector[i] is this seeed propagated by detector i */
    bool 							         openVarsAndConssCalculated;   /**< are the openVars and openCons calculated */
    long                             hashvalue;
-
+   SCIP_Real                        score;                        /**< score to evaluate the seeeds */
 
 
    const static int              primes[];

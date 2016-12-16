@@ -2063,6 +2063,7 @@ SCIP_Real Seeed::evaluate(
    Seeedpool* seeedpool
    )
 {
+
    SCIP_Real             borderscore;        /**< score of the border */
    SCIP_Real             densityscore;       /**< score of block densities */
    SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
@@ -2090,6 +2091,8 @@ SCIP_Real Seeed::evaluate(
    alphalinking = 0.2 ;
    alphadensity  = 0.2;
 
+   if(getNOpenconss() != 0 || getNOpenvars() != 0)
+      SCIPwarningMessage(scip, "Decomposition type changed to 'bordered' due to an added constraint.\n");
 
    SCIP_CALL( SCIPallocBufferArray(scip, &nzblocks, nBlocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nlinkvarsblocks, nBlocks) );
@@ -2105,13 +2108,11 @@ SCIP_Real Seeed::evaluate(
     */
 
    /* calculate matrix area */
-   matrixarea = (nVars - getNOpenvars() ) * ( nConss - getNOpenconss() );
+   matrixarea = nVars*nConss;
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++i )
    {
-      //SCIP_CONS** curconss;
-
       int ncurconss;
       int nvarsblock;
       SCIP_Bool *ishandled;
@@ -2126,35 +2127,29 @@ SCIP_Real Seeed::evaluate(
       }
       ncurconss = getNConssForBlock(i);
 
-
       for( j = 0; j < ncurconss; ++j )
       {
-         int curcons = getConssForBlock(i)[j];
+         int cons = getConssForBlock(i)[j];
          int ncurvars;
-         ncurvars = seeedpool->getNVarsForCons(curcons);
-
+         ncurvars = seeedpool->getNVarsForCons(cons);
          for( k = 0; k < ncurvars; ++k )
          {
-            int curvar = seeedpool->getVarsForCons(curcons)[k];
+            int var = seeedpool->getVarsForCons(cons)[k];
             int block;
-            if( isVarBlockvarOfBlock(curvar, i) )
+            if( isVarBlockvarOfBlock(var, i) )
                block = i + 1;
-            else if( isVarLinkingvar(curvar) || isVarStairlinkingvar(curvar))
+            else if( isVarLinkingvar(var) || isVarStairlinkingvar(var))
                block = nBlocks + 2;
-            else if( isVarMastervar(curvar) )
+            else if( isVarMastervar(var) )
                block = nBlocks + 1;
-            else
-            {
-               assert(isVarOpenvar(curvar));
-               continue;
-            }
+
             ++(nzblocks[i]);
 
-            if( block == nBlocks+1 && ishandled[curvar] == FALSE )
+            if( block == nBlocks+1 && ishandled[var] == FALSE )
             {
                ++(nlinkvarsblocks[i]);
             }
-            ishandled[curvar] = TRUE;
+            ishandled[var] = TRUE;
          }
       }
 
@@ -2181,8 +2176,7 @@ SCIP_Real Seeed::evaluate(
       SCIPfreeBufferArray(scip, &ishandled);
    }
 
-//   borderarea = getNMasterconss()*nVars+getNLinkingvars()*(nConss-getNMasterconss());
-   borderarea = getNMasterconss()*(nVars - getNOpenvars()) + getNLinkingvars() * (nConss - getNMasterconss() - getNOpenconss());
+   borderarea = getNMasterconss()*nVars+(getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars())*(nConss-getNMasterconss());
 
    density = 1E20;
    varratio = 1.0;
@@ -2190,9 +2184,9 @@ SCIP_Real Seeed::evaluate(
    {
       density = MIN(density, blockdensities[i]);
 
-      if( getNLinkingvars() > 0 )
+      if( (getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars()) > 0 )
       {
-         varratio *= 1.0*nlinkvarsblocks[i]/getNLinkingvars();
+         varratio *= 1.0*nlinkvarsblocks[i]/(getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars());
       }
       else
       {
@@ -2203,6 +2197,9 @@ SCIP_Real Seeed::evaluate(
    linkingscore = (0.5+0.5*varratio);
    borderscore = (1.0*(borderarea)/matrixarea);
    densityscore = (1-density);
+
+
+
 
    DEC_DECTYPE type;
    if(getNLinkingvars() == getNTotalStairlinkingvars() && getNMasterconss() == 0 && getNLinkingvars() > 0)
@@ -2248,7 +2245,6 @@ SCIP_Real Seeed::evaluate(
 //      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
       break;
    case DEC_DECTYPE_UNKNOWN:
-      SCIPerrorMessage("unknown type, cannot compute score\n");
       assert(FALSE);
       break;
    default:
@@ -2256,10 +2252,11 @@ SCIP_Real Seeed::evaluate(
       assert(FALSE);
       break;
    }
-   if(nBlocks == 1 || nBlocks == 0)
+   if(nBlocks == 0)
       totalscore = 1.0;
-
-   if( nBlocks == 0 || nBlocks == 1)
+   if(nBlocks == 1)
+      totalscore *= 4;
+   if(totalscore > 1)
       totalscore = 1;
 
    SCIPfreeBufferArray(scip, &nvarsblocks);
@@ -2267,6 +2264,7 @@ SCIP_Real Seeed::evaluate(
    SCIPfreeBufferArray(scip, &blockdensities);
    SCIPfreeBufferArray(scip, &nlinkvarsblocks);
    SCIPfreeBufferArray(scip, &nzblocks);
+   score = totalscore;
    return totalscore;
 }
 
