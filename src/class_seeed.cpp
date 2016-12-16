@@ -151,6 +151,13 @@ int Seeed::addBlock()
 
  }
 
+ /** incorporates the the needed time of a certain detector in the detector chain */
+  void Seeed::addClockTime(SCIP_Real clocktime){
+
+     /** add number of new blocks */
+     detectorClockTimes.push_back(clocktime);
+  }
+
 
 /** returns if constraints are assigned to blocks */
 bool Seeed::alreadyAssignedConssToBlocks()
@@ -806,30 +813,6 @@ bool Seeed::checkAllConsAssigned()
    openConss.clear();
    return true;
 }
-
-/** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
-    bool Seeed::isTrivial(
-    )
-    {
-       if( getNBlocks() == 1 && getNConssForBlock(0) == getNConss() )
-          return true;
-
-       if( getNConss() == getNMasterconss() )
-          return true;
-
-       if( getNConss() == getNOpenconss() && getNVars() == getNOpenvars() )
-          return true;
-
-
-       if( getNVars() == getNMastervars() + getNLinkingvars() )
-          return true;
-
-       return false;
-    }
-
-
-
-
 
 /** check the consistency of this seeed */
 bool Seeed::checkConsistency()
@@ -1908,178 +1891,6 @@ SCIP_RETCODE Seeed::displayVars(Seeedpool* seeedpool)
    return SCIP_OKAY;
 }
 
-/** displays the assignments of the vars */
-SCIP_RETCODE Seeed::writeScatterPlot(
-   Seeedpool* seeedpool,
-   const char* filename
-){
-   std::vector<int> orderToRows(nConss, -1);
-   std::vector<int> rowToOrder(nConss, -1);
-   std::vector<int> orderToCols(nVars, -1);
-   std::vector<int> colsToOrder(nVars, -1);
-   int counterrows = 0;
-   int countercols = 0;
-   std::ofstream ofs;
-
-   ofs.open (filename, std::ofstream::out );
-
-   /** order of constraints */
-   /* master constraints */
-   for ( int i = 0; i < getNMasterconss() ; ++i )
-   {
-      int rowidx = getMasterconss()[i];
-      orderToRows[counterrows] = rowidx;
-      rowToOrder[rowidx] = counterrows;
-      ++counterrows;
-   }
-
-   /* block constraints */
-   for ( int b = 0; b < getNBlocks() ; ++b )
-   {
-      for (int i = 0; i < getNConssForBlock(b) ; ++i )
-      {
-         int rowidx = getConssForBlock(b)[i];
-         orderToRows[counterrows] = rowidx;
-         rowToOrder[rowidx] = counterrows;
-         ++counterrows;
-      }
-   }
-
-   /** open constraints */
-   for ( int i = 0; i < getNOpenconss() ; ++i )
-   {
-      int rowidx = getOpenconss()[i];
-      orderToRows[counterrows] = rowidx;
-      rowToOrder[rowidx] = counterrows;
-      ++counterrows;
-   }
-
-   /** order of variables */
-
-      /* linking variables */
-      for ( int i = 0; i < getNLinkingvars() ; ++i )
-      {
-         int colidx = getLinkingvars()[i];
-         orderToCols[countercols] = colidx;
-         colsToOrder[colidx] = countercols;
-         ++countercols;
-      }
-
-      /* master variables */
-      for ( int i = 0; i < getNMastervars() ; ++i )
-      {
-         int colidx = getMastervars()[i];
-         orderToCols[countercols] = colidx;
-         colsToOrder[colidx] = countercols;
-         ++countercols;
-      }
-
-
-      /* block variables */
-      for ( int b = 0; b < getNBlocks() ; ++b )
-      {
-         for (int i = 0; i < getNVarsForBlock(b) ; ++i )
-         {
-            int colidx = getVarsForBlock(b)[i];
-            orderToCols[countercols] = colidx;
-            colsToOrder[colidx] = countercols;
-            ++countercols;
-         }
-         for (int i = 0; i < getNStairlinkingvars(b) ; ++i )
-         {
-            int colidx = getStairlinkingvars(b)[i];
-            orderToCols[countercols] = colidx;
-            colsToOrder[colidx] = countercols;
-            ++countercols;
-         }
-      }
-
-      /** open vars */
-      for ( int i = 0; i < getNOpenvars() ; ++i )
-      {
-         int colidx = getOpenvars()[i];
-         orderToCols[countercols] = colidx;
-         colsToOrder[colidx] = countercols;
-         ++countercols;
-      }
-
-      /* write scatter plot */
-      for( int row = 0; row < nConss; ++row )
-         for ( int col = 0; col < nVars; ++col )
-         {
-            assert( orderToRows[row] != -1);
-            assert( orderToCols[col] != -1);
-            if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
-               ofs << col+0.5 << " " << row+0.5 <<  std::endl;
-         }
-
-      ofs.close();
-
-   return SCIP_OKAY;
-}
-
-
-/** just for debugging */
-void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
-
-   char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
-   int rowboxcounter = 0;
-   int colboxcounter = 0;
-
-   writeScatterPlot(seeedpool, help);
-
-   std::ofstream ofs;
-
-   ofs.open ("helper.plg", std::ofstream::out );
-   ofs << "set xrange [-1:" << getNVars() << "]\nset yrange[" << getNConss() << ":-1]\n";
-
-
-   /* write linking var */
-   ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fc rgb \"purple\"\n" ;
-   colboxcounter+=getNLinkingvars();
-
-   ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fc rgb \"yellow\"\n" ;
-   colboxcounter+=getNMastervars();
-
-
-   displaySeeed(seeedpool);
-   // std::cout << " nmasterconss: " << getNMasterconss() << std::endl;
-
-
-   /* write linking cons box */
-   ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fc rgb \"orange\"\n" ;
-   rowboxcounter += getNMasterconss();
-
-   for( int b = 0; b < getNBlocks() ; ++b )
-   {
-      ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"grey\"\n" ;
-      colboxcounter += getNVarsForBlock(b);
-
-      if ( getNStairlinkingvars(b) != 0 )
-         ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fc rgb \"pink\"\n" ;
-      colboxcounter += getNStairlinkingvars(b);
-
-      rowboxcounter+= getNConssForBlock(b);
-   }
-
-
-   ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"green\"\n" ;
-         colboxcounter += getNOpenvars();
-         rowboxcounter+= getNOpenconss();
-
-   ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
-
-   ofs << "pause -1" << std::endl;
-
-   ofs.close();
-
-   system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
-   system("rm helpScatter.txt");
-   system("rm helper.plg");
-   return;
-}
-
-
 /** computes the score of the given seeed based on the border, the average density score and the ratio of
  * linking variables
  */
@@ -2087,6 +1898,7 @@ SCIP_Real Seeed::evaluate(
    Seeedpool* seeedpool
    )
 {
+
    SCIP_Real             borderscore;        /**< score of the border */
    SCIP_Real             densityscore;       /**< score of block densities */
    SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
@@ -2114,6 +1926,8 @@ SCIP_Real Seeed::evaluate(
    alphalinking = 0.2 ;
    alphadensity  = 0.2;
 
+   if(getNOpenconss() != 0 || getNOpenvars() != 0)
+      SCIPwarningMessage(scip, "Decomposition type changed to 'bordered' due to an added constraint.\n");
 
    SCIP_CALL( SCIPallocBufferArray(scip, &nzblocks, nBlocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nlinkvarsblocks, nBlocks) );
@@ -2129,13 +1943,11 @@ SCIP_Real Seeed::evaluate(
     */
 
    /* calculate matrix area */
-   matrixarea = (nVars - getNOpenvars() ) * ( nConss - getNOpenconss() );
+   matrixarea = nVars*nConss;
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++i )
    {
-      //SCIP_CONS** curconss;
-
       int ncurconss;
       int nvarsblock;
       SCIP_Bool *ishandled;
@@ -2150,35 +1962,29 @@ SCIP_Real Seeed::evaluate(
       }
       ncurconss = getNConssForBlock(i);
 
-
       for( j = 0; j < ncurconss; ++j )
       {
-         int curcons = getConssForBlock(i)[j];
+         int cons = getConssForBlock(i)[j];
          int ncurvars;
-         ncurvars = seeedpool->getNVarsForCons(curcons);
-
+         ncurvars = seeedpool->getNVarsForCons(cons);
          for( k = 0; k < ncurvars; ++k )
          {
-            int curvar = seeedpool->getVarsForCons(curcons)[k];
+            int var = seeedpool->getVarsForCons(cons)[k];
             int block;
-            if( isVarBlockvarOfBlock(curvar, i) )
+            if( isVarBlockvarOfBlock(var, i) )
                block = i + 1;
-            else if( isVarLinkingvar(curvar) || isVarStairlinkingvar(curvar))
+            else if( isVarLinkingvar(var) || isVarStairlinkingvar(var))
                block = nBlocks + 2;
-            else if( isVarMastervar(curvar) )
+            else if( isVarMastervar(var) )
                block = nBlocks + 1;
-            else
-            {
-               assert(isVarOpenvar(curvar));
-               continue;
-            }
+
             ++(nzblocks[i]);
 
-            if( block == nBlocks+1 && ishandled[curvar] == FALSE )
+            if( block == nBlocks+1 && ishandled[var] == FALSE )
             {
                ++(nlinkvarsblocks[i]);
             }
-            ishandled[curvar] = TRUE;
+            ishandled[var] = TRUE;
          }
       }
 
@@ -2205,8 +2011,7 @@ SCIP_Real Seeed::evaluate(
       SCIPfreeBufferArray(scip, &ishandled);
    }
 
-//   borderarea = getNMasterconss()*nVars+getNLinkingvars()*(nConss-getNMasterconss());
-   borderarea = getNMasterconss()*(nVars - getNOpenvars()) + getNLinkingvars() * (nConss - getNMasterconss() - getNOpenconss());
+   borderarea = getNMasterconss()*nVars+(getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars())*(nConss-getNMasterconss());
 
    density = 1E20;
    varratio = 1.0;
@@ -2214,9 +2019,9 @@ SCIP_Real Seeed::evaluate(
    {
       density = MIN(density, blockdensities[i]);
 
-      if( getNLinkingvars() > 0 )
+      if( (getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars()) > 0 )
       {
-         varratio *= 1.0*nlinkvarsblocks[i]/getNLinkingvars();
+         varratio *= 1.0*nlinkvarsblocks[i]/(getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars());
       }
       else
       {
@@ -2227,6 +2032,9 @@ SCIP_Real Seeed::evaluate(
    linkingscore = (0.5+0.5*varratio);
    borderscore = (1.0*(borderarea)/matrixarea);
    densityscore = (1-density);
+
+
+
 
    DEC_DECTYPE type;
    if(getNLinkingvars() == getNTotalStairlinkingvars() && getNMasterconss() == 0 && getNLinkingvars() > 0)
@@ -2272,7 +2080,6 @@ SCIP_Real Seeed::evaluate(
 //      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
       break;
    case DEC_DECTYPE_UNKNOWN:
-      SCIPerrorMessage("unknown type, cannot compute score\n");
       assert(FALSE);
       break;
    default:
@@ -2280,10 +2087,11 @@ SCIP_Real Seeed::evaluate(
       assert(FALSE);
       break;
    }
-   if(nBlocks == 1 || nBlocks == 0)
+   if(nBlocks == 0)
       totalscore = 1.0;
-
-   if( nBlocks == 0 || nBlocks == 1)
+   if(nBlocks == 1)
+      totalscore *= 4;
+   if(totalscore > 1)
       totalscore = 1;
 
    SCIPfreeBufferArray(scip, &nvarsblocks);
@@ -2291,6 +2099,7 @@ SCIP_Real Seeed::evaluate(
    SCIPfreeBufferArray(scip, &blockdensities);
    SCIPfreeBufferArray(scip, &nlinkvarsblocks);
    SCIPfreeBufferArray(scip, &nzblocks);
+   score = totalscore;
    return totalscore;
 }
 
@@ -2836,6 +2645,24 @@ bool Seeed::isPropagatedBy(int detectorID)
    return propagatedByDetector[detectorID];
 }
 
+/** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
+bool Seeed::isTrivial()
+{
+   if( getNBlocks() == 1 && getNConssForBlock(0) == getNConss() )
+      return true;
+
+   if( getNConss() == getNMasterconss() )
+      return true;
+
+   if( getNConss() == getNOpenconss() && getNVars() == getNOpenvars() )
+      return true;
+
+   if( getNVars() == getNMastervars() + getNLinkingvars() )
+      return true;
+
+   return false;
+}
+
 /** return whether the var is a var of the block */
 bool Seeed::isVarBlockvarOfBlock(int var, int block)
 {
@@ -3013,6 +2840,89 @@ SCIP_RETCODE Seeed::setVarToStairlinking(int varToStairlinking, int block1, int 
    return SCIP_OKAY;
 }
 
+/** just for debugging */
+void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
+
+   char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
+   int rowboxcounter = 0;
+   int colboxcounter = 0;
+   bool colored = true;
+
+   writeScatterPlot(seeedpool, help);
+
+   std::ofstream ofs;
+
+   ofs.open ("helper.plg", std::ofstream::out );
+   ofs << "set xrange [-1:" << getNVars() << "]\nset yrange[" << getNConss() << ":-1]\n";
+
+
+   /* write linking var */
+   if(colored)
+      ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fc rgb \"purple\"\n" ;
+   else
+      ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fillstyle solid noborder fc rgb \"grey60\"\n" ;
+   colboxcounter+=getNLinkingvars();
+
+   if(colored)
+      ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fc rgb \"yellow\"\n" ;
+   else
+      ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fillstyle solid noborder fc rgb \"grey80\"\n" ;
+   colboxcounter+=getNMastervars();
+
+
+   displaySeeed(seeedpool);
+   // std::cout << " nmasterconss: " << getNMasterconss() << std::endl;
+
+
+   /* write linking cons box */
+   if(colored)
+      ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fc rgb \"orange\"\n" ;
+   else
+      ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fillstyle solid noborder fc rgb \"grey40\"\n" ;
+   rowboxcounter += getNMasterconss();
+
+   for( int b = 0; b < getNBlocks() ; ++b )
+   {
+      if(colored)
+         ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"grey\"\n" ;
+      else
+         ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fillstyle solid noborder fc rgb \"grey70\"\n" ;
+      colboxcounter += getNVarsForBlock(b);
+
+      if ( getNStairlinkingvars(b) != 0 )
+      {
+         if(colored)
+            ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fc rgb \"pink\"\n" ;
+         else
+            ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fillstyle solid noborder fc rgb \"grey90\"\n" ;
+      }
+      colboxcounter += getNStairlinkingvars(b);
+
+      rowboxcounter+= getNConssForBlock(b);
+   }
+
+   if(colored)
+      ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"green\"\n" ;
+   else
+      ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fillstyle solid noborder fc rgb \"grey50\"\n" ;
+
+         colboxcounter += getNOpenvars();
+         rowboxcounter+= getNOpenconss();
+   if(colored)
+      ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
+   else
+      ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
+
+   ofs << "pause -1" << std::endl;
+
+   ofs.close();
+
+   system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+   system("rm helpScatter.txt");
+   system("rm helper.plg");
+   return;
+}
+
 /** sorts the vars and conss according their numbers */
 void Seeed::sort()
 {
@@ -3025,6 +2935,116 @@ void Seeed::sort()
    std::sort(linkingVars.begin(), linkingVars.end());
    std::sort(masterVars.begin(), masterVars.end());
    std::sort(masterConss.begin(), masterConss.end());
+}
+
+/** displays the assignments of the vars */
+SCIP_RETCODE Seeed::writeScatterPlot(
+   Seeedpool* seeedpool,
+   const char* filename
+){
+   std::vector<int> orderToRows(nConss, -1);
+   std::vector<int> rowToOrder(nConss, -1);
+   std::vector<int> orderToCols(nVars, -1);
+   std::vector<int> colsToOrder(nVars, -1);
+   int counterrows = 0;
+   int countercols = 0;
+   std::ofstream ofs;
+
+   ofs.open (filename, std::ofstream::out );
+
+   /** order of constraints */
+   /* master constraints */
+   for ( int i = 0; i < getNMasterconss() ; ++i )
+   {
+      int rowidx = getMasterconss()[i];
+      orderToRows[counterrows] = rowidx;
+      rowToOrder[rowidx] = counterrows;
+      ++counterrows;
+   }
+
+   /* block constraints */
+   for ( int b = 0; b < getNBlocks() ; ++b )
+   {
+      for (int i = 0; i < getNConssForBlock(b) ; ++i )
+      {
+         int rowidx = getConssForBlock(b)[i];
+         orderToRows[counterrows] = rowidx;
+         rowToOrder[rowidx] = counterrows;
+         ++counterrows;
+      }
+   }
+
+   /** open constraints */
+   for ( int i = 0; i < getNOpenconss() ; ++i )
+   {
+      int rowidx = getOpenconss()[i];
+      orderToRows[counterrows] = rowidx;
+      rowToOrder[rowidx] = counterrows;
+      ++counterrows;
+   }
+
+   /** order of variables */
+
+      /* linking variables */
+      for ( int i = 0; i < getNLinkingvars() ; ++i )
+      {
+         int colidx = getLinkingvars()[i];
+         orderToCols[countercols] = colidx;
+         colsToOrder[colidx] = countercols;
+         ++countercols;
+      }
+
+      /* master variables */
+      for ( int i = 0; i < getNMastervars() ; ++i )
+      {
+         int colidx = getMastervars()[i];
+         orderToCols[countercols] = colidx;
+         colsToOrder[colidx] = countercols;
+         ++countercols;
+      }
+
+
+      /* block variables */
+      for ( int b = 0; b < getNBlocks() ; ++b )
+      {
+         for (int i = 0; i < getNVarsForBlock(b) ; ++i )
+         {
+            int colidx = getVarsForBlock(b)[i];
+            orderToCols[countercols] = colidx;
+            colsToOrder[colidx] = countercols;
+            ++countercols;
+         }
+         for (int i = 0; i < getNStairlinkingvars(b) ; ++i )
+         {
+            int colidx = getStairlinkingvars(b)[i];
+            orderToCols[countercols] = colidx;
+            colsToOrder[colidx] = countercols;
+            ++countercols;
+         }
+      }
+
+      /** open vars */
+      for ( int i = 0; i < getNOpenvars() ; ++i )
+      {
+         int colidx = getOpenvars()[i];
+         orderToCols[countercols] = colidx;
+         colsToOrder[colidx] = countercols;
+         ++countercols;
+      }
+
+      /* write scatter plot */
+      for( int row = 0; row < nConss; ++row )
+         for ( int col = 0; col < nVars; ++col )
+         {
+            assert( orderToRows[row] != -1);
+            assert( orderToCols[col] != -1);
+            if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
+               ofs << col+0.5 << " " << row+0.5 <<  std::endl;
+         }
+
+      ofs.close();
+
+   return SCIP_OKAY;
 }
 
 } /* namespace gcg */
