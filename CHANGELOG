@@ -3,6 +3,7 @@ GCG Version
 
 code cleanup
 - reallocate memory for original variable array in pricing variable data more efficiently
+- reorder permutations in isomorph detector according to orbit size and add maxdecomps parameter
 
 bug fixes
 - fixed handling of fixed variables in decompositions
