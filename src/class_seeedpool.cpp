@@ -1017,8 +1017,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
             /** set detectorchain */
             int ndetectors = seeed->getNDetectors();
-            decompositions[i]->sizeDetectorchain = ndetectors;
-            size = SCIPcalcMemGrowSize(scip, decompositions[i]->sizeDetectorchain);
+            decompositions[i]->sizedetectorchain = ndetectors;
+            size = SCIPcalcMemGrowSize(scip, decompositions[i]->sizedetectorchain);
             SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->detectorchain, size) ); /** free in decomp.c:469 */
             for( int k = 0; k < ndetectors; ++k )
             {
