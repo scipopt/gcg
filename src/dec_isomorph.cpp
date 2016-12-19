@@ -1020,7 +1020,8 @@ SCIP_RETCODE createSeeedFromMasterconss(
 
       if( consismaster[i] )
       {
-         SCIP_CALL( SCIPhashmapInsert(newconstoblock, (void*) (size_t) cons, (void*) (size_t) (nblocks+1)) );
+         /* notation is misleading: masterconss are only potential master constraints */
+         /* SCIP_CALL( SCIPhashmapInsert(newconstoblock, (void*) (size_t) cons, (void*) (size_t) (nblocks+1)) ); */
          continue;
       }
 
@@ -1036,6 +1037,11 @@ SCIP_RETCODE createSeeedFromMasterconss(
    }
    (*newSeeed) = new gcg::Seeed(seeed, seeedpool);
    SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblock(newconstoblock, nblocks, seeedpool) );
+
+   (*newSeeed)->considerImplicits(seeedpool);
+   (*newSeeed)->assignAllDependent(seeedpool);
+
+   //(*newSeeed)->showScatterPlot(seeedpool);
 
    SCIPfreeBufferArray(scip, &vartoblock);
    SCIPfreeBufferArray(scip, &consismaster);
