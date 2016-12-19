@@ -77,6 +77,7 @@ private:
    long                             hashvalue;
    SCIP_Real                        score;                        /**< score to evaluate the seeeds */
 
+   bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
    const static int              primes[];
    const static int              nPrimes;
