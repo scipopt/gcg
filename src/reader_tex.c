@@ -779,7 +779,7 @@ SCIPincludeReaderTex(
       &readerdata->usegp, FALSE, DEFAULT_USEGP, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-      "reading/texreader/maxndecomps", "maximum number of decompositions to visualize (ones with best score first are preferred)",
+      "reading/texreader/maxndecomps", "maximum number of decompositions to visualize (ones with best score are preferred)",
       &readerdata->maxndecomps, FALSE, DEFAULT_MAXNDECOMPS, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
