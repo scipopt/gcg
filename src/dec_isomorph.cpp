@@ -1261,6 +1261,8 @@ SCIP_RETCODE reorderPermutations(
 
       if( orbitsizesIter  == orbitsizes.end()  )
       {
+         seeedpool->addCandidatesNBlocks(orbitsize);
+
          orbitsizes.push_back(orbitsize);
       }
    }
