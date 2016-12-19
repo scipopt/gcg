@@ -306,9 +306,11 @@ SCIP_RETCODE convertStructToGCG(
    for( i = 0; i < nvars; ++i )
    {
       SCIP_VAR* transvar;
+
       SCIP_CALL( SCIPgetTransformedVar(scip, origvars[i], &transvar) );
       assert(transvar != NULL);
-      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, SCIPvarGetProbvar(transvar), origvars[i]) );
+
+      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]) );
    }
 
    for( i = 0; i < nblocks; ++i )
@@ -321,6 +323,7 @@ SCIP_RETCODE convertStructToGCG(
          assert(subscipvars[i][j] != NULL);
          relevantvar = SCIPvarGetProbvar(subscipvars[i][j]);
 
+         /* If there is a corresponding original (untransformed) variable, assign it to the block */
          if( SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]) != NULL )
          {
             SCIP_VAR* origvar;
@@ -329,15 +332,16 @@ SCIP_RETCODE convertStructToGCG(
             assert(SCIPvarGetData(origvar) != NULL);
 
             SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, origvar, i) );
-            SCIPdebugMessage("\t\tVar %s (%p) in block %d\n", SCIPvarGetName(subscipvars[i][j]), (void*) subscipvars[i][j],i );
+            SCIPdebugMessage("\t\tOriginal var %s (%p) in block %d\n", SCIPvarGetName(subscipvars[i][j]), (void*) subscipvars[i][j], i);
          }
-         else
-         {
-            if( SCIPvarGetData(relevantvar) == NULL )
-               SCIP_CALL( GCGorigVarCreateData(scip, relevantvar) );
 
-            SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, relevantvar, i) );
-         }
+         /* Assign the corresponding problem variable to the block */
+         if( SCIPvarGetData(relevantvar) == NULL )
+            SCIP_CALL( GCGorigVarCreateData(scip, relevantvar) );
+         SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, relevantvar, i) );
+
+         SCIPdebugMessage("\t\tTransformed var %s (%p) in block %d\n", SCIPvarGetName(relevantvar), (void*) relevantvar, i);
+
          assert(SCIPvarGetData(subscipvars[i][j]) != NULL || SCIPvarGetData(relevantvar) != NULL);
       }
    }
