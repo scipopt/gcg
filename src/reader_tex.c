@@ -62,16 +62,16 @@
 #define LINEBREAK "\n"
 #endif
 
-#define USEGP_DEFAULT            FALSE
-#define MAXNDECOMPS_DEFAULT      50
-#define RETURNTYPE_DEFAULT       0
+#define DEFAULT_USEGP            FALSE
+#define DEFAULT_MAXNDECOMPS      50
+#define DEFAULT_RETURNTYPE       0
 
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-   SCIP_Bool       useGp;       /** if true uses gp files as intermediate step */
-   int             maxNDecomps; /** maximum number of decompositions to visualize (ones with best score first are preferred) */
-   int             returnType;  /** output only decompositions of type 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered */
+   SCIP_Bool       usegp;       /** if true uses gp files as intermediate step */
+   int             maxndecomps; /** maximum number of decompositions to visualize (ones with best score first are preferred) */
+   int             returntype;  /** output only decompositions of type 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered */
 };
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
@@ -136,7 +136,7 @@ SCIP_RETCODE GCGreadTex(
 
 /** gets number of decompositions of a certain type in a given decomposition structure */
 static
-SCIP_RETCODE getNDecompsOfType(
+SCIP_RETCODE getdecompsoftype(
    SCIP*                scip,               /**< SCIP data structure */
    DEC_DECOMP**         decomps,            /**< Decompositions structure */
    int*                 ndecomps,           /**< Number of decompositions in the structure */
@@ -147,9 +147,9 @@ SCIP_RETCODE getNDecompsOfType(
    int i;
 
    *number = 0;
-   for(i = 0; i < *ndecomps; i++)
+   for( i = 0; i < *ndecomps; i++ )
    {
-      if(DECdecompGetType(decomps[i]) == type)
+      if( DECdecompGetType(decomps[i]) == type )
          *number = *number+1;
    }
    return SCIP_OKAY;
@@ -169,7 +169,7 @@ SCIP_RETCODE writeHeaderCode(
 {
    char* pname;
    char ppath[SCIP_MAXSTRLEN];
-   int ndecompsOfType;
+   int decompsoftype;
 
    strcpy(ppath, (char*) SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
@@ -210,7 +210,7 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               %s", LINEBREAK);
-   if(readerdata->useGp)
+   if( readerdata->usegp )
    {
       SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                   %s", LINEBREAK);
    }
@@ -224,7 +224,7 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "  \\thispagestyle{empty}                                                         %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  {\\Huge Report: %s} \\\\ \\today                                               %s", pname, LINEBREAK);
 
-   if(statistics)
+   if( statistics )
    {
       SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "\\vspace{2cm}                                                                    %s", LINEBREAK);
@@ -233,10 +233,10 @@ SCIP_RETCODE writeHeaderCode(
       SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                      %s", pname, LINEBREAK);
       SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                      %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                     %s", SCIPconshdlrDecompGetNDecdecomps(scip), LINEBREAK);
-      if(readerdata->returnType != 0)
+      if( readerdata->returntype != 0 )
       {
-          getNDecompsOfType(scip,decomps,ndecomps,readerdata->returnType, &ndecompsOfType);
-          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                 %s", ndecompsOfType, LINEBREAK);
+          getdecompsoftype(scip,decomps,ndecomps,readerdata->returntype, &decompsoftype);
+          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                 %s", decompsoftype, LINEBREAK);
       }
       else
       {
@@ -247,7 +247,7 @@ SCIP_RETCODE writeHeaderCode(
    }
    SCIPinfoMessage(scip, file, "\\end{titlepage}                                                                 %s", LINEBREAK);
 
-   if(toc)
+   if( toc )
    {
       SCIPinfoMessage(scip, file, "\\thispagestyle{empty}                                                           %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "\\tableofcontents                                                                %s", LINEBREAK);
@@ -319,7 +319,8 @@ SCIP_RETCODE writeTikz(
    if( decomp != NULL )
    {
       /* go through the blocks and create the indices */
-      if( DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN)
+      /* @todo add " && DECdecompGetType(decomp) != DEC_DECTYPE_ARROWHEAD" to this in seeed version */
+      if( DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN && DECdecompGetType(decomp) != DEC_DECTYPE_STAIRCASE )
       {
          for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
          {
@@ -327,33 +328,16 @@ SCIP_RETCODE writeTikz(
             {
                assert(subscipvars[i][j] != NULL);
                SCIP_CALL( SCIPhashmapInsert(varindexmap, subscipvars[i][j], (void*)varindex) );
-               if((int)varindex > maxindvars)
+               if( (int)varindex > maxindvars )
                   maxindvars = (int) varindex;
                varindex++;
             }
-
-
-            /* @todo add " || DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD" to this in seeed version */
-            /*if(DECdecompGetType(decomp)== DEC_DECTYPE_STAIRCASE)
-            {
-               nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
-               stairlinkingvars = DECdecompGetStairlinkingvars(decomp);
-               for( j = 0; j <  nstairlinkingvars[i]; ++j )
-               {
-                  assert(stairlinkingvars[i][j] != NULL);
-                  SCIP_CALL( SCIPhashmapInsert(varindexmap, DECdecompGetStairlinkingvars(decomp)[i][j], (void*)varindex) );
-                  if((int)varindex > maxindvars)
-                     maxindvars = (int) varindex;
-                  varindex++;
-               }
-            }*/
-            /* @todo  */
 
             for( j = 0; j < nsubscipconss[i]; ++j )
             {
                assert(subscipconss[i][j] != NULL);
                SCIP_CALL( SCIPhashmapInsert(consindexmap, subscipconss[i][j], (void*)consindex) );
-               if((int)consindex > maxindcons)
+               if( (int)consindex > maxindcons )
                   maxindcons = (int) consindex;
                consindex++;
             }
@@ -363,7 +347,7 @@ SCIP_RETCODE writeTikz(
          {
             assert(linkingvars[j] != NULL);
             SCIP_CALL( SCIPhashmapInsert(varindexmap, linkingvars[j], (void*)varindex) );
-            if((int)varindex > maxindvars)
+            if( (int)varindex > maxindvars )
                maxindvars = (int) varindex;
             varindex++;
          }
@@ -371,10 +355,19 @@ SCIP_RETCODE writeTikz(
          {
             assert(linkingconss[j] != NULL);
             SCIP_CALL( SCIPhashmapInsert(consindexmap, linkingconss[j], (void*)consindex) );
-            if((int)consindex > maxindcons)
+            if( (int)consindex > maxindcons )
                maxindcons = (int) consindex;
             consindex++;
          }
+      }
+      /* @todo add " || DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD" to this in seeed version */
+      else if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
+      {
+         varindexmap = DECdecompGetVarindex(decomp);
+         consindexmap = DECdecompGetConsindex(decomp);
+
+         assert(varindexmap != NULL);
+         assert(consindexmap != NULL);
       }
    }
 
@@ -460,7 +453,7 @@ SCIP_RETCODE writeTikz(
                assert(varindexmap != NULL);
                assert(consindexmap != NULL);
                /*@todo make the following if statement into an assertion*/
-               if(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL && SCIPhashmapGetImage(consindexmap, conss[i]) != NULL)
+               if( SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL && SCIPhashmapGetImage(consindexmap, conss[i]) != NULL )
                {
                   xpoint = ( (float)(size_t)SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) )/ (float)maxindvars;
                   ypoint = ( (float)(size_t)SCIPhashmapGetImage(consindexmap, conss[i]) )/ (float)maxindcons;
@@ -480,8 +473,12 @@ SCIP_RETCODE writeTikz(
    SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                                            %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  }                                                                             %s", LINEBREAK);
 
-   SCIPhashmapFree(&varindexmap);
-   SCIPhashmapFree(&consindexmap);
+   /* @todo add " && DECdecompGetType(decomp) != DEC_DECTYPE_ARROWHEAD" to this in seeed version */
+   if( DECdecompGetType(decomp) != DEC_DECTYPE_STAIRCASE )
+   {
+      SCIPhashmapFree(&varindexmap);
+      SCIPhashmapFree(&consindexmap);
+   }
 
    return SCIP_OKAY;
 }
@@ -513,19 +510,19 @@ SCIP_RETCODE writeDecompCode(
    assert(decomp != NULL);
    (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
 
-   if(readerdata->useGp)
+   if( readerdata->usegp )
    {
       /* --- create a gnuplot file for the decomposition --- */
 
       /* get path to write to and put it into gpfilename */
       filedesc = fileno(file); /* get link to file descriptor */
-      if(filedesc < 0)
+      if( filedesc < 0 )
       {
          return SCIP_FILECREATEERROR;
       }
       snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
       success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
-      if(success < 0)
+      if( success < 0 )
       {
          return SCIP_NOFILE;
       }
@@ -537,13 +534,13 @@ SCIP_RETCODE writeDecompCode(
       /* get name of file and attach it to gpfilename */
       strcpy(ppath, (char*) SCIPgetProbName(scip));
       SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
-      if(pname != NULL &&  pname[0] != '\0')
+      if( pname != NULL &&  pname[0] != '\0' )
       {
          strcat(gpfilename, pname);
          strcat(gpfilename, "-");
       }
 
-      if(decompname != NULL &&  decompname[0] != '\0')
+      if( decompname != NULL &&  decompname[0] != '\0' )
       {
          strcat(gpfilename, decompname);
       }
@@ -556,7 +553,7 @@ SCIP_RETCODE writeDecompCode(
 
       /* write gp file for decomp using the gp reader (using the tex output option) */
       gpfile = fopen(gpfilename, "w");
-      if(gpfile == NULL)
+      if( gpfile == NULL )
       {
          return SCIP_FILECREATEERROR;
       }
@@ -577,7 +574,7 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                                           %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
-   if(readerdata->useGp)
+   if( readerdata->usegp )
    {
       SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                                           %s", pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp), LINEBREAK);
    }
@@ -641,12 +638,12 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    char pfile[SCIP_MAXSTRLEN];
    char pfilecpy[SCIP_MAXSTRLEN];
    char makefilename[SCIP_MAXSTRLEN];
-   SCIP_Bool writeDecomp;
+   SCIP_Bool writedecomp;
    int filedesc;
    int success;
    int i;
    int maxrounds;
-   int ndecompsOfType;
+   int decompsoftype;
 
    assert(scip != NULL);
    assert(*ndecomps > 0);
@@ -655,13 +652,13 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    /* get path to write to and put it into gpfilename */
    filedesc = fileno(file); /* get link to file descriptor */
-      if(filedesc < 0)
+      if( filedesc < 0 )
    {
    return SCIP_FILECREATEERROR;
    }
    snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
    success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
-   if(success < 0)
+   if( success < 0 )
    {
    return SCIP_NOFILE;
    }
@@ -673,7 +670,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    /* open and write first lines of makefile */
    makefile = fopen(makefilename, "w");
-   if(makefile == NULL)
+   if( makefile == NULL )
    {
       return SCIP_FILECREATEERROR;
    }
@@ -681,7 +678,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex                                                               %s", filename, filename, LINEBREAK);
-   if(readerdata->useGp)
+   if( readerdata->usegp )
    {
       SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
       SCIPinfoMessage(scip, makefile, "\t@echo                                                                      %s", LINEBREAK);
@@ -702,7 +699,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIPinfoMessage(scip, makefile, "\t@latexmk -c                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@rm -f report_*figure*.*                                                   %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@rm -f *.auxlock                                                           %s", LINEBREAK);
-   if(readerdata->useGp)
+   if( readerdata->usegp )
    {
       SCIPinfoMessage(scip, makefile, "\t@rm -f *.gp                                                                %s", LINEBREAK);
    }
@@ -716,19 +713,19 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    SCIP_CALL( writeHeaderCode(scip,file,statistics,decomps,ndecomps,toc,readerdata) );
 
-   if(readerdata->returnType != 0)
+   if( readerdata->returntype != 0 )
    {
-      getNDecompsOfType(scip,decomps,ndecomps,readerdata->returnType, &ndecompsOfType);
+      getdecompsoftype(scip,decomps,ndecomps,readerdata->returntype, &decompsoftype);
    }
    else
    {
-      ndecompsOfType = *ndecomps;
+      decompsoftype = *ndecomps;
    }
 
    /* check if the number of max decomps exceeds the number of available outputs */
-   if(readerdata->maxNDecomps < ndecompsOfType)
+   if( readerdata->maxndecomps < decompsoftype )
    {
-      maxrounds = readerdata->maxNDecomps;
+      maxrounds = readerdata->maxndecomps;
    }
    else
    {
@@ -738,17 +735,17 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    /* write LaTeX code for each decomp starting with the highest score */
    /* note: decomps come sorted from lowest to highest score */
    /* only output such decompositions of the given type */
-   for( i=0; i<*ndecomps && maxrounds>0; i++ )
+   for( i = 0; i < *ndecomps && maxrounds > 0; i++ )
    {
-      if(decomps[i] != NULL)
+      if( decomps[i] != NULL )
       {
-         writeDecomp = FALSE;
-         if(readerdata->returnType == 0)
-            writeDecomp = TRUE;
-         else if((unsigned int)readerdata->returnType == DECdecompGetType(decomps[i]))
-            writeDecomp = TRUE;
+         writedecomp = FALSE;
+         if( readerdata->returntype == 0 )
+            writedecomp = TRUE;
+         else if( (unsigned int)readerdata->returntype == DECdecompGetType(decomps[i]) )
+            writedecomp = TRUE;
 
-         if(writeDecomp == TRUE)
+         if( writedecomp == TRUE )
          {
             SCIP_CALL( writeDecompCode(scip,file,makefile,decomps[i], readerdata) );
             maxrounds--;
@@ -778,16 +775,16 @@ SCIPincludeReaderTex(
 
    /* include possible parameters */
    SCIP_CALL( SCIPaddBoolParam(scip,
-      "reading/texreader/useGp", "if true uses gp files as intermediate step",
-      &readerdata->useGp, FALSE, USEGP_DEFAULT, NULL, NULL) );
+      "reading/texreader/usegp", "if true uses gp files as intermediate step",
+      &readerdata->usegp, FALSE, DEFAULT_USEGP, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-      "reading/texreader/maxNDecomps", "maximum number of decompositions to visualize (ones with best score first are preferred)",
-      &readerdata->maxNDecomps, FALSE, MAXNDECOMPS_DEFAULT, 0, INT_MAX, NULL, NULL) );
+      "reading/texreader/maxndecomps", "maximum number of decompositions to visualize (ones with best score first are preferred)",
+      &readerdata->maxndecomps, FALSE, DEFAULT_MAXNDECOMPS, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-      "reading/texreader/returnType", "output only decompositions of type 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered",
-      &readerdata->returnType, FALSE, RETURNTYPE_DEFAULT, 0, 4, NULL, NULL) );
+      "reading/texreader/returntype", "output only decompositions of type 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered",
+      &readerdata->returntype, FALSE, DEFAULT_RETURNTYPE, 0, 4, NULL, NULL) );
 
    return SCIP_OKAY;
 }
