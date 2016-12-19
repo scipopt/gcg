@@ -516,6 +516,11 @@ public:
          const char* filename
    );
 
+   SCIP_RETCODE isEqual(
+      Seeed*               otherseeed,
+      SCIP_Bool*           isequal,
+      bool                 sortseeeds
+      );
 
 private:
 

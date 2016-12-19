@@ -70,7 +70,7 @@
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 
-#define DEFAULT_MAXDECOMPSEXACT  1           /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXACT  5           /**< default maximum number of decompositions */
 #define DEFAULT_MAXDECOMPSEXTEND 5           /**< default maximum number of decompositions */
 
 /*
@@ -1450,7 +1450,7 @@ SCIP_RETCODE detectIsomorph(
          SCIP_CALL( SCIPreallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(maxdecomps, nperms)) ); /*lint !e506*/
 
       int pos = *nNewSeeeds;
-      for( p = *nNewSeeeds; p < *nNewSeeeds + MIN(maxdecomps, nperms); ++p )
+      for( p = *nNewSeeeds; p < *nNewSeeeds + nperms && pos < *nNewSeeeds + maxdecomps; ++p )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
 
@@ -1470,7 +1470,28 @@ SCIP_RETCODE detectIsomorph(
 
          if( nmasterconss < nconss )
          {
+            SCIP_Bool isduplicate;
+            int q;
+
             SCIP_CALL( createSeeedFromMasterconss(scip, &((*newSeeeds)[pos]), masterconss, nmasterconss, seeed, seeedpool) );
+
+            ((*newSeeeds)[pos])->calcHashvalue();
+
+            isduplicate = FALSE;
+
+            for( q = 0; q < pos && !isduplicate; ++q )
+            {
+               SCIP_CALL( ((*newSeeeds)[pos])->isEqual((*newSeeeds)[q], &isduplicate, TRUE) );
+            }
+
+            if( isduplicate )
+            {
+               delete (*newSeeeds)[pos];
+            }
+            else
+            {
+               ++pos;
+            }
 
             SCIPfreeMemoryArray(scip, &masterconss);
          }
@@ -1481,8 +1502,6 @@ SCIP_RETCODE detectIsomorph(
 
             continue;
          }
-
-         ++pos;
       }
       *nNewSeeeds = pos;
 

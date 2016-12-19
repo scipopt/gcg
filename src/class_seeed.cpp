@@ -3051,4 +3051,103 @@ SCIP_RETCODE Seeed::writeScatterPlot(
    return SCIP_OKAY;
 }
 
+
+SCIP_RETCODE Seeed::isEqual(
+   Seeed*               otherseeed,
+   SCIP_Bool*           isequal,
+   bool                 sortseeeds
+   )
+{
+   *isequal = TRUE;
+
+   assert(otherseeed != NULL);
+
+   /** compares the number of master conss, master vars, blocks, linking vars and stairlinking vars */
+   if( getNMasterconss() != otherseeed->getNMasterconss() || getNMastervars() != otherseeed->getNMastervars() ||
+      getNBlocks() != otherseeed->getNBlocks() || getNLinkingvars() != otherseeed->getNLinkingvars() )
+      *isequal = FALSE;
+
+   /** compares the number of stairlinking vars */
+   for( int b = 0; b < getNBlocks() && *isequal; ++b )
+   {
+      if( getNStairlinkingvars(b) != otherseeed->getNStairlinkingvars(b))
+         *isequal = FALSE;;
+   }
+
+   /** compares the number of constraints and variables in the blocks*/
+   for( int j = 0; j < getNBlocks() && *isequal; ++j )
+   {
+      if( (getNVarsForBlock(j) != otherseeed->getNVarsForBlock(j)) || (getNConssForBlock(j) != otherseeed->getNConssForBlock(j)) )
+         *isequal = FALSE;
+   }
+
+   /** sorts the the master conss, master vars, conss in blocks, vars in blocks, linking vars and stairlinking vars */
+   if( sortseeeds && *isequal )
+   {
+      sort();
+      otherseeed->sort();
+   }
+
+   /** compares the master cons */
+   for( int j = 0; j < getNMasterconss() && *isequal; ++j)
+   {
+      if( getMasterconss()[j] != otherseeed->getMasterconss()[j] )
+         *isequal = FALSE;
+   }
+
+   /** compares the master vars */
+   for( int j = 0; j < getNMastervars() && *isequal; ++j)
+   {
+      if( getMastervars()[j] != otherseeed->getMastervars()[j] )
+         *isequal = FALSE;
+   }
+
+   /** compares the constrains and variables in the blocks */
+   for( int j = 0; j < getNBlocks() && *isequal; ++j )
+   {
+      for( int k = 0; k < getNConssForBlock(j) && *isequal; ++k)
+      {
+         if( getConssForBlock(j)[k] != otherseeed->getConssForBlock(j)[k] )
+            *isequal = FALSE;
+      }
+      for( int k = 0; k < getNVarsForBlock(j) && *isequal; ++k)
+      {
+         if( getVarsForBlock(j)[k] != otherseeed->getVarsForBlock(j)[k] )
+            *isequal = FALSE;
+      }
+   }
+
+   /** compares the linking vars */
+   for( int j = 0; j < getNLinkingvars() && *isequal; ++j)
+   {
+      if( getLinkingvars()[j] != otherseeed->getLinkingvars()[j] )
+         *isequal = FALSE;
+   }
+
+   /** compares the stairlinking vars */
+   for( int b = 0; b < getNBlocks() && *isequal; ++b)
+   {
+      for( int j = 0; j < getNStairlinkingvars(b) && *isequal; ++j)
+      {
+         if( getStairlinkingvars(b)[j] != otherseeed->getStairlinkingvars(b)[j] )
+            *isequal = FALSE;
+      }
+   }
+
+   if( *isequal )
+   {
+      //std::cout << "seeed " << getID() << " is a duplicate of seeed " << otherseeed->getID() << std::endl;
+      if( getHashValue() != otherseeed->getHashValue() )
+      {
+          displaySeeed();
+          otherseeed->displaySeeed();
+      }
+      assert(getHashValue() == otherseeed->getHashValue() );
+   }
+   else
+      assert(getHashValue() != otherseeed->getHashValue() );
+
+   return SCIP_OKAY;
+}
+
 } /* namespace gcg */
