@@ -469,7 +469,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    int givenBlocks = -1; // if givenBlocks == -1, the numbers of the following array will be used as number of blocks, else the number of givenBlocks will be used as number of blocks
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
-   std::vector<int> numberOfBlocks = {2, 5, 8, 16, 32};
+   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
 
    assert(scip != NULL);
    assert(detectordata != NULL);

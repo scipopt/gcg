@@ -89,6 +89,33 @@ namespace gcg {
 
 /** local methods */
 
+/** method to enumerate all subsets */
+std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
+{
+    std::vector< std::vector<int> > subset;
+    std::vector<int> empty;
+    subset.push_back( empty );
+
+    for ( size_t i = 0; i < set.size(); ++i )
+    {
+        std::vector< std::vector<int> > subsetTemp = subset;
+
+        for (size_t j = 0; j < subsetTemp.size(); ++j)
+            subsetTemp[j].push_back( set[i] );
+
+        for (size_t j = 0; j < subsetTemp.size(); ++j)
+            subset.push_back( subsetTemp[j] );
+    }
+    return subset;
+}
+
+/** methode to calculate the greates common divisor */
+
+int gcd(int a, int b) {
+    return b == 0 ? a : gcd(b, a % b);
+}
+
+
 SCIP_CONS* consGetRelevantRepr(SCIP* scip, SCIP_CONS* cons){
 
    return cons;
@@ -209,7 +236,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
  Seeedpool::Seeedpool(
     SCIP*               givenScip, /**< SCIP data structure */
         const char*             conshdlrName
-    ):scip(givenScip), currSeeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), ndecompositions(0)
+    ):scip(givenScip), currSeeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), ndecompositions(0), candidatesNBlocks(0)
  {
          SCIP_CONS** conss;
          SCIP_VAR** vars;
@@ -356,6 +383,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          nTotalSeeeds++;
 
          decompositions = NULL;
+
+         calcCandidatesNBlocks();
 
 
  }//end constructor
@@ -1243,6 +1272,106 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     return nConss;
  }
 
+ std::vector<int> Seeedpool::getCandidatesNBlocks() const
+ {
+    return candidatesNBlocks;
+ }
+
+ void Seeedpool::calcCandidatesNBlocks()
+  {
+    /**
+     * at first for every subset of constypes calculate gcd (greatest common divisors) of the corresponding number of occurrences
+     */
+    std::vector<consType> foundConstypes(0);
+    std::vector<int> constypesIndices(0);
+    std::vector<int> nConssConstype(0);
+
+
+    for( int i = 0; i < getNConss(); ++i)
+     {
+         SCIP_CONS* cons;
+
+         cons = getConsForIndex(i);
+         consType cT = GCGconsGetType(cons);
+
+         /** find constype or not */
+         std::vector<consType>::const_iterator constypeIter = foundConstypes.begin();
+         for(; constypeIter != foundConstypes.end(); ++constypeIter)
+         {
+           if(*constypeIter == cT)
+              break;
+         }
+
+         if( constypeIter  == foundConstypes.end()  )
+         {
+            foundConstypes.push_back(GCGconsGetType(cons) );
+         }
+     }
+
+    nConssConstype = std::vector<int>(foundConstypes.size(), 0);
+
+    for( int i = 0; i < getNConss(); ++i)
+    {
+       SCIP_CONS* cons;
+
+       cons = getConsForIndex(i);
+       consType cT = GCGconsGetType(cons);
+
+       /** count constypes or not */
+
+       for(size_t cTIndex = 0; cTIndex < foundConstypes.size(); ++cTIndex)
+       {
+          if(foundConstypes[cTIndex] == cT)
+          {
+             ++nConssConstype[cTIndex];
+             break;
+          }
+       }
+    }
+
+    for(size_t i = 0; i < foundConstypes.size(); ++i)
+    {
+       constypesIndices.push_back(i);
+    }
+
+      std::vector< std::vector<int> > subsetsOfConstypes = getAllSubsets(constypesIndices);
+
+      for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
+      {
+         int greatestCD = 1;
+
+         if(subsetsOfConstypes[subset].size() == 0 || subsetsOfConstypes[subset].size() == 1)
+              continue;
+
+         greatestCD = gcd(nConssConstype[subsetsOfConstypes[subset][0]], nConssConstype[subsetsOfConstypes[subset][1]]  );
+
+         for( size_t i = 2; i < subsetsOfConstypes[subset].size() ; ++i)
+         {
+            greatestCD = gcd( greatestCD, nConssConstype[subsetsOfConstypes[subset][i]] );
+         }
+
+         if(greatestCD > 1)
+         {
+            bool alreadyIn = false;
+            for(size_t i = 0; i < candidatesNBlocks.size(); ++i )
+            {
+               if(candidatesNBlocks[i] == greatestCD)
+               {
+                  alreadyIn = true;
+                  break;
+               }
+            }
+            if(!alreadyIn)
+            {
+               std::cout << "added block number candidate : " << greatestCD << std::endl;
+               candidatesNBlocks.push_back(greatestCD);
+            }
+         }
+
+      }
+
+     return ;
+  }
 
 
 
