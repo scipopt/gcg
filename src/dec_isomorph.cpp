@@ -556,17 +556,18 @@ void collapsePermutation(
    }
 }
 
-/** filters the best permutation */
-SCIP_RETCODE filterPermutation(
+/** reorder such that the best permutation is represented by 0, the second best by 1, etc. */
+SCIP_RETCODE reorderPermutations(
    SCIP*                 scip,               /**< SCIP data structure */
    int*                  permutation,        /**< the permutation */
    int                   permsize,           /**< size of the permutation */
    int                   nperms              /**< number of permutations */
 )
 {
-   int best = 0;
    int i;
    int* count;
+   int* order;
+   int* invorder;
 
    assert(scip != NULL);
    assert(permutation != NULL);
@@ -574,23 +575,59 @@ SCIP_RETCODE filterPermutation(
    assert(nperms > 0);
 
    SCIP_CALL( SCIPallocBufferArray(scip, &count, nperms) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &order, nperms) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &invorder, nperms) );
    BMSclearMemoryArray(count, nperms);
+   BMSclearMemoryArray(order, nperms);
+   BMSclearMemoryArray(invorder, nperms);
 
+   /* initialize order array that will give a mapping from new to old representatives */
+   for( i = 0; i < nperms; ++i )
+   {
+      order[i] = i;
+   }
+
+   /* count sizes of orbits */
    for( i = 0; i < permsize; ++i )
    {
       if( permutation[i] >= 0 )
+      {
          count[permutation[i]] += 1;
+
+         SCIPdebugMessage("permutation[i] = %d; count %d\n", permutation[i], count[permutation[i]]);
+      }
    }
 
-   best = count-std::max_element(count, count+nperms);
-   SCIPfreeBufferArray(scip, &count);
+   /* sort count and order array */
+   SCIPsortDownIntInt(count, order, nperms);
 
+#ifdef SCIP_DEBUG
+
+   for( i = 0; i < nperms; ++i )
+   {
+      SCIPdebugMessage("count[%d] = %d, order[%d] = %d\n", i, count[i], i, order[i]);
+   }
+#endif
+
+   /* compute invorder array that gives a mapping from old to new representatives */
+   for( i = 0; i < nperms; ++i )
+   {
+      invorder[order[i]] = i;
+      SCIPdebugMessage("invorder[%d] = %d\n", order[i], invorder[order[i]]);
+   }
+
+   SCIPdebugMessage("Best permutation with orbit of size %d, best %d\n", count[0], order[0]);
+
+   /* update representatives of constraints */
    for( i = 0; i < permsize; ++i )
    {
-      if( permutation[i] != best )
-         permutation[i] = -1;
+      if( permutation[i] >= 0 )
+         permutation[i] = invorder[permutation[i]];
    }
 
+   SCIPfreeBufferArray(scip, &count);
+   SCIPfreeBufferArray(scip, &order);
+   SCIPfreeBufferArray(scip, &invorder);
 
    return SCIP_OKAY;
 }
@@ -656,9 +693,8 @@ SCIP_RETCODE detectIsomorph(
       // renumbering from 0 to number of permutations
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
-      // filter decomposition with largest orbit
-      if( detectordata->maxdecomps == 1)
-         SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
+      // reorder decomposition (corresponding to orbit size)
+      SCIP_CALL( reorderPermutations(scip, ptrhook->conssperm, nconss, nperms) );
 
       if( *ndecdecomps == 0 )
          SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->maxdecomps, nperms)) ); /*lint !e506*/
