@@ -136,7 +136,7 @@ SCIP_RETCODE GCGreadTex(
 
 /** gets number of decompositions of a certain type in a given decomposition structure */
 static
-SCIP_RETCODE getdecompsoftype(
+SCIP_RETCODE getNDecompsOfType(
    SCIP*                scip,               /**< SCIP data structure */
    DEC_DECOMP**         decomps,            /**< Decompositions structure */
    int*                 ndecomps,           /**< Number of decompositions in the structure */
@@ -169,7 +169,7 @@ SCIP_RETCODE writeHeaderCode(
 {
    char* pname;
    char ppath[SCIP_MAXSTRLEN];
-   int decompsoftype;
+   int ndecompsoftype;
 
    strcpy(ppath, (char*) SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
@@ -235,8 +235,8 @@ SCIP_RETCODE writeHeaderCode(
       SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                     %s", SCIPconshdlrDecompGetNDecdecomps(scip), LINEBREAK);
       if( readerdata->returntype != 0 )
       {
-          getdecompsoftype(scip,decomps,ndecomps,readerdata->returntype, &decompsoftype);
-          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                 %s", decompsoftype, LINEBREAK);
+          getNDecompsOfType(scip,decomps,ndecomps,readerdata->returntype, &ndecompsoftype);
+          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                 %s", ndecompsoftype, LINEBREAK);
       }
       else
       {
@@ -643,7 +643,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    int success;
    int i;
    int maxrounds;
-   int decompsoftype;
+   int ndecompsoftype;
 
    assert(scip != NULL);
    assert(*ndecomps > 0);
@@ -715,15 +715,15 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    if( readerdata->returntype != 0 )
    {
-      getdecompsoftype(scip,decomps,ndecomps,readerdata->returntype, &decompsoftype);
+      getNDecompsOfType(scip,decomps,ndecomps,readerdata->returntype, &ndecompsoftype);
    }
    else
    {
-      decompsoftype = *ndecomps;
+      ndecompsoftype = *ndecomps;
    }
 
    /* check if the number of max decomps exceeds the number of available outputs */
-   if( readerdata->maxndecomps < decompsoftype )
+   if( readerdata->maxndecomps < ndecompsoftype )
    {
       maxrounds = readerdata->maxndecomps;
    }
