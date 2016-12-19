@@ -1277,6 +1277,30 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     return candidatesNBlocks;
  }
 
+ void Seeedpool::addCandidatesNBlocks(
+    int                 candidate            /**< candidate for block size */
+    )
+ {
+
+    if(candidate > 1)
+    {
+       bool alreadyIn = false;
+       for(size_t i = 0; i < candidatesNBlocks.size(); ++i )
+       {
+          if(candidatesNBlocks[i] == candidate)
+          {
+             alreadyIn = true;
+             break;
+          }
+       }
+       if(!alreadyIn)
+       {
+          std::cout << "added block number candidate : " << candidate << std::endl;
+          candidatesNBlocks.push_back(candidate);
+       }
+    }
+ }
+
  void Seeedpool::calcCandidatesNBlocks()
   {
     /**

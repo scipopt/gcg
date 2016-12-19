@@ -170,6 +170,10 @@ public:
 
    std::vector<int> getCandidatesNBlocks() const;
 
+   void addCandidatesNBlocks(
+      int                 candidate            /**< candidate for block size */
+      );
+
    void calcCandidatesNBlocks();
 
 };
