@@ -156,6 +156,15 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
   seeedOrig->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
+  if(!seeedOrig->areOpenVarsAndConssCalculated())
+  {
+      seeedOrig->calcOpenconss();
+      seeedOrig->calcOpenvars();
+      seeedOrig->setOpenVarsAndConssCalculated(true);
+  }
+
+
+
 
   for( int i = 0; i < seeedOrig->getNOpenconss(); ++i)
   {
@@ -187,12 +196,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   seeedPropagationData->nNewSeeeds = subsetsOfConstypes.size() - 1;
 
 
-  if(!seeedOrig->areOpenVarsAndConssCalculated())
-  {
-      seeedOrig->calcOpenconss();
-      seeedOrig->calcOpenvars();
-      seeedOrig->setOpenVarsAndConssCalculated(true);
-  }
 
   for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
   {

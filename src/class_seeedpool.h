@@ -106,6 +106,9 @@ private:
    DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
    int                                          ndecompositions;        /**< number of decompositions found by the detectors */
 
+   /** oracle data */
+   std::vector<int>                             candidatesNBlocks;
+
 
 public:
 
@@ -165,6 +168,9 @@ public:
 
    int getNConss();
 
+   std::vector<int> getCandidatesNBlocks() const;
+
+   void calcCandidatesNBlocks();
 
 };
 
