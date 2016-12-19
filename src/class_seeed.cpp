@@ -301,7 +301,7 @@ bool Seeed::assignHittingOpenconss(Seeedpool* seeedpool)
       {
          for( int v = 0; v < seeedpool->getNVarsForCons(cons); ++v )
          {
-            if( find(stairlinkingVars[block].begin(), stairlinkingVars[block].end(), var) != stairlinkingVars[block].end() )
+            if( find(stairlinkingVars[b].begin(), stairlinkingVars[b].end(), var) != stairlinkingVars[b].end() )
             {
                stairlinking = true;
                blocksOfStairlinkingvars.push_back(b);
