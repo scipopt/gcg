@@ -522,6 +522,12 @@ public:
          const char* filename
    );
 
+   /* method to check whether seeed is equal to given other seeed */
+   SCIP_RETCODE isEqual(
+      Seeed*               otherseeed,          /**< other seeed */
+      SCIP_Bool*           isequal,             /**< pointer to store whether seeeds are identical */
+      bool                 sortseeeds           /**< should conss and vars be sorted before comparing the seeeds? */
+      );
 
 private:
 
