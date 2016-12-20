@@ -1666,7 +1666,7 @@ SCIP_RETCODE createMaster(
    }
 
    /* set integral objective status in the extended problem, if possible */
-   if( SCIPisObjIntegral(scip) )
+   if( SCIPisObjIntegral(scip) && relaxdata->discretization )
    {
       SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
    }
