@@ -132,102 +132,18 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
 
    for( size_t i = 0; i < seeeds.size(); ++i )
    {
-      bool noDuplicate = false;
-
       assert(seeeds[i] != NULL);
 
-      /** compares the number of master conss, master vars, blocks, linking vars and stairlinking vars */
-      if( compseeed->getNMasterconss() != seeeds[i]->getNMasterconss() || compseeed->getNMastervars() != seeeds[i]->getNMastervars() ||
-         compseeed->getNBlocks() != seeeds[i]->getNBlocks() || compseeed->getNLinkingvars() != seeeds[i]->getNLinkingvars())
-         continue;
-
-      /** compares the number of stairlinking vars */
-      for( int b = 0; b < compseeed->getNBlocks(); ++b)
-      {
-         if( compseeed->getNStairlinkingvars(b) != seeeds[i]->getNStairlinkingvars(b))
-            noDuplicate = true;;
-      }
-
-      /** compares the number of constraints and variables in the blocks*/
-      for( int j = 0; j < compseeed->getNBlocks() && !noDuplicate ; ++j )
-      {
-         if( (compseeed->getNVarsForBlock(j) != seeeds[i]->getNVarsForBlock(j)) || (compseeed->getNConssForBlock(j) != seeeds[i]->getNConssForBlock(j)) )
-            noDuplicate = true;
-      }
-
-      /** sorts the the master conss, master vars, conss in blocks, vars in blocks, linking vars and stairlinking vars */
-      if( sort && !noDuplicate)
-      {
-         compseeed->sort();
-         seeeds[i]->sort();
-      }
-
-      /** compares the master cons */
-      for( int j = 0; j < compseeed->getNMasterconss() && !noDuplicate; ++j)
-      {
-         if( compseeed->getMasterconss()[j] != seeeds[i]->getMasterconss()[j] )
-            noDuplicate = true;
-      }
-
-      /** compares the master vars */
-      for( int j = 0; j < compseeed->getNMastervars() && !noDuplicate; ++j)
-      {
-         if( compseeed->getMastervars()[j] != seeeds[i]->getMastervars()[j] )
-            noDuplicate = true;
-      }
-
-      /** compares the constrains and variables in the blocks */
-      for( int j = 0; j < compseeed->getNBlocks() && !noDuplicate; ++j )
-      {
-         for( int k = 0; k < compseeed->getNConssForBlock(j) && !noDuplicate; ++k)
-         {
-            if( compseeed->getConssForBlock(j)[k] != seeeds[i]->getConssForBlock(j)[k] )
-               noDuplicate = true;
-         }
-         for( int k = 0; k < compseeed->getNVarsForBlock(j) && !noDuplicate; ++k)
-         {
-            if( compseeed->getVarsForBlock(j)[k] != seeeds[i]->getVarsForBlock(j)[k] )
-               noDuplicate = true;
-         }
-      }
-
-      /** compares the linking vars */
-      for( int j = 0; j < compseeed->getNLinkingvars() && !noDuplicate; ++j)
-      {
-         if( compseeed->getLinkingvars()[j] != seeeds[i]->getLinkingvars()[j] )
-            noDuplicate = true;
-      }
-
-      /** compares the stairlinking vars */
-      for( int b = 0; b < compseeed->getNBlocks() && !noDuplicate; ++b)
-      {
-         for( int j = 0; j < compseeed->getNStairlinkingvars(b) && !noDuplicate; ++j)
-         {
-            if( compseeed->getStairlinkingvars(b)[j] != seeeds[i]->getStairlinkingvars(b)[j] )
-               noDuplicate = true;
-         }
-      }
-
-      if(!noDuplicate)
-      {
-         //std::cout << "seeed " << compseeed->getID() << " is a duplicate of seeed " << seeeds[i]->getID() << std::endl;
-         if(compseeed->getHashValue() != seeeds[i]->getHashValue() )
-         {
-             compseeed->displaySeeed();
-             seeeds[i]->displaySeeed();
-         }
-         assert(compseeed->getHashValue() == seeeds[i]->getHashValue() );
+      if (compseeed->isEqual(seeeds[i] ) )
          return FALSE;
-      }
-      assert(compseeed->getHashValue() != seeeds[i]->getHashValue() );
    }
    return TRUE;
 }
 
 SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currSeeeds, std::vector<SeeedPtr> const & finishedSeeeds, bool sort){
 
-   bool bool1 = seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, sort);
-   bool bool2 = seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, sort);
+   SCIP_Bool bool1 = seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, sort);
+   SCIP_Bool bool2 = seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, sort);
    return ( bool1 && bool2 );
 }
 
@@ -665,21 +581,21 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
              std::cout << "Detector " << DECdetectorGetName(detectorToScipDetector[i] ) << " \t worked on \t " << successDetectors[i] << " of " << finishedSeeeds.size() << "\t and took a total time of \t" << SCIPgetClockTime(scip, detectorToScipDetector[i]->dectime)  << std::endl;
          }
 
-//         if((int)finishedSeeeds.size() != 0)
-//         {
-//            SCIP_Real minscore = finishedSeeeds[0]->evaluate(this);
-//            SeeedPtr bestSeeed = finishedSeeeds[0];
-//            for( size_t i = 1; i < finishedSeeeds.size(); ++i )
-//            {
-//               SCIP_Real score = finishedSeeeds[i]->evaluate(this);
-//               if (score < minscore)
-//               {
-//                  minscore = score;
-//                  bestSeeed = finishedSeeeds[i];
-//               }
-//            }
-//            bestSeeed->showScatterPlot(this);
-//         }
+         if((int)finishedSeeeds.size() != 0)
+         {
+            SCIP_Real minscore = finishedSeeeds[0]->evaluate(this);
+            SeeedPtr bestSeeed = finishedSeeeds[0];
+            for( size_t i = 1; i < finishedSeeeds.size(); ++i )
+            {
+               SCIP_Real score = finishedSeeeds[i]->evaluate(this);
+               if (score < minscore)
+               {
+                  minscore = score;
+                  bestSeeed = finishedSeeeds[i];
+               }
+            }
+            bestSeeed->showScatterPlot(this);
+         }
 
 
          /** fill out the decompositions */

@@ -710,10 +710,11 @@ void Seeed::calcHashvalue()
    for( int i = 0; i < nBlocks; ++i )
    {
       long blockval = 0;
+      int blockid = blockorder[i].first;
 
-      for( size_t tau = 0; tau < conssForBlocks[i].size(); ++tau )
+      for( size_t tau = 0; tau < conssForBlocks[blockid].size(); ++tau )
       {
-         blockval += (2 * conssForBlocks[i][tau] + 1) * pow(2, tau % 16);
+         blockval += (2 * conssForBlocks[blockid][tau] + 1) * pow(2, tau % 16);
       }
 
       hashval += primes[i % (nPrimes - 1)] * blockval;
@@ -2688,6 +2689,106 @@ bool Seeed::isPropagatedBy(int detectorID)
    assert((int)propagatedByDetector.size() > detectorID);
    return propagatedByDetector[detectorID];
 }
+
+bool Seeed::isEqual(
+   Seeed* other)
+{
+   if( getNMasterconss() !=  other->getNMasterconss() ||  getNMastervars() !=  other->getNMastervars() ||
+             getNBlocks() !=  other->getNBlocks() ||  getNLinkingvars() !=  other->getNLinkingvars() )
+           return false;
+
+   if( getHashValue() != other->getHashValue() )
+      return false;
+
+   std::vector<std::pair<int, int>> blockorderthis = std::vector<std::pair<int, int> >(0);
+   std::vector<std::pair<int, int>> blockorderother = std::vector<std::pair<int, int> >(0);
+
+
+   /** find sorting for blocks (non decreasing according smallest row index) */
+   for( int i = 0; i < this->nBlocks; ++i )
+   {
+      blockorderthis.push_back(std::pair<int, int>(i, conssForBlocks[i][0]));
+      blockorderother.push_back(std::pair<int, int>(i, other->conssForBlocks[i][0]));
+   }
+
+   std::sort(blockorderthis.begin(), blockorderthis.end(), compare_blocks);
+   std::sort(blockorderother.begin(), blockorderother.end(), compare_blocks);
+
+   /** compares the number of stairlinking vars */
+   for( int b = 0; b < getNBlocks(); ++b)
+   {
+      int blockthis = blockorderthis[b].first;
+      int blockother = blockorderother[b].first;
+
+      if( getNStairlinkingvars(blockthis) != other->getNStairlinkingvars(blockother) )
+         return false;
+   }
+
+   /** compares the number of constraints and variables in the blocks*/
+   for( int b = 0; b < getNBlocks() ; ++b )
+   {
+      int blockthis = blockorderthis[b].first;
+      int blockother = blockorderother[b].first;
+
+      if( (getNVarsForBlock(blockthis) != other->getNVarsForBlock(blockother)) || (getNConssForBlock(blockthis) != other->getNConssForBlock(blockother)) )
+         return false;
+   }
+
+   /** sorts the the master conss, master vars, conss in blocks, vars in blocks, linking vars and stairlinking vars */
+   sort();
+   other->sort();
+
+   /** compares the master cons */
+   for( int j = 0; j < getNMasterconss() ; ++j)
+   {
+      if( getMasterconss()[j] != other->getMasterconss()[j] )
+         return false;
+   }
+
+   /** compares the master vars */
+   for( int j = 0; j < getNMastervars(); ++j)
+   {
+      if( getMastervars()[j] != other->getMastervars()[j] )
+         return false;
+   }
+
+   /** compares the constrains and variables in the blocks */
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      int blockthis = blockorderthis[b].first;
+      int blockother = blockorderother[b].first;
+
+      for( int j = 0; j < getNConssForBlock(blockthis); ++j)
+      {
+         if( getConssForBlock(blockthis)[j] != other->getConssForBlock(blockother)[j] )
+            return false;
+      }
+
+      for( int j = 0; j < getNVarsForBlock(blockthis); ++j)
+      {
+         if( getVarsForBlock(blockthis)[j] != other->getVarsForBlock(blockother)[j] )
+            return false;
+      }
+
+      for( int j = 0; j < getNStairlinkingvars(blockthis); ++j)
+      {
+         if( getStairlinkingvars(blockthis)[j] != other->getStairlinkingvars(blockother)[j] )
+            return false;
+      }
+
+   }
+
+   /** compares the linking vars */
+   for( int j = 0; j < getNLinkingvars() ; ++j)
+   {
+      if( getLinkingvars()[j] != other->getLinkingvars()[j] )
+         return false;
+   }
+
+   return true;
+}
+
+
 
 /** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
 bool Seeed::isTrivial()

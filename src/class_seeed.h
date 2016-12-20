@@ -424,9 +424,14 @@ public:
    bool isTrivial(
    );
 
+   bool isEqual(
+      Seeed* other);
+
+
    /** returns whether the var is a var of the block */
    bool isVarBlockvarOfBlock(
-         int var, int block
+         int var,
+         int block
    );
 
    /** returns whether the var is a linking var */
