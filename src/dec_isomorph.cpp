@@ -1277,7 +1277,7 @@ SCIP_RETCODE reorderPermutations(
 
       greatestCD = gcd(subsetsOfOrbitsizes[subset][0], subsetsOfOrbitsizes[subset][1]  );
 
-      for( size_t j = 2; i < subsetsOfOrbitsizes[subset].size() ; ++j)
+      for( size_t j = 2; j < subsetsOfOrbitsizes[subset].size() ; ++j)
       {
          greatestCD = gcd( greatestCD, subsetsOfOrbitsizes[subset][j] );
       }
