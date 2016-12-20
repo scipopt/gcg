@@ -1561,6 +1561,8 @@ SCIP_RETCODE detectIsomorph(
             SCIP_CALL( createSeeedFromMasterconss(scip, &((*newSeeeds)[pos]), masterconss, nmasterconss, seeed, seeedpool) );
 
             ((*newSeeeds)[pos])->calcHashvalue();
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+            (*newSeeeds)[pos]->addClockTime( tempTime + SCIPclockGetTime(temporaryClock) );
 
             isduplicate = FALSE;
 
@@ -1568,6 +1570,7 @@ SCIP_RETCODE detectIsomorph(
             {
                SCIP_CALL( ((*newSeeeds)[pos])->isEqual((*newSeeeds)[q], &isduplicate, TRUE) );
             }
+
 
             if( isduplicate )
             {
@@ -1580,8 +1583,7 @@ SCIP_RETCODE detectIsomorph(
 
             SCIPfreeMemoryArray(scip, &masterconss);
 
-            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-            (*newSeeeds)[pos]->addClockTime( tempTime + SCIPclockGetTime(temporaryClock) );
+
          }
 
          else
