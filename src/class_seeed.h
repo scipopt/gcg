@@ -77,6 +77,7 @@ private:
    long                             hashvalue;
    SCIP_Real                        score;                        /**< score to evaluate the seeeds */
 
+   bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
    const static int              primes[];
    const static int              nPrimes;
@@ -423,9 +424,22 @@ public:
    bool isTrivial(
    );
 
+/* method to check whether seeed is equal to given other seeed */
+   SCIP_RETCODE isEqual(
+      Seeed*               otherseeed,          /**< other seeed */
+      SCIP_Bool*           isequal,             /**< pointer to store whether seeeds are identical */
+      bool                 sortseeeds           /**< should conss and vars be sorted before comparing the seeeds? */
+      );
+
+
+   bool isEqual(
+      Seeed* other);
+
+
    /** returns whether the var is a var of the block */
    bool isVarBlockvarOfBlock(
-         int var, int block
+         int var,
+         int block
    );
 
    /** returns whether the var is a linking var */

@@ -63,7 +63,7 @@
 #define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
 #define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_DECCHAR           's'            /**< display character of detector */
-#define DEC_ENABLED           TRUE          /**< should detector be called by default */
+#define DEC_ENABLED           FALSE          /**< should detector be called by default */
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL      FALSE          /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -2462,7 +2462,7 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
    SCIPwarningMessage(scip, "WRITEALLOUTPUT in detector stairheur is not implemented for seeeds.\n");
 #endif
 
-   if(seeed->getNOpenconss() == 0)
+   if( seeed->getNOpenconss() == 0 || seeed->getNOpenvars() == 0 )
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;

@@ -61,7 +61,7 @@
 #define DEC_DETECTORNAME         "isomorph"  /**< name of detector */
 #define DEC_DESC                 "Detector for pricing problems suitable for aggregation" /**< description of detector*/
 #define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
+#define DEC_MAXCALLROUND         0           /** last round the detector gets called                              */
 #define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_PRIORITY             100         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'I'         /**< display character of detector */
@@ -71,7 +71,7 @@
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 
-#define DEFAULT_MAXDECOMPSEXACT  1           /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXACT  5           /**< default maximum number of decompositions */
 #define DEFAULT_MAXDECOMPSEXTEND 5           /**< default maximum number of decompositions */
 
 /*
@@ -142,6 +142,12 @@ gcg::Seeed* struct_hook::getSeeed()
 gcg::Seeedpool* struct_hook::getSeeedpool()
 {
    return this->seeedpool;
+}
+
+/** methode to calculate the greates common divisor */
+
+int gcd(int a, int b) {
+    return b == 0 ? a : gcd(b, a % b);
 }
 
 /** constructor of the hook struct */
@@ -1021,7 +1027,8 @@ SCIP_RETCODE createSeeedFromMasterconss(
 
       if( consismaster[i] )
       {
-         SCIP_CALL( SCIPhashmapInsert(newconstoblock, (void*) (size_t) cons, (void*) (size_t) (nblocks+1)) );
+         /* notation is misleading: masterconss are only potential master constraints */
+         /* SCIP_CALL( SCIPhashmapInsert(newconstoblock, (void*) (size_t) cons, (void*) (size_t) (nblocks+1)) ); */
          continue;
       }
 
@@ -1037,6 +1044,11 @@ SCIP_RETCODE createSeeedFromMasterconss(
    }
    (*newSeeed) = new gcg::Seeed(seeed, seeedpool);
    SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblock(newconstoblock, nblocks, seeedpool) );
+
+   (*newSeeed)->considerImplicits(seeedpool);
+   (*newSeeed)->assignAllDependent(seeedpool);
+
+   //(*newSeeed)->showScatterPlot(seeedpool);
 
    SCIPfreeBufferArray(scip, &vartoblock);
    SCIPfreeBufferArray(scip, &consismaster);
@@ -1140,9 +1152,31 @@ void collapsePermutation(
    }
 }
 
+/** method to enumerate all subsets */
+static
+std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
+{
+    std::vector< std::vector<int> > subset;
+    std::vector<int> empty;
+    subset.push_back( empty );
+
+    for ( size_t i = 0; i < set.size(); ++i )
+    {
+        std::vector< std::vector<int> > subsetTemp = subset;
+
+        for (size_t j = 0; j < subsetTemp.size(); ++j)
+            subsetTemp[j].push_back( set[i] );
+
+        for (size_t j = 0; j < subsetTemp.size(); ++j)
+            subset.push_back( subsetTemp[j] );
+    }
+    return subset;
+}
+
 /** reorder such that the best permutation is represented by 0, the second best by 1, etc. */
 SCIP_RETCODE reorderPermutations(
    SCIP*                 scip,               /**< SCIP data structure */
+   gcg::Seeedpool*       seeedpool,          /**< seeedpool */
    int*                  permutation,        /**< the permutation */
    int                   permsize,           /**< size of the permutation */
    int                   nperms              /**< number of permutations */
@@ -1208,6 +1242,50 @@ SCIP_RETCODE reorderPermutations(
       if( permutation[i] >= 0 )
          permutation[i] = invorder[permutation[i]];
    }
+
+
+   std::vector<int> orbitsizes(0);
+
+   /* compute invorder array that gives a mapping from old to new representatives */
+   for( i = 0; i < nperms; ++i )
+   {
+      int orbitsize;
+      orbitsize = count[i];
+
+      /** find orbitsize or not */
+      std::vector<int>::const_iterator orbitsizesIter = orbitsizes.begin();
+      for(; orbitsizesIter != orbitsizes.end(); ++orbitsizesIter)
+      {
+        if(*orbitsizesIter == orbitsize)
+           break;
+      }
+
+      if( orbitsizesIter  == orbitsizes.end()  )
+      {
+         seeedpool->addCandidatesNBlocks(orbitsize);
+
+         orbitsizes.push_back(orbitsize);
+      }
+   }
+   std::vector< std::vector<int> > subsetsOfOrbitsizes = getAllSubsets(orbitsizes);
+
+   for(size_t subset = 0; subset < subsetsOfOrbitsizes.size(); ++subset)
+   {
+      int greatestCD = 1;
+
+      if(subsetsOfOrbitsizes[subset].size() == 0 || subsetsOfOrbitsizes[subset].size() == 1)
+           continue;
+
+      greatestCD = gcd(subsetsOfOrbitsizes[subset][0], subsetsOfOrbitsizes[subset][1]  );
+
+      for( size_t j = 2; j < subsetsOfOrbitsizes[subset].size() ; ++j)
+      {
+         greatestCD = gcd( greatestCD, subsetsOfOrbitsizes[subset][j] );
+      }
+
+      seeedpool->addCandidatesNBlocks(greatestCD);
+   }
+
 
    SCIPfreeBufferArray(scip, &count);
    SCIPfreeBufferArray(scip, &order);
@@ -1279,7 +1357,9 @@ SCIP_RETCODE detectIsomorph(
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
       // reorder decomposition (corresponding to orbit size)
-      SCIP_CALL( reorderPermutations(scip, ptrhook->conssperm, nconss, nperms) );
+      //SCIP_CALL( reorderPermutations(scip, ptrhook->conssperm, nconss, nperms) );
+
+
 
       if( *ndecdecomps == 0 )
          SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(maxdecomps, nperms)) ); /*lint !e506*/
@@ -1441,7 +1521,7 @@ SCIP_RETCODE detectIsomorph(
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
       // reorder decomposition (corresponding to orbit size)
-      SCIP_CALL( reorderPermutations(scip, ptrhook->conssperm, nconss, nperms) );
+      SCIP_CALL( reorderPermutations(scip, seeedpool, ptrhook->conssperm, nconss, nperms) );
 
       if( *nNewSeeeds == 0 )
          SCIP_CALL( SCIPallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(maxdecomps, nperms)) ); /*lint !e506*/
@@ -1449,9 +1529,11 @@ SCIP_RETCODE detectIsomorph(
          SCIP_CALL( SCIPreallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(maxdecomps, nperms)) ); /*lint !e506*/
 
       int pos = *nNewSeeeds;
+
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
       SCIP_Real tempTime = SCIPclockGetTime(temporaryClock);
-      for( p = *nNewSeeeds; p < *nNewSeeeds + MIN(maxdecomps, nperms); ++p )
+
+      for( p = *nNewSeeeds; p < *nNewSeeeds + nperms && pos < *nNewSeeeds + maxdecomps; ++p )
       {
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
          SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -1473,7 +1555,28 @@ SCIP_RETCODE detectIsomorph(
 
          if( nmasterconss < nconss )
          {
+            SCIP_Bool isduplicate;
+            int q;
+
             SCIP_CALL( createSeeedFromMasterconss(scip, &((*newSeeeds)[pos]), masterconss, nmasterconss, seeed, seeedpool) );
+
+            ((*newSeeeds)[pos])->calcHashvalue();
+
+            isduplicate = FALSE;
+
+            for( q = 0; q < pos && !isduplicate; ++q )
+            {
+               SCIP_CALL( ((*newSeeeds)[pos])->isEqual((*newSeeeds)[q], &isduplicate, TRUE) );
+            }
+
+            if( isduplicate )
+            {
+               delete (*newSeeeds)[pos];
+            }
+            else
+            {
+               ++pos;
+            }
 
             SCIPfreeMemoryArray(scip, &masterconss);
 
@@ -1489,8 +1592,6 @@ SCIP_RETCODE detectIsomorph(
 
             continue;
          }
-
-         ++pos;
       }
       *nNewSeeeds = pos;
 
