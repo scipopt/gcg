@@ -47,6 +47,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <sstream>
+#include <iomanip>
 
 
 #include <exception>
@@ -418,9 +419,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          std::vector<SeeedPtr> delSeeeds;
          bool duplicate;
 
-         SCIP_CLOCK* temporaryClock; /* @TODO replace with finer measurement in detectors */
-
-         SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+//         SCIP_CLOCK* temporaryClock; /* @TODO replace with finer measurement in detectors */
+//
+//         SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
 
          successDetectors = std::vector<int>(nDetectors, 0);
          ndecompositions = 0;
@@ -482,7 +483,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                                  /** new seeeds are created by the current detector */
                                  SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
-                                 SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+                                 //SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
                                  if(verboseLevel > 2)
                                      std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d]) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round+1 << std::endl;
 
@@ -501,12 +502,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                     }
                                     seeedPropData->newSeeeds[j]->calcHashvalue();
                                     seeedPropData->newSeeeds[j]->addDecChangesFromAncestor(seeedPtr);
-                                    seeedPropData->newSeeeds[j]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+                                    //seeedPropData->newSeeeds[j]->addClockTime( SCIPclockGetTime(temporaryClock )  );
                                  }
 
                                  SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
-                                 SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-                                 SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+                                 //SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+                                 //SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
 
 
                                  if(seeedPropData->nNewSeeeds != 0 && (displaySeeeds ) )
@@ -543,7 +544,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                                if(verboseLevel > 2)
                                                {
                                                    std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to finished seeeds!" << std::endl;
-                                                   seeedPropData->newSeeeds[seeed]->evaluate(this);
                                                    seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
                                                }
                                                    finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
@@ -553,7 +553,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                                if(verboseLevel > 2)
                                                {
                                                    std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to next round seeeds!" << std::endl;
-                                                   seeedPropData->newSeeeds[seeed]->evaluate(this);
                                                    seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
                                                }
                                                nextSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
@@ -662,7 +661,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          for( int i = 0; i < nDetectors; ++i )
          {
-             std::cout << "Detector " << DECdetectorGetName(detectorToScipDetector[i] ) << " \t worked on \t " << successDetectors[i] << " of " << finishedSeeeds.size() << "\t and took a total time of \t" << SCIPgetClockTime(scip, detectorToScipDetector[i]->dectime)  << std::endl;
+             std::cout << "Detector " << std::setw(25) << std::setiosflags(std::ios::left) << DECdetectorGetName(detectorToScipDetector[i] ) << " \t worked on \t " << successDetectors[i] << " of " << finishedSeeeds.size() << "\t and took a total time of \t" << SCIPgetClockTime(scip, detectorToScipDetector[i]->dectime)  << std::endl;
          }
 
 //         if((int)finishedSeeeds.size() != 0)
@@ -825,11 +824,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                else subscipvars[b] = NULL;
 
                if(seeed->getNStairlinkingvars(b) > 0)
-                  SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars[b], seeed->getNStairlinkingvars( b) ) );
+                  SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars[b], seeed->getNStairlinkingvars(b) ) );
                else stairlinkingvars[b] = NULL;
 
                nsubscipvars[b] = seeed->getNVarsForBlock(b);
-               nstairlinkingvars[b] = seeed->getNStairlinkingvars( b);
+               nstairlinkingvars[b] = seeed->getNStairlinkingvars(b);
 
                for ( int v = 0; v < seeed->getNVarsForBlock(b); ++v )
                {
@@ -1121,7 +1120,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          }
 
-         SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+         //SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
          /** delete the seeeds */
          for(size_t c = 0; c < currSeeeds.size(); ++c)

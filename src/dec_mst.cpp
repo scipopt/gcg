@@ -39,6 +39,7 @@
 #include "graph/matrixgraph.h"
 #include "graph/rowgraph_weighted.h"
 #include "graph/graph_gcg.h"
+#include "scip/clock.h"
 
 using gcg::RowGraphWeighted;
 using gcg::Weights;
@@ -417,8 +418,10 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   std::vector<SCIP_Real> clockTimes1;        /**< vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes2;        /**< vector containing times in seconds  */
+   std::vector<SCIP_Real> clockTimes3;        /**< vector containing times in seconds  */
 
-   seeedPropagationData->seeedToPropagate->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    assert(scip != NULL);
    assert(detectordata != NULL);
    *result = SCIP_DIDNOTFIND;
@@ -442,40 +445,68 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
 
    std::vector<std::string> sim;
 
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+
    if(detectordata->johnsonenable)
    {
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
       SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed, gcg::DISTANCE_MEASURE::JOHNSON, gcg::WEIGHT_TYPE::DIST));
       detectordata->graphs->push_back(g);
       sim.push_back("Johnson");
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->intersectionenable)
    {
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
       SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed, gcg::DISTANCE_MEASURE::INTERSECTION, gcg::WEIGHT_TYPE::DIST));
       detectordata->graphs->push_back(g);
       sim.push_back("Intersection");
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->jaccardenable)
    {
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
       SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed, gcg::DISTANCE_MEASURE::JACCARD, gcg::WEIGHT_TYPE::DIST));
       detectordata->graphs->push_back(g);
       sim.push_back("Jaccard");
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->cosineenable)
    {
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
       SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed,gcg::DISTANCE_MEASURE::COSINE, gcg::WEIGHT_TYPE::DIST));
       detectordata->graphs->push_back(g);
       sim.push_back("Cosine");
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    if(detectordata->simpsonenable)
    {
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
       SCIP_CALL( g->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed,gcg::DISTANCE_MEASURE::SIMPSON, gcg::WEIGHT_TYPE::DIST));
       detectordata->graphs->push_back(g);
       sim.push_back("Simspon");
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes1.push_back(SCIPclockGetTime(temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
    time(&cp0);
    detectordata->n_similarities = (int) detectordata->graphs->size();
@@ -485,6 +516,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    std::vector<std::vector<double> > epsLists(detectordata->graphs->size());
    for(int i = 0; i < (int)detectordata->graphs->size(); i++)
    {
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       mids[i] = detectordata->graphs->at(i)->getEdgeWeightPercentile(q);
       if(i == 1 && detectordata->intersectionenable)
       {
@@ -494,7 +526,10 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       {
          epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], false); // case for all except intersection
       }
-
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      clockTimes2.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes2.push_back(SCIPclockGetTime(temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
 
    time(&cp1);
@@ -509,6 +544,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    time(&d_s);
    for(int i = 0; i < (int)detectordata->graphs->size(); i++)
    {
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       RowGraphWeighted<GraphGCG>* graph = detectordata->graphs->at(i);
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n  %s similarity: ", sim[i].c_str());
       int old_n_blocks = -1;
@@ -561,16 +597,22 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       }
       delete detectordata->graphs->at(i);
       detectordata->graphs->at(i) = NULL;
+
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      clockTimes3.push_back(SCIPclockGetTime(temporaryClock));
+      clockTimes3.push_back(SCIPclockGetTime(temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
    }
 
    delete seeed;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
    seeedPropagationData->nNewSeeeds = nNewSeeeds;
-   for(int j = 0, s = 0; s < n_seeeds_found; ++j)
+   for(int j = 0, s = 0; s < nNewSeeeds; ++j)
    {
       if(newSeeeds[j] != NULL)
       {
          seeedPropagationData->newSeeeds[s] = newSeeeds[j];
+         seeedPropagationData->newSeeeds[s]->addClockTime(clockTimes1[j] + clockTimes2[j] + clockTimes3[j]);
          seeedPropagationData->newSeeeds[s]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
          ++s;
       }
@@ -591,6 +633,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       SCIPfreeMemoryArrayNull(scip, &(seeedPropagationData->newSeeeds));
    }
 
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
    return SCIP_OKAY;
 }
 

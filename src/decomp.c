@@ -922,8 +922,8 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    assert(decomp->stairlinkingvars != NULL);
    assert(decomp->nstairlinkingvars != NULL);
 
-   BMSclearMemoryArray(decomp->stairlinkingvars, decomp->nblocks-1);
-   BMSclearMemoryArray(decomp->nstairlinkingvars, decomp->nblocks-1);
+   BMSclearMemoryArray(decomp->stairlinkingvars, decomp->nblocks);
+   BMSclearMemoryArray(decomp->nstairlinkingvars, decomp->nblocks);
 
    for( b = 0; b < decomp->nblocks-1; ++b )
    {
@@ -940,6 +940,9 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
          decomp->stairlinkingvars[b] = NULL;
       }
    }
+
+   decomp->nstairlinkingvars[decomp->nblocks - 1] = 0;
+   decomp->stairlinkingvars[decomp->nblocks -1] = NULL;
 
    for( b = 0; b < decomp->nblocks-1; ++b )
    {

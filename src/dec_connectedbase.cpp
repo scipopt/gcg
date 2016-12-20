@@ -40,6 +40,7 @@
 #include "class_seeedpool.h"
 #include "scip/scip.h"
 #include "scip_misc.h"
+#include "scip/clock.h"
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -133,6 +134,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
 {
    *result = SCIP_DIDNOTFIND;
 
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool );
@@ -147,6 +151,9 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    seeedPropagationData->nNewSeeeds = 1;
    seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
 

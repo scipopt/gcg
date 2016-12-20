@@ -41,6 +41,7 @@
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
 #include "scip_misc.h"
+#include "scip/clock.h"
 
 #include <iostream>
 
@@ -144,6 +145,10 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
 {
   *result = SCIP_DIDNOTFIND;
 
+  SCIP_CLOCK* temporaryClock;
+  SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+  SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
   SCIP_CONS* cons;
 
   int seeedCounter = 0;
@@ -219,8 +224,15 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
       seeedPropagationData->newSeeeds[seeedCounter] = seeed;
       seeedCounter++;
   }
-
   delete seeedOrig;
+
+  SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+  for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
+  {
+     seeedPropagationData->newSeeeds[s]->addClockTime(SCIPclockGetTime(temporaryClock )  );
+  }
+  SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
   *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;

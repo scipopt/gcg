@@ -48,9 +48,9 @@
 
 #define READERGP_GNUPLOT_BOXTEMPLATE(i, x1, y1, x2, y2) "set object %d rect from %.1f,%.1f to %.1f,%.1f fc rgb \"grey\"\n", (i), (x1), (y1), (x2), (y2)
 #define READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, x1, y1, x2, y2, color) "set object %d rect from %.1f,%.1f to %.1f,%.1f fc rgb \"%s\"\n", (i), (x1), (y1), (x2), (y2), (color)
-#define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\nunset xtics\nunset ytics\nunset border\nunset key\nset style fill solid 1.0 noborder\nset size ratio -1\n", (outputname)
+#define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\n", (outputname)
 #define READERGP_GNUPLOT_RANGES(xmax, ymax) "set xrange [-1:%d]\nset yrange[%d:-1]\n", (xmax), (ymax)
-#define READERGP_GNUPLOT_PLOTCMD "plot \"-\" using 1:2:3 with circles fc rgb \"red\"\n"
+#define READERGP_GNUPLOT_PLOTCMD "plot \"-\" using 1:2:3 notitle with circles fc rgb \"red\" fill solid\n"
 
 #define READERGP_GNUPLOT_HEADER_TEX(outputname) "set terminal tikz\nset output \"%s.tex\"\nunset xtics\nunset ytics\nunset border\nunset key\nset style fill solid 1.0 noborder\nset size ratio -1\n", (outputname)
 
@@ -114,18 +114,18 @@ SCIP_RETCODE writeDecompositionHeader(
    nmastervars = 0;
    for( i = 0; i < decdecomp->nlinkingvars; ++i )
    {
-      if( (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, decdecomp->linkingvars[i]) == decdecomp->nblocks + 1)
+      if( (int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[i]) == decdecomp->nblocks + 1)
          nmastervars++;
    }
    startx = 0;
    starty = 0;
    i = 1;
    /** write linking var box */
-   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, decdecomp->nlinkingvars - nstairlinkingvars + 0.5, nconss + 0.5, "purple"));
+   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, decdecomp->nlinkingvars - nstairlinkingvars - nmastervars + 0.5, nconss + 0.5, "purple"));
    i++;
    startx += decdecomp->nlinkingvars - nstairlinkingvars - nmastervars;
    /** write master var box */
-   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, 0 + 0.5, startx + nmastervars + 0.5, nconss + 0.5, "yellow"));
+   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, startx + nmastervars + 0.5, nconss + 0.5, "yellow"));
    i++;
   startx += nmastervars;
   /** write linking cons box */
@@ -145,7 +145,7 @@ SCIP_RETCODE writeDecompositionHeader(
      {
         startx = endx;
         endx += decdecomp->nstairlinkingvars[b];
-        SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, endx + 0.5, starty + decdecomp->nsubscipvars[b] + decdecomp->nsubscipvars[b+1] + 0.5, "pink"));
+        SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, endx + 0.5, starty + decdecomp->nsubscipconss[b] + decdecomp->nsubscipconss[b+1] + 0.5, "pink"));
         i++;
      }
      startx = endx;
@@ -264,12 +264,11 @@ SCIP_RETCODE writeData(
       SCIP_CALL( SCIPallocBufferArray(scip, &stairlinkingvars, SCIPgetNVars(scip)) );
       for( j = 0; j < SCIPgetNVars(scip); ++j)
          stairlinkingvars[j] = 0;
-      for( i = 0; i < decdecomp->nblocks; ++i)
+      for( i = 0; i < decdecomp->nblocks - 1; ++i)
       {
          for( j = 0; j < decdecomp->nstairlinkingvars[i]; ++j)
          {
             assert(SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j]) != NULL);
-            assert(SCIPhashmapExists(decdecomp->varindex, decdecomp->stairlinkingvars[i][j]));
             assert(stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j])] == 0);
             stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j])] = 1;
          }
@@ -286,19 +285,18 @@ SCIP_RETCODE writeData(
       for( j = 0; j < decdecomp->nlinkingvars; ++j )
       {
          assert(decdecomp->linkingvars[j] != NULL);
-         if( (int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[i]) == decdecomp->nblocks + 2 && stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->linkingvars[i])] == 0)
+         assert((int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[j]) == decdecomp->nblocks + 2 || (int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[j]) == decdecomp->nblocks + 1);
+         if( (int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[j]) == decdecomp->nblocks + 2 && stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->linkingvars[j])] == 0)
          {
             SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
             varindex++;
          }
-         else if(stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->linkingvars[i])] == 0)
-            assert((int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[i]) == decdecomp->nblocks + 1);
       }
       /** mastervars */
       for( j = 0; j < decdecomp->nlinkingvars; ++j )
       {
          assert(decdecomp->linkingvars[j] != NULL);
-         if( (int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[i]) == decdecomp->nblocks + 1 )
+         if( (int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[j]) == decdecomp->nblocks + 1 )
          {
             SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
             varindex++;
