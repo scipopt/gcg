@@ -129,12 +129,14 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> const & seeeds, bool sort){
 
    assert(compseeed != NULL);
+   SCIP_Bool isDuplicate;
 
    for( size_t i = 0; i < seeeds.size(); ++i )
    {
       assert(seeeds[i] != NULL);
 
-      if (compseeed->isEqual(seeeds[i] ) )
+      compseeed->isEqual(seeeds[i], &isDuplicate, sort );
+      if (isDuplicate)
          return FALSE;
    }
    return TRUE;
