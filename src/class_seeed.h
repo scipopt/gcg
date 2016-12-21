@@ -433,7 +433,8 @@ public:
 
 
    bool isEqual(
-      Seeed* other);
+      Seeed* other                              /**< other seeed */
+      );
 
 
    /** returns whether the var is a var of the block */

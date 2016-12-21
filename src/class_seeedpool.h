@@ -178,6 +178,19 @@ public:
 
    void calcCandidatesNBlocks();
 
+   int getNConssClassDistributions();
+
+   int* getConssClassDistribution(int consclassdistr);
+
+   int getNClassesOfDistribution(int consclassdistr);
+
+   void addConssClassesForSCIPConstypes(
+      );
+
+   void addConssClassesForConsnames(
+      );
+
+
 };
 
 } /* namespace gcg */

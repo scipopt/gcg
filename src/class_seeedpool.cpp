@@ -89,6 +89,27 @@ namespace gcg {
 
 /** local methods */
 
+void removeDigits(char *str, int *nremoved) {
+
+    char digits[11] = "0123456789";
+    char *src, *dst;
+    *nremoved = 0;
+    for(int i = 0; i < 10; ++i )
+    {
+       char digit = digits[i];
+       for (src = dst = str; *src != '\0'; src++)
+       {
+          *dst = *src;
+          if (*dst != digit)
+             dst++;
+          else
+             *nremoved = *nremoved + 1;
+       }
+    }
+    *dst = '\0';
+}
+
+
 /** method to enumerate all subsets */
 std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
 {
@@ -136,7 +157,7 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
       assert(seeeds[i] != NULL);
 
       compseeed->isEqual(seeeds[i], &isDuplicate, sort );
-      if (isDuplicate)
+      if ( isDuplicate )
          return FALSE;
    }
    return TRUE;
@@ -302,6 +323,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          decompositions = NULL;
 
+         addConssClassesForSCIPConstypes();
          calcCandidatesNBlocks();
 
 
@@ -1223,98 +1245,161 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
  void Seeedpool::calcCandidatesNBlocks()
   {
     /**
+     * for every subset of constraint classes calculate gcd (greatest common divisors) of the corresponding number of occurrences
+     */
+
+
+    for( size_t conssclass = 0; conssclass < consclassescollection.size(); ++conssclass )
+    {
+       std::vector<int> nconssofclass = std::vector<int>(consclassesnclasses[conssclass], 0);
+       std::vector<int> consclassindices = std::vector<int>(0);
+       for( int i = 0; i < consclassesnclasses[conssclass]; ++ i)
+          consclassindices.push_back(i);
+       std::vector< std::vector<int> > subsetsOfConstypes = getAllSubsets(consclassindices);
+
+       for ( int i =0; i < getNConss(); ++i)
+          ++nconssofclass[ consclassescollection[conssclass][i] ];
+
+       for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
+       {
+          int greatestCD = 1;
+
+          if(subsetsOfConstypes[subset].size() == 0 || subsetsOfConstypes[subset].size() == 1)
+               continue;
+
+          greatestCD = gcd(nconssofclass[subsetsOfConstypes[subset][0]], nconssofclass[subsetsOfConstypes[subset][1]]  );
+
+          for( size_t i = 2; i < subsetsOfConstypes[subset].size() ; ++i)
+          {
+             greatestCD = gcd( greatestCD, nconssofclass[subsetsOfConstypes[subset][i]] );
+          }
+
+          if( greatestCD > 1 )
+          {
+             bool alreadyIn = false;
+             for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
+             {
+                if( candidatesNBlocks[i] == greatestCD )
+                {
+                   alreadyIn = true;
+                   break;
+                }
+             }
+             if( !alreadyIn )
+             {
+                std::cout << "added block number candidate : " << greatestCD << std::endl;
+                candidatesNBlocks.push_back(greatestCD);
+             }
+          }
+       }
+    }
+
+    return ;
+  }
+
+ int Seeedpool::getNConssClassDistributions(){
+    return consclassescollection.size();
+ }
+
+ int* Seeedpool::getConssClassDistribution(
+    int consclassdistr
+    ){
+    return &(consclassescollection[consclassdistr][0]);
+ }
+
+ int Seeedpool::getNClassesOfDistribution(
+    int consclassdistr
+    )
+ {
+    return consclassesnclasses[consclassdistr];
+ }
+
+ void Seeedpool::addConssClassesForSCIPConstypes()
+ {
+    /**
      * at first for every subset of constypes calculate gcd (greatest common divisors) of the corresponding number of occurrences
      */
     std::vector<consType> foundConstypes(0);
     std::vector<int> constypesIndices(0);
     std::vector<int> nConssConstype(0);
-
-
-    for( int i = 0; i < getNConss(); ++i)
-     {
-         SCIP_CONS* cons;
-
-         cons = getConsForIndex(i);
-         consType cT = GCGconsGetType(cons);
-
-         /** find constype or not */
-         std::vector<consType>::const_iterator constypeIter = foundConstypes.begin();
-         for(; constypeIter != foundConstypes.end(); ++constypeIter)
-         {
-           if(*constypeIter == cT)
-              break;
-         }
-
-         if( constypeIter  == foundConstypes.end()  )
-         {
-            foundConstypes.push_back(GCGconsGetType(cons) );
-         }
-     }
-
-    nConssConstype = std::vector<int>(foundConstypes.size(), 0);
+    std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
 
     for( int i = 0; i < getNConss(); ++i)
     {
        SCIP_CONS* cons;
-
+       bool found = false;
        cons = getConsForIndex(i);
        consType cT = GCGconsGetType(cons);
+       size_t constype;
 
-       /** count constypes or not */
+       /** find constype or not */
 
-       for(size_t cTIndex = 0; cTIndex < foundConstypes.size(); ++cTIndex)
+       for( constype = 0; constype < foundConstypes.size(); ++constype)
        {
-          if(foundConstypes[cTIndex] == cT)
+          if( foundConstypes[constype] == cT )
           {
-             ++nConssConstype[cTIndex];
+             found = true;
              break;
           }
        }
-    }
+       if( !found )
+       {
+          foundConstypes.push_back(GCGconsGetType(cons) );
+          classForCons[i] = foundConstypes.size() - 1;
+       }
+       else
+          classForCons[i] = constype;
+     }
 
-    for(size_t i = 0; i < foundConstypes.size(); ++i)
-    {
-       constypesIndices.push_back(i);
-    }
+    consclassescollection.push_back(classForCons);
+    consclassesnclasses.push_back(foundConstypes.size() );
 
-      std::vector< std::vector<int> > subsetsOfConstypes = getAllSubsets(constypesIndices);
+    return;
+ }
 
-      for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
-      {
-         int greatestCD = 1;
+ void Seeedpool::addConssClassesForConsnames()
+  {
+     /**
+      * at first for every subset of constypes calculate gcd (greatest common divisors) of the corresponding number of occurrences
+      */
+     std::vector<consType> foundConstypes(0);
+     std::vector<int> constypesIndices(0);
+     std::vector<int> nConssConstype(0);
+     std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
 
-         if(subsetsOfConstypes[subset].size() == 0 || subsetsOfConstypes[subset].size() == 1)
-              continue;
+     for( int i = 0; i < getNConss(); ++i)
+     {
+        SCIP_CONS* cons;
+        bool found = false;
+        cons = getConsForIndex(i);
+        consType cT = GCGconsGetType(cons);
+        size_t constype;
 
-         greatestCD = gcd(nConssConstype[subsetsOfConstypes[subset][0]], nConssConstype[subsetsOfConstypes[subset][1]]  );
+        /** find constype or not */
 
-         for( size_t i = 2; i < subsetsOfConstypes[subset].size() ; ++i)
-         {
-            greatestCD = gcd( greatestCD, nConssConstype[subsetsOfConstypes[subset][i]] );
-         }
-
-         if(greatestCD > 1)
-         {
-            bool alreadyIn = false;
-            for(size_t i = 0; i < candidatesNBlocks.size(); ++i )
-            {
-               if(candidatesNBlocks[i] == greatestCD)
-               {
-                  alreadyIn = true;
-                  break;
-               }
-            }
-            if(!alreadyIn)
-            {
-               std::cout << "added block number candidate : " << greatestCD << std::endl;
-               candidatesNBlocks.push_back(greatestCD);
-            }
-         }
-
+        for( constype = 0; constype < foundConstypes.size(); ++constype)
+        {
+           if( foundConstypes[constype] == cT )
+           {
+              found = true;
+              break;
+           }
+        }
+        if( !found )
+        {
+           foundConstypes.push_back(GCGconsGetType(cons) );
+           classForCons[i] = foundConstypes.size() - 1;
+        }
+        else
+           classForCons[i] = constype;
       }
 
-     return ;
+     consclassescollection.push_back(classForCons);
+     consclassesnclasses.push_back(foundConstypes.size() );
+
+     return;
   }
+
 
 
 
