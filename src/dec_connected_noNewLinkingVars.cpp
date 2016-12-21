@@ -40,6 +40,7 @@
 #include "class_seeedpool.h"
 #include "scip/scip.h"
 #include "scip_misc.h"
+#include "scip/clock.h"
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -132,6 +133,10 @@ static
 DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
 {
    *result = SCIP_DIDNOTFIND;
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
    std::vector<int> conssForBfs;
    std::vector<std::vector<int>> visitedConss = std::vector<std::vector<int>>(0); /** vector of vector with connected constraints */
    std::vector<int> emptyVector = std::vector<int>(0);
@@ -158,6 +163,10 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
    seeedPropagationData->nNewSeeeds = 1;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
+
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
 

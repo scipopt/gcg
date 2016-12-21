@@ -140,6 +140,13 @@ int Seeed::addBlock()
    return nBlocks - 1;
 }
 
+/** incorporates the the needed time of a certain detector in the detector chain */
+ void Seeed::addClockTime(SCIP_Real clocktime){
+
+    /** add number of new blocks */
+    detectorClockTimes.push_back(clocktime);
+ }
+
 /** incorporates the changes from ancestor  seeed */
  void Seeed::addDecChangesFromAncestor(Seeed* ancestor){
 
@@ -153,13 +160,6 @@ int Seeed::addBlock()
     pctVarsToBorder.push_back( ( getNMastervars() + getNLinkingvars() + getNTotalStairlinkingvars() - ancestor->getNMastervars() - ancestor->getNLinkingvars() - ancestor->getNTotalStairlinkingvars()) / (SCIP_Real) getNVars() );
 
  }
-
- /** incorporates the the needed time of a certain detector in the detector chain */
-  void Seeed::addClockTime(SCIP_Real clocktime){
-
-     /** add number of new blocks */
-     detectorClockTimes.push_back(clocktime);
-  }
 
 
 /** returns if constraints are assigned to blocks */
@@ -1962,7 +1962,7 @@ SCIP_Real Seeed::evaluate(
    alphadensity  = 0.2;
 
    if(getNOpenconss() != 0 || getNOpenvars() != 0)
-      SCIPwarningMessage(scip, "Decomposition type changed to 'bordered' due to an added constraint.\n");
+      SCIPwarningMessage(scip, "Evaluation for seeeds is not implemented for seeeds with open conss or open vars.\n");
 
    SCIP_CALL( SCIPallocBufferArray(scip, &nzblocks, nBlocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nlinkvarsblocks, nBlocks) );

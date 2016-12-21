@@ -115,14 +115,14 @@ public:
    /** add a block, returns the number of the new block */
    int addBlock();
 
-   /** incorporates the changes from ancestor  seeed */
-   void addDecChangesFromAncestor(
-         Seeed* ancestor
-         );
-
    /** incorporates the the needed time of a certain detector in the detector chain */
    void addClockTime(
          SCIP_Real clocktime
+         );
+
+   /** incorporates the changes from ancestor  seeed */
+   void addDecChangesFromAncestor(
+         Seeed* ancestor
          );
 
    /** are already assigned constraints to blocks */

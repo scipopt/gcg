@@ -46,6 +46,7 @@
 #include "gcg.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "scip/clock.h"
 
 #include "graph.hh"
 #include "pub_gcgvar.h"
@@ -1466,6 +1467,10 @@ SCIP_RETCODE detectIsomorph(
    int                   maxdecomps          /**< maximum number of new decompositions */
 )
 {
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
    bliss::Graph graph;
    bliss::Stats bstats;
    AUT_HOOK *ptrhook;
@@ -1524,8 +1529,14 @@ SCIP_RETCODE detectIsomorph(
          SCIP_CALL( SCIPreallocMemoryArray(scip, newSeeeds, *nNewSeeeds + MIN(maxdecomps, nperms)) ); /*lint !e506*/
 
       int pos = *nNewSeeeds;
+
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      SCIP_Real tempTime = SCIPclockGetTime(temporaryClock);
+
       for( p = *nNewSeeeds; p < *nNewSeeeds + nperms && pos < *nNewSeeeds + maxdecomps; ++p )
       {
+         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+         SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
 
          SCIPdebugMessage("masterconss of seeed %d:\n", p);
@@ -1550,6 +1561,8 @@ SCIP_RETCODE detectIsomorph(
             SCIP_CALL( createSeeedFromMasterconss(scip, &((*newSeeeds)[pos]), masterconss, nmasterconss, seeed, seeedpool) );
 
             ((*newSeeeds)[pos])->calcHashvalue();
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+            (*newSeeeds)[pos]->addClockTime( tempTime + SCIPclockGetTime(temporaryClock) );
 
             isduplicate = FALSE;
 
@@ -1557,6 +1570,7 @@ SCIP_RETCODE detectIsomorph(
             {
                SCIP_CALL( ((*newSeeeds)[pos])->isEqual((*newSeeeds)[q], &isduplicate, TRUE) );
             }
+
 
             if( isduplicate )
             {
@@ -1568,11 +1582,15 @@ SCIP_RETCODE detectIsomorph(
             }
 
             SCIPfreeMemoryArray(scip, &masterconss);
+
+
          }
 
          else
          {
             SCIPfreeMemoryArray(scip, &masterconss);
+
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 
             continue;
          }
@@ -1585,25 +1603,28 @@ SCIP_RETCODE detectIsomorph(
       }
 
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d (new) decompositions.\n", *nNewSeeeds - oldnseeeds);
-      }
-      else
-      {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "not found.\n");
-      }
+   }
+   else
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "not found.\n");
+   }
 
-      if( *nNewSeeeds == 0 )
-      {
-         SCIPfreeMemoryArrayNull(scip, newSeeeds);
-      }
+   if( *nNewSeeeds == 0 )
+   {
+      SCIPfreeMemoryArrayNull(scip, newSeeeds);
+   }
 
 
-      delete colorinfo;
+   delete colorinfo;
 
-      delete ptrhook;
 
-      *result = detectordata->result;
+   delete ptrhook;
 
-      return SCIP_OKAY;
+   *result = detectordata->result;
+
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
+   return SCIP_OKAY;
 }
 
 

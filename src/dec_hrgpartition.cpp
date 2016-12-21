@@ -62,6 +62,7 @@
 #include "graph/weights.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "scip/clock.h"
 
 
 #include <set>
@@ -452,6 +453,11 @@ static
 DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
 {
    *result = SCIP_DIDNOTFIND;
+
+   SCIP_CLOCK* clock;
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
    int nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
@@ -461,6 +467,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
 
    /* add hrgpartition presolver parameters */
 
+   std::vector<SCIP_Real> clockTimes;        /**< vector containing times in seconds  */
    int k;
    int j;
    int s;
@@ -492,6 +499,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
       SCIPfreeBufferArray(scip, &newSeeeds);
+      SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
+      SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
@@ -516,6 +525,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
          delete seeed;
          seeedPropagationData->nNewSeeeds = 0;
          SCIPfreeBufferArray(scip, &newSeeeds);
+         SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
+         SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
          *result = SCIP_SUCCESS;
          return SCIP_OKAY;
       }
@@ -538,26 +549,45 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    //if givenBlocks == -1, use the number of the array numberOfBlocks as number of blocks
    else
    {
+      SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
+      SCIP_CLOCK* temporaryClock;
+      SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
       for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
       {
+         SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
          SCIP_RETCODE retcode;
          detectordata->blocks = numberOfBlocks[k];
          retcode = callMetis(scip, detectordata, result);
 
+         if(numberOfBlocks[k] > seeedPropagationData->seeedToPropagate->getNOpenconss() )
+         {
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+            SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+            continue;
+         }
+
          if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
          {
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+            SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
             continue;
          }
 
          SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
 
+         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
          if( (newSeeeds)[j] != NULL )
          {
             nNewSeeeds = nNewSeeeds + 2;
             detectordata->found = TRUE;
+            clockTimes.push_back(SCIPclockGetTime(temporaryClock));
+            clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created
          }
+         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
          j = j + 2;
       }
+      SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+      SCIP_CALL_ABORT( SCIPstartClock(scip, clock ) );
    }
 
 
@@ -585,9 +615,24 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
       if( status == -1 )
       {
          SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
+         SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
+         SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
          return SCIP_WRITEERROR;
       }
    }
+
+   SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
+   if(givenBlocks != -1)
+   {
+      seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(clock )  );
+      seeedPropagationData->newSeeeds[1]->addClockTime( SCIPclockGetTime(clock )  );
+   }
+   else
+   {
+      for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
+   }
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
 
    *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
    return SCIP_OKAY;
