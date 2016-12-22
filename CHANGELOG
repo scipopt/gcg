@@ -13,6 +13,7 @@ code cleanup
 - cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
 - reallocate memory for origvars array in pricingvardate more efficiently
 - reallocate memory for original variable array in pricing variable data more efficiently
+- reorder permutations in isomorph detector according to orbit size and add maxdecomps parameter
 
 bug fixes
 - changed/corrected variable fixing behaviour of Extreme Point RINS in case of aggregated blocks
