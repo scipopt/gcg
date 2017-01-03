@@ -75,8 +75,9 @@ private:
    std::vector<bool> 				   propagatedByDetector;	      /**< propagatedByDetector[i] is this seeed propagated by detector i */
    bool 							         openVarsAndConssCalculated;   /**< are the openVars and openCons calculated */
    long                             hashvalue;
+   SCIP_Real                        score;                        /**< score to evaluate the seeeds */
 
-
+   bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
    const static int              primes[];
    const static int              nPrimes;
@@ -114,8 +115,15 @@ public:
    /** add a block, returns the number of the new block */
    int addBlock();
 
+   /** incorporates the the needed time of a certain detector in the detector chain */
+   void addClockTime(
+         SCIP_Real clocktime
+         );
+
    /** incorporates the changes from ancestor  seeed */
-   void addDecChangesFromAncestor(Seeed* ancestor);
+   void addDecChangesFromAncestor(
+         Seeed* ancestor
+         );
 
    /** are already assigned constraints to blocks */
    bool alreadyAssignedConssToBlocks();
@@ -212,13 +220,6 @@ public:
    bool checkConsistency(
    );
 
-   /** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
-    bool isTrivial(
-    );
-
-
-
-
    bool checkVarsAndConssConsistency(
          Seeedpool* seeedpool
    );
@@ -263,14 +264,6 @@ public:
    /** displays the assignments of the vars */
    SCIP_RETCODE displayVars( Seeedpool* seeedpool = NULL
    );
-
-   /** displays the assignments of the vars */
-   SCIP_RETCODE writeScatterPlot(
-      Seeedpool* seeedpool,
-      const char* filename
-   );
-
-   void showScatterPlot(  Seeedpool* seeedpool );
 
    /** computes the score of the given seeed based on the border, the average density score and the ratio of linking variables*/
    SCIP_Real evaluate(
@@ -427,9 +420,27 @@ public:
          int detectorID
    );
 
+   /** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
+   bool isTrivial(
+   );
+
+/* method to check whether seeed is equal to given other seeed */
+   SCIP_RETCODE isEqual(
+      Seeed*               otherseeed,          /**< other seeed */
+      SCIP_Bool*           isequal,             /**< pointer to store whether seeeds are identical */
+      bool                 sortseeeds           /**< should conss and vars be sorted before comparing the seeeds? */
+      );
+
+
+   bool isEqual(
+      Seeed* other                              /**< other seeed */
+      );
+
+
    /** returns whether the var is a var of the block */
    bool isVarBlockvarOfBlock(
-         int var, int block
+         int var,
+         int block
    );
 
    /** returns whether the var is a linking var */
@@ -508,8 +519,16 @@ public:
          int varToStairLinking, int block1, int block2
    );
 
+   void showScatterPlot(  Seeedpool* seeedpool );
+
    /** sorts the vars and conss according their numbers */
    void sort(
+   );
+
+   /** displays the assignments of the vars */
+   SCIP_RETCODE writeScatterPlot(
+         Seeedpool* seeedpool,
+         const char* filename
    );
 
 

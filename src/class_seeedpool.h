@@ -106,6 +106,11 @@ private:
    DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
    int                                          ndecompositions;        /**< number of decompositions found by the detectors */
 
+   /** oracle data */
+   std::vector<int>                             candidatesNBlocks;      /**< candidate for the number of blocks  */
+
+   std::vector<std::vector<int> >               consclassescollection;  /**< collection of different constraint class distributions  */
+   std::vector<int >                            consclassesnclasses;    /**< number of classes of the corresponding distribution */
 
 public:
 
@@ -164,6 +169,26 @@ public:
    int getNVars();
 
    int getNConss();
+
+   std::vector<int> getCandidatesNBlocks() const;
+
+   void addCandidatesNBlocks(
+      int                 candidate            /**< candidate for block size */
+      );
+
+   void calcCandidatesNBlocks();
+
+   int getNConssClassDistributions();
+
+   int* getConssClassDistribution(int consclassdistr);
+
+   int getNClassesOfDistribution(int consclassdistr);
+
+   void addConssClassesForSCIPConstypes(
+      );
+
+   void addConssClassesForConsnames(
+      );
 
 
 };

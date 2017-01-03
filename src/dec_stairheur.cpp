@@ -54,6 +54,7 @@
 #include "gcg.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "scip/clock.h"
 
 #define DEC_DETECTORNAME      "stairheur"    /**< name of the detector */
 #define DEC_DESC              "detects staircase matrices via matrix reordering" /**< detector description */
@@ -62,7 +63,7 @@
 #define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
 #define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_DECCHAR           's'            /**< display character of detector */
-#define DEC_ENABLED           TRUE          /**< should detector be called by default */
+#define DEC_ENABLED           FALSE          /**< should detector be called by default */
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL      FALSE          /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -2058,9 +2059,14 @@ SCIP_RETCODE blocking(
    gcg::Seeedpool*       seeedpool,          /**< */
    gcg::Seeed***         newSeeeds,          /**< array of seeeds */
    int*                  nNewSeeeds,         /**< size of seeeds array */
+   SCIP_Real             time,               /**< previous time */
    SCIP_RESULT*          result              /**< pointer to store result */
    )
 {
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
    int tau = 1; /*  desired number of blocks */
    int ncons = seeed->getNOpenconss();
    int nvars = seeed->getNOpenvars();
@@ -2089,6 +2095,8 @@ SCIP_RETCODE blocking(
          if( tau < 2 )
          {
             *result = SCIP_DIDNOTFIND;
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+            SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
             return SCIP_OKAY;
          }
       }
@@ -2098,25 +2106,38 @@ SCIP_RETCODE blocking(
       }
    }
 
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+   SCIP_Real tempTime = SCIPclockGetTime(temporaryClock);
+   SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
    /* variant 2 */
    /* dynamic blocking */
    if( detectordata->dynamicblocking )
    {
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       SCIPdebugMessage("detectordata->enableblockingdynamic = 1.\n");
       SCIP_CALL( rowsWithConstriction(scip, seeed, detectordata) );
 
       SCIPdebugMessage("detectordata->enablemultipledecomps = %ud.\n", detectordata->multipledecomps);
 
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+      SCIP_Real tempTimeDynamicBlocking = SCIPclockGetTime(temporaryClock);
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
       if( detectordata->multipledecomps )
       {
          for( tau = detectordata->minblocks; tau <= detectordata->maxblocks; ++tau )
          {
+            SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
             SCIPdebugMessage("tau = %i, dec = %i\n", tau, *nNewSeeeds);
             SCIP_CALL( resetDetectordata(scip, detectordata) );
 
             SCIP_CALL( blockingDynamic(scip, seeed, detectordata, tau, nvars) );
             if( detectordata->blocks <= 1 )
+            {
+               SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+               SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
                continue;
+            }
 
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed, seeedpool);
             SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
@@ -2124,11 +2145,16 @@ SCIP_RETCODE blocking(
 
     //        detectordata->constoblock = NULL;
 
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + tempTimeDynamicBlocking + SCIPclockGetTime(temporaryClock) );
+            SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
             (*nNewSeeeds) += 1;
          }
       }
       else
       {
+         SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
          SCIPdebugMessage("tau = %i, dec = %i\n", tau, *nNewSeeeds);
          SCIP_CALL( resetDetectordata(scip, detectordata) );
 
@@ -2140,7 +2166,16 @@ SCIP_RETCODE blocking(
             (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
  //           detectordata->constoblock = NULL;
 
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + tempTimeDynamicBlocking + SCIPclockGetTime(temporaryClock) );
+            SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
             (*nNewSeeeds) += 1;
+         }
+         else
+         {
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+            SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
          }
       }
    }
@@ -2150,6 +2185,7 @@ SCIP_RETCODE blocking(
 
    if( detectordata->staticblocking )
    {
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       SCIPdebugMessage("nconssperblock = %i, dec = %i\n", detectordata->nconssperblock, *nNewSeeeds);
 
       SCIP_CALL( resetDetectordata(scip, detectordata) );
@@ -2162,7 +2198,16 @@ SCIP_RETCODE blocking(
          (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
 //         detectordata->constoblock = NULL;
 
+         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+         (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + SCIPclockGetTime(temporaryClock) );
+         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
          (*nNewSeeeds) += 1;
+      }
+      else
+      {
+         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
       }
    }
 
@@ -2175,23 +2220,33 @@ SCIP_RETCODE blocking(
       {
          for( tau = detectordata->minblocks; tau <= detectordata->maxblocks; ++tau )
          {
+            SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
             SCIPdebugMessage("tau = %i, dec = %i\n", tau, *nNewSeeeds);
             SCIP_CALL( resetDetectordata(scip, detectordata) );
 
             SCIP_CALL( blockingAsSoonAsPossible(scip, detectordata, tau, nvars) );
             if( detectordata->blocks <= 1)
+            {
+               SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+               SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
                continue;
+            }
 
             (*newSeeeds[*nNewSeeeds]) = new gcg::Seeed(seeed, seeedpool);
             SCIP_CALL((*newSeeeds[*nNewSeeeds])->assignSeeedFromConstoblock(detectordata->constoblock, detectordata->blocks, seeedpool) );
             (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
  //           detectordata->constoblock = NULL;
 
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + SCIPclockGetTime(temporaryClock) );
+            SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
             *nNewSeeeds += 1;
          }
       }
       else
       {
+         SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
          SCIPdebugMessage("tau = %i, dec = %i\n", tau, *nNewSeeeds);
          SCIP_CALL( resetDetectordata(scip, detectordata) );
          SCIP_CALL( blockingAsSoonAsPossible(scip, detectordata, tau, nvars) );
@@ -2202,10 +2257,20 @@ SCIP_RETCODE blocking(
             (*newSeeeds[*nNewSeeeds])->assignCurrentStairlinking(seeedpool);
             detectordata->constoblock = NULL;
 
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+            (*newSeeeds[*nNewSeeeds])->addClockTime( time + tempTime + SCIPclockGetTime(temporaryClock) );
+            SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+
             *nNewSeeeds += 1;
+         }
+         else
+         {
+            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+            SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
          }
       }
    }
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
    return SCIP_OKAY;
 }
 
@@ -2385,18 +2450,24 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
    gcg::Seeed* seeed;
 
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
 #ifdef WRITEALLOUTPUT
    int ROC_iterations;
-   assert(false); //not implemented for seeeds
+   SCIPwarningMessage(scip, "WRITEALLOUTPUT in detector stairheur is not implemented for seeeds.\n");
 #endif
 
-   if(seeed->getNOpenconss() == 0)
+   if( seeed->getNOpenconss() == 0 || seeed->getNOpenvars() == 0 )
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
@@ -2423,9 +2494,8 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
 
 #ifdef WRITEALLOUTPUT
    {
-      char filename[256];
-      sprintf(filename, "%s_initial_problem", getProbNameWithoutPath(scip));
-      //plotInitialProblem(scip, detectordata, filename);
+      //char filename[256];
+      //sprintf(filename, "%s_initial_problem", getProbNameWithoutPath(scip));
    }
 #endif
 
@@ -2447,10 +2517,10 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
    SCIP_CALL( rankOrderClustering(scip, seeed, seeedPropagationData->seeedpool, detectordata, detectordata->maxiterationsROC, &ROC_iterations) );
 
    /* check conditions for arrays ibegin and jbegin: ibegin[i]<=ibegin[i+k] for all positive k */
-   if( ROC_iterations < detectordata->maxiterationsROC || detectordata->maxiterationsROC  == -1 )
-   {
-      checkConsistencyOfIndexarrays(detectordata, seeed->getNOpenvars(), nconss);
-   }
+   //if( ROC_iterations < detectordata->maxiterationsROC || detectordata->maxiterationsROC  == -1 )
+   //{
+   //   checkConsistencyOfIndexarrays(detectordata, seeed->getNOpenvars(), nconss);
+   //}
 #else
    SCIP_CALL( rankOrderClustering(scip, seeed, seeedPropagationData->seeedpool, detectordata, detectordata->maxiterationsROC, NULL) );
 #endif
@@ -2470,13 +2540,15 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
    /* =====BLOCKING======= */
    /* ==================== */
 
-   SCIP_CALL( blocking(scip, detectordata, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->newSeeeds), &(seeedPropagationData->nNewSeeeds),result) );
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   SCIP_CALL( blocking(scip, detectordata, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->newSeeeds), &(seeedPropagationData->nNewSeeeds), SCIPclockGetTime(temporaryClock), result) );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d seeeds.\n", seeedPropagationData->nNewSeeeds);
    #ifdef WRITEALLOUTPUT
    {
-      char filename[256];
-      sprintf(filename, "%s_ROC", getProbNameWithoutPath(scip));
-      plotInitialProblem(scip, detectordata, filename);
+      //char filename[256];
+      //sprintf(filename, "%s_ROC", getProbNameWithoutPath(scip));
+      //plotInitialProblem(scip, detectordata, filename);
    }
 #endif
    for( i = 0; i < seeedPropagationData->nNewSeeeds; ++i )

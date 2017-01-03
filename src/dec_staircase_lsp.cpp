@@ -49,6 +49,7 @@
 #include "tclique/tclique.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "scip/clock.h"
 
 
 
@@ -747,6 +748,10 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    int nblocks = 0;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
 
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
    gcg::Seeedpool* seeedpool = seeedPropagationData->seeedpool;
    gcg::Seeed* currseeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
 
@@ -845,6 +850,11 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = currseeed;
    seeedPropagationData->nNewSeeeds = 1;
+
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
    *result = SCIP_SUCCESS;
 
 

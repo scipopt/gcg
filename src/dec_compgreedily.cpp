@@ -37,6 +37,7 @@
 #include "cons_decomp.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "scip/clock.h"
 #include <iostream>
 
 /* constraint handler properties */
@@ -127,6 +128,11 @@ static
 DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
 {
    *result = SCIP_DIDNOTFIND;
+
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
 
@@ -137,6 +143,11 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
+
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;

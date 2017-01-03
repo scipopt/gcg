@@ -41,11 +41,13 @@
 #include "cons_decomp.h"
 #include "decomp.h"
 #include "scip_misc.h"
+#include "scip/clock.h"
 
 #include <algorithm>
 #include <iostream>
 #include <stdio.h>
 #include <sstream>
+#include <iomanip>
 
 
 #include <exception>
@@ -88,6 +90,54 @@ namespace gcg {
 
 /** local methods */
 
+void removeDigits(char *str, int *nremoved) {
+
+    char digits[11] = "0123456789";
+    char *src, *dst;
+    *nremoved = 0;
+    for(int i = 0; i < 10; ++i )
+    {
+       char digit = digits[i];
+       for (src = dst = str; *src != '\0'; src++)
+       {
+          *dst = *src;
+          if (*dst != digit)
+             dst++;
+          else
+             *nremoved = *nremoved + 1;
+       }
+    }
+    *dst = '\0';
+}
+
+
+/** method to enumerate all subsets */
+std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
+{
+    std::vector< std::vector<int> > subset;
+    std::vector<int> empty;
+    subset.push_back( empty );
+
+    for ( size_t i = 0; i < set.size(); ++i )
+    {
+        std::vector< std::vector<int> > subsetTemp = subset;
+
+        for (size_t j = 0; j < subsetTemp.size(); ++j)
+            subsetTemp[j].push_back( set[i] );
+
+        for (size_t j = 0; j < subsetTemp.size(); ++j)
+            subset.push_back( subsetTemp[j] );
+    }
+    return subset;
+}
+
+/** methode to calculate the greates common divisor */
+
+int gcd(int a, int b) {
+    return b == 0 ? a : gcd(b, a % b);
+}
+
+
 SCIP_CONS* consGetRelevantRepr(SCIP* scip, SCIP_CONS* cons){
 
    return cons;
@@ -101,105 +151,23 @@ SCIP_VAR* varGetRelevantRepr(SCIP* scip, SCIP_VAR* var){
 SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> const & seeeds, bool sort){
 
    assert(compseeed != NULL);
+   SCIP_Bool isDuplicate;
 
    for( size_t i = 0; i < seeeds.size(); ++i )
    {
-      bool noDuplicate = false;
-
       assert(seeeds[i] != NULL);
 
-      /** compares the number of master conss, master vars, blocks, linking vars and stairlinking vars */
-      if( compseeed->getNMasterconss() != seeeds[i]->getNMasterconss() || compseeed->getNMastervars() != seeeds[i]->getNMastervars() ||
-         compseeed->getNBlocks() != seeeds[i]->getNBlocks() || compseeed->getNLinkingvars() != seeeds[i]->getNLinkingvars())
-         continue;
-
-      /** compares the number of stairlinking vars */
-      for( int b = 0; b < compseeed->getNBlocks(); ++b)
-      {
-         if( compseeed->getNStairlinkingvars(b) != seeeds[i]->getNStairlinkingvars(b))
-            noDuplicate = true;;
-      }
-
-      /** compares the number of constraints and variables in the blocks*/
-      for( int j = 0; j < compseeed->getNBlocks() && !noDuplicate ; ++j )
-      {
-         if( (compseeed->getNVarsForBlock(j) != seeeds[i]->getNVarsForBlock(j)) || (compseeed->getNConssForBlock(j) != seeeds[i]->getNConssForBlock(j)) )
-            noDuplicate = true;
-      }
-
-      /** sorts the the master conss, master vars, conss in blocks, vars in blocks, linking vars and stairlinking vars */
-      if( sort && !noDuplicate)
-      {
-         compseeed->sort();
-         seeeds[i]->sort();
-      }
-
-      /** compares the master cons */
-      for( int j = 0; j < compseeed->getNMasterconss() && !noDuplicate; ++j)
-      {
-         if( compseeed->getMasterconss()[j] != seeeds[i]->getMasterconss()[j] )
-            noDuplicate = true;
-      }
-
-      /** compares the master vars */
-      for( int j = 0; j < compseeed->getNMastervars() && !noDuplicate; ++j)
-      {
-         if( compseeed->getMastervars()[j] != seeeds[i]->getMastervars()[j] )
-            noDuplicate = true;
-      }
-
-      /** compares the constrains and variables in the blocks */
-      for( int j = 0; j < compseeed->getNBlocks() && !noDuplicate; ++j )
-      {
-         for( int k = 0; k < compseeed->getNConssForBlock(j) && !noDuplicate; ++k)
-         {
-            if( compseeed->getConssForBlock(j)[k] != seeeds[i]->getConssForBlock(j)[k] )
-               noDuplicate = true;
-         }
-         for( int k = 0; k < compseeed->getNVarsForBlock(j) && !noDuplicate; ++k)
-         {
-            if( compseeed->getVarsForBlock(j)[k] != seeeds[i]->getVarsForBlock(j)[k] )
-               noDuplicate = true;
-         }
-      }
-
-      /** compares the linking vars */
-      for( int j = 0; j < compseeed->getNLinkingvars() && !noDuplicate; ++j)
-      {
-         if( compseeed->getLinkingvars()[j] != seeeds[i]->getLinkingvars()[j] )
-            noDuplicate = true;
-      }
-
-      /** compares the stairlinking vars */
-      for( int b = 0; b < compseeed->getNBlocks() && !noDuplicate; ++b)
-      {
-         for( int j = 0; j < compseeed->getNStairlinkingvars(b) && !noDuplicate; ++j)
-         {
-            if( compseeed->getStairlinkingvars(b)[j] != seeeds[i]->getStairlinkingvars(b)[j] )
-               noDuplicate = true;
-         }
-      }
-
-      if(!noDuplicate)
-      {
-         //std::cout << "seeed " << compseeed->getID() << " is a duplicate of seeed " << seeeds[i]->getID() << std::endl;
-         if(compseeed->getHashValue() != seeeds[i]->getHashValue() )
-         {
-             compseeed->displaySeeed();
-             seeeds[i]->displaySeeed();
-         }
-         assert(compseeed->getHashValue() == seeeds[i]->getHashValue() );
+      compseeed->isEqual(seeeds[i], &isDuplicate, sort );
+      if ( isDuplicate )
          return FALSE;
-      }
-      assert(compseeed->getHashValue() != seeeds[i]->getHashValue() );
    }
    return TRUE;
 }
 
 SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currSeeeds, std::vector<SeeedPtr> const & finishedSeeeds, bool sort){
 
-   bool bool1 = seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, sort);
-   bool bool2 = seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, sort);
+   SCIP_Bool bool1 = seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, sort);
+   SCIP_Bool bool2 = seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, sort);
    return ( bool1 && bool2 );
 }
 
@@ -208,7 +176,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
  Seeedpool::Seeedpool(
     SCIP*               givenScip, /**< SCIP data structure */
         const char*             conshdlrName
-    ):scip(givenScip), currSeeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), ndecompositions(0)
+    ):scip(givenScip), currSeeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), ndecompositions(0), candidatesNBlocks(0)
  {
          SCIP_CONS** conss;
          SCIP_VAR** vars;
@@ -356,6 +324,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          decompositions = NULL;
 
+         addConssClassesForSCIPConstypes();
+         calcCandidatesNBlocks();
+
 
  }//end constructor
 
@@ -387,6 +358,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          std::vector<int> successDetectors;
          std::vector<SeeedPtr> delSeeeds;
          bool duplicate;
+
+//         SCIP_CLOCK* temporaryClock; /* @TODO replace with finer measurement in detectors */
+//
+//         SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
 
          successDetectors = std::vector<int>(nDetectors, 0);
          ndecompositions = 0;
@@ -448,10 +423,13 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                                  /** new seeeds are created by the current detector */
                                  SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
+                                 //SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
                                  if(verboseLevel > 2)
                                      std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d]) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round+1 << std::endl;
 
                                  SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
+
+
 
                                  for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
                                  {
@@ -463,7 +441,14 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                         assert(false);
                                     }
                                     seeedPropData->newSeeeds[j]->calcHashvalue();
+                                    seeedPropData->newSeeeds[j]->addDecChangesFromAncestor(seeedPtr);
+                                    //seeedPropData->newSeeeds[j]->addClockTime( SCIPclockGetTime(temporaryClock )  );
                                  }
+
+                                 SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
+                                 //SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+                                 //SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+
 
                                  if(seeedPropData->nNewSeeeds != 0 && (displaySeeeds ) )
                                  {
@@ -483,7 +468,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                      if(displaySeeeds)
                                          std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds" << std::endl;
 
-                                 SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
+
 
 
 
@@ -616,7 +601,23 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          for( int i = 0; i < nDetectors; ++i )
          {
-             std::cout << "Detector " << DECdetectorGetName(detectorToScipDetector[i] ) << " \t worked on \t " << successDetectors[i] << " of " << finishedSeeeds.size() << "\t and took a total time of \t" << SCIPgetClockTime(scip, detectorToScipDetector[i]->dectime)  << std::endl;
+             std::cout << "Detector " << std::setw(25) << std::setiosflags(std::ios::left) << DECdetectorGetName(detectorToScipDetector[i] ) << " \t worked on \t " << successDetectors[i] << " of " << finishedSeeeds.size() << "\t and took a total time of \t" << SCIPgetClockTime(scip, detectorToScipDetector[i]->dectime)  << std::endl;
+         }
+
+         if((int)finishedSeeeds.size() != 0)
+         {
+            SCIP_Real minscore = finishedSeeeds[0]->evaluate(this);
+            SeeedPtr bestSeeed = finishedSeeeds[0];
+            for( size_t i = 1; i < finishedSeeeds.size(); ++i )
+            {
+               SCIP_Real score = finishedSeeeds[i]->evaluate(this);
+               if (score < minscore)
+               {
+                  minscore = score;
+                  bestSeeed = finishedSeeeds[i];
+               }
+            }
+            bestSeeed->showScatterPlot(this);
          }
 
 
@@ -647,12 +648,16 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             int conscounter = 1; /* in consindex counting starts with 1 */
             int counterstairlinkingvars = 0;
 
+            int size;
+
             assert(seeed->checkConsistency() );
 
             /* create decomp data structure */
             SCIP_CALL_ABORT( DECdecompCreate(scip, &(decompositions[i])) );
 
-  //          seeed->showScatterPlot(this);
+ //           seeed->displayConss();
+ //           seeed->showScatterPlot(this);
+
 
             /** set nblocks */
             DECdecompSetNBlocks(decompositions[i], seeed->getNBlocks() );
@@ -760,11 +765,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                else subscipvars[b] = NULL;
 
                if(seeed->getNStairlinkingvars(b) > 0)
-                  SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars[b], seeed->getNStairlinkingvars( b) ) );
+                  SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars[b], seeed->getNStairlinkingvars(b) ) );
                else stairlinkingvars[b] = NULL;
 
                nsubscipvars[b] = seeed->getNVarsForBlock(b);
-               nstairlinkingvars[b] = seeed->getNStairlinkingvars( b);
+               nstairlinkingvars[b] = seeed->getNStairlinkingvars(b);
 
                for ( int v = 0; v < seeed->getNVarsForBlock(b); ++v )
                {
@@ -1000,14 +1005,30 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
             /** set detectorchain */
             int ndetectors = seeed->getNDetectors();
-            decompositions[i]->sizeDetectorchain = ndetectors;
-            SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->detectorchain, ndetectors) ); /** free in decomp.c:469 */
+            decompositions[i]->sizedetectorchain = ndetectors;
+            size = SCIPcalcMemGrowSize(scip, decompositions[i]->sizedetectorchain);
+            SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->detectorchain, size) ); /** free in decomp.c:469 */
             for( int k = 0; k < ndetectors; ++k )
             {
                //          std::cout << " added detector of " << i << "-th seeed to its detetcor chain" << std::endl;
                decompositions[i]->detectorchain[k] = getDetectorForIndex(seeed->getDetectorchain()[k]);
             }
 
+
+            /** set statistical detector chain data */
+
+            DECdecompSetSeeedID(decompositions[i], seeed->getID() );
+            if(seeed->getNDetectors() > 0 )
+            {
+               DECdecompSetDetectorClockTimes(scip, decompositions[i], &(seeed->detectorClockTimes[0]) );
+               DECdecompSetDetectorPctVarsToBorder(scip, decompositions[i], &(seeed->pctVarsToBorder[0] ) );
+               DECdecompSetDetectorPctVarsToBlock(scip, decompositions[i], &(seeed->pctVarsToBlock[0] ) );
+               DECdecompSetDetectorPctVarsFromOpen(scip, decompositions[i], &(seeed->pctVarsFromFree[0] ) );
+               DECdecompSetDetectorPctConssToBorder(scip, decompositions[i], &(seeed->pctConssToBorder[0] ) );
+               DECdecompSetDetectorPctConssToBlock(scip, decompositions[i], &(seeed->pctConssToBlock[0] ) );
+               DECdecompSetDetectorPctConssFromOpen(scip, decompositions[i], &(seeed->pctConssFromFree[0] ) );
+               DECdecompSetNNewBlocks(scip, decompositions[i], &(seeed->nNewBlocks[0] ) );
+            }
             /** set dectype */
             if(decompositions[i]->nlinkingvars == seeed->getNTotalStairlinkingvars() && decompositions[i]->nlinkingconss == 0 && DECdecompGetNLinkingvars(decompositions[i]) > 0)
             {
@@ -1039,6 +1060,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 
          }
+
+         //SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
          /** delete the seeeds */
          for(size_t c = 0; c < currSeeeds.size(); ++c)
@@ -1188,6 +1211,193 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
  int Seeedpool::getNConss(){
     return nConss;
  }
+
+ std::vector<int> Seeedpool::getCandidatesNBlocks() const
+ {
+    return candidatesNBlocks;
+ }
+
+ void Seeedpool::addCandidatesNBlocks(
+    int                 candidate            /**< candidate for block size */
+    )
+ {
+
+    if(candidate > 1)
+    {
+       bool alreadyIn = false;
+       for(size_t i = 0; i < candidatesNBlocks.size(); ++i )
+       {
+          if(candidatesNBlocks[i] == candidate)
+          {
+             alreadyIn = true;
+             break;
+          }
+       }
+       if(!alreadyIn)
+       {
+          std::cout << "added block number candidate : " << candidate << std::endl;
+          candidatesNBlocks.push_back(candidate);
+       }
+    }
+ }
+
+ void Seeedpool::calcCandidatesNBlocks()
+  {
+    /**
+     * for every subset of constraint classes calculate gcd (greatest common divisors) of the corresponding number of occurrences
+     */
+
+
+    for( size_t conssclass = 0; conssclass < consclassescollection.size(); ++conssclass )
+    {
+       std::vector<int> nconssofclass = std::vector<int>(consclassesnclasses[conssclass], 0);
+       std::vector<int> consclassindices = std::vector<int>(0);
+       for( int i = 0; i < consclassesnclasses[conssclass]; ++ i)
+          consclassindices.push_back(i);
+       std::vector< std::vector<int> > subsetsOfConstypes = getAllSubsets(consclassindices);
+
+       for ( int i =0; i < getNConss(); ++i)
+          ++nconssofclass[ consclassescollection[conssclass][i] ];
+
+       for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
+       {
+          int greatestCD = 1;
+
+          if(subsetsOfConstypes[subset].size() == 0 || subsetsOfConstypes[subset].size() == 1)
+               continue;
+
+          greatestCD = gcd(nconssofclass[subsetsOfConstypes[subset][0]], nconssofclass[subsetsOfConstypes[subset][1]]  );
+
+          for( size_t i = 2; i < subsetsOfConstypes[subset].size() ; ++i)
+          {
+             greatestCD = gcd( greatestCD, nconssofclass[subsetsOfConstypes[subset][i]] );
+          }
+
+          if( greatestCD > 1 )
+          {
+             bool alreadyIn = false;
+             for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
+             {
+                if( candidatesNBlocks[i] == greatestCD )
+                {
+                   alreadyIn = true;
+                   break;
+                }
+             }
+             if( !alreadyIn )
+             {
+                std::cout << "added block number candidate : " << greatestCD << std::endl;
+                candidatesNBlocks.push_back(greatestCD);
+             }
+          }
+       }
+    }
+
+    return ;
+  }
+
+ int Seeedpool::getNConssClassDistributions(){
+    return consclassescollection.size();
+ }
+
+ int* Seeedpool::getConssClassDistribution(
+    int consclassdistr
+    ){
+    return &(consclassescollection[consclassdistr][0]);
+ }
+
+ int Seeedpool::getNClassesOfDistribution(
+    int consclassdistr
+    )
+ {
+    return consclassesnclasses[consclassdistr];
+ }
+
+ void Seeedpool::addConssClassesForSCIPConstypes()
+ {
+    /**
+     * at first for every subset of constypes calculate gcd (greatest common divisors) of the corresponding number of occurrences
+     */
+    std::vector<consType> foundConstypes(0);
+    std::vector<int> constypesIndices(0);
+    std::vector<int> nConssConstype(0);
+    std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
+
+    for( int i = 0; i < getNConss(); ++i)
+    {
+       SCIP_CONS* cons;
+       bool found = false;
+       cons = getConsForIndex(i);
+       consType cT = GCGconsGetType(cons);
+       size_t constype;
+
+       /** find constype or not */
+
+       for( constype = 0; constype < foundConstypes.size(); ++constype)
+       {
+          if( foundConstypes[constype] == cT )
+          {
+             found = true;
+             break;
+          }
+       }
+       if( !found )
+       {
+          foundConstypes.push_back(GCGconsGetType(cons) );
+          classForCons[i] = foundConstypes.size() - 1;
+       }
+       else
+          classForCons[i] = constype;
+     }
+
+    consclassescollection.push_back(classForCons);
+    consclassesnclasses.push_back(foundConstypes.size() );
+
+    return;
+ }
+
+ void Seeedpool::addConssClassesForConsnames()
+  {
+     /**
+      * at first for every subset of constypes calculate gcd (greatest common divisors) of the corresponding number of occurrences
+      */
+     std::vector<consType> foundConstypes(0);
+     std::vector<int> constypesIndices(0);
+     std::vector<int> nConssConstype(0);
+     std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
+
+     for( int i = 0; i < getNConss(); ++i)
+     {
+        SCIP_CONS* cons;
+        bool found = false;
+        cons = getConsForIndex(i);
+        consType cT = GCGconsGetType(cons);
+        size_t constype;
+
+        /** find constype or not */
+
+        for( constype = 0; constype < foundConstypes.size(); ++constype)
+        {
+           if( foundConstypes[constype] == cT )
+           {
+              found = true;
+              break;
+           }
+        }
+        if( !found )
+        {
+           foundConstypes.push_back(GCGconsGetType(cons) );
+           classForCons[i] = foundConstypes.size() - 1;
+        }
+        else
+           classForCons[i] = constype;
+      }
+
+     consclassescollection.push_back(classForCons);
+     consclassesnclasses.push_back(foundConstypes.size() );
+
+     return;
+  }
 
 
 
