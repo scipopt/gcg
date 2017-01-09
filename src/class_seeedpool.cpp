@@ -48,7 +48,7 @@
 #include <stdio.h>
 #include <sstream>
 #include <iomanip>
-
+#include <queue>
 
 #include <exception>
 
@@ -90,24 +90,69 @@ namespace gcg {
 
 /** local methods */
 
+int calcLevenshteinDistance(std::string s, std::string t)
+{
+    // trivial cases
+    if (s.compare(t) == 0) return 0;
+    if (s.length() == 0) return t.length();
+    if (t.length() == 0) return s.length();
+
+    // create two work vectors of integer distances
+    std::vector<int> v0 (t.length() + 1);
+    std::vector<int> v1 (t.length() + 1);
+
+    // initialize v0 (the previous row of distances)
+    // this row is A[0][i]: edit distance for an empty s
+    // the distance is just the number of characters to delete from t
+    for ( size_t i = 0; i < v0.size(); i++ )
+        v0[i] = i;
+
+    for (size_t i = 0; i < s.length(); i++)
+    {
+        // calculate v1 (current row distances) from the previous row v0
+
+        // first element of v1 is A[i+1][0]
+        //   edit distance is delete (i+1) chars from s to match empty t
+        v1[0] = i + 1;
+
+        // use formula to fill in the rest of the row
+        for (size_t j = 0; j < t.length(); j++)
+        {
+            int cost = (s[i] == t[j]) ? 0 : 1;
+            v1[j + 1] = std::min(v1[j] + 1, std::min( v0[j + 1] + 1, v0[j] + cost ) );
+        }
+
+        // copy v1 (current row) to v0 (previous row) for next iteration
+        for (size_t j = 0; j < v0.size(); j++)
+            v0[j] = v1[j];
+    }
+
+    return v1[t.length()];
+}
+
+
 void removeDigits(char *str, int *nremoved) {
 
     char digits[11] = "0123456789";
-    char *src, *dst;
     *nremoved = 0;
+
     for(int i = 0; i < 10; ++i )
     {
        char digit = digits[i];
-       for (src = dst = str; *src != '\0'; src++)
+       size_t j = 0;
+       while ( j < strlen(str) )
        {
-          *dst = *src;
-          if (*dst != digit)
-             dst++;
-          else
+          if (str[j] == digit)
+          {
              *nremoved = *nremoved + 1;
+             for(size_t k = j; k < strlen(str); ++k)
+             {
+                str[k] = str[k+1];
+             }
+          }
+          else ++j;
        }
     }
-    *dst = '\0';
 }
 
 
@@ -325,6 +370,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          decompositions = NULL;
 
          addConssClassesForSCIPConstypes();
+         addConssClassesForConsnamesDigitFreeIdentical();
+         addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
          calcCandidatesNBlocks();
 
 
@@ -1356,49 +1403,163 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     return;
  }
 
- void Seeedpool::addConssClassesForConsnames()
+ void Seeedpool::addConssClassesForConsnamesDigitFreeIdentical()
   {
      /**
-      * at first for every subset of constypes calculate gcd (greatest common divisors) of the corresponding number of occurrences
+      * at first remove all digits from the consnames
       */
-     std::vector<consType> foundConstypes(0);
-     std::vector<int> constypesIndices(0);
+     std::vector<std::string> consnamesToCompare(getNConss(), "");
      std::vector<int> nConssConstype(0);
      std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
+     std::vector<std::string> nameClasses(0);
 
-     for( int i = 0; i < getNConss(); ++i)
+
+     for( int i = 0; i < getNConss(); ++i )
      {
-        SCIP_CONS* cons;
-        bool found = false;
-        cons = getConsForIndex(i);
-        consType cT = GCGconsGetType(cons);
-        size_t constype;
+        int nremoved;
+        char consname[SCIP_MAXSTRLEN];
+        strcpy(consname, SCIPconsGetName(getConsForIndex(i) ) );
 
-        /** find constype or not */
+        removeDigits(consname, &nremoved);
+        consnamesToCompare[i] = std::string(consname);
+     }
 
-        for( constype = 0; constype < foundConstypes.size(); ++constype)
+     /** test of reduced consnames */
+
+     if( false )
+     {
+        for( int i = 0; i < getNConss(); ++i )
         {
-           if( foundConstypes[constype] == cT )
+          std::cout << " old consname : " << SCIPconsGetName(getConsForIndex(i) ) << std::endl;
+//           std::cout << " new consname : " << consnamesToCompare[i]  << std::endl;
+//           std::cout << std::endl;
+        }
+     }
+
+     for( int i = 0; i < getNConss(); ++i )
+     {
+        bool belongstoexistingclass = false;
+        /** test if string belongs to an existing name class */
+        for ( size_t j = 0; j < nameClasses.size(); ++j )
+        {
+           if ( nameClasses[j].compare(consnamesToCompare[i]) == 0 )
            {
-              found = true;
+              belongstoexistingclass = true;
+              classForCons[i] = j;
+              nConssConstype[j]++;
               break;
            }
         }
-        if( !found )
+        if ( !belongstoexistingclass )
         {
-           foundConstypes.push_back(GCGconsGetType(cons) );
-           classForCons[i] = foundConstypes.size() - 1;
+           nameClasses.push_back(consnamesToCompare[i] );
+           nConssConstype.push_back(1);
+           classForCons[i] = nameClasses.size()-1;
+
         }
-        else
-           classForCons[i] = constype;
-      }
+     }
 
      consclassescollection.push_back(classForCons);
-     consclassesnclasses.push_back(foundConstypes.size() );
+     consclassesnclasses.push_back(nameClasses.size() );
+
+     std::cout << " comparison of digit-reduced consnames for identity  " << " yields a distribution with " << nameClasses.size()  << " different constraint classes" << std::endl;
 
      return;
+
+
   }
 
+ void Seeedpool::addConssClassesForConsnamesLevenshteinDistanceConnectivity(
+    int connectivity
+    )
+  {
+     /**
+      * at first remove all digits from the consnames
+      */
+     std::vector<std::string> consnamesToCompare(getNConss(), "");
+     std::vector<int> nConssConstype(0);
+     std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
+     std::vector<bool> alreadyReached(getNConss(), false);
+     std::queue<int> helpqueue = std::queue<int>();
+     //std::vector<int> neighborConss(0);
+     int nUnreachedConss = getNConss();
+     int currentClass = -1;
+
+     std::vector< std::vector<int> > levenshteindistances(getNConss(), std::vector<int>(getNConss(), -1) );
+
+     for( int i = 0; i < getNConss(); ++i )
+     {
+        consnamesToCompare[i] = std::string(SCIPconsGetName(getConsForIndex(i) ));
+     }
+
+     for( int i = 0; i < getNConss(); ++i )
+     {
+        for ( int j = i+1; j < getNConss(); ++j)
+        {
+           levenshteindistances[i][j] = calcLevenshteinDistance(consnamesToCompare[i], consnamesToCompare[j]);
+           levenshteindistances[j][i] = levenshteindistances[i][j];
+//           if(levenshteindistances[i][j] == 1)
+//              std::cout << " string1 : " << consnamesToCompare[i] << " string2 : " << consnamesToCompare[j] << " distance: " << levenshteindistances[i][j] << std::endl;
+        }
+     }
+
+     /** do breadth first search */
+        while( nUnreachedConss > 0 )
+        {
+           int firstUnreached = -1;
+           currentClass++;
+           assert(helpqueue.empty());
+           for( int i = 0; i < getNConss(); ++i )
+           {
+              if( classForCons[i] == -1 )
+              {
+                 firstUnreached = i;
+                 break;
+              }
+           }
+
+           helpqueue.push(firstUnreached);
+//           neighborConss.clear();
+//           neighborConss.push_back(firstUnreached);
+           alreadyReached[firstUnreached] = true;
+           classForCons[firstUnreached] = currentClass;
+           --nUnreachedConss;
+
+           while( !helpqueue.empty() )
+           {
+              int nodecons = helpqueue.front();
+              helpqueue.pop();
+              for( int j = 0; j < getNConss() ; ++j )
+              {
+
+                 if( alreadyReached[j] )
+                    continue;
+
+                 if(j == nodecons)
+                    continue;
+
+                 if(levenshteindistances[j][nodecons] > connectivity)
+                    continue;
+
+                    alreadyReached[j] = true;
+                    classForCons[j] = currentClass;
+                    --nUnreachedConss;
+                    helpqueue.push(j);
+                 }
+           } //endwhile(!queue.empty() )
+
+        } // endwhile( !openConss.empty() )
+
+        consclassescollection.push_back(classForCons);
+        consclassesnclasses.push_back(currentClass+1 );
+
+        std::cout << " levenshtein connectivity of " << connectivity << " yields a distribution with " << currentClass+1  << " different constraint classes" << std::endl;
+
+
+     return;
+
+
+  }
 
 
 
