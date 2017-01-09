@@ -2307,7 +2307,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          if( SCIPisDualfeasNegative(scip_, redcost) )
          {
-            SCIPinfoMessage(scip_, NULL, "Found column in column pool\n");
+            SCIPdebugMessage("Found column in column pool with redcost %f\n", redcost);
             break;
          }
       }
