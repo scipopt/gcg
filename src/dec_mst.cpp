@@ -55,6 +55,7 @@ using gcg::GraphGCG;
 #define DEC_PRIORITY             910         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'M'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
+#define DEC_ENABLEDFINISHING     FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -637,6 +638,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    return SCIP_OKAY;
 }
 
+#define finishSeeedMST NULL
+
 
 /*
  * detector specific interface methods
@@ -656,8 +659,8 @@ SCIP_RETCODE SCIPincludeDetectorMST(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+      detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST, finishSeeedMST) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/mst/niterations", "Number of iterations to run mst with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );

@@ -67,6 +67,7 @@
 #define DEC_DECCHAR              'I'         /**< display character of detector */
 
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
+#define DEC_ENABLEDFINISHING     FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                 TRUE        /**< should the detector be skipped if others found decompositions */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -1677,7 +1678,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
 
    return SCIP_OKAY;
 }
-
+#define detectorFinishSeeedIsomorph NULL
 /*
  * detector specific interface methods
  */
@@ -1698,8 +1699,8 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, detectorFinishSeeedIsomorph) );
 
    /* add isomorph constraint handler parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecompsexact",

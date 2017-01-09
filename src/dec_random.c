@@ -56,6 +56,7 @@
 #define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_DECCHAR              'r'         /**< display character of detector */
 #define DEC_ENABLED              FALSE       /**< should the detection be enabled */
+#define DEC_ENABLEDFINISHING     FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -242,6 +243,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectRandom)
 
 #define detectorExitRandom NULL
 #define detectorPropagateSeeedRandom NULL
+#define detectorFinishSeeedRandom NULL
 /*
  * detector specific interface methods
  */
@@ -258,8 +260,8 @@ SCIP_RETCODE SCIPincludeDetectorRandom(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorDetectRandom, detectorFreeRandom, detectorInitRandom, detectorExitRandom, detectorPropagateSeeedRandom) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+      detectordata, detectorDetectRandom, detectorFreeRandom, detectorInitRandom, detectorExitRandom, detectorPropagateSeeedRandom, detectorFinishSeeedRandom) );
 
 
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/seed", "random seed for the random number generator, -1 is the current time",

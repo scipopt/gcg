@@ -63,6 +63,7 @@
 #define DEC_PRIORITY          1100           /**< priority of the detector */
 #define DEC_DECCHAR           'c'            /**< display character of detector */
 #define DEC_ENABLED           FALSE          /**< should detector be called by default */
+#define DEC_ENABLEDFINISHING  FALSE          /**< should the finishing be enabled */
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -2039,6 +2040,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectCutpacking)
 #endif
 
 #define detectorPropagateSeeedCutpacking NULL
+#define detectorFinishSeeedCutpacking NULL
 #define detectorExitCutpacking NULL
 
 /** creates the cutpacking detector and includes it in SCIP */
@@ -2056,8 +2058,8 @@ SCIP_RETCODE SCIPincludeDetectorCutpacking(
 
    /* include structure detector */
    SCIP_CALL( DECincludeDetector(scip,
-      DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, detectorExitCutpacking, detectorPropagateSeeedCutpacking) );
+      DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, detectorExitCutpacking, detectorPropagateSeeedCutpacking, detectorFinishSeeedCutpacking) );
 
 
    /* add cutpacking detector parameters */

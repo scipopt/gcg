@@ -510,32 +510,73 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  seeedPropData->nNewSeeeds = 0;
                          }
 
-                         SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
-                         seeedPtr->calcHashvalue();
-
-
-                   if( seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false) )
-                   {
-                      finishedSeeeds.push_back(seeedPtr);
-                   }
-                   else
-                   {
-                      bool isIdentical = false;
-                      for (size_t h = 0; h < finishedSeeeds.size(); ++h )
-                      {
-                         if( seeedPtr == finishedSeeeds[h] )
+//                         SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
+                         for(int d = 0; d < nDetectors; ++d)
                          {
-                            isIdentical = true;
-                            break;
+                            DEC_DETECTOR* detector = detectorToScipDetector[d];
+                            SCIP_RESULT result = SCIP_DIDNOTFIND;
+                            seeedPropData->seeedToPropagate = seeedPtr;
+
+                            /** if the finishing of the detector is not enabled go on with the next detector */
+                            if( !detector->enabledFinishing )
+                                    continue;
+
+                            SCIP_CALL_ABORT(detectorToScipDetector[d]->finishSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
+
+                            for(int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished)
+                            {
+                               SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+                               seeed->calcHashvalue();
+                               if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
+                               {
+                                  finishedSeeeds.push_back(seeed);
+                               }
+                               else
+                               {
+                                  bool isIdentical = false;
+                                  for (size_t h = 0; h < finishedSeeeds.size(); ++h )
+                                  {
+                                     if( seeed == finishedSeeeds[h] )
+                                     {
+                                        isIdentical = true;
+                                        break;
+                                     }
+                                  }
+
+                                  if( !isIdentical )
+                                  {
+                                     currSeeedsToDelete.push_back(seeed);
+                                  }
+                               }
+                            }
+                            SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
+                            seeedPropData->newSeeeds = NULL;
+                            seeedPropData->nNewSeeeds = 0;
                          }
-                      }
+//                         seeedPtr->calcHashvalue();
 
-                      if( !isIdentical )
-                      {
-                         currSeeedsToDelete.push_back(seeedPtr);
-                      }
 
-                   }
+//                   if( seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false) )
+//                   {
+//                      finishedSeeeds.push_back(seeedPtr);
+//                   }
+//                   else
+//                   {
+//                      bool isIdentical = false;
+//                      for (size_t h = 0; h < finishedSeeeds.size(); ++h )
+//                      {
+//                         if( seeedPtr == finishedSeeeds[h] )
+//                         {
+//                            isIdentical = true;
+//                            break;
+//                         }
+//                      }
+//
+//                      if( !isIdentical )
+//                      {
+//                         currSeeedsToDelete.push_back(seeedPtr);
+//                      }
+//                   }
                  }
 
                  for(size_t s = 0; s < currSeeedsToDelete.size(); ++s )
@@ -545,25 +586,62 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          }
 
-         /* completeByconnected() on  currseeeds (from last round) and add them to finished seeeds */
+//         /* completeByconnected() on  currseeeds (from last round) and add them to finished seeeds */
+//
+//         for(size_t i = 0; i < currSeeeds.size(); ++i)
+//         {
+//             SeeedPtr seeedPtr = currSeeeds[i];
+//
+//             SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
+//             seeedPtr->calcHashvalue();
+//             /* currseeeds are freed later */
+//             if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false))
+//             {
+//                if(verboseLevel > 2)
+//                {
+//                   std::cout << "seeed " << seeedPtr->getID() << " is finished from next round seeeds!" << std::endl;
+//                   seeedPtr->showScatterPlot(this);
+//                }
+//                finishedSeeeds.push_back(seeedPtr);
+//             }
+//
+//         }
 
+         /** complete the currseeeds with finishing detectors and add them to finished seeeds */
          for(size_t i = 0; i < currSeeeds.size(); ++i)
          {
-             SeeedPtr seeedPtr = currSeeeds[i];
+            SeeedPtr seeedPtr = currSeeeds[i];
+            for(int d = 0; d < nDetectors; ++d)
+            {
+               DEC_DETECTOR* detector = detectorToScipDetector[d];
+               SCIP_RESULT result = SCIP_DIDNOTFIND;
+               seeedPropData->seeedToPropagate = seeedPtr;
 
-             SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
-             seeedPtr->calcHashvalue();
-             /* currseeeds are freed later */
-             if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false))
-             {
-                if(verboseLevel > 2)
-                {
-                   std::cout << "seeed " << seeedPtr->getID() << " is finished from next round seeeds!" << std::endl;
-                   seeedPtr->showScatterPlot(this);
-                }
-                finishedSeeeds.push_back(seeedPtr);
-             }
+               /** if the finishing of the detector is not enabled go on with the next detector */
+               if( !detector->enabledFinishing )
+                  continue;
 
+               SCIP_CALL_ABORT(detectorToScipDetector[d]->finishSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
+
+               for(int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished)
+               {
+                  SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+                  seeed->calcHashvalue();
+                  if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
+                  {
+                     if(verboseLevel > 2)
+                     {
+                        std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
+                        seeed->showScatterPlot(this);
+                     }
+                     finishedSeeeds.push_back(seeed);
+                  }
+
+                  SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
+                  seeedPropData->newSeeeds = NULL;
+                  seeedPropData->nNewSeeeds = 0;
+               }
+            }
          }
 
          std::cout << (int) finishedSeeeds.size() << " finished seeeds are found." << std::endl;
