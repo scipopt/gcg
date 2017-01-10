@@ -196,6 +196,8 @@ public:
       int connectivity
          );
 
+   void addConssClassesForNNonzeros(
+      );
 
 
 };
