@@ -62,6 +62,7 @@
 #define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_DECCHAR              'S'            /**< display character of detector */
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
+#define DEC_ENABLEDFINISHING     FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -866,7 +867,120 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    return SCIP_OKAY;
 }
 
+static
+DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
+{
+   int i;
+   int j;
+   int* nodes;
+   int nnodes;
+   int* distances;
+   int* blocks;
+   int nblocks = 0;
+   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
 
+   gcg::Seeedpool* seeedpool = seeedPropagationData->seeedpool;
+   gcg::Seeed* currseeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+
+
+   *result = SCIP_DIDNOTFIND;
+
+   currseeed->considerImplicits(seeedpool);
+   currseeed->refineToMaster(seeedpool);
+
+
+   SCIP_CALL( createGraphFromPartialMatrix(scip, &(detectordata->graph), currseeed, seeedpool, detectordata) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+
+   if( tcliqueGetNNodes(detectordata->graph) > 0 )
+   {
+      nnodes = tcliqueGetNNodes(detectordata->graph);
+
+      /* find connected components of the graph. the result will be stored in 'detectordata->components' */
+      SCIP_CALL( findConnectedComponents(scip, detectordata) );
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &nodes, nnodes) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &distances, nnodes) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nnodes) );
+
+      for( i = 0; i < nnodes; ++i)
+         blocks[i] = -1;
+
+      /* find the diameter of each connected component */
+      for( i = 0; i < detectordata->ncomponents; ++i )
+      {
+         int diameter = 0;
+         int ncompsize = 0;
+
+         SCIP_CALL( findDiameter(scip, detectordata, &diameter, &ncompsize, nodes, distances, i) );
+         SCIPdebugMessage("component %i has %i vertices and diameter %i\n", i, ncompsize, diameter);
+
+         for( j = 0; j < ncompsize; j++ )
+         {
+            assert(nodes[j] >= 0);
+            assert(nodes[j] < nnodes);
+            assert(distances[j] >= 0);
+            assert(distances[j] <= diameter);
+            assert(distances[j] + nblocks < nnodes);
+
+            blocks[nodes[j]] = nblocks + distances[j];
+            SCIPdebugMessage("\tnode %i to block %i\n", nodes[j], nblocks + distances[j]);
+         }
+
+         nblocks += (diameter + 1);
+      }
+      if( nblocks > 0 )
+      {
+         detectordata->nblocks = nblocks;
+
+         for( i = 0; i < nnodes; ++i )
+         {
+            assert(blocks[i] >= 0);
+            SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, (void*) (size_t) detectordata->newToOld->at(i), (void*) (size_t) (blocks[i] + 1)) );
+         }
+      }
+
+      SCIPfreeBufferArray(scip, &blocks);
+      SCIPfreeBufferArray(scip, &nodes);
+      SCIPfreeBufferArray(scip, &distances);
+      SCIPfreeBufferArray(scip, &(detectordata->components));
+   }
+
+   SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks, seeedpool) );
+
+   currseeed->assignCurrentStairlinking(seeedpool);
+   currseeed->considerImplicits(seeedpool);
+   currseeed->assignAllDependent(seeedpool);
+
+
+
+   if( detectordata->constoblock != NULL )
+      SCIPhashmapFree(&detectordata->constoblock);
+   if( detectordata->vartoblock != NULL )
+      SCIPhashmapFree(&detectordata->vartoblock);
+
+
+   assert(currseeed->checkConsistency() );
+
+
+   if(currseeed->getNOpenconss() == 0 && currseeed->getNOpenvars() == 0)
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
+      seeedPropagationData->newSeeeds[0] = currseeed;
+      seeedPropagationData->nNewSeeeds = 1;
+   }
+   else
+   {
+      seeedPropagationData->nNewSeeeds = 0;
+   }
+
+   *result = SCIP_SUCCESS;
+
+
+   tcliqueFree(&detectordata->graph);
+
+   return SCIP_OKAY;
+}
 //#define detectorExitStaircase NULL
 /*
  * constraint specific interface methods
@@ -893,9 +1007,9 @@ SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
 
 
    SCIP_CALL( DECincludeDetector( scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
-         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP,
          DEC_USEFULRECALL, detectordata, detectorDetectStaircaseLsp, detectorFreeStaircaseLsp,
-         detectorInitStaircaseLsp, detectorExitStaircaseLsp, detectorPropagateSeeedStaircaseLsp) );
+         detectorInitStaircaseLsp, detectorExitStaircaseLsp, detectorPropagateSeeedStaircaseLsp, detectorFinishSeeedStaircaseLsp) );
 
 
    return SCIP_OKAY;

@@ -55,6 +55,7 @@
 #define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'C'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
+#define DEC_ENABLEDFINISHING     TRUE        /**< should the finishing be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -159,6 +160,36 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
 
    return SCIP_OKAY;
 }
+
+static
+DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
+{
+   *result = SCIP_DIDNOTFIND;
+
+//   SCIP_CLOCK* temporaryClock;
+//   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+//   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
+   gcg::Seeed* seeed;
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool );
+
+   //complete the seeed by bfs
+   seeed->completeByConnected(seeedPropagationData->seeedpool );
+
+  // seeed->showScatterPlot(seeedPropagationData->seeedpool);
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
+   seeedPropagationData->newSeeeds[0] = seeed;
+   seeedPropagationData->nNewSeeeds = 1;
+
+//   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+//   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+//   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
+   *result = SCIP_SUCCESS;
+
+   return SCIP_OKAY;
+}
 /*
  * detector specific interface methods
  */
@@ -173,7 +204,7 @@ SCIP_RETCODE SCIPincludeDetectorConnectedbase(
    /**@todo create connectedbase detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConnectedbase, freeConnectedbase, initConnectedbase, exitConnectedbase, propagateSeeedConnectedbase) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConnectedbase, freeConnectedbase, initConnectedbase, exitConnectedbase, propagateSeeedConnectedbase, finishSeeedConnectedbase) );
 
    /**@todo add connectedbase detector parameters */
 

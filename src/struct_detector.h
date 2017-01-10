@@ -51,6 +51,7 @@ struct DEC_Detector {
    int                   minCallRound;       /** first round the detector gets called (offset in detection loop) */
    int                   priority;           /**< detector priority */
    SCIP_Bool             enabled;            /**< flag to indicate whether detector is enabled */
+   SCIP_Bool             enabledFinishing;   /**< flag to indicate whether finishing is enabled */
    SCIP_Bool             skip;               /**< should detector be skipped if other detectors found decompositions */
    SCIP_Bool             usefulRecall;       /** is it useful to call this detector on a descendant of the propagated seeed */
    DEC_DECOMP**          decomps;            /**< decompositions this detector has found */
@@ -63,6 +64,7 @@ struct DEC_Detector {
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)); /**< structure detection method of detector */
    DEC_DECL_EXITDETECTOR((*exitDetection));  /**< deinitialization method of detector */
    DEC_DECL_PROPAGATESEEED((*propagateSeeed));
+   DEC_DECL_FINISHSEEED((*finishSeeed));
 
 };
 

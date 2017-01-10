@@ -25,15 +25,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_constype.cpp
+/**@file   dec_consclass.cpp
  * @ingroup DETECTORS
- * @brief  detector constype (put your description here)
+ * @brief  detector consclass (put your description here)
  * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_constype.h"
+#include "dec_consclass.h"
 #include "cons_decomp.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
@@ -46,15 +46,15 @@
 #include <iostream>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "constype"       /**< name of detector */
-#define DEC_DESC                 "detector constype" /**< description of detector*/
+#define DEC_DETECTORNAME         "consclass"       /**< name of detector */
+#define DEC_DESC                 "detector consclass" /**< description of detector*/
 #define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND         0           /** last round the detector gets called                              */
 #define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'c'         /**< display character of detector */
-#define DEC_ENABLED              FALSE        /**< should the detection be enabled */
-#define DEC_ENABLEDFINISHING     FALSE       /**< should the finishing be enabled */
+#define DEC_ENABLED              TRUE        /**< should the detection be enabled */
+#define DEC_ENABLEDFINISHING     FALSE        /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 /*
@@ -75,7 +75,7 @@ struct DEC_DetectorData
 /* put your local methods here, and declare them static */
 
 /** method to enumerate all subsets */
-std::vector< std::vector<int> > getSubsets(std::vector<int> set)
+std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
 {
     std::vector< std::vector<int> > subset;
     std::vector<int> empty;
@@ -99,12 +99,12 @@ std::vector< std::vector<int> > getSubsets(std::vector<int> set)
  */
 
 /** destructor of detector to free user data (called when GCG is exiting) */
-#define freeConstype NULL
+#define freeConsclass NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0
 static
-DEC_DECL_EXITDETECTOR(exitConstype)
+DEC_DECL_EXITDETECTOR(exitConsclass)
 { /*lint --e{715}*/
 
    SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
@@ -113,13 +113,13 @@ DEC_DECL_EXITDETECTOR(exitConstype)
    return SCIP_OKAY;
 }
 #else
-#define exitConstype NULL
+#define exitConsclass NULL
 #endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
 #if 0
 static
-DEC_DECL_INITDETECTOR(initConstype)
+DEC_DECL_INITDETECTOR(initConsclass)
 { /*lint --e{715}*/
 
    SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
@@ -128,11 +128,11 @@ DEC_DECL_INITDETECTOR(initConstype)
    return SCIP_OKAY;
 }
 #else
-#define initConstype NULL
+#define initConsclass NULL
 #endif
 
 /** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectConstype)
+static DEC_DECL_DETECTSTRUCTURE(detectConsclass)
 { /*lint --e{715}*/
    *result = SCIP_DIDNOTFIND;
 
@@ -142,7 +142,10 @@ static DEC_DECL_DETECTSTRUCTURE(detectConstype)
    return SCIP_OKAY;
 }
 
-static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
+
+#define finishSeeedConsclass NULL
+
+static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 {
   *result = SCIP_DIDNOTFIND;
 
@@ -150,14 +153,29 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-  SCIP_CONS* cons;
+  std::vector<gcg::Seeed*> foundseeeds(0);
 
-  int seeedCounter = 0;
+
   gcg::Seeed* seeedOrig;
   gcg::Seeed* seeed;
 
-  std::vector<consType> foundConstypes(0);
-  std::vector<int> constypesIndices(0);
+  int maximumnclasses = 8; /* if  distribution of classes exceed this number its skipped */
+
+  for( int conssclass = 0; conssclass < seeedPropagationData->seeedpool->getNConssClassDistributions(); ++conssclass )
+  {
+
+    int nclasses = seeedPropagationData->seeedpool->getNClassesOfDistribution(conssclass);
+    std::vector<int> classforcons = seeedPropagationData->seeedpool->getConssClassDistributionVector(conssclass);
+    std::vector<int> consclassindices = std::vector<int>(0);
+
+    /** check if there are to  many classes in this distribution and skip it if so */
+
+    if ( nclasses > maximumnclasses)
+    {
+       std::cout << " the current consclass distribution includes " <<  nclasses << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
+       continue;
+    }
+
 
   seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
   seeedOrig->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
@@ -169,95 +187,75 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
       seeedOrig->setOpenVarsAndConssCalculated(true);
   }
 
+  for( int i = 0; i < nclasses; ++ i)
+      consclassindices.push_back(i);
+
+  std::vector< std::vector<int> > subsetsOfConsclasses = getAllSubsets(consclassindices);
 
 
-  for( int i = 0; i < seeedOrig->getNOpenconss(); ++i)
+
+
+  for(size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset)
   {
-      cons = seeedPropagationData->seeedpool->getConsForIndex(seeedOrig->getOpenconss()[i]);
-      consType cT = GCGconsGetType(cons);
-
-      /** find constype or not */
-      std::vector<consType>::const_iterator constypeIter = foundConstypes.begin();
-      for(; constypeIter != foundConstypes.end(); ++constypeIter)
-      {
-    	  if(*constypeIter == cT)
-    		  break;
-      }
-
-      if( constypeIter  == foundConstypes.end()  )
-      {
-         foundConstypes.push_back(GCGconsGetType(cons) );
-      }
-  }
-
-  for(size_t i = 0; i < foundConstypes.size(); ++i)
-  {
-      constypesIndices.push_back(i);
-  }
-
-  std::vector< std::vector<int> > subsetsOfConstypes = getSubsets(constypesIndices);
-
-  SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), subsetsOfConstypes.size() - 1) );
-  seeedPropagationData->nNewSeeeds = subsetsOfConstypes.size() - 1;
-
-
-
-  for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
-  {
-      if(subsetsOfConstypes[subset].size() == 0)
+      if(subsetsOfConsclasses[subset].size() == 0)
           continue;
 
       seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
          /** set open cons that have type of the current subset to Master */
       for( int i = 0; i < seeed->getNOpenconss(); ++i)
       {
-          for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
+          for(size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
           {
-              cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);
-              if( GCGconsGetType   (cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
+              if( classforcons[seeed->getOpenconss()[i]] == subsetsOfConsclasses[subset][consclassId] )
               {
                   seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+                  break;
               }
           }
       }
       seeed->flushBooked();
-      seeedPropagationData->newSeeeds[seeedCounter] = seeed;
-      seeedCounter++;
+
+      foundseeeds.push_back(seeed);
   }
   delete seeedOrig;
+ }
 
   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+
+  SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
+  seeedPropagationData->nNewSeeeds = foundseeeds.size();
+
   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
   {
+     seeedPropagationData->newSeeeds[s] = foundseeeds[s];
      seeedPropagationData->newSeeeds[s]->addClockTime(SCIPclockGetTime(temporaryClock )  );
   }
+
   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
   *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 }
-
-#define finishSeeedConstype NULL
 /*
  * detector specific interface methods
  */
 
-/** creates the handler for constype detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
+/** creates the handler for consclass detector and includes it in SCIP */
+SCIP_RETCODE SCIPincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
 )
 {
    DEC_DETECTORDATA* detectordata;
 
-   /**@todo create constype detector data here*/
+   /**@todo create consclass detector data here*/
    detectordata = NULL;
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConstype,
-         freeConstype, initConstype, exitConstype, propagateSeeedConstype, finishSeeedConstype));
+         DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConsclass,
+         freeConsclass, initConsclass, exitConsclass, propagateSeeedConsclass, finishSeeedConsclass));
 
-   /**@todo add constype detector parameters */
+   /**@todo add consclass detector parameters */
 
    return SCIP_OKAY;
 }

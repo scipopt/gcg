@@ -182,12 +182,21 @@ public:
 
    int* getConssClassDistribution(int consclassdistr);
 
+   std::vector<int> getConssClassDistributionVector(int consclassdistr);
+
    int getNClassesOfDistribution(int consclassdistr);
 
    void addConssClassesForSCIPConstypes(
       );
 
-   void addConssClassesForConsnames(
+   void addConssClassesForConsnamesDigitFreeIdentical(
+      );
+
+   void addConssClassesForConsnamesLevenshteinDistanceConnectivity(
+      int connectivity
+         );
+
+   void addConssClassesForNNonzeros(
       );
 
 
