@@ -51,6 +51,8 @@
 #include <cerrno>
 #include <unistd.h>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 
 #include "cons_decomp.h"
@@ -355,36 +357,48 @@ SCIP_RETCODE createMetisFile(
    return SCIP_OKAY;
 }
 
-/** are there conss and vars to be included by the graph (min. two conss) */
+/** returns, whether the hypercolgraph is connected */
 static
-bool graphCompletible(
+bool connected(
    gcg::Seeedpool*  seeedpool,
    gcg::Seeed*      seeed
    )
 {
-   int counter = 0;
-   bool varFound;
-   for(int c = 0; c < seeed->getNOpenconss(); ++c)
+   std::vector<int> queue;
+   std::vector<int> visited;
+
+   if(seeed->getNOpenconss() < 2)
+      return false;
+
+   queue.push_back(seeed->getOpenconss()[0]);
+   do
    {
-      varFound = false;
-      int cons = seeed->getOpenconss()[c];
-      for(int v = 0; v < seeed->getNOpenvars() && !varFound; ++v)
+      int node = queue[0];
+      queue.erase(queue.begin());
+      visited.push_back(node);
+      for(int v = 0; v < seeedpool->getNVarsForCons(node); ++v)
       {
-         int var = seeed->getOpenvars()[v];
-         for(int i = 0; i < seeedpool->getNVarsForCons(cons) && !varFound; ++i)
+         int var = seeedpool->getVarsForCons(node)[v];
+         if(!seeed->isVarOpenvar(var))
+            continue;
+         for(int c = 0; c < seeedpool->getNConssForVar(var); ++c)
          {
-            if(var == seeedpool->getVarsForCons(cons)[i])
-            {
-               varFound = true;
-            }
+            int cons = seeedpool->getConssForVar(var)[c];
+            if(!seeed->isConsOpencons(cons))
+               continue;
+            if(find(visited.begin(), visited.end(), cons) != visited.end())
+               continue;
+            if(find(queue.begin(), queue.end(), cons) != queue.end())
+               continue;
+            queue.push_back(cons);
          }
       }
-      if(varFound)
-         counter++;
-      if(counter == 2)
-         return true;
-   }
-   return false;
+   } while(!queue.empty());
+
+   if((int)visited.size() != seeed->getNOpenconss())
+      return false;
+   else
+      return true;
 }
 
 /** detector structure detection method, tries to detect a structure in the problem */
@@ -487,6 +501,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
    std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
+   if(numberOfBlocks.empty())
+      numberOfBlocks.push_back(8);
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -503,7 +519,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
-   if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
+   if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
@@ -626,6 +642,8 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
    std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
+   if(numberOfBlocks.empty())
+      numberOfBlocks.push_back(8);
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -642,7 +660,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
-   if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
+   if(!connected(seeedPropagationData->seeedpool, seeed))
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;

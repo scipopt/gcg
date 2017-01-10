@@ -47,6 +47,8 @@
 #include <cerrno>
 #include <unistd.h>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 
 #include "cons_decomp.h"
@@ -349,36 +351,82 @@ SCIP_RETCODE createMetisFile(
    return SCIP_OKAY;
 }
 
-/** are there conss and vars to be included by the graph (min. 2 vars) */
+/** returns, whether the hyperrolcolgraph is connected */
 static
-bool graphCompletible(
+bool connected(
    gcg::Seeedpool*  seeedpool,
    gcg::Seeed*      seeed
    )
 {
-   int counter = 0;
-   bool consFound;
-   for(int v = 0; v < seeed->getNOpenvars(); ++v)
+   std::vector<int> queue;
+   std::vector<int> visited;
+
+   if(seeed->getNOpenvars() < 2)
+      return false;
+
+   queue.push_back(seeed->getOpenvars()[0]);
+   do
    {
-      consFound = false;
-      int var = seeed->getOpenvars()[v];
-      for(int c = 0; c < seeed->getNOpenconss() && !consFound; ++c)
+      int node = queue[0];
+      queue.erase(queue.begin());
+      visited.push_back(node);
+      for(int c = 0; c < seeedpool->getNConssForVar(node); ++c)
       {
-         int cons = seeed->getOpenconss()[c];
-         for(int i = 0; i < seeedpool->getNConssForVar(var) && !consFound; ++i)
+         int cons = seeedpool->getConssForVar(node)[c];
+         if(!seeed->isConsOpencons(cons))
+            continue;
+         for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
          {
-            if(cons == seeedpool->getConssForVar(var)[i])
-            {
-               consFound = true;
-            }
+            int var = seeedpool->getVarsForCons(cons)[v];
+            if(!seeed->isVarOpenvar(var))
+               continue;
+            if(find(visited.begin(), visited.end(), var) != visited.end())
+               continue;
+            if(find(queue.begin(), queue.end(), var) != queue.end())
+               continue;
+            queue.push_back(var);
          }
       }
-      if(consFound)
-         counter++;
-      if(counter == 2)
-         return true;
-   }
-   return false;
+   } while(!queue.empty());
+
+   if((int)visited.size() != seeed->getNOpenvars())
+      return false;
+
+   queue.clear();
+   visited.clear();
+
+   if(seeed->getNOpenconss() < 2)
+      return false;
+
+   queue.push_back(seeed->getOpenconss()[0]);
+   do
+   {
+      int node = queue[0];
+      queue.erase(queue.begin());
+      visited.push_back(node);
+      for(int v = 0; v < seeedpool->getNVarsForCons(node); ++v)
+      {
+         int var = seeedpool->getVarsForCons(node)[v];
+         if(!seeed->isVarOpenvar(var))
+            continue;
+         for(int c = 0; c < seeedpool->getNConssForVar(var); ++c)
+         {
+            int cons = seeedpool->getConssForVar(var)[c];
+            if(!seeed->isConsOpencons(cons))
+               continue;
+            if(find(visited.begin(), visited.end(), cons) != visited.end())
+               continue;
+            if(find(queue.begin(), queue.end(), cons) != queue.end())
+               continue;
+            queue.push_back(cons);
+         }
+      }
+   } while(!queue.empty());
+
+   if((int)visited.size() != seeed->getNOpenconss())
+      return false;
+   else
+      return true;
 }
 
 /** detection callback method */
@@ -479,6 +527,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
    std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
+   if(numberOfBlocks.empty())
+      numberOfBlocks.push_back(8);
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -495,7 +545,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
 
    seeedPropagationData->seeedpool->decrementSeeedcount();
 
-   if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks())
+   if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks())
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
@@ -623,6 +673,8 @@ DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
    std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
+   if(numberOfBlocks.empty())
+      numberOfBlocks.push_back(8);
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -639,7 +691,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
 
    seeedPropagationData->seeedpool->decrementSeeedcount();
 
-   if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
+   if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
