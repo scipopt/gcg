@@ -1294,11 +1294,22 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
      * for every subset of constraint classes calculate gcd (greatest common divisors) of the corresponding number of occurrences
      */
 
+    int maximumnclasses = 18; /* if  distribution of classes exceed this number its skipped */
 
     for( size_t conssclass = 0; conssclass < consclassescollection.size(); ++conssclass )
     {
        std::vector<int> nconssofclass = std::vector<int>(consclassesnclasses[conssclass], 0);
        std::vector<int> consclassindices = std::vector<int>(0);
+
+       /** check if there are to  many classes in this distribution and skip it if so */
+
+       if ( consclassesnclasses[conssclass] > maximumnclasses)
+       {
+          std::cout << " the current consclass distribution includes " <<  consclassesnclasses[conssclass] << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
+          continue;
+       }
+
+
        for( int i = 0; i < consclassesnclasses[conssclass]; ++ i)
           consclassindices.push_back(i);
        std::vector< std::vector<int> > subsetsOfConstypes = getAllSubsets(consclassindices);
@@ -1352,6 +1363,13 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     ){
     return &(consclassescollection[consclassdistr][0]);
  }
+
+ std::vector<int> Seeedpool::getConssClassDistributionVector(
+     int consclassdistr
+     ){
+     return (consclassescollection[consclassdistr]);
+  }
+
 
  int Seeedpool::getNClassesOfDistribution(
     int consclassdistr
