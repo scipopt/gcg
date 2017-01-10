@@ -187,8 +187,13 @@ public:
    void addConssClassesForSCIPConstypes(
       );
 
-   void addConssClassesForConsnames(
+   void addConssClassesForConsnamesDigitFreeIdentical(
       );
+
+   void addConssClassesForConsnamesLevenshteinDistanceConnectivity(
+      int connectivity
+         );
+
 
 
 };
