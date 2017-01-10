@@ -125,7 +125,27 @@ typedef struct Seeed_Propagation_Data SEEED_PROPAGATION_DATA;
 
 #define DEC_DECL_PROPAGATESEEED(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SEEED_PROPAGATION_DATA* seeedPropagationData, SCIP_RESULT* result)
 
+/**
+ * given a seeed (incomplete decomposition) the detector
+ * tries to find refined, finished seeeds and stores the
+ *
+ * input:
+ *  - scip            : SCIP data structure
+ *  - detectordata    : detector data  structure
+ *  - decdecomps      : a pointer to an array where detected decompositions
+ *                      should be saved. The array needs to be created in this
+ *                      method.
+ *  - ndecdecomps     : pointer where the number of detected decompositions is
+ *                      stored
+ *  - result          : pointer where to store the result
+ *
+ * possible return values for result:
+ *  - SCIP_SUCCESS    : the method completed and found decompositions
+ *  - SCIP_DIDNOTFIND : the method completed without finding a decomposition
+ *  - SCIP_DIDNOTRUN  : the method did not run
+ */
 
+#define DEC_DECL_FINISHSEEED(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SEEED_PROPAGATION_DATA* seeedPropagationData, SCIP_RESULT* result)
 
 
 #endif

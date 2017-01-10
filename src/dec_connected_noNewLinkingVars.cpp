@@ -55,6 +55,7 @@
 #define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              '?'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
+#define DEC_ENABLEDFINISHING     FALSE        /**< should the finishing be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -172,6 +173,51 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
 
    return SCIP_OKAY;
 }
+
+static
+DEC_DECL_FINISHSEEED(finishSeeedConnected_noNewLinkingVars)
+{
+   *result = SCIP_DIDNOTFIND;
+//   SCIP_CLOCK* temporaryClock;
+//   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+//   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
+   std::vector<int> conssForBfs;
+   std::vector<std::vector<int>> visitedConss = std::vector<std::vector<int>>(0); /** vector of vector with connected constraints */
+   std::vector<int> emptyVector = std::vector<int>(0);
+
+   gcg::Seeed* seeed;
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector) );
+
+   if(!seeed->areOpenVarsAndConssCalculated())
+   {
+      seeed->calcOpenconss();
+      seeed->calcOpenvars();
+      seeed->setOpenVarsAndConssCalculated(true);
+   }
+
+   seeed->considerImplicits(seeedPropagationData->seeedpool);
+
+   //assign all dependent open vars and conss
+   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+
+   //complete the seeed by bfs
+   seeed->completeByConnected(seeedPropagationData->seeedpool);
+
+   seeedPropagationData->nNewSeeeds = 1;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
+   seeedPropagationData->newSeeeds[0] = seeed;
+
+//   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+//   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+//   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
+   *result = SCIP_SUCCESS;
+
+   return SCIP_OKAY;
+}
+
 /*
  * detector specific interface methods
  */
@@ -186,7 +232,7 @@ SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
    /**@todo create connected_noNewLinkingVars detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConnected_noNewLinkingVars, freeConnected_noNewLinkingVars, initConnected_noNewLinkingVars, exitConnected_noNewLinkingVars, propagateSeeedConnected_noNewLinkingVars) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConnected_noNewLinkingVars, freeConnected_noNewLinkingVars, initConnected_noNewLinkingVars, exitConnected_noNewLinkingVars, propagateSeeedConnected_noNewLinkingVars, finishSeeedConnected_noNewLinkingVars) );
 
    /**@todo add connected_noNewLinkingVars detector parameters */
 

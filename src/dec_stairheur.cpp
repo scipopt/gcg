@@ -64,6 +64,7 @@
 #define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
 #define DEC_DECCHAR           's'            /**< display character of detector */
 #define DEC_ENABLED           FALSE          /**< should detector be called by default */
+#define DEC_ENABLEDFINISHING  FALSE          /**< should the finishing be enabled */
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL      FALSE          /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -2568,6 +2569,7 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
    return SCIP_OKAY;
 }
 #define detectorExitStairheur NULL
+#define detectorFinishSeeedStairheur NULL
 
 /** creates the stairheur detector and includes it in SCIP */
 
@@ -2584,8 +2586,8 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
 
    detectordata->constoblock  = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagateSeeedStairheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+      detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagateSeeedStairheur, detectorFinishSeeedStairheur) );
 
 
 

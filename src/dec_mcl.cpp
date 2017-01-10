@@ -59,6 +59,7 @@ using gcg::GraphGCG;
 #else
 #define DEC_ENABLED              FALSE        /**< should the detection be enabled */
 #endif
+#define DEC_ENABLEDFINISHING     FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -569,6 +570,7 @@ DEC_DECL_DETECTSTRUCTURE(detectMCL)
 //   return SCIP_OKAY;
 //}
 
+#define finishSeeedMCL NULL
 /*
  * detector specific interface methods
  */
@@ -587,8 +589,8 @@ SCIP_RETCODE SCIPincludeDetectorMCL(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectMCL, freeMCL, initMCL, exitMCL, propagateSeeedMCL) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+      detectordata, detectMCL, freeMCL, initMCL, exitMCL, propagateSeeedMCL, finishSeeedMCL) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/mcl/niterations", "Number of iterations to run MCL with different inflate factor (max=20).", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 1, 20, NULL, NULL) );

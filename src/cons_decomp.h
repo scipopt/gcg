@@ -95,6 +95,7 @@ SCIP_RETCODE DECincludeDetector(
    int                   minCallRound,       /** first round the detector gets called (offset in detection loop) */
    int                   priority,           /**< priority of the detector                                           */
    SCIP_Bool             enabled,            /**< whether the detector should be enabled by default                  */
+   SCIP_Bool             enabledFinishing,   /**< whether the finishing should be enabled */
    SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure   */
    SCIP_Bool             usefulRecall,       /** is it useful to call this detector on a descendant of the propagated seeed */
    DEC_DETECTORDATA      *detectordata,      /**< the associated detector data (or NULL)                             */
@@ -102,7 +103,8 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_FREEDETECTOR((*freeDetector)),   /**< destructor of detector (or NULL) */
    DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL)                        */
    DEC_DECL_EXITDETECTOR((*exitDetector)),    /**< deinitialization method of detector (or NULL)                      */
-   DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector))
+   DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
+   DEC_DECL_FINISHSEEED((*finishSeeedDetector))
    );
 
 /** returns the remaning time of scip that the decomposition may use */

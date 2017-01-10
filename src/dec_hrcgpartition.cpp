@@ -47,6 +47,8 @@
 #include <cerrno>
 #include <unistd.h>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 
 #include "cons_decomp.h"
@@ -79,6 +81,7 @@ using gcg::Weights;
 #define DEC_PRIORITY          1000           /**< priority of the detector */
 #define DEC_DECCHAR           'a'            /**< display character of detector */
 #define DEC_ENABLED           TRUE           /**< should detector be called by default */
+#define DEC_ENABLEDFINISHING  FALSE          /**< should the finishing be enabled */
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL      TRUE           /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -348,36 +351,82 @@ SCIP_RETCODE createMetisFile(
    return SCIP_OKAY;
 }
 
-/** are there conss and vars to be included by the graph (min. 2 vars) */
+/** returns, whether the hyperrolcolgraph is connected */
 static
-bool graphCompletible(
+bool connected(
    gcg::Seeedpool*  seeedpool,
    gcg::Seeed*      seeed
    )
 {
-   int counter = 0;
-   bool consFound;
-   for(int v = 0; v < seeed->getNOpenvars(); ++v)
+   std::vector<int> queue;
+   std::vector<int> visited;
+
+   if(seeed->getNOpenvars() < 2)
+      return false;
+
+   queue.push_back(seeed->getOpenvars()[0]);
+   do
    {
-      consFound = false;
-      int var = seeed->getOpenvars()[v];
-      for(int c = 0; c < seeed->getNOpenconss() && !consFound; ++c)
+      int node = queue[0];
+      queue.erase(queue.begin());
+      visited.push_back(node);
+      for(int c = 0; c < seeedpool->getNConssForVar(node); ++c)
       {
-         int cons = seeed->getOpenconss()[c];
-         for(int i = 0; i < seeedpool->getNConssForVar(var) && !consFound; ++i)
+         int cons = seeedpool->getConssForVar(node)[c];
+         if(!seeed->isConsOpencons(cons))
+            continue;
+         for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
          {
-            if(cons == seeedpool->getConssForVar(var)[i])
-            {
-               consFound = true;
-            }
+            int var = seeedpool->getVarsForCons(cons)[v];
+            if(!seeed->isVarOpenvar(var))
+               continue;
+            if(find(visited.begin(), visited.end(), var) != visited.end())
+               continue;
+            if(find(queue.begin(), queue.end(), var) != queue.end())
+               continue;
+            queue.push_back(var);
          }
       }
-      if(consFound)
-         counter++;
-      if(counter == 2)
-         return true;
-   }
-   return false;
+   } while(!queue.empty());
+
+   if((int)visited.size() != seeed->getNOpenvars())
+      return false;
+
+   queue.clear();
+   visited.clear();
+
+   if(seeed->getNOpenconss() < 2)
+      return false;
+
+   queue.push_back(seeed->getOpenconss()[0]);
+   do
+   {
+      int node = queue[0];
+      queue.erase(queue.begin());
+      visited.push_back(node);
+      for(int v = 0; v < seeedpool->getNVarsForCons(node); ++v)
+      {
+         int var = seeedpool->getVarsForCons(node)[v];
+         if(!seeed->isVarOpenvar(var))
+            continue;
+         for(int c = 0; c < seeedpool->getNConssForVar(var); ++c)
+         {
+            int cons = seeedpool->getConssForVar(var)[c];
+            if(!seeed->isConsOpencons(cons))
+               continue;
+            if(find(visited.begin(), visited.end(), cons) != visited.end())
+               continue;
+            if(find(queue.begin(), queue.end(), cons) != queue.end())
+               continue;
+            queue.push_back(cons);
+         }
+      }
+   } while(!queue.empty());
+
+   if((int)visited.size() != seeed->getNOpenconss())
+      return false;
+   else
+      return true;
 }
 
 /** detection callback method */
@@ -475,10 +524,11 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    int s;
    int nMaxSeeeds;
    int nNewSeeeds = 0;
-   int givenBlocks = -1; // if givenBlocks == -1, the numbers of the following array will be used as number of blocks, else the number of givenBlocks will be used as number of blocks
    gcg::Seeed* seeed;
    gcg::Seeed** newSeeeds;
    std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
+   if(numberOfBlocks.empty())
+      numberOfBlocks.push_back(8);
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -495,7 +545,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
 
    seeedPropagationData->seeedpool->decrementSeeedcount();
 
-   if(!graphCompletible(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
+   if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks())
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
@@ -512,84 +562,51 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
 
 
-   SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeedPropagationData->seeedToPropagate) );
+   SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
-   //if givenBlocks != -1, use givenBlocks as number of blocks
-   if(givenBlocks != -1)
+   SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
+   for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
    {
-      assert(givenBlocks >= 0);
-      int blocks = givenBlocks - seeed->getNBlocks();
-      if(blocks <= 0)
+      int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+      SCIP_RETCODE retcode;
+      detectordata->blocks = nblocks;
+
+      if(nblocks > seeedPropagationData->seeedToPropagate->getNOpenconss() || nblocks <= 0)
       {
-        delete seeed;
-        seeedPropagationData->nNewSeeeds = 0;
-        SCIPfreeBufferArray(scip, &newSeeeds);
-        SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
-        SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-        *result = SCIP_SUCCESS;
-        return SCIP_OKAY;
-      }
-      else
-      {
-         SCIP_RETCODE retcode;
-         detectordata->blocks = blocks;
-         retcode = callMetis(scip, detectordata, result);
-         if( *result == SCIP_SUCCESS && retcode == SCIP_OKAY )
-         {
-            SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[0], &newSeeeds[1], seeedPropagationData->seeedpool) );
-            if( (newSeeeds)[0] != NULL )
-            {
-               nNewSeeeds = 2;
-               detectordata->found = TRUE;
-            }
-         }
-      }
-   }
-   //if givenBlocks == -1, use the number of the array numberOfBlocks as number of blocks
-   else
-   {
-      SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
-      SCIP_CLOCK* temporaryClock;
-      SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-      for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
-      {
-         SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-         SCIP_RETCODE retcode;
-         detectordata->blocks = numberOfBlocks[k];
-         retcode = callMetis(scip, detectordata, result);
-
-         if(numberOfBlocks[k] > seeedPropagationData->seeedToPropagate->getNOpenconss() )
-         {
-            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-            SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
-            continue;
-         }
-
-         if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
-         {
-            SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-            SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
-            continue;
-         }
-
-         SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
-
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-         if( (newSeeeds)[j] != NULL )
-         {
-            nNewSeeeds = nNewSeeeds + 2;
-            detectordata->found = TRUE;
-            clockTimes.push_back(SCIPclockGetTime(temporaryClock));
-            clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created
-         }
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
-         j = j + 2;
+         continue;
       }
-      SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-      SCIP_CALL_ABORT( SCIPstartClock(scip, clock ) );
+
+      retcode = callMetis(scip, detectordata, result);
+
+      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
+      {
+         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+         continue;
+      }
+
+      SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
+
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      if( (newSeeeds)[j] != NULL )
+      {
+         nNewSeeeds = nNewSeeeds + 2;
+         detectordata->found = TRUE;
+         clockTimes.push_back(SCIPclockGetTime(temporaryClock));
+         clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created
+      }
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+      j = j + 2;
    }
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, clock ) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
 
@@ -604,7 +621,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
       {
          newSeeeds[j]->considerImplicits(seeedPropagationData->seeedpool);
          newSeeeds[j]->refineToMaster(seeedPropagationData->seeedpool);
-//         newSeeeds[j]->showScatterPlot(seeedPropagationData->seeedpool);
          seeedPropagationData->newSeeeds[s] = newSeeeds[j];
          seeedPropagationData->newSeeeds[s]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
          ++s;
@@ -625,17 +641,134 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    }
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
-   if(givenBlocks != -1)
-   {
-      seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(clock )  );
-      seeedPropagationData->newSeeeds[1]->addClockTime( SCIPclockGetTime(clock )  );
-   }
-   else
-   {
-      for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
-   }
+
+   for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
+      seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
+
+   *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
+   return SCIP_OKAY;
+
+}
+
+static
+DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
+{
+   *result = SCIP_DIDNOTFIND;
+
+
+   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   int nconss = SCIPgetNConss(scip);
+   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
+
+   SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
+   /* add hrcgpartition presolver parameters */
+
+   std::vector<SCIP_Real> clockTimes;        /**< vector containing times in seconds  */
+   int k;
+   int j;
+   int s;
+   int nMaxSeeeds;
+   int nNewSeeeds = 0;
+   gcg::Seeed* seeed;
+   gcg::Seeed** newSeeeds;
+   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
+   if(numberOfBlocks.empty())
+      numberOfBlocks.push_back(8);
+
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+
+   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+   nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
+
+   /* allocate space for output data */
+   assert(detectordata->maxblocks >= detectordata->minblocks);
+   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed->considerImplicits(seeedPropagationData->seeedpool);
+   seeed->refineToMaster(seeedPropagationData->seeedpool);
+
+   seeedPropagationData->seeedpool->decrementSeeedcount();
+
+   if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
+   {
+      delete seeed;
+      seeedPropagationData->nNewSeeeds = 0;
+      SCIPfreeBufferArray(scip, &newSeeeds);
+      *result = SCIP_SUCCESS;
+      return SCIP_OKAY;
+   }
+
+   /* build the hypergraph structure from the original problem */
+
+   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
+   detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
+
+
+   SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
+   SCIP_CALL( createMetisFile(scip, detectordata) );
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
+   for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
+   {
+      int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
+      SCIP_RETCODE retcode;
+      detectordata->blocks = nblocks;
+
+      if(nblocks > seeedPropagationData->seeedToPropagate->getNOpenconss() || nblocks <= 0)
+      {
+         continue;
+      }
+      retcode = callMetis(scip, detectordata, result);
+
+      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
+      {
+         continue;
+      }
+
+      SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
+
+      if( (newSeeeds)[j] != NULL )
+      {
+         nNewSeeeds = nNewSeeeds + 2;
+         detectordata->found = TRUE;
+      }
+      j = j + 2;
+   }
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
+
+   delete detectordata->graph;
+   delete seeed;
+   detectordata->graph = NULL;
+   assert(nNewSeeeds % 2 == 0);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds/2) );
+   seeedPropagationData->nNewSeeeds = nNewSeeeds/2;
+   for(j = 0, s = 0; s < nNewSeeeds/2; j+=2)
+   {
+      if((newSeeeds)[j] != NULL)
+      {
+         newSeeeds[j]->considerImplicits(seeedPropagationData->seeedpool);
+         newSeeeds[j]->assignAllDependent(seeedPropagationData->seeedpool);
+         seeedPropagationData->newSeeeds[s] = newSeeeds[j];
+         assert(newSeeeds[j]->getNOpenconss() == 0);
+         assert(newSeeeds[j]->getNOpenvars() == 0);
+         ++s;
+      }
+   }
+   SCIPfreeBufferArray(scip, &newSeeeds);
+
+   if( detectordata->tidy )
+   {
+      int status = remove( detectordata->tempfile );
+      if( status == -1 )
+      {
+         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
+
+         return SCIP_WRITEERROR;
+      }
+   }
 
    *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
    return SCIP_OKAY;
@@ -656,7 +789,7 @@ SCIP_RETCODE SCIPincludeDetectorHrcgpartition(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectHrcgpartition, freeHrcgpartition, initHrcgpartition, exitHrcgpartition, propagateSeeedHrcgpartition) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectHrcgpartition, freeHrcgpartition, initHrcgpartition, exitHrcgpartition, propagateSeeedHrcgpartition, finishSeeedHrcgpartition) );
 
 
    /* add hrcgpartition presolver parameters */
