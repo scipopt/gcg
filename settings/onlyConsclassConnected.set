@@ -1,0 +1,24 @@
+# SCIP version 3.0.2.1
+
+detectors/hrcgpartition/enabled = FALSE
+detectors/hcgpartition/enabled = FALSE
+detectors/hrgpartition/enabled = FALSE
+detectors/stairheur/enabled = FALSE
+detectors/isomorph/enabled = FALSE
+detectors/compgreedily/enabled = FALSE
+detectors/connected/enabled = FALSE
+detectors/connectedbase/enabled = FALSE
+detectors/connectedbase/enabledfinishing = TRUE
+detectors/compgreedily/enabled = FALSE
+detectors/compgreedily/enabledfinishing = TRUE
+detectors/connected/enabled = FALSE
+detectors/connected_nonewlinkingvars/enabled = FALSE
+detectors/mastersetpack/enabled = FALSE
+detectors/mastersetpart/enabled = FALSE
+detectors/mastersetcover/enabled = FALSE
+detectors/staircase/enabled = FALSE
+detectors/constype/enabled = FALSE
+detectors/staircase_lsp/enabled = FALSE
+
+
+limits/time = 10
