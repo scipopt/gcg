@@ -1582,7 +1582,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
      //std::vector<int> neighborConss(0);
      int nUnreachedConss = getNConss();
      int currentClass = -1;
-     int nmaxconss = 10000;
+     int nmaxconss = 5000;
 
      if (getNConss() > nmaxconss)
      {
