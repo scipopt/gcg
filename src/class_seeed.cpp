@@ -50,6 +50,7 @@
 #include <algorithm>
 #include <queue>
 #include <fstream>
+#include <stdlib.h>
 
 #define SCIP_CALL_EXC(x)   do                                                                                  \
                        {                                                                                      \
@@ -79,7 +80,7 @@ Seeed::Seeed(
    int         givenNVars                  /**number of variables */
 ) :
    scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
-      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), detectorClockTimes(0), detectorChain(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), changedHashvalue(false)
+      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), detectorClockTimes(0), detectorChain(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), isFinishedByFinisher(false), changedHashvalue(false)
 {
 }
 
@@ -109,6 +110,7 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    pctConssToBlock = seeedToCopy->pctConssToBlock;
    pctConssFromFree = seeedToCopy->pctConssFromFree;
    nNewBlocks = seeedToCopy->nNewBlocks;
+   isFinishedByFinisher = seeedToCopy->isFinishedByFinisher;
    changedHashvalue = seeedToCopy->changedHashvalue;
 
 }
@@ -1830,6 +1832,7 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
    std::cout << "ID: " << id << std::endl;
    std::cout << "number of blocks: " << nBlocks << std::endl;
    std::cout << "hashvalue: " << hashvalue << std::endl;
+   std::cout << "score: " << score << std::endl;
 
    for( int b = 0; b < nBlocks; ++b )
    {
@@ -1846,16 +1849,22 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
    std::cout << getNDetectors() << " detector(s)";
    if( getNDetectors() != 0 )
    {
-      if(seeedpool == NULL)
-         std::cout << ": " << detectorChain[0];
+      std::string detectorrepres;
+      if( seeedpool == NULL )
+         detectorrepres = detectorChain[0];
       else
-         std::cout << ": " <<  DECdetectorGetName( seeedpool->getDetectorForIndex( detectorChain[0] ) );
+         detectorrepres = (getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName( seeedpool->getDetectorForIndex( detectorChain[0] ) ) : "(finish)" + std::string(DECdetectorGetName( seeedpool->getFinishingDetectorForIndex( detectorChain[0] ) ))   );
+
+      std::cout << ": " <<  detectorrepres;
+
       for( int d = 1; d < getNDetectors(); ++d )
       {
          if (seeedpool == NULL)
-            std::cout << ", " << detectorChain[d];
+            detectorrepres =  detectorChain[d] ;
          else
-            std::cout << ", " << DECdetectorGetName( seeedpool->getDetectorForIndex( detectorChain[d] ) );
+            detectorrepres = (getNDetectors() != d+1 || !isFinishedByFinisher ? DECdetectorGetName( seeedpool->getDetectorForIndex( detectorChain[d] ) ) : "(finish)" + std::string(DECdetectorGetName( seeedpool->getFinishingDetectorForIndex( detectorChain[d] ) ))   );
+
+         std::cout << ", " << detectorrepres;
       }
    }
    std::cout << "\n";
@@ -2478,6 +2487,13 @@ int* Seeed::getDetectorchain()
    return &detectorChain[0];
 }
 
+/** returns if theis seeed was finished by finishSeeed() method of a detector */
+   bool Seeed::getFinishedByFinisher(
+   ){
+      return isFinishedByFinisher;
+   }
+
+
 /** returns the calculated has value of this seeed */
 long Seeed::getHashValue()
 {
@@ -2938,6 +2954,15 @@ SCIP_RETCODE Seeed::setDetectorPropagated(int detectorID)
 
    return SCIP_OKAY;
 }
+
+/** set if this seeed was finished by finishSeeed() method of a detector */
+   void Seeed::setFinishedByFinisher(
+      bool finished
+   ){
+      isFinishedByFinisher = finished;
+   }
+
+
 
 /** set number of blocks, atm only increasing number of blocks  */
 SCIP_RETCODE Seeed::setNBlocks(int newNBlocks)

@@ -221,7 +221,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
  Seeedpool::Seeedpool(
     SCIP*               givenScip, /**< SCIP data structure */
         const char*             conshdlrName
-    ):scip(givenScip), currSeeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), ndecompositions(0), candidatesNBlocks(0)
+    ):scip(givenScip), currSeeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0)
  {
          SCIP_CONS** conss;
          SCIP_VAR** vars;
@@ -259,6 +259,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
 
+         /** set up enabled detectors */
          for(int d = 0; d < conshdlrdata->ndetectors; ++d )
          {
                  DEC_DETECTOR* detector;
@@ -271,8 +272,24 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  scipDetectorToIndex[detector] = nDetectors;
                  detectorToScipDetector.push_back(detector);
                  ++nDetectors;
-
          }
+
+         /** set up enabled finishing detectors */
+         for(int d = 0; d < conshdlrdata->ndetectors; ++d )
+         {
+                 DEC_DETECTOR* detector;
+
+                 detector = conshdlrdata->detectors[d];
+                 assert(detector != NULL);
+                 if( !detector->enabledFinishing || detector->finishSeeed == NULL)
+                         continue;
+
+                 scipFinishingDetectorToIndex[detector] = nFinishingDetectors;
+                 detectorToFinishingScipDetector.push_back(detector);
+                 ++nFinishingDetectors;
+         }
+
+
 
          /** initilize matrix datastructures */
          conss = SCIPgetConss(scip);
@@ -560,22 +577,32 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                          }
 
 //                         SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
-                         for(int d = 0; d < nDetectors; ++d)
+                         for(int d = 0; d < nFinishingDetectors; ++d)
                          {
-                            DEC_DETECTOR* detector = detectorToScipDetector[d];
+                            DEC_DETECTOR* detector = detectorToFinishingScipDetector[d];
                             SCIP_RESULT result = SCIP_DIDNOTFIND;
                             seeedPropData->seeedToPropagate = seeedPtr;
+
+                            if(verboseLevel > 2 )
+                               std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << " is enabled " << std::endl;
 
                             /** if the finishing of the detector is not enabled go on with the next detector */
                             if( !detector->enabledFinishing )
                                     continue;
 
-                            SCIP_CALL_ABORT(detectorToScipDetector[d]->finishSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
+                            if(verboseLevel > 2 )
+                               std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
+
+                            SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
 
                             for(int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished)
                             {
                                SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+                               seeedPropData->newSeeeds[finished]->sort();
                                seeed->calcHashvalue();
+                               seeedPropData->newSeeeds[finished]->addDecChangesFromAncestor(seeedPtr);
+                               seeed->setFinishedByFinisher(true);
+
                                if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
                                {
                                   finishedSeeeds.push_back(seeed);
@@ -660,22 +687,29 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          for(size_t i = 0; i < currSeeeds.size(); ++i)
          {
             SeeedPtr seeedPtr = currSeeeds[i];
-            for(int d = 0; d < nDetectors; ++d)
+            for(int d = 0; d < nFinishingDetectors; ++d)
             {
-               DEC_DETECTOR* detector = detectorToScipDetector[d];
+               DEC_DETECTOR* detector = detectorToFinishingScipDetector[d];
                SCIP_RESULT result = SCIP_DIDNOTFIND;
                seeedPropData->seeedToPropagate = seeedPtr;
+
+               std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;
 
                /** if the finishing of the detector is not enabled go on with the next detector */
                if( !detector->enabledFinishing )
                   continue;
 
-               SCIP_CALL_ABORT(detectorToScipDetector[d]->finishSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
+               std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
+
+               SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
 
                for(int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished)
                {
                   SeeedPtr seeed = seeedPropData->newSeeeds[finished];
                   seeed->calcHashvalue();
+                  seeed->addDecChangesFromAncestor(seeedPtr);
+                  seeed->setFinishedByFinisher(true);
+
                   if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
                   {
                      if(verboseLevel > 2)
@@ -744,7 +778,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                   bestSeeed = finishedSeeeds[i];
                }
             }
-            bestSeeed->showScatterPlot(this);
+       //     bestSeeed->showScatterPlot(this);
          }
 
 
@@ -1137,8 +1171,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->detectorchain, size) ); /** free in decomp.c:469 */
             for( int k = 0; k < ndetectors; ++k )
             {
+               if(k != ndetectors-1 || !seeed->getFinishedByFinisher() )
+               {
                //          std::cout << " added detector of " << i << "-th seeed to its detetcor chain" << std::endl;
-               decompositions[i]->detectorchain[k] = getDetectorForIndex(seeed->getDetectorchain()[k]);
+                  decompositions[i]->detectorchain[k] = getDetectorForIndex(seeed->getDetectorchain()[k]);
+               }else
+                  decompositions[i]->detectorchain[k] = getFinishingDetectorForIndex(seeed->getDetectorchain()[k]);
             }
 
 
@@ -1286,6 +1324,11 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     return detectorToScipDetector[detectorIndex];
  }
 
+ DEC_DETECTOR* Seeedpool::getFinishingDetectorForIndex(int detectorIndex){
+    return detectorToFinishingScipDetector[detectorIndex];
+ }
+
+
  SCIP_Real Seeedpool::getVal(int row, int col){
 
     std::tr1::unordered_map< std::pair<int, int>, SCIP_Real, pair_hash>::const_iterator iter =  valsMap.find(std::pair<int, int>(row, col) ) ;
@@ -1307,6 +1350,11 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
  int Seeedpool::getIndexForDetector(DEC_DETECTOR* detector){
     return scipDetectorToIndex[detector];
  }
+
+ int Seeedpool::getIndexForFinishingDetector(DEC_DETECTOR* detector){
+     return scipFinishingDetectorToIndex[detector];
+  }
+
 
  int Seeedpool::getNewIdForSeeed(){
     nTotalSeeeds++;

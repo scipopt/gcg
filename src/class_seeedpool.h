@@ -93,15 +93,21 @@ private:
    std::vector<SCIP_CONS*> 			   			consToScipCons;	      /**< stores the corresponding scip constraints pointer */
    std::vector<SCIP_VAR*> 				       		varToScipVar;		      /**< stores the corresponding scip variable pointer */
    std::vector<DEC_DETECTOR*> 				   	detectorToScipDetector; /**< stores the corresponding SCIP detector pinter */
+   std::vector<DEC_DETECTOR*>                   detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pinter */
    std::tr1::unordered_map<SCIP_CONS*, int> 	   scipConsToIndex;	      /**< maps SCIP_CONS* to the corresponding index */
    std::tr1::unordered_map<SCIP_VAR*, int>  	   scipVarToIndex;		   /**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int>  scipDetectorToIndex;		/**< maps SCIP_VAR* to the corresponding index */
+   std::tr1::unordered_map<DEC_DETECTOR*, int>  scipFinishingDetectorToIndex;    /**< maps SCIP_VAR* to the corresponding index */
+
 
    std::tr1::unordered_map< std::pair<int, int>, SCIP_Real, pair_hash>  valsMap;               /**< maps an entry of the matrix to its value, zeros are omitted */
 
    int 										         	nVars;                  /**< number of variables */
    int 										         	nConss;                 /**< number of constraints */
    int										         	nDetectors;             /**< number of detectors */
+
+   int                                          nFinishingDetectors;             /**< number of detectors */
+
 
    DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
    int                                          ndecompositions;        /**< number of decompositions found by the detectors */
@@ -148,6 +154,8 @@ public:
 
    DEC_DETECTOR* getDetectorForIndex(int detectorIndex);
 
+   DEC_DETECTOR* getFinishingDetectorForIndex(int detectorIndex);
+
    SCIP_Real getVal(int row, int col);
 
    int getIndexForVar(SCIP_VAR* var);
@@ -155,6 +163,8 @@ public:
    int getIndexForCons(SCIP_CONS* cons);
 
    int getIndexForDetector(DEC_DETECTOR* detector);
+
+   int getIndexForFinishingDetector(DEC_DETECTOR* detector);
 
    int getNewIdForSeeed();
 

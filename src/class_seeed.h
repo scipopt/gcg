@@ -77,6 +77,7 @@ private:
    long                             hashvalue;
    SCIP_Real                        score;                        /**< score to evaluate the seeeds */
 
+   bool                             isFinishedByFinisher;         /**< was this seeed finished by the finishseeed() method of a detector */
    bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
    const static int              primes[];
@@ -307,6 +308,12 @@ public:
    int* getDetectorchain(
    );
 
+   /** returns if theis seeed was finished by finishSeeed() method of a detector */
+   bool getFinishedByFinisher(
+   );
+
+
+
    /** returns the calculated has value of this seeed */
    long getHashValue(
    );
@@ -488,6 +495,11 @@ public:
    SCIP_RETCODE setDetectorPropagated(
          int detectorID
    );
+
+   /** set if this seeed was finished by finishSeeed() method of a detector */
+   void setFinishedByFinisher(
+         bool finished
+      );
 
    /** set number of blocks, atm only increasing number of blocks  */
    SCIP_RETCODE setNBlocks(

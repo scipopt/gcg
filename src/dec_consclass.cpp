@@ -159,7 +159,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
   gcg::Seeed* seeedOrig;
   gcg::Seeed* seeed;
 
-  int maximumnclasses = 8; /* if  distribution of classes exceed this number its skipped */
+  int maximumnclasses = 7; /* if  distribution of classes exceed this number its skipped */
 
   for( int conssclass = 0; conssclass < seeedPropagationData->seeedpool->getNConssClassDistributions(); ++conssclass )
   {
