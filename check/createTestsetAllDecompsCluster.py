@@ -12,7 +12,7 @@ if len(sys.argv) == 4:
 
 	gcgexec = pathtogcg+"bin/gcg"
 	settings = pathtogcg+"settings/onlyConsclassConnected.set"
-	testsetfile = pathtogcg+"check/testset/allDecCl_"+instancename+".test"
+	testsetfile = pathtogcg+"check/testset/allDec_"+instancename+".test"
 
 	print pathtogcg
 
