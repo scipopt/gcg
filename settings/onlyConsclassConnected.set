@@ -14,6 +14,9 @@ detectors/compgreedily/enabledfinishing = TRUE
 detectors/connected/enabled = FALSE
 detectors/connected_nonewlinkingvars/enabled = FALSE
 detectors/mastersetpack/enabled = FALSE
+detectors/generalmastersetpack/enabled = FALSE
+detectors/generalmastersetpart/enabled = FALSE
+detectors/generalmastersetcover/enabled = FALSE
 detectors/mastersetpart/enabled = FALSE
 detectors/mastersetcover/enabled = FALSE
 detectors/staircase/enabled = FALSE
@@ -21,4 +24,4 @@ detectors/constype/enabled = FALSE
 detectors/staircase_lsp/enabled = FALSE
 
 
-limits/time = 10
+limits/time = 120
