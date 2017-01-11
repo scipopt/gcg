@@ -849,6 +849,8 @@ SCIP_RETCODE detection(
 
 
    tcliqueFree(&detectordata->graph);
+
+   return SCIP_OKAY;
 }
 
 
