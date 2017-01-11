@@ -398,6 +398,173 @@ bool connected(
       return true;
 }
 
+/** detection function for seeeds */
+static
+SCIP_RETCODE detection(
+   SCIP*                   scip,                         /**< SCIP data structure */
+   DEC_DETECTORDATA*       detectordata,                 /**< detectordata of the detector */
+   Seeed_Propagation_Data* seeedPropagationData,         /**< seeedPropagationData (including the seeedpool) where to store the new Seeeds */
+   gcg::Seeed*             seeed,                        /**< seeed to propagate */
+   bool                    border,                       /**< whether new seeeds should be stored in which this detector only assignes conss to master */
+   bool                    time,                         /**< whether the stopped time should added be to the new seeeds */
+   SCIP_RESULT*            result                        /**< pointer where to store the result */
+)
+{
+
+   *result = SCIP_DIDNOTFIND;
+
+   /* add hrgpartition presolver parameters */
+
+   int k;
+   int j;
+   int s;
+   int nMaxSeeeds;
+   int nNewSeeeds = 0;
+   gcg::Seeed** newSeeeds;
+   SCIP_CLOCK* clock;
+   SCIP_CLOCK* temporaryClock;
+   std::vector<SCIP_Real> clockTimes;        /**< vector containing times in seconds  */
+
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+
+   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
+   if(numberOfBlocks.empty())
+      numberOfBlocks.push_back(8);
+
+   int nconss = SCIPgetNConss(scip);
+   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
+
+   SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
+
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+
+   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+   nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
+
+   /* allocate space for output data */
+   assert(detectordata->maxblocks >= detectordata->minblocks);
+   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
+
+
+   /* build the hypergraph structure from the original problem */
+
+   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
+   detectordata->graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
+
+   SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
+
+   SCIP_CALL( createMetisFile(scip, detectordata) );
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
+   SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
+   for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
+   {
+      int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
+      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+      SCIP_RETCODE retcode;
+      detectordata->blocks = nblocks;
+
+      if(nblocks > seeed->getNOpenconss() || nblocks <= 0)
+      {
+         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+         continue;
+      }
+
+      retcode = callMetis(scip, detectordata, result);
+
+      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
+      {
+         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+         continue;
+      }
+
+      SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
+
+      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+      if( (newSeeeds)[j] != NULL )
+      {
+         nNewSeeeds = nNewSeeeds + 2;
+         detectordata->found = TRUE;
+         clockTimes.push_back(SCIPclockGetTime(temporaryClock));
+         clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created
+      }
+      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+      j = j + 2;
+   }
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, clock ) );
+
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
+
+   delete detectordata->graph;
+   detectordata->graph = NULL;
+   delete seeed;
+
+   assert(nNewSeeeds % 2 == 0);
+   if(border)
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
+      seeedPropagationData->nNewSeeeds = nNewSeeeds;
+      for(j = 0, s = 0; s < nNewSeeeds; ++j)
+      {
+         if(newSeeeds[j] != NULL)
+         {
+            seeedPropagationData->newSeeeds[s] = newSeeeds[j];
+            ++s;
+         }
+      }
+   }
+   else
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds/2) );
+      seeedPropagationData->nNewSeeeds = nNewSeeeds/2;
+      for(j = 0, s = 0; s < nNewSeeeds/2; j+=2)
+      {
+         if(newSeeeds[j] != NULL)
+         {
+            seeedPropagationData->newSeeeds[s] = newSeeeds[j];
+            ++s;
+         }
+      }
+   }
+
+   SCIPfreeBufferArray(scip, &newSeeeds);
+
+   if( detectordata->tidy )
+   {
+      int status = remove( detectordata->tempfile );
+      if( status == -1 )
+      {
+         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
+         SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
+         SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
+         return SCIP_WRITEERROR;
+      }
+   }
+
+   SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
+   if(time && border)
+   {
+      for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
+   }
+   else if(time && !border)
+   {
+      for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
+         seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[2*s] );
+   }
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
+
+   *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
+   return SCIP_OKAY;
+}
+
 /** detection callback method */
 static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
@@ -474,280 +641,57 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 static
 DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
 {
-   *result = SCIP_DIDNOTFIND;
-
-   SCIP_CLOCK* clock;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-
-   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-   int nconss = SCIPgetNConss(scip);
-   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
-
-
-   SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
-
-   /* add hrgpartition presolver parameters */
-
-   std::vector<SCIP_Real> clockTimes;        /**< vector containing times in seconds  */
-   int k;
-   int j;
-   int s;
-   int nMaxSeeeds;
-   int nNewSeeeds = 0;
    gcg::Seeed* seeed;
-   gcg::Seeed** newSeeeds;
-   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
-   if(numberOfBlocks.empty())
-      numberOfBlocks.push_back(8);
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->considerImplicits(seeedPropagationData->seeedpool);
-   seeed->refineToMaster(seeedPropagationData->seeedpool);
 
    seeedPropagationData->seeedpool->decrementSeeedcount();
-
-   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
-   nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
-
-   /* allocate space for output data */
-   assert(detectordata->maxblocks >= detectordata->minblocks);
-   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
+   seeed->considerImplicits(seeedPropagationData->seeedpool);
+   seeed->refineToMaster(seeedPropagationData->seeedpool);
 
    if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
-      SCIPfreeBufferArray(scip, &newSeeeds);
-      SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
-      SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
 
-   /* build the hypergraph structure from the original problem */
+   detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, TRUE, result);
 
-   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   detectordata->graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
+   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
+      seeedPropagationData->newSeeeds[s]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
-   SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
-
-   SCIP_CALL( createMetisFile(scip, detectordata) );
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
-   SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-   for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
-   {
-      int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
-      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-      SCIP_RETCODE retcode;
-      detectordata->blocks = nblocks;
-
-      if(nblocks > seeedPropagationData->seeedToPropagate->getNOpenconss() || nblocks <= 0)
-      {
-         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
-         continue;
-      }
-
-      retcode = callMetis(scip, detectordata, result);
-
-      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
-      {
-         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
-         continue;
-      }
-
-      SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
-
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      if( (newSeeeds)[j] != NULL )
-      {
-         nNewSeeeds = nNewSeeeds + 2;
-         detectordata->found = TRUE;
-         clockTimes.push_back(SCIPclockGetTime(temporaryClock));
-         clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created
-      }
-      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
-      j = j + 2;
-   }
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, clock ) );
-
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
-
-   delete detectordata->graph;
-   detectordata->graph = NULL;
-   delete seeed;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
-   seeedPropagationData->nNewSeeeds = nNewSeeeds;
-   for(j = 0, s = 0; s < nNewSeeeds; ++j)
-   {
-      if(newSeeeds[j] != NULL)
-      {
-         seeedPropagationData->newSeeeds[s] = newSeeeds[j];
-         seeedPropagationData->newSeeeds[s]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
-         ++s;
-      }
-   }
-   SCIPfreeBufferArray(scip, &newSeeeds);
-
-   if( detectordata->tidy )
-   {
-      int status = remove( detectordata->tempfile );
-      if( status == -1 )
-      {
-         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
-         SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
-         SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-         return SCIP_WRITEERROR;
-      }
-   }
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
-
-   for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
-      seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-
-   *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
    return SCIP_OKAY;
-
 }
 
 static
 DEC_DECL_FINISHSEEED(finishSeeedHrgpartition)
 {
-   *result = SCIP_DIDNOTFIND;
-
-   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-   int nconss = SCIPgetNConss(scip);
-   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
-
-
-   SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
-
-   /* add hrgpartition presolver parameters */
-
-   std::vector<SCIP_Real> clockTimes;        /**< vector containing times in seconds  */
-   int k;
-   int j;
-   int s;
-   int nMaxSeeeds;
-   int nNewSeeeds = 0;
    gcg::Seeed* seeed;
-   gcg::Seeed** newSeeeds;
-   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
-   if(numberOfBlocks.empty())
-      numberOfBlocks.push_back(8);
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->considerImplicits(seeedPropagationData->seeedpool);
-   seeed->refineToMaster(seeedPropagationData->seeedpool);
 
    seeedPropagationData->seeedpool->decrementSeeedcount();
-
-   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
-   nMaxSeeeds = detectordata->maxblocks-detectordata->minblocks+1;
-
-   /* allocate space for output data */
-   assert(detectordata->maxblocks >= detectordata->minblocks);
-   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
+   seeed->considerImplicits(seeedPropagationData->seeedpool);
+   seeed->assignAllDependent(seeedPropagationData->seeedpool);
 
    if(!connected(seeedPropagationData->seeedpool, seeed))
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
-      SCIPfreeBufferArray(scip, &newSeeeds);
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
 
-   /* build the hypergraph structure from the original problem */
+   detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, FALSE, result);
 
-   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   detectordata->graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
-
-   SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
-
-   SCIP_CALL( createMetisFile(scip, detectordata) );
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
-   for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
+   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
    {
-      int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
-      SCIP_RETCODE retcode;
-      detectordata->blocks = nblocks;
-
-      if(nblocks > seeedPropagationData->seeedToPropagate->getNOpenconss() || nblocks <= 0)
-      {
-         continue;
-      }
-
-      retcode = callMetis(scip, detectordata, result);
-
-      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
-      {
-         continue;
-      }
-
-      SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
-
-      if( (newSeeeds)[j] != NULL )
-      {
-         nNewSeeeds = nNewSeeeds + 2;
-         detectordata->found = TRUE;
-      }
-      j = j + 2;
+      seeedPropagationData->newSeeeds[s]->considerImplicits(seeedPropagationData->seeedpool);
+      seeedPropagationData->newSeeeds[s]->assignAllDependent(seeedPropagationData->seeedpool);
+      assert(seeedPropagationData->newSeeeds[s]->getNOpenconss() == 0);
+      assert(seeedPropagationData->newSeeeds[s]->getNOpenvars() == 0);
    }
-
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
-
-   delete detectordata->graph;
-   detectordata->graph = NULL;
-   delete seeed;
-   assert(nNewSeeeds % 2 == 0);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds/2) );
-   seeedPropagationData->nNewSeeeds = nNewSeeeds/2;
-   for(j = 0, s = 0; s < nNewSeeeds/2; j+=2)
-   {
-      if((newSeeeds)[j] != NULL)
-      {
-         newSeeeds[j]->considerImplicits(seeedPropagationData->seeedpool);
-         newSeeeds[j]->assignAllDependent(seeedPropagationData->seeedpool);
-         seeedPropagationData->newSeeeds[s] = newSeeeds[j];
-         assert(newSeeeds[j]->getNOpenconss() == 0);
-         assert(newSeeeds[j]->getNOpenvars() == 0);
-         ++s;
-      }
-   }
-   SCIPfreeBufferArray(scip, &newSeeeds);
-
-   if( detectordata->tidy )
-   {
-      int status = remove( detectordata->tempfile );
-      if( status == -1 )
-      {
-         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
-         return SCIP_WRITEERROR;
-      }
-   }
-
-
-   *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
    return SCIP_OKAY;
-
 }
 
 

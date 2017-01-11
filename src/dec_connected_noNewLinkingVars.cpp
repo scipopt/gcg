@@ -128,23 +128,14 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected_noNewLinkingVars)
    return SCIP_OKAY;
 }
 
-
-
+/** detection function for seeeds */
 static
-DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
+SCIP_RETCODE detection(
+   Seeed_Propagation_Data* seeedPropagationData         /**< seeedPropagationData (including the seeedpool and seeedTopropagate) where to store the new Seeeds */
+)
 {
-   *result = SCIP_DIDNOTFIND;
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-
-   std::vector<int> conssForBfs;
-   std::vector<std::vector<int>> visitedConss = std::vector<std::vector<int>>(0); /** vector of vector with connected constraints */
-   std::vector<int> emptyVector = std::vector<int>(0);
-
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector) );
 
    if(!seeed->areOpenVarsAndConssCalculated())
    {
@@ -164,6 +155,22 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
    seeedPropagationData->nNewSeeeds = 1;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
+
+   return SCIP_OKAY;
+}
+
+
+static
+DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
+{
+   *result = SCIP_DIDNOTFIND;
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
+   detection(seeedPropagationData);
+
+   seeedPropagationData->newSeeeds[0]->setDetectorPropagated( seeedPropagationData->seeedpool->getIndexForDetector(detector) );
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
@@ -178,40 +185,8 @@ static
 DEC_DECL_FINISHSEEED(finishSeeedConnected_noNewLinkingVars)
 {
    *result = SCIP_DIDNOTFIND;
-//   SCIP_CLOCK* temporaryClock;
-//   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-//   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   std::vector<int> conssForBfs;
-   std::vector<std::vector<int>> visitedConss = std::vector<std::vector<int>>(0); /** vector of vector with connected constraints */
-   std::vector<int> emptyVector = std::vector<int>(0);
-
-   gcg::Seeed* seeed;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector) );
-
-   if(!seeed->areOpenVarsAndConssCalculated())
-   {
-      seeed->calcOpenconss();
-      seeed->calcOpenvars();
-      seeed->setOpenVarsAndConssCalculated(true);
-   }
-
-   seeed->considerImplicits(seeedPropagationData->seeedpool);
-
-   //assign all dependent open vars and conss
-   seeed->assignAllDependent(seeedPropagationData->seeedpool);
-
-   //complete the seeed by bfs
-   seeed->completeByConnected(seeedPropagationData->seeedpool);
-
-   seeedPropagationData->nNewSeeeds = 1;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = seeed;
-
-//   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-//   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
-//   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   detection(seeedPropagationData);
 
    *result = SCIP_SUCCESS;
 
