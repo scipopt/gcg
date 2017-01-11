@@ -735,10 +735,13 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircaseLsp)
    return SCIP_OKAY;
 }
 
-
-/** detector structure detection method, tries to detect a structure in the problem */
+/** detection function for seeeds */
 static
-DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
+SCIP_RETCODE detection(
+   SCIP*                   scip,                         /**< SCIP data structure */
+   DEC_DETECTORDATA*       detectordata,                 /**< detectordata of the detector */
+   Seeed_Propagation_Data* seeedPropagationData          /**< seeedPropagationData (including the seeedpool) where to store the new Seeeds */
+)
 {
    int i;
    int j;
@@ -747,17 +750,9 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    int* distances;
    int* blocks;
    int nblocks = 0;
-   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
    gcg::Seeedpool* seeedpool = seeedPropagationData->seeedpool;
    gcg::Seeed* currseeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-
-
-   *result = SCIP_DIDNOTFIND;
 
    currseeed->considerImplicits(seeedpool);
    currseeed->refineToMaster(seeedpool);
@@ -833,7 +828,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
 
    currseeed->considerImplicits(seeedpool);
 
-   currseeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+
 
  //  currseeed->showScatterPlot(seeedpool);
 
@@ -852,16 +847,34 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    seeedPropagationData->newSeeeds[0] = currseeed;
    seeedPropagationData->nNewSeeeds = 1;
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
-   *result = SCIP_SUCCESS;
-
 
    tcliqueFree(&detectordata->graph);
 
+   return SCIP_OKAY;
+}
 
+
+/** detector structure detection method, tries to detect a structure in the problem */
+static
+DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
+{
+
+   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
+   *result = SCIP_DIDNOTFIND;
+
+   detection(scip, detectordata, seeedPropagationData);
+
+   *result = SCIP_SUCCESS;
+
+   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
 
    return SCIP_OKAY;
@@ -870,114 +883,13 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
 static
 DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
 {
-   int i;
-   int j;
-   int* nodes;
-   int nnodes;
-   int* distances;
-   int* blocks;
-   int nblocks = 0;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-
-   gcg::Seeedpool* seeedpool = seeedPropagationData->seeedpool;
-   gcg::Seeed* currseeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-
 
    *result = SCIP_DIDNOTFIND;
 
-   currseeed->considerImplicits(seeedpool);
-   currseeed->refineToMaster(seeedpool);
-
-
-   SCIP_CALL( createGraphFromPartialMatrix(scip, &(detectordata->graph), currseeed, seeedpool, detectordata) );
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
-
-   if( tcliqueGetNNodes(detectordata->graph) > 0 )
-   {
-      nnodes = tcliqueGetNNodes(detectordata->graph);
-
-      /* find connected components of the graph. the result will be stored in 'detectordata->components' */
-      SCIP_CALL( findConnectedComponents(scip, detectordata) );
-
-      SCIP_CALL( SCIPallocBufferArray(scip, &nodes, nnodes) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &distances, nnodes) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nnodes) );
-
-      for( i = 0; i < nnodes; ++i)
-         blocks[i] = -1;
-
-      /* find the diameter of each connected component */
-      for( i = 0; i < detectordata->ncomponents; ++i )
-      {
-         int diameter = 0;
-         int ncompsize = 0;
-
-         SCIP_CALL( findDiameter(scip, detectordata, &diameter, &ncompsize, nodes, distances, i) );
-         SCIPdebugMessage("component %i has %i vertices and diameter %i\n", i, ncompsize, diameter);
-
-         for( j = 0; j < ncompsize; j++ )
-         {
-            assert(nodes[j] >= 0);
-            assert(nodes[j] < nnodes);
-            assert(distances[j] >= 0);
-            assert(distances[j] <= diameter);
-            assert(distances[j] + nblocks < nnodes);
-
-            blocks[nodes[j]] = nblocks + distances[j];
-            SCIPdebugMessage("\tnode %i to block %i\n", nodes[j], nblocks + distances[j]);
-         }
-
-         nblocks += (diameter + 1);
-      }
-      if( nblocks > 0 )
-      {
-         detectordata->nblocks = nblocks;
-
-         for( i = 0; i < nnodes; ++i )
-         {
-            assert(blocks[i] >= 0);
-            SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, (void*) (size_t) detectordata->newToOld->at(i), (void*) (size_t) (blocks[i] + 1)) );
-         }
-      }
-
-      SCIPfreeBufferArray(scip, &blocks);
-      SCIPfreeBufferArray(scip, &nodes);
-      SCIPfreeBufferArray(scip, &distances);
-      SCIPfreeBufferArray(scip, &(detectordata->components));
-   }
-
-   SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks, seeedpool) );
-
-   currseeed->assignCurrentStairlinking(seeedpool);
-   currseeed->considerImplicits(seeedpool);
-   currseeed->assignAllDependent(seeedpool);
-
-
-
-   if( detectordata->constoblock != NULL )
-      SCIPhashmapFree(&detectordata->constoblock);
-   if( detectordata->vartoblock != NULL )
-      SCIPhashmapFree(&detectordata->vartoblock);
-
-
-   assert(currseeed->checkConsistency() );
-
-
-   if(currseeed->getNOpenconss() == 0 && currseeed->getNOpenvars() == 0)
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-      seeedPropagationData->newSeeeds[0] = currseeed;
-      seeedPropagationData->nNewSeeeds = 1;
-   }
-   else
-   {
-      seeedPropagationData->nNewSeeeds = 0;
-   }
+   detection(scip, detectordata, seeedPropagationData);
 
    *result = SCIP_SUCCESS;
-
-
-   tcliqueFree(&detectordata->graph);
 
    return SCIP_OKAY;
 }

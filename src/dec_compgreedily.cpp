@@ -140,11 +140,14 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    //assign open conss and vars greedily
    seeed->completeGreedily(seeedPropagationData->seeedpool);
 
+
    seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForFinishingDetector(detector));
+
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
 
+   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );

@@ -177,8 +177,6 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    //complete the seeed by bfs
    seeed->completeByConnected(seeedPropagationData->seeedpool );
 
-  // seeed->showScatterPlot(seeedPropagationData->seeedpool);
-
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
