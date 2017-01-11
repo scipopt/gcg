@@ -372,6 +372,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          addConssClassesForSCIPConstypes();
          addConssClassesForConsnamesDigitFreeIdentical();
          addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
+         addConssClassesForNNonzeros();
+
          calcCandidatesNBlocks();
 
 
@@ -1372,11 +1374,22 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
      * for every subset of constraint classes calculate gcd (greatest common divisors) of the corresponding number of occurrences
      */
 
+    int maximumnclasses = 18; /* if  distribution of classes exceed this number its skipped */
 
     for( size_t conssclass = 0; conssclass < consclassescollection.size(); ++conssclass )
     {
        std::vector<int> nconssofclass = std::vector<int>(consclassesnclasses[conssclass], 0);
        std::vector<int> consclassindices = std::vector<int>(0);
+
+       /** check if there are to  many classes in this distribution and skip it if so */
+
+       if ( consclassesnclasses[conssclass] > maximumnclasses)
+       {
+          std::cout << " the current consclass distribution includes " <<  consclassesnclasses[conssclass] << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
+          continue;
+       }
+
+
        for( int i = 0; i < consclassesnclasses[conssclass]; ++ i)
           consclassindices.push_back(i);
        std::vector< std::vector<int> > subsetsOfConstypes = getAllSubsets(consclassindices);
@@ -1430,6 +1443,13 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     ){
     return &(consclassescollection[consclassdistr][0]);
  }
+
+ std::vector<int> Seeedpool::getConssClassDistributionVector(
+     int consclassdistr
+     ){
+     return (consclassescollection[consclassdistr]);
+  }
+
 
  int Seeedpool::getNClassesOfDistribution(
     int consclassdistr
@@ -1562,8 +1582,17 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
      //std::vector<int> neighborConss(0);
      int nUnreachedConss = getNConss();
      int currentClass = -1;
+     int nmaxconss = 5000;
+
+     if (getNConss() > nmaxconss)
+     {
+        std::cout << " skipped levenshtein distance based constraint classes calculating since number of constraints " << getNConss() << " exceeds limit " << nmaxconss   << std::endl;
+        return;
+     }
+
 
      std::vector< std::vector<int> > levenshteindistances(getNConss(), std::vector<int>(getNConss(), -1) );
+
 
      for( int i = 0; i < getNConss(); ++i )
      {
@@ -1638,6 +1667,67 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
 
   }
+
+
+ void Seeedpool::addConssClassesForNNonzeros()
+  {
+     /**
+      * at first remove all digits from the consnames
+      */
+     std::vector<int> nconssforclass(0);
+     std::vector<int> differentNNonzeros(0);
+     std::vector<int> classForCons (getNConss(), -1);
+
+     int counterClasses = 0;
+
+     for( int i = 0; i < getNConss(); ++i )
+     {
+        int nnonzeros = getNVarsForCons(i);
+        bool nzalreadyfound = false;
+
+        for ( size_t nzid = 0; nzid < differentNNonzeros.size(); ++nzid )
+        {
+           if ( nnonzeros == differentNNonzeros[nzid] )
+           {
+              nzalreadyfound = true;
+              classForCons[i] = nzid;
+              ++nconssforclass[nzid];
+              break;
+           }
+        }
+
+        if(!nzalreadyfound)
+        {
+           classForCons[i] = counterClasses;
+           ++counterClasses;
+           differentNNonzeros.push_back(nnonzeros);
+           nconssforclass.push_back(1);
+        }
+     }
+
+     /** test of reduced consnames */
+
+     if( true )
+     {
+        std::cout << " nNonzero : nConsWithNNonzero"  << std::endl;
+        for( size_t i = 0; i < differentNNonzeros.size(); ++i )
+        {
+           std::cout << differentNNonzeros[i] << " : " << nconssforclass[i] << std::endl;
+//           std::cout << " new consname : " << consnamesToCompare[i]  << std::endl;
+//           std::cout << std::endl;
+        }
+     }
+
+     consclassescollection.push_back(classForCons);
+     consclassesnclasses.push_back(differentNNonzeros.size() );
+
+     std::cout << " comparison of number of nonzeros  " << " yields a distribution with " << differentNNonzeros.size()  << " different constraint classes" << std::endl;
+
+     return;
+
+
+  }
+
 
 
 

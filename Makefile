@@ -227,6 +227,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_hrgpartition.o \
 			dec_hrcgpartition.o \
 			dec_connectedbase.o \
+			dec_consclass.o \
 			dec_connected_noNewLinkingVars.o \
 			dec_generalmastersetpack.o \
 			dec_generalmastersetpart.o \
