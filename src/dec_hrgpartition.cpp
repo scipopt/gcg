@@ -406,7 +406,6 @@ SCIP_RETCODE detection(
    Seeed_Propagation_Data* seeedPropagationData,         /**< seeedPropagationData (including the seeedpool) where to store the new Seeeds */
    gcg::Seeed*             seeed,                        /**< seeed to propagate */
    bool                    border,                       /**< whether new seeeds should be stored in which this detector only assignes conss to master */
-   bool                    time,                         /**< whether the stopped time should added be to the new seeeds */
    SCIP_RESULT*            result                        /**< pointer where to store the result */
 )
 {
@@ -549,12 +548,12 @@ SCIP_RETCODE detection(
    }
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
-   if(time && border)
+   if(border)
    {
       for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
          seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[s] );
    }
-   else if(time && !border)
+   else
    {
       for( s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
          seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[2*s] );
@@ -656,7 +655,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
       return SCIP_OKAY;
    }
 
-   detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, TRUE, result);
+   detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
 
    for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
       seeedPropagationData->newSeeeds[s]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
@@ -682,7 +681,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHrgpartition)
       return SCIP_OKAY;
    }
 
-   detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, FALSE, result);
+   detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, result);
 
    for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
    {
