@@ -3612,7 +3612,8 @@ SCIP_RETCODE DECcreatePolishedDecomp(
    DEC_DECOMP**          newdecomp           /**< new decomposition, if successful */
    )
 {
-   int transferred = 0;
+   int transferredexisting = 0;
+   int transferrednew = 0;
    DEC_DECOMP* origdecomp = decomp;
    DEC_DECOMP* tempdecomp = NULL;
 
@@ -3629,11 +3630,11 @@ SCIP_RETCODE DECcreatePolishedDecomp(
 
    do
    {
-      SCIP_CALL( DECtryAssignMasterconssToExistingPricing(scip, *newdecomp, &transferred) );
-      SCIPdebugMessage("%d conss transferred to existing pricing\n", transferred);
-      SCIP_CALL( DECtryAssignMasterconssToNewPricing(scip, *newdecomp, &tempdecomp, &transferred) );
-      SCIPdebugMessage("%d conss transferred to new pricing\n", transferred);
-      if( transferred > 0 )
+      SCIP_CALL( DECtryAssignMasterconssToExistingPricing(scip, *newdecomp, &transferredexisting) );
+      SCIPdebugMessage("%d conss transferred to existing pricing\n", transferredexisting);
+      SCIP_CALL( DECtryAssignMasterconssToNewPricing(scip, *newdecomp, &tempdecomp, &transferrednew) );
+      SCIPdebugMessage("%d conss transferred to new pricing\n", transferrednew);
+      if( transferrednew > 0 )
       {
          if( *newdecomp != origdecomp )
          {
@@ -3641,7 +3642,7 @@ SCIP_RETCODE DECcreatePolishedDecomp(
          }
          *newdecomp = tempdecomp;
       }
-   } while( transferred > 0 );
+   } while( transferredexisting > 0 || transferrednew > 0 );
 
    if( *newdecomp == origdecomp )
    {
