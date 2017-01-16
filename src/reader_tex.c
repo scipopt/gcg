@@ -631,6 +631,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    )
 {
    FILE* makefile;
+   FILE* readme;
    char* filepath;
    char* filename;
    char name[SCIP_MAXSTRLEN] = "makepdf";
@@ -638,6 +639,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    char pfile[SCIP_MAXSTRLEN];
    char pfilecpy[SCIP_MAXSTRLEN];
    char makefilename[SCIP_MAXSTRLEN];
+   char readmename[SCIP_MAXSTRLEN];
    SCIP_Bool writedecomp;
    int filedesc;
    int success;
@@ -650,7 +652,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    /* --- create a Makefile --- */
 
-   /* get path to write to and put it into gpfilename */
+   /* get path to write to and put it into makefilename */
    filedesc = fileno(file); /* get link to file descriptor */
       if( filedesc < 0 )
    {
@@ -668,7 +670,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    strcat(makefilename, "/");
    strcat(makefilename, name);
 
-   /* open and write first lines of makefile */
+   /* open and write makefile */
    makefile = fopen(makefilename, "w");
    if( makefile == NULL )
    {
@@ -708,8 +710,36 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIPinfoMessage(scip, makefile, "\t@latexmk -C                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, makefile, "\t@make -f %s clean                                                          %s", name, LINEBREAK);
 
+   /* close makefile */
+   fclose(makefile);
 
-   /* --- make the tex files --- */
+   /* --- create a readme file --- */
+
+   /* use same file path as the makefile */
+   strcpy(readmename, filepath);
+   strcat(readmename, "/");
+   strcat(readmename, "README_");
+   strcat(readmename, name);
+
+   /* open and write readme */
+   readme = fopen(readmename, "w");
+   if( readme == NULL )
+   {
+      return SCIP_FILECREATEERROR;
+   }
+
+   SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file     %s", name, LINEBREAK);
+   SCIPinfoMessage(scip, readme, "                                                                             %s", LINEBREAK);
+   SCIPinfoMessage(scip, readme, "Instead of using 'make' use 'make -f %s' instead                             %s", name, LINEBREAK);
+   SCIPinfoMessage(scip, readme, "                                                                             %s", LINEBREAK);
+   SCIPinfoMessage(scip, readme, "Clean options:                                                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, readme, "\t'clean' clears all present intermediate files (if any exist)               %s", LINEBREAK);
+   SCIPinfoMessage(scip, readme, "\t'cleanall' clears all generated files INCLUDING .pdf                       %s", LINEBREAK);
+
+   /* close readme file */
+   fclose(readme);
+
+   /* --- make the tex file(s) --- */
 
    SCIP_CALL( writeHeaderCode(scip,file,statistics,decomps,ndecomps,toc,readerdata) );
 
