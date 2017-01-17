@@ -970,6 +970,9 @@ SCIP_RETCODE setPricingProblemParameters(
    /* disable multiaggregation because of infinite values */
    SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
 
+   /* disable presolving of xor constraints as work-around for a SCIP bug */
+   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/maxprerounds", 0) );
+
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
 #if SCIP_VERSION > 210
