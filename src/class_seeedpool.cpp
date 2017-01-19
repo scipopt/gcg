@@ -229,6 +229,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          SCIP_CONSHDLR* conshdlr;  /** cons_decomp to get detectors */
          SCIP_CONSHDLRDATA* conshdlrdata;
 
+//         if(!presolved)
+//         {
+//            nVars = SCIPgetNOrigVars(scip);
+//            nConss = SCIPgetNOrigConss(scip);
+//         }
+
 
          int relevantVarCounter = 0;
          int relevantConsCounter = 0;
@@ -292,11 +298,14 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 
          /** initilize matrix datastructures */
+
          conss = SCIPgetConss(scip);
          vars = SCIPgetVars(scip);
 
+
          /** assign an index to every cons and var
           * @TODO: are all constraints/variables relevant? (probvars etc)  */
+
          for(int i = 0; i < nConss; ++i)
          {
                  SCIP_CONS* relevantCons;
@@ -308,13 +317,20 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                          consToScipCons.push_back(relevantCons);
                          ++relevantConsCounter;
                  }
+                 else
+                 {
+                    std::cout << "NULL" << std::endl;
+                 }
          }
 
          for(int i = 0; i < nVars; ++i)
          {
                  SCIP_VAR* relevantVar;
 
+
+
                  relevantVar = varGetRelevantRepr(scip, vars[i]);
+
 
                  if( relevantVar != NULL )
                  {
@@ -327,6 +343,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          /** from here on nVars and nConss represents the relevant numbers */
          nVars = relevantVarCounter;
          nConss = relevantConsCounter;
+         std::cout << "nVars: " << nVars << " / nConss: " << nConss << std::endl;
          varsForConss = std::vector<std::vector<int>>(nConss);
          valsForConss = std::vector<std::vector<SCIP_Real>>(nConss);
          conssForVars = std::vector<std::vector<int>>(nVars);
@@ -357,11 +374,15 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                      int varIndex;
                      std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
 
+
                      /** because of the bug of GCGconsGet*()-methods some variables have to be negated */
                      if(!SCIPvarIsNegated(currVars[currVar]))
                         iterVar = scipVarToIndex.find(currVars[currVar]);
                      else
                         iterVar = scipVarToIndex.find(SCIPvarGetNegatedVar(currVars[currVar]));
+
+
+
 
                      if(iterVar == scipVarToIndex.end() )
                         continue;
@@ -1775,6 +1796,115 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
 
   }
+
+ void Seeedpool::addConssClassDistribution(
+     std::vector<int>                             conssClassDistribution,     /**< distribution to add */
+     std::vector<SCIP_CONS*>                      indexToCons                 /**< stores the corresponding scip constraints pointer */
+     )
+  {
+     int consindex;
+     SCIP_CONS* cons;
+     int classCounter = 0;
+     std::vector<int> classes;
+     int consCounter = 0;
+
+     //fillout the distributionvector
+     std::vector<int> distribution (nConss);
+
+     for( size_t c = 0; c < indexToCons.size(); ++c )
+     {
+        cons = indexToCons[c];
+        if( find(consToScipCons.begin(), consToScipCons.end(), cons) == consToScipCons.end() )
+           continue;
+        consindex = getIndexForCons(cons);
+        distribution[consindex] = conssClassDistribution[c];
+        consCounter ++;
+        if( find( classes.begin(), classes.end(), conssClassDistribution[c]) == classes.end() )
+        {
+           classCounter++;
+           classes.push_back(conssClassDistribution[c]);
+        }
+
+     }
+
+     if( consCounter != nConss )
+     {
+        std::cout << "Distribution can not be added because of missing constraints!" << std::endl;
+        return;
+     }
+
+     //the different classes should be consecutively numbered
+     int maximum = *std::max_element(distribution.begin(), distribution.end());
+     assert( maximum >= classCounter - 1);
+     while( maximum != classCounter - 1 )
+     {
+        bool found;
+        int number = -1;
+
+        //search for a number between 0 and (classCounter - 1) which is not assigned to a class yet
+        do
+        {
+           found = false;
+           number++;
+           for( size_t j = 0; j < distribution.size(); ++j )
+           {
+              if( number == distribution[j] )
+              {
+                 found = true;
+                 break;
+              }
+           }
+        }while( found && number < classCounter );
+
+        assert( number != classCounter );
+
+        for( size_t j = 0; j < distribution.size(); ++j )
+        {
+           if( distribution[j] == maximum )
+              distribution[j] = number;
+        }
+     }
+
+     if(distributionIsNoDuplicateOfDistributions(distribution, classCounter, consclassescollection))
+     {
+        consclassescollection.push_back( distribution );
+        consclassesnclasses.push_back( classCounter );
+     }
+
+
+
+ }
+
+ bool Seeedpool::distributionIsNoDuplicateOfDistributions(
+    std::vector<int>              compDistribution,
+    int                           nClasses,
+    std::vector<std::vector<int>> distributions
+    )
+ {
+    assert( (int) compDistribution.size() == nConss );
+    bool equal = false;
+    for( size_t j = 0; j < distributions.size(); ++j )
+    {
+       equal = true;
+       for( int k = 0; k < nClasses && equal; ++k )
+       {
+          int classnumber = -1;
+          for( size_t l = 0; l < compDistribution.size() && equal; ++l )
+          {
+             if( compDistribution[l] == k )
+             {
+                if( classnumber == -1 )
+                   classnumber = consclassescollection[j][l];
+                if( consclassescollection[j][l] != classnumber )
+                   equal = false;
+             }
+          }
+       }
+       if(equal)
+          return false;
+    }
+    return true;
+ }
 
 
 

@@ -209,6 +209,17 @@ public:
    void addConssClassesForNNonzeros(
       );
 
+   void addConssClassDistribution(
+      std::vector<int>              conssClassDistribution,
+      std::vector<SCIP_CONS*>       indexToCons
+      );
+
+   bool distributionIsNoDuplicateOfDistributions(
+      std::vector<int>              compDistribution,
+      int                           nClasses,
+      std::vector<std::vector<int>> distributions
+      );
+
 
 };
 

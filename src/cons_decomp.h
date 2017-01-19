@@ -46,6 +46,8 @@
 extern "C" {
 #endif
 
+
+
 /** creates the handler for decomp constraints and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeConshdlrDecomp(
@@ -124,9 +126,8 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
 extern
 SCIP_RETCODE DECdetectStructure(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RESULT*          result              /**< Result pointer to indicate whether some structure was found */
+   SCIP_RESULT*          result             /**< Result pointer to indicate whether some structure was found */
    );
-
 
 /** write out all known decompositions **/
 SCIP_RETCODE DECwriteAllDecomps(
