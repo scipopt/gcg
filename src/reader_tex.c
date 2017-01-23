@@ -586,17 +586,17 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "\\end {figure}                                                                  %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\begin{tabular}{lll}                                                           %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Found by detector: & %s & \\\\                                                %s", DECdetectorGetName(DECdecompGetDetector(decomp)), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of blocks: & %i & \\\\                                                 %s", DECdecompGetNBlocks(decomp), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of linking variables: & %i & \\\\                                      %s", DECdecompGetNLinkingvars(decomp), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i & \\\\                                    %s", DECdecompGetNLinkingconss(decomp), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Scores: & Total score: & %f \\\\                                              %s", scores.totalscore, LINEBREAK);
-   SCIPinfoMessage(scip, file, "  & Block density score: & %f \\\\                                              %s", scores.densityscore, LINEBREAK);
-   SCIPinfoMessage(scip, file, "  & Interlinking blocks score: & %f \\\\                                        %s", scores.linkingscore, LINEBREAK);
-   SCIPinfoMessage(scip, file, "  & Border score: & %f \\\\                                                     %s", scores.borderscore, LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Found by detector: & %s \\\\                                                  %s", DECdetectorGetName(DECdecompGetDetector(decomp)), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   %s", DECdecompGetNBlocks(decomp), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        %s", DECdecompGetNLinkingvars(decomp), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i \\\\                                      %s", DECdecompGetNLinkingconss(decomp), LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Block density score: & %f \\\\                                                %s", scores.densityscore, LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Interlinking blocks score: & %f \\\\                                          %s", scores.linkingscore, LINEBREAK);
+   SCIPinfoMessage(scip, file, "  Border score: & %f \\\\                                                       %s", scores.borderscore, LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\textbf{Total score:} & \\textbf{%f} \\\\                                    %s", scores.totalscore, LINEBREAK);
    SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\clearpage                                                                       %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\clearpage                                                                     %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
 
    /*@todo get and output statistics*/
