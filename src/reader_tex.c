@@ -634,7 +634,8 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    FILE* readme;
    char* filepath;
    char* filename;
-   char name[SCIP_MAXSTRLEN] = "makepdf";
+   const char makename[SCIP_MAXSTRLEN] = "makepdf";
+   char name[SCIP_MAXSTRLEN];
    char sympath[SCIP_MAXSTRLEN];
    char pfile[SCIP_MAXSTRLEN];
    char pfilecpy[SCIP_MAXSTRLEN];
@@ -668,7 +669,12 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    SCIPsplitFilename(pfilecpy, &filepath, &filename, NULL, NULL);
    strcpy(makefilename, filepath);
    strcat(makefilename, "/");
+   strcpy(name, makename);
+   strcat(name, "_");
+   strcat(name, filename);
+   strcat(name, ".make");
    strcat(makefilename, name);
+
 
    /* open and write makefile */
    makefile = fopen(makefilename, "w");
@@ -719,7 +725,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    strcpy(readmename, filepath);
    strcat(readmename, "/");
    strcat(readmename, "README_");
-   strcat(readmename, name);
+   strcat(readmename, makename);
 
    /* open and write readme */
    readme = fopen(readmename, "w");
