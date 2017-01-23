@@ -796,7 +796,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                   bestSeeed = finishedSeeeds[i];
                }
             }
-            bestSeeed->showScatterPlot(this);
+//            bestSeeed->showScatterPlot(this);
          }
 
 
