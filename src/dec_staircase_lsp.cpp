@@ -754,6 +754,10 @@ SCIP_RETCODE detection(
    gcg::Seeedpool* seeedpool = seeedPropagationData->seeedpool;
    gcg::Seeed* currseeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
 
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
    currseeed->considerImplicits(seeedpool);
    currseeed->refineToMaster(seeedpool);
 
@@ -850,6 +854,10 @@ SCIP_RETCODE detection(
 
    tcliqueFree(&detectordata->graph);
 
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
    return SCIP_OKAY;
 }
 
@@ -861,21 +869,12 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
 
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
 
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-
    *result = SCIP_DIDNOTFIND;
 
    detection(scip, detectordata, seeedPropagationData);
+   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
 
    *result = SCIP_SUCCESS;
-
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
 
    return SCIP_OKAY;
 }

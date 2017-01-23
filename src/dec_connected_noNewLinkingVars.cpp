@@ -131,9 +131,14 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected_noNewLinkingVars)
 /** detection function for seeeds */
 static
 SCIP_RETCODE detection(
+   SCIP*                   scip,                        /**< SCIP data structure */
    Seeed_Propagation_Data* seeedPropagationData         /**< seeedPropagationData (including the seeedpool and seeedTopropagate) where to store the new Seeeds */
 )
 {
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
 
@@ -156,6 +161,10 @@ SCIP_RETCODE detection(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
 
+   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
+   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
    return SCIP_OKAY;
 }
 
@@ -164,17 +173,11 @@ static
 DEC_DECL_PROPAGATESEEED(propagateSeeedConnected_noNewLinkingVars)
 {
    *result = SCIP_DIDNOTFIND;
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   detection(seeedPropagationData);
+   detection(scip, seeedPropagationData);
 
    seeedPropagationData->newSeeeds[0]->setDetectorPropagated( seeedPropagationData->seeedpool->getIndexForDetector(detector) );
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
 
@@ -186,7 +189,7 @@ DEC_DECL_FINISHSEEED(finishSeeedConnected_noNewLinkingVars)
 {
    *result = SCIP_DIDNOTFIND;
 
-   detection(seeedPropagationData);
+   detection(scip, seeedPropagationData);
 
    *result = SCIP_SUCCESS;
 
