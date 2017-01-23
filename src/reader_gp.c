@@ -107,9 +107,12 @@ SCIP_RETCODE writeDecompositionHeader(
    nconss = SCIPgetNConss(scip);
 
    nstairlinkingvars = 0;
-   for( b = 0; b < decdecomp->nblocks - 1; ++b )
+   if (decdecomp->nstairlinkingvars != NULL)
    {
-      nstairlinkingvars += decdecomp->nstairlinkingvars[b];
+      for( b = 0; b < decdecomp->nblocks - 1; ++b )
+      {
+         nstairlinkingvars += decdecomp->nstairlinkingvars[b];
+      }
    }
    nmastervars = 0;
    for( i = 0; i < decdecomp->nlinkingvars; ++i )
@@ -141,12 +144,15 @@ SCIP_RETCODE writeDecompositionHeader(
      endy += decdecomp->nsubscipconss[b];
      SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, endx + 0.5, endy + 0.5, "grey"));
      i++;
-     if(decdecomp->nstairlinkingvars[b] != 0)
+     if(decdecomp->nstairlinkingvars != NULL )
      {
+        if(decdecomp->nstairlinkingvars[b] != 0)
+        {
         startx = endx;
         endx += decdecomp->nstairlinkingvars[b];
         SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, endx + 0.5, starty + decdecomp->nsubscipconss[b] + decdecomp->nsubscipconss[b+1] + 0.5, "pink"));
         i++;
+        }
      }
      startx = endx;
      starty = endy;
@@ -266,11 +272,14 @@ SCIP_RETCODE writeData(
          stairlinkingvars[j] = 0;
       for( i = 0; i < decdecomp->nblocks - 1; ++i)
       {
-         for( j = 0; j < decdecomp->nstairlinkingvars[i]; ++j)
+         if(decdecomp->nstairlinkingvars != NULL)
          {
-            assert(SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j]) != NULL);
-            assert(stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j])] == 0);
-            stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j])] = 1;
+            for( j = 0; j < decdecomp->nstairlinkingvars[i]; ++j)
+            {
+               assert(SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j]) != NULL);
+               assert(stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j])] == 0);
+               stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j])] = 1;
+            }
          }
       }
 
@@ -315,11 +324,14 @@ SCIP_RETCODE writeData(
             SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->subscipvars[i][j], (void*)varindex) );
             varindex++;
          }
-         for( j = 0; j < decdecomp->nstairlinkingvars[i]; ++j )
+         if( decdecomp->nstairlinkingvars != 0)
          {
-            assert(decdecomp->stairlinkingvars[i][j] != NULL);
-            SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->stairlinkingvars[i][j], (void*)varindex) );
-            varindex++;
+            for( j = 0; j < decdecomp->nstairlinkingvars[i]; ++j )
+            {
+               assert(decdecomp->stairlinkingvars[i][j] != NULL);
+               SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->stairlinkingvars[i][j], (void*)varindex) );
+               varindex++;
+            }
          }
          for( j = 0; j < decdecomp->nsubscipconss[i]; ++j )
          {
@@ -606,15 +618,18 @@ SCIP_RETCODE SCIPwriteGp(
    detectorchain = DECdecompGetDetectorChain(decdecomp);
    sizedetectorchain = DECdecompGetDetectorChainSize(decdecomp);
 
-   sprintf(detectorchainstring, "%s", DECdetectorGetName(detectorchain[0]));
-
-   for( i=1; i < sizedetectorchain; ++i )
+   if (detectorchain != NULL)
    {
-      sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(detectorchain[i]) );
+      sprintf(detectorchainstring, "%s", DECdetectorGetName(detectorchain[0]));
+
+      for( i=1; i < sizedetectorchain; ++i )
+      {
+         sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(detectorchain[i]) );
+      }
+      SCIPinfoMessage(scip, NULL, "%s \n", detectorchainstring);
    }
-   SCIPinfoMessage(scip, NULL, "%s \n", detectorchainstring);
-
-
+   else
+      sprintf(detectorchainstring, "%s", "provided");
    /* print header */
    if( decdecomp == NULL )
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);

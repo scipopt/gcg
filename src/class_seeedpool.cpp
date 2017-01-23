@@ -176,7 +176,7 @@ std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
     return subset;
 }
 
-/** methode to calculate the greates common divisor */
+/** method to calculate the greatest common divisor */
 
 int gcd(int a, int b) {
     return b == 0 ? a : gcd(b, a % b);
@@ -445,31 +445,28 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             currSeeeds[s]->calcHashvalue();
          }
 
-         for(int round = 0; round < maxndetectionrounds; ++round)
+         for( int round = 0; round < maxndetectionrounds; ++round )
          {
                  std::cout << "currently in detection round " << round << std::endl;
                  std::vector<SeeedPtr> nextSeeeds = std::vector<SeeedPtr>(0);
                  std::vector<SeeedPtr> currSeeedsToDelete = std::vector<SeeedPtr>(0);
 
-                 for(size_t s = 0; s < currSeeeds.size(); ++s )
+                 for( size_t s = 0; s < currSeeeds.size(); ++s )
                  {
                          SeeedPtr seeedPtr;
                          seeedPtr= currSeeeds[s];
-                         if(displaySeeeds)
+                         if( displaySeeeds )
                          {
                             std::cout << "Start to propagate seeed " << seeedPtr->getID() << " in round " << round << ":" << std::endl;
                             seeedPtr->displaySeeed();
                          }
 
                          /** the current seeed is handled by all detectors */
-                         for(int d = 0; d < nDetectors; ++d)
+                         for( int d = 0; d < nDetectors; ++d )
                          {
-
-
                                  DEC_DETECTOR* detector;
                                  std::vector<SeeedPtr>::const_iterator newSIter;
                                  std::vector<SeeedPtr>::const_iterator newSIterEnd;
-
 
                                  SCIP_RESULT result = SCIP_DIDNOTFIND;
                                  detector = detectorToScipDetector[d];
@@ -778,8 +775,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                   bestSeeed = finishedSeeeds[i];
                }
             }
-       //     bestSeeed->showScatterPlot(this);
+            bestSeeed->showScatterPlot(this);
          }
+
 
 
          /** fill out the decompositions */

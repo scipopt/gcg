@@ -37,6 +37,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+
 #include "decomp.h"
 #include "gcg.h"
 #include "cons_decomp.h"
@@ -44,6 +45,7 @@
 #include "struct_decomp.h"
 #include "scip_misc.h"
 #include "relax_gcg.h"
+
 
 #include <assert.h>
 
@@ -490,16 +492,18 @@ SCIP_RETCODE DECdecompFree(
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->stairlinkingvars, decomp->nblocks);
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->nstairlinkingvars,decomp->nblocks);
    SCIPfreeBlockMemoryArrayNull(scip, &decomp->linkingconss, SCIPcalcMemGrowSize(scip, decomp->nlinkingconss));
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorchain, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorclocktimes, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctvarstoborder, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctconsstoborder, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctvarstoblock, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctconsstoblock, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctvarsfromopen, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctconssfromopen, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
-   SCIPfreeBlockMemoryArrayNull(scip, &decomp->nnewblocks, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
-
+   if( decomp->detectorchain != NULL )
+   {
+      SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorchain, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
+      SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorclocktimes, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
+      SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctvarstoborder, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
+      SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctconsstoborder, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
+      SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctvarstoblock, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
+      SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctconsstoblock, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
+      SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctvarsfromopen, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
+      SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctconssfromopen, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
+      SCIPfreeBlockMemoryArrayNull(scip, &decomp->nnewblocks, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
+   }
 
    SCIPfreeMemoryNull(scip, decdecomp);
 
