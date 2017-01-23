@@ -232,6 +232,9 @@ SCIP_RETCODE writeHeaderCode(
       SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{0pt}                                    %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                      %s", pname, LINEBREAK);
       SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                      %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "  Number of variables in original problem: & %i  \\\\                            %s", SCIPgetNOrigVars(scip), LINEBREAK);
+      SCIPinfoMessage(scip, file, "  \\vspace{0.5cm}                                                                %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\                          %s", SCIPgetNOrigConss(scip), LINEBREAK);
       SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                     %s", SCIPconshdlrDecompGetNDecdecomps(scip), LINEBREAK);
       if( readerdata->returntype != 0 )
       {
