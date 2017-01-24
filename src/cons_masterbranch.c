@@ -379,80 +379,50 @@ SCIP_RETCODE addPendingBndChg(
    return SCIP_OKAY;
 }
 
-/** For a given bound change on an original variable, check if the bounds on the variables identical to it are the same
- *
- *  @note If the variable is represented by another one, we check only the representative;
- *        otherwise, we check all variables identical to it
+/** For a given global bound change on a pricing variable, check if the global bounds on all corresponding original variables are still the same
  *
  *  @return TRUE if the variable is in a relevant block AND all variables identical to it have the same bounds
  */
 static
-SCIP_Bool checkAggregatedVariableBounds(
+SCIP_Bool checkAggregatedGlobalBounds(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             bndvar,             /**< variable whose bound was changed */
-   SCIP_BOUNDTYPE        bndtype,            /**< type of the new bound */
-   SCIP_Real             newbnd,             /**< value of the new bound */
-   SCIP_VAR*             pricingvar,         /**< pricing variable corresponding to the original variable */
-   SCIP_Bool             global              /**< indicates whether the bound change is a global one */
+   SCIP_VAR*             bndvar,             /**< pricing variable whose new global bound is to be checked */
+   SCIP_BOUNDTYPE        bndtype,            /**< type of the new global bound */
+   SCIP_Real             bound               /**< new global bound */
    )
 {
    SCIP_VAR** identvars;
    int nidentvars;
+   SCIP_Bool identical;
 
-   /* get variables with which the original variables was aggregated */
-   identvars = GCGpricingVarGetOrigvars(pricingvar);
-   nidentvars = GCGpricingVarGetNOrigvars(pricingvar);
+   assert(GCGvarIsPricing(bndvar));
 
-   /* First case: The variable is not represented by another one - check the bounds of all variables it represents */
-   if( identvars[0] == bndvar )
+   /* get all identical variables */
+   identvars = GCGpricingVarGetOrigvars(bndvar);
+   nidentvars = GCGpricingVarGetNOrigvars(bndvar);
+
+   identical = TRUE;
+
+   /* If the variable was not aggregated, there is nothing to check */
+   if( nidentvars > 1 )
    {
       int i;
 
-      /* In case we have an aggregated original variable, check if all identical variables have the same bounds */
+      /* Check if the bounds of all identical variables are equal to the one of the representative */
       for( i = 0; i < nidentvars; ++i )
       {
-         SCIP_Real lb;
-         SCIP_Real ub;
-         SCIP_Real bound;
-
-         lb = global ? SCIPvarGetLbGlobal(identvars[i]) : SCIPvarGetLbLocal(identvars[i]);
-         ub = global ? SCIPvarGetUbGlobal(identvars[i]) : SCIPvarGetUbLocal(identvars[i]);
-         bound = (bndtype == SCIP_BOUNDTYPE_UPPER) ? ub : lb;
-
-         if( !SCIPisEQ(scip, bound, newbnd) )
+         SCIP_Real identbound = bndtype == SCIP_BOUNDTYPE_UPPER ? SCIPvarGetUbGlobal(identvars[i]) : SCIPvarGetLbGlobal(identvars[i]);
+         if( !SCIPisEQ(scip, identbound, bound) )
          {
             SCIPerrorMessage("Var <%s> has new local %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
                SCIPvarGetName(bndvar), bndtype == SCIP_BOUNDTYPE_UPPER ? "upper" : "lower",
-               newbnd, SCIPvarGetName(identvars[i]), bound);
-            return FALSE;
+                  bound, SCIPvarGetName(identvars[i]), identbound);
+            identical = FALSE;
          }
       }
-
-      return TRUE;
    }
 
-   /* Second case: The variable is represented by another one due to aggregation; check if its representative has the same bound */
-   else
-   {
-      SCIP_Real lb;
-      SCIP_Real ub;
-      SCIP_Real bound;
-
-      lb = global ? SCIPvarGetLbGlobal(identvars[0]) : SCIPvarGetLbLocal(identvars[0]);
-      ub = global ? SCIPvarGetUbGlobal(identvars[0]) : SCIPvarGetUbLocal(identvars[0]);
-      bound = (bndtype == SCIP_BOUNDTYPE_UPPER) ? ub : lb;
-
-      if( !SCIPisEQ(scip, bound, newbnd) )
-      {
-         SCIPerrorMessage("Var <%s> has new local %s bound %g, but representative <%s> has %g -- don't know how to handle!\n",
-            SCIPvarGetName(bndvar), bndtype == SCIP_BOUNDTYPE_UPPER ? "upper" : "lower",
-            newbnd, SCIPvarGetName(identvars[0]), bound);
-      }
-
-      /* Since the block is not relevant, there is no corresponding pricing variable */
-      return FALSE;
-   }
-
+   return identical;
 }
 
 /** apply global bound changes on original problem variables either
@@ -519,8 +489,7 @@ SCIP_RETCODE applyGlobalBndchgsToPricingprobs(
              */
 
             /* check if all identical variables have the same global bound */
-            if( !checkAggregatedVariableBounds(origscip, GCGpricingVarGetOrigvars(conshdlrdata->pendingvars[i])[0],
-               conshdlrdata->pendingbndtypes[i], conshdlrdata->pendingnewbnds[i], conshdlrdata->pendingvars[i], TRUE) )
+            if( !checkAggregatedGlobalBounds(origscip, conshdlrdata->pendingvars[i], conshdlrdata->pendingbndtypes[i], conshdlrdata->pendingnewbnds[i]) )
                continue;
 
             if( conshdlrdata->pendingbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
@@ -844,6 +813,114 @@ SCIP_RETCODE tightenPricingVarBound(
    return SCIP_OKAY;
 }
 
+/** For a given local bound change on an original variable, check if the bounds on the variables identical to it are the same
+ *
+ *  @note If the variable is represented by another one, we check only the representative;
+ *        otherwise, we check all variables identical to it
+ *
+ *  @return TRUE if the variable is in a relevant block AND all variables identical to it have the same bounds
+ */
+static
+SCIP_Bool checkAggregatedLocalBounds(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            bndvars,            /**< all variables whose local bounds were changed */
+   SCIP_Real*            bounds,             /**< corresponding new local bounds */
+   int                   nbndvars,           /**< number of all variables whose local bounds were changed */
+   SCIP_VAR*             bndvar,             /**< original variable whose local bound was changed and which is to be checked */
+   SCIP_BOUNDTYPE        bndtype,            /**< type of the new local bound */
+   SCIP_VAR*             pricingvar          /**< pricing variable corresponding to the original variable */
+   )
+{
+   SCIP_VAR** identvars;
+   int nidentvars;
+
+   assert(GCGvarIsOriginal(bndvar));
+   assert(GCGvarIsPricing(pricingvar));
+
+   /* get variables with which the original variable was aggregated */
+   identvars = GCGpricingVarGetOrigvars(pricingvar);
+   nidentvars = GCGpricingVarGetNOrigvars(pricingvar);
+
+   /* First case: The variable is not represented by another one - check the bounds of all variables it represents */
+   if( identvars[0] == bndvar )
+   {
+      SCIP_Bool identical = TRUE;
+
+      /* If the variable was not aggregated, there is nothing to check */
+      if( nidentvars > 1 )
+      {
+         int i;
+         int j;
+         SCIP_Real* identbounds;  /* most recent bounds of all identical variables */
+
+         SCIP_CALL( SCIPallocBufferArray(scip, &identbounds, nidentvars) );
+         for( j = 0; j < nidentvars; ++j )
+            identbounds[j] = SCIP_INVALID;
+
+         /* For all variables on which a bound was changed *and* which are identical to the current variable,
+          * get the most recent bound
+          */
+         for( i = 0; i < nbndvars; ++i )
+         {
+            assert(GCGvarIsOriginal(bndvars[i]));
+
+            if( GCGpricingVarGetOrigvars(GCGoriginalVarGetPricingVar(bndvars[i]))[0] == identvars[0] )
+               for( j = 0; j < nidentvars; ++j )
+                  if( identvars[j] == bndvars[i] )
+                     identbounds[j] = bounds[i];
+         }
+
+         /* Check if the bounds of all identical variables are equal to the one of the representative */
+         for( j = 1; j < nidentvars; ++j )
+         {
+            if( !SCIPisEQ(scip, identbounds[j], identbounds[0]) )
+            {
+               SCIPerrorMessage("Var <%s> has new local %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
+                  SCIPvarGetName(bndvar), bndtype == SCIP_BOUNDTYPE_UPPER ? "upper" : "lower",
+                     identbounds[0], SCIPvarGetName(identvars[j]), identbounds[j]);
+               identical = FALSE;
+            }
+         }
+
+         SCIPfreeBufferArray(scip, &identbounds);
+      }
+
+      return identical;
+   }
+
+   /* Second case: The variable is represented by another one due to aggregation; check if its representative has the same bound */
+   else
+   {
+      int i;
+      SCIP_Real reprbound;
+      SCIP_Real bound;
+
+      /* Get the most recent bound for the bound change variable as well as for its representative */
+      reprbound = SCIP_INVALID;
+      bound = SCIP_INVALID;
+      for( i = 0; i < nbndvars; ++i )
+      {
+         assert(GCGvarIsOriginal(bndvars[i]));
+
+         if( bndvars[i] == identvars[0] )
+            reprbound = bounds[i];
+         else if( bndvars[i] == bndvar )
+            bound = bounds[i];
+      }
+
+      /* Check if the bounds are equal */
+      if( !SCIPisEQ(scip, bound, reprbound) )
+      {
+         SCIPerrorMessage("Var <%s> has new local %s bound %g, but representative <%s> has %g -- don't know how to handle!\n",
+            SCIPvarGetName(bndvar), bndtype == SCIP_BOUNDTYPE_UPPER ? "upper" : "lower",
+            bound, SCIPvarGetName(identvars[0]), reprbound);
+      }
+
+      /* Since the block is not relevant, there is no corresponding pricing variable */
+      return FALSE;
+   }
+}
+
 /** apply local bound changes in the original problem to the pricing problems */
 static
 SCIP_RETCODE applyLocalBndchgsToPricingprobs(
@@ -880,8 +957,8 @@ SCIP_RETCODE applyLocalBndchgsToPricingprobs(
 
       else if( blocknr >= 0 )
       {
-         if( checkAggregatedVariableBounds(scip, consdata->localbndvars[i], consdata->localbndtypes[i], consdata->localnewbnds[i],
-            GCGoriginalVarGetPricingVar(consdata->localbndvars[i]), FALSE) )
+         if( checkAggregatedLocalBounds(scip, consdata->localbndvars, consdata->localnewbnds, consdata->nlocalbndchgs, consdata->localbndvars[i],
+         consdata->localbndtypes[i], GCGoriginalVarGetPricingVar(consdata->localbndvars[i])) )
          {
             SCIPdebugMessage("adjusting bound of pricing var <%s>\n", SCIPvarGetName(consdata->localbndvars[i]));
             /* set corresponding bound in the pricing problem */
@@ -905,8 +982,8 @@ SCIP_RETCODE applyLocalBndchgsToPricingprobs(
             if( pricingvars[j] == NULL )
                continue;
 
-            if( !checkAggregatedVariableBounds(scip, consdata->localbndvars[i], consdata->localbndtypes[i], consdata->localnewbnds[i],
-               pricingvars[j], FALSE) )
+            if( !checkAggregatedLocalBounds(scip, consdata->localbndvars, consdata->localnewbnds, consdata->nlocalbndchgs,
+               consdata->localbndvars[i], consdata->localbndtypes[i], pricingvars[j]) )
                aggregated = TRUE;
          }
          if( aggregated )
@@ -1812,7 +1889,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    oldbound = SCIPeventGetOldbound(event);
    newbound = SCIPeventGetNewbound(event);
 
-   SCIPdebugMessage("eventexec: eventtype = 0x%x, var = %s, oldbound = %f, newbound = %f\n", eventtype, SCIPvarGetName(var), oldbound, newbound);
+   SCIPdebugMessage("eventexec: eventtype = 0x%x, var = %s, oldbound = %f, newbound = %f\n", (unsigned int) eventtype, SCIPvarGetName(var), oldbound, newbound);
 
    if( !GCGrelaxIsInitialized(scip) )
    {

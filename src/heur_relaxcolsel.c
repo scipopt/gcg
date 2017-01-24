@@ -879,7 +879,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       }
 
       /* try to add the solution to (original) solution pool */
-      SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &success) );
+      SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, FALSE, TRUE, TRUE, TRUE, &success) );
 
       /* check if all blocks are full */
       allblocksfull = TRUE;
@@ -920,9 +920,9 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       if( success && allblocksfull )
       {
 #ifdef SCIP_DEBUG
-         SCIP_CALL( SCIPtrySol(scip, mastersol, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
+         SCIP_CALL( SCIPtrySol(scip, mastersol, TRUE, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
 #else
-         SCIP_CALL( SCIPtrySol(scip, mastersol, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
+         SCIP_CALL( SCIPtrySol(scip, mastersol, FALSE, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
 #endif
          if( !masterfeas )
          {

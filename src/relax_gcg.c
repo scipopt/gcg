@@ -71,6 +71,7 @@
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
 #define RELAX_PRIORITY         -1
 #define RELAX_FREQ             1
+#define RELAX_INCLUDESLP       FALSE
 
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
@@ -305,9 +306,11 @@ SCIP_RETCODE convertStructToGCG(
    for( i = 0; i < nvars; ++i )
    {
       SCIP_VAR* transvar;
+
       SCIP_CALL( SCIPgetTransformedVar(scip, origvars[i], &transvar) );
       assert(transvar != NULL);
-      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, SCIPvarGetProbvar(transvar), origvars[i]) );
+
+      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]) );
    }
 
    for( i = 0; i < nblocks; ++i )
@@ -320,6 +323,7 @@ SCIP_RETCODE convertStructToGCG(
          assert(subscipvars[i][j] != NULL);
          relevantvar = SCIPvarGetProbvar(subscipvars[i][j]);
 
+         /* If there is a corresponding original (untransformed) variable, assign it to the block */
          if( SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]) != NULL )
          {
             SCIP_VAR* origvar;
@@ -328,15 +332,16 @@ SCIP_RETCODE convertStructToGCG(
             assert(SCIPvarGetData(origvar) != NULL);
 
             SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, origvar, i) );
-            SCIPdebugMessage("\t\tVar %s (%p) in block %d\n", SCIPvarGetName(subscipvars[i][j]), (void*) subscipvars[i][j],i );
+            SCIPdebugMessage("\t\tOriginal var %s (%p) in block %d\n", SCIPvarGetName(subscipvars[i][j]), (void*) subscipvars[i][j], i);
          }
-         else
-         {
-            if( SCIPvarGetData(relevantvar) == NULL )
-               SCIP_CALL( GCGorigVarCreateData(scip, relevantvar) );
 
-            SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, relevantvar, i) );
-         }
+         /* Assign the corresponding problem variable to the block */
+         if( SCIPvarGetData(relevantvar) == NULL )
+            SCIP_CALL( GCGorigVarCreateData(scip, relevantvar) );
+         SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, relevantvar, i) );
+
+         SCIPdebugMessage("\t\tTransformed var %s (%p) in block %d\n", SCIPvarGetName(relevantvar), (void*) relevantvar, i);
+
          assert(SCIPvarGetData(subscipvars[i][j]) != NULL || SCIPvarGetData(relevantvar) != NULL);
       }
    }
@@ -934,8 +939,8 @@ SCIP_RETCODE setPricingProblemParameters(
 
    /* disable conflict analysis */
    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useinflp", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useboundlp", FALSE) );
+   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useinflp", 'o') );
+   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useboundlp", 'o') );
    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usesb", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usepseudo", FALSE) );
 
@@ -964,6 +969,9 @@ SCIP_RETCODE setPricingProblemParameters(
 
    /* disable multiaggregation because of infinite values */
    SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
+
+   /* disable presolving of xor constraints as work-around for a SCIP bug */
+   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/maxprerounds", 0) );
 
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
@@ -1448,7 +1456,7 @@ SCIP_RETCODE createMasterprobConss(
    nmasterconss = DECdecompGetNLinkingconss(relaxdata->decdecomp);
    newcons = NULL;
 
-   assert(SCIPhashmapGetNEntries(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
+   assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
    for( c = 0; c < nmasterconss; ++c )
    {
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0 )
@@ -1661,7 +1669,7 @@ SCIP_RETCODE createMaster(
    }
 
    /* set integral objective status in the extended problem, if possible */
-   if( SCIPisObjIntegral(scip) )
+   if( SCIPisObjIntegral(scip) && relaxdata->discretization )
    {
       SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
    }
@@ -1890,10 +1898,10 @@ SCIP_RETCODE solveDiagonalBlocks(
    else
       *lowerbound = objvalue;
 
-   SCIP_CALL( SCIPcheckSol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &isfeasible) );
+   SCIP_CALL( SCIPcheckSol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &isfeasible) );
    assert(isfeasible);
 
-   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
+   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
 
    /** @todo maybe add a constraint here to indicate that it has been decomposed */
 
@@ -1944,13 +1952,16 @@ SCIP_RETCODE initRelaxator(
    }
 
    /* permute the decomposition if the permutation seed is set */
-   SCIP_CALL( SCIPgetIntParam(scip, "misc/permutationseed", &permutationseed) );
-   if( permutationseed >= 0 )
+   SCIP_CALL( SCIPgetIntParam(scip, "randomization/permutationseed", &permutationseed) );
+   if( permutationseed > 0 )
    {
-      SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, (unsigned int) permutationseed) );
+      SCIP_RANDNUMGEN* randnumgen;
+
+      SCIP_CALL( SCIPrandomCreate(&randnumgen, SCIPblkmem(scip), (unsigned int) permutationseed) );
+      SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, randnumgen) );
+      SCIPrandomFree(&randnumgen);
    }
 
-   SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Discretization with continuous variables is currently not supported. The parameter setting will be ignored.\n");
@@ -2361,7 +2372,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
       if( relaxdata->currentorigsol != NULL )
       {
-         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
       }
 
       /* if a new primal solution was found in the master problem, transfer it to the original problem */
@@ -2373,9 +2384,9 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
          SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
    #ifdef SCIP_DEBUG
-         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &stored) );
+         SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
    #else
-         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+         SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
    #endif
          if( !stored )
          {
@@ -2440,7 +2451,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    initRelaxdata(relaxdata);
 
    /* include relaxator */
-   SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
+   SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, RELAX_INCLUDESLP, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
          relaxExitGcg, relaxInitsolGcg, relaxExitsolGcg, relaxExecGcg, relaxdata) );
 
    /* inform the main scip, that no LPs should be solved */
@@ -3565,7 +3576,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
       SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
 
-      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
       if( !stored )
       {
          SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
