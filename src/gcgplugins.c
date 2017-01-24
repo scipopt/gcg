@@ -101,7 +101,6 @@
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_trivial.h"
 #include "scip/presol_boundshift.h"
-#include "scip/presol_components.h"
 #include "scip/presol_domcol.h"
 #include "scip/presol_convertinttobin.h"
 
@@ -266,7 +265,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
-   SCIP_CALL( SCIPincludePresolComponents(scip) );
    SCIP_CALL( SCIPincludePresolDomcol(scip) );
    SCIP_CALL( SCIPincludePresolConvertinttobin(scip) );
 

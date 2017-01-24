@@ -2526,9 +2526,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          /** add variable only if we cannot abort */
          if( !infeasible &&
              (nfoundvarsprob <= pricerdata->maxsolsprob &&
-             (pricetype->getType() == GCG_PRICETYPE_REDCOST || nfoundvars < pricetype->getMaxvarsround()) &&
-             (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxvarsround() || GCGisRootNode(scip_) ) &&
-             (nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !GCGisRootNode(scip_))))) )
+             (pricetype->getType() == GCG_PRICETYPE_REDCOST || nfoundvarsprob < pricetype->getMaxvarsround()) &&
+             (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvarsprob < pricetype->getMaxvarsround() || GCGisRootNode(scip_) ) &&
+             (nfoundvarsprob < reducedcostpricing->getMaxvarsroundroot() || !GCGisRootNode(scip_))))) )
          {
             SCIPdebugMessage("Solution %d/%d of prob %d: ", j+1, ncols[prob], prob);
 
@@ -3864,9 +3864,9 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    }
 
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, TRUE, TRUE, TRUE, TRUE, &added) );
+   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, TRUE, TRUE, TRUE, TRUE, TRUE, &added) );
 #else
-   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, FALSE, TRUE, TRUE, TRUE, &added) );
+   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, FALSE, FALSE, TRUE, TRUE, TRUE, &added) );
 #endif
 
    /* set external pointer if it is not NULL */

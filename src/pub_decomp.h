@@ -670,7 +670,7 @@ extern
 SCIP_RETCODE DECpermuteDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   unsigned int          permutationseed     /**< permutation seed */
+   SCIP_RANDNUMGEN*      randnumgen          /**< random number generator */
    );
 
 #ifdef __cplusplus
