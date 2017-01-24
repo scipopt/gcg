@@ -864,6 +864,9 @@ SCIP_Bool checkAggregatedLocalBounds(
          {
             assert(GCGvarIsOriginal(bndvars[i]));
 
+            if( GCGvarGetBlock(bndvars[i]) < 0 )
+               continue;
+
             if( GCGpricingVarGetOrigvars(GCGoriginalVarGetPricingVar(bndvars[i]))[0] == identvars[0] )
                for( j = 0; j < nidentvars; ++j )
                   if( identvars[j] == bndvars[i] )
