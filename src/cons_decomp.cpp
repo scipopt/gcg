@@ -643,10 +643,7 @@ SCIP_RETCODE DECdetectStructure(
    }
 
 
-   for( int i = 0; i < seeedpoolunpresolved.getNConss(); ++i)
-   {
 
-   }
 
 //   std::cout << " name of cons 1 : " << SCIPvarGetName( seeedpoolunpresolved.getVarForIndex(0) ) << std::endl;
 //   std::cout << " name of cons 2 : " << SCIPvarGetName( seeedpoolunpresolved.getVarForIndex(1) ) << std::endl;
