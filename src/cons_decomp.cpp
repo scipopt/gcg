@@ -603,35 +603,63 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_Real* scores;
    int i;
 
+   SCIP_Bool presolveOrigProblem;
+
    assert(scip != NULL);
 
-   //get data of the seeedpool with original vars and conss
-   gcg::Seeedpool seeedpoolOriginal(scip, CONSHDLR_NAME);         /**< seeedpool with original variables and constraints */
-   std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
-   std::vector<std::vector<int>> conssClassDistributions;         /**< collection of different constraint class distributions */
-   std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
+   presolveOrigProblem = TRUE;
 
-   candidatesNBlocks = seeedpoolOriginal.getCandidatesNBlocks();
-
-   for( int i = 0; i < seeedpoolOriginal.getNConssClassDistributions(); ++i )
-      conssClassDistributions.push_back(seeedpoolOriginal.getConssClassDistributionVector(i));
-
-   for( int i = 0; i < seeedpoolOriginal.getNConss(); ++i )
-   {
-      SCIP_CONS* cons;
-      SCIPgetTransformedCons(scip, seeedpoolOriginal.getConsForIndex(i), &cons);
-      indexToCons.push_back(cons);
-   }
-
-   //Presolving
-   SCIP_CALL( SCIPpresolve(scip) );
-
-   //Detection
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+
+
+
+   /** get data of the seeedpool with original vars and conss */
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb(scip) );
+
+
+   gcg::Seeedpool seeedpoolunpresolved(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
+   std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
+   std::vector<std::vector<int>> conssClassDistributions;         /**< collection of different constraint class distributions */
+   std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
+
+   std::vector<gcg::Seeed*> seeedsunpresolved;                    /**< seeeds that were found for the unpresolved problem */
+
+
+   /** detection for original problem */
+   if( conshdlrdata->ndecomps == 0 )
+   {
+      candidatesNBlocks = seeedpoolunpresolved.getCandidatesNBlocks();
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "start finding decompositions for original problem!\n");
+      seeedsunpresolved = seeedpoolunpresolved.findSeeeds();
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished finding decompositions for original problem!\n");
+      for( int i = 0; i < seeedpoolunpresolved.getNConssClassDistributions(); ++i )
+         conssClassDistributions.push_back(seeedpoolunpresolved.getConssClassDistributionVector(i));
+
+   }
+
+
+   for( int i = 0; i < seeedpoolunpresolved.getNConss(); ++i)
+   {
+
+   }
+
+//   std::cout << " name of cons 1 : " << SCIPvarGetName( seeedpoolunpresolved.getVarForIndex(0) ) << std::endl;
+//   std::cout << " name of cons 2 : " << SCIPvarGetName( seeedpoolunpresolved.getVarForIndex(1) ) << std::endl;
+
+   //Presolving
+   if(presolveOrigProblem)
+      SCIP_CALL( SCIPpresolve(scip) );
+
+//   std::cout << " AFTER PRESOLVE name of cons 1 : " << SCIPvarGetName( seeedpoolunpresolved.getVarForIndex(0) ) << std::endl;
+//   std::cout << " AFTER PRESOLVE name of cons 2 : " << SCIPvarGetName( seeedpoolunpresolved.getVarForIndex(1) ) << std::endl;
+
+
+   /** detection for presolved problem */
 
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
@@ -644,21 +672,29 @@ SCIP_RETCODE DECdetectStructure(
       return SCIP_OKAY;
    }
 
-   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
-      SCIP_CALL( SCIPtransformProb(scip) );
-
+   /** start detection clocks */
    SCIP_CALL( SCIPresetClock(scip, conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPstartClock(scip, conshdlrdata->detectorclock) );
 
    if( conshdlrdata->ndecomps == 0 )
    {
-	  gcg::Seeedpool seeedpool(scip, CONSHDLR_NAME);
+	  gcg::Seeedpool seeedpool(scip, CONSHDLR_NAME, TRUE);
+
+     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");
+
+	  std::vector<gcg::Seeed*> translatedSeeeds = seeedpool.translateSeeeds(&seeedpoolunpresolved, seeedsunpresolved);
+
+	  SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
+
+	  seeedpool.populate(translatedSeeeds);
+
+     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished translate seeed method!\n");
 
 	  for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
 	     seeedpool.addCandidatesNBlocks(candidatesNBlocks[c]);
 
-//	  for( size_t d = 0; d < conssClassDistributions.size(); ++d )
-//	     seeedpool.addConssClassDistribution(conssClassDistributions[d], indexToCons);
+	  for( size_t d = 0; d < conssClassDistributions.size(); ++d )
+	     seeedpool.addConssClassDistribution(conssClassDistributions[d], indexToCons);
 
 	  seeedpool.findDecompositions();
 	  conshdlrdata->decdecomps = seeedpool.getDecompositions();

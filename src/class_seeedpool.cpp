@@ -42,6 +42,8 @@
 #include "decomp.h"
 #include "scip_misc.h"
 #include "scip/clock.h"
+#include "scip/cons.h"
+
 
 #include <algorithm>
 #include <iostream>
@@ -220,8 +222,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 /** constructor */
  Seeedpool::Seeedpool(
     SCIP*               givenScip, /**< SCIP data structure */
-        const char*             conshdlrName
-    ):scip(givenScip), currSeeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0)
+        const char*             conshdlrName,
+        SCIP_Bool                transformed
+    ):scip(givenScip), currSeeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0), transformed(transformed)
  {
          SCIP_CONS** conss;
          SCIP_VAR** vars;
@@ -229,11 +232,14 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          SCIP_CONSHDLR* conshdlr;  /** cons_decomp to get detectors */
          SCIP_CONSHDLRDATA* conshdlrdata;
 
-//         if(!presolved)
-//         {
-//            nVars = SCIPgetNOrigVars(scip);
-//            nConss = SCIPgetNOrigConss(scip);
-//         }
+
+         if( !transformed )
+         {
+            nVars = SCIPgetNOrigVars(scip);
+            nConss = SCIPgetNOrigConss(scip);
+         }
+
+
 
 
          int relevantVarCounter = 0;
@@ -298,10 +304,16 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 
          /** initilize matrix datastructures */
-
-         conss = SCIPgetConss(scip);
-         vars = SCIPgetVars(scip);
-
+         if( transformed )
+         {
+            conss = SCIPgetConss(scip);
+            vars = SCIPgetVars(scip);
+         }
+         else
+         {
+            conss = SCIPgetOrigConss(scip);
+            vars = SCIPgetOrigVars(scip);
+         }
 
          /** assign an index to every cons and var
           * @TODO: are all constraints/variables relevant? (probvars etc)  */
@@ -310,7 +322,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          {
                  SCIP_CONS* relevantCons;
 
-                 relevantCons = consGetRelevantRepr(scip, conss[i]);
+                 relevantCons = transformed ? consGetRelevantRepr(scip, conss[i]) : conss[i];
+
                  if( relevantCons != NULL )
                  {
                          scipConsToIndex[relevantCons] = relevantConsCounter ;
@@ -328,9 +341,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  SCIP_VAR* relevantVar;
 
 
-
-                 relevantVar = varGetRelevantRepr(scip, vars[i]);
-
+                 if( transformed )
+                    relevantVar = varGetRelevantRepr(scip, vars[i]);
+                 else relevantVar = vars[i];
 
                  if( relevantVar != NULL )
                  {
@@ -399,9 +412,16 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  SCIPfreeBufferArrayNull(scip, &currVals);
          }
 
-         /* populate seeedpool with empty seeed */
+         /*    seeedpool with empty seeed and translated original seeeds*/
 
          currSeeeds.push_back(new Seeed(scip, nTotalSeeeds,nDetectors,nConss,nVars) );
+
+         for (size_t i = 0; i < translatedOrigSeeeds.size(); ++i)
+         {
+            translatedOrigSeeeds[i]->calcHashvalue();
+            if( seeedIsNoDuplicateOfSeeeds(translatedOrigSeeeds[i], currSeeeds, true) )
+                currSeeeds.push_back(translatedOrigSeeeds[i] );
+         }
 
          nTotalSeeeds++;
 
@@ -409,7 +429,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          addConssClassesForSCIPConstypes();
          addConssClassesForConsnamesDigitFreeIdentical();
-         addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
+     //    addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
          addConssClassesForNNonzeros();
 
          calcCandidatesNBlocks();
@@ -424,7 +444,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
  /** finds decompositions  */
   /** access coefficient matrlix constraint-wise */
- void    Seeedpool::findDecompositions(
+ std::vector<SeeedPtr>    Seeedpool::findSeeeds(
  ){
 
          /** 1) read parameter, as there are: maxrounds
@@ -435,20 +455,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 
          SEEED_PROPAGATION_DATA* seeedPropData;
-//         SCIP_VAR* probvar;
-//         SCIP_CONS* cons;
-//         int cindex = 0;
-//         int vindex = 0;
-//         int currblock;
          bool displaySeeeds = false;
          int verboseLevel;
          std::vector<int> successDetectors;
          std::vector<SeeedPtr> delSeeeds;
          bool duplicate;
-
-//         SCIP_CLOCK* temporaryClock; /* @TODO replace with finer measurement in detectors */
-//
-//         SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
 
          successDetectors = std::vector<int>(nDetectors, 0);
          ndecompositions = 0;
@@ -457,7 +468,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          seeedPropData->nNewSeeeds = 0;
          delSeeeds = std::vector<SeeedPtr>(0);
 
-         verboseLevel = 0;
+        verboseLevel = 0;
 
          for(size_t s = 0; s < currSeeeds.size(); ++s)
          {
@@ -476,10 +487,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  {
                          SeeedPtr seeedPtr;
                          seeedPtr= currSeeeds[s];
-                         if( displaySeeeds )
+                         if( displaySeeeds || verboseLevel >= 1 )
                          {
                             std::cout << "Start to propagate seeed " << seeedPtr->getID() << " in round " << round << ":" << std::endl;
-                            seeedPtr->displaySeeed();
+                            if (displaySeeeds)
+                               seeedPtr->displaySeeed();
                          }
 
                          /** the current seeed is handled by all detectors */
@@ -493,7 +505,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  detector = detectorToScipDetector[d];
 
                                  /** if the seeed is also propagated by the detector go on with the next detector */
-                                 if(seeedPtr->isPropagatedBy(d) && !detector->usefulRecall )
+                                 if(seeedPtr->isPropagatedBy(detector) && !detector->usefulRecall )
                                          continue;
 
                                  /** check if detector is callable in current detection round */
@@ -507,9 +519,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                                  /** new seeeds are created by the current detector */
                                  SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
-                                 //SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-                                 if(verboseLevel > 2)
-                                     std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d]) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round+1 << std::endl;
+                                 if(verboseLevel >= 1)
+                                     std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d]) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round << std::endl;
 
                                  SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
 
@@ -552,10 +563,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                      if(displaySeeeds)
                                          std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds" << std::endl;
 
-
-
-
-
                                  /** if the new seeeds are no duplicate they're added to the currSeeeds */
                                  for( int seeed = 0; seeed < seeedPropData->nNewSeeeds; ++seeed )
                                  {
@@ -592,9 +599,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
                                  seeedPropData->newSeeeds = NULL;
                                  seeedPropData->nNewSeeeds = 0;
-                         }
+                         } // end for detectors
 
-//                         SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
                          for(int d = 0; d < nFinishingDetectors; ++d)
                          {
                             DEC_DETECTOR* detector = detectorToFinishingScipDetector[d];
@@ -611,7 +617,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                             if(verboseLevel > 2 )
                                std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
 
-                            SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
+                            SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d], seeedPropData, &result) );
 
                             for(int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished)
                             {
@@ -647,59 +653,13 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                             seeedPropData->newSeeeds = NULL;
                             seeedPropData->nNewSeeeds = 0;
                          }
-//                         seeedPtr->calcHashvalue();
-
-
-//                   if( seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false) )
-//                   {
-//                      finishedSeeeds.push_back(seeedPtr);
-//                   }
-//                   else
-//                   {
-//                      bool isIdentical = false;
-//                      for (size_t h = 0; h < finishedSeeeds.size(); ++h )
-//                      {
-//                         if( seeedPtr == finishedSeeeds[h] )
-//                         {
-//                            isIdentical = true;
-//                            break;
-//                         }
-//                      }
-//
-//                      if( !isIdentical )
-//                      {
-//                         currSeeedsToDelete.push_back(seeedPtr);
-//                      }
-//                   }
-                 }
+                 }// end for currseeeds
 
                  for(size_t s = 0; s < currSeeedsToDelete.size(); ++s )
                     delete currSeeedsToDelete[s];
 
                  currSeeeds = nextSeeeds;
-
-         }
-
-//         /* completeByconnected() on  currseeeds (from last round) and add them to finished seeeds */
-//
-//         for(size_t i = 0; i < currSeeeds.size(); ++i)
-//         {
-//             SeeedPtr seeedPtr = currSeeeds[i];
-//
-//             SCIP_CALL_ABORT(seeedPtr->completeByConnected( seeedPropData->seeedpool ) );
-//             seeedPtr->calcHashvalue();
-//             /* currseeeds are freed later */
-//             if(seeedIsNoDuplicateOfSeeeds(seeedPtr, finishedSeeeds, false))
-//             {
-//                if(verboseLevel > 2)
-//                {
-//                   std::cout << "seeed " << seeedPtr->getID() << " is finished from next round seeeds!" << std::endl;
-//                   seeedPtr->showScatterPlot(this);
-//                }
-//                finishedSeeeds.push_back(seeedPtr);
-//             }
-//
-//         }
+         } // end for rounds
 
          /** complete the currseeeds with finishing detectors and add them to finished seeeds */
          for(size_t i = 0; i < currSeeeds.size(); ++i)
@@ -747,8 +707,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          std::cout << (int) finishedSeeeds.size() << " finished seeeds are found." << std::endl;
 
-
-
          if(displaySeeeds)
          {
             for(size_t i = 0; i < finishedSeeeds.size(); ++i)
@@ -769,7 +727,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
              for( int d = 0; d < nDetectors; ++d )
              {
-                 if(finishedSeeeds[i]->isPropagatedBy(d))
+                 if(finishedSeeeds[i]->isPropagatedBy(detectorToScipDetector[d]))
                      successDetectors[d] += 1;
              }
          }
@@ -800,40 +758,97 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          }
 
 
-
-         /** fill out the decompositions */
-
-         SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
-         for( size_t i = 0; i < finishedSeeeds.size(); ++i )
+         /** delete the seeeds */
+         for(size_t c = 0; c < currSeeeds.size(); ++c)
          {
-            SeeedPtr seeed = finishedSeeeds[i];
+            duplicate = false;
+            for(size_t d = 0; d < delSeeeds.size(); ++d)
+            {
+               if(currSeeeds[c]==delSeeeds[d])
+               {
+                  duplicate=true;
+                  break;
+               }
+            }
+            if(!duplicate)
+            {
+               delSeeeds.push_back(currSeeeds[c]);
+            }
+         }
 
-            SCIP_HASHMAP* vartoblock;
-            SCIP_HASHMAP* constoblock;
-            SCIP_HASHMAP* varindex;
-            SCIP_HASHMAP* consindex;
 
-            SCIP_VAR*** stairlinkingvars;
-            SCIP_VAR*** subscipvars;
-            SCIP_VAR**  linkingvars;
-            SCIP_CONS**  linkingconss;
-            SCIP_CONS*** subscipconss;
+         for( size_t d =  delSeeeds.size(); d > 0; d--)
+         {
+            delete delSeeeds[d-1];
+         }
 
-            int* nsubscipconss;
-            int* nsubscipvars;
-            int* nstairlinkingvars;
-            int  nlinkingvars;
+         delSeeeds.clear();
 
-            int varcounter = 1;  /* in varindex counting starts with 1 */
-            int conscounter = 1; /* in consindex counting starts with 1 */
-            int counterstairlinkingvars = 0;
+         delete seeedPropData;
 
-            int size;
+         return finishedSeeeds;
 
-            assert(seeed->checkConsistency() );
+}
 
-            /* create decomp data structure */
-            SCIP_CALL_ABORT( DECdecompCreate(scip, &(decompositions[i])) );
+ void    Seeedpool::findDecompositions(
+ ){
+
+    /**
+     * finds seeeds and translates them to decompositions
+     *   */
+
+    SEEED_PROPAGATION_DATA* seeedPropData;
+    bool displaySeeeds = false;
+    int verboseLevel;
+    std::vector<int> successDetectors;
+    std::vector<SeeedPtr> delSeeeds;
+    std::vector<SeeedPtr> finishedSeeeds;
+    bool duplicate;
+
+    successDetectors = std::vector<int>(nDetectors, 0);
+    ndecompositions = 0;
+    seeedPropData = new SEEED_PROPAGATION_DATA();
+    seeedPropData->seeedpool = this;
+    seeedPropData->nNewSeeeds = 0;
+    delSeeeds = std::vector<SeeedPtr>(0);
+
+    verboseLevel = 0;
+
+    finishedSeeeds = findSeeeds();
+
+    /** fill out the decompositions */
+
+    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
+    for( size_t i = 0; i < finishedSeeeds.size(); ++i )
+    {
+       SeeedPtr seeed = finishedSeeeds[i];
+
+       SCIP_HASHMAP* vartoblock;
+       SCIP_HASHMAP* constoblock;
+       SCIP_HASHMAP* varindex;
+       SCIP_HASHMAP* consindex;
+
+       SCIP_VAR*** stairlinkingvars;
+       SCIP_VAR*** subscipvars;
+       SCIP_VAR**  linkingvars;
+       SCIP_CONS**  linkingconss;
+       SCIP_CONS*** subscipconss;
+
+       int* nsubscipconss;
+       int* nsubscipvars;
+       int* nstairlinkingvars;
+       int  nlinkingvars;
+
+       int varcounter = 1;  /* in varindex counting starts with 1 */
+       int conscounter = 1; /* in consindex counting starts with 1 */
+       int counterstairlinkingvars = 0;
+
+       int size;
+
+       assert(seeed->checkConsistency() );
+
+       /* create decomp data structure */
+       SCIP_CALL_ABORT( DECdecompCreate(scip, &(decompositions[i])) );
 
  //           seeed->displayConss();
  //           seeed->showScatterPlot(this);
@@ -1021,152 +1036,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             SCIPfreeBufferArrayNull(scip, &(nstairlinkingvars));
 
 
-
-
-
-            /**** OLD STUFF below */
-//
-//            for( int j = 0; j < seeed->getNMastervars(); ++j )
-//            {
-//               decompositions[i]->linkingvars[j + seeed->getNLinkingvars()] = SCIPvarGetProbvar( getVarForIndex(seeed->getMastervars()[j]));
-//               SCIPcaptureVar(scip, decompositions[i]->linkingvars[j + seeed->getNLinkingvars()]);
-//            }
-//
-//            /** set stairlinkingvars */
-//            SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->stairlinkingvars, nblocks) ); /** free in decomp.c:466 */
-//            SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->nstairlinkingvars, nblocks) ); /** free in decomp.c:467 */
-//
-//            for ( int j = 0; j < nblocks; ++j )
-//            {
-//              decompositions[i]->nstairlinkingvars[j] = seeed->getNStairlinkingvars(j);
-//              SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->stairlinkingvars[j], decompositions[i]->nstairlinkingvars[j]) ); /** free in decomp.c:444 */
-//               for ( int k = 0; k < decompositions[i]->nstairlinkingvars[j]; ++k )
-//               {
-//                  decompositions[i]->stairlinkingvars[j][k] = SCIPvarGetProbvar( getVarForIndex(seeed->getStairlinkingvars(j)[k]) );
-//                  SCIPcaptureVar(scip, decompositions[i]->stairlinkingvars[j][k]);
-//               }
-//            }
-//
-//            /** create hashmap constoblock and consindex */
-//
-//
-//            SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipconss, nblocks) ); /** free in decomp.c:463 */
-//            SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->nsubscipconss, nblocks) ); /** free in decomp.c:464 */
-//            /** add block conss */
-//            for( int b = 0; b < seeed->getNBlocks(); ++b )
-//            {
-//               currblock = b+1;
-//               decompositions[i]->nsubscipconss[b] = seeed->getNConssForBlock(b);
-//               SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipconss[b], decompositions[i]->nsubscipconss[b]) ); /** free in decomp.c:416 */
-//               for ( int j = 0; j < seeed->getNConssForBlock(b); ++j)
-//               {
-//                  cindex++;
-//                  cons = getConsForIndex((seeed->getConssForBlock(b))[j]);
-//                  decompositions[i]->subscipconss[b][j] = cons;
-//                  SCIPdebugMessage("cons %d is cons of block %d\n", cindex, currblock );
-//                  SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->constoblock, cons, (void*) (size_t) currblock) );
-//                  SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->consindex, (void*) (size_t) cindex, (void*) (size_t) currblock) );
-//                  SCIP_CALL_ABORT( SCIPcaptureCons(scip, cons) );
-//               }
-//            }
-//
-//            /** add master conss */
-//            for( int j = 0; j < seeed->getNMasterconss(); ++j )
-//            {
-//               cindex++;
-//               cons = getConsForIndex(seeed->getMasterconss()[j]);
-//               SCIPdebugMessage("cons %d is mastercons\n", cindex);
-//               SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->constoblock, cons, (void*) (size_t) (nblocks+1)) );
-//               SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->consindex, (void*) (size_t) cindex, (void*) (size_t) (nblocks+1)) );
-//               SCIP_CALL_ABORT( SCIPcaptureCons(scip, cons) );
-//            }
-//
-//            /** create hashmap vartoblock and varindex */
-//            SCIP_CALL_ABORT( SCIPhashmapCreate( &decompositions[i]->vartoblock, SCIPblkmem(scip), nVars ) );
-//            SCIP_CALL_ABORT( SCIPhashmapCreate( &decompositions[i]->varindex, SCIPblkmem(scip), nVars ) );
-//
-//            SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipvars, nblocks) ); /** free in decomp.c:461 */
-//            SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->nsubscipvars, nblocks) ); /** free in decomp.c:462 */
-//
-//            SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars, nblocks) );
-//            SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nstairlinkingvars, nblocks) );
-//
-//
-//            /** add block vars and stairlinkingvars */
-//            for( int b = 0; b < nblocks; ++b)
-//            {
-//               currblock = b+1;
-//               decompositions[i]->nsubscipvars[b] = seeed->getNVarsForBlock(b);
-//               if ( decompositions[i]->nsubscipvars[b] != 0)
-//                  SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->subscipvars[b], decompositions[i]->nsubscipvars[b]) ); /** free in decomp.c:405 */
-//               else decompositions[i]->subscipvars[b] = NULL;
-//
-//               SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &(stairlinkingvars[b]), seeed->getNStairlinkingvars(b)) ); /*lint !e866*/
-//               nstairlinkingvars[b] = 0;
-//
-//
-//               for ( int j = 0; j < seeed->getNVarsForBlock(b); ++j )
-//               {
-//                  vindex++;
-//                  probvar = SCIPvarGetProbvar( getVarForIndex(seeed->getVarsForBlock(b)[j]) );
-//                  decompositions[i]->subscipvars[b][j] = probvar;
-//                  if( SCIPhashmapExists(decompositions[i]->vartoblock, probvar) )
-//                  {
-//                     SCIPdebugMessage("var <%s> has been handled before, it should not been add to block %d\n", SCIPvarGetName(probvar), currblock);
-//                  }
-//                  else
-//                  {
-//                     SCIPdebugMessage("var <%s> has not been handled before, adding to block %d\n", SCIPvarGetName(probvar), currblock );
-//                     SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->vartoblock, probvar, (void*) (size_t) currblock) );
-//                     SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->varindex, (void*) (size_t) vindex, (void*) (size_t) currblock) );
-//                     SCIP_CALL_ABORT( SCIPcaptureVar(scip, probvar) );
-//                  }
-//               }
-//
-//               for( int k = 0; k < seeed->getNStairlinkingvars(b); ++k )
-//               {
-//                  probvar = SCIPvarGetProbvar( getVarForIndex((seeed->getStairlinkingvars(b))[k]));
-//                  if( !SCIPhashmapExists(decompositions[i]->vartoblock, probvar) )
-//                  {
-//                     vindex++;
-//                     SCIPdebugMessage("var <%s> is stairlinkingvar\n", SCIPvarGetName(probvar));
-//                     SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
-//                     SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->varindex, (void*) (size_t) vindex, (void*) (size_t) (nblocks+2)) );
-//                     SCIP_CALL_ABORT( SCIPcaptureVar(scip, probvar) );
-// //                    stairlinkingvars[b][k] = probvar;
-//                  }
-//                  assert( ((size_t) SCIPhashmapGetImage(decompositions[i]->vartoblock, probvar)) == (size_t)nblocks+2);
-//               }
-//            }
-//
-//
-//            SCIPfreeBufferArrayNull(scip, &(stairlinkingvars));
-//            SCIPfreeBufferArrayNull(scip, &(nstairlinkingvars));
-//
-//
-//              /** add linking vars */
-//            for( int j = 0; j < seeed->getNLinkingvars(); ++j )
-//            {
-//               vindex++;
-//               probvar = SCIPvarGetProbvar( getVarForIndex(seeed->getLinkingvars()[j]) );
-//               SCIPdebugMessage("var <%s> is linkingvar\n", SCIPvarGetName(probvar));
-//               SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
-//               SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->varindex, (void*) (size_t) vindex, (void*) (size_t) (nblocks+2)) );
-//               SCIP_CALL_ABORT( SCIPcaptureVar(scip, probvar) );
-//            }
-//
-//            /** add master vars */
-//            for( int j = 0; j < seeed->getNMastervars(); ++j )
-//            {
-//               vindex++;
-//               probvar = SCIPvarGetProbvar( getVarForIndex(seeed->getMastervars()[j]) );
-//               SCIPdebugMessage("var <%s> is mastervar\n", SCIPvarGetName(probvar));
-//               SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
-//               SCIP_CALL_ABORT( SCIPhashmapSetImage(decompositions[i]->varindex, (void*) (size_t) vindex, (void*) (size_t) (nblocks+1)) );
-//               SCIP_CALL_ABORT( SCIPcaptureVar(scip, probvar) );
-//            }
-
-
 //            /** test detector chain output */
 //            char detectorchainstring[SCIP_MAXSTRLEN];
 //
@@ -1193,9 +1062,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                if(k != ndetectors-1 || !seeed->getFinishedByFinisher() )
                {
                //          std::cout << " added detector of " << i << "-th seeed to its detetcor chain" << std::endl;
-                  decompositions[i]->detectorchain[k] = getDetectorForIndex(seeed->getDetectorchain()[k]);
+                  decompositions[i]->detectorchain[k] = seeed->getDetectorchain()[k];
                }else
-                  decompositions[i]->detectorchain[k] = getFinishingDetectorForIndex(seeed->getDetectorchain()[k]);
+                  decompositions[i]->detectorchain[k] = seeed->getDetectorchain()[k];
             }
 
 
@@ -1248,22 +1117,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          //SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
          /** delete the seeeds */
-         for(size_t c = 0; c < currSeeeds.size(); ++c)
-         {
-            duplicate = false;
-            for(size_t d = 0; d < delSeeeds.size(); ++d)
-            {
-               if(currSeeeds[c]==delSeeeds[d])
-               {
-                  duplicate=true;
-                  break;
-               }
-            }
-            if(!duplicate)
-            {
-               delSeeeds.push_back(currSeeeds[c]);
-            }
-         }
 
          for(size_t f = 0; f < finishedSeeeds.size(); ++f)
          {
@@ -1308,6 +1161,197 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
    }
 }*/
+
+
+std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector<Seeed*> origseeeds )
+{
+   int nrowsother  = origpool->nConss;
+   int nrowsthis  = nConss;
+   int ncolsother  = origpool->nVars;
+   int ncolsthis  = nVars;
+
+   std::vector<Seeed*> newseeeds(0);
+   std::vector<int> rowothertothis(nrowsother, -1);
+   std::vector<int> rowthistoother(nrowsthis, -1);
+   std::vector<int> colothertothis(ncolsother, -1);
+   std::vector<int> colthistoother(ncolsthis, -1);
+
+   std::vector<int> missingrowinthis(0);
+   std::vector<int> newrowsthis(0);
+   std::vector<int> missingcolsinthis(0);
+   std::vector<int> newcolsthis(0);
+
+   SCIPdebugMessagePrint(this->scip, " started translate seeed method \n" );
+
+
+   /* identify new and deleted rows and cols; and identify bijection between maintained variables */
+
+   for( int i = 0; i < nrowsother; ++i  )
+   {
+      SCIP_CONS* otherrow = origpool->getConsForIndex(i);
+      assert(otherrow != NULL);
+      if (SCIPconsGetTransformed(otherrow ) == NULL )
+         continue;
+      SCIP_Bool foundmaintained = FALSE;
+
+//      SCIPdebugMessagePrint(this->scip, " otherrow: ptr %s ; name: %s  \n", SCIPconsGetTransformed(otherrow),  SCIPconsGetName(SCIPconsGetTransformed(otherrow))  );
+      for( int j = 0; j < nrowsthis; ++j  )
+      {
+//         SCIPdebugMessagePrint(this->scip, " %s vs %s \n", SCIPconsGetName(otherrow), SCIPconsGetName(this->getConsForIndex(j))  );
+         if( SCIPconsGetTransformed(otherrow) == this->getConsForIndex(j) )
+         {
+//            std::cout << " EQUAL! " << std::endl;
+//            SCIPdebugMessagePrint(this->scip, " EQUAL \n" );
+            rowothertothis[i] = j;
+            rowthistoother[j] = i;
+            foundmaintained = TRUE;
+            break;
+         }
+      }
+      if (!foundmaintained)
+         missingrowinthis.push_back(i);
+   }
+
+   for( int i = 0; i < ncolsother; ++i  )
+   {
+      SCIP_VAR* othervar = origpool->getVarForIndex(i);
+      SCIP_Bool foundmaintained = FALSE;
+      for( int j = 0; j < ncolsthis; ++j  )
+      {
+         if( othervar == this->getVarForIndex(j) )
+         {
+            colothertothis[i] = j;
+            colthistoother[j] = i;
+            foundmaintained = TRUE;
+            break;
+         }
+      }
+   }
+
+   SCIPdebugMessagePrint(this->scip, " calculated translation; number of missing constraints: %d; number of other seeeds: %d \n", missingrowinthis.size(), origseeeds.size() );
+
+   /** constructing seeeds for this seeedpool */
+
+   for( size_t s = 0; s < origseeeds.size(); ++s )
+   {
+      SeeedPtr otherseeed;
+      SeeedPtr newseeed;
+
+      otherseeed = origseeeds[s];
+
+      SCIPdebugMessagePrint(this->scip, " otherseeed seeed %d has %d many blocks \n", otherseeed->getID(), otherseeed->getNBlocks() );
+
+      /** ignore seeeds with one block or no block, they are supposed to be find anyway */
+      if( otherseeed->getNBlocks() == 1 || otherseeed->getNBlocks() == 0  )
+         continue;
+
+      SCIPdebugMessagePrint(this->scip, " transform seeed %d \n", otherseeed->getID() );
+
+      newseeed = new Seeed(scip, this->getNewIdForSeeed(), this->getNDetectors(), this->getNConss(), this->getNVars() );
+
+      /** prepare new seeed */
+      newseeed->calcOpenconss();
+      newseeed->calcOpenvars();
+      newseeed->setOpenVarsAndConssCalculated(true);
+
+      newseeed->setNBlocks(otherseeed->getNBlocks() );
+
+
+      /** set all (which have representative in the unpresolved seeed) constraints according to their representatives in the unpresolved seeed */
+      for(int b = 0; b < otherseeed->getNBlocks() ; ++b )
+      {
+         for ( int i = 0; i < otherseeed->getNConssForBlock(b); i++ )
+         {
+            int thiscons = rowothertothis[otherseeed->getConssForBlock(b)[i] ];
+            if( thiscons != -1 )
+            {
+               newseeed->setConsToBlock(thiscons, b);
+               newseeed->deleteOpencons(thiscons);
+            }
+         }
+
+/*         for ( int j = 0; j < otherseeed->getNVarsForBlock(b); j++ )
+         {
+            int thisvar = colothertothis[otherseeed->getVarsForBlock(b)[j] ];
+            if( thisvar != -1 )
+            {
+               newseeed->setVarToBlock(thisvar, b);
+               newseeed->deleteOpenvar(thisvar);
+            }
+         }*/
+      }
+
+      for ( int i = 0; i < otherseeed->getNMasterconss(); i++ )
+      {
+         int thiscons = rowothertothis[otherseeed->getMasterconss()[i] ];
+         if( thiscons != -1 )
+         {
+            newseeed->setConsToMaster(thiscons);
+            newseeed->deleteOpencons(thiscons);
+         }
+      }
+
+      /** set linking and master vars according to their representatives in the unpresolved seeed */
+
+      for ( int j = 0; j < otherseeed->getNLinkingvars(); j++ )
+      {
+         int thisvar = colothertothis[otherseeed->getLinkingvars()[j] ];
+         if( thisvar != -1 )
+         {
+            newseeed->setVarToLinking(thisvar);
+            newseeed->deleteOpenvar(thisvar);
+         }
+      }
+
+      for ( int j = 0; j < otherseeed->getNMastervars(); j++ )
+      {
+         int thisvar = colothertothis[otherseeed->getMastervars()[j] ];
+         if( thisvar != -1 )
+         {
+            newseeed->setVarToMaster(thisvar);
+            newseeed->deleteOpenvar(thisvar);
+         }
+      }
+
+      newseeed->detectorChain = otherseeed->detectorChain;
+
+      newseeed->stemsFromUnpresolved = true;
+      newseeed->isFinishedByFinisherUnpresolved  = otherseeed->isFinishedByFinisher;
+
+      if ( otherseeed->isFinishedByFinisher )
+         newseeed->finishedUnpresolvedBy = otherseeed->detectorChain[otherseeed->detectorChain.size()-1];
+
+
+      newseeed->setFinishedByFinisher(otherseeed->isFinishedByFinisher);
+      newseeed->sort();
+      newseeed->considerImplicits(this);
+      newseeed->deleteEmptyBlocks();
+      newseeed->checkConsistency();
+
+      if (newseeed->getNOpenconss() == getNConss() && newseeed->getNOpenvars() == newseeed->getNVars())
+      {
+         delete newseeed;
+         continue;
+      }
+
+      std::cout << "unpresolved seeed " << std::endl;
+      otherseeed->showScatterPlot(origpool);
+      std::cout << "has become " << std::endl;
+      newseeed->showScatterPlot(this);
+
+      if(newseeed->checkConsistency() )
+         newseeeds.push_back(newseeed);
+      else delete newseeed;
+   }
+
+   return newseeeds;
+}
+
+void Seeedpool::populate(std::vector<SeeedPtr> seeeds){
+   translatedOrigSeeeds = seeeds;
+}
+
+
 
 const  int * Seeedpool::getVarsForCons(int cons){
          return &varsForConss[cons][0];
@@ -1397,6 +1441,11 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
  int Seeedpool::getNDetectors(){
     return nDetectors;
  }
+
+ int Seeedpool::getNFinishingDetectors(){
+     return nFinishingDetectors;
+  }
+
 
  int Seeedpool::getNVars(){
     return nVars;

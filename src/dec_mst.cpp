@@ -614,7 +614,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
       {
          seeedPropagationData->newSeeeds[s] = newSeeeds[j];
          seeedPropagationData->newSeeeds[s]->addClockTime(clockTimes1[j] + clockTimes2[j] + clockTimes3[j]);
-         seeedPropagationData->newSeeeds[s]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+         seeedPropagationData->newSeeeds[s]->setDetectorPropagated(detector);
          ++s;
       }
    }

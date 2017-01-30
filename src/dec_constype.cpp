@@ -160,7 +160,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   std::vector<int> constypesIndices(0);
 
   seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-  seeedOrig->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+  seeedOrig->setDetectorPropagated(detector);
 
   if(!seeedOrig->areOpenVarsAndConssCalculated())
   {

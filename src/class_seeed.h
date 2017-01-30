@@ -39,7 +39,7 @@
 
 #include "objscip/objscip.h"
 #include <vector>
-
+#include "struct_detector.h"
 
 
 
@@ -77,7 +77,6 @@ private:
    long                             hashvalue;
    SCIP_Real                        score;                        /**< score to evaluate the seeeds */
 
-   bool                             isFinishedByFinisher;         /**< was this seeed finished by the finishseeed() method of a detector */
    bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
    const static int              primes[];
@@ -85,17 +84,23 @@ private:
 
 public:
 
+   bool                             isFinishedByFinisher;         /**< was this seeed finished by the finishseeed() method of a detector */
    /** statistic information */
-   std::vector<int>                 detectorChain;             /**< vector containing detector indices that worked on that seeed */
-   std::vector<SCIP_Real>           detectorClockTimes;        /**< vector containing detector times in seconds  */
-   std::vector<SCIP_Real>           pctVarsToBorder;           /**< vector containing the fraction of variables assigned to the border for each detector working on that seeed*/
-   std::vector<SCIP_Real>           pctVarsToBlock;           /**< vector containing the fraction of variables assigned to a block for each detector working on that seeed*/
-   std::vector<SCIP_Real>           pctVarsFromFree;          /**< vector containing the fraction of variables that are not longer open for each detector working on that seeed*/
+   std::vector<DEC_DETECTOR*>       detectorChain;              /**< vector containing detectors that worked on that seeed */
+   std::vector<SCIP_Bool>           detectorChainFinishingUsed; /**< vector containing whether the finishing method of the corresponding detector was used on that seeed */
+   std::vector<SCIP_Real>           detectorClockTimes;         /**< vector containing detector times in seconds  */
+   std::vector<SCIP_Real>           pctVarsToBorder;            /**< vector containing the fraction of variables assigned to the border for each detector working on that seeed*/
+   std::vector<SCIP_Real>           pctVarsToBlock;             /**< vector containing the fraction of variables assigned to a block for each detector working on that seeed*/
+   std::vector<SCIP_Real>           pctVarsFromFree;            /**< vector containing the fraction of variables that are not longer open for each detector working on that seeed*/
    std::vector<SCIP_Real>           pctConssToBorder;           /**< vector containing the fraction of constraints assigned to the border for each detector working on that seeed*/
-   std::vector<SCIP_Real>           pctConssToBlock;           /**< vector containing the fraction of constraints assigned to a block for each detector working on that seeed*/
-   std::vector<SCIP_Real>           pctConssFromFree;          /**< vector containing the fraction of constraints that are not longer open for each detector working on that seeed*/
-   std::vector<int>                 nNewBlocks;             /**< vector containing detector indices that worked on that seeed */
+   std::vector<SCIP_Real>           pctConssToBlock;            /**< vector containing the fraction of constraints assigned to a block for each detector working on that seeed*/
+   std::vector<SCIP_Real>           pctConssFromFree;           /**< vector containing the fraction of constraints that are not longer open for each detector working on that seeed*/
+   std::vector<int>                 nNewBlocks;                 /**< vector containing detector indices that worked on that seeed */
 
+   /** datastructure to store information if this seeed stems from a seeed concerning the uinpresolved problem */
+   bool                             stemsFromUnpresolved;
+   bool                             isFinishedByFinisherUnpresolved; /**< was the ancestor seeed for the unpresolved problem finished by the finishseeed() method of a detector */
+   DEC_DETECTOR*                    finishedUnpresolvedBy;           /**< index of dinishing detector of unpresolved ancestor seeed */
 
 
    /** constructor(s) */
@@ -305,7 +310,7 @@ public:
    );
 
    /** returns the detectorchain */
-   int* getDetectorchain(
+   DEC_DETECTOR** getDetectorchain(
    );
 
    /** returns if theis seeed was finished by finishSeeed() method of a detector */
@@ -424,7 +429,7 @@ public:
 
    /** returns whether this seeed was propagated by certain detector */
    bool isPropagatedBy(
-         int detectorID
+         DEC_DETECTOR* detectorID
    );
 
    /** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
@@ -493,8 +498,13 @@ public:
    );
 
    SCIP_RETCODE setDetectorPropagated(
-         int detectorID
+      DEC_DETECTOR* detectorID
    );
+
+   SCIP_RETCODE setFinishingDetectorPropagated(
+      DEC_DETECTOR* detectorID
+   );
+
 
    /** set if this seeed was finished by finishSeeed() method of a detector */
    void setFinishedByFinisher(

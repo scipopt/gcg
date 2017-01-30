@@ -150,10 +150,18 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
   *result = SCIP_DIDNOTFIND;
 
   SCIP_CLOCK* temporaryClock;
+
+  if (seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() ||  seeedPropagationData->seeedToPropagate->getNOpenvars() != seeedPropagationData->seeedpool->getNVars() )
+  {
+    *result = SCIP_SUCCESS;
+     return SCIP_OKAY;
+  }
+
   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
   std::vector<gcg::Seeed*> foundseeeds(0);
+
 
 
   gcg::Seeed* seeedOrig;
@@ -178,7 +186,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
 
   seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-  seeedOrig->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+  seeedOrig->setDetectorPropagated(detector);
 
   if(!seeedOrig->areOpenVarsAndConssCalculated())
   {

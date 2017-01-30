@@ -2555,7 +2555,7 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
    for( i = 0; i < seeedPropagationData->nNewSeeeds; ++i )
    {
  //     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %i", seeedPropagationData->newSeeeds[i]->getNBlocks());
-      seeedPropagationData->newSeeeds[i]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+      seeedPropagationData->newSeeeds[i]->setDetectorPropagated(detector);
    }
  //  SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n");
 

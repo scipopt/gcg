@@ -80,7 +80,7 @@ Seeed::Seeed(
    int         givenNVars                  /**number of variables */
 ) :
    scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
-      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), detectorClockTimes(0), detectorChain(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), isFinishedByFinisher(false), changedHashvalue(false)
+      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), detectorClockTimes(0), detectorChain(0), detectorChainFinishingUsed(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), isFinishedByFinisher(false), changedHashvalue(false), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false)
 {
 }
 
@@ -101,6 +101,7 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    openConss = seeedToCopy->openConss;
    propagatedByDetector = seeedToCopy->propagatedByDetector;
    detectorChain = seeedToCopy->detectorChain;
+   detectorChainFinishingUsed = seeedToCopy->detectorChainFinishingUsed;
    openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
    detectorClockTimes = seeedToCopy->detectorClockTimes;
    pctVarsToBorder = seeedToCopy->pctVarsToBorder;
@@ -112,6 +113,9 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    nNewBlocks = seeedToCopy->nNewBlocks;
    isFinishedByFinisher = seeedToCopy->isFinishedByFinisher;
    changedHashvalue = seeedToCopy->changedHashvalue;
+   stemsFromUnpresolved = seeedToCopy->stemsFromUnpresolved;
+   isFinishedByFinisherUnpresolved = seeedToCopy->isFinishedByFinisherUnpresolved;
+
 
 }
 
@@ -1733,10 +1737,12 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks()
          it = varsForBlocks.begin();
          for( b = 0; b < block; ++b )
             it++;
+         for(size_t j = 0; j < varsForBlocks[block].size(); ++j)
+            openVars.push_back(varsForBlocks[block][j]);
          varsForBlocks.erase(it);
 
          //set stairlinkingvars of the previous block to block vars
-         if( (int)stairlinkingVars[block - 1].size() != 0)
+         if( block != 0 && (int)stairlinkingVars[block - 1].size() != 0)
          {
             std::vector<int>::iterator iter = stairlinkingVars[block - 1].begin();
             std::vector<int>::iterator iterEnd = stairlinkingVars[block - 1].end();
@@ -1850,19 +1856,13 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
    if( getNDetectors() != 0 )
    {
       std::string detectorrepres;
-      if( seeedpool == NULL )
-         detectorrepres = detectorChain[0];
-      else
-         detectorrepres = (getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName( seeedpool->getDetectorForIndex( detectorChain[0] ) ) : "(finish)" + std::string(DECdetectorGetName( seeedpool->getFinishingDetectorForIndex( detectorChain[0] ) ))   );
+      detectorrepres = (getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[0]) : "(finish)" + std::string(DECdetectorGetName(detectorChain[0]))   );
 
       std::cout << ": " <<  detectorrepres;
 
       for( int d = 1; d < getNDetectors(); ++d )
       {
-         if (seeedpool == NULL)
-            detectorrepres =  detectorChain[d] ;
-         else
-            detectorrepres = (getNDetectors() != d+1 || !isFinishedByFinisher ? DECdetectorGetName( seeedpool->getDetectorForIndex( detectorChain[d] ) ) : "(finish)" + std::string(DECdetectorGetName( seeedpool->getFinishingDetectorForIndex( detectorChain[d] ) ))   );
+         detectorrepres = (getNDetectors() != d+1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[d]): "(finish)" + std::string(DECdetectorGetName(detectorChain[d] ))   );
 
          std::cout << ", " << detectorrepres;
       }
@@ -2482,7 +2482,7 @@ const int* Seeed::getConssForBlock(int block)
 }
 
 /** returns the detectorchain */
-int* Seeed::getDetectorchain()
+DEC_DETECTOR** Seeed::getDetectorchain()
 {
    return &detectorChain[0];
 }
@@ -2700,10 +2700,11 @@ bool Seeed::isConsOpencons(int cons)
 }
 
 /** returns whether this seeed was propagated by certain detector */
-bool Seeed::isPropagatedBy(int detectorID)
+bool Seeed::isPropagatedBy(DEC_DETECTOR* detectorID)
 {
-   assert((int)propagatedByDetector.size() > detectorID);
-   return propagatedByDetector[detectorID];
+   std::vector<DEC_DETECTOR*>::const_iterator iter = std::find(detectorChain.begin(), detectorChain.end(), detectorID );
+
+   return iter != detectorChain.end();
 }
 
 
@@ -2946,11 +2947,21 @@ SCIP_RETCODE Seeed::setConsToMaster(int consToMaster)
 }
 
 /** sets seeed to be propagated by detector with detectorID  */
-SCIP_RETCODE Seeed::setDetectorPropagated(int detectorID)
+SCIP_RETCODE Seeed::setDetectorPropagated(DEC_DETECTOR* detectorID)
 {
-   assert( (int) propagatedByDetector.size() > detectorID);
-   propagatedByDetector[detectorID] = true;
    detectorChain.push_back(detectorID);
+   detectorChainFinishingUsed.push_back(FALSE);
+
+   return SCIP_OKAY;
+}
+
+/** sets seeed to be propagated by detector with detectorID  */
+SCIP_RETCODE Seeed::setFinishingDetectorPropagated(DEC_DETECTOR* detectorID)
+{
+
+   isFinishedByFinisher = true;
+   detectorChain.push_back(detectorID);
+   detectorChainFinishingUsed.push_back(TRUE);
 
    return SCIP_OKAY;
 }
@@ -3107,7 +3118,7 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
    }
 
    if(colored)
-      ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"green\"\n" ;
+      ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  getNMasterconss() << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"green\"\n" ;
    else
       ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fillstyle solid noborder fc rgb \"grey50\"\n" ;
 

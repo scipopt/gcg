@@ -118,19 +118,36 @@ private:
    std::vector<std::vector<int> >               consclassescollection;  /**< collection of different constraint class distributions  */
    std::vector<int >                            consclassesnclasses;    /**< number of classes of the corresponding distribution */
 
+   SCIP_Bool                                    transformed;            /**< corresponds the matrix datastructure to the transformed problem */
+
+   std::vector<SeeedPtr>                        translatedOrigSeeeds;   /**< seeeds that are translated seeeds from found ones for the original problem */
+
 public:
 
    /** constructor */
    Seeedpool(
       SCIP*             scip, /**< SCIP data structure */
-	  const char*	conshdlrName
+	  const char*	conshdlrName,
+	  SCIP_Bool    transformed
       );
 
    ~Seeedpool();
 
+   /** finds seeedss  */
+   /*
+    * @return user has to free
+    */
+   std::vector<SeeedPtr> findSeeeds(
+      );
+
+
    /** finds decompositions  */
    void findDecompositions(
-   );
+    );
+
+     std::vector<SeeedPtr> translateSeeeds( Seeedpool* otherpool, std::vector<Seeed*> otherseeeds );
+
+   void populate(std::vector<SeeedPtr> seeeds);
 
    /** access the variable indices of matrix constraint-wise */
    const  int *  getVarsForCons(int consIndex);
@@ -175,6 +192,8 @@ public:
    int getNDecompositions();
 
    int getNDetectors();
+
+   int getNFinishingDetectors();
 
    int getNVars();
 

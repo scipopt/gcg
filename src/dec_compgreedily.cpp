@@ -141,13 +141,13 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    seeed->completeGreedily(seeedPropagationData->seeedpool);
 
 
-   seeed->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForFinishingDetector(detector));
+   seeed->setDetectorPropagated(detector);
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
 
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
@@ -175,7 +175,7 @@ DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+   seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated(detector);
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );

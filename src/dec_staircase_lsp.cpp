@@ -872,7 +872,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
    *result = SCIP_DIDNOTFIND;
 
    detection(scip, detectordata, seeedPropagationData);
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(seeedPropagationData->seeedpool->getIndexForDetector(detector));
+   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
 
    *result = SCIP_SUCCESS;
 
