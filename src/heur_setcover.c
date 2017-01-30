@@ -545,7 +545,7 @@ SCIP_RETCODE allocateMemoryForSolution(
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->subgradient, core->nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->lagrangiancostslocal, core->nvariables) );
    SCIP_CALL( SCIPallocBufferArray(scip, &mult->lagrangiancostsglobal, core->nvariables) );
-   SCIP_CALL( SCIPhashtableCreate(&mult->xgreedylocal, SCIPblkmem(scip), SCIPcalcHashtableSize(10), hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
+   SCIP_CALL( SCIPhashtableCreate(&mult->xgreedylocal, SCIPblkmem(scip), 10, hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
 
    for( i = 0; i < core->nvariables; i++ )
    {
@@ -798,8 +798,8 @@ SCIP_RETCODE initInstance(
    SCP_INSTANCE *inst                        /**< unitialized SCP instance                                        */
    )
 {
-   SCIP_CALL( SCIPhashtableCreate(&inst->varsfixed, SCIPblkmem(scip), SCIPcalcHashtableSize(10), hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
-   SCIP_CALL( SCIPhashtableCreate(&inst->rowscovered, SCIPblkmem(scip), SCIPcalcHashtableSize(10), hashGetKeyIntPtr, hashKeyEqIntPtr, hashKeyValIntPtr, NULL) );
+   SCIP_CALL( SCIPhashtableCreate(&inst->varsfixed, SCIPblkmem(scip), 10, hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
+   SCIP_CALL( SCIPhashtableCreate(&inst->rowscovered, SCIPblkmem(scip), 10, hashGetKeyIntPtr, hashKeyEqIntPtr, hashKeyValIntPtr, NULL) );
    inst->costsfixed = 0.0;
    return SCIP_OKAY;
 }
@@ -861,8 +861,8 @@ SCIP_RETCODE initTentativeCore(
    assert(core != NULL);
 
    /* mapvariables is a mapping: SCIPvarGetIndex(core->variables[i]) -> i */
-   SCIP_CALL( SCIPhashmapCreate(&core->mapvariables, SCIPblkmem(scip), SCIPcalcHashtableSize(SCIPgetNVars(scip))) );
-   SCIP_CALL( SCIPhashtableCreate(&core->corevariables, SCIPblkmem(scip), SCIPcalcHashtableSize(10), hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
+   SCIP_CALL( SCIPhashmapCreate(&core->mapvariables, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPhashtableCreate(&core->corevariables, SCIPblkmem(scip), 10, hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
 
    core->rowsavailable = FALSE;
    core->rows = NULL;
@@ -2882,9 +2882,9 @@ SCIP_RETCODE setCoveringHeuristic(
    SCIP_CALL( allocateMemoryForSolution(scip, &heurdata->core, &heurdata->multbestlbtotal) );
    SCIP_CALL( allocateMemoryForSolution(scip, &heurdata->core, &heurdata->tpmultlbsubinst) );
 
-   SCIP_CALL( SCIPhashtableCreate(&heurdata->bestubinst_sol, SCIPblkmem(scip), SCIPcalcHashtableSize(10), hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
-   SCIP_CALL( SCIPhashtableCreate(&heurdata->bestubsubinstsol, SCIPblkmem(scip), SCIPcalcHashtableSize(10), hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
-   SCIP_CALL( SCIPhashtableCreate(&heurdata->bestubsol, SCIPblkmem(scip), SCIPcalcHashtableSize(10), hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
+   SCIP_CALL( SCIPhashtableCreate(&heurdata->bestubinst_sol, SCIPblkmem(scip), 10, hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
+   SCIP_CALL( SCIPhashtableCreate(&heurdata->bestubsubinstsol, SCIPblkmem(scip), 10, hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
+   SCIP_CALL( SCIPhashtableCreate(&heurdata->bestubsol, SCIPblkmem(scip), 10, hashGetKeyVar, hashKeyEqVar, hashKeyValVar, NULL) );
 
    heurdata->multbestlbtotal.lblagrangeglobal = 0;
    heurdata->bestub = SCIP_REAL_MAX;

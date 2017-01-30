@@ -436,7 +436,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    SCIP_CALL( SCIPcreate(&restmaster) );
 
    /* create the variable mapping hash map */
-   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(restmaster), SCIPcalcHashtableSize(5 * nmastervars)) );
+   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(restmaster), nmastervars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &restmastervars, nmastervars) );
 
    if( heurdata->uselprows )

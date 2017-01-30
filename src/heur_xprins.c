@@ -407,7 +407,7 @@ SCIP_RETCODE initializeSubproblem(
    SCIP_HASHMAP* varmapfw;                   /* mapping of SCIP variables to subSCIP variables      */
 
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
-   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), SCIPcalcHashtableSize(5 * nvars)) );
+   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), nvars) );
 
    /* copy the SCIP instance to the subSCIP */
 

@@ -402,7 +402,7 @@ SCIP_RETCODE GCGapplyGcgrens(
    SCIP_CALL( SCIPcreate(&subscip) );
 
    /* create the variable mapping hash map */
-   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), SCIPcalcHashtableSize(5 * nvars)) );
+   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), nvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &subvars, nvars) );
 
    /* different methods to create sub-problem: either copy LP relaxation or the CIP with all constraints */

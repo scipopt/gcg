@@ -1517,7 +1517,7 @@ SCIP_RETCODE createPricingprobConss(
    nsubscipconss = DECdecompGetNSubscipconss(relaxdata->decdecomp);
    nblocks = DECdecompGetNBlocks(relaxdata->decdecomp);
 
-   SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), SCIPcalcHashtableSize(5 *SCIPgetNConss(scip))) ); /*lint !e613*/
+   SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), SCIPgetNConss(scip)) ); /*lint !e613*/
 
    for( b = 0; b < nblocks; ++b )
    {
