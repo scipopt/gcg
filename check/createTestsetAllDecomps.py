@@ -20,6 +20,7 @@ if len(sys.argv) == 4:
 	call(['mkdir', pathtogcg+"check/decs/"+instancename ])
 
 	# (2) write all decomps
+	print ""+gcgexec + ' -c '+ "read " + abspathtoinstance, '-c ' + "set load " + settings + ' -c ' + "detect " + '-c' + " write alldec " + pathtogcg+"check/decs/"+instancename + " dec " + '-c' + " quit"
 	call([gcgexec, '-c', "read " + abspathtoinstance, '-c', "set load " + settings, '-c', "detect", '-c', "write alldec " + pathtogcg+"check/decs/"+instancename + " dec", '-c', "quit" ] )
 
 	# (3) create testset-file
@@ -29,6 +30,7 @@ if len(sys.argv) == 4:
 	os.system('for i in `ls ' + pathtogcg+'check/decs/'+instancename+'/*.dec | sort -V`;do echo "'+abspathtoinstance+';$i" >> '+testsetfile+'; done ')
     # (5) call make test
 	os.system('cd ' + pathtogcg)
-	os.system('make test TEST=allDec_'+ instancename+ ' LPS=spx OPT=opt TIME=1800 ')
+	print 'make test TEST=allDec_'+ instancename+ ' LPS=spx OPT=opt TIME=1800 '
+	#os.system('make test TEST=allDec_'+ instancename+ ' LPS=spx OPT=opt TIME=1800 ')
 else:
 	print "Usage: ./createTestsetAllDecomps.py abspathtoinstance instancename abspathtogcg"
