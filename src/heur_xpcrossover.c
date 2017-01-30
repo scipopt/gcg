@@ -66,6 +66,7 @@
 #define DEFAULT_COPYCUTS      TRUE          /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                              * of the original scip be copied to constraints of the subscip
                                              */
+#define DEFAULT_RANDSEED         7           /* initial random seed                                                  */
 
 #define HASHSIZE_POINTS       11113         /**< size of hash table for extreme point tuples                         */
 
@@ -95,7 +96,7 @@ struct SCIP_HeurData
    SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
                                               *   to constraints in subproblem?
                                               */
-   unsigned int          randseed;           /**< seed value for random number generator                            */
+   SCIP_RANDNUMGEN*      randnumgen;         /**< random number generator                                           */
    SCIP_HASHTABLE*       hashtable;          /**< hashtable used to store the extreme point tuples already used     */
    POINTTUPLE*           lasttuple;          /**< last tuple of extreme points                                      */
 
@@ -598,7 +599,7 @@ SCIP_RETCODE selectExtremePointsRandomized(
             int idx;
             int selidx;
 
-            idx = SCIPgetRandomInt(nusedpts-k-1, lastpt-1, &heurdata->randseed);
+            idx = SCIPrandomGetInt(heurdata->randnumgen, nusedpts-k-1, lastpt-1);
             selidx = i * nusedpts + k;
             selection[selidx] = blockpts[idx];
             lastpt = idx;
@@ -742,7 +743,7 @@ SCIP_RETCODE setupSubproblem(
    SCIP_CALL( SCIPcreateProb(subscip, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    /* copy all variables */
-   SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, TRUE) );
+   SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, NULL, NULL, 0, TRUE) );
 
    /* copy all constraints */
    valid = FALSE;
@@ -1240,7 +1241,7 @@ SCIP_RETCODE createNewSol(
 #ifdef SCIP_STATISTIC
    if( !*success )
 #endif
-      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, success) );
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, success) );
 
 #ifdef SCIP_STATISTIC
    if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )
@@ -1311,10 +1312,13 @@ SCIP_DECL_HEURINIT(heurInitXpcrossover)
 
    /* initialize data */
    heurdata->usednodes = 0;
-   heurdata->randseed = 0;
    heurdata->lasttuple = NULL;
    heurdata->nfailures = 0;
    heurdata->nextnodenumber = 0;
+
+   /* create random number generator */
+   SCIP_CALL( SCIPrandomCreate(&heurdata->randnumgen, SCIPblkmem(scip),
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
 
    /* initialize hash table */
    SCIP_CALL( SCIPhashtableCreate(&heurdata->hashtable, SCIPblkmem(scip), HASHSIZE_POINTS,
@@ -1352,6 +1356,9 @@ SCIP_DECL_HEUREXIT(heurExitXpcrossover)
    /* free hash table */
    assert(heurdata->hashtable != NULL );
    SCIPhashtableFree(&heurdata->hashtable);
+
+   /* free random number generator */
+   SCIPrandomFree(&heurdata->randnumgen);
 
    return SCIP_OKAY;
 }

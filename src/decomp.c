@@ -1390,7 +1390,8 @@ SCIP_RETCODE DECdecompTransform(
       for( c = 0; c < decomp->nsubscipconss[b]; ++c )
       {
          SCIP_CONS* newcons;
-         SCIPdebugMessage("%d, %d: %s (%s)\n", b, c, SCIPconsGetName(decomp->subscipconss[b][c]), SCIPconsIsTransformed(decomp->subscipconss[b][c])?"t":"o" );
+         SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, c, SCIPconsGetName(decomp->subscipconss[b][c]),
+            (void*) decomp->subscipconss[b][c], SCIPconsIsTransformed(decomp->subscipconss[b][c])?"t":"o" );
          assert(decomp->subscipconss[b][c] != NULL);
          newcons = SCIPfindCons(scip, SCIPconsGetName(decomp->subscipconss[b][c]));
          if( newcons != decomp->subscipconss[b][c] )
@@ -3658,7 +3659,7 @@ SCIP_RETCODE DECcreatePolishedDecomp(
 SCIP_RETCODE DECpermuteDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   unsigned int          permutationseed     /**< permutation seed */
+   SCIP_RANDNUMGEN*      randnumgen          /**< random number generator */
    )
 {
    int b;
@@ -3677,22 +3678,22 @@ SCIP_RETCODE DECpermuteDecomp(
       int *nsubscipvars = DECdecompGetNSubscipvars(decomp);
       subscipconss = DECdecompGetSubscipconss(decomp);
 
-      SCIPpermuteArray((void**)(subscipconss[b]), 0, nsubscipconss[b], &permutationseed);
+      SCIPrandomPermuteArray(randnumgen, (void**)(subscipconss[b]), 0, nsubscipconss[b]);
 
       subscipvars = DECdecompGetSubscipvars(decomp);
-      SCIPpermuteArray((void**)(subscipvars[b]), 0, nsubscipvars[b], &permutationseed);
+      SCIPrandomPermuteArray(randnumgen, (void**)(subscipvars[b]), 0, nsubscipvars[b]);
    }
 
    if( DECdecompGetNLinkingconss(decomp) > 0 )
    {
       SCIP_CONS** linkingconss = DECdecompGetLinkingconss(decomp);
-      SCIPpermuteArray((void**)linkingconss, 0, DECdecompGetNLinkingconss(decomp), &permutationseed);
+      SCIPrandomPermuteArray(randnumgen, (void**)linkingconss, 0, DECdecompGetNLinkingconss(decomp));
    }
 
    if( DECdecompGetNLinkingvars(decomp) > 0 )
    {
       SCIP_VAR** linkingvars = DECdecompGetLinkingvars(decomp);;
-      SCIPpermuteArray((void**)linkingvars, 0, DECdecompGetNLinkingvars(decomp), &permutationseed);
+      SCIPrandomPermuteArray(randnumgen, (void**)linkingvars, 0, DECdecompGetNLinkingvars(decomp));
    }
 
    SCIP_CALL( DECdecompCheckConsistency(scip, decomp) );

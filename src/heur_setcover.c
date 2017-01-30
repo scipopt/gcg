@@ -68,6 +68,7 @@
 #define DEF_MAX_ITER_NO_IMP    5          /**< stop of no improvements during the last X iterations of three-phase                                 */
 #define DEF_GREEDY_MAX_ITER    250        /**< number of multipliers that are used for computing greedy solutions during each iteration            */
 #define DEF_MIN_PROB_SIZE      1000       /**< minimum number of variables the problem has to contain for the heuristic to start                   */
+#define DEFAULT_RANDSEED       19         /**< initial random seed                                                                                 */
 
 /*
  * Data structures
@@ -144,7 +145,6 @@ struct SCIP_HeurData
    int param_max_iter_no_imp;             /**< stop of no improvements during the last X iterations of three-phase                                 */
    int param_greedy_max_iter;             /**< number of multipliers that are used for computing greedy solutions during each iteration            */
    int param_min_prob_size;               /**< minimum number of variables the master problem needs to contain before the heuristic starts at all  */
-   int param_seed;                        /**< default seed used for the random number generator, -1 if clock time is to be used                   */
 
    SCP_CORE core;                         /**< core (subcollection of columns) of the problem covering all rows */
    SCP_INSTANCE inst;                     /**< reduced instance where some variables may be fixed and some rows be covered */
@@ -182,7 +182,7 @@ struct SCIP_HeurData
 
    /* memory that is used locally by subgradientOptimization */
    SCIP_Real *sglastlb;                   /**< stores lower bounds of the last iterations */
-   unsigned int seed;                     /**< seed that is used for the random number generator */
+   SCIP_RANDNUMGEN* randnumgen;           /**< random number generator */
 };
 
 /*
@@ -2162,7 +2162,7 @@ SCIP_RETCODE subgradientOptimization(
    for( i = 0; i < core->nconss; i++ )
    {
       if( !isRowCovered(core, inst, i) )
-         last_mult.u[i] = SCIPgetRandomReal(0.9, 1.1, &heurdata->seed) * last_mult.u[i];
+         last_mult.u[i] = SCIPrandomGetReal(heurdata->randnumgen, 0.9, 1.1) * last_mult.u[i];
       else
          last_mult.u[i] = 0.0;
    }
@@ -2656,9 +2656,9 @@ SCIP_RETCODE reportSolution(
                }
 
 #ifdef SCIP_DEBUG
-               SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &foundsol) );
+               SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &foundsol) );
 #else
-               SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &foundsol) );
+               SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &foundsol) );
 #endif
                changed = TRUE;
             }
@@ -2682,9 +2682,9 @@ SCIP_RETCODE reportSolution(
    }
 
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPtrySolFree(scip, &newsol, TRUE, TRUE, TRUE, TRUE, &success) );
+   SCIP_CALL( SCIPtrySolFree(scip, &newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &success) );
 #else
-   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, &success) );
+   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &success) );
 #endif
    SCIPfreeBufferArray(scip, &solvals);
 
@@ -2841,12 +2841,6 @@ SCIP_RETCODE setCoveringHeuristic(
    SCIP_Bool success;
 
    heurdata = SCIPheurGetData(heur);
-
-   /* initialize seed for random number generator */
-   if( heurdata->param_seed == -1 )
-      heurdata->seed = (unsigned int) SCIPround(scip, SCIPclockGetTimeOfDay());
-   else
-      heurdata->seed = (unsigned int) heurdata->param_seed;
 
    /* allocate memory that is used locally by redefineCore */
    SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->rccols, heurdata->param_core_tent_size) );
@@ -3038,6 +3032,45 @@ SCIP_DECL_HEURFREE(heurFreeSetcover)
    return SCIP_OKAY;
 }
 
+/** initialization method of primal heuristic (called after problem was transformed) */
+static
+SCIP_DECL_HEURINIT(heurInitSetcover)
+{  /*lint --e{715}*/
+   SCIP_HEURDATA* heurdata;
+
+   assert(heur != NULL);
+   assert(scip != NULL);
+
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   /* create random number generator */
+   SCIP_CALL( SCIPrandomCreate(&heurdata->randnumgen, SCIPblkmem(scip),
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+
+   return SCIP_OKAY;
+}
+
+/** deinitialization method of primal heuristic (called before transformed problem is freed) */
+static
+SCIP_DECL_HEUREXIT(heurExitSetcover)
+{  /*lint --e{715}*/
+   SCIP_HEURDATA* heurdata;
+
+   assert(heur != NULL);
+   assert(scip != NULL);
+
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   /* free random number generator */
+   SCIPrandomFree(&heurdata->randnumgen);
+
+   return SCIP_OKAY;
+}
+
 
 /** execution method of primal heuristic */
 static
@@ -3104,6 +3137,8 @@ SCIP_RETCODE SCIPincludeHeurSetcover(
 
    /* set non fundamental callbacks via setter functions */
    SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeSetcover) );
+   SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitSetcover) );
+   SCIP_CALL( SCIPsetHeurExit(scip, heur, heurExitSetcover) );
 
    /* add setcover primal heuristic parameters */
 
@@ -3162,10 +3197,6 @@ SCIP_RETCODE SCIPincludeHeurSetcover(
    SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/minprobsize",
          "minimum number of variables in the problem for the heuristic to start",
          &heurdata->param_min_prob_size, FALSE, DEF_MIN_PROB_SIZE, 1, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/seed",
-      "seed for the random number generator, -1 if clock time is to be used",
-      &heurdata->param_seed, FALSE, -1, -1, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }

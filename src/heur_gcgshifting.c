@@ -53,14 +53,15 @@
 
 #define MAXSHIFTINGS          50        /**< maximal number of non improving shiftings */
 #define WEIGHTFACTOR          1.1
+#define DEFAULT_RANDSEED      31     /**< initial random seed */
 
 
 /* locally defined heuristic data */
 struct SCIP_HeurData
 {
    SCIP_SOL*             sol;                /**< working solution */
+   SCIP_RANDNUMGEN*      randnumgen;         /**< random number generator */
    SCIP_Longint          lastlp;             /**< last LP number where the heuristic was applied */
-   unsigned int          randseed;           /**< seed value for random number generator */
 };
 
 
@@ -488,7 +489,11 @@ SCIP_DECL_HEURINIT(heurInitGcgshifting) /*lint --e{715}*/
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
    SCIP_CALL( SCIPcreateSol(scip, &heurdata->sol, heur) );
    heurdata->lastlp = -1;
-   heurdata->randseed = 0;
+
+   /* create random number generator */
+   SCIP_CALL( SCIPrandomCreate(&heurdata->randnumgen, SCIPblkmem(scip),
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+
    SCIPheurSetData(heur, heurdata);
 
    return SCIP_OKAY;
@@ -506,6 +511,10 @@ SCIP_DECL_HEUREXIT(heurExitGcgshifting) /*lint --e{715}*/
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
    SCIP_CALL( SCIPfreeSol(scip, &heurdata->sol) );
+
+   /* free random number generator */
+   SCIPrandomFree(&heurdata->randnumgen);
+
    SCIPfreeMemory(scip, &heurdata);
    SCIPheurSetData(heur, NULL);
 
@@ -742,7 +751,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
          }
          if( rowidx == -1 )
          {
-            rowidx = SCIPgetRandomInt(0, nviolrows-1, &heurdata->randseed);
+            rowidx = SCIPrandomGetInt(heurdata->randnumgen, 0, nviolrows-1);
             row = violrows[rowidx];
             rowpos = SCIProwGetLPPos(row);
             assert(0 <= rowpos && rowpos < nlprows);
@@ -860,7 +869,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
        * done in the shifting heuristic itself; however, we better check feasibility of LP rows,
        * because of numerical problems with activity updating
        */
-      SCIP_CALL( SCIPtrySol(scip, sol, FALSE, FALSE, FALSE, TRUE, &stored) );
+      SCIP_CALL( SCIPtrySol(scip, sol, FALSE, FALSE, FALSE, FALSE, TRUE, &stored) );
 
       if( stored )
       {
