@@ -80,8 +80,6 @@ SCIP_DECL_PRESOLEXEC(presolExecRoundbound)
    {
       SCIP_Real lb;
       SCIP_Real ub;
-      SCIP_Bool infeasible;
-      SCIP_Bool fixed;
 
       /* get variable's bounds */
       lb = SCIPvarGetLbGlobal(vars[v]);
