@@ -232,6 +232,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          SCIP_CONSHDLR* conshdlr;  /** cons_decomp to get detectors */
          SCIP_CONSHDLRDATA* conshdlrdata;
 
+         SCIP_Bool conssclassnnonzeros;
+         SCIP_Bool conssclassscipconstypes;
+         SCIP_Bool conssclassconsnamenonumbers;
+         SCIP_Bool conssclassconsnamelevenshtein;
+
 
          if( !transformed )
          {
@@ -416,21 +421,36 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          currSeeeds.push_back(new Seeed(scip, nTotalSeeeds,nDetectors,nConss,nVars) );
 
-         for (size_t i = 0; i < translatedOrigSeeeds.size(); ++i)
-         {
-            translatedOrigSeeeds[i]->calcHashvalue();
-            if( seeedIsNoDuplicateOfSeeeds(translatedOrigSeeeds[i], currSeeeds, true) )
-                currSeeeds.push_back(translatedOrigSeeeds[i] );
-         }
+
 
          nTotalSeeeds++;
 
          decompositions = NULL;
 
-         addConssClassesForSCIPConstypes();
-         addConssClassesForConsnamesDigitFreeIdentical();
-     //    addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
-         addConssClassesForNNonzeros();
+
+         if( transformed )
+         {
+            SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", &conssclassnnonzeros);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", &conssclassscipconstypes);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabledorig", &conssclassconsnamelevenshtein);
+         }
+         else
+         {
+            SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabledorig", &conssclassnnonzeros);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/scipconsstype/enabledorig", &conssclassscipconstypes);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabledorig", &conssclassconsnamenonumbers);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabledorig", &conssclassconsnamelevenshtein);
+         }
+
+         if( conssclassnnonzeros )
+            addConssClassesForNNonzeros();
+         if( conssclassscipconstypes )
+            addConssClassesForSCIPConstypes();
+         if( conssclassconsnamenonumbers )
+            addConssClassesForConsnamesDigitFreeIdentical();
+         if( conssclassconsnamelevenshtein )
+            addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
 
          calcCandidatesNBlocks();
 
@@ -469,6 +489,14 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          delSeeeds = std::vector<SeeedPtr>(0);
 
         verboseLevel = 0;
+
+        for (size_t i = 0; i < translatedOrigSeeeds.size(); ++i)
+        {
+           translatedOrigSeeeds[i]->calcHashvalue();
+           if( seeedIsNoDuplicateOfSeeeds(translatedOrigSeeeds[i], currSeeeds, true) )
+              currSeeeds.push_back(translatedOrigSeeeds[i] );
+        }
+
 
          for(size_t s = 0; s < currSeeeds.size(); ++s)
          {
@@ -688,6 +716,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                   seeed->addDecChangesFromAncestor(seeedPtr);
                   seeed->setFinishedByFinisher(true);
 
+           //       seeed->showScatterPlot(this);
+
                   if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
                   {
                      if(verboseLevel > 2)
@@ -814,7 +844,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
     verboseLevel = 0;
 
-    finishedSeeeds = findSeeeds();
+
+     finishedSeeeds = findSeeeds();
+
+
+    finishedSeeeds = removeSomeOneblockDecomps(finishedSeeeds);
+
 
     /** fill out the decompositions */
 
@@ -851,7 +886,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
        SCIP_CALL_ABORT( DECdecompCreate(scip, &(decompositions[i])) );
 
  //           seeed->displayConss();
- //           seeed->showScatterPlot(this);
+  //     if(seeed->detectorChain.size() > 2)
+          //seeed->showScatterPlot(this);
 
 
             /** set nblocks */
@@ -1190,18 +1226,27 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
    {
       SCIP_CONS* otherrow = origpool->getConsForIndex(i);
       assert(otherrow != NULL);
-      if (SCIPconsGetTransformed(otherrow ) == NULL )
-         continue;
       SCIP_Bool foundmaintained = FALSE;
 
 //      SCIPdebugMessagePrint(this->scip, " otherrow: ptr %s ; name: %s  \n", SCIPconsGetTransformed(otherrow),  SCIPconsGetName(SCIPconsGetTransformed(otherrow))  );
       for( int j = 0; j < nrowsthis; ++j  )
       {
-//         SCIPdebugMessagePrint(this->scip, " %s vs %s \n", SCIPconsGetName(otherrow), SCIPconsGetName(this->getConsForIndex(j))  );
-         if( SCIPconsGetTransformed(otherrow) == this->getConsForIndex(j) )
+         SCIP_CONS* thisrow = this->getConsForIndex(j);
+         assert(SCIPconsIsTransformed(thisrow) );
+         char buffer[SCIP_MAXSTRLEN];
+         assert(this->scip != NULL);
+         strcpy(buffer, SCIPconsGetName(thisrow) + 2);
+         assert(this->scip != NULL);
+   //      SCIPdebugMessagePrint(this->scip, "1 %s vs %s \n", SCIPconsGetName(otherrow), SCIPconsGetName(thisrow)  );
+   //      SCIPdebugMessagePrint(this->scip, "2 %s vs %s \n", SCIPconsGetName(otherrow), buffer  );
+         if( strcmp(SCIPconsGetName(otherrow), SCIPconsGetName(thisrow) ) == 0 )
          {
 //            std::cout << " EQUAL! " << std::endl;
-//            SCIPdebugMessagePrint(this->scip, " EQUAL \n" );
+/*            SCIPdebugMessagePrint(this->scip, " EQUAL \n" );
+            SCIPprintCons(origpool->scip, otherrow, NULL);
+            SCIPdebugMessagePrint(this->scip, " \n" );
+            SCIPprintCons(this->scip, thisrow, NULL);
+            SCIPdebugMessagePrint(this->scip, " \n" );*/
             rowothertothis[i] = j;
             rowthistoother[j] = i;
             foundmaintained = TRUE;
@@ -1328,16 +1373,13 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
       newseeed->deleteEmptyBlocks();
       newseeed->checkConsistency();
 
-      if (newseeed->getNOpenconss() == getNConss() && newseeed->getNOpenvars() == newseeed->getNVars())
-      {
-         delete newseeed;
-         continue;
-      }
 
-      std::cout << "unpresolved seeed " << std::endl;
+
+   /*   std::cout << "unpresolved seeed " << std::endl;
       otherseeed->showScatterPlot(origpool);
       std::cout << "has become " << std::endl;
       newseeed->showScatterPlot(this);
+*/
 
       if(newseeed->checkConsistency() )
          newseeeds.push_back(newseeed);
@@ -1593,7 +1635,6 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
        size_t constype;
 
        /** find constype or not */
-
        for( constype = 0; constype < foundConstypes.size(); ++constype)
        {
           if( foundConstypes[constype] == cT )
@@ -1611,8 +1652,12 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
           classForCons[i] = constype;
      }
 
+
+
     consclassescollection.push_back(classForCons);
     consclassesnclasses.push_back(foundConstypes.size() );
+
+    std::cout << " consclassifier scipconstypes: " << " classification with " << foundConstypes.size()  << " different constraint classes" << std::endl;
 
     return;
  }
@@ -1676,7 +1721,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
      consclassescollection.push_back(classForCons);
      consclassesnclasses.push_back(nameClasses.size() );
 
-     std::cout << " comparison of digit-reduced consnames for identity  " << " yields a distribution with " << nameClasses.size()  << " different constraint classes" << std::endl;
+     std::cout << " consclass classifier digit-reduced consnames (check for identity):  " << " classificiation with " << nameClasses.size()  << " different constraint classes" << std::endl;
 
      return;
 
@@ -1776,7 +1821,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
         consclassescollection.push_back(classForCons);
         consclassesnclasses.push_back(currentClass+1 );
 
-        std::cout << " levenshtein connectivity of " << connectivity << " yields a distribution with " << currentClass+1  << " different constraint classes" << std::endl;
+        std::cout << " consclassifier levenshtein: connectivity of " << connectivity << " yields a classification with " << currentClass+1  << " different constraint classes" << std::endl;
 
 
      return;
@@ -1823,7 +1868,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
      /** test of reduced consnames */
 
-     if( true )
+     if( false )
      {
         std::cout << " nNonzero : nConsWithNNonzero"  << std::endl;
         for( size_t i = 0; i < differentNNonzeros.size(); ++i )
@@ -1837,7 +1882,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
      consclassescollection.push_back(classForCons);
      consclassesnclasses.push_back(differentNNonzeros.size() );
 
-     std::cout << " comparison of number of nonzeros  " << " yields a distribution with " << differentNNonzeros.size()  << " different constraint classes" << std::endl;
+     std::cout << " consclassifier nonzeros: comparison of number of nonzeros  " << " yields a distribution with " << differentNNonzeros.size()  << " different constraint classes" << std::endl;
 
      return;
 
@@ -1953,7 +1998,47 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     return true;
  }
 
+std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
+      std::vector<SeeedPtr> seeeds){
 
+
+   std::vector<SeeedPtr> remainingSeeeds(0);
+   std::vector<SeeedPtr> oneBlockSeeeds(0);
+
+   int nmasterconssfirst = 1000;
+   int nmasterconsssecond = 1001;
+
+   for( size_t i = 0; i < seeeds.size(); ++i )
+   {
+      if( seeeds[i]->getNBlocks() == 1)
+      {
+         if(seeeds[i]->getNMasterconss() < nmasterconssfirst )
+         {
+            nmasterconsssecond = nmasterconssfirst;
+            nmasterconssfirst = seeeds[i]->getNMasterconss();
+         }else if(seeeds[i]->getNMasterconss() < nmasterconsssecond )
+            nmasterconsssecond = seeeds[i]->getNMasterconss();
+
+      }
+      else
+         remainingSeeeds.push_back(seeeds[i]);
+   }
+
+   for(int i = 0; i < seeeds.size(); ++i)
+   {
+      if( seeeds[i]->getNBlocks() == 1 && ( seeeds[i]->getNMasterconss() == nmasterconssfirst || seeeds[i]->getNMasterconss() == nmasterconsssecond ) )
+         remainingSeeeds.push_back(seeeds[i]);
+      else if (seeeds[i]->getNBlocks() == 1)
+         oneBlockSeeeds.push_back(seeeds[i]);
+   }
+
+   for(int i = 0; i < oneBlockSeeeds.size(); ++i)
+   {
+      delete oneBlockSeeeds[i];
+   }
+
+   return remainingSeeeds;
+}
 
 
 } /* namespace gcg */

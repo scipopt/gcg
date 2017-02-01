@@ -62,30 +62,54 @@
 
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 #define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
+#define DEFAULT_ENABLEORIGDETECTION FALSE /**< indicates whether to start detection for the original problem */
+
+#define DEFAULT_CONSSCLASSNNONZENABLED                FALSE    /**<  indicates whether constraint classifier for nonzero entries is enabled */
+#define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE     /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
+
+#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED         TRUE     /**< indicates whether constraint classifier for scipconstype is enabled */
+#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     FALSE    /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
+
+#define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED     FALSE    /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
+#define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG TRUE     /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
+
+#define DEFAULT_CONSSCLASSLEVENSHTEINENABLED          FALSE    /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
+#define DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG      TRUE     /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
+
+
 
 /*
  * Data structures
  */
 
-
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
-   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
-   DEC_DETECTOR**        detectors;          /**< array of structure detectors */
-   int*                  priorities;         /**< priorities of the detectors */
-   int                   ndetectors;         /**< number of detectors */
-   SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
-   SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
-   int                   ndecomps;           /**< number of decomposition structures  */
-   int                   maxndetectionrounds;/**< maximum number of detection loop rounds  */
-   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
-   int**                 candidatesNBlocks;        /**< pointer to store candidates for number of blocks calculated by the seeedpool */
+   DEC_DECOMP**          decdecomps;                        /**< array of decomposition structures */
+   DEC_DETECTOR**        detectors;                         /**< array of structure detectors */
+   int*                  priorities;                        /**< priorities of the detectors */
+   int                   ndetectors;                        /**< number of detectors */
+   SCIP_CLOCK*           detectorclock;                     /**< clock to measure detection time */
+   SCIP_Bool             hasrun;                            /**< flag to indicate whether we have already detected */
+   int                   ndecomps;                          /**< number of decomposition structures  */
+   int                   maxndetectionrounds;               /**< maximum number of detection loop rounds  */
+   SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+   SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
+   SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
+   SCIP_Bool             conssclassnnonzenabledorig;        /**< indicates whether constraint classifier for nonzero entries is enabled for the original problem */
+   SCIP_Bool             conssclassnconstypeenabled;        /**< indicates whether constraint classifier for scipconstype is enabled */
+   SCIP_Bool             conssclassnconstypeenabledorig;    /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
+   SCIP_Bool             consnamenonumbersenabled;          /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
+   SCIP_Bool             consnamenonumbersenabledorig;      /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
+   SCIP_Bool             conssclasslevenshteinabled;        /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
+   SCIP_Bool             conssclasslevenshteinenabledorig;  /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
+
+   int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
    int*                  nCandidates;
-   int***                conssClasses;             /**< pointer to store the  collection of different constraint class distributions */
-   int*                  nConssClassDistributions; /**< pointer to store number of constraint class distributions */
+   int***                conssClasses;                      /**< pointer to store the  collection of different constraint class distributions */
+   int*                  nConssClassDistributions;          /**< pointer to store number of constraint class distributions */
    int**                 nClassesOfDistribution;
-   SCIP_HASHMAP*         consToIndex;              /**< hashmap from constraints to indices, to be filled */
+   SCIP_HASHMAP*         consToIndex;                       /**< hashmap from constraints to indices, to be filled */
    int*                  nConss;
 };
 
@@ -311,7 +335,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->detectors = NULL;
    conshdlrdata->hasrun = FALSE;
    conshdlrdata->maxndetectionrounds = 0;
-
+   conshdlrdata->enableorigdetection = FALSE;
 
    SCIP_CALL( SCIPcreateWallClock(scip, &conshdlrdata->detectorclock) );
 
@@ -327,6 +351,15 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/enabled", "indicates whether to start detection for the original problem", &conshdlrdata->enableorigdetection, FALSE, DEFAULT_ENABLEORIGDETECTION, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", "indicates whether constraint classifier for nonzero entries is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSNNONZENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/nnonzeros/enabledorig", "indicates whether constraint classifier for nonzero entries is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSNNONZENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", "indicates whether constraint classifier for scipconstype is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/scipconsstype/enabledorig", "indicates whether constraint classifier for scipconsstype is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", "indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled", &conshdlrdata->consnamenonumbersenabled, FALSE, DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabledorig", "indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem", &conshdlrdata->consnamenonumbersenabledorig, FALSE, DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled", &conshdlrdata->conssclasslevenshteinabled, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabledorig", "indicates whether constraint classifier for scipconsstype is enabled for the original problem", &conshdlrdata->conssclasslevenshteinenabledorig, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
@@ -600,27 +633,6 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-   SCIP_Real* scores;
-   int i;
-
-   SCIP_Bool presolveOrigProblem;
-
-   assert(scip != NULL);
-
-   presolveOrigProblem = TRUE;
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-
-
-   /** get data of the seeedpool with original vars and conss */
-   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
-      SCIP_CALL( SCIPtransformProb(scip) );
-
 
    gcg::Seeedpool seeedpoolunpresolved(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
    std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
@@ -630,8 +642,37 @@ SCIP_RETCODE DECdetectStructure(
    std::vector<gcg::Seeed*> seeedsunpresolved;                    /**< seeeds that were found for the unpresolved problem */
 
 
+   SCIP_Real* scores;
+   int i;
+
+   SCIP_Bool presolveOrigProblem;
+   SCIP_Bool calculateOrigDecomps;
+
+   assert(scip != NULL);
+
+   presolveOrigProblem = TRUE;
+
+   SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( calculateOrigDecomps)
+      seeedpoolunpresolved = gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
+
+
+   /** get data of the seeedpool with original vars and conss */
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb(scip) );
+
+
+
+
    /** detection for original problem */
-   if( conshdlrdata->ndecomps == 0 )
+   if( conshdlrdata->ndecomps == 0 && calculateOrigDecomps )
    {
       candidatesNBlocks = seeedpoolunpresolved.getCandidatesNBlocks();
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "start finding decompositions for original problem!\n");
@@ -639,7 +680,6 @@ SCIP_RETCODE DECdetectStructure(
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished finding decompositions for original problem!\n");
       for( int i = 0; i < seeedpoolunpresolved.getNConssClassDistributions(); ++i )
          conssClassDistributions.push_back(seeedpoolunpresolved.getConssClassDistributionVector(i));
-
    }
 
 
@@ -677,21 +717,23 @@ SCIP_RETCODE DECdetectStructure(
    {
 	  gcg::Seeedpool seeedpool(scip, CONSHDLR_NAME, TRUE);
 
-     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");
+	  if( calculateOrigDecomps )
+	  {
+	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");
+	     std::vector<gcg::Seeed*> translatedSeeeds = seeedpool.translateSeeeds(&seeedpoolunpresolved, seeedsunpresolved);
+	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
 
-	  std::vector<gcg::Seeed*> translatedSeeeds = seeedpool.translateSeeeds(&seeedpoolunpresolved, seeedsunpresolved);
+	     seeedpool.populate(translatedSeeeds);
 
-	  SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
+        SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished translate seeed method!\n");
 
-	  seeedpool.populate(translatedSeeeds);
+        for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
+             seeedpool.addCandidatesNBlocks(candidatesNBlocks[c]);
 
-     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished translate seeed method!\n");
+        for( size_t d = 0; d < conssClassDistributions.size(); ++d )
+             seeedpool.addConssClassDistribution(conssClassDistributions[d], indexToCons);
 
-	  for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
-	     seeedpool.addCandidatesNBlocks(candidatesNBlocks[c]);
-
-	  for( size_t d = 0; d < conssClassDistributions.size(); ++d )
-	     seeedpool.addConssClassDistribution(conssClassDistributions[d], indexToCons);
+	  }
 
 	  seeedpool.findDecompositions();
 	  conshdlrdata->decdecomps = seeedpool.getDecompositions();

@@ -98,8 +98,6 @@ private:
    std::tr1::unordered_map<SCIP_VAR*, int>  	   scipVarToIndex;		   /**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int>  scipDetectorToIndex;		/**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int>  scipFinishingDetectorToIndex;    /**< maps SCIP_VAR* to the corresponding index */
-
-
    std::tr1::unordered_map< std::pair<int, int>, SCIP_Real, pair_hash>  valsMap;               /**< maps an entry of the matrix to its value, zeros are omitted */
 
    int 										         	nVars;                  /**< number of variables */
@@ -239,8 +237,9 @@ public:
       std::vector<std::vector<int>> distributions
       );
 
+   std::vector<SeeedPtr> removeSomeOneblockDecomps(
+      std::vector<SeeedPtr> givenseeeds);
 
-};
-
+   };
 } /* namespace gcg */
 #endif /* GCG_CLASS_SEEEDPOOL_H__ */

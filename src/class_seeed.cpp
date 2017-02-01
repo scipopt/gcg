@@ -1852,6 +1852,7 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
    std::cout << getNMastervars() << " mastervariable(s)" << std::endl;
    std::cout << getNOpenconss() << " open constraint(s)" << std::endl;
    std::cout << getNOpenvars() << " open variable(s)" << std::endl;
+   std::cout <<  "  stems from unpresolved problem: " << stemsFromUnpresolved << std::endl;
    std::cout << getNDetectors() << " detector(s)";
    if( getNDetectors() != 0 )
    {
