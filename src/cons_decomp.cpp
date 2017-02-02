@@ -64,11 +64,11 @@
 #define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
 #define DEFAULT_ENABLEORIGDETECTION FALSE /**< indicates whether to start detection for the original problem */
 
-#define DEFAULT_CONSSCLASSNNONZENABLED                FALSE    /**<  indicates whether constraint classifier for nonzero entries is enabled */
+#define DEFAULT_CONSSCLASSNNONZENABLED                TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled */
 #define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE     /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED         TRUE     /**< indicates whether constraint classifier for scipconstype is enabled */
-#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     FALSE    /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
+#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     TRUE    /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED     FALSE    /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
 #define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG TRUE     /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
@@ -660,8 +660,6 @@ SCIP_RETCODE DECdetectStructure(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   if( calculateOrigDecomps)
-      seeedpoolunpresolved = gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
 
    /** get data of the seeedpool with original vars and conss */
@@ -669,12 +667,12 @@ SCIP_RETCODE DECdetectStructure(
       SCIP_CALL( SCIPtransformProb(scip) );
 
 
+   candidatesNBlocks = seeedpoolunpresolved.getCandidatesNBlocks();
 
 
    /** detection for original problem */
    if( conshdlrdata->ndecomps == 0 && calculateOrigDecomps )
    {
-      candidatesNBlocks = seeedpoolunpresolved.getCandidatesNBlocks();
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "start finding decompositions for original problem!\n");
       seeedsunpresolved = seeedpoolunpresolved.findSeeeds();
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished finding decompositions for original problem!\n");

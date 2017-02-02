@@ -92,6 +92,9 @@ namespace gcg {
 
 /** local methods */
 
+SCIP_Bool cmpSeeedsMaxWhite (SeeedPtr i, SeeedPtr j) { return (i->getMaxWhiteScore() < j->getMaxWhiteScore() ); }
+
+
 int calcLevenshteinDistance(std::string s, std::string t)
 {
     // trivial cases
@@ -433,7 +436,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", &conssclassnnonzeros);
             SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", &conssclassscipconstypes);
             SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
-            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabledorig", &conssclassconsnamelevenshtein);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
          }
          else
          {
@@ -442,6 +445,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabledorig", &conssclassconsnamenonumbers);
             SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabledorig", &conssclassconsnamelevenshtein);
          }
+
+         std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
 
          if( conssclassnnonzeros )
             addConssClassesForNNonzeros();
@@ -850,8 +855,21 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
     finishedSeeeds = removeSomeOneblockDecomps(finishedSeeeds);
 
+    /* sort the seeeds according to maximum white measure */
 
-    /** fill out the decompositions */
+    // using function as comp
+      std::sort (finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
+
+
+      /** hack to just use max white seeed */
+      if(false)
+      {
+         std::vector<SeeedPtr> justBest(0);
+         justBest.push_back(finishedSeeeds[0]);
+         finishedSeeeds = justBest;
+      }
+
+      /** fill out the decompositions */
 
     SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
     for( size_t i = 0; i < finishedSeeeds.size(); ++i )
@@ -887,7 +905,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
  //           seeed->displayConss();
   //     if(seeed->detectorChain.size() > 2)
-          //seeed->showScatterPlot(this);
+       seeed->showScatterPlot(this);
 
 
             /** set nblocks */

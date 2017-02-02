@@ -76,6 +76,7 @@ private:
    bool 							         openVarsAndConssCalculated;   /**< are the openVars and openCons calculated */
    long                             hashvalue;
    SCIP_Real                        score;                        /**< score to evaluate the seeeds */
+   SCIP_Real                        maxwhitescore;                /**< score corresponding to the max white measure */
 
    bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
@@ -338,6 +339,9 @@ public:
    /** returns vector containing master vars (every constraint containing a master var is in master )*/
    const int* getMastervars(
    );
+
+   /** return the "maximum white score" (the smaller the better) */
+   SCIP_Real getMaxWhiteScore();
 
    /** returns number of blocks */
    int getNBlocks(

@@ -1839,7 +1839,7 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
    std::cout << "number of blocks: " << nBlocks << std::endl;
    std::cout << "hashvalue: " << hashvalue << std::endl;
    std::cout << "score: " << score << std::endl;
-
+   std::cout << "maxwhitescore: " << maxwhitescore << std::endl;
    for( int b = 0; b < nBlocks; ++b )
    {
       std::cout << getNConssForBlock(b) << " constraint(s) in block " << b << std::endl;
@@ -1949,6 +1949,7 @@ SCIP_Real Seeed::evaluate(
    SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
    SCIP_Real             totalscore;         /**< accumulated score */
 
+
    int matrixarea;
    int borderarea;
    int i;
@@ -1967,9 +1968,13 @@ SCIP_Real Seeed::evaluate(
    SCIP_Real alphalinking;
    SCIP_Real alphadensity;
 
+   SCIP_Real blackarea;
+
+   maxwhitescore = 1.;
    alphaborderarea = 0.6;
    alphalinking = 0.2 ;
    alphadensity  = 0.2;
+   blackarea = 0.;
 
    if(getNOpenconss() != 0 || getNOpenvars() != 0)
       SCIPwarningMessage(scip, "Evaluation for seeeds is not implemented for seeeds with open conss or open vars.\n");
@@ -1990,6 +1995,11 @@ SCIP_Real Seeed::evaluate(
    /* calculate matrix area */
    matrixarea = nVars*nConss;
 
+   blackarea += getNLinkingvars() * getNConss();
+   blackarea += getNMasterconss() * getNVars();
+
+   blackarea -= getNMastervars() * getNLinkingvars();
+
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++i )
    {
@@ -2001,6 +2011,7 @@ SCIP_Real Seeed::evaluate(
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
+      blackarea +=  getNConssForBlock(i) * getNVarsForBlock(i);
       for( j = 0; j < nVars; ++j )
       {
          ishandled[j] = FALSE;
@@ -2057,6 +2068,8 @@ SCIP_Real Seeed::evaluate(
    }
 
    borderarea = getNMasterconss()*nVars+(getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars())*(nConss-getNMasterconss());
+
+   maxwhitescore = blackarea/( getNConss() * getNVars() );
 
    density = 1E20;
    varratio = 1.0;
@@ -2527,6 +2540,12 @@ const int* Seeed::getMastervars()
 {
    return &masterVars[0];
 }
+
+/** return the "maximum white score" (the smaller the better) */
+   SCIP_Real Seeed::getMaxWhiteScore(){
+      return maxwhitescore;
+   }
+
 
 /** returns number of blocks */
 int Seeed::getNBlocks()
