@@ -54,17 +54,21 @@
 
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "staircase_lsp"    /**< name of detector */
-#define DEC_DESC                 "Staircase detection via shortest paths" /**< description of detector */
-#define DEC_PRIORITY             200            /**< priority of the detector */
-#define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
-#define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
-#define DEC_DECCHAR              'S'            /**< display character of detector */
-#define DEC_ENABLED              TRUE           /**< should the detection be enabled */
-#define DEC_ENABLEDFINISHING     FALSE       /**< should the finishing be enabled */
-#define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
-#define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_DETECTORNAME          "staircase_lsp"    /**< name of detector */
+#define DEC_DESC                  "Staircase detection via shortest paths" /**< description of detector */
+#define DEC_PRIORITY              200            /**< priority of the detector */
+#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_DECCHAR               'S'            /**< display character of detector */
+#define DEC_ENABLED               TRUE           /**< should the detection be enabled */
+#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
+#define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 #define TCLIQUE_CALL(x) do                                                                                    \
                        {                                                                                      \
@@ -918,7 +922,7 @@ SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
 
 
    SCIP_CALL( DECincludeDetector( scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
-         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP,
+         DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP,
          DEC_USEFULRECALL, detectordata, detectorDetectStaircaseLsp, detectorFreeStaircaseLsp,
          detectorInitStaircaseLsp, detectorExitStaircaseLsp, detectorPropagateSeeedStaircaseLsp, detectorFinishSeeedStaircaseLsp) );
 

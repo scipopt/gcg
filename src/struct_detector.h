@@ -49,8 +49,12 @@ struct DEC_Detector {
    int                   freqCallRound;      /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
    int                   maxCallRound;       /** last round the detector gets called                              */
    int                   minCallRound;       /** first round the detector gets called (offset in detection loop) */
+   int                   freqCallRoundOriginal; /** frequency the detector gets called in detection loop while detecting the original problem */
+   int                   maxCallRoundOriginal; /** last round the detector gets called while detecting the original problem */
+   int                   minCallRoundOriginal; /** first round the detector gets calles (offset in detection loop) while detecting the original problem */
    int                   priority;           /**< detector priority */
    SCIP_Bool             enabled;            /**< flag to indicate whether detector is enabled */
+   SCIP_Bool             enabledOriginal;   /**< flag to indicate whether detector is enabled for the original problem */
    SCIP_Bool             enabledFinishing;   /**< flag to indicate whether finishing is enabled */
    SCIP_Bool             skip;               /**< should detector be skipped if other detectors found decompositions */
    SCIP_Bool             usefulRecall;       /** is it useful to call this detector on a descendant of the propagated seeed */

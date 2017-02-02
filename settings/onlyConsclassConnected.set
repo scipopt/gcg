@@ -10,7 +10,7 @@ detectors/connected/enabled = FALSE
 detectors/connectedbase/enabled = FALSE
 detectors/connectedbase/enabledfinishing = TRUE
 detectors/compgreedily/enabled = FALSE
-detectors/compgreedily/enabledfinishing = TRUE
+detectors/compgreedily/enabledfinishing = FALSE
 detectors/connected/enabled = FALSE
 detectors/connected_nonewlinkingvars/enabled = FALSE
 detectors/mastersetpack/enabled = FALSE
@@ -23,5 +23,5 @@ detectors/staircase/enabled = FALSE
 detectors/constype/enabled = FALSE
 detectors/staircase_lsp/enabled = FALSE
 
-
-limits/time = 120
+timing/clocktype = 2
+limits/time = 46800

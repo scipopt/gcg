@@ -51,16 +51,20 @@
 #include <algorithm>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "colors"    /**< name of detector */
-#define DEC_DESC                 "Detector according to color classes" /**< description of detector*/
-#define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
-#define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
-#define DEC_PRIORITY             0              /**< priority of the detector */
+#define DEC_DETECTORNAME          "colors"    /**< name of detector */
+#define DEC_DESC                  "Detector according to color classes" /**< description of detector*/
+#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                            */
+#define DEC_MINCALLROUND          0           /** first round the detector gets called                             */
+#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_PRIORITY              0              /**< priority of the detector */
 
 #define DEC_DECCHAR              'k'            /**< display character of detector */
 
 #define DEC_ENABLED              FALSE          /**< should the detection be enabled */
+#define DEC_ENABLED_ORIGINAL     FALSE          /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING     FALSE          /**< should the finishing be enabled */
 #define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
@@ -449,7 +453,7 @@ SCIP_RETCODE SCIPincludeDetectorColors(
    assert(detectordata != NULL);
 
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLED_ORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
          detectordata, detectorDetectColors, detectorFreeColors, detectorInitColors, detectorExitColors, detectorPropagateSeeedColors, detectorFinishSeeedColors) );
 
 

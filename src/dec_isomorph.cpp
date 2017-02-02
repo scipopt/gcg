@@ -58,18 +58,22 @@
 #include "pub_bliss.h"
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "isomorph"  /**< name of detector */
-#define DEC_DESC                 "Detector for pricing problems suitable for aggregation" /**< description of detector*/
-#define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND         0           /** last round the detector gets called                              */
-#define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
-#define DEC_PRIORITY             100         /**< priority of the constraint handler for separation */
-#define DEC_DECCHAR              'I'         /**< display character of detector */
+#define DEC_DETECTORNAME          "isomorph"  /**< name of detector */
+#define DEC_DESC                  "Detector for pricing problems suitable for aggregation" /**< description of detector*/
+#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          0           /** last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  0     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_PRIORITY              100         /**< priority of the constraint handler for separation */
+#define DEC_DECCHAR               'I'         /**< display character of detector */
 
-#define DEC_ENABLED              TRUE        /**< should the detection be enabled */
-#define DEC_ENABLEDFINISHING     FALSE       /**< should the finishing be enabled */
-#define DEC_SKIP                 TRUE        /**< should the detector be skipped if others found decompositions */
-#define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_ENABLED               TRUE        /**< should the detection be enabled */
+#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
+#define DEC_SKIP                  TRUE        /**< should the detector be skipped if others found decompositions */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 
 #define DEFAULT_MAXDECOMPSEXACT  5           /**< default maximum number of decompositions */
@@ -1699,7 +1703,7 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, detectorFinishSeeedIsomorph) );
 
    /* add isomorph constraint handler parameters */

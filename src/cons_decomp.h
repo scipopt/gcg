@@ -95,8 +95,12 @@ SCIP_RETCODE DECincludeDetector(
    int                   freqCallRound,      /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
    int                   maxCallRound,       /** last round the detector gets called                              */
    int                   minCallRound,       /** first round the detector gets called (offset in detection loop) */
+   int                   freqCallRoundOriginal,  /** frequency the detector gets called in detection loop while detecting of the original problem */
+   int                   maxCallRoundOriginal,   /** last round the detector gets called while detecting of the original problem */
+   int                   minCallRoundOriginal,   /** first round the detector gets called (offset in detection loop) while detecting of the original problem */
    int                   priority,           /**< priority of the detector                                           */
    SCIP_Bool             enabled,            /**< whether the detector should be enabled by default                  */
+   SCIP_Bool             enabledOriginal,        /**< whether the detector should be enabled by default for detecting the original problem */
    SCIP_Bool             enabledFinishing,   /**< whether the finishing should be enabled */
    SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure   */
    SCIP_Bool             usefulRecall,       /** is it useful to call this detector on a descendant of the propagated seeed */

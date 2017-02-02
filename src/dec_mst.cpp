@@ -47,17 +47,21 @@ using gcg::GraphGCG;
 
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "mst"                               /**< name of detector */
-#define DEC_DESC                 "detector based on MST clustering"  /**< description of detector*/
-#define DEC_FREQCALLROUND        1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND         INT_MAX     /** last round the detector gets called                              */
-#define DEC_MINCALLROUND         0           /** first round the detector gets called                              */
-#define DEC_PRIORITY             910         /**< priority of the constraint handler for separation */
-#define DEC_DECCHAR              'M'         /**< display character of detector */
-#define DEC_ENABLED              TRUE        /**< should the detection be enabled */
-#define DEC_ENABLEDFINISHING     FALSE       /**< should the finishing be enabled */
-#define DEC_SKIP                 FALSE       /**< should detector be skipped if other detectors found decompositions */
-#define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_DETECTORNAME          "mst"                               /**< name of detector */
+#define DEC_DESC                  "detector based on MST clustering"  /**< description of detector*/
+#define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
+#define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
+#define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
+#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
+#define DEC_PRIORITY              910         /**< priority of the constraint handler for separation */
+#define DEC_DECCHAR               'M'         /**< display character of detector */
+#define DEC_ENABLED               TRUE        /**< should the detection be enabled */
+#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
+#define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
+#define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 /* Default parameter settings*/
 #define DEFAULT_N_ITERATIONS              51
@@ -659,7 +663,7 @@ SCIP_RETCODE SCIPincludeDetectorMST(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
       detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST, finishSeeedMST) );
 
    /* add arrowheur presolver parameters */

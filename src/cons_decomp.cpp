@@ -487,23 +487,27 @@ DEC_DETECTOR* DECfindDetector(
 
 /** includes the detector */
 SCIP_RETCODE DECincludeDetector(
-   SCIP*                 scip,               /**< SCIP data structure */
-   const char*           name,               /**< name of the detector */
-   const char            decchar,            /**< display character of the detector */
-   const char*           description,        /**< description of the detector */
-   int                   freqCallRound,      /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-   int                   maxCallRound,       /** last round the detector gets called                              */
-   int                   minCallRound,       /** first round the detector gets called (offset in detection loop) */
-   int                   priority,           /**< priority of the detector                                           */
-   SCIP_Bool             enabled,            /**< whether the detector should be enabled by default                  */
-   SCIP_Bool             enabledFinishing,   /**< whether the finishing should be enabled */
-   SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure   */
-   SCIP_Bool             usefulRecall,       /** is it useful to call this detector on a descendant of the propagated seeed */
-   DEC_DETECTORDATA*     detectordata,       /**< the associated detector data (or NULL) */
+   SCIP*                 scip,                   /**< SCIP data structure */
+   const char*           name,                   /**< name of the detector */
+   const char            decchar,                /**< display character of the detector */
+   const char*           description,            /**< description of the detector */
+   int                   freqCallRound,          /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+   int                   maxCallRound,           /** last round the detector gets called                              */
+   int                   minCallRound,           /** first round the detector gets called (offset in detection loop) */
+   int                   freqCallRoundOriginal,  /** frequency the detector gets called in detection loop while detecting of the original problem */
+   int                   maxCallRoundOriginal,   /** last round the detector gets called while detecting of the original problem */
+   int                   minCallRoundOriginal,   /** first round the detector gets called (offset in detection loop) while detecting of the original problem */
+   int                   priority,               /**< priority of the detector                                           */
+   SCIP_Bool             enabled,                /**< whether the detector should be enabled by default                  */
+   SCIP_Bool             enabledOriginal,        /**< whether the detector should be enabled by default for detecting the original problem */
+   SCIP_Bool             enabledFinishing,       /**< whether the finishing should be enabled */
+   SCIP_Bool             skip,                   /**< whether the detector should be skipped if others found structure   */
+   SCIP_Bool             usefulRecall,           /** is it useful to call this detector on a descendant of the propagated seeed */
+   DEC_DETECTORDATA*     detectordata,           /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)), /**< the method that will detect the structure (must not be NULL)*/
-   DEC_DECL_FREEDETECTOR((*freeDetector)),   /**< destructor of detector (or NULL) */
-   DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL) */
-   DEC_DECL_EXITDETECTOR((*exitDetector)),    /**< deinitialization method of detector (or NULL) */
+   DEC_DECL_FREEDETECTOR((*freeDetector)),       /**< destructor of detector (or NULL) */
+   DEC_DECL_INITDETECTOR((*initDetector)),       /**< initialization method of detector (or NULL) */
+   DEC_DECL_EXITDETECTOR((*exitDetector)),       /**< deinitialization method of detector (or NULL) */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
    DEC_DECL_FINISHSEEED((*finishSeeedDetector))
    )
@@ -557,8 +561,12 @@ SCIP_RETCODE DECincludeDetector(
    detector->freqCallRound = freqCallRound;
    detector->maxCallRound = maxCallRound;
    detector->minCallRound = minCallRound;
+   detector->freqCallRoundOriginal = freqCallRoundOriginal;
+   detector->maxCallRoundOriginal = maxCallRoundOriginal;
+   detector->minCallRoundOriginal= minCallRoundOriginal;
    detector->priority = priority;
    detector->enabled = enabled;
+   detector->enabledOriginal = enabledOriginal;
    detector->enabledFinishing = enabledFinishing;
    detector->skip = skip;
    detector->usefulRecall = usefulRecall;
@@ -569,6 +577,10 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabled), FALSE, enabled, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabledFinishing", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabledFinishing", name);
+   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabledFinishing), FALSE, enabled, NULL, NULL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabledfinishing", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled for finishing of incomplete decompositions", name);
@@ -595,6 +607,18 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallround", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "minimum round the detector gets called in detection loop <%s>", name);
    SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->minCallRound), FALSE, minCallRound, 0, INT_MAX, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallroundOriginal", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "frequency the detector gets called in detection loop,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <%s>", name);
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->freqCallRound), FALSE, freqCallRoundOriginal, 0, INT_MAX, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallroundOriginal", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "maximum round the detector gets called in detection loop <%s>", name);
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->maxCallRound), FALSE, maxCallRoundOriginal, 0, INT_MAX, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallroundOriginal", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "minimum round the detector gets called in detection loop <%s>", name);
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->minCallRound), FALSE, minCallRoundOriginal, 0, INT_MAX, NULL, NULL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/priority", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "priority of detector <%s>", name);
@@ -676,10 +700,14 @@ SCIP_RETCODE DECdetectStructure(
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "start finding decompositions for original problem!\n");
       seeedsunpresolved = seeedpoolunpresolved.findSeeeds();
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished finding decompositions for original problem!\n");
-      for( int i = 0; i < seeedpoolunpresolved.getNConssClassDistributions(); ++i )
+      for( i = 0; i < seeedpoolunpresolved.getNConssClassDistributions(); ++i )
          conssClassDistributions.push_back(seeedpoolunpresolved.getConssClassDistributionVector(i));
    }
 
+
+
+//   for( i = 0; i < seeedpoolunpresolved.getNConss(); ++i)
+//   {
 
 
 
@@ -852,7 +880,7 @@ SCIP_RETCODE DECwriteAllDecomps(
    DEC_DECOMP *decomp;
    DEC_DECOMP *tmp;
    int i;
-   int j;
+//   int j;
 
    assert(scip != NULL);
    assert(extension != NULL);
