@@ -853,30 +853,6 @@ SCIP_RETCODE GCGwriteDecompsToTex(
       }
    }
 
-   /* if picturesonly is true make a tex file containing a tikz picture for each decomposition */
-
-               /* use same file path as the makefile and attach detectorchar + nblocks */
-               /*strcpy(decompname, filepath);
-               strcat(decompname, "/");
-
-               strcat(tempname, filename);
-               strcat(tempname, "-");
-               tempc = DECdetectorGetChar(DECdecompGetDetector(decomps[i]));
-               strcat(tempname, &tempc);
-               strcat(tempname, "-");
-               sprintf(tempstr,"%d",DECdecompGetNBlocks(decomps[i]));
-               strcat(tempname, tempstr);
-               tempstr[0] = '\0';
-
-               strcat(decompname, tempname);
- */
-/*open, write tikz, close*/
-
-               /* input the decomposition into main file */
-/*               SCIPinfoMessage(scip, file, "    \\input{%s}                                                           %s",tempname, LINEBREAK);
-               tempname[0] = '\0';
-               maxrounds--;*/
-
    /*write an ending for the LaTeX code*/
    SCIP_CALL( writeEndCode(scip,file) );
 
