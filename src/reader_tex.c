@@ -846,6 +846,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
                strcat(decompname, "-");
                sprintf(tempstr,"%d",DECdecompGetNBlocks(decomps[i]));
                strcat(decompname, tempstr);
+               tempstr[0] = '\0';
 
                /* open and write the single decomposition */
                decompfile = fopen(decompname, "w");
