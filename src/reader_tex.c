@@ -158,6 +158,32 @@ SCIP_RETCODE getNDecompsOfType(
    return SCIP_OKAY;
 }
 
+/** gets path of file */
+static
+SCIP_RETCODE getPath(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file,               /**< Decompositions structure */
+   char*                pfile               /**< return path of file */
+   )
+{
+   char sympath[SCIP_MAXSTRLEN];
+   int filedesc;
+   int success;
+
+   filedesc = fileno(file); /* get link to file descriptor */
+   if( filedesc < 0 )
+   {
+      return SCIP_FILECREATEERROR;
+   }
+   snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
+   success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
+   if( success < 0 )
+   {
+      return SCIP_NOFILE;
+   }
+   return SCIP_OKAY;
+}
+
 /** write LaTeX code header, begin of document, general statistics and table of contents */
 static
 SCIP_RETCODE writeHeaderCode(
@@ -389,7 +415,7 @@ SCIP_RETCODE writeTikz(
     * Instead of var-/consindex the value of (index/maxindex)*textwidth/height is used
     */
 
-   if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED)
+   if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED )
    {
       for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
       {
@@ -407,7 +433,6 @@ SCIP_RETCODE writeTikz(
    }
    else
    {
-      /*@todo after testing allow staircase again*/
       if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
       {
          nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
@@ -505,12 +530,9 @@ SCIP_RETCODE writeDecompCode(
    char decompname[SCIP_MAXSTRLEN];
    char gpfilename[SCIP_MAXSTRLEN];
    char gpname[SCIP_MAXSTRLEN];
-   char sympath[SCIP_MAXSTRLEN];
    char pfile[SCIP_MAXSTRLEN];
    char pfilecpy[SCIP_MAXSTRLEN];
    FILE* gpfile;
-   int filedesc;
-   int success;
    DEC_SCORES scores;
 
    assert(decomp != NULL);
@@ -521,17 +543,7 @@ SCIP_RETCODE writeDecompCode(
       /* --- create a gnuplot file for the decomposition --- */
 
       /* get path to write to and put it into gpfilename */
-      filedesc = fileno(file); /* get link to file descriptor */
-      if( filedesc < 0 )
-      {
-         return SCIP_FILECREATEERROR;
-      }
-      snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
-      success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
-      if( success < 0 )
-      {
-         return SCIP_NOFILE;
-      }
+      getPath(scip, file, pfile);
       strcpy(pfilecpy, pfile);
       SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
       strcpy(gpfilename, filepath);
@@ -569,13 +581,16 @@ SCIP_RETCODE writeDecompCode(
       fclose(gpfile);
    }
 
-   /* --- gather further information & output them --- */
+   /* --- gather information & output them into .tex file --- */
 
    DECevaluateDecomposition(scip, decomp, &scores);
 
-   SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", decompname, LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}                              %s", decompname, LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   if(!readerdata->picturesonly)
+   {
+      SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", decompname, LINEBREAK);
+      SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}                              %s", decompname, LINEBREAK);
+      SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   }
    SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                                           %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
    if( readerdata->usegp )
@@ -588,18 +603,21 @@ SCIP_RETCODE writeDecompCode(
    }
    SCIPinfoMessage(scip, file, "  \\end{center}                                                                 %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "\\end {figure}                                                                  %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Found by detector: & %s \\\\                                                  %s", DECdetectorGetName(DECdecompGetDetector(decomp)), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   %s", DECdecompGetNBlocks(decomp), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        %s", DECdecompGetNLinkingvars(decomp), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i \\\\                                      %s", DECdecompGetNLinkingconss(decomp), LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Block density score: & %f \\\\                                                %s", scores.densityscore, LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Interlinking blocks score: & %f \\\\                                          %s", scores.linkingscore, LINEBREAK);
-   SCIPinfoMessage(scip, file, "  Border score: & %f \\\\                                                       %s", scores.borderscore, LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\textbf{Total score:} & \\textbf{%f} \\\\                                    %s", scores.totalscore, LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
+   if(!readerdata->picturesonly)
+   {
+      SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "  Found by detector: & %s \\\\                                                  %s", DECdetectorGetName(DECdecompGetDetector(decomp)), LINEBREAK);
+      SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   %s", DECdecompGetNBlocks(decomp), LINEBREAK);
+      SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        %s", DECdecompGetNLinkingvars(decomp), LINEBREAK);
+      SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i \\\\                                      %s", DECdecompGetNLinkingconss(decomp), LINEBREAK);
+      SCIPinfoMessage(scip, file, "  Block density score: & %f \\\\                                                %s", scores.densityscore, LINEBREAK);
+      SCIPinfoMessage(scip, file, "  Interlinking blocks score: & %f \\\\                                          %s", scores.linkingscore, LINEBREAK);
+      SCIPinfoMessage(scip, file, "  Border score: & %f \\\\                                                       %s", scores.borderscore, LINEBREAK);
+      SCIPinfoMessage(scip, file, "  \\textbf{Total score:} & \\textbf{%f} \\\\                                    %s", scores.totalscore, LINEBREAK);
+      SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
+   }
    SCIPinfoMessage(scip, file, "\\clearpage                                                                     %s", LINEBREAK);
    SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
 
@@ -619,59 +637,29 @@ SCIP_RETCODE writeEndCode(
    return SCIP_OKAY;
 }
 
-/** writes tex files for the visualization & statistics of a given set of decomposition
- * and writes a Makefile to compile the files with
- */
-SCIP_RETCODE GCGwriteDecompsToTex(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
-   int*                  ndecomps,           /**< Number of decompositions */
-   SCIP_Bool             statistics,         /**< if true detection statistics and are included in report */
-   SCIP_Bool             toc,                /**< if true table of contents is included */
-   SCIP_READERDATA*      readerdata          /**< reader specific arguments */
+/** makes a new makefile and readme for the given .tex file */
+static
+SCIP_RETCODE makeMakefileAndReadme(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file,               /**< Decompositions structure */
+   SCIP_READERDATA*     readerdata          /**< reader specific arguments */
    )
 {
    FILE* makefile;
    FILE* readme;
-   FILE* decompfile;
    char* filepath;
    char* filename;
-   const char makename[SCIP_MAXSTRLEN] = "makepdf";
-   char name[SCIP_MAXSTRLEN];
-   char sympath[SCIP_MAXSTRLEN];
    char pfile[SCIP_MAXSTRLEN];
    char pfilecpy[SCIP_MAXSTRLEN];
    char makefilename[SCIP_MAXSTRLEN];
    char readmename[SCIP_MAXSTRLEN];
-   char decompname[SCIP_MAXSTRLEN];
-   char tempname[SCIP_MAXSTRLEN];
-   char tempstr[SCIP_MAXSTRLEN];
-   char tempc;
-   SCIP_Bool writedecomp;
-   int filedesc;
-   int success;
-   int i;
-   int maxrounds;
-   int ndecompsoftype;
-
-   assert(scip != NULL);
-   assert(*ndecomps > 0);
+   char name[SCIP_MAXSTRLEN];
+   const char makename[SCIP_MAXSTRLEN] = "makepdf";
 
    /* --- create a Makefile --- */
 
    /* get path to write to and put it into makefilename */
-   filedesc = fileno(file); /* get link to file descriptor */
-      if( filedesc < 0 )
-   {
-   return SCIP_FILECREATEERROR;
-   }
-   snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
-   success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
-   if( success < 0 )
-   {
-   return SCIP_NOFILE;
-   }
+   getPath(scip, file, pfile);
    strcpy(pfilecpy, pfile);
    SCIPsplitFilename(pfilecpy, &filepath, &filename, NULL, NULL);
    strcpy(makefilename, filepath);
@@ -751,94 +739,124 @@ SCIP_RETCODE GCGwriteDecompsToTex(
 
    /* close readme file */
    fclose(readme);
+   return SCIP_OKAY;
+}
+
+/** writes tex files for the visualization & statistics of a given set of decomposition
+ * and writes a Makefile to compile the files with
+ */
+SCIP_RETCODE GCGwriteDecompsToTex(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File pointer to write to */
+   DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
+   int*                  ndecomps,           /**< Number of decompositions */
+   SCIP_Bool             statistics,         /**< if true detection statistics and are included in report */
+   SCIP_Bool             toc,                /**< if true table of contents is included */
+   SCIP_READERDATA*      readerdata          /**< reader specific arguments */
+   )
+{
+   FILE* decompfile;
+   char* filepath;
+   char* filename;
+   char pfile[SCIP_MAXSTRLEN];
+   char decompname[SCIP_MAXSTRLEN];
+   char tempname[SCIP_MAXSTRLEN] = {'\0'};
+   char tempstr[SCIP_MAXSTRLEN] = {'\0'};
+   char tempc = '\0';
+   SCIP_Bool writedecomp;
+   int i;
+   int maxrounds;
+   int ndecompsoftype;
+
+   assert(scip != NULL);
+   assert(*ndecomps > 0);
+
+   getPath(scip, file, pfile);
+   SCIPsplitFilename(pfile, &filepath, &filename, NULL, NULL);
+
+   /* --- make a makefile and readme file --- */
+   makeMakefileAndReadme(scip,file,readerdata);
 
    /* --- make the tex file(s) --- */
 
+   /* write LaTeX header including title and (optional) statistics & table of contents */
    SCIP_CALL( writeHeaderCode(scip,file,statistics,decomps,ndecomps,toc,readerdata) );
 
-   /* if picturesonly is false write one report for all decompositions */
-   if( !readerdata->picturesonly )
-      {
-      if( readerdata->returntype != 0 )
-      {
-         getNDecompsOfType(scip,decomps,ndecomps,readerdata->returntype, &ndecompsoftype);
-      }
-      else
-      {
-         ndecompsoftype = *ndecomps;
-      }
-
-      /* check if the number of max decomps exceeds the number of available outputs */
-      if( readerdata->maxndecomps < ndecompsoftype )
-      {
-         maxrounds = readerdata->maxndecomps;
-      }
-      else
-      {
-         maxrounds = *ndecomps;
-      }
-
-      /* write LaTeX code for each decomp starting with the highest score */
-      /* note: decomps come sorted from lowest to highest score */
-      /* only output such decompositions of the given type */
-      for( i = 0; i < *ndecomps && maxrounds > 0; i++ )
-      {
-         if( decomps[i] != NULL )
-         {
-            writedecomp = FALSE;
-            if( readerdata->returntype == 0 )
-               writedecomp = TRUE;
-            else if( (unsigned int)readerdata->returntype == DECdecompGetType(decomps[i]) )
-               writedecomp = TRUE;
-
-            if( writedecomp == TRUE )
-            {
-               SCIP_CALL( writeDecompCode(scip,file,decomps[i],readerdata) );
-               maxrounds--;
-            }
-         }
-      }
+   if( readerdata->returntype != 0 )
+   {
+      getNDecompsOfType(scip,decomps,ndecomps,readerdata->returntype, &ndecompsoftype);
    }
-   /* if picturesonly is true make a tex file containing a tikz picture for each decomposition */
    else
    {
-      if( readerdata->returntype != 0 )
-      {
-         getNDecompsOfType(scip,decomps,ndecomps,readerdata->returntype, &ndecompsoftype);
-      }
-      else
-      {
-         ndecompsoftype = *ndecomps;
-      }
+      ndecompsoftype = *ndecomps;
+   }
 
-      /* check if the number of max decomps exceeds the number of available outputs */
-      if( readerdata->maxndecomps < ndecompsoftype )
-      {
-         maxrounds = readerdata->maxndecomps;
-      }
-      else
-      {
-         maxrounds = *ndecomps;
-      }
+   /* check if the number of max decomps exceeds the number of available outputs */
+   if( readerdata->maxndecomps < ndecompsoftype )
+   {
+      maxrounds = readerdata->maxndecomps;
+   }
+   else
+   {
+      maxrounds = *ndecomps;
+   }
 
-      /* write LaTeX code for each decomp starting with the highest score */
-      /* note: decomps come sorted from lowest to highest score */
-      /* only output such decompositions of the given type */
-      for( i = 0; i < *ndecomps && maxrounds > 0; i++ )
+   /* write LaTeX code for each decomp starting with the highest score */
+   /* note: decomps come sorted from lowest to highest score */
+   /* only output such decompositions of the given type */
+   for( i = 0; i < *ndecomps && maxrounds > 0; i++ )
+   {
+      if( decomps[i] != NULL )
       {
-         if( decomps[i] != NULL )
+         writedecomp = FALSE;
+         if( readerdata->returntype == 0 )
+            writedecomp = TRUE;
+         else if( (unsigned int)readerdata->returntype == DECdecompGetType(decomps[i]) )
+            writedecomp = TRUE;
+
+         if( writedecomp == TRUE )
          {
-            writedecomp = FALSE;
-            if( readerdata->returntype == 0 )
-               writedecomp = TRUE;
-            else if( (unsigned int)readerdata->returntype == DECdecompGetType(decomps[i]) )
-               writedecomp = TRUE;
-
-            /*@todo allow staircase again once the staircase errors are found */
-            if( writedecomp == TRUE  && DECdecompGetType(decomps[i]) != DEC_DECTYPE_STAIRCASE)
+            if(readerdata->picturesonly)
             {
                /* use same file path as the makefile and attach detectorchar + nblocks */
                strcpy(decompname, filepath);
+               strcat(decompname, "/");
+
+               strcpy(tempname, filename);
+               strcat(tempname, "-");
+               tempc = DECdetectorGetChar(DECdecompGetDetector(decomps[i]));
+               strcat(tempname, &tempc);
+               strcat(tempname, "-");
+               sprintf(tempstr,"%d",DECdecompGetNBlocks(decomps[i]));
+               strcat(tempname, tempstr);
+               tempstr[0] = '\0';
+
+               strcat(decompname, tempname);
+               decompfile = fopen(decompname, "w");
+               if( decompfile == NULL )
+               {
+                  return SCIP_FILECREATEERROR;
+               }
+               SCIP_CALL( writeDecompCode(scip,decompfile,decomps[i],readerdata) );
+               fclose(decompfile);
+
+               /* input the decomposition into main file */
+               SCIPinfoMessage(scip, file, "    \\input{%s}                                                           %s",tempname, LINEBREAK);
+               tempname[0] = '\0';
+            }
+            else
+            {
+               SCIP_CALL( writeDecompCode(scip,file,decomps[i],readerdata) );
+            }
+            maxrounds--;
+         }
+      }
+   }
+
+   /* if picturesonly is true make a tex file containing a tikz picture for each decomposition */
+
+               /* use same file path as the makefile and attach detectorchar + nblocks */
+               /*strcpy(decompname, filepath);
                strcat(decompname, "/");
 
                strcat(tempname, filename);
@@ -851,28 +869,15 @@ SCIP_RETCODE GCGwriteDecompsToTex(
                tempstr[0] = '\0';
 
                strcat(decompname, tempname);
-
-               /* open and write the single decomposition */
-               decompfile = fopen(decompname, "w");
-               if( decompfile == NULL )
-               {
-                  return SCIP_FILECREATEERROR;
-               }
-
-               SCIP_CALL( writeTikz(scip,decompfile,decomps[i]) );
-               /* close decomp file */
-               fclose(decompfile);
+ */
+/*open, write tikz, close*/
 
                /* input the decomposition into main file */
-               SCIPinfoMessage(scip, file, "    \\input{%s}                                                           %s",tempname, LINEBREAK);
+/*               SCIPinfoMessage(scip, file, "    \\input{%s}                                                           %s",tempname, LINEBREAK);
                tempname[0] = '\0';
-               maxrounds--;
-            }
-         }
-      }
-   }
+               maxrounds--;*/
 
-   /*write an ending for the LaTex code*/
+   /*write an ending for the LaTeX code*/
    SCIP_CALL( writeEndCode(scip,file) );
 
    return SCIP_OKAY;
