@@ -645,6 +645,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
    char makefilename[SCIP_MAXSTRLEN];
    char readmename[SCIP_MAXSTRLEN];
    char decompname[SCIP_MAXSTRLEN];
+   char tempname[SCIP_MAXSTRLEN];
    char tempstr[SCIP_MAXSTRLEN];
    char tempc;
    SCIP_Bool writedecomp;
@@ -839,14 +840,17 @@ SCIP_RETCODE GCGwriteDecompsToTex(
                /* use same file path as the makefile and attach detectorchar + nblocks */
                strcpy(decompname, filepath);
                strcat(decompname, "/");
-               strcat(decompname, filename);
-               strcat(decompname, "-");
+
+               strcat(tempname, filename);
+               strcat(tempname, "-");
                tempc = DECdetectorGetChar(DECdecompGetDetector(decomps[i]));
-               strcat(decompname, &tempc);
-               strcat(decompname, "-");
+               strcat(tempname, &tempc);
+               strcat(tempname, "-");
                sprintf(tempstr,"%d",DECdecompGetNBlocks(decomps[i]));
-               strcat(decompname, tempstr);
+               strcat(tempname, tempstr);
                tempstr[0] = '\0';
+
+               strcat(decompname, tempname);
 
                /* open and write the single decomposition */
                decompfile = fopen(decompname, "w");
@@ -860,8 +864,8 @@ SCIP_RETCODE GCGwriteDecompsToTex(
                fclose(decompfile);
 
                /* input the decomposition into main file */
-               SCIPinfoMessage(scip, file, "    \\input{%s}                                                           %s", decompname, LINEBREAK);
-
+               SCIPinfoMessage(scip, file, "    \\input{%s}                                                           %s",tempname, LINEBREAK);
+               tempname[0] = '\0';
                maxrounds--;
             }
          }
