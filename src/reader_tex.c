@@ -818,7 +818,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
          {
             if(readerdata->picturesonly)
             {
-               /* use same file path as the makefile and attach detectorchar + nblocks */
+               /* get file path and attach detectorchar + nblocks */
                strcpy(decompname, filepath);
                strcat(decompname, "/");
 
@@ -837,6 +837,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
                {
                   return SCIP_FILECREATEERROR;
                }
+               /* write decomposition picture into new file */
                SCIP_CALL( writeDecompCode(scip,decompfile,decomps[i],readerdata) );
                fclose(decompfile);
 
@@ -846,6 +847,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
             }
             else
             {
+               /* if picturesonly is false, put decomposition infos into main file */
                SCIP_CALL( writeDecompCode(scip,file,decomps[i],readerdata) );
             }
             maxrounds--;
