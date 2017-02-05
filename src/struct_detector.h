@@ -54,7 +54,7 @@ struct DEC_Detector {
    int                   minCallRoundOriginal; /** first round the detector gets calles (offset in detection loop) while detecting the original problem */
    int                   priority;           /**< detector priority */
    SCIP_Bool             enabled;            /**< flag to indicate whether detector is enabled */
-   SCIP_Bool             enabledOriginal;   /**< flag to indicate whether detector is enabled for the original problem */
+   SCIP_Bool             enabledOrig;   /**< flag to indicate whether detector is enabled for the original problem */
    SCIP_Bool             enabledFinishing;   /**< flag to indicate whether finishing is enabled */
    SCIP_Bool             skip;               /**< should detector be skipped if other detectors found decompositions */
    SCIP_Bool             usefulRecall;       /** is it useful to call this detector on a descendant of the propagated seeed */

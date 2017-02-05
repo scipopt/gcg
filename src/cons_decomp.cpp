@@ -98,7 +98,7 @@ struct SCIP_ConshdlrData
    SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
    SCIP_Bool             conssclassnnonzenabledorig;        /**< indicates whether constraint classifier for nonzero entries is enabled for the original problem */
    SCIP_Bool             conssclassnconstypeenabled;        /**< indicates whether constraint classifier for scipconstype is enabled */
-   SCIP_Bool             conssclassnconstypeenabledorig;    /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
+   SCIP_Bool             conssclassnconstypeenabledorig;    /**< indicates whether constraint classifier for scipconstype is enabled for the original problem */
    SCIP_Bool             consnamenonumbersenabled;          /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
    SCIP_Bool             consnamenonumbersenabledorig;      /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
    SCIP_Bool             conssclasslevenshteinabled;        /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
@@ -355,11 +355,11 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", "indicates whether constraint classifier for nonzero entries is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSNNONZENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/nnonzeros/enabledorig", "indicates whether constraint classifier for nonzero entries is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSNNONZENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", "indicates whether constraint classifier for scipconstype is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/scipconsstype/enabledorig", "indicates whether constraint classifier for scipconsstype is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/scipconstype/enabledorig", "indicates whether constraint classifier for scipconsstype is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", "indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled", &conshdlrdata->consnamenonumbersenabled, FALSE, DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabledorig", "indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem", &conshdlrdata->consnamenonumbersenabledorig, FALSE, DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled", &conshdlrdata->conssclasslevenshteinabled, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLED, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabledorig", "indicates whether constraint classifier for scipconsstype is enabled for the original problem", &conshdlrdata->conssclasslevenshteinenabledorig, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabledorig", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem", &conshdlrdata->conssclasslevenshteinenabledorig, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
@@ -566,7 +566,7 @@ SCIP_RETCODE DECincludeDetector(
    detector->minCallRoundOriginal= minCallRoundOriginal;
    detector->priority = priority;
    detector->enabled = enabled;
-   detector->enabledOriginal = enabledOriginal;
+   detector->enabledOrig = enabledOriginal;
    detector->enabledFinishing = enabledFinishing;
    detector->skip = skip;
    detector->usefulRecall = usefulRecall;
@@ -578,9 +578,9 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabled), FALSE, enabled, NULL, NULL) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabledFinishing", name);
-   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabledFinishing", name);
-   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabledFinishing), FALSE, enabled, NULL, NULL) );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabledorig", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled for detecting in the original problem", name);
+   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabledOrig), FALSE, enabled, NULL, NULL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabledfinishing", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled for finishing of incomplete decompositions", name);
