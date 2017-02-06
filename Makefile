@@ -114,7 +114,7 @@ endif
 #-----------------------------------------------------------------------------
 
 ifeq ($(CPLEXSOLVER),true)
-FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/cpxinc
+FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
 else
 FLAGS		+=	-DNCPLEXSOLVER
 endif
