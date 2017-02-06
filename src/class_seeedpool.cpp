@@ -293,7 +293,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  }
                  else
                  {
-                    if( !detector->enabledOriginal || detector->propagateSeeed == NULL)
+                    if( !detector->enabledOrig || detector->propagateSeeed == NULL)
                        continue;
 
                  }
