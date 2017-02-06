@@ -131,7 +131,7 @@ public:
 
    ~Seeedpool();
 
-   /** finds seeedss  */
+   /** finds seeeds  */
    /*
     * @return user has to free
     */
@@ -146,6 +146,8 @@ public:
      std::vector<SeeedPtr> translateSeeeds( Seeedpool* otherpool, std::vector<Seeed*> otherseeeds );
 
    void populate(std::vector<SeeedPtr> seeeds);
+
+   void freeCurrSeeeds();
 
    /** access the variable indices of matrix constraint-wise */
    const  int *  getVarsForCons(int consIndex);

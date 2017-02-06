@@ -451,7 +451,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          else
          {
             SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabledorig", &conssclassnnonzeros);
-            SCIPgetBoolParam(scip, "detection/conssclassifier/scipconsstype/enabledorig", &conssclassscipconstypes);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabledorig", &conssclassscipconstypes);
             SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabledorig", &conssclassconsnamenonumbers);
             SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabledorig", &conssclassconsnamelevenshtein);
          }
@@ -1234,6 +1234,16 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
    }
 }*/
+
+ void Seeedpool::freeCurrSeeeds()
+ {
+    for( size_t i = 0; i < currSeeeds.size(); ++i )
+    {
+       delete currSeeeds[i];
+    }
+    return;
+ }
+
 
 
 std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector<Seeed*> origseeeds )

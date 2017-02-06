@@ -1,4 +1,4 @@
-GCG Version
+GCG Version tba
 =================
 
 features
@@ -19,6 +19,13 @@ features
   added branching on another variable and limited disc. search to original variable diving
 - added menu item "write reportdecompositions" that creates a report of all decompositions
   in form of a .tex file
+
+
+
+GCG Version 2.1.2
+=================
+
+- changed interface to SCIP 4.0.0
 
 code cleanup
 - cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters

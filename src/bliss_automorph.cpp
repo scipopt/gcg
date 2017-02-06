@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -56,7 +56,8 @@ struct struct_hook
    SCIP_HASHMAP* varmap;                     /**< hashmap for permutated variables */
    SCIP_HASHMAP* consmap;                    /**< hashmap for permutated constraints */
    SCIP** scips;                             /**< array of scips to search for automorphisms */
-   int* nodemap;                            /**< mapping of the nodes; filled generator-wise */
+   int* nodemap;                             /**< mapping of the nodes; filled generator-wise */
+   int* consperm;
 
    /** constructor for the hook struct*/
    struct_hook(
@@ -66,11 +67,10 @@ struct struct_hook
       unsigned int n,                        /**< number of permutations */
       SCIP** scips                           /**< array of scips to search for automorphisms */
       );
-   /** destrcutor for hook struct */
-   ~struct_hook()
-   {   /*lint -esym(1540,struct_hook::conssperm) */
-      SCIPfreeMemoryArrayNull(scip, &nodemap);
-   }
+
+   /** destructor for hook struct */
+//   ~struct_hook();
+
 
    /** getter for the bool aut */
    SCIP_Bool getBool();
@@ -90,6 +90,9 @@ struct struct_hook
    /** getter for the SCIPs */
    SCIP** getScips();
 };
+
+
+
 
 void struct_hook::setBool( SCIP_Bool aut_ )
 {
@@ -774,6 +777,7 @@ SCIP_RETCODE cmpGraphPair(
    if( !ptrhook->getBool() )
       *result = SCIP_DIDNOTFIND;
 
+   SCIPfreeMemoryArrayNull(scip, &ptrhook->nodemap);
    delete ptrhook;
    return SCIP_OKAY;
 }

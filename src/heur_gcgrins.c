@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -535,7 +535,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
    SCIP_CALL( SCIPcreate(&subscip) );
 
    /* create the variable mapping hash map */
-   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), SCIPcalcHashtableSize(5 * nvars)) );
+   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), nvars) );
 
    if( heurdata->uselprows )
    {
