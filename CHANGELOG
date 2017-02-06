@@ -1,5 +1,5 @@
-GCG Version
-===========
+GCG Version 2.1.2
+=================
 
 code cleanup
 - reallocate memory for original variable array in pricing variable data more efficiently
