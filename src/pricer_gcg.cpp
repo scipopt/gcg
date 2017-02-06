@@ -2537,6 +2537,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             if( !added )
             {
                SCIP_CALL( GCGfreeGcgCol( &cols[prob][j]) );
+               SCIPdebugPrintf("not added.\n");
             }
             else
             {
