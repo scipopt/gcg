@@ -924,7 +924,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
  //           seeed->displayConss();
   //     if(seeed->detectorChain.size() > 2)
-       seeed->showScatterPlot(this);
+   //    seeed->showScatterPlot(this);
 
 
             /** set nblocks */
