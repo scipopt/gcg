@@ -174,6 +174,9 @@ SCIP_RETCODE GCGcreateGcgColFromSol(
          continue;
       }
 
+      if( SCIPvarIsIntegral(solvar) )
+         solval = SCIPfeasRound(pricingprob, solval);
+
       colvars[ncolvars] = solvar;
       colvals[ncolvars] = solval;
       ++ncolvars;
