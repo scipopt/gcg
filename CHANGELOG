@@ -1,5 +1,7 @@
-GCG Version
-===========
+GCG Version 2.1.2
+=================
+
+- changed interface to SCIP 4.0.0
 
 code cleanup
 - reallocate memory for original variable array in pricing variable data more efficiently
