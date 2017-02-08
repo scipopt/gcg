@@ -872,7 +872,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
      finishedSeeeds = findSeeeds();
 
 
-    finishedSeeeds = removeSomeOneblockDecomps(finishedSeeeds);
+ //   finishedSeeeds = removeSomeOneblockDecomps(finishedSeeeds);
 
     /* sort the seeeds according to maximum white measure */
 
@@ -881,10 +881,26 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 
       /** hack to just use max white seeed */
-      if(false)
+      if(true)
       {
+         size_t nDecomps = 4;
+         SCIP_Bool addTrivialDecomp = TRUE;
          std::vector<SeeedPtr> justBest(0);
-         justBest.push_back(finishedSeeeds[0]);
+         for( size_t dec = 0; dec < nDecomps && dec < finishedSeeeds.size(); ++dec)
+         {
+            justBest.push_back(finishedSeeeds[dec]);
+         }
+
+         if(addTrivialDecomp)
+         {
+            for(size_t dec = 0; dec < finishedSeeeds.size(); ++dec)
+            {
+               if(finishedSeeeds[dec]->getNMasterconss() == 0 && finishedSeeeds[dec]->getNLinkingvars() == 0 && finishedSeeeds[dec]->getNBlocks() == 1)
+               {
+                  justBest.push_back(finishedSeeeds[dec]);
+               }
+            }
+         }
          finishedSeeeds = justBest;
       }
 
@@ -1274,8 +1290,6 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
       SCIP_CONS* otherrow = origpool->getConsForIndex(i);
       assert(otherrow != NULL);
       SCIP_Bool foundmaintained = FALSE;
-
-//      SCIPdebugMessagePrint(this->scip, " otherrow: ptr %s ; name: %s  \n", SCIPconsGetTransformed(otherrow),  SCIPconsGetName(SCIPconsGetTransformed(otherrow))  );
       for( int j = 0; j < nrowsthis; ++j  )
       {
          SCIP_CONS* thisrow = this->getConsForIndex(j);
@@ -1284,16 +1298,8 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
          assert(this->scip != NULL);
          strcpy(buffer, SCIPconsGetName(thisrow) + 2);
          assert(this->scip != NULL);
-   //      SCIPdebugMessagePrint(this->scip, "1 %s vs %s \n", SCIPconsGetName(otherrow), SCIPconsGetName(thisrow)  );
-   //      SCIPdebugMessagePrint(this->scip, "2 %s vs %s \n", SCIPconsGetName(otherrow), buffer  );
          if( strcmp(SCIPconsGetName(otherrow), SCIPconsGetName(thisrow) ) == 0 )
          {
-//            std::cout << " EQUAL! " << std::endl;
-/*            SCIPdebugMessagePrint(this->scip, " EQUAL \n" );
-            SCIPprintCons(origpool->scip, otherrow, NULL);
-            SCIPdebugMessagePrint(this->scip, " \n" );
-            SCIPprintCons(this->scip, thisrow, NULL);
-            SCIPdebugMessagePrint(this->scip, " \n" );*/
             rowothertothis[i] = j;
             rowthistoother[j] = i;
             foundmaintained = TRUE;
