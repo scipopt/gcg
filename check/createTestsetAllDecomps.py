@@ -4,15 +4,18 @@ import os
 import sys
 from subprocess import call
 
-if len(sys.argv) == 4:
+if len(sys.argv) == 4 or len(sys.argv) == 5:
 
 	abspathtoinstance = sys.argv[1]
 	instancename = sys.argv[2]
 	pathtogcg = sys.argv[3]
+	testsetname = instancename
+	if len(sys.argv ) == 5:
+		testsetname = sys.argv[4]
 
 	gcgexec = pathtogcg+"bin/gcg"
 	settings = pathtogcg+"settings/onlyConsclassConnected.set"
-	testsetfile = pathtogcg+"check/testset/allDec_"+instancename+".test"
+	testsetfile = pathtogcg+"check/testset/allDec_"+testsetname+".test"
 
 	print pathtogcg
 
@@ -30,7 +33,7 @@ if len(sys.argv) == 4:
 	os.system('for i in `ls ' + pathtogcg+'check/decs/'+instancename+'/*.dec | sort -V`;do echo "'+abspathtoinstance+';$i" >> '+testsetfile+'; done ')
     # (5) call make test
 	os.system('cd ' + pathtogcg)
-	print 'make test TEST=allDec_'+ instancename+ ' LPS=spx OPT=opt TIME=1800 '
+	print 'make test TEST=allDec_'+ testsetname+ ' LPS=spx OPT=opt TIME=1800 '
 	#os.system('make test TEST=allDec_'+ instancename+ ' LPS=spx OPT=opt TIME=1800 ')
 else:
-	print "Usage: ./createTestsetAllDecomps.py abspathtoinstance instancename abspathtogcg"
+	print "Usage: ./createTestsetAllDecomps.py abspathtoinstance instancename abspathtogcg [testsetname]"
