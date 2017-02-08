@@ -55,6 +55,7 @@ struct struct_hook
    SCIP_HASHMAP* varmap;                     /**< hashmap for permutated variables */
    SCIP_HASHMAP* consmap;                    /**< hashmap for permutated constraints */
    SCIP** scips;                             /**< array of scips to search for automorphisms */
+   int* nodemap;                            /**< mapping of the nodes; filled generator-wise */
 
    /** constructor for the hook struct*/
    struct_hook(
@@ -64,6 +65,11 @@ struct struct_hook
       unsigned int n,                        /**< number of permutations */
       SCIP** scips                           /**< array of scips to search for automorphisms */
       );
+   /** destrcutor for hook struct */
+   ~struct_hook()
+   {   /*lint -esym(1540,struct_hook::conssperm) */
+      SCIPfreeMemoryArrayNull(scip, &nodemap);
+   }
 
    /** getter for the bool aut */
    SCIP_Bool getBool();
@@ -123,14 +129,20 @@ struct_hook::struct_hook(
    SCIP**                scips_              /**< array of scips to search for automorphisms */
    )
 {
+   size_t i;
    aut = aut_;
    n = n_;
    consmap = consmap_;
    varmap = varmap_;
    scips = scips_;
+   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &nodemap, n_) ); /*lint !e666*/
+   for (i = 0; i < n_; ++i)
+      nodemap[i] = -1;
+
 }
 
-/** hook function to save the permutation of the graph */
+/** hook function to save the permutation of the graph; fhook() is called by metis for every generator,
+ *  AUT_HOOK* hook  stores a combined mapping in nodemapping that is filled generator-wise */
 static
 void fhook(
    void*                 user_param,         /**< data structure to save hashmaps with permutation */
@@ -160,15 +172,22 @@ void fhook(
    for( i = 0; i < n / 2; i++ )
    {
       assert(aut[i] < INT_MAX);
-      if( (aut[i]) >= n / 2 )
+
+      if( (aut[i]) >= n / 2 && hook->nodemap[i] == -1 )
       {
          assert(aut[i] < n);
-         SCIPdebugMessage("%u -> %u\n", i, aut[i]);
-         j++;
+         SCIPdebugMessage("current generator: %u -> %u\n", i, aut[i]);
+         hook->nodemap[i] = aut[i];
       }
-      else
-         break;
    }
+
+   for( i = 0; i < n / 2; i++ )
+   {
+      SCIPdebugMessage("general mapping : %u -> %u\n", i, hook->nodemap[i]);
+      if( hook->nodemap[i] >= (int) n / 2 )
+         ++j;
+   }
+
    if( j == n / 2 )
    {
       hook->setBool(TRUE);
@@ -211,7 +230,7 @@ void fhook(
       if( i < (unsigned int) nconss )
       {
          unsigned int consindex = i;
-         unsigned int consindex2 = aut[i]-n/2;
+         unsigned int consindex2 = hook->nodemap[i]-n/2;
          assert( consindex2 < (unsigned int) nconss);
          SCIP_CONS* cons1 = conss1[consindex];
          SCIP_CONS* cons2 = conss2[consindex2];
@@ -221,7 +240,7 @@ void fhook(
       else if( i < (unsigned int) nvars+nconss )
       {
          unsigned int varindex = i-nconss;
-         unsigned int varindex2 = aut[i]-nconss-n/2;
+         unsigned int varindex2 = hook->nodemap[i]-nconss-n/2;
          assert( varindex2 < (unsigned int) nvars);
          SCIP_VAR* var1 = vars1[varindex];
          SCIP_VAR* var2 = vars2[varindex2];
