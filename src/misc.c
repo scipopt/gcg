@@ -117,15 +117,15 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
          assert(blocknr >= 0);
          /* we also want to take into account variables representing rays, that have a small value (between normal and feas eps),
           * so we do no feas comparison here */
-         if( SCIPisFeasPositive(masterprob, mastervals[i]) )
+         if( SCIPisPositive(masterprob, mastervals[i]) )
          {
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < norigvars; j++ )
             {
-               if( SCIPisFeasZero(scip, origvals[j]) )
-                  break;
+               if( SCIPisZero(scip, origvals[j]) )
+                  continue;
 
-               assert(!SCIPisFeasZero(scip, origvals[j]));
+               assert(!SCIPisZero(scip, origvals[j]));
 
                /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done later) */
                if( GCGoriginalVarIsLinking(origvars[j]) )
@@ -165,9 +165,9 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
             SCIP_VAR* pricingvar;
             int norigpricingvars;
             SCIP_VAR** origpricingvars;
-            if( SCIPisFeasZero(scip, origvals[j]) )
+            if( SCIPisZero(scip, origvals[j]) )
                break;
-            assert(!SCIPisFeasZero(scip, origvals[j]));
+            assert(!SCIPisZero(scip, origvals[j]));
 
             /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */
             if( GCGoriginalVarIsLinking(origvars[j]) )
@@ -234,7 +234,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
             int norigpricingvars;
             SCIP_VAR** origpricingvars;
 
-            if( SCIPisFeasZero(scip, origvals[j]) )
+            if( SCIPisZero(scip, origvals[j]) )
                continue;
 
             /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */

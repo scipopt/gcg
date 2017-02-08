@@ -313,7 +313,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 
          varsolval = SCIPgetSolVal(scip, sol, mastervars[i]);
 
-         if( SCIPisFeasPositive(scip, varsolval) )
+         if( SCIPisPositive(scip, varsolval) )
             solval += mastervals[i] * varsolval;
       }
 
