@@ -665,7 +665,7 @@ SCIP_RETCODE checkIdentical(
       assert(GCGvarIsOriginal(origvars1[0]));
       assert(GCGvarIsOriginal(origvars2[0]));
 
-      ncoefs1 = GCGoriginalVarGetNCoefs(origvars2[0]);
+      ncoefs1 = GCGoriginalVarGetNCoefs(origvars1[0]);
       ncoefs2 = GCGoriginalVarGetNCoefs(origvars2[0]);
 
       /* nunber of coefficients differs */
@@ -680,7 +680,7 @@ SCIP_RETCODE checkIdentical(
       conss1 = GCGoriginalVarGetMasterconss(origvars1[0]);
       conss2 = GCGoriginalVarGetMasterconss(origvars2[0]);
       coefs1 = GCGoriginalVarGetCoefs(origvars1[0]);
-      coefs2 = GCGoriginalVarGetCoefs(origvars1[0]);
+      coefs2 = GCGoriginalVarGetCoefs(origvars2[0]);
 
       /* check that the master constraints and the coefficients are the same */
       for( j = 0; j < ncoefs1; ++j )
