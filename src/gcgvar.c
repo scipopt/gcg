@@ -1154,10 +1154,11 @@ SCIP_RETCODE GCGcreateMasterVar(
    /* update variable datas */
    for( i = 0; i < nsolvars && !trivialsol; i++ )
    {
+      SCIP_Real solval;
+
       assert(solvars != NULL);
       assert(solvals != NULL);
 
-      SCIP_Real solval;
       solval = solvals[i];
 
       if( !SCIPisZero(scip, solval) )
