@@ -1538,20 +1538,30 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    objcoeff = 0;
    for( i = 0; i < nsolvars; i++ )
    {
-      if( !SCIPisZero(scip, solvals[i]) )
+      SCIP_Real solval;
+      solval = solvals[i];
+
+      if( !SCIPisZero(scip, solval) )
       {
          SCIP_VAR* origvar;
 
          assert(GCGvarIsPricing(solvars[i]));
          origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
 
+         if( SCIPisZero(scip, SCIPvarGetObj(origvar)) )
+            continue;
+
          /* original variable is linking variable --> directly transferred master variable got the full obj,
           * priced-in variables get no objective value for this origvar */
          if( GCGoriginalVarIsLinking(origvar) )
             continue;
 
+         /* round solval if possible to avoid numerical troubles */
+         if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
+            solval = SCIPround(scip, solval);
+
          /* add quota of original variable's objcoef to the master variable's coef */
-         objcoeff += solvals[i] * SCIPvarGetObj(origvar);
+         objcoeff += solval * SCIPvarGetObj(origvar);
       }
    }
 
@@ -1679,20 +1689,31 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    objcoeff = 0;
    for( i = 0; i < nsolvars; i++ )
    {
+      SCIP_Real solval;
+      solval = solvals[i];
+
       if( !SCIPisZero(scip, solvals[i]) )
       {
          SCIP_VAR* origvar;
 
          assert(GCGvarIsPricing(solvars[i]));
          origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
+         solval = solvals[i];
+
+         if( SCIPisZero(scip, SCIPvarGetObj(origvar)) )
+            continue;
 
          /* original variable is linking variable --> directly transferred master variable got the full obj,
           * priced-in variables get no objective value for this origvar */
          if( GCGoriginalVarIsLinking(origvar) )
             continue;
 
+         /* round solval if possible to avoid numerical troubles */
+         if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
+            solval = SCIPround(scip, solval);
+
          /* add quota of original variable's objcoef to the master variable's coef */
-         objcoeff += solvals[i] * SCIPvarGetObj(origvar);
+         objcoeff += solval * SCIPvarGetObj(origvar);
       }
    }
 
