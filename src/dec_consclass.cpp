@@ -173,6 +173,9 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   int maximumnclasses = 9; /* if  distribution of classes exceed this number its skipped */
 
+  if( seeedPropagationData->seeedpool->getNConss() + seeedPropagationData->seeedpool->getNVars() > 50000 )
+     maximumnclasses = 3;
+
   for( int conssclass = 0; conssclass < seeedPropagationData->seeedpool->getNConssClassDistributions(); ++conssclass )
   {
 

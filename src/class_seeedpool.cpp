@@ -92,6 +92,12 @@ namespace gcg {
 
 /** local methods */
 
+struct sort_pred {
+    bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
+        return left.second < right.second;
+    }
+};
+
 SCIP_Bool cmpSeeedsMaxWhite (SeeedPtr i, SeeedPtr j) { return (i->getMaxWhiteScore() < j->getMaxWhiteScore() ); }
 
 
@@ -466,6 +472,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             addConssClassesForConsnamesDigitFreeIdentical();
          if( conssclassconsnamelevenshtein )
             addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
+
+         reduceConsclasses();
 
          calcCandidatesNBlocks();
 
@@ -2047,6 +2055,58 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
           return false;
     }
     return true;
+ }
+
+ void Seeedpool::reduceConsclasses(
+      )
+ {
+    int maxnclasses = 9;
+
+    if( getNConss() + getNVars() > 50000 )
+       maxnclasses = 3;
+
+
+    for( size_t classifierid = 0; classifierid < consclassescollection.size(); ++classifierid )
+    {
+       if( consclassesnclasses[classifierid] > maxnclasses && consclassesnclasses[classifierid] < maxnclasses*2 )
+       {
+          std::vector<bool> classisremoved(consclassesnclasses[classifierid], false);
+          int enlargedclass = consclassesnclasses[classifierid] - maxnclasses;
+          int enlargedclassid = -1;
+          std::vector<int> newclassifier(consclassescollection[classifierid].size(), -1 );
+
+          /** try to reduce consclass */
+          std::vector<std::pair<int,int> > nmembers(consclassesnclasses[classifierid], std::pair<int,int>(0,0) );
+          for( size_t i = 0; i <  nmembers.size(); ++i)
+             nmembers[i].first = i;
+          std::vector<int>::const_iterator iter = consclassescollection[classifierid].begin();
+          std::vector<int>::const_iterator iterend = consclassescollection[classifierid].end();
+
+          for( ; iter < iterend; ++iter)
+          {
+             nmembers[*iter].second++;
+          }
+
+          std::sort(nmembers.begin(), nmembers.end(), sort_pred() );
+
+          for(size_t i = 0; i < enlargedclass; ++i)
+             classisremoved[nmembers[i].first] = true;
+
+          enlargedclassid = nmembers[enlargedclass].first;
+
+          for(size_t i = 0; i < newclassifier.size(); ++i)
+          {
+             if( classisremoved[consclassescollection[classifierid][i]] )
+                newclassifier[i] = consclassescollection[classifierid][enlargedclassid];
+             else
+                newclassifier[i] = consclassescollection[classifierid][i];
+          }
+
+          consclassescollection.push_back(newclassifier);
+          consclassesnclasses.push_back(maxnclasses );
+          std::cout <<  "addded new cons classifier with " << maxnclasses << std::endl;
+       }
+    }
  }
 
 std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(

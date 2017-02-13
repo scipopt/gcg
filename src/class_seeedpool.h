@@ -239,6 +239,10 @@ public:
       std::vector<std::vector<int>> distributions
       );
 
+   void reduceConsclasses();
+
+
+
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds);
 
