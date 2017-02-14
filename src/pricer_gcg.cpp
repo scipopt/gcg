@@ -2331,7 +2331,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             goto done;
 
          #pragma omp flush(infeasible,nfoundvars,successfulmips)
-         if( (abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible) && !pricerdata->stabilization)
+         if( (abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible) && !stabilized)
          {
             goto done;
          }
@@ -2363,7 +2363,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          if( optimal && ncols[prob] > 0)
          {
-            SCIP_Real convdual = stabilization->convGetDual(prob);
+            SCIP_Real convdual = 0.0;
+            SCIP_CONS* cons = GCGgetConvCons(origprob, prob);
+
+            if( stabilized )
+               convdual = stabilization->convGetDual(prob);
+            else
+               convdual = pricetype->consGetDual(scip_, cons);
 
             #pragma omp atomic
             beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
