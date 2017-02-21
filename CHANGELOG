@@ -9,6 +9,12 @@ features
   single backtracking in addition to limited discrepancy search in master variable diving;
   added branching on another variable and limited disc. search to original variable diving
 
+
+GCG Version 2.1.2
+=================
+
+- changed interface to SCIP 4.0.0
+
 code cleanup
 - cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
 - reallocate memory for origvars array in pricingvardate more efficiently

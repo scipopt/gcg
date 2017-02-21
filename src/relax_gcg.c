@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1517,7 +1517,7 @@ SCIP_RETCODE createPricingprobConss(
    nsubscipconss = DECdecompGetNSubscipconss(relaxdata->decdecomp);
    nblocks = DECdecompGetNBlocks(relaxdata->decdecomp);
 
-   SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), SCIPcalcHashtableSize(5 *SCIPgetNConss(scip))) ); /*lint !e613*/
+   SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), SCIPgetNConss(scip)) ); /*lint !e613*/
 
    for( b = 0; b < nblocks; ++b )
    {
@@ -1978,17 +1978,19 @@ SCIP_RETCODE initRelaxator(
    SCIP_CALL( SCIPtransformProb(masterprob) );
    SCIP_CALL( SCIPduplicateMemoryArray(scip, &oldconss, relaxdata->masterconss, relaxdata->nmasterconss) );
 
+   /* transform the master constraints */
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
          relaxdata->masterconss, relaxdata->masterconss) );
-
    for( i = 0; i < relaxdata->nmasterconss; ++i )
    {
       SCIP_CALL( SCIPreleaseCons(masterprob, &(oldconss[i])) );
    }
    SCIPfreeMemoryArray(scip, &oldconss);
 
+   /* transform the decomposition */
    SCIP_CALL( DECdecompTransform(scip, relaxdata->decdecomp) );
 
+   /* transform the convexity constraints */
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
       if( relaxdata->convconss[i] != NULL )
@@ -2002,7 +2004,7 @@ SCIP_RETCODE initRelaxator(
    nvars = SCIPgetNVars(scip);
    vars = SCIPgetVars(scip);
 
-   /* transform the linking constraints */
+   /* transform the linking variable constraints */
    for( i = 0; i < nvars; ++i )
    {
       assert(GCGvarIsOriginal(vars[i]));
@@ -2012,7 +2014,7 @@ SCIP_RETCODE initRelaxator(
          int j;
          SCIP_CONS** linkconss;
          linkconss = GCGlinkingVarGetLinkingConss(vars[i]);
-         for( j = 0;j < relaxdata->npricingprobs; ++j )
+         for( j = 0; j < relaxdata->npricingprobs; ++j )
          {
             if( linkconss[j] != NULL )
             {
@@ -2023,8 +2025,16 @@ SCIP_RETCODE initRelaxator(
          }
       }
    }
+   for( i = 0; i < relaxdata->nvarlinkconss; ++i )
+   {
+      SCIP_CONS* transcons;
 
-   SCIP_CALL( SCIPgetTransformedConss(masterprob, relaxdata->nvarlinkconss, relaxdata->varlinkconss, relaxdata->varlinkconss) );
+      SCIP_CALL( SCIPgetTransformedCons(masterprob, relaxdata->varlinkconss[i], &transcons) );
+      assert(transcons != NULL);
+
+      SCIP_CALL( SCIPreleaseCons(masterprob, &relaxdata->varlinkconss[i]) );
+      relaxdata->varlinkconss[i] = transcons;
+   }
 
    return SCIP_OKAY;
 }

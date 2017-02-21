@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -53,7 +53,7 @@
  * - \ref RELEASENOTES "Release notes"
  * - \ref LICENSE      "Licensing information"
  *
- * @version  2.1.1
+ * @version  2.1.2
  *
  * <b>Further Documentation</b>
  * - \ref IMPORTANTMETHODS "Methods you should know for writing GCG plug-ins"
@@ -147,14 +147,14 @@ bliss-[version].zip  gcg-[version].tgz  hmetis-[version]-linux.tar.gz  scip-[ver
 \endverbatim
  * When asked for links to SoPlex, we need to set links from <code>scip-[version]/lib/spxinc</code> to <code>soplex-[version]/src/</code> and <code>scip-[version]/lib/libsoplex.*</code> to <code>soplex-[version]/lib/libsoplex.*</code>. For the linker, a link to either libsoplex.*.a or libsoplex-*.so is enough, so in our case we only need to specify the path to libsoplex.*.a:
 \verbatim
-../../soplex-[version]/src/
-../../soplex-[version]/lib/libsoplex.linux.x86_64.gnu.opt.a
+../../../soplex-[version]/src/
+../../../soplex-[version]/lib/libsoplex.linux.x86_64.gnu.opt.a
 <enter>
 \endverbatim
  * For ZIMPL, links need to point from <code>scip-[version]/lib/zimplinc/zimpl</code> to <code>zimpl-[version]/src/</code> and from <code>scip-[version]/lib/libzimpl.*</code> to <code>zimpl-[version]/lib/libzimpl.*</code>. Again, we may also ignore the link to libzimpl.*.so:
 \verbatim
 ../../../zimpl-[version]/src/
-../../zimpl-[version]/lib/libzimpl.linux.x86_64.gnu.opt.a
+../../../zimpl-[version]/lib/libzimpl.linux.x86_64.gnu.opt.a
 <enter>
 \endverbatim
 
@@ -513,6 +513,8 @@ GCG> q
  */
 
 /**@page RELEASENOTES Release notes
+ *
+ * \verbinclude release-notes-2.1.2
  *
  * \verbinclude release-notes-2.1.1
  *
