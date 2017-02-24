@@ -1112,13 +1112,30 @@ SCIP_RETCODE setDetectionDefault(
    assert(scip != NULL);
    assert(conshdlrdata != NULL);
 
+   SCIP_CALL (SCIPsetIntParam(scip, "detection/maxrounds", 2) );
+   SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob", FALSE) );
+
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
+
+   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < 4000)
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
+   else
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
+
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
+      SCIP_Result* result;
+
       char paramname[SCIP_MAXSTRLEN];
       SCIP_Bool paramval;
       (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
 
       SCIP_CALL( SCIPresetParam(scip, paramname) );
+
+      *result = SCIP_DIDNOTRUN;
+      conshdlrdata->detectors[i]->setParamDefault(scip, conshdlrdata->detectors[i], result);
       if( !quiet )
       {
          SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
@@ -1137,8 +1154,40 @@ SCIP_RETCODE setDetectionAggressive(
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
    )
 { /*lint --e{715}*/
+   int i;
+
    assert(scip != NULL);
    assert(conshdlrdata != NULL);
+
+
+   SCIP_CALL (SCIPsetIntParam(scip, "detection/maxrounds", 3) );
+
+   SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob", TRUE) );
+
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
+
+   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < 80000)
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
+   else
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
+
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+      {
+         SCIP_Result* result;
+
+         *result = SCIP_DIDNOTRUN;
+         conshdlrdata->detectors[i]->setParamAggressive(scip, conshdlrdata->detectors[i], result);
+         if( !quiet )
+         {
+            char paramname[SCIP_MAXSTRLEN];
+            SCIP_Bool paramval;
+
+            SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+         }
+      }
 
    return SCIP_OKAY;
 }
@@ -1178,8 +1227,40 @@ SCIP_RETCODE setDetectionFast(
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
    )
 { /*lint --e{715} */
+   int i;
+
    assert(scip != NULL);
    assert(conshdlrdata != NULL);
+
+   SCIP_CALL (SCIPsetIntParam(scip, "detection/maxrounds", 1) );
+   SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob", FALSE) );
+
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
+
+   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < 2000)
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
+   else
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
+
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      SCIP_Result* result;
+
+      *result = SCIP_DIDNOTRUN;
+      conshdlrdata->detectors[i]->setParamFast(scip, conshdlrdata->detectors[i], result);
+      if( !quiet )
+      {
+         char paramname[SCIP_MAXSTRLEN];
+            SCIP_Bool paramval;
+
+            SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+      }
+   }
+
+
 
    return SCIP_OKAY;
 }

@@ -147,5 +147,48 @@ typedef struct Seeed_Propagation_Data SEEED_PROPAGATION_DATA;
 
 #define DEC_DECL_FINISHSEEED(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SEEED_PROPAGATION_DATA* seeedPropagationData, SCIP_RESULT* result)
 
+/**
+ * set the parameter of a detector to values according to fast emphasis and size of the instance
+ *  input:
+ *  - scip            : SCIP data structure
+ *  - detectordata    : detector data  structure
+ *  - result          : pointer where to store the result
+ *
+ * possible return values for result:
+ *  - SCIP_SUCCESS    : the method completed
+ *  - SCIP_DIDNOTRUN  : the method did not run
+ */
+
+#define DEC_DECL_SETPARAMFAST(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SCIP_RESULT* result)
+
+/**
+ * set the parameter of a detector to values according to aggressive emphasis and size of the instance
+ *  input:
+ *  - scip            : SCIP data structure
+ *  - detectordata    : detector data  structure
+ *  - result          : pointer where to store the result
+ *
+ * possible return values for result:
+ *  - SCIP_SUCCESS    : the method completed
+ *  - SCIP_DIDNOTRUN  : the method did not run
+ */
+
+#define DEC_DECL_SETPARAMAGGRESSIVE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SCIP_RESULT* result)
+
+/**
+ * set the parameter of a detector to values according to default emphasis and size of the instance
+ *  input:
+ *  - scip            : SCIP data structure
+ *  - detectordata    : detector data  structure
+ *  - result          : pointer where to store the result
+ *
+ * possible return values for result:
+ *  - SCIP_SUCCESS    : the method completed
+ *  - SCIP_DIDNOTRUN  : the method did not run
+ */
+
+#define DEC_DECL_SETPARAMDEFAULT(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SCIP_RESULT* result)
+
+
 
 #endif

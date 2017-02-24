@@ -29,6 +29,7 @@
  * @brief  data structures for detectors
  * @author Martin Bergner
  * @author Christian Puchert
+ * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -69,6 +70,10 @@ struct DEC_Detector {
    DEC_DECL_EXITDETECTOR((*exitDetection));  /**< deinitialization method of detector */
    DEC_DECL_PROPAGATESEEED((*propagateSeeed));
    DEC_DECL_FINISHSEEED((*finishSeeed));
+   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressive));
+   DEC_DECL_SETPARAMDEFAULT((*setParamDefault));
+   DEC_DECL_SETPARAMFAST((*setParamFast));
+
 
 };
 
