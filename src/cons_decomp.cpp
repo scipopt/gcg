@@ -1190,7 +1190,7 @@ SCIP_RETCODE setDetectionAggressive(
          SCIP_Result* result = NULL;
 
          *result = SCIP_DIDNOTRUN;
-         if( conshdlrdata->detectors[i]->setParamAggressive )
+         if( conshdlrdata->detectors[i]->setParamAggressive != NULL )
             conshdlrdata->detectors[i]->setParamAggressive(scip, conshdlrdata->detectors[i], result);
 
          if( !quiet )
@@ -1263,7 +1263,8 @@ SCIP_RETCODE setDetectionFast(
       SCIP_Result* result = NULL;
 
       *result = SCIP_DIDNOTRUN;
-      conshdlrdata->detectors[i]->setParamFast(scip, conshdlrdata->detectors[i], result);
+      if( conshdlrdata->detectors[i]->setParamFast != NULL )
+         conshdlrdata->detectors[i]->setParamFast(scip, conshdlrdata->detectors[i], result);
       if( !quiet )
       {
          char paramname[SCIP_MAXSTRLEN];
