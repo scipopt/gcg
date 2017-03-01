@@ -232,7 +232,8 @@ LIBOBJ		=	reader_blk.o \
 			dec_generalmastersetpack.o \
 			dec_generalmastersetpart.o \
 			dec_generalmastersetcover.o \
-			presol_roundbound.o
+			presol_roundbound.o \
+			class_consclassifier
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
