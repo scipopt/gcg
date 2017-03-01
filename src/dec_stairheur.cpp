@@ -2575,6 +2575,11 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
 #define detectorExitStairheur NULL
 #define detectorFinishSeeedStairheur NULL
 
+#define setParamAggressiveStairheur NULL
+#define setParamDefaultStairheur NULL
+#define setParamFastStairheur NULL
+
+
 /** creates the stairheur detector and includes it in SCIP */
 
 extern "C"
@@ -2591,7 +2596,7 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
    detectordata->constoblock  = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagateSeeedStairheur, detectorFinishSeeedStairheur) );
+      detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagateSeeedStairheur, detectorFinishSeeedStairheur, setParamAggressiveStairheur, setParamDefaultStairheur, setParamFastStairheur) );
 
 
 

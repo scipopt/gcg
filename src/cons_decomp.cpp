@@ -77,7 +77,7 @@
 #define DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG      TRUE     /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
 
 #define DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER    10000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis default */
-#define AGGRESIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
+#define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
 #define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000     /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
 
 
@@ -512,7 +512,10 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_INITDETECTOR((*initDetector)),       /**< initialization method of detector (or NULL) */
    DEC_DECL_EXITDETECTOR((*exitDetector)),       /**< deinitialization method of detector (or NULL) */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
-   DEC_DECL_FINISHSEEED((*finishSeeedDetector))
+   DEC_DECL_FINISHSEEED((*finishSeeedDetector)),
+   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
+   DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),
+   DEC_DECL_SETPARAMFAST((*setParamFastDetector))
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -559,6 +562,11 @@ SCIP_RETCODE DECincludeDetector(
 
    detector->propagateSeeed = propagateSeeedDetector;
    detector->finishSeeed = finishSeeedDetector;
+   detector->setParamAggressive =  setParamAggressiveDetector;
+   detector->setParamDefault =  setParamDefaultDetector;
+   detector->setParamFast =  setParamFastDetector;
+
+
    detector->decchar = decchar;
 
    detector->freqCallRound = freqCallRound;
@@ -612,7 +620,7 @@ SCIP_RETCODE DECincludeDetector(
    SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->minCallRound), FALSE, minCallRound, 0, INT_MAX, NULL, NULL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallroundOriginal", name);
-   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "frequency the detector gets called in detection loop,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <%s>", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "frequency the detector gets called in detection loop,i.e., it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <%s>", name);
    SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->freqCallRound), FALSE, freqCallRoundOriginal, 0, INT_MAX, NULL, NULL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallroundOriginal", name);
@@ -1129,7 +1137,7 @@ SCIP_RETCODE setDetectionDefault(
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      SCIP_Result* result;
+      SCIP_Result* result = NULL;
 
       char paramname[SCIP_MAXSTRLEN];
       SCIP_Bool paramval;
@@ -1138,7 +1146,8 @@ SCIP_RETCODE setDetectionDefault(
       SCIP_CALL( SCIPresetParam(scip, paramname) );
 
       *result = SCIP_DIDNOTRUN;
-      conshdlrdata->detectors[i]->setParamDefault(scip, conshdlrdata->detectors[i], result);
+      if( conshdlrdata->detectors[i]->setParamDefault != NULL )
+         conshdlrdata->detectors[i]->setParamDefault(scip, conshdlrdata->detectors[i], result);
       if( !quiet )
       {
          SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
@@ -1178,10 +1187,12 @@ SCIP_RETCODE setDetectionAggressive(
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
-         SCIP_Result* result;
+         SCIP_Result* result = NULL;
 
          *result = SCIP_DIDNOTRUN;
-         conshdlrdata->detectors[i]->setParamAggressive(scip, conshdlrdata->detectors[i], result);
+         if( conshdlrdata->detectors[i]->setParamAggressive )
+            conshdlrdata->detectors[i]->setParamAggressive(scip, conshdlrdata->detectors[i], result);
+
          if( !quiet )
          {
             char paramname[SCIP_MAXSTRLEN];
@@ -1249,7 +1260,7 @@ SCIP_RETCODE setDetectionFast(
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      SCIP_Result* result;
+      SCIP_Result* result = NULL;
 
       *result = SCIP_DIDNOTRUN;
       conshdlrdata->detectors[i]->setParamFast(scip, conshdlrdata->detectors[i], result);

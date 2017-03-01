@@ -2047,6 +2047,12 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectCutpacking)
 #define detectorFinishSeeedCutpacking NULL
 #define detectorExitCutpacking NULL
 
+#define setParamAggressiveCutpacking NULL
+#define setParamDefaultCutpacking NULL
+#define setParamFastCutpacking NULL
+
+
+
 /** creates the cutpacking detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectorCutpacking(
    SCIP*                 scip                /**< SCIP data structure */
@@ -2063,7 +2069,7 @@ SCIP_RETCODE SCIPincludeDetectorCutpacking(
    /* include structure detector */
    SCIP_CALL( DECincludeDetector(scip,
       DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, detectorExitCutpacking, detectorPropagateSeeedCutpacking, detectorFinishSeeedCutpacking) );
+      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, detectorExitCutpacking, detectorPropagateSeeedCutpacking, detectorFinishSeeedCutpacking, setParamAggressiveCutpacking, setParamDefaultCutpacking, setParamFastCutpacking) );
 
 
    /* add cutpacking detector parameters */

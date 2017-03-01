@@ -732,6 +732,11 @@ DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
 
 }
 
+#define setParamAggressiveHrcgpartition NULL
+#define setParamDefaultHrcgpartition NULL
+#define setParamFastHrcgpartition NULL
+
+
 
 /** creates the hrcgpartition presolver and includes it in SCIP */
 extern "C"
@@ -746,7 +751,7 @@ SCIP_RETCODE SCIPincludeDetectorHrcgpartition(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectHrcgpartition, freeHrcgpartition, initHrcgpartition, exitHrcgpartition, propagateSeeedHrcgpartition, finishSeeedHrcgpartition) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectHrcgpartition, freeHrcgpartition, initHrcgpartition, exitHrcgpartition, propagateSeeedHrcgpartition, finishSeeedHrcgpartition, setParamAggressiveHrcgpartition, setParamDefaultHrcgpartition, setParamFastHrcgpartition) );
 
 
    /* add hrcgpartition presolver parameters */

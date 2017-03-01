@@ -434,6 +434,13 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectColors)
 #define detectorFinishSeeedColors NULL
 #define detectorExitColors NULL
 #define detectorInitColors NULL
+
+#define setParamAggressiveColors NULL
+#define setParamDefaultColors NULL
+#define setParamFastColor NULL
+
+
+
 /*
  * detector specific interface methods
  */
@@ -454,7 +461,7 @@ SCIP_RETCODE SCIPincludeDetectorColors(
 
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLED_ORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
-         detectordata, detectorDetectColors, detectorFreeColors, detectorInitColors, detectorExitColors, detectorPropagateSeeedColors, detectorFinishSeeedColors) );
+         detectordata, detectorDetectColors, detectorFreeColors, detectorInitColors, detectorExitColors, detectorPropagateSeeedColors, detectorFinishSeeedColors, setParamAggressiveColors, setParamDefaultColors, setParamFastColor) );
 
 
    /* add colors constraint handler parameters */

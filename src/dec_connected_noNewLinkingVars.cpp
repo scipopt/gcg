@@ -200,6 +200,12 @@ DEC_DECL_FINISHSEEED(finishSeeedConnected_noNewLinkingVars)
    return SCIP_OKAY;
 }
 
+#define setParamAggressiveConnected_noNewLinkingVars NULL
+#define setParamDefaultConnected_noNewLinkingVars NULL
+#define setParamFastConnected_noNewLinkingVars NULL
+
+
+
 /*
  * detector specific interface methods
  */
@@ -214,7 +220,7 @@ SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
    /**@todo create connected_noNewLinkingVars detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConnected_noNewLinkingVars, freeConnected_noNewLinkingVars, initConnected_noNewLinkingVars, exitConnected_noNewLinkingVars, propagateSeeedConnected_noNewLinkingVars, finishSeeedConnected_noNewLinkingVars) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConnected_noNewLinkingVars, freeConnected_noNewLinkingVars, initConnected_noNewLinkingVars, exitConnected_noNewLinkingVars, propagateSeeedConnected_noNewLinkingVars, finishSeeedConnected_noNewLinkingVars, setParamAggressiveConnected_noNewLinkingVars, setParamDefaultConnected_noNewLinkingVars, setParamFastConnected_noNewLinkingVars) );
 
    /**@todo add connected_noNewLinkingVars detector parameters */
 

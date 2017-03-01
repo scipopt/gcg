@@ -189,6 +189,13 @@ DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
 
    return SCIP_OKAY;
 }
+
+#define setParamAggressiveCompgreedily NULL
+#define setParamDefaultCompgreedily NULL
+#define setParamFastCompgreedily NULL
+
+
+
 /*
  * detector specific interface methods
  */
@@ -203,7 +210,7 @@ SCIP_RETCODE SCIPincludeDetectorCompgreedily(
    /**@todo create compgreedily detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectCompgreedily, freeCompgreedily,initCompgreedily, exitCompgreedily, propagateSeeedCompgreedily, finishSeeedCompgreedily) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectCompgreedily, freeCompgreedily,initCompgreedily, exitCompgreedily, propagateSeeedCompgreedily, finishSeeedCompgreedily, setParamAggressiveCompgreedily, setParamDefaultCompgreedily, setParamFastCompgreedily) );
 
    /**@todo add compgreedily detector parameters */
 

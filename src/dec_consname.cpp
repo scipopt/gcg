@@ -273,6 +273,10 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectConsname)
 #define detectorPropagateSeeedConsname NULL
 #define detectorFinishSeeedConsname NULL
 
+#define setParamAggressiveConsname NULL
+#define setParamDefaultConsname NULL
+#define setParamFastConsname NULL
+
 
 /*
  * detector specific interface methods
@@ -296,7 +300,7 @@ SCIP_RETCODE SCIPincludeDetectorConsname(
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
       DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectorDetectConsname,
-      detectorFreeConsname, detectorInitConsname, detectorExitConsname, detectorPropagateSeeedConsname, detectorFinishSeeedConsname) );
+      detectorFreeConsname, detectorInitConsname, detectorExitConsname, detectorPropagateSeeedConsname, detectorFinishSeeedConsname, setParamAggressiveConsname, setParamDefaultConsname, setParamFastConsname) );
 
    /* add consname detector parameters */
    SCIP_CALL( SCIPaddStringParam(scip, "detectors/consname/regex", "All cons whose name match this regular expression will be mastercons", &detectordata->regex, FALSE, DEFAULT_REGEX, NULL, NULL) );

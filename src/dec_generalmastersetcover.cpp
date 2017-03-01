@@ -221,6 +221,13 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetcover)
 }
 
 #define finishSeeedGeneralmastersetcover NULL
+
+#define setParamAggressiveGeneralmastersetcover NULL
+#define setParamDefaultGeneralmastersetcover NULL
+#define setParamFastGeneralmastersetcover NULL
+
+
+
 /*
  * detector specific interface methods
  */
@@ -235,7 +242,7 @@ SCIP_RETCODE SCIPincludeDetectorGeneralmastersetcover(SCIP* scip /**< SCIP data 
    detectordata = NULL;
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectGeneralmastersetcover, freeGeneralmastersetcover, initGeneralmastersetcover, exitGeneralmastersetcover, propagateSeeedGeneralmastersetcover, finishSeeedGeneralmastersetcover));
+      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectGeneralmastersetcover, freeGeneralmastersetcover, initGeneralmastersetcover, exitGeneralmastersetcover, propagateSeeedGeneralmastersetcover, finishSeeedGeneralmastersetcover, setParamAggressiveGeneralmastersetcover, setParamDefaultGeneralmastersetcover, setParamFastGeneralmastersetcover));
 
    /**@todo add generalmastersetcover detector parameters */
 

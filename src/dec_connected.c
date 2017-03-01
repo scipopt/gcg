@@ -348,6 +348,10 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectConnected)
 #define detectorPropagateSeeedConnected NULL
 #define detectorFinishSeeedConnected NULL
 
+#define setParamAggressiveConnected NULL
+#define setParamDefaultConnected NULL
+#define setParamFastConnected NULL
+
 
 /*
  * detector specific interface methods
@@ -370,7 +374,7 @@ SCIP_RETCODE SCIPincludeDetectorConnected(
    detectordata->blockdiagonal = FALSE;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorDetectConnected, detectorFreeConnected, detectorInitConnected, detectorExitConnected, detectorPropagateSeeedConnected, detectorFinishSeeedConnected) );
+      detectordata, detectorDetectConnected, detectorFreeConnected, detectorInitConnected, detectorExitConnected, detectorPropagateSeeedConnected, detectorFinishSeeedConnected, setParamAggressiveConnected, setParamDefaultConnected, setParamFastConnected) );
 
 
    /* add connected constraint handler parameters */

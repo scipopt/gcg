@@ -243,6 +243,13 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
 }
 
 #define finishSeeedConstype NULL
+
+#define setParamAggressiveConstype NULL
+#define setParamDefaultConstype NULL
+#define setParamFastConstype NULL
+
+
+
 /*
  * detector specific interface methods
  */
@@ -259,7 +266,7 @@ SCIP_RETCODE SCIPincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConstype,
-         freeConstype, initConstype, exitConstype, propagateSeeedConstype, finishSeeedConstype));
+         freeConstype, initConstype, exitConstype, propagateSeeedConstype, finishSeeedConstype, setParamAggressiveConstype, setParamDefaultConstype, setParamFastConstype));
 
    /**@todo add constype detector parameters */
 

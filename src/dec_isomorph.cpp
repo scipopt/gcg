@@ -1683,6 +1683,12 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
    return SCIP_OKAY;
 }
 #define detectorFinishSeeedIsomorph NULL
+
+#define setParamAggressiveIsomorph NULL
+#define setParamDefaultIsomorph NULL
+#define setParamFastIsomorph NULL
+
+
 /*
  * detector specific interface methods
  */
@@ -1704,7 +1710,7 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, detectorFinishSeeedIsomorph) );
+      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, detectorFinishSeeedIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
 
    /* add isomorph constraint handler parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecompsexact",

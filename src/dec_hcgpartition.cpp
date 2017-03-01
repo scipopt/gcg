@@ -700,6 +700,11 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
    return SCIP_OKAY;
 }
 
+#define setParamAggressiveHcgpartition NULL
+#define setParamDefaultHcgpartition NULL
+#define setParamFastHcgpartition NULL
+
+
 
 /** creates the hcgpartition presolver and includes it in SCIP */
 extern "C"
@@ -715,7 +720,7 @@ SCIP_RETCODE SCIPincludeDetectorHcgpartition(
    assert(detectordata != NULL);
 
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectHcgpartition, freeHcgpartition, initHcgpartition, exitHcgpartition, propagateSeeedHcgpartition, finishSeeedHcgpartition) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectHcgpartition, freeHcgpartition, initHcgpartition, exitHcgpartition, propagateSeeedHcgpartition, finishSeeedHcgpartition, setParamAggressiveHcgpartition, setParamDefaultHcgpartition, setParamFastHcgpartition) );
 
 
    /* add hcgpartition detector parameters */
