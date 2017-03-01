@@ -76,6 +76,9 @@
 #define DEFAULT_CONSSCLASSLEVENSHTEINENABLED          FALSE    /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
 #define DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG      TRUE     /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
 
+#define DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER    10000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis default */
+#define AGGRESIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
+#define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000     /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
 
 
 /*
@@ -1119,7 +1122,7 @@ SCIP_RETCODE setDetectionDefault(
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
 
-   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < 4000)
+   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
    else
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
@@ -1168,7 +1171,7 @@ SCIP_RETCODE setDetectionAggressive(
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
 
-   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < 80000)
+   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
    else
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
@@ -1239,7 +1242,7 @@ SCIP_RETCODE setDetectionFast(
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
 
-   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < 2000)
+   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
    else
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
@@ -1259,8 +1262,6 @@ SCIP_RETCODE setDetectionFast(
             SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
       }
    }
-
-
 
    return SCIP_OKAY;
 }
