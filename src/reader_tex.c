@@ -345,15 +345,14 @@ SCIP_RETCODE writeTikz(
    varindexmap = NULL;
    consindexmap = NULL;
 
-   SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
-
    if( decomp != NULL )
    {
       /* go through the blocks and create the indices */
       /* @todo add " && DECdecompGetType(decomp) != DEC_DECTYPE_ARROWHEAD" to this in seeed version */
       if( DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN && DECdecompGetType(decomp) != DEC_DECTYPE_STAIRCASE )
       {
+         SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+            SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
          for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
          {
             for( j = 0; j < nsubscipvars[i]; ++j )
@@ -403,6 +402,10 @@ SCIP_RETCODE writeTikz(
       }
    }
 
+   /* the max indices must be at least one to be compatible with division */
+   maxindvars = maxindvars<1?1:maxindvars;
+   maxindcons = maxindcons<1?1:maxindcons;
+   /* determine the highest index */
    maxind = maxindvars>maxindcons?maxindvars:maxindcons;
 
    /* --- write header --- */
@@ -532,6 +535,7 @@ SCIP_RETCODE writeDecompCode(
    char gpname[SCIP_MAXSTRLEN];
    char pfile[SCIP_MAXSTRLEN];
    char pfilecpy[SCIP_MAXSTRLEN];
+   char dectype[SCIP_MAXSTRLEN];
    FILE* gpfile;
    DEC_SCORES scores;
 
@@ -609,6 +613,25 @@ SCIP_RETCODE writeDecompCode(
       SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
       SCIPinfoMessage(scip, file, "  Found by detector: & %s \\\\                                                  %s", DECdetectorGetName(DECdecompGetDetector(decomp)), LINEBREAK);
+      switch(DECdecompGetType(decomp))
+      {
+         case DEC_DECTYPE_ARROWHEAD:
+            strcpy(dectype,"arrowhead");
+            break;
+         case DEC_DECTYPE_STAIRCASE:
+            strcpy(dectype,"staircase");
+            break;
+         case DEC_DECTYPE_DIAGONAL:
+            strcpy(dectype,"diagonal");
+            break;
+         case DEC_DECTYPE_BORDERED:
+            strcpy(dectype,"bordered");
+            break;
+         default:
+            strcpy(dectype,"unknown");
+            break;
+      }
+      SCIPinfoMessage(scip, file, "  Type of decomposition: & %s \\\\                                              %s", dectype, LINEBREAK);
       SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   %s", DECdecompGetNBlocks(decomp), LINEBREAK);
       SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        %s", DECdecompGetNLinkingvars(decomp), LINEBREAK);
       SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i \\\\                                      %s", DECdecompGetNLinkingconss(decomp), LINEBREAK);
