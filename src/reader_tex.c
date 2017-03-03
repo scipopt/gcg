@@ -57,12 +57,6 @@
 #define READER_DESC             "file reader for writing decomposition details to LaTeX files"
 #define READER_EXTENSION        "tex"
 
-#if defined(_WIN32) || defined(_WIN64)
-#define LINEBREAK "\r\n"
-#else
-#define LINEBREAK "\n"
-#endif
-
 #define DEFAULT_USEGP            FALSE
 #define DEFAULT_MAXNDECOMPS      50
 #define DEFAULT_RETURNTYPE       0
@@ -72,9 +66,12 @@
 struct SCIP_ReaderData
 {
    SCIP_Bool       usegp;           /** if true uses gp files as intermediate step */
-   int             maxndecomps;     /** maximum number of decompositions to visualize (ones with best score first are preferred) */
-   int             returntype;      /** output only decompositions of type 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered */
-   SCIP_Bool       picturesonly;    /** if true only tex code for the pictures is generated (no statistics, no report file) */
+   int             maxndecomps;     /** maximum number of decompositions to visualize
+                                      * (ones with best score first are preferred) */
+   int             returntype;      /** output only decompositions of type:47: error
+                                      * 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered */
+   SCIP_Bool       picturesonly;    /** if true only tex code for the pictures is generated
+                                      * (no statistics, no report file) */
 };
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
@@ -97,7 +94,8 @@ SCIP_DECL_READERREAD(readerReadTex)
 {  /*lint --e{715}*/
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Please read in a problem before reading in the corresponding structure file!\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL,
+         "Please read in a problem before reading in the corresponding structure file!\n");
       return SCIP_OKAY;
    }
 
@@ -203,87 +201,94 @@ SCIP_RETCODE writeHeaderCode(
    strcpy(ppath, (char*) SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
-   SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *                  This file is part of the program                         * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *          GCG --- Generic Column Generation                                * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *                  a Dantzig-Wolfe decomposition based extension            * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *                  of the branch-cut-and-price framework                    * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *         SCIP --- Solving Constraint Integer Programs                      * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *                         Zuse Institute Berlin (ZIB)                       * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * This program is free software; you can redistribute it and/or             * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * modify it under the terms of the GNU Lesser General Public License        * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * as published by the Free Software Foundation; either version 3            * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * of the License, or (at your option) any later version.                    * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * This program is distributed in the hope that it will be useful,           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * but WITHOUT ANY WARRANTY; without even the implied warranty of            * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * GNU Lesser General Public License for more details.                       * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * You should have received a copy of the GNU Lesser General Public License  * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * along with this program; if not, write to the Free Software               * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.* %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% *                                                                           * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%%                                                                               %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% @author Hanna Franzen                                                         %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\documentclass[a4paper,10pt]{article}                                           %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "%% packages                                                                      %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n");
+   SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
+   SCIPinfoMessage(scip, file, "%% *                  This file is part of the program                         * \n");
+   SCIPinfoMessage(scip, file, "%% *          GCG --- Generic Column Generation                                * \n");
+   SCIPinfoMessage(scip, file, "%% *                  a Dantzig-Wolfe decomposition based extension            * \n");
+   SCIPinfoMessage(scip, file, "%% *                  of the branch-cut-and-price framework                    * \n");
+   SCIPinfoMessage(scip, file, "%% *         SCIP --- Solving Constraint Integer Programs                      * \n");
+   SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
+   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       * \n");
+   SCIPinfoMessage(scip, file, "%% *                         Zuse Institute Berlin (ZIB)                       * \n");
+   SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
+   SCIPinfoMessage(scip, file, "%% * This program is free software; you can redistribute it and/or             * \n");
+   SCIPinfoMessage(scip, file, "%% * modify it under the terms of the GNU Lesser General Public License        * \n");
+   SCIPinfoMessage(scip, file, "%% * as published by the Free Software Foundation; either version 3            * \n");
+   SCIPinfoMessage(scip, file, "%% * of the License, or (at your option) any later version.                    * \n");
+   SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
+   SCIPinfoMessage(scip, file, "%% * This program is distributed in the hope that it will be useful,           * \n");
+   SCIPinfoMessage(scip, file, "%% * but WITHOUT ANY WARRANTY; without even the implied warranty of            * \n");
+   SCIPinfoMessage(scip, file, "%% * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             * \n");
+   SCIPinfoMessage(scip, file, "%% * GNU Lesser General Public License for more details.                       * \n");
+   SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
+   SCIPinfoMessage(scip, file, "%% * You should have received a copy of the GNU Lesser General Public License  * \n");
+   SCIPinfoMessage(scip, file, "%% * along with this program; if not, write to the Free Software               * \n");
+   SCIPinfoMessage(scip, file, "%% * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.* \n");
+   SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
+   SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n");
+   SCIPinfoMessage(scip, file, "%%                                                                               \n");
+   SCIPinfoMessage(scip, file, "%% @author Hanna Franzen                                                         \n");
+   SCIPinfoMessage(scip, file, "                                                                                 \n");
+   SCIPinfoMessage(scip, file, "                                                                                 \n");
+   SCIPinfoMessage(scip, file, "\\documentclass[a4paper,10pt]{article}                                           \n");
+   SCIPinfoMessage(scip, file, "                                                                                 \n");
+   SCIPinfoMessage(scip, file, "%% packages                                                                      \n");
+   SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     \n");
+   SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
+   SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
    if( readerdata->usegp )
    {
-      SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                   %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                \n");
    }
-   SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\begin{document}                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\begin{titlepage}                                                               %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\centering                                                                    %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\thispagestyle{empty}                                                         %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  {\\Huge Report: %s} \\\\ \\today                                               %s", pname, LINEBREAK);
+   SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      \n");
+   SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               \n");
+   SCIPinfoMessage(scip, file, "                                                                                 \n");
+   SCIPinfoMessage(scip, file, "\\begin{document}                                                                \n");
+   SCIPinfoMessage(scip, file, "                                                                                 \n");
+   SCIPinfoMessage(scip, file, "\\begin{titlepage}                                                               \n");
+   SCIPinfoMessage(scip, file, "  \\centering                                                                    \n");
+   SCIPinfoMessage(scip, file, "  \\thispagestyle{empty}                                                         \n");
+   SCIPinfoMessage(scip, file, "  {\\Huge Report: %s} \\\\ \\today                                               \n",
+      pname);
 
    if( statistics )
    {
-      SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "\\vspace{2cm}                                                                    %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                             %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{0pt}                                    %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                      %s", pname, LINEBREAK);
-      SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                      %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Number of variables in original problem: & %i  \\\\                            %s", SCIPgetNOrigVars(scip), LINEBREAK);
-      SCIPinfoMessage(scip, file, "  \\vspace{0.5cm}                                                                %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\                          %s", SCIPgetNOrigConss(scip), LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                     %s", SCIPconshdlrDecompGetNDecdecomps(scip), LINEBREAK);
+      SCIPinfoMessage(scip, file, "                                                                              \n");
+      SCIPinfoMessage(scip, file, "\\vspace{2cm}                                                                 \n");
+      SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                          \n");
+      SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{0pt}                                 \n");
+      SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                   \n",
+         pname);
+      SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                   \n");
+      SCIPinfoMessage(scip, file, "  Number of variables in original problem: & %i  \\\\                         \n",
+         SCIPgetNOrigVars(scip));
+      SCIPinfoMessage(scip, file, "  \\vspace{0.5cm}                                                             \n");
+      SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\                       \n",
+         SCIPgetNOrigConss(scip));
+      SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                  \n",
+         SCIPconshdlrDecompGetNDecdecomps(scip));
       if( readerdata->returntype != 0 )
       {
           getNDecompsOfType(scip,decomps,ndecomps,readerdata->returntype, &ndecompsoftype);
-          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                 %s", ndecompsoftype, LINEBREAK);
+          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\          \n",
+             ndecompsoftype);
       }
       else
       {
-         SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\                 %s", *ndecomps, LINEBREAK);
+         SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\           \n",
+            *ndecomps);
       }
-      SCIPinfoMessage(scip, file, "\\end{tabular}                                                                   %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "                                                                                 %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "\\end{tabular}                                                                \n");
+      SCIPinfoMessage(scip, file, "                                                                              \n");
    }
-   SCIPinfoMessage(scip, file, "\\end{titlepage}                                                                 %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\end{titlepage}                                                                 \n");
 
    if( toc && readerdata->picturesonly == FALSE)
    {
-      SCIPinfoMessage(scip, file, "\\thispagestyle{empty}                                                           %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "\\tableofcontents                                                                %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "\\newpage                                                                        %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "\\thispagestyle{empty}                                                        \n");
+      SCIPinfoMessage(scip, file, "\\tableofcontents                                                             \n");
+      SCIPinfoMessage(scip, file, "\\newpage                                                                     \n");
    }
 
    return SCIP_OKAY;
@@ -299,7 +304,6 @@ SCIP_RETCODE writeTikz(
    )
 {
    SCIP_VAR*** subscipvars;
-   /*SCIP_VAR*** stairlinkingvars;*/
    SCIP_CONS*** subscipconss;
    SCIP_VAR** linkingvars;
    SCIP_CONS** linkingconss;
@@ -410,8 +414,8 @@ SCIP_RETCODE writeTikz(
 
    /* --- write header --- */
 
-   SCIPinfoMessage(scip, file, "  \\resizebox{\\textwidth}{!}{                                                  %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                                          %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\resizebox{\\textwidth}{!}{                                                   \n");
+   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                                           \n");
 
    /* --- draw grey rectangles with standard outline (black) for the blocks --- */
    /* note: the picture is scaled to the page's textwidth in order to scale down large pictures.
@@ -424,15 +428,23 @@ SCIP_RETCODE writeTikz(
       {
          endx += nsubscipvars[i];
          endy += nsubscipconss[i];
-         SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
+         SCIPinfoMessage(scip, file,
+            "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);\n",
+            (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
          startx = endx;
          starty = endy;
       }
       endx += nlinkingvars;
       endy += nlinkingconss;
-      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
-      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (startx+0.5)/maxindvars, (+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
-      SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
+      SCIPinfoMessage(scip, file,
+         "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);\n",
+         (0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
+      SCIPinfoMessage(scip, file,
+         "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);\n",
+         (startx+0.5)/maxindvars, (+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
+      SCIPinfoMessage(scip, file,
+         "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);\n",
+         (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
    }
    else
    {
@@ -443,13 +455,17 @@ SCIP_RETCODE writeTikz(
          {
             endx += nsubscipvars[i]+nstairlinkingvars[i];
             endy += nsubscipconss[i];
-            SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
+            SCIPinfoMessage(scip, file,
+               "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);\n",
+               (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
             startx = endx-nstairlinkingvars[i];
             starty = endy;
          }
          endx += nsubscipvars[i];
          endy += nsubscipconss[i];
-         SCIPinfoMessage(scip, file, "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);%s", (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons, LINEBREAK);
+         SCIPinfoMessage(scip, file,
+            "    \\draw [fill=gray] (%f*\\textwidth,%f*\\textheight) rectangle (%f*\\textwidth,%f*\\textheight);\n",
+            (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
       }
    }
 
@@ -472,15 +488,18 @@ SCIP_RETCODE writeTikz(
          /* if the problem has been created but has not been processed yet, output the whole model */
          if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
          {
-            SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-            SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];%s", (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind, LINEBREAK);
+            SCIPinfoMessage(scip, file,
+               "                                                                                \n");
+            SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];\n",
+               (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind);
          }
          else
          {
             /* if there is no decomposition, output the presolved model! */
             if( decomp == NULL || DECdecompGetType(decomp) == DEC_DECTYPE_UNKNOWN )
             {
-               SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];%s", (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind, LINEBREAK);
+               SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];\n",
+                  (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind);
             }
             /* if there is a decomposition, output the indices derived from the decomposition above*/
             else
@@ -488,11 +507,14 @@ SCIP_RETCODE writeTikz(
                assert(varindexmap != NULL);
                assert(consindexmap != NULL);
                /*@todo make the following if statement into an assertion*/
-               if( SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL && SCIPhashmapGetImage(consindexmap, conss[i]) != NULL )
+               if( SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL
+                  && SCIPhashmapGetImage(consindexmap, conss[i]) != NULL )
                {
-                  xpoint = ( (float)(size_t)SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) )/ (float)maxindvars;
+                  xpoint =
+                     ( (float)(size_t)SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) )/(float)maxindvars;
                   ypoint = ( (float)(size_t)SCIPhashmapGetImage(consindexmap, conss[i]) )/ (float)maxindcons;
-                  SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];                                   %s", xpoint, ypoint, radius/maxind, LINEBREAK);
+                  SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];\n",
+                     xpoint, ypoint, radius/maxind);
                }
             }
          }
@@ -501,12 +523,12 @@ SCIP_RETCODE writeTikz(
       SCIPfreeBufferArrayNull(scip, &curvars);
    }
 
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "                                                                                \n");
 
    /* --- write closing --- */
 
-   SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                                            %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  }                                                                             %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                                            \n");
+   SCIPinfoMessage(scip, file, "  }                                                                             \n");
 
    /* @todo add " && DECdecompGetType(decomp) != DEC_DECTYPE_ARROWHEAD" to this in seeed version */
    if( DECdecompGetType(decomp) != DEC_DECTYPE_STAIRCASE )
@@ -540,7 +562,8 @@ SCIP_RETCODE writeDecompCode(
    DEC_SCORES scores;
 
    assert(decomp != NULL);
-   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
+   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)),
+      DECdecompGetNBlocks(decomp));
 
    if( readerdata->usegp )
    {
@@ -591,28 +614,30 @@ SCIP_RETCODE writeDecompCode(
 
    if(!readerdata->picturesonly)
    {
-      SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                                   %s", decompname, LINEBREAK);
-      SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}                              %s", decompname, LINEBREAK);
-      SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
+      SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
+      SCIPinfoMessage(scip, file, "                                                                \n");
    }
-   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                                           %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "  \\begin{center}                                                               %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
+   SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
    if( readerdata->usegp )
    {
-      SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                                           %s", pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp), LINEBREAK);
+      SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                            \n",
+         pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
    }
    else
    {
       writeTikz(scip, file, decomp);
    }
-   SCIPinfoMessage(scip, file, "  \\end{center}                                                                 %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "\\end {figure}                                                                  %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
+   SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
    if(!readerdata->picturesonly)
    {
-      SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                                 %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                            %s", LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Found by detector: & %s \\\\                                                  %s", DECdetectorGetName(DECdecompGetDetector(decomp)), LINEBREAK);
+      SCIPinfoMessage(scip, file, "                                                                \n");
+      SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
+      SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                            \n");
+      SCIPinfoMessage(scip, file, "  Found by detector: & %s \\\\                                  \n",
+         DECdetectorGetName(DECdecompGetDetector(decomp)));
       switch(DECdecompGetType(decomp))
       {
          case DEC_DECTYPE_ARROWHEAD:
@@ -631,18 +656,26 @@ SCIP_RETCODE writeDecompCode(
             strcpy(dectype,"unknown");
             break;
       }
-      SCIPinfoMessage(scip, file, "  Type of decomposition: & %s \\\\                                              %s", dectype, LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   %s", DECdecompGetNBlocks(decomp), LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        %s", DECdecompGetNLinkingvars(decomp), LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i \\\\                                      %s", DECdecompGetNLinkingconss(decomp), LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Block density score: & %f \\\\                                                %s", scores.densityscore, LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Interlinking blocks score: & %f \\\\                                          %s", scores.linkingscore, LINEBREAK);
-      SCIPinfoMessage(scip, file, "  Border score: & %f \\\\                                                       %s", scores.borderscore, LINEBREAK);
-      SCIPinfoMessage(scip, file, "  \\textbf{Total score:} & \\textbf{%f} \\\\                                    %s", scores.totalscore, LINEBREAK);
-      SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  %s", LINEBREAK);
+      SCIPinfoMessage(scip, file, "  Type of decomposition: & %s \\\\                                              \n",
+         dectype);
+      SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   \n",
+         DECdecompGetNBlocks(decomp));
+      SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        \n",
+         DECdecompGetNLinkingvars(decomp));
+      SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i \\\\                                      \n",
+         DECdecompGetNLinkingconss(decomp));
+      SCIPinfoMessage(scip, file, "  Block density score: & %f \\\\                                                \n",
+         scores.densityscore);
+      SCIPinfoMessage(scip, file, "  Interlinking blocks score: & %f \\\\                                          \n",
+         scores.linkingscore);
+      SCIPinfoMessage(scip, file, "  Border score: & %f \\\\                                                       \n",
+         scores.borderscore);
+      SCIPinfoMessage(scip, file, "  \\textbf{Total score:} & \\textbf{%f} \\\\                                    \n",
+         scores.totalscore);
+      SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  \n");
    }
-   SCIPinfoMessage(scip, file, "\\clearpage                                                                     %s", LINEBREAK);
-   SCIPinfoMessage(scip, file, "                                                                                %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\clearpage                                                                     \n");
+   SCIPinfoMessage(scip, file, "                                                                                \n");
 
    return SCIP_OKAY;
 }
@@ -655,7 +688,7 @@ SCIP_RETCODE writeEndCode(
    )
 {
 
-   SCIPinfoMessage(scip, file, "\\end{document}                                                                  %s", LINEBREAK);
+   SCIPinfoMessage(scip, file, "\\end{document}                                                                  \n");
 
    return SCIP_OKAY;
 }
@@ -701,38 +734,40 @@ SCIP_RETCODE makeMakefileAndReadme(
       return SCIP_FILECREATEERROR;
    }
 
-   SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex                                                               %s", filename, filename, LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "                                                                             \n");
+   SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               \n");
+   SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex                                                               \n",
+      filename, filename);
    if( readerdata->usegp )
    {
-      SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
-      SCIPinfoMessage(scip, makefile, "\t@echo                                                                      %s", LINEBREAK);
-      SCIPinfoMessage(scip, makefile, "\t@echo Compiling gp files to tex                                            %s", LINEBREAK);
-      SCIPinfoMessage(scip, makefile, "\t@echo                                                                      %s", LINEBREAK);
-      SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
-      SCIPinfoMessage(scip, makefile, "\tgnuplot *.gp                                                               %s", LINEBREAK);
+      SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
+      SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
+      SCIPinfoMessage(scip, makefile, "\t@echo Compiling gp files to tex                                            \n");
+      SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
+      SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
+      SCIPinfoMessage(scip, makefile, "\tgnuplot *.gp                                                               \n");
    }
-   SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@echo                                                                      %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@echo Compiling tex code. This may take a while.                           %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@echo                                                                      %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode -shell-escape\" -use-make %s.tex %s", filename, LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@make -f %s clean                                                          %s", name, LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "clean:                                                                       %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@latexmk -c                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@rm -f report_*figure*.*                                                   %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@rm -f *.auxlock                                                           %s", LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
+   SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
+   SCIPinfoMessage(scip, makefile, "\t@echo Compiling tex code. This may take a while.                           \n");
+   SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
+   SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
+   SCIPinfoMessage(scip, makefile,
+      "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode -shell-escape\" -use-make %s.tex \n", filename);
+   SCIPinfoMessage(scip, makefile, "\t@make -f %s clean                                                          \n", name);
+   SCIPinfoMessage(scip, makefile, "                                                                             \n");
+   SCIPinfoMessage(scip, makefile, "clean:                                                                       \n");
+   SCIPinfoMessage(scip, makefile, "\t@latexmk -c                                                                \n");
+   SCIPinfoMessage(scip, makefile, "\t@rm -f report_*figure*.*                                                   \n");
+   SCIPinfoMessage(scip, makefile, "\t@rm -f *.auxlock                                                           \n");
    if( readerdata->usegp )
    {
-      SCIPinfoMessage(scip, makefile, "\t@rm -f *.gp                                                                %s", LINEBREAK);
+      SCIPinfoMessage(scip, makefile, "\t@rm -f *.gp                                                             \n");
    }
-   SCIPinfoMessage(scip, makefile, "                                                                             %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "cleanall:                                                                    %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@latexmk -C                                                                %s", LINEBREAK);
-   SCIPinfoMessage(scip, makefile, "\t@make -f %s clean                                                          %s", name, LINEBREAK);
+   SCIPinfoMessage(scip, makefile, "                                                                             \n");
+   SCIPinfoMessage(scip, makefile, "cleanall:                                                                    \n");
+   SCIPinfoMessage(scip, makefile, "\t@latexmk -C                                                                \n");
+   SCIPinfoMessage(scip, makefile, "\t@make -f %s clean                                                          \n", name);
 
    /* close makefile */
    fclose(makefile);
@@ -752,13 +787,13 @@ SCIP_RETCODE makeMakefileAndReadme(
       return SCIP_FILECREATEERROR;
    }
 
-   SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file     %s", name, LINEBREAK);
-   SCIPinfoMessage(scip, readme, "                                                                             %s", LINEBREAK);
-   SCIPinfoMessage(scip, readme, "Instead of using 'make' use 'make -f %s' instead                             %s", name, LINEBREAK);
-   SCIPinfoMessage(scip, readme, "                                                                             %s", LINEBREAK);
-   SCIPinfoMessage(scip, readme, "Clean options:                                                               %s", LINEBREAK);
-   SCIPinfoMessage(scip, readme, "\t'clean' clears all present intermediate files (if any exist)               %s", LINEBREAK);
-   SCIPinfoMessage(scip, readme, "\t'cleanall' clears all generated files INCLUDING .pdf                       %s", LINEBREAK);
+   SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file     \n", name);
+   SCIPinfoMessage(scip, readme, "                                                                             \n");
+   SCIPinfoMessage(scip, readme, "Instead of using 'make' use 'make -f %s' instead                             \n", name);
+   SCIPinfoMessage(scip, readme, "                                                                             \n");
+   SCIPinfoMessage(scip, readme, "Clean options:                                                               \n");
+   SCIPinfoMessage(scip, readme, "\t'clean' clears all present intermediate files (if any exist)               \n");
+   SCIPinfoMessage(scip, readme, "\t'cleanall' clears all generated files INCLUDING .pdf                       \n");
 
    /* close readme file */
    fclose(readme);
@@ -865,7 +900,7 @@ SCIP_RETCODE GCGwriteDecompsToTex(
                fclose(decompfile);
 
                /* input the decomposition into main file */
-               SCIPinfoMessage(scip, file, "    \\input{%s}                                                           %s",tempname, LINEBREAK);
+               SCIPinfoMessage(scip, file, "    \\input{%s}                                        \n",tempname);
                tempname[0] = '\0';
             }
             else
@@ -905,15 +940,18 @@ SCIPincludeReaderTex(
       &readerdata->usegp, FALSE, DEFAULT_USEGP, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(scip,
-         "reading/texreader/picturesonly", "if true only tex code for the pictures is generated (no statistics, no report file)",
+         "reading/texreader/picturesonly",
+         "if true only tex code for the pictures is generated (no statistics, no report file)",
          &readerdata->picturesonly, FALSE, DEFAULT_USEGP, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-      "reading/texreader/maxndecomps", "maximum number of decompositions to visualize (ones with best score are preferred)",
+      "reading/texreader/maxndecomps",
+      "maximum number of decompositions to visualize (ones with best score are preferred)",
       &readerdata->maxndecomps, FALSE, DEFAULT_MAXNDECOMPS, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-      "reading/texreader/returntype", "output only decompositions of type 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered",
+      "reading/texreader/returntype",
+      "output only decompositions of type 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered",
       &readerdata->returntype, FALSE, DEFAULT_RETURNTYPE, 0, 4, NULL, NULL) );
 
    return SCIP_OKAY;
