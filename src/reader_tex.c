@@ -307,6 +307,7 @@ SCIP_RETCODE writeTikz(
    SCIP_CONS*** subscipconss;
    SCIP_VAR** linkingvars;
    SCIP_CONS** linkingconss;
+   SCIP_VAR** vars;
    SCIP_CONS** conss;
    SCIP_HASHMAP* varindexmap;
    SCIP_HASHMAP* consindexmap;
@@ -323,6 +324,7 @@ SCIP_RETCODE writeTikz(
    int nlinkingconss;
    int i;
    int j;
+   int nvars;
    int nconss;
    int maxindvars = 0;
    int maxindcons = 0;
@@ -343,6 +345,8 @@ SCIP_RETCODE writeTikz(
    nlinkingconss = DECdecompGetNLinkingconss(decomp);
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
 
    /* --- compute indices for variables & constraints --- */
 
@@ -398,8 +402,27 @@ SCIP_RETCODE writeTikz(
       /* @todo add " || DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD" to this in seeed version */
       else if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
       {
+         /* get the computed index maps instead of computing them here */
          varindexmap = DECdecompGetVarindex(decomp);
          consindexmap = DECdecompGetConsindex(decomp);
+
+         /* determine max indices */
+         for(i = 0; i < nvars; i++)
+         {
+            if(SCIPhashmapExists(varindexmap, vars[i]) &&
+               (int)(size_t)(SCIPhashmapGetImage(varindexmap, vars[i]))>maxindvars)
+            {
+               maxindvars = (int)(size_t)(SCIPhashmapGetImage(varindexmap, vars[i]));
+            }
+         }
+         for(i = 0; i < nconss; i++)
+         {
+            if(SCIPhashmapExists(consindexmap, conss[i]) &&
+               (int)(size_t)(SCIPhashmapGetImage(consindexmap, conss[i]))>maxindcons)
+            {
+               maxindcons = (int)(size_t)(SCIPhashmapGetImage(consindexmap, conss[i]));
+            }
+         }
 
          assert(varindexmap != NULL);
          assert(consindexmap != NULL);
@@ -507,8 +530,8 @@ SCIP_RETCODE writeTikz(
                assert(varindexmap != NULL);
                assert(consindexmap != NULL);
                /*@todo make the following if statement into an assertion*/
-               if( SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL
-                  && SCIPhashmapGetImage(consindexmap, conss[i]) != NULL )
+               if( SCIPhashmapExists(varindexmap, SCIPvarGetProbvar(curvars[j]))
+                  && SCIPhashmapExists(consindexmap, conss[i]))
                {
                   xpoint =
                      ( (float)(size_t)SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) )/(float)maxindvars;
