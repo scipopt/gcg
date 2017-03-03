@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -2537,6 +2537,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             if( !added )
             {
                SCIP_CALL( GCGfreeGcgCol( &cols[prob][j]) );
+               SCIPdebugPrintf("not added.\n");
             }
             else
             {
@@ -3864,9 +3865,9 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    }
 
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, TRUE, TRUE, TRUE, TRUE, &added) );
+   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, TRUE, TRUE, TRUE, TRUE, TRUE, &added) );
 #else
-   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, FALSE, TRUE, TRUE, TRUE, &added) );
+   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, FALSE, FALSE, TRUE, TRUE, TRUE, &added) );
 #endif
 
    /* set external pointer if it is not NULL */

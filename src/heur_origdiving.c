@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -625,9 +625,9 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             {
                /* try to add solution to SCIP */
 #ifdef SCIP_DEBUG
-               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
+               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, TRUE, &success) );
 #else
-               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, TRUE, TRUE, TRUE, &success) );
+               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, TRUE, TRUE, TRUE, &success) );
 #endif
                /* check, if solution was feasible and good enough */
                if( success )
@@ -888,9 +888,9 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 
       /* try to add solution to SCIP */
 #ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
+      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, TRUE, &success) );
 #else
-      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, TRUE, TRUE, TRUE, &success) );
+      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, TRUE, TRUE, TRUE, &success) );
 #endif
 
       /* check, if solution was feasible and good enough */
