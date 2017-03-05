@@ -49,10 +49,10 @@
 #define DEC_DETECTORNAME          "generalmastersetpack"       /**< name of detector */
 #define DEC_DESC                  "detector generalmastersetpack" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
+#define DEC_MAXCALLROUND          0     /** last round the detector gets called                              */
 #define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
 #define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MAXCALLROUNDORIGINAL  0     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               '?'         /**< display character of detector */
@@ -223,9 +223,79 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
 
 #define finishSeeedGeneralmastersetpack NULL
 
-#define setParamAggressiveGeneralmastersetpack NULL
-#define setParamDefaultGeneralmastersetpack NULL
-#define setParamFastGeneralmastersetpack NULL
+static
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetpack)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+   int newval;
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", name);
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   ++newval;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", name);
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   ++newval;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+   return SCIP_OKAY;
+
+}
+
+
+static
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultGeneralmastersetpack)
+{
+   char setstr[SCIP_MAXSTRLEN];
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+
+   return SCIP_OKAY;
+
+}
+
+static
+DEC_DECL_SETPARAMFAST(setParamFastGeneralmastersetpack)
+{
+   char setstr[SCIP_MAXSTRLEN];
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+
+   return SCIP_OKAY;
+
+}
 
 
 /*

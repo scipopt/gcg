@@ -57,7 +57,7 @@
 #define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_DECCHAR               'C'         /**< display character of detector */
-#define DEC_ENABLED               TRUE        /**< should the detection be enabled */
+#define DEC_ENABLED               FALSE        /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       TRUE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      TRUE        /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
@@ -195,9 +195,68 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    return SCIP_OKAY;
 }
 
-#define setParamAggressiveConnectedbase NULL
-#define setParamDefaultConnectedbase NULL
-#define setParamFastConnectedbase NULL
+static
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConnectedbase)
+{
+   char setstr[SCIP_MAXSTRLEN];
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+
+
+   return SCIP_OKAY;
+
+}
+
+
+static
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultConnectedbase)
+{
+   char setstr[SCIP_MAXSTRLEN];
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+
+
+   return SCIP_OKAY;
+
+}
+
+static
+DEC_DECL_SETPARAMFAST(setParamFastConnectedbase)
+{
+   char setstr[SCIP_MAXSTRLEN];
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+
+   return SCIP_OKAY;
+
+}
 
 
 

@@ -28,7 +28,7 @@
 /**@file   dec_generalmastersetcover.cpp
  * @ingroup DETECTORS
  * @brief  detector generalmastersetcover (sets setcovering, logior constraint and constraint with infinity rhs and nonnegative lhs to master)
- * @author Martin Bergner
+ * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -49,10 +49,10 @@
 #define DEC_DETECTORNAME          "generalmastersetcover"       /**< name of detector */
 #define DEC_DESC                  "detector generalmastersetcover" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
+#define DEC_MAXCALLROUND          0     /** last round the detector gets called                              */
 #define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
 #define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MAXCALLROUNDORIGINAL  0     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               '?'         /**< display character of detector */
@@ -222,9 +222,91 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetcover)
 
 #define finishSeeedGeneralmastersetcover NULL
 
-#define setParamAggressiveGeneralmastersetcover NULL
-#define setParamDefaultGeneralmastersetcover NULL
-#define setParamFastGeneralmastersetcover NULL
+
+static
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetcover)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+   int newval;
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallround", name);
+      SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+      SCIPinfoMessage(scip, NULL, "Before setting %s = %d\n", setstr, newval);
+
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmincallround", name);
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   ++newval;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallround", name);
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   SCIPinfoMessage(scip, NULL, "After Setting %s = %d\n", setstr, newval);
+
+
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", name);
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   ++newval;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+   return SCIP_OKAY;
+
+}
+
+
+static
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultGeneralmastersetcover)
+{
+   char setstr[SCIP_MAXSTRLEN];
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+
+   return SCIP_OKAY;
+
+}
+
+static
+DEC_DECL_SETPARAMFAST(setParamFastGeneralmastersetcover)
+{
+   char setstr[SCIP_MAXSTRLEN];
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+
+   return SCIP_OKAY;
+
+}
 
 
 
@@ -242,7 +324,10 @@ SCIP_RETCODE SCIPincludeDetectorGeneralmastersetcover(SCIP* scip /**< SCIP data 
    detectordata = NULL;
 
    SCIP_CALL(
-      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectGeneralmastersetcover, freeGeneralmastersetcover, initGeneralmastersetcover, exitGeneralmastersetcover, propagateSeeedGeneralmastersetcover, finishSeeedGeneralmastersetcover, setParamAggressiveGeneralmastersetcover, setParamDefaultGeneralmastersetcover, setParamFastGeneralmastersetcover));
+      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND,
+         DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
+         DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+         detectordata, detectGeneralmastersetcover, freeGeneralmastersetcover, initGeneralmastersetcover, exitGeneralmastersetcover, propagateSeeedGeneralmastersetcover, finishSeeedGeneralmastersetcover, setParamAggressiveGeneralmastersetcover, setParamDefaultGeneralmastersetcover, setParamFastGeneralmastersetcover));
 
    /**@todo add generalmastersetcover detector parameters */
 

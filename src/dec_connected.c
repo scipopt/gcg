@@ -65,8 +65,8 @@
 #define DEC_PRIORITY              0              /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'C'            /**< display character of detector */
 
-#define DEC_ENABLED               TRUE           /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       TRUE  /**< should the detection of the original problem be enabled */
+#define DEC_ENABLED               FALSE           /**< should the detection be enabled */
+#define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE        /**< should the finishing be enabled */
 #define DEFAULT_SETPPCINMASTER    TRUE           /**< should the extended structure be detected */
 #define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */

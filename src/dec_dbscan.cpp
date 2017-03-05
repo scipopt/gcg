@@ -652,9 +652,66 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
 #define finishSeeedDBSCAN NULL
 
 
-#define setParamAggressiveDBSCAN NULL
-#define setParamDefaultDBSCAN NULL
-#define setParamFastDBSCAN NULL
+static
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveDBSCAN)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+   return SCIP_OKAY;
+
+}
+
+
+static
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultDBSCAN)
+{
+   char setstr[SCIP_MAXSTRLEN];
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+
+   return SCIP_OKAY;
+
+}
+
+static
+DEC_DECL_SETPARAMFAST(setParamFastDBSCAN)
+{
+   char setstr[SCIP_MAXSTRLEN];
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+
+   return SCIP_OKAY;
+
+}
 
 
 

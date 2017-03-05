@@ -244,9 +244,54 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
 
 #define finishSeeedConstype NULL
 
-#define setParamAggressiveConstype NULL
-#define setParamDefaultConstype NULL
-#define setParamFastConstype NULL
+static
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConstype)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+   return SCIP_OKAY;
+
+}
+
+
+static
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultConstype)
+{
+
+   return SCIP_OKAY;
+
+}
+
+static
+DEC_DECL_SETPARAMFAST(setParamFastConstype)
+{
+   char setstr[SCIP_MAXSTRLEN];
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+
+   return SCIP_OKAY;
+
+}
 
 
 

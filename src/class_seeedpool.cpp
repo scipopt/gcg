@@ -456,10 +456,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          }
          else
          {
-            SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabledorig", &conssclassnnonzeros);
-            SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabledorig", &conssclassscipconstypes);
-            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabledorig", &conssclassconsnamenonumbers);
-            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabledorig", &conssclassconsnamelevenshtein);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/origenabled", &conssclassnnonzeros);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/origenabled", &conssclassscipconstypes);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
          }
 
          std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
@@ -551,9 +551,15 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  DEC_DETECTOR* detector;
                                  std::vector<SeeedPtr>::const_iterator newSIter;
                                  std::vector<SeeedPtr>::const_iterator newSIterEnd;
+                                 int maxcallround;
+                                 int mincallround;
+                                 int freqcallround;
+                                 char setstr[SCIP_MAXSTRLEN];
+                                 const char* detectorname;
 
-                                 SCIP_RESULT result = SCIP_DIDNOTFIND;
                                  detector = detectorToScipDetector[d];
+                                 detectorname = DECdetectorGetName(detector);
+                                 SCIP_RESULT result = SCIP_DIDNOTFIND;
 
                                  /** if the seeed is also propagated by the detector go on with the next detector */
                                  if(seeedPtr->isPropagatedBy(detector) && !detector->usefulRecall )
@@ -562,20 +568,28 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  /** check if detector is callable in current detection round */
                                  if(transformed)
                                  {
-                                    if(detector->maxCallRound < round || detector->minCallRound > round)
-                                       continue;
-
-                                    if( (round - detector->minCallRound) % detector->freqCallRound != 0 )
-                                       continue;
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &maxcallround) );
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &mincallround) );
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &freqcallround) );
                                  }
                                  else
                                  {
-                                    if(detector->maxCallRoundOriginal < round || detector->minCallRoundOriginal > round)
-                                       continue;
-
-                                    if( (round - detector->minCallRoundOriginal) % detector->freqCallRoundOriginal != 0 )
-                                       continue;
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &maxcallround) );
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmincallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &mincallround) );
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origfreqcallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &freqcallround) );
                                  }
+
+                                 if( maxcallround < round || mincallround > round)
+                                    continue;
+
+                                 if( (round - mincallround) % freqcallround != 0 )
+                                    continue;
 
                                  seeedPropData->seeedToPropagate = seeedPtr;
 
@@ -585,8 +599,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                      std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d]) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round << std::endl;
 
                                  SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
-
-
 
                                  for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
                                  {
