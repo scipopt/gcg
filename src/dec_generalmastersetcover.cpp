@@ -239,21 +239,11 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetcover)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallround", name);
-      SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
-      SCIPinfoMessage(scip, NULL, "Before setting %s = %d\n", setstr, newval);
-
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmincallround", name);
+     (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", name);
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
    ++newval;
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
-   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallround", name);
-   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
    SCIPinfoMessage(scip, NULL, "After Setting %s = %d\n", setstr, newval);
-
 
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", name);
