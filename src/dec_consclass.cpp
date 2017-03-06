@@ -363,7 +363,7 @@ DEC_DECL_SETPARAMFAST(setParamFastConsclass)
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
 
-   newval = FAST_MAXIMUMNCLASSES - modifier;
+   newval = MAX( 2, FAST_MAXIMUMNCLASSES - modifier );
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "\n%s = %d\n", setstr, newval);

@@ -104,7 +104,7 @@ using gcg::Weights;
                                                   constraints */
 #define DEFAULT_MINBLOCKS          2          /**< value for the minimum number of blocks to be considered */
 #define DEFAULT_MAXBLOCKS          20         /**< value for the maximum number of blocks to be considered */
-#define DEFAULT_MAXNBLOCKCANDIDATES 3          /**< number of block number candidates to be considered */
+#define DEFAULT_MAXNBLOCKCANDIDATES 4          /**< number of block number candidates to be considered */
 #define DEFAULT_ALPHA              0.0        /**< factor for standard deviation of constraint weights */
 #define DEFAULT_BETA               0.5        /**< factor of how the weight for equality and inequality constraints is
                                                   distributed (keep 1/2 for the same on both) */
@@ -116,8 +116,9 @@ using gcg::Weights;
                                                   linking constraints), 'r' row hypergraph (single bordered, no linking
                                                   variables) and 'a' column-row hypergraph (arrowhead) */
 
-#define FAST_MAXHALFPERIMETER	  25000		/**< if nrows + ncols does not exceeds this value
+#define FAST_MAXHALFPERIMETER	  25000		/**< if nrows + ncols does not exceeds this value */
 
+#define SET_MULTIPLEFORSIZETRANSF 12500
 /*
  * Data structures
  */
@@ -450,9 +451,9 @@ SCIP_RETCODE detection(
 )
 {
 
-   *result = SCIP_DIDNOTFIND;
-
-   /* add hrgpartition presolver parameters */
+	/* add hrgpartition presolver parameters */
+   char setstr[SCIP_MAXSTRLEN];
+   int maxnblockcandidates;
 
    int k;
    int j;
@@ -467,12 +468,19 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
 
+   *result = SCIP_DIDNOTFIND;
+
    std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getSortedCandidatesNBlocks();
-   if(numberOfBlocks.empty())
+   if( numberOfBlocks.empty() )
       numberOfBlocks.push_back(8);
 
    int nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/hrcgpartition/maxnblocksblockcandidates");
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
+
+   maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
 
    SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
 
@@ -500,7 +508,7 @@ SCIP_RETCODE detection(
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-   for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
+   for( j = 0, k = 0; k < maxnblockcandidates; ++k)
    {
       int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -744,6 +752,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrcgpartition)
    char setstr[SCIP_MAXSTRLEN];
    const char* name = DECdetectorGetName(detector);
    int newval;
+   SCIP_Real modifier;
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
@@ -767,6 +776,21 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrcgpartition)
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
+
+   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+
+   modifier = log(modifier) / log(2);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+   modifier += 1;
+
+   newval = DEFAULT_MAXNBLOCKCANDIDATES - modifier + 2;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
    return SCIP_OKAY;
 
 }
@@ -776,6 +800,8 @@ static
 DEC_DECL_SETPARAMDEFAULT(setParamDefaultHrcgpartition)
 {
    char setstr[SCIP_MAXSTRLEN];
+   int newval;
+   SCIP_Real modifier;
 
    const char* name = DECdetectorGetName(detector);
 
@@ -788,6 +814,22 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultHrcgpartition)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
+   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+
+   modifier = log(modifier) / log(2);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+   modifier += 1;
+
+   newval = DEFAULT_MAXNBLOCKCANDIDATES - modifier;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+
+
    return SCIP_OKAY;
 
 }
@@ -796,6 +838,9 @@ static
 DEC_DECL_SETPARAMFAST(setParamFastHrcgpartition)
 {
    char setstr[SCIP_MAXSTRLEN];
+   int newval;
+   SCIP_Real modifier;
+
 
    const char* name = DECdetectorGetName(detector);
 
@@ -808,9 +853,20 @@ DEC_DECL_SETPARAMFAST(setParamFastHrcgpartition)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
-   if( SCIPgetNConss(scip) + SCIPgetNVars(scip) < FAST_MAXHALFPERIMETER )
 
+   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 
+   modifier = log(modifier) / log(2);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+   modifier += 1;
+
+   newval = DEFAULT_MAXNBLOCKCANDIDATES - modifier - 2;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
    return SCIP_OKAY;
 
