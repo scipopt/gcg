@@ -433,7 +433,7 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
 
-   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
+   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getSortedCandidatesNBlocks();
    if(numberOfBlocks.empty())
       numberOfBlocks.push_back(8);
 

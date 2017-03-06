@@ -702,7 +702,7 @@ SCIP_RETCODE DECdetectStructure(
       SCIP_CALL( SCIPtransformProb(scip) );
 
 
-   candidatesNBlocks = seeedpoolunpresolved.getCandidatesNBlocks();
+   candidatesNBlocks = seeedpoolunpresolved.getSortedCandidatesNBlocks();
 
 
    /** detection for original problem */

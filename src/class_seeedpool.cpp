@@ -92,11 +92,20 @@ namespace gcg {
 
 /** local methods */
 
+struct sort_decr {
+    bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
+        return left.second > right.second;
+    }
+};
+
+
 struct sort_pred {
     bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
         return left.second < right.second;
     }
 };
+
+
 
 SCIP_Bool cmpSeeedsMaxWhite (SeeedPtr i, SeeedPtr j) { return (i->getMaxWhiteScore() < j->getMaxWhiteScore() ); }
 
@@ -1568,9 +1577,25 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     return nConss;
  }
 
- std::vector<int> Seeedpool::getCandidatesNBlocks() const
+ std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
  {
-    return candidatesNBlocks;
+	std::vector<int> toreturn(0);
+	SCIP_Bool output = FALSE;
+
+	/** first: sort the current candidates */
+	std::sort(candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
+
+	if( output )
+	{
+		std::cout << "nCandidates: " << candidatesNBlocks.size() << std::endl;
+		for(size_t i = 0; i < candidatesNBlocks.size(); ++i)
+			std::cout << "nblockcandides: " << candidatesNBlocks[i].first << " ; " << candidatesNBlocks[i].second << " times prop " << std::endl;
+	}
+
+	for(size_t i = 0; i < candidatesNBlocks.size(); ++i)
+		toreturn.push_back(candidatesNBlocks[i].first);
+
+    return toreturn;
  }
 
  void Seeedpool::addCandidatesNBlocks(
@@ -1583,18 +1608,21 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
        bool alreadyIn = false;
        for(size_t i = 0; i < candidatesNBlocks.size(); ++i )
        {
-          if(candidatesNBlocks[i] == candidate)
+          if(candidatesNBlocks[i].first == candidate)
           {
              alreadyIn = true;
+             ++candidatesNBlocks[i].second;
              break;
           }
        }
        if(!alreadyIn)
        {
           std::cout << "added block number candidate : " << candidate << std::endl;
-          candidatesNBlocks.push_back(candidate);
+          candidatesNBlocks.push_back(std::pair<int,int>(candidate, 1) );
        }
     }
+
+    return;
  }
 
  void Seeedpool::calcCandidatesNBlocks()
@@ -1626,6 +1654,13 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
        for ( int i =0; i < getNConss(); ++i)
           ++nconssofclass[ consclassescollection[conssclass][i] ];
 
+       /** start with the cardinalities of the consclasses as candidates */
+       for( size_t i = 0; i < nconssofclass.size(); ++i)
+       {
+    	   addCandidatesNBlocks(nconssofclass[i]);
+       }
+
+       /** continue with gcd of all cardinalities in this subset */
        for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
        {
           int greatestCD = 1;
@@ -1640,23 +1675,8 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
              greatestCD = gcd( greatestCD, nconssofclass[subsetsOfConstypes[subset][i]] );
           }
 
-          if( greatestCD > 1 )
-          {
-             bool alreadyIn = false;
-             for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
-             {
-                if( candidatesNBlocks[i] == greatestCD )
-                {
-                   alreadyIn = true;
-                   break;
-                }
-             }
-             if( !alreadyIn )
-             {
-                std::cout << "added block number candidate : " << greatestCD << std::endl;
-                candidatesNBlocks.push_back(greatestCD);
-             }
-          }
+          addCandidatesNBlocks(greatestCD);
+
        }
     }
 
