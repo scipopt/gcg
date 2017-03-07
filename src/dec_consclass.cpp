@@ -173,8 +173,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   std::vector<gcg::Seeed*> foundseeeds(0);
 
-
-
   gcg::Seeed* seeedOrig;
   gcg::Seeed* seeed;
 
@@ -184,7 +182,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   for( int conssclass = 0; conssclass < seeedPropagationData->seeedpool->getNConssClassDistributions(); ++conssclass )
   {
-
     int nclasses = seeedPropagationData->seeedpool->getNClassesOfDistribution(conssclass);
     std::vector<int> classforcons = seeedPropagationData->seeedpool->getConssClassDistributionVector(conssclass);
     std::vector<int> consclassindices = std::vector<int>(0);
@@ -196,7 +193,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        std::cout << " the current consclass distribution includes " <<  nclasses << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
        continue;
     }
-
 
   seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
   seeedOrig->setDetectorPropagated(detector);
@@ -286,7 +282,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
 
    modifier = SCIPfloor(scip, modifier);
 
-   newval = AGGRESSIVE_MAXIMUMNCLASSES - modifier;
+   newval = MAX( 2, AGGRESSIVE_MAXIMUMNCLASSES - modifier );
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
@@ -324,7 +320,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConsclass)
 
    modifier = SCIPfloor(scip, modifier);
 
-   newval = DEFAULT_MAXIMUMNCLASSES - modifier;
+   newval = MAX( 2, DEFAULT_MAXIMUMNCLASSES - modifier );
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );

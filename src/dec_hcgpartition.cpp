@@ -80,10 +80,10 @@ using gcg::Weights;
 #define DEC_DETECTORNAME         "hcgpartition"    /**< name of the detector */
 #define DEC_DESC                 "enforces arrowhead structures using graph partitioning" /**< description of detector */
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
+#define DEC_MAXCALLROUND          0     /** last round the detector gets called                              */
 #define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
 #define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MAXCALLROUNDORIGINAL  0     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              1000           /**< priority of the detector */
 #define DEC_DECCHAR               'c'            /**< display character of detector */
@@ -449,7 +449,7 @@ SCIP_RETCODE detection(
 
    SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/hcgpartition/maxnblocksblockcandidates");
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/hcgpartition/maxnblockcandidates");
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
 
    maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
@@ -753,7 +753,8 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHcgpartition)
    modifier = SCIPfloor(scip, modifier);
    modifier += 1;
 
-   newval = DEFAULT_MAXNBLOCKCANDIDATES - modifier + 2;
+   newval = MAX( 0, DEFAULT_MAXNBLOCKCANDIDATES - modifier + 2 );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnblockcandidates", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
@@ -790,7 +791,8 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultHcgpartition)
    modifier = SCIPfloor(scip, modifier);
    modifier += 1;
 
-   newval = DEFAULT_MAXNBLOCKCANDIDATES - modifier;
+   newval = MAX( 0, DEFAULT_MAXNBLOCKCANDIDATES - modifier );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnblockcandidates", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
@@ -830,7 +832,8 @@ DEC_DECL_SETPARAMFAST(setParamFastHcgpartition)
    modifier = SCIPfloor(scip, modifier);
    modifier += 1;
 
-   newval = DEFAULT_MAXNBLOCKCANDIDATES - modifier - 2;
+   newval = MAX( 0, DEFAULT_MAXNBLOCKCANDIDATES - modifier - 2 );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnblockcandidates", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
@@ -858,7 +861,7 @@ SCIP_RETCODE SCIPincludeDetectorHcgpartition(
 
 
    /* add hcgpartition detector parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/maxnblocksblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/maxnblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 0, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip, "detectors/hcgpartition/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
