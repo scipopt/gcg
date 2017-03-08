@@ -287,7 +287,7 @@ SCIP_RETCODE filterInfiniteColumns(
                SCIPwarningMessage(pricingprob, "Removing solution with infinite value.\n");
             }
 
-            SCIP_CALL( GCGfreeGcgCol(&cols[s]) );
+            GCGfreeGcgCol(&cols[s]);
 
             cols[s] = cols[*ncols-1];
             --(*ncols);

@@ -70,7 +70,7 @@ SCIP_RETCODE GCGcreateGcgCol(
 
 /** free a gcg column */
 extern
-SCIP_RETCODE GCGfreeGcgCol(
+void GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
 );
 

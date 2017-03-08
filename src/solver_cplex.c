@@ -823,7 +823,7 @@ SCIP_RETCODE solveCplex(
          }
          else
          {
-            SCIP_CALL( GCGfreeGcgCol(&cols[*ncols]) );
+            GCGfreeGcgCol(&cols[*ncols]);
          }
       }
 
