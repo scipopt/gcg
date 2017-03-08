@@ -16,7 +16,7 @@ git status
 
 echo generating default setting files
 make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false scip -j4
-make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false BLISS=false -j4
+make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false BLISS=false GTEST=false -j4
 bin/gcg -c "set default set save doc/inc/parameters.set quit"
 
 sed -i '$ d' doc/inc/parameters.set
@@ -45,7 +45,7 @@ $NAME/settings/earlybranching.set \
 $NAME/settings/heurpricing.set \
 $NAME/src/depend.* \
 $NAME/src/*.c $NAME/src/*.cpp $NAME/src/*.h \
-$NAME/src/graph/*.cpp $NAME/src/graph/*.c $NAME/src/graph/*.h \
+$NAME/src/graph/*.cpp $NAME/src/graph/*.h \
 $NAME/check/instances/cpmp/*.lp \
 $NAME/check/instances/bpp/*.lp \
 $NAME/check/instances/gap/*.lp \
