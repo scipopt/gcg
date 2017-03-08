@@ -637,8 +637,8 @@ numerics/hugeval = 1e+15
 presolving/maxrounds = -1
 
 # abort presolve, if at most this fraction of the problem was changed in last presolve round
-# [type: real, advanced: TRUE, range: [0,1], default: 0.001]
-presolving/abortfac = 0.001
+# [type: real, advanced: TRUE, range: [0,1], default: 0.0008]
+presolving/abortfac = 0.0008
 
 # maximal number of restarts (-1: unlimited)
 # [type: int, advanced: FALSE, range: [-1,2147483647], default: -1]
@@ -917,36 +917,36 @@ concurrent/presolvebefore = TRUE
 concurrent/initseed = 5131912
 
 # initial frequency of synchronization with other threads
-# [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 0.5]
-concurrent/sync/freqinit = 0.5
+# [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 10]
+concurrent/sync/freqinit = 10
 
 # maximal frequency of synchronization with other threads
-# [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 20]
-concurrent/sync/freqmax = 20
+# [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 10]
+concurrent/sync/freqmax = 10
 
 # factor by which the frequency of synchronization is changed
 # [type: real, advanced: FALSE, range: [1,1.79769313486232e+308], default: 1.5]
 concurrent/sync/freqfactor = 1.5
 
 # when adapting the synchronization frequency this value is the targeted relative difference by which the absolute gap decreases per synchronization
-# [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 0.005]
-concurrent/sync/targetprogress = 0.005
+# [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 0.001]
+concurrent/sync/targetprogress = 0.001
 
 # maximum number of solutions that will be shared in a single synchronization
-# [type: int, advanced: FALSE, range: [0,1000], default: 1]
-concurrent/sync/maxnsols = 1
+# [type: int, advanced: FALSE, range: [0,1000], default: 3]
+concurrent/sync/maxnsols = 3
 
 # maximum number of synchronizations before reading is enforced regardless of delay
-# [type: int, advanced: TRUE, range: [0,100], default: 3]
-concurrent/sync/maxnsyncdelay = 3
+# [type: int, advanced: TRUE, range: [0,100], default: 7]
+concurrent/sync/maxnsyncdelay = 7
 
 # minimum delay before synchronization data is read
-# [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 2]
-concurrent/sync/minsyncdelay = 2
+# [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 10]
+concurrent/sync/minsyncdelay = 10
 
 # how many of the N best solutions should be considered for synchronization?
-# [type: int, advanced: FALSE, range: [0,2147483647], default: 1]
-concurrent/sync/nbestsols = 1
+# [type: int, advanced: FALSE, range: [0,2147483647], default: 10]
+concurrent/sync/nbestsols = 10
 
 # path prefix for parameter setting files of concurrent solvers
 # [type: string, advanced: FALSE, default: ""]
@@ -1120,13 +1120,13 @@ constraints/linear/simplifyinequalities = TRUE
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
 constraints/linear/dualpresolving = TRUE
 
-# should singleton variable stuffing be performed?
+# should stuffing of singleton continuous variables be performed?
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
 constraints/linear/singletonstuffing = TRUE
 
-# should single variable stuffing be performed?
-# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
-constraints/linear/singlevarstuffing = TRUE
+# should single variable stuffing be performed, which tries to fulfill constraints using the cheapest variable?
+# [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
+constraints/linear/singlevarstuffing = FALSE
 
 # apply binaries sorting in decr. order of coeff abs value?
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: TRUE]
@@ -1639,6 +1639,10 @@ presolving/domcol/nummaxpairs = 1048576
 # should predictive bound strengthening be applied?
 # [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 presolving/domcol/predbndstr = FALSE
+
+# should reductions for continuous variables be performed?
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: TRUE]
+presolving/domcol/continuousred = TRUE
 
 # priority of presolver <convertinttobin>
 # [type: int, advanced: TRUE, range: [-536870912,536870911], default: 6000000]
