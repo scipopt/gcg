@@ -206,7 +206,7 @@ Copyright (c) 2010-2012 Operations Research, RWTH Aachen University
                         Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)
 
 SCIP version 3.0.0 [precision: 8 byte] [memory: block] [mode: optimized] [LP solver: SoPlex 1.6.0.7] [GitHash: 8330fdf]
-Copyright (c) 2002-2012 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)
+Copyright (C) 2002-2017 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)
 
 External codes:
   Readline 6.2         GNU library for command line editing (gnu.org/s/readline)
