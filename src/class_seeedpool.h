@@ -242,10 +242,14 @@ public:
 
    void reduceConsclasses();
 
-
-
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds);
+
+   SCIP_RETCODE buildFamilyTreeLatexFile(
+      const char* filename,                                 /* filename the output should be written to */
+      std::vector<SeeedPtr> seeeds                          /* vector of seeed pointers the  family tree should be constructed for */
+      );
+
 
    };
 } /* namespace gcg */

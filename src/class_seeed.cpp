@@ -80,7 +80,7 @@ Seeed::Seeed(
    int         givenNVars                  /**number of variables */
 ) :
    scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
-      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false)
+      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false)
 {
 }
 
@@ -115,7 +115,7 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    changedHashvalue = seeedToCopy->changedHashvalue;
    stemsFromUnpresolved = seeedToCopy->stemsFromUnpresolved;
    isFinishedByFinisherUnpresolved = seeedToCopy->isFinishedByFinisherUnpresolved;
-
+   listofancestorids = seeedToCopy->listofancestorids;
 
 }
 
@@ -164,7 +164,7 @@ int Seeed::addBlock()
     pctVarsToBlock.push_back( (-getNOpenvars()-getNMastervars() - getNLinkingvars() - getNTotalStairlinkingvars() + ancestor->getNOpenvars()+ ancestor->getNMastervars() + ancestor->getNLinkingvars() + ancestor->getNTotalStairlinkingvars() ) / getNVars() );
     pctConssToBorder.push_back( ( getNMasterconss() - ancestor->getNMasterconss() ) / (SCIP_Real) getNConss() );
     pctVarsToBorder.push_back( ( getNMastervars() + getNLinkingvars() + getNTotalStairlinkingvars() - ancestor->getNMastervars() - ancestor->getNLinkingvars() - ancestor->getNTotalStairlinkingvars()) / (SCIP_Real) getNVars() );
-
+    listofancestorids.push_back(ancestor->getID() );
  }
 
 
@@ -859,7 +859,7 @@ bool Seeed::checkConsistency()
    /** check if nblocks is set appropriate */
    if( nBlocks != (int) conssForBlocks.size() )
    {
-      std::cout << "Warning! In (seeed " << id << ") nBlocks " << nBlocks << " and size of conssForBlocks"
+      std::cout << "Warning! In (seeed " << id << ") nBlocks " << nBlocks << " and size of conssForBlocks "
          << conssForBlocks.size() << " are not identical" << std::endl;
       assert(false);
       return false;
@@ -1840,6 +1840,11 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
    std::cout << "hashvalue: " << hashvalue << std::endl;
    std::cout << "score: " << score << std::endl;
    std::cout << "maxwhitescore: " << maxwhitescore << std::endl;
+   std::cout << "ancestorids: " ;
+   for ( size_t i = 0; i  < listofancestorids.size(); ++i)
+      std::cout << listofancestorids[i] << "; ";
+   std::cout << std::endl;
+
    for( int b = 0; b < nBlocks; ++b )
    {
       std::cout << getNConssForBlock(b) << " constraint(s) in block " << b << std::endl;

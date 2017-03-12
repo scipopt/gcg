@@ -739,7 +739,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  }// end for currseeeds
 
                  for(size_t s = 0; s < currSeeedsToDelete.size(); ++s )
+                 {
                     delete currSeeedsToDelete[s];
+                    currSeeedsToDelete[s] = NULL;
+                 }
 
                  currSeeeds = nextSeeeds;
          } // end for rounds
@@ -865,6 +868,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          for( size_t d =  delSeeeds.size(); d > 0; d--)
          {
             delete delSeeeds[d-1];
+            delSeeeds[d-1] = NULL;
          }
 
          delSeeeds.clear();
@@ -1257,6 +1261,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          for( size_t d =  delSeeeds.size(); d > 0; d--)
          {
             delete delSeeeds[d-1];
+            delSeeeds[d-1] = NULL;
          }
 
          delSeeeds.clear();
@@ -1284,7 +1289,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
  {
     for( size_t i = 0; i < currSeeeds.size(); ++i )
     {
-       delete currSeeeds[i];
+       if ( currSeeeds[i] != NULL )
+       {
+          currSeeeds[i]->checkConsistency();
+          delete currSeeeds[i];
+          currSeeeds[i] = NULL;
+       }
     }
     return;
  }
@@ -1463,7 +1473,10 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
 
       if(newseeed->checkConsistency() )
          newseeeds.push_back(newseeed);
-      else delete newseeed;
+      else {
+         delete newseeed;
+         newseeed = NULL;
+      }
    }
 
    return newseeeds;
@@ -2178,6 +2191,7 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
    for(int i = 0; i < oneBlockSeeeds.size(); ++i)
    {
       delete oneBlockSeeeds[i];
+      oneBlockSeeeds[i] = NULL;
    }
 
    return remainingSeeeds;

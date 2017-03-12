@@ -98,6 +98,8 @@ public:
    std::vector<SCIP_Real>           pctConssFromFree;           /**< vector containing the fraction of constraints that are not longer open for each detector working on that seeed*/
    std::vector<int>                 nNewBlocks;                 /**< vector containing detector indices that worked on that seeed */
 
+   std::vector<int>                 listofancestorids;          /**< vector containing detector indices that worked on that seeed */
+
    /** datastructure to store information if this seeed stems from a seeed concerning the uinpresolved problem */
    bool                             stemsFromUnpresolved;
    bool                             isFinishedByFinisherUnpresolved; /**< was the ancestor seeed for the unpresolved problem finished by the finishseeed() method of a detector */

@@ -777,7 +777,7 @@ SCIP_RETCODE DECdetectStructure(
 	  conshdlrdata->ndecomps = seeedpool.getNDecompositions();
 	  SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
 	  SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
-	  seeedpool.freeCurrSeeeds();
+//	  seeedpool.freeCurrSeeeds();
    }
    else
    {
