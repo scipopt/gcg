@@ -106,8 +106,65 @@ struct sort_pred {
 };
 
 
+SCIP_RETCODE getDetectorCallRoundInfo(SCIP* scip, const char* detectorname, SCIP_Bool transformed, int* maxcallround, int* mincallround, int* freqcallround)
+	{
+		char*  setstr;
+		if(transformed)
+		{
+			(void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", detectorname);
+			SCIP_CALL( SCIPgetIntParam(scip, setstr, maxcallround) );
+			(void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallround", detectorname);
+			SCIP_CALL( SCIPgetIntParam(scip, setstr, mincallround) );
+			(void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallround", detectorname);
+			SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, freqcallround) );
+		}
+		else
+		{
+			(void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", detectorname);
+			SCIP_CALL( SCIPgetIntParam(scip, setstr, maxcallround) );
+			(void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmincallround", detectorname);
+			SCIP_CALL( SCIPgetIntParam(scip, setstr, mincallround) );
+			(void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origfreqcallround", detectorname);
+			SCIP_CALL( SCIPgetIntParam(scip, setstr, freqcallround) );
+		}
+
+		return SCIP_OKAY;
+	}
 
 SCIP_Bool cmpSeeedsMaxWhite (SeeedPtr i, SeeedPtr j) { return (i->getMaxWhiteScore() < j->getMaxWhiteScore() ); }
+
+
+/* method to thin out the vector of given seeeds */
+std::vector<SeeedPtr> thinout( std::vector<SeeedPtr> finishedSeeeds, size_t nDecomps, SCIP_Bool addTrivialDecomp ){
+
+	std::vector<SeeedPtr> justBest(0);
+	for( size_t dec = 0; dec < nDecomps && dec < finishedSeeeds.size(); ++dec)
+	{
+		justBest.push_back(finishedSeeeds[dec]);
+	}
+
+	if(addTrivialDecomp)
+	{
+		for(size_t dec = 0; dec < finishedSeeeds.size(); ++dec)
+		{
+			if(finishedSeeeds[dec]->getNMasterconss() == 0 && finishedSeeeds[dec]->getNLinkingvars() == 0 && finishedSeeeds[dec]->getNBlocks() == 1)
+			{
+				justBest.push_back(finishedSeeeds[dec]);
+			}
+		}
+	}
+	return justBest;
+}
+
+SCIP_RETCODE sortAndImplicitsAndHashvalue(Seeedpool* seeedpool, SeeedPtr seeed)
+{
+	seeed->considerImplicits(seeedpool);
+	seeed->sort();
+	seeed->calcHashvalue();
+
+	return SCIP_OKAY;
+}
+
 
 
 int calcLevenshteinDistance(std::string s, std::string t)
@@ -522,6 +579,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
         verboseLevel = 1;
 
+        /** add translated original seeeds (of unpresolved problem) */
         for (size_t i = 0; i < translatedOrigSeeeds.size(); ++i)
         {
            translatedOrigSeeeds[i]->calcHashvalue();
@@ -531,11 +589,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
 
          for(size_t s = 0; s < currSeeeds.size(); ++s)
-         {
-            currSeeeds[s]->sort();
-            currSeeeds[s]->considerImplicits(this);
-            currSeeeds[s]->calcHashvalue();
-         }
+        	 SCIP_CALL_ABORT( sortAndImplicitsAndHashvalue(this, currSeeeds[s]) );
 
          for( int round = 0; round < maxndetectionrounds; ++round )
          {
@@ -546,11 +600,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  for( size_t s = 0; s < currSeeeds.size(); ++s )
                  {
                          SeeedPtr seeedPtr;
-                         seeedPtr= currSeeeds[s];
+                         seeedPtr = currSeeeds[s];
+
                          if( displaySeeeds || verboseLevel >= 1 )
                          {
                             std::cout << "Start to propagate seeed " << seeedPtr->getID() << " in round " << round << ":" << std::endl;
-                            if (displaySeeeds)
+                            if( displaySeeeds )
                                seeedPtr->displaySeeed();
                          }
 
@@ -575,35 +630,16 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                          continue;
 
                                  /** check if detector is callable in current detection round */
-                                 if(transformed)
-                                 {
-                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", detectorname);
-                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &maxcallround) );
-                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallround", detectorname);
-                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &mincallround) );
-                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallround", detectorname);
-                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &freqcallround) );
-                                 }
-                                 else
-                                 {
-                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", detectorname);
-                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &maxcallround) );
-                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmincallround", detectorname);
-                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &mincallround) );
-                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origfreqcallround", detectorname);
-                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &freqcallround) );
-                                 }
+                                SCIP_CALL_ABORT( getDetectorCallRoundInfo( scip, detectorname, transformed, &maxcallround, &mincallround, &freqcallround) );
 
-                                 if( maxcallround < round || mincallround > round)
-                                    continue;
-
-                                 if( (round - mincallround) % freqcallround != 0 )
+                                 if( maxcallround < round || mincallround > round || ( (round - mincallround) % freqcallround != 0 ) )
                                     continue;
 
                                  seeedPropData->seeedToPropagate = seeedPtr;
 
                                  /** new seeeds are created by the current detector */
                                  SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
+
                                  if(verboseLevel >= 1)
                                      std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d]) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round << std::endl;
 
@@ -611,22 +647,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                                  for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
                                  {
-                                    seeedPropData->newSeeeds[j]->considerImplicits(this);
-                                    seeedPropData->newSeeeds[j]->sort();
-                                    if(!seeedPropData->newSeeeds[j]->checkConsistency())
-                                    {
-                                        seeedPropData->newSeeeds[j]->displaySeeed();
-                                        assert(false);
-                                    }
-                                    seeedPropData->newSeeeds[j]->calcHashvalue();
+                                    sortAndImplicitsAndHashvalue(this, seeedPropData->newSeeeds[j] );
+                                    seeedPropData->newSeeeds[j]->checkConsistency();
                                     seeedPropData->newSeeeds[j]->addDecChangesFromAncestor(seeedPtr);
-                                    //seeedPropData->newSeeeds[j]->addClockTime( SCIPclockGetTime(temporaryClock )  );
                                  }
 
                                  SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
-                                 //SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-                                 //SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
-
 
                                  if(seeedPropData->nNewSeeeds != 0 && (displaySeeeds ) )
                                  {
@@ -889,8 +915,11 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
     SEEED_PROPAGATION_DATA* seeedPropData;
     std::vector<int> successDetectors;
     std::vector<SeeedPtr> delSeeeds;
-//    std::vector<SeeedPtr> finishedSeeeds;
     bool duplicate;
+    SCIP_Bool usemaxwhitescore;
+
+	size_t nDecomps = 4;
+	SCIP_Bool addTrivialDecomp = TRUE;
 
     successDetectors = std::vector<int>(nDetectors, 0);
     ndecompositions = 0;
@@ -898,44 +927,19 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
     seeedPropData->seeedpool = this;
     seeedPropData->nNewSeeeds = 0;
     delSeeeds = std::vector<SeeedPtr>(0);
+    usemaxwhitescore = TRUE;
 
     int verboseLevel = 0;
 
-
-     finishedSeeeds = findSeeeds();
-
-
- //   finishedSeeeds = removeSomeOneblockDecomps(finishedSeeeds);
+    finishedSeeeds = findSeeeds();
 
     /* sort the seeeds according to maximum white measure */
 
-    // using function as comp
-      std::sort (finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
+    std::sort (finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
 
-
-      /** hack to just use max white seeed */
-      if(true)
-      {
-         size_t nDecomps = 4;
-         SCIP_Bool addTrivialDecomp = TRUE;
-         std::vector<SeeedPtr> justBest(0);
-         for( size_t dec = 0; dec < nDecomps && dec < finishedSeeeds.size(); ++dec)
-         {
-            justBest.push_back(finishedSeeeds[dec]);
-         }
-
-         if(addTrivialDecomp)
-         {
-            for(size_t dec = 0; dec < finishedSeeeds.size(); ++dec)
-            {
-               if(finishedSeeeds[dec]->getNMasterconss() == 0 && finishedSeeeds[dec]->getNLinkingvars() == 0 && finishedSeeeds[dec]->getNBlocks() == 1)
-               {
-                  justBest.push_back(finishedSeeeds[dec]);
-               }
-            }
-         }
-         finishedSeeeds = justBest;
-      }
+    /** hack to just use max white seeed */
+    if( usemaxwhitescore )
+    	finishedSeeeds = thinout( finishedSeeeds, nDecomps, addTrivialDecomp );
 
       /** fill out the decompositions */
 
