@@ -45,6 +45,7 @@
 #include "gcg.h"
 
 #include "class_seeed.h"
+#include "class_consclassifier.h"
 
 
 

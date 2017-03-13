@@ -33,14 +33,24 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_CLASS_CONSCLASSIFIER_H_
-#define GCG_CLASS_CONSCLASSIFIER_H_
+#ifndef GCG_CLASS_CONSCLASSIFIER_H__
+#define GCG_CLASS_CONSCLASSIFIER_H__
 
+#include "objscip/objscip.h"
 #include <vector>
 #include <string>
 
 namespace gcg
 {
+
+enum ClassDecompInfo
+{
+   BOTH = 0,                     /**< assign class to master or pricing problem */
+   ONLY_MASTER = 1,              /**< assign class only to master problem */
+   ONLY_PRICING = 2              /**< assign class only to pricing problem */
+};
+typedef enum ClassDecompInfo DECOMPINFO;
+
 
 class ConsClassifier
 {
@@ -49,49 +59,66 @@ private:
    SCIP*                      scip;                   /**< scip data structure */
    int                        nClasses;               /**< number of classes the classifier provides */
    int                        nConss;                 /**< number of constraints */
-   std::vector<int>           consToClasses;          /**< constraint i is assigned to class consToClasses[i] */
-   std::string                name;                   /**< name of the classifier */
+   std::vector<int>           consToClasses;          /**< constraint i is assigned to class consToClasses[i] (-1 if not assigned)*/
    std::vector<std::string>   classNames;             /**< name of class k is classNames[k] */
-   std::vector<int>           classDecompInfo;        /**< encodes whether a class k should be assigned to master or pricing problem */
+   std::vector<DECOMPINFO>    classDecompInfo;        /**< encodes whether a class k should be assigned to master or pricing problem */
 
 public:
 
+   std::string                name;                   /**< name of the classifier */
    /** constructor */
    ConsClassifier(
-      SCIP* scip,                /** scip data structure */
-      std::string name,          /** name of classifier */
-      int nConss                 /** number of constraints to be classified */
+      SCIP*                scip,                /**< scip data structure */
+      const char*          name,                /**< name of classifier */
+      int                  nClasses,            /**< initial number of classes */
+      int                  nConss               /**< number of constraints to be classified */
    );
 
    /** destructor */
    ~ConsClassifier();
 
 
-   /** creates a new class, returns number of class */
+   /** creates a new class, returns index of the class */
    int addClass(
-      std::string name          /**< name of the class */
-      // ??? int classDecompInfo        /**< decomposition code of the class */
+      const char* name,                /**< name of the class */
+      DECOMPINFO decompInfo            /**< decomposition code of the class */
    );
 
    /** assigns a constraint to a class */
    void assignConsToClass(
-      int consindex,            /**< index of the constraint */
-      int classindex            /**< index of the class */
+      int consindex,                   /**< index of the constraint */
+      int classindex                   /**< index of the class */
    );
 
 
-   /** returns the number of classes the classifier provides */
-   int getNClasses(
+   /** returns the decomposition info */
+   const DECOMPINFO* getClassDecompInfo(
+   );
+
+   /** returns the decomposition info of a class */
+   DECOMPINFO getClassDecompInfoOfClass(
+      int classindex                   /**< index of class */
    );
 
 
-   /** returns vector containing the assigned class of each constraint */
-   const int* getConsToClasses(
+   /** returns the name of a class */
+   const std::string getClassName(
+      int classindex                   /**< index of class */
    );
+
+   /** returns the name of the class a constraint is assigned to */
+   const std::string getClassNameOfCons(
+      int consindex                    /**< index of constraint */
+   );
+
 
    /** returns the index of the class a constraint is assigned to */
    int getClassOfCons(
-      int consindex              /**< index of constraint */
+      int consindex                    /**< index of constraint */
+   );
+
+   /** returns vector containing the assigned class of each constraint */
+   const int* getConsToClasses(
    );
 
 
@@ -100,33 +127,36 @@ public:
    );
 
 
-   const std::string* getClassNames(
+   /** returns the number of classes the classifier provides */
+   int getNClasses(
    );
 
-   /** returns the name of the class a constraint is assigned to */
-   const std::string getClassNameOfCons(
-      int consindex              /**< index of constraint */
+   /** returns the number of constraints */
+   int getNConss(
    );
 
 
-   /** returns the decomposition code */
-   const int* getClassDecompInfo(
-   );
-
-   /** returns the decomposition code of a class */
-   int getClassDecompInfoOfClass(
-      int classindex             /**< index of class */
+   /** returns whether a constraint is already assigned to a class */
+   bool isConsClassified
+   (
+      int consindex                    /**< index of constraint */
    );
 
 
    /** set the decomposition code of a class */
    void setClassDecompInfo(
-      int classindex,            /**< index of class */
-      int decompInfo             /**< decomposition code of class */
+      int classindex,                  /**< index of class */
+      DECOMPINFO decompInfo            /**< decomposition code of class */
+   );
+
+   /** set the name of a class */
+   void setClassName(
+      int classindex,                  /**< index of class */
+      const char* name                 /**< name of class */
    );
 
 };
 
 
 } /* namespace gcg */
-#endif /* GCG_CLASS_CONSCLASSIFIER_H_ */
+#endif /* GCG_CLASS_CONSCLASSIFIER_H__ */

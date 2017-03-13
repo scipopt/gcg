@@ -1718,6 +1718,76 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
     std::cout << " consclassifier scipconstypes: " << " classification with " << foundConstypes.size()  << " different constraint classes" << std::endl;
 
+    /** Start of testing ConsClassifier */
+    ConsClassifier* classifier = new ConsClassifier( scip, "SCIPConstypes", (int) foundConstypes.size(), getNConss() );
+
+    for( int c = 0; c < classifier->getNClasses(); ++c )
+    {
+       std::string name;
+       switch (foundConstypes[c])
+       {
+       case linear:
+          name = "linear";
+          break;
+       case knapsack:
+          name = "knapsack";
+          break;
+       case varbound:
+          name = "varbound";
+          break;
+       case setpacking:
+          name = "setpacking";
+          break;
+       case setcovering:
+          name = "setcovering";
+          break;
+       case setpartitioning:
+          name = "setpartitioning";
+          break;
+       case logicor:
+          name= "logicor";
+          break;
+       case sos1:
+          name = "sos1";
+          break;
+       case sos2:
+          name = "sos2";
+          break;
+       case unknown:
+          name = "unknown";
+          break;
+       case nconsTypeItems:
+          name = "nconsTypeItems";
+          break;
+       }
+       classifier->setClassName( c, name.c_str() );
+    }
+    for( int i = 0; i < classifier->getNConss(); ++i )
+    {
+       classifier->assignConsToClass( i, classForCons[i] );
+    }
+
+    std::cout << "Name: " << classifier->getName() << std::endl;
+    std::cout << "Number of classes: " << classifier->getNClasses() << std::endl;
+    std::cout << "Number of constraints: " << classifier->getNConss() << std::endl;
+
+    for( int c = 0; c < classifier->getNClasses(); ++c )
+    {
+       std::cout << "Classname: " << classifier->getClassName( c ) << std::endl;
+       std::cout << "Assigned constraints:";
+       for( int i = 0; i < classifier->getNConss(); ++i )
+       {
+          if ( classifier->getClassOfCons( i ) == c )
+          {
+             std::cout << " " << i;
+          }
+       }
+       std::cout << std::endl;
+    }
+
+    delete classifier;
+    /** End of testing ConsClassifier */
+
     return;
  }
 
@@ -1782,6 +1852,40 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
      std::cout << " consclass classifier digit-reduced consnames (check for identity):  " << " classificiation with " << nameClasses.size()  << " different constraint classes" << std::endl;
 
+
+     /** Start of testing ConsClassifier */
+     ConsClassifier* classifier = new ConsClassifier( scip, "NNonzeros", (int) nameClasses.size(), getNConss() );
+
+     for( int c = 0; c < classifier->getNClasses(); ++c )
+     {
+        classifier->setClassName( c, nameClasses[c].c_str() );
+     }
+     for( int i = 0; i < classifier->getNConss(); ++i )
+     {
+        classifier->assignConsToClass( i, classForCons[i] );
+     }
+
+     std::cout << "Name: " << classifier->getName() << std::endl;
+     std::cout << "Number of classes: " << classifier->getNClasses() << std::endl;
+     std::cout << "Number of constraints: " << classifier->getNConss() << std::endl;
+
+     for( int c = 0; c < classifier->getNClasses(); ++c )
+     {
+        std::cout << "Classname: " << classifier->getClassName( c ) << std::endl;
+        std::cout << "Assigned constraints:";
+        for( int i = 0; i < classifier->getNConss(); ++i )
+        {
+           if ( classifier->getClassOfCons( i ) == c )
+           {
+              std::cout << " " << i;
+           }
+        }
+        std::cout << std::endl;
+     }
+
+     delete classifier;
+     /** End of testing ConsClassifier */
+
      return;
 
 
@@ -1803,6 +1907,13 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
      int nUnreachedConss = getNConss();
      int currentClass = -1;
      int nmaxconss = 5000;
+
+     /* Start of testing ConsClassifier (1/3) */
+     std::stringstream classifierName;
+     classifierName << "Levensthein_Dist_Con:" << connectivity;
+     ConsClassifier* classifier = new ConsClassifier( scip, classifierName.str().c_str(), 0, getNConss() );
+     /* End of testing ConsClassifier (1/3) */
+
 
      if (getNConss() > nmaxconss)
      {
@@ -1875,6 +1986,11 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
                  }
            } //endwhile(!queue.empty() )
 
+           /* Start of testing ConsClassifier (2/3) */
+           int newClass = classifier->addClass( consnamesToCompare[firstUnreached].c_str(), BOTH );
+           assert( newClass == currentClass );
+           /* End of testing ConsClassifier (2/3) */
+
         } // endwhile( !openConss.empty() )
 
         consclassescollection.push_back(classForCons);
@@ -1882,6 +1998,33 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
         std::cout << " consclassifier levenshtein: connectivity of " << connectivity << " yields a classification with " << currentClass+1  << " different constraint classes" << std::endl;
 
+
+        /* Start of testing ConsClassifier (3/3) */
+        for( int i = 0; i < classifier->getNConss(); ++i )
+        {
+           classifier->assignConsToClass( i, classForCons[i] );
+        }
+
+        std::cout << "Name: " << classifier->getName() << std::endl;
+        std::cout << "Number of classes: " << classifier->getNClasses() << std::endl;
+        std::cout << "Number of constraints: " << classifier->getNConss() << std::endl;
+
+        for( int c = 0; c < classifier->getNClasses(); ++c )
+        {
+           std::cout << "Classname: " << classifier->getClassName( c ) << std::endl;
+           std::cout << "Assigned constraints:";
+           for( int i = 0; i < classifier->getNConss(); ++i )
+           {
+              if ( classifier->getClassOfCons( i ) == c )
+              {
+                 std::cout << " " << i;
+              }
+           }
+           std::cout << std::endl;
+        }
+
+        delete classifier;
+        /** End of testing ConsClassifier (3/3) */
 
      return;
 
@@ -1897,6 +2040,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
      std::vector<int> nconssforclass(0);
      std::vector<int> differentNNonzeros(0);
      std::vector<int> classForCons (getNConss(), -1);
+
 
      int counterClasses = 0;
 
@@ -1942,6 +2086,41 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
      consclassesnclasses.push_back(differentNNonzeros.size() );
 
      std::cout << " consclassifier nonzeros: comparison of number of nonzeros  " << " yields a distribution with " << differentNNonzeros.size()  << " different constraint classes" << std::endl;
+
+     /** Start of testing ConsClassifier */
+     ConsClassifier* classifier = new ConsClassifier( scip, "NNonzeros", (int) differentNNonzeros.size(), getNConss() );
+
+     for( int c = 0; c < classifier->getNClasses(); ++c )
+     {
+        std::stringstream name;
+        name << differentNNonzeros[c];
+        classifier->setClassName( c, name.str().c_str() );
+     }
+     for( int i = 0; i < classifier->getNConss(); ++i )
+     {
+        classifier->assignConsToClass( i, classForCons[i] );
+     }
+
+     std::cout << "Name: " << classifier->getName() << std::endl;
+     std::cout << "Number of classes: " << classifier->getNClasses() << std::endl;
+     std::cout << "Number of constraints: " << classifier->getNConss() << std::endl;
+
+     for( int c = 0; c < classifier->getNClasses(); ++c )
+     {
+        std::cout << "Classname: " << classifier->getClassName( c ) << std::endl;
+        std::cout << "Assigned constraints:";
+        for( int i = 0; i < classifier->getNConss(); ++i )
+        {
+           if ( classifier->getClassOfCons( i ) == c )
+           {
+              std::cout << " " << i;
+           }
+        }
+        std::cout << std::endl;
+     }
+
+     delete classifier;
+     /** End of testing ConsClassifier */
 
      return;
 
