@@ -232,6 +232,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_generalmastersetpack.o \
 			dec_generalmastersetpart.o \
 			dec_generalmastersetcover.o \
+			class_consclassifier.o \
 			presol_roundbound.o
 
 ifeq ($(BLISS),true)
