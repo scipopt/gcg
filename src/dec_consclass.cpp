@@ -61,6 +61,13 @@
 #define DEC_ENABLEDFINISHING      FALSE        /**< should the detection be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+
+#define DEFAULT_MAXIMUMNCLASSES     8
+#define AGGRESSIVE_MAXIMUMNCLASSES  10
+#define FAST_MAXIMUMNCLASSES        6
+
+#define SET_MULTIPLEFORSIZETRANSF   12500
+
 /*
  * Data structures
  */
@@ -166,31 +173,26 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   std::vector<gcg::Seeed*> foundseeeds(0);
 
-
-
   gcg::Seeed* seeedOrig;
   gcg::Seeed* seeed;
 
-  int maximumnclasses = 9; /* if  distribution of classes exceed this number its skipped */
+  int maximumnclasses;
 
-  if( seeedPropagationData->seeedpool->getNConss() + seeedPropagationData->seeedpool->getNVars() > 50000 )
-     maximumnclasses = 3;
+  SCIPgetIntParam(scip, "detectors/consclass/maxnclasses", &maximumnclasses); /* if  distribution of classes exceed this number its skipped */
 
   for( int conssclass = 0; conssclass < seeedPropagationData->seeedpool->getNConssClassDistributions(); ++conssclass )
   {
-
     int nclasses = seeedPropagationData->seeedpool->getNClassesOfDistribution(conssclass);
     std::vector<int> classforcons = seeedPropagationData->seeedpool->getConssClassDistributionVector(conssclass);
     std::vector<int> consclassindices = std::vector<int>(0);
 
     /** check if there are to  many classes in this distribution and skip it if so */
 
-    if ( nclasses > maximumnclasses)
+    if ( nclasses > maximumnclasses )
     {
        std::cout << " the current consclass distribution includes " <<  nclasses << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
        continue;
     }
-
 
   seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
   seeedOrig->setDetectorPropagated(detector);
@@ -252,6 +254,122 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
    return SCIP_OKAY;
 }
+
+static
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   SCIP_Real modifier;
+
+   int newval;
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+
+   modifier = ((SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+   modifier = log(modifier) / log(2.);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+
+   newval = MAX( 2, AGGRESSIVE_MAXIMUMNCLASSES - modifier );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
+
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "\n%s = %d\n", setstr, newval);
+
+
+   return SCIP_OKAY;
+
+}
+
+
+static
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultConsclass)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   SCIP_Real modifier;
+
+   int newval;
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+   modifier = log(modifier) / log(2);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+
+   newval = MAX( 2, DEFAULT_MAXIMUMNCLASSES - modifier );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
+
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "\n%s = %d\n", setstr, newval);
+
+   return SCIP_OKAY;
+
+}
+
+static
+DEC_DECL_SETPARAMFAST(setParamFastConsclass)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   SCIP_Real modifier;
+   int newval;
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+
+   modifier = log(modifier) / log(2);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
+
+   newval = MAX( 2, FAST_MAXIMUMNCLASSES - modifier );
+
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "\n%s = %d\n", setstr, newval);
+
+   return SCIP_OKAY;
+
+}
+
+
+
 /*
  * detector specific interface methods
  */
@@ -261,6 +379,7 @@ SCIP_RETCODE SCIPincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
 )
 {
    DEC_DETECTORDATA* detectordata;
+   char setstr[SCIP_MAXSTRLEN];
 
    /**@todo create consclass detector data here*/
    detectordata = NULL;
@@ -268,9 +387,13 @@ SCIP_RETCODE SCIPincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConsclass,
-         freeConsclass, initConsclass, exitConsclass, propagateSeeedConsclass, finishSeeedConsclass));
+         freeConsclass, initConsclass, exitConsclass, propagateSeeedConsclass, finishSeeedConsclass, setParamAggressiveConsclass, setParamDefaultConsclass, setParamFastConsclass));
 
    /**@todo add consclass detector parameters */
+
+   const char* name = DEC_DETECTORNAME;
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, "maximum number of classes ",  NULL, FALSE, DEFAULT_MAXIMUMNCLASSES, 1, INT_MAX, NULL, NULL ) );
 
    return SCIP_OKAY;
 }

@@ -644,6 +644,10 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
 
 #define finishSeeedMST NULL
 
+#define setParamAggressiveMST NULL
+#define setParamDefaultMST NULL
+#define setParamFastMST NULL
+
 
 /*
  * detector specific interface methods
@@ -664,7 +668,7 @@ SCIP_RETCODE SCIPincludeDetectorMST(
    detectordata->found = FALSE;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST, finishSeeedMST) );
+      detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST, finishSeeedMST, setParamAggressiveMST, setParamDefaultMST, setParamFastMST) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/mst/niterations", "Number of iterations to run mst with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );

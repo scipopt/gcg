@@ -660,6 +660,11 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircase)
 #define detectorPropagateSeeedStaircase NULL
 #define detectorFinishSeeedStaircase NULL
 
+#define setParamAggressiveStaircase NULL
+#define setParamDefaultStaircase NULL
+#define setParamFastStaircase NULL
+
+
 /*
  * constraint specific interface methods
  */
@@ -682,7 +687,7 @@ SCIP_RETCODE SCIPincludeDetectorStaircase(
    detectordata->nblocks = 0;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, detectorExitStaircase, detectorPropagateSeeedStaircase, detectorFinishSeeedStaircase) );
+      detectordata, detectorDetectStaircase, detectorFreeStaircase, detectorInitStaircase, detectorExitStaircase, detectorPropagateSeeedStaircase, detectorFinishSeeedStaircase, setParamAggressiveStaircase, setParamDefaultStaircase, setParamFastStaircase) );
 
    return SCIP_OKAY;
 }

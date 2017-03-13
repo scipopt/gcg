@@ -31,6 +31,7 @@
  * @author Martin Bergner
  * @author Daniel Peters
  * @author Jonas Witt
+ * @author Michael Bastubbe
  *
  * This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving
  * automorphisms and bliss.
@@ -76,8 +77,10 @@
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 
-#define DEFAULT_MAXDECOMPSEXACT  5           /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXACT  7           /**< default maximum number of decompositions */
 #define DEFAULT_MAXDECOMPSEXTEND 5           /**< default maximum number of decompositions */
+
+#define SET_MULTIPLEFORSIZETRANSF 12500
 
 /*
  * Data structures
@@ -1364,8 +1367,6 @@ SCIP_RETCODE detectIsomorph(
       // reorder decomposition (corresponding to orbit size)
       //SCIP_CALL( reorderPermutations(scip, ptrhook->conssperm, nconss, nperms) );
 
-
-
       if( *ndecdecomps == 0 )
          SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(maxdecomps, nperms)) ); /*lint !e506*/
       else
@@ -1683,6 +1684,142 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
    return SCIP_OKAY;
 }
 #define detectorFinishSeeedIsomorph NULL
+
+static
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+   int newval;
+   SCIP_Real modifier;
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+
+     (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", name);
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   ++newval;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "After Setting %s = %d\n", setstr, newval);
+
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", name);
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   ++newval;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+
+   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+
+   modifier = log(modifier) / log(2);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+   modifier += 0;
+
+   newval = MAX( 0, DEFAULT_MAXDECOMPSEXACT - modifier );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsexact", name);
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+   newval = MAX( 0, DEFAULT_MAXDECOMPSEXTEND - modifier );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsextend", name);
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+   return SCIP_OKAY;
+
+}
+
+
+static
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   int newval;
+   SCIP_Real modifier;
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+
+   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+
+   modifier = log(modifier) / log(2);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+   modifier += 2;
+
+   newval = MAX( 0, DEFAULT_MAXDECOMPSEXACT - modifier );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsexact", name);
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+   newval = MAX( 0, DEFAULT_MAXDECOMPSEXTEND - modifier );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsextend", name);
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+
+
+   return SCIP_OKAY;
+
+}
+
+static
+DEC_DECL_SETPARAMFAST(setParamFastIsomorph)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   int newval;
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+
+   newval = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) >  SET_MULTIPLEFORSIZETRANSF) ? 0 : 1;
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsexact", name);
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+   newval = 0;
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsextend", name);
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+
+   return SCIP_OKAY;
+
+}
+
+
+
 /*
  * detector specific interface methods
  */
@@ -1704,7 +1841,7 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, detectorFinishSeeedIsomorph) );
+      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, detectorFinishSeeedIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
 
    /* add isomorph constraint handler parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecompsexact",

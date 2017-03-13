@@ -576,6 +576,13 @@ DEC_DECL_DETECTSTRUCTURE(detectMCL)
 //}
 
 #define finishSeeedMCL NULL
+
+#define setParamAggressiveMCL NULL
+#define setParamDefaultMCL NULL
+#define setParamFastMCL NULL
+
+
+
 /*
  * detector specific interface methods
  */
@@ -595,7 +602,7 @@ SCIP_RETCODE SCIPincludeDetectorMCL(
    detectordata->found = FALSE;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
-      detectordata, detectMCL, freeMCL, initMCL, exitMCL, propagateSeeedMCL, finishSeeedMCL) );
+      detectordata, detectMCL, freeMCL, initMCL, exitMCL, propagateSeeedMCL, finishSeeedMCL, setParamAggressiveMCL, setParamDefaultMCL, setParamFastMCL) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/mcl/niterations", "Number of iterations to run MCL with different inflate factor (max=20).", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 1, 20, NULL, NULL) );

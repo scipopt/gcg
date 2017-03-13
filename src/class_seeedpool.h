@@ -94,7 +94,7 @@ private:
    std::vector<SCIP_CONS*> 			   			consToScipCons;	      /**< stores the corresponding scip constraints pointer */
    std::vector<SCIP_VAR*> 				       		varToScipVar;		      /**< stores the corresponding scip variable pointer */
    std::vector<DEC_DETECTOR*> 				   	detectorToScipDetector; /**< stores the corresponding SCIP detector pinter */
-   std::vector<DEC_DETECTOR*>                   detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pinter */
+   std::vector<DEC_DETECTOR*>                   detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pointer*/
    std::tr1::unordered_map<SCIP_CONS*, int> 	   scipConsToIndex;	      /**< maps SCIP_CONS* to the corresponding index */
    std::tr1::unordered_map<SCIP_VAR*, int>  	   scipVarToIndex;		   /**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int>  scipDetectorToIndex;		/**< maps SCIP_VAR* to the corresponding index */
@@ -112,7 +112,8 @@ private:
    int                                          ndecompositions;        /**< number of decompositions found by the detectors */
 
    /** oracle data */
-   std::vector<int>                             candidatesNBlocks;      /**< candidate for the number of blocks  */
+   std::vector<std::pair<int,int> >                             candidatesNBlocks;      	/**< candidate for the number of blocks  */
+
 
    std::vector<std::vector<int> >               consclassescollection;  /**< collection of different constraint class distributions  */
    std::vector<int >                            consclassesnclasses;    /**< number of classes of the corresponding distribution */
@@ -200,7 +201,7 @@ public:
 
    int getNConss();
 
-   std::vector<int> getCandidatesNBlocks() const;
+   std::vector<int> getSortedCandidatesNBlocks();
 
    void addCandidatesNBlocks(
       int                 candidate            /**< candidate for block size */
@@ -242,10 +243,14 @@ public:
 
    void reduceConsclasses();
 
-
-
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds);
+
+   SCIP_RETCODE buildFamilyTreeLatexFile(
+      const char* filename,                                 /* filename the output should be written to */
+      std::vector<SeeedPtr> seeeds                          /* vector of seeed pointers the  family tree should be constructed for */
+      );
+
 
    };
 } /* namespace gcg */

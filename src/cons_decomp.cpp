@@ -76,6 +76,9 @@
 #define DEFAULT_CONSSCLASSLEVENSHTEINENABLED          FALSE    /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
 #define DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG      TRUE     /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
 
+#define DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER    10000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis default */
+#define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
+#define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000     /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
 
 
 /*
@@ -353,13 +356,13 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/enabled", "indicates whether to start detection for the original problem", &conshdlrdata->enableorigdetection, FALSE, DEFAULT_ENABLEORIGDETECTION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", "indicates whether constraint classifier for nonzero entries is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSNNONZENABLED, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/nnonzeros/enabledorig", "indicates whether constraint classifier for nonzero entries is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSNNONZENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/nnonzeros/origenabled", "indicates whether constraint classifier for nonzero entries is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSNNONZENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", "indicates whether constraint classifier for scipconstype is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/scipconstype/enabledorig", "indicates whether constraint classifier for scipconsstype is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/scipconstype/origenabled", "indicates whether constraint classifier for scipconsstype is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", "indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled", &conshdlrdata->consnamenonumbersenabled, FALSE, DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabledorig", "indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem", &conshdlrdata->consnamenonumbersenabledorig, FALSE, DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", "indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem", &conshdlrdata->consnamenonumbersenabledorig, FALSE, DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled", &conshdlrdata->conssclasslevenshteinabled, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLED, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabledorig", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem", &conshdlrdata->conssclasslevenshteinenabledorig, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem", &conshdlrdata->conssclasslevenshteinenabledorig, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
@@ -509,7 +512,10 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_INITDETECTOR((*initDetector)),       /**< initialization method of detector (or NULL) */
    DEC_DECL_EXITDETECTOR((*exitDetector)),       /**< deinitialization method of detector (or NULL) */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
-   DEC_DECL_FINISHSEEED((*finishSeeedDetector))
+   DEC_DECL_FINISHSEEED((*finishSeeedDetector)),
+   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
+   DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),
+   DEC_DECL_SETPARAMFAST((*setParamFastDetector))
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -556,6 +562,11 @@ SCIP_RETCODE DECincludeDetector(
 
    detector->propagateSeeed = propagateSeeedDetector;
    detector->finishSeeed = finishSeeedDetector;
+   detector->setParamAggressive =  setParamAggressiveDetector;
+   detector->setParamDefault =  setParamDefaultDetector;
+   detector->setParamFast =  setParamFastDetector;
+
+
    detector->decchar = decchar;
 
    detector->freqCallRound = freqCallRound;
@@ -578,11 +589,11 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabled), FALSE, enabled, NULL, NULL) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabledorig", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled for detecting in the original problem", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabledOrig), FALSE, enabled, NULL, NULL) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabledfinishing", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled for finishing of incomplete decompositions", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabledFinishing), FALSE, enabledFinishing, NULL, NULL) );
 
@@ -608,17 +619,17 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "minimum round the detector gets called in detection loop <%s>", name);
    SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->minCallRound), FALSE, minCallRound, 0, INT_MAX, NULL, NULL) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallroundOriginal", name);
-   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "frequency the detector gets called in detection loop,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <%s>", name);
-   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->freqCallRound), FALSE, freqCallRoundOriginal, 0, INT_MAX, NULL, NULL) );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origfreqcallround", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "frequency the detector gets called in detection loop,i.e., it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 <%s>", name);
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->freqCallRoundOriginal), FALSE, freqCallRoundOriginal, 0, INT_MAX, NULL, NULL) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallroundOriginal", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "maximum round the detector gets called in detection loop <%s>", name);
-   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->maxCallRound), FALSE, maxCallRoundOriginal, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->maxCallRoundOriginal), FALSE, maxCallRoundOriginal, 0, INT_MAX, NULL, NULL) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallroundOriginal", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmincallround", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "minimum round the detector gets called in detection loop <%s>", name);
-   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->minCallRound), FALSE, minCallRoundOriginal, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->minCallRoundOriginal), FALSE, minCallRoundOriginal, 0, INT_MAX, NULL, NULL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/priority", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "priority of detector <%s>", name);
@@ -691,7 +702,7 @@ SCIP_RETCODE DECdetectStructure(
       SCIP_CALL( SCIPtransformProb(scip) );
 
 
-   candidatesNBlocks = seeedpoolunpresolved.getCandidatesNBlocks();
+   candidatesNBlocks = seeedpoolunpresolved.getSortedCandidatesNBlocks();
 
 
    /** detection for original problem */
@@ -766,7 +777,7 @@ SCIP_RETCODE DECdetectStructure(
 	  conshdlrdata->ndecomps = seeedpool.getNDecompositions();
 	  SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
 	  SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
-	  seeedpool.freeCurrSeeeds();
+//	  seeedpool.freeCurrSeeeds();
    }
    else
    {
@@ -1113,20 +1124,20 @@ SCIP_RETCODE setDetectionDefault(
    assert(conshdlrdata != NULL);
 
    SCIP_CALL (SCIPsetIntParam(scip, "detection/maxrounds", 2) );
-   SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob", FALSE) );
+   SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob/enabled", FALSE) );
 
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
 
-   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < 4000)
+   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
    else
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      SCIP_Result* result;
+      SCIP_Result result;
 
       char paramname[SCIP_MAXSTRLEN];
       SCIP_Bool paramval;
@@ -1134,12 +1145,42 @@ SCIP_RETCODE setDetectionDefault(
 
       SCIP_CALL( SCIPresetParam(scip, paramname) );
 
-      *result = SCIP_DIDNOTRUN;
-      conshdlrdata->detectors[i]->setParamDefault(scip, conshdlrdata->detectors[i], result);
+      result = SCIP_DIDNOTRUN;
+      if( conshdlrdata->detectors[i]->setParamDefault != NULL )
+         conshdlrdata->detectors[i]->setParamDefault(scip, conshdlrdata->detectors[i], &result);
       if( !quiet )
       {
+         char paramname[SCIP_MAXSTRLEN];
+         SCIP_Bool paramval;
+         SCIP_Bool written = FALSE;
+
+         (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
          SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
-         SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+         if( paramval == TRUE )
+         {
+            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            written = TRUE;
+         }
+
+         (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/origenabled", conshdlrdata->detectors[i]->name);
+         SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+         if( paramval == TRUE )
+         {
+            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            written = TRUE;
+         }
+
+         (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", conshdlrdata->detectors[i]->name);
+         SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+         if( paramval == TRUE )
+         {
+            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            written = TRUE;
+         }
+
+         if( written )
+            SCIPinfoMessage(scip, NULL, "\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+
       }
    }
 
@@ -1162,30 +1203,58 @@ SCIP_RETCODE setDetectionAggressive(
 
    SCIP_CALL (SCIPsetIntParam(scip, "detection/maxrounds", 3) );
 
-   SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob", TRUE) );
+   SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob/enabled", TRUE) );
 
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
 
-   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < 80000)
+   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
    else
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
-         SCIP_Result* result;
+         SCIP_Result result;
 
-         *result = SCIP_DIDNOTRUN;
-         conshdlrdata->detectors[i]->setParamAggressive(scip, conshdlrdata->detectors[i], result);
+         result = SCIP_DIDNOTRUN;
+         if( conshdlrdata->detectors[i]->setParamAggressive != NULL )
+            conshdlrdata->detectors[i]->setParamAggressive(scip, conshdlrdata->detectors[i], &result);
+
          if( !quiet )
          {
             char paramname[SCIP_MAXSTRLEN];
             SCIP_Bool paramval;
+            SCIP_Bool written = FALSE;
 
+            (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
             SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
-            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            if( paramval == TRUE )
+            {
+               SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+               written = TRUE;
+            }
+
+            (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/origenabled", conshdlrdata->detectors[i]->name);
+            SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+            if( paramval == TRUE )
+            {
+               SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+               written = TRUE;
+            }
+
+            (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", conshdlrdata->detectors[i]->name);
+            SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+            if( paramval == TRUE )
+            {
+               SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+               written = TRUE;
+            }
+
+            if( written )
+               SCIPinfoMessage(scip, NULL, "\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+
          }
       }
 
@@ -1233,34 +1302,58 @@ SCIP_RETCODE setDetectionFast(
    assert(conshdlrdata != NULL);
 
    SCIP_CALL (SCIPsetIntParam(scip, "detection/maxrounds", 1) );
-   SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob", FALSE) );
+   SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob/enabled", FALSE) );
 
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
 
-   if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < 2000)
+   if( SCIPgetNVars(scip) + SCIPgetNConss(scip) < FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER )
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
    else
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      SCIP_Result* result;
+      SCIP_Result result;
 
-      *result = SCIP_DIDNOTRUN;
-      conshdlrdata->detectors[i]->setParamFast(scip, conshdlrdata->detectors[i], result);
+      result = SCIP_DIDNOTRUN;
+      if( conshdlrdata->detectors[i]->setParamFast != NULL )
+         conshdlrdata->detectors[i]->setParamFast(scip, conshdlrdata->detectors[i], &result);
       if( !quiet )
       {
          char paramname[SCIP_MAXSTRLEN];
-            SCIP_Bool paramval;
+         SCIP_Bool paramval;
+         SCIP_Bool written = FALSE;
 
-            SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+         (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
+         SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+         if( paramval == TRUE )
+         {
             SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            written = TRUE;
+         }
+
+         (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/origenabled", conshdlrdata->detectors[i]->name);
+         SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+         if( paramval == TRUE )
+         {
+            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            written = TRUE;
+         }
+
+         (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", conshdlrdata->detectors[i]->name);
+         SCIP_CALL( SCIPgetBoolParam(scip, paramname, &paramval) );
+         if( paramval == TRUE )
+         {
+            SCIPinfoMessage(scip, NULL, "%s = %s\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
+            written = TRUE;
+         }
+
+         if( written )
+            SCIPinfoMessage(scip, NULL, "\n", paramname, paramval == TRUE ? "TRUE" : "FALSE");
       }
    }
-
-
 
    return SCIP_OKAY;
 }
@@ -1293,14 +1386,12 @@ SCIP_RETCODE GCGsetDetection(
    switch( paramsetting )
    {
    case SCIP_PARAMSETTING_AGGRESSIVE:
-      SCIP_CALL( setDetectionDefault(scip, conshdlrdata, quiet) );
       SCIP_CALL( setDetectionAggressive(scip, conshdlrdata, quiet) );
       break;
    case SCIP_PARAMSETTING_OFF:
       SCIP_CALL( setDetectionOff(scip, conshdlrdata, quiet) );
       break;
    case SCIP_PARAMSETTING_FAST:
-      SCIP_CALL( setDetectionDefault(scip, conshdlrdata, quiet) );
       SCIP_CALL( setDetectionFast(scip, conshdlrdata, quiet) );
       break;
    case SCIP_PARAMSETTING_DEFAULT:

@@ -76,10 +76,10 @@ using gcg::Weights;
 #define DEC_DETECTORNAME          "hrcgpartition"    /**< name of the detector */
 #define DEC_DESC                  "enforces arrowhead structures using graph partitioning" /**< description of detector */
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          INT_MAX           /** last round the detector gets called                              */
+#define DEC_MAXCALLROUND          1           /** last round the detector gets called                              */
 #define DEC_MINCALLROUND          0          /** first round the detector gets called                              */
 #define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
-#define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
+#define DEC_MAXCALLROUNDORIGINAL  1     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              1000           /**< priority of the detector */
 #define DEC_DECCHAR               'a'            /**< display character of detector */
@@ -102,10 +102,11 @@ using gcg::Weights;
 #define DEFAULT_DUMMYNODES        0.2        /**< percentage of dummy vertices*/
 #define DEFAULT_CONSWEIGHT_SETPPC 5          /**< weight for constraint hyperedges that are setpartitioning or covering
                                                   constraints */
-#define DEFAULT_MINBLOCKS         2          /**< value for the minimum number of blocks to be considered */
-#define DEFAULT_MAXBLOCKS         20         /**< value for the maximum number of blocks to be considered */
-#define DEFAULT_ALPHA             0.0        /**< factor for standard deviation of constraint weights */
-#define DEFAULT_BETA              0.5        /**< factor of how the weight for equality and inequality constraints is
+#define DEFAULT_MINBLOCKS          2          /**< value for the minimum number of blocks to be considered */
+#define DEFAULT_MAXBLOCKS          20         /**< value for the maximum number of blocks to be considered */
+#define DEFAULT_MAXNBLOCKCANDIDATES 4          /**< number of block number candidates to be considered */
+#define DEFAULT_ALPHA              0.0        /**< factor for standard deviation of constraint weights */
+#define DEFAULT_BETA               0.5        /**< factor of how the weight for equality and inequality constraints is
                                                   distributed (keep 1/2 for the same on both) */
 #define DEFAULT_METIS_UBFACTOR    5.0        /**< default unbalance factor given to metis on the commandline */
 #define DEFAULT_METIS_VERBOSE     FALSE      /**< should metis be verbose */
@@ -114,6 +115,10 @@ using gcg::Weights;
 #define DEFAULT_TYPE              'a'        /**< type of the decomposition 'c' column hypergraph (single bordered, no
                                                   linking constraints), 'r' row hypergraph (single bordered, no linking
                                                   variables) and 'a' column-row hypergraph (arrowhead) */
+
+#define FAST_MAXHALFPERIMETER	  25000		/**< if nrows + ncols does not exceeds this value */
+
+#define SET_MULTIPLEFORSIZETRANSF 12500
 /*
  * Data structures
  */
@@ -137,10 +142,11 @@ struct DEC_DetectorData
    SCIP_Real beta;                  /**< factor for equality od inequality constraints */
 
    /* general parameters */
-   SCIP_Real dummynodes;      /**< percent of dummy nodes */
-   SCIP_Bool tidy;            /**< whether tempory metis files should be cleaned up */
-   int       maxblocks;       /**< maximal number of blocks to test */
-   int       minblocks;       /**< minimal number of blocks to test */
+   SCIP_Real dummynodes;      			/**< percent of dummy nodes */
+   SCIP_Bool tidy;            			/**< whether tempory metis files should be cleaned up */
+   int       maxnblockcandidates;       /**< maximal number of block canddidates to test */
+   int       maxblocks;       			/**< maximal number of blocks to test */
+   int       minblocks;       			/**< minimal number of blocks to test */
 
    /* metis parameters */
    int       randomseed;      /**< metis random seed */
@@ -445,9 +451,9 @@ SCIP_RETCODE detection(
 )
 {
 
-   *result = SCIP_DIDNOTFIND;
-
-   /* add hrgpartition presolver parameters */
+	/* add hrgpartition presolver parameters */
+   char setstr[SCIP_MAXSTRLEN];
+   int maxnblockcandidates;
 
    int k;
    int j;
@@ -462,12 +468,19 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
 
-   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getCandidatesNBlocks();
-   if(numberOfBlocks.empty())
+   *result = SCIP_DIDNOTFIND;
+
+   std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getSortedCandidatesNBlocks();
+   if( numberOfBlocks.empty() )
       numberOfBlocks.push_back(8);
 
    int nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/hrcgpartition/maxnblockcandidates");
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
+
+   maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
 
    SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
 
@@ -495,7 +508,7 @@ SCIP_RETCODE detection(
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-   for( j = 0, k = 0; k < (int) numberOfBlocks.size(); ++k)
+   for( j = 0, k = 0; k < maxnblockcandidates; ++k)
    {
       int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -733,6 +746,139 @@ DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
 }
 
 
+static
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrcgpartition)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+   int newval;
+   SCIP_Real modifier;
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+
+     (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", name);
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   ++newval;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "After Setting %s = %d\n", setstr, newval);
+
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", name);
+   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   ++newval;
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+
+   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+
+   modifier = log(modifier) / log(2);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+   modifier += 1;
+
+   newval = MAX( 0, DEFAULT_MAXNBLOCKCANDIDATES - modifier + 2 );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnblockcandidates", name);
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+   return SCIP_OKAY;
+
+}
+
+
+static
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultHrcgpartition)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   int newval;
+   SCIP_Real modifier;
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+
+   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+
+   modifier = log(modifier) / log(2);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+   modifier += 1;
+
+   newval = MAX( 0, DEFAULT_MAXNBLOCKCANDIDATES - modifier );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnblockcandidates", name);
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+
+
+   return SCIP_OKAY;
+
+}
+
+static
+DEC_DECL_SETPARAMFAST(setParamFastHrcgpartition)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   int newval;
+   SCIP_Real modifier;
+
+
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+
+   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+
+   modifier = log(modifier) / log(2);
+
+   if (!SCIPisFeasPositive(scip, modifier) )
+      modifier = -1.;
+
+   modifier = SCIPfloor(scip, modifier);
+   modifier += 1;
+
+   newval = MAX( 0, DEFAULT_MAXNBLOCKCANDIDATES - modifier - 2 );
+
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnblockcandidates", name);
+   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+
+   return SCIP_OKAY;
+
+}
+
+
+
 /** creates the hrcgpartition presolver and includes it in SCIP */
 extern "C"
 SCIP_RETCODE SCIPincludeDetectorHrcgpartition(
@@ -746,11 +892,11 @@ SCIP_RETCODE SCIPincludeDetectorHrcgpartition(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectHrcgpartition, freeHrcgpartition, initHrcgpartition, exitHrcgpartition, propagateSeeedHrcgpartition, finishSeeedHrcgpartition) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectHrcgpartition, freeHrcgpartition, initHrcgpartition, exitHrcgpartition, propagateSeeedHrcgpartition, finishSeeedHrcgpartition, setParamAggressiveHrcgpartition, setParamDefaultHrcgpartition, setParamFastHrcgpartition) );
 
 
-   /* add hrcgpartition presolver parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
+   /* add hrcgpartition detector parameters */
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/maxnblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 0, 1000000, NULL, NULL) );   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/hrcgpartition/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip, "detectors/hrcgpartition/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
    SCIP_CALL( SCIPaddRealParam(scip, "detectors/hrcgpartition/alpha", "factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );

@@ -92,11 +92,20 @@ namespace gcg {
 
 /** local methods */
 
+struct sort_decr {
+    bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
+        return left.second > right.second;
+    }
+};
+
+
 struct sort_pred {
     bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
         return left.second < right.second;
     }
 };
+
+
 
 SCIP_Bool cmpSeeedsMaxWhite (SeeedPtr i, SeeedPtr j) { return (i->getMaxWhiteScore() < j->getMaxWhiteScore() ); }
 
@@ -456,10 +465,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          }
          else
          {
-            SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabledorig", &conssclassnnonzeros);
-            SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabledorig", &conssclassscipconstypes);
-            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabledorig", &conssclassconsnamenonumbers);
-            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabledorig", &conssclassconsnamelevenshtein);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/origenabled", &conssclassnnonzeros);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/origenabled", &conssclassscipconstypes);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
+            SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
          }
 
          std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
@@ -511,7 +520,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          seeedPropData->nNewSeeeds = 0;
          delSeeeds = std::vector<SeeedPtr>(0);
 
-        verboseLevel = 0;
+        verboseLevel = 1;
 
         for (size_t i = 0; i < translatedOrigSeeeds.size(); ++i)
         {
@@ -551,9 +560,15 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  DEC_DETECTOR* detector;
                                  std::vector<SeeedPtr>::const_iterator newSIter;
                                  std::vector<SeeedPtr>::const_iterator newSIterEnd;
+                                 int maxcallround;
+                                 int mincallround;
+                                 int freqcallround;
+                                 char setstr[SCIP_MAXSTRLEN];
+                                 const char* detectorname;
 
-                                 SCIP_RESULT result = SCIP_DIDNOTFIND;
                                  detector = detectorToScipDetector[d];
+                                 detectorname = DECdetectorGetName(detector);
+                                 SCIP_RESULT result = SCIP_DIDNOTFIND;
 
                                  /** if the seeed is also propagated by the detector go on with the next detector */
                                  if(seeedPtr->isPropagatedBy(detector) && !detector->usefulRecall )
@@ -562,20 +577,28 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                  /** check if detector is callable in current detection round */
                                  if(transformed)
                                  {
-                                    if(detector->maxCallRound < round || detector->minCallRound > round)
-                                       continue;
-
-                                    if( (round - detector->minCallRound) % detector->freqCallRound != 0 )
-                                       continue;
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &maxcallround) );
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &mincallround) );
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &freqcallround) );
                                  }
                                  else
                                  {
-                                    if(detector->maxCallRoundOriginal < round || detector->minCallRoundOriginal > round)
-                                       continue;
-
-                                    if( (round - detector->minCallRoundOriginal) % detector->freqCallRoundOriginal != 0 )
-                                       continue;
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &maxcallround) );
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmincallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &mincallround) );
+                                    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origfreqcallround", detectorname);
+                                    SCIP_CALL_ABORT( SCIPgetIntParam(scip, setstr, &freqcallround) );
                                  }
+
+                                 if( maxcallround < round || mincallround > round)
+                                    continue;
+
+                                 if( (round - mincallround) % freqcallround != 0 )
+                                    continue;
 
                                  seeedPropData->seeedToPropagate = seeedPtr;
 
@@ -585,8 +608,6 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                      std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d]) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round << std::endl;
 
                                  SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
-
-
 
                                  for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
                                  {
@@ -718,7 +739,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                  }// end for currseeeds
 
                  for(size_t s = 0; s < currSeeedsToDelete.size(); ++s )
+                 {
                     delete currSeeedsToDelete[s];
+                    currSeeedsToDelete[s] = NULL;
+                 }
 
                  currSeeeds = nextSeeeds;
          } // end for rounds
@@ -844,6 +868,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          for( size_t d =  delSeeeds.size(); d > 0; d--)
          {
             delete delSeeeds[d-1];
+            delSeeeds[d-1] = NULL;
          }
 
          delSeeeds.clear();
@@ -1236,6 +1261,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          for( size_t d =  delSeeeds.size(); d > 0; d--)
          {
             delete delSeeeds[d-1];
+            delSeeeds[d-1] = NULL;
          }
 
          delSeeeds.clear();
@@ -1263,7 +1289,12 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
  {
     for( size_t i = 0; i < currSeeeds.size(); ++i )
     {
-       delete currSeeeds[i];
+       if ( currSeeeds[i] != NULL )
+       {
+          currSeeeds[i]->checkConsistency();
+          delete currSeeeds[i];
+          currSeeeds[i] = NULL;
+       }
     }
     return;
  }
@@ -1442,7 +1473,10 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
 
       if(newseeed->checkConsistency() )
          newseeeds.push_back(newseeed);
-      else delete newseeed;
+      else {
+         delete newseeed;
+         newseeed = NULL;
+      }
    }
 
    return newseeeds;
@@ -1556,9 +1590,25 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     return nConss;
  }
 
- std::vector<int> Seeedpool::getCandidatesNBlocks() const
+ std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
  {
-    return candidatesNBlocks;
+	std::vector<int> toreturn(0);
+	SCIP_Bool output = FALSE;
+
+	/** first: sort the current candidates */
+	std::sort(candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
+
+	if( output )
+	{
+		std::cout << "nCandidates: " << candidatesNBlocks.size() << std::endl;
+		for(size_t i = 0; i < candidatesNBlocks.size(); ++i)
+			std::cout << "nblockcandides: " << candidatesNBlocks[i].first << " ; " << candidatesNBlocks[i].second << " times prop " << std::endl;
+	}
+
+	for(size_t i = 0; i < candidatesNBlocks.size(); ++i)
+		toreturn.push_back(candidatesNBlocks[i].first);
+
+    return toreturn;
  }
 
  void Seeedpool::addCandidatesNBlocks(
@@ -1571,18 +1621,21 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
        bool alreadyIn = false;
        for(size_t i = 0; i < candidatesNBlocks.size(); ++i )
        {
-          if(candidatesNBlocks[i] == candidate)
+          if(candidatesNBlocks[i].first == candidate)
           {
              alreadyIn = true;
+             ++candidatesNBlocks[i].second;
              break;
           }
        }
        if(!alreadyIn)
        {
           std::cout << "added block number candidate : " << candidate << std::endl;
-          candidatesNBlocks.push_back(candidate);
+          candidatesNBlocks.push_back(std::pair<int,int>(candidate, 1) );
        }
     }
+
+    return;
  }
 
  void Seeedpool::calcCandidatesNBlocks()
@@ -1614,6 +1667,13 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
        for ( int i =0; i < getNConss(); ++i)
           ++nconssofclass[ consclassescollection[conssclass][i] ];
 
+       /** start with the cardinalities of the consclasses as candidates */
+       for( size_t i = 0; i < nconssofclass.size(); ++i)
+       {
+    	   addCandidatesNBlocks(nconssofclass[i]);
+       }
+
+       /** continue with gcd of all cardinalities in this subset */
        for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
        {
           int greatestCD = 1;
@@ -1628,23 +1688,8 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
              greatestCD = gcd( greatestCD, nconssofclass[subsetsOfConstypes[subset][i]] );
           }
 
-          if( greatestCD > 1 )
-          {
-             bool alreadyIn = false;
-             for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
-             {
-                if( candidatesNBlocks[i] == greatestCD )
-                {
-                   alreadyIn = true;
-                   break;
-                }
-             }
-             if( !alreadyIn )
-             {
-                std::cout << "added block number candidate : " << greatestCD << std::endl;
-                candidatesNBlocks.push_back(greatestCD);
-             }
-          }
+          addCandidatesNBlocks(greatestCD);
+
        }
     }
 
@@ -2325,6 +2370,7 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
    for(int i = 0; i < oneBlockSeeeds.size(); ++i)
    {
       delete oneBlockSeeeds[i];
+      oneBlockSeeeds[i] = NULL;
    }
 
    return remainingSeeeds;

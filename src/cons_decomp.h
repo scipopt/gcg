@@ -110,7 +110,10 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL)                        */
    DEC_DECL_EXITDETECTOR((*exitDetector)),    /**< deinitialization method of detector (or NULL)                      */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
-   DEC_DECL_FINISHSEEED((*finishSeeedDetector))
+   DEC_DECL_FINISHSEEED((*finishSeeedDetector)),
+   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
+   DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),
+   DEC_DECL_SETPARAMFAST((*setParamFastDetector))
    );
 
 /** returns the remaning time of scip that the decomposition may use */

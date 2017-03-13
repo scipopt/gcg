@@ -185,6 +185,10 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
  */
 
 #define finishSeeedMastersetcover NULL
+#define setParamAggressiveMastersetcover NULL
+#define setParamDefaultMastersetcover NULL
+#define setParamFastMastersetcover NULL
+
 
 
 
@@ -201,7 +205,7 @@ SCIP_RETCODE SCIPincludeDetectorMastersetcover(SCIP* scip /**< SCIP data structu
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
          DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP,
          DEC_USEFULRECALL, detectordata, detectMastersetcover, freeMastersetcover,
-         initMastersetcover, exitMastersetcover, propagateSeeedMastersetcover, finishSeeedMastersetcover));
+         initMastersetcover, exitMastersetcover, propagateSeeedMastersetcover, finishSeeedMastersetcover, setParamAggressiveMastersetcover, setParamDefaultMastersetcover, setParamFastMastersetcover));
 
    /**@todo add mastersetcover detector parameters */
 
