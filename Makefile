@@ -575,7 +575,7 @@ ifeq ($(MAKESOFTLINKS), true)
 		                echo "* Please insert the paths to SCIP below." ; \
 		                echo "* The link will be installed in the 'lib' directory." ; \
 		                echo ; \
-				echo "> Enter soft-link target file or directory for \"scip\" (e.g., scipoptsuite-3.1.0/scip-3.1.0):" ; \
+				echo "> Enter soft-link target file or directory for \"scip\" (e.g., scipoptsuite-4.0.0/scip-4.0.0):" ; \
 				echo -n "> " ; \
 				cd $$DIRNAME ; \
 				eval $(READ) TARGET ; \

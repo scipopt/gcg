@@ -2,7 +2,7 @@
 
 # For release versions, only use VERSION="x.x.x".
 # For development versions, use VERSION="x.x.x.x" with subversion number.
-VERSION="2.1.1"
+VERSION="2.1.2"
 NAME="gcg-$VERSION"
 rm -f $NAME
 ln -s . $NAME
@@ -16,7 +16,7 @@ git status
 
 echo generating default setting files
 make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false scip -j4
-make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false BLISS=false -j4
+make LPS=none OPT=opt READLINE=false ZLIB=false ZIMPL=false BLISS=false GTEST=false -j4
 bin/gcg -c "set default set save doc/inc/parameters.set quit"
 
 sed -i '$ d' doc/inc/parameters.set
@@ -37,7 +37,7 @@ tar --no-recursion --ignore-failed-read -cvzhf release/$NAME.tgz \
 --exclude="*cvs*" \
 --exclude="*~" \
 --exclude=".*" \
-$NAME/README $NAME/LICENSE $NAME/INSTALL $NAME/CHANGELOG $NAME/Makefile $NAME/doc/* \
+$NAME/README.md $NAME/LICENSE $NAME/INSTALL $NAME/CHANGELOG $NAME/Makefile $NAME/doc/* \
 $NAME/release-notes/release-notes* \
 $NAME/check/check.sh $NAME/check/evalcheck.sh $NAME/check/check.awk $NAME/check/eval.sh \
 $NAME/check/testset/short.test $NAME/check/testset/short.solu $NAME/check/cmpres.awk \
@@ -45,7 +45,7 @@ $NAME/settings/earlybranching.set \
 $NAME/settings/heurpricing.set \
 $NAME/src/depend.* \
 $NAME/src/*.c $NAME/src/*.cpp $NAME/src/*.h \
-$NAME/src/graph/*.cpp $NAME/src/graph/*.c $NAME/src/graph/*.h \
+$NAME/src/graph/*.cpp $NAME/src/graph/*.h \
 $NAME/check/instances/cpmp/*.lp \
 $NAME/check/instances/bpp/*.lp \
 $NAME/check/instances/gap/*.lp \

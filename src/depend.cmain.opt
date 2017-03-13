@@ -43,10 +43,10 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/nlpi/struct_expr.h lib/scip/src/scip/presolve.h \
- lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
- lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_mem.h \
- lib/scip/src/scip/type_primal.h lib/scip/src/scip/type_pricestore.h \
- lib/scip/src/scip/type_sepastore.h \
+ lib/scip/src/scip/cuts.h lib/scip/src/scip/heuristics.h \
+ lib/scip/src/scip/struct_scip.h lib/scip/src/scip/type_interrupt.h \
+ lib/scip/src/scip/type_mem.h lib/scip/src/scip/type_primal.h \
+ lib/scip/src/scip/type_pricestore.h lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
  lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
