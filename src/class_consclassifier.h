@@ -57,19 +57,20 @@ class ConsClassifier
 
 private:
    SCIP*                      scip;                   /**< scip data structure */
+   std::string                name;                   /**< name of the classifier */
    int                        nClasses;               /**< number of classes the classifier provides */
    int                        nConss;                 /**< number of constraints */
    std::vector<int>           consToClasses;          /**< constraint i is assigned to class consToClasses[i] (-1 if not assigned)*/
    std::vector<std::string>   classNames;             /**< name of class k is classNames[k] */
+   std::vector<std::string>   classDescriptions;      /**< information text describing class k is classDescriptions[k] */
    std::vector<DECOMPINFO>    classDecompInfo;        /**< encodes whether a class k should be assigned to master or pricing problem */
 
 public:
 
-   std::string                name;                   /**< name of the classifier */
    /** constructor */
    ConsClassifier(
       SCIP*                scip,                /**< scip data structure */
-      const char*          name,                /**< name of classifier */
+      const char*          name,                /**< name of classifier (will be copied) */
       int                  nClasses,            /**< initial number of classes */
       int                  nConss               /**< number of constraints to be classified */
    );
@@ -80,7 +81,8 @@ public:
 
    /** creates a new class, returns index of the class */
    int addClass(
-      const char* name,                /**< name of the class */
+      const char* name,                /**< name of the class (will be copied) */
+      const char* desc,                /**< description of the class (will be copied) */
       DECOMPINFO decompInfo            /**< decomposition code of the class */
    );
 
@@ -100,14 +102,18 @@ public:
       int classindex                   /**< index of class */
    );
 
+   /** returns the information text of a class */
+   const char* getClassDescription(
+      int classindex                   /**< index of class */
+   );
 
    /** returns the name of a class */
-   const std::string getClassName(
+   const char* getClassName(
       int classindex                   /**< index of class */
    );
 
    /** returns the name of the class a constraint is assigned to */
-   const std::string getClassNameOfCons(
+   const char* getClassNameOfCons(
       int consindex                    /**< index of constraint */
    );
 
@@ -123,7 +129,7 @@ public:
 
 
    /** returns the name of the classifier */
-   const std::string getName(
+   const char* getName(
    );
 
 
@@ -143,16 +149,22 @@ public:
    );
 
 
-   /** set the decomposition code of a class */
+   /** sets the decomposition code of a class */
    void setClassDecompInfo(
       int classindex,                  /**< index of class */
       DECOMPINFO decompInfo            /**< decomposition code of class */
    );
 
-   /** set the name of a class */
+   /** sets the information text of a class */
+   void setClassDescription(
+      int classindex,                  /**< index of class */
+      const char* desc                 /**< description of class (will be copied) */
+   );
+
+   /** sets the name of a class */
    void setClassName(
       int classindex,                  /**< index of class */
-      const char* name                 /**< name of class */
+      const char* name                 /**< name of class (will be copied) */
    );
 
 };

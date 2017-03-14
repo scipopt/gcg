@@ -40,7 +40,6 @@
 
 namespace gcg {
 
-using namespace std;
 
 /** constructor */
 ConsClassifier::ConsClassifier(
@@ -49,7 +48,8 @@ ConsClassifier::ConsClassifier(
    int            givenNClasses,
    int            givenNCons
 ) :
-   scip(_scip),  name(string("test")), nClasses(givenNClasses), nConss(givenNCons), consToClasses(givenNCons, -1), classNames(givenNClasses, ""), classDecompInfo(givenNClasses, BOTH)
+   scip(_scip),  name(std::string(givenName)), nClasses(givenNClasses), nConss(givenNCons), consToClasses(givenNCons, -1),
+   classNames(givenNClasses, ""), classDescriptions(givenNClasses, ""), classDecompInfo(givenNClasses, BOTH)
 {
 
 }
@@ -60,14 +60,17 @@ ConsClassifier::~ConsClassifier()
 }
 
 /** creates a new class, returns index of the class */
-int ConsClassifier::addClass( const char* givenName, DECOMPINFO givenDecompInfo )
+int ConsClassifier::addClass( const char* givenName, const char* givenDesc, DECOMPINFO givenDecompInfo )
 {
    assert((int) classNames.size() == nClasses);
+   assert((int) classDescriptions.size() == nClasses);
+   assert((int) classDecompInfo.size() == nClasses);
    assert(givenDecompInfo == BOTH || givenDecompInfo == ONLY_MASTER || givenDecompInfo == ONLY_PRICING );
 
    std::string givenClassName = std::string(givenName);
 
    classNames.push_back( givenClassName );
+   classDescriptions.push_back( givenDesc );
    classDecompInfo.push_back( givenDecompInfo );
 
    ++nClasses;
@@ -102,22 +105,29 @@ DECOMPINFO ConsClassifier::getClassDecompInfoOfClass( int givenClassindex )
    return classDecompInfo[givenClassindex];
 }
 
-
-/** returns the name of a class */
-const std::string ConsClassifier::getClassName( int givenClassindex )
+/** returns the information text of a class */
+const char* ConsClassifier::getClassDescription( int givenClassindex )
 {
    assert(0 <= givenClassindex && givenClassindex < nClasses);
 
-   return classNames[givenClassindex];
+   return classDescriptions[givenClassindex].c_str();
+}
+
+/** returns the name of a class */
+const char* ConsClassifier::getClassName( int givenClassindex )
+{
+   assert(0 <= givenClassindex && givenClassindex < nClasses);
+
+   return classNames[givenClassindex].c_str();
 }
 
 /** returns the name of the class a constraint is assigned to */
-const std::string ConsClassifier::getClassNameOfCons( int givenConsindex )
+const char* ConsClassifier::getClassNameOfCons( int givenConsindex )
 {
    assert(0 <= givenConsindex && givenConsindex < nConss);
    assert(0 <= consToClasses[givenConsindex] && consToClasses[givenConsindex] < nClasses);
 
-   return classNames[consToClasses[givenConsindex]];
+   return classNames[consToClasses[givenConsindex]].c_str();
 }
 
 
@@ -140,10 +150,9 @@ const int* ConsClassifier::getConsToClasses()
 
 
 /** returns the name of the classifier */
-const std::string ConsClassifier::getName()
+const char* ConsClassifier::getName()
 {
-   return name;
-   //return "";
+   return name.c_str();
 }
 
 
@@ -169,7 +178,7 @@ bool ConsClassifier::isConsClassified( int givenConsindex )
 }
 
 
-/** set the decomposition code of a class */
+/** sets the decomposition code of a class */
 void ConsClassifier::setClassDecompInfo( int givenClassindex, DECOMPINFO givenDecompInfo )
 {
    assert(0 <= givenClassindex && givenClassindex < nClasses);
@@ -178,7 +187,15 @@ void ConsClassifier::setClassDecompInfo( int givenClassindex, DECOMPINFO givenDe
    classDecompInfo[givenClassindex] = givenDecompInfo;
 }
 
-/** set the name of a class */
+/** sets the information text of a class */
+void ConsClassifier::setClassDescription( int givenClassindex, const char* givenDesc )
+{
+   assert(0 <= givenClassindex && givenClassindex < nClasses);
+
+   classDescriptions[givenClassindex] = std::string(givenDesc);
+}
+
+/** sets the name of a class */
 void ConsClassifier::setClassName( int givenClassindex, const char* givenName )
 {
    assert(0 <= givenClassindex && givenClassindex < nClasses);
