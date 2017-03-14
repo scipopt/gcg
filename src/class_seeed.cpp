@@ -3288,7 +3288,18 @@ SCIP_RETCODE Seeed::writeScatterPlot(
    return SCIP_OKAY;
 }
 
+/** method to construct a short caption for this seeed
+ * @return short caption of this partial decomposition
+ * */
+const char* Seeed::getShortCaption(){
 
+   static char shortcaption[SCIP_MAXSTRLEN];
+
+   sprintf(shortcaption, "ID %d; nBl %d; scoreMW %.2f ", getID(), getNBlocks(), maxwhitescore );
+
+   return shortcaption;
+
+}
 
 
 } /* namespace gcg */

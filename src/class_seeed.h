@@ -553,6 +553,8 @@ public:
    void sort(
    );
 
+   const char* getShortCaption();
+
    /** displays the assignments of the vars */
    SCIP_RETCODE writeScatterPlot(
          Seeedpool* seeedpool,

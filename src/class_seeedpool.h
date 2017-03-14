@@ -85,6 +85,8 @@ private:
    std::vector<SeeedPtr> 						      currSeeeds;				   /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of current (open) seeeds */
 
+   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
+
    int                                          maxndetectionrounds;    /**< maximum number of detection rounds */
    int											         nTotalSeeeds;        	/**< number of created seeeeds, used to give next id */
    std::vector<std::vector<int>> 				   varsForConss; 	   	   /**< stores for every constraint the indices of variables that are contained in the constraint */
@@ -134,7 +136,7 @@ public:
 
    /** finds seeeds  */
    /*
-    * @return user has to free
+    * @return user has to free Seeeds
     */
    std::vector<SeeedPtr> findSeeeds(
       );
@@ -149,6 +151,12 @@ public:
    void populate(std::vector<SeeedPtr> seeeds);
 
    void freeCurrSeeeds();
+
+   void addSeeedToCurr(SeeedPtr seeed);
+
+   void addSeeedToFinished(SeeedPtr seeed);
+
+   void sortAllRelevantSeeeds();
 
    /** access the variable indices of matrix constraint-wise */
    const  int *  getVarsForCons(int consIndex);
@@ -245,7 +253,7 @@ public:
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds);
 
-   SCIP_RETCODE buildFamilyTreeLatexFile(
+   SCIP_RETCODE writeFamilyTreeLatexFile(
       const char* filename,                                 /* filename the output should be written to */
       std::vector<SeeedPtr> seeeds                          /* vector of seeed pointers the  family tree should be constructed for */
       );
