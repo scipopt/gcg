@@ -3308,7 +3308,7 @@ const char* Seeed::getShortCaption(){
 
    static char shortcaption[SCIP_MAXSTRLEN];
 
-   sprintf(shortcaption, "ID %d; nBl %d; scoreMW %.2f ", getID(), getNBlocks(), maxwhitescore );
+   sprintf(shortcaption, "id %d; nB %d; maxW %.2f ", getID(), getNBlocks(), maxwhitescore );
 
    return shortcaption;
 

@@ -153,6 +153,13 @@ SCIP_Bool finishnextchild( std::vector<int>& childs, std::vector<SCIP_Bool>& chi
    }
 }
 
+std::string writeSeeedInfoLatex( SeeedPtr seeed ){
+   std::stringstream line;
+   // (s1) { \includegraphics[width=0.15\textwidth]{/home/bastubbe/gcg/plotsfortalk/second/000_dec.pdf}  }
+   line << "\\node[below = \\belowcaptionskip of s" << seeed->getID() << "] (caps" << seeed->getID() << ") {\\scriptsize " << seeed->getShortCaption() << "}; " << std::endl;
+   return line.str();
+}
+
 
 std::string writeSeeedIncludeLatex( SeeedPtr seeed ){
    std::stringstream line;
@@ -2432,11 +2439,15 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
             if( curr != -1)
                ofs << " } " ;
          }
-
    }
 
 
    ofs << ";" << std::endl;
+   for( size_t i = 0; i < treeseeeds.size(); ++i)
+   {
+      ofs << writeSeeedInfoLatex( treeseeeds[i] );
+   }
+
    ofs << closing << std::endl;
 
    ofs.close();
