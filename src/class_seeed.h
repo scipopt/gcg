@@ -532,6 +532,7 @@ public:
          int block
    );
 
+
    /** add a variable to the linking variables */
    SCIP_RETCODE setVarToLinking(
          int varToLinking
@@ -547,7 +548,7 @@ public:
          int varToStairLinking, int block1, int block2
    );
 
-   void showScatterPlot(  Seeedpool* seeedpool );
+   void showScatterPlot(  Seeedpool* seeedpool, SCIP_Bool writeonly = FALSE, const char* filename = NULL );
 
    /** sorts the vars and conss according their numbers */
    void sort(

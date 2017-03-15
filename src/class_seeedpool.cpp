@@ -106,6 +106,61 @@ struct sort_pred {
     }
 };
 
+std::string getSeeedFolderLatex( SeeedPtr seeed ){
+
+   std::stringstream decompfilename;
+   std::string tmpworkfolder = "./tmpplotsforfamilytree/";
+   decompfilename << tmpworkfolder << "dec" << seeed->getID() << ".pdf";
+
+   return decompfilename.str();
+}
+
+
+SCIP_Bool unfinishedchildexists(std::vector<SCIP_Bool> const& childsfinished)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return true;
+   }
+   return false;
+}
+
+int getfirstunfinishedchild(std::vector<SCIP_Bool> const& childsfinished, std::vector<int> const& childs)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return childs[s];
+   }
+   return -1;
+}
+
+
+/**
+ * @return is nextchild the last unfinished child
+ */
+SCIP_Bool finishnextchild( std::vector<int>& childs, std::vector<SCIP_Bool>& childsfinished, int child )
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+      {
+         assert(childs[s] == child);
+         childsfinished[s] = TRUE;
+         return s == childsfinished.size() - 1;
+      }
+   }
+}
+
+
+std::string writeSeeedIncludeLatex( SeeedPtr seeed ){
+   std::stringstream line;
+   // (s1) { \includegraphics[width=0.15\textwidth]{/home/bastubbe/gcg/plotsfortalk/second/000_dec.pdf}  }
+   line << " (s" << seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{" << getSeeedFolderLatex(seeed) << "} }" << std::endl;
+
+   return line.str();
+}
 
 SCIP_RETCODE getDetectorCallRoundInfo(SCIP* scip, const char* detectorname, SCIP_Bool transformed, int* maxcallround, int* mincallround, int* freqcallround)
 	{
@@ -726,7 +781,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                             SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d], seeedPropData, &result) );
 
-                            for(int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished)
+                            for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished )
                             {
                                SeeedPtr seeed = seeedPropData->newSeeeds[finished];
                                seeedPropData->newSeeeds[finished]->sort();
@@ -742,7 +797,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
                                else
                                {
                                   bool isIdentical = false;
-                                  for (size_t h = 0; h < finishedSeeeds.size(); ++h )
+                                  for ( size_t h = 0; h < finishedSeeeds.size(); ++h )
                                   {
                                      if( seeed == finishedSeeeds[h] )
                                      {
@@ -773,10 +828,10 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
          } // end for rounds
 
          /** complete the currseeeds with finishing detectors and add them to finished seeeds */
-         for(size_t i = 0; i < currSeeeds.size(); ++i)
+         for( size_t i = 0; i < currSeeeds.size(); ++i )
          {
             SeeedPtr seeedPtr = currSeeeds[i];
-            for(int d = 0; d < nFinishingDetectors; ++d)
+            for( int d = 0; d < nFinishingDetectors; ++d )
             {
                DEC_DETECTOR* detector = detectorToFinishingScipDetector[d];
                SCIP_RESULT result = SCIP_DIDNOTFIND;
@@ -792,7 +847,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
 
-               for(int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished)
+               for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished )
                {
                   SeeedPtr seeed = seeedPropData->newSeeeds[finished];
                   seeed->calcHashvalue();
@@ -801,7 +856,7 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
                   if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
                   {
-                     if(verboseLevel > 2)
+                     if( verboseLevel > 2 )
                      {
                         std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
                         seeed->showScatterPlot(this);
@@ -888,14 +943,14 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
             }
          }
 
-
-         for( size_t d =  delSeeeds.size(); d > 0; d--)
-         {
-            delete delSeeeds[d-1];
-            delSeeeds[d-1] = NULL;
-         }
-
-         delSeeeds.clear();
+/* postpone deleting to destructor */
+//         for( size_t d =  delSeeeds.size(); d > 0; d--)
+//         {
+//            delete delSeeeds[d-1];
+//            delSeeeds[d-1] = NULL;
+//         }
+//
+//         delSeeeds.clear();
 
          delete seeedPropData;
 
@@ -918,8 +973,8 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
     bool duplicate;
     SCIP_Bool usemaxwhitescore;
 
-	size_t nDecomps = 4;
-	SCIP_Bool addTrivialDecomp = TRUE;
+	size_t nDecomps = 6;
+	SCIP_Bool addTrivialDecomp = FALSE;
 
     successDetectors = std::vector<int>(nDetectors, 0);
     ndecompositions = 0;
@@ -945,7 +1000,16 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
     {
        std::vector<SeeedPtr> tovisualize(0);
        tovisualize.push_back(finishedSeeeds[0]);
+       tovisualize.push_back(finishedSeeeds[1]);
+       tovisualize.push_back(finishedSeeeds[2]);
+       tovisualize.push_back(finishedSeeeds[3]);
+       tovisualize.push_back(finishedSeeeds[4]);
+       tovisualize.push_back(finishedSeeeds[5]);
        writeFamilyTreeLatexFile( "famtree.tex", tovisualize);
+    }
+
+    {
+       finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
     }
 
       /** fill out the decompositions */
@@ -1251,29 +1315,29 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 
          /** delete the seeeds */
 
-         for(size_t f = 0; f < finishedSeeeds.size(); ++f)
-         {
-            duplicate = false;
-            for(size_t d = 0; d < delSeeeds.size(); ++d)
-            {
-               if(finishedSeeeds[f]==delSeeeds[d])
-               {
-                  duplicate=true;
-                  break;
-               }
-            }
-            if(!duplicate)
-            {
-               delSeeeds.push_back(finishedSeeeds[f]);
-            }
-         }
-
-
-         for( size_t d =  delSeeeds.size(); d > 0; d--)
-         {
-            delete delSeeeds[d-1];
-            delSeeeds[d-1] = NULL;
-         }
+//         for(size_t f = 0; f < finishedSeeeds.size(); ++f)
+//         {
+//            duplicate = false;
+//            for(size_t d = 0; d < delSeeeds.size(); ++d)
+//            {
+//               if(finishedSeeeds[f]==delSeeeds[d])
+//               {
+//                  duplicate=true;
+//                  break;
+//               }
+//            }
+//            if(!duplicate)
+//            {
+//               delSeeeds.push_back(finishedSeeeds[f]);
+//            }
+//         }
+//
+//
+//         for( size_t d =  delSeeeds.size(); d > 0; d--)
+//         {
+//            delete delSeeeds[d-1];
+//            delSeeeds[d-1] = NULL;
+//         }
 
          delSeeeds.clear();
 
@@ -1727,7 +1791,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
        {
           int greatestCD = 1;
 
-          if(subsetsOfConstypes[subset].size() == 0 || subsetsOfConstypes[subset].size() == 1)
+          if( subsetsOfConstypes[subset].size() == 0 || subsetsOfConstypes[subset].size() == 1 )
                continue;
 
           greatestCD = gcd(nconssofclass[subsetsOfConstypes[subset][0]], nconssofclass[subsetsOfConstypes[subset][1]]  );
@@ -2252,15 +2316,127 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
    ){
 
    std::ofstream ofs;
-   std::string preambel = "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}"
-      "\n\\usetikzlibrary{positioning}\n\\usepackage{capt-of}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n"
-      "\\begin{tikzpicture}[level/.style={sibling distance=0.75\\textwidth/#1}, level distance=10em, ->, dashed]\n\\node";
+   int curr = -1;
+   SCIP_Real firstsibldist = -1.;
 
+   std::stringstream preambel;
    std::string closing = "\\end{tikzpicture}\n\\end{document}";
 
-   ofs.open (filename, std::ofstream::out );
-   ofs << preambel << std::endl;
+   /* collectiotn of treeseeds */
+   std::vector<SeeedPtr> treeseeeds(0);
+   std::vector<int> treeseeedids(0);
+   std::vector<SCIP_Bool> isseeedintree(allrelevantseeeds.size(), FALSE );
 
+   int root = -1;
+   std::vector<int> parents(allrelevantseeeds.size(), -1);
+   std::vector<std::vector<int> > childs (allrelevantseeeds.size(), std::vector<int>(0));
+   std::vector<std::vector<SCIP_Bool> > childsfinished(allrelevantseeeds.size(), std::vector<SCIP_Bool>(0));
+   std::vector<SCIP_Bool> visited(allrelevantseeeds.size(), FALSE);
+
+   /** check allrelevant seeeds **/
+   for( size_t s = 0; s < allrelevantseeeds.size(); ++s )
+   {
+      assert(allrelevantseeeds[s] == NULL || (int) s == allrelevantseeeds[s]->getID() );
+   }
+
+   /** 1) find relevant seeeds in tree and build tree */
+   for( size_t s = 0; s < seeeds.size(); ++s )
+   {
+      int currid = seeeds[s]->getID();
+      if ( currid == NULL )
+         continue;
+      currid = seeeds[s]->getID();
+      if( !isseeedintree[seeeds[s]->getID()] )
+      {
+         isseeedintree[seeeds[s]->getID()] = TRUE;
+         treeseeeds.push_back( seeeds[s]);
+         treeseeedids.push_back(seeeds[s]->getID());
+      }
+      else
+         break;
+
+      for( size_t i = 0; i < seeeds[s]->listofancestorids.size(); ++i )
+      {
+         int ancestorid;
+         ancestorid = seeeds[s]->listofancestorids[seeeds[s]->listofancestorids.size() - i -1];
+         parents[currid] = ancestorid;
+         childs[ancestorid].push_back(currid);
+         childsfinished[ancestorid].push_back(FALSE);
+
+         if( !isseeedintree[ancestorid] )
+         {
+            isseeedintree[ancestorid] = TRUE;
+            treeseeeds.push_back( allrelevantseeeds[ancestorid] );
+            treeseeedids.push_back(ancestorid);
+            if( i == seeeds[s]->listofancestorids.size() -1 )
+            {
+               root = ancestorid;
+            }
+            currid = ancestorid;
+         }
+         else
+            break;
+      }
+   }
+
+    for( size_t i = 0; i < treeseeeds.size(); ++i )
+   {
+      SeeedPtr seeed = treeseeeds[i];
+      std::string decompfilename;
+
+      seeed = treeseeeds[i];
+      decompfilename = getSeeedFolderLatex(seeed);
+
+      seeed->showScatterPlot(this, TRUE, decompfilename.c_str() );
+   }
+
+ //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
+
+    firstsibldist = 1. / (childs[root].size() - 1 );
+    preambel.precision(2);
+
+    preambel << "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
+    preambel << "\n\\usetikzlibrary{positioning}\n\\usepackage{capt-of}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
+    preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=10em, ->, dashed]\n\\node";
+
+
+   /** start writing file */
+   ofs.open (filename, std::ofstream::out );
+   ofs << preambel.str();
+
+   /** iterate tree and write file */
+   curr = root;
+   while ( curr != -1 )
+   {
+      if( !visited[curr] )
+      {
+         /** write node */
+         ofs << writeSeeedIncludeLatex( allrelevantseeeds[curr] );
+         /* set node visited */
+         visited[curr] = TRUE;
+         if( parents[curr] != -1 )
+            finishnextchild(childs[parents[curr]], childsfinished[parents[curr]], curr);
+
+      }
+      if ( unfinishedchildexists(childsfinished[curr] ) )
+      {
+         int unfinishedchild = getfirstunfinishedchild(childsfinished[curr], childs[curr] );
+         /* is first child unfinihsed? */
+//         if( unfinishedchild == childs[curr][0] )
+         ofs << " child { node " ;
+         curr = unfinishedchild;
+      }
+      else
+         {
+            curr = parents[curr];
+            if( curr != -1)
+               ofs << " } " ;
+         }
+
+   }
+
+
+   ofs << ";" << std::endl;
    ofs << closing << std::endl;
 
    ofs.close();
