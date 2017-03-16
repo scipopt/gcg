@@ -535,14 +535,14 @@ SCIP_RETCODE detection(
 
       SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
 
-      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hrc|%d", numberOfBlocks[k]);
-      newSeeeds[j]->addDetectorChainInfo(decinfo);
-      newSeeeds[j+1]->addDetectorChainInfo(decinfo);
 
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
       if( (newSeeeds)[j] != NULL )
       {
-         nNewSeeeds = nNewSeeeds + 2;
+    	  (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hrc:%d", numberOfBlocks[k]);
+          newSeeeds[j]->addDetectorChainInfo(decinfo);
+          newSeeeds[j+1]->addDetectorChainInfo(decinfo);
+          nNewSeeeds = nNewSeeeds + 2;
          detectordata->found = TRUE;
          clockTimes.push_back(SCIPclockGetTime(temporaryClock));
          clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created

@@ -169,7 +169,7 @@ SCIP_Bool finishnextchild( std::vector<int>& childs, std::vector<SCIP_Bool>& chi
 std::string writeSeeedDetectorChainInfoLatex( SeeedPtr seeed, int currheight ){
    std::stringstream line;
    // (s1) { \includegraphics[width=0.15\textwidth]{/home/bastubbe/gcg/plotsfortalk/second/000_dec.pdf}  }
-   if ( (size_t) currheight >=  seeed->detectorchaininfo.size() )
+   if ( (size_t) currheight >  seeed->detectorchaininfo.size() )
       line << "edge from parent node [left] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
       else
          line << "edge from parent node [left] {" << seeed->detectorchaininfo[ currheight - 1] <<"} " ;
@@ -2653,8 +2653,8 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
    /** 1) find relevant seeeds in tree and build tree */
    for( size_t s = 0; s < seeeds.size(); ++s )
    {
-      int currid = seeeds[s]->getID();
-      if ( currid == NULL )
+      int currid;
+      if ( seeeds[s] == NULL )
          continue;
       currid = seeeds[s]->getID();
       if( !isseeedintree[seeeds[s]->getID()] )

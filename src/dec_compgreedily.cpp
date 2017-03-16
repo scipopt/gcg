@@ -138,6 +138,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
 {
    *result = SCIP_DIDNOTFIND;
 
+   char decinfo[SCIP_MAXSTRLEN];
    SCIP_CLOCK* temporaryClock;
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -159,6 +160,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "compgreed");
+   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
    *result = SCIP_SUCCESS;
 
@@ -169,6 +172,7 @@ static
 DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
 {
    *result = SCIP_DIDNOTFIND;
+   char decinfo[SCIP_MAXSTRLEN];
 
    SCIP_CLOCK* temporaryClock;
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
@@ -184,6 +188,8 @@ DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
    seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated(detector);
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "compgreed");
+   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );

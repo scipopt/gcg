@@ -44,7 +44,7 @@
 #include "struct_decomp.h"
 #include "cons_decomp.h"
 
-
+#include <sstream>
 #include <iostream>
 #include <exception>
 #include <algorithm>
@@ -102,6 +102,7 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    propagatedByDetector = seeedToCopy->propagatedByDetector;
    detectorChain = seeedToCopy->detectorChain;
    detectorChainFinishingUsed = seeedToCopy->detectorChainFinishingUsed;
+   detectorchaininfo = seeedToCopy->detectorchaininfo;
    openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
    detectorClockTimes = seeedToCopy->detectorClockTimes;
    pctVarsToBorder = seeedToCopy->pctVarsToBorder;
@@ -173,7 +174,10 @@ int Seeed::addBlock()
      const char* decinfo
   )
  {
-    detectorchaininfo.push_back( std::string(decinfo, SCIP_MAXSTRLEN ) );
+	 std::stringstream help;
+	 help << decinfo;
+    detectorchaininfo.push_back( help.str() );
+
     return;
  }
 

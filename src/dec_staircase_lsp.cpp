@@ -755,6 +755,8 @@ SCIP_RETCODE detection(
    int* blocks;
    int nblocks = 0;
 
+   char decinfo[SCIP_MAXSTRLEN];
+
    gcg::Seeedpool* seeedpool = seeedPropagationData->seeedpool;
    gcg::Seeed* currseeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
 
@@ -855,6 +857,8 @@ SCIP_RETCODE detection(
    seeedPropagationData->newSeeeds[0] = currseeed;
    seeedPropagationData->nNewSeeeds = 1;
 
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "consclass");
+   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
    tcliqueFree(&detectordata->graph);
 
