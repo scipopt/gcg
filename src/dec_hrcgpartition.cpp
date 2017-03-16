@@ -510,10 +510,12 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    for( j = 0, k = 0; k < maxnblockcandidates; ++k)
    {
+      char decinfo[SCIP_MAXSTRLEN];
       int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       SCIP_RETCODE retcode;
       detectordata->blocks = nblocks;
+
 
       if(nblocks > seeed->getNOpenconss() || nblocks <= 0)
       {
@@ -532,6 +534,10 @@ SCIP_RETCODE detection(
       }
 
       SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
+
+      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hrc|%d", numberOfBlocks[k]);
+      newSeeeds[j]->addDetectorChainInfo(decinfo);
+      newSeeeds[j+1]->addDetectorChainInfo(decinfo);
 
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
       if( (newSeeeds)[j] != NULL )

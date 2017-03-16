@@ -139,6 +139,16 @@ int getfirstunfinishedchild(std::vector<SCIP_Bool> const& childsfinished, std::v
    return -1;
 }
 
+int getfirstunfinishedchildid(std::vector<SCIP_Bool> const& childsfinished, std::vector<int> const& childs)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return (int)s;
+   }
+   return -1;
+}
+
 
 /**
  * @return is nextchild the last unfinished child
@@ -155,6 +165,17 @@ SCIP_Bool finishnextchild( std::vector<int>& childs, std::vector<SCIP_Bool>& chi
       }
    }
 }
+
+std::string writeSeeedDetectorChainInfoLatex( SeeedPtr seeed, int currheight ){
+   std::stringstream line;
+   // (s1) { \includegraphics[width=0.15\textwidth]{/home/bastubbe/gcg/plotsfortalk/second/000_dec.pdf}  }
+   if ( (size_t) currheight >=  seeed->detectorchaininfo.size() )
+      line << "edge from parent node [left] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
+      else
+         line << "edge from parent node [left] {" << seeed->detectorchaininfo[ currheight - 1] <<"} " ;
+   return line.str();
+}
+
 
 std::string writeSeeedInfoLatex( SeeedPtr seeed ){
    std::stringstream line;
@@ -2606,6 +2627,7 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
 
    std::ofstream ofs;
    int curr = -1;
+   int currheight = 0;
    SCIP_Real firstsibldist = -1.;
 
    std::stringstream preambel;
@@ -2686,7 +2708,7 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
 
     preambel << "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
     preambel << "\n\\usetikzlibrary{positioning}\n\\usepackage{capt-of}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
-    preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=10em, ->, dashed]\n\\node";
+    preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
 
 
    /** start writing file */
@@ -2714,10 +2736,14 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
 //         if( unfinishedchild == childs[curr][0] )
          ofs << " child { node " ;
          curr = unfinishedchild;
+         ++currheight;
       }
       else
          {
-            curr = parents[curr];
+         if ( parents[curr] != -1 )
+            ofs << writeSeeedDetectorChainInfoLatex( allrelevantseeeds[curr], currheight);
+         --currheight;
+         curr = parents[curr];
             if( curr != -1)
                ofs << " } " ;
          }
