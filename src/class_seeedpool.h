@@ -45,6 +45,7 @@
 #include "gcg.h"
 
 #include "class_seeed.h"
+#include "class_consclassifier.h"
 
 
 
@@ -118,6 +119,9 @@ private:
 
    std::vector<std::vector<int> >               consclassescollection;  /**< collection of different constraint class distributions  */
    std::vector<int >                            consclassesnclasses;    /**< number of classes of the corresponding distribution */
+
+   std::vector<ConsClassifier*>                 consclassescollection2; /**< collection of different constraint class distributions  */
+
 
    SCIP_Bool                                    transformed;            /**< corresponds the matrix datastructure to the transformed problem */
 
