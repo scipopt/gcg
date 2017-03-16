@@ -166,7 +166,15 @@ int Seeed::addBlock()
     pctVarsToBlock.push_back( (-getNOpenvars()-getNMastervars() - getNLinkingvars() - getNTotalStairlinkingvars() + ancestor->getNOpenvars()+ ancestor->getNMastervars() + ancestor->getNLinkingvars() + ancestor->getNTotalStairlinkingvars() ) / getNVars() );
     pctConssToBorder.push_back( ( getNMasterconss() - ancestor->getNMasterconss() ) / (SCIP_Real) getNConss() );
     pctVarsToBorder.push_back( ( getNMastervars() + getNLinkingvars() + getNTotalStairlinkingvars() - ancestor->getNMastervars() - ancestor->getNLinkingvars() - ancestor->getNTotalStairlinkingvars()) / (SCIP_Real) getNVars() );
-    listofancestorids.push_back(ancestor->getID() );
+    listofancestorids.push_back( ancestor->getID() );
+ }
+
+ void Seeed::addDetectorChainInfo(
+     const char* decinfo
+  )
+ {
+    detectorchaininfo.push_back( std::string(decinfo, SCIP_MAXSTRLEN ) );
+    return;
  }
 
 
