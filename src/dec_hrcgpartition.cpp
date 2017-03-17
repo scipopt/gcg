@@ -91,12 +91,12 @@ using gcg::Weights;
 
 
 /* Default parameter settings */
-#define DEFAULT_VARWEIGHT         1          /**< weight for variable nodes */
-#define DEFAULT_VARWEIGHTBIN      2          /**< weight for binary variable nodes */
-#define DEFAULT_VARWEIGHTINT      2          /**< weight for integer variable nodes */
-#define DEFAULT_VARWEIGHTIMPL     2          /**< weight for implicit integer variable nodes */
-#define DEFAULT_VARWEIGHTCONT     1          /**< weight for continous variable nodes */
-#define DEFAULT_CONSWEIGHT        5          /**< weight for constraint hyperedges */
+#define DEFAULT_VARWEIGHT         2          /**< weight for variable nodes */
+#define DEFAULT_VARWEIGHTBIN      3          /**< weight for binary variable nodes */
+#define DEFAULT_VARWEIGHTINT      3          /**< weight for integer variable nodes */
+#define DEFAULT_VARWEIGHTIMPL     3          /**< weight for implicit integer variable nodes */
+#define DEFAULT_VARWEIGHTCONT     2          /**< weight for continous variable nodes */
+#define DEFAULT_CONSWEIGHT        1          /**< weight for constraint hyperedges */
 #define DEFAULT_RANDSEED          1          /**< random seed for the hmetis call */
 #define DEFAULT_TIDY              TRUE       /**< whether to clean up afterwards */
 #define DEFAULT_DUMMYNODES        0.2        /**< percentage of dummy vertices*/
