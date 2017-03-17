@@ -104,7 +104,7 @@ using gcg::Weights;
                                                   constraints */
 #define DEFAULT_MINBLOCKS         2          /**< value for the minimum number of blocks to be considered */
 #define DEFAULT_MAXBLOCKS         20         /**< value for the maximum number of blocks to be considered */
-#define DEFAULT_MAXNBLOCKCANDIDATES 2          /**< number of block number candidates to be considered */
+#define DEFAULT_MAXNBLOCKCANDIDATES 3          /**< number of block number candidates to be considered */
 #define DEFAULT_ALPHA             0.0        /**< factor for standard deviation of constraint weights */
 #define DEFAULT_BETA              0.5        /**< factor of how the weight for equality and inequality constraints is
                                                   distributed (keep 1/2 for the same on both) */
@@ -419,6 +419,7 @@ SCIP_RETCODE detection(
 {
    /* add hrgpartition presolver parameters */
 	char setstr[SCIP_MAXSTRLEN];
+	char decinfo[SCIP_MAXSTRLEN];
 	int maxnblockcandidates;
 
    int k;
@@ -506,6 +507,10 @@ SCIP_RETCODE detection(
          detectordata->found = TRUE;
          clockTimes.push_back(SCIPclockGetTime(temporaryClock));
          clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hr\\_%d", numberOfBlocks[k]);
+         newSeeeds[j]->addDetectorChainInfo(decinfo);
+         newSeeeds[j+1]->addDetectorChainInfo(decinfo);
+
       }
       SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
       j = j + 2;

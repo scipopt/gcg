@@ -424,6 +424,7 @@ SCIP_RETCODE detection(
 
    /* add hcgpartition presolver parameters */
    char setstr[SCIP_MAXSTRLEN];
+   char decinfo[SCIP_MAXSTRLEN];
    int maxnblockcandidates;
    int k;
    int j;
@@ -506,6 +507,10 @@ SCIP_RETCODE detection(
       {
          nNewSeeeds = nNewSeeeds + 2;
          detectordata->found = TRUE;
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hc\\_%d", numberOfBlocks[k]);
+         newSeeeds[j]->addDetectorChainInfo(decinfo);
+         newSeeeds[j+1]->addDetectorChainInfo(decinfo);
+
          clockTimes.push_back(SCIPclockGetTime(temporaryClock));
          clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created
       }

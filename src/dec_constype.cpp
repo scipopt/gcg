@@ -149,6 +149,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectConstype)
 static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
 {
   *result = SCIP_DIDNOTFIND;
+  char decinfo[SCIP_MAXSTRLEN];
 
   SCIP_CLOCK* temporaryClock;
   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
@@ -225,6 +226,9 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
           }
       }
       seeed->flushBooked();
+      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "constype");
+      seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
+
       seeedPropagationData->newSeeeds[seeedCounter] = seeed;
       seeedCounter++;
   }

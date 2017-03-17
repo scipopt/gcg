@@ -1100,16 +1100,12 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
        tovisualize.push_back(finishedSeeeds[1]);
        tovisualize.push_back(finishedSeeeds[2]);
        tovisualize.push_back(finishedSeeeds[3]);
-       tovisualize.push_back(finishedSeeeds[4]);
-       tovisualize.push_back(finishedSeeeds[5]);
+ //      tovisualize.push_back(finishedSeeeds[4]);
+ //      tovisualize.push_back(finishedSeeeds[5]);
        writeFamilyTreeLatexFile( "famtree.tex", tovisualize);
     }
 
-    {
-       finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
-    }
-
-      /** fill out the decompositions */
+    /** fill out the decompositions */
 
     SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
     for( size_t i = 0; i < finishedSeeeds.size(); ++i )
@@ -1811,11 +1807,11 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 	if( output )
 	{
 		std::cout << "nCandidates: " << candidatesNBlocks.size() << std::endl;
-		for(size_t i = 0; i < candidatesNBlocks.size(); ++i)
+		for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
 			std::cout << "nblockcandides: " << candidatesNBlocks[i].first << " ; " << candidatesNBlocks[i].second << " times prop " << std::endl;
 	}
 
-	for(size_t i = 0; i < candidatesNBlocks.size(); ++i)
+	for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
 		toreturn.push_back(candidatesNBlocks[i].first);
 
     return toreturn;
@@ -1826,7 +1822,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     )
  {
 
-    if(candidate > 1)
+    if( candidate > 1 )
     {
        bool alreadyIn = false;
        for(size_t i = 0; i < candidatesNBlocks.size(); ++i )
@@ -1858,8 +1854,9 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
     for( size_t conssclass = 0; conssclass < consclassescollection.size(); ++conssclass )
     {
-       std::vector<int> nconssofclass = std::vector<int>(consclassesnclasses[conssclass], 0);
-       std::vector<int> consclassindices = std::vector<int>(0);
+       std::vector< std::vector<int> > subsetsOfConstypes(0, std::vector<int>(0) );
+       std::vector<int> nconssofclass(consclassesnclasses[conssclass], 0);
+       std::vector<int> consclassindices(0);
 
        /** check if there are to  many classes in this distribution and skip it if so */
 
@@ -1870,12 +1867,13 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
        }
 
 
-       for( int i = 0; i < consclassesnclasses[conssclass]; ++ i)
+       for( int i = 0; i < consclassesnclasses[conssclass]; ++i)
           consclassindices.push_back(i);
-       std::vector< std::vector<int> > subsetsOfConstypes = getAllSubsets(consclassindices);
 
-       for ( int i =0; i < getNConss(); ++i)
-          ++nconssofclass[ consclassescollection[conssclass][i] ];
+       subsetsOfConstypes = getAllSubsets(consclassindices);
+
+       for ( size_t i = 0; i < getNConss(); ++i)
+          ++(nconssofclass.at( consclassescollection[conssclass].at(i) ) );
 
        /** start with the cardinalities of the consclasses as candidates */
        for( size_t i = 0; i < nconssofclass.size(); ++i)
@@ -2542,6 +2540,8 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
           int enlargedclass = consclassesnclasses[classifierid] - maxnclasses;
           int enlargedclassid = -1;
           std::vector<int> newclassifier(consclassescollection[classifierid].size(), -1 );
+          std::vector<int> oldtonew( consclassesnclasses[classifierid], -1 );
+          int nclassesreassigned = 0;
 
           /** try to reduce consclass */
           std::vector<std::pair<int,int> > nmembers(consclassesnclasses[classifierid], std::pair<int,int>(0,0) );
@@ -2550,24 +2550,40 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
           std::vector<int>::const_iterator iter = consclassescollection[classifierid].begin();
           std::vector<int>::const_iterator iterend = consclassescollection[classifierid].end();
 
-          for( ; iter < iterend; ++iter)
+          for( ; iter < iterend; ++iter )
           {
              nmembers[*iter].second++;
           }
 
           std::sort(nmembers.begin(), nmembers.end(), sort_pred() );
 
-          for(size_t i = 0; i < enlargedclass; ++i)
+          for( size_t i = 0; i < (size_t) enlargedclass; ++i )
              classisremoved[nmembers[i].first] = true;
 
           enlargedclassid = nmembers[enlargedclass].first;
 
+          for( size_t i = 0; i < classisremoved.size() ; ++i )
+          {
+             int oldclass = (int) i;
+             if( classisremoved[nmembers[i].first] )
+                oldclass =  enlargedclassid;
+             if( oldtonew[oldclass] == -1 )
+             {
+                oldtonew[oldclass] = nclassesreassigned;
+                nclassesreassigned++;
+             }
+             oldtonew[i] = oldtonew[oldclass];
+          }
+
+
+
+
           for(size_t i = 0; i < newclassifier.size(); ++i)
           {
              if( classisremoved[consclassescollection[classifierid][i]] )
-                newclassifier[i] = consclassescollection[classifierid][enlargedclassid];
+                newclassifier[i] = oldtonew[consclassescollection[classifierid][enlargedclassid]];
              else
-                newclassifier[i] = consclassescollection[classifierid][i];
+                newclassifier[i] = oldtonew[consclassescollection[classifierid][i]];
           }
 
           consclassescollection.push_back(newclassifier);

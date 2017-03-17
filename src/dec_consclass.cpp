@@ -210,9 +210,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   std::vector< std::vector<int> > subsetsOfConsclasses = getAllSubsets(consclassindices);
 
-
-
-
   for(size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset)
   {
       if(subsetsOfConsclasses[subset].size() == 0)

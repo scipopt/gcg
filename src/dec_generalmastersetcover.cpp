@@ -131,6 +131,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetcover)
 {
    *result = SCIP_DIDNOTFIND;
 
+   char decinfo[SCIP_MAXSTRLEN];
    SCIP_CLOCK* temporaryClock;
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -210,6 +211,9 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetcover)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "genmastersetcover");
+   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
+
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );

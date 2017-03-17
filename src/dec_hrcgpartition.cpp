@@ -539,7 +539,7 @@ SCIP_RETCODE detection(
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
       if( (newSeeeds)[j] != NULL )
       {
-    	  (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hrc:%d", numberOfBlocks[k]);
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hrc\\_%d", numberOfBlocks[k]);
           newSeeeds[j]->addDetectorChainInfo(decinfo);
           newSeeeds[j+1]->addDetectorChainInfo(decinfo);
           nNewSeeeds = nNewSeeeds + 2;

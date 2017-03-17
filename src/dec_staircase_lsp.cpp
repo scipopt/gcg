@@ -857,7 +857,7 @@ SCIP_RETCODE detection(
    seeedPropagationData->newSeeeds[0] = currseeed;
    seeedPropagationData->nNewSeeeds = 1;
 
-   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "consclass");
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "staircase\\_lsp");
    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
    tcliqueFree(&detectordata->graph);
