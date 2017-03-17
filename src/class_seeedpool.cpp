@@ -33,6 +33,15 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+/*lint -e64 disable useless and wrong lint warning */
+
+#ifdef __INTEL_COMPILER
+#ifndef _OPENMP
+#pragma warning disable 3180  /* disable wrong and useless omp warnings */
+#endif
+#endif
+
+
 #include "gcg.h"
 #include "objscip/objscip.h"
 #include "class_seeedpool.h"
@@ -52,6 +61,11 @@
 #include <iomanip>
 #include <queue>
 #include <fstream>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 
 #include <exception>
 
@@ -76,7 +90,7 @@
 
 
 #define ENUM_TO_STRING(x) # x
-
+#define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
 
 
 /** constraint handler data */
@@ -90,7 +104,9 @@ struct SCIP_ConshdlrData
    SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
    int                   ndecomps;           /**< number of decomposition structures  */
    SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+   int                   nthreads;
 };
+
 
 namespace gcg {
 
