@@ -41,6 +41,13 @@
 
 #include <assert.h>
 #include <iostream>
+#include <stdio.h>
+#include <sstream>
+#include <iomanip>
+#include <queue>
+#include <fstream>
+
+
 
 #include "cons_decomp.h"
 #include "dec_connected.h"
@@ -50,6 +57,12 @@
 #include "scip_misc.h"
 #include "scip/clock.h"
 #include "class_seeedpool.h"
+#include "class_seeed.h"
+
+
+#include <vector>
+
+typedef gcg::Seeed* SeeedPtr;
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
@@ -114,12 +127,15 @@ struct SCIP_ConshdlrData
    int**                 nClassesOfDistribution;
    SCIP_HASHMAP*         consToIndex;                       /**< hashmap from constraints to indices, to be filled */
    int*                  nConss;
+   gcg::Seeedpool*		 seeedpool;
+
 };
 
 
 /*
  * Local methods
  */
+
 
 /**
  * create a 'decomposition' consisting of only one single block; used if no other decomposition was found
@@ -674,7 +690,7 @@ SCIP_RETCODE DECdetectStructure(
    std::vector<std::vector<int>> conssClassDistributions;         /**< collection of different constraint class distributions */
    std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
 
-   std::vector<gcg::Seeed*> seeedsunpresolved;                    /**< seeeds that were found for the unpresolved problem */
+   std::vector<gcg::SeeedPtr> seeedsunpresolved;                    /**< seeeds that were found for the unpresolved problem */
 
 
    SCIP_Real* scores;
@@ -752,29 +768,30 @@ SCIP_RETCODE DECdetectStructure(
 
    if( conshdlrdata->ndecomps == 0 )
    {
-	  gcg::Seeedpool seeedpool(scip, CONSHDLR_NAME, TRUE);
+	  gcg::Seeedpool* seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
 
 	  if( calculateOrigDecomps )
 	  {
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");
-	     std::vector<gcg::Seeed*> translatedSeeeds = seeedpool.translateSeeeds(&seeedpoolunpresolved, seeedsunpresolved);
+	     std::vector<gcg::Seeed*> translatedSeeeds = seeedpool->translateSeeeds(&seeedpoolunpresolved, seeedsunpresolved);
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
 
-	     seeedpool.populate(translatedSeeeds);
+	     seeedpool->populate(translatedSeeeds);
 
         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished translate seeed method!\n");
 
         for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
-             seeedpool.addCandidatesNBlocks(candidatesNBlocks[c]);
+             seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
 
         for( size_t d = 0; d < conssClassDistributions.size(); ++d )
-             seeedpool.addConssClassDistribution(conssClassDistributions[d], indexToCons);
+             seeedpool->addConssClassDistribution(conssClassDistributions[d], indexToCons);
 
 	  }
 
-	  seeedpool.findDecompositions();
-	  conshdlrdata->decdecomps = seeedpool.getDecompositions();
-	  conshdlrdata->ndecomps = seeedpool.getNDecompositions();
+	  seeedpool->findDecompositions();
+	  conshdlrdata->decdecomps = seeedpool->getDecompositions();
+	  conshdlrdata->ndecomps = seeedpool->getNDecompositions();
+	  conshdlrdata->seeedpool = seeedpool;
 	  SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
 	  SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
 //	  seeedpool.freeCurrSeeeds();
@@ -974,6 +991,50 @@ SCIP_RETCODE DECwriteAllDecomps(
 
    return SCIP_OKAY;
 }
+
+
+/** write
+ *  out all detected or provided decompositions */
+/** write family tree **/
+SCIP_RETCODE DECwriteFamilyTree(
+   SCIP*                 scip,               /**< SCIP data structure */
+   char*                 directory,          /**< directory for decompositions */
+   int                   ndecompositions     /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
+   )
+{
+
+
+	SCIP_CONSHDLR* conshdlr;
+	SCIP_CONSHDLRDATA* conshdlrdata;
+	assert(scip != NULL);
+
+	conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+	assert(conshdlr != NULL);
+
+	conshdlrdata = SCIPconshdlrGetData(conshdlr);
+
+	std::vector<SeeedPtr> tovisualize(0);
+	assert(conshdlrdata != NULL);
+
+	 /* test familiy tree visualization */
+	    {
+	       std::vector<SeeedPtr> tovisualize(0);
+	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[0]);
+	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[1]);
+	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[2]);
+	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[3]);
+	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[4]);
+	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[5]);
+	       conshdlrdata->seeedpool->writeFamilyTreeLatexFile( "famtree.tex", tovisualize);
+	    }
+
+
+	   return SCIP_OKAY;
+}
+
+
+
+
 
 /** returns the best known decomposition, if available and NULL otherwise */
 DEC_DECOMP* DECgetBestDecomp(

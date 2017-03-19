@@ -42,6 +42,10 @@
 #include "type_detector.h"
 
 
+
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -190,6 +194,8 @@ SCIP_RETCODE GCGsetDetection(
    SCIP_PARAMSETTING     paramsetting,       /**< parameter settings */
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
    );
+
+
 
 #ifdef __cplusplus
 }

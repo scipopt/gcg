@@ -1093,17 +1093,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
     if( usemaxwhitescore )
     	finishedSeeeds = thinout( finishedSeeeds, nDecomps, addTrivialDecomp );
 
-    /* test familiy tree visualization */
-    {
-       std::vector<SeeedPtr> tovisualize(0);
-       tovisualize.push_back(finishedSeeeds[0]);
-       tovisualize.push_back(finishedSeeeds[1]);
-       tovisualize.push_back(finishedSeeeds[2]);
-       tovisualize.push_back(finishedSeeeds[3]);
- //      tovisualize.push_back(finishedSeeeds[4]);
- //      tovisualize.push_back(finishedSeeeds[5]);
-       writeFamilyTreeLatexFile( "famtree.tex", tovisualize);
-    }
+
 
     /** fill out the decompositions */
 
@@ -2779,8 +2769,6 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
 
    return SCIP_OKAY;
 }
-
-
 
 
 } /* namespace gcg */

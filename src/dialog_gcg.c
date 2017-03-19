@@ -236,7 +236,7 @@ SCIP_RETCODE writeFamilyTree(
 
       do
       {
-         SCIP_RETCODE retcode = DECwriteAllDecomps(scip, dirname, extension);
+         SCIP_RETCODE retcode = DECwriteFamilyTree(scip, dirname, extension);
 
          if( retcode == SCIP_FILECREATEERROR )
          {
