@@ -143,6 +143,14 @@ SCIP_RETCODE DECwriteAllDecomps(
    char*                 extension           /**< the file extension for the export */
    );
 
+/** write family tree **/
+SCIP_RETCODE DECwriteFamilyTree(
+   SCIP*                 scip,               /**< SCIP data structure */
+   char*                 directory,          /**< directory for decompositions */
+   int                   ndecompositions     /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
+   );
+
+
 /** returns the best known decomposition, if available and NULL otherwise */
 extern
 DEC_DECOMP* DECgetBestDecomp(
