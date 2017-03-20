@@ -1024,7 +1024,6 @@ SCIP_RETCODE DECwriteFamilyTree(
 	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[2]);
 	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[3]);
 	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[4]);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[5]);
 	       conshdlrdata->seeedpool->writeFamilyTreeLatexFile( "famtree.tex", tovisualize);
 	    }
 
