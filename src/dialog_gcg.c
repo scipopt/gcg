@@ -189,6 +189,108 @@ SCIP_RETCODE writeAllDecompositions(
    return SCIP_OKAY;
 }
 
+/** writes out all decompositions currently known to cons_decomp */
+static
+SCIP_RETCODE writeFamilyTree(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_DIALOG*          dialog,             /**< dialog menu */
+   SCIP_DIALOGHDLR*      dialoghdlr,         /**< dialog handler */
+   SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
+   )
+{
+
+   char* filename;
+   char* dirname;
+   SCIP_Bool endoffile;
+
+   if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
+   {
+      SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory and/or extension: ", &dirname, &endoffile) );
+   if( endoffile )
+   {
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
+   if( SCIPdialoghdlrIsBufferEmpty(dialoghdlr) )
+   {
+      filename = dirname;
+      dirname = NULL;
+   }
+   else
+   {
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
+   }
+
+   if( filename[0] != '\0' )
+   {
+      char* extension;
+      extension = filename;
+      SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, extension, TRUE) );
+
+      do
+      {
+         SCIP_RETCODE retcode = DECwriteFamilyTree(scip, dirname, extension);
+
+         if( retcode == SCIP_FILECREATEERROR )
+         {
+            SCIPdialogMessage(scip, NULL, "error creating files\n");
+            SCIPdialoghdlrClearBuffer(dialoghdlr);
+            break;
+         }
+         else if( retcode == SCIP_WRITEERROR )
+         {
+            SCIPdialogMessage(scip, NULL, "error writing files\n");
+            SCIPdialoghdlrClearBuffer(dialoghdlr);
+            break;
+         }
+         else if( retcode == SCIP_PLUGINNOTFOUND )
+         {
+            /* ask user once for a suitable reader */
+            if( extension == NULL )
+            {
+               SCIPdialogMessage(scip, NULL, "no reader for requested output format\n");
+
+               SCIPdialogMessage(scip, NULL, "following readers are avaliable for writing:\n");
+               displayReaders(scip, FALSE, TRUE);
+
+               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
+                     "select a suitable reader by extension (or return): ", &extension, &endoffile) );
+
+               if( extension[0] == '\0' )
+                  break;
+            }
+            else
+            {
+               SCIPdialogMessage(scip, NULL, "no reader for output in <%s> format\n", extension);
+               extension = NULL;
+            }
+         }
+         else
+         {
+            /* check for unexpected errors */
+            SCIP_CALL( retcode );
+
+            /* print result message if writing was successful */
+            SCIPdialogMessage(scip, NULL, "written all decompositions %s\n", extension);
+            break;
+         }
+      }
+      while (extension != NULL );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
+
 /** writes out visualizations of all decompositions currently known to cons_decomp to a PDF file */
 static
 SCIP_RETCODE reportAllDecompositions(
@@ -527,6 +629,26 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteAllDecompositions)
 
    return SCIP_OKAY;
 }
+
+
+/** dialog execution method for writing all known decompositions */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteFamilyTree)
+{
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
+   {
+      SCIP_CALL( writeFamilyTree(scip, dialog, dialoghdlr, nextdialog) );
+   }
+   else
+      SCIPdialogMessage(scip, NULL, "no problem available\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
 
 /** dialog execution method for reporting all known decompositions in a PDF file */
 static
@@ -1004,6 +1126,19 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+   /* write family tree of whites decompositions */
+   if( !SCIPdialogHasEntry(submenu, "familytree") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteFamilyTree, NULL, NULL,
+            "familytree",
+            "write all decompositions (including partial decompositions) that are part of the family tree given by the current settings as pdf files and creates a latex file displaying corresponding the family tree",
+            FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+
 
    /* write reportdecompositions */
       if( !SCIPdialogHasEntry(submenu, "reportdecompositions") )

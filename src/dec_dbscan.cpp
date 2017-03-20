@@ -621,9 +621,14 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
    {
       if(newSeeeds[j] != NULL)
       {
+         char decinfo[SCIP_MAXSTRLEN];
+
          seeedPropagationData->newSeeeds[s] = newSeeeds[j];
          seeedPropagationData->newSeeeds[s]->addClockTime(clockTimes1[j] + clockTimes2[j] + clockTimes3[j]);
          seeedPropagationData->newSeeeds[s]->setDetectorPropagated(detector);
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "dbscan");
+         seeedPropagationData->newSeeeds[s]->addDetectorChainInfo(decinfo);
+
          ++s;
       }
    }

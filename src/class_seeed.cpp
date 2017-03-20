@@ -44,7 +44,7 @@
 #include "struct_decomp.h"
 #include "cons_decomp.h"
 
-
+#include <sstream>
 #include <iostream>
 #include <exception>
 #include <algorithm>
@@ -80,7 +80,7 @@ Seeed::Seeed(
    int         givenNVars                  /**number of variables */
 ) :
    scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
-      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false)
+      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false)
 {
 }
 
@@ -102,6 +102,7 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    propagatedByDetector = seeedToCopy->propagatedByDetector;
    detectorChain = seeedToCopy->detectorChain;
    detectorChainFinishingUsed = seeedToCopy->detectorChainFinishingUsed;
+   detectorchaininfo = seeedToCopy->detectorchaininfo;
    openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
    detectorClockTimes = seeedToCopy->detectorClockTimes;
    pctVarsToBorder = seeedToCopy->pctVarsToBorder;
@@ -112,6 +113,8 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    pctConssFromFree = seeedToCopy->pctConssFromFree;
    nNewBlocks = seeedToCopy->nNewBlocks;
    isFinishedByFinisher = seeedToCopy->isFinishedByFinisher;
+   score = seeedToCopy->score;
+   maxwhitescore = seeedToCopy->maxwhitescore;
    changedHashvalue = seeedToCopy->changedHashvalue;
    stemsFromUnpresolved = seeedToCopy->stemsFromUnpresolved;
    isFinishedByFinisherUnpresolved = seeedToCopy->isFinishedByFinisherUnpresolved;
@@ -164,7 +167,18 @@ int Seeed::addBlock()
     pctVarsToBlock.push_back( (-getNOpenvars()-getNMastervars() - getNLinkingvars() - getNTotalStairlinkingvars() + ancestor->getNOpenvars()+ ancestor->getNMastervars() + ancestor->getNLinkingvars() + ancestor->getNTotalStairlinkingvars() ) / getNVars() );
     pctConssToBorder.push_back( ( getNMasterconss() - ancestor->getNMasterconss() ) / (SCIP_Real) getNConss() );
     pctVarsToBorder.push_back( ( getNMastervars() + getNLinkingvars() + getNTotalStairlinkingvars() - ancestor->getNMastervars() - ancestor->getNLinkingvars() - ancestor->getNTotalStairlinkingvars()) / (SCIP_Real) getNVars() );
-    listofancestorids.push_back(ancestor->getID() );
+    listofancestorids.push_back( ancestor->getID() );
+ }
+
+ void Seeed::addDetectorChainInfo(
+     const char* decinfo
+  )
+ {
+	 std::stringstream help;
+	 help << decinfo;
+    detectorchaininfo.push_back( help.str() );
+
+    return;
  }
 
 
@@ -2000,7 +2014,7 @@ SCIP_Real Seeed::evaluate(
    /* calculate matrix area */
    matrixarea = nVars*nConss;
 
-   blackarea += getNLinkingvars() * getNConss();
+   blackarea += ( getNLinkingvars()+ getNTotalStairlinkingvars() ) * getNConss();
    blackarea += getNMasterconss() * getNVars();
 
    blackarea -= getNMastervars() * getNLinkingvars();
@@ -2016,7 +2030,7 @@ SCIP_Real Seeed::evaluate(
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
-      blackarea +=  getNConssForBlock(i) * getNVarsForBlock(i);
+      blackarea +=  getNConssForBlock(i) * ( getNVarsForBlock(i) );
       for( j = 0; j < nVars; ++j )
       {
          ishandled[j] = FALSE;
@@ -3082,7 +3096,11 @@ SCIP_RETCODE Seeed::setVarToStairlinking(int varToStairlinking, int block1, int 
 }
 
 /** just for debugging */
-void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
+void Seeed::showScatterPlot(
+      Seeedpool* seeedpool,
+      SCIP_Bool writeonly,
+      const char* filename
+      ){
 
    char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
    int rowboxcounter = 0;
@@ -3094,6 +3112,12 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
    std::ofstream ofs;
 
    ofs.open ("helper.plg", std::ofstream::out );
+
+   if( writeonly )
+   {
+      ofs << "set terminal pdf " << std::endl;
+      ofs << "set output \"" << filename  << "\"" << std::endl;
+   }
    ofs << "set xrange [-1:" << getNVars() << "]\nset yrange[" << getNConss() << ":-1]\n";
 
 
@@ -3154,13 +3178,14 @@ void Seeed::showScatterPlot(  Seeedpool* seeedpool ){
    else
       ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
 
-   ofs << "pause -1" << std::endl;
+   if( !writeonly )
+      ofs << "pause -1" << std::endl;
 
    ofs.close();
 
    system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
-   system("rm helpScatter.txt");
-   system("rm helper.plg");
+//   system("rm helpScatter.txt");
+//   system("rm helper.plg");
    return;
 }
 
@@ -3288,7 +3313,18 @@ SCIP_RETCODE Seeed::writeScatterPlot(
    return SCIP_OKAY;
 }
 
+/** method to construct a short caption for this seeed
+ * @return short caption of this partial decomposition
+ * */
+const char* Seeed::getShortCaption(){
 
+   static char shortcaption[SCIP_MAXSTRLEN];
+
+   sprintf(shortcaption, "id %d; nB %d; maxW %.2f ", getID(), getNBlocks(), maxwhitescore );
+
+   return shortcaption;
+
+}
 
 
 } /* namespace gcg */

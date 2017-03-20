@@ -91,12 +91,12 @@ using gcg::Weights;
 
 
 /* Default parameter settings */
-#define DEFAULT_VARWEIGHT         1          /**< weight for variable nodes */
-#define DEFAULT_VARWEIGHTBIN      2          /**< weight for binary variable nodes */
-#define DEFAULT_VARWEIGHTINT      2          /**< weight for integer variable nodes */
-#define DEFAULT_VARWEIGHTIMPL     2          /**< weight for implicit integer variable nodes */
-#define DEFAULT_VARWEIGHTCONT     1          /**< weight for continous variable nodes */
-#define DEFAULT_CONSWEIGHT        5          /**< weight for constraint hyperedges */
+#define DEFAULT_VARWEIGHT         2          /**< weight for variable nodes */
+#define DEFAULT_VARWEIGHTBIN      3          /**< weight for binary variable nodes */
+#define DEFAULT_VARWEIGHTINT      3          /**< weight for integer variable nodes */
+#define DEFAULT_VARWEIGHTIMPL     3          /**< weight for implicit integer variable nodes */
+#define DEFAULT_VARWEIGHTCONT     2          /**< weight for continous variable nodes */
+#define DEFAULT_CONSWEIGHT        1          /**< weight for constraint hyperedges */
 #define DEFAULT_RANDSEED          1          /**< random seed for the hmetis call */
 #define DEFAULT_TIDY              TRUE       /**< whether to clean up afterwards */
 #define DEFAULT_DUMMYNODES        0.2        /**< percentage of dummy vertices*/
@@ -510,10 +510,12 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    for( j = 0, k = 0; k < maxnblockcandidates; ++k)
    {
+      char decinfo[SCIP_MAXSTRLEN];
       int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       SCIP_RETCODE retcode;
       detectordata->blocks = nblocks;
+
 
       if(nblocks > seeed->getNOpenconss() || nblocks <= 0)
       {
@@ -533,10 +535,14 @@ SCIP_RETCODE detection(
 
       SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
 
+
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
       if( (newSeeeds)[j] != NULL )
       {
-         nNewSeeeds = nNewSeeeds + 2;
+         (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "hrc\\_%d", numberOfBlocks[k]);
+          newSeeeds[j]->addDetectorChainInfo(decinfo);
+          newSeeeds[j+1]->addDetectorChainInfo(decinfo);
+          nNewSeeeds = nNewSeeeds + 2;
          detectordata->found = TRUE;
          clockTimes.push_back(SCIPclockGetTime(temporaryClock));
          clockTimes.push_back(SCIPclockGetTime(temporaryClock)); // 2x because two seeeds where created

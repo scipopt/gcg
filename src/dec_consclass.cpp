@@ -159,6 +159,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectConsclass)
 static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 {
   *result = SCIP_DIDNOTFIND;
+  char decinfo[SCIP_MAXSTRLEN];
 
   SCIP_CLOCK* temporaryClock;
 
@@ -209,9 +210,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   std::vector< std::vector<int> > subsetsOfConsclasses = getAllSubsets(consclassindices);
 
-
-
-
   for(size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset)
   {
       if(subsetsOfConsclasses[subset].size() == 0)
@@ -231,6 +229,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
           }
       }
       seeed->flushBooked();
+      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "consclass");
+      seeed->addDetectorChainInfo(decinfo);
 
       foundseeeds.push_back(seeed);
   }

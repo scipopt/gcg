@@ -820,12 +820,14 @@ SCIP_RETCODE createSeeedFromMasterconss(
    int*                  masterconss,         /**< constraints to be put in the master */
    int                   nmasterconss,        /**< number of constraints in the master */
    gcg::Seeed*           seeed,               /**< seeed to propagate */
-   gcg::Seeedpool*       seeedpool            /**< seeedpool */
+   gcg::Seeedpool*       seeedpool,            /**< seeedpool */
+   SCIP_Bool             exact                /** does this seeed stems from exact graph construction ( or was onlysign = TRUE ) was used */
    )
 {
 
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* newconstoblock;
+   char decinfo[SCIP_MAXSTRLEN];
    int nconss;
    int nvars;
    int nblocks;
@@ -1055,6 +1057,14 @@ SCIP_RETCODE createSeeedFromMasterconss(
 
    (*newSeeed)->considerImplicits(seeedpool);
    (*newSeeed)->assignAllDependent(seeedpool);
+
+   if( exact )
+      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "isomorph\\_exact");
+   else
+      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "isomorph\\_extended" );
+   (*newSeeed)->addDetectorChainInfo(decinfo);
+
+
 
    //(*newSeeed)->showScatterPlot(seeedpool);
 
@@ -1564,7 +1574,7 @@ SCIP_RETCODE detectIsomorph(
             SCIP_Bool isduplicate;
             int q;
 
-            SCIP_CALL( createSeeedFromMasterconss(scip, &((*newSeeeds)[pos]), masterconss, nmasterconss, seeed, seeedpool) );
+            SCIP_CALL( createSeeedFromMasterconss(scip, &((*newSeeeds)[pos]), masterconss, nmasterconss, seeed, seeedpool, !onlysign) );
 
             ((*newSeeeds)[pos])->calcHashvalue();
             SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );

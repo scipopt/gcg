@@ -138,6 +138,7 @@ static
 DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
 {
    *result = SCIP_DIDNOTFIND;
+   char decinfo[SCIP_MAXSTRLEN];
 
    SCIP_CLOCK* temporaryClock;
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
@@ -156,6 +157,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
    seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "connected");
+   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
@@ -174,6 +177,7 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    SCIP_CLOCK* temporaryClock;
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   char decinfo[SCIP_MAXSTRLEN];
 
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool );
@@ -185,6 +189,9 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
    seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated(detector);
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "connected");
+   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
+
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );

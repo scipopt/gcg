@@ -40,7 +40,7 @@
 #include "objscip/objscip.h"
 #include <vector>
 #include "struct_detector.h"
-
+#include <string>
 
 
 
@@ -88,6 +88,7 @@ public:
    bool                             isFinishedByFinisher;         /**< was this seeed finished by the finishseeed() method of a detector */
    /** statistic information */
    std::vector<DEC_DETECTOR*>       detectorChain;              /**< vector containing detectors that worked on that seeed */
+   std::vector<std::string>         detectorchaininfo;          /**< vector containing information about the detector call */
    std::vector<SCIP_Bool>           detectorChainFinishingUsed; /**< vector containing whether the finishing method of the corresponding detector was used on that seeed */
    std::vector<SCIP_Real>           detectorClockTimes;         /**< vector containing detector times in seconds  */
    std::vector<SCIP_Real>           pctVarsToBorder;            /**< vector containing the fraction of variables assigned to the border for each detector working on that seeed*/
@@ -133,6 +134,10 @@ public:
    void addDecChangesFromAncestor(
          Seeed* ancestor
          );
+
+   void addDetectorChainInfo(
+      const char* decinfo
+   );
 
    /** are already assigned constraints to blocks */
    bool alreadyAssignedConssToBlocks();
@@ -532,6 +537,7 @@ public:
          int block
    );
 
+
    /** add a variable to the linking variables */
    SCIP_RETCODE setVarToLinking(
          int varToLinking
@@ -547,11 +553,13 @@ public:
          int varToStairLinking, int block1, int block2
    );
 
-   void showScatterPlot(  Seeedpool* seeedpool );
+   void showScatterPlot(  Seeedpool* seeedpool, SCIP_Bool writeonly = FALSE, const char* filename = NULL );
 
    /** sorts the vars and conss according their numbers */
    void sort(
    );
+
+   const char* getShortCaption();
 
    /** displays the assignments of the vars */
    SCIP_RETCODE writeScatterPlot(
