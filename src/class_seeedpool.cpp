@@ -240,6 +240,63 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
 }
 
 
+/* test method for reduceClasses in ConsClassifier */
+void testReduceClasses()
+{
+   /** set up */
+   ConsClassifier* testClassifier = new ConsClassifier( NULL, "Test", 5, 10 );
+   ConsClassifier* reducedClassifier;
+
+   std::cout << "TEST: Test reduceClasses method" << std::endl;
+
+   for ( int c = 0; c < testClassifier->getNClasses(); ++c)
+   {
+      std::stringstream classname;
+      std::stringstream classdesc;
+      classname << c;
+      classdesc << "This class contains all constraints with " << c << ".";
+      testClassifier->setClassName( c, classname.str().c_str() );
+      testClassifier->setClassDescription( c, classdesc.str().c_str() );
+   }
+
+   testClassifier->assignConsToClass( 0, 3 );
+   testClassifier->assignConsToClass( 1, 1 );
+   testClassifier->assignConsToClass( 2, 0 );
+   testClassifier->assignConsToClass( 3, 2 );
+   testClassifier->assignConsToClass( 4, 0 );
+   testClassifier->assignConsToClass( 5, 1 );
+   testClassifier->assignConsToClass( 6, 2 );
+   testClassifier->assignConsToClass( 7, 0 );
+   testClassifier->assignConsToClass( 8, 4 );
+   testClassifier->assignConsToClass( 9, 2 );
+
+   /** test reduceClasses */
+   reducedClassifier = testClassifier->reduceClasses( 3 );
+
+   std::cout << "-- Number of classes: " << reducedClassifier->getNClasses() << std::endl;
+   std::cout << "-- Classifier name: " << std::string(reducedClassifier->getName()) << std::endl;
+
+   for ( int it_class = 0; it_class < reducedClassifier->getNClasses(); ++it_class )
+   {
+      std::cout << "--- Class no: " << it_class << std::endl;
+      std::cout << "--- Class name: " << std::string(reducedClassifier->getClassName( it_class )) << std::endl;
+      std::cout << "--- Class description: " << std::string(reducedClassifier->getClassDescription( it_class )) << std::endl;
+      std::cout << "--- Assigned conss:";
+
+      for ( int it_cons = 0; it_cons < reducedClassifier->getNConss(); ++it_cons )
+      {
+         if ( reducedClassifier->getClassOfCons( it_cons ) == it_class )
+         {
+            std::cout << " " << it_cons;
+         }
+      }
+      std::cout << std::endl;
+   }
+
+   delete testClassifier;
+   delete reducedClassifier;
+}
+
 /* test method for consclasscollection with ConsClassifier */
 void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std::vector<int> const & ccc1n, std::vector<ConsClassifier*> const & ccc2 )
 {
@@ -275,7 +332,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
          std::cout << std::endl;
       }
 
-      /* secondly, print all information if consclassescollection2 (i.e. vector of ConsClassifier objects */
+      /* secondly, print all information if consclassescollection2 (i.e. vector of ConsClassifier objects) */
       std::cout << "- 2.: consclassescollection2 (vector<ConsClassifier*>)" << std::endl;
       std::cout << "-- Number of classes: " << ccc2[it_classifier]->getNClasses() << std::endl;
       std::cout << "-- Classifier name: " << std::string(ccc2[it_classifier]->getName()) << std::endl;
@@ -547,9 +604,10 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
          if( conssclassconsnamelevenshtein )
             addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
 
-         /** Start of testing consclassescollection2, i.e. vector of ConsClassifier objects */
+         /** Start of testing consclassescollection2, i.e. vector of ConsClassifier objects, and reduceClasses */
+         testReduceClasses();
          testConsClassesCollection( consclassescollection, consclassesnclasses, consclassescollection2 );
-         /** End of testing consclassescollection2, i.e. vector of ConsClassifier objects */
+         /** End of testing consclassescollection2, i.e. vector of ConsClassifier objects, and reduceClasses */
 
          reduceConsclasses();
 
