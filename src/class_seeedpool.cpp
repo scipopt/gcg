@@ -760,6 +760,14 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
        if( allrelevantseeeds[help] != NULL && allrelevantseeeds[help]->getID() >= 0  )
           delete allrelevantseeeds[help];
     }
+
+    for ( size_t i = 0; i < consclassescollection2.size(); ++i )
+    {
+       size_t help = consclassescollection2.size() - i - 1;
+       if( consclassescollection2[help] != NULL )
+          delete consclassescollection2[help];
+    }
+
  }
 
 
@@ -1900,28 +1908,28 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
     int maximumnclasses = 18; /* if  distribution of classes exceed this number its skipped */
 
-    for( size_t conssclass = 0; conssclass < consclassescollection.size(); ++conssclass )
+    for( size_t classifier = 0; classifier < consclassescollection2.size(); ++classifier )
     {
        std::vector< std::vector<int> > subsetsOfConstypes(0, std::vector<int>(0) );
-       std::vector<int> nconssofclass(consclassesnclasses[conssclass], 0);
+       std::vector<int> nconssofclass(consclassescollection2[classifier]->getNClasses(), 0);
        std::vector<int> consclassindices(0);
 
        /** check if there are to  many classes in this distribution and skip it if so */
 
-       if ( consclassesnclasses[conssclass] > maximumnclasses)
+       if ( consclassescollection2[classifier]->getNClasses() > maximumnclasses)
        {
-          std::cout << " the current consclass distribution includes " <<  consclassesnclasses[conssclass] << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
+          std::cout << " the current consclass distribution includes " <<  consclassescollection2[classifier]->getNClasses() << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
           continue;
        }
 
 
-       for( int i = 0; i < consclassesnclasses[conssclass]; ++i)
+       for( int i = 0; i < consclassescollection2[classifier]->getNClasses(); ++i)
           consclassindices.push_back(i);
 
        subsetsOfConstypes = getAllSubsets(consclassindices);
 
-       for ( size_t i = 0; i < getNConss(); ++i)
-          ++(nconssofclass.at( consclassescollection[conssclass].at(i) ) );
+       for ( int i = 0; i < getNConss(); ++i)
+          ++(nconssofclass.at( consclassescollection2[classifier]->getClassOfCons(i) ) );
 
        /** start with the cardinalities of the consclasses as candidates */
        for( size_t i = 0; i < nconssofclass.size(); ++i)
@@ -1953,27 +1961,49 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
   }
 
  int Seeedpool::getNConssClassDistributions(){
-    return consclassescollection.size();
+    return (int) consclassescollection2.size();
  }
 
  int* Seeedpool::getConssClassDistribution(
     int consclassdistr
-    ){
-    return &(consclassescollection[consclassdistr][0]);
+    )
+ {
+    int nconss = consclassescollection2[consclassdistr]->getNConss();
+    int* output = new int[nconss];
+    for ( int i = 0; i < nconss; ++i )
+       output[i] = consclassescollection2[consclassdistr]->getClassOfCons( i );
+    return &output[0];
  }
 
  std::vector<int> Seeedpool::getConssClassDistributionVector(
      int consclassdistr
-     ){
-     return (consclassescollection[consclassdistr]);
-  }
+     )
+ {
+    int nconss = consclassescollection2[consclassdistr]->getNConss();
+    std::vector<int> output(nconss, 0);
+    for ( int i = 0; i < nconss; ++i )
+       output[i] = consclassescollection2[consclassdistr]->getClassOfCons( i );
+    return output;
+ }
 
 
  int Seeedpool::getNClassesOfDistribution(
     int consclassdistr
     )
  {
-    return consclassesnclasses[consclassdistr];
+    return consclassescollection2[consclassdistr]->getNClasses();
+ }
+
+ /** returns number of different constraint classifiers */
+ int Seeedpool::getNConsClassifier()
+ {
+    return (int) consclassescollection2.size();
+ }
+
+ /** returns pointer to a constraint classifier */
+ ConsClassifier* Seeedpool::getConsClassifier( int givenClassifierIndex )
+ {
+    return consclassescollection2[givenClassifierIndex];
  }
 
  void Seeedpool::addConssClassesForSCIPConstypes()
