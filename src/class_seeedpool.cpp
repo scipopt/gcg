@@ -248,6 +248,7 @@ SCIP_RETCODE sortAndImplicitsAndHashvalue(Seeedpool* seeedpool, SeeedPtr seeed)
 	seeed->considerImplicits(seeedpool);
 	seeed->sort();
 	seeed->calcHashvalue();
+	seeed->evaluate(seeedpool);
 
 	return SCIP_OKAY;
 }
@@ -731,8 +732,11 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
 
         verboseLevel = 1;
 
+        for( size_t i = 0; i < currSeeeds.size(); ++i )
+        	SCIP_CALL_ABORT( sortAndImplicitsAndHashvalue(this, currSeeeds[i]) );
+
         /** add translated original seeeds (of unpresolved problem) */
-        for ( size_t i = 0; i < translatedOrigSeeeds.size(); ++i )
+        for( size_t i = 0; i < translatedOrigSeeeds.size(); ++i )
         {
            SCIP_CALL_ABORT( sortAndImplicitsAndHashvalue(this, translatedOrigSeeeds[i]) );
            if( seeedIsNoDuplicateOfSeeeds(translatedOrigSeeeds[i], currSeeeds, true) )

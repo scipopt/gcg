@@ -1853,7 +1853,10 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
    std::cout << "number of blocks: " << nBlocks << std::endl;
    std::cout << "hashvalue: " << hashvalue << std::endl;
    std::cout << "score: " << score << std::endl;
-   std::cout << "maxwhitescore: " << maxwhitescore << std::endl;
+   if( getNOpenconss() + getNOpenconss() > 0)
+	   std::cout << "maxwhitescore >= " << maxwhitescore << std::endl;
+   else
+	   std::cout << "maxwhitescore: " << maxwhitescore << std::endl;
    std::cout << "ancestorids: " ;
    for ( size_t i = 0; i  < listofancestorids.size(); ++i)
       std::cout << listofancestorids[i] << "; ";
@@ -1957,6 +1960,7 @@ SCIP_RETCODE Seeed::displayVars(Seeedpool* seeedpool)
 
 /** computes the score of the given seeed based on the border, the average density score and the ratio of
  * linking variables
+ * @todo bound calculation for unfinished decompositions could be more precise
  */
 SCIP_Real Seeed::evaluate(
    Seeedpool* seeedpool
@@ -1995,7 +1999,24 @@ SCIP_Real Seeed::evaluate(
    alphadensity  = 0.2;
    blackarea = 0.;
 
-   if(getNOpenconss() != 0 || getNOpenvars() != 0)
+
+   /* calculate bound on max white score */
+   if( getNOpenconss() != 0 || getNOpenvars() != 0 )
+   {
+	   blackarea += ( getNLinkingvars()+ getNTotalStairlinkingvars() ) * getNConss();
+	   blackarea += getNMasterconss() * getNVars();
+	   blackarea -= getNMastervars() * getNLinkingvars();
+	   for( i = 0; i < nBlocks; ++i )
+	   {
+		   blackarea +=  getNConssForBlock(i) * getNVarsForBlock(i) ;
+	   }
+
+	   maxwhitescore = blackarea/( getNConss() * getNVars() );
+
+	   return maxwhitescore;
+   }
+
+   if( getNOpenconss() != 0 || getNOpenvars() != 0 )
       SCIPwarningMessage(scip, "Evaluation for seeeds is not implemented for seeeds with open conss or open vars.\n");
 
    SCIP_CALL( SCIPallocBufferArray(scip, &nzblocks, nBlocks) );
@@ -3321,8 +3342,10 @@ SCIP_RETCODE Seeed::writeScatterPlot(
 const char* Seeed::getShortCaption(){
 
    static char shortcaption[SCIP_MAXSTRLEN];
-
-   sprintf(shortcaption, "id %d; nB %d; maxW %.2f ", getID(), getNBlocks(), maxwhitescore );
+   if( getNOpenconss() + getNOpenvars() > 0)
+	   sprintf(shortcaption, "id %d; nB %d; maxW$\\geq$ %.2f ", getID(), getNBlocks(), maxwhitescore );
+   else
+	   sprintf(shortcaption, "id %d; nB %d; maxW %.2f ", getID(), getNBlocks(), maxwhitescore );
 
    return shortcaption;
 
