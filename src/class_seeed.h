@@ -553,7 +553,7 @@ public:
          int varToStairLinking, int block1, int block2
    );
 
-   void showScatterPlot(  Seeedpool* seeedpool, SCIP_Bool writeonly = FALSE, const char* filename = NULL );
+   void showScatterPlot(  Seeedpool* seeedpool, SCIP_Bool writeonly = FALSE, const char* filename = NULL, SCIP_Bool draft = FALSE, SCIP_Bool colored = TRUE );
 
    /** sorts the vars and conss according their numbers */
    void sort(

@@ -151,7 +151,8 @@ SCIP_RETCODE DECwriteAllDecomps(
 SCIP_RETCODE DECwriteFamilyTree(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 directory,          /**< directory for decompositions */
-   int                   ndecompositions     /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
+   int                   ndecompositions,     /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
+   SCIP_Bool 			 draft
    );
 
 

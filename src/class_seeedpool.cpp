@@ -243,15 +243,6 @@ std::vector<SeeedPtr> thinout( std::vector<SeeedPtr> finishedSeeeds, size_t nDec
 	return justBest;
 }
 
-SCIP_RETCODE sortAndImplicitsAndHashvalue(Seeedpool* seeedpool, SeeedPtr seeed)
-{
-	seeed->considerImplicits(seeedpool);
-	seeed->sort();
-	seeed->calcHashvalue();
-	seeed->evaluate(seeedpool);
-
-	return SCIP_OKAY;
-}
 
 
 
@@ -733,12 +724,12 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
         verboseLevel = 1;
 
         for( size_t i = 0; i < currSeeeds.size(); ++i )
-        	SCIP_CALL_ABORT( sortAndImplicitsAndHashvalue(this, currSeeeds[i]) );
+        	SCIP_CALL_ABORT( prepareSeeed( currSeeeds[i]) );
 
         /** add translated original seeeds (of unpresolved problem) */
         for( size_t i = 0; i < translatedOrigSeeeds.size(); ++i )
         {
-           SCIP_CALL_ABORT( sortAndImplicitsAndHashvalue(this, translatedOrigSeeeds[i]) );
+           SCIP_CALL_ABORT( prepareSeeed( translatedOrigSeeeds[i]) );
            if( seeedIsNoDuplicateOfSeeeds(translatedOrigSeeeds[i], currSeeeds, true) )
               currSeeeds.push_back(translatedOrigSeeeds[i] );
         }
@@ -799,7 +790,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
 
                                  for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
                                  {
-                                    sortAndImplicitsAndHashvalue(this, seeedPropData->newSeeeds[j] );
+                                    prepareSeeed( seeedPropData->newSeeeds[j] );
                                     seeedPropData->newSeeeds[j]->checkConsistency();
                                     seeedPropData->newSeeeds[j]->addDecChangesFromAncestor(seeedPtr);
                                  }
@@ -1434,6 +1425,9 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
 
  }
 
+
+
+
 /*SCIP_RETCODE DECdecompCheckConsistency(DEC_DECOMP* decomp)
 {
    int c;
@@ -1446,6 +1440,18 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
 
    }
 }*/
+
+
+ SCIP_RETCODE Seeedpool::prepareSeeed( SeeedPtr seeed)
+ {
+ 	seeed->considerImplicits(this);
+ 	seeed->sort();
+ 	seeed->calcHashvalue();
+ 	seeed->evaluate(this);
+
+ 	return SCIP_OKAY;
+ }
+
 
  void Seeedpool::freeCurrSeeeds()
  {
@@ -2632,7 +2638,8 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
 
 SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
    const char* filename,                                 /* filename the output should be written to */
-   std::vector<SeeedPtr> seeeds                          /* vector of seeed pointers the  family tree should be constructed for */
+   std::vector<SeeedPtr> seeeds,                          /* vector of seeed pointers the  family tree should be constructed for */
+   SCIP_Bool draft
    ){
 
    std::ofstream ofs;
@@ -2708,7 +2715,7 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
       seeed = treeseeeds[i];
       decompfilename = getSeeedFolderLatex(seeed);
 
-      seeed->showScatterPlot(this, TRUE, decompfilename.c_str() );
+      seeed->showScatterPlot(this, TRUE, decompfilename.c_str(), draft );
    }
 
  //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;

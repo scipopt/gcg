@@ -999,7 +999,8 @@ SCIP_RETCODE DECwriteAllDecomps(
 SCIP_RETCODE DECwriteFamilyTree(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 directory,          /**< directory for decompositions */
-   int                   ndecompositions     /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
+   int                   ndecompositions,     /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
+   SCIP_Bool draft
    )
 {
 
@@ -1017,15 +1018,11 @@ SCIP_RETCODE DECwriteFamilyTree(
 	assert(conshdlrdata != NULL);
 
 	 /* test familiy tree visualization */
-	    {
-	       std::vector<SeeedPtr> tovisualize(0);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[0]);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[1]);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[2]);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[3]);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[4]);
-	       conshdlrdata->seeedpool->writeFamilyTreeLatexFile( "famtree.tex", tovisualize);
-	    }
+
+	for( int i = 0; i < ndecompositions; ++i)
+		tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[i]);
+
+	conshdlrdata->seeedpool->writeFamilyTreeLatexFile( "famtree.tex", tovisualize, draft);
 
 
 	   return SCIP_OKAY;

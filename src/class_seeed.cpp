@@ -3120,15 +3120,18 @@ SCIP_RETCODE Seeed::setVarToStairlinking(int varToStairlinking, int block1, int 
 void Seeed::showScatterPlot(
       Seeedpool* seeedpool,
       SCIP_Bool writeonly,
-      const char* filename
-      ){
+      const char* filename,
+	  SCIP_Bool draft,
+	  SCIP_Bool colored
+){
 
    char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
    int rowboxcounter = 0;
    int colboxcounter = 0;
-   bool colored = true;
 
-   writeScatterPlot(seeedpool, help);
+
+   if ( !draft )
+	   writeScatterPlot(seeedpool, help);
 
    std::ofstream ofs;
 
@@ -3194,19 +3197,27 @@ void Seeed::showScatterPlot(
    else
       ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fillstyle solid noborder fc rgb \"grey50\"\n" ;
 
-         colboxcounter += getNOpenvars();
-         rowboxcounter+= getNOpenconss();
-   if(colored)
-      ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
-   else
-      ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
+   colboxcounter += getNOpenvars();
+   rowboxcounter+= getNOpenconss();
+
+   if( !draft )
+   {
+	   if(colored)
+		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
+	   else
+		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
+   }
+   	   else
+   		 ofs << "plot 0" << std::endl;
 
    if( !writeonly )
       ofs << "pause -1" << std::endl;
 
    ofs.close();
-
-   system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+   if( !draft)
+	   system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+   else
+	   system("gnuplot helper.plg ");
 //   system("rm helpScatter.txt");
 //   system("rm helper.plg");
    return;

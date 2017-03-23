@@ -201,7 +201,16 @@ SCIP_RETCODE writeFamilyTree(
 
    char* filename;
    char* dirname;
+   char* draftstring;
+   char* ndecstring;
    SCIP_Bool endoffile;
+   SCIP_Bool draft;
+   int ndecs;
+   int defaultndecs = 5;
+
+
+   draft = FALSE;
+   ndecs = 5;
 
    if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
    {
@@ -211,7 +220,7 @@ SCIP_RETCODE writeFamilyTree(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory and/or extension: ", &dirname, &endoffile) );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory: ", &dirname, &endoffile) );
    if( endoffile )
    {
       *nextdialog = NULL;
@@ -228,7 +237,21 @@ SCIP_RETCODE writeFamilyTree(
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
    }
 
-   if( filename[0] != '\0' )
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "draft mode? (TRUE/[FALSE]) ", &draftstring, &endoffile) );
+   if( strcmp( draftstring, "TRUE") == 0 )
+	   draft = TRUE;
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "number of finished decompositions (default: 5): ", &ndecstring, &endoffile) );
+
+   ndecs = atoi( ndecstring );
+
+   if ( ndecs == 0 )
+   {
+	   SCIPdialogMessage(scip, NULL, "set number of finished decompositions to %d \n", defaultndecs);
+	   ndecs = defaultndecs;
+   }
+
+ //  if( filename[0] != '\0' )
    {
       char* extension;
       extension = filename;
@@ -236,7 +259,7 @@ SCIP_RETCODE writeFamilyTree(
 
       do
       {
-         SCIP_RETCODE retcode = DECwriteFamilyTree(scip, dirname, extension);
+         SCIP_RETCODE retcode = DECwriteFamilyTree(scip, dirname, ndecs, draft);
 
          if( retcode == SCIP_FILECREATEERROR )
          {

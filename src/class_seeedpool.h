@@ -157,6 +157,8 @@ public:
 
    void populate(std::vector<SeeedPtr> seeeds);
 
+   SCIP_RETCODE prepareSeeed( SeeedPtr seeed);
+
    void freeCurrSeeeds();
 
    void addSeeedToCurr(SeeedPtr seeed);
@@ -262,8 +264,9 @@ public:
 
    SCIP_RETCODE writeFamilyTreeLatexFile(
       const char* filename,                                 /* filename the output should be written to */
-      std::vector<SeeedPtr> seeeds                          /* vector of seeed pointers the  family tree should be constructed for */
-      );
+      std::vector<SeeedPtr> seeeds,                          /* vector of seeed pointers the  family tree should be constructed for */
+	  SCIP_Bool draft
+   );
 
 
    };
