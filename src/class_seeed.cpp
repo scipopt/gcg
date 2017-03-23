@@ -2014,7 +2014,7 @@ SCIP_Real Seeed::evaluate(
    /* calculate matrix area */
    matrixarea = nVars*nConss;
 
-   blackarea += getNLinkingvars() * getNConss();
+   blackarea += ( getNLinkingvars()+ getNTotalStairlinkingvars() ) * getNConss();
    blackarea += getNMasterconss() * getNVars();
 
    blackarea -= getNMastervars() * getNLinkingvars();
@@ -2030,7 +2030,7 @@ SCIP_Real Seeed::evaluate(
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
-      blackarea +=  getNConssForBlock(i) * ( getNVarsForBlock(i) + getNStairlinkingvars(i) + ( i == 0 ? 0 : getNStairlinkingvars(i-1) ) );
+      blackarea +=  getNConssForBlock(i) * ( getNVarsForBlock(i) );
       for( j = 0; j < nVars; ++j )
       {
          ishandled[j] = FALSE;

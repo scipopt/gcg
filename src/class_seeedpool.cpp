@@ -2713,7 +2713,7 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
     preambel.precision(2);
 
     preambel << "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
-    preambel << "\n\\usetikzlibrary{positioning}\n\\usepackage{capt-of}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
+    preambel << "\n\\usetikzlibrary{positioning}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
     preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
 
 
