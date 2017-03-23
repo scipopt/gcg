@@ -3115,8 +3115,10 @@ void Seeed::showScatterPlot(
 
    if( writeonly )
    {
-      ofs << "set terminal pdf " << std::endl;
+	  ofs << "set terminal pdf " << std::endl;
       ofs << "set output \"" << filename  << "\"" << std::endl;
+	//  ofs << "set terminal postscript" << std::endl;
+	//  ofs << "set output \"| ps2pdf - " << filename  << "\"" << std::endl;
    }
    ofs << "set xrange [-1:" << getNVars() << "]\nset yrange[" << getNConss() << ":-1]\n";
 
