@@ -998,8 +998,9 @@ SCIP_RETCODE DECwriteAllDecomps(
 /** write family tree **/
 SCIP_RETCODE DECwriteFamilyTree(
    SCIP*                 scip,               /**< SCIP data structure */
-   char*                 directory,          /**< directory for decompositions */
-   int                   ndecompositions,     /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
+   const char*           filename,           /**< filename the output should be written to (including directory) */
+   const char*           workfolder,         /**< directory in which should be worked */
+   int                   ndecompositions,    /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
    SCIP_Bool draft
    )
 {
@@ -1022,7 +1023,7 @@ SCIP_RETCODE DECwriteFamilyTree(
 	for( int i = 0; i < ndecompositions; ++i)
 		tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[i]);
 
-	conshdlrdata->seeedpool->writeFamilyTreeLatexFile( "famtree.tex", tovisualize, draft);
+	conshdlrdata->seeedpool->writeFamilyTreeLatexFile( filename, workfolder, tovisualize, draft);
 
 
 	   return SCIP_OKAY;
@@ -1207,8 +1208,6 @@ SCIP_RETCODE setDetectionDefault(
          conshdlrdata->detectors[i]->setParamDefault(scip, conshdlrdata->detectors[i], &result);
       if( !quiet )
       {
-         char paramname[SCIP_MAXSTRLEN];
-         SCIP_Bool paramval;
          SCIP_Bool written = FALSE;
 
          (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);

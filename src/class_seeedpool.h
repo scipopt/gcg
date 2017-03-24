@@ -264,7 +264,8 @@ public:
 
    SCIP_RETCODE writeFamilyTreeLatexFile(
       const char* filename,                                 /* filename the output should be written to */
-      std::vector<SeeedPtr> seeeds,                          /* vector of seeed pointers the  family tree should be constructed for */
+      const char* workfolder,                               /* directory in which should be worked */
+      std::vector<SeeedPtr> seeeds,                         /* vector of seeed pointers the  family tree should be constructed for */
 	  SCIP_Bool draft
    );
 

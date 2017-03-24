@@ -243,7 +243,10 @@ SCIP_RETCODE writeFamilyTree(
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", dirname, filename, extension);
 
    /*@todo y/ yes or anything for no*/
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Draft mode? (y/[n]) ", &draftstring, &endoffile) );
+   SCIPdialogMessage(scip, NULL, "Draft mode will not visualize non-zero values but is faster and takes less memory.\n");
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
+      "To activate draft mode type 'yes', otherwise type anything different or just press Enter:",
+      &draftstring, &endoffile) );
    if( strcmp( draftstring, "y") == 0 || strcmp( draftstring, "yes") == 0 ||
       strcmp( draftstring, "Y") == 0 || strcmp( draftstring, "Yes") == 0 || strcmp( draftstring, "YES") == 0)
    {
@@ -263,7 +266,7 @@ SCIP_RETCODE writeFamilyTree(
 	   ndecs = defaultndecs;
    }
 
-   retcode = DECwriteFamilyTree(scip, outname, ndecs, draft);
+   retcode = DECwriteFamilyTree(scip, outname, dirname, ndecs, draft);
    if( retcode == SCIP_FILECREATEERROR )
    {
       SCIPdialogMessage(scip, NULL, "error creating file\n");
