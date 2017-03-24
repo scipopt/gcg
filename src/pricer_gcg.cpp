@@ -2141,9 +2141,9 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       if( bestcol != NULL )
       {
          /* todo: add columns to column pool */
-         for(int j = 0; j < *ncols; ++j)
+         for( int j = 0; j < *ncols; ++j )
          {
-            SCIP_CALL( GCGfreeGcgCol(&cols[j]) );
+            GCGfreeGcgCol(&cols[j]);
          }
          SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
       }
@@ -2331,7 +2331,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             goto done;
 
          #pragma omp flush(infeasible,nfoundvars,successfulmips)
-         if( (abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible) && !pricerdata->stabilization)
+         if( (abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible) && !stabilized)
          {
             goto done;
          }
@@ -2363,7 +2363,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          if( optimal && ncols[prob] > 0)
          {
-            SCIP_Real convdual = stabilization->convGetDual(prob);
+            SCIP_Real convdual = 0.0;
+            SCIP_CONS* cons = GCGgetConvCons(origprob, prob);
+
+            if( stabilized )
+               convdual = stabilization->convGetDual(prob);
+            else
+               convdual = pricetype->consGetDual(scip_, cons);
 
             #pragma omp atomic
             beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
@@ -2511,7 +2517,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
                if( !success )
                {
-                  SCIP_CALL( GCGfreeGcgCol(&cols[i][j]) );
+                  GCGfreeGcgCol(&cols[i][j]);
                   SCIPdebugMessage("Freeing column %d of prob %d.\n", j, i);
                }
             }
@@ -2557,7 +2563,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
             if( !added )
             {
-               SCIP_CALL( GCGfreeGcgCol( &cols[prob][j]) );
+               GCGfreeGcgCol( &cols[prob][j]);
                SCIPdebugPrintf("not added.\n");
             }
             else
@@ -2567,7 +2573,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
          else
          {
-            SCIP_CALL( GCGfreeGcgCol(&cols[prob][j]) );
+            GCGfreeGcgCol(&cols[prob][j]);
          }
       }
 
@@ -2715,7 +2721,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
          ++(nfoundvarsprob[probnr]);
          ++nfoundvars;
 
-         SCIP_CALL( GCGfreeGcgCol(&gcgcol) );
+         GCGfreeGcgCol(&gcgcol);
 
          SCIPdebugMessage("added\n");
       }
