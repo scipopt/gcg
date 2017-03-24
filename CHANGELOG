@@ -41,6 +41,7 @@ bug fixes
 - fix identity check of decompositions
 - fix bug in createPolishedDecomp()
 - fix bug in isomorph detector
+- avoid numerical troubles by rounding integral pricing solutions if possible
 
 
 GCG Version 2.1.1
