@@ -777,11 +777,11 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                          for( int d = 0; d < nDetectors; ++d )
                          {
                              SEEED_PROPAGATION_DATA* seeedPropData;
-                        	 seeedPropData = new SEEED_PROPAGATION_DATA();
-                        	 	 seeedPropData->seeedpool = this;
-                        	 	 seeedPropData->nNewSeeeds = 0;
-                                 DEC_DETECTOR* detector;
-                                 std::vector<SeeedPtr>::const_iterator newSIter;
+                             seeedPropData = new SEEED_PROPAGATION_DATA();
+                             seeedPropData->seeedpool = this;
+                             seeedPropData->nNewSeeeds = 0;
+                             DEC_DETECTOR* detector;
+                             std::vector<SeeedPtr>::const_iterator newSIter;
                                  std::vector<SeeedPtr>::const_iterator newSIterEnd;
                                  int maxcallround;
                                  int mincallround;
@@ -803,15 +803,19 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                  if( maxcallround < round || mincallround > round || ( (round - mincallround) % freqcallround != 0 ) )
                                     continue;
 
-                                 seeedPropData->seeedToPropagate = seeedPtr;
+                                 #pragma omp critical seeedcounting
+                                 {
+                                    seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
+                                    decrementSeeedcount();
+                                 }
 
                                  /** new seeeds are created by the current detector */
                                  SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
 
                                  if( verboseLevel >= 1 )
                                  {
-									 #pragma omp critical
-									 SCIPinfoMessage(scip, NULL, "detector %s started to propagate the %d-th seeed (ID %d ) in round %d \n", DECdetectorGetName(detectorToScipDetector[d]), s+1, seeedPtr->getID(), round);
+                                    #pragma omp critical scipinfo
+                                    SCIPinfoMessage(scip, NULL, "detector %s started to propagate the %d-th seeed (ID %d ) in round %d \n", DECdetectorGetName(detectorToScipDetector[d]), s+1, seeedPtr->getID(), round);
                                  }
 
                                  SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d], seeedPropData, &result) );
@@ -827,23 +831,23 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
 
                                  if(seeedPropData->nNewSeeeds != 0 && ( displaySeeeds ) )
                                  {
-									#pragma omp critical
+									#pragma omp critical ostream
                                     std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found " << seeedPropData->nNewSeeeds << " new seeed(s): ";
-									#pragma omp critical
+									#pragma omp critical ostream
                                     std::cout << seeedPropData->newSeeeds[0]->getID();
                                     for( int j = 1; j < seeedPropData->nNewSeeeds; ++j )
                                     {
-                                    	#pragma omp critical
+                                       #pragma omp critical ostream
                                     	std::cout << ", " << seeedPropData->newSeeeds[j]->getID();
                                     }
-									#pragma omp critical
+									#pragma omp critical ostream
                                     std::cout << "\n";
 
                                     if( displaySeeeds )
                                     {
                                        for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
                                        {
-										  #pragma omp critical
+										  #pragma omp critical ostream
                                           seeedPropData->newSeeeds[j]->displaySeeed();
                                        }
                                     }
@@ -851,7 +855,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                  else
                                      if( displaySeeeds )
                                      {
-										 #pragma omp critical
+										 #pragma omp critical ostream
                                          std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds" << std::endl;
                                      }
 
@@ -866,13 +870,13 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                             {
                                                if(verboseLevel > 2)
                                                {
-												   #pragma omp critical
+												   #pragma omp critical ostream
                                             	   {
                                                    std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to finished seeeds!" << std::endl;
                                                    seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
                                             	   }
                                                }
-											   #pragma omp critical
+											   #pragma omp critical seeedptrstore
                                                {
                                                	   finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
                                                	   allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
@@ -882,13 +886,13 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                             {
                                                if(verboseLevel > 2)
                                                {
-												   #pragma omp critical
+												   #pragma omp critical ostream
                                             	   {
                                             		   std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to next round seeeds!" << std::endl;
                                             		   seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
                                             	   }
                                                }
-											   #pragma omp critical
+											   #pragma omp critical seeedptrstore
                                                {
                                             	   nextSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
                                             	   allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
@@ -902,7 +906,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                          }
                                  }
                                  /** cleanup propagation data structure */
-								 #pragma omp critical
+
                                  SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
                                  seeedPropData->newSeeeds = NULL;
                                  seeedPropData->nNewSeeeds = 0;

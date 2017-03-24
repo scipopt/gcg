@@ -1649,7 +1649,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
 {
    *result = SCIP_DIDNOTFIND;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-   gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
+   gcg::Seeed* seeed = new gcg::Seeed( seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool) ;
 
    seeedPropagationData->nNewSeeeds = 0;
    seeedPropagationData->newSeeeds = NULL;
@@ -1663,7 +1663,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
    if( detectordata->maxdecompsextend > 0 )
       SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, TRUE, detectordata->maxdecompsextend) );
 
-   if( detectordata->maxdecompsexact )
+   if( detectordata->maxdecompsexact > 0 )
       SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, FALSE, detectordata->maxdecompsexact) );
 
    for( int i = 0; i < seeedPropagationData->nNewSeeeds; ++i )

@@ -785,7 +785,7 @@ void Seeed::calcOpenconss()
 void Seeed::calcOpenvars()
 {
 
-   openVars = std::vector<int>(0);
+   openVars.clear();
    std::vector<bool> openVarsBool(nVars, true);
 
    changedHashvalue = true;
