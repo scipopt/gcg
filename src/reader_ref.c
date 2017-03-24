@@ -373,7 +373,7 @@ SCIP_Bool isInt(
 
    assert(refinput != NULL);
    assert(value != NULL);
-   assert(!strcasecmp(refinput->token, "INFINITY") == 0 && !strcasecmp(refinput->token, "INF") == 0 );
+   assert(!(strcasecmp(refinput->token, "INFINITY") == 0) && !(strcasecmp(refinput->token, "INF") == 0));
 
    val = strtol(refinput->token, &endptr, 0);
    if( endptr != refinput->token && *endptr == '\0' )
