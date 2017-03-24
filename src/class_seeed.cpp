@@ -79,7 +79,7 @@ Seeed::Seeed(
    int         givenNConss,                /**number of constraints */
    int         givenNVars                  /**number of variables */
 ) :
-   scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
+   scip(_scip), id(-1), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
       std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false)
 {
 }
@@ -87,7 +87,7 @@ Seeed::Seeed(
 Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
 {
    scip = (seeedToCopy->scip);
-   id = seeedpool->getNewIdForSeeed();
+   id = seeedToCopy->id;
    nBlocks = seeedToCopy->nBlocks;
    nVars = seeedToCopy->nVars;
    nConss = seeedToCopy->nConss;
@@ -1853,7 +1853,10 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
    std::cout << "number of blocks: " << nBlocks << std::endl;
    std::cout << "hashvalue: " << hashvalue << std::endl;
    std::cout << "score: " << score << std::endl;
-   std::cout << "maxwhitescore: " << maxwhitescore << std::endl;
+   if( getNOpenconss() + getNOpenconss() > 0)
+	   std::cout << "maxwhitescore >= " << maxwhitescore << std::endl;
+   else
+	   std::cout << "maxwhitescore: " << maxwhitescore << std::endl;
    std::cout << "ancestorids: " ;
    for ( size_t i = 0; i  < listofancestorids.size(); ++i)
       std::cout << listofancestorids[i] << "; ";
@@ -1957,6 +1960,7 @@ SCIP_RETCODE Seeed::displayVars(Seeedpool* seeedpool)
 
 /** computes the score of the given seeed based on the border, the average density score and the ratio of
  * linking variables
+ * @todo bound calculation for unfinished decompositions could be more precise
  */
 SCIP_Real Seeed::evaluate(
    Seeedpool* seeedpool
@@ -1995,7 +1999,24 @@ SCIP_Real Seeed::evaluate(
    alphadensity  = 0.2;
    blackarea = 0.;
 
-   if(getNOpenconss() != 0 || getNOpenvars() != 0)
+
+   /* calculate bound on max white score */
+   if( getNOpenconss() != 0 || getNOpenvars() != 0 )
+   {
+	   blackarea += ( getNLinkingvars()+ getNTotalStairlinkingvars() ) * getNConss();
+	   blackarea += getNMasterconss() * getNVars();
+	   blackarea -= getNMastervars() * getNLinkingvars();
+	   for( i = 0; i < nBlocks; ++i )
+	   {
+		   blackarea +=  getNConssForBlock(i) * getNVarsForBlock(i) ;
+	   }
+
+	   maxwhitescore = blackarea/( getNConss() * getNVars() );
+
+	   return maxwhitescore;
+   }
+
+   if( getNOpenconss() != 0 || getNOpenvars() != 0 )
       SCIPwarningMessage(scip, "Evaluation for seeeds is not implemented for seeeds with open conss or open vars.\n");
 
    SCIP_CALL( SCIPallocBufferArray(scip, &nzblocks, nBlocks) );
@@ -2014,7 +2035,7 @@ SCIP_Real Seeed::evaluate(
    /* calculate matrix area */
    matrixarea = nVars*nConss;
 
-   blackarea += getNLinkingvars() * getNConss();
+   blackarea += ( getNLinkingvars()+ getNTotalStairlinkingvars() ) * getNConss();
    blackarea += getNMasterconss() * getNVars();
 
    blackarea -= getNMastervars() * getNLinkingvars();
@@ -2030,7 +2051,7 @@ SCIP_Real Seeed::evaluate(
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
-      blackarea +=  getNConssForBlock(i) * ( getNVarsForBlock(i) + getNStairlinkingvars(i) + ( i == 0 ? 0 : getNStairlinkingvars(i-1) ) );
+      blackarea +=  getNConssForBlock(i) * ( getNVarsForBlock(i) );
       for( j = 0; j < nVars; ++j )
       {
          ishandled[j] = FALSE;
@@ -3038,6 +3059,17 @@ SCIP_RETCODE Seeed::setNBlocks(int newNBlocks)
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE Seeed::setID(
+          int newid
+    ){
+   this->id = newid;
+
+   return SCIP_OKAY;
+}
+
+
+
+
 /** sets open vars and conss to be calculated  */
 SCIP_RETCODE Seeed::setOpenVarsAndConssCalculated(bool value)
 {
@@ -3099,15 +3131,18 @@ SCIP_RETCODE Seeed::setVarToStairlinking(int varToStairlinking, int block1, int 
 void Seeed::showScatterPlot(
       Seeedpool* seeedpool,
       SCIP_Bool writeonly,
-      const char* filename
-      ){
+      const char* filename,
+	  SCIP_Bool draft,
+	  SCIP_Bool colored
+){
 
    char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
    int rowboxcounter = 0;
    int colboxcounter = 0;
-   bool colored = true;
 
-   writeScatterPlot(seeedpool, help);
+
+   if ( !draft )
+	   writeScatterPlot(seeedpool, help);
 
    std::ofstream ofs;
 
@@ -3115,8 +3150,10 @@ void Seeed::showScatterPlot(
 
    if( writeonly )
    {
-      ofs << "set terminal pdf " << std::endl;
+	  ofs << "set terminal pdf " << std::endl;
       ofs << "set output \"" << filename  << "\"" << std::endl;
+	//  ofs << "set terminal postscript" << std::endl;
+	//  ofs << "set output \"| ps2pdf - " << filename  << "\"" << std::endl;
    }
    ofs << "set xrange [-1:" << getNVars() << "]\nset yrange[" << getNConss() << ":-1]\n";
 
@@ -3171,19 +3208,27 @@ void Seeed::showScatterPlot(
    else
       ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fillstyle solid noborder fc rgb \"grey50\"\n" ;
 
-         colboxcounter += getNOpenvars();
-         rowboxcounter+= getNOpenconss();
-   if(colored)
-      ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
+   colboxcounter += getNOpenvars();
+   rowboxcounter+= getNOpenconss();
+
+   if( !draft )
+   {
+	   if(colored)
+		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
+	   else
+		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
+   }
    else
-      ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
+      ofs << "plot 0" << std::endl;
 
    if( !writeonly )
       ofs << "pause -1" << std::endl;
 
    ofs.close();
-
-   system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+   if( !draft)
+	   system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+   else
+	   system("gnuplot helper.plg ");
 //   system("rm helpScatter.txt");
 //   system("rm helper.plg");
    return;
@@ -3319,8 +3364,10 @@ SCIP_RETCODE Seeed::writeScatterPlot(
 const char* Seeed::getShortCaption(){
 
    static char shortcaption[SCIP_MAXSTRLEN];
-
-   sprintf(shortcaption, "id %d; nB %d; maxW %.2f ", getID(), getNBlocks(), maxwhitescore );
+   if( getNOpenconss() + getNOpenvars() > 0)
+	   sprintf(shortcaption, "id %d; nB %d; maxW$\\geq$ %.2f ", getID(), getNBlocks(), maxwhitescore );
+   else
+	   sprintf(shortcaption, "id %d; nB %d; maxW %.2f ", getID(), getNBlocks(), maxwhitescore );
 
    return shortcaption;
 

@@ -84,7 +84,7 @@ class Seeedpool
 private:
    SCIP*                 						      scip;              	   /**< SCIP data structure */
    std::vector<SeeedPtr> 						      currSeeeds;				   /**< vector of current (open) seeeds */
-   std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of current (open) seeeds */
+
 
    std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
 
@@ -127,7 +127,10 @@ private:
 
    std::vector<SeeedPtr>                        translatedOrigSeeeds;   /**< seeeds that are translated seeeds from found ones for the original problem */
 
+
 public:
+
+   std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of current (open) seeeds */
 
    /** constructor */
    Seeedpool(
@@ -153,6 +156,8 @@ public:
      std::vector<SeeedPtr> translateSeeeds( Seeedpool* otherpool, std::vector<Seeed*> otherseeeds );
 
    void populate(std::vector<SeeedPtr> seeeds);
+
+   SCIP_RETCODE prepareSeeed( SeeedPtr seeed);
 
    void freeCurrSeeeds();
 
@@ -259,8 +264,9 @@ public:
 
    SCIP_RETCODE writeFamilyTreeLatexFile(
       const char* filename,                                 /* filename the output should be written to */
-      std::vector<SeeedPtr> seeeds                          /* vector of seeed pointers the  family tree should be constructed for */
-      );
+      std::vector<SeeedPtr> seeeds,                          /* vector of seeed pointers the  family tree should be constructed for */
+	  SCIP_Bool draft
+   );
 
 
    };

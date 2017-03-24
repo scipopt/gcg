@@ -334,7 +334,8 @@ SCIP_RETCODE callMetis(
 static
 SCIP_RETCODE createMetisFile(
    SCIP*                 scip,               /**< SCIP data struture */
-   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
+   DEC_DETECTORDATA*     detectordata,        /**< detector data structure */
+   int                   seeedID
    )
 {
    int nvertices;
@@ -346,13 +347,13 @@ SCIP_RETCODE createMetisFile(
    detectordata->graph->setDummynodes(ndummyvertices);
 
    if( !detectordata->realname )
-   {
-      (void) SCIPsnprintf(detectordata->tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
-   }
-   else
-   {
-      (void) SCIPsnprintf(detectordata->tempfile, SCIP_MAXSTRLEN, "gcg-%s-XXXXXX", SCIPgetProbName(scip));
-   }
+      {
+         (void) SCIPsnprintf(detectordata->tempfile, SCIP_MAXSTRLEN, "gcg-%c-%d-XXXXXX", DEC_DECCHAR, seeedID );
+      }
+      else
+      {
+         (void) SCIPsnprintf(detectordata->tempfile, SCIP_MAXSTRLEN, "gcg-%s-%c-%d-XXXXXX", SCIPgetProbName(scip), DEC_DECCHAR, seeedID);
+      }
 
    fd = mkstemp(detectordata->tempfile);
 
@@ -503,7 +504,7 @@ SCIP_RETCODE detection(
 
    SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
 
-   SCIP_CALL( createMetisFile(scip, detectordata) );
+   SCIP_CALL( createMetisFile(scip, detectordata, seeed->getID()) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
@@ -647,7 +648,7 @@ DEC_DECL_DETECTSTRUCTURE(detectHrcgpartition)
    detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
 
    SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   SCIP_CALL( createMetisFile(scip, detectordata) );
+   SCIP_CALL( createMetisFile(scip, detectordata, 0) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
@@ -697,9 +698,8 @@ static
 DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
 {
    gcg::Seeed* seeed;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed = seeedPropagationData->seeedToPropagate;
 
-   seeedPropagationData->seeedpool->decrementSeeedcount();
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
@@ -723,10 +723,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
 static
 DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
 {
-   gcg::Seeed* seeed;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
 
-   seeedPropagationData->seeedpool->decrementSeeedcount();
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
 
