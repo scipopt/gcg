@@ -370,6 +370,65 @@ namespace gcg
       return TRUE;
    }
 
+
+/* test method for reduceClasses in ConsClassifier */
+void testReduceClasses()
+{
+   /** set up */
+   ConsClassifier* testClassifier = new ConsClassifier( NULL, "Test", 5, 10 );
+   ConsClassifier* reducedClassifier;
+
+   std::cout << "TEST: Test reduceClasses method" << std::endl;
+
+   for ( int c = 0; c < testClassifier->getNClasses(); ++c)
+   {
+      std::stringstream classname;
+      std::stringstream classdesc;
+      classname << c;
+      classdesc << "This class contains all constraints with " << c << ".";
+      testClassifier->setClassName( c, classname.str().c_str() );
+      testClassifier->setClassDescription( c, classdesc.str().c_str() );
+   }
+
+   testClassifier->assignConsToClass( 0, 3 );
+   testClassifier->assignConsToClass( 1, 1 );
+   testClassifier->assignConsToClass( 2, 0 );
+   testClassifier->assignConsToClass( 3, 2 );
+   testClassifier->assignConsToClass( 4, 0 );
+   testClassifier->assignConsToClass( 5, 1 );
+   testClassifier->assignConsToClass( 6, 2 );
+   testClassifier->assignConsToClass( 7, 0 );
+   testClassifier->assignConsToClass( 8, 4 );
+   testClassifier->assignConsToClass( 9, 2 );
+
+   /** test reduceClasses */
+   reducedClassifier = testClassifier->reduceClasses( 3 );
+
+   std::cout << "-- Number of classes: " << reducedClassifier->getNClasses() << std::endl;
+   std::cout << "-- Classifier name: " << std::string(reducedClassifier->getName()) << std::endl;
+
+   for ( int it_class = 0; it_class < reducedClassifier->getNClasses(); ++it_class )
+   {
+      std::cout << "--- Class no: " << it_class << std::endl;
+      std::cout << "--- Class name: " << std::string(reducedClassifier->getClassName( it_class )) << std::endl;
+      std::cout << "--- Class description: " << std::string(reducedClassifier->getClassDescription( it_class )) << std::endl;
+      std::cout << "--- Assigned conss:";
+
+      for ( int it_cons = 0; it_cons < reducedClassifier->getNConss(); ++it_cons )
+      {
+         if ( reducedClassifier->getClassOfCons( it_cons ) == it_class )
+         {
+            std::cout << " " << it_cons;
+         }
+      }
+      std::cout << std::endl;
+   }
+
+   delete testClassifier;
+   delete reducedClassifier;
+}
+
+
    SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currSeeeds, std::vector<SeeedPtr> const & finishedSeeeds, bool sort)
    {
       SCIP_Bool bool1 = seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, sort);
@@ -413,10 +472,10 @@ namespace gcg
             std::cout << std::endl;
          }
 
-         /* secondly, print all information if consclassescollection2 (i.e. vector of ConsClassifier objects */
-         std::cout << "- 2.: consclassescollection2 (vector<ConsClassifier*>)" << std::endl;
-         std::cout << "-- Number of classes: " << ccc2[it_classifier]->getNClasses() << std::endl;
-         std::cout << "-- Classifier name: " << std::string(ccc2[it_classifier]->getName()) << std::endl;
+      /* secondly, print all information if consclassescollection2 (i.e. vector of ConsClassifier objects) */
+      std::cout << "- 2.: consclassescollection2 (vector<ConsClassifier*>)" << std::endl;
+      std::cout << "-- Number of classes: " << ccc2[it_classifier]->getNClasses() << std::endl;
+      std::cout << "-- Classifier name: " << std::string(ccc2[it_classifier]->getName()) << std::endl;
 
          for ( it_class = 0; it_class < ccc2[it_classifier]->getNClasses(); ++it_class )
          {
@@ -672,14 +731,22 @@ namespace gcg
 
       }//end constructor
 
-      Seeedpool::~Seeedpool(){
-
-       for( size_t i = 0; i < allrelevantseeeds.size(); ++i )
-       {
+   Seeedpool::~Seeedpool()
+   {
+	   for( size_t i = 0; i < allrelevantseeeds.size(); ++i )
+    	  {
           size_t help = allrelevantseeeds.size() - i - 1;
           if( allrelevantseeeds[help] != NULL && allrelevantseeeds[help]->getID() >= 0 )
              delete allrelevantseeeds[help];
        }
+
+	    for ( size_t i = 0; i < consclassescollection2.size(); ++i )
+	    {
+	       size_t help = consclassescollection2.size() - i - 1;
+	       if( consclassescollection2[help] != NULL )
+	          delete consclassescollection2[help];
+	    }
+
    }
 
 
@@ -772,7 +839,7 @@ namespace gcg
                if( verboseLevel >= 1 )
                   std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d]) << " started to propagate the " << s+1 << ". seeed (ID " << seeedPtr->getID() << ") in round " << round << std::endl;
 
-               SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
+         SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d],seeedPropData, &result) );
 
                for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
                {
@@ -840,6 +907,7 @@ namespace gcg
                seeedPropData->newSeeeds = NULL;
                seeedPropData->nNewSeeeds = 0;
             } // end for detectors
+
 
             for( int d = 0; d < nFinishingDetectors; ++d )
             {
@@ -1837,28 +1905,29 @@ namespace gcg
 
       int maximumnclasses = 18; /* if  distribution of classes exceed this number its skipped */
 
-      for( size_t conssclass = 0; conssclass < consclassescollection.size(); ++conssclass )
-      {
-         std::vector< std::vector<int> > subsetsOfConstypes(0, std::vector<int>(0) );
-         std::vector<int> nconssofclass(consclassesnclasses[conssclass], 0);
-         std::vector<int> consclassindices(0);
 
-         /** check if there are to  many classes in this distribution and skip it if so */
+    for( size_t classifier = 0; classifier < consclassescollection2.size(); ++classifier )
+    {
+       std::vector< std::vector<int> > subsetsOfConstypes(0, std::vector<int>(0) );
+       std::vector<int> nconssofclass(consclassescollection2[classifier]->getNClasses(), 0);
+       std::vector<int> consclassindices(0);
 
-         if ( consclassesnclasses[conssclass] > maximumnclasses)
-         {
-            std::cout << " the current consclass distribution includes " <<  consclassesnclasses[conssclass] << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
-            continue;
-         }
+        /** check if there are to  many classes in this distribution and skip it if so */
+
+       if ( consclassescollection2[classifier]->getNClasses() > maximumnclasses)
+       {
+          std::cout << " the current consclass distribution includes " <<  consclassescollection2[classifier]->getNClasses() << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
+          continue;
+       }
 
 
-         for( int i = 0; i < consclassesnclasses[conssclass]; ++i)
-            consclassindices.push_back(i);
+       for( int i = 0; i < consclassescollection2[classifier]->getNClasses(); ++i)
+          consclassindices.push_back(i);
 
          subsetsOfConstypes = getAllSubsets(consclassindices);
 
-         for ( size_t i = 0; i < (size_t) getNConss(); ++i)
-            ++(nconssofclass.at( consclassescollection[conssclass].at(i) ) );
+       for ( int i = 0; i < getNConss(); ++i)
+          ++(nconssofclass.at( consclassescollection2[classifier]->getClassOfCons(i) ) );
 
          /** start with the cardinalities of the consclasses as candidates */
          for( size_t i = 0; i < nconssofclass.size(); ++i)
@@ -1887,29 +1956,89 @@ namespace gcg
       return ;
    }
 
-   int Seeedpool::getNConssClassDistributions()
-   {
-      return consclassescollection.size();
-   }
+ int Seeedpool::getNConssClassDistributions(){
+    return (int) consclassescollection2.size();
+ }
 
-   int* Seeedpool::getConssClassDistribution(
-      int consclassdistr
-   ){
-      return &(consclassescollection[consclassdistr][0]);
-   }
+ int* Seeedpool::getConssClassDistribution(
+    int consclassdistr
+    )
+ {
+    int nconss = consclassescollection2[consclassdistr]->getNConss();
+    int* output = new int[nconss];
+    for ( int i = 0; i < nconss; ++i )
+       output[i] = consclassescollection2[consclassdistr]->getClassOfCons( i );
+    return &output[0];
+ }
 
    std::vector<int> Seeedpool::getConssClassDistributionVector(
      int consclassdistr
-   ){
-     return (consclassescollection[consclassdistr]);
-   }
+     )
+ {
+    int nconss = consclassescollection2[consclassdistr]->getNConss();
+    std::vector<int> output(nconss, 0);
+    for ( int i = 0; i < nconss; ++i )
+       output[i] = consclassescollection2[consclassdistr]->getClassOfCons( i );
+    return output;
+ }
 
 
-   int Seeedpool::getNClassesOfDistribution(
-   int consclassdistr
-   ){
-      return consclassesnclasses[consclassdistr];
-   }
+ int Seeedpool::getNClassesOfDistribution(
+    int consclassdistr
+    )
+ {
+    return consclassescollection2[consclassdistr]->getNClasses();
+ }
+
+ /** returns number of different constraint classifiers */
+ int Seeedpool::getNConsClassifier()
+ {
+    return (int) consclassescollection2.size();
+ }
+
+ /** returns pointer to a constraint classifier */
+ ConsClassifier* Seeedpool::getConsClassifier( int givenClassifierIndex )
+ {
+    return consclassescollection2[givenClassifierIndex];
+ }
+
+// void Seeedpool::addConssClassesForSCIPConstypes()
+// {
+//    /**
+//     * at first for every subset of constypes calculate gcd (greatest common divisors) of the corresponding number of occurrences
+//     */
+//    std::vector<consType> foundConstypes(0);
+//    std::vector<int> constypesIndices(0);
+//    std::vector<int> nConssConstype(0);
+//    std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
+//
+//    for( int i = 0; i < getNConss(); ++i)
+//    {
+//       SCIP_CONS* cons;
+//       bool found = false;
+//       cons = getConsForIndex(i);
+//       consType cT = GCGconsGetType(cons);
+//       size_t constype;
+//
+//       /** find constype or not */
+//       for( constype = 0; constype < foundConstypes.size(); ++constype)
+//       {
+//          if( foundConstypes[constype] == cT )
+//          {
+//             found = true;
+//             break;
+//          }
+//       }
+//       if( !found )
+//       {
+//          foundConstypes.push_back(GCGconsGetType(cons) );
+//          classForCons[i] = foundConstypes.size() - 1;
+//       }
+//       else
+//          classForCons[i] = constype;
+//     }
+
+
 
    void Seeedpool::addConssClassesForSCIPConstypes()
    {

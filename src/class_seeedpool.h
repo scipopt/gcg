@@ -233,6 +233,14 @@ public:
 
    int getNClassesOfDistribution(int consclassdistr);
 
+   /** returns number of different constraint classifiers */
+   int getNConsClassifier();
+
+   /** returns pointer to a constraint classifier */
+   ConsClassifier* getConsClassifier(
+      int classifierIndex                     /**< index of constraint classifier */
+   );
+
    void addConssClassesForSCIPConstypes(
       );
 

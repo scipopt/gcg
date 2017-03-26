@@ -122,9 +122,6 @@ struct SCIP_ConshdlrData
 
    int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
    int*                  nCandidates;
-   int***                conssClasses;                      /**< pointer to store the  collection of different constraint class distributions */
-   int*                  nConssClassDistributions;          /**< pointer to store number of constraint class distributions */
-   int**                 nClassesOfDistribution;
    SCIP_HASHMAP*         consToIndex;                       /**< hashmap from constraints to indices, to be filled */
    int*                  nConss;
    gcg::Seeedpool*		 seeedpool;
@@ -848,8 +845,8 @@ SCIP_RETCODE DECdetectStructure(
 //   SCIP*                 scip,                     /**< SCIP data structure */
 //   int**                 candidatesNBlocks,        /**< pointer to store candidates for number of blocks calculated by the seeedpool */
 //   int*                  nCandidates,              /**< pointer to store number of candidates for number of blocks calculated by the seeedpool */
-//   int***                conssClasses,             /**< pointer to store the  collection of different constraint class distributions */
-//   int*                  nConssClassDistributions, /**< pointer to store number of constraint class distributions */
+//   int***                consClasses,             /**< pointer to store the  collection of different constraint class distributions */
+//   int*                  nConsClassDistributions, /**< pointer to store number of constraint class distributions */
 //   int**                 nClassesOfDistribution,   /**< pointer to store numbers of classes of the distributions */
 //   SCIP_HASHMAP*         consToIndex,              /**< hashmap from constraints to indices, to be filled */
 //   int*                  nConss                    /**< pointer to store number of constraints */
@@ -864,22 +861,22 @@ SCIP_RETCODE DECdetectStructure(
 //   for( int i = 0; i < *nCandidates; ++i )
 //      (*candidatesNBlocks)[i] = candidatesNBlocksVector[i];
 //
-//   std::vector<std::vector<int>> conssClassesVector;
+//   std::vector<std::vector<int>> consClassesVector;
 //   for( int i = 0; i < seeedpool.getNConssClassDistributions(); ++i )
-//      conssClassesVector.push_back(seeedpool.getConssClassDistributionVector(i));
-//   *nConssClassDistributions = seeedpool.getNConssClassDistributions();
-//   SCIP_CALL( SCIPallocMemoryArray(scip, &(conssClasses), *nConssClassDistributions) );
-//   SCIP_CALL( SCIPallocMemoryArray(scip, &(nClassesOfDistribution), *nConssClassDistributions) );
-//   for( int i = 0; i < *nConssClassDistributions; ++i )
+//      consClassesVector.push_back(seeedpool.getConssClassDistributionVector(i));
+//   *nConsClassDistributions = seeedpool.getNConssClassDistributions();
+//   SCIP_CALL( SCIPallocMemoryArray(scip, &(consClasses), *nConsClassDistributions) );
+//   SCIP_CALL( SCIPallocMemoryArray(scip, &(nClassesOfDistribution), *nConsClassDistributions) );
+//   for( int i = 0; i < *nConsClassDistributions; ++i )
 //   {
 //      (*nClassesOfDistribution)[i] = seeedpool.getNClassesOfDistribution(i);
-//      SCIP_CALL( SCIPallocMemoryArray(scip, &(conssClasses[i]), (*nClassesOfDistribution)[i]) );
+//      SCIP_CALL( SCIPallocMemoryArray(scip, &(consClasses[i]), (*nClassesOfDistribution)[i]) );
 //   }
-//   for( int i = 0; i < (int)conssClassesVector.size(); ++i )
+//   for( int i = 0; i < (int)consClassesVector.size(); ++i )
 //   {
-//      for( int j = 0; j < (int)conssClassesVector[i].size(); ++j )
+//      for( int j = 0; j < (int)consClassesVector[i].size(); ++j )
 //      {
-//         (*conssClasses)[i][j] = conssClassesVector[i][j];
+//         (*consClasses)[i][j] = consClassesVector[i][j];
 //      }
 //   }
 //
