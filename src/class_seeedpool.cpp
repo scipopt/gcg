@@ -168,13 +168,51 @@ namespace gcg
       }
    }
 
-   std::string writeSeeedDetectorChainInfoLatex( SeeedPtr seeed, int currheight )
+   std::string writeSeeedDetectorChainInfoLatex( SeeedPtr seeed, int currheight, int visucounter )
    {
       std::stringstream line;
+      std::string relposition;
+      int position = visucounter % 4;
+      if( position == 0 )
+    	  relposition = "left";
+      else if ( position == 1)
+    	  relposition = "above";
+      else if ( position == 2)
+          	  relposition = "right";
+      else
+    	  relposition = "below";
+
+
       if ( (size_t) currheight >  seeed->detectorchaininfo.size() )
-         line << "edge from parent node [left] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
+         line << "edge from parent node [" << relposition << "] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
          else
-            line << "edge from parent node [left] {" << seeed->detectorchaininfo[ currheight - 1] <<"} " ;
+         {
+        	 std::string oldinfo = seeed->detectorchaininfo[ currheight - 1];
+             /** take latexified detctorchaininfo */
+             size_t index = 0;
+             while (true) {
+            	 /* Locate the substring to replace. */
+            	 index = oldinfo.find("_", index);
+            	 if (index == std::string::npos)
+            		 break;
+            	 if ( index > 0 &&   oldinfo.at(index-1) == '\\' )
+            	 {
+            		 ++index;
+            		 continue;
+            	 }
+
+            	 /* Make the replacement. */
+            	 oldinfo.replace(index, 1, "\\_");
+
+            	 /* Advance index forward so the next iteration doesn't pick it up as well. */
+            	 index += 2;
+             }
+             std::cout << "oldinfo: " << oldinfo << std::endl;
+
+            line << "edge from parent node [" << relposition << "] {" << oldinfo <<"} " ;
+         }
+
+
       return line.str();
    }
 
@@ -503,7 +541,7 @@ void testReduceClasses()
       SCIP*               givenScip, /**< SCIP data structure */
         const char*       conshdlrName,
         SCIP_Bool         _transformed
-      ):scip(givenScip), currSeeeds(0), allrelevantseeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0), transformed(_transformed)
+      ):scip(givenScip), currSeeeds(0), allrelevantseeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0), transformed(_transformed), helpvisucounter(0)
    {
       SCIP_CONS** conss;
       SCIP_VAR** vars;
@@ -2804,12 +2842,12 @@ void testReduceClasses()
        for( size_t i = 0; i < treeseeeds.size(); ++i )
       {
          SeeedPtr seeed = treeseeeds[i];
-         std::string decompfilename;
+         std::stringstream decompfilename;
 
          seeed = treeseeeds[i];
-         decompfilename = getSeeedFolderLatex(seeed);
+         decompfilename << workfolder << "/" << getSeeedFolderLatex(seeed);
 
-         seeed->showScatterPlot(this, TRUE, decompfilename.c_str(), draft );
+         seeed->showScatterPlot(this, TRUE, decompfilename.str().c_str(), draft );
       }
 
     //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
@@ -2851,8 +2889,10 @@ void testReduceClasses()
          }
          else
          {
-            if ( parents[curr] != -1 )
-               ofs << writeSeeedDetectorChainInfoLatex( allrelevantseeeds[curr], currheight);
+            if ( parents[curr] != -1 ){
+               ofs << writeSeeedDetectorChainInfoLatex( allrelevantseeeds[curr], currheight, helpvisucounter);
+               ++helpvisucounter;
+            }
             --currheight;
             curr = parents[curr];
             if( curr != -1)

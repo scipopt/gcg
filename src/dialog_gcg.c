@@ -198,10 +198,11 @@ SCIP_RETCODE writeFamilyTree(
    SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
    )
 {
-   char* dirname;
+   char  dirname[SCIP_MAXSTRLEN];
    char* draftstring;
    char* ndecstring;
-   char* filename;
+   char filename[SCIP_MAXSTRLEN];
+   char* tmpstring;
    char tempstr[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
    const char* extension = "tex";
@@ -225,14 +226,18 @@ SCIP_RETCODE writeFamilyTree(
 
    /*@todo path & filename.tex where path must exist*/
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,"Enter existing directory for output (e.g. ../path/to/directory):\n",
-      &dirname, &endoffile) );
+      &tmpstring, &endoffile) );
    if( endoffile )
    {
       *nextdialog = NULL;
       return SCIP_OKAY;
    }
+
+   strncpy(dirname, tmpstring, SCIP_MAXSTRLEN);
+
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,"Enter file name for output (e.g. myfile):\n", &filename,
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,"Enter file name for output (e.g. myfile):\n", &tmpstring,
       &endoffile) );
    if( endoffile )
    {
@@ -240,7 +245,10 @@ SCIP_RETCODE writeFamilyTree(
       return SCIP_OKAY;
    }
 
+   strncpy(filename, tmpstring, SCIP_MAXSTRLEN);
+
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", dirname, filename, extension);
+
 
    /*@todo y/ yes or anything for no*/
    SCIPdialogMessage(scip, NULL, "Draft mode will not visualize non-zero values but is faster and takes less memory.\n");
@@ -267,6 +275,9 @@ SCIP_RETCODE writeFamilyTree(
    }
 
    retcode = DECwriteFamilyTree(scip, outname, dirname, ndecs, draft);
+
+
+
    if( retcode == SCIP_FILECREATEERROR )
    {
       SCIPdialogMessage(scip, NULL, "error creating file\n");

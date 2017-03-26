@@ -127,6 +127,7 @@ private:
 
    std::vector<SeeedPtr>                        translatedOrigSeeeds;   /**< seeeds that are translated seeeds from found ones for the original problem */
 
+   int											helpvisucounter;
 
 public:
 
