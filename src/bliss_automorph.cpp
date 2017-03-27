@@ -778,10 +778,6 @@ SCIP_RETCODE cmpGraphPair(
       *result = SCIP_DIDNOTFIND;
 
    SCIPfreeMemoryArrayNull(scip, &ptrhook->nodemap);
-<<<<<<< HEAD
-
-=======
->>>>>>> feature/reform_detection
    delete ptrhook;
    return SCIP_OKAY;
 }
