@@ -46,6 +46,8 @@
 extern "C" {
 #endif
 
+
+
 /** creates the handler for decomp constraints and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeConshdlrDecomp(
@@ -90,14 +92,28 @@ SCIP_RETCODE DECincludeDetector(
    const char*           name,               /**< name of the detector                                               */
    const char            decchar,            /**< display character of the detector                                  */
    const char*           description,        /**< description of the detector                                        */
+   int                   freqCallRound,      /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
+   int                   maxCallRound,       /** last round the detector gets called                              */
+   int                   minCallRound,       /** first round the detector gets called (offset in detection loop) */
+   int                   freqCallRoundOriginal,  /** frequency the detector gets called in detection loop while detecting of the original problem */
+   int                   maxCallRoundOriginal,   /** last round the detector gets called while detecting of the original problem */
+   int                   minCallRoundOriginal,   /** first round the detector gets called (offset in detection loop) while detecting of the original problem */
    int                   priority,           /**< priority of the detector                                           */
    SCIP_Bool             enabled,            /**< whether the detector should be enabled by default                  */
+   SCIP_Bool             enabledOriginal,        /**< whether the detector should be enabled by default for detecting the original problem */
+   SCIP_Bool             enabledFinishing,   /**< whether the finishing should be enabled */
    SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure   */
+   SCIP_Bool             usefulRecall,       /** is it useful to call this detector on a descendant of the propagated seeed */
    DEC_DETECTORDATA      *detectordata,      /**< the associated detector data (or NULL)                             */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)), /**< the method that will detect the structure (must not be NULL)   */
    DEC_DECL_FREEDETECTOR((*freeDetector)),   /**< destructor of detector (or NULL) */
-   DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL) */
-   DEC_DECL_EXITDETECTOR((*exitDetector))    /**< deinitialization method of detector (or NULL) */
+   DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL)                        */
+   DEC_DECL_EXITDETECTOR((*exitDetector)),    /**< deinitialization method of detector (or NULL)                      */
+   DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
+   DEC_DECL_FINISHSEEED((*finishSeeedDetector)),
+   DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
+   DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),
+   DEC_DECL_SETPARAMFAST((*setParamFastDetector))
    );
 
 /** returns the remaning time of scip that the decomposition may use */
@@ -117,9 +133,8 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
 extern
 SCIP_RETCODE DECdetectStructure(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RESULT*          result              /**< Result pointer to indicate whether some structure was found */
+   SCIP_RESULT*          result             /**< Result pointer to indicate whether some structure was found */
    );
-
 
 /** write out all known decompositions **/
 SCIP_RETCODE DECwriteAllDecomps(

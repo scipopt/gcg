@@ -57,7 +57,7 @@ struct struct_hook
    SCIP_HASHMAP* consmap;                    /**< hashmap for permutated constraints */
    SCIP** scips;                             /**< array of scips to search for automorphisms */
    int* nodemap;                             /**< mapping of the nodes; filled generator-wise */
-   int* consperm;                            /**< mapping of constraints */
+   int* consperm;
 
    /** constructor for the hook struct*/
    struct_hook(
@@ -67,6 +67,10 @@ struct struct_hook
       unsigned int n,                        /**< number of permutations */
       SCIP** scips                           /**< array of scips to search for automorphisms */
       );
+
+   /** destructor for hook struct */
+//   ~struct_hook();
+
 
    /** getter for the bool aut */
    SCIP_Bool getBool();
@@ -86,6 +90,9 @@ struct struct_hook
    /** getter for the SCIPs */
    SCIP** getScips();
 };
+
+
+
 
 void struct_hook::setBool( SCIP_Bool aut_ )
 {
@@ -771,7 +778,10 @@ SCIP_RETCODE cmpGraphPair(
       *result = SCIP_DIDNOTFIND;
 
    SCIPfreeMemoryArrayNull(scip, &ptrhook->nodemap);
+<<<<<<< HEAD
 
+=======
+>>>>>>> feature/reform_detection
    delete ptrhook;
    return SCIP_OKAY;
 }

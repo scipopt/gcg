@@ -1185,6 +1185,7 @@ SCIP_RETCODE createPricingVariables(
          }
          else
          {
+            SCIPinfoMessage(scip, NULL, " changed block number to %d \n", tempblock );
             blocknr = tempblock; /*lint !e806*/
          }
       }
@@ -1358,6 +1359,8 @@ SCIP_RETCODE createMasterProblem(
 
    /* do not modify the time limit after solving the master problem */
    SCIP_CALL( SCIPsetBoolParam(masterscip, "reoptimization/commontimelimit", FALSE) );
+
+   SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/probing/maxprerounds", 0) );
 
    return SCIP_OKAY;
 }

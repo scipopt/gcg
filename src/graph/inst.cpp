@@ -36,14 +36,17 @@
 #include "bipartitegraph_def.h"
 #include "columngraph_def.h"
 #include "rowgraph_def.h"
+#include "rowgraph_weighted_def.h"
 #include "hypercolgraph_def.h"
 #include "hyperrowgraph_def.h"
 #include "hyperrowcolgraph_def.h"
 #include "graph_def.h"
 #include "hypergraph_def.h"
 #include "graph_tclique.h"
+#include "graph_gcg.h"
 #include "matrixgraph_def.h"
 #include "graph_interface.h"
+#include "graphalgorithms_def.h"
 
 namespace gcg {
 
@@ -51,10 +54,19 @@ namespace gcg {
 template class BipartiteGraph<GraphTclique>;
 template class ColumnGraph<GraphTclique>;
 template class RowGraph<GraphTclique>;
+template class RowGraph<GraphGCG>;
+template class RowGraphWeighted<GraphGCG>;
+template class GraphAlgorithms<GraphGCG>;
+
+
+
+
+
 template class HypercolGraph<GraphTclique>;
 template class HyperrowGraph<GraphTclique>;
 template class HyperrowcolGraph<GraphTclique>;
 template class Graph<GraphTclique>;
+template class Graph<GraphGCG>;
 template class Hypergraph<GraphTclique>;
 template class MatrixGraph<GraphTclique>;
 

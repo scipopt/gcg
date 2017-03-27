@@ -118,19 +118,19 @@
       <a name="Q8">How does aggregation work in GCG?</a>
     </p>
     <p class="a">
-       Detecting whether (some) pricing problems can be aggregated is done using 
-      <a href="http://www.tcs.hut.fi/Software/bliss/">Bliss</a>, an external 
-      tool for computing automorphism groups of graphs. After a decomposition has been 
+       Detecting whether (some) pricing problems can be aggregated is done using
+      <a href="http://www.tcs.hut.fi/Software/bliss/">Bliss</a>, an external
+      tool for computing automorphism groups of graphs. After a decomposition has been
       selected, we check for each pair of pricing problems if they are identical
       (and their variables have the same coefficients in the same master constraints)
-      by creating an auxiliary graph and trying to find a suitable automorphism 
+      by creating an auxiliary graph and trying to find a suitable automorphism
       using Bliss. Identical pricing problems are then aggregated.
       See the <a href="INSTALL.html">installation information </a>
       for an instruction on how to include bliss.<br />
 
-       If Bliss is not included, aggregation in GCG is done very simple. If the 
+       If Bliss is not included, aggregation in GCG is done very simple. If the
       same variables appear in the same order with the same coefficients in the same
-      constraints for all pricing problems (and with the same coefficients in the 
+      constraints for all pricing problems (and with the same coefficients in the
       master constraints), GCG will detect that and aggregate the pricing problems.
     </p>
 </div>

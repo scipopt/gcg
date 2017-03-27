@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,31 +25,40 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowhead and bordered detector via graph partitioning (uses hmetis)
+/**@file   dec_mastersetcover.h
+ * @brief  mastersetcover detector
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
+#ifndef DEC_MASTERSETCOVER_H_
+#define DEC_MASTERSETCOVER_H_
 
 #include "scip/scip.h"
-#include "type_decomp.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** creates the arrowheur detector and includes it in SCIP */
+/** creates the handler for mastersetcover detector and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectorArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
+SCIP_RETCODE SCIPincludeDetectorMastersetcover(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+
+
+#endif /* DEC_MASTERSETCOVER_H_ */
+
+
+
+
+
+
+
+

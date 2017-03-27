@@ -1036,6 +1036,20 @@ SCIP_RETCODE writeData(
            || DECdecompGetType(decdecomp) == DEC_DECTYPE_STAIRCASE);
    SCIPdebugMessage("DEC_DECOMP Type: %s\n", DECgetStrType(DECdecompGetType(decdecomp)));
 
+   /* at first: write meta data of decompsition as comment */
+   SCIPinfoMessage(scip, file, "%s%s ndetectors \n", commentchars, commentchars );
+   SCIPinfoMessage(scip, file, "%s%s %d \n", commentchars, commentchars, DECdecompGetDetectorChainSize(decdecomp) );
+
+   SCIPinfoMessage(scip, file, "%s%s name time nnewblocks %%ofnewborderconss %%ofnewblockconss %%ofnewlinkingvars %%ofnewblockvars  \n", commentchars, commentchars );
+
+   for ( i = 0; i < DECdecompGetDetectorChainSize(decdecomp) ; ++i)
+   {
+      SCIPinfoMessage(scip, file, "%s%s %s %f %d %f %f %f %f \n", commentchars, commentchars, DECdetectorGetName(DECdecompGetDetectorChain(decdecomp)[i] ), DECdecompGetDetectorClockTimes(decdecomp)[i],
+      DECdecompGetNNewBlocks(decdecomp)[i], DECdecompGetDetectorPctConssToBorder(decdecomp)[i], DECdecompGetDetectorPctConssToBlock(decdecomp)[i], DECdecompGetDetectorPctVarsToBorder(decdecomp)[i],
+      DECdecompGetDetectorPctVarsToBlock(decdecomp)[i]) ;
+   }
+
+
    /* if we don't have staicase, but something else, go through the blocks and create the indices */
    /* subscip conss */
    subscipconss = DECdecompGetSubscipconss(decdecomp);

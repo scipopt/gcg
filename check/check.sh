@@ -213,7 +213,7 @@ do
             then
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
-                echo display statistics            >> $TMPFILE
+ #               echo display statistics            >> $TMPFILE
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
@@ -251,6 +251,8 @@ EOF
                         echo read $BLKFILE         >> $TMPFILE
                     fi
                 fi
+                GP_BASE=`basename $DECFILE .dec`
+#               echo write problem $HOME\/Desktop\/results\/gps\/$GP_BASE.gp >> $TMPFILE
                 echo optimize                      >> $TMPFILE
                 echo display statistics            >> $TMPFILE
 #               echo display additionalstatistics  >> $TMPFILE

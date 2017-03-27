@@ -1,7 +1,16 @@
-GCG Version
+GCG Version tba
 =================
 
 features
+- new detection scheme:
+	- detection is roundwise (new parameter detection/maxrounds, default: 2)
+	- further new paramters for each detector: detector/*/{usefullrecall, freqcallround, maxcallround, mincallround}:
+		-  it useful to call this detector on a descendant of the propagated seeed
+		- frequency the detector gets called (is active) in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqcallround == 0
+		- last round the detector gets called
+		- first round the detector gets called (offset in detection loop)
+	- there is a current pool of partial decompositions (i.e. some conss and vars are open, initilized by empty decomposition (all vars and conss are open) )
+	- in every detection round each active detector is called on each current partial detection and returns (possibly empty set) of decomposition (possibly still partial but but strictly more refined)
 - solve the problem with one single block if no decomposition is available ('SCIP mode')
 - extended isomorph detector by the possibility to identify blocks which are identical
   w.r.t. signs (but not necessarily values) of coefficients.
@@ -10,6 +19,7 @@ features
   added branching on another variable and limited disc. search to original variable diving
 - added menu item "write reportdecompositions" that creates a report of all decompositions
   in form of a .tex file
+
 
 
 GCG Version 2.1.2

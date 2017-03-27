@@ -136,6 +136,7 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "============\n\n");
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
    SCIP_CALL( SCIPtransformProb(scip) );
+
    if( decname != NULL )
    {
       SCIPinfoMessage(scip, NULL, "\nread decomposition <%s>\n", decname);
@@ -145,8 +146,7 @@ SCIP_RETCODE fromCommandLine(
    }
    else
    {
-      SCIP_CALL( SCIPpresolve(scip) );
-      SCIP_CALL( DECdetectStructure(scip, &result) );
+      SCIP_CALL( DECdetectStructure(scip, &result) ); /* including presolving */
    }
 
    /*******************

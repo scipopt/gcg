@@ -177,12 +177,29 @@
 #include "dec_isomorph.h"
 #endif
 
-#include "dec_arrowheur.h"
+/* new detection stuff */
+#include "dec_constype.h"
+#include "dec_consclass.h"
 #include "dec_stairheur.h"
 #include "dec_staircase.h"
 #include "dec_random.h"
 #include "dec_colors.h"
+#include "dec_compgreedily.h"
+#include "dec_staircase_lsp.h"
 #include "dec_consname.h"
+#include "dec_mastersetpack.h"
+#include "dec_mastersetpart.h"
+#include "dec_mastersetcover.h"
+#include "dec_hrcgpartition.h"
+#include "dec_hrgpartition.h"
+#include "dec_hcgpartition.h"
+#include "dec_connectedbase.h"
+#include "dec_connected_noNewLinkingVars.h"
+#include "dec_generalmastersetcover.h"
+#include "dec_generalmastersetpack.h"
+#include "dec_generalmastersetpart.h"
+#include "dec_staircase_lsp.h"
+
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -207,6 +224,12 @@
 #include "dec_cutpacking.h"
 #include "scip_misc.h"
 
+/* Igor's detection with clustering */
+#include "dec_dbscan.h"
+#include "dec_mst.h"
+#ifdef GSL
+#include "dec_mcl.h"
+#endif
 
 /** includes default plugins for generic column generation into SCIP */
 SCIP_RETCODE SCIPincludeGcgPlugins(
@@ -337,13 +360,32 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectorConnected(scip) );
-   SCIP_CALL( SCIPincludeDetectorArrowheur(scip) );
+   SCIP_CALL( SCIPincludeDetectorConstype(scip) );
+   SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );
+   SCIP_CALL( SCIPincludeDetectorStaircaseLsp(scip) );
    SCIP_CALL( SCIPincludeDetectorColors(scip) );
    SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
-   SCIP_CALL( SCIPincludeDetectorConsname(scip) );
+#ifdef GSL
+   SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
+   SCIP_CALL( SCIPincludeDetectorMST(scip) );
+   SCIP_CALL( SCIPincludeDetectorMCL(scip) );
+#endif
+   SCIP_CALL( SCIPincludeDetectorCompgreedily(scip) );
+   SCIP_CALL( SCIPincludeDetectorMastersetcover(scip) );
+   SCIP_CALL( SCIPincludeDetectorMastersetpack(scip) );
+   SCIP_CALL( SCIPincludeDetectorMastersetpart(scip) );
+   SCIP_CALL( SCIPincludeDetectorHcgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectorHrgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectorHrcgpartition(scip) );
+   SCIP_CALL( SCIPincludeDetectorConnectedbase(scip) );
+   SCIP_CALL( SCIPincludeDetectorConnected_noNewLinkingVars(scip) );
+   SCIP_CALL( SCIPincludeDetectorGeneralmastersetpack(scip) );
+   SCIP_CALL( SCIPincludeDetectorGeneralmastersetpart(scip) );
+   SCIP_CALL( SCIPincludeDetectorGeneralmastersetcover(scip) );
+
 
 
 #ifndef NBLISS

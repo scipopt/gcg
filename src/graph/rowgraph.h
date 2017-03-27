@@ -44,7 +44,7 @@ namespace gcg {
 template <class T>
 class RowGraph : public gcg::MatrixGraph<T>
 {
-private:
+protected:
    gcg::Graph<T> graph;
 
 public:
@@ -56,6 +56,14 @@ public:
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      );
+
+   /** amplifies a seeed by dint of a graph created with open constraints and open variables of the seeed */
+   virtual SCIP_RETCODE createSeeedFromPartition(
+      Seeed*      oldSeeed,            /**< seeed which should be amplifies */
+      Seeed**     firstSeeed,          /**< pointer to buffer the new seeed amplified by dint of the graph */
+      Seeed**     secondSeeed,         /**< pinter to buffer the new seeed whose border is amplified by dint of the graph */
+      Seeedpool*  seeedpool
       );
 
    virtual SCIP_RETCODE createFromMatrix(

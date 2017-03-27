@@ -182,14 +182,22 @@ LIBOBJ		=	reader_blk.o \
 			solver_knapsack.o \
 			cons_decomp.o \
 			decomp.o \
-			dec_arrowheur.o \
+			dec_constype.o \
 			dec_stairheur.o \
 			dec_connected.o \
 			dec_consname.o \
 			dec_cutpacking.o \
 			dec_staircase.o \
+			dec_staircase_lsp.o \
 			dec_random.o \
 			dec_colors.o \
+			dec_dbscan.o \
+			dec_mst.o \
+			dec_mcl.o \
+			dec_compgreedily.o \
+			dec_mastersetcover.o \
+			dec_mastersetpack.o \
+			dec_mastersetpart.o \
 			gcggithash.o \
 			reader_gp.o \
 			reader_tex.o \
@@ -202,12 +210,31 @@ LIBOBJ		=	reader_blk.o \
 			graph/weights.o \
 			graph/inst.o \
 			graph/graph_tclique.o \
+			graph/graph_gcg.o \
 			stat.o \
 			objdialog.o \
 			dialog_graph.o \
 			gcgpqueue.o \
 			gcgcol.o \
-			class_colpool.o
+			class_colpool.o \
+			class_seeed.o \
+			class_seeedpool.o \
+			dec_compgreedily.o \
+			dec_mastersetcover.o \
+			dec_mastersetpack.o \
+			dec_mastersetpart.o \
+			dec_hcgpartition.o \
+			dec_hrgpartition.o \
+			dec_hrcgpartition.o \
+			dec_connectedbase.o \
+			dec_consclass.o \
+			dec_connected_noNewLinkingVars.o \
+			dec_generalmastersetpack.o \
+			dec_generalmastersetpart.o \
+			dec_generalmastersetcover.o \
+			class_consclassifier.o \
+			presol_roundbound.o
+
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

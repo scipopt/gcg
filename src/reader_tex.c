@@ -572,6 +572,9 @@ SCIP_RETCODE writeDecompCode(
    SCIP_READERDATA*      readerdata          /**< reader specific arguments */
    )
 {
+   FILE* gpfile;
+   DEC_DETECTOR** detectorchain;
+   DEC_SCORES scores;
    char* filepath;
    char* pname;
    char ppath[SCIP_MAXSTRLEN];
@@ -581,12 +584,26 @@ SCIP_RETCODE writeDecompCode(
    char pfile[SCIP_MAXSTRLEN];
    char pfilecpy[SCIP_MAXSTRLEN];
    char dectype[SCIP_MAXSTRLEN];
-   FILE* gpfile;
-   DEC_SCORES scores;
+   char detectorchainstring[SCIP_MAXSTRLEN];
+   int sizedetectorchain;
+   int i;
+
+   /* construct detector chain string*/
+
+   detectorchain = DECdecompGetDetectorChain(decomp);
+   sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
+
+   sprintf(detectorchainstring, "%s", DECdetectorGetName(detectorchain[0]));
+
+   for( i=1; i < sizedetectorchain; ++i )
+   {
+      sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(detectorchain[i]) );
+   }
+   SCIPinfoMessage(scip, NULL, "%s \n", detectorchainstring);
 
    assert(decomp != NULL);
-   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", DECdetectorGetChar(DECdecompGetDetector(decomp)),
-      DECdecompGetNBlocks(decomp));
+
+   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", detectorchainstring, DECdecompGetNBlocks(decomp));
 
    if( readerdata->usegp )
    {
@@ -633,6 +650,7 @@ SCIP_RETCODE writeDecompCode(
 
    /* --- gather information & output them into .tex file --- */
 
+
    DECevaluateDecomposition(scip, decomp, &scores);
 
    if(!readerdata->picturesonly)
@@ -646,12 +664,13 @@ SCIP_RETCODE writeDecompCode(
    if( readerdata->usegp )
    {
       SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                            \n",
-         pname, DECdetectorGetChar(DECdecompGetDetector(decomp)), DECdecompGetNBlocks(decomp));
+         pname, detectorchainstring, DECdecompGetNBlocks(decomp));
    }
    else
    {
       writeTikz(scip, file, decomp);
    }
+
    SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
    SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
    if(!readerdata->picturesonly)
@@ -659,8 +678,7 @@ SCIP_RETCODE writeDecompCode(
       SCIPinfoMessage(scip, file, "                                                                \n");
       SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
       SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                            \n");
-      SCIPinfoMessage(scip, file, "  Found by detector: & %s \\\\                                  \n",
-         DECdetectorGetName(DECdecompGetDetector(decomp)));
+      SCIPinfoMessage(scip, file, "  Found by detector: & %s \\\\                                  \n",detectorchainstring);
       switch(DECdecompGetType(decomp))
       {
          case DEC_DECTYPE_ARROWHEAD:

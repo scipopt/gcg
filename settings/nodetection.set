@@ -32,4 +32,3 @@ detectors/cutpacking/enabled = FALSE
 # flag to indicate whether detector <stairheur> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/stairheur/enabled = FALSE
-
