@@ -172,16 +172,18 @@ namespace gcg
    {
       std::stringstream line;
       std::string relposition;
-      int position = visucounter % 4;
+      int position = visucounter % 3;
       if( position == 0 )
-    	  relposition = "left";
-      else if ( position == 1)
     	  relposition = "above";
+      else if ( position == 1)
+         relposition = "";
       else if ( position == 2)
-          	  relposition = "right";
+         relposition = "below";
       else
-    	  relposition = "below";
+         relposition = "below left";
 
+      if ( currheight != 1)
+         relposition = "";
 
       if ( (size_t) currheight >  seeed->detectorchaininfo.size() )
          line << "edge from parent node [" << relposition << "] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
@@ -1153,7 +1155,7 @@ void testReduceClasses()
       std::vector<SeeedPtr> delSeeeds;
       SCIP_Bool usemaxwhitescore;
 
-      size_t nDecomps = 6;
+      size_t nDecomps = 12;
       SCIP_Bool addTrivialDecomp = FALSE;
 
       successDetectors = std::vector<int>(nDetectors, 0);
