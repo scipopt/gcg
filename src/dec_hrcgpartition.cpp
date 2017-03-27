@@ -153,8 +153,7 @@ struct DEC_DetectorData
    SCIP_Bool realname;        /**< flag to indicate real problem name or temporary filename for metis files */
 
    /* various data */
-   int         blocks;        /**< indicates the current block */
-   SCIP_Bool   found;         /**< indicates whethere a decomposition has been found */
+    SCIP_Bool   found;         /**< indicates whethere a decomposition has been found */
    char        type;          /**< type of the decomposition 'c' column hypergraph (single bordered, no linking
                                    constraints), 'r' row hypergraph (single bordered, no linking variables) and
                                    'a' column-row hypergraph (arrowhead) */
@@ -199,7 +198,6 @@ DEC_DECL_INITDETECTOR(initHrcgpartition)
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
    detectordata->found = FALSE;
-   detectordata->blocks = -1;
 
    nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
@@ -263,7 +261,7 @@ SCIP_RETCODE callMetis(
       (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
                tempfile,
-               detectordata->blocks,
+               nblocks,
                detectordata->randomseed,
                detectordata->metisuseptyperb ? "rb" : "kway",
                detectordata->metisubfactor,
@@ -273,7 +271,7 @@ SCIP_RETCODE callMetis(
    {
       (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                tempfile,
-               detectordata->blocks,
+               nblocks,
                detectordata->randomseed,
                detectordata->metisuseptyperb ? "rb" : "kway",
                detectordata->metisubfactor,
@@ -282,7 +280,7 @@ SCIP_RETCODE callMetis(
 
    SCIP_CALL( SCIPstartClock(scip, metisclock) );
    SCIPdebugMessage("Calling metis with: %s\n", metiscall);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %d", detectordata->blocks );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %d", nblocks );
    status = system( metiscall );
 
    SCIP_CALL( SCIPstopClock(scip, metisclock) );
@@ -307,7 +305,7 @@ SCIP_RETCODE callMetis(
       return SCIP_ERROR;
    }
 
-   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, detectordata->blocks);
+   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, nblocks);
    SCIP_CALL( graph->readPartition(metisout) );
 
    /* if desired delete the temoprary metis file */
