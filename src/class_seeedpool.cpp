@@ -799,6 +799,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                              int freqcallround;
                              char setstr[SCIP_MAXSTRLEN];
                              const char* detectorname;
+                             SCIP_CLOCK* detectorclock;
 
                              detector = detectorToScipDetector[d];
                              detectorname = DECdetectorGetName(detector);
@@ -807,6 +808,9 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                              /** if the seeed is also propagated by the detector go on with the next detector */
                              if( seeedPtr->isPropagatedBy(detector) && !detector->usefulRecall )
                                 continue;
+
+                             #pragma omp critical (clock)
+                             SCIPcreateClock(scip, &detectorclock);
 
                              /** check if detector is callable in current detection round */
                              SCIP_CALL_ABORT( getDetectorCallRoundInfo( scip, detectorname, transformed, &maxcallround, &mincallround, &freqcallround) );
@@ -821,7 +825,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                  }
 
                                  /** new seeeds are created by the current detector */
-                                 SCIP_CALL_ABORT( SCIPstartClock(scip, detectorToScipDetector[d]->dectime) );
+                                 SCIP_CALL_ABORT( SCIPstartClock(scip, detectorclock) );
 
                                  if( verboseLevel >= 1 )
                                  {
@@ -840,7 +844,13 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                     seeedPropData->newSeeeds[j]->addDecChangesFromAncestor(seeedPtr);
                                  }
 
-                                 SCIP_CALL_ABORT( SCIPstopClock(scip, detectorToScipDetector[d]->dectime) );
+                                 SCIP_CALL_ABORT( SCIPstopClock(scip, detectorclock) );
+
+                                 #pragma omp critical (clockcount)
+                                 detectorToScipDetector[d]->dectime += SCIPgetClockTime(scip, detectorclock);
+
+                                 #pragma omp critical (clock)
+                                 SCIPfreeClock(scip, &detectorclock);
 
                                  if(seeedPropData->nNewSeeeds != 0 && ( displaySeeeds ) )
                                  {
@@ -971,31 +981,32 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                seeed->calcHashvalue();
                                seeed->addDecChangesFromAncestor(seeedPtr);
                                seeed->setFinishedByFinisher(true);
+                               #pragma omp critical (seeedptrstore)
+                               {
+                                  if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
+                                  {
 
-                               if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
-                               {
-                                 #pragma omp critical (seeedptrstore)
-                                  {
-                                     finishedSeeeds.push_back(seeed);
-                                     allrelevantseeeds.push_back(seeed);
-                                  }
-                               }
-                               else
-                               {
-                                  bool isIdentical = false;
-                                  for ( size_t h = 0; h < finishedSeeeds.size(); ++h )
-                                  {
-                                     if( seeed == finishedSeeeds[h] )
                                      {
-                                        isIdentical = true;
-                                        break;
+                                        finishedSeeeds.push_back(seeed);
+                                        allrelevantseeeds.push_back(seeed);
                                      }
                                   }
-
-                                  if( !isIdentical )
+                                  else
                                   {
-                                     #pragma omp critical (seeedptrstore)
-                                     currSeeedsToDelete.push_back(seeed);
+                                     bool isIdentical = false;
+                                     for ( size_t h = 0; h < finishedSeeeds.size(); ++h )
+                                     {
+                                        if( seeed == finishedSeeeds[h] )
+                                        {
+                                           isIdentical = true;
+                                           break;
+                                        }
+                                     }
+
+                                     if( !isIdentical )
+                                     {
+                                        currSeeedsToDelete.push_back(seeed);
+                                     }
                                   }
                                }
                             }
@@ -1102,7 +1113,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
 
          for( int i = 0; i < nDetectors; ++i )
          {
-             std::cout << "Detector " << std::setw(25) << std::setiosflags(std::ios::left) << DECdetectorGetName(detectorToScipDetector[i] ) << " \t worked on \t " << successDetectors[i] << " of " << finishedSeeeds.size() << "\t and took a total time of \t" << SCIPgetClockTime(scip, detectorToScipDetector[i]->dectime)  << std::endl;
+             std::cout << "Detector " << std::setw(25) << std::setiosflags(std::ios::left) << DECdetectorGetName(detectorToScipDetector[i] ) << " \t worked on \t " << successDetectors[i] << " of " << finishedSeeeds.size() << "\t and took a total time of \t" << detectorToScipDetector[i]->dectime  << std::endl;
          }
 
          if( (int) finishedSeeeds.size() != 0)

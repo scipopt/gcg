@@ -126,9 +126,6 @@ using gcg::Weights;
 /** private detector data */
 struct DEC_DetectorData
 {
-   /* Graph stuff for hmetis */
-   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
-   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
 
    /* weight parameters */
    int       varWeight;             /**< weight of a variable hyperedge */
@@ -156,7 +153,6 @@ struct DEC_DetectorData
    SCIP_Bool realname;        /**< flag to indicate real problem name or temporary filename for metis files */
 
    /* various data */
-   SCIP_CLOCK* metisclock;    /**< clock to measure metis time */
    int         blocks;        /**< indicates the current block */
    SCIP_Bool   found;         /**< indicates whethere a decomposition has been found */
    char        type;          /**< type of the decomposition 'c' column hypergraph (single bordered, no linking
@@ -208,7 +204,6 @@ DEC_DECL_INITDETECTOR(initHrcgpartition)
    nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
-   SCIP_CALL( SCIPcreateWallClock(scip, &detectordata->metisclock) );
 
    return SCIP_OKAY;
 }
@@ -226,8 +221,6 @@ DEC_DECL_EXITDETECTOR(exitHrcgpartition)
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
-   SCIP_CALL( SCIPfreeClock(scip, &detectordata->metisclock) );
-
    return SCIP_OKAY;
 }
 
@@ -236,11 +229,15 @@ static
 SCIP_RETCODE callMetis(
    SCIP*                 scip,               /**< SCIP data struture */
    DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
+   MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
+   char                  tempfile[SCIP_MAXSTRLEN],
+   int                   nblocks,            /** number of blocks */
    SCIP_RESULT*          result              /**< result indicating whether the detection was successful */
    )
 {
    char metiscall[SCIP_MAXSTRLEN];
    char metisout[SCIP_MAXSTRLEN];
+   SCIP_CLOCK* metisclock;
 
    int status;
 
@@ -251,6 +248,8 @@ SCIP_RETCODE callMetis(
 
    *result = SCIP_DIDNOTRUN;
 
+
+   SCIPcreateWallClock(scip, &metisclock);
    remainingtime = DECgetRemainingTime(scip);
 
    if( remainingtime <= 0 )
@@ -263,7 +262,7 @@ SCIP_RETCODE callMetis(
    {
       (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
-               detectordata->tempfile,
+               tempfile,
                detectordata->blocks,
                detectordata->randomseed,
                detectordata->metisuseptyperb ? "rb" : "kway",
@@ -273,7 +272,7 @@ SCIP_RETCODE callMetis(
    else
    {
       (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
-               detectordata->tempfile,
+               tempfile,
                detectordata->blocks,
                detectordata->randomseed,
                detectordata->metisuseptyperb ? "rb" : "kway",
@@ -281,14 +280,13 @@ SCIP_RETCODE callMetis(
                detectordata->metisverbose ? "" : "> /dev/null" );
    }
 
-   SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
-   SCIP_CALL( SCIPstartClock(scip, detectordata->metisclock) );
+   SCIP_CALL( SCIPstartClock(scip, metisclock) );
    SCIPdebugMessage("Calling metis with: %s\n", metiscall);
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %d", detectordata->blocks );
    status = system( metiscall );
 
-   SCIP_CALL( SCIPstopClock(scip, detectordata->metisclock) );
-   SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, detectordata->metisclock),  remainingtime-SCIPgetClockTime(scip, detectordata->metisclock) );
+   SCIP_CALL( SCIPstopClock(scip, metisclock) );
+   SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, metisclock),  remainingtime-SCIPgetClockTime(scip, metisclock) );
 
    /* check error codes */
    if( status == -1 )
@@ -309,8 +307,8 @@ SCIP_RETCODE callMetis(
       return SCIP_ERROR;
    }
 
-   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", detectordata->tempfile, detectordata->blocks);
-   SCIP_CALL( detectordata->graph->readPartition(metisout) );
+   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, detectordata->blocks);
+   SCIP_CALL( graph->readPartition(metisout) );
 
    /* if desired delete the temoprary metis file */
    if( detectordata->tidy )
@@ -324,7 +322,7 @@ SCIP_RETCODE callMetis(
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, "Temporary file is in: %s\n", detectordata->tempfile);
+      SCIPinfoMessage(scip, NULL, "Temporary file is in: %s\n", tempfile);
    }
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -335,29 +333,31 @@ static
 SCIP_RETCODE createMetisFile(
    SCIP*                 scip,               /**< SCIP data struture */
    DEC_DETECTORDATA*     detectordata,        /**< detector data structure */
-   int                   seeedID
+   int                   seeedID,
+   MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
+   char tempfile[SCIP_MAXSTRLEN]
    )
 {
    int nvertices;
    int ndummyvertices;
    int fd;
-   nvertices = detectordata->graph->getNNonzeroes();
+   nvertices = graph->getNNonzeroes();
    /*lint --e{524}*/
    ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
-   detectordata->graph->setDummynodes(ndummyvertices);
+   graph->setDummynodes(ndummyvertices);
 
    if( !detectordata->realname )
       {
-         (void) SCIPsnprintf(detectordata->tempfile, SCIP_MAXSTRLEN, "gcg-%c-%d-XXXXXX", DEC_DECCHAR, seeedID );
+         (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-%c-%d-XXXXXX", DEC_DECCHAR, seeedID );
       }
       else
       {
-         (void) SCIPsnprintf(detectordata->tempfile, SCIP_MAXSTRLEN, "gcg-%s-%c-%d-XXXXXX", SCIPgetProbName(scip), DEC_DECCHAR, seeedID);
+         (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-%s-%c-%d-XXXXXX", SCIPgetProbName(scip), DEC_DECCHAR, seeedID);
       }
 
-   fd = mkstemp(detectordata->tempfile);
+   fd = mkstemp(tempfile);
 
-   SCIP_CALL( detectordata->graph->writeToFile(fd, TRUE) );
+   SCIP_CALL( graph->writeToFile(fd, TRUE) );
    close(fd);
    return SCIP_OKAY;
 }
@@ -465,6 +465,11 @@ SCIP_RETCODE detection(
    SCIP_CLOCK* clock;
    SCIP_CLOCK* temporaryClock;
    std::vector<SCIP_Real> clockTimes;        /**< vector containing times in seconds  */
+   /* Graph stuff for hmetis */
+   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
+   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
+   SCIP_CLOCK* metisclock;                   /**< clock to measure metis time */
+
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
@@ -483,7 +488,9 @@ SCIP_RETCODE detection(
 
    maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
 
-   SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
+
+
+   SCIP_CALL( SCIPcreateClock(scip, &metisclock) );
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -500,11 +507,11 @@ SCIP_RETCODE detection(
    /* build the hypergraph structure from the original problem */
 
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
+   graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
 
-   SCIP_CALL( detectordata->graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
+   SCIP_CALL( graph->createFromPartialMatrix(seeedPropagationData->seeedpool, seeed) );
 
-   SCIP_CALL( createMetisFile(scip, detectordata, seeed->getID()) );
+   SCIP_CALL( createMetisFile(scip, detectordata, seeed->getID(), graph, tempfile) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
@@ -515,7 +522,6 @@ SCIP_RETCODE detection(
       int nblocks = numberOfBlocks[k] - seeed->getNBlocks();
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       SCIP_RETCODE retcode;
-      detectordata->blocks = nblocks;
 
 
       if(nblocks > seeed->getNOpenconss() || nblocks <= 0)
@@ -525,7 +531,7 @@ SCIP_RETCODE detection(
          continue;
       }
 
-      retcode = callMetis(scip, detectordata, result);
+      retcode = callMetis(scip, detectordata, graph, tempfile, nblocks, result);
 
       if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
       {
@@ -534,7 +540,7 @@ SCIP_RETCODE detection(
          continue;
       }
 
-      SCIP_CALL( detectordata->graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
+      SCIP_CALL( graph->createSeeedFromPartition(seeed, &newSeeeds[j], &newSeeeds[j+1], seeedPropagationData->seeedpool) );
 
 
       SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
@@ -557,8 +563,8 @@ SCIP_RETCODE detection(
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d seeeds found.\n",  nNewSeeeds);
 
-   delete detectordata->graph;
-   detectordata->graph = NULL;
+   delete graph;
+   graph = NULL;
    delete seeed;
 
    assert(nNewSeeeds % 2 == 0);
@@ -593,7 +599,7 @@ SCIP_RETCODE detection(
 
    if( detectordata->tidy )
    {
-      int status = remove( detectordata->tempfile );
+      int status = remove( tempfile );
       if( status == -1 )
       {
          SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
@@ -629,6 +635,9 @@ DEC_DECL_DETECTSTRUCTURE(detectHrcgpartition)
    int j;
    int ndecs;
 
+   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
+   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
+
    assert(scip != NULL);
    assert(detectordata != NULL);
    assert(decdecomps != NULL);
@@ -645,25 +654,24 @@ DEC_DECL_DETECTSTRUCTURE(detectHrcgpartition)
    /* build the hypergraph structure from the original problem */
 
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
+   graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
 
-   SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   SCIP_CALL( createMetisFile(scip, detectordata, 0) );
+   SCIP_CALL( graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+   SCIP_CALL( createMetisFile(scip, detectordata, 0, graph, tempfile) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
    {
       SCIP_RETCODE retcode;
-      detectordata->blocks = i;
       /* get the partitions for the new variables from metis */
-      retcode = callMetis(scip, detectordata, result);
+      retcode = callMetis(scip, detectordata, graph, tempfile, i, result);
 
       if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY )
       {
          continue;
       }
 
-      SCIP_CALL( detectordata->graph->createDecompFromPartition(&(*decdecomps)[j]) );
+      SCIP_CALL( graph->createDecompFromPartition(&(*decdecomps)[j]) );
       if( (*decdecomps)[j] != NULL )
       {
          *ndecdecomps += 1;
@@ -673,14 +681,14 @@ DEC_DECL_DETECTSTRUCTURE(detectHrcgpartition)
    }
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d decompositions found.\n",  *ndecdecomps);
 
-   delete detectordata->graph;
-   detectordata->graph = NULL;
+   delete graph;
+   graph = NULL;
 
    SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
 
    if( detectordata->tidy )
    {
-      int status = remove( detectordata->tempfile );
+      int status = remove( tempfile );
       if( status == -1 )
       {
          SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
@@ -703,7 +711,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
-   if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
+   if( !connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
       delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
