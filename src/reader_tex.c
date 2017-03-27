@@ -61,6 +61,7 @@
 #define DEFAULT_MAXNDECOMPS      50
 #define DEFAULT_RETURNTYPE       0
 #define DEFAULT_PICTURESONLY     FALSE
+#define DEFAULT_DRAFTMODE        FALSE
 
 /** data for dec reader */
 struct SCIP_ReaderData
@@ -72,6 +73,7 @@ struct SCIP_ReaderData
                                       * 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered */
    SCIP_Bool       picturesonly;    /** if true only tex code for the pictures is generated
                                       * (no statistics, no report file) */
+   SCIP_Bool       draftmode;       /** if true shows no non-zeroes, recommended if too slow or too memory-intensive */
 };
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
@@ -300,7 +302,8 @@ static
 SCIP_RETCODE writeTikz(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decomp              /**< Decomposition array pointer */
+   DEC_DECOMP*           decomp,             /**< Decomposition array pointer */
+   SCIP_READERDATA*      readerdata          /**< reader specific arguments */
    )
 {
    SCIP_VAR*** subscipvars;
@@ -492,58 +495,61 @@ SCIP_RETCODE writeTikz(
       }
    }
 
-   /* --- draw black dots for the constraints --- */
+   /* --- draw black dots for nonzeroes --- */
 
    /* draw the dots */
-   for( i = 0; i < nconss; i++ )
+   if(!readerdata->draftmode)
    {
-      int ncurvars = GCGconsGetNVars(scip, conss[i]);
-      SCIP_VAR** curvars = NULL;
-
-      if( ncurvars > 0 )
+      for( i = 0; i < nconss; i++ )
       {
-         SCIP_CALL( SCIPallocBufferArray( scip, &curvars, ncurvars) );
-         SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
-      }
+         int ncurvars = GCGconsGetNVars(scip, conss[i]);
+         SCIP_VAR** curvars = NULL;
 
-      for( j = 0; j < ncurvars; j++ )
-      {
-         /* if the problem has been created but has not been processed yet, output the whole model */
-         if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
+         if( ncurvars > 0 )
          {
-            SCIPinfoMessage(scip, file,
-               "                                                                                \n");
-            SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];\n",
-               (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind);
+            SCIP_CALL( SCIPallocBufferArray( scip, &curvars, ncurvars) );
+            SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
          }
-         else
+
+         for( j = 0; j < ncurvars; j++ )
          {
-            /* if there is no decomposition, output the presolved model! */
-            if( decomp == NULL || DECdecompGetType(decomp) == DEC_DECTYPE_UNKNOWN )
+            /* if the problem has been created but has not been processed yet, output the whole model */
+            if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
             {
+               SCIPinfoMessage(scip, file,
+                  "                                                                                \n");
                SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];\n",
                   (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind);
             }
-            /* if there is a decomposition, output the indices derived from the decomposition above*/
             else
             {
-               assert(varindexmap != NULL);
-               assert(consindexmap != NULL);
-               /*@todo make the following if statement into an assertion*/
-               if( SCIPhashmapExists(varindexmap, SCIPvarGetProbvar(curvars[j]))
-                  && SCIPhashmapExists(consindexmap, conss[i]))
+               /* if there is no decomposition, output the presolved model! */
+               if( decomp == NULL || DECdecompGetType(decomp) == DEC_DECTYPE_UNKNOWN )
                {
-                  xpoint =
-                     ( (float)(size_t)SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) )/(float)maxindvars;
-                  ypoint = ( (float)(size_t)SCIPhashmapGetImage(consindexmap, conss[i]) )/ (float)maxindcons;
                   SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];\n",
-                     xpoint, ypoint, radius/maxind);
+                     (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind);
+               }
+               /* if there is a decomposition, output the indices derived from the decomposition above*/
+               else
+               {
+                  assert(varindexmap != NULL);
+                  assert(consindexmap != NULL);
+                  /*@todo make the following if statement into an assertion*/
+                  if( SCIPhashmapExists(varindexmap, SCIPvarGetProbvar(curvars[j]))
+                     && SCIPhashmapExists(consindexmap, conss[i]))
+                  {
+                     xpoint =
+                        ( (float)(size_t)SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) )/(float)maxindvars;
+                     ypoint = ( (float)(size_t)SCIPhashmapGetImage(consindexmap, conss[i]) )/ (float)maxindcons;
+                     SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth,%f*\\textheight) circle [radius=%f];\n",
+                        xpoint, ypoint, radius/maxind);
+                  }
                }
             }
          }
-      }
 
-      SCIPfreeBufferArrayNull(scip, &curvars);
+         SCIPfreeBufferArrayNull(scip, &curvars);
+      }
    }
 
    SCIPinfoMessage(scip, file, "                                                                                \n");
@@ -668,7 +674,7 @@ SCIP_RETCODE writeDecompCode(
    }
    else
    {
-      writeTikz(scip, file, decomp);
+      writeTikz(scip, file, decomp, readerdata);
    }
 
    SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
@@ -983,7 +989,12 @@ SCIPincludeReaderTex(
    SCIP_CALL( SCIPaddBoolParam(scip,
          "reading/texreader/picturesonly",
          "if true only tex code for the pictures is generated (no statistics, no report file)",
-         &readerdata->picturesonly, FALSE, DEFAULT_USEGP, NULL, NULL) );
+         &readerdata->picturesonly, FALSE, DEFAULT_PICTURESONLY, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+         "reading/texreader/draftmode",
+         "if true shows no non-zeroes, recommended if too slow or too memory-intensive",
+         &readerdata->draftmode, FALSE, DEFAULT_DRAFTMODE, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
       "reading/texreader/maxndecomps",
