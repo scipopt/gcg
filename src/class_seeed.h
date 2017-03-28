@@ -180,6 +180,13 @@ public:
          Seeedpool* seeedpool
    );
 
+   /** fills out the seeed with the vector constoblock  */
+   SCIP_RETCODE assignSeeedFromConstoblockVector(
+      std::vector<int> constoblock,
+      int additionalNBlocks,
+      Seeedpool* seeedpool
+      );
+
    /** book a constraint to be added to the block constraints of the given block (after calling flushBookes) */
    SCIP_RETCODE bookAsBlockCons(
           int consToBlock,

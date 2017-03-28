@@ -652,6 +652,47 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int ad
    return SCIP_OKAY;
 }
 
+/** fills out the seeed with the hashmap constoblock if there are still assigned conss and vars */
+SCIP_RETCODE Seeed::assignSeeedFromConstoblockVector(std::vector<int> constoblock, int additionalNBlocks, Seeedpool* seeedpool)
+{
+   int oldNBlocks = nBlocks;
+   int consblock;
+   int cons;
+
+   assert(additionalNBlocks >= 0);
+
+   changedHashvalue = true;
+
+   for( int b = 0; b < additionalNBlocks; ++b )
+      addBlock();
+
+   for( int i = 0; i < getNOpenconss(); ++i )
+   {
+      cons = openConss[i];
+
+      if( constoblock[cons] == -1 )
+         continue;
+
+      consblock = oldNBlocks + ( constoblock[cons] - 1);
+      assert(consblock >= oldNBlocks && consblock <= nBlocks);
+      if( consblock == nBlocks )
+         bookAsMasterCons(cons);
+      else
+         bookAsBlockCons(cons, consblock);
+   }
+
+   flushBooked();
+
+  // showScatterPlot(seeedpool);
+
+   deleteEmptyBlocks();
+   sort();
+   assert(checkConsistency());
+   return SCIP_OKAY;
+}
+
+
+
 /** book a constraint to be added to the block constraints of the given block (after calling flushBookes) */
 SCIP_RETCODE Seeed::bookAsBlockCons(
         int consToBlock,
