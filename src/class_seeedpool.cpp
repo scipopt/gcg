@@ -821,7 +821,6 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                  #pragma omp critical (seeedcount)
                                  {
                                     seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
-                                    decrementSeeedcount();
                                  }
 
                                  /** new seeeds are created by the current detector */
@@ -904,6 +903,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                                }
 											   #pragma omp critical (seeedptrstore)
                                                {
+                                                  assert(seeedPropData->newSeeeds[seeed]->getID() >= 0);
                                                	   finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
                                                	   allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
                                                }
@@ -939,7 +939,6 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                  delete seeedPropData;
                          } // end for detectors
 
-                         #pragma omp parallel for schedule(static,1)
                          for( int d = 0; d < nFinishingDetectors; ++d )
                          {
                             DEC_DETECTOR* detector = detectorToFinishingScipDetector[d];
@@ -951,7 +950,6 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                             #pragma omp critical (seeedcount)
                             {
                                seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
-                               decrementSeeedcount();
                             }
 
 
@@ -985,11 +983,9 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                                {
                                   if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
                                   {
-
-                                     {
-                                        finishedSeeeds.push_back(seeed);
-                                        allrelevantseeeds.push_back(seeed);
-                                     }
+                                     assert(seeed->getID() >= 0);
+                                     finishedSeeeds.push_back(seeed);
+                                     allrelevantseeeds.push_back(seeed);
                                   }
                                   else
                                   {
@@ -1027,6 +1023,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
          } // end for rounds
 
          /** complete the currseeeds with finishing detectors and add them to finished seeeds */
+         #pragma omp parallel for schedule(static,1)
          for( size_t i = 0; i < currSeeeds.size(); ++i )
          {
             SeeedPtr seeedPtr = currSeeeds[i];
@@ -1038,7 +1035,10 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                seeedPropData = new SEEED_PROPAGATION_DATA();
                seeedPropData->seeedpool = this;
                seeedPropData->nNewSeeeds = 0;
-               seeedPropData->seeedToPropagate = seeedPtr;
+               #pragma omp critical (seeedcount)
+               {
+                  seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
+               }
 
                std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;
 
@@ -1054,7 +1054,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                {
                   SeeedPtr seeed = seeedPropData->newSeeeds[finished];
                   #pragma omp critical (seeedcount)
-                  seeed->setID(getNewIdForSeeed());
+                  seeed->setID( getNewIdForSeeed() );
 
                   seeed->calcHashvalue();
                   seeed->addDecChangesFromAncestor(seeedPtr);
@@ -1067,8 +1067,12 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                         std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
                         seeed->showScatterPlot(this);
                      }
-                     finishedSeeeds.push_back(seeed);
-                     allrelevantseeeds.push_back(seeed);
+                     #pragma omp critical (seeedptrstore)
+                     {
+                        assert(seeed->getID() >= 0);
+                        finishedSeeeds.push_back(seeed);
+                        allrelevantseeeds.push_back(seeed);
+                     }
                   }
 
                   SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
@@ -1078,7 +1082,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
 
                delete seeedPropData;
             }
-         }
+         }// end for finishing curr seeeds
 
          std::cout << (int) finishedSeeeds.size() << " finished seeeds are found." << std::endl;
 
