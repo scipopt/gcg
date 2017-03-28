@@ -785,7 +785,6 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                      }
 
                          /** the current seeed is handled by all detectors */
-    //   					 #pragma omp parallel for schedule(static,1)//firstprivate(seeedPropData) //private(detector, detectorname, freqcallround, maxcallround, mincallround, newSIter, newSIterEnd, setstr, result)
                          for( int d = 0; d < nDetectors; ++d )
                          {
                              SEEED_PROPAGATION_DATA* seeedPropData;
