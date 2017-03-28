@@ -180,6 +180,7 @@ SCIP_Bool finishnextchild( std::vector<int>& childs, std::vector<SCIP_Bool>& chi
          return s == childsfinished.size() - 1;
       }
    }
+   return FALSE;
 }
 
 std::string writeSeeedDetectorChainInfoLatex( SeeedPtr seeed, int currheight ){
@@ -797,7 +798,6 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
                              int maxcallround;
                              int mincallround;
                              int freqcallround;
-                             char setstr[SCIP_MAXSTRLEN];
                              const char* detectorname;
                              SCIP_CLOCK* detectorclock;
 
@@ -1179,10 +1179,8 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
      * finds seeeds and translates them to decompositions
      *   */
 
-    SEEED_PROPAGATION_DATA* seeedPropData;
     std::vector<int> successDetectors;
     std::vector<SeeedPtr> delSeeeds;
-    bool duplicate;
     SCIP_Bool usemaxwhitescore;
 
 	size_t nDecomps = 6;
@@ -1192,8 +1190,6 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
     ndecompositions = 0;
     delSeeeds = std::vector<SeeedPtr>(0);
     usemaxwhitescore = TRUE;
-
-    int verboseLevel = 0;
 
     finishedSeeeds = findSeeeds();
 
@@ -1986,7 +1982,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
        subsetsOfConstypes = getAllSubsets(consclassindices);
 
-       for ( size_t i = 0; i < getNConss(); ++i)
+       for ( int i = 0; i < getNConss(); ++i)
           ++(nconssofclass.at( consclassescollection[conssclass].at(i) ) );
 
        /** start with the cardinalities of the consclasses as candidates */
@@ -2733,7 +2729,7 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
          remainingSeeeds.push_back(seeeds[i]);
    }
 
-   for(int i = 0; i < seeeds.size(); ++i)
+   for( size_t i = 0; i < seeeds.size(); ++i)
    {
       if( seeeds[i]->getNBlocks() == 1 && ( seeeds[i]->getNMasterconss() == nmasterconssfirst || seeeds[i]->getNMasterconss() == nmasterconsssecond ) )
          remainingSeeeds.push_back(seeeds[i]);
@@ -2741,7 +2737,7 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
          oneBlockSeeeds.push_back(seeeds[i]);
    }
 
-   for(int i = 0; i < oneBlockSeeeds.size(); ++i)
+   for( size_t i = 0; i < oneBlockSeeeds.size(); ++i)
    {
       delete oneBlockSeeeds[i];
       oneBlockSeeeds[i] = NULL;

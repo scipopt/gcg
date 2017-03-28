@@ -432,8 +432,6 @@ SCIP_RETCODE detection(
    /* Graph stuff for hmetis */
    MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
    char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
-   SCIP_CLOCK* metisclock;                   /**< clock to measure metis time */
-
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );

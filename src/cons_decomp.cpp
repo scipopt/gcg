@@ -1206,8 +1206,6 @@ SCIP_RETCODE setDetectionDefault(
          conshdlrdata->detectors[i]->setParamDefault(scip, conshdlrdata->detectors[i], &result);
       if( !quiet )
       {
-         char paramname[SCIP_MAXSTRLEN];
-         SCIP_Bool paramval;
          SCIP_Bool written = FALSE;
 
          (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
