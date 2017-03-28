@@ -694,7 +694,6 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
 {
    gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
 
-  // seeedPropagationData->seeedpool->decrementSeeedcount();
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
 

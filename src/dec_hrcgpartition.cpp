@@ -248,6 +248,7 @@ SCIP_RETCODE callMetis(
 
 
    remainingtime = DECgetRemainingTime(scip);
+   SCIP_CALL( SCIPcreateWallClock(scip, &metisclock) );
 
    if( remainingtime <= 0 )
    {
