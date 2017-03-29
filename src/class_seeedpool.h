@@ -153,7 +153,13 @@ public:
    void findDecompositions(
     );
 
-     std::vector<SeeedPtr> translateSeeeds( Seeedpool* otherpool, std::vector<Seeed*> otherseeeds, std::vector<ConsClassifier*> origclassifier );
+   void translateSeeedData(
+      Seeedpool* otherpool,                              /**< old seeedpool */
+      std::vector<Seeed*> otherseeeds,                   /**< seeeds to be translated */
+      std::vector<Seeed*>& newseeeds,                    /**< translated seeeds (pass empty vector) */
+      std::vector<ConsClassifier*> otherclassifier,      /**< consclassifier to be translated */
+      std::vector<ConsClassifier*>& newclassifier        /**< translated consclassifier (pass empty vector) */
+   );
 
    void populate(std::vector<SeeedPtr> seeeds);
 
@@ -256,6 +262,10 @@ public:
       std::vector<int>              conssClassDistribution,
       std::vector<SCIP_CONS*>       indexToCons
       );
+
+   void addConsClassifier(
+      ConsClassifier*               classifier                 /**< consclassifier to be added */
+   );
 
    bool distributionIsNoDuplicateOfDistributions(
       std::vector<int>              compDistribution,

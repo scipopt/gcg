@@ -285,6 +285,9 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
  *  returns number of removed classes */
 int ConsClassifier::removeEmptyClasses()
 {
+   if ( nClasses == 0 )
+      return 0;
+
    /** firstly, find empty classes */
    std::vector<int> nConssPerClasses(nClasses, 0);
    std::vector<int> toDelete(0);

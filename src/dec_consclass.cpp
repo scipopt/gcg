@@ -226,13 +226,33 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
     std::vector< std::vector<int> > subsetsOfConsclasses = getAllSubsets(consclassindices_both);
 
 
+    /** Begin of test (1/x) */
+    std::cout << "- open conss:";
+    for ( int i = 0; i < seeedOrig->getNOpenconss(); ++i )
+    {
+       std::cout << " " << seeedOrig->getOpenconss()[i];
+    }
+    std::cout << std::endl;
+    /** End of test (1/x) */
+
     for( size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset )
     {
        if( subsetsOfConsclasses[subset].size() == 0 && consclassindices_master.size() == 0 )
           continue;
 
        seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
-       /** set open cons that have type of the current subset or decomp info ONLY_MASTER to Master */
+
+       /** Begin of test (2/x) */
+       std::cout << "- class subset:";
+       for( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
+       {
+          std::cout << " " << subsetsOfConsclasses[subset][consclassId];
+       }
+       std::cout << std::endl;
+       std::cout << "- not to master in subset " << subset << ":";
+       /** End of test (2/x) */
+
+       /** set open cons that have a) type of the current subset or b) decomp info ONLY_MASTER to Master */
        for( int i = 0; i < seeed->getNOpenconss(); ++i )
        {
           bool foundCons = false;
@@ -245,7 +265,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
                   break;
               }
           }
-          /** only check consclassindices_master if current cons is not already found in a subset */
+          /** only check consclassindices_master if current cons has not already been found in a subset */
           if ( !foundCons )
           {
              for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
@@ -257,7 +277,13 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
                 }
              }
           }
+          /** Begin of test (3/x) */
+          std::cout << " " << i;
+          /** End of test (3/x) */
        }
+       /** Begin of test (4/x) */
+          std::cout << std::endl;
+       /** End of test (4/x) */
 
        /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
        std::stringstream decdesc;
