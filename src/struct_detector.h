@@ -61,7 +61,7 @@ struct DEC_Detector {
    SCIP_Bool             usefulRecall;       /** is it useful to call this detector on a descendant of the propagated seeed */
    DEC_DECOMP**          decomps;            /**< decompositions this detector has found */
    int                   ndecomps;           /**< number of decompositions the detector has found */
-   SCIP_CLOCK*           dectime;            /**< time the detector took to find decompositions */
+   SCIP_Real             dectime;            /**< time the detector took to find decompositions */
 
    DEC_DECL_FREEDETECTOR((*freeDetector));  /**< destructor of detector */
    DEC_DECL_INITDETECTOR((*initDetector));  /**< initialization method of detector */

@@ -79,7 +79,7 @@ Seeed::Seeed(
    int         givenNConss,                /**number of constraints */
    int         givenNVars                  /**number of variables */
 ) :
-   scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
+   scip(_scip), id(-1), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
       std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false)
 {
 }
@@ -87,7 +87,7 @@ Seeed::Seeed(
 Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
 {
    scip = (seeedToCopy->scip);
-   id = seeedpool->getNewIdForSeeed();
+   id = seeedToCopy->id;
    nBlocks = seeedToCopy->nBlocks;
    nVars = seeedToCopy->nVars;
    nConss = seeedToCopy->nConss;
@@ -652,6 +652,47 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int ad
    return SCIP_OKAY;
 }
 
+/** fills out the seeed with the hashmap constoblock if there are still assigned conss and vars */
+SCIP_RETCODE Seeed::assignSeeedFromConstoblockVector(std::vector<int> constoblock, int additionalNBlocks, Seeedpool* seeedpool)
+{
+   int oldNBlocks = nBlocks;
+   int consblock;
+   int cons;
+
+   assert(additionalNBlocks >= 0);
+
+   changedHashvalue = true;
+
+   for( int b = 0; b < additionalNBlocks; ++b )
+      addBlock();
+
+   for( int i = 0; i < getNOpenconss(); ++i )
+   {
+      cons = openConss[i];
+
+      if( constoblock[cons] == -1 )
+         continue;
+
+      consblock = oldNBlocks + ( constoblock[cons] - 1);
+      assert(consblock >= oldNBlocks && consblock <= nBlocks);
+      if( consblock == nBlocks )
+         bookAsMasterCons(cons);
+      else
+         bookAsBlockCons(cons, consblock);
+   }
+
+   flushBooked();
+
+  // showScatterPlot(seeedpool);
+
+   deleteEmptyBlocks();
+   sort();
+   assert(checkConsistency());
+   return SCIP_OKAY;
+}
+
+
+
 /** book a constraint to be added to the block constraints of the given block (after calling flushBookes) */
 SCIP_RETCODE Seeed::bookAsBlockCons(
         int consToBlock,
@@ -785,7 +826,7 @@ void Seeed::calcOpenconss()
 void Seeed::calcOpenvars()
 {
 
-   openVars = std::vector<int>(0);
+   openVars.clear();
    std::vector<bool> openVarsBool(nVars, true);
 
    changedHashvalue = true;
@@ -3059,6 +3100,17 @@ SCIP_RETCODE Seeed::setNBlocks(int newNBlocks)
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE Seeed::setID(
+          int newid
+    ){
+   this->id = newid;
+
+   return SCIP_OKAY;
+}
+
+
+
+
 /** sets open vars and conss to be calculated  */
 SCIP_RETCODE Seeed::setOpenVarsAndConssCalculated(bool value)
 {
@@ -3207,8 +3259,8 @@ void Seeed::showScatterPlot(
 	   else
 		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
    }
-   	   else
-   		 ofs << "plot 0" << std::endl;
+   else
+      ofs << "plot 0" << std::endl;
 
    if( !writeonly )
       ofs << "pause -1" << std::endl;

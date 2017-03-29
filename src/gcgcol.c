@@ -116,7 +116,7 @@ SCIP_RETCODE GCGcreateGcgCol(
 }
 
 /** free a gcg column */
-SCIP_RETCODE GCGfreeGcgCol(
+void GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
    )
 {
@@ -129,8 +129,6 @@ SCIP_RETCODE GCGfreeGcgCol(
    assert((*gcgcol)->vals != NULL);
    SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vals);
    SCIPfreeMemory((*gcgcol)->pricingprob, gcgcol);
-
-   return SCIP_OKAY;
 }
 
 /** create a gcg column from a solution to a pricing problem */

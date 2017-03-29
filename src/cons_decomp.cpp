@@ -192,7 +192,7 @@ SCIP_DECL_CONSINIT(consInitDecomp)
       detector = conshdlrdata->detectors[i];
       assert(detector != NULL);
 
-      SCIP_CALL( SCIPresetClock(scip, detector->dectime) );
+      detector->dectime = 0.;
       if( detector->initDetector != NULL )
       {
          SCIPdebugMessage("Calling initDetector of %s\n", detector->name);
@@ -268,7 +268,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
          SCIPdebugMessage("Calling freeDetector of %s\n", detector->name);
          SCIP_CALL( (*detector->freeDetector)(scip, detector) );
       }
-      SCIP_CALL( SCIPfreeClock(scip, &detector->dectime) );
       SCIPfreeBlockMemory(scip, &detector);
    }
 
@@ -596,7 +595,7 @@ SCIP_RETCODE DECincludeDetector(
    detector->usefulRecall = usefulRecall;
    detector->ndecomps = 0;
    detector->decomps = NULL;
-   SCIP_CALL( SCIPcreateWallClock(scip, &(detector->dectime)) );
+   detector->dectime = 0.;
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled", name);
@@ -1156,7 +1155,7 @@ SCIP_RETCODE GCGprintDetectorStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Detector statistics:       time     number     blocks\n");
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-10.10s       :   %8.2f %10d    ", conshdlrdata->detectors[i]->name, SCIPclockGetTime(conshdlrdata->detectors[i]->dectime), conshdlrdata->detectors[i]->ndecomps );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-10.10s       :   %8.2f %10d    ", conshdlrdata->detectors[i]->name, conshdlrdata->detectors[i]->dectime, conshdlrdata->detectors[i]->ndecomps );
       for( j = 0; j < conshdlrdata->detectors[i]->ndecomps; ++j )
       {
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %d", DECdecompGetNBlocks(conshdlrdata->detectors[i]->decomps[j]));
