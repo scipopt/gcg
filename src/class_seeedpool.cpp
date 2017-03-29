@@ -741,8 +741,8 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
             addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
 
          /** Start of testing consclassescollection2, i.e. vector of ConsClassifier objects, and reduceClasses */
-         testReduceClasses();
-         testConsClassesCollection( consclassescollection, consclassesnclasses, consclassescollection2 );
+         // testReduceClasses();
+         // testConsClassesCollection( consclassescollection, consclassesnclasses, consclassescollection2 );
          /** End of testing consclassescollection2, i.e. vector of ConsClassifier objects, and reduceClasses */
 
          reduceConsclasses();
@@ -1563,7 +1563,7 @@ void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std:
  }
 
 
-std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector<Seeed*> origseeeds )
+std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector<Seeed*> origseeeds, std::vector<ConsClassifier*> origclassifier )
 {
    int nrowsother  = origpool->nConss;
    int nrowsthis  = nConss;
@@ -1740,6 +1740,46 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
          newseeed = NULL;
       }
    }
+
+   /** TODO: output */
+   std::vector<ConsClassifier*> newclassifiers;
+
+   /** constructing ConsClassifiers for this seeedpool */
+   for ( size_t i = 0; i < origclassifier.size(); ++i )
+   {
+      ConsClassifier* oldclassifier = origclassifier[i];
+      ConsClassifier* newclassifier = new ConsClassifier(scip, oldclassifier->getName(), oldclassifier->getNClasses(), nrowsthis);
+      int bufferclassindex = -1;
+
+      /** copy class information */
+      for ( int j = 0; j < oldclassifier->getNClasses(); ++j )
+      {
+         newclassifier->setClassName( j, oldclassifier->getClassName(j) );
+         newclassifier->setClassDescription( j, oldclassifier->getClassDescription(j) );
+         newclassifier->setClassDecompInfo( j, oldclassifier->getClassDecompInfoOfClass(j) );
+      }
+
+      /** assign new conss to classes */
+      for ( int c = 0; c < nrowsthis; ++c )
+      {
+         if ( rowthistoother[c] != -1 )
+         {
+            newclassifier->assignConsToClass( c, oldclassifier->getClassOfCons( rowthistoother[c] ) );
+         }
+         else
+         {
+            if ( bufferclassindex == -1)
+            {
+               bufferclassindex = newclassifier->addClass( "buffer", "This class contains constraints which are new in the presolved problem.", BOTH );
+            }
+            newclassifier->assignConsToClass( c, bufferclassindex );
+         }
+      }
+
+      /** remove empty classes */
+      newclassifier->removeEmptyClasses();
+   }
+
 
    return newseeeds;
 }
@@ -2050,7 +2090,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
     std::cout << " consclassifier scipconstypes: " << " classification with " << foundConstypes.size()  << " different constraint classes" << std::endl;
 
     /** Start of testing ConsClassifier */
-    ConsClassifier* classifier = new ConsClassifier( scip, "SCIPConstypes", (int) foundConstypes.size(), getNConss() );
+    ConsClassifier* classifier = new ConsClassifier( scip, "constypes", (int) foundConstypes.size(), getNConss() );
 
     for( int c = 0; c < classifier->getNClasses(); ++c )
     {
@@ -2194,7 +2234,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
 
      /** Start of testing ConsClassifier */
-     ConsClassifier* classifier = new ConsClassifier( scip, "Consnames_ident", (int) nameClasses.size(), getNConss() );
+     ConsClassifier* classifier = new ConsClassifier( scip, "consnames", (int) nameClasses.size(), getNConss() );
 
      for( int c = 0; c < classifier->getNClasses(); ++c )
      {
@@ -2258,7 +2298,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
 
      /* Start of testing ConsClassifier (1/3) */
      std::stringstream classifierName;
-     classifierName << "Levensthein_Dist_Con:" << connectivity;
+     classifierName << "lev_dist_" << connectivity;
      ConsClassifier* classifier = new ConsClassifier( scip, classifierName.str().c_str(), 0, getNConss() );
      /* End of testing ConsClassifier (1/3) */
 
@@ -2443,7 +2483,7 @@ const  SCIP_Real * Seeedpool::getValsForCons(int cons){
      std::cout << " consclassifier nonzeros: comparison of number of nonzeros  " << " yields a distribution with " << differentNNonzeros.size()  << " different constraint classes" << std::endl;
 
      /** Start of testing ConsClassifier */
-     ConsClassifier* classifier = new ConsClassifier( scip, "NNonzeros", (int) differentNNonzeros.size(), getNConss() );
+     ConsClassifier* classifier = new ConsClassifier( scip, "nonzeros", (int) differentNNonzeros.size(), getNConss() );
 
      for( int c = 0; c < classifier->getNClasses(); ++c )
      {

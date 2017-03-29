@@ -153,7 +153,7 @@ public:
    void findDecompositions(
     );
 
-     std::vector<SeeedPtr> translateSeeeds( Seeedpool* otherpool, std::vector<Seeed*> otherseeeds );
+     std::vector<SeeedPtr> translateSeeeds( Seeedpool* otherpool, std::vector<Seeed*> otherseeeds, std::vector<ConsClassifier*> origclassifier );
 
    void populate(std::vector<SeeedPtr> seeeds);
 

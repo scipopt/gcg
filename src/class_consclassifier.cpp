@@ -64,6 +64,26 @@ ConsClassifier::ConsClassifier(
 
 }
 
+/** copy constructor */
+ConsClassifier::ConsClassifier( const ConsClassifier* toCopy )
+{
+   assert( toCopy != NULL );
+   scip = toCopy->scip;
+   name = toCopy->name;
+   nClasses = toCopy->nClasses;
+   nConss = toCopy->nConss;
+   consToClasses = toCopy->consToClasses;
+   classNames.assign(nClasses, "");
+   classDescriptions.assign(nClasses, "");
+   classDecompInfo.assign(nClasses, BOTH);
+   for ( int i = 0; i < nClasses; ++i )
+   {
+      classNames[i] = toCopy->classNames[i];
+      classDescriptions[i] = toCopy->classDescriptions[i];
+      classDecompInfo[i] = toCopy->classDecompInfo[i];
+   }
+}
+
 /** destructor */
 ConsClassifier::~ConsClassifier()
 {
@@ -260,6 +280,45 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
    return newClassifier;
 }
 
+
+/** removes all classes which do not have any assigned constraint (classindices may change)
+ *  returns number of removed classes */
+int ConsClassifier::removeEmptyClasses()
+{
+   /** firstly, find empty classes */
+   std::vector<int> nConssPerClasses(nClasses, 0);
+   std::vector<int> toDelete(0);
+
+   for ( int i = 0; i < nConss; ++i )
+      ++nConssPerClasses[consToClasses[i]];
+
+   for ( int i = 0; i < nClasses; ++i )
+   {
+      if ( nConssPerClasses[i] == 0 )
+      {
+         toDelete.push_back(i);
+      }
+   }
+
+   /** secondly, update data */
+   for ( size_t i = 0; i < toDelete.size(); ++i )
+   {
+      int classindex = toDelete[toDelete.size() - 1 - i];
+
+      for ( int j = 0; j < nConss; ++j )
+      {
+         assert( consToClasses[j] != classindex );
+         if ( consToClasses[j] > classindex )
+            --consToClasses[j];
+      }
+      classNames.erase(classNames.begin() + classindex);
+      classDescriptions.erase(classDescriptions.begin() + classindex);
+      classDecompInfo.erase(classDecompInfo.begin() + classindex);
+      --nClasses;
+   }
+
+   return (int) toDelete.size();
+}
 
 /** sets the decomposition code of a class */
 void ConsClassifier::setClassDecompInfo( int givenClassindex, DECOMPINFO givenDecompInfo )

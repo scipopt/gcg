@@ -218,6 +218,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
           case gcg::ONLY_MASTER:
              consclassindices_master.push_back( i );
              break;
+          case gcg::ONLY_PRICING:
+             break;
        }
     }
 
@@ -259,7 +261,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
        /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
        std::stringstream decdesc;
-       decdesc << "consclass" << "_" << classifier->getName() << ":" << classifier->getClassName( subsetsOfConsclasses[subset][0] );
+       decdesc << "consclass" << "\\_" << classifier->getName() << ":\\\\" << classifier->getClassName( subsetsOfConsclasses[subset][0] );
        for ( size_t consclassId = 1; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
        {
           decdesc << "-" << classifier->getClassName( subsetsOfConsclasses[subset][consclassId] );

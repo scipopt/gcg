@@ -75,6 +75,12 @@ public:
       int                  nConss               /**< number of constraints to be classified */
    );
 
+   /** copy constructor */
+   ConsClassifier(
+      const ConsClassifier* toCopy              /**< ConsClassifier to be copied */
+   );
+
+
    /** destructor */
    ~ConsClassifier();
 
@@ -153,6 +159,11 @@ public:
     *  and lower than 2*(upper bound) (returns NULL otherwise) */
    ConsClassifier* reduceClasses(
       int maxNumberOfClasses           /**< upper bound */
+   );
+
+   /** removes all classes which do not have any assigned constraint (classindices may change)
+    *  returns number of removed classes */
+   int removeEmptyClasses(
    );
 
    /** sets the decomposition code of a class */

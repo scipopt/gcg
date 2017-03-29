@@ -58,6 +58,7 @@
 #include "scip/clock.h"
 #include "class_seeedpool.h"
 #include "class_seeed.h"
+#include "class_consclassifier.h"
 
 
 #include <vector>
@@ -684,7 +685,8 @@ SCIP_RETCODE DECdetectStructure(
 
    gcg::Seeedpool seeedpoolunpresolved(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
    std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
-   std::vector<std::vector<int>> conssClassDistributions;         /**< collection of different constraint class distributions */
+   //std::vector<std::vector<int>> conssClassDistributions;         /**< collection of different constraint class distributions */
+   std::vector<gcg::ConsClassifier*> conssClassDistributions;         /**< collection of different constraint class distributions */
    std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
 
    std::vector<gcg::SeeedPtr> seeedsunpresolved;                    /**< seeeds that were found for the unpresolved problem */
@@ -725,7 +727,10 @@ SCIP_RETCODE DECdetectStructure(
       seeedsunpresolved = seeedpoolunpresolved.findSeeeds();
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished finding decompositions for original problem!\n");
       for( i = 0; i < seeedpoolunpresolved.getNConssClassDistributions(); ++i )
-         conssClassDistributions.push_back(seeedpoolunpresolved.getConssClassDistributionVector(i));
+      {
+         gcg::ConsClassifier* classifier = new gcg::ConsClassifier( seeedpoolunpresolved.getConsClassifier(i) );
+         conssClassDistributions.push_back( classifier );
+      }
    }
 
 
@@ -770,7 +775,7 @@ SCIP_RETCODE DECdetectStructure(
 	  if( calculateOrigDecomps )
 	  {
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");
-	     std::vector<gcg::Seeed*> translatedSeeeds = seeedpool->translateSeeeds(&seeedpoolunpresolved, seeedsunpresolved);
+	     std::vector<gcg::Seeed*> translatedSeeeds = seeedpool->translateSeeeds(&seeedpoolunpresolved, seeedsunpresolved, conssClassDistributions);
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
 
 	     seeedpool->populate(translatedSeeeds);
@@ -781,7 +786,7 @@ SCIP_RETCODE DECdetectStructure(
              seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
 
         for( size_t d = 0; d < conssClassDistributions.size(); ++d )
-             seeedpool->addConssClassDistribution(conssClassDistributions[d], indexToCons);
+             /*seeedpool->addConssClassDistribution(conssClassDistributions[d], indexToCons)*/;
 
 	  }
 
