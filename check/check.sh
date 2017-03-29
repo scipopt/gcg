@@ -236,11 +236,18 @@ do
                     fi
                     if test -f $BLKFILE
                     then
-                        presol=`grep -A1 PRESOLVE $BLKFILE`
-                    # if we find a presolving file
+                        EXT=${BLKFILE##*.}
+                        if test "$EXT" = "gz"
+                        then
+                            presol=`zgrep -A1 PRESOLVE $BLKFILE`
+                        else
+                            presol=`grep -A1 PRESOLVE $BLKFILE`
+                        fi
+                        echo $presol
+                        # If the decomposition contains presolving information ...
                         if test $? = 0
                         then
-                        # look if its in there
+                            # ... check if it belongs to a presolved problem
                             if grep -xq 1 - <<EOF
 $presol
 EOF
