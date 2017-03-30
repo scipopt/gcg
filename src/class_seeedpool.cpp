@@ -287,7 +287,7 @@ SCIP_Bool cmpSeeedsMaxWhite(SeeedPtr i, SeeedPtr j)
 
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout( std::vector<SeeedPtr> finishedSeeeds, size_t nDecomps, SCIP_Bool addTrivialDecomp )
-      {
+         {
    std::vector<SeeedPtr> justBest(0);
    for( size_t dec = 0; dec < nDecomps && dec < finishedSeeeds.size(); ++dec)
    {
@@ -1267,14 +1267,18 @@ delete seeedPropData;
     std::vector<int> successDetectors;
     std::vector<SeeedPtr> delSeeeds;
     SCIP_Bool usemaxwhitescore;
+    SCIP_Bool dothinout;
+
 
     size_t nDecomps = 6;
+
     SCIP_Bool addTrivialDecomp = FALSE;
 
     successDetectors = std::vector<int>(nDetectors, 0);
     ndecompositions = 0;
     delSeeeds = std::vector<SeeedPtr>(0);
     usemaxwhitescore = TRUE;
+    dothinout = FALSE;
 
     finishedSeeeds = findSeeeds();
 
@@ -1283,7 +1287,7 @@ delete seeedPropData;
     std::sort (finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
 
     /** hack to just use max white seeed */
-    if( usemaxwhitescore )
+    if( usemaxwhitescore && dothinout )
        finishedSeeeds = thinout( finishedSeeeds, nDecomps, addTrivialDecomp );
 
     /** fill out the decompositions */
