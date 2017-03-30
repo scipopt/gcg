@@ -28,6 +28,7 @@
 /**@file   cons_decomp.h
  * @brief  constraint handler for structure detection
  * @author Martin Bergner
+ * @author Michael Bastubbe
  *
  * This constraint handler will run all registered structure detectors in
  * increasing priority until the first detector finds a suitable structure.
@@ -40,10 +41,6 @@
 
 #include "scip/scip.h"
 #include "type_detector.h"
-
-
-
-
 
 
 #ifdef __cplusplus
@@ -131,6 +128,15 @@ extern
 SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+   );
+
+
+/** sets (and adds) a (possible incomplete) detection structure **/
+extern
+SCIP_RETCODE SCIPconshdlrDecompAddConsToBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_HASHMAP*         consToBlock,        /**< possible incomplete detection info */
+   SCIP_HASHMAP*         varsToBlock        /**< possible incomplete detection info stored as two hashmaps*/
    );
 
 /** interface method to detect the structure */

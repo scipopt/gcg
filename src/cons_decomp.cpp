@@ -104,6 +104,7 @@ struct SCIP_ConshdlrData
    DEC_DECOMP**          decdecomps;                        /**< array of decomposition structures */
    DEC_DETECTOR**        detectors;                         /**< array of structure detectors */
    int*                  priorities;                        /**< priorities of the detectors */
+   std::vector<SCIP_HASHMAP*> initalpartialdecomps;                      /**< possible incomplete decompositions given by user */
    int                   ndetectors;                        /**< number of detectors */
    SCIP_CLOCK*           detectorclock;                     /**< clock to measure detection time */
    SCIP_Bool             hasrun;                            /**< flag to indicate whether we have already detected */
@@ -412,6 +413,27 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
       conshdlrdata->decdecomps[0] = decdecomp;
       conshdlrdata->ndecomps += 1;
    }
+   return SCIP_OKAY;
+}
+
+/** sets (and adds) the decomposition structure **/
+SCIP_RETCODE SCIPconshdlrDecompAddConsToBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_HASHMAP*         consToBlock,        /**< possible incomplete detection info */
+   SCIP_HASHMAP*         varsToBlock        /**< possible incomplete detection info stored as two hashmaps*/
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->initalpartialdecomps.push_back(consToBlock);
+
    return SCIP_OKAY;
 }
 
