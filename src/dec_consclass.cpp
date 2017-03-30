@@ -190,6 +190,13 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
     std::vector<int> consclassindices_both = std::vector<int>(0);
     std::vector<int> consclassindices_master = std::vector<int>(0);
 
+    /** Begin of test (1/6) */
+//    for ( int i = 0; i < classifier->getNClasses(); ++i)
+//    {
+//       classifier->setClassDecompInfo( i, gcg::ONLY_MASTER );
+//    }
+    /** End of test (1/6) */
+
     /** check if there are too many classes in this distribution and skip it if so */
 
     if ( classifier->getNClasses() > maximumnclasses )
@@ -226,14 +233,21 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
     std::vector< std::vector<int> > subsetsOfConsclasses = getAllSubsets(consclassindices_both);
 
 
-    /** Begin of test (1/x) */
-    std::cout << "- open conss:";
-    for ( int i = 0; i < seeedOrig->getNOpenconss(); ++i )
-    {
-       std::cout << " " << seeedOrig->getOpenconss()[i];
-    }
-    std::cout << std::endl;
-    /** End of test (1/x) */
+    /** Begin of test (2/6) */
+//    std::cout << "- classnames: ";
+//    for ( int i = 0; i < classifier->getNClasses(); ++i )
+//    {
+//       std::cout << " " << i << "_" << classifier->getClassName(i);
+//    }
+//    std::cout << std::endl;
+//
+//    std::cout << "- (open conss)_class:";
+//    for ( int i = 0; i < seeedOrig->getNOpenconss(); ++i )
+//    {
+//       std::cout << " " << seeedOrig->getOpenconss()[i] << "_" << classifier->getClassOfCons( seeedOrig->getOpenconss()[i] );
+//    }
+//    std::cout << std::endl;
+    /** End of test (2/6) */
 
     for( size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset )
     {
@@ -242,15 +256,15 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
        seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
 
-       /** Begin of test (2/x) */
-       std::cout << "- class subset:";
-       for( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
-       {
-          std::cout << " " << subsetsOfConsclasses[subset][consclassId];
-       }
-       std::cout << std::endl;
-       std::cout << "- not to master in subset " << subset << ":";
-       /** End of test (2/x) */
+       /** Begin of test (3/6) */
+//       std::cout << "- class subset:";
+//       for( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
+//       {
+//          std::cout << " " << subsetsOfConsclasses[subset][consclassId];
+//       }
+//       std::cout << std::endl;
+//       std::cout << "- assigned to master in subset " << subset << ":";
+       /** End of test (3/6) */
 
        /** set open cons that have a) type of the current subset or b) decomp info ONLY_MASTER to Master */
        for( int i = 0; i < seeed->getNOpenconss(); ++i )
@@ -273,25 +287,42 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
                 if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == consclassindices_master[consclassId] )
                 {
                    seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+//                   foundCons = true;
                    break;
                 }
              }
           }
-          /** Begin of test (3/x) */
-          std::cout << " " << i;
-          /** End of test (3/x) */
+          /** Begin of test (4/6) */
+//          if ( foundCons ) std::cout << " " << i;
+          /** End of test (4/6) */
        }
-       /** Begin of test (4/x) */
-          std::cout << std::endl;
-       /** End of test (4/x) */
+       /** Begin of test (5/6) */
+//       std::cout << std::endl;
+       /** End of test (5/6) */
 
        /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
        std::stringstream decdesc;
-       decdesc << "consclass" << "\\_" << classifier->getName() << ":\\\\" << classifier->getClassName( subsetsOfConsclasses[subset][0] );
-       for ( size_t consclassId = 1; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
+       decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
+       for ( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
        {
-          decdesc << "-" << classifier->getClassName( subsetsOfConsclasses[subset][consclassId] );
+          if ( consclassId > 0 )
+          {
+             decdesc << "-";
+          }
+          decdesc << classifier->getClassName( subsetsOfConsclasses[subset][consclassId] );
        }
+       for ( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
+       {
+          if ( consclassId > 0 || subsetsOfConsclasses[subset].size() > 0)
+          {
+             decdesc << "-";
+          }
+          decdesc << classifier->getClassName( consclassindices_master[consclassId] );
+       }
+
+       /** Begin of test (6/6) */
+//       std::cout << decdesc.str() << std::endl;
+       /** Begin of test (6/6) */
 
        seeed->flushBooked();
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
