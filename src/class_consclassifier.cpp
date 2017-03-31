@@ -36,9 +36,19 @@
 #include "class_consclassifier.h"
 
 #include <assert.h>
+#include <sstream>
+#include <algorithm>
 
 
 namespace gcg {
+
+/* local methods */
+
+struct sort_pred {
+    bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
+        return left.second < right.second;
+    }
+};
 
 
 /** constructor */
@@ -175,6 +185,79 @@ bool ConsClassifier::isConsClassified( int givenConsindex )
    assert(0 <= givenConsindex && givenConsindex < nConss);
 
    return consToClasses[givenConsindex] != -1;
+}
+
+/** returns classifier with reduced number of classes */
+ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
+{
+   assert( givenMaxNumber > 0 );
+
+   if ( nClasses <= givenMaxNumber || nClasses >= 2*givenMaxNumber )
+      return NULL;
+
+   std::vector<int> classindexmapping(nClasses, -1);
+   int enlargedclass = nClasses - givenMaxNumber;
+   int enlargedclassid = -1;
+   ConsClassifier* newClassifier;
+   std::stringstream newName;
+   std::stringstream newClassdesc;
+
+   /** create new ConsClassifier */
+   newName << name << "_Reduced_To_" << givenMaxNumber;
+   newClassifier = new ConsClassifier( scip, newName.str().c_str(), givenMaxNumber, nConss);
+
+   /** count number of constraints per class */
+   std::vector<std::pair<int,int>> nmembers( nClasses, std::pair<int,int>(0,0) );
+   for( int i = 0; i < nClasses; ++i )
+   {
+      nmembers[i].first = i;
+   }
+
+   std::vector<int>::const_iterator iter = consToClasses.begin();
+   std::vector<int>::const_iterator iterend = consToClasses.end();
+   for( ; iter < iterend; ++iter )
+   {
+      nmembers[*iter].second++;
+   }
+
+   /** map the classes with high numbers of assigned constraints to new class indices */
+   std::sort( nmembers.begin(), nmembers.end(), sort_pred() );
+   for( int i = 0; i < newClassifier->getNClasses(); ++i )
+   {
+      classindexmapping[nmembers[enlargedclass + i].first] = i;
+   }
+
+   /** reassign constraints */
+   enlargedclassid = nmembers[enlargedclass].first;
+
+   for( int i = 0; i < newClassifier->getNConss(); ++i)
+   {
+      if( classindexmapping[consToClasses[i]] == -1 )
+         newClassifier->assignConsToClass( i, classindexmapping[enlargedclassid] );
+      else
+         newClassifier->assignConsToClass( i, classindexmapping[consToClasses[i]] );
+   }
+
+   /** set new class names and descriptions */
+   newClassifier->setClassName( classindexmapping[enlargedclassid], "Merged" );
+
+   for ( int i = 0; i < nClasses; ++i )
+   {
+     if ( classindexmapping[i] == -1 || i == enlargedclassid )
+     {
+        newClassdesc << getClassDescription( i ) << " - ";
+     }
+     else
+     {
+        newClassifier->setClassName( classindexmapping[i], getClassName(i) );
+        newClassifier->setClassDescription( classindexmapping[i], getClassDescription(i) );
+     }
+   }
+
+   newClassifier->setClassDescription( classindexmapping[enlargedclassid], newClassdesc.str().c_str() );
+
+
+   return newClassifier;
 }
 
 

@@ -37,11 +37,14 @@
 #include "cons_decomp.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "class_consclassifier.h"
 #include "gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
 #include "scip_misc.h"
 #include "scip/clock.h"
+
+#include <sstream>
 
 #include <iostream>
 
@@ -181,60 +184,94 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   SCIPgetIntParam(scip, "detectors/consclass/maxnclasses", &maximumnclasses); /* if  distribution of classes exceed this number its skipped */
 
-  for( int conssclass = 0; conssclass < seeedPropagationData->seeedpool->getNConssClassDistributions(); ++conssclass )
+  for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifier(); ++classifierIndex )
   {
-    int nclasses = seeedPropagationData->seeedpool->getNClassesOfDistribution(conssclass);
-    std::vector<int> classforcons = seeedPropagationData->seeedpool->getConssClassDistributionVector(conssclass);
-    std::vector<int> consclassindices = std::vector<int>(0);
+    gcg::ConsClassifier* classifier = seeedPropagationData->seeedpool->getConsClassifier( classifierIndex );
+    std::vector<int> consclassindices_both = std::vector<int>(0);
+    std::vector<int> consclassindices_master = std::vector<int>(0);
 
-    /** check if there are to  many classes in this distribution and skip it if so */
+    /** check if there are too many classes in this distribution and skip it if so */
 
-    if ( nclasses > maximumnclasses )
+    if ( classifier->getNClasses() > maximumnclasses )
     {
-       std::cout << " the current consclass distribution includes " <<  nclasses << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
+       std::cout << " the current consclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
        continue;
     }
 
-  seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-  seeedOrig->setDetectorPropagated(detector);
+    seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+    seeedOrig->setDetectorPropagated(detector);
 
-  if(!seeedOrig->areOpenVarsAndConssCalculated())
-  {
-      seeedOrig->calcOpenconss();
-      seeedOrig->calcOpenvars();
-      seeedOrig->setOpenVarsAndConssCalculated(true);
-  }
+    if( !seeedOrig->areOpenVarsAndConssCalculated() )
+    {
+       seeedOrig->calcOpenconss();
+       seeedOrig->calcOpenvars();
+       seeedOrig->setOpenVarsAndConssCalculated(true);
+    }
 
-  for( int i = 0; i < nclasses; ++ i)
-      consclassindices.push_back(i);
+    for( int i = 0; i < classifier->getNClasses(); ++ i )
+    {
+       switch( classifier->getClassDecompInfoOfClass( i ) )
+       {
+          case gcg::BOTH:
+             consclassindices_both.push_back( i );
+             break;
+          case gcg::ONLY_MASTER:
+             consclassindices_master.push_back( i );
+             break;
+       }
+    }
 
-  std::vector< std::vector<int> > subsetsOfConsclasses = getAllSubsets(consclassindices);
+    std::vector< std::vector<int> > subsetsOfConsclasses = getAllSubsets(consclassindices_both);
 
-  for(size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset)
-  {
-      if(subsetsOfConsclasses[subset].size() == 0)
+
+    for( size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset )
+    {
+       if( subsetsOfConsclasses[subset].size() == 0 && consclassindices_master.size() == 0 )
           continue;
 
-      seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
-         /** set open cons that have type of the current subset to Master */
-      for( int i = 0; i < seeed->getNOpenconss(); ++i)
-      {
-          for(size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
+       seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
+       /** set open cons that have type of the current subset or decomp info ONLY_MASTER to Master */
+       for( int i = 0; i < seeed->getNOpenconss(); ++i )
+       {
+          bool foundCons = false;
+          for( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
           {
-              if( classforcons[seeed->getOpenconss()[i]] == subsetsOfConsclasses[subset][consclassId] )
+              if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == subsetsOfConsclasses[subset][consclassId] )
               {
                   seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+                  foundCons = true;
                   break;
               }
           }
-      }
-      seeed->flushBooked();
-      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "consclass");
-      seeed->addDetectorChainInfo(decinfo);
+          /** only check consclassindices_master if current cons is not already found in a subset */
+          if ( !foundCons )
+          {
+             for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
+             {
+                if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == consclassindices_master[consclassId] )
+                {
+                   seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+                   break;
+                }
+             }
+          }
+       }
 
-      foundseeeds.push_back(seeed);
-  }
-  delete seeedOrig;
+       /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
+       std::stringstream decdesc;
+       decdesc << "consclass" << "_" << classifier->getName() << ":" << classifier->getClassName( subsetsOfConsclasses[subset][0] );
+       for ( size_t consclassId = 1; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
+       {
+          decdesc << "-" << classifier->getClassName( subsetsOfConsclasses[subset][consclassId] );
+       }
+
+       seeed->flushBooked();
+       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
+       seeed->addDetectorChainInfo(decinfo);
+
+       foundseeeds.push_back(seeed);
+    }
+    delete seeedOrig;
  }
 
   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );

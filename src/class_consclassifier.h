@@ -143,11 +143,17 @@ public:
 
 
    /** returns whether a constraint is already assigned to a class */
-   bool isConsClassified
-   (
+   bool isConsClassified(
       int consindex                    /**< index of constraint */
    );
 
+
+   /** returns classifier with reduced number of classes
+    *  if the current number of classes is greater than an upper bound
+    *  and lower than 2*(upper bound) (returns NULL otherwise) */
+   ConsClassifier* reduceClasses(
+      int maxNumberOfClasses           /**< upper bound */
+   );
 
    /** sets the decomposition code of a class */
    void setClassDecompInfo(

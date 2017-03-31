@@ -724,7 +724,7 @@ reoptimization/sepabestsol = FALSE
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
 reoptimization/storevarhistory = FALSE
 
-# re-use pseudo costs if the objective function changed only slightly 
+# re-use pseudo costs if the objective function changed only slightly
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
 reoptimization/usepscost = FALSE
 
@@ -5392,7 +5392,7 @@ sepa/basis/mincuts = 1
 sepa/basis/chgobjallways = FALSE
 
 # parameter returns if cuts are forced to enter the LP
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+# [type: bool, advanced: FALSE, range: {TRUE,FALSE}, default: FALSE]
 sepa/basis/forcecuts = FALSE
 
 # flag to indicate whether the solver is enabled

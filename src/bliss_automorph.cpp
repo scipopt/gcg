@@ -57,7 +57,11 @@ struct struct_hook
    SCIP_HASHMAP* consmap;                    /**< hashmap for permutated constraints */
    SCIP** scips;                             /**< array of scips to search for automorphisms */
    int* nodemap;                             /**< mapping of the nodes; filled generator-wise */
+<<<<<<< HEAD
    int* consperm;
+=======
+   int* consperm;                            /**< mapping of constraints */
+>>>>>>> feature/reform_detection
 
    /** constructor for the hook struct*/
    struct_hook(
