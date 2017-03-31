@@ -609,7 +609,7 @@ SCIP_RETCODE writeDecompCode(
 
    assert(decomp != NULL);
 
-   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%c-%d", detectorchainstring, DECdecompGetNBlocks(decomp));
+   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d", detectorchainstring, DECdecompGetNBlocks(decomp));
 
    if( readerdata->usegp )
    {
@@ -661,7 +661,15 @@ SCIP_RETCODE writeDecompCode(
 
    if(!readerdata->picturesonly)
    {
-      SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
+      /*@todo make '_' in detectorchainstring/decompname save */
+      for(i = 0; i < SCIP_MAXSTRLEN; i++)
+      {
+         if(decompname[i] == '_'){
+            decompname[i] = '-';
+         }
+      }
+
+      SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}\n", decompname);
       SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
       SCIPinfoMessage(scip, file, "                                                                \n");
    }
@@ -684,7 +692,7 @@ SCIP_RETCODE writeDecompCode(
       SCIPinfoMessage(scip, file, "                                                                \n");
       SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
       SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                            \n");
-      SCIPinfoMessage(scip, file, "  Found by detector: & %s \\\\                                  \n",detectorchainstring);
+      SCIPinfoMessage(scip, file, "  Found by detector: & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\  \n",detectorchainstring);
       switch(DECdecompGetType(decomp))
       {
          case DEC_DECTYPE_ARROWHEAD:
