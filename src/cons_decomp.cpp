@@ -701,6 +701,9 @@ SCIP_RETCODE DECdetectStructure(
 
    presolveOrigProblem = TRUE;
 
+   /** Test: activate calculateOrigDecomps */
+   // SCIP_CALL( SCIPsetBoolParam( scip, "detection/origprob/enabled", TRUE ) );
+
    SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -718,8 +721,6 @@ SCIP_RETCODE DECdetectStructure(
 
    candidatesNBlocks = seeedpoolunpresolved.getSortedCandidatesNBlocks();
 
-   /** Test: activate calculateOrigDecomps */
-   // calculateOrigDecomps = true;
 
    /** detection for original problem */
    if( conshdlrdata->ndecomps == 0 && calculateOrigDecomps )

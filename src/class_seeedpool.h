@@ -245,22 +245,17 @@ public:
       int classifierIndex                     /**< index of constraint classifier */
    );
 
-   void addConssClassesForSCIPConstypes(
+   ConsClassifier* createConsClassifierForSCIPConstypes(
       );
 
-   void addConssClassesForConsnamesDigitFreeIdentical(
+   ConsClassifier* createConsClassifierForConsnamesDigitFreeIdentical(
       );
 
-   void addConssClassesForConsnamesLevenshteinDistanceConnectivity(
+   ConsClassifier* createConsClassifierForConsnamesLevenshteinDistanceConnectivity(
       int connectivity
          );
 
-   void addConssClassesForNNonzeros(
-      );
-
-   void addConssClassDistribution(
-      std::vector<int>              conssClassDistribution,
-      std::vector<SCIP_CONS*>       indexToCons
+   ConsClassifier* createConsClassifierForNNonzeros(
       );
 
    void addConsClassifier(
@@ -272,6 +267,10 @@ public:
       int                           nClasses,
       std::vector<std::vector<int>> distributions
       );
+
+   bool classifierIsNoDuplicateOfClassifiers(
+      ConsClassifier*              compClassifier
+   );
 
    void reduceConsclasses();
 
