@@ -239,6 +239,7 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     \n");
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
    SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
+   SCIPinfoMessage(scip, file, "\\usepackage{tabularx}                                                           \n");
    if( readerdata->usegp )
    {
       SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                \n");
@@ -691,8 +692,10 @@ SCIP_RETCODE writeDecompCode(
    {
       SCIPinfoMessage(scip, file, "                                                                \n");
       SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
-      SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                            \n");
-      SCIPinfoMessage(scip, file, "  Found by detector: & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\  \n",detectorchainstring);
+      SCIPinfoMessage(scip, file, "\\begin{tabular}{lp{10cm}}                                      \n");
+      SCIPinfoMessage(scip, file,
+         "  Found by detector: & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\ \n",
+         detectorchainstring);
       switch(DECdecompGetType(decomp))
       {
          case DEC_DECTYPE_ARROWHEAD:
