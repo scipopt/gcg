@@ -721,6 +721,18 @@ SCIP_Bool GCGmasterVarIsRay(
    return vardata->data.mastervardata.isray;
 }
 
+/** returns whether the master variable is a copy of an original variable */
+SCIP_Bool GCGmasterVarIsOriginalCopy(
+   SCIP_VAR*             var                 /**< variable data structure */
+   )
+{
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   /* if the block number is negative then the variable is a copy from the original */
+   return GCGvarGetBlock(var) < 0;
+}
+
 /** returns the number of original variables the master variable is contained in */
 int GCGmasterVarGetNOrigvars(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -1024,24 +1036,20 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
 
 /** creates the corresponding pricing variable for the given original variable */
 SCIP_RETCODE GCGlinkingVarCreatePricingVar(
-   SCIP*                 masterscip,         /**< master problem SCIP data structure */
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
    int                   pricingprobnr,      /**< number of the pricing problem */
    SCIP_VAR*             origvar,            /**< original variable */
-   SCIP_VAR**            var,                /**< pointer to store new pricing variable */
-   SCIP_CONS**           linkcons            /**< constraint linking pricing variables */
+   SCIP_VAR**            var                 /**< pointer to store new pricing variable */
    )
 {
    SCIP_VARDATA* vardata;
    char name[SCIP_MAXSTRLEN];
 
-   assert(masterscip != NULL);
    assert(pricingscip != NULL);
    assert(pricingprobnr >= 0);
    assert(origvar != NULL);
    assert(GCGoriginalVarIsLinking(origvar));
    assert(var != NULL);
-   assert(linkcons != NULL);
 
    /* create variable data */
    SCIP_CALL( SCIPallocBlockMemory(pricingscip, &vardata) );
@@ -1057,6 +1065,26 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    SCIP_CALL( SCIPcreateVar(pricingscip, var, name, SCIPvarGetLbGlobal(origvar),
          SCIPvarGetUbGlobal(origvar), 0.0, SCIPvarGetType(origvar),
          TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
+
+   return SCIP_OKAY;
+}
+
+/** creates the corresponding constraint in the master problem for the linking variable */
+SCIP_RETCODE GCGlinkingVarCreateMasterCons(
+   SCIP*                 masterscip,         /**< msater problem SCIP data structure */
+   int                   pricingprobnr,      /**< number of the pricing problem */
+   SCIP_VAR*             origvar,            /**< original variable */
+   SCIP_CONS**           linkcons            /**< constraint linking pricing variables */
+   )
+{
+   SCIP_VARDATA* vardata;
+   char name[SCIP_MAXSTRLEN];
+
+   assert(masterscip != NULL);
+   assert(pricingprobnr >= 0);
+   assert(origvar != NULL);
+   assert(GCGoriginalVarIsLinking(origvar));
+   assert(linkcons != NULL);
 
    /* add corresponding linking constraint to the master problem */
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "l_%s_%d", SCIPvarGetName(origvar), pricingprobnr);

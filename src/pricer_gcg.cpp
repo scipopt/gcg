@@ -3142,6 +3142,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
 { /*lint -esym(715, stopearly)*/
    SCIP_RETCODE retcode;
+   int decompmode;
 
    assert(scip == scip_);
    assert(pricer != NULL);
@@ -3150,6 +3151,16 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    assert(farkaspricing != NULL);
 
    *result = SCIP_DIDNOTRUN;
+
+   /* retrieving the decomposition mode */
+   SCIP_CALL( SCIPgetIntParam(origprob, "relaxing/gcg/mode", &decompmode) );
+
+   /* if the decomposition mode is Benders', then no columns will be added by the pricer */
+   if( decompmode == DEC_DECMODE_BENDERS )
+   {
+      *result = SCIP_SUCCESS;
+      return SCIP_OKAY;
+   }
 
    if( reducedcostpricing->getCalls() == 0 )
    {
@@ -3199,6 +3210,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    SCIP_RETCODE retcode;
    SCIP_SOL** origsols;
    int norigsols;
+   int decompmode;
 
    assert(scip == scip_);
    assert(pricer != NULL);
@@ -3207,6 +3219,16 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    assert(farkaspricing != NULL);
 
    *result = SCIP_DIDNOTRUN;
+
+   /* retrieving the decomposition mode */
+   SCIP_CALL( SCIPgetIntParam(origprob, "relaxing/gcg/mode", &decompmode) );
+
+   /* if the decomp mode is Benders', then no columns will be added by the pricer */
+   if( decompmode == DEC_DECMODE_BENDERS )
+   {
+      *result = SCIP_SUCCESS;
+      return SCIP_OKAY;
+   }
 
    /** @todo This is just a workaround around SCIP stages! */
    if( reducedcostpricing->getCalls() == 0 && farkaspricing->getCalls() == 0 )

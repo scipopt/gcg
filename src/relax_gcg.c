@@ -52,6 +52,7 @@
 
 #include "struct_branchgcg.h"
 
+#include "cons_benders.h"
 #include "cons_origbranch.h"
 #include "cons_masterbranch.h"
 #include "pricer_gcg.h"
@@ -76,6 +77,7 @@
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
+#define DEFAULT_MODE 0
 #define DELVARS
 
 /*
@@ -130,6 +132,7 @@ struct SCIP_RelaxData
    SCIP_Bool             masterissetpart;    /**< is the master a set partitioning problem? */
    SCIP_Bool             masterissetcover;   /**< is the master a set covering problem? */
    SCIP_Bool             dispinfos;          /**< should additional information be displayed? */
+   int                   mode;               /**< the decomposition mode for GCG. 0: Dantzig-Wolfe (default), 1: Benders' decomposition, 2: automatic */
 
    /* data for probing */
    SCIP_Bool             masterinprobing;    /**< is the master problem in probing mode? */
@@ -144,6 +147,38 @@ struct SCIP_RelaxData
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
 };
+
+#if 1
+/** information method for a parameter change of mode */
+static
+SCIP_DECL_PARAMCHGD(paramChgdDecompositionMode)
+{  /*lint --e{715}*/
+   SCIP* masterprob;
+   int newval;
+
+   masterprob = GCGgetMasterprob(scip);
+   newval = SCIPparamGetInt(param);
+
+   /* if the decomposition mode is changed, then the separation frequency of the Benders' decomposition constraint
+    * handler must be modified */
+   if( newval == DEC_DECMODE_DANTZIGWOLFE )
+   {
+      SCIP_CALL( SCIPsetIntParam(masterprob, "constraints/benders/sepafreq", -1) );
+   }
+   else if( newval == DEC_DECMODE_BENDERS )
+   {
+      SCIP_CALL( SCIPsetIntParam(masterprob, "constraints/benders/sepafreq", 1) );
+   }
+   else
+   {
+      assert(newval == DEC_DECMODE_AUTO);
+      SCIP_CALL( SCIPsetIntParam(masterprob, "constraints/benders/sepafreq", -1) );
+   }
+
+   return SCIP_OKAY;
+}
+#endif
+
 
 /*
  * Local methods
@@ -1095,21 +1130,27 @@ SCIP_RETCODE createLinkingPricingVars(
       if( pricingvars[i] == NULL )
          continue;
 
-      SCIP_CALL( GCGlinkingVarCreatePricingVar(relaxdata->masterprob,
-            relaxdata->pricingprobs[i], i, origvar, &var, &linkcons) );
+      SCIP_CALL( GCGlinkingVarCreatePricingVar(relaxdata->pricingprobs[i], i, origvar, &var) );
 
       GCGlinkingVarSetPricingVar(origvar, i, var);
-      GCGlinkingVarSetLinkingCons(origvar, linkcons, i);
 
       assert(GCGvarIsPricing(var));
       SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[i], var) );
-      SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &relaxdata->varlinkconss, relaxdata->nvarlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &relaxdata->varlinkconsblock, relaxdata->nvarlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
 
-      relaxdata->varlinkconss[relaxdata->nvarlinkconss] = linkcons;
-      relaxdata->varlinkconsblock[relaxdata->nvarlinkconss] = i;
-      relaxdata->nvarlinkconss++;
+
+      if( relaxdata->mode != DEC_DECMODE_BENDERS )
+      {
+         SCIP_CALL( GCGlinkingVarCreateMasterCons(relaxdata->masterprob, i, origvar, &linkcons) );
+         GCGlinkingVarSetLinkingCons(origvar, linkcons, i);
+         SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
+
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &relaxdata->varlinkconss, relaxdata->nvarlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &relaxdata->varlinkconsblock, relaxdata->nvarlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
+
+         relaxdata->varlinkconss[relaxdata->nvarlinkconss] = linkcons;
+         relaxdata->varlinkconsblock[relaxdata->nvarlinkconss] = i;
+         relaxdata->nvarlinkconss++;
+      }
 
       /* because the variable was added to the problem,
        * it is captured by SCIP and we can safely release it right now
@@ -1130,7 +1171,7 @@ SCIP_RETCODE createLinkingPricingVars(
          {
             count++;
             assert(GCGvarIsPricing(pricingvars[i]));
-            assert(linkconss[i] != NULL);
+            assert(relaxdata->mode == DEC_DECMODE_BENDERS || linkconss[i] != NULL);
          }
          else
             assert(linkconss[i] == NULL);
@@ -1336,7 +1377,8 @@ SCIP_RETCODE createMasterProblem(
    SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the master problem */
    SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the master problem */
    SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the master problem */
-   SCIP_Real             dualfeastol         /**< feasibility tolerance for reduced costs in LP solution in the master problem */
+   SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the master problem */
+   int                   mode                /**< the decomposition mode */
    )
 {
    assert(masterscip != NULL);
@@ -1358,6 +1400,13 @@ SCIP_RETCODE createMasterProblem(
 
    /* do not modify the time limit after solving the master problem */
    SCIP_CALL( SCIPsetBoolParam(masterscip, "reoptimization/commontimelimit", FALSE) );
+
+   /* NOTE: This is just for testing. Separation, presolving and heuristics are turned off */
+   SCIP_CALL( SCIPsetSeparating(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
+   SCIP_CALL( SCIPsetHeuristics(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
+   SCIP_CALL( SCIPsetPresolving(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
+   SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxrounds", 0) );
+   SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxroundsroot", 0) );
 
    return SCIP_OKAY;
 }
@@ -1465,6 +1514,8 @@ SCIP_RETCODE createMasterprobConss(
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0 )
          continue;
 
+      /* TODO: In the Benders' decomposition case the copy of the constraint could be used.
+       * Current implementation creates the constraints with the master variables. */
       success = FALSE;
       /* copy the constraint (dirty trick, we only need lhs and rhs, because variables are added later) */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "linear_%s", SCIPconsGetName(masterconss[c]));
@@ -1618,6 +1669,8 @@ SCIP_RETCODE createMaster(
 
    SCIP_CALL( initRelaxProblemdata(scip, relaxdata) );
 
+   SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+
    /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
    SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype) );
 
@@ -1630,7 +1683,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPgetRealParam(scip, "numerics/dualfeastol", &dualfeastol) );
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
-   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol) );
+   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, relaxdata->mode) );
 
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
@@ -1658,17 +1711,20 @@ SCIP_RETCODE createMaster(
    /* check for identity of blocks */
    SCIP_CALL( checkIdenticalBlocks(scip, relaxdata) );
 
-   for( i = 0; i < relaxdata->npricingprobs; i++ )
+   if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
    {
-      if( relaxdata->blockrepresentative[i] != i )
-         continue;
+      for( i = 0; i < relaxdata->npricingprobs; i++ )
+      {
+         if( relaxdata->blockrepresentative[i] != i )
+            continue;
 
-      /* create the corresponding convexity constraint */
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "conv_block_%d", i);
-      SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &(relaxdata->convconss[i]), name, 0, NULL, NULL,
-            relaxdata->nblocksidentical[i]*1.0, relaxdata->nblocksidentical[i]*1.0,
-            TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
-      SCIP_CALL( SCIPaddCons(relaxdata->masterprob, relaxdata->convconss[i]) );
+         /* create the corresponding convexity constraint */
+         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "conv_block_%d", i);
+         SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &(relaxdata->convconss[i]), name, 0, NULL, NULL,
+               relaxdata->nblocksidentical[i]*1.0, relaxdata->nblocksidentical[i]*1.0,
+               TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+         SCIP_CALL( SCIPaddCons(relaxdata->masterprob, relaxdata->convconss[i]) );
+      }
    }
 
    /* set integral objective status in the extended problem, if possible */
@@ -2477,6 +2533,8 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
+   /* TODO: Need to check a parameter if Benders' is going to be used. */
+   SCIP_CALL( SCIPincludeConshdlrBenders(relaxdata->masterprob, scip) );
    SCIP_CALL( SCIPsetMessagehdlr(relaxdata->masterprob, SCIPgetMessagehdlr(scip)) );
 
    /* disable display output in the master problem */
@@ -2505,6 +2563,9 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/dispinfos",
          "should additional information about the blocks be displayed?",
          &(relaxdata->dispinfos), FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/mode",
+            "the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition, 2: auto)",
+            &(relaxdata->mode), FALSE, DEFAULT_MODE, 0, 2, paramChgdDecompositionMode, NULL) );
 
    return SCIP_OKAY;
 }

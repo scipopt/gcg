@@ -211,6 +211,12 @@ SCIP_Bool GCGmasterVarIsRay(
    SCIP_VAR*             var                 /**< variable data structure */
    );
 
+/** returns whether the master variable is a copy of an original variable */
+extern
+SCIP_Bool GCGmasterVarIsOriginalCopy(
+   SCIP_VAR*             var                 /**< variable data structure */
+   );
+
 /** returns the number of original variables the master variable is contained in */
 extern
 int GCGmasterVarGetNOrigvars(
@@ -316,11 +322,18 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
 /** creates the corresponding pricing variable for the given original variable */
 extern
 SCIP_RETCODE GCGlinkingVarCreatePricingVar(
-   SCIP*                 masterscip,         /**< msater problem SCIP data structure */
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
    int                   pricingprobnr,      /**< number of the pricing problem */
    SCIP_VAR*             origvar,            /**< original variable */
-   SCIP_VAR**            var,                /**< pointer to store new pricing variable */
+   SCIP_VAR**            var                 /**< pointer to store new pricing variable */
+   );
+
+/** creates the corresponding constraint in the master problem for the linking variable */
+extern
+SCIP_RETCODE GCGlinkingVarCreateMasterCons(
+   SCIP*                 masterscip,         /**< msater problem SCIP data structure */
+   int                   pricingprobnr,      /**< number of the pricing problem */
+   SCIP_VAR*             origvar,            /**< original variable */
    SCIP_CONS**           linkcons            /**< constraint linking pricing variables */
    );
 

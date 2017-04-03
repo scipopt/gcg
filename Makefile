@@ -134,6 +134,7 @@ LIBOBJ		=	reader_blk.o \
 			branch_orig.o \
 			branch_ryanfoster.o \
 			branch_generic.o \
+			cons_benders.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			cons_integralorig.o \
