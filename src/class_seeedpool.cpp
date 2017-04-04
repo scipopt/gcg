@@ -1294,6 +1294,9 @@ Seeedpool::~Seeedpool()
     {
        SeeedPtr seeed = finishedSeeeds[i];
 
+
+       char detectorchaininfo[SCIP_MAXSTRLEN];
+
        SCIP_HASHMAP* vartoblock;
        SCIP_HASHMAP* constoblock;
        SCIP_HASHMAP* varindex;
@@ -1329,6 +1332,7 @@ Seeedpool::~Seeedpool()
        /** set nblocks */
        DECdecompSetNBlocks(decompositions[i], seeed->getNBlocks() );
 
+       //detectorchaininfo ;
        /** set constraints */
        if( seeed->getNMasterconss( )  != 0 )
           SCIP_CALL_ABORT (SCIPallocBufferArray(scip, &linkingconss, seeed->getNMasterconss() ) );
@@ -1543,7 +1547,7 @@ Seeedpool::~Seeedpool()
        /** set statistical detector chain data */
 
        DECdecompSetSeeedID(decompositions[i], seeed->getID() );
-       if(seeed->getNDetectors() > 0 )
+       if( seeed->getNDetectors() > 0 )
        {
           DECdecompSetDetectorClockTimes(scip, decompositions[i], &(seeed->detectorClockTimes[0]) );
           DECdecompSetDetectorPctVarsToBorder(scip, decompositions[i], &(seeed->pctVarsToBorder[0] ) );
@@ -1554,16 +1558,32 @@ Seeedpool::~Seeedpool()
           DECdecompSetDetectorPctConssFromOpen(scip, decompositions[i], &(seeed->pctConssFromFree[0] ) );
           DECdecompSetNNewBlocks(scip, decompositions[i], &(seeed->nNewBlocks[0] ) );
        }
+
+       /** set detector chain info string */
+
+       for( int d = 0; d < seeed->getNDetectors(); ++d )
+       {
+          //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(seeed->getDetectorchain()[d]));
+          char str[2] = "\0"; /* gives {\0, \0} */
+          str[0] = DECdetectorGetChar(seeed->getDetectorchain()[d]);
+          strncat(detectorchaininfo, str, 1 );
+       }
+
+       DECdecompSetDetectorChainString(scip, decompositions[i], detectorchaininfo);
+
+       //SCIPinfoMessage(scip, NULL, "%s \n", detectorchaininfo);
+
+       //DECdetectorGetChar( )
        /** set dectype */
-       if(decompositions[i]->nlinkingvars == seeed->getNTotalStairlinkingvars() && decompositions[i]->nlinkingconss == 0 && DECdecompGetNLinkingvars(decompositions[i]) > 0)
+       if( decompositions[i]->nlinkingvars == seeed->getNTotalStairlinkingvars() && decompositions[i]->nlinkingconss == 0 && DECdecompGetNLinkingvars(decompositions[i]) > 0)
        {
           decompositions[i]->type = DEC_DECTYPE_STAIRCASE;
        }
-       else if(decompositions[i]->nlinkingvars > 0 || seeed->getNTotalStairlinkingvars() )
+       else if( decompositions[i]->nlinkingvars > 0 || seeed->getNTotalStairlinkingvars() )
        {
           decompositions[i]->type = DEC_DECTYPE_ARROWHEAD;
        }
-       else if(decompositions[i]->nlinkingconss > 0)
+       else if( decompositions[i]->nlinkingconss > 0)
        {
           decompositions[i]->type = DEC_DECTYPE_BORDERED;
        }

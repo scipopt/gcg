@@ -77,7 +77,7 @@ struct DecDecomp
    SCIP_Real*            pctvarsfromopen;     /**< percentages of variables assigned to a block or border of the corresponding detectors on this decomposition */
    SCIP_Real*            pctconssfromopen;    /**< percentages of constraints assigned to a block or the border of the corresponding detectors on this decomposition */
    int*                  nnewblocks;          /**< number of new blocks of the corresponding detectors on this decomposition */
-
+   char*                 detectorchainstring; /**< string for the detector information working on that decomposition */
 };
 
 #ifdef __cplusplus
