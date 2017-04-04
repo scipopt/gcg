@@ -29,6 +29,7 @@
  * @ingroup DETECTORS
  * @brief  detector for staircase_lsp matrices
  * @author Martin Bergner
+ * @author Michael Bastubbe
  *
  * This detector detects staircase_lsp structures in the constraint matrix by searching for the longest shortest path
  * in the row graph of the matrix.

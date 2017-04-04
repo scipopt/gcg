@@ -286,6 +286,8 @@ SCIP_RETCODE callMetis(
    SCIP_CALL( SCIPstopClock(scip, metisclock) );
    SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, metisclock),  remainingtime-SCIPgetClockTime(scip, metisclock) );
 
+   SCIP_CALL( SCIPfreeClock(scip, &metisclock) );
+
    /* check error codes */
    if( status == -1 )
    {
@@ -466,7 +468,6 @@ SCIP_RETCODE detection(
    /* Graph stuff for hmetis */
    MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
    char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
-   SCIP_CLOCK* metisclock;                   /**< clock to measure metis time */
 
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
@@ -487,8 +488,6 @@ SCIP_RETCODE detection(
    maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
 
 
-
-   SCIP_CALL( SCIPcreateClock(scip, &metisclock) );
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -563,7 +562,6 @@ SCIP_RETCODE detection(
 
    delete graph;
    graph = NULL;
-   delete seeed;
 
    assert(nNewSeeeds % 2 == 0);
    if(border)
@@ -619,7 +617,6 @@ SCIP_RETCODE detection(
          seeedPropagationData->newSeeeds[s]->addClockTime( SCIPclockGetTime(clock) + clockTimes[2*s] );
    }
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &clock) );
-
    *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
    return SCIP_OKAY;
 }
@@ -711,7 +708,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
 
    if( !connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
-      delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
@@ -736,7 +732,6 @@ DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
 
    if(!connected(seeedPropagationData->seeedpool, seeed))
    {
-      delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;

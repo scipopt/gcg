@@ -437,7 +437,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
    assert(detectordata != NULL);
    *result = SCIP_DIDNOTFIND;
 
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed = seeedPropagationData->seeedToPropagate;
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
    if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
    {
@@ -614,7 +614,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
       detectordata->graphs->at(i) = NULL;
    }
 
-   delete seeed;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), nNewSeeeds) );
    seeedPropagationData->nNewSeeeds = nNewSeeeds;
    for(int j = 0, s = 0; s < nNewSeeeds; ++j)

@@ -290,6 +290,8 @@ SCIP_RETCODE callMetis(
    SCIP_CALL( SCIPstopClock(scip, metisclock) );
    SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, metisclock),  remainingtime-SCIPgetClockTime(scip, metisclock) );
 
+   SCIP_CALL( SCIPfreeClock(scip, &metisclock) );
+
    /* check error codes */
    if( status == -1 )
    {
@@ -526,7 +528,6 @@ SCIP_RETCODE detection(
 
    delete graph;
    graph = NULL;
-   delete seeed;
 
    assert(nNewSeeeds % 2 == 0);
    if(border)
@@ -675,7 +676,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
 
    if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
-      delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
@@ -697,9 +697,8 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
 
-   if(!connected(seeedPropagationData->seeedpool, seeed))
+   if( !connected(seeedPropagationData->seeedpool, seeed ) )
    {
-      delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;

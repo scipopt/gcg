@@ -164,7 +164,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   std::vector<consType> foundConstypes(0);
   std::vector<int> constypesIndices(0);
 
-  seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+  seeedOrig = seeedPropagationData->seeedToPropagate;
   seeedOrig->setDetectorPropagated(detector);
 
   if(!seeedOrig->areOpenVarsAndConssCalculated())
@@ -232,7 +232,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
       seeedPropagationData->newSeeeds[seeedCounter] = seeed;
       seeedCounter++;
   }
-  delete seeedOrig;
 
   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
