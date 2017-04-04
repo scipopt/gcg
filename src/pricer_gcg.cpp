@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1520,7 +1520,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       /* compute the objective function value of the solution */
       redcost = computeRedCost(pricetype, sol, solisray, prob, &objvalue);
 
-      if( !SCIPisSumNegative(scip, redcost) )
+      if( !SCIPisDualfeasNegative(scip, redcost) )
       {
          SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%ud) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
          *added = FALSE;
@@ -1540,20 +1540,30 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    objcoeff = 0;
    for( i = 0; i < nsolvars; i++ )
    {
-      if( !SCIPisZero(scip, solvals[i]) )
+      SCIP_Real solval;
+      solval = solvals[i];
+
+      if( !SCIPisZero(scip, solval) )
       {
          SCIP_VAR* origvar;
 
          assert(GCGvarIsPricing(solvars[i]));
          origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
 
+         if( SCIPisZero(scip, SCIPvarGetObj(origvar)) )
+            continue;
+
          /* original variable is linking variable --> directly transferred master variable got the full obj,
           * priced-in variables get no objective value for this origvar */
          if( GCGoriginalVarIsLinking(origvar) )
             continue;
 
+         /* round solval if possible to avoid numerical troubles */
+         if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
+            solval = SCIPround(scip, solval);
+
          /* add quota of original variable's objcoef to the master variable's coef */
-         objcoeff += solvals[i] * SCIPvarGetObj(origvar);
+         objcoeff += solval * SCIPvarGetObj(origvar);
       }
    }
 
@@ -1661,7 +1671,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
       /* compute the objective function value of the solution */
       redcost = GCGcolGetRedcost(gcgcol);
 
-      if( !SCIPisSumNegative(scip, redcost) )
+      if( !SCIPisDualfeasNegative(scip, redcost) )
       {
          SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%ud) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], isray);
          *added = FALSE;
@@ -1681,20 +1691,31 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    objcoeff = 0;
    for( i = 0; i < nsolvars; i++ )
    {
+      SCIP_Real solval;
+      solval = solvals[i];
+
       if( !SCIPisZero(scip, solvals[i]) )
       {
          SCIP_VAR* origvar;
 
          assert(GCGvarIsPricing(solvars[i]));
          origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
+         solval = solvals[i];
+
+         if( SCIPisZero(scip, SCIPvarGetObj(origvar)) )
+            continue;
 
          /* original variable is linking variable --> directly transferred master variable got the full obj,
           * priced-in variables get no objective value for this origvar */
          if( GCGoriginalVarIsLinking(origvar) )
             continue;
 
+         /* round solval if possible to avoid numerical troubles */
+         if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
+            solval = SCIPround(scip, solval);
+
          /* add quota of original variable's objcoef to the master variable's coef */
-         objcoeff += solvals[i] * SCIPvarGetObj(origvar);
+         objcoeff += solval * SCIPvarGetObj(origvar);
       }
    }
 
@@ -1884,7 +1905,7 @@ int ObjPricerGcg::countPricedVariables(
       SCIP_CALL_ABORT( GCGcolUpdateRedcost(cols[j], redcost, FALSE) );
 
       SCIPdebugMessage("solution %d of prob %d (%p) has reduced cost %g\n", j, prob, (void*) (cols[j]), redcost);
-      if( SCIPisNegative(scip_, redcost) )
+      if( SCIPisDualfeasNegative(scip_, redcost) )
       {
          nfoundvars += 1;
       }
@@ -2111,7 +2132,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_Real redcost = computeRedCostGcgCol(pricetype, bestcol, NULL);
    SCIP_CALL( GCGcolUpdateRedcost(bestcol, redcost, FALSE) );
 
-   if( SCIPisNegative(scip_, redcost) )
+   if( SCIPisDualfeasNegative(scip_, redcost) )
    {
       found = TRUE;
    }
@@ -2122,9 +2143,9 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       if( bestcol != NULL )
       {
          /* todo: add columns to column pool */
-         for(int j = 0; j < *ncols; ++j)
+         for( int j = 0; j < *ncols; ++j )
          {
-            SCIP_CALL( GCGfreeGcgCol(&cols[j]) );
+            GCGfreeGcgCol(&cols[j]);
          }
          SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
       }
@@ -2150,7 +2171,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       bestcol = cols[0];
       redcost = computeRedCostGcgCol(pricetype, bestcol, NULL);
 
-      if( SCIPisNegative(scip_, redcost) )
+      if( SCIPisDualfeasNegative(scip_, redcost) )
       {
          break;
       }
@@ -2326,7 +2347,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             goto done;
 
          #pragma omp flush(infeasible,nfoundvars,successfulmips)
-         if( (abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible) && !pricerdata->stabilization)
+         if( (abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible) && !stabilized)
          {
             goto done;
          }
@@ -2358,7 +2379,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          if( optimal && ncols[prob] > 0)
          {
-            SCIP_Real convdual = stabilization->convGetDual(prob);
+            SCIP_Real convdual = 0.0;
+            SCIP_CONS* cons = GCGgetConvCons(origprob, prob);
+
+            if( stabilized )
+               convdual = stabilization->convGetDual(prob);
+            else
+               convdual = pricetype->consGetDual(scip_, cons);
 
             #pragma omp atomic
             beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
@@ -2506,7 +2533,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
                if( !success )
                {
-                  SCIP_CALL( GCGfreeGcgCol(&cols[i][j]) );
+                  GCGfreeGcgCol(&cols[i][j]);
                   SCIPdebugMessage("Freeing column %d of prob %d.\n", j, i);
                }
             }
@@ -2552,7 +2579,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
             if( !added )
             {
-               SCIP_CALL( GCGfreeGcgCol( &cols[prob][j]) );
+               GCGfreeGcgCol( &cols[prob][j]);
+               SCIPdebugPrintf("not added.\n");
             }
             else
             {
@@ -2561,7 +2589,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
          else
          {
-            SCIP_CALL( GCGfreeGcgCol(&cols[prob][j]) );
+            GCGfreeGcgCol(&cols[prob][j]);
          }
       }
 
@@ -2695,7 +2723,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
       SCIPdebugMessage("bestredcost = %g\n", redcost);
 
       /** add variable only if we cannot abort */
-      if( nfoundvarsprob[probnr] <= pricerdata->maxsolsprob &&  SCIPisSumNegative(scip_, redcost) )
+      if( nfoundvarsprob[probnr] <= pricerdata->maxsolsprob &&  SCIPisDualfeasNegative(scip_, redcost) )
       {
          SCIP_Bool added;
          GCG_COL* gcgcol;
@@ -2709,7 +2737,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
          ++(nfoundvarsprob[probnr]);
          ++nfoundvars;
 
-         SCIP_CALL( GCGfreeGcgCol(&gcgcol) );
+         GCGfreeGcgCol(&gcgcol);
 
          SCIPdebugMessage("added\n");
       }
@@ -3884,9 +3912,9 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    }
 
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, TRUE, TRUE, TRUE, TRUE, &added) );
+   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, TRUE, TRUE, TRUE, TRUE, TRUE, &added) );
 #else
-   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, FALSE, TRUE, TRUE, TRUE, &added) );
+   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, FALSE, FALSE, TRUE, TRUE, TRUE, &added) );
 #endif
 
    /* set external pointer if it is not NULL */

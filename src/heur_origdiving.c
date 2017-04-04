@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -176,11 +176,6 @@ SCIP_DECL_HEURFREE(heurFreeOrigdiving) /*lint --e{715}*/
 static
 SCIP_DECL_HEURINIT(heurInitOrigdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
-#ifdef SCIP_STATISTIC
-   SCIP* masterprob;
-   SCIP_EVENTHDLRDATA* eventhdlrdata;
-   SCIP_EVENTHDLR* eventhdlr;
-#endif
    SCIP_HEURDATA* heurdata;
 
    assert(heur != NULL);
@@ -188,18 +183,6 @@ SCIP_DECL_HEURINIT(heurInitOrigdiving) /*lint --e{715}*/
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
-
-#ifdef SCIP_STATISTIC
-   /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
-   assert(masterprob != NULL);
-
-   /* get origdiving event handler and its data */
-   eventhdlr = SCIPfindEventhdlr(masterprob, EVENTHDLR_NAME);
-   assert(eventhdlr != NULL);
-   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
-   assert(eventhdlrdata != NULL);
-#endif
 
    /* create working solution */
    SCIP_CALL( SCIPcreateSol(scip, &heurdata->sol, heur) );
@@ -214,21 +197,6 @@ SCIP_DECL_HEURINIT(heurInitOrigdiving) /*lint --e{715}*/
    {
       SCIP_CALL( heurdata->divinginit(scip, heur) );
    }
-
-#ifdef SCIP_STATISTIC
-   /* register the diving heuristic to the origdiving event handler */
-   assert((eventhdlrdata->heurs == NULL) == (eventhdlrdata->nheurs == 0));
-   if( eventhdlrdata->nheurs == 0 )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &eventhdlrdata->heurs, 1) ); /*lint !e506*/
-   }
-   else
-   {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &eventhdlrdata->heurs, eventhdlrdata->nheurs+1) );
-   }
-   eventhdlrdata->heurs[eventhdlrdata->nheurs] = heur;
-   ++eventhdlrdata->nheurs;
-#endif
 
    return SCIP_OKAY;
 }
@@ -625,9 +593,9 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             {
                /* try to add solution to SCIP */
 #ifdef SCIP_DEBUG
-               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
+               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, TRUE, &success) );
 #else
-               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, TRUE, TRUE, TRUE, &success) );
+               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, TRUE, TRUE, TRUE, &success) );
 #endif
                /* check, if solution was feasible and good enough */
                if( success )
@@ -687,11 +655,12 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                SCIP_CALL( SCIPchgVarUbProbing(scip, bestcand, SCIPfeasFloor(scip, bestcandsol)) );
             }
 
+            /* apply domain propagation */
+            SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
+
             SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
          }
 
-         /* apply domain propagation */
-         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
          if( !cutoff || backtracked || farkaspricing )
          {
             /* resolve the diving LP */
@@ -888,9 +857,9 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 
       /* try to add solution to SCIP */
 #ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
+      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, TRUE, &success) );
 #else
-      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, TRUE, TRUE, TRUE, &success) );
+      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, TRUE, TRUE, TRUE, &success) );
 #endif
 
       /* check, if solution was feasible and good enough */
@@ -972,6 +941,10 @@ SCIP_DECL_EVENTFREE(eventFreeOrigdiving)
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
+   /* free memory */
+   assert((eventhdlrdata->heurs == NULL) == (eventhdlrdata->nheurs == 0));
+   SCIPfreeMemoryArrayNull(scip, &eventhdlrdata->heurs);
+
    SCIPfreeMemory(scip, &eventhdlrdata);
 
    SCIPeventhdlrSetData(eventhdlr, NULL);
@@ -995,17 +968,7 @@ SCIP_DECL_EVENTINIT(eventInitOrigdiving)
 static
 SCIP_DECL_EVENTEXIT(eventExitOrigdiving)
 {  /*lint --e{715}*/
-   SCIP_EVENTHDLRDATA* eventhdlrdata;
-
    assert(eventhdlr != NULL);
-
-   /* get event handler data */
-   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
-   assert(eventhdlrdata != NULL);
-
-   /* free memory */
-   assert((eventhdlrdata->heurs == NULL) == (eventhdlrdata->nheurs == 0));
-   SCIPfreeMemoryArrayNull(scip, &eventhdlrdata->heurs);
 
    /* notify GCG that this event should drop the SOLFOUND event */
    SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, -1) );
@@ -1175,8 +1138,25 @@ SCIP_RETCODE GCGincludeDivingHeurOrig(
    GCG_DIVINGDATA*       divingdata          /**< diving rule specific data (or NULL) */
    )
 {
+#ifdef SCIP_STATISTIC
+   SCIP* masterprob;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP_EVENTHDLR* eventhdlr;
+#endif
    SCIP_HEURDATA* heurdata;
    char paramname[SCIP_MAXSTRLEN];
+
+#ifdef SCIP_STATISTIC
+   /* get master problem */
+   masterprob = GCGgetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   /* get origdiving event handler and its data */
+   eventhdlr = SCIPfindEventhdlr(masterprob, EVENTHDLR_NAME);
+   assert(eventhdlr != NULL);
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+#endif
 
    /* create original diving primal heuristic data */
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
@@ -1277,6 +1257,21 @@ SCIP_RETCODE GCGincludeDivingHeurOrig(
         paramname,
         "maximal discrepancy allowed in backtracking and limited discrepancy search",
         &heurdata->maxdiscrepancy, TRUE, DEFAULT_MAXDISCREPANCY, 0, INT_MAX, NULL, NULL) );
+
+#ifdef SCIP_STATISTIC
+   /* register the diving heuristic to the origdiving event handler */
+   assert((eventhdlrdata->heurs == NULL) == (eventhdlrdata->nheurs == 0));
+   if( eventhdlrdata->nheurs == 0 )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(masterprob, &eventhdlrdata->heurs, 1) ); /*lint !e506*/
+   }
+   else
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(masterprob, &eventhdlrdata->heurs, eventhdlrdata->nheurs+1) );
+   }
+   eventhdlrdata->heurs[eventhdlrdata->nheurs] = *heur;
+   ++eventhdlrdata->nheurs;
+#endif
 
    return SCIP_OKAY;
 }

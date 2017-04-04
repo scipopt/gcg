@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1154,10 +1154,14 @@ SCIP_RETCODE GCGcreateMasterVar(
    /* update variable datas */
    for( i = 0; i < nsolvars && !trivialsol; i++ )
    {
+      SCIP_Real solval;
+
       assert(solvars != NULL);
       assert(solvals != NULL);
 
-      if( !SCIPisZero(scip, solvals[i]) )
+      solval = solvals[i];
+
+      if( !SCIPisZero(scip, solval) )
       {
          SCIP_VAR* origvar;
          assert(GCGvarIsPricing(solvars[i]));
@@ -1168,13 +1172,17 @@ SCIP_RETCODE GCGcreateMasterVar(
          assert(newvardata->data.mastervardata.origvars != NULL);
          assert(newvardata->data.mastervardata.origvals != NULL);
          assert(GCGvarIsOriginal(origvar));
-         assert(!solisray || vartype == SCIP_VARTYPE_CONTINUOUS || SCIPisIntegral(scip, solvals[i]) || SCIPvarGetType(solvars[i]) == SCIP_VARTYPE_CONTINUOUS);
+         assert(!solisray || vartype == SCIP_VARTYPE_CONTINUOUS || SCIPisIntegral(scip, solval) || SCIPvarGetType(solvars[i]) == SCIP_VARTYPE_CONTINUOUS);
+
+         /* round solval if possible to avoid numerical troubles */
+         if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
+            solval = SCIPround(scip, solval);
 
          /* save in the master problem variable's data the quota of the corresponding original variable */
          newvardata->data.mastervardata.origvars[j] = origvar;
-         newvardata->data.mastervardata.origvals[j] = solvals[i];
+         newvardata->data.mastervardata.origvals[j] = solval;
          /* save the quota in the original variable's data */
-         SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, solvals[i]) );
+         SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, solval) );
          j++;
       }
    }

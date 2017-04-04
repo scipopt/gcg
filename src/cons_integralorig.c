@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -309,9 +309,15 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 
       for( i = 0; i < nmastervars; i++ )
       {
-         solval += mastervals[i] * SCIPgetSolVal(scip, sol, mastervars[i]);
+         SCIP_Real varsolval;
+
+         varsolval = SCIPgetSolVal(scip, sol, mastervars[i]);
+
+         if( SCIPisPositive(scip, varsolval) )
+            solval += mastervals[i] * varsolval;
       }
-      if( !SCIPisFeasIntegral(scip, solval) )
+
+      if( !SCIPisFeasIntegral(origprob, solval) )
       {
          *result = SCIP_INFEASIBLE;
 

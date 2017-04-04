@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -304,6 +304,7 @@ TEST_F(GcgVarTest, OriginalVarGetCoefs) {
 
 TEST_F(GcgVarTest, OriginalVarGetNCoefs) {
    ORIGVAR(ovar, ovardata);
+   ovardata.data.origvardata.coefs = (SCIP_Real*) 0xDEADBEEF;
    ovardata.data.origvardata.ncoefs = 0xDEAD;
    ASSERT_EQ(0xDEAD, GCGoriginalVarGetNCoefs(&ovar));
 }
@@ -459,7 +460,10 @@ TEST_F(GcgVarTest, MastervarGetOrigvars) {
 
 TEST_F(GcgVarTest, MastervarGetNOrigvars) {
    MASTERVAR(var, vardata);
+   ORIGVAR(var2, vardata2);
+   SCIP_VAR* vars[1] = { &var2 };
    vardata.blocknr = 1;
+   vardata.data.mastervardata.origvars = vars;
    vardata.data.mastervardata.norigvars = 0xDEAD;
    ASSERT_EQ(0xDEAD, GCGmasterVarGetNOrigvars(&var));
 }
