@@ -180,7 +180,7 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    char decinfo[SCIP_MAXSTRLEN];
 
    gcg::Seeed* seeed;
-   seeed = seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool );
+   seeed  = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool );
 
    //complete the seeed by bfs
    seeed->completeByConnected(seeedPropagationData->seeedpool );
