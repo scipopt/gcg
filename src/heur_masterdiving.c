@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -107,16 +107,20 @@ struct SCIP_HeurData
    int                   nsuccess;           /**< number of runs that produced at least one feasible solution */
 
 #ifdef SCIP_STATISTIC
-   SCIP_Longint          ncalls;             /**< number of calls                                                   */
-   SCIP_Longint          nsols;              /**< number of solutions                                               */
-   SCIP_Longint          nimpsols;           /**< number of improving solutions                                     */
-   SCIP_Longint          ndivesols;          /**< number of integral diving LP solutions                            */
-   SCIP_Longint          nimpdivesols;       /**< number of improving integral diving LP solutions                  */
-   SCIP_Longint          nroundsols;         /**< number of integral solutions that have been obtained by rounding  */
-   SCIP_Longint          nimproundsols;      /**< number of improving integral solutions obtained by rounding       */
-   SCIP_Longint          ndives;             /**< number of dives                                                   */
-   SCIP_Real             bestprimalbd;       /**< objective value of best solution found by this heuristic          */
-   SCIP_Bool             bestsolrounded;     /**< was the best solution obtained by rounding?                       */
+   SCIP_Longint          ncalls;             /**< number of calls                                                           */
+   SCIP_Longint          nsols;              /**< number of solutions                                                       */
+   SCIP_Longint          nimpsols;           /**< number of improving solutions                                             */
+   SCIP_Longint          ndivesols;          /**< number of integral diving LP solutions                                    */
+   SCIP_Longint          nimpdivesols;       /**< number of improving integral diving LP solutions                          */
+   SCIP_Longint          nroundsols;         /**< number of integral solutions that have been obtained by rounding          */
+   SCIP_Longint          nimproundsols;      /**< number of improving integral solutions obtained by rounding               */
+   SCIP_Longint          ndivenodes;         /**< number of diving nodes                                                    */
+   SCIP_Longint          nfarkas;            /**< number of times an infeasibility was resolved by Farkas pricing           */
+   SCIP_Longint          notherdirections;   /**< number of times a cutoff was resolved by branching in the other direction */
+   SCIP_Longint          nbacktracks;        /**< number of times a single backtracking at a deeper node was performed      */
+   SCIP_Longint          ndiscsearches;      /**< number of times a limited discrepancy search was performed                */
+   SCIP_Real             bestprimalbd;       /**< objective value of best solution found by this heuristic                  */
+   SCIP_Bool             bestsolrounded;     /**< was the best solution obtained by rounding?                               */
 #endif
 };
 
@@ -243,7 +247,11 @@ SCIP_DECL_HEURINITSOL(heurInitsolMasterdiving)
    heurdata->nimpdivesols = 0;
    heurdata->nroundsols = 0;
    heurdata->nimproundsols = 0;
-   heurdata->ndives = 0;
+   heurdata->ndivenodes = 0;
+   heurdata->nfarkas = 0;
+   heurdata->notherdirections = 0;
+   heurdata->nbacktracks = 0;
+   heurdata->ndiscsearches = 0;
    heurdata->bestprimalbd = SCIPinfinity(scip);
    heurdata->bestsolrounded = FALSE;
 #endif
@@ -321,7 +329,11 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
 #ifdef SCIP_STATISTIC
    /* variable declarations for additional statistics */
-   int ndives;                         /* diving loops performed in one call of the heuristic */
+   int ndivenodes;                     /* number of diving nodes */
+   int maxreacheddepth;                /* maximal diving depth reached in this call */
+   int nfarkas;                        /* number of times an infeasibility was resolved by Farkas pricing */
+   int nbacktracks;                    /* number of times a single backtracking at a deeper node was performed */
+   int ndiscsearches;                  /* number of times a limited discrepancy search was performed */
    SCIP_Longint totallpiters;          /* lp iterations performed in one call of the heuristic */
    SCIP_CLOCK* lptime;                 /* time spent for solving diving LPs */
 #endif
@@ -487,7 +499,11 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    startnlpcands = nlpcands;
 
 #ifdef SCIP_STATISTIC
-   ndives = 0;
+   ndivenodes = 0;
+   maxreacheddepth = 0;
+   nfarkas = 0;
+   nbacktracks = 0;
+   ndiscsearches = 0;
    totallpiters = 0;
 #endif
 
@@ -509,8 +525,8 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       divedepth++;
 
 #ifdef SCIP_STATISTIC
-      ++heurdata->ndives;
-      ++ndives;
+      maxreacheddepth = MAX(maxreacheddepth, divedepth);
+      ++ndivenodes;
 #endif
 
       /* get the current LP solution */
@@ -553,7 +569,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             SCIPdebugMessage("%s found roundable primal solution: obj=%g\n", SCIPheurGetName(heur), SCIPgetSolOrigObj(scip, heurdata->sol));
 
             /* try to add solution to SCIP */
-            SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
+            SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
 
             /* check, if solution was feasible and good enough */
             if( success )
@@ -638,6 +654,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             && !backtracked )
          {
             SCIPdebugMessage("  *** infeasibility detected at level %d - perform Farkas pricing\n", SCIPgetProbingDepth(scip));
+#ifdef SCIP_STATISTIC
+            ++nfarkas;
+#endif
             farkaspricing = TRUE;
          }
          else
@@ -658,6 +677,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
                tabulist[discrepancy] = bestcand;
                ++discrepancy;
 
+#ifdef SCIP_STATISTIC
+                  ++nbacktracks;
+#endif
                backtracked = TRUE;
             }
             /* Limited discrepancy search: If single backtracking unsuccessful, backtrack further */
@@ -687,6 +709,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
                   for( i = divedepth + 1; i < heurdata->maxdiscdepth; ++i )
                      discrepancies[i] = discrepancies[divedepth];
 
+#ifdef SCIP_STATISTIC
+                  ++ndiscsearches;
+#endif
                   backtracked = TRUE;
                }
                else
@@ -734,7 +759,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       SCIPdebugMessage("%s found primal solution: obj=%g\n", SCIPheurGetName(heur), SCIPgetSolOrigObj(scip, heurdata->sol));
 
       /* try to add solution to SCIP */
-      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
+      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
 
       /* check, if solution was feasible and good enough */
       if( success )
@@ -752,9 +777,16 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
 #ifdef SCIP_STATISTIC
    eventhdlrdata->runningheur = NULL;
+   heurdata->ndivenodes += ndivenodes;
+   heurdata->nfarkas += nfarkas;
+   heurdata->nbacktracks += nbacktracks;
+   heurdata->ndiscsearches += ndiscsearches;
 
-   SCIPstatisticPrintf("Masterdiving statistic: %s , %3d diveloops, lptime = %6.1f seconds, %"SCIP_LONGINT_FORMAT" lp iterations, %5d pricing rounds\n",
-      SCIPheurGetName(heur), ndives, SCIPgetClockTime(scip, lptime), totallpiters, totalpricerounds);
+   if( ndivenodes > 0 )
+   {
+      SCIPstatisticPrintf("Masterdiving statistic: %s at node %"SCIP_LONGINT_FORMAT" , %d dive nodes, max depth = %d, lptime = %6.1f sec, %"SCIP_LONGINT_FORMAT" lp iters, %d pricing rds, %d Farkas repairs, %d single backtracks, %d disc searches\n",
+         SCIPheurGetName(heur), SCIPgetNNodes(scip), ndivenodes, maxreacheddepth, SCIPgetClockTime(scip, lptime), totallpiters, totalpricerounds, nfarkas, nbacktracks, ndiscsearches);
+   }
 #endif
 
    /* free memory */
@@ -831,7 +863,7 @@ SCIP_DECL_EVENTEXITSOL(eventExitsolMasterdiving)
    assert(eventhdlrdata != NULL);
 
    /* print detailed statistics */
-   SCIPstatisticPrintf("Master Diving Heuristics   :      Calls       Sols  Improving   DiveSols  Improving  RoundSols  Improving      Dives   LP iters  Price rds        max    BestPrimal Rounded?\n");
+   SCIPstatisticPrintf("Master Diving Heuristics   :      Calls       Sols  Improving   DiveSols  Improving  RoundSols  Improving      Nodes   LP iters  Price rds        max    nFarkas  Single bt   Discsrch    BestPrimal Rounded?\n");
    for( i = 0; i < eventhdlrdata->nheurs; ++i )
    {
       SCIP_HEUR* heur;
@@ -843,8 +875,8 @@ SCIP_DECL_EVENTEXITSOL(eventExitsolMasterdiving)
       heurdata = SCIPheurGetData(heur);
       assert(heurdata != NULL);
 
-      SCIPstatisticPrintf("%-17.17s          : %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10d",
-         SCIPheurGetName(heur), heurdata->ncalls, heurdata->nsols, heurdata->nimpsols, heurdata->ndivesols, heurdata->nimpdivesols, heurdata->nroundsols, heurdata->nimproundsols, heurdata->ndives, heurdata->nlpiterations, heurdata->npricerounds, heurdata->maxpricerounds);
+      SCIPstatisticPrintf("%-17.17s          : %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10d %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT,
+         SCIPheurGetName(heur), heurdata->ncalls, heurdata->nsols, heurdata->nimpsols, heurdata->ndivesols, heurdata->nimpdivesols, heurdata->nroundsols, heurdata->nimproundsols, heurdata->ndivenodes, heurdata->nlpiterations, heurdata->npricerounds, heurdata->maxpricerounds, heurdata->nfarkas, heurdata->nbacktracks, heurdata->ndiscsearches);
       if( SCIPisInfinity(scip, heurdata->bestprimalbd) )
          SCIPstatisticPrintf("      infinity");
       else
@@ -927,7 +959,7 @@ SCIP_DECL_EVENTEXEC(eventExecMasterdiving)
       heurdata->bestsolrounded = rounded;
    }
 
-   SCIPstatisticPrintf("Masterdiving statistic: %s found solution %13.6e , improving = %ud , rounded = %ud\n",
+   SCIPstatisticPrintf("Masterdiving statistic: %s found solution %13.6e , improving = %u , rounded = %u\n",
       SCIPheurGetName(heur), SCIPgetSolTransObj(scip, sol), improving, rounded);
 
    return SCIP_OKAY;

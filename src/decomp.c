@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1390,7 +1390,8 @@ SCIP_RETCODE DECdecompTransform(
       for( c = 0; c < decomp->nsubscipconss[b]; ++c )
       {
          SCIP_CONS* newcons;
-         SCIPdebugMessage("%d, %d: %s (%s)\n", b, c, SCIPconsGetName(decomp->subscipconss[b][c]), SCIPconsIsTransformed(decomp->subscipconss[b][c])?"t":"o" );
+         SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, c, SCIPconsGetName(decomp->subscipconss[b][c]),
+            (void*) decomp->subscipconss[b][c], SCIPconsIsTransformed(decomp->subscipconss[b][c])?"t":"o" );
          assert(decomp->subscipconss[b][c] != NULL);
          newcons = SCIPfindCons(scip, SCIPconsGetName(decomp->subscipconss[b][c]));
          if( newcons != decomp->subscipconss[b][c] )
@@ -3614,7 +3615,8 @@ SCIP_RETCODE DECcreatePolishedDecomp(
    DEC_DECOMP**          newdecomp           /**< new decomposition, if successful */
    )
 {
-   int transferred = 0;
+   int transferredexisting = 0;
+   int transferrednew = 0;
    DEC_DECOMP* origdecomp = decomp;
    DEC_DECOMP* tempdecomp = NULL;
 
@@ -3631,11 +3633,11 @@ SCIP_RETCODE DECcreatePolishedDecomp(
 
    do
    {
-      SCIP_CALL( DECtryAssignMasterconssToExistingPricing(scip, *newdecomp, &transferred) );
-      SCIPdebugMessage("%d conss transferred to existing pricing\n", transferred);
-      SCIP_CALL( DECtryAssignMasterconssToNewPricing(scip, *newdecomp, &tempdecomp, &transferred) );
-      SCIPdebugMessage("%d conss transferred to new pricing\n", transferred);
-      if( transferred > 0 )
+      SCIP_CALL( DECtryAssignMasterconssToExistingPricing(scip, *newdecomp, &transferredexisting) );
+      SCIPdebugMessage("%d conss transferred to existing pricing\n", transferredexisting);
+      SCIP_CALL( DECtryAssignMasterconssToNewPricing(scip, *newdecomp, &tempdecomp, &transferrednew) );
+      SCIPdebugMessage("%d conss transferred to new pricing\n", transferrednew);
+      if( transferrednew > 0 )
       {
          if( *newdecomp != origdecomp )
          {
@@ -3643,7 +3645,7 @@ SCIP_RETCODE DECcreatePolishedDecomp(
          }
          *newdecomp = tempdecomp;
       }
-   } while( transferred > 0 );
+   } while( transferredexisting > 0 || transferrednew > 0 );
 
    if( *newdecomp == origdecomp )
    {
@@ -3657,7 +3659,7 @@ SCIP_RETCODE DECcreatePolishedDecomp(
 SCIP_RETCODE DECpermuteDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   unsigned int          permutationseed     /**< permutation seed */
+   SCIP_RANDNUMGEN*      randnumgen          /**< random number generator */
    )
 {
    int b;
@@ -3676,22 +3678,22 @@ SCIP_RETCODE DECpermuteDecomp(
       int *nsubscipvars = DECdecompGetNSubscipvars(decomp);
       subscipconss = DECdecompGetSubscipconss(decomp);
 
-      SCIPpermuteArray((void**)(subscipconss[b]), 0, nsubscipconss[b], &permutationseed);
+      SCIPrandomPermuteArray(randnumgen, (void**)(subscipconss[b]), 0, nsubscipconss[b]);
 
       subscipvars = DECdecompGetSubscipvars(decomp);
-      SCIPpermuteArray((void**)(subscipvars[b]), 0, nsubscipvars[b], &permutationseed);
+      SCIPrandomPermuteArray(randnumgen, (void**)(subscipvars[b]), 0, nsubscipvars[b]);
    }
 
    if( DECdecompGetNLinkingconss(decomp) > 0 )
    {
       SCIP_CONS** linkingconss = DECdecompGetLinkingconss(decomp);
-      SCIPpermuteArray((void**)linkingconss, 0, DECdecompGetNLinkingconss(decomp), &permutationseed);
+      SCIPrandomPermuteArray(randnumgen, (void**)linkingconss, 0, DECdecompGetNLinkingconss(decomp));
    }
 
    if( DECdecompGetNLinkingvars(decomp) > 0 )
    {
       SCIP_VAR** linkingvars = DECdecompGetLinkingvars(decomp);;
-      SCIPpermuteArray((void**)linkingvars, 0, DECdecompGetNLinkingvars(decomp), &permutationseed);
+      SCIPrandomPermuteArray(randnumgen, (void**)linkingvars, 0, DECdecompGetNLinkingvars(decomp));
    }
 
    SCIP_CALL( DECdecompCheckConsistency(scip, decomp) );

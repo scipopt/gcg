@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -117,13 +117,13 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
          assert(blocknr >= 0);
          /* we also want to take into account variables representing rays, that have a small value (between normal and feas eps),
           * so we do no feas comparison here */
-         if( SCIPisPositive(scip, mastervals[i]) )
+         if( SCIPisPositive(masterprob, mastervals[i]) )
          {
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < norigvars; j++ )
             {
                if( SCIPisZero(scip, origvals[j]) )
-                  break;
+                  continue;
 
                assert(!SCIPisZero(scip, origvals[j]));
 
@@ -156,7 +156,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       }
 
       /* handle the variables with value >= 1 to get integral values in original solution */
-      while( SCIPisFeasGE(scip, mastervals[i], 1.0) )
+      while( SCIPisFeasGE(masterprob, mastervals[i], 1.0) )
       {
          assert(blocknr >= 0);
          /* loop over all original variables contained in the current master variable */
@@ -166,7 +166,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
             int norigpricingvars;
             SCIP_VAR** origpricingvars;
             if( SCIPisZero(scip, origvals[j]) )
-               break;
+               continue;
             assert(!SCIPisZero(scip, origvals[j]));
 
             /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */
@@ -198,7 +198,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
          mastervals[i] = mastervals[i] - 1.0;
          blocknrs[blocknr]++;
       }
-      assert(!SCIPisFeasNegative(scip, mastervals[i]));
+      assert(!SCIPisFeasNegative(masterprob, mastervals[i]));
    }
 
    /* loop over all given master variables */
@@ -214,13 +214,13 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       origvals = GCGmasterVarGetOrigvals(mastervars[i]);
       blocknr = GCGvarGetBlock(mastervars[i]);
 
-      if( SCIPisFeasZero(scip, mastervals[i]) )
+      if( SCIPisFeasZero(masterprob, mastervals[i]) )
       {
          continue;
       }
-      assert(SCIPisFeasGE(scip, mastervals[i], 0.0) && SCIPisFeasLT(scip, mastervals[i], 1.0));
+      assert(SCIPisFeasGE(masterprob, mastervals[i], 0.0) && SCIPisFeasLT(masterprob, mastervals[i], 1.0));
 
-      while( SCIPisFeasPositive(scip, mastervals[i]) )
+      while( SCIPisFeasPositive(masterprob, mastervals[i]) )
       {
          assert(blocknr >= 0);
          assert(GCGvarIsMaster(mastervars[i]));
@@ -264,14 +264,14 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
          }
 
          mastervals[i] = mastervals[i] - increaseval;
-         if( SCIPisFeasZero(scip, mastervals[i]) )
+         if( SCIPisFeasZero(masterprob, mastervals[i]) )
          {
             mastervals[i] = 0.0;
          }
          blockvalue[blocknr] += increaseval;
 
          /* if the value assigned to the block is equal to 1, this block is full and we take the next block */
-         if( SCIPisFeasGE(scip, blockvalue[blocknr], 1.0) )
+         if( SCIPisFeasGE(masterprob, blockvalue[blocknr], 1.0) )
          {
             blockvalue[blocknr] = 0.0;
             blocknrs[blocknr]++;
@@ -288,6 +288,7 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
     */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPgetRealParam(scip, "numerics/feastol", &feastol) );
+
    for( i = 0; i < nvars; ++i )
    {
       SCIP_Real solval;

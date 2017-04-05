@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -60,7 +60,7 @@
 #define SEPA_FREQ                     0
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP           FALSE /**< does the separator use a secondary SCIP instance? */
-#define SEPA_DELAY                FALSE /**< should separation method be delayed, if other separators found cuts? */
+#define SEPA_DELAY                 TRUE  /**< should separation method be delayed, if other separators found cuts? */
 
 #define STARTMAXCUTS 50       /**< maximal cuts used at the beginning */
 #define MAXCUTSINC   20       /**< increase of allowed number of cuts */
@@ -1544,6 +1544,16 @@ SCIP_RETCODE SCIPincludeSepaBasis(
 
    /* create master separator data */
    SCIP_CALL( SCIPallocMemory(scip, &sepadata) );
+
+   sepadata->mastercuts = NULL;
+   sepadata->origcuts = NULL;
+   sepadata->norigcuts = 0;
+   sepadata->nmastercuts = 0;
+   sepadata->maxcuts = 0;
+   sepadata->newcuts = NULL;
+   sepadata->nnewcuts = 0;
+   sepadata->maxnewcuts = 0;
+   sepadata->objrow = NULL;
 
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,

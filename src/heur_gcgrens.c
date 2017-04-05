@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -313,7 +313,7 @@ SCIP_RETCODE createNewSol(
 #ifdef SCIP_STATISTIC
    if( !*success || heurdata->addallsols )
 #endif
-      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, success) );
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, success) );
 
 #ifdef SCIP_STATISTIC
    if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )
@@ -403,7 +403,7 @@ SCIP_RETCODE GCGapplyGcgrens(
    SCIP_CALL( SCIPcreate(&subscip) );
 
    /* create the variable mapping hash map */
-   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), SCIPcalcHashtableSize(5 * nvars)) );
+   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), nvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &subvars, nvars) );
 
    /* different methods to create sub-problem: either copy LP relaxation or the CIP with all constraints */
@@ -421,7 +421,7 @@ SCIP_RETCODE GCGapplyGcgrens(
       SCIP_CALL( SCIPcreateProb(subscip, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
       /* copy all variables */
-      SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, TRUE) );
+      SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, NULL, NULL, 0, TRUE) );
    }
    else
    {

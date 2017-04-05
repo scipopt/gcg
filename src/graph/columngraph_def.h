@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -228,8 +228,6 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
    this->nvars = nvars_;
    this->nconss = nconss_;
 
-
-
    /* go through all variables */
    for( i = 0; i < this->nvars; ++i )
    {
@@ -273,7 +271,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
          else
             var1 = curvars[j];
 
-         if( var1 )
+         if( !GCGisVarRelevant(var1) )
             continue;
 
          assert(var1 != NULL);
@@ -317,8 +315,6 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
    this->graph.flush();
    return SCIP_OKAY;
 }
-
-
 
 } /* namespace gcg */
 

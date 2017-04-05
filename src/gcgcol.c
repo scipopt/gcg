@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -116,17 +116,19 @@ SCIP_RETCODE GCGcreateGcgCol(
 }
 
 /** free a gcg column */
-SCIP_RETCODE GCGfreeGcgCol(
+void GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
    )
 {
-   /* todo: release vars? */
+   assert(gcgcol != NULL);
+   assert(*gcgcol != NULL);
 
+   /* todo: release vars? */
+   assert((*gcgcol)->vars != NULL);
    SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vars);
+   assert((*gcgcol)->vals != NULL);
    SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vals);
    SCIPfreeMemory((*gcgcol)->pricingprob, gcgcol);
-
-   return SCIP_OKAY;
 }
 
 /** create a gcg column from a solution to a pricing problem */

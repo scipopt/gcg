@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -72,6 +72,20 @@ SCIP_Real GCGconsGetRhs(
 /** returns the lhs of an arbitrary SCIP constraint */
 extern
 SCIP_Real GCGconsGetLhs(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get left hand side for */
+   );
+
+/** returns the dual farkas sol of an arbitrary SCIP constraint */
+extern
+SCIP_Real GCGconsGetDualfarkas(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get left hand side for */
+   );
+
+/** returns the dual sol of an arbitrary SCIP constraint */
+extern
+SCIP_Real GCGconsGetDualsol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
