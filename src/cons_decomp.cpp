@@ -702,7 +702,7 @@ SCIP_RETCODE DECdetectStructure(
    presolveOrigProblem = TRUE;
 
    /** Test: activate calculateOrigDecomps */
-   // SCIP_CALL( SCIPsetBoolParam( scip, "detection/origprob/enabled", TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam( scip, "detection/origprob/enabled", TRUE ) );
 
    SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
 

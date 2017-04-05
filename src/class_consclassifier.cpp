@@ -223,7 +223,7 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
    std::stringstream newClassdesc;
 
    /** create new ConsClassifier */
-   newName << name << "_Reduced_To_" << givenMaxNumber;
+   newName << name << "-red-to-" << givenMaxNumber;
    newClassifier = new ConsClassifier( scip, newName.str().c_str(), givenMaxNumber, nConss);
 
    /** count number of constraints per class */
@@ -237,7 +237,8 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
    std::vector<int>::const_iterator iterend = consToClasses.end();
    for( ; iter < iterend; ++iter )
    {
-      nmembers[*iter].second++;
+      if ( *iter != -1 )
+         nmembers[*iter].second++;
    }
 
    /** map the classes with high numbers of assigned constraints to new class indices */
@@ -252,10 +253,13 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
 
    for( int i = 0; i < newClassifier->getNConss(); ++i)
    {
-      if( classindexmapping[consToClasses[i]] == -1 )
-         newClassifier->assignConsToClass( i, classindexmapping[enlargedclassid] );
-      else
-         newClassifier->assignConsToClass( i, classindexmapping[consToClasses[i]] );
+      if ( consToClasses[i] != -1 )
+      {
+         if( classindexmapping[consToClasses[i]] == -1 )
+            newClassifier->assignConsToClass( i, classindexmapping[enlargedclassid] );
+         else
+            newClassifier->assignConsToClass( i, classindexmapping[consToClasses[i]] );
+      }
    }
 
    /** set new class names and descriptions */
@@ -293,7 +297,10 @@ int ConsClassifier::removeEmptyClasses()
    std::vector<int> toDelete(0);
 
    for ( int i = 0; i < nConss; ++i )
-      ++nConssPerClasses[consToClasses[i]];
+   {
+      if ( consToClasses[i] != -1 )
+         ++nConssPerClasses[consToClasses[i]];
+   }
 
    for ( int i = 0; i < nClasses; ++i )
    {

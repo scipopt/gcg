@@ -117,10 +117,7 @@ private:
    std::vector<std::pair<int,int> >                             candidatesNBlocks;      	/**< candidate for the number of blocks  */
 
 
-   std::vector<std::vector<int> >               consclassescollection;  /**< collection of different constraint class distributions  */
-   std::vector<int >                            consclassesnclasses;    /**< number of classes of the corresponding distribution */
-
-   std::vector<ConsClassifier*>                 consclassescollection2; /**< collection of different constraint class distributions  */
+   std::vector<ConsClassifier*>                 consclassescollection; /**< collection of different constraint class distributions  */
 
 
    SCIP_Bool                                    transformed;            /**< corresponds the matrix datastructure to the transformed problem */
@@ -258,20 +255,18 @@ public:
    ConsClassifier* createConsClassifierForNNonzeros(
       );
 
+   /** adds a constraint classifier if it is no duplicate of an existing classifier */
    void addConsClassifier(
-      ConsClassifier*               classifier                 /**< consclassifier to be added */
+      ConsClassifier*               classifier              /**< consclassifier to be added */
    );
 
-   bool distributionIsNoDuplicateOfDistributions(
-      std::vector<int>              compDistribution,
-      int                           nClasses,
-      std::vector<std::vector<int>> distributions
-      );
-
+   /** returns true if there already exists a classifier with an equivalent index structure,
+    *  meaning that the partition of the set of constraints is the same ignoring the concrete classindices, classnames, etc. */
    bool classifierIsNoDuplicateOfClassifiers(
-      ConsClassifier*              compClassifier
+      ConsClassifier*              compClassifier           /**< consclassifier to be checked */
    );
 
+   /** adds constraint classifiers with a reduced number of classes */
    void reduceConsclasses();
 
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
