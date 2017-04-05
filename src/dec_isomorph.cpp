@@ -825,8 +825,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
    )
 {
 
-   SCIP_HASHMAP* constoblock;
-   SCIP_HASHMAP* newconstoblock;
+
    char decinfo[SCIP_MAXSTRLEN];
    int nconss;
    int nvars;
@@ -837,6 +836,9 @@ SCIP_RETCODE createSeeedFromMasterconss(
    int i, j;
    int* vartoblock;
    int ncurvars;
+
+   std::vector<int> constoblock( seeedpool->getNConss(), -1);
+   std::vector<int> newconstoblock( seeedpool->getNConss(), -1);
 
    assert(scip != NULL);
    assert(nmasterconss == 0 || masterconss != NULL);
@@ -853,17 +855,15 @@ SCIP_RETCODE createSeeedFromMasterconss(
    SCIP_CALL( SCIPallocBufferArray(scip, &blockrepresentative, nblocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &consismaster, nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &vartoblock, nvars) );
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
-   SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), nconss) );
 
    for( i = 0; i < nmasterconss; ++i )
    {
-      SCIP_CALL( SCIPhashmapInsert(constoblock,(void*) (size_t)masterconss[i], (void*) (size_t) (nblocks+1)) );
+      constoblock[masterconss[i]]  = nblocks+1;
    }
 
    for( i = 0; i < nconss; ++i )
    {
-      consismaster[i] = SCIPhashmapExists(constoblock, (void*) (size_t) seeed->getOpenconss()[i]);
+      consismaster[i] = ( constoblock[seeed->getOpenconss()[i]] != -1 );
    }
 
    for( i = 0; i < nvars; ++i )
@@ -891,7 +891,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
       ncurvars = seeedpool->getNVarsForCons(seeed->getOpenconss()[i]);
       assert(ncurvars >= 0);
 
-      assert(SCIPhashmapGetImage(constoblock, (void*) (size_t) cons) == NULL);
+      assert( constoblock[cons] == -1 );
 
       /* if there are no variables, put it in the first block, otherwise put it in the next block */
       if( ncurvars == 0 )
@@ -990,7 +990,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
       if( consblock != -1 )
       {
          SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(seeedpool->getConsForIndex(cons)), consblock);
-         SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) cons, (void*)(size_t)consblock) );
+         constoblock[cons] = consblock;
       }
       else
       {
@@ -1042,18 +1042,18 @@ SCIP_RETCODE createSeeedFromMasterconss(
          continue;
       }
 
-      if( !SCIPhashmapExists(constoblock, (void*) (size_t) cons) )
-         continue;
+      if( constoblock[cons] == -1)
+               continue;
 
-      consblock = (int) (size_t) SCIPhashmapGetImage(constoblock, (void*) (size_t) cons); /*lint !e507*/
+      consblock = constoblock[cons]; /*lint !e507*/
       assert(consblock > 0);
       consblock = blockrepresentative[consblock];
       assert(consblock <= nblocks);
-      SCIP_CALL( SCIPhashmapInsert(newconstoblock, (void*) (size_t) cons, (void*)(size_t)consblock) );
+      newconstoblock[cons] = consblock;
       SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(seeedpool->getConsForIndex(cons)));
    }
    (*newSeeed) = new gcg::Seeed(seeed, seeedpool);
-   SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblock(newconstoblock, nblocks, seeedpool) );
+   SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblockVector(newconstoblock, nblocks, seeedpool) );
 
    (*newSeeed)->considerImplicits(seeedpool);
    (*newSeeed)->assignAllDependent(seeedpool);
@@ -1071,8 +1071,6 @@ SCIP_RETCODE createSeeedFromMasterconss(
    SCIPfreeBufferArray(scip, &vartoblock);
    SCIPfreeBufferArray(scip, &consismaster);
    SCIPfreeBufferArray(scip, &blockrepresentative);
-   SCIPhashmapFree(&constoblock);
-   SCIPhashmapFree(&newconstoblock);
 
    return SCIP_OKAY;
 }
@@ -1649,7 +1647,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
 {
    *result = SCIP_DIDNOTFIND;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-   gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
+   gcg::Seeed* seeed =  seeedPropagationData->seeedToPropagate ;
 
    seeedPropagationData->nNewSeeeds = 0;
    seeedPropagationData->newSeeeds = NULL;
@@ -1663,7 +1661,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
    if( detectordata->maxdecompsextend > 0 )
       SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, TRUE, detectordata->maxdecompsextend) );
 
-   if( detectordata->maxdecompsexact )
+   if( detectordata->maxdecompsexact > 0 )
       SCIP_CALL( detectIsomorph(scip, seeed, seeedPropagationData->seeedpool, &(seeedPropagationData->nNewSeeeds), &(seeedPropagationData->newSeeeds), detectordata, result, FALSE, detectordata->maxdecompsexact) );
 
    for( int i = 0; i < seeedPropagationData->nNewSeeeds; ++i )
@@ -1671,6 +1669,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
       seeedPropagationData->newSeeeds[i]->setDetectorPropagated(detector);
       seeedPropagationData->newSeeeds[i]->refineToMaster(seeedPropagationData->seeedpool);
    }
+
    return SCIP_OKAY;
 }
 #define detectorExitIsomorph NULL

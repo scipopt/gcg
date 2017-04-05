@@ -144,7 +144,7 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
    gcg::Seeed* seeed;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed = seeedPropagationData->seeedToPropagate;
 
    if(!seeed->areOpenVarsAndConssCalculated())
    {

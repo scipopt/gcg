@@ -124,6 +124,7 @@ private:
 
    std::vector<SeeedPtr>                        translatedOrigSeeeds;   /**< seeeds that are translated seeeds from found ones for the original problem */
 
+   int											helpvisucounter;
 
 public:
 
@@ -159,6 +160,8 @@ public:
    );
 
    void populate(std::vector<SeeedPtr> seeeds);
+
+   SCIP_RETCODE prepareSeeed( SeeedPtr seeed);
 
    void freeCurrSeeeds();
 
@@ -274,8 +277,10 @@ public:
 
    SCIP_RETCODE writeFamilyTreeLatexFile(
       const char* filename,                                 /* filename the output should be written to */
-      std::vector<SeeedPtr> seeeds                          /* vector of seeed pointers the  family tree should be constructed for */
-      );
+      const char* workfolder,                               /* directory in which should be worked */
+      std::vector<SeeedPtr> seeeds,                         /* vector of seeed pointers the  family tree should be constructed for */
+	  SCIP_Bool draft
+   );
 
 
    };

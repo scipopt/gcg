@@ -198,10 +198,23 @@ SCIP_RETCODE writeFamilyTree(
    SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
    )
 {
-
-   char* filename;
-   char* dirname;
+   char  dirname[SCIP_MAXSTRLEN];
+   char* draftstring;
+   char* ndecstring;
+   char filename[SCIP_MAXSTRLEN];
+   char* tmpstring;
+   char tempstr[SCIP_MAXSTRLEN];
+   char outname[SCIP_MAXSTRLEN];
+   const char* extension = "tex";
    SCIP_Bool endoffile;
+   SCIP_Bool draft;
+   int ndecs;
+   const int defaultndecs = 5;
+   SCIP_RETCODE retcode;
+
+   draft = FALSE;
+   ndecs = 5;
+   tempstr[0] = '\0';
 
    if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
    {
@@ -211,78 +224,77 @@ SCIP_RETCODE writeFamilyTree(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory and/or extension: ", &dirname, &endoffile) );
+   /*@todo path & filename.tex where path must exist*/
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,"Enter existing directory for output (e.g. ../path/to/directory):\n",
+      &tmpstring, &endoffile) );
    if( endoffile )
    {
       *nextdialog = NULL;
       return SCIP_OKAY;
    }
 
-   if( SCIPdialoghdlrIsBufferEmpty(dialoghdlr) )
+   strncpy(dirname, tmpstring, SCIP_MAXSTRLEN);
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,"Enter file name for output (e.g. myfile):\n", &tmpstring,
+      &endoffile) );
+   if( endoffile )
    {
-      filename = dirname;
-      dirname = NULL;
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
+   strncpy(filename, tmpstring, SCIP_MAXSTRLEN);
+
+   (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", dirname, filename, extension);
+
+
+   /*@todo y/ yes or anything for no*/
+   SCIPdialogMessage(scip, NULL, "Draft mode will not visualize non-zero values but is faster and takes less memory.\n");
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
+      "To activate draft mode type 'yes', otherwise type anything different or just press Enter:",
+      &draftstring, &endoffile) );
+   if( strcmp( draftstring, "y") == 0 || strcmp( draftstring, "yes") == 0 ||
+      strcmp( draftstring, "Y") == 0 || strcmp( draftstring, "Yes") == 0 || strcmp( draftstring, "YES") == 0)
+   {
+	   draft = TRUE;
+   }
+
+   (void) SCIPsnprintf(tempstr, SCIP_MAXSTRLEN, "Maximum number of finished decompositions (default: %d): ", defaultndecs);
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, (char*)tempstr, &ndecstring, &endoffile) );
+
+   /*@todo is this possible in a more elegant way? it might be ok*/
+   ndecs = atoi( ndecstring );
+
+   if ( ndecs == 0 )
+   {
+	   SCIPdialogMessage(scip, NULL,
+	      "This is not a compatible number, set number of finished decompositions to %d \n", defaultndecs);
+	   ndecs = defaultndecs;
+   }
+
+   retcode = DECwriteFamilyTree(scip, outname, dirname, ndecs, draft);
+
+
+
+   if( retcode == SCIP_FILECREATEERROR )
+   {
+      SCIPdialogMessage(scip, NULL, "error creating file\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+   }
+   else if( retcode == SCIP_WRITEERROR )
+   {
+      SCIPdialogMessage(scip, NULL, "error writing file\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
    }
    else
    {
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
-   }
+      /* check for unexpected errors */
+      SCIP_CALL( retcode );
 
-   if( filename[0] != '\0' )
-   {
-      char* extension;
-      extension = filename;
-      SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, extension, TRUE) );
-
-      do
-      {
-         SCIP_RETCODE retcode = DECwriteFamilyTree(scip, dirname, extension);
-
-         if( retcode == SCIP_FILECREATEERROR )
-         {
-            SCIPdialogMessage(scip, NULL, "error creating files\n");
-            SCIPdialoghdlrClearBuffer(dialoghdlr);
-            break;
-         }
-         else if( retcode == SCIP_WRITEERROR )
-         {
-            SCIPdialogMessage(scip, NULL, "error writing files\n");
-            SCIPdialoghdlrClearBuffer(dialoghdlr);
-            break;
-         }
-         else if( retcode == SCIP_PLUGINNOTFOUND )
-         {
-            /* ask user once for a suitable reader */
-            if( extension == NULL )
-            {
-               SCIPdialogMessage(scip, NULL, "no reader for requested output format\n");
-
-               SCIPdialogMessage(scip, NULL, "following readers are avaliable for writing:\n");
-               displayReaders(scip, FALSE, TRUE);
-
-               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
-                     "select a suitable reader by extension (or return): ", &extension, &endoffile) );
-
-               if( extension[0] == '\0' )
-                  break;
-            }
-            else
-            {
-               SCIPdialogMessage(scip, NULL, "no reader for output in <%s> format\n", extension);
-               extension = NULL;
-            }
-         }
-         else
-         {
-            /* check for unexpected errors */
-            SCIP_CALL( retcode );
-
-            /* print result message if writing was successful */
-            SCIPdialogMessage(scip, NULL, "written all decompositions %s\n", extension);
-            break;
-         }
-      }
-      while (extension != NULL );
+      /* print result message if writing was successful */
+      SCIPdialogMessage(scip, NULL, "Family tree visualization is written to %s\n", outname);
    }
 
    return SCIP_OKAY;
@@ -560,8 +572,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
          SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
       }
-
-      SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
 
    case SCIP_STAGE_PRESOLVED:
       if( !DEChasDetectionRun(scip) )

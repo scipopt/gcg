@@ -29,6 +29,7 @@
  * @ingroup DETECTORS
  * @brief  detector for staircase_lsp matrices
  * @author Martin Bergner
+ * @author Michael Bastubbe
  *
  * This detector detects staircase_lsp structures in the constraint matrix by searching for the longest shortest path
  * in the row graph of the matrix.
@@ -866,6 +867,8 @@ SCIP_RETCODE detection(
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
    SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
+
+
    return SCIP_OKAY;
 }
 
@@ -875,12 +878,28 @@ static
 DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
 {
 
-   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   DEC_DETECTORDATA* detectordata;
+
+   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   assert(detectordata != NULL);
+   detectordata->graph = NULL;
+   detectordata->constoblock = NULL;
+   detectordata->vartoblock = NULL;
+   detectordata->nblocks = 0;
+   detectordata->newToOld = NULL;
+   detectordata->oldToNew = NULL;
+   detectordata->components = NULL;
+   detectordata->ncomponents = 0;
 
    *result = SCIP_DIDNOTFIND;
 
    detection(scip, detectordata, seeedPropagationData);
    seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
+
+   delete detectordata->newToOld;
+   delete detectordata->oldToNew;
+
+   SCIPfreeMemory(scip, &detectordata);
 
    *result = SCIP_SUCCESS;
 
@@ -890,11 +909,28 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStaircaseLsp)
 static
 DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
 {
-   DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
+   DEC_DETECTORDATA* detectordata;
+
+   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   assert(detectordata != NULL);
+   detectordata->graph = NULL;
+   detectordata->constoblock = NULL;
+   detectordata->vartoblock = NULL;
+   detectordata->nblocks = 0;
+   detectordata->newToOld = NULL;
+   detectordata->oldToNew = NULL;
+   detectordata->components = NULL;
+   detectordata->ncomponents = 0;
+
 
    *result = SCIP_DIDNOTFIND;
 
    detection(scip, detectordata, seeedPropagationData);
+
+   delete detectordata->newToOld;
+   delete detectordata->oldToNew;
+
+   SCIPfreeMemory(scip, &detectordata);
 
    *result = SCIP_SUCCESS;
 
@@ -919,7 +955,7 @@ SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
 {
    DEC_DETECTORDATA* detectordata;
 
-   /* create staircase constraint handler data */
+   /* for thread safety: create staircase constraint handler data in callback methods*/
    detectordata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );

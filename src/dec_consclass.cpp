@@ -171,7 +171,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
      return SCIP_OKAY;
   }
 
-  SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+  SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
   std::vector<gcg::Seeed*> foundseeeds(0);
@@ -195,7 +195,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        continue;
     }
 
-    seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+    seeedOrig = seeedPropagationData->seeedToPropagate;
     seeedOrig->setDetectorPropagated(detector);
 
     if( !seeedOrig->areOpenVarsAndConssCalculated() )
@@ -282,8 +282,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
        foundseeeds.push_back(seeed);
     }
-    delete seeedOrig;
- }
+  }
 
   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 

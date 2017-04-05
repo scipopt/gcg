@@ -186,6 +186,7 @@ SCIP_DECL_CONSINIT(consInitDecomp)
    assert(conshdlrdata != NULL);
 
    conshdlrdata->hasrun = FALSE;
+   conshdlrdata->seeedpool = NULL;
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
@@ -193,7 +194,7 @@ SCIP_DECL_CONSINIT(consInitDecomp)
       detector = conshdlrdata->detectors[i];
       assert(detector != NULL);
 
-      SCIP_CALL( SCIPresetClock(scip, detector->dectime) );
+      detector->dectime = 0.;
       if( detector->initDetector != NULL )
       {
          SCIPdebugMessage("Calling initDetector of %s\n", detector->name);
@@ -244,6 +245,9 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       }
    }
 
+   delete conshdlrdata->seeedpool;
+
+   conshdlrdata->seeedpool = NULL;
    return SCIP_OKAY;
 }
 
@@ -269,7 +273,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
          SCIPdebugMessage("Calling freeDetector of %s\n", detector->name);
          SCIP_CALL( (*detector->freeDetector)(scip, detector) );
       }
-      SCIP_CALL( SCIPfreeClock(scip, &detector->dectime) );
       SCIPfreeBlockMemory(scip, &detector);
    }
 
@@ -282,6 +285,9 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
    }
+
+   if( conshdlrdata->seeedpool != NULL )
+      delete conshdlrdata->seeedpool;
 
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
@@ -597,7 +603,7 @@ SCIP_RETCODE DECincludeDetector(
    detector->usefulRecall = usefulRecall;
    detector->ndecomps = 0;
    detector->decomps = NULL;
-   SCIP_CALL( SCIPcreateWallClock(scip, &(detector->dectime)) );
+   detector->dectime = 0.;
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled", name);
@@ -682,7 +688,6 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-
    gcg::Seeedpool seeedpoolunpresolved(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
    std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
    std::vector<gcg::ConsClassifier*> conssClassDistributions;         /**< collection of different constraint class distributions */
@@ -701,9 +706,6 @@ SCIP_RETCODE DECdetectStructure(
 
    presolveOrigProblem = TRUE;
 
-   /** Test: activate calculateOrigDecomps */
-   SCIP_CALL( SCIPsetBoolParam( scip, "detection/origprob/enabled", TRUE ) );
-
    SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -712,7 +714,7 @@ SCIP_RETCODE DECdetectStructure(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-
+   conshdlrdata->seeedpool = NULL;
 
    /** get data of the seeedpool with original vars and conss */
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
@@ -772,7 +774,7 @@ SCIP_RETCODE DECdetectStructure(
 
    if( conshdlrdata->ndecomps == 0 )
    {
-	  gcg::Seeedpool* seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+     conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
 
 	  if( calculateOrigDecomps )
 	  {
@@ -780,24 +782,25 @@ SCIP_RETCODE DECdetectStructure(
 	     std::vector<gcg::Seeed*> translatedSeeeds(0);
 	     std::vector<gcg::ConsClassifier*> translatedDistributions(0);
 
-	     seeedpool->translateSeeedData(&seeedpoolunpresolved, seeedsunpresolved, translatedSeeeds, conssClassDistributions, translatedDistributions);
+	     conshdlrdata->seeedpool->translateSeeedData(&seeedpoolunpresolved, seeedsunpresolved, translatedSeeeds, conssClassDistributions, translatedDistributions);
+
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
 
-	     seeedpool->populate(translatedSeeeds);
+	     conshdlrdata->seeedpool->populate(translatedSeeeds);
 
         for ( size_t d = 0; d < translatedDistributions.size(); ++d )
-           seeedpool->addConsClassifier( translatedDistributions[d] );
+           conshdlrdata->seeedpool->addConsClassifier( translatedDistributions[d] );
 
         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished translate seeed method!\n");
 
         for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
-             seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
+           conshdlrdata->seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
 	  }
 
-	  seeedpool->findDecompositions();
-	  conshdlrdata->decdecomps = seeedpool->getDecompositions();
-	  conshdlrdata->ndecomps = seeedpool->getNDecompositions();
-	  conshdlrdata->seeedpool = seeedpool;
+	  conshdlrdata->seeedpool->findDecompositions();
+	  conshdlrdata->decdecomps = conshdlrdata->seeedpool->getDecompositions();
+	  conshdlrdata->ndecomps = conshdlrdata->seeedpool->getNDecompositions();
+
 	  SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
 	  SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
 //	  seeedpool.freeCurrSeeeds();
@@ -843,6 +846,7 @@ SCIP_RETCODE DECdetectStructure(
 
    /* show that we done our duty */
    conshdlrdata->hasrun = TRUE;
+
 
 //   SCIPhashmapFree( &consToIndex );
 
@@ -1004,8 +1008,10 @@ SCIP_RETCODE DECwriteAllDecomps(
 /** write family tree **/
 SCIP_RETCODE DECwriteFamilyTree(
    SCIP*                 scip,               /**< SCIP data structure */
-   char*                 directory,          /**< directory for decompositions */
-   int                   ndecompositions     /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
+   const char*           filename,           /**< filename the output should be written to (including directory) */
+   const char*           workfolder,         /**< directory in which should be worked */
+   int                   ndecompositions,    /**< the number of (complete) decompositions in order of a certain measure (atm: max white) */
+   SCIP_Bool draft
    )
 {
 
@@ -1023,15 +1029,11 @@ SCIP_RETCODE DECwriteFamilyTree(
 	assert(conshdlrdata != NULL);
 
 	 /* test familiy tree visualization */
-	    {
-	       std::vector<SeeedPtr> tovisualize(0);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[0]);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[1]);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[2]);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[3]);
-	       tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[4]);
-	       conshdlrdata->seeedpool->writeFamilyTreeLatexFile( "famtree.tex", tovisualize);
-	    }
+
+	for( int i = 0; i < ndecompositions; ++i)
+		tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[i]);
+
+	conshdlrdata->seeedpool->writeFamilyTreeLatexFile( filename, workfolder, tovisualize, draft);
 
 
 	   return SCIP_OKAY;
@@ -1167,7 +1169,7 @@ SCIP_RETCODE GCGprintDetectorStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Detector statistics:       time     number     blocks\n");
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-10.10s       :   %8.2f %10d    ", conshdlrdata->detectors[i]->name, SCIPclockGetTime(conshdlrdata->detectors[i]->dectime), conshdlrdata->detectors[i]->ndecomps );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-10.10s       :   %8.2f %10d    ", conshdlrdata->detectors[i]->name, conshdlrdata->detectors[i]->dectime, conshdlrdata->detectors[i]->ndecomps );
       for( j = 0; j < conshdlrdata->detectors[i]->ndecomps; ++j )
       {
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %d", DECdecompGetNBlocks(conshdlrdata->detectors[i]->decomps[j]));
@@ -1216,8 +1218,6 @@ SCIP_RETCODE setDetectionDefault(
          conshdlrdata->detectors[i]->setParamDefault(scip, conshdlrdata->detectors[i], &result);
       if( !quiet )
       {
-         char paramname[SCIP_MAXSTRLEN];
-         SCIP_Bool paramval;
          SCIP_Bool written = FALSE;
 
          (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
