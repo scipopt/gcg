@@ -800,7 +800,7 @@ SCIP_RETCODE DECdetectStructure(
    }
    else
    {
-      seeedpoolunpresolved.freeCurrSeeeds();
+      //seeedpoolunpresolved.freeCurrSeeeds();
       SCIP_CALL( DECdecompTransform(scip, conshdlrdata->decdecomps[0]) );
    }
 

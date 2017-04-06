@@ -86,7 +86,7 @@ using gcg::Weights;
 #define DEC_MAXCALLROUNDORIGINAL  0     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              1000           /**< priority of the detector */
-#define DEC_DECCHAR               'c'            /**< display character of detector */
+#define DEC_DECCHAR               'g'            /**< display character of detector */
 #define DEC_ENABLED               TRUE           /**< should detector be called by default */
 #define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE          /**< should detector be called by default */
