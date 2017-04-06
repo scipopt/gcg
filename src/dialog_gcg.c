@@ -354,7 +354,7 @@ SCIP_RETCODE reportAllDecompositions(
       &tempstring, &endoffile) );
 
    nmaxdecs = atoi( tempstring );
-   if ( nmaxdecs == 0 )
+   if ( nmaxdecs == 0 || nmaxdecs < 0)
    {
       SCIPdialogMessage(scip, NULL,
          "This is not a compatible number, all decompositions will be included. \n");
@@ -370,6 +370,8 @@ SCIP_RETCODE reportAllDecompositions(
    /* there are decomp types 0-4 (see type_decomp.h for further infos) */
    if(type < 0 || type > 4){
       type = 0;
+      SCIPdialogMessage(scip, NULL,
+               "This is not a compatible number, all decompositions will be included. \n");
    }
    ndecompsoftype = 0;
    if(type == 0)

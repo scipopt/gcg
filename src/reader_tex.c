@@ -58,8 +58,6 @@
 #define READER_EXTENSION        "tex"
 
 #define DEFAULT_USEGP            FALSE
-#define DEFAULT_MAXNDECOMPS      50
-#define DEFAULT_RETURNTYPE       0
 #define DEFAULT_PICTURESONLY     FALSE
 #define DEFAULT_DRAFTMODE        FALSE
 
@@ -844,6 +842,11 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
       return SCIP_FILECREATEERROR;
    }
 
+   /*
+   if( readerdata->usegp )
+   {
+      SCIPinfoMessage(scip, makefile, "GNUPLOTFILES:=$(gnuplot $(wildcard *.gp))                                   \n");
+   } */
    SCIPinfoMessage(scip, makefile, "                                                                             \n");
    SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               \n");
    SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex                                                               \n",
@@ -855,6 +858,8 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
       SCIPinfoMessage(scip, makefile, "\t@echo Compiling gp files to tex                                            \n");
       SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
       SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
+      /*SCIPinfoMessage(scip, makefile, "\t@echo $(gnuplot file)                                                      \n");
+       */
       SCIPinfoMessage(scip, makefile, "\tgnuplot *.gp                                                               \n");
    }
    SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
