@@ -67,14 +67,40 @@
 struct SCIP_ReaderData
 {
    SCIP_Bool       usegp;           /** if true uses gp files as intermediate step */
-   int             maxndecomps;     /** maximum number of decompositions to visualize
-                                      * (ones with best score first are preferred) */
-   int             returntype;      /** output only decompositions of type:47: error
-                                      * 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered */
-   SCIP_Bool       picturesonly;    /** if true only tex code for the pictures is generated
-                                      * (no statistics, no report file) */
-   SCIP_Bool       draftmode;       /** if true shows no non-zeroes, recommended if too slow or too memory-intensive */
+   SCIP_Bool       picturesonly;    /** if true only tex code for the pictures is generated (no statistics included) */
+   SCIP_Bool       draftmode;       /** if true shows no non-zeroes, recommended if too slow or too memory-intensive
+                                      * (not compatible with gp) */
 };
+
+/** Getter of parameter usegp */
+SCIP_Bool GCGtexGetUseGp(
+   SCIP*                scip               /**< SCIP data structure */
+   )
+{
+   SCIP_READERDATA* readerdata;
+   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
+   return readerdata->usegp;
+}
+
+/** Getter of parameter picturesonly */
+SCIP_Bool GCGtexGetPicturesonly(
+   SCIP*                scip               /**< SCIP data structure */
+   )
+{
+   SCIP_READERDATA* readerdata;
+   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
+   return readerdata->picturesonly;
+}
+
+/** Getter of parameter draftmode */
+SCIP_Bool GCGtexGetDraftmode(
+   SCIP*                scip               /**< SCIP data structure */
+   )
+{
+   SCIP_READERDATA* readerdata;
+   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
+   return readerdata->draftmode;
+}
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
 static
@@ -90,7 +116,8 @@ SCIP_DECL_READERFREE(readerFreeTex)
    return SCIP_OKAY;
 }
 
-/** problem reading method of reader */
+/** Problem reading method of reader.
+ *  Since the reader is not supposed to read files this returns a reading error. */
 static
 SCIP_DECL_READERREAD(readerReadTex)
 {  /*lint --e{715}*/
@@ -100,69 +127,29 @@ SCIP_DECL_READERREAD(readerReadTex)
          "Please read in a problem before reading in the corresponding structure file!\n");
       return SCIP_OKAY;
    }
-
-   SCIP_CALL( GCGreadTex(scip, filename, result) );
-
-   return SCIP_OKAY;
+   return SCIP_READERROR;
 }
 
 /** problem writing method of reader */
 static
 SCIP_DECL_READERWRITE(readerWriteTex)
 {  /*lint --e{715}*/
-   int ndecomps;
-   SCIP_READERDATA* readerdata;
 
    assert(scip != NULL);
    assert(reader != NULL);
 
-   ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
+   SCIP_CALL( GCGtexWriteHeaderCode(scip,file) );
+   SCIP_CALL( GCGtexWriteDecompCode(scip, file, DECgetBestDecomp(scip)) );
+   SCIP_CALL( GCGtexWriteEndCode(scip,file) );
 
-   SCIP_CALL( GCGwriteDecompsToTex(scip, file, SCIPconshdlrDecompGetDecdecomps(scip), &ndecomps, TRUE, TRUE, readerdata) );
    *result = SCIP_SUCCESS;
-
    return SCIP_OKAY;
 }
 
-/* the reader is not supposed to read files,
- * returns a reading error */
-SCIP_RETCODE GCGreadTex(
-   SCIP*                 scip,               /**< SCIP data structure */
-   const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
-   )
-{
-   return SCIP_READERROR;
-}
-
-/** gets number of decompositions of a certain type in a given decomposition structure */
-static
-SCIP_RETCODE getNDecompsOfType(
+/** gets the path of the file */
+SCIP_RETCODE GCGgetFilePath(
    SCIP*                scip,               /**< SCIP data structure */
-   DEC_DECOMP**         decomps,            /**< Decompositions structure */
-   int*                 ndecomps,           /**< Number of decompositions in the structure */
-   DEC_DECTYPE          type,               /**< type that is to be counted */
-   int*                 number              /**< number of decomps of given type (resultpointer) */
-   )
-{
-   int i;
-
-   *number = 0;
-   for( i = 0; i < *ndecomps; i++ )
-   {
-      if( DECdecompGetType(decomps[i]) == type )
-         *number = *number+1;
-   }
-   return SCIP_OKAY;
-}
-
-/** gets path of file */
-static
-SCIP_RETCODE getPath(
-   SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file,               /**< Decompositions structure */
+   FILE*                file,               /**< file */
    char*                pfile               /**< return path of file */
    )
 {
@@ -184,21 +171,25 @@ SCIP_RETCODE getPath(
    return SCIP_OKAY;
 }
 
-/** write LaTeX code header, begin of document, general statistics and table of contents */
-static
-SCIP_RETCODE writeHeaderCode(
+/** write LaTeX code header & begin of document
+ * The proper order in which a tex file is written goes as follows:
+ *    -> GCGtexWriteHeaderCode         (required)
+ *    GCGtexWriteTitlepage             (optional)
+ *    GCGtexWriteTableOfContents       (optional)
+ *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
+ *    GCGtexWriteEndCode               (required)
+ *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteHeaderCode(
    SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file,               /**< File pointer to write to */
-   SCIP_Bool            statistics,         /**< if true detection statistics and are included in report */
-   DEC_DECOMP**         decomps,            /**< Decompositions structure */
-   int*                 ndecomps,           /**< Number of decompositions */
-   SCIP_Bool            toc,                /**< if true table of contents is included */
-   SCIP_READERDATA*     readerdata          /**< reader specific arguments */
+   FILE*                file                /**< File pointer to write to */
    )
 {
+   SCIP_READERDATA* readerdata;
    char* pname;
    char ppath[SCIP_MAXSTRLEN];
-   int ndecompsoftype;
+
+   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
 
    strcpy(ppath, (char*) SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
@@ -239,7 +230,6 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     \n");
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
    SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
-   SCIPinfoMessage(scip, file, "\\usepackage{tabularx}                                                           \n");
    if( readerdata->usegp )
    {
       SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                \n");
@@ -249,50 +239,89 @@ SCIP_RETCODE writeHeaderCode(
    SCIPinfoMessage(scip, file, "                                                                                 \n");
    SCIPinfoMessage(scip, file, "\\begin{document}                                                                \n");
    SCIPinfoMessage(scip, file, "                                                                                 \n");
-   SCIPinfoMessage(scip, file, "\\begin{titlepage}                                                               \n");
-   SCIPinfoMessage(scip, file, "  \\centering                                                                    \n");
-   SCIPinfoMessage(scip, file, "  \\thispagestyle{empty}                                                         \n");
-   SCIPinfoMessage(scip, file, "  {\\Huge Report: %s} \\\\ \\today                                               \n",
-      pname);
 
-   if( statistics )
-   {
-      SCIPinfoMessage(scip, file, "                                                                              \n");
-      SCIPinfoMessage(scip, file, "\\vspace{2cm}                                                                 \n");
-      SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                          \n");
-      SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{0pt}                                 \n");
-      SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                   \n",
-         pname);
-      SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                   \n");
-      SCIPinfoMessage(scip, file, "  Number of variables in original problem: & %i  \\\\                         \n",
-         SCIPgetNOrigVars(scip));
-      SCIPinfoMessage(scip, file, "  \\vspace{0.5cm}                                                             \n");
-      SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\                       \n",
-         SCIPgetNOrigConss(scip));
-      SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                  \n",
-         SCIPconshdlrDecompGetNDecdecomps(scip));
-      if( readerdata->returntype != 0 )
+   return SCIP_OKAY;
+}
+
+/** write LaTeX code title page that includes general statistics about the problem
+ *  * The proper order in which a tex file is written goes as follows:
+ *    GCGtexWriteHeaderCode            (required)
+ *    -> GCGtexWriteTitlepage          (optional)
+ *    GCGtexWriteTableOfContents       (optional)
+ *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
+ *    GCGtexWriteEndCode               (required)
+ *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteTitlepage(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file,               /**< File pointer to write to */
+   int*                 npresenteddecomps   /**< Number of decompositions to be shown in the file or NULL if unknown */
+   )
+{
+   char* pname;
+   char ppath[SCIP_MAXSTRLEN];
+   int ndecomps;
+
+   ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
+   strcpy(ppath, (char*) SCIPgetProbName(scip));
+   SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
+
+   SCIPinfoMessage(scip, file, "\\begin{titlepage}                                                            \n");
+   SCIPinfoMessage(scip, file, "  \\centering                                                                 \n");
+   SCIPinfoMessage(scip, file, "  \\thispagestyle{empty}                                                      \n");
+   SCIPinfoMessage(scip, file, "  {\\Huge Report: %s} \\\\ \\today                                            \n",
+      pname);
+   SCIPinfoMessage(scip, file, "                                                                              \n");
+   SCIPinfoMessage(scip, file, "\\vspace{2cm}                                                                 \n");
+   SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                          \n");
+   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{0pt}                                 \n");
+   SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                   \n",
+      pname);
+   SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                   \n");
+   SCIPinfoMessage(scip, file, "  Number of variables in original problem: & %i  \\\\                         \n",
+      SCIPgetNOrigVars(scip));
+   SCIPinfoMessage(scip, file, "  \\vspace{0.5cm}                                                             \n");
+   SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\                       \n",
+      SCIPgetNOrigConss(scip));
+   SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                  \n",
+      SCIPconshdlrDecompGetNDecdecomps(scip));
+   if(npresenteddecomps != NULL){
+      if( ndecomps > *npresenteddecomps )
       {
-          getNDecompsOfType(scip,decomps,ndecomps,readerdata->returntype, &ndecompsoftype);
-          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\          \n",
-             ndecompsoftype);
+         SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\ \n",
+            *npresenteddecomps);
       }
       else
       {
-         SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\           \n",
-            *ndecomps);
+         SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\ \n", ndecomps);
       }
-      SCIPinfoMessage(scip, file, "\\end{tabular}                                                                \n");
-      SCIPinfoMessage(scip, file, "                                                                              \n");
    }
-   SCIPinfoMessage(scip, file, "\\end{titlepage}                                                                 \n");
+   SCIPinfoMessage(scip, file, "\\end{tabular}                                                                \n");
+   SCIPinfoMessage(scip, file, "                                                                              \n");
+   SCIPinfoMessage(scip, file, "\\end{titlepage}                                                              \n");
+   SCIPinfoMessage(scip, file, "\\newpage                                                                     \n");
 
-   if( toc && readerdata->picturesonly == FALSE)
-   {
-      SCIPinfoMessage(scip, file, "\\thispagestyle{empty}                                                        \n");
-      SCIPinfoMessage(scip, file, "\\tableofcontents                                                             \n");
-      SCIPinfoMessage(scip, file, "\\newpage                                                                     \n");
-   }
+   return SCIP_OKAY;
+}
+
+/** write LaTeX code for table of contents
+ * The proper order in which a tex file is written goes as follows:
+ *    GCGtexWriteHeaderCode            (required)
+ *    GCGtexWriteTitlepage             (optional)
+ *    -> GCGtexWriteTableOfContents    (optional)
+ *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
+ *    GCGtexWriteEndCode               (required)
+ *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteTableOfContents(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file                /**< File pointer to write to */
+   )
+{
+   SCIPinfoMessage(scip, file, "\\thispagestyle{empty}                                                        \n");
+   SCIPinfoMessage(scip, file, "\\tableofcontents                                                             \n");
+   SCIPinfoMessage(scip, file, "\\newpage                                                                     \n");
+   SCIPinfoMessage(scip, file, "                                                                              \n");
 
    return SCIP_OKAY;
 }
@@ -303,7 +332,7 @@ static
 SCIP_RETCODE writeTikz(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decomp,             /**< Decomposition array pointer */
+   DEC_DECOMP*           decomp,             /**< Decomposition pointer */
    SCIP_READERDATA*      readerdata          /**< reader specific arguments */
    )
 {
@@ -449,7 +478,8 @@ SCIP_RETCODE writeTikz(
     * Instead of var-/consindex the value of (index/maxindex)*textwidth/height is used
     */
 
-   if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED )
+   if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED
+       || DECdecompGetType(decomp) == DEC_DECTYPE_DIAGONAL )
    {
       for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
       {
@@ -535,7 +565,6 @@ SCIP_RETCODE writeTikz(
                {
                   assert(varindexmap != NULL);
                   assert(consindexmap != NULL);
-                  /*@todo make the following if statement into an assertion*/
                   if( SCIPhashmapExists(varindexmap, SCIPvarGetProbvar(curvars[j]))
                      && SCIPhashmapExists(consindexmap, conss[i]))
                   {
@@ -570,16 +599,24 @@ SCIP_RETCODE writeTikz(
    return SCIP_OKAY;
 }
 
-/** write LaTeX code for one decomposition */
-static
-SCIP_RETCODE writeDecompCode(
+/** write LaTeX code for one decomposition
+ * The proper order in which a tex file is written goes as follows:
+ *    GCGtexWriteHeaderCode            (required)
+ *    GCGtexWriteTitlepage             (optional)
+ *    GCGtexWriteTableOfContents       (optional)
+ *    -> GCGtexWriteDecompCode         (required as often as the number of decompositions you wish to visualize)
+ *    GCGtexWriteEndCode               (required)
+ *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteDecompCode(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decomp,             /**< Decomposition array pointer */
-   SCIP_READERDATA*      readerdata          /**< reader specific arguments */
+   DEC_DECOMP*           decomp              /**< Decomposition pointer */
    )
 {
    FILE* gpfile;
+   SCIP_READER* reader;
+   SCIP_READERDATA* readerdata;
    DEC_DETECTOR** detectorchain;
    DEC_SCORES scores;
    char* filepath;
@@ -595,29 +632,37 @@ SCIP_RETCODE writeDecompCode(
    int sizedetectorchain;
    int i;
 
-   /* construct detector chain string*/
+   assert(decomp != NULL);
+   reader = SCIPfindReader(scip, "texreader");
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
 
+   /* construct detector chain string*/
    detectorchain = DECdecompGetDetectorChain(decomp);
    sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
 
    sprintf(detectorchainstring, "%s", DECdetectorGetName(detectorchain[0]));
-
    for( i=1; i < sizedetectorchain; ++i )
    {
       sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(detectorchain[i]) );
    }
    SCIPinfoMessage(scip, NULL, "%s \n", detectorchainstring);
 
-   assert(decomp != NULL);
-
    (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d", detectorchainstring, DECdecompGetNBlocks(decomp));
+   /* tex will have problems with the character '_' */
+   for(i = 0; i < SCIP_MAXSTRLEN; i++)
+   {
+      if(decompname[i] == '_'){
+         decompname[i] = '-';
+      }
+   }
 
    if( readerdata->usegp )
    {
       /* --- create a gnuplot file for the decomposition --- */
 
       /* get path to write to and put it into gpfilename */
-      getPath(scip, file, pfile);
+      GCGgetFilePath(scip, file, pfile);
       strcpy(pfilecpy, pfile);
       SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
       strcpy(gpfilename, filepath);
@@ -628,19 +673,19 @@ SCIP_RETCODE writeDecompCode(
       SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
       if( pname != NULL &&  pname[0] != '\0' )
       {
-         strcat(gpfilename, pname);
-         strcat(gpfilename, "-");
+         strcpy(gpname, pname);
+         strcat(gpname, "-");
       }
 
       if( decompname != NULL &&  decompname[0] != '\0' )
       {
-         strcat(gpfilename, decompname);
+         strcat(gpname, decompname);
       }
       else
       {
          return SCIP_FILECREATEERROR;
       }
-      strcpy(gpname, gpfilename);
+      strcat(gpfilename, gpname);
       strcat(gpfilename, ".gp");
 
       /* write gp file for decomp using the gp reader (using the tex output option) */
@@ -657,20 +702,11 @@ SCIP_RETCODE writeDecompCode(
 
    /* --- gather information & output them into .tex file --- */
 
-
    DECevaluateDecomposition(scip, decomp, &scores);
 
    if(!readerdata->picturesonly)
    {
-      /*@todo make '_' in detectorchainstring/decompname save */
-      for(i = 0; i < SCIP_MAXSTRLEN; i++)
-      {
-         if(decompname[i] == '_'){
-            decompname[i] = '-';
-         }
-      }
-
-      SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}\n", decompname);
+      SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
       SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
       SCIPinfoMessage(scip, file, "                                                                \n");
    }
@@ -678,7 +714,7 @@ SCIP_RETCODE writeDecompCode(
    SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
    if( readerdata->usegp )
    {
-      SCIPinfoMessage(scip, file, "    \\input{%s-%c-%d}                                            \n",
+      SCIPinfoMessage(scip, file, "    \\input{%s-%s-%d}                                            \n",
          pname, detectorchainstring, DECdecompGetNBlocks(decomp));
    }
    else
@@ -738,9 +774,16 @@ SCIP_RETCODE writeDecompCode(
    return SCIP_OKAY;
 }
 
-/** write LaTeX code for end of document */
-static
-SCIP_RETCODE writeEndCode(
+/** write LaTeX code for end of document
+ * The proper order in which a tex file is written goes as follows:
+ *    GCGtexWriteHeaderCode            (required)
+ *    GCGtexWriteTitlepage             (optional)
+ *    GCGtexWriteTableOfContents       (optional)
+ *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
+ *    -> GCGtexWriteEndCode            (required)
+ *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteEndCode(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< File pointer to write to */
    )
@@ -751,16 +794,23 @@ SCIP_RETCODE writeEndCode(
    return SCIP_OKAY;
 }
 
-/** makes a new makefile and readme for the given .tex file */
-static
-SCIP_RETCODE makeMakefileAndReadme(
+/** makes a new makefile and readme for the given .tex file
+ * The proper order in which a tex file is written goes as follows:
+ *    GCGtexWriteHeaderCode            (required)
+ *    GCGtexWriteTitlepage             (optional)
+ *    GCGtexWriteTableOfContents       (optional)
+ *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
+ *    GCGtexWriteEndCode               (required)
+ *    -> GCGtexWriteMakefileAndReadme  (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file,               /**< Decompositions structure */
-   SCIP_READERDATA*     readerdata          /**< reader specific arguments */
+   FILE*                file                /**< File for which the makefile & readme are generated */
    )
 {
    FILE* makefile;
    FILE* readme;
+   SCIP_READERDATA* readerdata;
    char* filepath;
    char* filename;
    char pfile[SCIP_MAXSTRLEN];
@@ -770,10 +820,12 @@ SCIP_RETCODE makeMakefileAndReadme(
    char name[SCIP_MAXSTRLEN];
    const char makename[SCIP_MAXSTRLEN] = "makepdf";
 
+   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
+
    /* --- create a Makefile --- */
 
    /* get path to write to and put it into makefilename */
-   getPath(scip, file, pfile);
+   GCGgetFilePath(scip, file, pfile);
    strcpy(pfilecpy, pfile);
    SCIPsplitFilename(pfilecpy, &filepath, &filename, NULL, NULL);
    strcpy(makefilename, filepath);
@@ -858,125 +910,6 @@ SCIP_RETCODE makeMakefileAndReadme(
    return SCIP_OKAY;
 }
 
-/** writes tex files for the visualization & statistics of a given set of decomposition
- * and writes a Makefile to compile the files with
- */
-SCIP_RETCODE GCGwriteDecompsToTex(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
-   int*                  ndecomps,           /**< Number of decompositions */
-   SCIP_Bool             statistics,         /**< if true detection statistics and are included in report */
-   SCIP_Bool             toc,                /**< if true table of contents is included */
-   SCIP_READERDATA*      readerdata          /**< reader specific arguments */
-   )
-{
-   FILE* decompfile;
-   char* filepath;
-   char* filename;
-   char pfile[SCIP_MAXSTRLEN];
-   char decompname[SCIP_MAXSTRLEN];
-   char tempname[SCIP_MAXSTRLEN] = {'\0'};
-   char tempstr[SCIP_MAXSTRLEN] = {'\0'};
-   char tempc = '\0';
-   SCIP_Bool writedecomp;
-   int i;
-   int maxrounds;
-   int ndecompsoftype;
-
-   assert(scip != NULL);
-   assert(*ndecomps > 0);
-
-   getPath(scip, file, pfile);
-   SCIPsplitFilename(pfile, &filepath, &filename, NULL, NULL);
-
-   /* --- make a makefile and readme file --- */
-   makeMakefileAndReadme(scip,file,readerdata);
-
-   /* --- make the tex file(s) --- */
-
-   /* write LaTeX header including title and (optional) statistics & table of contents */
-   SCIP_CALL( writeHeaderCode(scip,file,statistics,decomps,ndecomps,toc,readerdata) );
-
-   if( readerdata->returntype != 0 )
-   {
-      getNDecompsOfType(scip,decomps,ndecomps,readerdata->returntype, &ndecompsoftype);
-   }
-   else
-   {
-      ndecompsoftype = *ndecomps;
-   }
-
-   /* check if the number of max decomps exceeds the number of available outputs */
-   if( readerdata->maxndecomps < ndecompsoftype )
-   {
-      maxrounds = readerdata->maxndecomps;
-   }
-   else
-   {
-      maxrounds = *ndecomps;
-   }
-
-   /* write LaTeX code for each decomp starting with the highest score */
-   /* note: decomps come sorted from lowest to highest score */
-   /* only output such decompositions of the given type */
-   for( i = 0; i < *ndecomps && maxrounds > 0; i++ )
-   {
-      if( decomps[i] != NULL )
-      {
-         writedecomp = FALSE;
-         if( readerdata->returntype == 0 )
-            writedecomp = TRUE;
-         else if( (unsigned int)readerdata->returntype == DECdecompGetType(decomps[i]) )
-            writedecomp = TRUE;
-
-         if( writedecomp == TRUE )
-         {
-            if(readerdata->picturesonly)
-            {
-               /* get file path and attach detectorchar + nblocks */
-               strcpy(decompname, filepath);
-               strcat(decompname, "/");
-
-               strcpy(tempname, filename);
-               strcat(tempname, "-");
-               tempc = DECdetectorGetChar(DECdecompGetDetector(decomps[i]));
-               strcat(tempname, &tempc);
-               strcat(tempname, "-");
-               sprintf(tempstr,"%d",DECdecompGetNBlocks(decomps[i]));
-               strcat(tempname, tempstr);
-               tempstr[0] = '\0';
-
-               strcat(decompname, tempname);
-               decompfile = fopen(decompname, "w");
-               if( decompfile == NULL )
-               {
-                  return SCIP_FILECREATEERROR;
-               }
-               /* write decomposition picture into new file */
-               SCIP_CALL( writeDecompCode(scip,decompfile,decomps[i],readerdata) );
-               fclose(decompfile);
-
-               /* input the decomposition into main file */
-               SCIPinfoMessage(scip, file, "    \\input{%s}                                        \n",tempname);
-               tempname[0] = '\0';
-            }
-            else
-            {
-               /* if picturesonly is false, put decomposition infos into main file */
-               SCIP_CALL( writeDecompCode(scip,file,decomps[i],readerdata) );
-            }
-            maxrounds--;
-         }
-      }
-   }
-
-   /*write an ending for the LaTeX code*/
-   SCIP_CALL( writeEndCode(scip,file) );
-
-   return SCIP_OKAY;
-}
-
 /** includes the tex file reader in SCIP */
 SCIP_RETCODE
 SCIPincludeReaderTex(
@@ -1004,18 +937,8 @@ SCIPincludeReaderTex(
 
    SCIP_CALL( SCIPaddBoolParam(scip,
          "reading/texreader/draftmode",
-         "if true shows no non-zeroes, recommended if too slow or too memory-intensive",
+         "if true shows no non-zeroes, recommended if too slow or too memory-intensive (not compatible with gp)",
          &readerdata->draftmode, FALSE, DEFAULT_DRAFTMODE, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(scip,
-      "reading/texreader/maxndecomps",
-      "maximum number of decompositions to visualize (ones with best score are preferred)",
-      &readerdata->maxndecomps, FALSE, DEFAULT_MAXNDECOMPS, 0, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(scip,
-      "reading/texreader/returntype",
-      "output only decompositions of type 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered",
-      &readerdata->returntype, FALSE, DEFAULT_RETURNTYPE, 0, 4, NULL, NULL) );
 
    return SCIP_OKAY;
 }

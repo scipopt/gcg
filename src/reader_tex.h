@@ -54,24 +54,112 @@ SCIP_RETCODE SCIPincludeReaderTex(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-
-/* the reader cannot read files, will return an error if used */
-extern
-SCIP_RETCODE GCGreadTex(
-   SCIP*                 scip,               /**< SCIP data structure */
-   const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
+/** gets the path of the file */
+SCIP_RETCODE GCGgetFilePath(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file,               /**< file */
+   char*                pfile               /**< return path of file */
    );
 
-/** write a tex file for the visualization & statistics of a given set of decomposition */
-SCIP_RETCODE GCGwriteDecompsToTex(
+/** write LaTeX code header & begin of document
+ * The proper order in which a tex file is written goes as follows:
+ *    -> GCGtexWriteHeaderCode         (required)
+ *    GCGtexWriteTitlepage             (optional)
+ *    GCGtexWriteTableOfContents       (optional)
+ *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
+ *    GCGtexWriteEndCode               (required)
+ *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteHeaderCode(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file                /**< File pointer to write to */
+   );
+
+/** write LaTeX code title page that includes general statistics about the problem
+ *  * The proper order in which a tex file is written goes as follows:
+ *    GCGtexWriteHeaderCode            (required)
+ *    -> GCGtexWriteTitlepage          (optional)
+ *    GCGtexWriteTableOfContents       (optional)
+ *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
+ *    GCGtexWriteEndCode               (required)
+ *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteTitlepage(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file,               /**< File pointer to write to */
+   int*                 npresenteddecomps   /**< Number of decompositions to be shown in the file or NULL if unknown */
+   );
+
+/** write LaTeX code for table of contents
+ * The proper order in which a tex file is written goes as follows:
+ *    GCGtexWriteHeaderCode            (required)
+ *    GCGtexWriteTitlepage             (optional)
+ *    -> GCGtexWriteTableOfContents    (optional)
+ *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
+ *    GCGtexWriteEndCode               (required)
+ *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteTableOfContents(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file                /**< File pointer to write to */
+   );
+
+/** write LaTeX code for one decomposition
+ * The proper order in which a tex file is written goes as follows:
+ *    GCGtexWriteHeaderCode            (required)
+ *    GCGtexWriteTitlepage             (optional)
+ *    GCGtexWriteTableOfContents       (optional)
+ *    -> GCGtexWriteDecompCode         (required as often as the number of decompositions you wish to visualize)
+ *    GCGtexWriteEndCode               (required)
+ *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteDecompCode(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP**          decomps,            /**< Decomposition array pointer */
-   int*                  ndecomps,           /**< Number of decompositions */
-   SCIP_Bool             statistics,         /**< if true detection statistics are included in report */
-   SCIP_Bool             toc,                /**< if true table of contents is included */
-   SCIP_READERDATA*      readerdata          /**< reader specific arguments */
+   DEC_DECOMP*           decomp              /**< Decomposition pointer */
+   );
+
+/** write LaTeX code for end of document
+ * The proper order in which a tex file is written goes as follows:
+ *    GCGtexWriteHeaderCode            (required)
+ *    GCGtexWriteTitlepage             (optional)
+ *    GCGtexWriteTableOfContents       (optional)
+ *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
+ *    -> GCGtexWriteEndCode            (required)
+ *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteEndCode(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< File pointer to write to */
+   );
+
+/** makes a new makefile and readme for the given .tex file
+ * The proper order in which a tex file is written goes as follows:
+ *    GCGtexWriteHeaderCode            (required)
+ *    GCGtexWriteTitlepage             (optional)
+ *    GCGtexWriteTableOfContents       (optional)
+ *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
+ *    GCGtexWriteEndCode               (required)
+ *    -> GCGtexWriteMakefileAndReadme  (optional but highly recommended)
+ */
+SCIP_RETCODE GCGtexWriteMakefileAndReadme(
+   SCIP*                scip,               /**< SCIP data structure */
+   FILE*                file                /**< File for which the makefile & readme are generated */
+   );
+
+/** Getter of parameter usegp */
+SCIP_Bool GCGtexGetUseGp(
+   SCIP*                scip               /**< SCIP data structure */
+   );
+
+/** Getter of parameter picturesonly */
+SCIP_Bool GCGtexGetPicturesonly(
+   SCIP*                scip               /**< SCIP data structure */
+   );
+
+/** Getter of parameter draftmode */
+SCIP_Bool GCGtexGetDraftmode(
+   SCIP*                scip               /**< SCIP data structure */
    );
 
 #ifdef __cplusplus
