@@ -1123,9 +1123,13 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraints(
 #endif
             linkconss = GCGlinkingVarGetLinkingConss(origvars[0]);
 
-            assert(pricingvars[prob] == solvars[i]);
-            assert(linkconss[prob] != NULL);
-            SCIP_CALL( SCIPaddCoefLinear(scip_, linkconss[prob], newvar, -solvals[i]) );
+            /* the linking constraints could be NULL if the Benders' decomposition is used. */
+            if( linkconss != NULL )
+            {
+               assert(pricingvars[prob] == solvars[i]);
+               assert(linkconss[prob] != NULL);
+               SCIP_CALL( SCIPaddCoefLinear(scip_, linkconss[prob], newvar, -solvals[i]) );
+            }
             continue;
          }
 
@@ -4009,11 +4013,15 @@ SCIP_RETCODE GCGmasterCreateInitialMastervars(
             SCIP_CONS** linkingconss;
             linkingconss = GCGlinkingVarGetLinkingConss(var);
 
-            for( i = 0; i < npricingprobs; i++ )
+            /* the linking constraints could be NULL if the Benders' decomposition is used. */
+            if( linkingconss != NULL )
             {
-               if( linkingconss[i] != NULL )
+               for( i = 0; i < npricingprobs; i++ )
                {
-                  SCIP_CALL( SCIPaddCoefLinear(scip, linkingconss[i], newvar, 1.0) );
+                  if( linkingconss[i] != NULL )
+                  {
+                     SCIP_CALL( SCIPaddCoefLinear(scip, linkingconss[i], newvar, 1.0) );
+                  }
                }
             }
          }

@@ -222,7 +222,7 @@ SCIP_RETCODE setOriginalVarBlockNr(
       if( !GCGoriginalVarIsLinking(var) )
          relaxdata->nlinkingvars++;
 
-      SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock, relaxdata->npricingprobs) );
+      SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock, relaxdata->npricingprobs, relaxdata->mode) );
       assert(GCGisLinkingVarInBlock(var, newblock));
       assert(GCGoriginalVarIsLinking(var));
    }
@@ -1113,15 +1113,19 @@ SCIP_RETCODE createLinkingPricingVars(
       int count;
 
       linkconss = GCGlinkingVarGetLinkingConss(origvar);
-      count = 0;
-      for( i = 0; i < relaxdata->npricingprobs; i++ )
+      /* the linking constraints could be NULL if the Benders' decomposition is used. */
+      if( linkconss != NULL )
       {
-         assert(linkconss[i] == NULL);
+         count = 0;
+         for( i = 0; i < relaxdata->npricingprobs; i++ )
+         {
+            assert(linkconss[i] == NULL);
 
-         if( pricingvars[i] != NULL )
-            count++;
+            if( pricingvars[i] != NULL )
+               count++;
+         }
+         assert(nblocks == count);
       }
-      assert(nblocks == count);
    }
 #endif
 
@@ -1164,19 +1168,23 @@ SCIP_RETCODE createLinkingPricingVars(
       int count;
 
       linkconss = GCGlinkingVarGetLinkingConss(origvar);
-      count = 0;
-      for( i = 0; i < relaxdata->npricingprobs; i++ )
+      /* the linking constraints could be NULL if the Benders' decomposition is used. */
+      if( linkconss != NULL )
       {
-         if( pricingvars[i] != NULL )
+         count = 0;
+         for( i = 0; i < relaxdata->npricingprobs; i++ )
          {
-            count++;
-            assert(GCGvarIsPricing(pricingvars[i]));
-            assert(relaxdata->mode == DEC_DECMODE_BENDERS || linkconss[i] != NULL);
+            if( pricingvars[i] != NULL )
+            {
+               count++;
+               assert(GCGvarIsPricing(pricingvars[i]));
+               assert(relaxdata->mode == DEC_DECMODE_BENDERS || linkconss[i] != NULL);
+            }
+            else
+               assert(linkconss[i] == NULL);
          }
-         else
-            assert(linkconss[i] == NULL);
+         assert(nblocks == count);
       }
-      assert(nblocks == count);
    }
 #endif
 
@@ -2073,13 +2081,17 @@ SCIP_RETCODE initRelaxator(
          int j;
          SCIP_CONS** linkconss;
          linkconss = GCGlinkingVarGetLinkingConss(vars[i]);
-         for( j = 0; j < relaxdata->npricingprobs; ++j )
+         /* the linking constraints could be NULL if the Benders' decomposition is used. */
+         if( linkconss != NULL )
          {
-            if( linkconss[j] != NULL )
+            for( j = 0; j < relaxdata->npricingprobs; ++j )
             {
-               SCIP_CONS* tempcons;
-               SCIP_CALL( SCIPtransformCons(masterprob, linkconss[j], &(tempcons)) );
-               GCGlinkingVarSetLinkingCons(vars[i], tempcons, j);
+               if( linkconss[j] != NULL )
+               {
+                  SCIP_CONS* tempcons;
+                  SCIP_CALL( SCIPtransformCons(masterprob, linkconss[j], &(tempcons)) );
+                  GCGlinkingVarSetLinkingCons(vars[i], tempcons, j);
+               }
             }
          }
       }

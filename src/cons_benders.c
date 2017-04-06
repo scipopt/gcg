@@ -30,6 +30,7 @@
 #include "struct_solver.h"
 #include "scip_misc.h"
 #include "pub_gcgvar.h"
+#include "cons_masterbranch.h"
 
 #include "scip/cons_linear.h"
 #include "scip/pub_var.h"
@@ -103,7 +104,7 @@ struct SCIP_ConshdlrData
    SCIP**                pricingprobs;       /**< pointers to the pricing problems */
    SCIP_Real*            pricingobjvals;     /**< the objective values of each pricing problem in the current iteration */
    int*                  noptimalityprob;    /**< number of optimality cuts created by the subproblem */
-   int*                  nfeasibilityprob;    /**< number of feasibility cuts created by the subproblem */
+   int*                  nfeasibilityprob;   /**< number of feasibility cuts created by the subproblem */
    SCIP_Longint          currnodenr;         /**< current node number in the masterproblem*/
    SCIP_HASHMAP*         mapcons2idx;        /**< hashmap mapping constraints to their index in the conss array */
    SCIP_Real*            score;              /**< score of the pricing problem problems */
@@ -111,12 +112,15 @@ struct SCIP_ConshdlrData
    int                   npricingprobsnotnull; /**< number of non-Null pricing problems*/
 
    SCIP_VAR**            auxiliaryvars;      /**< the auxiliary variables added to the master problem */
-   SCIP_CONS***          optimalitycuts;    /**< array of all optimality cuts */
+   SCIP_CONS***          optimalitycuts;     /**< array of all optimality cuts */
    SCIP_CONS***          feasibilitycuts;    /**< array of all feasibility cuts */
    int*                  noptimalitycuts;    /**< number of optimality cuts */
    int*                  nfeasibilitycuts;   /**< number of feasibility cuts */
    int*                  maxoptimalitycuts;  /**< maximal number of optimality cuts */
-   int*                  maxfeasibilitycuts;  /**< maximal number of optimality cuts */
+   int*                  maxfeasibilitycuts; /**< maximal number of optimality cuts */
+
+   int                   ncalls;             /**< the number of calls to the constraint handler. */
+                                             /*   This is used to initialise the branching */
 
    /** variables used for statistics */
    SCIP_CLOCK*           freeclock;          /**< time for freeing pricing problems */
@@ -160,6 +164,29 @@ struct SCIP_ConshdlrData
 /*
  * Local methods
  */
+
+/* this function performs the necessary operations at the first call to the constraint handler. This is to get around
+ * the SCIP stages. See scip_farkas and scip_redcost in pricer_gcg.cpp for another example. */
+static
+SCIP_RETCODE conshdlrCallOperations(
+   SCIP*                 masterprob,
+   SCIP_CONSHDLRDATA*    conshdlrdata
+   )
+{
+   assert(masterprob != NULL);
+   assert(conshdlrdata != NULL);
+
+   /* this is the same trick that is used in pricer_gcg.cpp. If both DW and BD are used for the same problem, this may
+    * need to be changed. */
+   if( conshdlrdata->ncalls == 0 )
+   {
+      SCIP_CALL( GCGconsMasterbranchAddRootCons(masterprob) );
+   }
+
+   conshdlrdata->ncalls++;
+
+   return SCIP_OKAY;
+}
 
 /* returns the objective coefficient for the given variable */
 static
@@ -501,11 +528,11 @@ SCIP_RETCODE addOptimalityCut(
    assert(cut != NULL);
    assert(probnumber >= 0 && probnumber <= conshdlrdata->npricingprobs);
 
-   SCIP_CALL( ensureSizeOptimalityCutsArray(masterprob, conshdlrdata, probnumber, conshdlrdata->maxoptimalitycuts[probnumber] + 1) );
+   SCIP_CALL( ensureSizeOptimalityCutsArray(masterprob, conshdlrdata, probnumber, conshdlrdata->noptimalitycuts[probnumber] + 1) );
 
    conshdlrdata->optimalitycuts[probnumber][conshdlrdata->noptimalitycuts[probnumber]] = cut;
 
-   SCIP_CALL( SCIPcaptureCons(masterprob, cut) );
+   //SCIP_CALL( SCIPcaptureCons(masterprob, cut) );
 
    ++(conshdlrdata->noptimalitycuts[probnumber]);
 
@@ -713,11 +740,11 @@ SCIP_RETCODE addFeasibilityCut(
    assert(cut != NULL);
    assert(probnumber >= 0 && probnumber <= conshdlrdata->npricingprobs);
 
-   SCIP_CALL( ensureSizeFeasibilityCutsArray(masterprob, conshdlrdata, probnumber, conshdlrdata->maxfeasibilitycuts[probnumber] + 1) );
+   SCIP_CALL( ensureSizeFeasibilityCutsArray(masterprob, conshdlrdata, probnumber, conshdlrdata->nfeasibilitycuts[probnumber] + 1) );
 
    conshdlrdata->feasibilitycuts[probnumber][conshdlrdata->nfeasibilitycuts[probnumber]] = cut;
 
-   SCIP_CALL( SCIPcaptureCons(masterprob, cut) );
+   //SCIP_CALL( SCIPcaptureCons(masterprob, cut) );
 
    ++(conshdlrdata->nfeasibilitycuts[probnumber]);
 
@@ -1178,6 +1205,8 @@ SCIP_DECL_CONSINITSOL(consInitsolBenders)
    SCIP_CALL( SCIPgetIntParam(origprob, "display/verblevel", &origverblevel) );
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", origverblevel) );
 
+   conshdlrdata->ncalls = 0;
+
    conshdlrdata->currnodenr = -1;
    conshdlrdata->eagerage = 0;
 
@@ -1304,11 +1333,10 @@ SCIP_DECL_CONSEXITSOL(consExitsolBenders)
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
-   assert(conss != NULL);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
 
-   for( i = conshdlrdata->npricingprobs - 1; i >= 0; i++ )
+   for( i = conshdlrdata->npricingprobs - 1; i >= 0; i-- )
    {
       SCIPfreeBlockMemoryArray(scip, &conshdlrdata->feasibilitycuts[i], conshdlrdata->maxfeasibilitycuts[i]);
       SCIPfreeBlockMemoryArray(scip, &conshdlrdata->optimalitycuts[i], conshdlrdata->maxoptimalitycuts[i]);
@@ -1430,6 +1458,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpBenders)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrdata;
    int i;
+   int decompmode;
 
    SCIP_Real objval;
    SCIP_Bool infeasible;
@@ -1441,6 +1470,16 @@ SCIP_DECL_CONSENFOLP(consEnfolpBenders)
    (*result) = SCIP_FEASIBLE;
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+
+   /* retrieving the decomposition mode */
+   SCIP_CALL( SCIPgetIntParam(conshdlrdata->origprob, "relaxing/gcg/mode", &decompmode) );
+
+   /* if the decomposition mode is Benders', then no columns will be added by the pricer */
+   if( decompmode == DEC_DECMODE_DANTZIGWOLFE )
+      return SCIP_OKAY;
+
+   /* in each iteration a set of operations are required. This is a helper function for each call */
+   SCIP_CALL( conshdlrCallOperations(scip, conshdlrdata) );
 
    SCIP_CALL( solveSubproblems(scip, conshdlr, NULL, &objval, &infeasible, FALSE) );
 
@@ -1461,6 +1500,7 @@ SCIP_DECL_CONSENFORELAX(consEnforelaxBenders)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrdata;
    int i;
+   int decompmode;
 
    SCIP_Real objval;
    SCIP_Bool infeasible;
@@ -1470,7 +1510,19 @@ SCIP_DECL_CONSENFORELAX(consEnforelaxBenders)
    assert(sol != NULL);
    assert(result != NULL);
 
+   (*result) = SCIP_FEASIBLE;
+
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+
+   /* retrieving the decomposition mode */
+   SCIP_CALL( SCIPgetIntParam(conshdlrdata->origprob, "relaxing/gcg/mode", &decompmode) );
+
+   /* if the decomposition mode is Benders', then no columns will be added by the pricer */
+   if( decompmode == DEC_DECMODE_DANTZIGWOLFE )
+      return SCIP_OKAY;
+
+   /* in each iteration a set of operations are required. This is a helper function for each call */
+   SCIP_CALL( conshdlrCallOperations(scip, conshdlrdata) );
 
    SCIP_CALL( solveSubproblems(scip, conshdlr, sol, &objval, &infeasible, FALSE) );
 
@@ -1491,6 +1543,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsBenders)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrdata;
    int i;
+   int decompmode;
 
    SCIP_Real objval;
    SCIP_Bool infeasible;
@@ -1499,7 +1552,19 @@ SCIP_DECL_CONSENFOPS(consEnfopsBenders)
    assert(conshdlr != NULL);
    assert(result != NULL);
 
+   (*result) = SCIP_FEASIBLE;
+
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+
+   /* retrieving the decomposition mode */
+   SCIP_CALL( SCIPgetIntParam(conshdlrdata->origprob, "relaxing/gcg/mode", &decompmode) );
+
+   /* if the decomposition mode is Benders', then no columns will be added by the pricer */
+   if( decompmode == DEC_DECMODE_DANTZIGWOLFE )
+      return SCIP_OKAY;
+
+   /* in each iteration a set of operations are required. This is a helper function for each call */
+   SCIP_CALL( conshdlrCallOperations(scip, conshdlrdata) );
 
    SCIP_CALL( solveSubproblems(scip, conshdlr, NULL, &objval, &infeasible, FALSE) );
 
@@ -1525,20 +1590,37 @@ SCIP_DECL_CONSCHECK(consCheckBenders)
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_Real objval;
    SCIP_Bool infeasible;
+   int decompmode;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
    assert(sol != NULL);
    assert(result != NULL);
 
+   (*result) = SCIP_FEASIBLE;
+
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+
+   /* retrieving the decomposition mode */
+   SCIP_CALL( SCIPgetIntParam(conshdlrdata->origprob, "relaxing/gcg/mode", &decompmode) );
+
+   /* if the decomposition mode is Benders', then no columns will be added by the pricer */
+   if( decompmode == DEC_DECMODE_DANTZIGWOLFE )
+      return SCIP_OKAY;
+
+   /* in each iteration a set of operations are required. This is a helper function for each call */
+   SCIP_CALL( conshdlrCallOperations(scip, conshdlrdata) );
 
    SCIP_CALL( solveSubproblems(scip, conshdlr, sol, &objval, &infeasible, TRUE) );
 
    if( infeasible )
       (*result) = SCIP_INFEASIBLE;
+#if 0 /* the else case has not been implemented yet */
    else  /* in the else case, we need to update the objective function value with objval */
-      (*result) = SCIP_FEASIBLE;
+   {
+      /*  */
+   }
+#endif
 
    SCIP_CALL( freePricingProblems(conshdlrdata) );
 

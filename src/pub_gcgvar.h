@@ -154,7 +154,8 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< var that is added to a block */
    int                   newblock,           /**< the new block the variable will be in */
-   int                   nblocks             /**< total number of pricing problems */
+   int                   nblocks,            /**< total number of pricing problems */
+   int                   mode                /**< the decomposition mode */
    );
 
 

@@ -79,6 +79,9 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
             SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.origvardata.linkingvardata->linkconss), nblocks);
             SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.origvardata.linkingvardata->pricingvars), nblocks);
          }
+         else if( (*vardata)->data.origvardata.linkingvardata->pricingvars != NULL )
+            SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.origvardata.linkingvardata->pricingvars), nblocks);
+
          SCIPfreeBlockMemory(scip, &((*vardata)->data.origvardata.linkingvardata));
          (*vardata)->data.origvardata.linkingvardata = NULL;
       }
@@ -603,7 +606,8 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< var that is added to a block */
    int                   newblock,           /**< the new block the variable will be in */
-   int                   nblocks             /**< total number of pricing problems */
+   int                   nblocks,            /**< total number of pricing problems */
+   int                   mode                /**< the decomposition mode */
    )
 {
    SCIP_VARDATA* vardata;
@@ -623,9 +627,13 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    {
       SCIP_CALL( SCIPallocBlockMemory(scip, &vardata->data.origvardata.linkingvardata) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->pricingvars, nblocks) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->linkconss, nblocks) );
       BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->pricingvars, nblocks);
-      BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->linkconss, nblocks);
+
+      if( mode != DEC_DECMODE_BENDERS )
+      {
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->linkconss, nblocks) );
+         BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->linkconss, nblocks);
+      }
 
       /* store old block; store the original variable, it will be exchanged for the correct pricing variable later */
       vardata->data.origvardata.linkingvardata->pricingvars[blocknr] = var;
@@ -638,7 +646,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    /* store new block */
    if( vardata->data.origvardata.linkingvardata->pricingvars[newblock] == NULL )
    {
-      assert(vardata->data.origvardata.linkingvardata->linkconss[newblock] == NULL);
+      assert(mode == DEC_DECMODE_BENDERS || vardata->data.origvardata.linkingvardata->linkconss[newblock] == NULL);
       vardata->data.origvardata.linkingvardata->pricingvars[newblock] = var;
       vardata->data.origvardata.linkingvardata->nblocks++;
    }
@@ -661,7 +669,7 @@ SCIP_CONS** GCGlinkingVarGetLinkingConss(
    assert(vardata != NULL);
 
    assert(vardata->data.origvardata.linkingvardata != NULL);
-   assert(vardata->data.origvardata.linkingvardata->linkconss != NULL);
+   //assert(vardata->data.origvardata.linkingvardata->linkconss != NULL);
    return vardata->data.origvardata.linkingvardata->linkconss;
 }
 
@@ -1077,7 +1085,6 @@ SCIP_RETCODE GCGlinkingVarCreateMasterCons(
    SCIP_CONS**           linkcons            /**< constraint linking pricing variables */
    )
 {
-   SCIP_VARDATA* vardata;
    char name[SCIP_MAXSTRLEN];
 
    assert(masterscip != NULL);
