@@ -241,6 +241,17 @@ private:
       SCIP_VAR*             newvar              /**< variable to add */
    );
 
+   /** ensures size of root bounds arrays */
+   SCIP_RETCODE ensureSizeRootBounds(
+      int                   size                /**< needed size */
+   );
+
+   /** adds new bounds to the bound arrays */
+   SCIP_RETCODE addRootBounds(
+      SCIP_Real             primalbound,        /**< new primal bound for the root master LP */
+      SCIP_Real             dualbound           /**< new dual bound for the root master LP */
+   );
+
    /** add master variable to all constraints */
    SCIP_RETCODE addVariableToMasterconstraints(
       SCIP_VAR*             newvar,             /**< The new variable to add */

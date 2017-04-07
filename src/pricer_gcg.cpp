@@ -191,6 +191,11 @@ struct SCIP_PricerData
    int                   ndegeneracycalcs;   /**< number of observations */
 
    int                   eagerage;           /**< iterations since last eager iteration */
+
+   int                   nrootbounds;        /**< number of stored bounds */
+   SCIP_Real*            rootpbs;            /**< array of primal bounds for the root LP, one bound for each pricing call */
+   SCIP_Real*            rootdbs;            /**< array of dual bounds for the root LP, one bound for each pricing call */
+   int                   maxrootbounds;     /**< maximal number of bounds */
 };
 
 
@@ -352,6 +357,27 @@ SCIP_RETCODE ObjPricerGcg::ensureSizeSolvers()
    {
       SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->solvers), (size_t)pricerdata->nsolvers+1) );
    }
+
+   return SCIP_OKAY;
+}
+
+/** ensures size of root bounds arrays */
+SCIP_RETCODE ObjPricerGcg::ensureSizeRootBounds(
+   int                   size                /**< needed size */
+   )
+{
+   assert(pricerdata != NULL);
+   assert(pricerdata->rootdbs != NULL);
+   assert(pricerdata->rootpbs != NULL);
+
+   if( pricerdata->maxrootbounds < size )
+   {
+      int oldsize = pricerdata->maxrootbounds;
+      pricerdata->maxrootbounds = SCIPcalcMemGrowSize(scip_, size);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &(pricerdata->rootpbs), oldsize, pricerdata->maxrootbounds) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &(pricerdata->rootdbs), oldsize, pricerdata->maxrootbounds) );
+   }
+   assert(pricerdata->maxrootbounds >= size);
 
    return SCIP_OKAY;
 }
@@ -1242,6 +1268,22 @@ SCIP_RETCODE ObjPricerGcg::addVariableToPricedvars(
    SCIP_CALL( ensureSizePricedvars(pricerdata->npricedvars + 1) );
    pricerdata->pricedvars[pricerdata->npricedvars] = newvar;
    pricerdata->npricedvars++;
+
+   return SCIP_OKAY;
+}
+
+/** adds new bounds to the bound arrays */
+SCIP_RETCODE ObjPricerGcg::addRootBounds(
+   SCIP_Real             primalbound,        /**< new primal bound for the root master LP */
+   SCIP_Real             dualbound           /**< new dual bound for the root master LP */
+   )
+{
+   SCIP_CALL( ensureSizeRootBounds(pricerdata->nrootbounds + 1) );
+   pricerdata->rootpbs[pricerdata->nrootbounds] = primalbound;
+   pricerdata->rootdbs[pricerdata->nrootbounds] = dualbound;
+   //SCIPinfoMessage(scip_, NULL, "Add new bounds: \n pb = %f\n db = %f\n", primalbound, dualbound);
+   pricerdata->nrootbounds++;
+
 
    return SCIP_OKAY;
 }
@@ -3050,6 +3092,11 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->maxpricedvars = 50;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
+   pricerdata->nrootbounds = 0;
+   pricerdata->maxrootbounds = 50;
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootdbs, pricerdata->maxrootbounds) );
+
    pricerdata->rootnodedegeneracy = 0.0;
    pricerdata->avgrootnodedegeneracy = 0.0;
    pricerdata->ndegeneracycalcs = 0;
@@ -3124,6 +3171,13 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
       SCIP_CALL( SCIPreleaseVar(scip, &pricerdata->pricedvars[i]) );
    }
    SCIPfreeBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars);
+   pricerdata->maxpricedvars = 0;
+   pricerdata->npricedvars = 0;
+
+   SCIPfreeBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds);
+   SCIPfreeBlockMemoryArray(scip, &pricerdata->rootdbs, pricerdata->maxrootbounds);
+   pricerdata->maxrootbounds = 0;
+   pricerdata->nrootbounds = 0;
 
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->freeclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->transformclock)) );
@@ -3189,6 +3243,9 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    SCIP_CALL( reducedcostpricing->startClock() );
    retcode = priceNewVariables(reducedcostpricing, result, lowerbound);
    SCIP_CALL( reducedcostpricing->stopClock() );
+
+   if( SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
+      SCIP_CALL( addRootBounds(SCIPgetLPObjval(scip_), *lowerbound) );
 
    return retcode;
 }
