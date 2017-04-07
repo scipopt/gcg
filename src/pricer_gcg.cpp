@@ -3762,6 +3762,21 @@ void GCGpricerPrintStatistics(
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "From\t%.0f\t-\t%.0f\tvars:\t\t%d \n", start, end, pricerdata->foundvarshist[i]);
    }
 
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Root bounds \niter\tpb\tdb\n");
+
+   for( i = 0; i < pricerdata->nrootbounds; i++ )
+   {
+      SCIP_Real pb;
+      SCIP_Real db;
+
+      pb = pricerdata->rootpbs[i];
+      db = pricerdata->rootdbs[i];
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\t%.5f\t%.5f\n", i, pb, db);
+   }
+
+
    redcost = pricer->getReducedCostPricing();
    assert( redcost != NULL );
    farkas = pricer->getFarkasPricing();
