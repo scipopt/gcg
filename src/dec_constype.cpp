@@ -55,7 +55,7 @@
 #define DEC_MAXCALLROUNDORIGINAL  0     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
-#define DEC_DECCHAR               'c'         /**< display character of detector */
+#define DEC_DECCHAR               't'         /**< display character of detector */
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
@@ -164,7 +164,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   std::vector<consType> foundConstypes(0);
   std::vector<int> constypesIndices(0);
 
-  seeedOrig = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+  seeedOrig = seeedPropagationData->seeedToPropagate;
   seeedOrig->setDetectorPropagated(detector);
 
   if(!seeedOrig->areOpenVarsAndConssCalculated())
@@ -232,7 +232,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
       seeedPropagationData->newSeeeds[seeedCounter] = seeed;
       seeedCounter++;
   }
-  delete seeedOrig;
 
   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )

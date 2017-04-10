@@ -185,6 +185,7 @@ SCIP_DECL_CONSINIT(consInitDecomp)
    assert(conshdlrdata != NULL);
 
    conshdlrdata->hasrun = FALSE;
+   conshdlrdata->seeedpool = NULL;
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
@@ -243,6 +244,9 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       }
    }
 
+   delete conshdlrdata->seeedpool;
+
+   conshdlrdata->seeedpool = NULL;
    return SCIP_OKAY;
 }
 
@@ -280,6 +284,9 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
    }
+
+   if( conshdlrdata->seeedpool != NULL )
+      delete conshdlrdata->seeedpool;
 
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
@@ -680,7 +687,6 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-
    gcg::Seeedpool seeedpoolunpresolved(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
    std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
    std::vector<std::vector<int>> conssClassDistributions;         /**< collection of different constraint class distributions */
@@ -707,7 +713,7 @@ SCIP_RETCODE DECdetectStructure(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-
+   conshdlrdata->seeedpool = NULL;
 
    /** get data of the seeedpool with original vars and conss */
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
@@ -764,37 +770,37 @@ SCIP_RETCODE DECdetectStructure(
 
    if( conshdlrdata->ndecomps == 0 )
    {
-	  gcg::Seeedpool* seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+     conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
 
 	  if( calculateOrigDecomps )
 	  {
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");
-	     std::vector<gcg::Seeed*> translatedSeeeds = seeedpool->translateSeeeds(&seeedpoolunpresolved, seeedsunpresolved);
+	     std::vector<gcg::Seeed*> translatedSeeeds = conshdlrdata->seeedpool->translateSeeeds(&seeedpoolunpresolved, seeedsunpresolved);
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
 
-	     seeedpool->populate(translatedSeeeds);
+	     conshdlrdata->seeedpool->populate(translatedSeeeds);
 
         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished translate seeed method!\n");
 
         for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
-             seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
+           conshdlrdata->seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
 
         for( size_t d = 0; d < conssClassDistributions.size(); ++d )
-             seeedpool->addConssClassDistribution(conssClassDistributions[d], indexToCons);
+           conshdlrdata->seeedpool->addConssClassDistribution(conssClassDistributions[d], indexToCons);
 
 	  }
 
-	  seeedpool->findDecompositions();
-	  conshdlrdata->decdecomps = seeedpool->getDecompositions();
-	  conshdlrdata->ndecomps = seeedpool->getNDecompositions();
-	  conshdlrdata->seeedpool = seeedpool;
+	  conshdlrdata->seeedpool->findDecompositions();
+	  conshdlrdata->decdecomps = conshdlrdata->seeedpool->getDecompositions();
+	  conshdlrdata->ndecomps = conshdlrdata->seeedpool->getNDecompositions();
+
 	  SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
 	  SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
 //	  seeedpool.freeCurrSeeeds();
    }
    else
    {
-      seeedpoolunpresolved.freeCurrSeeeds();
+      //seeedpoolunpresolved.freeCurrSeeeds();
       SCIP_CALL( DECdecompTransform(scip, conshdlrdata->decdecomps[0]) );
    }
 
@@ -833,6 +839,7 @@ SCIP_RETCODE DECdetectStructure(
 
    /* show that we done our duty */
    conshdlrdata->hasrun = TRUE;
+
 
 //   SCIPhashmapFree( &consToIndex );
 

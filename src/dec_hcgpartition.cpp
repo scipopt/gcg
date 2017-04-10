@@ -86,7 +86,7 @@ using gcg::Weights;
 #define DEC_MAXCALLROUNDORIGINAL  0     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              1000           /**< priority of the detector */
-#define DEC_DECCHAR               'c'            /**< display character of detector */
+#define DEC_DECCHAR               'g'            /**< display character of detector */
 #define DEC_ENABLED               TRUE           /**< should detector be called by default */
 #define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE          /**< should detector be called by default */
@@ -290,6 +290,8 @@ SCIP_RETCODE callMetis(
    SCIP_CALL( SCIPstopClock(scip, metisclock) );
    SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, metisclock),  remainingtime-SCIPgetClockTime(scip, metisclock) );
 
+   SCIP_CALL( SCIPfreeClock(scip, &metisclock) );
+
    /* check error codes */
    if( status == -1 )
    {
@@ -449,7 +451,7 @@ SCIP_RETCODE detection(
    if(numberOfBlocks.empty())
       numberOfBlocks.push_back(8);
 
-   int nconss = SCIPgetNConss(scip);
+   int nconss = seeedPropagationData->seeedpool->getNConss();
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/hcgpartition/maxnblockcandidates");
@@ -526,7 +528,6 @@ SCIP_RETCODE detection(
 
    delete graph;
    graph = NULL;
-   delete seeed;
 
    assert(nNewSeeeds % 2 == 0);
    if(border)
@@ -675,7 +676,6 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
 
    if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
-      delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
@@ -697,9 +697,8 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
 
-   if(!connected(seeedPropagationData->seeedpool, seeed))
+   if( !connected(seeedPropagationData->seeedpool, seeed ) )
    {
-      delete seeed;
       seeedPropagationData->nNewSeeeds = 0;
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;

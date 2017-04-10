@@ -503,6 +503,7 @@ SCIP_RETCODE DECdecompFree(
       SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctvarsfromopen, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
       SCIPfreeBlockMemoryArrayNull(scip, &decomp->pctconssfromopen, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
       SCIPfreeBlockMemoryArrayNull(scip, &decomp->nnewblocks, SCIPcalcMemGrowSize(scip,decomp->sizedetectorchain ) );
+      SCIPfreeBlockMemoryArrayNull(scip, &decomp->detectorchainstring, SCIP_MAXSTRLEN );
    }
 
    SCIPfreeMemoryNull(scip, decdecomp);
@@ -875,6 +876,9 @@ SCIP_RETCODE DECdecompSetLinkingvars(
 
    return SCIP_OKAY;
 }
+
+
+
 
 /** returns the linkingvars array of the given decomposition */
 SCIP_VAR** DECdecompGetLinkingvars(
@@ -1493,6 +1497,31 @@ SCIP_Real* DECdecompGetDetectorClockTimes(
 {
    return decomp->detectorclocktimes;
 }
+
+/** sets the detector clock times of the detectors of the detector chain */
+extern
+SCIP_RETCODE DECdecompSetDetectorChainString(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition data structure */
+   char*                 detectorchainstring
+   )
+{
+
+   SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &(decomp->detectorchainstring), detectorchainstring, SCIP_MAXSTRLEN ) );
+   return SCIP_OKAY;
+
+}
+
+/** sets the detector clock times of the detectors of the detector chain */
+extern
+char* DECdecompGetDetectorChainString(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   return decomp->detectorchainstring;
+}
+
 
 /** sets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 void DECdecompSetDetectorPctVarsToBorder(
@@ -3542,7 +3571,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Decomp statistics  :\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  type             : %10s\n", DECgetStrType(DECdecompGetType(decomp)));
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  detector         : %10s\n", decomp->detector == NULL? "provided": DECdetectorGetName(decomp->detector));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  detector         : %10s\n", decomp->detectorchainstring == NULL? "provided": decomp->detectorchainstring);
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  blocks           : %10d\n", DECdecompGetNBlocks(decomp));
 
    nblocksrelevant = nblocks;

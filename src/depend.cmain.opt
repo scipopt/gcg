@@ -48,7 +48,8 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_mem.h lib/scip/src/scip/type_primal.h \
  lib/scip/src/scip/type_pricestore.h lib/scip/src/scip/type_sepastore.h \
  lib/scip/src/scip/type_conflictstore.h \
- lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/set.h \
+ lib/scip/src/scip/type_concurrent.h lib/scip/src/scip/struct_stat.h \
+ lib/scip/src/scip/type_visual.h lib/scip/src/scip/set.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
  lib/scip/src/scip/debug.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \

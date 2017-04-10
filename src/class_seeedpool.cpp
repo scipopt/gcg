@@ -749,7 +749,7 @@ Seeedpool::Seeedpool(
       SCIPfreeBufferArrayNull(scip, &currVals);
    }
 
-   /*    seeedpool with empty seeed and translated original seeeds*/
+   /*  init  seeedpool with empty seeed and translated original seeeds*/
    addSeeedToCurr( new Seeed( scip, -1, nDetectors, nConss, nVars) );
 
    decompositions = NULL;
@@ -811,7 +811,7 @@ Seeedpool::~Seeedpool()
 }
 
  /** finds decompositions  */
-  /** access coefficient matrlix constraint-wise */
+  /** access coefficient matrix constraint-wise */
  std::vector<SeeedPtr>    Seeedpool::findSeeeds(
  ){
     /** 1) read parameter, as there are: maxrounds
@@ -854,13 +854,13 @@ Seeedpool::~Seeedpool()
        std::vector<SeeedPtr> nextSeeeds = std::vector<SeeedPtr>(0);
        std::vector<SeeedPtr> currSeeedsToDelete = std::vector<SeeedPtr>(0);
 
-#pragma omp parallel for schedule(static,1)
+       #pragma omp parallel for schedule(static,1)
        for( size_t s = 0; s < currSeeeds.size(); ++s )
        {
           SeeedPtr seeedPtr;
           seeedPtr = currSeeeds[s];
 
-#pragma omp critical (ostream)
+          #pragma omp critical (ostream)
           {
              if( displaySeeeds || verboseLevel >= 1 )
              {
@@ -894,134 +894,133 @@ Seeedpool::~Seeedpool()
              if( seeedPtr->isPropagatedBy(detector) && !detector->usefulRecall )
                 continue;
 
-#pragma omp critical (clock)
-SCIPcreateClock(scip, &detectorclock);
+             /** check if detector is callable in current detection round */
+             SCIP_CALL_ABORT( getDetectorCallRoundInfo( scip, detectorname, transformed, &maxcallround, &mincallround, &freqcallround) );
 
-/** check if detector is callable in current detection round */
-SCIP_CALL_ABORT( getDetectorCallRoundInfo( scip, detectorname, transformed, &maxcallround, &mincallround, &freqcallround) );
+             if( maxcallround < round || mincallround > round || ( (round - mincallround) % freqcallround != 0 ) )
+                continue;
 
-if( maxcallround < round || mincallround > round || ( (round - mincallround) % freqcallround != 0 ) )
-   continue;
+             #pragma omp critical (seeedcount)
+             seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
 
-#pragma omp critical (seeedcount)
-{
-   seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
-}
 
-/** new seeeds are created by the current detector */
-SCIP_CALL_ABORT( SCIPstartClock(scip, detectorclock) );
+             /** new seeeds are created by the current detector */
+             #pragma omp critical (clock)
+             SCIPcreateClock(scip, &detectorclock);
+             SCIP_CALL_ABORT( SCIPstartClock(scip, detectorclock) );
 
-if( verboseLevel >= 1 )
-{
-#pragma omp critical (scipinfo)
-   SCIPinfoMessage(scip, NULL, "detector %s started to propagate the %d-th seeed (ID %d ) in round %d \n", DECdetectorGetName(detectorToScipDetector[d]), s+1, seeedPtr->getID(), round);
-}
+             if( verboseLevel >= 1 )
+             {
+                #pragma omp critical (scipinfo)
+                SCIPinfoMessage(scip, NULL, "detector %s started to propagate the %d-th seeed (ID %d ) in round %d \n", DECdetectorGetName(detectorToScipDetector[d]), s+1, seeedPtr->getID(), round);
+             }
 
-SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d], seeedPropData, &result) );
+             SCIP_CALL_ABORT(detectorToScipDetector[d]->propagateSeeed(scip, detectorToScipDetector[d], seeedPropData, &result) );
 
-for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
-{
-#pragma omp critical (seeedcount)
-   seeedPropData->newSeeeds[j]->setID(getNewIdForSeeed());
-   prepareSeeed( seeedPropData->newSeeeds[j] );
-   seeedPropData->newSeeeds[j]->checkConsistency();
-   seeedPropData->newSeeeds[j]->addDecChangesFromAncestor(seeedPtr);
-}
+             for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
+             {
+               #pragma omp critical (seeedcount)
+                seeedPropData->newSeeeds[j]->setID(getNewIdForSeeed());
+                prepareSeeed( seeedPropData->newSeeeds[j] );
+                seeedPropData->newSeeeds[j]->checkConsistency();
+                seeedPropData->newSeeeds[j]->addDecChangesFromAncestor(seeedPtr);
+             }
 
-SCIP_CALL_ABORT( SCIPstopClock(scip, detectorclock) );
+             SCIP_CALL_ABORT( SCIPstopClock(scip, detectorclock) );
 
-#pragma omp critical (clockcount)
-detectorToScipDetector[d]->dectime += SCIPgetClockTime(scip, detectorclock);
+             #pragma omp critical (clockcount)
+             detectorToScipDetector[d]->dectime += SCIPgetClockTime(scip, detectorclock);
 
-#pragma omp critical (clock)
-SCIPfreeClock(scip, &detectorclock);
+             #pragma omp critical (clock)
+             SCIPfreeClock(scip, &detectorclock);
 
-if(seeedPropData->nNewSeeeds != 0 && ( displaySeeeds ) )
-{
-#pragma omp critical (ostream)
-   std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found " << seeedPropData->nNewSeeeds << " new seeed(s): ";
-#pragma omp critical (ostream)
-   std::cout << seeedPropData->newSeeeds[0]->getID();
-   for( int j = 1; j < seeedPropData->nNewSeeeds; ++j )
-   {
-#pragma omp critical (ostream)
-      std::cout << ", " << seeedPropData->newSeeeds[j]->getID();
-   }
-#pragma omp critical (ostream)
-   std::cout << "\n";
+             if(seeedPropData->nNewSeeeds != 0 && ( displaySeeeds ) )
+             {
+                #pragma omp critical (ostream)
+                std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found " << seeedPropData->nNewSeeeds << " new seeed(s): ";
+                #pragma omp critical (ostream)
+                std::cout << seeedPropData->newSeeeds[0]->getID();
+                for( int j = 1; j < seeedPropData->nNewSeeeds; ++j )
+                {
+                   #pragma omp critical (ostream)
+                   std::cout << ", " << seeedPropData->newSeeeds[j]->getID();
+                }
+                #pragma omp critical (ostream)
+                std::cout << "\n";
 
-   if( displaySeeeds )
-   {
-      for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
-      {
-#pragma omp critical (ostream)
-seeedPropData->newSeeeds[j]->displaySeeed();
-      }
-   }
-}
-else
-   if( displaySeeeds )
-   {
-#pragma omp critical (ostream)
-      std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds" << std::endl;
-   }
+                if( displaySeeeds )
+                {
+                   for( int j = 0; j < seeedPropData->nNewSeeeds; ++j )
+                   {
+                      #pragma omp critical (ostream)
+                      seeedPropData->newSeeeds[j]->displaySeeed();
+                   }
+                }
+             }
+             else
+                if( displaySeeeds )
+                {
+                   #pragma omp critical (ostream)
+                   std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds" << std::endl;
+                }
 
-/** if the new seeeds are no duplicate they're added to the currSeeeds */
-for( int seeed = 0; seeed < seeedPropData->nNewSeeeds; ++seeed )
-{
-   SCIP_Bool noduplicate;
-#pragma omp critical (seeedptrstore)
-   noduplicate = seeedIsNoDuplicate(seeedPropData->newSeeeds[seeed], nextSeeeds, finishedSeeeds, false);
-   if( !seeedPropData->newSeeeds[seeed]->isTrivial() && noduplicate )
-   {
-      seeedPropData->newSeeeds[seeed]->calcOpenconss();
-      seeedPropData->newSeeeds[seeed]->calcOpenvars();
-      if(seeedPropData->newSeeeds[seeed]->getNOpenconss() == 0 && seeedPropData->newSeeeds[seeed]->getNOpenvars() == 0)
-      {
-         if(verboseLevel > 2)
-         {
-#pragma omp critical (ostream)
-{
-   std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to finished seeeds!" << std::endl;
-   seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
-}
-         }
-#pragma omp critical (seeedptrstore)
-         {
-            assert(seeedPropData->newSeeeds[seeed]->getID() >= 0);
-            finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
-            allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
-         }
-      }
-      else
-      {
-         if(verboseLevel > 2)
-         {
-#pragma omp critical (ostream)
-            {
-               std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to next round seeeds!" << std::endl;
-               seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
-            }
-         }
-#pragma omp critical (seeedptrstore)
-         {
-            nextSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
-            allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
-         }
-      }
-   }
-   else
-   {
-      delete seeedPropData->newSeeeds[seeed];
-      seeedPropData->newSeeeds[seeed] = NULL;
-   }
-}
-/** cleanup propagation data structure */
+             /** if the new seeeds are no duplicate they're added to the currSeeeds */
+             for( int seeed = 0; seeed < seeedPropData->nNewSeeeds; ++seeed )
+             {
+                SCIP_Bool noduplicate;
+                #pragma omp critical (seeedptrstore)
+                noduplicate = seeedIsNoDuplicate(seeedPropData->newSeeeds[seeed], nextSeeeds, finishedSeeeds, false);
+                if( !seeedPropData->newSeeeds[seeed]->isTrivial() && noduplicate )
+                {
+                   seeedPropData->newSeeeds[seeed]->calcOpenconss();
+                   seeedPropData->newSeeeds[seeed]->calcOpenvars();
+                   if(seeedPropData->newSeeeds[seeed]->getNOpenconss() == 0 && seeedPropData->newSeeeds[seeed]->getNOpenvars() == 0)
+                   {
+                      if(verboseLevel > 2)
+                      {
+                         #pragma omp critical (ostream)
+                         {
+                            std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to finished seeeds!" << std::endl;
+                            seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
+                         }
+                      }
+                      #pragma omp critical (seeedptrstore)
+                      {
+                         assert(seeedPropData->newSeeeds[seeed]->getID() >= 0);
+                         finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
+                         allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
+                      }
+                   }
+                   else
+                   {
+                      if(verboseLevel > 2)
+                      {
+                         #pragma omp critical (ostream)
+                         {
+                            std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to next round seeeds!" << std::endl;
+                            seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
+                         }
+                      }
+                      #pragma omp critical (seeedptrstore)
+                      {
+                         nextSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
+                         allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
+                      }
+                   }
+                }
+                else
+                {
+                   delete seeedPropData->newSeeeds[seeed];
+                   seeedPropData->newSeeeds[seeed] = NULL;
+                }
+             }
+             /** cleanup propagation data structure */
 
-SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
-seeedPropData->newSeeeds = NULL;
-seeedPropData->nNewSeeeds = 0;
-delete seeedPropData;
+             SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
+             delete seeedPropData->seeedToPropagate;
+             seeedPropData->newSeeeds = NULL;
+             seeedPropData->nNewSeeeds = 0;
+             delete seeedPropData;
           } // end for detectors
 
           for( int d = 0; d < nFinishingDetectors; ++d )
@@ -1032,69 +1031,67 @@ delete seeedPropData;
              seeedPropData = new SEEED_PROPAGATION_DATA();
              seeedPropData->seeedpool = this;
              seeedPropData->nNewSeeeds = 0;
-#pragma omp critical (seeedcount)
-{
-   seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
-}
+             #pragma omp critical (seeedcount)
+             seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
 
+             if(verboseLevel > 2 )
+             #pragma omp critical (ostream)
+             {
+                std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << " is enabled " << std::endl;
+             }
 
-if(verboseLevel > 2 )
-#pragma omp critical (ostream)
-{
-   std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << " is enabled " << std::endl;
-}
+             /** if the finishing of the detector is not enabled go on with the next detector */
+             if( !detector->enabledFinishing )
+                continue;
 
-/** if the finishing of the detector is not enabled go on with the next detector */
-if( !detector->enabledFinishing )
-   continue;
+             if(verboseLevel > 2 )
+             #pragma omp critical (ostream)
+             {
+                std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
+             }
+             SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d], seeedPropData, &result) );
 
-if(verboseLevel > 2 )
-#pragma omp critical (ostream)
-{
-   std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
-}
-SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d], seeedPropData, &result) );
+             for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished )
+             {
+                SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+                #pragma omp critical (seeedcount)
+                seeed->setID(getNewIdForSeeed());
+                seeed->sort();
+                seeed->calcHashvalue();
+                seeed->addDecChangesFromAncestor(seeedPtr);
+                seeed->setFinishedByFinisher(true);
+                #pragma omp critical (seeedptrstore)
+                {
+                   if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
+                   {
+                      assert(seeed->getID() >= 0);
+                      finishedSeeeds.push_back(seeed);
+                      allrelevantseeeds.push_back(seeed);
+                   }
+                   else
+                   {
+                      bool isIdentical = false;
+                      for ( size_t h = 0; h < finishedSeeeds.size(); ++h )
+                      {
+                         if( seeed == finishedSeeeds[h] )
+                         {
+                            isIdentical = true;
+                            break;
+                         }
+                      }
 
-for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished )
-{
-   SeeedPtr seeed = seeedPropData->newSeeeds[finished];
-#pragma omp critical (seeedcount)
-   seeed->setID(getNewIdForSeeed());
-   seeed->sort();
-   seeed->calcHashvalue();
-   seeed->addDecChangesFromAncestor(seeedPtr);
-   seeed->setFinishedByFinisher(true);
-#pragma omp critical (seeedptrstore)
-{
-   if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
-   {
-      assert(seeed->getID() >= 0);
-      finishedSeeeds.push_back(seeed);
-      allrelevantseeeds.push_back(seeed);
-   }
-   else
-   {
-      bool isIdentical = false;
-      for ( size_t h = 0; h < finishedSeeeds.size(); ++h )
-      {
-         if( seeed == finishedSeeeds[h] )
-         {
-            isIdentical = true;
-            break;
-         }
-      }
-
-      if( !isIdentical )
-      {
-         currSeeedsToDelete.push_back(seeed);
-      }
-   }
-}
-}
-SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
-seeedPropData->newSeeeds = NULL;
-seeedPropData->nNewSeeeds = 0;
-delete seeedPropData;
+                      if( !isIdentical )
+                      {
+                         currSeeedsToDelete.push_back(seeed);
+                      }
+                   }
+                }
+             }
+             SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
+             delete seeedPropData->seeedToPropagate;
+             seeedPropData->newSeeeds = NULL;
+             seeedPropData->nNewSeeeds = 0;
+             delete seeedPropData;
           }
        }// end for currseeeds
 
@@ -1108,7 +1105,7 @@ delete seeedPropData;
     } // end for rounds
 
     /** complete the currseeeds with finishing detectors and add them to finished seeeds */
-#pragma omp parallel for schedule(static,1)
+    #pragma omp parallel for schedule(static,1)
     for( size_t i = 0; i < currSeeeds.size(); ++i )
     {
        SeeedPtr seeedPtr = currSeeeds[i];
@@ -1120,60 +1117,60 @@ delete seeedPropData;
           seeedPropData = new SEEED_PROPAGATION_DATA();
           seeedPropData->seeedpool = this;
           seeedPropData->nNewSeeeds = 0;
-#pragma omp critical (seeedcount)
-{
-             seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
-}
 
-std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;
+          #pragma omp critical (seeedcount)
+          seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
 
-/** if the finishing of the detector is not enabled go on with the next detector */
-if( !detector->enabledFinishing )
-   continue;
+          std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;
 
-std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
+          /** if the finishing of the detector is not enabled go on with the next detector */
+          if( !detector->enabledFinishing )
+             continue;
 
-SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
+          std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
 
-for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished )
-{
-   SeeedPtr seeed = seeedPropData->newSeeeds[finished];
-#pragma omp critical (seeedcount)
-   seeed->setID( getNewIdForSeeed() );
+          SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
 
-   seeed->calcHashvalue();
-   seeed->addDecChangesFromAncestor(seeedPtr);
-   seeed->setFinishedByFinisher(true);
+          for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished )
+          {
+             SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+             #pragma omp critical (seeedcount)
+             seeed->setID( getNewIdForSeeed() );
 
-   if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
-   {
-      if( verboseLevel > 2 )
-      {
-         std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
-         seeed->showScatterPlot(this);
-      }
-#pragma omp critical (seeedptrstore)
-      {
-         assert(seeed->getID() >= 0);
-         finishedSeeeds.push_back(seeed);
-         allrelevantseeeds.push_back(seeed);
-      }
-   }
+             seeed->calcHashvalue();
+             seeed->addDecChangesFromAncestor(seeedPtr);
+             seeed->setFinishedByFinisher(true);
 
-   SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
-   seeedPropData->newSeeeds = NULL;
-   seeedPropData->nNewSeeeds = 0;
-}
+             if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
+             {
+                if( verboseLevel > 2 )
+                {
+                   std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
+                   seeed->showScatterPlot(this);
+                }
+                #pragma omp critical (seeedptrstore)
+                {
+                   assert(seeed->getID() >= 0);
+                   finishedSeeeds.push_back(seeed);
+                   allrelevantseeeds.push_back(seeed);
+                }
+             }
 
-delete seeedPropData;
+             SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
+             seeedPropData->newSeeeds = NULL;
+             seeedPropData->nNewSeeeds = 0;
+          }
+
+          delete seeedPropData->seeedToPropagate;
+          delete seeedPropData;
        }
     }// end for finishing curr seeeds
 
     std::cout << (int) finishedSeeeds.size() << " finished seeeds are found." << std::endl;
 
-    if(displaySeeeds)
+    if( displaySeeeds )
     {
-       for(size_t i = 0; i < finishedSeeeds.size(); ++i)
+       for( size_t i = 0; i < finishedSeeeds.size(); ++i )
        {
           std::cout << i+1 << "th finished seeed: " << std::endl;
           finishedSeeeds[i]->displaySeeed();
@@ -1262,7 +1259,7 @@ delete seeedPropData;
 
     /**
      * finds seeeds and translates them to decompositions
-     *   */
+     */
 
     std::vector<int> successDetectors;
     std::vector<SeeedPtr> delSeeeds;
@@ -1296,6 +1293,9 @@ delete seeedPropData;
     for( size_t i = 0; i < finishedSeeeds.size(); ++i )
     {
        SeeedPtr seeed = finishedSeeeds[i];
+
+
+       char detectorchaininfo[SCIP_MAXSTRLEN];
 
        SCIP_HASHMAP* vartoblock;
        SCIP_HASHMAP* constoblock;
@@ -1332,6 +1332,7 @@ delete seeedPropData;
        /** set nblocks */
        DECdecompSetNBlocks(decompositions[i], seeed->getNBlocks() );
 
+       //detectorchaininfo ;
        /** set constraints */
        if( seeed->getNMasterconss( )  != 0 )
           SCIP_CALL_ABORT (SCIPallocBufferArray(scip, &linkingconss, seeed->getNMasterconss() ) );
@@ -1546,7 +1547,7 @@ delete seeedPropData;
        /** set statistical detector chain data */
 
        DECdecompSetSeeedID(decompositions[i], seeed->getID() );
-       if(seeed->getNDetectors() > 0 )
+       if( seeed->getNDetectors() > 0 )
        {
           DECdecompSetDetectorClockTimes(scip, decompositions[i], &(seeed->detectorClockTimes[0]) );
           DECdecompSetDetectorPctVarsToBorder(scip, decompositions[i], &(seeed->pctVarsToBorder[0] ) );
@@ -1557,16 +1558,31 @@ delete seeedPropData;
           DECdecompSetDetectorPctConssFromOpen(scip, decompositions[i], &(seeed->pctConssFromFree[0] ) );
           DECdecompSetNNewBlocks(scip, decompositions[i], &(seeed->nNewBlocks[0] ) );
        }
+
+       /** set detector chain info string */
+
+
+       SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, " ") ;
+       for( int d = 0; d < seeed->getNDetectors(); ++d )
+       {
+          //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(seeed->getDetectorchain()[d]));
+          char str[2] = "\0"; /* gives {\0, \0} */
+          str[0] = DECdetectorGetChar(seeed->getDetectorchain()[d]);
+          (void) strncat(detectorchaininfo, str, 1 );
+       }
+
+       DECdecompSetDetectorChainString(scip, decompositions[i], detectorchaininfo);
+
        /** set dectype */
-       if(decompositions[i]->nlinkingvars == seeed->getNTotalStairlinkingvars() && decompositions[i]->nlinkingconss == 0 && DECdecompGetNLinkingvars(decompositions[i]) > 0)
+       if( decompositions[i]->nlinkingvars == seeed->getNTotalStairlinkingvars() && decompositions[i]->nlinkingconss == 0 && DECdecompGetNLinkingvars(decompositions[i]) > 0)
        {
           decompositions[i]->type = DEC_DECTYPE_STAIRCASE;
        }
-       else if(decompositions[i]->nlinkingvars > 0 || seeed->getNTotalStairlinkingvars() )
+       else if( decompositions[i]->nlinkingvars > 0 || seeed->getNTotalStairlinkingvars() )
        {
           decompositions[i]->type = DEC_DECTYPE_ARROWHEAD;
        }
-       else if(decompositions[i]->nlinkingconss > 0)
+       else if( decompositions[i]->nlinkingconss > 0)
        {
           decompositions[i]->type = DEC_DECTYPE_BORDERED;
        }

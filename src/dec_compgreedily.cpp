@@ -234,7 +234,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultCompgreedily)
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
-   if( SCIPgetNConss(scip) + SCIPgetNVars(scip) < DEFAULT_LIMITHALFPERIMETERENABLEDORIGINAL )
+   if( SCIPgetNOrigConss(scip) + SCIPgetNOrigVars(scip) < DEFAULT_LIMITHALFPERIMETERENABLEDORIGINAL )
       SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
    else
       SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );

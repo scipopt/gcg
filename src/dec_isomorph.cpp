@@ -185,7 +185,7 @@ struct_hook::struct_hook(
    aut = aut_;
    n = n_;
    scip = scip_;
-   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &conssperm, SCIPgetNConss(scip)) ); /*lint !e666*/
+   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &conssperm, seeedpool_->getNConss() ) ); /*lint !e666*/
    seeed = seeed_;
    seeedpool = seeedpool_;
 }
@@ -496,10 +496,6 @@ SCIP_RETCODE setupArrays(
       for( j = 0; j < ncurvars; j++ )
       {
          added = FALSE;
-
-
-//         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
-//            SCIPgetProbvarSum(scip, &(curvars[j]), &(curvals[j]), &constant);
 
          if( !onlysign )
          {
@@ -1647,7 +1643,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
 {
    *result = SCIP_DIDNOTFIND;
    DEC_DETECTORDATA* detectordata = DECdetectorGetData(detector);
-   gcg::Seeed* seeed = new gcg::Seeed( seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool) ;
+   gcg::Seeed* seeed =  seeedPropagationData->seeedToPropagate ;
 
    seeedPropagationData->nNewSeeeds = 0;
    seeedPropagationData->newSeeeds = NULL;
@@ -1669,6 +1665,7 @@ DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedIsomorph)
       seeedPropagationData->newSeeeds[i]->setDetectorPropagated(detector);
       seeedPropagationData->newSeeeds[i]->refineToMaster(seeedPropagationData->seeedpool);
    }
+
    return SCIP_OKAY;
 }
 #define detectorExitIsomorph NULL

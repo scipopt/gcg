@@ -29,6 +29,7 @@
  * @ingroup DETECTORS
  * @brief  detector for staircase_lsp matrices
  * @author Martin Bergner
+ * @author Michael Bastubbe
  *
  * This detector detects staircase_lsp structures in the constraint matrix by searching for the longest shortest path
  * in the row graph of the matrix.
@@ -772,7 +773,7 @@ SCIP_RETCODE detection(
    //SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");
 
    SCIP_CALL( createGraphFromPartialMatrix(scip, &(detectordata->graph), currseeed, seeedpool, detectordata) );
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), seeedpool->getNConss() ) );
 
    if( tcliqueGetNNodes(detectordata->graph) > 0 )
    {
