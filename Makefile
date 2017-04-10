@@ -232,7 +232,9 @@ LIBOBJ		=	reader_blk.o \
 			dec_generalmastersetpack.o \
 			dec_generalmastersetpart.o \
 			dec_generalmastersetcover.o \
+			class_indexclassifier.o \
 			class_consclassifier.o \
+			class_varclassifier.o \
 			presol_roundbound.o
 
 

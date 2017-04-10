@@ -46,6 +46,7 @@
 
 #include "class_seeed.h"
 #include "class_consclassifier.h"
+#include "class_varclassifier.h"
 
 
 

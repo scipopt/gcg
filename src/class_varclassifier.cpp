@@ -25,15 +25,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   class_consclassifier.cpp
- * @brief  class for classifying constraints
+/**@file   class_varclassifier.cpp
+ * @brief  class for classifying variables
  * @author Julius Hense
  *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "class_consclassifier.h"
+#include "class_varclassifier.h"
 
 #include <assert.h>
 #include <sstream>
@@ -44,144 +44,133 @@ namespace gcg {
 
 
 /** constructor */
-ConsClassifier::ConsClassifier(
+VarClassifier::VarClassifier(
    SCIP*          _scip,
    const char*    givenName,
    int            givenNClasses,
-   int            givenNCons
+   int            givenNVars
 ) :
-   IndexClassifier(_scip, givenName, givenNClasses, givenNCons)
+   IndexClassifier(_scip, givenName, givenNClasses, givenNVars)
 {
 
 }
 
 /** copy constructor */
-ConsClassifier::ConsClassifier(
-   const ConsClassifier* toCopy
+VarClassifier::VarClassifier(
+   const VarClassifier* toCopy
 ) : IndexClassifier( toCopy )
 {
+//   for ( int i = 0; i < getNClasses(); ++i )
+//   {
+//      classDecompInfo[i] = toCopy->classDecompInfo[i];
+//   }
 }
 
 /** destructor */
-ConsClassifier::~ConsClassifier()
+VarClassifier::~VarClassifier()
 {
 }
 
 /** creates a new class, returns index of the class */
-int ConsClassifier::addClass( const char* givenName, const char* givenDesc, DECOMPINFO givenDecompInfo )
+int VarClassifier::addClass( const char* givenName, const char* givenDesc )
 {
+//   assert((int) classDecompInfo.size() == getNClasses());
+//   assert(givenDecompInfo == BOTH || givenDecompInfo == ONLY_MASTER || givenDecompInfo == ONLY_PRICING );
+
    int classindex = IndexClassifier::addClass( givenName, givenDesc );
-   setClassDecompInfoOfClass( classindex, givenDecompInfo );
+
+//   classDecompInfo.push_back( givenDecompInfo );
+//
+//   assert( (int) classDecompInfo.size() - 1 == classindex );
 
    return classindex;
 }
 
-/** assigns a constraint to a class */
-void ConsClassifier::assignConsToClass( int givenConsindex, int givenClassindex )
+/** assigns a variable to a class */
+void VarClassifier::assignVarToClass( int givenVarindex, int givenClassindex )
 {
-   IndexClassifier::assignIndexToClass( givenConsindex, givenClassindex );
+   IndexClassifier::assignIndexToClass( givenVarindex, givenClassindex );
 }
 
 
 /** returns the decomposition code */
-const DECOMPINFO* ConsClassifier::getClassDecompInfo()
-{
-   return NULL;
+//const DECOMPINFO* ConsClassifier::getClassDecompInfo()
+//{
 //   if ( getNClasses() > 0)
 //      return &classDecompInfo[0];
 //   else
 //      return NULL;
-}
+//}
 
 /** returns the decomposition code of a class */
-DECOMPINFO ConsClassifier::getClassDecompInfoOfClass( int givenClassindex )
+//DECOMPINFO ConsClassifier::getClassDecompInfoOfClass( int givenClassindex )
+//{
+//   assert(0 <= givenClassindex && givenClassindex < getNClasses());
+//
+//   return classDecompInfo[givenClassindex];
+//}
+
+/** returns the name of the class a variable is assigned to */
+const char* VarClassifier::getClassNameOfVar( int givenVarindex )
 {
-   int decompInfo = IndexClassifier::getClassDecompInfoOfClass( givenClassindex );
-   DECOMPINFO interp;
-
-   assert( 0 <= decompInfo && decompInfo <= 2);
-
-   switch ( decompInfo )
-   {
-   case 0:
-      interp = BOTH;
-      break;
-   case 1:
-      interp = ONLY_MASTER;
-      break;
-   case 2:
-      interp = ONLY_PRICING;
-      break;
-   default:
-      interp = BOTH;
-      break;
-   }
-
-   return interp;
+   return IndexClassifier::getClassNameOfIndex( givenVarindex );
 }
 
-/** returns the name of the class a constraint is assigned to */
-const char* ConsClassifier::getClassNameOfCons( int givenConsindex )
+/** returns the index of the class a variable is assigned to */
+int VarClassifier::getClassOfVar( int givenVarindex )
 {
-   return IndexClassifier::getClassNameOfIndex( givenConsindex );
+   return IndexClassifier::getClassOfIndex( givenVarindex );
 }
 
-/** returns the index of the class a constraint is assigned to */
-int ConsClassifier::getClassOfCons( int givenConsindex )
+/** returns vector containing the assigned class of each variable */
+const int* VarClassifier::getVarsToClasses()
 {
-   return IndexClassifier::getClassOfIndex( givenConsindex );
-}
-
-/** returns vector containing the assigned class of each constraint */
-const int* ConsClassifier::getConsToClasses()
-{
-   std::vector<int> consToClasses = IndexClassifier::getIndicesToClasses();
-   if ( consToClasses.size() > 0 )
-      return &consToClasses[0];
+   std::vector<int> varsToClasses = IndexClassifier::getIndicesToClasses();
+   if ( varsToClasses.size() > 0 )
+      return &varsToClasses[0];
    else
       return NULL;
 }
 
-/** returns the number of constraints */
-int ConsClassifier::getNConss()
+/** returns the number of variables */
+int VarClassifier::getNVars()
 {
    return IndexClassifier::getNIndices();
 }
 
 
-/** returns whether a constraint is already assigned to a class */
-bool ConsClassifier::isConsClassified( int givenConsindex )
+/** returns whether a variable is already assigned to a class */
+bool VarClassifier::isVarClassified( int givenVarindex )
 {
-   return IndexClassifier::isIndexClassified( givenConsindex );
+   return IndexClassifier::isIndexClassified( givenVarindex );
 }
 
 /** returns classifier with reduced number of classes */
-ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
+VarClassifier* VarClassifier::reduceClasses( int givenMaxNumber )
 {
    std::vector<int> classindexmapping = IndexClassifier::reduceClasses( givenMaxNumber );
-   ConsClassifier* newClassifier;
+   VarClassifier* newClassifier;
    std::stringstream newName;
    std::stringstream newClassdesc;
 
    if ( classindexmapping.empty() )
       return NULL;
 
-   /** create new ConsClassifier */
+   /** create new VarClassifier */
    newName << getName() << "-red-to-" << givenMaxNumber;
-   newClassifier = new ConsClassifier( scip, newName.str().c_str(), givenMaxNumber, getNConss() );
+   newClassifier = new VarClassifier( scip, newName.str().c_str(), givenMaxNumber, getNVars() );
 
-   /** reassign conss */
-   for( int i = 0; i < newClassifier->getNConss(); ++i)
+   /** reassign vars */
+   for( int i = 0; i < newClassifier->getNVars(); ++i)
    {
-      if ( getClassOfCons(i) != -1 )
+      if ( getClassOfVar(i) != -1 )
       {
-         newClassifier->assignConsToClass( i, classindexmapping[getClassOfCons(i)] );
+         newClassifier->assignVarToClass( i, classindexmapping[getClassOfVar(i)] );
       }
    }
 
    /** set new class names and descriptions (enlarged class has index 0) */
    newClassifier->setClassName( 0, "merged" );
-   newClassifier->setClassDecompInfo( 0, BOTH );
 
    for ( int i = 0; i < getNClasses(); ++i )
    {
@@ -193,7 +182,6 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
      {
         newClassifier->setClassName( classindexmapping[i], getClassName(i) );
         newClassifier->setClassDescription( classindexmapping[i], getClassDescription(i) );
-        newClassifier->setClassDecompInfo( classindexmapping[i], getClassDecompInfoOfClass(i) );
      }
    }
 
@@ -204,11 +192,12 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
 }
 
 /** sets the decomposition code of a class */
-void ConsClassifier::setClassDecompInfo( int givenClassindex, DECOMPINFO givenDecompInfo )
-{
-   assert(givenDecompInfo == BOTH || givenDecompInfo == ONLY_MASTER || givenDecompInfo == ONLY_PRICING );
-
-   IndexClassifier::setClassDecompInfoOfClass( givenClassindex, (int) givenDecompInfo );
-}
+//void VarClassifier::setClassDecompInfo( int givenClassindex, DECOMPINFO givenDecompInfo )
+//{
+//   assert(0 <= givenClassindex && givenClassindex < getNClasses());
+//   assert(givenDecompInfo == BOTH || givenDecompInfo == ONLY_MASTER || givenDecompInfo == ONLY_PRICING );
+//
+//   classDecompInfo[givenClassindex] = givenDecompInfo;
+//}
 
 } /* namespace gcg */
