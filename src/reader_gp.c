@@ -620,10 +620,10 @@ SCIP_RETCODE SCIPwriteGp(
    else
    {
       if(outputPDF)
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%s_%d_%d", name, detectorchainstring, DECdecompGetSeeedID,
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%s_%d_%d", name, detectorchainstring, DECdecompGetSeeedID(decdecomp),
             decdecomp->nblocks);
       else
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%s-%d-%d", name, detectorchainstring, DECdecompGetSeeedID,
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%s-%d-%d", name, detectorchainstring, DECdecompGetSeeedID(decdecomp),
             decdecomp->nblocks);
    }
 

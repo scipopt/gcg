@@ -646,7 +646,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
       sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
    }
 
-   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d-%d", detectorchainstring, DECdecompGetSeeedID,
+   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d-%d", detectorchainstring, DECdecompGetSeeedID(decomp),
       DECdecompGetNBlocks(decomp));
    /* tex will have problems with the character '_' */
    for(i = 0; i < SCIP_MAXSTRLEN; i++)
@@ -714,7 +714,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
    if( readerdata->usegp )
    {
       SCIPinfoMessage(scip, file, "    \\input{%s-%s-%d-%d}                                          \n",
-         pname, detectorchainstring, DECdecompGetSeeedID, DECdecompGetNBlocks(decomp));
+         pname, detectorchainstring, DECdecompGetSeeedID(decomp), DECdecompGetNBlocks(decomp));
    }
    else
    {
