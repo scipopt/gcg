@@ -47,8 +47,6 @@
 #include <queue>
 #include <fstream>
 
-
-
 #include "cons_decomp.h"
 #include "dec_connected.h"
 #include "gcg.h"
@@ -58,7 +56,6 @@
 #include "scip/clock.h"
 #include "class_seeedpool.h"
 #include "class_seeed.h"
-
 
 #include <vector>
 
@@ -92,7 +89,6 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER    10000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis default */
 #define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
 #define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000     /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
-
 
 /*
  * Data structures
@@ -128,11 +124,9 @@ struct SCIP_ConshdlrData
 
 };
 
-
 /*
  * Local methods
  */
-
 
 /**
  * create a 'decomposition' consisting of only one single block; used if no other decomposition was found
@@ -169,7 +163,6 @@ SCIP_RETCODE createOneBlockDecomp(
 
    return SCIP_OKAY;
 }
-
 
 /*
  * Callback methods of constraint handler
@@ -296,7 +289,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    return SCIP_OKAY;
 }
 
-
 /** constraint enforcing method of constraint handler for LP solutions */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpDecomp)
@@ -305,7 +297,6 @@ SCIP_DECL_CONSENFOLP(consEnfolpDecomp)
    return SCIP_OKAY;
 }
 
-
 /** constraint enforcing method of constraint handler for pseudo solutions */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsDecomp)
@@ -313,7 +304,6 @@ SCIP_DECL_CONSENFOPS(consEnfopsDecomp)
    *result = SCIP_FEASIBLE;
    return SCIP_OKAY;
 }
-
 
 /** feasibility check method of constraint handler for integral solutions */
 static
@@ -324,15 +314,12 @@ SCIP_DECL_CONSCHECK(consCheckDecomp)
    return SCIP_OKAY;
 }
 
-
-
 /** variable rounding lock method of constraint handler */
 static
 SCIP_DECL_CONSLOCK(consLockDecomp)
 {  /*lint --e{715}*/
    return SCIP_OKAY;
 }
-
 
 /*
  * constraint specific interface methods
@@ -585,7 +572,6 @@ SCIP_RETCODE DECincludeDetector(
    detector->setParamDefault =  setParamDefaultDetector;
    detector->setParamFast =  setParamFastDetector;
 
-
    detector->decchar = decchar;
 
    detector->freqCallRound = freqCallRound;
@@ -719,9 +705,7 @@ SCIP_RETCODE DECdetectStructure(
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       SCIP_CALL( SCIPtransformProb(scip) );
 
-
    candidatesNBlocks = seeedpoolunpresolved.getSortedCandidatesNBlocks();
-
 
    /** detection for original problem */
    if( conshdlrdata->ndecomps == 0 && calculateOrigDecomps )
@@ -733,12 +717,8 @@ SCIP_RETCODE DECdetectStructure(
          conssClassDistributions.push_back(seeedpoolunpresolved.getConssClassDistributionVector(i));
    }
 
-
-
 //   for( i = 0; i < seeedpoolunpresolved.getNConss(); ++i)
 //   {
-
-
 
 //   std::cout << " name of cons 1 : " << SCIPvarGetName( seeedpoolunpresolved.getVarForIndex(0) ) << std::endl;
 //   std::cout << " name of cons 2 : " << SCIPvarGetName( seeedpoolunpresolved.getVarForIndex(1) ) << std::endl;
@@ -895,7 +875,6 @@ SCIP_RETCODE DECdetectStructure(
 //   return SCIP_OKAY;
 //}
 
-
 /** write
  *  out all detected or provided decompositions */
 SCIP_RETCODE DECwriteAllDecomps(
@@ -995,7 +974,6 @@ SCIP_RETCODE DECwriteAllDecomps(
    return SCIP_OKAY;
 }
 
-
 /** write
  *  out all detected or provided decompositions */
 /** write family tree **/
@@ -1007,7 +985,6 @@ SCIP_RETCODE DECwriteFamilyTree(
    SCIP_Bool             draft               /**< draft mode will not visualize non-zeros but is faster and takes less memory */
    )
 {
-
 
 	SCIP_CONSHDLR* conshdlr;
 	SCIP_CONSHDLRDATA* conshdlrdata;
@@ -1031,10 +1008,6 @@ SCIP_RETCODE DECwriteFamilyTree(
 
 	   return SCIP_OKAY;
 }
-
-
-
-
 
 /** returns the best known decomposition, if available and NULL otherwise */
 DEC_DECOMP* DECgetBestDecomp(
