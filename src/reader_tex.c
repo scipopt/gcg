@@ -617,6 +617,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
    DEC_SCORES scores;
    char* filepath;
    char* pname;
+   char* detectorchainstring;
    char ppath[SCIP_MAXSTRLEN];
    char decompname[SCIP_MAXSTRLEN];
    char gpfilename[SCIP_MAXSTRLEN];
@@ -624,7 +625,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
    char pfile[SCIP_MAXSTRLEN];
    char pfilecpy[SCIP_MAXSTRLEN];
    char dectype[SCIP_MAXSTRLEN];
-   char detectorchainstring[SCIP_MAXSTRLEN];
+   char fulldetectorstring[SCIP_MAXSTRLEN];
    int sizedetectorchain;
    int i;
 
@@ -633,18 +634,20 @@ SCIP_RETCODE GCGtexWriteDecompCode(
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 
-   /* construct detector chain string*/
+   /* get detector chain string & full-text string*/
+   detectorchainstring = DECdecompGetDetectorChainString(scip, decomp);
+
    detectorchain = DECdecompGetDetectorChain(decomp);
    sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
 
-   sprintf(detectorchainstring, "%s", DECdetectorGetName(detectorchain[0]));
+   sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
    for( i=1; i < sizedetectorchain; ++i )
    {
-      sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(detectorchain[i]) );
+      sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
    }
-   SCIPinfoMessage(scip, NULL, "%s \n", detectorchainstring);
 
-   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d", detectorchainstring, DECdecompGetNBlocks(decomp));
+   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d-%d", detectorchainstring, DECdecompGetSeeedID,
+      DECdecompGetNBlocks(decomp));
    /* tex will have problems with the character '_' */
    for(i = 0; i < SCIP_MAXSTRLEN; i++)
    {
@@ -710,8 +713,8 @@ SCIP_RETCODE GCGtexWriteDecompCode(
    SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
    if( readerdata->usegp )
    {
-      SCIPinfoMessage(scip, file, "    \\input{%s-%s-%d}                                            \n",
-         pname, detectorchainstring, DECdecompGetNBlocks(decomp));
+      SCIPinfoMessage(scip, file, "    \\input{%s-%s-%d-%d}                                          \n",
+         pname, detectorchainstring, DECdecompGetSeeedID, DECdecompGetNBlocks(decomp));
    }
    else
    {
@@ -726,8 +729,8 @@ SCIP_RETCODE GCGtexWriteDecompCode(
       SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
       SCIPinfoMessage(scip, file, "\\begin{tabular}{lp{10cm}}                                      \n");
       SCIPinfoMessage(scip, file,
-         "  Found by detector: & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\ \n",
-         detectorchainstring);
+         "  Found by detector(s): & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\ \n",
+         fulldetectorstring);
       switch(DECdecompGetType(decomp))
       {
          case DEC_DECTYPE_ARROWHEAD:

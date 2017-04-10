@@ -1561,8 +1561,7 @@ Seeedpool::~Seeedpool()
 
        /** set detector chain info string */
 
-
-       SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, " ") ;
+       SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
        for( int d = 0; d < seeed->getNDetectors(); ++d )
        {
           //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(seeed->getDetectorchain()[d]));

@@ -594,13 +594,10 @@ SCIP_RETCODE SCIPwriteGp(
    SCIP_Bool             outputPDF           /**< if true give pdf file, if false give tex file instead */
    )
 {
+   char* name;
+   char* detectorchainstring;
    char probname[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
-   char *name;
-   char detectorchainstring[SCIP_MAXSTRLEN];
-   DEC_DETECTOR** detectorchain;
-   int sizedetectorchain;
-   int i;
 
    assert(scip != NULL);
    assert(file != NULL);
@@ -614,31 +611,20 @@ SCIP_RETCODE SCIPwriteGp(
    (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
 
-   /* construct detector chain string*/
-   detectorchain = DECdecompGetDetectorChain(decdecomp);
-   sizedetectorchain = DECdecompGetDetectorChainSize(decdecomp);
+   /* get detector chain string*/
+   detectorchainstring = DECdecompGetDetectorChainString(scip, decdecomp);
 
-   if (detectorchain != NULL)
-   {
-      sprintf(detectorchainstring, "%s", DECdetectorGetName(detectorchain[0]));
-
-      for( i=1; i < sizedetectorchain; ++i )
-      {
-         sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(detectorchain[i]) );
-      }
-      SCIPinfoMessage(scip, NULL, "%s \n", detectorchainstring);
-   }
-   else
-      sprintf(detectorchainstring, "%s", "provided");
    /* print header */
    if( decdecomp == NULL )
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
    else
    {
       if(outputPDF)
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%s_%d", name, detectorchainstring, decdecomp->nblocks);
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%s_%d_%d", name, detectorchainstring, DECdecompGetSeeedID,
+            decdecomp->nblocks);
       else
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%s-%d", name, detectorchainstring, decdecomp->nblocks);
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%s-%d-%d", name, detectorchainstring, DECdecompGetSeeedID,
+            decdecomp->nblocks);
    }
 
    SCIP_CALL( writeFileHeader(scip, file, outname, outputPDF) );
