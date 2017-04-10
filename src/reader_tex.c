@@ -483,7 +483,7 @@ SCIP_RETCODE writeTikz(
          endx += nsubscipvars[i];
          endy += nsubscipconss[i];
          SCIPinfoMessage(scip, file,
-            "    \\draw [fill=gray] (%f*\\textwidth*0.5,%f*\\textwidth*0.5) rectangle (%f*\\textwidth*0.5,%f*\\textwidth*0.5);\n",
+            "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
             (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
          startx = endx;
          starty = endy;
@@ -491,13 +491,13 @@ SCIP_RETCODE writeTikz(
       endx += nlinkingvars;
       endy += nlinkingconss;
       SCIPinfoMessage(scip, file,
-         "    \\draw [fill=gray] (%f*\\textwidth*0.5,%f*\\textwidth*0.5) rectangle (%f*\\textwidth*0.5,%f*\\textwidth*0.5);\n",
+         "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
          (0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
       SCIPinfoMessage(scip, file,
-         "    \\draw [fill=gray] (%f*\\textwidth*0.5,%f*\\textwidth*0.5) rectangle (%f*\\textwidth*0.5,%f*\\textwidth*0.5);\n",
+         "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
          (startx+0.5)/maxindvars, (+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
       SCIPinfoMessage(scip, file,
-         "    \\draw [fill=gray] (%f*\\textwidth*0.5,%f*\\textwidth*0.5) rectangle (%f*\\textwidth*0.5,%f*\\textwidth*0.5);\n",
+         "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
          (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
    }
    else
@@ -510,7 +510,7 @@ SCIP_RETCODE writeTikz(
             endx += nsubscipvars[i]+nstairlinkingvars[i];
             endy += nsubscipconss[i];
             SCIPinfoMessage(scip, file,
-               "    \\draw [fill=gray] (%f*\\textwidth*0.5,%f*\\textwidth*0.5) rectangle (%f*\\textwidth*0.5,%f*\\textwidth*0.5);\n",
+               "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
                (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
             startx = endx-nstairlinkingvars[i];
             starty = endy;
@@ -518,7 +518,7 @@ SCIP_RETCODE writeTikz(
          endx += nsubscipvars[i];
          endy += nsubscipconss[i];
          SCIPinfoMessage(scip, file,
-            "    \\draw [fill=gray] (%f*\\textwidth*0.5,%f*\\textwidth*0.5) rectangle (%f*\\textwidth*0.5,%f*\\textwidth*0.5);\n",
+            "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
             (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
       }
    }
@@ -546,7 +546,7 @@ SCIP_RETCODE writeTikz(
             {
                SCIPinfoMessage(scip, file,
                   "                                                                                \n");
-               SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth*0.5,%f*\\textwidth*0.5) circle [radius=%f];\n",
+               SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
                   (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind);
             }
             else
@@ -554,7 +554,7 @@ SCIP_RETCODE writeTikz(
                /* if there is no decomposition, output the presolved model! */
                if( decomp == NULL || DECdecompGetType(decomp) == DEC_DECTYPE_UNKNOWN )
                {
-                  SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth*0.5,%f*\\textwidth*0.5) circle [radius=%f];\n",
+                  SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
                      (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind);
                }
                /* if there is a decomposition, output the indices derived from the decomposition above*/
@@ -568,7 +568,7 @@ SCIP_RETCODE writeTikz(
                      xpoint =
                         ( (float)(size_t)SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) )/(float)maxindvars;
                      ypoint = ( (float)(size_t)SCIPhashmapGetImage(consindexmap, conss[i]) )/ (float)maxindcons;
-                     SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth*0.5,%f*\\textwidth*0.5) circle [radius=%f];\n",
+                     SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
                         xpoint, ypoint, radius/maxind);
                   }
                }
