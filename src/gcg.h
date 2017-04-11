@@ -260,6 +260,13 @@ int GCGgetNTransvars(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
+/** returns the auxiliary variable for the given pricing probblem */
+extern
+SCIP_VAR* GCGgetAuxiliaryVariable(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   );
+
 #ifdef __cplusplus
 }
 #endif

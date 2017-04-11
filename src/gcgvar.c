@@ -634,6 +634,8 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
          SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->linkconss, nblocks) );
          BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->linkconss, nblocks);
       }
+      else
+         vardata->data.origvardata.linkingvardata->linkconss = NULL;
 
       /* store old block; store the original variable, it will be exchanged for the correct pricing variable later */
       vardata->data.origvardata.linkingvardata->pricingvars[blocknr] = var;
@@ -1114,10 +1116,12 @@ SCIP_RETCODE GCGcreateMasterVar(
    int                   prob,               /**< number of pricing problem that created this variable */
    int                   nsolvars,           /**< number of variables in the solution */
    SCIP_Real*            solvals,            /**< values of variables in the solution */
-   SCIP_VAR**            solvars             /**< variables with non zero coefficient in the solution */
+   SCIP_VAR**            solvars,            /**< variables with non zero coefficient in the solution */
+   SCIP_Bool             auxiliaryvar        /**< is new variable an Benders' auxiliary variables? */
    )
 {
    SCIP_VARDATA* newvardata;
+   SCIP_Real lb;
    int i;
    int j;
    SCIP_Bool trivialsol;
@@ -1135,6 +1139,10 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    trivialsol = FALSE;
 
+   lb = 0.0;
+   if( auxiliaryvar )
+      lb = -SCIPinfinity(scip);
+
    /* create data for the new variable in the master problem */
    SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
    newvardata->vartype = GCG_VARTYPE_MASTER;
@@ -1144,7 +1152,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    newvardata->data.mastervardata.isray = solisray;
 
    /* create variable in the master problem */
-   SCIP_CALL( SCIPcreateVar(scip, newvar, varname, 0.0, SCIPinfinity(scip), /* GCGrelaxGetNIdenticalBlocks(origprob, prob) */
+   SCIP_CALL( SCIPcreateVar(scip, newvar, varname, lb, SCIPinfinity(scip), /* GCGrelaxGetNIdenticalBlocks(origprob, prob) */
          objcoeff, vartype, TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
 
    /* count number of non-zeros */
@@ -1166,7 +1174,7 @@ SCIP_RETCODE GCGcreateMasterVar(
     * if we have not added any original variable to the mastervariable, all coefficients were 0.
     * In that case, we will add all variables in the pricing problem
     */
-   if( newvardata->data.mastervardata.norigvars == 0 )
+   if( newvardata->data.mastervardata.norigvars == 0 && !auxiliaryvar )
    {
       newvardata->data.mastervardata.norigvars = SCIPgetNOrigVars(pricingscip);
       trivialsol = TRUE;

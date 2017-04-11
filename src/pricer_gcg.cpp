@@ -1587,7 +1587,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    }
 
    SCIP_CALL( GCGcreateMasterVar(scip, origprob, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
-         pricerdata->vartype, solisray, prob, nsolvars, solvals, solvars));
+         pricerdata->vartype, solisray, prob, nsolvars, solvals, solvars, FALSE));
 
    SCIPvarMarkDeletable(newvar);
 
@@ -1739,7 +1739,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    }
 
    SCIP_CALL( GCGcreateMasterVar(scip, GCGmasterGetOrigprob(scip), pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
-         pricerdata->vartype, isray, prob, nsolvars, solvals, solvars));
+         pricerdata->vartype, isray, prob, nsolvars, solvals, solvars, FALSE));
 
    SCIPvarMarkDeletable(newvar);
 

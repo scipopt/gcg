@@ -122,6 +122,8 @@ struct SCIP_ConshdlrData
    int                   ncalls;             /**< the number of calls to the constraint handler. */
                                              /*   This is used to initialise the branching */
 
+   SCIP_SOL**            subproblemsols;     /**< the solutions from the subproblem. Used to create an original problem solution */
+
    /** variables used for statistics */
    SCIP_CLOCK*           freeclock;          /**< time for freeing pricing problems */
    SCIP_CLOCK*           transformclock;     /**< time for transforming pricing problems */
@@ -778,7 +780,7 @@ SCIP_RETCODE addAuxiliaryVariableToCut(
    /* retrieving the best solution to check the value of the auxiliary variable against the subproblem solution */
    bestsol = SCIPgetBestSol(masterprob);
 
-   if( conshdlrdata->noptimalitycuts[probnumber] == 0 )
+   if( FALSE && conshdlrdata->noptimalitycuts[probnumber] == 0 )
    {
       SCIP_EVENTHDLR* eventhdlr;
 
@@ -792,7 +794,7 @@ SCIP_RETCODE addAuxiliaryVariableToCut(
        * added */
       (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "auxiliaryvar_%d", probnumber );
       SCIP_CALL( GCGcreateMasterVar(masterprob, conshdlrdata->origprob, conshdlrdata->pricingprobs[probnumber], &auxiliaryvar,
-            varname, 1.0, SCIP_VARTYPE_CONTINUOUS, FALSE, probnumber, 0, NULL, NULL));
+            varname, 1.0, SCIP_VARTYPE_CONTINUOUS, FALSE, probnumber, 0, NULL, NULL, TRUE));
 
       SCIP_CALL( SCIPaddVar(masterprob, auxiliaryvar) );
 
@@ -807,7 +809,10 @@ SCIP_RETCODE addAuxiliaryVariableToCut(
    {
       SCIP_Real auxiliaryvarval;
 
-      auxiliaryvarval = SCIPgetSolVal(masterprob, bestsol, conshdlrdata->auxiliaryvars[probnumber]);
+      //if( conshdlrdata->noptimalitycuts[probnumber] == 0 )
+         //auxiliaryvarval = -SCIPinfinity(masterprob);
+      //else
+         auxiliaryvarval = SCIPgetSolVal(masterprob, bestsol, conshdlrdata->auxiliaryvars[probnumber]);
 
       /* if the value of the auxiliary variable in the master problem is greater or equal to the subproblem objective,
        * then a cut is not added by the subproblem.
@@ -1040,12 +1045,159 @@ SCIP_RETCODE freePricingProblems(
       if( conshdlrdata->pricingprobs[j] != NULL
          && SCIPgetStage(conshdlrdata->pricingprobs[j]) > SCIP_STAGE_PROBLEM)
       {
+         /* freeing the solution from the subproblem if it is not NULL */
+         if( conshdlrdata->subproblemsols[j] != NULL)
+            SCIP_CALL( SCIPfreeSol(conshdlrdata->pricingprobs[j], &conshdlrdata->subproblemsols[j]) );
+
          SCIP_CALL( SCIPfreeTransform(conshdlrdata->pricingprobs[j]) );
       }
    }
 
    return SCIP_OKAY;
 }
+
+
+/** sets the values the given variables in the original problem */
+static
+SCIP_RETCODE setOriginalProblemValues(
+   SCIP*                 origprob,           /**< the SCIP instance of the original problem */
+   SCIP_SOL*             origsol,            /**< the solution for the original problem */
+   SCIP_VAR**            vars,               /**< the variables from the decomposed problem */
+   SCIP_Real*            vals,               /**< the solution values of the given problem */
+   int                   nvars,              /**< the number of variables */
+   SCIP_Bool             master              /**< are the variables from the master problem */
+   )
+{
+   SCIP_VAR** origvars;
+   SCIP_Real* origvals;
+   int norigvars;
+   int i;
+
+   assert(origprob != NULL);
+   assert(vars != NULL);
+   assert(vals != NULL);
+
+   /* looping through all variables to update the values in the original solution */
+   for( i = 0; i < nvars; i++ )
+   {
+      norigvars = master ? GCGmasterVarGetNOrigvars(vars[i]) : GCGpricingVarGetNOrigvars(vars[i]);
+      if( norigvars > 0 )
+      {
+         origvars = master ? GCGmasterVarGetOrigvars(vars[i]) : GCGpricingVarGetOrigvars(vars[i]);
+
+         if( master )
+            origvals = GCGmasterVarGetOrigvals(vars[i]);
+
+         /* all master variables should be associated with a single original variable. This is because no reformulation has
+          * been performed. */
+         assert(norigvars == 1);
+         assert(!master || origvals[0] == 1.0);
+
+         assert((master && GCGvarIsMaster(vars[i])) || (!master && GCGvarIsPricing(vars[i])));
+
+         assert(!SCIPisInfinity(origprob, vals[i]));
+
+         SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvars[0], vals[i]) );
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
+/** creates an original problem solution from the master and subproblem solutions */
+static
+SCIP_RETCODE createOriginalProblemSolution(
+   SCIP*                 masterprob,
+   SCIP_CONSHDLRDATA*    conshdlrdata
+   )
+{
+   /* Don't know whether we need to consider the fixed variables. Must check. */
+   SCIP* origprob;
+   SCIP* pricingprob;
+   SCIP_SOL* origsol;
+   SCIP_SOL* bestsol;
+   SCIP_VAR** vars;
+   SCIP_Real* vals;
+   int npricingprobs;
+   int nvars;
+   int i;
+   SCIP_Bool stored;
+
+   assert(masterprob != NULL);
+   assert(conshdlrdata != NULL);
+
+   origprob = conshdlrdata->origprob;
+
+   /* creating the original problem */
+   SCIP_CALL( SCIPcreateSol(origprob, &origsol, GCGrelaxGetProbingheur(origprob)) );
+
+   /* setting the values of the master variables in the original solution */
+
+   /* getting the variable data for the master variables */
+   SCIP_CALL( SCIPgetVarsData(masterprob, &vars, &nvars, NULL, NULL, NULL, NULL) );
+   assert(vars != NULL);
+
+   /* getting the best solution from the master problem */
+   bestsol = SCIPgetBestSol(masterprob);
+
+   SCIP_CALL( SCIPallocBufferArray(masterprob, &vals, nvars) );
+   SCIP_CALL( SCIPgetSolVals(masterprob, bestsol, nvars, vars, vals) );
+
+   /* setting the values using the master problem solution */
+   SCIP_CALL( setOriginalProblemValues(origprob, origsol, vars, vals, nvars, TRUE) );
+
+   /* freeing the values buffer array for use for the pricing problems */
+   SCIPfreeBufferArray(masterprob, &vals);
+
+   /* setting the values of the subproblem variables in the original solution */
+   npricingprobs = conshdlrdata->npricingprobs;
+
+   /* looping through all subproblems */
+   for( i = 0; i < npricingprobs; i++ )
+   {
+      pricingprob = conshdlrdata->pricingprobs[i];
+
+      /* getting the variable data for the master variables */
+      SCIP_CALL( SCIPgetVarsData(pricingprob, &vars, &nvars, NULL, NULL, NULL, NULL) );
+      assert(vars != NULL);
+
+      /* getting the best solution from the master problem */
+      bestsol = SCIPgetBestSol(pricingprob);
+
+      SCIP_CALL( SCIPallocBufferArray(pricingprob, &vals, nvars) );
+      SCIP_CALL( SCIPgetSolVals(pricingprob, bestsol, nvars, vars, vals) );
+
+      /* setting the values using the master problem solution */
+      SCIP_CALL( setOriginalProblemValues(origprob, origsol, vars, vals, nvars, FALSE) );
+
+      /* freeing the values buffer array for use for the pricing problems */
+      SCIPfreeBufferArray(pricingprob, &vals);
+   }
+
+#ifdef SCIP_DEBUG
+   SCIP_CALL( SCIPtrySol(origprob, origsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
+#else
+   SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+#endif
+   if( !stored )
+   {
+
+      SCIP_CALL( SCIPcheckSolOrig(origprob, origsol, &stored, TRUE, TRUE) );
+   }
+   /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
+    *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+    */
+   SCIP_CALL( SCIPfreeSol(origprob, &origsol) );
+
+   if( stored )
+      SCIPdebugMessage("  updated current best primal feasible solution.\n");
+
+
+   return SCIP_OKAY;
+}
+
 #if 0
 /* applies the generated cut to the master problem*/
 static
@@ -1227,6 +1379,8 @@ SCIP_DECL_CONSINITSOL(consInitsolBenders)
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->noptimalitycutsdist), conshdlrdata->npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->subproblemtimedist), conshdlrdata->npricingprobs) );
 
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->subproblemsols), conshdlrdata->npricingprobs) );
+
    SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrdata->nodetimehist), SUBPROBLEM_STAT_ARRAYLEN_TIME) ); /*lint !e506*/
    SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrdata->optimalitycutshist), SUBPROBLEM_STAT_ARRAYLEN_CUTS) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrdata->feasibilitycutshist), SUBPROBLEM_STAT_ARRAYLEN_CUTS) );
@@ -1244,6 +1398,8 @@ SCIP_DECL_CONSINITSOL(consInitsolBenders)
       conshdlrdata->nfeasibilitycutsdist[i] = 0;
       conshdlrdata->noptimalitycutsdist[i] = 0;
       conshdlrdata->subproblemtimedist[i] = 0;
+
+      conshdlrdata->subproblemsols[i] = NULL;
 
       if( GCGisPricingprobRelevant(origprob, i) )
       {
@@ -1297,6 +1453,9 @@ SCIP_DECL_CONSINITSOL(consInitsolBenders)
       conshdlrdata->nfeasibilitycuts[i] = 0;
       conshdlrdata->maxfeasibilitycuts[i] = 50;
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &conshdlrdata->feasibilitycuts[i], conshdlrdata->maxfeasibilitycuts[i]) );
+
+      /* getting the auxiliary variable of the master problem from the relax data stored in the original problem */
+      conshdlrdata->auxiliaryvars[i] = GCGgetAuxiliaryVariable(origprob, i);
    }
 
 
@@ -1361,6 +1520,8 @@ SCIP_DECL_CONSEXITSOL(consExitsolBenders)
    SCIPfreeMemoryArray(scip, &(conshdlrdata->feasibilitycutshist));
    SCIPfreeMemoryArray(scip, &(conshdlrdata->optimalitycutshist));
    SCIPfreeMemoryArray(scip, &(conshdlrdata->nodetimehist));
+
+   SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->subproblemsols), conshdlrdata->npricingprobs);
 
    SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->subproblemtimedist), conshdlrdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->noptimalitycutsdist), conshdlrdata->npricingprobs);
@@ -1483,6 +1644,9 @@ SCIP_DECL_CONSENFOLP(consEnfolpBenders)
 
    SCIP_CALL( solveSubproblems(scip, conshdlr, NULL, &objval, &infeasible, FALSE) );
 
+   if( !infeasible )
+      SCIP_CALL( createOriginalProblemSolution(scip, conshdlrdata) );
+
    for( i = 0; i < conshdlrdata->npricingprobs; i++ )
       SCIP_CALL( generateAndApplyBendersCuts(scip, conshdlrdata->pricingprobs[i], conshdlr, i, result) );
 
@@ -1526,6 +1690,9 @@ SCIP_DECL_CONSENFORELAX(consEnforelaxBenders)
 
    SCIP_CALL( solveSubproblems(scip, conshdlr, sol, &objval, &infeasible, FALSE) );
 
+   if( !infeasible )
+      SCIP_CALL( createOriginalProblemSolution(scip, conshdlrdata) );
+
    for( i = 0; i < conshdlrdata->npricingprobs; i++ )
       SCIP_CALL( generateAndApplyBendersCuts(scip, conshdlrdata->pricingprobs[i], conshdlr, i, result) );
 
@@ -1567,6 +1734,9 @@ SCIP_DECL_CONSENFOPS(consEnfopsBenders)
    SCIP_CALL( conshdlrCallOperations(scip, conshdlrdata) );
 
    SCIP_CALL( solveSubproblems(scip, conshdlr, NULL, &objval, &infeasible, FALSE) );
+
+   if( !infeasible )
+      SCIP_CALL( createOriginalProblemSolution(scip, conshdlrdata) );
 
    for( i = 0; i < conshdlrdata->npricingprobs; i++ )
       SCIP_CALL( generateAndApplyBendersCuts(scip, conshdlrdata->pricingprobs[i], conshdlr, i, result) );
@@ -1615,12 +1785,10 @@ SCIP_DECL_CONSCHECK(consCheckBenders)
 
    if( infeasible )
       (*result) = SCIP_INFEASIBLE;
-#if 0 /* the else case has not been implemented yet */
-   else  /* in the else case, we need to update the objective function value with objval */
+   else  /* TODO: in the else case, we need to update the objective function value with objval */
    {
-      /*  */
+      SCIP_CALL( createOriginalProblemSolution(scip, conshdlrdata) );
    }
-#endif
 
    SCIP_CALL( freePricingProblems(conshdlrdata) );
 

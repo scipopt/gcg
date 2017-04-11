@@ -122,6 +122,9 @@ struct SCIP_RelaxData
    int                   nmarkedmasterconss; /**< number of elements in array of conss that are marked to be in the master */
    SCIP_Longint          lastsolvednodenr;   /**< node number of the node that was solved at the last call of the relaxator */
 
+   /* Benders' decomposition data */
+   SCIP_VAR**            auxiliaryvars;      /**< the auxiliary variables for the Benders' decomposition optimality cuts */
+
    /* branchrule data */
    GCG_BRANCHRULE**      branchrules;        /**< branching rules registered in the relaxator */
    int                   nbranchrules;       /**< number of branching rules registered in the relaxator */
@@ -183,6 +186,35 @@ SCIP_DECL_PARAMCHGD(paramChgdDecompositionMode)
 /*
  * Local methods
  */
+
+/** adds the auxiliary variables to the Benders' decomposition master problem */
+static
+SCIP_RETCODE addAuxiliaryVariablesToMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata           /**< relaxator data data structure */
+   )
+{
+   SCIP_VAR* auxiliaryvar;
+   char varname[SCIP_MAXSTRLEN];    /* the name of the auxiliary variable */
+   int i;
+
+   for( i = 0; i < relaxdata->npricingprobs; i++ )
+   {
+      /* if no optimality cuts have been added for this subproblem, then the auxiliary variable will be created and
+       * added */
+      (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "auxiliaryvar_%d", i );
+      SCIP_CALL( GCGcreateMasterVar(relaxdata->masterprob, scip, relaxdata->pricingprobs[i], &auxiliaryvar,
+            varname, 1.0, SCIP_VARTYPE_CONTINUOUS, FALSE, i, 0, NULL, NULL, TRUE));
+
+      SCIP_CALL( SCIPaddVar(relaxdata->masterprob, auxiliaryvar) );
+
+      relaxdata->auxiliaryvars[i] = auxiliaryvar;
+
+      SCIP_CALL( SCIPreleaseVar(relaxdata->masterprob, &auxiliaryvar) );
+   }
+
+   return SCIP_OKAY;
+}
 
 
 /** sets the number of the block, the given original variable belongs to */
@@ -1366,6 +1398,9 @@ SCIP_RETCODE initRelaxProblemdata(
 
       /* array for saving convexity constraints belonging to one of the pricing problems */
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->convconss), relaxdata->npricingprobs) );
+
+      /* allocating memory for the auxiliary variable array */
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->auxiliaryvars), relaxdata->npricingprobs) );
    }
 
    SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2origvar), SCIPblkmem(scip), 10*SCIPgetNVars(scip)+1) );
@@ -1707,6 +1742,7 @@ SCIP_RETCODE createMaster(
 
    /* create pricing variables */
    SCIP_CALL( createPricingVariables(scip, relaxdata, hashorig2pricingvar) );
+   SCIP_CALL( addAuxiliaryVariablesToMaster(scip, relaxdata) );
 
    /* create master and pricing problem constraints */
    SCIP_CALL( createMasterprobConss(scip, relaxdata) );
@@ -2276,6 +2312,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss);
    SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->convconss), relaxdata->npricingprobs);
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->auxiliaryvars), relaxdata->npricingprobs);
 
    /* free master problem */
    if( relaxdata->masterprob != NULL )
@@ -2457,7 +2494,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       /* if a new primal solution was found in the master problem, transfer it to the original problem */
-      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
+      if( relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE && SCIPgetBestSol(relaxdata->masterprob) != NULL
+         && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
       {
          SCIP_SOL* newsol;
 
@@ -4040,3 +4078,25 @@ int GCGgetNTransvars(
 
    return relaxdata->ntransvars;
 }
+
+/** returns the auxiliary variable for the given pricing probblem */
+extern
+SCIP_VAR* GCGgetAuxiliaryVariable(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->auxiliaryvars[pricingprobnr];
+}
+

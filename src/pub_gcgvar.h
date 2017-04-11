@@ -352,7 +352,8 @@ SCIP_RETCODE GCGcreateMasterVar(
    int                   prob,               /**< number of pricing problem that created this variable */
    int                   nsolvars,           /**< number of variables in the solution */
    SCIP_Real*            solvals,            /**< values of variables in the solution */
-   SCIP_VAR**            solvars             /**< variables with non zero coefficient in the solution */
+   SCIP_VAR**            solvars,            /**< variables with non zero coefficient in the solution */
+   SCIP_Bool             auxiliaryvar        /**< is new variable an Benders' auxiliary variables? */
    );
 
 /** creates initial master variables and the vardata */
