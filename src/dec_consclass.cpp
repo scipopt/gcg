@@ -183,7 +183,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   SCIPgetIntParam(scip, "detectors/consclass/maxnclasses", &maximumnclasses); /* if  distribution of classes exceed this number its skipped */
 
-  for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifier(); ++classifierIndex )
+  for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifiers(); ++classifierIndex )
   {
     gcg::ConsClassifier* classifier = seeedPropagationData->seeedpool->getConsClassifier( classifierIndex );
     std::vector<int> consclassindices_both = std::vector<int>(0);

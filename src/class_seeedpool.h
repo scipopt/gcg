@@ -119,6 +119,7 @@ private:
 
 
    std::vector<ConsClassifier*>                 consclassescollection; /**< collection of different constraint class distributions  */
+   std::vector<VarClassifier*>                  varclassescollection;  /**< collection of different variabale class distributions   */
 
 
    SCIP_Bool                                    transformed;            /**< corresponds the matrix datastructure to the transformed problem */
@@ -156,8 +157,10 @@ public:
       Seeedpool* otherpool,                              /**< old seeedpool */
       std::vector<Seeed*> otherseeeds,                   /**< seeeds to be translated */
       std::vector<Seeed*>& newseeeds,                    /**< translated seeeds (pass empty vector) */
-      std::vector<ConsClassifier*> otherclassifier,      /**< consclassifier to be translated */
-      std::vector<ConsClassifier*>& newclassifier        /**< translated consclassifier (pass empty vector) */
+      std::vector<ConsClassifier*> otherconsclassifiers, /**< consclassifiers to be translated */
+      std::vector<ConsClassifier*>& newconsclassifiers,  /**< translated consclassifiers (pass empty vector) */
+      std::vector<VarClassifier*> othervarclassifiers,  /**< varclassifiers to be translated */
+      std::vector<VarClassifier*>& newvarclassifiers    /**< translated varclassifiers (pass empty vector) */
    );
 
    void populate(std::vector<SeeedPtr> seeeds);
@@ -239,7 +242,7 @@ public:
    int getNClassesOfDistribution(int consclassdistr);
 
    /** returns number of different constraint classifiers */
-   int getNConsClassifier();
+   int getNConsClassifiers();
 
    /** returns pointer to a constraint classifier */
    ConsClassifier* getConsClassifier(
@@ -259,19 +262,32 @@ public:
    ConsClassifier* createConsClassifierForNNonzeros(
       );
 
-   /** adds a constraint classifier if it is no duplicate of an existing classifier */
+   /** adds a constraint classifier if it is no duplicate of an existing constraint classifier */
    void addConsClassifier(
       ConsClassifier*               classifier              /**< consclassifier to be added */
    );
 
-   /** returns true if there already exists a classifier with an equivalent index structure,
-    *  meaning that the partition of the set of constraints is the same ignoring the concrete classindices, classnames, etc. */
-   bool classifierIsNoDuplicateOfClassifiers(
-      ConsClassifier*              compClassifier           /**< consclassifier to be checked */
-   );
-
    /** adds constraint classifiers with a reduced number of classes */
    void reduceConsclasses();
+
+   /** returns number of different variable classifiers */
+   int getNVarClassifiers();
+
+   /** returns pointer to a variable classifier */
+   VarClassifier* getVarClassifier(
+      int classifierIndex                     /**< index of variable classifier */
+   );
+
+   VarClassifier* createVarClassifierForSCIPVartypes(
+   );
+
+   /** adds a variable classifier if it is no duplicate of an existing variable classifier */
+   void addVarClassifier(
+      VarClassifier*               classifier              /**< varclassifier to be added */
+   );
+
+   /** adds variable classifiers with a reduced number of classes */
+   void reduceVarclasses();
 
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds);

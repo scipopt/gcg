@@ -127,6 +127,12 @@ protected:
 
 public:
 
+   /** returns true if the other classifier has an equivalent index structure,
+    *  meaning that the partition of the set of constraints is the same ignoring the concrete classindices, classnames, etc. */
+   bool classifierIsDuplicateOfClassifier(
+      IndexClassifier* otherClassifier    /**< other classifier to be checked */
+   );
+
    /** returns the information text of a class */
    const char* getClassDescription(
       int classindex                   /**< index of class */

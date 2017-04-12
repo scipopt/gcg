@@ -74,6 +74,7 @@ IndexClassifier::IndexClassifier( const IndexClassifier* toCopy )
    indicesToClasses = toCopy->indicesToClasses;
    classNames.assign(nClasses, "");
    classDescriptions.assign(nClasses, "");
+   classDecompInfo.assign(nClasses, 0);
    for ( int i = 0; i < nClasses; ++i )
    {
       classNames[i] = toCopy->classNames[i];
@@ -113,6 +114,52 @@ void IndexClassifier::assignIndexToClass( int givenIndex, int givenClassindex )
 
    indicesToClasses[givenIndex] = givenClassindex;
 }
+
+/** returns true if the other classifier has an equivalent index structure,
+ *  meaning that the partition of the set of constraints is the same ignoring the concrete classindices, classnames, etc. */
+bool IndexClassifier::classifierIsDuplicateOfClassifier( IndexClassifier* otherClassifier )
+{
+   std::vector<int> classMapping ( getNClasses(), -1 );
+
+   /** check whether number of indices and classes is the same */
+   assert( getNIndices() == otherClassifier->getNIndices() );
+   if ( getNClasses() != otherClassifier->getNClasses() )
+      return false;
+
+   /** check whether index classes in this classifier are subsets of classes in current classifier */
+   for ( int i = 0; i < getNIndices(); ++i )
+   {
+      if ( isIndexClassified( i ) )
+      {
+         int compClass = getClassOfIndex( i );
+
+         if ( classMapping[ compClass ] == -1 )
+            classMapping[ compClass ] = otherClassifier->getClassOfIndex( i );
+         else if ( classMapping[ compClass ] != otherClassifier->getClassOfIndex( i ) )
+            return false;
+      }
+      else if ( otherClassifier->isIndexClassified( i ) )
+      {
+         return false;
+      }
+   }
+
+   /** check whether index classes in this classifier are strict subsets of classes in current classifier */
+   for ( size_t c = 0; c < classMapping.size(); ++c )
+   {
+      if ( classMapping[c] != -1 )
+      {
+         for ( size_t j = c + 1; j < classMapping.size(); ++j )
+         {
+            if ( classMapping[c] == classMapping[j] )
+               return false;
+         }
+      }
+   }
+
+   return true;
+}
+
 
 /** returns the decomposition info of the a class */
 int IndexClassifier::getClassDecompInfo( int givenClassindex )

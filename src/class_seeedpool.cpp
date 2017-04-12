@@ -454,6 +454,8 @@ Seeedpool::Seeedpool(
    SCIP_Bool conssclassconsnamenonumbers;
    SCIP_Bool conssclassconsnamelevenshtein;
 
+//   SCIP_Bool varclassscipvartypes;
+
    if( !transformed )
    {
       nVars = SCIPgetNOrigVars(scip);
@@ -641,6 +643,8 @@ Seeedpool::Seeedpool(
       SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", &conssclassscipconstypes);
       SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
       SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
+
+//      SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/enabled", &varclassscipvartypes);
    }
    else
    {
@@ -648,6 +652,8 @@ Seeedpool::Seeedpool(
       SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/origenabled", &conssclassscipconstypes);
       SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
       SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
+
+//      SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", &varclassscipvartypes);
    }
 
    std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
@@ -661,7 +667,11 @@ Seeedpool::Seeedpool(
    if( conssclassconsnamelevenshtein )
       addConsClassifier( createConsClassifierForConsnamesLevenshteinDistanceConnectivity(1) );
 
+//   if ( varclassscipvartypes )
+      addVarClassifier( createVarClassifierForSCIPVartypes() );
+
    reduceConsclasses();
+   reduceVarclasses();
 
    calcCandidatesNBlocks();
 
@@ -681,6 +691,13 @@ Seeedpool::~Seeedpool()
       size_t help = consclassescollection.size() - i - 1;
       if( consclassescollection[help] != NULL )
          delete consclassescollection[help];
+   }
+
+   for ( size_t i = 0; i < varclassescollection.size(); ++i )
+   {
+      size_t help = varclassescollection.size() - i - 1;
+      if( varclassescollection[help] != NULL )
+         delete varclassescollection[help];
    }
 }
 
@@ -1592,10 +1609,12 @@ void Seeedpool::sortAllRelevantSeeeds(){
 }
 
 void Seeedpool::translateSeeedData( Seeedpool* origpool, std::vector<Seeed*> origseeeds, std::vector<Seeed*>& newseeeds,
-   std::vector<ConsClassifier*> otherclassifiers, std::vector<ConsClassifier*>& newclassifiers )
+   std::vector<ConsClassifier*> otherconsclassifiers, std::vector<ConsClassifier*>& newconsclassifiers,
+   std::vector<VarClassifier*> othervarclassifiers, std::vector<VarClassifier*>& newvarclassifiers )
 {
    assert( newseeeds.empty() );
-   assert( newclassifiers.empty() );
+   assert( newconsclassifiers.empty() );
+   assert( newvarclassifiers.empty() );
 
    int nrowsother  = origpool->nConss;
    int nrowsthis  = nConss;
@@ -1774,9 +1793,9 @@ void Seeedpool::translateSeeedData( Seeedpool* origpool, std::vector<Seeed*> ori
 
 
    /** constructing ConsClassifiers for this seeedpool */
-   for ( size_t i = 0; i < otherclassifiers.size(); ++i )
+   for ( size_t i = 0; i < otherconsclassifiers.size(); ++i )
    {
-      ConsClassifier* oldclassifier = otherclassifiers[i];
+      ConsClassifier* oldclassifier = otherconsclassifiers[i];
       ConsClassifier* newclassifier;
       std::stringstream newname;
 
@@ -1812,7 +1831,49 @@ void Seeedpool::translateSeeedData( Seeedpool* origpool, std::vector<Seeed*> ori
       /** remove empty classes */
       newclassifier->removeEmptyClasses();
 
-      newclassifiers.push_back(newclassifier);
+      newconsclassifiers.push_back(newclassifier);
+   }
+
+
+   /** constructing VarClassifiers for this seeedpool */
+   for ( size_t i = 0; i < othervarclassifiers.size(); ++i )
+   {
+      VarClassifier* oldclassifier = othervarclassifiers[i];
+      VarClassifier* newclassifier;
+      std::stringstream newname;
+
+      newname << oldclassifier->getName() << "-origp";
+      newclassifier = new VarClassifier(scip, newname.str().c_str(), oldclassifier->getNClasses(), ncolsthis);
+      int bufferclassindex = -1;
+
+      /** copy class information */
+      for ( int j = 0; j < oldclassifier->getNClasses(); ++j )
+      {
+         newclassifier->setClassName( j, oldclassifier->getClassName(j) );
+         newclassifier->setClassDescription( j, oldclassifier->getClassDescription(j) );
+      }
+
+      /** assign new vars to classes */
+      for ( int c = 0; c < ncolsthis; ++c )
+      {
+         if ( colthistoother[c] != -1 )
+         {
+            newclassifier->assignVarToClass( c, oldclassifier->getClassOfVar( colthistoother[c] ) );
+         }
+         else
+         {
+            if ( bufferclassindex == -1)
+            {
+               bufferclassindex = newclassifier->addClass( "buffer", "This class contains variables which are new in the presolved problem." );
+            }
+            newclassifier->assignVarToClass( c, bufferclassindex );
+         }
+      }
+
+      /** remove empty classes */
+      newclassifier->removeEmptyClasses();
+
+      newvarclassifiers.push_back(newclassifier);
    }
 }
 
@@ -2084,7 +2145,7 @@ int Seeedpool::getNClassesOfDistribution( int consclassdistr )
 }
 
 /** returns number of different constraint classifiers */
-int Seeedpool::getNConsClassifier()
+int Seeedpool::getNConsClassifiers()
 {
    return (int) consclassescollection.size();
 }
@@ -2092,6 +2153,8 @@ int Seeedpool::getNConsClassifier()
  /** returns pointer to a constraint classifier */
 ConsClassifier* Seeedpool::getConsClassifier( int givenClassifierIndex )
 {
+   assert( 0 <= givenClassifierIndex && givenClassifierIndex < (int) consclassescollection.size() );
+
    return consclassescollection[givenClassifierIndex];
 }
 
@@ -2102,7 +2165,6 @@ ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
      */
     std::vector<consType> foundConstypes(0);
     std::vector<int> constypesIndices(0);
-    std::vector<int> nConssConstype(0);
     std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
     ConsClassifier* classifier;
 
@@ -2453,65 +2515,25 @@ ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
 /** adds a constraint classifier if it is no duplicate of an existing classifier */
 void Seeedpool::addConsClassifier( ConsClassifier* givenClassifier )
 {
-   if ( givenClassifier != NULL && classifierIsNoDuplicateOfClassifiers( givenClassifier ) )
-      consclassescollection.push_back( givenClassifier );
-}
+   if ( givenClassifier != NULL )
+   {
+      /** check whether there already exists an equivalent consclassifier */
+      ConsClassifier* equiv = NULL;
 
-/** returns true if there already exists a classifier with an equivalent index structure,
- *  meaning that the partition of the set of constraints is the same ignoring the concrete classindices, classnames, etc. */
-bool Seeedpool::classifierIsNoDuplicateOfClassifiers( ConsClassifier* compClassifier )
-{
-    for ( size_t classifierid = 0; classifierid < consclassescollection.size(); ++classifierid )
-    {
-       ConsClassifier* currentClassifier = consclassescollection[classifierid];
+      for ( size_t i = 0; i < consclassescollection.size(); ++i )
+      {
+         if ( givenClassifier->classifierIsDuplicateOfClassifier( consclassescollection[i] ) )
+         {
+            equiv = consclassescollection[i];
+            break;
+         }
+      }
 
-       std::vector<int> classMapping ( compClassifier->getNClasses(), -1 );
-       bool equal = true;
-
-       /** check whether number of conss and classes is the same */
-       assert( compClassifier->getNConss() == currentClassifier->getNConss() );
-       if ( compClassifier->getNClasses() != currentClassifier->getNClasses() )
-          equal = false;
-
-       /** check whether cons classes in comp classifier are subsets of classes in current classifier */
-       for ( int i = 0; i < compClassifier->getNConss() && equal; ++i )
-       {
-          if ( compClassifier->isConsClassified( i ) )
-          {
-             int compClass = compClassifier->getClassOfCons( i );
-
-             if ( classMapping[ compClass ] == -1 )
-                classMapping[ compClass ] = currentClassifier->getClassOfCons( i );
-             else if ( classMapping[ compClass ] != currentClassifier->getClassOfCons( i ) )
-                equal = false;
-          }
-          else if ( currentClassifier->isConsClassified( i ) )
-          {
-             equal = false;
-          }
-       }
-
-       /** check whether cons classes in comp classifier are strict subsets of classes in current classifier */
-       for ( size_t c = 0; c < classMapping.size() && equal; ++c )
-       {
-          if ( classMapping[c] != -1 )
-          {
-             for ( size_t j = c + 1; j < classMapping.size() && equal; ++j )
-             {
-                if ( classMapping[c] == classMapping[j] )
-                   equal = false;
-             }
-          }
-       }
-
-       if (equal)
-       {
-          std::cout << "  consclassifier " << compClassifier->getName() << " not considered since it offers the same structure as " << currentClassifier->getName() << std::endl;
-          return false;
-       }
-    }
-
-    return true;
+      if ( equiv == NULL )
+         consclassescollection.push_back( givenClassifier );
+      else
+         std::cout << "  consclassifier " << givenClassifier->getName() << " not considered since it offers the same structure as " << equiv->getName() << std::endl;
+   }
 }
 
 /** adds constraint classifiers with a reduced number of classes */
@@ -2530,6 +2552,135 @@ void Seeedpool::reduceConsclasses()
       {
          std::cout <<  "add reduced version of consclassifier " << consclassescollection[classifierid]->getName() << " with " << maxnclasses << " classes" << std::endl;
          addConsClassifier( newclassifier );
+      }
+   }
+}
+
+/** returns number of different variable classifiers */
+int Seeedpool::getNVarClassifiers()
+{
+   return (int) varclassescollection.size();
+}
+
+/** returns pointer to a variable classifier */
+VarClassifier* Seeedpool::getVarClassifier( int givenClassifierIndex )
+{
+   assert( 0 <= givenClassifierIndex && givenClassifierIndex < (int) varclassescollection.size() );
+
+   return varclassescollection[givenClassifierIndex];
+}
+
+VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
+{
+   std::vector<SCIP_VARTYPE> foundVartypes(0);
+   std::vector<int> vartypesIndices(0);
+   std::vector<int> classForVars = std::vector<int>(getNVars(), -1);
+   VarClassifier* classifier;
+
+   for( int i = 0; i < getNVars(); ++i)
+   {
+      SCIP_VAR* var;
+      bool found = false;
+      var = getVarForIndex(i);
+      SCIP_VARTYPE vT = SCIPvarGetType( var );
+      size_t vartype;
+
+      /** find vartype or not */
+      for( vartype = 0; vartype < foundVartypes.size(); ++vartype )
+      {
+         if( foundVartypes[vartype] == vT )
+         {
+            found = true;
+            break;
+         }
+      }
+      if( !found )
+      {
+         foundVartypes.push_back( vT );
+         classForVars[i] = foundVartypes.size() - 1;
+      }
+      else
+         classForVars[i] = vartype;
+   }
+
+   classifier = new VarClassifier( scip, "vartypes", (int) foundVartypes.size(), getNVars() );
+
+   for( int c = 0; c < classifier->getNClasses(); ++c )
+   {
+      std::string name;
+      std::stringstream text;
+      switch (foundVartypes[c])
+      {
+          case SCIP_VARTYPE_BINARY:
+             name = "bin";
+             break;
+          case SCIP_VARTYPE_INTEGER:
+             name = "int";
+             break;
+          case SCIP_VARTYPE_IMPLINT:
+             name = "impl";
+             break;
+          case SCIP_VARTYPE_CONTINUOUS:
+             name = "cont";
+             break;
+          default:
+             name = "newVartype";
+             break;
+      }
+      classifier->setClassName( c, name.c_str() );
+      text << "This class contains all variables that are of (SCIP) vartype \"" << name << "\".";
+      classifier->setClassDescription( c, text.str().c_str() );
+   }
+   for( int i = 0; i < classifier->getNVars(); ++i )
+   {
+      classifier->assignVarToClass( i, classForVars[i] );
+   }
+
+   std::cout << " varclassifier scipvartypes:" << " yields a classification with " << foundVartypes.size()  << " different variable classes" << std::endl;
+
+   return classifier;
+}
+
+/** adds a variable classifier if it is no duplicate of an existing variable classifier */
+void Seeedpool::addVarClassifier( VarClassifier* givenClassifier )
+{
+   if ( givenClassifier != NULL )
+   {
+      /** check whether there already exists an equivalent varclassifier */
+      VarClassifier* equiv = NULL;
+
+      for ( size_t i = 0; i < varclassescollection.size(); ++i )
+      {
+         if ( givenClassifier->classifierIsDuplicateOfClassifier( varclassescollection[i] ) )
+         {
+            equiv = varclassescollection[i];
+            break;
+         }
+      }
+
+      if ( equiv == NULL )
+         varclassescollection.push_back( givenClassifier );
+      else
+         std::cout << "  varclassifier " << givenClassifier->getName() << " not considered since it offers the same structure as " << equiv->getName() << std::endl;
+   }
+}
+
+/** adds variable classifiers with a reduced number of classes */
+void Seeedpool::reduceVarclasses()
+{
+   int maxnclasses = 9;
+
+   if( getNConss() + getNVars() > 50000 )
+      maxnclasses = 3;
+
+   for( size_t classifierid = 0; classifierid < varclassescollection.size(); ++classifierid )
+   {
+      VarClassifier* newclassifier = varclassescollection[classifierid]->reduceClasses( maxnclasses );
+
+      if ( newclassifier != NULL )
+      {
+         std::cout <<  "add reduced version of consclassifier " << varclassescollection[classifierid]->getName() << " with " << maxnclasses << " classes" << std::endl;
+         addVarClassifier( newclassifier );
       }
    }
 }
