@@ -115,7 +115,7 @@ void IndexClassifier::assignIndexToClass( int givenIndex, int givenClassindex )
 }
 
 /** returns the decomposition info of the a class */
-int IndexClassifier::getClassDecompInfoOfClass( int givenClassindex )
+int IndexClassifier::getClassDecompInfo( int givenClassindex )
 {
    assert(0 <= givenClassindex && givenClassindex < nClasses);
 
@@ -273,7 +273,7 @@ int IndexClassifier::removeEmptyClasses()
 }
 
 /** sets the decomposition info of the a class */
-void IndexClassifier::setClassDecompInfoOfClass( int givenClassindex, int givenDecompInfo )
+void IndexClassifier::setClassDecompInfo( int givenClassindex, int givenDecompInfo )
 {
    assert(0 <= givenClassindex && givenClassindex < nClasses);
 

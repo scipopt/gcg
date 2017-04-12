@@ -74,14 +74,8 @@ VarClassifier::~VarClassifier()
 /** creates a new class, returns index of the class */
 int VarClassifier::addClass( const char* givenName, const char* givenDesc )
 {
-//   assert((int) classDecompInfo.size() == getNClasses());
-//   assert(givenDecompInfo == BOTH || givenDecompInfo == ONLY_MASTER || givenDecompInfo == ONLY_PRICING );
-
    int classindex = IndexClassifier::addClass( givenName, givenDesc );
-
-//   classDecompInfo.push_back( givenDecompInfo );
-//
-//   assert( (int) classDecompInfo.size() - 1 == classindex );
+//   setClassDecompInfoOfClass( classindex, givenDecompInfo );
 
    return classindex;
 }
@@ -92,18 +86,8 @@ void VarClassifier::assignVarToClass( int givenVarindex, int givenClassindex )
    IndexClassifier::assignIndexToClass( givenVarindex, givenClassindex );
 }
 
-
-/** returns the decomposition code */
-//const DECOMPINFO* ConsClassifier::getClassDecompInfo()
-//{
-//   if ( getNClasses() > 0)
-//      return &classDecompInfo[0];
-//   else
-//      return NULL;
-//}
-
 /** returns the decomposition code of a class */
-//DECOMPINFO ConsClassifier::getClassDecompInfoOfClass( int givenClassindex )
+//DECOMPINFO ConsClassifier::getClassDecompInfo( int givenClassindex )
 //{
 //   assert(0 <= givenClassindex && givenClassindex < getNClasses());
 //

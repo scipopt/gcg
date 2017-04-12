@@ -91,7 +91,7 @@ protected:
    );
 
    /** returns the decomposition info of the a class */
-   int getClassDecompInfoOfClass(
+   int getClassDecompInfo(
       int classindex                   /**< index of the class */
    );
 
@@ -119,7 +119,7 @@ protected:
    );
 
    /** sets the decomposition info of the a class */
-   void setClassDecompInfoOfClass(
+   void setClassDecompInfo(
       int classindex,                  /**< index of the class */
       int decompInfo                   /**< decomposition info */
    );

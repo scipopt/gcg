@@ -1789,7 +1789,7 @@ void Seeedpool::translateSeeedData( Seeedpool* origpool, std::vector<Seeed*> ori
       {
          newclassifier->setClassName( j, oldclassifier->getClassName(j) );
          newclassifier->setClassDescription( j, oldclassifier->getClassDescription(j) );
-         newclassifier->setClassDecompInfo( j, oldclassifier->getClassDecompInfoOfClass(j) );
+         newclassifier->setClassDecompInfo( j, oldclassifier->getClassDecompInfo(j) );
       }
 
       /** assign new conss to classes */

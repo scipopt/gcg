@@ -207,7 +207,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
     for( int i = 0; i < classifier->getNClasses(); ++ i )
     {
-       switch( classifier->getClassDecompInfoOfClass( i ) )
+       switch( classifier->getClassDecompInfo( i ) )
        {
           case gcg::BOTH:
              consclassindices_both.push_back( i );

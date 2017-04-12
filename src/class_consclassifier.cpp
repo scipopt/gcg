@@ -71,7 +71,7 @@ ConsClassifier::~ConsClassifier()
 int ConsClassifier::addClass( const char* givenName, const char* givenDesc, DECOMPINFO givenDecompInfo )
 {
    int classindex = IndexClassifier::addClass( givenName, givenDesc );
-   setClassDecompInfoOfClass( classindex, givenDecompInfo );
+   setClassDecompInfo( classindex, givenDecompInfo );
 
    return classindex;
 }
@@ -82,21 +82,10 @@ void ConsClassifier::assignConsToClass( int givenConsindex, int givenClassindex 
    IndexClassifier::assignIndexToClass( givenConsindex, givenClassindex );
 }
 
-
-/** returns the decomposition code */
-const DECOMPINFO* ConsClassifier::getClassDecompInfo()
-{
-   return NULL;
-//   if ( getNClasses() > 0)
-//      return &classDecompInfo[0];
-//   else
-//      return NULL;
-}
-
 /** returns the decomposition code of a class */
-DECOMPINFO ConsClassifier::getClassDecompInfoOfClass( int givenClassindex )
+DECOMPINFO ConsClassifier::getClassDecompInfo( int givenClassindex )
 {
-   int decompInfo = IndexClassifier::getClassDecompInfoOfClass( givenClassindex );
+   int decompInfo = IndexClassifier::getClassDecompInfo( givenClassindex );
    DECOMPINFO interp;
 
    assert( 0 <= decompInfo && decompInfo <= 2);
@@ -133,11 +122,11 @@ int ConsClassifier::getClassOfCons( int givenConsindex )
 }
 
 /** returns vector containing the assigned class of each constraint */
-const int* ConsClassifier::getConsToClasses()
+const int* ConsClassifier::getConssToClasses()
 {
-   std::vector<int> consToClasses = IndexClassifier::getIndicesToClasses();
-   if ( consToClasses.size() > 0 )
-      return &consToClasses[0];
+   std::vector<int> conssToClasses = IndexClassifier::getIndicesToClasses();
+   if ( conssToClasses.size() > 0 )
+      return &conssToClasses[0];
    else
       return NULL;
 }
@@ -193,7 +182,7 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
      {
         newClassifier->setClassName( classindexmapping[i], getClassName(i) );
         newClassifier->setClassDescription( classindexmapping[i], getClassDescription(i) );
-        newClassifier->setClassDecompInfo( classindexmapping[i], getClassDecompInfoOfClass(i) );
+        newClassifier->setClassDecompInfo( classindexmapping[i], getClassDecompInfo(i) );
      }
    }
 
@@ -208,7 +197,7 @@ void ConsClassifier::setClassDecompInfo( int givenClassindex, DECOMPINFO givenDe
 {
    assert(givenDecompInfo == BOTH || givenDecompInfo == ONLY_MASTER || givenDecompInfo == ONLY_PRICING );
 
-   IndexClassifier::setClassDecompInfoOfClass( givenClassindex, (int) givenDecompInfo );
+   IndexClassifier::setClassDecompInfo( givenClassindex, (int) givenDecompInfo );
 }
 
 } /* namespace gcg */

@@ -86,13 +86,8 @@ public:
       int classindex                   /**< index of the class */
    );
 
-
-   /** returns the decomposition info */
-   const DECOMPINFO* getClassDecompInfo(
-   );
-
    /** returns the decomposition info of a class */
-   DECOMPINFO getClassDecompInfoOfClass(
+   DECOMPINFO getClassDecompInfo(
       int classindex                   /**< index of class */
    );
 
@@ -108,7 +103,7 @@ public:
    );
 
    /** returns vector containing the assigned class of each constraint */
-   const int* getConsToClasses(
+   const int* getConssToClasses(
    );
 
    /** returns the number of constraints */

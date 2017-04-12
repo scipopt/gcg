@@ -81,13 +81,8 @@ public:
       int classindex                   /**< index of the class */
    );
 
-
-   /** returns the decomposition info */
-//   const DECOMPINFO* getClassDecompInfo(
-//   );
-
    /** returns the decomposition info of a class */
-//   DECOMPINFO getClassDecompInfoOfClass(
+//   DECOMPINFO getClassDecompInfo(
 //      int classindex                   /**< index of class */
 //   );
 
