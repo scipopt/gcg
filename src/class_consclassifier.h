@@ -41,13 +41,13 @@
 namespace gcg
 {
 
-enum ClassDecompInfo
+enum ConsClassDecompInfo
 {
    BOTH = 0,                     /**< assign class to master or pricing problem */
    ONLY_MASTER = 1,              /**< assign class only to master problem */
    ONLY_PRICING = 2              /**< assign class only to pricing problem */
 };
-typedef enum ClassDecompInfo DECOMPINFO;
+typedef enum ConsClassDecompInfo CONS_DECOMPINFO;
 
 
 class ConsClassifier : public IndexClassifier
@@ -77,7 +77,7 @@ public:
    int addClass(
       const char* name,                /**< name of the class (will be copied) */
       const char* desc,                /**< description of the class (will be copied) */
-      DECOMPINFO decompInfo            /**< decomposition code of the class */
+      CONS_DECOMPINFO decompInfo            /**< decomposition code of the class */
    );
 
    /** assigns a constraint to a class */
@@ -87,7 +87,7 @@ public:
    );
 
    /** returns the decomposition info of a class */
-   DECOMPINFO getClassDecompInfo(
+   CONS_DECOMPINFO getClassDecompInfo(
       int classindex                   /**< index of class */
    );
 
@@ -126,7 +126,7 @@ public:
    /** sets the decomposition code of a class */
    void setClassDecompInfo(
       int classindex,                  /**< index of class */
-      DECOMPINFO decompInfo            /**< decomposition code of class */
+      CONS_DECOMPINFO decompInfo            /**< decomposition code of class */
    );
 
 };

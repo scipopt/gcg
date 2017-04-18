@@ -60,10 +60,6 @@ VarClassifier::VarClassifier(
    const VarClassifier* toCopy
 ) : IndexClassifier( toCopy )
 {
-//   for ( int i = 0; i < getNClasses(); ++i )
-//   {
-//      classDecompInfo[i] = toCopy->classDecompInfo[i];
-//   }
 }
 
 /** destructor */
@@ -72,10 +68,10 @@ VarClassifier::~VarClassifier()
 }
 
 /** creates a new class, returns index of the class */
-int VarClassifier::addClass( const char* givenName, const char* givenDesc )
+int VarClassifier::addClass( const char* givenName, const char* givenDesc, VAR_DECOMPINFO givenDecompInfo )
 {
    int classindex = IndexClassifier::addClass( givenName, givenDesc );
-//   setClassDecompInfoOfClass( classindex, givenDecompInfo );
+   setClassDecompInfo( classindex, givenDecompInfo );
 
    return classindex;
 }
@@ -87,12 +83,34 @@ void VarClassifier::assignVarToClass( int givenVarindex, int givenClassindex )
 }
 
 /** returns the decomposition code of a class */
-//DECOMPINFO ConsClassifier::getClassDecompInfo( int givenClassindex )
-//{
-//   assert(0 <= givenClassindex && givenClassindex < getNClasses());
-//
-//   return classDecompInfo[givenClassindex];
-//}
+VAR_DECOMPINFO VarClassifier::getClassDecompInfo( int givenClassindex )
+{
+   int decompInfo = IndexClassifier::getClassDecompInfo( givenClassindex );
+   VAR_DECOMPINFO interp;
+
+   assert( 0 <= decompInfo && decompInfo <= 3);
+
+   switch ( decompInfo )
+   {
+   case 0:
+      interp = ALL;
+      break;
+   case 1:
+      interp = LINKING;
+      break;
+   case 2:
+      interp = MASTER;
+      break;
+   case 3:
+      interp = BLOCK;
+      break;
+   default:
+      interp = ALL;
+      break;
+   }
+
+   return interp;
+}
 
 /** returns the name of the class a variable is assigned to */
 const char* VarClassifier::getClassNameOfVar( int givenVarindex )
@@ -155,6 +173,7 @@ VarClassifier* VarClassifier::reduceClasses( int givenMaxNumber )
 
    /** set new class names and descriptions (enlarged class has index 0) */
    newClassifier->setClassName( 0, "merged" );
+   newClassifier->setClassDecompInfo( 0, ALL );
 
    for ( int i = 0; i < getNClasses(); ++i )
    {
@@ -166,6 +185,7 @@ VarClassifier* VarClassifier::reduceClasses( int givenMaxNumber )
      {
         newClassifier->setClassName( classindexmapping[i], getClassName(i) );
         newClassifier->setClassDescription( classindexmapping[i], getClassDescription(i) );
+        newClassifier->setClassDecompInfo( classindexmapping[i], getClassDecompInfo(i) );
      }
    }
 
@@ -176,12 +196,11 @@ VarClassifier* VarClassifier::reduceClasses( int givenMaxNumber )
 }
 
 /** sets the decomposition code of a class */
-//void VarClassifier::setClassDecompInfo( int givenClassindex, DECOMPINFO givenDecompInfo )
-//{
-//   assert(0 <= givenClassindex && givenClassindex < getNClasses());
-//   assert(givenDecompInfo == BOTH || givenDecompInfo == ONLY_MASTER || givenDecompInfo == ONLY_PRICING );
-//
-//   classDecompInfo[givenClassindex] = givenDecompInfo;
-//}
+void VarClassifier::setClassDecompInfo( int givenClassindex, VAR_DECOMPINFO givenDecompInfo )
+{
+   assert( givenDecompInfo == ALL || givenDecompInfo == LINKING || givenDecompInfo == MASTER || givenDecompInfo == BLOCK );
+
+   IndexClassifier::setClassDecompInfo( givenClassindex, (int) givenDecompInfo );
+}
 
 } /* namespace gcg */

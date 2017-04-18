@@ -60,7 +60,6 @@ IndexClassifier::IndexClassifier(
    scip(_scip),  name(std::string(givenName)), nClasses(givenNClasses), nIndices(givenNIndices), indicesToClasses(givenNIndices, -1),
    classNames(givenNClasses, ""), classDescriptions(givenNClasses, ""), classDecompInfo( nClasses, 0 )
 {
-
 }
 
 /** copy constructor */

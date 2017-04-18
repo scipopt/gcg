@@ -41,12 +41,18 @@
 namespace gcg
 {
 
+enum VarClassDecompInfo
+{
+   ALL = 0,
+   LINKING = 1,
+   MASTER = 2,
+   BLOCK = 3
+};
+typedef enum VarClassDecompInfo VAR_DECOMPINFO;
+
 
 class VarClassifier : public IndexClassifier
 {
-
-private:
-//   std::vector<DECOMPINFO>    classDecompInfo;        /**< encodes whether a class k should be assigned to master or pricing problem */
 
 public:
 
@@ -71,8 +77,8 @@ public:
    /** creates a new class, returns index of the class */
    int addClass(
       const char* name,                /**< name of the class (will be copied) */
-      const char* desc                /**< description of the class (will be copied) */
-//      DECOMPINFO decompInfo            /**< decomposition code of the class */
+      const char* desc,                /**< description of the class (will be copied) */
+      VAR_DECOMPINFO decompInfo        /**< decomposition code of the class */
    );
 
    /** assigns a variable to a class */
@@ -82,9 +88,9 @@ public:
    );
 
    /** returns the decomposition info of a class */
-//   DECOMPINFO getClassDecompInfo(
-//      int classindex                   /**< index of class */
-//   );
+   VAR_DECOMPINFO getClassDecompInfo(
+      int classindex                   /**< index of class */
+   );
 
    /** returns the name of the class a variable is assigned to */
    const char* getClassNameOfVar(
@@ -120,10 +126,10 @@ public:
    );
 
    /** sets the decomposition code of a class */
-//   void setClassDecompInfo(
-//      int classindex,                  /**< index of class */
-//      DECOMPINFO decompInfo            /**< decomposition code of class */
-//   );
+   void setClassDecompInfo(
+      int classindex,                  /**< index of class */
+      VAR_DECOMPINFO decompInfo        /**< decomposition code of class */
+   );
 
 };
 

@@ -1851,6 +1851,7 @@ void Seeedpool::translateSeeedData( Seeedpool* origpool, std::vector<Seeed*> ori
       {
          newclassifier->setClassName( j, oldclassifier->getClassName(j) );
          newclassifier->setClassDescription( j, oldclassifier->getClassDescription(j) );
+         newclassifier->setClassDecompInfo( j, oldclassifier->getClassDecompInfo(j) );
       }
 
       /** assign new vars to classes */
@@ -1864,7 +1865,7 @@ void Seeedpool::translateSeeedData( Seeedpool* origpool, std::vector<Seeed*> ori
          {
             if ( bufferclassindex == -1)
             {
-               bufferclassindex = newclassifier->addClass( "buffer", "This class contains variables which are new in the presolved problem." );
+               bufferclassindex = newclassifier->addClass( "buffer", "This class contains variables which are new in the presolved problem.", ALL );
             }
             newclassifier->assignVarToClass( c, bufferclassindex );
          }

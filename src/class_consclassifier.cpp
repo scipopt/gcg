@@ -68,7 +68,7 @@ ConsClassifier::~ConsClassifier()
 }
 
 /** creates a new class, returns index of the class */
-int ConsClassifier::addClass( const char* givenName, const char* givenDesc, DECOMPINFO givenDecompInfo )
+int ConsClassifier::addClass( const char* givenName, const char* givenDesc, CONS_DECOMPINFO givenDecompInfo )
 {
    int classindex = IndexClassifier::addClass( givenName, givenDesc );
    setClassDecompInfo( classindex, givenDecompInfo );
@@ -83,10 +83,10 @@ void ConsClassifier::assignConsToClass( int givenConsindex, int givenClassindex 
 }
 
 /** returns the decomposition code of a class */
-DECOMPINFO ConsClassifier::getClassDecompInfo( int givenClassindex )
+CONS_DECOMPINFO ConsClassifier::getClassDecompInfo( int givenClassindex )
 {
    int decompInfo = IndexClassifier::getClassDecompInfo( givenClassindex );
-   DECOMPINFO interp;
+   CONS_DECOMPINFO interp;
 
    assert( 0 <= decompInfo && decompInfo <= 2);
 
@@ -193,7 +193,7 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
 }
 
 /** sets the decomposition code of a class */
-void ConsClassifier::setClassDecompInfo( int givenClassindex, DECOMPINFO givenDecompInfo )
+void ConsClassifier::setClassDecompInfo( int givenClassindex, CONS_DECOMPINFO givenDecompInfo )
 {
    assert(givenDecompInfo == BOTH || givenDecompInfo == ONLY_MASTER || givenDecompInfo == ONLY_PRICING );
 
