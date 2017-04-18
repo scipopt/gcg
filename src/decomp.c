@@ -2583,8 +2583,8 @@ SCIP_RETCODE DECevaluateDecomposition(
    DEC_SCORES*           score               /**< returns the score of the decomposition */
    )
 {
-   int matrixarea;
-   int borderarea;
+   SCIP_Longint matrixarea;
+   SCIP_Longint borderarea;
    int nvars;
    int nconss;
    int i;
@@ -2622,7 +2622,7 @@ SCIP_RETCODE DECevaluateDecomposition(
     */
 
    /* calculate matrix area */
-   matrixarea = nvars*nconss;
+   matrixarea = (SCIP_Longint) nvars*nconss;
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nblocks; ++i )
@@ -2709,7 +2709,7 @@ SCIP_RETCODE DECevaluateDecomposition(
       SCIPfreeBufferArray(scip, &ishandled);
    }
 
-   borderarea = DECdecompGetNLinkingconss(decdecomp)*nvars+DECdecompGetNLinkingvars(decdecomp)*(nconss-DECdecompGetNLinkingconss(decdecomp));
+   borderarea = (SCIP_Longint) DECdecompGetNLinkingconss(decdecomp)*nvars + (SCIP_Longint) DECdecompGetNLinkingvars(decdecomp)*(nconss-DECdecompGetNLinkingconss(decdecomp));
 
    density = 1E20;
    varratio = 1.0;
