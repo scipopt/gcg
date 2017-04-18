@@ -357,6 +357,14 @@ SCIP_RETCODE DECdecompSetDetectorChainString(
    char*                 detectorchainstring
    );
 
+/** sets the detector clock times of the detectors of the detector chain */
+extern
+char* DECdecompGetDetectorChainString(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+
 /** sets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 extern
 void DECdecompSetDetectorPctVarsToBorder(

@@ -1150,7 +1150,7 @@ Seeedpool::~Seeedpool()
 
     /**
      * finds seeeds and translates them to decompositions
-     *   */
+     */
 
     std::vector<int> successDetectors;
     std::vector<SeeedPtr> delSeeeds;
@@ -1452,19 +1452,17 @@ Seeedpool::~Seeedpool()
 
        /** set detector chain info string */
 
+       SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
        for( int d = 0; d < seeed->getNDetectors(); ++d )
        {
           //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(seeed->getDetectorchain()[d]));
           char str[2] = "\0"; /* gives {\0, \0} */
           str[0] = DECdetectorGetChar(seeed->getDetectorchain()[d]);
-          strncat(detectorchaininfo, str, 1 );
+          (void) strncat(detectorchaininfo, str, 1 );
        }
 
        DECdecompSetDetectorChainString(scip, decompositions[i], detectorchaininfo);
 
-       //SCIPinfoMessage(scip, NULL, "%s \n", detectorchaininfo);
-
-       //DECdetectorGetChar( )
        /** set dectype */
        if( decompositions[i]->nlinkingvars == seeed->getNTotalStairlinkingvars() && decompositions[i]->nlinkingconss == 0 && DECdecompGetNLinkingvars(decompositions[i]) > 0)
        {

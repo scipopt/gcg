@@ -444,7 +444,7 @@ SCIP_RETCODE detection(
    if( numberOfBlocks.empty() )
       numberOfBlocks.push_back(8);
 
-   int nconss = SCIPgetNConss(scip);
+   int nconss = seeedPropagationData->seeedpool->getNConss();
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/hrgpartition/maxnblockcandidates");

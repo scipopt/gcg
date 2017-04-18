@@ -1507,9 +1507,19 @@ SCIP_RETCODE DECdecompSetDetectorChainString(
    )
 {
 
-      SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &(decomp->detectorchainstring), detectorchainstring, SCIP_MAXSTRLEN ) );
+   SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &(decomp->detectorchainstring), detectorchainstring, SCIP_MAXSTRLEN ) );
    return SCIP_OKAY;
 
+}
+
+/** sets the detector clock times of the detectors of the detector chain */
+extern
+char* DECdecompGetDetectorChainString(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   return decomp->detectorchainstring;
 }
 
 
