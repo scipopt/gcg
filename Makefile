@@ -198,6 +198,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_mastersetcover.o \
 			dec_mastersetpack.o \
 			dec_mastersetpart.o \
+			dec_varclass.o \
 			gcggithash.o \
 			reader_gp.o \
 			reader_tex.o \

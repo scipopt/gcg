@@ -199,6 +199,7 @@
 #include "dec_generalmastersetpack.h"
 #include "dec_generalmastersetpart.h"
 #include "dec_staircase_lsp.h"
+#include "dec_varclass.h"
 
 
 /* Christian's heuristics */
@@ -385,6 +386,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorGeneralmastersetpack(scip) );
    SCIP_CALL( SCIPincludeDetectorGeneralmastersetpart(scip) );
    SCIP_CALL( SCIPincludeDetectorGeneralmastersetcover(scip) );
+   SCIP_CALL( SCIPincludeDetectorVarclass(scip) );
 
 
 

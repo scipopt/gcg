@@ -454,7 +454,7 @@ Seeedpool::Seeedpool(
    SCIP_Bool conssclassconsnamenonumbers;
    SCIP_Bool conssclassconsnamelevenshtein;
 
-//   SCIP_Bool varclassscipvartypes;
+   SCIP_Bool varclassscipvartypes;
 
    if( !transformed )
    {
@@ -644,7 +644,7 @@ Seeedpool::Seeedpool(
       SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
       SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
 
-//      SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/enabled", &varclassscipvartypes);
+      SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/enabled", &varclassscipvartypes);
    }
    else
    {
@@ -653,7 +653,7 @@ Seeedpool::Seeedpool(
       SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
       SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
 
-//      SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", &varclassscipvartypes);
+      SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", &varclassscipvartypes);
    }
 
    std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
@@ -667,7 +667,7 @@ Seeedpool::Seeedpool(
    if( conssclassconsnamelevenshtein )
       addConsClassifier( createConsClassifierForConsnamesLevenshteinDistanceConnectivity(1) );
 
-//   if ( varclassscipvartypes )
+   if ( varclassscipvartypes )
       addVarClassifier( createVarClassifierForSCIPVartypes() );
 
    reduceConsclasses();
@@ -2057,6 +2057,7 @@ void Seeedpool::calcCandidatesNBlocks()
 
    int maximumnclasses = 18; /* if  distribution of classes exceed this number its skipped */
 
+   /** firstly, iterate over all consclassifiers */
    for( size_t classifier = 0; classifier < consclassescollection.size(); ++classifier )
    {
       std::vector< std::vector<int> > subsetsOfConstypes(0, std::vector<int>(0) );
@@ -2077,7 +2078,7 @@ void Seeedpool::calcCandidatesNBlocks()
 
       subsetsOfConstypes = getAllSubsets(consclassindices);
 
-      for ( int i = 0; i < getNConss(); ++i)
+      for ( int i = 0; i < consclassescollection[classifier]->getNConss(); ++i)
       {
          if ( consclassescollection[classifier]->isConsClassified(i) )
             ++(nconssofclass.at( consclassescollection[classifier]->getClassOfCons(i) ) );
@@ -2105,12 +2106,61 @@ void Seeedpool::calcCandidatesNBlocks()
          }
 
          addCandidatesNBlocks(greatestCD);
-
       }
    }
 
-   return ;
- }
+   /** secondly, iterate over all varclassifiers */
+   for( size_t classifier = 0; classifier < varclassescollection.size(); ++classifier )
+   {
+      std::vector< std::vector<int> > subsetsOfVartypes(0, std::vector<int>(0) );
+      std::vector<int> nvarsofclass(varclassescollection[classifier]->getNClasses(), 0);
+      std::vector<int> varclassindices(0);
+
+      /** check if there are to  many classes in this distribution and skip it if so */
+
+      if ( varclassescollection[classifier]->getNClasses() > maximumnclasses)
+      {
+         std::cout << " the current varclass distribution includes " <<  varclassescollection[classifier]->getNClasses() << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
+         continue;
+      }
+
+
+      for( int i = 0; i < varclassescollection[classifier]->getNClasses(); ++i)
+         varclassindices.push_back(i);
+
+      subsetsOfVartypes = getAllSubsets(varclassindices);
+
+      for ( int i = 0; i < varclassescollection[classifier]->getNVars(); ++i)
+      {
+        if ( varclassescollection[classifier]->isVarClassified(i) )
+           ++(nvarsofclass.at( varclassescollection[classifier]->getClassOfVar(i) ) );
+      }
+
+      /** start with the cardinalities of the varclasses as candidates */
+      for( size_t i = 0; i < nvarsofclass.size(); ++i)
+      {
+         addCandidatesNBlocks(nvarsofclass[i]);
+      }
+
+      /** continue with gcd of all cardinalities in this subset */
+      for(size_t subset = 0; subset < subsetsOfVartypes.size(); ++subset)
+      {
+         int greatestCD = 1;
+
+         if( subsetsOfVartypes[subset].size() == 0 || subsetsOfVartypes[subset].size() == 1 )
+              continue;
+
+         greatestCD = gcd(nvarsofclass[subsetsOfVartypes[subset][0]], nvarsofclass[subsetsOfVartypes[subset][1]]  );
+
+         for( size_t i = 2; i < subsetsOfVartypes[subset].size() ; ++i)
+         {
+            greatestCD = gcd( greatestCD, nvarsofclass[subsetsOfVartypes[subset][i]] );
+         }
+
+         addCandidatesNBlocks(greatestCD);
+      }
+   }
+}
 
 int Seeedpool::getNConssClassDistributions(){
    return (int) consclassescollection.size();

@@ -25,19 +25,19 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_consclass.cpp
+/**@file   dec_varclass.cpp
  * @ingroup DETECTORS
- * @brief  detector consclass (put your description here)
- * @author Michael Bastubbe
+ * @brief  detector varclass
+ * @author Julius Hense
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_consclass.h"
+#include "dec_varclass.h"
 #include "cons_decomp.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
-#include "class_consclassifier.h"
+#include "class_varclassifier.h"
 #include "gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
@@ -49,8 +49,8 @@
 #include <iostream>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "consclass"       /**< name of detector */
-#define DEC_DESC                  "detector consclass" /**< description of detector*/
+#define DEC_DETECTORNAME          "varclass"       /**< name of detector */
+#define DEC_DESC                  "detector varclass" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          0           /** last round the detector gets called                              */
 #define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
@@ -58,7 +58,7 @@
 #define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
-#define DEC_DECCHAR               'c'         /**< display character of detector */
+#define DEC_DECCHAR               'v'         /**< display character of detector */
 #define DEC_ENABLED               TRUE        /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE        /**< should the detection be enabled */
@@ -113,12 +113,12 @@ static std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
  */
 
 /** destructor of detector to free user data (called when GCG is exiting) */
-#define freeConsclass NULL
+#define freeVarclass NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0
 static
-DEC_DECL_EXITDETECTOR(exitConsclass)
+DEC_DECL_EXITDETECTOR(exitVarclass)
 { /*lint --e{715}*/
 
    SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
@@ -127,7 +127,7 @@ DEC_DECL_EXITDETECTOR(exitConsclass)
    return SCIP_OKAY;
 }
 #else
-#define exitConsclass NULL
+#define exitVarclass NULL
 #endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
@@ -142,11 +142,11 @@ DEC_DECL_INITDETECTOR(initConsclass)
    return SCIP_OKAY;
 }
 #else
-#define initConsclass NULL
+#define initVarclass NULL
 #endif
 
 /** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectConsclass)
+static DEC_DECL_DETECTSTRUCTURE(detectVarclass)
 { /*lint --e{715}*/
    *result = SCIP_DIDNOTFIND;
 
@@ -156,9 +156,9 @@ static DEC_DECL_DETECTSTRUCTURE(detectConsclass)
    return SCIP_OKAY;
 }
 
-#define finishSeeedConsclass NULL
+#define finishSeeedVarclass NULL
 
-static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
+static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
 {
   *result = SCIP_DIDNOTFIND;
   char decinfo[SCIP_MAXSTRLEN];
@@ -177,21 +177,23 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
   std::vector<gcg::Seeed*> foundseeeds(0);
 
   gcg::Seeed* seeedOrig;
-  gcg::Seeed* seeed;
+  gcg::Seeed* seeedMaster;
+  gcg::Seeed* seeedLinking;
 
   int maximumnclasses;
 
-  SCIPgetIntParam(scip, "detectors/consclass/maxnclasses", &maximumnclasses); /* if  distribution of classes exceed this number its skipped */
+  SCIPgetIntParam(scip, "detectors/varclass/maxnclasses", &maximumnclasses); /* if  distribution of classes exceed this number its skipped */
 
-  for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifiers(); ++classifierIndex )
+  for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNVarClassifiers(); ++classifierIndex )
   {
-    gcg::ConsClassifier* classifier = seeedPropagationData->seeedpool->getConsClassifier( classifierIndex );
-    std::vector<int> consclassindices_both = std::vector<int>(0);
-    std::vector<int> consclassindices_master = std::vector<int>(0);
+    gcg::VarClassifier* classifier = seeedPropagationData->seeedpool->getVarClassifier( classifierIndex );
+    std::vector<int> varclassindices_all = std::vector<int>(0);
+    std::vector<int> varclassindices_master = std::vector<int>(0);
+    std::vector<int> varclassindices_linking = std::vector<int>(0);
 
     if ( classifier->getNClasses() > maximumnclasses )
     {
-       std::cout << " the current consclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
+       std::cout << " the current varclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of var class detector" << std::endl;
        continue;
     }
 
@@ -209,78 +211,103 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
     {
        switch( classifier->getClassDecompInfo( i ) )
        {
-          case gcg::BOTH:
-             consclassindices_both.push_back( i );
+          case gcg::ALL:
+             varclassindices_all.push_back( i );
              break;
-          case gcg::ONLY_MASTER:
-             consclassindices_master.push_back( i );
+          case gcg::LINKING:
+             varclassindices_linking.push_back( i );
              break;
-          case gcg::ONLY_PRICING:
+          case gcg::MASTER:
+             varclassindices_master.push_back( i );
+             break;
+          case gcg::BLOCK:
              break;
        }
     }
 
-    std::vector< std::vector<int> > subsetsOfConsclasses = getAllSubsets(consclassindices_both);
+    std::vector< std::vector<int> > subsetsOfVarclasses = getAllSubsets(varclassindices_all);
 
-    for( size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset )
+    for( size_t subset = 0; subset < subsetsOfVarclasses.size(); ++subset )
     {
-       if( subsetsOfConsclasses[subset].size() == 0 && consclassindices_master.size() == 0 )
+       if( subsetsOfVarclasses[subset].size() == 0 && varclassindices_master.size() == 0 )
           continue;
 
-       seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
+       seeedMaster = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
+       seeedLinking = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
 
-       /** set open cons that have a) type of the current subset or b) decomp info ONLY_MASTER to Master */
-       for( int i = 0; i < seeed->getNOpenconss(); ++i )
+       /** what to do now? */
+       for( int i = 0; i < seeedOrig->getNOpenvars(); ++i )
        {
-          bool foundCons = false;
-          for( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
+          bool foundVar = false;
+          for( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
           {
-              if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == subsetsOfConsclasses[subset][consclassId] )
+              if( classifier->getClassOfVar( seeedOrig->getOpenvars()[i] ) == subsetsOfVarclasses[subset][varclassId] )
               {
-                  seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
-                  foundCons = true;
+                  seeedMaster->bookAsMasterVar(seeedOrig->getOpenvars()[i]);
+                  seeedLinking->bookAsLinkingVar(seeedOrig->getOpenvars()[i]);
+                  foundVar = true;
                   break;
               }
           }
-          /** only check consclassindices_master if current cons has not already been found in a subset */
-          if ( !foundCons )
+          /** only check varclassindices_master if current var has not already been found in a subset */
+          if ( !foundVar )
           {
-             for( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
+             for( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
              {
-                if( classifier->getClassOfCons( seeed->getOpenconss()[i] ) == consclassindices_master[consclassId] )
+                if( classifier->getClassOfVar( seeedMaster->getOpenvars()[i] ) == varclassindices_master[varclassId] )
                 {
-                   seeed->bookAsMasterCons(seeed->getOpenconss()[i]);
+                   seeedMaster->bookAsMasterVar(seeedOrig->getOpenvars()[i]);
+                   seeedLinking->bookAsMasterVar(seeedOrig->getOpenvars()[i]);
+                   foundVar = true;
+                   break;
+                }
+             }
+          }
+          /** only check varclassindices_linking if current var has not already been found in a subset */
+          if ( !foundVar )
+          {
+             for( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
+             {
+                if( classifier->getClassOfVar( seeedMaster->getOpenvars()[i] ) == varclassindices_linking[varclassId] )
+                {
+                   seeedMaster->bookAsLinkingVar(seeedOrig->getOpenvars()[i]);
+                   seeedLinking->bookAsLinkingVar(seeedOrig->getOpenvars()[i]);
                    break;
                 }
              }
           }
        }
 
-       /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
+       /** TODO set desc */
+       /** set decinfo to: varclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
        std::stringstream decdesc;
-       decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
-       for ( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
+       decdesc << "varclass" << "\\_" << classifier->getName() << ": \\\\ ";
+       for ( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
        {
-          if ( consclassId > 0 )
+          if ( varclassId > 0 )
           {
              decdesc << "-";
           }
-          decdesc << classifier->getClassName( subsetsOfConsclasses[subset][consclassId] );
+          decdesc << classifier->getClassName( subsetsOfVarclasses[subset][varclassId] );
        }
-       for ( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
+       for ( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
        {
-          if ( consclassId > 0 || subsetsOfConsclasses[subset].size() > 0)
+          if ( varclassId > 0 || subsetsOfVarclasses[subset].size() > 0)
           {
              decdesc << "-";
           }
-          decdesc << classifier->getClassName( consclassindices_master[consclassId] );
+          decdesc << classifier->getClassName( varclassindices_master[varclassId] );
        }
 
-       seeed->flushBooked();
+       seeedMaster->flushBooked();
+       seeedLinking->flushBooked();
+       /** TODO set desc */
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
-       seeed->addDetectorChainInfo(decinfo);
+       seeedMaster->addDetectorChainInfo("varclass");
+       seeedLinking->addDetectorChainInfo("varclass");
 
-       foundseeeds.push_back(seeed);
+       foundseeeds.push_back(seeedMaster);
+       foundseeeds.push_back(seeedLinking);
     }
   }
 
@@ -303,7 +330,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 }
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
@@ -342,7 +369,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultConsclass)
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultVarclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
@@ -378,7 +405,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConsclass)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastConsclass)
+DEC_DECL_SETPARAMFAST(setParamFastVarclass)
 {
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
@@ -421,22 +448,22 @@ DEC_DECL_SETPARAMFAST(setParamFastConsclass)
  * detector specific interface methods
  */
 
-/** creates the handler for consclass detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
+/** creates the handler for varclass detector and includes it in SCIP */
+SCIP_RETCODE SCIPincludeDetectorVarclass(SCIP* scip /**< SCIP data structure */
 )
 {
    DEC_DETECTORDATA* detectordata;
    char setstr[SCIP_MAXSTRLEN];
 
-   /**@todo create consclass detector data here*/
+   /**@todo create varclass detector data here*/
    detectordata = NULL;
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConsclass,
-         freeConsclass, initConsclass, exitConsclass, propagateSeeedConsclass, finishSeeedConsclass, setParamAggressiveConsclass, setParamDefaultConsclass, setParamFastConsclass));
+         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectVarclass,
+         freeVarclass, initVarclass, exitVarclass, propagateSeeedVarclass, finishSeeedVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
 
-   /**@todo add consclass detector parameters */
+   /**@todo add varclass detector parameters */
 
    const char* name = DEC_DETECTORNAME;
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
