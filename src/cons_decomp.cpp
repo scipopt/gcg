@@ -703,7 +703,6 @@ SCIP_RETCODE DECdetectStructure(
 
    std::vector<gcg::SeeedPtr> seeedsunpresolved;                    /**< seeeds that were found for the unpresolved problem */
 
-
    SCIP_Real* scores;
    int i;
 
@@ -841,7 +840,6 @@ SCIP_RETCODE DECdetectStructure(
       scores[i] = score.totalscore;
    }
 
-   SCIPsortRealPtr(scores, (void**)conshdlrdata->decdecomps, conshdlrdata->ndecomps);
    SCIPfreeBufferArray(scip, &scores);
 
    SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );
