@@ -3301,7 +3301,15 @@ int DECfilterSimilarDecompositions(
    return nunique;
 }
 
-/** returns the number of the block that the constraint is with respect to the decomposition */
+/** returns the number of the block that the constraint is with respect to the decomposition; set
+ * *block = -2, if it has no variables
+ * *block = -1, if it has only variables belonging only to the master (meaning that this constraint should build a new block)
+ * *block in [0,...,nblocks-1] if it only contains variables of a particular block (plus linking variables)
+ * *block = nblocks, if it contains
+ *   - either variables from more than one block (plus linking variables or master only variables)
+ *   - or linking variables only
+ */
+/** @fixme: For linking variables, we should check which blocks they actually link */
 /** @todo: maybe this is possible in such a way that a staircase structure is preserved */
 SCIP_RETCODE DECdetermineConsBlock(
    SCIP*                 scip,               /**< SCIP data structure */
