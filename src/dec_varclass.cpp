@@ -211,7 +211,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
 
        seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
 
-       /** what to do now? - guess: subsets of ALL classes to master */
+       /** book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
        for( int i = 0; i < seeed->getNOpenvars(); ++i )
        {
           bool foundVar = false;
@@ -219,23 +219,10 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
           {
               if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == subsetsOfVarclasses[subset][varclassId] )
               {
-                  seeed->bookAsMasterVar(seeed->getOpenvars()[i]);
+                  seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
                   foundVar = true;
                   break;
               }
-          }
-          /** only check varclassindices_master if current var has not already been found in a subset */
-          if ( !foundVar )
-          {
-             for( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
-             {
-                if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_master[varclassId] )
-                {
-                   seeed->bookAsMasterVar(seeed->getOpenvars()[i]);
-                   foundVar = true;
-                   break;
-                }
-             }
           }
           /** only check varclassindices_linking if current var has not already been found in a subset */
           if ( !foundVar )
@@ -245,14 +232,26 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
                 if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_linking[varclassId] )
                 {
                    seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
+                   foundVar = true;
+                   break;
+                }
+             }
+          }
+          /** only check varclassindices_master if current var has not already been found in a subset */
+          if ( !foundVar )
+          {
+             for( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
+             {
+                if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_master[varclassId] )
+                {
+                   seeed->bookAsMasterVar(seeed->getOpenvars()[i]);
                    break;
                 }
              }
           }
        }
 
-       /** TODO update desc according to strategy */
-       /** set decinfo to: varclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
+       /** set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
        std::stringstream decdesc;
        decdesc << "varclass" << "\\_" << classifier->getName() << ": \\\\ ";
        for ( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
@@ -263,13 +262,13 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
           }
           decdesc << classifier->getClassName( subsetsOfVarclasses[subset][varclassId] );
        }
-       for ( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
+       for ( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
        {
           if ( varclassId > 0 || subsetsOfVarclasses[subset].size() > 0)
           {
              decdesc << "-";
           }
-          decdesc << classifier->getClassName( varclassindices_master[varclassId] );
+          decdesc << classifier->getClassName( varclassindices_linking[varclassId] );
        }
 
        seeed->flushBooked();

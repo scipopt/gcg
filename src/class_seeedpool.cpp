@@ -1665,7 +1665,7 @@ void Seeedpool::translateSeeedData( Seeedpool* origpool, std::vector<Seeed*> ori
 
       SCIPdebugMessagePrint(this->scip, " otherseeed seeed %d has %d many blocks \n", otherseeed->getID(), otherseeed->getNBlocks() );
 
-      /** ignore seeeds with one block or no block, they are supposed to be find anyway */
+      /** ignore seeeds with one block or no block, they are supposed to be found anyway */
       if( otherseeed->getNBlocks() == 1 || otherseeed->getNBlocks() == 0  )
          continue;
 
@@ -1694,15 +1694,15 @@ void Seeedpool::translateSeeedData( Seeedpool* origpool, std::vector<Seeed*> ori
             }
          }
 
-         /*for ( int j = 0; j < otherseeed->getNVarsForBlock(b); j++ )
-            {
-               int thisvar = colothertothis[otherseeed->getVarsForBlock(b)[j] ];
-               if( thisvar != -1 )
-               {
-                  newseeed->setVarToBlock(thisvar, b);
-                  newseeed->deleteOpenvar(thisvar);
-               }
-            }*/
+//         for ( int j = 0; j < otherseeed->getNVarsForBlock(b); j++ )
+//         {
+//            int thisvar = colothertothis[otherseeed->getVarsForBlock(b)[j] ];
+//            if( thisvar != -1 )
+//            {
+//               newseeed->setVarToBlock(thisvar, b);
+//               newseeed->deleteOpenvar(thisvar);
+//            }
+//         }
       }
 
       for ( int i = 0; i < otherseeed->getNMasterconss(); i++ )

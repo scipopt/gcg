@@ -199,7 +199,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
        seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
 
-       /** set open cons that have a) type of the current subset or b) decomp info ONLY_MASTER to Master */
+       /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
        for( int i = 0; i < seeed->getNOpenconss(); ++i )
        {
           bool foundCons = false;
