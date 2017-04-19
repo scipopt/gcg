@@ -88,26 +88,6 @@ struct DEC_DetectorData
 
 /* put your local methods here, and declare them static */
 
-/** method to enumerate all subsets */
-static std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
-{
-    std::vector< std::vector<int> > subset;
-    std::vector<int> empty;
-    subset.push_back( empty );
-
-    for ( size_t i = 0; i < set.size(); ++i )
-    {
-        std::vector< std::vector<int> > subsetTemp = subset;
-
-        for (size_t j = 0; j < subsetTemp.size(); ++j)
-            subsetTemp[j].push_back( set[i] );
-
-        for (size_t j = 0; j < subsetTemp.size(); ++j)
-            subset.push_back( subsetTemp[j] );
-    }
-    return subset;
-}
-
 /*
  * detector callback methods
  */
@@ -186,7 +166,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
   for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifiers(); ++classifierIndex )
   {
     gcg::ConsClassifier* classifier = seeedPropagationData->seeedpool->getConsClassifier( classifierIndex );
-    std::vector<int> consclassindices_both = std::vector<int>(0);
     std::vector<int> consclassindices_master = std::vector<int>(0);
 
     if ( classifier->getNClasses() > maximumnclasses )
@@ -207,20 +186,11 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
     for( int i = 0; i < classifier->getNClasses(); ++ i )
     {
-       switch( classifier->getClassDecompInfo( i ) )
-       {
-          case gcg::BOTH:
-             consclassindices_both.push_back( i );
-             break;
-          case gcg::ONLY_MASTER:
+       if ( classifier->getClassDecompInfo( i ) == gcg::ONLY_MASTER )
              consclassindices_master.push_back( i );
-             break;
-          case gcg::ONLY_PRICING:
-             break;
-       }
     }
 
-    std::vector< std::vector<int> > subsetsOfConsclasses = getAllSubsets(consclassindices_both);
+    std::vector< std::vector<int> > subsetsOfConsclasses = classifier->getAllSubsets( true, false, false );
 
     for( size_t subset = 0; subset < subsetsOfConsclasses.size(); ++subset )
     {

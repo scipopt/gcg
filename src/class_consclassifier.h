@@ -86,6 +86,13 @@ public:
       int classindex                   /**< index of the class */
    );
 
+   /** returns a vector containing all possible subsets of the chosen classindices */
+   std::vector<std::vector<int>> getAllSubsets(
+      bool both,                       /**< true, if BOTH classes should be considered */
+      bool only_master,                /**< true, if ONLY_MASTER classes should be considered */
+      bool only_pricing                /**< true, if ONLY_PRICING classes should be considered */
+   );
+
    /** returns the decomposition info of a class */
    CONS_DECOMPINFO getClassDecompInfo(
       int classindex                   /**< index of class */
@@ -108,6 +115,10 @@ public:
 
    /** returns the number of constraints */
    int getNConss(
+   );
+
+   /** returns a vector with the numbers of constraints that are assigned to the classes */
+   std::vector<int> getNConssOfClasses(
    );
 
    /** returns whether a constraint is already assigned to a class */

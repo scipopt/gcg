@@ -90,6 +90,11 @@ protected:
       int classindex                   /**< index of the class */
    );
 
+   /** returns a vector containing all possible subsets of the given classindices */
+   std::vector<std::vector<int>> getAllSubsets(
+      std::vector<int>& classindices   /**< classindices to be considered */
+   );
+
    /** returns the decomposition info of the a class */
    int getClassDecompInfo(
       int classindex                   /**< index of the class */
@@ -111,6 +116,10 @@ protected:
 
    /** returns the number of indices */
    int getNIndices(
+   );
+
+   /** returns a vector with the numbers of indices that are assigned to the classes */
+   std::vector<int> getNIndicesOfClasses(
    );
 
    /** returns whether an index is already assigned to a class */

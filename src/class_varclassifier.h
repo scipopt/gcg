@@ -87,6 +87,14 @@ public:
       int classindex                   /**< index of the class */
    );
 
+   /** returns a vector containing all possible subsets of the chosen classindices */
+   std::vector<std::vector<int>> getAllSubsets(
+      bool all,                        /**< true, if ALL classes should be considered */
+      bool linking,                    /**< true, if LINKING classes should be considered */
+      bool master,                     /**< true, if MASTER classes should be considered */
+      bool block                       /**< true, if BLOCK classes should be considered */
+   );
+
    /** returns the decomposition info of a class */
    VAR_DECOMPINFO getClassDecompInfo(
       int classindex                   /**< index of class */
@@ -111,6 +119,9 @@ public:
    int getNVars(
    );
 
+   /** returns a vector with the numbers of variables that are assigned to the classes */
+   std::vector<int> getNVarsOfClasses(
+   );
 
    /** returns whether a variable is already assigned to a class */
    bool isVarClassified(

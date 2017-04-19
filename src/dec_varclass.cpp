@@ -61,7 +61,7 @@
 #define DEC_DECCHAR               'v'         /**< display character of detector */
 #define DEC_ENABLED               TRUE        /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
-#define DEC_ENABLEDFINISHING      FALSE        /**< should the detection be enabled */
+#define DEC_ENABLEDFINISHING      FALSE        /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
@@ -87,26 +87,6 @@ struct DEC_DetectorData
  */
 
 /* put your local methods here, and declare them static */
-
-/** method to enumerate all subsets */
-static std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
-{
-    std::vector< std::vector<int> > subset;
-    std::vector<int> empty;
-    subset.push_back( empty );
-
-    for ( size_t i = 0; i < set.size(); ++i )
-    {
-        std::vector< std::vector<int> > subsetTemp = subset;
-
-        for (size_t j = 0; j < subsetTemp.size(); ++j)
-            subsetTemp[j].push_back( set[i] );
-
-        for (size_t j = 0; j < subsetTemp.size(); ++j)
-            subset.push_back( subsetTemp[j] );
-    }
-    return subset;
-}
 
 /*
  * detector callback methods
@@ -177,8 +157,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
   std::vector<gcg::Seeed*> foundseeeds(0);
 
   gcg::Seeed* seeedOrig;
-  gcg::Seeed* seeedMaster;
-  gcg::Seeed* seeedLinking;
+  gcg::Seeed* seeed;
 
   int maximumnclasses;
 
@@ -187,7 +166,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
   for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNVarClassifiers(); ++classifierIndex )
   {
     gcg::VarClassifier* classifier = seeedPropagationData->seeedpool->getVarClassifier( classifierIndex );
-    std::vector<int> varclassindices_all = std::vector<int>(0);
     std::vector<int> varclassindices_master = std::vector<int>(0);
     std::vector<int> varclassindices_linking = std::vector<int>(0);
 
@@ -212,7 +190,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        switch( classifier->getClassDecompInfo( i ) )
        {
           case gcg::ALL:
-             varclassindices_all.push_back( i );
              break;
           case gcg::LINKING:
              varclassindices_linking.push_back( i );
@@ -225,26 +202,24 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        }
     }
 
-    std::vector< std::vector<int> > subsetsOfVarclasses = getAllSubsets(varclassindices_all);
+    std::vector< std::vector<int> > subsetsOfVarclasses = classifier->getAllSubsets( true, false, false, false );
 
     for( size_t subset = 0; subset < subsetsOfVarclasses.size(); ++subset )
     {
-       if( subsetsOfVarclasses[subset].size() == 0 && varclassindices_master.size() == 0 )
+       if( subsetsOfVarclasses[subset].size() == 0 && varclassindices_master.size() == 0 && varclassindices_linking.size() == 0 )
           continue;
 
-       seeedMaster = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
-       seeedLinking = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
+       seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
 
-       /** what to do now? */
-       for( int i = 0; i < seeedOrig->getNOpenvars(); ++i )
+       /** what to do now? - guess: subsets of ALL classes to master */
+       for( int i = 0; i < seeed->getNOpenvars(); ++i )
        {
           bool foundVar = false;
           for( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
           {
-              if( classifier->getClassOfVar( seeedOrig->getOpenvars()[i] ) == subsetsOfVarclasses[subset][varclassId] )
+              if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == subsetsOfVarclasses[subset][varclassId] )
               {
-                  seeedMaster->bookAsMasterVar(seeedOrig->getOpenvars()[i]);
-                  seeedLinking->bookAsLinkingVar(seeedOrig->getOpenvars()[i]);
+                  seeed->bookAsMasterVar(seeed->getOpenvars()[i]);
                   foundVar = true;
                   break;
               }
@@ -254,10 +229,9 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
           {
              for( size_t varclassId = 0; varclassId < varclassindices_master.size(); ++varclassId )
              {
-                if( classifier->getClassOfVar( seeedMaster->getOpenvars()[i] ) == varclassindices_master[varclassId] )
+                if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_master[varclassId] )
                 {
-                   seeedMaster->bookAsMasterVar(seeedOrig->getOpenvars()[i]);
-                   seeedLinking->bookAsMasterVar(seeedOrig->getOpenvars()[i]);
+                   seeed->bookAsMasterVar(seeed->getOpenvars()[i]);
                    foundVar = true;
                    break;
                 }
@@ -268,17 +242,16 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
           {
              for( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
              {
-                if( classifier->getClassOfVar( seeedMaster->getOpenvars()[i] ) == varclassindices_linking[varclassId] )
+                if( classifier->getClassOfVar( seeed->getOpenvars()[i] ) == varclassindices_linking[varclassId] )
                 {
-                   seeedMaster->bookAsLinkingVar(seeedOrig->getOpenvars()[i]);
-                   seeedLinking->bookAsLinkingVar(seeedOrig->getOpenvars()[i]);
+                   seeed->bookAsLinkingVar(seeed->getOpenvars()[i]);
                    break;
                 }
              }
           }
        }
 
-       /** TODO set desc */
+       /** TODO update desc according to strategy */
        /** set decinfo to: varclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
        std::stringstream decdesc;
        decdesc << "varclass" << "\\_" << classifier->getName() << ": \\\\ ";
@@ -299,15 +272,11 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
           decdesc << classifier->getClassName( varclassindices_master[varclassId] );
        }
 
-       seeedMaster->flushBooked();
-       seeedLinking->flushBooked();
-       /** TODO set desc */
+       seeed->flushBooked();
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
-       seeedMaster->addDetectorChainInfo("varclass");
-       seeedLinking->addDetectorChainInfo("varclass");
+       seeed->addDetectorChainInfo(decinfo);
 
-       foundseeeds.push_back(seeedMaster);
-       foundseeeds.push_back(seeedLinking);
+       foundseeeds.push_back(seeed);
     }
   }
 

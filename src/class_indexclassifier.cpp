@@ -159,6 +159,25 @@ bool IndexClassifier::classifierIsDuplicateOfClassifier( IndexClassifier* otherC
    return true;
 }
 
+/** returns a vector containing all possible subsets of the given classindices */
+std::vector<std::vector<int>> IndexClassifier::getAllSubsets( std::vector<int>& givenClassindices )
+{
+   std::vector<std::vector<int>> subsets;
+   std::vector<int> empty;
+   subsets.push_back( empty );
+
+   for ( size_t i = 0; i < givenClassindices.size(); ++i )
+   {
+      std::vector< std::vector<int> > subsetTemp = subsets;
+
+      for (size_t j = 0; j < subsetTemp.size(); ++j)
+         subsetTemp[j].push_back( givenClassindices[i] );
+
+      for (size_t j = 0; j < subsetTemp.size(); ++j)
+         subsets.push_back( subsetTemp[j] );
+   }
+   return subsets;
+}
 
 /** returns the decomposition info of the a class */
 int IndexClassifier::getClassDecompInfo( int givenClassindex )
@@ -228,6 +247,21 @@ int IndexClassifier::getNIndices()
    return nIndices;
 }
 
+/** returns a vector with the numbers of indices that are assigned to the classes */
+std::vector<int> IndexClassifier::getNIndicesOfClasses()
+{
+   std::vector<int> nIndicesOfClasses( nClasses, 0 );
+
+   if ( nClasses == 0 )
+      return nIndicesOfClasses;
+
+   for ( int i = 0; i < nIndices; ++i)
+   {
+      if ( indicesToClasses[i] != -1 )
+         ++nIndicesOfClasses[indicesToClasses[i]];
+   }
+   return nIndicesOfClasses;
+}
 
 /** returns whether an index is already assigned to a class */
 bool IndexClassifier::isIndexClassified( int givenIndex )

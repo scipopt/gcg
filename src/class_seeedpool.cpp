@@ -373,27 +373,6 @@ void removeDigits(char *str, int *nremoved)
    }
 }
 
-
-/** method to enumerate all subsets */
-std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
-      {
-   std::vector< std::vector<int> > subset;
-   std::vector<int> empty;
-   subset.push_back( empty );
-
-   for ( size_t i = 0; i < set.size(); ++i )
-   {
-      std::vector< std::vector<int> > subsetTemp = subset;
-
-      for (size_t j = 0; j < subsetTemp.size(); ++j)
-         subsetTemp[j].push_back( set[i] );
-
-      for (size_t j = 0; j < subsetTemp.size(); ++j)
-         subset.push_back( subsetTemp[j] );
-   }
-   return subset;
-      }
-
 /** method to calculate the greatest common divisor */
 
 int gcd(int a, int b)
@@ -2060,34 +2039,21 @@ void Seeedpool::calcCandidatesNBlocks()
    /** firstly, iterate over all consclassifiers */
    for( size_t classifier = 0; classifier < consclassescollection.size(); ++classifier )
    {
-      std::vector< std::vector<int> > subsetsOfConstypes(0, std::vector<int>(0) );
-      std::vector<int> nconssofclass(consclassescollection[classifier]->getNClasses(), 0);
-      std::vector<int> consclassindices(0);
-
       /** check if there are to  many classes in this distribution and skip it if so */
-
       if ( consclassescollection[classifier]->getNClasses() > maximumnclasses)
       {
          std::cout << " the current consclass distribution includes " <<  consclassescollection[classifier]->getNClasses() << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
          continue;
       }
 
-
-      for( int i = 0; i < consclassescollection[classifier]->getNClasses(); ++i)
-         consclassindices.push_back(i);
-
-      subsetsOfConstypes = getAllSubsets(consclassindices);
-
-      for ( int i = 0; i < consclassescollection[classifier]->getNConss(); ++i)
-      {
-         if ( consclassescollection[classifier]->isConsClassified(i) )
-            ++(nconssofclass.at( consclassescollection[classifier]->getClassOfCons(i) ) );
-      }
+      /** get necessary data of current classifier */
+      std::vector< std::vector<int> > subsetsOfConstypes = consclassescollection[classifier]->getAllSubsets( true, true, true );
+      std::vector<int> nConssOfClasses = consclassescollection[classifier]->getNConssOfClasses();
 
       /** start with the cardinalities of the consclasses as candidates */
-      for( size_t i = 0; i < nconssofclass.size(); ++i)
+      for( size_t i = 0; i < nConssOfClasses.size(); ++i)
       {
-        addCandidatesNBlocks(nconssofclass[i]);
+        addCandidatesNBlocks(nConssOfClasses[i]);
       }
 
       /** continue with gcd of all cardinalities in this subset */
@@ -2098,11 +2064,11 @@ void Seeedpool::calcCandidatesNBlocks()
          if( subsetsOfConstypes[subset].size() == 0 || subsetsOfConstypes[subset].size() == 1 )
               continue;
 
-         greatestCD = gcd(nconssofclass[subsetsOfConstypes[subset][0]], nconssofclass[subsetsOfConstypes[subset][1]]  );
+         greatestCD = gcd(nConssOfClasses[subsetsOfConstypes[subset][0]], nConssOfClasses[subsetsOfConstypes[subset][1]]  );
 
          for( size_t i = 2; i < subsetsOfConstypes[subset].size() ; ++i)
          {
-            greatestCD = gcd( greatestCD, nconssofclass[subsetsOfConstypes[subset][i]] );
+            greatestCD = gcd( greatestCD, nConssOfClasses[subsetsOfConstypes[subset][i]] );
          }
 
          addCandidatesNBlocks(greatestCD);
@@ -2112,34 +2078,21 @@ void Seeedpool::calcCandidatesNBlocks()
    /** secondly, iterate over all varclassifiers */
    for( size_t classifier = 0; classifier < varclassescollection.size(); ++classifier )
    {
-      std::vector< std::vector<int> > subsetsOfVartypes(0, std::vector<int>(0) );
-      std::vector<int> nvarsofclass(varclassescollection[classifier]->getNClasses(), 0);
-      std::vector<int> varclassindices(0);
-
       /** check if there are to  many classes in this distribution and skip it if so */
-
       if ( varclassescollection[classifier]->getNClasses() > maximumnclasses)
       {
          std::cout << " the current varclass distribution includes " <<  varclassescollection[classifier]->getNClasses() << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
          continue;
       }
 
-
-      for( int i = 0; i < varclassescollection[classifier]->getNClasses(); ++i)
-         varclassindices.push_back(i);
-
-      subsetsOfVartypes = getAllSubsets(varclassindices);
-
-      for ( int i = 0; i < varclassescollection[classifier]->getNVars(); ++i)
-      {
-        if ( varclassescollection[classifier]->isVarClassified(i) )
-           ++(nvarsofclass.at( varclassescollection[classifier]->getClassOfVar(i) ) );
-      }
+      /** get necessary data of current classifier */
+      std::vector< std::vector<int> > subsetsOfVartypes = varclassescollection[classifier]->getAllSubsets( true, true, true, true );
+      std::vector<int> nVarsOfClasses = varclassescollection[classifier]->getNVarsOfClasses();
 
       /** start with the cardinalities of the varclasses as candidates */
-      for( size_t i = 0; i < nvarsofclass.size(); ++i)
+      for( size_t i = 0; i < nVarsOfClasses.size(); ++i)
       {
-         addCandidatesNBlocks(nvarsofclass[i]);
+         addCandidatesNBlocks(nVarsOfClasses[i]);
       }
 
       /** continue with gcd of all cardinalities in this subset */
@@ -2150,11 +2103,11 @@ void Seeedpool::calcCandidatesNBlocks()
          if( subsetsOfVartypes[subset].size() == 0 || subsetsOfVartypes[subset].size() == 1 )
               continue;
 
-         greatestCD = gcd(nvarsofclass[subsetsOfVartypes[subset][0]], nvarsofclass[subsetsOfVartypes[subset][1]]  );
+         greatestCD = gcd(nVarsOfClasses[subsetsOfVartypes[subset][0]], nVarsOfClasses[subsetsOfVartypes[subset][1]]  );
 
          for( size_t i = 2; i < subsetsOfVartypes[subset].size() ; ++i)
          {
-            greatestCD = gcd( greatestCD, nvarsofclass[subsetsOfVartypes[subset][i]] );
+            greatestCD = gcd( greatestCD, nVarsOfClasses[subsetsOfVartypes[subset][i]] );
          }
 
          addCandidatesNBlocks(greatestCD);

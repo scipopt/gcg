@@ -82,6 +82,19 @@ void ConsClassifier::assignConsToClass( int givenConsindex, int givenClassindex 
    IndexClassifier::assignIndexToClass( givenConsindex, givenClassindex );
 }
 
+/** returns a vector containing all possible subsets of the chosen classindices */
+std::vector<std::vector<int>> ConsClassifier::getAllSubsets( bool both, bool only_master, bool only_pricing )
+{
+   std::vector<int> classindices;
+   for ( int i = 0; i < getNClasses(); ++i )
+   {
+      if ( ( both && getClassDecompInfo( i ) == BOTH ) || ( only_master && getClassDecompInfo( i ) == ONLY_MASTER )
+            || ( only_pricing && getClassDecompInfo( i ) == ONLY_PRICING ) )
+         classindices.push_back( i );
+   }
+   return IndexClassifier::getAllSubsets( classindices );
+}
+
 /** returns the decomposition code of a class */
 CONS_DECOMPINFO ConsClassifier::getClassDecompInfo( int givenClassindex )
 {
@@ -135,6 +148,12 @@ const int* ConsClassifier::getConssToClasses()
 int ConsClassifier::getNConss()
 {
    return IndexClassifier::getNIndices();
+}
+
+/** returns a vector with the numbers of constraints that are assigned to the classes */
+std::vector<int> ConsClassifier::getNConssOfClasses()
+{
+   return IndexClassifier::getNIndicesOfClasses();
 }
 
 

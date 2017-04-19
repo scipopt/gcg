@@ -82,6 +82,19 @@ void VarClassifier::assignVarToClass( int givenVarindex, int givenClassindex )
    IndexClassifier::assignIndexToClass( givenVarindex, givenClassindex );
 }
 
+/** returns a vector containing all possible subsets of the chosen classindices */
+std::vector<std::vector<int>> VarClassifier::getAllSubsets( bool all, bool linking, bool master, bool block )
+{
+   std::vector<int> classindices;
+   for ( int i = 0; i < getNClasses(); ++i )
+   {
+      if ( ( all && getClassDecompInfo( i ) == ALL ) || ( linking && getClassDecompInfo( i ) == LINKING )
+            || ( master && getClassDecompInfo( i ) == MASTER ) || ( block && getClassDecompInfo( i ) == BLOCK ) )
+         classindices.push_back( i );
+   }
+   return IndexClassifier::getAllSubsets( classindices );
+}
+
 /** returns the decomposition code of a class */
 VAR_DECOMPINFO VarClassifier::getClassDecompInfo( int givenClassindex )
 {
@@ -138,6 +151,12 @@ const int* VarClassifier::getVarsToClasses()
 int VarClassifier::getNVars()
 {
    return IndexClassifier::getNIndices();
+}
+
+/** returns a vector with the numbers of variables that are assigned to the classes */
+std::vector<int> VarClassifier::getNVarsOfClasses()
+{
+   return IndexClassifier::getNIndicesOfClasses();
 }
 
 
