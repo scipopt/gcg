@@ -44,7 +44,6 @@
 
 
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,10 +132,6 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    );
 
 
-/** creates the seeedpool **/
-SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
 
 /** creates the seeedpool for the unpresolved problem **/
 SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
@@ -197,6 +192,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    SCIP*                 scip                 /**< SCIP data structure */
    );
+
 
 
 /** interface method to detect the structure */
