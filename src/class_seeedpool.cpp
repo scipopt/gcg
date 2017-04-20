@@ -1375,7 +1375,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
        {
           SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipconss[b], seeed->getNConssForBlock(b) ) );
           nsubscipconss[b] = seeed->getNConssForBlock(b);
-          for ( int c = 0; c < seeed->getNConssForBlock(b); ++c )
+          for( int c = 0; c < seeed->getNConssForBlock(b); ++c )
           {
              int consid  = seeed->getConssForBlock(b)[c];
              SCIP_CONS* scipcons = consToScipCons[consid];
