@@ -56,13 +56,15 @@
 #include "string.h"
 #include "scip_misc.h"
 #include "scip/clock.h"
-#include "class_seeedpool.h"
 #include "class_seeed.h"
-
+#include "class_seeedpool.h"
 
 #include <vector>
 
+
 typedef gcg::Seeed* SeeedPtr;
+
+
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
@@ -124,7 +126,15 @@ struct SCIP_ConshdlrData
    int*                  nCandidates;
    SCIP_HASHMAP*         consToIndex;                       /**< hashmap from constraints to indices, to be filled */
    int*                  nConss;
-   gcg::Seeedpool*		 seeedpool;
+
+   gcg::Seeedpool*		 seeedpool;                         /** seeedpool that manages the detection  process for the presolved transformed problem */
+   gcg::Seeedpool*       seeedpoolunpresolved;              /** seeedpool that manages the deetction of the unpresolved problem */
+   std::vector<SeeedPtr> allrelevantseeeds;                 /** collection  of all relevant seeeds ( i.e. all seeeds w.r.t. copies ) */
+   std::vector<SeeedPtr> incompleteseeeds;                  /** collection of incomplete seeeds originatging from incomplete decompostions given by the users */
+   SCIP_HASHMAP*         seeedToDecdecomp;                  /**< hashmap from seeeds to the corresponding decdecomp (or NULL if the seeed is incomplete)  */
+   SCIP_HASHMAP*         decdecompToSeeed;                  /**< hashmap from decompositions to the corresponding seeed */
+
+   SeeedPtr              curruserseeed;
 
 };
 
@@ -358,6 +368,13 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->hasrun = FALSE;
    conshdlrdata->maxndetectionrounds = 0;
    conshdlrdata->enableorigdetection = FALSE;
+   conshdlrdata->seeedpoolunpresolved = NULL;
+   conshdlrdata->seeedpool = NULL;
+   conshdlrdata->allrelevantseeeds = std::vector<gcg::Seeed*>(0);
+   conshdlrdata->incompleteseeeds = std::vector<gcg::Seeed*>(0);
+   conshdlrdata->decdecompToSeeed = NULL;
+   conshdlrdata->seeedToDecdecomp = NULL;
+   conshdlrdata->curruserseeed = NULL;
 
    SCIP_CALL( SCIPcreateWallClock(scip, &conshdlrdata->detectorclock) );
 
@@ -466,6 +483,84 @@ DEC_DETECTORDATA* DECdetectorGetData(
    return detector->decdata;
 
 }
+
+
+/** returns the seeedpool **/
+gcg::Seeedpool* SCIPconshdlrDecompGetSeeedpool(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->seeedpool;
+}
+
+/** returns the seeedpool for the unpresolved problem **/
+gcg::Seeedpool* SCIPconshdlrDecompGetSeeedpoolUnpresolved(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->seeedpoolunpresolved;
+}
+
+/** creates the seeedpool **/
+SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->seeedpool != NULL )
+      conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+
+
+   return SCIP_OKAY;
+}
+
+/** creates the seeedpool **/
+SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+      conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
+
+   return SCIP_OKAY;
+}
+
+
 
 /** returns the name of the provided detector */
 const char* DECdetectorGetName(
@@ -678,6 +773,305 @@ SCIP_Real DECgetRemainingTime(
    return timelimit;
 }
 
+
+/** creates a user seeed for the presolved problem **/
+SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             presolved           /**< should the user seeed be created for the presolved problem */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->curruserseeed != NULL )
+   {
+      SCIPwarningMessage(scip, "there is a current user seeed, it is going to be flushed..!\n");
+      SCIP_CALL( SCIPconshdlrDecompUserSeeedFlush(scip) );
+   }
+
+   currseeedpool = presolved ? conshdlrdata->seeedpool : conshdlrdata->seeedpoolunpresolved;
+
+   assert( currseeedpool != NULL );
+   assert( conshdlrdata->curruserseeed == NULL );
+
+   conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool->getNDetectors(), currseeedpool->getNConss(), currseeedpool->getNVars() );
+
+   conshdlrdata->curruserseeed->stemsFromUnpresolved = !presolved;
+
+   return SCIP_OKAY;
+}
+
+/** sets the number of blocks */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
+   SCIP*                 scip,                /**< SCIP data structure */
+   int                   nblocks               /**< number of blocks */
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->curruserseeed != NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   conshdlrdata->curruserseeed->setNBlocks(nblocks);
+
+   return SCIP_OKAY;
+}
+
+
+
+/** sets a constraint by name to a block in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           consname,            /**< name of the constraint */
+   int                   blockid              /* block index ( counting from 0) */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   int consindex;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->curruserseeed != NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   consindex = currseeedpool->getIndexForCons( SCIPfindCons(scip, consname ) );
+
+   conshdlrdata->curruserseeed->bookAsBlockCons(consindex, blockid);
+
+   return SCIP_OKAY;
+}
+
+
+/** sets a constraint by name to the master in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToMaster(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           consname
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   int consindex;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->curruserseeed != NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   consindex = currseeedpool->getIndexForCons( SCIPfindCons(scip, consname ) );
+
+   conshdlrdata->curruserseeed->bookAsMasterCons(consindex);
+
+   return SCIP_OKAY;
+
+}
+
+
+/** sets a variable by name to a block in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           varname,             /**< name of the variable */
+   int                   blockid              /**< block index ( counting from 0) */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   int varindex;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->curruserseeed != NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
+
+   conshdlrdata->curruserseeed->bookAsBlockVar(varindex, blockid);
+
+   return SCIP_OKAY;
+}
+
+
+/** sets a variable by name to the master in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToMaster(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           varname              /**< name of the variable */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   int varindex;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->curruserseeed != NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
+
+   varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
+
+   conshdlrdata->curruserseeed->bookAsMasterVar(varindex);
+
+   return SCIP_OKAY;
+
+}
+
+
+/** sets a variable by name to the linking variables in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           varname              /**< name of the variable */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+      SCIP_CONSHDLRDATA* conshdlrdata;
+      gcg::Seeedpool* currseeedpool;
+      int varindex;
+
+      conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+      if( conshdlr == NULL )
+      {
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+         return SCIP_ERROR;
+      }
+
+      conshdlrdata = SCIPconshdlrGetData(conshdlr);
+      assert(conshdlrdata != NULL);
+
+      if( conshdlrdata->curruserseeed != NULL )
+      {
+         SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+         return SCIP_OKAY;
+      }
+
+      varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
+
+      conshdlrdata->curruserseeed->bookedAsLinkingVars(varindex);
+
+      return SCIP_OKAY;
+
+}
+
+
+/** finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if complete etc */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
+   SCIP*                 scip                 /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+      SCIP_CONSHDLRDATA* conshdlrdata;
+      gcg::Seeedpool* currseeedpool;
+      int varindex;
+
+      conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+      if( conshdlr == NULL )
+      {
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+         return SCIP_ERROR;
+      }
+
+      conshdlrdata = SCIPconshdlrGetData(conshdlr);
+      assert(conshdlrdata != NULL);
+
+      if( conshdlrdata->curruserseeed != NULL )
+      {
+         SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+         return SCIP_OKAY;
+      }
+
+      currseeedpool = conshdlrdata->curruserseeed->stemsFromUnpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+
+      conshdlrdata->curruserseeed->considerImplicits(currseeedpool);
+
+      return SCIP_OKAY;
+}
+
+
+
+
+
+
 /** interface method to detect the structure including presolving */
 SCIP_RETCODE DECdetectStructure(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -688,6 +1082,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CONSHDLRDATA* conshdlrdata;
 
    gcg::Seeedpool seeedpoolunpresolved(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
+   seeedpoolunpresolved.calcConsClassifierAndNBlockCandidates(scip);
    std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
    std::vector<std::vector<int>> conssClassDistributions;         /**< collection of different constraint class distributions */
    std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
@@ -769,8 +1164,9 @@ SCIP_RETCODE DECdetectStructure(
 
    if( conshdlrdata->ndecomps == 0 )
    {
-     conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
-
+     if( conshdlrdata->seeedpool == NULL )
+        conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+     conshdlrdata->seeedpool->calcConsClassifierAndNBlockCandidates(scip);
 	  if( calculateOrigDecomps )
 	  {
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");

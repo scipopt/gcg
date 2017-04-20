@@ -44,8 +44,6 @@
 
 
 
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -132,6 +130,73 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    );
+
+
+/** creates the seeedpool **/
+SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** creates the seeedpool for the unpresolved problem **/
+SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+
+/** creates a user seeed for the presolved problem **/
+SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** creates a user seeed for the unpresolved problem **/
+SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeedUnpresolved(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** sets the number of blocks */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
+   SCIP*                 scip,                /**< SCIP data structure */
+   int                   nblocks              /**< number of blocks */
+   );
+
+
+/** sets a constraint by name to a block in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           consname,            /**< name of the constraint */
+   int                   blockid              /* block index ( counting from 0) */
+   );
+
+/** sets a constraint by name to the master in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToMaster(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           consname
+   );
+
+/** sets a variable by name to a block in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           varname,             /**< name of the variable */
+   int                   blockid              /**< block index ( counting from 0) */
+   );
+
+/** sets a variable by name to the master in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToMaster(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           varname              /**< name of the variable */
+   );
+
+/** sets a variable by name to the linking variables in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           varname              /**< name of the variable */
+   );
+
+/** finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if complete etc */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
+   SCIP*                 scip                 /**< SCIP data structure */
+   );
+
 
 /** interface method to detect the structure */
 extern
