@@ -101,7 +101,7 @@ public:
 
    std::vector<int>                 listofancestorids;          /**< vector containing detector indices that worked on that seeed */
 
-   /** datastructure to store information if this seeed stems from a seeed concerning the uinpresolved problem */
+   /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
    bool                             stemsFromUnpresolved;
    bool                             isFinishedByFinisherUnpresolved; /**< was the ancestor seeed for the unpresolved problem finished by the finishseeed() method of a detector */
    DEC_DETECTOR*                    finishedUnpresolvedBy;           /**< index of dinishing detector of unpresolved ancestor seeed */

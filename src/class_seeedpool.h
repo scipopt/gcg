@@ -127,7 +127,7 @@ private:
 
    std::vector<SeeedPtr>                        translatedOrigSeeeds;   /**< seeeds that are translated seeeds from found ones for the original problem */
 
-   int											helpvisucounter;
+   int											         helpvisucounter;
 
 public:
 
@@ -141,6 +141,10 @@ public:
       );
 
    ~Seeedpool();
+
+   SCIP_RETCODE calcConsClassifierAndNBlockCandidates(
+      SCIP*               givenScip        /**< SCIP data structure */
+   );
 
    /** finds seeeds  */
    /*

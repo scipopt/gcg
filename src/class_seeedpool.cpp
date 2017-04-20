@@ -568,11 +568,6 @@ Seeedpool::Seeedpool(
    SCIP_CONSHDLR* conshdlr;  /** cons_decomp to get detectors */
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-   SCIP_Bool conssclassnnonzeros;
-   SCIP_Bool conssclassscipconstypes;
-   SCIP_Bool conssclassconsnamenonumbers;
-   SCIP_Bool conssclassconsnamelevenshtein;
-
    if( !transformed )
    {
       nVars = SCIPgetNOrigVars(scip);
@@ -631,7 +626,7 @@ Seeedpool::Seeedpool(
    }
 
    /** set up enabled finishing detectors */
-   for(int d = 0; d < conshdlrdata->ndetectors; ++d )
+   for( int d = 0; d < conshdlrdata->ndetectors; ++d )
    {
       DEC_DETECTOR* detector;
 
@@ -660,7 +655,7 @@ Seeedpool::Seeedpool(
    /** assign an index to every cons and var
     * @TODO: are all constraints/variables relevant? (probvars etc)  */
 
-   for(int i = 0; i < nConss; ++i)
+   for( int i = 0; i < nConss; ++i )
    {
       SCIP_CONS* relevantCons;
 
@@ -678,7 +673,7 @@ Seeedpool::Seeedpool(
       }
    }
 
-   for(int i = 0; i < nVars; ++i)
+   for( int i = 0; i < nVars; ++i )
    {
       SCIP_VAR* relevantVar;
 
@@ -724,7 +719,7 @@ Seeedpool::Seeedpool(
       SCIP_CALL_ABORT(GCGconsGetVars(scip, cons, currVars, nCurrVars));
       SCIP_CALL_ABORT(GCGconsGetVals(scip, cons, currVals, nCurrVars));
 
-      for(int currVar = 0; currVar < nCurrVars; ++currVar)
+      for( int currVar = 0; currVar < nCurrVars; ++currVar )
       {
          int varIndex;
          std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
@@ -754,40 +749,6 @@ Seeedpool::Seeedpool(
 
    decompositions = NULL;
 
-   if( transformed )
-   {
-      SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", &conssclassnnonzeros);
-      SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", &conssclassscipconstypes);
-      SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
-      SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
-   }
-   else
-   {
-      SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/origenabled", &conssclassnnonzeros);
-      SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/origenabled", &conssclassscipconstypes);
-      SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
-      SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
-   }
-
-   std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
-
-   if( conssclassnnonzeros )
-      addConssClassesForNNonzeros();
-   if( conssclassscipconstypes )
-      addConssClassesForSCIPConstypes();
-   if( conssclassconsnamenonumbers )
-      addConssClassesForConsnamesDigitFreeIdentical();
-
-   if( conssclassconsnamelevenshtein )
-      addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
-
-   /** Start of testing consclassescollection2, i.e. vector of ConsClassifier objects */
-   testConsClassesCollection( consclassescollection, consclassesnclasses, consclassescollection2 );
-   /** End of testing consclassescollection2, i.e. vector of ConsClassifier objects */
-
-   reduceConsclasses();
-
-   calcCandidatesNBlocks();
 
 
 }//end constructor
@@ -809,6 +770,56 @@ Seeedpool::~Seeedpool()
          delete consclassescollection2[help];
    }
 }
+
+
+/** calculates constraint and variables classes, and find block number candidates */
+SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
+   SCIP*               givenScip /**< SCIP data structure */
+   ){
+
+   SCIP_Bool conssclassnnonzeros;
+   SCIP_Bool conssclassscipconstypes;
+   SCIP_Bool conssclassconsnamenonumbers;
+   SCIP_Bool conssclassconsnamelevenshtein;
+
+   if( transformed )
+      {
+         SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", &conssclassnnonzeros);
+         SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", &conssclassscipconstypes);
+         SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
+         SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
+      }
+      else
+      {
+         SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/origenabled", &conssclassnnonzeros);
+         SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/origenabled", &conssclassscipconstypes);
+         SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
+         SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
+      }
+
+      std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
+
+      if( conssclassnnonzeros )
+         addConssClassesForNNonzeros();
+      if( conssclassscipconstypes )
+         addConssClassesForSCIPConstypes();
+      if( conssclassconsnamenonumbers )
+         addConssClassesForConsnamesDigitFreeIdentical();
+
+      if( conssclassconsnamelevenshtein )
+         addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
+
+      /** Start of testing consclassescollection2, i.e. vector of ConsClassifier objects */
+      testConsClassesCollection( consclassescollection, consclassesnclasses, consclassescollection2 );
+      /** End of testing consclassescollection2, i.e. vector of ConsClassifier objects */
+
+      reduceConsclasses();
+
+      calcCandidatesNBlocks();
+
+
+}
+
 
  /** finds decompositions  */
   /** access coefficient matrix constraint-wise */

@@ -31,6 +31,7 @@
  * @author Martin Bergner
  * @author Gerald Gamrath
  * @author Christian Puchert
+ * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -50,6 +51,10 @@
 #include "cons_decomp.h"
 #include "pub_decomp.h"
 
+#include "class_seeed.h"
+
+typedef gcg::Seeed* SeeedPtr;
+
 #define READER_NAME             "decreader"
 #define READER_DESC             "file reader for blocks in dec format"
 #define READER_EXTENSION        "dec"
@@ -64,7 +69,7 @@
 /** section in DEC File */
 enum DecSection
 {
-   DEC_START, DEC_PRESOLVED, DEC_NBLOCKS, DEC_BLOCK, DEC_MASTERCONSS, DEC_END
+   DEC_START, DEC_PRESOLVED, DEC_NBLOCKS, DEC_BLOCKCONSS, DEC_MASTERCONSS, DEC_BLOCKVARS, DEC_MASTERVARS, DEC_LINKINGVARS, DEC_END
 };
 typedef enum DecSection DECSECTION;
 
@@ -92,6 +97,7 @@ struct DecInput
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    DECSECTION section;                       /**< current section */
    SCIP_Bool haserror;                       /**< flag to indicate an error occurence */
+   SeeedPtr seeed;                           /**< incomplete decomposition */
 };
 typedef struct DecInput DECINPUT;
 
@@ -436,11 +442,11 @@ SCIP_Bool isNewSection(
       return TRUE;
    }
 
-   if( strcasecmp(decinput->token, "BLOCK") == 0 )
+   if( strcasecmp(decinput->token, "BLOCK") == 0 || strcasecmp(decinput->token, "BLOCKCONSS") == 0 || strcasecmp(decinput->token, "BLOCKCONS") == 0)
    {
       int blocknr;
 
-      decinput->section = DEC_BLOCK;
+      decinput->section = DEC_BLOCKCONSS;
 
       if( getNextToken(decinput) )
       {
@@ -458,7 +464,7 @@ SCIP_Bool isNewSection(
       else
          syntaxError(scip, decinput, "no block number after block keyword!\n");
 
-      SCIPdebugMessage("new section: BLOCK %d\n", decinput->blocknr);
+      SCIPdebugMessage("new section: BLOCKCONSS %d\n", decinput->blocknr);
 
       return TRUE;
 
@@ -472,6 +478,54 @@ SCIP_Bool isNewSection(
 
       return TRUE;
    }
+
+   if( strcasecmp(decinput->token, "BLOCKVARS") == 0 || strcasecmp(decinput->token, "BLOCKVAR") == 0 )
+   {
+      int blocknr;
+
+      decinput->section = DEC_BLOCKVARS;
+
+      if( getNextToken(decinput) )
+      {
+         /* read block number */
+         if( isInt(scip, decinput, &blocknr) )
+         {
+            assert(blocknr >= 0);
+            assert(blocknr <= decinput->nblocks);
+
+            decinput->blocknr = blocknr - 1;
+         }
+         else
+            syntaxError(scip, decinput, "no block number after block keyword!\n");
+      }
+      else
+         syntaxError(scip, decinput, "no block number after block keyword!\n");
+
+      SCIPdebugMessage("new section: BLOCKVARS %d\n", decinput->blocknr);
+
+      return TRUE;
+
+   }
+
+   if( strcasecmp(decinput->token, "MASTERVARS") == 0 || strcasecmp(decinput->token, "MASTERVAR") == 0 )
+   {
+      decinput->section = DEC_MASTERVARS;
+
+      SCIPdebugMessage("new section: MASTERVARS\n");
+
+      return TRUE;
+   }
+
+   if( strcasecmp(decinput->token, "LINKINGVARS") == 0 || strcasecmp(decinput->token, "LINKINGVAR") == 0 )
+   {
+      decinput->section = DEC_LINKINGVARS;
+
+      SCIPdebugMessage("new section: LINKINGVARS\n");
+
+      return TRUE;
+   }
+
+
 
    return FALSE;
 }
@@ -572,7 +626,7 @@ SCIP_RETCODE readNBlocks(
 
 /** reads the blocks section */
 static
-SCIP_RETCODE readBlock(
+SCIP_RETCODE readBlockconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
    SCIP_READERDATA*      readerdata          /**< reader data */
@@ -656,6 +710,94 @@ SCIP_RETCODE readBlock(
    return SCIP_OKAY;
 }
 
+/** reads the block vars section */
+static
+SCIP_RETCODE readBlockvars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput,           /**< DEC reading data */
+   SCIP_READERDATA*      readerdata          /**< reader data */
+   )
+{
+   int blockid;
+
+   SCIP_Bool success;
+   assert(decinput != NULL);
+   assert(readerdata != NULL);
+
+   while( getNextToken(decinput) )
+   {
+      int i;
+      SCIP_CONS* cons;
+      SCIP_VAR** curvars = NULL;
+      int ncurvars;
+
+      SCIP_Bool conshasvar = FALSE;
+      /* check if we reached a new section */
+      if( isNewSection(scip, decinput) )
+         break;
+
+      /* the token must be the name of an existing cons */
+      cons = SCIPfindCons(scip, decinput->token);
+      if( cons == NULL )
+      {
+         syntaxError(scip, decinput, "unknown constraint in block section");
+         break;
+      }
+
+      if( !SCIPconsIsActive(cons) )
+      {
+         assert( !SCIPhashmapExists(readerdata->constoblock, cons));
+         continue;
+      }
+
+      /* get all curvars for the specific constraint */
+      SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
+      assert(success);
+      if( ncurvars > 0 )
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetConsVars(scip, cons, curvars, ncurvars, &success) );
+         assert(success);
+      }
+
+      blockid = decinput->blocknr;
+
+      for( i = 0; i < ncurvars; i ++ )
+      {
+         assert(curvars != NULL); /* for flexelint */
+         if( decinput->presolved )
+         {
+            SCIP_VAR* var = SCIPvarGetProbvar(curvars[i]);
+            if( !GCGisVarRelevant(var) )
+               continue;
+         }
+
+         conshasvar = TRUE;
+      }
+
+      SCIPfreeBufferArrayNull(scip, &curvars);
+
+      if( !conshasvar )
+      {
+         assert(!SCIPhashmapExists(readerdata->constoblock, cons));
+         SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n",  SCIPconsGetName(cons));
+         continue;
+      }
+      /*
+       * saving block <-> constraint
+       */
+
+      assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*)(size_t) LINKINGVALUE);
+
+      SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(cons), blockid);
+      SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blockid+1)) );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
 /** reads the masterconss section */
 static
 SCIP_RETCODE readMasterconss(
@@ -699,6 +841,96 @@ SCIP_RETCODE readMasterconss(
 
    return SCIP_OKAY;
 }
+
+/** reads the mastervars section */
+static
+SCIP_RETCODE readMastervars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput,           /**< DEC reading data */
+   SCIP_READERDATA*      readerdata          /**< reader data */
+   )
+{
+   assert(scip != NULL);
+   assert(decinput != NULL);
+   assert(readerdata != NULL);
+
+   while( getNextToken(decinput) )
+   {
+      SCIP_CONS* cons;
+
+      /* check if we reached a new section */
+      if( isNewSection(scip, decinput) )
+         break;
+
+      /* the token must be the name of an existing constraint */
+      cons = SCIPfindCons(scip, decinput->token);
+      if( cons == NULL )
+      {
+         syntaxError(scip, decinput, "unknown constraint in masterconss section");
+         break;
+      }
+      else
+      {
+         if( !SCIPhashmapExists( readerdata->constoblock, cons) )
+         {
+            SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n", SCIPconsGetName(cons));
+            continue;
+         }
+
+         assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) LINKINGVALUE);
+
+         SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** reads the linkingvars section */
+static
+SCIP_RETCODE readLinkingvars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput,           /**< DEC reading data */
+   SCIP_READERDATA*      readerdata          /**< reader data */
+   )
+{
+   assert(scip != NULL);
+   assert(decinput != NULL);
+   assert(readerdata != NULL);
+
+   while( getNextToken(decinput) )
+   {
+      SCIP_CONS* cons;
+
+      /* check if we reached a new section */
+      if( isNewSection(scip, decinput) )
+         break;
+
+      /* the token must be the name of an existing constraint */
+      cons = SCIPfindCons(scip, decinput->token);
+      if( cons == NULL )
+      {
+         syntaxError(scip, decinput, "unknown constraint in masterconss section");
+         break;
+      }
+      else
+      {
+         if( !SCIPhashmapExists( readerdata->constoblock, cons) )
+         {
+            SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n", SCIPconsGetName(cons));
+            continue;
+         }
+
+         assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) LINKINGVALUE);
+
+         SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
 
 /** fills the whole Decomp struct after the dec file has been read */
 static
@@ -821,6 +1053,23 @@ SCIP_RETCODE readDECFile(
                retcode = SCIP_READERROR;
                break;
             }
+            /** create the seeed from the right seeedpool */
+            if ( decinput->presolved )
+            {
+               gcg::Seeedpool* seeedpool = NULL;
+
+  //             if ( SCIPconshdlrDecompGetSeeedpool(scip) == NULL )
+               SCIPconshdlrDecompCreateSeeedpool(scip);
+  //             seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
+//               decinput->seeed = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars() );
+
+            }
+            else
+            {
+
+            }
+
+
             break;
 
          case DEC_NBLOCKS:
@@ -838,13 +1087,28 @@ SCIP_RETCODE readDECFile(
             }
             break;
 
-         case DEC_BLOCK:
-            SCIP_CALL( readBlock(scip, decinput, readerdata) );
+         case DEC_BLOCKCONSS:
+            SCIP_CALL( readBlockconss(scip, decinput, readerdata) );
             break;
 
          case DEC_MASTERCONSS:
             SCIP_CALL( readMasterconss(scip, decinput, readerdata) );
             break;
+
+         case DEC_BLOCKVARS:
+            SCIP_CALL( readBlockvars(scip, decinput, readerdata) );
+            break;
+
+
+         case DEC_MASTERVARS:
+            SCIP_CALL( readMastervars(scip, decinput, readerdata) );
+            break;
+
+         case DEC_LINKINGVARS:
+            SCIP_CALL( readLinkingvars(scip, decinput, readerdata) );
+            break;
+
+
 
          case DEC_END: /* this is already handled in the while() loop */
          default:
