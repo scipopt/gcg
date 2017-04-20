@@ -1062,7 +1062,20 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
       currseeedpool = conshdlrdata->curruserseeed->stemsFromUnpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
 
-      conshdlrdata->curruserseeed->considerImplicits(currseeedpool);
+      conshdlrdata->curruserseeed->flushBooked();
+      currseeedpool->prepareSeeed(conshdlrdata->curruserseeed);
+
+      if( conshdlrdata->curruserseeed->isComplete() )
+      {
+/**@TODO create decdecomp from seeed */
+         conshdlrdata->allrelevantseeeds.push_back(conshdlrdata->curruserseeed);
+      }
+      else
+      {
+         conshdlrdata->incompleteseeeds.push_back(conshdlrdata->curruserseeed);
+      }
+
+      conshdlrdata->curruserseeed = NULL;
 
       return SCIP_OKAY;
 }

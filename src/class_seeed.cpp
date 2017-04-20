@@ -2943,6 +2943,15 @@ bool Seeed::isTrivial()
    return false;
 }
 
+
+bool Seeed::isComplete()
+{
+
+   return ( 0 == getNOpenconss() && 0 == getNOpenvars() );
+}
+
+
+
 /** return whether the var is a var of the block */
 bool Seeed::isVarBlockvarOfBlock(int var, int block)
 {

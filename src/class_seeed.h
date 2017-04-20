@@ -454,6 +454,11 @@ public:
    bool isTrivial(
    );
 
+   /** is this seeed complete (i.e. has it least one open constraint or one open variable ) */
+   bool isComplete(
+   );
+
+
 /* method to check whether seeed is equal to given other seeed */
    SCIP_RETCODE isEqual(
       Seeed*               otherseeed,          /**< other seeed */
