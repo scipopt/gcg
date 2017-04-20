@@ -1048,7 +1048,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
 
       varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
 
-      conshdlrdata->curruserseeed->bookedAsLinkingVars(varindex);
+      conshdlrdata->curruserseeed->bookAsLinkingVar(varindex);
 
       return SCIP_OKAY;
 

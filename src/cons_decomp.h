@@ -132,6 +132,11 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    );
 
 
+/** creates the seeedpool for the presolved problem **/
+SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 
 /** creates the seeedpool for the unpresolved problem **/
 SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
