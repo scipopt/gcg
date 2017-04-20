@@ -28,6 +28,7 @@
 /**@file   cons_decomp.h
  * @brief  constraint handler for structure detection
  * @author Martin Bergner
+ * @author Michael Bastubbe
  *
  * This constraint handler will run all registered structure detectors in
  * increasing priority until the first detector finds a suitable structure.
