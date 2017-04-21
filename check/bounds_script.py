@@ -63,13 +63,10 @@ def generate_files(files):
             settings = 'default'
             for line in _file:
                 if line.startswith("loaded parameter file"):
-                    print line
-                    settings=line[3]
-                    print settings
+                    settings=line.split()[-1]
+                    #settings=settings[3]
                     settings=settings.split("/")[-1]
-                    print settings
                     settings = os.path.splitext(settings)[0]
-                    print settings
                 elif line.startswith("Original Program statistics:"):
                     orig = True
                 elif line.startswith("Master Program statistics:"):
@@ -95,8 +92,13 @@ def generate_files(files):
 
                     print df
                     df=df.astype(float)
-                    ax = df.plot(kind='line', y='pb', color='red', label='pb');
-                    df.plot(kind='line', y='db', color='blue', label='db', ax=ax);
+                    
+                    #fig, axes = plt.subplots(nrows=2, ncols=2)
+                    ax = None
+                    ax = df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.5);
+                    ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax);
+                    ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);
+                    
 
                     #fig = plot.get_figure()
                     plt.savefig(params['outdir']+"/"+name+"_"+settings+".png")

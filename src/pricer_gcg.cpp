@@ -195,7 +195,11 @@ struct SCIP_PricerData
    int                   nrootbounds;        /**< number of stored bounds */
    SCIP_Real*            rootpbs;            /**< array of primal bounds for the root LP, one bound for each pricing call */
    SCIP_Real*            rootdbs;            /**< array of dual bounds for the root LP, one bound for each pricing call */
-   int                   maxrootbounds;     /**< maximal number of bounds */
+   SCIP_Real*            roottimes;          /**< array of times spent for root LP */
+   SCIP_Real*            rootdualdiffs;      /**< array of differences to last dual solution */
+   int                   maxrootbounds;      /**< maximal number of bounds */
+   SCIP_Real             rootfarkastime;     /**< time of last Farkas call */
+   SCIP_Real             dualdiff;           /**< difference to last dual solution */
 };
 
 
@@ -369,6 +373,8 @@ SCIP_RETCODE ObjPricerGcg::ensureSizeRootBounds(
    assert(pricerdata != NULL);
    assert(pricerdata->rootdbs != NULL);
    assert(pricerdata->rootpbs != NULL);
+   assert(pricerdata->roottimes != NULL);
+   assert(pricerdata->rootdualdiffs != NULL);
 
    if( pricerdata->maxrootbounds < size )
    {
@@ -376,6 +382,8 @@ SCIP_RETCODE ObjPricerGcg::ensureSizeRootBounds(
       pricerdata->maxrootbounds = SCIPcalcMemGrowSize(scip_, size);
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &(pricerdata->rootpbs), oldsize, pricerdata->maxrootbounds) );
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &(pricerdata->rootdbs), oldsize, pricerdata->maxrootbounds) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &(pricerdata->roottimes), oldsize, pricerdata->maxrootbounds) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &(pricerdata->rootdualdiffs), oldsize, pricerdata->maxrootbounds) );
    }
    assert(pricerdata->maxrootbounds >= size);
 
@@ -1281,7 +1289,10 @@ SCIP_RETCODE ObjPricerGcg::addRootBounds(
    SCIP_CALL( ensureSizeRootBounds(pricerdata->nrootbounds + 1) );
    pricerdata->rootpbs[pricerdata->nrootbounds] = primalbound;
    pricerdata->rootdbs[pricerdata->nrootbounds] = dualbound;
+   pricerdata->roottimes[pricerdata->nrootbounds] = SCIPgetSolvingTime(scip_) - pricerdata->rootfarkastime;
+   pricerdata->rootdualdiffs[pricerdata->nrootbounds] = pricerdata->dualdiff;
    //SCIPinfoMessage(scip_, NULL, "Add new bounds: \n pb = %f\n db = %f\n", primalbound, dualbound);
+   SCIPdebugMessage("Add new bounds: \n pb = %f\n db = %f\n", primalbound, dualbound);
    pricerdata->nrootbounds++;
 
 
@@ -2256,6 +2267,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    int j;
    int nfoundvars;
 
+   SCIP_Real** olddualvalues;
+   SCIP_Real* olddualconv;
+
+   int nprobvars;
+
 #ifndef NDEBUG
    int oldnfoundvars;
 #endif
@@ -2329,6 +2345,27 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    colpoolupdated = FALSE;
 
+   if( pricerdata->calls > 1 && pricetype->getType() == GCG_PRICETYPE_REDCOST )
+   {
+      SCIP_CALL( SCIPallocBufferArray(scip_, &olddualvalues, pricerdata->npricingprobs) );
+      SCIP_CALL( SCIPallocBufferArray(scip_, &olddualconv, pricerdata->npricingprobs) );
+
+      for( i = 0; i < pricerdata->npricingprobs; i++ )
+      {
+         if( pricerdata->pricingprobs[i] == NULL )
+            continue;
+
+         nprobvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
+
+         olddualconv[i] = pricerdata->dualsolconv[i];
+         SCIP_CALL( SCIPallocBufferArray(scip_, &(olddualvalues[i]), nprobvars) );
+
+         for( j = 0; j < nprobvars; j++ )
+            olddualvalues[i][j] = pricerdata->realdualvalues[i][j];
+      }
+   }
+
+
    do
    {
       bestredcost = 0.0;
@@ -2342,7 +2379,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( stabilized )
          stabilization->updateNode();
 
+//      SCIPinfoMessage(scip_, NULL, "stab = %d\n",stabilized);
+
       stabilized = stabilized && stabilization->isStabilized();
+
+//      SCIPinfoMessage(scip_, NULL, "stab = %d\n",stabilized);
 
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
@@ -2680,6 +2721,50 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    else if( pricinghaserror )
       *result = SCIP_DIDNOTRUN;
 
+   if( pricerdata->calls > 1 && pricetype->getType() == GCG_PRICETYPE_REDCOST )
+   {
+      SCIP_Real dualdiff;
+      int ndiffs;
+
+      dualdiff = 0.0;
+      ndiffs = 0;
+
+      for( i = 0; i < pricerdata->npricingprobs; i++ )
+      {
+         if( pricerdata->pricingprobs[i] == NULL )
+            continue;
+
+         nprobvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
+
+         for( j = 0; j < nprobvars; j++ )
+         {
+            dualdiff += SQR(olddualvalues[i][j] - pricerdata->realdualvalues[i][j]);
+            if( !SCIPisZero(scip_, olddualvalues[i][j] - pricerdata->realdualvalues[i][j]) )
+               ++ndiffs;
+         }
+
+         dualdiff += olddualconv[i] - pricerdata->dualsolconv[i];
+         if( !SCIPisZero(scip_, olddualconv[i] - pricerdata->dualsolconv[i]) )
+            ++ndiffs;
+
+         SCIPfreeBufferArray(scip_, &(olddualvalues[i]));
+
+      }
+      SCIPfreeBufferArray(scip_, &olddualvalues);
+      SCIPfreeBufferArray(scip_, &olddualconv);
+
+      dualdiff = SQRT(dualdiff);
+
+      if( ndiffs == 0 )
+         SCIPinfoMessage(scip_, NULL, "ndiffs is zero\n");
+
+      if( SCIPisZero(scip_, dualdiff) )
+         SCIPinfoMessage(scip_, NULL, "dualdiff is zero\n");
+
+      pricerdata->dualdiff = dualdiff;
+   }
+
+
    return SCIP_OKAY;
 }
 
@@ -2880,6 +2965,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
       pricerdata->eagerage = 0;
    }
+
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype->getType() == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
 
@@ -3092,10 +3178,14 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->maxpricedvars = 50;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
+   pricerdata->rootfarkastime = 0.0;
+   pricerdata->dualdiff = 0.0;
    pricerdata->nrootbounds = 0;
    pricerdata->maxrootbounds = 50;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootdbs, pricerdata->maxrootbounds) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->roottimes, pricerdata->maxrootbounds) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootdualdiffs, pricerdata->maxrootbounds) );
 
    pricerdata->rootnodedegeneracy = 0.0;
    pricerdata->avgrootnodedegeneracy = 0.0;
@@ -3176,8 +3266,12 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 
    SCIPfreeBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds);
    SCIPfreeBlockMemoryArray(scip, &pricerdata->rootdbs, pricerdata->maxrootbounds);
+   SCIPfreeBlockMemoryArray(scip, &pricerdata->roottimes, pricerdata->maxrootbounds);
+   SCIPfreeBlockMemoryArray(scip, &pricerdata->rootdualdiffs, pricerdata->maxrootbounds);
    pricerdata->maxrootbounds = 0;
    pricerdata->nrootbounds = 0;
+   pricerdata->rootfarkastime = 0.0;
+   pricerdata->dualdiff = 0.0;
 
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->freeclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->transformclock)) );
@@ -3244,9 +3338,10 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    retcode = priceNewVariables(reducedcostpricing, result, lowerbound);
    SCIP_CALL( reducedcostpricing->stopClock() );
 
-   if( SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
-      SCIP_CALL( addRootBounds(SCIPgetLPObjval(scip_), *lowerbound) );
-
+   if( SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) && *result != SCIP_DIDNOTRUN)
+   {   SCIP_CALL( addRootBounds(SCIPgetLPObjval(scip_), *lowerbound) );
+      SCIPdebugMessage("Add bounds, %f\n", *lowerbound);
+   }
    return retcode;
 }
 
@@ -3295,6 +3390,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       if( norigsols > 0 )
       {
          farkaspricing->incCalls();
+         pricerdata->rootfarkastime =  SCIPgetSolvingTime(scip_);
          return SCIP_OKAY;
       }
    }
@@ -3302,6 +3398,8 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    SCIP_CALL( farkaspricing->startClock() );
    retcode = priceNewVariables(farkaspricing, result, NULL);
    SCIP_CALL( farkaspricing->stopClock() );
+
+   pricerdata->rootfarkastime =  SCIPgetSolvingTime(scip_);
 
    return retcode;
 }
@@ -3763,17 +3861,21 @@ void GCGpricerPrintStatistics(
    }
 
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Root bounds \niter\tpb\tdb\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Root bounds \niter\tpb\tdb\ttime\tdualdiff\n");
 
    for( i = 0; i < pricerdata->nrootbounds; i++ )
    {
       SCIP_Real pb;
       SCIP_Real db;
+      SCIP_Real time;
+      SCIP_Real dualdiff;
 
       pb = pricerdata->rootpbs[i];
       db = pricerdata->rootdbs[i];
+      time = pricerdata->roottimes[i];
+      dualdiff = pricerdata->rootdualdiffs[i];
 
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\t%.5f\t%.5f\n", i, pb, db);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\t%.5f\t%.5f\t%.5f\t%.5f\n", i, pb, db, time, dualdiff);
    }
 
 
