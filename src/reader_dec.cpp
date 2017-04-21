@@ -69,7 +69,7 @@ typedef gcg::Seeed* SeeedPtr;
 /** section in DEC File */
 enum DecSection
 {
-   DEC_START, DEC_PRESOLVED, DEC_NBLOCKS, DEC_BLOCKCONSS, DEC_MASTERCONSS, DEC_BLOCKVARS, DEC_MASTERVARS, DEC_LINKINGVARS, DEC_END
+   DEC_START, DEC_CONSDEFAULTMASTER, DEC_PRESOLVED, DEC_NBLOCKS, DEC_BLOCKCONSS, DEC_MASTERCONSS, DEC_BLOCKVARS, DEC_MASTERVARS, DEC_LINKINGVARS, DEC_END
 };
 typedef enum DecSection DECSECTION;
 
@@ -93,6 +93,7 @@ struct DecInput
    int linepos;                              /**< current line position (column) */
    SCIP_Bool presolved;                      /**< does the decomposition refer to the presolved problem? */
    SCIP_Bool haspresolvesection;             /**< does the decomposition have a presolved section  */
+   SCIP_Bool consdefaultmaster;              /**< does the unspecified constraints should be forced to the master (for downward compatibility)  */
    int nblocks;                              /**< number of blocks */
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    DECSECTION section;                       /**< current section */
@@ -428,6 +429,13 @@ SCIP_Bool isNewSection(
    /* reinstall the previous token by swapping back the token buffer */
    swapTokenBuffer(decinput);
 
+   if( strcasecmp(decinput->token, "CONSDEFAULTMASTER") == 0 )
+      {
+         SCIPdebugMessage("(line %d) new section: CONSDEFAULTMASTER\n", decinput->linenumber);
+         decinput->section = DEC_CONSDEFAULTMASTER;
+         return TRUE;
+      }
+
    if( strcasecmp(decinput->token, "PRESOLVED") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: PRESOLVED\n", decinput->linenumber);
@@ -551,6 +559,44 @@ SCIP_RETCODE readStart(
    return SCIP_OKAY;
 }
 
+/** reads the consdefaultmaster section */
+static
+SCIP_RETCODE readConsDefaultMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput            /**< DEC reading data */
+   )
+{
+   int consdefaultmaster;
+
+   assert(scip != NULL);
+   assert(decinput != NULL);
+
+   while( getNextToken(decinput) )
+   {
+      /* check if we reached a new section */
+      if( isNewSection(scip, decinput) )
+         return SCIP_OKAY;
+
+      /* read number of blocks */
+      if( isInt(scip, decinput, &consdefaultmaster) )
+      {
+         decinput->haspresolvesection = TRUE;
+         if( consdefaultmaster == 1 )
+            decinput->consdefaultmaster = TRUE;
+         else if ( consdefaultmaster == 0 )
+            decinput->consdefaultmaster = FALSE;
+         else
+            syntaxError(scip, decinput, "consdefaultmaster parameter must be 0 or 1");
+         SCIPdebugMessage("The constraints that are not specified is this decomposition are %s  forced to the master\n",
+            decinput->consdefaultmaster ? "" : " not");
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
 /** reads the presolved section */
 static
 SCIP_RETCODE readPresolved(
@@ -614,7 +660,10 @@ SCIP_RETCODE readNBlocks(
       if( isInt(scip, decinput, &nblocks) )
       {
          if( decinput->nblocks == NOVALUE )
+         {
             decinput->nblocks = nblocks;
+            SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(scip, nblocks);
+         }
          else
             syntaxError(scip, decinput, "2 integer values in nblocks section");
          SCIPdebugMessage("Number of blocks = %d\n", decinput->nblocks);
@@ -705,6 +754,7 @@ SCIP_RETCODE readBlockconss(
 
       SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(cons), blockid);
       SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blockid+1)) );
+      SCIP_CALL(SCIPconshdlrDecompUserSeeedSetConsToBlock(scip, decinput->token, blockid) );
    }
 
    return SCIP_OKAY;
@@ -720,77 +770,44 @@ SCIP_RETCODE readBlockvars(
 {
    int blockid;
 
-   SCIP_Bool success;
    assert(decinput != NULL);
    assert(readerdata != NULL);
 
    while( getNextToken(decinput) )
    {
-      int i;
-      SCIP_CONS* cons;
-      SCIP_VAR** curvars = NULL;
-      int ncurvars;
+      SCIP_Var* var;
+//      SCIP_VAR** curvars = NULL;
+//      int ncurvars;
 
-      SCIP_Bool conshasvar = FALSE;
+//      SCIP_Bool conshasvar = FALSE;
       /* check if we reached a new section */
       if( isNewSection(scip, decinput) )
          break;
 
       /* the token must be the name of an existing cons */
-      cons = SCIPfindCons(scip, decinput->token);
-      if( cons == NULL )
+      var = SCIPfindVar(scip, decinput->token);
+      if( var == NULL )
       {
-         syntaxError(scip, decinput, "unknown constraint in block section");
+         syntaxError(scip, decinput, "unknown variable in block section");
          break;
       }
 
-      if( !SCIPconsIsActive(cons) )
+      if( !SCIPvarIsActive(var) )
       {
-         assert( !SCIPhashmapExists(readerdata->constoblock, cons));
+         SCIPwarningMessage(scip, "Var <%s> has been fixed or aggregated by presolving, skipping.\n",  SCIPvarGetName(var));
          continue;
       }
 
-      /* get all curvars for the specific constraint */
-      SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
-      assert(success);
-      if( ncurvars > 0 )
-      {
-         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-         SCIP_CALL( SCIPgetConsVars(scip, cons, curvars, ncurvars, &success) );
-         assert(success);
-      }
 
       blockid = decinput->blocknr;
 
-      for( i = 0; i < ncurvars; i ++ )
-      {
-         assert(curvars != NULL); /* for flexelint */
-         if( decinput->presolved )
-         {
-            SCIP_VAR* var = SCIPvarGetProbvar(curvars[i]);
-            if( !GCGisVarRelevant(var) )
-               continue;
-         }
-
-         conshasvar = TRUE;
-      }
-
-      SCIPfreeBufferArrayNull(scip, &curvars);
-
-      if( !conshasvar )
-      {
-         assert(!SCIPhashmapExists(readerdata->constoblock, cons));
-         SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n",  SCIPconsGetName(cons));
-         continue;
-      }
-      /*
+            /*
        * saving block <-> constraint
        */
 
-      assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*)(size_t) LINKINGVALUE);
 
-      SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(cons), blockid);
-      SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blockid+1)) );
+      SCIPconshdlrDecompUserSeeedSetVarToBlock(scip, decinput->token, blockid);
+
    }
 
    return SCIP_OKAY;
@@ -835,6 +852,7 @@ SCIP_RETCODE readMasterconss(
 
          assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) LINKINGVALUE);
 
+         SCIPconshdlrDecompUserSeeedSetConsToMaster(scip, decinput->token);
          SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
       }
    }
@@ -856,30 +874,30 @@ SCIP_RETCODE readMastervars(
 
    while( getNextToken(decinput) )
    {
-      SCIP_CONS* cons;
+      SCIP_VAR* var;
 
       /* check if we reached a new section */
       if( isNewSection(scip, decinput) )
          break;
 
       /* the token must be the name of an existing constraint */
-      cons = SCIPfindCons(scip, decinput->token);
-      if( cons == NULL )
+      var = SCIPfindVar(scip, decinput->token);
+      if( var == NULL )
       {
-         syntaxError(scip, decinput, "unknown constraint in masterconss section");
+         syntaxError(scip, decinput, "unknown constraint in mastervars section");
          break;
       }
       else
       {
-         if( !SCIPhashmapExists( readerdata->constoblock, cons) )
+         if( !SCIPvarIsActive(var) )
          {
-            SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n", SCIPconsGetName(cons));
+            SCIPwarningMessage(scip, "Var <%s> has been fixed or aggregated by presolving, skipping.\n", SCIPvarGetName(var));
             continue;
          }
 
-         assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) LINKINGVALUE);
+         SCIPconshdlrDecompUserSeeedSetVarToMaster(scip, decinput->token);
 
-         SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
+         SCIPdebugMessage("var %s is master constraint\n", decinput->token);
       }
    }
 
@@ -900,28 +918,28 @@ SCIP_RETCODE readLinkingvars(
 
    while( getNextToken(decinput) )
    {
-      SCIP_CONS* cons;
+      SCIP_Var* var;
 
       /* check if we reached a new section */
       if( isNewSection(scip, decinput) )
          break;
 
       /* the token must be the name of an existing constraint */
-      cons = SCIPfindCons(scip, decinput->token);
-      if( cons == NULL )
+      var = SCIPfindVar(scip, decinput->token);
+      if( var == NULL )
       {
          syntaxError(scip, decinput, "unknown constraint in masterconss section");
          break;
       }
       else
       {
-         if( !SCIPhashmapExists( readerdata->constoblock, cons) )
+         if( !SCIPvarIsActive(var) )
          {
-            SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n", SCIPconsGetName(cons));
+            SCIPwarningMessage(scip, "Var <%s> has been fixed or aggregated by presolving, skipping.\n", SCIPvarGetName(var));
             continue;
          }
 
-         assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) LINKINGVALUE);
+         SCIPconshdlrDecompUserSeeedSetVarToLinking(scip, decinput->token);
 
          SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
       }
@@ -1044,6 +1062,11 @@ SCIP_RETCODE readDECFile(
             SCIP_CALL( readStart(scip, decinput) );
             break;
             /**@bug the reader should presolve the problem */
+         case DEC_CONSDEFAULTMASTER:
+            SCIP_CALL( readConsDefaultMaster(scip, decinput) );
+            break;
+            /**@bug the reader should presolve the problem */
+
          case DEC_PRESOLVED:
             SCIP_CALL( readPresolved(scip, decinput) );
             if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
@@ -1056,7 +1079,7 @@ SCIP_RETCODE readDECFile(
             /** create the seeed from the right seeedpool */
             if ( decinput->presolved )
             {
-               gcg::Seeedpool* seeedpool = NULL;
+//               gcg::Seeedpool* seeedpool = NULL;
 
   //             if ( SCIPconshdlrDecompGetSeeedpool(scip) == NULL )
                SCIPconshdlrDecompCreateSeeedpool(scip);

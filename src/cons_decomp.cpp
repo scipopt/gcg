@@ -39,6 +39,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+//#define SCIP_DEBUG
+
 #include <assert.h>
 #include <iostream>
 #include <stdio.h>
@@ -106,7 +108,7 @@ struct SCIP_ConshdlrData
    DEC_DECOMP**          decdecomps;                        /**< array of decomposition structures */
    DEC_DETECTOR**        detectors;                         /**< array of structure detectors */
    int*                  priorities;                        /**< priorities of the detectors */
-   std::vector<SCIP_HASHMAP*> initalpartialdecomps;                      /**< possible incomplete decompositions given by user */
+ //  std::vector<SCIP_HASHMAP*> initalpartialdecomps;                      /**< possible incomplete decompositions given by user */
    int                   ndetectors;                        /**< number of detectors */
    SCIP_CLOCK*           detectorclock;                     /**< clock to measure detection time */
    SCIP_Bool             hasrun;                            /**< flag to indicate whether we have already detected */
@@ -130,8 +132,10 @@ struct SCIP_ConshdlrData
 
    gcg::Seeedpool*		 seeedpool;                         /** seeedpool that manages the detection  process for the presolved transformed problem */
    gcg::Seeedpool*       seeedpoolunpresolved;              /** seeedpool that manages the deetction of the unpresolved problem */
-   std::vector<SeeedPtr> allrelevantseeeds;                 /** collection  of all relevant seeeds ( i.e. all seeeds w.r.t. copies ) */
-   std::vector<SeeedPtr> incompleteseeeds;                  /** collection of incomplete seeeds originatging from incomplete decompostions given by the users */
+   SeeedPtr*             allrelevantseeeds;                 /** collection  of all relevant seeeds ( i.e. all seeeds w.r.t. copies ) */
+   SeeedPtr*             incompleteseeeds;                  /** collection of incomplete seeeds originatging from incomplete decompostions given by the users */
+   int                   nallrelevantseeeds;                /** number  of all relevant seeeds ( i.e. all seeeds w.r.t. copies ) */
+   int                   nincompleteseeeds;                 /** number  of incomplete seeeds originatging from incomplete decompostions given by the users */
    SCIP_HASHMAP*         seeedToDecdecomp;                  /**< hashmap from seeeds to the corresponding decdecomp (or NULL if the seeed is incomplete)  */
    SCIP_HASHMAP*         decdecompToSeeed;                  /**< hashmap from decompositions to the corresponding seeed */
 
@@ -371,8 +375,10 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->enableorigdetection = FALSE;
    conshdlrdata->seeedpoolunpresolved = NULL;
    conshdlrdata->seeedpool = NULL;
-   conshdlrdata->allrelevantseeeds = std::vector<gcg::Seeed*>(0);
-   conshdlrdata->incompleteseeeds = std::vector<gcg::Seeed*>(0);
+   conshdlrdata->allrelevantseeeds = NULL;
+   conshdlrdata->incompleteseeeds = NULL;
+   conshdlrdata->nallrelevantseeeds = 0;
+   conshdlrdata->nincompleteseeeds = 0;
    conshdlrdata->decdecompToSeeed = NULL;
    conshdlrdata->seeedToDecdecomp = NULL;
    conshdlrdata->curruserseeed = NULL;
@@ -456,10 +462,11 @@ SCIP_RETCODE SCIPconshdlrDecompAddConsToBlock(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   conshdlrdata->initalpartialdecomps.push_back(consToBlock);
+   return SCIP_ERROR;
 
-   return SCIP_OKAY;
-}
+//   conshdlrdata->initalpartialdecomps.push_back(consToBlock);
+
+      }
 
 
 /** returns the decomposition structure **/
@@ -1090,11 +1097,17 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       if( conshdlrdata->curruserseeed->isComplete() )
       {
 /**@TODO create decdecomp from seeed */
-         conshdlrdata->allrelevantseeeds.push_back(conshdlrdata->curruserseeed);
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->allrelevantseeeds, (size_t)conshdlrdata->nallrelevantseeeds+1) );
+
+         conshdlrdata->allrelevantseeeds[conshdlrdata->nallrelevantseeeds] = conshdlrdata->curruserseeed ;
+         conshdlrdata->nallrelevantseeeds = conshdlrdata->nallrelevantseeeds+1;
       }
       else
       {
-         conshdlrdata->incompleteseeeds.push_back(conshdlrdata->curruserseeed);
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->incompleteseeeds, (size_t)conshdlrdata->nincompleteseeeds+1) );
+
+         conshdlrdata->incompleteseeeds[conshdlrdata->nincompleteseeeds] = conshdlrdata->curruserseeed ;
+         conshdlrdata->nincompleteseeeds = conshdlrdata->nincompleteseeeds+1;
       }
 
       conshdlrdata->curruserseeed = NULL;
@@ -1199,8 +1212,18 @@ SCIP_RETCODE DECdetectStructure(
 
    if( conshdlrdata->ndecomps == 0 )
    {
+
      if( conshdlrdata->seeedpool == NULL )
+     {
+        SCIPdebugMessagePrint(scip, "create seeedpool for current problem, n detecors: %d \n", conshdlrdata->ndetectors);
+
         conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+        SCIPdebugMessagePrint(scip, "created seeedpool for current problem, n detecors: %d \n", conshdlrdata->ndetectors);
+
+     }
+     else
+        SCIPdebugMessagePrint(scip, "seeedpool is not NULL \n");
+
      conshdlrdata->seeedpool->calcConsClassifierAndNBlockCandidates(scip);
 	  if( calculateOrigDecomps )
 	  {
@@ -1221,6 +1244,7 @@ SCIP_RETCODE DECdetectStructure(
 	  }
 
 	  conshdlrdata->seeedpool->findDecompositions();
+
 	  conshdlrdata->decdecomps = conshdlrdata->seeedpool->getDecompositions();
 	  conshdlrdata->ndecomps = conshdlrdata->seeedpool->getNDecompositions();
 

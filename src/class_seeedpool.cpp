@@ -41,6 +41,7 @@
 #endif
 #endif
 
+//#define SCIP_DEBUG
 
 #include "gcg.h"
 #include "objscip/objscip.h"
@@ -561,7 +562,7 @@ Seeedpool::Seeedpool(
    SCIP*               givenScip, /**< SCIP data structure */
    const char*       conshdlrName,
    SCIP_Bool         _transformed
-):scip(givenScip), currSeeeds(0), allrelevantseeeds(0), nTotalSeeeds(0),nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0), transformed(_transformed), helpvisucounter(0)
+):scip(givenScip), currSeeeds(0), allrelevantseeeds(0), nTotalSeeeds(0), nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0), transformed(_transformed), helpvisucounter(0)
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
@@ -586,8 +587,13 @@ Seeedpool::Seeedpool(
    /** set detection data */
    SCIP_CALL_ABORT( SCIPgetIntParam(givenScip, "detection/maxrounds", &maxndetectionrounds) );
 
+   SCIPdebugMessagePrint(scip, " conshdlrname: %s \n ", conshdlrName);
+   SCIPdebugMessagePrint(scip, " number of detectors: %d \n ", conshdlrdata->ndetectors);
+
+   assert(conshdlrdata->ndetectors > 0);
+
    /** store priorities of the detectors */
-   for(int d = 0; d < conshdlrdata->ndetectors; ++d )
+   for( int d = 0; d < conshdlrdata->ndetectors; ++d )
    {
       DEC_DETECTOR *detector;
       detector = conshdlrdata->detectors[d];
@@ -603,7 +609,7 @@ Seeedpool::Seeedpool(
    SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
 
    /** set up enabled detectors */
-   for(int d = 0; d < conshdlrdata->ndetectors; ++d )
+   for( int d = 0; d < conshdlrdata->ndetectors; ++d )
    {
       DEC_DETECTOR* detector;
 
@@ -817,7 +823,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
       calcCandidatesNBlocks();
 
-
+      return SCIP_OKAY;
 }
 
 
@@ -880,6 +886,8 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                    seeedPtr->displaySeeed();
              }
           }
+
+          SCIPdebugMessagePrint(scip, "number of detectors: %d \n", nDetectors);
 
           /** the current seeed is handled by all detectors */
           for( int d = 0; d < nDetectors; ++d )
@@ -1280,6 +1288,8 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
     size_t nDecomps = 6;
 
+//    SCIPdebugMessage("Starting find decomps of seeedpool\n");
+
     SCIP_Bool addTrivialDecomp = FALSE;
 
     successDetectors = std::vector<int>(nDetectors, 0);
@@ -1305,313 +1315,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     {
        SeeedPtr seeed = finishedSeeeds[i];
 
-
-       char detectorchaininfo[SCIP_MAXSTRLEN];
-
-       SCIP_HASHMAP* vartoblock;
-       SCIP_HASHMAP* constoblock;
-       SCIP_HASHMAP* varindex;
-       SCIP_HASHMAP* consindex;
-
-       SCIP_VAR*** stairlinkingvars;
-       SCIP_VAR*** subscipvars;
-       SCIP_VAR**  linkingvars;
-       SCIP_CONS**  linkingconss;
-       SCIP_CONS*** subscipconss;
-
-       int* nsubscipconss;
-       int* nsubscipvars;
-       int* nstairlinkingvars;
-       int  nlinkingvars;
-
-       int varcounter = 1;  /* in varindex counting starts with 1 */
-       int conscounter = 1; /* in consindex counting starts with 1 */
-       int counterstairlinkingvars = 0;
-
-       int size;
-
-       assert(seeed->checkConsistency() );
-
-       /* create decomp data structure */
-       SCIP_CALL_ABORT( DECdecompCreate(scip, &(decompositions[i])) );
-
-       //           seeed->displayConss();
-       //     if(seeed->detectorChain.size() > 2)
-       //    seeed->showScatterPlot(this);
-
-
-       /** set nblocks */
-       DECdecompSetNBlocks(decompositions[i], seeed->getNBlocks() );
-
-       //detectorchaininfo ;
-       /** set constraints */
-       if( seeed->getNMasterconss( )  != 0 )
-          SCIP_CALL_ABORT (SCIPallocBufferArray(scip, &linkingconss, seeed->getNMasterconss() ) );
-       else  linkingconss = NULL;
-
-       SCIP_CALL_ABORT (SCIPallocBufferArray(scip, &nsubscipconss, seeed->getNBlocks() ) );
-       SCIP_CALL_ABORT (SCIPallocBufferArray(scip, &subscipconss, seeed->getNBlocks() ) );
-
-       SCIP_CALL_ABORT( SCIPhashmapCreate( &constoblock, SCIPblkmem(scip), seeed->getNConss() ) );
-       SCIP_CALL_ABORT( SCIPhashmapCreate( &consindex, SCIPblkmem(scip), seeed->getNConss() ) );
-
-       /* set linking constraints */
-       for (int c = 0; c < seeed->getNMasterconss() ; ++c)
-       {
-          int consid = seeed->getMasterconss()[c];
-          SCIP_CONS* scipcons = consToScipCons[consid];
-          linkingconss[c] = scipcons;
-          SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, scipcons, (void*) (size_t) (seeed->getNBlocks() + 1) ) );
-          SCIP_CALL_ABORT( SCIPhashmapInsert(consindex, scipcons, (void*) (size_t) conscounter) );
-          conscounter++;
-       }
-
-       if (seeed->getNMasterconss() != 0 )
-          DECdecompSetLinkingconss(scip, decompositions[i], linkingconss, seeed->getNMasterconss());
-       else
-          linkingconss = NULL;
-       /* set block constraints */
-       for ( int b = 0; b < seeed->getNBlocks(); ++b )
-       {
-          SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipconss[b], seeed->getNConssForBlock(b) ) );
-          nsubscipconss[b] = seeed->getNConssForBlock(b);
-          for( int c = 0; c < seeed->getNConssForBlock(b); ++c )
-          {
-             int consid  = seeed->getConssForBlock(b)[c];
-             SCIP_CONS* scipcons = consToScipCons[consid];
-
-             assert(scipcons != NULL);
-             subscipconss[b][c] = scipcons;
-             SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, scipcons, (void*) (size_t) (b + 1 ) ) ) ;
-             SCIP_CALL_ABORT( SCIPhashmapInsert(consindex, scipcons, (void*) (size_t) conscounter) );
-             conscounter++;
-          }
-       }
-
-
-       DECdecompSetSubscipconss(scip, decompositions[i], subscipconss, nsubscipconss );
-
-       DECdecompSetConstoblock(decompositions[i], constoblock);
-       DECdecompSetConsindex(decompositions[i], consindex);
-
-       /* finished setting constraint data structures */
-       /** now: set variables */
-
-
-       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nsubscipvars, seeed->getNBlocks() ) );
-       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipvars, seeed->getNBlocks() ) );
-       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars, seeed->getNBlocks() ) );
-       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nstairlinkingvars, seeed->getNBlocks() ) );
-
-       SCIP_CALL_ABORT( SCIPhashmapCreate( &vartoblock, SCIPblkmem(scip), seeed->getNVars() ) );
-       SCIP_CALL_ABORT( SCIPhashmapCreate( &varindex, SCIPblkmem(scip), seeed->getNVars() ) );
-
-       /** set linkingvars */
-
-       nlinkingvars = seeed->getNLinkingvars() + seeed->getNMastervars() + seeed->getNTotalStairlinkingvars();
-
-       if( nlinkingvars != 0 )
-          SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &linkingvars, nlinkingvars) );
-       else
-          linkingvars = NULL;
-
-       for( int v = 0; v < seeed->getNLinkingvars(); ++v )
-       {
-          int var = seeed->getLinkingvars()[v];
-          SCIP_VAR* scipvar = SCIPvarGetProbvar( varToScipVar[var] );
-          assert(scipvar != NULL);
-
-          linkingvars[v] = scipvar;
-          SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t) (seeed->getNBlocks() + 2) ) );
-          SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
-          varcounter++;
-       }
-
-       for( int v = 0; v < seeed->getNMastervars(); ++v )
-       {
-          int var = seeed->getMastervars()[v];
-          SCIP_VAR* scipvar = SCIPvarGetProbvar( varToScipVar[var] );
-          linkingvars[v+seeed->getNLinkingvars()] = scipvar;
-          SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t) (seeed->getNBlocks() + 1) ) );
-          SCIP_CALL_ABORT( SCIPhashmapInsert(consindex, scipvar, (void*) (size_t) varcounter) );
-          varcounter++;
-       }
-
-
-       /* set block variables */
-       for ( int b = 0; b < seeed->getNBlocks(); ++b )
-       {
-
-          if(seeed->getNVarsForBlock(b) > 0)
-             SCIP_CALL_ABORT(SCIPallocBufferArray(scip, &subscipvars[b], seeed->getNVarsForBlock(b) ) );
-          else subscipvars[b] = NULL;
-
-          if(seeed->getNStairlinkingvars(b) > 0)
-             SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars[b], seeed->getNStairlinkingvars(b) ) );
-          else stairlinkingvars[b] = NULL;
-
-          nsubscipvars[b] = seeed->getNVarsForBlock(b);
-          nstairlinkingvars[b] = seeed->getNStairlinkingvars(b);
-
-          for ( int v = 0; v < seeed->getNVarsForBlock(b); ++v )
-          {
-             int var = seeed->getVarsForBlock(b)[v];
-             SCIP_VAR* scipvar = SCIPvarGetProbvar( varToScipVar[var] );
-             assert(scipvar != NULL);
-
-             subscipvars[b][v] = scipvar;
-             SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t) (b + 1) ) );
-             SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
-             varcounter++;
-          }
-
-          for ( int v = 0; v < seeed->getNStairlinkingvars(b); ++v )
-          {
-             int var = seeed->getStairlinkingvars(b)[v];
-             SCIP_VAR* scipvar = SCIPvarGetProbvar( varToScipVar[var] );
-             assert(scipvar != NULL);
-
-             stairlinkingvars[b][v] = scipvar;
-             linkingvars[seeed->getNLinkingvars() + seeed->getNMastervars() + counterstairlinkingvars ] = scipvar;
-             SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t) (seeed->getNBlocks() + 2) ) );
-             SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
-             varcounter++;
-             counterstairlinkingvars++;
-          }
-       }
-
-       DECdecompSetSubscipvars(scip, decompositions[i], subscipvars, nsubscipvars);
-       DECdecompSetStairlinkingvars(scip, decompositions[i], stairlinkingvars, nstairlinkingvars);
-       DECdecompSetLinkingvars(scip, decompositions[i], linkingvars, nlinkingvars);
-       DECdecompSetVarindex(decompositions[i], varindex);
-       DECdecompSetVartoblock(decompositions[i], vartoblock) ;
-
-       /** free stuff */
-
-       /** free constraints */
-
-       SCIPfreeBufferArrayNull(scip, &(linkingconss));
-       SCIPfreeBufferArrayNull(scip, &(nsubscipconss));
-       for( int b = seeed->getNBlocks()-1; b >= 0; --b )
-       {
-          SCIPfreeBufferArrayNull(scip, &(subscipconss[b]));
-       }
-       SCIPfreeBufferArrayNull(scip, &(subscipconss));
-
-       /** free vars stuff */
-
-       SCIPfreeBufferArrayNull(scip, &(linkingvars) );
-       for( int b = seeed->getNBlocks()-1; b >= 0; --b )
-       {
-          if( nsubscipvars[b] != 0 )
-          {
-             SCIPfreeBufferArrayNull(scip, &(subscipvars[b]));
-          }
-       }
-
-       SCIPfreeBufferArrayNull(scip, &(subscipvars) );
-       SCIPfreeBufferArrayNull(scip, &(nsubscipvars));
-
-       for( int b = seeed->getNBlocks()-1; b >= 0; --b )
-       {
-          if( nstairlinkingvars[b] != 0 )
-          {
-             SCIPfreeBufferArrayNull(scip, &(stairlinkingvars[b]));
-          }
-       }
-       SCIPfreeBufferArrayNull(scip, &(stairlinkingvars) );
-       SCIPfreeBufferArrayNull(scip, &(nstairlinkingvars));
-
-
-       //            /** test detector chain output */
-       //            char detectorchainstring[SCIP_MAXSTRLEN];
-       //
-       //            sprintf(detectorchainstring, "%s", DECdetectorGetName(decompositions[i]->detectorchain[0]));
-       //
-       //              for( i=1; i < ndetectors; ++i )
-       //              {
-       //                 sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(decompositions[i]->detectorchain[i]) );
-       //              }
-       //
-       //              SCIPinfoMessage(scip, NULL, "%s %s", detectorchainstring, LINEBREAK);
-
-
-       /*** OLD stuff above */
-
-
-       /** set detectorchain */
-       int ndetectors = seeed->getNDetectors();
-       decompositions[i]->sizedetectorchain = ndetectors;
-       size = SCIPcalcMemGrowSize(scip, decompositions[i]->sizedetectorchain);
-       SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decompositions[i]->detectorchain, size) ); /** free in decomp.c:469 */
-       for( int k = 0; k < ndetectors; ++k )
-       {
-          if(k != ndetectors-1 || !seeed->getFinishedByFinisher() )
-          {
-             //          std::cout << " added detector of " << i << "-th seeed to its detetcor chain" << std::endl;
-             decompositions[i]->detectorchain[k] = seeed->getDetectorchain()[k];
-          }else
-             decompositions[i]->detectorchain[k] = seeed->getDetectorchain()[k];
-       }
-
-
-       /** set statistical detector chain data */
-
-       DECdecompSetSeeedID(decompositions[i], seeed->getID() );
-       if( seeed->getNDetectors() > 0 )
-       {
-          DECdecompSetDetectorClockTimes(scip, decompositions[i], &(seeed->detectorClockTimes[0]) );
-          DECdecompSetDetectorPctVarsToBorder(scip, decompositions[i], &(seeed->pctVarsToBorder[0] ) );
-          DECdecompSetDetectorPctVarsToBlock(scip, decompositions[i], &(seeed->pctVarsToBlock[0] ) );
-          DECdecompSetDetectorPctVarsFromOpen(scip, decompositions[i], &(seeed->pctVarsFromFree[0] ) );
-          DECdecompSetDetectorPctConssToBorder(scip, decompositions[i], &(seeed->pctConssToBorder[0] ) );
-          DECdecompSetDetectorPctConssToBlock(scip, decompositions[i], &(seeed->pctConssToBlock[0] ) );
-          DECdecompSetDetectorPctConssFromOpen(scip, decompositions[i], &(seeed->pctConssFromFree[0] ) );
-          DECdecompSetNNewBlocks(scip, decompositions[i], &(seeed->nNewBlocks[0] ) );
-       }
-
-       /** set detector chain info string */
-
-       SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
-       for( int d = 0; d < seeed->getNDetectors(); ++d )
-       {
-          //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(seeed->getDetectorchain()[d]));
-          char str[2] = "\0"; /* gives {\0, \0} */
-          str[0] = DECdetectorGetChar(seeed->getDetectorchain()[d]);
-          (void) strncat(detectorchaininfo, str, 1 );
-       }
-
-       DECdecompSetDetectorChainString(scip, decompositions[i], detectorchaininfo);
-
-       /** set dectype */
-       if( decompositions[i]->nlinkingvars == seeed->getNTotalStairlinkingvars() && decompositions[i]->nlinkingconss == 0 && DECdecompGetNLinkingvars(decompositions[i]) > 0)
-       {
-          decompositions[i]->type = DEC_DECTYPE_STAIRCASE;
-       }
-       else if( decompositions[i]->nlinkingvars > 0 || seeed->getNTotalStairlinkingvars() )
-       {
-          decompositions[i]->type = DEC_DECTYPE_ARROWHEAD;
-       }
-       else if( decompositions[i]->nlinkingconss > 0)
-       {
-          decompositions[i]->type = DEC_DECTYPE_BORDERED;
-       }
-       else if(decompositions[i]->nlinkingconss == 0 && seeed->getNTotalStairlinkingvars() == 0)
-       {
-          decompositions[i]->type = DEC_DECTYPE_DIAGONAL;
-       }
-       else
-       {
-          decompositions[i]->type = DEC_DECTYPE_UNKNOWN;
-       }
-
-       ndecompositions++;
-
-       assert(DECdecompCheckConsistency(scip, decompositions[i] ) );
-
-       assert(!SCIPhashmapIsEmpty(decompositions[i]->constoblock));
-       assert(!SCIPhashmapIsEmpty(decompositions[i]->vartoblock));
-
+       SCIP_CALL_ABORT( createDecompFromSeeed(seeed, &decompositions[i]) );
 
     }
 
@@ -3049,7 +2753,7 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
          curr = parents[curr];
          if( curr != -1)
             ofs << " } " ;
-   }
+      }
    }
 
    ofs << ";" << std::endl;
@@ -3064,6 +2768,342 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
 
    return SCIP_OKAY;
 }
+
+/**
+ * creates a decomposition for a given seeed
+ */
+SCIP_RETCODE Seeedpool::createDecompFromSeeed(
+   SeeedPtr       seeed,                                 /** seeed the decomposition is created for */
+   DEC_DECOMP**   newdecomp                              /** the new decomp created from the seeed */
+  )
+{
+
+   char detectorchaininfo[SCIP_MAXSTRLEN];
+
+   SCIP_HASHMAP* vartoblock;
+   SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* varindex;
+   SCIP_HASHMAP* consindex;
+
+   SCIP_VAR*** stairlinkingvars;
+   SCIP_VAR*** subscipvars;
+   SCIP_VAR**  linkingvars;
+   SCIP_CONS**  linkingconss;
+   SCIP_CONS*** subscipconss;
+
+   int* nsubscipconss;
+   int* nsubscipvars;
+   int* nstairlinkingvars;
+   int  nlinkingvars;
+
+   int varcounter = 1;  /* in varindex counting starts with 1 */
+   int conscounter = 1; /* in consindex counting starts with 1 */
+   int counterstairlinkingvars = 0;
+
+   int size;
+
+   assert(seeed->checkConsistency() );
+
+   /* create decomp data structure */
+   SCIP_CALL_ABORT( DECdecompCreate( scip, newdecomp) );
+
+   //           seeed->displayConss();
+   //     if(seeed->detectorChain.size() > 2)
+   //    seeed->showScatterPlot(this);
+
+
+   /** set nblocks */
+   DECdecompSetNBlocks( *newdecomp, seeed->getNBlocks() );
+
+   //detectorchaininfo ;
+   /** set constraints */
+   if( seeed->getNMasterconss( )  != 0 )
+      SCIP_CALL_ABORT ( SCIPallocBufferArray(scip, &linkingconss, seeed->getNMasterconss() ) );
+   else  linkingconss = NULL;
+
+   SCIP_CALL_ABORT (SCIPallocBufferArray(scip, &nsubscipconss, seeed->getNBlocks() ) );
+   SCIP_CALL_ABORT (SCIPallocBufferArray(scip, &subscipconss, seeed->getNBlocks() ) );
+
+   SCIP_CALL_ABORT( SCIPhashmapCreate( &constoblock, SCIPblkmem(scip), seeed->getNConss() ) );
+   SCIP_CALL_ABORT( SCIPhashmapCreate( &consindex, SCIPblkmem(scip), seeed->getNConss() ) );
+
+   /* set linking constraints */
+   for (int c = 0; c < seeed->getNMasterconss() ; ++c)
+   {
+      int consid = seeed->getMasterconss()[c];
+      SCIP_CONS* scipcons = consToScipCons[consid];
+      linkingconss[c] = scipcons;
+      SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, scipcons, (void*) (size_t) (seeed->getNBlocks() + 1) ) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(consindex, scipcons, (void*) (size_t) conscounter) );
+      conscounter++;
+   }
+
+   if (seeed->getNMasterconss() != 0 )
+      DECdecompSetLinkingconss(scip, *newdecomp, linkingconss, seeed->getNMasterconss());
+   else
+      linkingconss = NULL;
+   /* set block constraints */
+   for ( int b = 0; b < seeed->getNBlocks(); ++b )
+   {
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipconss[b], seeed->getNConssForBlock(b) ) );
+      nsubscipconss[b] = seeed->getNConssForBlock(b);
+      for( int c = 0; c < seeed->getNConssForBlock(b); ++c )
+      {
+         int consid  = seeed->getConssForBlock(b)[c];
+         SCIP_CONS* scipcons = consToScipCons[consid];
+
+         assert(scipcons != NULL);
+         subscipconss[b][c] = scipcons;
+         SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, scipcons, (void*) (size_t) (b + 1 ) ) ) ;
+         SCIP_CALL_ABORT( SCIPhashmapInsert(consindex, scipcons, (void*) (size_t) conscounter) );
+         conscounter++;
+      }
+   }
+
+
+   DECdecompSetSubscipconss(scip, *newdecomp, subscipconss, nsubscipconss );
+
+   DECdecompSetConstoblock(*newdecomp, constoblock);
+   DECdecompSetConsindex(*newdecomp, consindex);
+
+   /* finished setting constraint data structures */
+   /** now: set variables */
+
+
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nsubscipvars, seeed->getNBlocks() ) );
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipvars, seeed->getNBlocks() ) );
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars, seeed->getNBlocks() ) );
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nstairlinkingvars, seeed->getNBlocks() ) );
+
+   SCIP_CALL_ABORT( SCIPhashmapCreate( &vartoblock, SCIPblkmem(scip), seeed->getNVars() ) );
+   SCIP_CALL_ABORT( SCIPhashmapCreate( &varindex, SCIPblkmem(scip), seeed->getNVars() ) );
+
+   /** set linkingvars */
+
+   nlinkingvars = seeed->getNLinkingvars() + seeed->getNMastervars() + seeed->getNTotalStairlinkingvars();
+
+   if( nlinkingvars != 0 )
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &linkingvars, nlinkingvars) );
+   else
+      linkingvars = NULL;
+
+   for( int v = 0; v < seeed->getNLinkingvars(); ++v )
+   {
+      int var = seeed->getLinkingvars()[v];
+      SCIP_VAR* scipvar = SCIPvarGetProbvar( varToScipVar[var] );
+      assert(scipvar != NULL);
+
+      linkingvars[v] = scipvar;
+      SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t) (seeed->getNBlocks() + 2) ) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
+      varcounter++;
+   }
+
+   for( int v = 0; v < seeed->getNMastervars(); ++v )
+   {
+      int var = seeed->getMastervars()[v];
+      SCIP_VAR* scipvar = SCIPvarGetProbvar( varToScipVar[var] );
+      linkingvars[v+seeed->getNLinkingvars()] = scipvar;
+      SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t) (seeed->getNBlocks() + 1) ) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(consindex, scipvar, (void*) (size_t) varcounter) );
+      varcounter++;
+   }
+
+
+   /* set block variables */
+   for ( int b = 0; b < seeed->getNBlocks(); ++b )
+   {
+
+      if(seeed->getNVarsForBlock(b) > 0)
+         SCIP_CALL_ABORT(SCIPallocBufferArray(scip, &subscipvars[b], seeed->getNVarsForBlock(b) ) );
+      else subscipvars[b] = NULL;
+
+      if(seeed->getNStairlinkingvars(b) > 0)
+         SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars[b], seeed->getNStairlinkingvars(b) ) );
+      else stairlinkingvars[b] = NULL;
+
+      nsubscipvars[b] = seeed->getNVarsForBlock(b);
+      nstairlinkingvars[b] = seeed->getNStairlinkingvars(b);
+
+      for ( int v = 0; v < seeed->getNVarsForBlock(b); ++v )
+      {
+         int var = seeed->getVarsForBlock(b)[v];
+         SCIP_VAR* scipvar = SCIPvarGetProbvar( varToScipVar[var] );
+         assert(scipvar != NULL);
+
+         subscipvars[b][v] = scipvar;
+         SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t) (b + 1) ) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
+         varcounter++;
+      }
+
+      for ( int v = 0; v < seeed->getNStairlinkingvars(b); ++v )
+      {
+         int var = seeed->getStairlinkingvars(b)[v];
+         SCIP_VAR* scipvar = SCIPvarGetProbvar( varToScipVar[var] );
+         assert(scipvar != NULL);
+
+         stairlinkingvars[b][v] = scipvar;
+         linkingvars[seeed->getNLinkingvars() + seeed->getNMastervars() + counterstairlinkingvars ] = scipvar;
+         SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t) (seeed->getNBlocks() + 2) ) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
+         varcounter++;
+         counterstairlinkingvars++;
+      }
+   }
+
+   DECdecompSetSubscipvars(scip, *newdecomp, subscipvars, nsubscipvars);
+   DECdecompSetStairlinkingvars(scip, *newdecomp, stairlinkingvars, nstairlinkingvars);
+   DECdecompSetLinkingvars(scip, *newdecomp, linkingvars, nlinkingvars);
+   DECdecompSetVarindex(*newdecomp, varindex);
+   DECdecompSetVartoblock(*newdecomp, vartoblock) ;
+
+   /** free stuff */
+
+   /** free constraints */
+
+   SCIPfreeBufferArrayNull(scip, &(linkingconss));
+   SCIPfreeBufferArrayNull(scip, &(nsubscipconss));
+   for( int b = seeed->getNBlocks()-1; b >= 0; --b )
+   {
+      SCIPfreeBufferArrayNull(scip, &(subscipconss[b]));
+   }
+   SCIPfreeBufferArrayNull(scip, &(subscipconss));
+
+   /** free vars stuff */
+
+   SCIPfreeBufferArrayNull(scip, &(linkingvars) );
+   for( int b = seeed->getNBlocks()-1; b >= 0; --b )
+   {
+      if( nsubscipvars[b] != 0 )
+      {
+         SCIPfreeBufferArrayNull(scip, &(subscipvars[b]));
+      }
+   }
+
+   SCIPfreeBufferArrayNull(scip, &(subscipvars) );
+   SCIPfreeBufferArrayNull(scip, &(nsubscipvars));
+
+   for( int b = seeed->getNBlocks()-1; b >= 0; --b )
+   {
+      if( nstairlinkingvars[b] != 0 )
+      {
+         SCIPfreeBufferArrayNull(scip, &(stairlinkingvars[b]));
+      }
+   }
+   SCIPfreeBufferArrayNull(scip, &(stairlinkingvars) );
+   SCIPfreeBufferArrayNull(scip, &(nstairlinkingvars));
+
+
+   //            /** test detector chain output */
+   //            char detectorchainstring[SCIP_MAXSTRLEN];
+   //
+   //            sprintf(detectorchainstring, "%s", DECdetectorGetName(decompositions[i]->detectorchain[0]));
+   //
+   //              for( i=1; i < ndetectors; ++i )
+   //              {
+   //                 sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(decompositions[i]->detectorchain[i]) );
+   //              }
+   //
+   //              SCIPinfoMessage(scip, NULL, "%s %s", detectorchainstring, LINEBREAK);
+
+
+   /*** OLD stuff above */
+
+
+   /** set detectorchain */
+   int ndetectors = seeed->getNDetectors();
+   (*newdecomp)->sizedetectorchain = ndetectors;
+   size = SCIPcalcMemGrowSize(scip, (*newdecomp)->sizedetectorchain);
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &(*newdecomp)->detectorchain, size) ); /** free in decomp.c:469 */
+   for( int k = 0; k < ndetectors; ++k )
+   {
+      if(k != ndetectors-1 || !seeed->getFinishedByFinisher() )
+      {
+         //          std::cout << " added detector of " << i << "-th seeed to its detetcor chain" << std::endl;
+         (*newdecomp)->detectorchain[k] = seeed->getDetectorchain()[k];
+      }else
+         (*newdecomp)->detectorchain[k] = seeed->getDetectorchain()[k];
+   }
+
+
+   /** set statistical detector chain data */
+
+   DECdecompSetSeeedID(*newdecomp, seeed->getID() );
+   if( seeed->getNDetectors() > 0 )
+   {
+      DECdecompSetDetectorClockTimes(scip, *newdecomp, &(seeed->detectorClockTimes[0]) );
+      DECdecompSetDetectorPctVarsToBorder(scip, *newdecomp, &(seeed->pctVarsToBorder[0] ) );
+      DECdecompSetDetectorPctVarsToBlock(scip, *newdecomp, &(seeed->pctVarsToBlock[0] ) );
+      DECdecompSetDetectorPctVarsFromOpen(scip, *newdecomp, &(seeed->pctVarsFromFree[0] ) );
+      DECdecompSetDetectorPctConssToBorder(scip, *newdecomp, &(seeed->pctConssToBorder[0] ) );
+      DECdecompSetDetectorPctConssToBlock(scip, *newdecomp, &(seeed->pctConssToBlock[0] ) );
+      DECdecompSetDetectorPctConssFromOpen(scip, *newdecomp, &(seeed->pctConssFromFree[0] ) );
+      DECdecompSetNNewBlocks(scip, *newdecomp, &(seeed->nNewBlocks[0] ) );
+   }
+
+   /** set detector chain info string */
+
+   SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
+   for( int d = 0; d < seeed->getNDetectors(); ++d )
+   {
+      //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(seeed->getDetectorchain()[d]));
+      char str[2] = "\0"; /* gives {\0, \0} */
+      str[0] = DECdetectorGetChar(seeed->getDetectorchain()[d]);
+      (void) strncat(detectorchaininfo, str, 1 );
+   }
+
+   DECdecompSetDetectorChainString(scip, *newdecomp, detectorchaininfo);
+
+   /** set dectype */
+   if( (*newdecomp)->nlinkingvars == seeed->getNTotalStairlinkingvars() && (*newdecomp)->nlinkingconss == 0 && DECdecompGetNLinkingvars((*newdecomp)) > 0)
+   {
+      (*newdecomp)->type = DEC_DECTYPE_STAIRCASE;
+   }
+   else if( (*newdecomp)->nlinkingvars > 0 || seeed->getNTotalStairlinkingvars() > 0 )
+   {
+      (*newdecomp)->type = DEC_DECTYPE_ARROWHEAD;
+   }
+   else if( (*newdecomp)->nlinkingconss > 0)
+   {
+      (*newdecomp)->type = DEC_DECTYPE_BORDERED;
+   }
+   else if( (*newdecomp)->nlinkingconss == 0 && seeed->getNTotalStairlinkingvars() == 0)
+   {
+      (*newdecomp)->type = DEC_DECTYPE_DIAGONAL;
+   }
+   else
+   {
+      (*newdecomp)->type = DEC_DECTYPE_UNKNOWN;
+   }
+
+   ndecompositions++;
+
+   assert(DECdecompCheckConsistency(scip, (*newdecomp) ) );
+
+   assert(!SCIPhashmapIsEmpty((*newdecomp)->constoblock));
+   assert(!SCIPhashmapIsEmpty((*newdecomp)->vartoblock));
+
+
+   return SCIP_OKAY;
+}
+
+/**
+ * creates a seeed for a given decomposition
+ */
+SCIP_RETCODE createSeeedFromDecomp(
+      DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
+      SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
+  )
+{
+   SeeedPtr seeed;
+
+   seeed = NULL;
+
+   return SCIP_OKAY;
+
+}
+
 
 
 } /* namespace gcg */

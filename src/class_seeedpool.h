@@ -127,7 +127,8 @@ private:
 
    std::vector<SeeedPtr>                        translatedOrigSeeeds;   /**< seeeds that are translated seeeds from found ones for the original problem */
 
-   int											         helpvisucounter;
+   int											         helpvisucounter;        /** help counter for family tree visualization to iterate the heights */
+
 
 public:
 
@@ -282,6 +283,22 @@ public:
 	  SCIP_Bool draft
    );
 
+
+   /**
+    * creates a decomposition for a given seeed
+    */
+   SCIP_RETCODE createDecompFromSeeed(
+      SeeedPtr       seeed,                                 /** seeed the decomposition is created for */
+      DEC_DECOMP**   newdecomp                              /** the new decomp created from the seeed */
+      );
+
+   /**
+    * creates a seeed for a given decomposition
+    */
+   SCIP_RETCODE createSeeedFromDecomp(
+      DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
+      SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
+      );
 
    };
 } /* namespace gcg */
