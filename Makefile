@@ -131,10 +131,10 @@ LIBOBJ		=	reader_blk.o \
 			gcgplugins.o \
 			relax_gcg.o \
 			pricer_gcg.o \
+			benders_gcg.o \
 			branch_orig.o \
 			branch_ryanfoster.o \
 			branch_generic.o \
-			cons_benders.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			cons_integralorig.o \

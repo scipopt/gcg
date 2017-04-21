@@ -363,6 +363,14 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    SCIP_VAR**            newvar              /**< pointer to store new variable */
    );
 
+/* adds the vardata to the auxiliary variable */
+extern
+SCIP_RETCODE GCGaddDataAuxiliaryVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             auxiliaryvar,       /**< the auxiliary variable */
+   int                   probnumber          /**< the subproblem number */
+   );
+
 /** sets the creation node of this var */
 extern
 void GCGsetCreationNode(

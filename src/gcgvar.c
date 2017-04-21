@@ -1302,6 +1302,41 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    return SCIP_OKAY;
 }
 
+/* adds the vardata to the auxiliary variable */
+SCIP_RETCODE GCGaddDataAuxiliaryVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             auxiliaryvar,       /**< the auxiliary variable */
+   int                   probnumber          /**< the subproblem number */
+   )
+{
+   SCIP_VARDATA* newvardata;
+
+   assert(scip != NULL);
+   assert(auxiliaryvar != NULL);
+
+   /* create data for the new variable in the master problem */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
+   newvardata->vartype = GCG_VARTYPE_MASTER;
+   newvardata->blocknr = probnumber;
+
+   /* store whether the variable represents a ray */
+   newvardata->data.mastervardata.isray = FALSE;
+
+   /* count number of non-zeros */
+   newvardata->data.mastervardata.norigvars = 0;
+
+   newvardata->data.mastervardata.origvars = NULL;
+   newvardata->data.mastervardata.origvals = NULL;
+
+   /* setting the variable data */
+   SCIPvarSetData(auxiliaryvar, newvardata);
+
+   /* setting the deltrans callback */
+   SCIPvarSetDeltransData(auxiliaryvar, gcgvardeltrans);
+
+   return SCIP_OKAY;
+}
+
 /** set creation node of variable */
 void GCGsetCreationNode(
    SCIP*                 scip,               /**< SCIP data structure */
