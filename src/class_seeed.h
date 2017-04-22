@@ -46,6 +46,14 @@
 
 namespace gcg {
 
+enum USERGIVEN
+{
+   NOT = 0,
+   PARTIAL = -1,
+   COMPLETE = -2,
+   COMPLETED_CONSTOMASTER = -3
+};
+
 class Seeedpool;
 
 
@@ -100,6 +108,8 @@ public:
    std::vector<int>                 nNewBlocks;                 /**< vector containing detector indices that worked on that seeed */
 
    std::vector<int>                 listofancestorids;          /**< vector containing detector indices that worked on that seeed */
+
+   USERGIVEN                        usergiven;                  /**< is this seeed partially or complete given by user */
 
    /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
    bool                             stemsFromUnpresolved;
@@ -572,6 +582,9 @@ public:
    );
 
    void showScatterPlot(  Seeedpool* seeedpool, SCIP_Bool writeonly = FALSE, const char* filename = NULL, SCIP_Bool draft = FALSE, SCIP_Bool colored = TRUE );
+
+   /** is this seeed a userseeed that should be completed by setting unspecified constraints to master */
+   SCIP_Bool shouldCompletedByConsToMaster();
 
    /** sorts the vars and conss according their numbers */
    void sort(

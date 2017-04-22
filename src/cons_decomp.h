@@ -146,19 +146,23 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
 
 /** creates a user seeed for the presolved problem **/
 SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             presolved           /**< should the user seeed be created for the presolved problem */
    );
 
-/** creates a user seeed for the unpresolved problem **/
-SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeedUnpresolved(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
 
 /** sets the number of blocks */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
    SCIP*                 scip,                /**< SCIP data structure */
    int                   nblocks              /**< number of blocks */
    );
+
+/** sets the number of blocks */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP_Bool             consdefaulttomaster  /**< are not specified constraints set to master for default */
+   );
+
 
 
 /** sets a constraint by name to a block in the current user seeed */

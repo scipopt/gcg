@@ -3284,6 +3284,14 @@ void Seeed::showScatterPlot(
    return;
 }
 
+/** is this seeed a userseeed that should be completed by setting unspecified constraints to master */
+SCIP_Bool Seeed::shouldCompletedByConsToMaster(){
+
+   return usergiven == USERGIVEN::COMPLETED_CONSTOMASTER;
+}
+
+
+
 /** sorts the vars and conss according their numbers */
 void Seeed::sort()
 {
