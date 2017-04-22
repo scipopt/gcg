@@ -1195,7 +1195,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CONSHDLRDATA* conshdlrdata;
 
    gcg::Seeedpool seeedpoolunpresolved(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
-   seeedpoolunpresolved.calcConsClassifierAndNBlockCandidates(scip);
+
    std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
    std::vector<std::vector<int>> conssClassDistributions;         /**< collection of different constraint class distributions */
    std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
@@ -1226,9 +1226,11 @@ SCIP_RETCODE DECdetectStructure(
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       SCIP_CALL( SCIPtransformProb(scip) );
 
-
-   candidatesNBlocks = seeedpoolunpresolved.getSortedCandidatesNBlocks();
-
+   if( conshdlrdata->ndecomps == 0)
+   {
+      candidatesNBlocks = seeedpoolunpresolved.getSortedCandidatesNBlocks();
+      seeedpoolunpresolved.calcConsClassifierAndNBlockCandidates(scip);
+   }
 
    /** detection for original problem */
    if( conshdlrdata->ndecomps == 0 && calculateOrigDecomps )
