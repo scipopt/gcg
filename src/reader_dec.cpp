@@ -580,7 +580,6 @@ SCIP_RETCODE readConsDefaultMaster(
       /* read number of blocks */
       if( isInt(scip, decinput, &consdefaultmaster) )
       {
-         decinput->haspresolvesection = TRUE;
          if( consdefaultmaster == 1 )
             decinput->consdefaultmaster = TRUE;
          else if ( consdefaultmaster == 0 )
@@ -620,9 +619,14 @@ SCIP_RETCODE readPresolved(
       {
          decinput->haspresolvesection = TRUE;
          if( presolved == 1 )
+         {
             decinput->presolved = TRUE;
+         }
          else if ( presolved == 0 )
+         {
             decinput->presolved = FALSE;
+
+         }
          else
             syntaxError(scip, decinput, "presolved parameter must be 0 or 1");
          SCIPdebugMessage("Decomposition is%s from presolved problem\n",
@@ -1043,12 +1047,6 @@ SCIP_RETCODE readDECFile(
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
 
-   /* cons -> block mapping */
-   SCIP_CALL( SCIPhashmapCreate(&readerdata->constoblock, SCIPblkmem(scip), nconss) );
-   for( i = 0; i < nconss; i ++ )
-   {
-      SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, conss[i], (void*) (size_t) LINKINGVALUE) );
-   }
 
    /* parse the file */
    decinput->section = DEC_START;
@@ -1061,20 +1059,21 @@ SCIP_RETCODE readDECFile(
          case DEC_START:
             SCIP_CALL( readStart(scip, decinput) );
             break;
-            /**@bug the reader should presolve the problem */
          case DEC_CONSDEFAULTMASTER:
             SCIP_CALL( readConsDefaultMaster(scip, decinput) );
             break;
-            /**@bug the reader should presolve the problem */
+
 
          case DEC_PRESOLVED:
             SCIP_CALL( readPresolved(scip, decinput) );
             if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
             {
+//               assert(BMSgetNUsedBufferMemory(SCIPbuffer(scip)) == 0);
+               SCIPpresolve(scip);
                assert(decinput->haspresolvesection);
                SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
                retcode = SCIP_READERROR;
-               break;
+       //        break;
             }
             /** create the seeed from the right seeedpool */
             if ( decinput->presolved )
@@ -1083,13 +1082,21 @@ SCIP_RETCODE readDECFile(
 
   //             if ( SCIPconshdlrDecompGetSeeedpool(scip) == NULL )
                SCIPconshdlrDecompCreateSeeedpool(scip);
+               SCIPconshdlrDecompCreateUserSeeed(scip, TRUE);
   //             seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
 //               decinput->seeed = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars() );
 
             }
             else
             {
-
+               SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+               SCIPconshdlrDecompCreateUserSeeed(scip, FALSE);
+            }
+            /* cons -> block mapping */
+            SCIP_CALL( SCIPhashmapCreate(&readerdata->constoblock, SCIPblkmem(scip), nconss) );
+            for( i = 0; i < nconss; i ++ )
+            {
+               SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, conss[i], (void*) (size_t) LINKINGVALUE) );
             }
 
 
