@@ -212,7 +212,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    );
 
 SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
-   SCIP*                 scip                 /**< SCIP data structure */
+   SCIP*                 scip,                 /**< SCIP data structure */
+   SCIP_Bool*            success
    );
 
 

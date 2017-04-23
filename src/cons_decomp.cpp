@@ -242,6 +242,21 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       conshdlrdata->decdecomps = NULL;
       conshdlrdata->ndecomps = 0;
    }
+
+   if( conshdlrdata->nallrelevantseeeds > 0 )
+   {
+      for( i = 0; i < conshdlrdata->nallrelevantseeeds; ++i )
+      {
+         delete conshdlrdata->allrelevantseeeds[i];
+      }
+
+   }
+
+   if( conshdlrdata->allrelevantseeeds != NULL )
+      SCIPfreeMemoryArray(scip, &conshdlrdata->allrelevantseeeds);
+   conshdlrdata->allrelevantseeeds = NULL;
+   conshdlrdata->nallrelevantseeeds = 0;
+
    conshdlrdata->hasrun = FALSE;
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
@@ -258,6 +273,7 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
          SCIP_CALL( (*detector->exitDetector)(scip, detector) );
       }
    }
+
 
    delete conshdlrdata->seeedpool;
 
@@ -1219,6 +1235,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
          conshdlrdata->nallrelevantseeeds = conshdlrdata->nallrelevantseeeds+1;
 
          conshdlrdata->decdecomps[conshdlrdata->ndecomps] = newdecomp;
+         ++conshdlrdata->ndecomps;
 
       }
       /** stems from unpresolved problem */
@@ -1243,7 +1260,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 }
 
 SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
-   SCIP*                 scip                 /**< SCIP data structure */
+   SCIP*                 scip,                 /**< SCIP data structure */
+   SCIP_Bool*            success               /** at least one unpresolved seeed coud be tranlsate in a complete presolved one */
    ){
 
    DEC_DECOMP* newdecomp;
@@ -1259,6 +1277,8 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    std::vector<SeeedPtr>::iterator seeediterend;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   *success = FALSE;
 
    if( conshdlr == NULL )
    {
@@ -1302,15 +1322,25 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
 
    for(; seeediter != seeediterend; ++seeediter )
    {
-      SCIP_CALL( conshdlrdata->seeedpool->createDecompFromSeeed( *seeediter, &newdecomp) );
+      seeedpool->prepareSeeed( *seeediter);
+      if( (*seeediter)->isComplete() )
+      {
+         SCIP_CALL( conshdlrdata->seeedpool->createDecompFromSeeed( *seeediter, &newdecomp) );
 
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->allrelevantseeeds, (size_t)conshdlrdata->nallrelevantseeeds+1) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, (size_t)conshdlrdata->ndecomps+1) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->allrelevantseeeds, (size_t)conshdlrdata->nallrelevantseeeds+1) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, (size_t)conshdlrdata->ndecomps+1) );
 
-      conshdlrdata->allrelevantseeeds[conshdlrdata->nallrelevantseeeds] = conshdlrdata->curruserseeed ;
-      conshdlrdata->nallrelevantseeeds = conshdlrdata->nallrelevantseeeds+1;
+         conshdlrdata->allrelevantseeeds[conshdlrdata->nallrelevantseeeds] = conshdlrdata->curruserseeed ;
+         conshdlrdata->nallrelevantseeeds = conshdlrdata->nallrelevantseeeds+1;
 
-      conshdlrdata->decdecomps[conshdlrdata->ndecomps] = newdecomp;
+         conshdlrdata->decdecomps[conshdlrdata->ndecomps] = newdecomp;
+         ++conshdlrdata->ndecomps;
+         *success = TRUE;
+         SCIPdebugMessagePrint(scip, " SUCCESS: unpresolved complete seeed did translate to complete presolved one \n");
+      }
+      else {
+         SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
+      }
 
 
    }
@@ -1733,6 +1763,8 @@ DEC_DECOMP* DECgetBestDecomp(
       assert(conshdlrdata->decdecomps[0] != NULL);
       return conshdlrdata->decdecomps[0];
    }
+
+   SCIPdebugMessagePrint(scip, "no decomps out there \n");
 
    return NULL;
 }

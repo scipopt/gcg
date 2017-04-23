@@ -55,6 +55,7 @@ struct Dec_Scores
    SCIP_Real             densityscore;       /**< score of block densities */
    SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
    SCIP_Real             totalscore;         /**< accumulated score */
+   SCIP_Real             maxwhitescore;      /** score related to max white measure (i.e. 1 - fraction of white (nonblock and nonborder) matrix area ) */
 };
 typedef struct Dec_Scores DEC_SCORES;
 

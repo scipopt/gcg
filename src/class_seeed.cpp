@@ -2076,10 +2076,10 @@ SCIP_Real Seeed::evaluate(
    /* calculate matrix area */
    matrixarea = nVars*nConss;
 
-   blackarea += ( getNLinkingvars()+ getNTotalStairlinkingvars() ) * getNConss();
+   blackarea += ( getNLinkingvars() + getNTotalStairlinkingvars() + getNMastervars() ) * getNConss();
    blackarea += getNMasterconss() * getNVars();
 
-   blackarea -= getNMastervars() * getNLinkingvars();
+   blackarea -= getNMasterconss() * ( getNLinkingvars() + getNMastervars() );
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++i )

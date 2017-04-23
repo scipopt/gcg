@@ -47,6 +47,7 @@
 #include "objscip/objscip.h"
 #include "class_seeedpool.h"
 #include "struct_detector.h"
+#include "pub_decomp.h"
 #include "struct_decomp.h"
 #include "cons_decomp.h"
 #include "decomp.h"
@@ -1504,7 +1505,7 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
 
       otherseeed = origseeeds[s];
 
-      SCIPdebugMessagePrint(this->scip, " otherseeed seeed %d has %d many blocks \n", otherseeed->getID(), otherseeed->getNBlocks() );
+ //     SCIPdebugMessagePrint(this->scip, " otherseeed seeed %d has %d many blocks \n", otherseeed->getID(), otherseeed->getNBlocks() );
 
       /** ignore seeeds with one block or no block, they are supposed to be find anyway */
       if( otherseeed->getNBlocks() == 1 || otherseeed->getNBlocks() == 0  )
@@ -1600,9 +1601,6 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
          std::cout << "has become " << std::endl;
          newseeed->showScatterPlot(this);
        */
-
-
-
 
        if(newseeed->checkConsistency() )
           newseeeds.push_back(newseeed);
@@ -2791,6 +2789,10 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIP_CONS**  linkingconss;
    SCIP_CONS*** subscipconss;
 
+   DEC_SCORES scores;
+
+
+
    int* nsubscipconss;
    int* nsubscipvars;
    int* nstairlinkingvars;
@@ -2905,7 +2907,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       SCIP_VAR* scipvar = SCIPvarGetProbvar( varToScipVar[var] );
       linkingvars[v+seeed->getNLinkingvars()] = scipvar;
       SCIP_CALL_ABORT( SCIPhashmapInsert(vartoblock, scipvar, (void*) (size_t) (seeed->getNBlocks() + 1) ) );
-      SCIP_CALL_ABORT( SCIPhashmapInsert(consindex, scipvar, (void*) (size_t) varcounter) );
+      SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
       varcounter++;
    }
 
@@ -2957,6 +2959,8 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    DECdecompSetLinkingvars(scip, *newdecomp, linkingvars, nlinkingvars);
    DECdecompSetVarindex(*newdecomp, varindex);
    DECdecompSetVartoblock(*newdecomp, vartoblock) ;
+
+
 
    /** free stuff */
 
@@ -3078,6 +3082,10 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    }
 
    ndecompositions++;
+
+   SCIP_CALL(DECevaluateDecomposition(scip, *newdecomp, &scores) );
+
+   assert(scores.maxwhitescore == seeed->getMaxWhiteScore() );
 
    assert(DECdecompCheckConsistency(scip, (*newdecomp) ) );
 
