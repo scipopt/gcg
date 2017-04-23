@@ -150,12 +150,21 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    SCIP_Bool             presolved           /**< should the user seeed be created for the presolved problem */
    );
 
+SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
 /** sets the number of blocks */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
    SCIP*                 scip,                /**< SCIP data structure */
    int                   nblocks              /**< number of blocks */
    );
+
+/** returns whether there is an user seeed  */
+SCIP_Bool SCIPconshdlrDecompUserSeeedIsActive(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 
 /** sets the number of blocks */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
@@ -199,6 +208,10 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
 
 /** finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if complete etc */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
+   SCIP*                 scip                 /**< SCIP data structure */
+   );
+
+SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP*                 scip                 /**< SCIP data structure */
    );
 

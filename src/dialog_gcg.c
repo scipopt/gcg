@@ -576,7 +576,14 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
 
    case SCIP_STAGE_PRESOLVED:
-      if( !DEChasDetectionRun(scip) )
+
+      if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
+      {
+         SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip);
+         SCIPdebugMessagePrint(scip, " origseeeds should be translated now \n");
+      }
+
+      if( !DEChasDetectionRun(scip) || DECgetBestDecomp(scip) == NULL )
       {
          SCIP_CALL( DECdetectStructure(scip, &result) );
          if( result == SCIP_DIDNOTFIND )
