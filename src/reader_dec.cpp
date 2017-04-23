@@ -1076,23 +1076,13 @@ SCIP_RETCODE readDECFile(
                retcode = SCIP_READERROR;
                break;
             }
-            /** create the seeed from the right seeedpool */
+            /** call cons_decomp to create seeed (and correct seeedpool if necessary) seeed from the right seeedpool */
             if ( decinput->presolved )
-            {
-//               gcg::Seeedpool* seeedpool = NULL;
-
-  //             if ( SCIPconshdlrDecompGetSeeedpool(scip) == NULL )
                SCIPconshdlrDecompCreateSeeedpool(scip);
-  //             seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
-//               decinput->seeed = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars() );
-
-            }
             else
-            {
+               SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
 
-            }
-
-
+            SCIPconshdlrDecompCreateUserSeeed(scip, decinput->presolved);
             break;
 
          case DEC_NBLOCKS:
@@ -1140,23 +1130,26 @@ SCIP_RETCODE readDECFile(
       }
    }
 
-   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
 
-   if( retcode == SCIP_OKAY )
-   {
-      /* fill decomp */
-      retcode =  fillDecompStruct(scip, decinput, decdecomp, readerdata);
-   }
+   SCIPconshdlrDecompUserSeeedFlush(scip);
 
-   if( retcode == SCIP_OKAY )
-   {
-      /* add decomp to cons_decomp */
-      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
-   }
-   else
-   {
-      SCIP_CALL( DECdecompFree(scip, &decdecomp) );
-   }
+//   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
+//
+//   if( retcode == SCIP_OKAY )
+//   {
+//      /* fill decomp */
+//      retcode =  fillDecompStruct(scip, decinput, decdecomp, readerdata);
+//   }
+//
+//   if( retcode == SCIP_OKAY )
+//   {
+//      /* add decomp to cons_decomp */
+//      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
+//   }
+//   else
+//   {
+//      SCIP_CALL( DECdecompFree(scip, &decdecomp) );
+//   }
    SCIPhashmapFree(&readerdata->constoblock);
 
    /* close file */
