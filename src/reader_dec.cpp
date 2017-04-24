@@ -805,10 +805,6 @@ SCIP_RETCODE readBlockvars(
 
       blockid = decinput->blocknr;
 
-            /*
-       * saving block <-> constraint
-       */
-
 
       SCIPconshdlrDecompUserSeeedSetVarToBlock(scip, decinput->token, blockid);
 

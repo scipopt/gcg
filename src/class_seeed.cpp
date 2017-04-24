@@ -2510,6 +2510,8 @@ SCIP_RETCODE Seeed::flushBooked()
    std::vector<std::pair<int, int>>::iterator bookedIter2;
    std::vector<std::pair<int, int>>::iterator bookedIterEnd2;
 
+   std::vector<SCIP_Bool> varislinking(getNVars(), FALSE);
+
    changedHashvalue = true;
 
    bookedIter = bookedAsMasterConss.begin();
@@ -2534,6 +2536,7 @@ SCIP_RETCODE Seeed::flushBooked()
    bookedIterEnd = bookedAsLinkingVars.end();
    for( ; bookedIter != bookedIterEnd; ++bookedIter )
    {
+      varislinking(*bookedIter) = TRUE;
       setVarToLinking(*bookedIter);
       deleteOpenvar(*bookedIter);
    }
@@ -2552,6 +2555,8 @@ SCIP_RETCODE Seeed::flushBooked()
    bookedIterEnd2 = bookedAsBlockVars.end();
    for( ; bookedIter2 != bookedIterEnd2; ++bookedIter2 )
    {
+      if( varislinking[(*bookedIter2).first ] )
+         continue;
       setVarToBlock((*bookedIter2).first, (*bookedIter2).second);
       deleteOpenvar((*bookedIter2).first);
    }

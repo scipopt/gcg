@@ -619,7 +619,10 @@ SCIP_RETCODE readNBlocks(
       if( isInt(scip, blkinput, &nblocks) )
       {
          if( blkinput->nblocks == NOVALUE )
+         {
             blkinput->nblocks = nblocks;
+            SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(scip, nblocks);
+         }
          else
             syntaxError(scip, blkinput, "2 integer values in nblocks section");
          SCIPdebugMessage("Number of blocks = %d\n", blkinput->nblocks);
@@ -670,6 +673,7 @@ SCIP_RETCODE readBlock(
          SCIPdebugMessage("\tVar %s temporary in block %d.\n", SCIPvarGetName(var), blockid);
          readerdata->varstoblock[varidx] = blockid;
          ++(readerdata->nblockvars[blockid]);
+         SCIPconshdlrDecompUserSeeedSetVarToBlock(scip, blkinput->token, blockid);
       }
       /* variable was assigned to another (non-linking) block before, so it becomes a linking variable, now */
       else if( (oldblock != LINKINGVALUE) )
@@ -689,6 +693,8 @@ SCIP_RETCODE readBlock(
          readerdata->linkingvarsblocks[varidx][0] = oldblock;
          readerdata->linkingvarsblocks[varidx][1] = blockid;
          readerdata->nlinkingvarsblocks[varidx] = 2;
+
+         SCIPconshdlrDecompUserSeeedSetVarToLinking(scip, blkinput->token);
       }
       /* variable is a linking variable already, store the new block to which it belongs */
       else
@@ -955,11 +961,28 @@ SCIP_RETCODE readBLKFile(
          SCIP_CALL( readPresolved(scip, blkinput) );
          if( blkinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
          {
+            SCIPpresolve(scip);
             assert(blkinput->haspresolvesection);
+
             /** @bug GCG should be able to presolve the problem first */
-            SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
-            goto TERMINATE;
+
+            //            SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
          }
+
+
+         if ( blkinput->presolved )
+         {
+            SCIPconshdlrDecompCreateSeeedpool(scip);
+            //             seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
+            //               decinput->seeed = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars() );
+
+         }
+         else
+         {
+            SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+         }
+
+         SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
          break;
 
       case BLK_NBLOCKS:
