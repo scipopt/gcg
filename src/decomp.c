@@ -394,6 +394,7 @@ SCIP_RETCODE DECdecompCreate(
    decomp->pctvarsfromopen= NULL;
    decomp->pctconssfromopen= NULL;
    decomp->nnewblocks= NULL;
+   decomp->maxwhitescore = -1.;
 
 
    return SCIP_OKAY;
@@ -2991,6 +2992,23 @@ SCIP_RETCODE DECgetVarLockData(
    return SCIP_OKAY;
 }
 
+/** computes the score of the given decomposition based on the border, the average density score and the ratio of
+ * linking variables
+ */
+SCIP_Real DECgetMaxWhiteScore(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   )
+{
+   DEC_SCORES score;
+
+   if( decdecomp->maxwhitescore == -1.)
+      DECevaluateDecomposition(scip, decdecomp, &score);
+
+   assert(decdecomp->maxwhitescore >= 0);
+
+   return decdecomp->maxwhitescore;
+}
 
 /** computes the score of the given decomposition based on the border, the average density score and the ratio of
  * linking variables
@@ -3169,7 +3187,7 @@ SCIP_RETCODE DECevaluateDecomposition(
    score->densityscore = (1-density);
    score->maxwhitescore = blackarea/( nconss * nvars );
 
-
+   decdecomp->maxwhitescore = score->maxwhitescore;
 
 
    switch( DECdecompGetType(decdecomp) )

@@ -587,6 +587,14 @@ SCIP_RETCODE DECgetVarLockData(
    int*                  masterlocksup       /**< pointer to array to store the down locks for the master */
    );
 
+/**
+ * returns the maximum white score ( if it is not calculated yet is decdecomp is evaluated)
+ */
+SCIP_Real DECgetMaxWhiteScore(
+      SCIP*                 scip,               /**< SCIP data structure */
+      DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+      );
+
 
 /** computes the score of the given decomposition based on the border, the average density score and the ratio of
  * linking variables

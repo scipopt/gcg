@@ -866,7 +866,6 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    ){
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -892,7 +891,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -922,8 +920,6 @@ SCIP_Bool SCIPconshdlrDecompUserSeeedIsActive(
    ){
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   int consindex;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -949,8 +945,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   int consindex;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -1272,7 +1266,6 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    gcg::Seeedpool* seeedpoolunpresolved;
    std::vector<SeeedPtr> seeedstotranslate(0);
    std::vector<SeeedPtr> seeedstranslated(0);
-   SeeedPtr        unpresolvedseeed;
    std::vector<SeeedPtr>::iterator seeediter;
    std::vector<SeeedPtr>::iterator seeediterend;
 
@@ -1342,18 +1335,44 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
          SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
       }
 
-
    }
 
-
    return SCIP_OKAY;
-
-
 }
 
+SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
+   SCIP*       scip
+   )
+{
 
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
 
+   SCIP_Real* scores;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIP_CALL_ABORT(SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
+
+   for (int i = 0; i < conshdlrdata->ndecomps; ++i )
+   {
+      scores[i] = DECgetMaxWhiteScore(scip, conshdlrdata->decdecomps[i]);
+   }
+
+   SCIPsortRealPtr(scores, (void**)conshdlrdata->decdecomps, conshdlrdata->ndecomps);
+
+   SCIPfreeBufferArray(scip, &scores);
+
+   return SCIP_OKAY;
+}
 
 /** interface method to detect the structure including presolving */
 SCIP_RETCODE DECdetectStructure(
@@ -1496,7 +1515,7 @@ SCIP_RETCODE DECdetectStructure(
    }
 
 
-   /* evaluate all decompositions and sort them by score */
+   /* evaluate all decompositions */
    SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
    for( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
@@ -1734,12 +1753,17 @@ DEC_DECOMP* DECgetBestDecomp(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
+   SCIP_Real* maxwhitescores;
+
+
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+
+   DECconshdlrDecompSortDecompositionsByScore(scip);
 
    if( conshdlrdata->ndecomps > 0 )
       return conshdlrdata->decdecomps[0];
