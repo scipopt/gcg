@@ -740,6 +740,7 @@ SCIP_RETCODE readMasterconss(
       {
          assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) NOVALUE);
          SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blkinput->nblocks +1)) );
+         SCIPconshdlrDecompUserSeeedSetConsToMaster(scip, blkinput->token);
       }
    }
 
@@ -758,6 +759,7 @@ SCIP_RETCODE fillDecompStruct(
 
    SCIP_HASHMAP* constoblock;
    SCIP_CONS** allcons;
+   SCIP_VAR** allvars;
 
    SCIP_VAR** consvars;
    SCIP_RETCODE retcode;
@@ -773,6 +775,7 @@ SCIP_RETCODE fillDecompStruct(
    assert(readerdata != NULL);
 
    allcons = SCIPgetConss(scip);
+   allvars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
    nblocks = blkinput->nblocks;
@@ -787,8 +790,19 @@ SCIP_RETCODE fillDecompStruct(
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &consvars, nvars) );
 
+   /* assign unassigned variables as master variables */
+   for( i = 0; i < nvars; ++i)
+   {
+      SCIP_VAR* var;
+      var = allvars[i];
+      if( readerdata->varstoblock[i] == NOVALUE )
+      {
+         SCIP_CALL( SCIPconshdlrDecompUserSeeedSetVarToMaster(scip, SCIPvarGetName(var) ) );
+      }
+   }
+
    /* assign constraints to blocks or declare them linking */
-   for( i = 0; i < nconss; i ++ )
+   for( i = 0; i < nconss;  ++i )
    {
       SCIP_CONS* cons;
 
@@ -815,7 +829,7 @@ SCIP_RETCODE fillDecompStruct(
          /* find the first unique assignment of a contained variable to a block */
          for( j = 0; j < nconsvars; ++j )
          {
-            /* if a contained variables is directly transferred to the master, the constraint is a linking constraint */
+            /* if a contained variable is directly transferred to the master, the constraint is a linking constraint */
             if( readerdata->varstoblock[SCIPvarGetProbindex(consvars[j])] == NOVALUE )
             {
                blocknr = -1;
@@ -865,6 +879,7 @@ SCIP_RETCODE fillDecompStruct(
          if( blocknr == -1 )
          {
             SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (nblocks+1)) );
+            SCIP_CALL( SCIPconshdlrDecompUserSeeedSetConsToMaster(scip, SCIPconsGetName(cons) ) );
 
             SCIPdebugMessage("constraint <%s> is a linking constraint\n",
                SCIPconsGetName(cons));
@@ -872,10 +887,13 @@ SCIP_RETCODE fillDecompStruct(
          else
          {
             SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (blocknr+1)) );
+            SCIP_CALL( SCIPconshdlrDecompUserSeeedSetConsToBlock(scip, SCIPconsGetName(cons), blocknr ) );
             SCIPdebugMessage("constraint <%s> is assigned to block %d\n", SCIPconsGetName(cons), blocknr);
          }
       }
    }
+
+   SCIPconshdlrDecompUserSeeedFlush(scip);
    retcode = DECfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
 
@@ -1032,15 +1050,9 @@ SCIP_RETCODE readBLKFile(
 
    /* fill decomp */
    retcode = fillDecompStruct(scip, blkinput, decdecomp, readerdata);
-   if( retcode == SCIP_OKAY )
-   {
-      /* add decomp to cons_decomp */
-      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
-   }
-   else
-   {
-      SCIP_CALL( DECdecompFree(scip, &decdecomp) );
-   }
+
+   SCIP_CALL( DECdecompFree(scip, &decdecomp) );
+
    for( i = 0; i < nvars; ++i )
    {
       assert(readerdata->linkingvarsblocks[i] != NULL || readerdata->nlinkingvarsblocks[i] == 0);

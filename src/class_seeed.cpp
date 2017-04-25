@@ -2536,7 +2536,7 @@ SCIP_RETCODE Seeed::flushBooked()
    bookedIterEnd = bookedAsLinkingVars.end();
    for( ; bookedIter != bookedIterEnd; ++bookedIter )
    {
-      varislinking(*bookedIter) = TRUE;
+      varislinking[*bookedIter] = TRUE;
       setVarToLinking(*bookedIter);
       deleteOpenvar(*bookedIter);
    }
