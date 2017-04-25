@@ -1211,10 +1211,11 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
    currseeedpool->prepareSeeed(conshdlrdata->curruserseeed);
 
+
    if( conshdlrdata->curruserseeed->isComplete() )
    {
-      /**@TODO create decdecomp from seeed */
-
+      if( !seeed->shouldCompletedByConsToMaster() )
+         conshdlrdata->curruserseeed->usergiven = gcg::USERGIVEN::COMPLETE;
       /** stems from presolved problem? */
       if( !conshdlrdata->curruserseeed->stemsFromUnpresolved )
       {
@@ -1242,6 +1243,9 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    }
    else
    {
+      assert( !seeed->shouldCompletedByConsToMaster() );
+      conshdlrdata->curruserseeed->usergiven = gcg::USERGIVEN::PARTIAL;
+
       SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->incompleteseeeds, (size_t)conshdlrdata->nincompleteseeeds+1) );
 
       conshdlrdata->incompleteseeeds[conshdlrdata->nincompleteseeeds] = conshdlrdata->curruserseeed ;

@@ -1522,6 +1522,7 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
 
       newseeed->setNBlocks(otherseeed->getNBlocks() );
 
+      newseeed->usergiven = otherseeed->usergiven;
 
       /** set all (which have representative in the unpresolved seeed) constraints according to their representatives in the unpresolved seeed */
       for(int b = 0; b < otherseeed->getNBlocks() ; ++b )
@@ -3049,6 +3050,13 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    /** set detector chain info string */
 
    SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
+   if( seeed->usergiven == USERGIVEN::PARTIAL || seeed->usergiven == USERGIVEN::COMPLETE || seeed->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
+   {
+      char str1[2] = "\0"; /* gives {\0, \0} */
+      str1[0] = 'U';
+      (void) strncat(detectorchaininfo, str1, 1 );
+
+   }
    for( int d = 0; d < seeed->getNDetectors(); ++d )
    {
       //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(seeed->getDetectorchain()[d]));

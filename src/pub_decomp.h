@@ -351,6 +351,7 @@ SCIP_Real* DECdecompGetDetectorClockTimes(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
+/** sets the detector clock times of the detectors of the detector chain */
 extern
 SCIP_RETCODE DECdecompSetDetectorChainString(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -358,7 +359,7 @@ SCIP_RETCODE DECdecompSetDetectorChainString(
    char*                 detectorchainstring
    );
 
-/** sets the detector clock times of the detectors of the detector chain */
+
 extern
 char* DECdecompGetDetectorChainString(
    SCIP*                 scip,               /**< SCIP data structure */
