@@ -17,6 +17,11 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from matplotlib import cm
 
+import matplotlib.ticker as mticker
+
+import math
+
+
 
 
 DIR, FILENAME = os.path.split(__file__)
@@ -91,11 +96,17 @@ def generate_files(files):
                     df = df.set_index('iter')
 
                     print df
+                    if df.empty:
+                        continue
+                    
                     df=df.astype(float)
                     
                     #fig, axes = plt.subplots(nrows=2, ncols=2)
                     ax = None
                     ax = df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.5);
+                    ax = plt.gca()
+                    myLocator = mticker.MultipleLocator(10 ** (math.floor(math.log10(len(df.index)))))
+                    ax.xaxis.set_major_locator(myLocator)
                     ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax);
                     ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);
                     

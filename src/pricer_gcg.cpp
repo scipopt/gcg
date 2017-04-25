@@ -2721,7 +2721,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    else if( pricinghaserror )
       *result = SCIP_DIDNOTRUN;
 
-   if( pricerdata->calls > 1 && pricetype->getType() == GCG_PRICETYPE_REDCOST )
+   if( pricerdata->nroundsredcost > 1 && pricetype->getType() == GCG_PRICETYPE_REDCOST )
    {
       SCIP_Real dualdiff;
       int ndiffs;
@@ -2753,15 +2753,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       SCIPfreeBufferArray(scip_, &olddualvalues);
       SCIPfreeBufferArray(scip_, &olddualconv);
 
-      dualdiff = SQRT(dualdiff);
-
-      if( ndiffs == 0 )
-         SCIPinfoMessage(scip_, NULL, "ndiffs is zero\n");
-
-      if( SCIPisZero(scip_, dualdiff) )
-         SCIPinfoMessage(scip_, NULL, "dualdiff is zero\n");
+      dualdiff = SQRT(ABS(dualdiff));
 
       pricerdata->dualdiff = dualdiff;
+   }
+   else
+   {
+      pricerdata->dualdiff = 0.0;
    }
 
 
