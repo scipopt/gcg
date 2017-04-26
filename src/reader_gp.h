@@ -72,6 +72,17 @@ SCIP_RETCODE SCIPwriteGp(
    SCIP_Bool             outputPDF           /**< if true give pdf file, if false give tex file instead */
    );
 
+/** Getter of parameter draftmode */
+SCIP_Bool GCGgpGetDraftmode(
+   SCIP*                scip               /**< SCIP data structure */
+   );
+
+/** Setter of parameter draftmode */
+void GCGgpSetDraftmode(
+   SCIP*                scip,              /**< SCIP data structure */
+   SCIP_Bool            usedraftmode       /**< new value for draftmode */
+   );
+
 #ifdef __cplusplus
 }
 #endif

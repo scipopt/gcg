@@ -54,6 +54,14 @@
 
 #define READERGP_GNUPLOT_HEADER_TEX(outputname) "set terminal tikz\nset output \"%s.tex\"\nunset xtics\nunset ytics\nunset border\nunset key\nset style fill solid 1.0 noborder\nset size ratio -1\n", (outputname)
 
+#define DEFAULT_DRAFTMODE FALSE
+
+/** data for dec reader */
+struct SCIP_ReaderData
+{
+   SCIP_Bool       draftmode;       /** if true shows no non-zeroes, recommended if too slow or too memory-intensive */
+};
+
 /*
  * Local methods
  */
@@ -362,6 +370,13 @@ SCIP_RETCODE writeFileTrailer(
 static
 SCIP_DECL_READERFREE(readerFreeGp)
 {
+   SCIP_READERDATA* readerdata;
+
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   SCIPfreeMemory(scip, &readerdata);
+
    assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
    return SCIP_OKAY;
 }
@@ -404,6 +419,9 @@ SCIP_RETCODE SCIPwriteGp(
    char probname[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
 
+   SCIP_READERDATA* readerdata;
+   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "gpreader"));
+
    assert(scip != NULL);
    assert(file != NULL);
 
@@ -441,23 +459,55 @@ SCIP_RETCODE SCIPwriteGp(
    /* write the plot header*/
    SCIP_CALL( writePlotCommands(scip, file) );
 
-   /* write data */
-   SCIP_CALL( writeData(scip, file, decdecomp) );
+   /* write data (if draftmode is not on) */
+   if(!readerdata->draftmode){
+      SCIP_CALL( writeData(scip, file, decdecomp) );
+   }
 
    /* write file end */
    SCIP_CALL( writeFileTrailer(scip, file) );
    return SCIP_OKAY;
 }
 
+/** Getter of parameter draftmode */
+SCIP_Bool GCGgpGetDraftmode(
+   SCIP*                scip               /**< SCIP data structure */
+   )
+{
+   SCIP_READERDATA* readerdata;
+   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "gpreader"));
+   return readerdata->draftmode;
+}
+
+/** Setter of parameter draftmode */
+void GCGgpSetDraftmode(
+   SCIP*                scip,              /**< SCIP data structure */
+   SCIP_Bool            usedraftmode       /**< new value for draftmode */
+   )
+{
+   SCIP_READERDATA* readerdata;
+   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "gpreader"));
+   readerdata->draftmode = usedraftmode;
+}
 
 /** includes the gp file reader into SCIP */
 SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   SCIP_READERDATA* readerdata;
+
+   /* create gp reader data */
+   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+
    /* include gp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
-         readerCopyGp, readerFreeGp, readerReadGp, readerWriteGp, NULL) );
+      readerCopyGp, readerFreeGp, readerReadGp, readerWriteGp, readerdata) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "reading/gpreader/draftmode",
+      "if true shows no non-zeroes, recommended if too slow or too memory-intensive",
+      &readerdata->draftmode, FALSE, DEFAULT_DRAFTMODE, NULL, NULL) );
 
    return SCIP_OKAY;
 }
