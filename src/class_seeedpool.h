@@ -126,7 +126,8 @@ private:
 
    std::vector<SeeedPtr>                        translatedOrigSeeeds;   /**< seeeds that are translated seeeds from found ones for the original problem */
 
-   int											helpvisucounter;
+   int											         helpvisucounter;        /** help counter for family tree visualization to iterate the heights */
+
 
 public:
 
@@ -141,6 +142,10 @@ public:
 
    ~Seeedpool();
 
+   SCIP_RETCODE calcConsClassifierAndNBlockCandidates(
+      SCIP*               givenScip        /**< SCIP data structure */
+   );
+
    /** finds seeeds  */
    /*
     * @return user has to free Seeeds
@@ -153,14 +158,22 @@ public:
    void findDecompositions(
     );
 
+   /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
    void translateSeeedData(
       Seeedpool* otherpool,                              /**< old seeedpool */
       std::vector<Seeed*> otherseeeds,                   /**< seeeds to be translated */
       std::vector<Seeed*>& newseeeds,                    /**< translated seeeds (pass empty vector) */
       std::vector<ConsClassifier*> otherconsclassifiers, /**< consclassifiers to be translated */
       std::vector<ConsClassifier*>& newconsclassifiers,  /**< translated consclassifiers (pass empty vector) */
-      std::vector<VarClassifier*> othervarclassifiers,  /**< varclassifiers to be translated */
-      std::vector<VarClassifier*>& newvarclassifiers    /**< translated varclassifiers (pass empty vector) */
+      std::vector<VarClassifier*> othervarclassifiers,   /**< varclassifiers to be translated */
+      std::vector<VarClassifier*>& newvarclassifiers     /**< translated varclassifiers (pass empty vector) */
+   );
+
+   /** translates seeeds if the index structure of the problem has changed, e.g. due to presolving */
+   void translateSeeeds(
+      Seeedpool* otherpool,                              /**< old seeedpool */
+      std::vector<Seeed*> otherseeeds,                   /**< seeeds to be translated */
+      std::vector<Seeed*>& newseeeds                     /**< translated seeeds (pass empty vector) */
    );
 
    void populate(std::vector<SeeedPtr> seeeds);
@@ -300,6 +313,58 @@ public:
    );
 
 
-   };
+   /**
+    * creates a decomposition for a given seeed
+    */
+   SCIP_RETCODE createDecompFromSeeed(
+      SeeedPtr       seeed,                                 /** seeed the decomposition is created for */
+      DEC_DECOMP**   newdecomp                              /** the new decomp created from the seeed */
+      );
+
+   /**
+    * creates a seeed for a given decomposition
+    */
+   SCIP_RETCODE createSeeedFromDecomp(
+      DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
+      SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
+      );
+
+private:
+
+   /** calculates necessary data for translating seeeds and classifiers */
+   void calcTranslationMapping(
+      Seeedpool* origpool,
+      std::vector<int>& rowothertothis,
+      std::vector<int>& rowthistoother,
+      std::vector<int>& colothertothis,
+      std::vector<int>& colthistoother,
+      std::vector<int>& missingrowinthis
+   );
+
+   /** returns translated Seeeds derived from given mapping data */
+   std::vector<Seeed*> getTranslatedSeeeds(
+      std::vector<Seeed*>& otherseeeds,                     /**< seeeds to be translated */
+      std::vector<int>& rowothertothis,
+      std::vector<int>& rowthistoother,
+      std::vector<int>& colothertothis,
+      std::vector<int>& colthistoother
+   );
+
+   /** returns translated ConsClassifiers derived from given mapping data */
+   std::vector<ConsClassifier*> getTranslatedConsClassifiers(
+      std::vector<ConsClassifier*>& otherclassifiers,       /**< consclassifiers to be translated */
+      std::vector<int>& rowothertothis,
+      std::vector<int>& rowthistoother
+   );
+
+   /** returns translated VarClassifiers derived from given mapping data */
+   std::vector<VarClassifier*> getTranslatedVarClassifiers(
+      std::vector<VarClassifier*>& otherclassifiers,        /**< varclassifiers to be translated */
+      std::vector<int>& colothertothis,
+      std::vector<int>& colthistoother
+   );
+
+};
+
 } /* namespace gcg */
 #endif /* GCG_CLASS_SEEEDPOOL_H__ */

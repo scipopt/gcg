@@ -394,6 +394,7 @@ SCIP_RETCODE DECdecompCreate(
    decomp->pctvarsfromopen= NULL;
    decomp->pctconssfromopen= NULL;
    decomp->nnewblocks= NULL;
+   decomp->maxwhitescore = -1.;
 
 
    return SCIP_OKAY;
@@ -2991,6 +2992,23 @@ SCIP_RETCODE DECgetVarLockData(
    return SCIP_OKAY;
 }
 
+/** computes the score of the given decomposition based on the border, the average density score and the ratio of
+ * linking variables
+ */
+SCIP_Real DECgetMaxWhiteScore(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   )
+{
+   DEC_SCORES score;
+
+   if( decdecomp->maxwhitescore == -1.)
+      DECevaluateDecomposition(scip, decdecomp, &score);
+
+   assert(decdecomp->maxwhitescore >= 0);
+
+   return decdecomp->maxwhitescore;
+}
 
 /** computes the score of the given decomposition based on the border, the average density score and the ratio of
  * linking variables
@@ -3017,6 +3035,7 @@ SCIP_RETCODE DECevaluateDecomposition(
    SCIP_Real* blockdensities;
    int* blocksizes;
    SCIP_Real density;
+   SCIP_Real blackarea;
 
    SCIP_Real alphaborderarea;
    SCIP_Real alphalinking;
@@ -3025,7 +3044,7 @@ SCIP_RETCODE DECevaluateDecomposition(
    alphaborderarea = 0.6;
    alphalinking = 0.2 ;
    alphadensity  = 0.2;
-
+   blackarea = 0.;
 
 
    assert(scip != NULL);
@@ -3052,6 +3071,12 @@ SCIP_RETCODE DECevaluateDecomposition(
    /* calculate matrix area */
    matrixarea = nvars*nconss;
 
+   blackarea += ( DECdecompGetNLinkingvars(decdecomp)  ) * nconss;
+   blackarea += DECdecompGetNLinkingconss(decdecomp) * nvars;
+
+   blackarea -= (DECdecompGetNLinkingvars(decdecomp) - DECdecompGetNTotalStairlinkingvars(decdecomp) ) * DECdecompGetNLinkingconss(decdecomp);
+
+
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nblocks; ++i )
    {
@@ -3064,6 +3089,8 @@ SCIP_RETCODE DECevaluateDecomposition(
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
+      blackarea +=  DECdecompGetNSubscipconss(decdecomp)[i] * ( DECdecompGetNSubscipvars(decdecomp)[i] );
+
       for( j = 0; j < nvars; ++j )
       {
          ishandled[j] = FALSE;
@@ -3158,8 +3185,9 @@ SCIP_RETCODE DECevaluateDecomposition(
    score->linkingscore = (0.5+0.5*varratio);
    score->borderscore = (1.0*(borderarea)/matrixarea);
    score->densityscore = (1-density);
+   score->maxwhitescore = blackarea/( nconss * nvars );
 
-
+   decdecomp->maxwhitescore = score->maxwhitescore;
 
 
    switch( DECdecompGetType(decdecomp) )

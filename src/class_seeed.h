@@ -46,6 +46,14 @@
 
 namespace gcg {
 
+enum USERGIVEN
+{
+   NOT = 0,
+   PARTIAL = -1,
+   COMPLETE = -2,
+   COMPLETED_CONSTOMASTER = -3
+};
+
 class Seeedpool;
 
 
@@ -101,7 +109,9 @@ public:
 
    std::vector<int>                 listofancestorids;          /**< vector containing detector indices that worked on that seeed */
 
-   /** datastructure to store information if this seeed stems from a seeed concerning the uinpresolved problem */
+   USERGIVEN                        usergiven;                  /**< is this seeed partially or complete given by user */
+
+   /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
    bool                             stemsFromUnpresolved;
    bool                             isFinishedByFinisherUnpresolved; /**< was the ancestor seeed for the unpresolved problem finished by the finishseeed() method of a detector */
    DEC_DETECTOR*                    finishedUnpresolvedBy;           /**< index of dinishing detector of unpresolved ancestor seeed */
@@ -454,6 +464,11 @@ public:
    bool isTrivial(
    );
 
+   /** is this seeed complete (i.e. has it least one open constraint or one open variable ) */
+   bool isComplete(
+   );
+
+
 /* method to check whether seeed is equal to given other seeed */
    SCIP_RETCODE isEqual(
       Seeed*               otherseeed,          /**< other seeed */
@@ -567,6 +582,9 @@ public:
    );
 
    void showScatterPlot(  Seeedpool* seeedpool, SCIP_Bool writeonly = FALSE, const char* filename = NULL, SCIP_Bool draft = FALSE, SCIP_Bool colored = TRUE );
+
+   /** is this seeed a userseeed that should be completed by setting unspecified constraints to master */
+   SCIP_Bool shouldCompletedByConsToMaster();
 
    /** sorts the vars and conss according their numbers */
    void sort(

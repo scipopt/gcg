@@ -28,6 +28,7 @@
 /**@file   cons_decomp.h
  * @brief  constraint handler for structure detection
  * @author Martin Bergner
+ * @author Michael Bastubbe
  *
  * This constraint handler will run all registered structure detectors in
  * increasing priority until the first detector finds a suitable structure.
@@ -40,9 +41,6 @@
 
 #include "scip/scip.h"
 #include "type_detector.h"
-
-
-
 
 
 
@@ -132,6 +130,93 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    );
+
+
+/** creates the seeedpool for the presolved problem **/
+SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+
+/** creates the seeedpool for the unpresolved problem **/
+SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+
+/** creates a user seeed for the presolved problem **/
+SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             presolved           /**< should the user seeed be created for the presolved problem */
+   );
+
+SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** sets the number of blocks */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
+   SCIP*                 scip,                /**< SCIP data structure */
+   int                   nblocks              /**< number of blocks */
+   );
+
+/** returns whether there is an user seeed  */
+SCIP_Bool SCIPconshdlrDecompUserSeeedIsActive(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+
+/** sets the number of blocks */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP_Bool             consdefaulttomaster  /**< are not specified constraints set to master for default */
+   );
+
+
+
+/** sets a constraint by name to a block in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           consname,            /**< name of the constraint */
+   int                   blockid              /* block index ( counting from 0) */
+   );
+
+/** sets a constraint by name to the master in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToMaster(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           consname
+   );
+
+/** sets a variable by name to a block in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           varname,             /**< name of the variable */
+   int                   blockid              /**< block index ( counting from 0) */
+   );
+
+/** sets a variable by name to the master in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToMaster(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           varname              /**< name of the variable */
+   );
+
+/** sets a variable by name to the linking variables in the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
+   SCIP*                 scip,                /**< SCIP data structure */
+   const char*           varname              /**< name of the variable */
+   );
+
+/** finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if complete etc */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
+   SCIP*                 scip                 /**< SCIP data structure */
+   );
+
+SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
+   SCIP*                 scip,                 /**< SCIP data structure */
+   SCIP_Bool*            success
+   );
+
+
 
 /** interface method to detect the structure */
 extern

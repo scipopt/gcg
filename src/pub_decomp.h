@@ -55,6 +55,7 @@ struct Dec_Scores
    SCIP_Real             densityscore;       /**< score of block densities */
    SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
    SCIP_Real             totalscore;         /**< accumulated score */
+   SCIP_Real             maxwhitescore;      /** score related to max white measure (i.e. 1 - fraction of white (nonblock and nonborder) matrix area ) */
 };
 typedef struct Dec_Scores DEC_SCORES;
 
@@ -350,6 +351,7 @@ SCIP_Real* DECdecompGetDetectorClockTimes(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
+/** sets the detector clock times of the detectors of the detector chain */
 extern
 SCIP_RETCODE DECdecompSetDetectorChainString(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -357,7 +359,7 @@ SCIP_RETCODE DECdecompSetDetectorChainString(
    char*                 detectorchainstring
    );
 
-/** sets the detector clock times of the detectors of the detector chain */
+
 extern
 char* DECdecompGetDetectorChainString(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -585,6 +587,14 @@ SCIP_RETCODE DECgetVarLockData(
    int*                  masterlocksdown,    /**< pointer to array to store the down locks for the master */
    int*                  masterlocksup       /**< pointer to array to store the down locks for the master */
    );
+
+/**
+ * returns the maximum white score ( if it is not calculated yet is decdecomp is evaluated)
+ */
+SCIP_Real DECgetMaxWhiteScore(
+      SCIP*                 scip,               /**< SCIP data structure */
+      DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+      );
 
 
 /** computes the score of the given decomposition based on the border, the average density score and the ratio of
