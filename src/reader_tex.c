@@ -615,6 +615,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
    SCIP_READERDATA* readerdata;
    DEC_DETECTOR** detectorchain;
    DEC_SCORES scores;
+   SCIP_Bool gpdraftwason = FALSE;
    char* filepath;
    char* pname;
    char* detectorchainstring;
@@ -694,7 +695,13 @@ SCIP_RETCODE GCGtexWriteDecompCode(
          return SCIP_FILECREATEERROR;
       }
 
+      /* write gp in the tex draft mode and restore the original parameter afterwards */
+      gpdraftwason = GCGgpGetDraftmode(scip);
+      GCGgpSetDraftmode(scip, readerdata->draftmode);
+
       SCIPwriteGp(scip, gpfile, decomp, TRUE, FALSE);
+
+      GCGgpSetDraftmode(scip, gpdraftwason);
 
       fclose(gpfile);
    }
