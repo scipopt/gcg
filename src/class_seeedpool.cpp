@@ -375,27 +375,6 @@ void removeDigits(char *str, int *nremoved)
    }
 }
 
-
-/** method to enumerate all subsets */
-std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
-      {
-   std::vector< std::vector<int> > subset;
-   std::vector<int> empty;
-   subset.push_back( empty );
-
-   for ( size_t i = 0; i < set.size(); ++i )
-   {
-      std::vector< std::vector<int> > subsetTemp = subset;
-
-      for (size_t j = 0; j < subsetTemp.size(); ++j)
-         subsetTemp[j].push_back( set[i] );
-
-      for (size_t j = 0; j < subsetTemp.size(); ++j)
-         subset.push_back( subsetTemp[j] );
-   }
-   return subset;
-      }
-
 /** method to calculate the greatest common divisor */
 
 int gcd(int a, int b)
@@ -431,130 +410,11 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
 }
 
 
-/* test method for reduceClasses in ConsClassifier */
-void testReduceClasses()
-{
-   /** set up */
-   ConsClassifier* testClassifier = new ConsClassifier( NULL, "Test", 5, 10 );
-   ConsClassifier* reducedClassifier;
-
-   std::cout << "TEST: Test reduceClasses method" << std::endl;
-
-   for ( int c = 0; c < testClassifier->getNClasses(); ++c)
-   {
-      std::stringstream classname;
-      std::stringstream classdesc;
-      classname << c;
-      classdesc << "This class contains all constraints with " << c << ".";
-      testClassifier->setClassName( c, classname.str().c_str() );
-      testClassifier->setClassDescription( c, classdesc.str().c_str() );
-   }
-
-   testClassifier->assignConsToClass( 0, 3 );
-   testClassifier->assignConsToClass( 1, 1 );
-   testClassifier->assignConsToClass( 2, 0 );
-   testClassifier->assignConsToClass( 3, 2 );
-   testClassifier->assignConsToClass( 4, 0 );
-   testClassifier->assignConsToClass( 5, 1 );
-   testClassifier->assignConsToClass( 6, 2 );
-   testClassifier->assignConsToClass( 7, 0 );
-   testClassifier->assignConsToClass( 8, 4 );
-   testClassifier->assignConsToClass( 9, 2 );
-
-   /** test reduceClasses */
-   reducedClassifier = testClassifier->reduceClasses( 3 );
-
-   std::cout << "-- Number of classes: " << reducedClassifier->getNClasses() << std::endl;
-   std::cout << "-- Classifier name: " << std::string(reducedClassifier->getName()) << std::endl;
-
-   for ( int it_class = 0; it_class < reducedClassifier->getNClasses(); ++it_class )
-   {
-      std::cout << "--- Class no: " << it_class << std::endl;
-      std::cout << "--- Class name: " << std::string(reducedClassifier->getClassName( it_class )) << std::endl;
-      std::cout << "--- Class description: " << std::string(reducedClassifier->getClassDescription( it_class )) << std::endl;
-      std::cout << "--- Assigned conss:";
-
-      for ( int it_cons = 0; it_cons < reducedClassifier->getNConss(); ++it_cons )
-      {
-         if ( reducedClassifier->getClassOfCons( it_cons ) == it_class )
-         {
-            std::cout << " " << it_cons;
-         }
-      }
-      std::cout << std::endl;
-   }
-
-   delete testClassifier;
-   delete reducedClassifier;
-}
-
-
 SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currSeeeds, std::vector<SeeedPtr> const & finishedSeeeds, bool sort)
 {
    SCIP_Bool bool1 = seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, sort);
    SCIP_Bool bool2 = seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, sort);
    return ( bool1 && bool2 );
-}
-
-
-/* test method for consclasscollection with ConsClassifier */
-void testConsClassesCollection( std::vector<std::vector<int>> const & ccc1, std::vector<int> const & ccc1n, std::vector<ConsClassifier*> const & ccc2 )
-{
-   int it_classifier;
-   int it_class;
-   int it_cons;
-
-   std::cout << "TEST: Compare contents of consclassescollections" << std::endl;
-
-   std::cout << "Numbers of classifiers: " << (int) ccc1.size() << " and " << (int) ccc2.size() << std::endl;
-
-   /* compare both data structures for each classifier */
-   for ( it_classifier = 0; it_classifier < (int) ccc1.size(); ++it_classifier )
-   {
-      std::cout << "- Classifier no: " << it_classifier << std::endl;
-
-      /* firstly, print all information of consclassescollection */
-      std::cout << "- 1.: consclassescollection (vector<vector<int>>)" << std::endl;
-      std::cout << "-- Number of classes: " << ccc1n[it_classifier] << std::endl;
-
-      for ( it_class = 0; it_class < (int) ccc1n[it_classifier];  ++it_class )
-      {
-         std::cout << "--- Class no: " << it_class << std::endl;
-         std::cout << "--- Assigned conss:";
-
-         for ( it_cons = 0; it_cons < (int) ccc1[it_classifier].size(); ++it_cons )
-         {
-            if ( ccc1[it_classifier][it_cons] == it_class )
-            {
-               std::cout << " " << it_cons;
-            }
-         }
-         std::cout << std::endl;
-      }
-
-      /* secondly, print all information if consclassescollection2 (i.e. vector of ConsClassifier objects) */
-      std::cout << "- 2.: consclassescollection2 (vector<ConsClassifier*>)" << std::endl;
-      std::cout << "-- Number of classes: " << ccc2[it_classifier]->getNClasses() << std::endl;
-      std::cout << "-- Classifier name: " << std::string(ccc2[it_classifier]->getName()) << std::endl;
-
-      for ( it_class = 0; it_class < ccc2[it_classifier]->getNClasses(); ++it_class )
-      {
-         std::cout << "--- Class no: " << it_class << std::endl;
-         std::cout << "--- Class name: " << std::string(ccc2[it_classifier]->getClassName( it_class )) << std::endl;
-         std::cout << "--- Class description: " << std::string(ccc2[it_classifier]->getClassDescription( it_class )) << std::endl;
-         std::cout << "--- Assigned conss:";
-
-         for ( it_cons = 0; it_cons < ccc2[it_classifier]->getNConss(); ++it_cons )
-         {
-            if ( ccc2[it_classifier]->getClassOfCons( it_cons ) == it_class )
-            {
-               std::cout << " " << it_cons;
-            }
-         }
-         std::cout << std::endl;
-      }
-
-   } /* it_classifier >= ccc1.size() */
 }
 
 
@@ -756,10 +616,7 @@ Seeedpool::Seeedpool(
 
    decompositions = NULL;
 
-
-
 }//end constructor
-
 
 Seeedpool::~Seeedpool()
 {
@@ -770,11 +627,18 @@ Seeedpool::~Seeedpool()
          delete allrelevantseeeds[help];
    }
 
-   for ( size_t i = 0; i < consclassescollection2.size(); ++i )
+   for ( size_t i = 0; i < consclassescollection.size(); ++i )
    {
-      size_t help = consclassescollection2.size() - i - 1;
-      if( consclassescollection2[help] != NULL )
-         delete consclassescollection2[help];
+      size_t help = consclassescollection.size() - i - 1;
+      if( consclassescollection[help] != NULL )
+         delete consclassescollection[help];
+   }
+
+   for ( size_t i = 0; i < varclassescollection.size(); ++i )
+   {
+      size_t help = varclassescollection.size() - i - 1;
+      if( varclassescollection[help] != NULL )
+         delete varclassescollection[help];
    }
 }
 
@@ -788,43 +652,45 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
    SCIP_Bool conssclassscipconstypes;
    SCIP_Bool conssclassconsnamenonumbers;
    SCIP_Bool conssclassconsnamelevenshtein;
+   SCIP_Bool varclassscipvartypes;
 
    if( transformed )
-      {
-         SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", &conssclassnnonzeros);
-         SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", &conssclassscipconstypes);
-         SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
-         SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
-      }
-      else
-      {
-         SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/origenabled", &conssclassnnonzeros);
-         SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/origenabled", &conssclassscipconstypes);
-         SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
-         SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
-      }
+     {
+        SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", &conssclassnnonzeros);
+        SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", &conssclassscipconstypes);
+        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
+        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
+        SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/enabled", &varclassscipvartypes);
+     }
+     else
+     {
+        SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/origenabled", &conssclassnnonzeros);
+        SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/origenabled", &conssclassscipconstypes);
+        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
+        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
+        SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", &varclassscipvartypes);
+     }
 
-      std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
+     std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
 
-      if( conssclassnnonzeros )
-         addConssClassesForNNonzeros();
-      if( conssclassscipconstypes )
-         addConssClassesForSCIPConstypes();
-      if( conssclassconsnamenonumbers )
-         addConssClassesForConsnamesDigitFreeIdentical();
+     if( conssclassnnonzeros )
+        addConsClassifier( createConsClassifierForNNonzeros() );
+     if( conssclassscipconstypes )
+        addConsClassifier( createConsClassifierForSCIPConstypes() );
+     if( conssclassconsnamenonumbers )
+        addConsClassifier( createConsClassifierForConsnamesDigitFreeIdentical() );
+     if( conssclassconsnamelevenshtein )
+        addConsClassifier( createConsClassifierForConsnamesLevenshteinDistanceConnectivity(1) );
 
-      if( conssclassconsnamelevenshtein )
-         addConssClassesForConsnamesLevenshteinDistanceConnectivity(1);
+     if ( varclassscipvartypes )
+        addVarClassifier( createVarClassifierForSCIPVartypes() );
 
-      /** Start of testing consclassescollection2, i.e. vector of ConsClassifier objects */
-      testConsClassesCollection( consclassescollection, consclassesnclasses, consclassescollection2 );
-      /** End of testing consclassescollection2, i.e. vector of ConsClassifier objects */
+     reduceConsclasses();
+     reduceVarclasses();
 
-      reduceConsclasses();
+     calcCandidatesNBlocks();
 
-      calcCandidatesNBlocks();
-
-      return SCIP_OKAY;
+     return SCIP_OKAY;
 }
 
 
@@ -1433,29 +1299,71 @@ void Seeedpool::sortAllRelevantSeeeds(){
 }
 
 
-std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector<Seeed*> origseeeds )
+/** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
+void Seeedpool::translateSeeedData( Seeedpool* origpool, std::vector<Seeed*> origseeeds, std::vector<Seeed*>& newseeeds,
+   std::vector<ConsClassifier*> otherconsclassifiers, std::vector<ConsClassifier*>& newconsclassifiers,
+   std::vector<VarClassifier*> othervarclassifiers, std::vector<VarClassifier*>& newvarclassifiers )
+{
+   assert( newseeeds.empty() );
+   assert( newconsclassifiers.empty() );
+   assert( newvarclassifiers.empty() );
+
+   std::vector<int> rowothertothis;
+   std::vector<int> rowthistoother;
+   std::vector<int> colothertothis;
+   std::vector<int> colthistoother;
+   std::vector<int> missingrowinthis;
+
+   SCIPdebugMessagePrint(this->scip, " started translate seeed method \n" );
+
+   calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
+
+   SCIPdebugMessagePrint(this->scip, " calculated translation; number of missing constraints: %d; number of other seeeds: %d \n", missingrowinthis.size(), origseeeds.size() );
+
+   newseeeds = getTranslatedSeeeds( origseeeds, rowothertothis, rowthistoother, colothertothis, colthistoother );
+   newconsclassifiers = getTranslatedConsClassifiers( otherconsclassifiers, rowothertothis, rowthistoother );
+   newvarclassifiers = getTranslatedVarClassifiers( othervarclassifiers, colothertothis, colthistoother );
+}
+
+/** translates seeeds if the index structure of the problem has changed, e.g. due to presolving */
+void Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector<Seeed*> origseeeds, std::vector<Seeed*>& newseeeds )
+{
+   assert( newseeeds.empty() );
+
+   std::vector<int> rowothertothis(0);
+   std::vector<int> rowthistoother(0);
+   std::vector<int> colothertothis(0);
+   std::vector<int> colthistoother(0);
+   std::vector<int> missingrowinthis(0);
+
+   SCIPdebugMessagePrint(this->scip, " started translate seeed method \n" );
+
+   calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
+
+   SCIPdebugMessagePrint(this->scip, " calculated translation; number of missing constraints: %d; number of other seeeds: %d \n", missingrowinthis.size(), origseeeds.size() );
+
+   newseeeds = getTranslatedSeeeds( origseeeds, rowothertothis, rowthistoother, colothertothis, colthistoother );
+}
+
+
+/** calculates necessary data for translating seeeds and classifiers */
+void Seeedpool::calcTranslationMapping( Seeedpool* origpool, std::vector<int>& rowothertothis, std::vector<int>& rowthistoother,
+   std::vector<int>& colothertothis, std::vector<int>& colthistoother, std::vector<int>& missingrowinthis )
 {
    int nrowsother  = origpool->nConss;
    int nrowsthis  = nConss;
    int ncolsother  = origpool->nVars;
    int ncolsthis  = nVars;
 
-   std::vector<Seeed*> newseeeds(0);
-   std::vector<int> rowothertothis(nrowsother, -1);
-   std::vector<int> rowthistoother(nrowsthis, -1);
-   std::vector<int> colothertothis(ncolsother, -1);
-   std::vector<int> colthistoother(ncolsthis, -1);
+   rowothertothis.assign(nrowsother, -1);
+   rowthistoother.assign(nrowsthis, -1);
+   colothertothis.assign(ncolsother, -1);
+   colthistoother.assign(ncolsthis, -1);
 
-   std::vector<int> missingrowinthis(0);
-   std::vector<int> newrowsthis(0);
-   std::vector<int> missingcolsinthis(0);
-   std::vector<int> newcolsthis(0);
-
-   SCIPdebugMessagePrint(this->scip, " started translate seeed method \n" );
+   missingrowinthis.clear();
 
 
    /* identify new and deleted rows and cols; and identify bijection between maintained variables */
-
    for( int i = 0; i < nrowsother; ++i  )
    {
       SCIP_CONS* otherrow = origpool->getConsForIndex(i);
@@ -1494,10 +1402,13 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
          }
       }
    }
+}
 
-   SCIPdebugMessagePrint(this->scip, " calculated translation; number of missing constraints: %d; number of other seeeds: %d \n", missingrowinthis.size(), origseeeds.size() );
-
-   /** constructing seeeds for this seeedpool */
+/** returns translated seeeds derived from given mapping data */
+std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origseeeds, std::vector<int>& rowothertothis, std::vector<int>& rowthistoother,
+   std::vector<int>& colothertothis, std::vector<int>& colthistoother )
+{
+   std::vector<Seeed*> newseeeds(0);
 
    for( size_t s = 0; s < origseeeds.size(); ++s )
    {
@@ -1508,7 +1419,7 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
 
  //     SCIPdebugMessagePrint(this->scip, " otherseeed seeed %d has %d many blocks \n", otherseeed->getID(), otherseeed->getNBlocks() );
 
-      /** ignore seeeds with one block or no block, they are supposed to be find anyway */
+      /** ignore seeeds with one block or no block, they are supposed to be found anyway */
       if( otherseeed->getNBlocks() == 1 || otherseeed->getNBlocks() == 0  )
          continue;
 
@@ -1538,15 +1449,15 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
             }
          }
 
-         /*for ( int j = 0; j < otherseeed->getNVarsForBlock(b); j++ )
-            {
-               int thisvar = colothertothis[otherseeed->getVarsForBlock(b)[j] ];
-               if( thisvar != -1 )
-               {
-                  newseeed->setVarToBlock(thisvar, b);
-                  newseeed->deleteOpenvar(thisvar);
-               }
-            }*/
+//         for ( int j = 0; j < otherseeed->getNVarsForBlock(b); j++ )
+//         {
+//            int thisvar = colothertothis[otherseeed->getVarsForBlock(b)[j] ];
+//            if( thisvar != -1 )
+//            {
+//               newseeed->setVarToBlock(thisvar, b);
+//               newseeed->deleteOpenvar(thisvar);
+//            }
+//         }
       }
 
       for ( int i = 0; i < otherseeed->getNMasterconss(); i++ )
@@ -1604,16 +1515,118 @@ std::vector<Seeed*> Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector
          newseeed->showScatterPlot(this);
        */
 
-       if(newseeed->checkConsistency() )
-          newseeeds.push_back(newseeed);
-       else {
-          delete newseeed;
-          newseeed = NULL;
-       }
-    }
+      if(newseeed->checkConsistency() )
+         newseeeds.push_back(newseeed);
+      else {
+         delete newseeed;
+         newseeed = NULL;
+      }
+   }
 
-    return newseeeds;
- }
+   return newseeeds;
+}
+
+
+/** returns translated ConsClassifiers derived from given mapping data */
+std::vector<ConsClassifier*> Seeedpool::getTranslatedConsClassifiers( std::vector<ConsClassifier*>& otherclassifiers,
+   std::vector<int>& rowothertothis, std::vector<int>& rowthistoother )
+{
+   std::vector<ConsClassifier*> newclassifiers(0);
+
+   for ( size_t i = 0; i < otherclassifiers.size(); ++i )
+   {
+      ConsClassifier* oldclassifier = otherclassifiers[i];
+      ConsClassifier* newclassifier;
+      std::stringstream newname;
+
+      newname << oldclassifier->getName() << "-origp";
+      newclassifier = new ConsClassifier(scip, newname.str().c_str(), oldclassifier->getNClasses(), (int) rowthistoother.size());
+      int bufferclassindex = -1;
+
+      /** copy class information */
+      for ( int j = 0; j < oldclassifier->getNClasses(); ++j )
+      {
+         newclassifier->setClassName( j, oldclassifier->getClassName(j) );
+         newclassifier->setClassDescription( j, oldclassifier->getClassDescription(j) );
+         newclassifier->setClassDecompInfo( j, oldclassifier->getClassDecompInfo(j) );
+      }
+
+      /** assign new conss to classes */
+      for ( int c = 0; c < (int) rowthistoother.size(); ++c )
+      {
+         if ( rowthistoother[c] != -1 )
+         {
+            newclassifier->assignConsToClass( c, oldclassifier->getClassOfCons( rowthistoother[c] ) );
+         }
+         else
+         {
+            if ( bufferclassindex == -1)
+            {
+               bufferclassindex = newclassifier->addClass( "buffer", "This class contains constraints which are new in the presolved problem.", BOTH );
+            }
+            newclassifier->assignConsToClass( c, bufferclassindex );
+         }
+      }
+
+      /** remove empty classes */
+      newclassifier->removeEmptyClasses();
+
+      newclassifiers.push_back(newclassifier);
+   }
+
+   return newclassifiers;
+}
+
+
+/** returns translated VarClassifiers derived from given mapping data */
+std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers( std::vector<VarClassifier*>& otherclassifiers,
+   std::vector<int>& colothertothis, std::vector<int>& colthistoother )
+{
+   std::vector<VarClassifier*> newclassifiers(0);
+
+   for ( size_t i = 0; i < otherclassifiers.size(); ++i )
+   {
+      VarClassifier* oldclassifier = otherclassifiers[i];
+      VarClassifier* newclassifier;
+      std::stringstream newname;
+
+      newname << oldclassifier->getName() << "-origp";
+      newclassifier = new VarClassifier( scip, newname.str().c_str(), oldclassifier->getNClasses(), (int) colthistoother.size());
+      int bufferclassindex = -1;
+
+      /** copy class information */
+      for ( int j = 0; j < oldclassifier->getNClasses(); ++j )
+      {
+         newclassifier->setClassName( j, oldclassifier->getClassName(j) );
+         newclassifier->setClassDescription( j, oldclassifier->getClassDescription(j) );
+         newclassifier->setClassDecompInfo( j, oldclassifier->getClassDecompInfo(j) );
+      }
+
+      /** assign new vars to classes */
+      for ( int c = 0; c < (int) colthistoother.size(); ++c )
+      {
+         if ( colthistoother[c] != -1 )
+         {
+            newclassifier->assignVarToClass( c, oldclassifier->getClassOfVar( colthistoother[c] ) );
+         }
+         else
+         {
+            if ( bufferclassindex == -1)
+            {
+               bufferclassindex = newclassifier->addClass( "buffer", "This class contains variables which are new in the presolved problem.", ALL );
+            }
+            newclassifier->assignVarToClass( c, bufferclassindex );
+         }
+      }
+
+      /** remove empty classes */
+      newclassifier->removeEmptyClasses();
+
+      newclassifiers.push_back(newclassifier);
+   }
+
+   return newclassifiers;
+}
 
 void Seeedpool::populate(std::vector<SeeedPtr> seeeds)
 {
@@ -1789,41 +1802,31 @@ void Seeedpool::addCandidatesNBlocks(
 }
 
 void Seeedpool::calcCandidatesNBlocks()
-{
+ {
    /**
     * for every subset of constraint classes calculate gcd (greatest common divisors) of the corresponding number of occurrences
     */
 
    int maximumnclasses = 18; /* if  distribution of classes exceed this number its skipped */
 
-
-   for( size_t classifier = 0; classifier < consclassescollection2.size(); ++classifier )
+   /** firstly, iterate over all consclassifiers */
+   for( size_t classifier = 0; classifier < consclassescollection.size(); ++classifier )
    {
-      std::vector< std::vector<int> > subsetsOfConstypes(0, std::vector<int>(0) );
-      std::vector<int> nconssofclass(consclassescollection2[classifier]->getNClasses(), 0);
-      std::vector<int> consclassindices(0);
-
       /** check if there are to  many classes in this distribution and skip it if so */
-
-      if ( consclassescollection2[classifier]->getNClasses() > maximumnclasses)
+      if ( consclassescollection[classifier]->getNClasses() > maximumnclasses)
       {
-         std::cout << " the current consclass distribution includes " <<  consclassescollection2[classifier]->getNClasses() << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
+         std::cout << " the current consclass distribution includes " <<  consclassescollection[classifier]->getNClasses() << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
          continue;
       }
 
-
-      for( int i = 0; i < consclassescollection2[classifier]->getNClasses(); ++i)
-         consclassindices.push_back(i);
-
-      subsetsOfConstypes = getAllSubsets(consclassindices);
-
-      for ( int i = 0; i < getNConss(); ++i)
-         ++(nconssofclass.at( consclassescollection2[classifier]->getClassOfCons(i) ) );
+      /** get necessary data of current classifier */
+      std::vector< std::vector<int> > subsetsOfConstypes = consclassescollection[classifier]->getAllSubsets( true, true, true );
+      std::vector<int> nConssOfClasses = consclassescollection[classifier]->getNConssOfClasses();
 
       /** start with the cardinalities of the consclasses as candidates */
-      for( size_t i = 0; i < nconssofclass.size(); ++i)
+      for( size_t i = 0; i < nConssOfClasses.size(); ++i)
       {
-         addCandidatesNBlocks(nconssofclass[i]);
+        addCandidatesNBlocks(nConssOfClasses[i]);
       }
 
       /** continue with gcd of all cardinalities in this subset */
@@ -1832,33 +1835,71 @@ void Seeedpool::calcCandidatesNBlocks()
          int greatestCD = 1;
 
          if( subsetsOfConstypes[subset].size() == 0 || subsetsOfConstypes[subset].size() == 1 )
-            continue;
+              continue;
 
-         greatestCD = gcd(nconssofclass[subsetsOfConstypes[subset][0]], nconssofclass[subsetsOfConstypes[subset][1]]  );
+         greatestCD = gcd(nConssOfClasses[subsetsOfConstypes[subset][0]], nConssOfClasses[subsetsOfConstypes[subset][1]]  );
 
          for( size_t i = 2; i < subsetsOfConstypes[subset].size() ; ++i)
          {
-            greatestCD = gcd( greatestCD, nconssofclass[subsetsOfConstypes[subset][i]] );
+            greatestCD = gcd( greatestCD, nConssOfClasses[subsetsOfConstypes[subset][i]] );
          }
 
          addCandidatesNBlocks(greatestCD);
       }
    }
-   return ;
+
+   /** secondly, iterate over all varclassifiers */
+   for( size_t classifier = 0; classifier < varclassescollection.size(); ++classifier )
+   {
+      /** check if there are to  many classes in this distribution and skip it if so */
+      if ( varclassescollection[classifier]->getNClasses() > maximumnclasses)
+      {
+         std::cout << " the current varclass distribution includes " <<  varclassescollection[classifier]->getNClasses() << " classes but only " << maximumnclasses << " are allowed for calcCandidatesNBlocks()" << std::endl;
+         continue;
+      }
+
+      /** get necessary data of current classifier */
+      std::vector< std::vector<int> > subsetsOfVartypes = varclassescollection[classifier]->getAllSubsets( true, true, true, true );
+      std::vector<int> nVarsOfClasses = varclassescollection[classifier]->getNVarsOfClasses();
+
+      /** start with the cardinalities of the varclasses as candidates */
+      for( size_t i = 0; i < nVarsOfClasses.size(); ++i)
+      {
+         addCandidatesNBlocks(nVarsOfClasses[i]);
+      }
+
+      /** continue with gcd of all cardinalities in this subset */
+      for(size_t subset = 0; subset < subsetsOfVartypes.size(); ++subset)
+      {
+         int greatestCD = 1;
+
+         if( subsetsOfVartypes[subset].size() == 0 || subsetsOfVartypes[subset].size() == 1 )
+              continue;
+
+         greatestCD = gcd(nVarsOfClasses[subsetsOfVartypes[subset][0]], nVarsOfClasses[subsetsOfVartypes[subset][1]]  );
+
+         for( size_t i = 2; i < subsetsOfVartypes[subset].size() ; ++i)
+         {
+            greatestCD = gcd( greatestCD, nVarsOfClasses[subsetsOfVartypes[subset][i]] );
+         }
+
+         addCandidatesNBlocks(greatestCD);
+      }
+   }
 }
 
 int Seeedpool::getNConssClassDistributions(){
-   return (int) consclassescollection2.size();
+   return (int) consclassescollection.size();
 }
 
 int* Seeedpool::getConssClassDistribution(
    int consclassdistr
 )
 {
-   int nconss = consclassescollection2[consclassdistr]->getNConss();
+   int nconss = consclassescollection[consclassdistr]->getNConss();
    int* output = new int[nconss];
    for ( int i = 0; i < nconss; ++i )
-      output[i] = consclassescollection2[consclassdistr]->getClassOfCons( i );
+      output[i] = consclassescollection[consclassdistr]->getClassOfCons( i );
    return &output[0];
 }
 
@@ -1866,655 +1907,411 @@ std::vector<int> Seeedpool::getConssClassDistributionVector(
    int consclassdistr
 )
 {
-   int nconss = consclassescollection2[consclassdistr]->getNConss();
+   int nconss = consclassescollection[consclassdistr]->getNConss();
    std::vector<int> output(nconss, 0);
    for ( int i = 0; i < nconss; ++i )
-      output[i] = consclassescollection2[consclassdistr]->getClassOfCons( i );
+      output[i] = consclassescollection[consclassdistr]->getClassOfCons( i );
    return output;
 }
 
-
-int Seeedpool::getNClassesOfDistribution(
-   int consclassdistr
-)
+int Seeedpool::getNClassesOfDistribution( int consclassdistr )
 {
-   return consclassescollection2[consclassdistr]->getNClasses();
+   return consclassescollection[consclassdistr]->getNClasses();
 }
 
 /** returns number of different constraint classifiers */
-int Seeedpool::getNConsClassifier()
+int Seeedpool::getNConsClassifiers()
 {
-   return (int) consclassescollection2.size();
+   return (int) consclassescollection.size();
 }
 
-/** returns pointer to a constraint classifier */
+ /** returns pointer to a constraint classifier */
 ConsClassifier* Seeedpool::getConsClassifier( int givenClassifierIndex )
 {
-   return consclassescollection2[givenClassifierIndex];
+   assert( 0 <= givenClassifierIndex && givenClassifierIndex < (int) consclassescollection.size() );
+
+   return consclassescollection[givenClassifierIndex];
 }
 
-// void Seeedpool::addConssClassesForSCIPConstypes()
-// {
-//    /**
-//     * at first for every subset of constypes calculate gcd (greatest common divisors) of the corresponding number of occurrences
-//     */
-//    std::vector<consType> foundConstypes(0);
-//    std::vector<int> constypesIndices(0);
-//    std::vector<int> nConssConstype(0);
-//    std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
-//
-//    for( int i = 0; i < getNConss(); ++i)
-//    {
-//       SCIP_CONS* cons;
-//       bool found = false;
-//       cons = getConsForIndex(i);
-//       consType cT = GCGconsGetType(cons);
-//       size_t constype;
-//
-//       /** find constype or not */
-//       for( constype = 0; constype < foundConstypes.size(); ++constype)
-//       {
-//          if( foundConstypes[constype] == cT )
-//          {
-//             found = true;
-//             break;
-//          }
-//       }
-//       if( !found )
-//       {
-//          foundConstypes.push_back(GCGconsGetType(cons) );
-//          classForCons[i] = foundConstypes.size() - 1;
-//       }
-//       else
-//          classForCons[i] = constype;
-//     }
+ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
+ {
+    /**
+     * at first for every subset of constypes calculate gcd (greatest common divisors) of the corresponding number of occurrences
+     */
+    std::vector<consType> foundConstypes(0);
+    std::vector<int> constypesIndices(0);
+    std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
+    ConsClassifier* classifier;
 
+    for( int i = 0; i < getNConss(); ++i)
+    {
+       SCIP_CONS* cons;
+       bool found = false;
+       cons = getConsForIndex(i);
+       consType cT = GCGconsGetType(cons);
+       size_t constype;
 
-
-void Seeedpool::addConssClassesForSCIPConstypes()
-{
-   /**
-    * at first for every subset of constypes calculate gcd (greatest common divisors) of the corresponding number of occurrences
-    */
-   std::vector<consType> foundConstypes(0);
-   std::vector<int> constypesIndices(0);
-   std::vector<int> nConssConstype(0);
-   std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
-
-   for( int i = 0; i < getNConss(); ++i)
-   {
-      SCIP_CONS* cons;
-      bool found = false;
-      cons = getConsForIndex(i);
-      consType cT = GCGconsGetType(cons);
-      size_t constype;
-
-      /** find constype or not */
-      for( constype = 0; constype < foundConstypes.size(); ++constype)
-      {
-         if( foundConstypes[constype] == cT )
-         {
-            found = true;
-            break;
-         }
-      }
-      if( !found )
-      {
-         foundConstypes.push_back(GCGconsGetType(cons) );
-         classForCons[i] = foundConstypes.size() - 1;
-      }
-      else
-         classForCons[i] = constype;
-   }
-
-   consclassescollection.push_back(classForCons);
-   consclassesnclasses.push_back(foundConstypes.size() );
-
-   std::cout << " consclassifier scipconstypes: " << " classification with " << foundConstypes.size()  << " different constraint classes" << std::endl;
-
-   /** Start of testing ConsClassifier */
-   ConsClassifier* classifier = new ConsClassifier( scip, "SCIPConstypes", (int) foundConstypes.size(), getNConss() );
-
-   for( int c = 0; c < classifier->getNClasses(); ++c )
-   {
-      std::string name;
-      std::stringstream text;
-      switch (foundConstypes[c])
-      {
-      case linear:
-         name = "linear";
-         break;
-      case knapsack:
-         name = "knapsack";
-         break;
-      case varbound:
-         name = "varbound";
-         break;
-      case setpacking:
-         name = "setpacking";
-         break;
-      case setcovering:
-         name = "setcovering";
-         break;
-      case setpartitioning:
-         name = "setpartitioning";
-         break;
-      case logicor:
-         name= "logicor";
-         break;
-      case sos1:
-         name = "sos1";
-         break;
-      case sos2:
-         name = "sos2";
-         break;
-      case unknown:
-         name = "unknown";
-         break;
-      case nconsTypeItems:
-         name = "nconsTypeItems";
-         break;
-      default:
-         name = "newConstype";
-         break;
-      }
-      classifier->setClassName( c, name.c_str() );
-      text << "This class contains all constraints that are of (SCIP) constype \"" << name << "\".";
-      classifier->setClassDescription( c, text.str().c_str() );
-   }
-   for( int i = 0; i < classifier->getNConss(); ++i )
-   {
-      classifier->assignConsToClass( i, classForCons[i] );
-   }
-
-   consclassescollection2.push_back(classifier);
-
-   classifier = NULL;
-
-   /*
-      std::cout << "Name: " << std::string(classifier->getName()) << std::endl;
-      std::cout << "Number of classes: " << classifier->getNClasses() << std::endl;
-      std::cout << "Number of constraints: " << classifier->getNConss() << std::endl;
-
-      for( int c = 0; c < classifier->getNClasses(); ++c )
-      {
-
-       std::cout << "Classname: " << std::string(classifier->getClassName( c )) << std::endl;
-       std::cout << "Assigned constraints:";
-       for( int i = 0; i < classifier->getNConss(); ++i )
+       /** find constype or not */
+       for( constype = 0; constype < foundConstypes.size(); ++constype)
        {
-          if ( classifier->getClassOfCons( i ) == c )
+          if( foundConstypes[constype] == cT )
           {
-             std::cout << " " << i;
+             found = true;
+             break;
           }
        }
-       std::cout << std::endl;
+       if( !found )
+       {
+          foundConstypes.push_back(GCGconsGetType(cons) );
+          classForCons[i] = foundConstypes.size() - 1;
+       }
+       else
+          classForCons[i] = constype;
+     }
 
-      }*/
-   /** End of testing ConsClassifier */
+    classifier = new ConsClassifier( scip, "constypes", (int) foundConstypes.size(), getNConss() );
 
-   return;
+    for( int c = 0; c < classifier->getNClasses(); ++c )
+    {
+       std::string name;
+       std::stringstream text;
+       switch (foundConstypes[c])
+       {
+       case linear:
+          name = "linear";
+          break;
+       case knapsack:
+          name = "knapsack";
+          break;
+       case varbound:
+          name = "varbound";
+          break;
+       case setpacking:
+          name = "setpacking";
+          break;
+       case setcovering:
+          name = "setcovering";
+          break;
+       case setpartitioning:
+          name = "setpartitioning";
+          break;
+       case logicor:
+          name= "logicor";
+          break;
+       case sos1:
+          name = "sos1";
+          break;
+       case sos2:
+          name = "sos2";
+          break;
+       case unknown:
+          name = "unknown";
+          break;
+       case nconsTypeItems:
+          name = "nconsTypeItems";
+          break;
+       default:
+          name = "newConstype";
+          break;
+       }
+       classifier->setClassName( c, name.c_str() );
+       text << "This class contains all constraints that are of (SCIP) constype \"" << name << "\".";
+       classifier->setClassDescription( c, text.str().c_str() );
+    }
+    for( int i = 0; i < classifier->getNConss(); ++i )
+    {
+       classifier->assignConsToClass( i, classForCons[i] );
+    }
+
+    std::cout << " consclassifier scipconstypes:" << " yields a classification with " << foundConstypes.size()  << " different constraint classes" << std::endl;
+
+    return classifier;
 }
 
-void Seeedpool::addConssClassesForConsnamesDigitFreeIdentical()
-{
-   /**
-    * at first remove all digits from the consnames
-    */
-   std::vector<std::string> consnamesToCompare(getNConss(), "");
-   std::vector<int> nConssConstype(0);
-   std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
-   std::vector<std::string> nameClasses(0);
+ ConsClassifier* Seeedpool::createConsClassifierForConsnamesDigitFreeIdentical()
+  {
+     /**
+      * at first remove all digits from the consnames
+      */
+     std::vector<std::string> consnamesToCompare(getNConss(), "");
+     std::vector<int> nConssConstype(0);
+     std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
+     std::vector<std::string> nameClasses(0);
+     ConsClassifier* classifier;
 
 
-   for( int i = 0; i < getNConss(); ++i )
-   {
-      int nremoved;
-      char consname[SCIP_MAXSTRLEN];
-      strcpy(consname, SCIPconsGetName(getConsForIndex(i) ) );
+     for( int i = 0; i < getNConss(); ++i )
+     {
+        int nremoved;
+        char consname[SCIP_MAXSTRLEN];
+        strcpy(consname, SCIPconsGetName(getConsForIndex(i) ) );
 
-      removeDigits(consname, &nremoved);
-      consnamesToCompare[i] = std::string(consname);
-   }
+        removeDigits(consname, &nremoved);
+        consnamesToCompare[i] = std::string(consname);
+     }
 
-   /** test of reduced consnames */
+     /** test of reduced consnames */
 
-   if( false )
-   {
-      for( int i = 0; i < getNConss(); ++i )
-      {
-         std::cout << " old consname : " << SCIPconsGetName(getConsForIndex(i) ) << std::endl;
-         //           std::cout << " new consname : " << consnamesToCompare[i]  << std::endl;
-         //           std::cout << std::endl;
-      }
-   }
+     if( false )
+     {
+        for( int i = 0; i < getNConss(); ++i )
+        {
+          std::cout << " old consname : " << SCIPconsGetName(getConsForIndex(i) ) << std::endl;
+//           std::cout << " new consname : " << consnamesToCompare[i]  << std::endl;
+//           std::cout << std::endl;
+        }
+     }
 
-   for( int i = 0; i < getNConss(); ++i )
-   {
-      bool belongstoexistingclass = false;
-      /** test if string belongs to an existing name class */
-      for ( size_t j = 0; j < nameClasses.size(); ++j )
-      {
-         if ( nameClasses[j].compare(consnamesToCompare[i]) == 0 )
-         {
-            belongstoexistingclass = true;
-            classForCons[i] = j;
-            nConssConstype[j]++;
-            break;
-         }
-      }
-      if ( !belongstoexistingclass )
-      {
-         nameClasses.push_back(consnamesToCompare[i] );
-         nConssConstype.push_back(1);
-         classForCons[i] = nameClasses.size()-1;
+     for( int i = 0; i < getNConss(); ++i )
+     {
+        bool belongstoexistingclass = false;
+        /** test if string belongs to an existing name class */
+        for ( size_t j = 0; j < nameClasses.size(); ++j )
+        {
+           if ( nameClasses[j].compare(consnamesToCompare[i]) == 0 )
+           {
+              belongstoexistingclass = true;
+              classForCons[i] = j;
+              nConssConstype[j]++;
+              break;
+           }
+        }
+        if ( !belongstoexistingclass )
+        {
+           nameClasses.push_back(consnamesToCompare[i] );
+           nConssConstype.push_back(1);
+           classForCons[i] = nameClasses.size()-1;
 
-      }
-   }
+        }
+     }
 
-   consclassescollection.push_back(classForCons);
-   consclassesnclasses.push_back(nameClasses.size() );
-
-   std::cout << " consclass classifier digit-reduced consnames (check for identity):  " << " classificiation with " << nameClasses.size()  << " different constraint classes" << std::endl;
-
-
-   /** Start of testing ConsClassifier */
-   ConsClassifier* classifier = new ConsClassifier( scip, "Consnames_ident", (int) nameClasses.size(), getNConss() );
-
-   for( int c = 0; c < classifier->getNClasses(); ++c )
-   {
-      std::stringstream text;
-      classifier->setClassName( c, nameClasses[c].c_str() );
-      text << "This class contains all constraints with name \"" << nameClasses[c] << "\".";
-      classifier->setClassDescription( c, text.str().c_str() );
-   }
-   for( int i = 0; i < classifier->getNConss(); ++i )
-   {
-      classifier->assignConsToClass( i, classForCons[i] );
-   }
-
-   consclassescollection2.push_back(classifier);
-
-   classifier = NULL;
-
-   /*
-     std::cout << "Name: " << std::string(classifier->getName()) << std::endl;
-     std::cout << "Number of classes: " << classifier->getNClasses() << std::endl;
-     std::cout << "Number of constraints: " << classifier->getNConss() << std::endl;
+     classifier = new ConsClassifier( scip, "consnames", (int) nameClasses.size(), getNConss() );
 
      for( int c = 0; c < classifier->getNClasses(); ++c )
      {
-        std::cout << "Classname: " << std::string(classifier->getClassName( c )) << std::endl;
-        std::cout << "Assigned constraints:";
-        for( int i = 0; i < classifier->getNConss(); ++i )
-        {
-           if ( classifier->getClassOfCons( i ) == c )
-           {
-              std::cout << " " << i;
-           }
-        }
-        std::cout << std::endl;
+        std::stringstream text;
+        classifier->setClassName( c, nameClasses[c].c_str() );
+        text << "This class contains all constraints with name \"" << nameClasses[c] << "\".";
+        classifier->setClassDescription( c, text.str().c_str() );
+     }
+     for( int i = 0; i < classifier->getNConss(); ++i )
+     {
+        classifier->assignConsToClass( i, classForCons[i] );
      }
 
-     delete classifier;*/
-   /** End of testing ConsClassifier */
+     std::cout << " consclassifier digit-reduced consnames (check for identity):" << " yields a classificiation with " << nameClasses.size()  << " different constraint classes" << std::endl;
 
-   return;
+     return classifier;
 }
 
-void Seeedpool::addConssClassesForConsnamesLevenshteinDistanceConnectivity(
-   int connectivity
-){
-   /**
-    * at first remove all digits from the consnames
-    */
-   std::vector<std::string> consnamesToCompare(getNConss(), "");
-   std::vector<int> nConssConstype(0);
-   std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
-   std::vector<bool> alreadyReached(getNConss(), false);
-   std::queue<int> helpqueue = std::queue<int>();
-   //std::vector<int> neighborConss(0);
-   int nUnreachedConss = getNConss();
-   int currentClass = -1;
-   int nmaxconss = 5000;
+ ConsClassifier* Seeedpool::createConsClassifierForConsnamesLevenshteinDistanceConnectivity(
+    int connectivity
+    )
+  {
+     /**
+      * at first remove all digits from the consnames
+      */
+     std::vector<std::string> consnamesToCompare(getNConss(), "");
+     std::vector<int> nConssConstype(0);
+     std::vector<int> classForCons = std::vector<int>(getNConss(), -1);
+     std::vector<bool> alreadyReached(getNConss(), false);
+     std::queue<int> helpqueue = std::queue<int>();
+     //std::vector<int> neighborConss(0);
+     int nUnreachedConss = getNConss();
+     int currentClass = -1;
+     int nmaxconss = 5000;
 
-   /* Start of testing ConsClassifier (1/3) */
-   std::stringstream classifierName;
-   classifierName << "Levensthein_Dist_Con:" << connectivity;
-   ConsClassifier* classifier = new ConsClassifier( scip, classifierName.str().c_str(), 0, getNConss() );
-   /* End of testing ConsClassifier (1/3) */
+     std::stringstream classifierName;
+     classifierName << "lev-dist-" << connectivity;
+     ConsClassifier* classifier = new ConsClassifier( scip, classifierName.str().c_str(), 0, getNConss() );
 
 
-   if (getNConss() > nmaxconss)
+     if (getNConss() > nmaxconss)
+     {
+        std::cout << " skipped levenshtein distance based constraint classes calculating since number of constraints " << getNConss() << " exceeds limit " << nmaxconss   << std::endl;
+        return NULL;
+     }
+
+
+     std::vector< std::vector<int> > levenshteindistances(getNConss(), std::vector<int>(getNConss(), -1) );
+
+
+     for( int i = 0; i < getNConss(); ++i )
+     {
+        consnamesToCompare[i] = std::string(SCIPconsGetName(getConsForIndex(i) ));
+     }
+
+     for( int i = 0; i < getNConss(); ++i )
+     {
+        for ( int j = i+1; j < getNConss(); ++j)
+        {
+           levenshteindistances[i][j] = calcLevenshteinDistance(consnamesToCompare[i], consnamesToCompare[j]);
+           levenshteindistances[j][i] = levenshteindistances[i][j];
+//           if(levenshteindistances[i][j] == 1)
+//              std::cout << " string1 : " << consnamesToCompare[i] << " string2 : " << consnamesToCompare[j] << " distance: " << levenshteindistances[i][j] << std::endl;
+        }
+     }
+
+     /** do breadth first search */
+        while( nUnreachedConss > 0 )
+        {
+           int firstUnreached = -1;
+           currentClass++;
+           assert(helpqueue.empty());
+           for( int i = 0; i < getNConss(); ++i )
+           {
+              if( classForCons[i] == -1 )
+              {
+                 firstUnreached = i;
+                 break;
+              }
+           }
+
+           helpqueue.push(firstUnreached);
+//           neighborConss.clear();
+//           neighborConss.push_back(firstUnreached);
+           alreadyReached[firstUnreached] = true;
+           classForCons[firstUnreached] = currentClass;
+           --nUnreachedConss;
+
+           while( !helpqueue.empty() )
+           {
+              int nodecons = helpqueue.front();
+              helpqueue.pop();
+              for( int j = 0; j < getNConss() ; ++j )
+              {
+
+                 if( alreadyReached[j] )
+                    continue;
+
+                 if(j == nodecons)
+                    continue;
+
+                 if(levenshteindistances[j][nodecons] > connectivity)
+                    continue;
+
+                    alreadyReached[j] = true;
+                    classForCons[j] = currentClass;
+                    --nUnreachedConss;
+                    helpqueue.push(j);
+                 }
+           } //endwhile(!queue.empty() )
+
+           std::stringstream text;
+           text << "This class contains all constraints with a name similar to \"" << consnamesToCompare[firstUnreached] << "\".";
+           int newClass = classifier->addClass( consnamesToCompare[firstUnreached].c_str(), text.str().c_str(), BOTH );
+           assert( newClass == currentClass );
+
+        } // endwhile( !openConss.empty() )
+
+        for( int i = 0; i < classifier->getNConss(); ++i )
+        {
+           classifier->assignConsToClass( i, classForCons[i] );
+        }
+
+        std::cout << " consclassifier levenshtein: connectivity of " << connectivity << " yields a classification with " << currentClass+1  << " different constraint classes" << std::endl;
+
+        return classifier;
+}
+
+
+ ConsClassifier* Seeedpool::createConsClassifierForNNonzeros()
+  {
+     /**
+      * at first remove all digits from the consnames
+      */
+     std::vector<int> nconssforclass(0);
+     std::vector<int> differentNNonzeros(0);
+     std::vector<int> classForCons (getNConss(), -1);
+
+
+     int counterClasses = 0;
+
+     for( int i = 0; i < getNConss(); ++i )
+     {
+        int nnonzeros = getNVarsForCons(i);
+        bool nzalreadyfound = false;
+
+        for ( size_t nzid = 0; nzid < differentNNonzeros.size(); ++nzid )
+        {
+           if ( nnonzeros == differentNNonzeros[nzid] )
+           {
+              nzalreadyfound = true;
+              classForCons[i] = nzid;
+              ++nconssforclass[nzid];
+              break;
+           }
+        }
+
+        if(!nzalreadyfound)
+        {
+           classForCons[i] = counterClasses;
+           ++counterClasses;
+           differentNNonzeros.push_back(nnonzeros);
+           nconssforclass.push_back(1);
+        }
+     }
+
+     /** test of reduced consnames */
+
+     if( false )
+     {
+        std::cout << " nNonzero : nConsWithNNonzero"  << std::endl;
+        for( size_t i = 0; i < differentNNonzeros.size(); ++i )
+        {
+           std::cout << differentNNonzeros[i] << " : " << nconssforclass[i] << std::endl;
+//           std::cout << " new consname : " << consnamesToCompare[i]  << std::endl;
+//           std::cout << std::endl;
+        }
+     }
+
+     ConsClassifier* classifier = new ConsClassifier( scip, "nonzeros", (int) differentNNonzeros.size(), getNConss() );
+
+     for( int c = 0; c < classifier->getNClasses(); ++c )
+     {
+        std::stringstream text;
+        text << differentNNonzeros[c];
+        classifier->setClassName( c, text.str().c_str() );
+        text.str("");
+        text.clear();
+        text << "This class contains all constraints with " << differentNNonzeros[c] << " nonzero coefficients.";
+        classifier->setClassDescription( c, text.str().c_str() );
+     }
+     for( int i = 0; i < classifier->getNConss(); ++i )
+     {
+        classifier->assignConsToClass( i, classForCons[i] );
+     }
+
+     std::cout << " consclassifier nonzeros: comparison of number of nonzeros" << " yields a classification with " << differentNNonzeros.size()  << " different constraint classes" << std::endl;
+
+     return classifier;
+ }
+
+/** adds a constraint classifier if it is no duplicate of an existing classifier */
+void Seeedpool::addConsClassifier( ConsClassifier* givenClassifier )
+{
+   if ( givenClassifier != NULL )
    {
-      std::cout << " skipped levenshtein distance based constraint classes calculating since number of constraints " << getNConss() << " exceeds limit " << nmaxconss   << std::endl;
-      return;
-   }
+      /** check whether there already exists an equivalent consclassifier */
+      ConsClassifier* equiv = NULL;
 
-   std::vector< std::vector<int> > levenshteindistances(getNConss(), std::vector<int>(getNConss(), -1) );
-
-   for( int i = 0; i < getNConss(); ++i )
-   {
-      consnamesToCompare[i] = std::string(SCIPconsGetName(getConsForIndex(i) ));
-   }
-
-   for( int i = 0; i < getNConss(); ++i )
-   {
-      for ( int j = i+1; j < getNConss(); ++j)
+      for ( size_t i = 0; i < consclassescollection.size(); ++i )
       {
-         levenshteindistances[i][j] = calcLevenshteinDistance(consnamesToCompare[i], consnamesToCompare[j]);
-         levenshteindistances[j][i] = levenshteindistances[i][j];
-         //           if(levenshteindistances[i][j] == 1)
-         //              std::cout << " string1 : " << consnamesToCompare[i] << " string2 : " << consnamesToCompare[j] << " distance: " << levenshteindistances[i][j] << std::endl;
-      }
-   }
-
-   /** do breadth first search */
-   while( nUnreachedConss > 0 )
-   {
-      int firstUnreached = -1;
-      currentClass++;
-      assert(helpqueue.empty());
-      for( int i = 0; i < getNConss(); ++i )
-      {
-         if( classForCons[i] == -1 )
+         if ( givenClassifier->classifierIsDuplicateOfClassifier( consclassescollection[i] ) )
          {
-            firstUnreached = i;
+            equiv = consclassescollection[i];
             break;
          }
       }
 
-      helpqueue.push(firstUnreached);
-      //           neighborConss.clear();
-      //           neighborConss.push_back(firstUnreached);
-      alreadyReached[firstUnreached] = true;
-      classForCons[firstUnreached] = currentClass;
-      --nUnreachedConss;
-
-      while( !helpqueue.empty() )
-      {
-         int nodecons = helpqueue.front();
-         helpqueue.pop();
-         for( int j = 0; j < getNConss() ; ++j )
-         {
-
-            if( alreadyReached[j] )
-               continue;
-
-            if(j == nodecons)
-               continue;
-
-            if(levenshteindistances[j][nodecons] > connectivity)
-               continue;
-
-            alreadyReached[j] = true;
-            classForCons[j] = currentClass;
-            --nUnreachedConss;
-            helpqueue.push(j);
-         }
-      } //endwhile(!queue.empty() )
-
-      /* Start of testing ConsClassifier (2/3) */
-      std::stringstream text;
-      text << "This class contains all constraints with a name similar to \"" << consnamesToCompare[firstUnreached] << "\".";
-      int newClass = classifier->addClass( consnamesToCompare[firstUnreached].c_str(), text.str().c_str(), BOTH );
-      assert( newClass == currentClass );
-      /* End of testing ConsClassifier (2/3) */
-
-   } // endwhile( !openConss.empty() )
-
-   consclassescollection.push_back(classForCons);
-   consclassesnclasses.push_back(currentClass+1 );
-
-   std::cout << " consclassifier levenshtein: connectivity of " << connectivity << " yields a classification with " << currentClass+1  << " different constraint classes" << std::endl;
-
-   /* Start of testing ConsClassifier (3/3) */
-   for( int i = 0; i < classifier->getNConss(); ++i )
-   {
-      classifier->assignConsToClass( i, classForCons[i] );
-   }
-
-   consclassescollection2.push_back(classifier);
-
-   classifier = NULL;
-
-   /*
-      std::cout << "Name: " << std::string(classifier->getName()) << std::endl;
-      std::cout << "Number of classes: " << classifier->getNClasses() << std::endl;
-      std::cout << "Number of constraints: " << classifier->getNConss() << std::endl;
-
-      for( int c = 0; c < classifier->getNClasses(); ++c )
-      {
-        std::cout << "Classname: " << std::string(classifier->getClassName( c )) << std::endl;
-        std::cout << "Assigned constraints:";
-        for( int i = 0; i < classifier->getNConss(); ++i )
-        {
-           if ( classifier->getClassOfCons( i ) == c )
-           {
-              std::cout << " " << i;
-           }
-        }
-        std::cout << std::endl;
-      }
-
-      delete classifier;*/
-   /** End of testing ConsClassifier (3/3) */
-
-   return;
-}
-
-
-void Seeedpool::addConssClassesForNNonzeros()
-{
-   /**
-    * at first remove all digits from the consnames
-    */
-   std::vector<int> nconssforclass(0);
-   std::vector<int> differentNNonzeros(0);
-   std::vector<int> classForCons (getNConss(), -1);
-
-   int counterClasses = 0;
-
-   for( int i = 0; i < getNConss(); ++i )
-   {
-      int nnonzeros = getNVarsForCons(i);
-      bool nzalreadyfound = false;
-
-      for ( size_t nzid = 0; nzid < differentNNonzeros.size(); ++nzid )
-      {
-         if ( nnonzeros == differentNNonzeros[nzid] )
-         {
-            nzalreadyfound = true;
-            classForCons[i] = nzid;
-            ++nconssforclass[nzid];
-            break;
-         }
-      }
-
-      if(!nzalreadyfound)
-      {
-         classForCons[i] = counterClasses;
-         ++counterClasses;
-         differentNNonzeros.push_back(nnonzeros);
-         nconssforclass.push_back(1);
-      }
-   }
-
-   /** test of reduced consnames */
-
-   if( false )
-   {
-      std::cout << " nNonzero : nConsWithNNonzero"  << std::endl;
-      for( size_t i = 0; i < differentNNonzeros.size(); ++i )
-      {
-         std::cout << differentNNonzeros[i] << " : " << nconssforclass[i] << std::endl;
-         //           std::cout << " new consname : " << consnamesToCompare[i]  << std::endl;
-         //           std::cout << std::endl;
-      }
-   }
-
-   consclassescollection.push_back(classForCons);
-   consclassesnclasses.push_back(differentNNonzeros.size() );
-
-   std::cout << " consclassifier nonzeros: comparison of number of nonzeros  " << " yields a distribution with " << differentNNonzeros.size()  << " different constraint classes" << std::endl;
-
-   /** Start of testing ConsClassifier */
-   ConsClassifier* classifier = new ConsClassifier( scip, "NNonzeros", (int) differentNNonzeros.size(), getNConss() );
-
-   for( int c = 0; c < classifier->getNClasses(); ++c )
-   {
-      std::stringstream text;
-      text << differentNNonzeros[c];
-      classifier->setClassName( c, text.str().c_str() );
-      text.str("");
-      text.clear();
-      text << "This class contains all constraints with " << differentNNonzeros[c] << " nonzero coefficients.";
-      classifier->setClassDescription( c, text.str().c_str() );
-   }
-   for( int i = 0; i < classifier->getNConss(); ++i )
-   {
-      classifier->assignConsToClass( i, classForCons[i] );
-   }
-
-   consclassescollection2.push_back(classifier);
-
-   classifier = NULL;
-
-   /*
-      std::cout << "Name: " << std::string(classifier->getName()) << std::endl;
-      std::cout << "Number of classes: " << classifier->getNClasses() << std::endl;
-      std::cout << "Number of constraints: " << classifier->getNConss() << std::endl;
-
-      for( int c = 0; c < classifier->getNClasses(); ++c )
-      {
-        std::cout << "Classname: " << std::string(classifier->getClassName( c )) << std::endl;
-        std::cout << "Description: " << std::string(classifier->getClassDescription( c )) << std::endl;
-        std::cout << "Assigned constraints:";
-        for( int i = 0; i < classifier->getNConss(); ++i )
-        {
-           if ( classifier->getClassOfCons( i ) == c )
-           {
-              std::cout << " " << i;
-           }
-        }
-        std::cout << std::endl;
-      }
-
-      delete classifier;*/
-   /** End of testing ConsClassifier */
-
-   return;
-
-
-}
-
-void Seeedpool::addConssClassDistribution(
-   std::vector<int>                             conssClassDistribution,     /**< distribution to add */
-   std::vector<SCIP_CONS*>                      indexToCons                 /**< stores the corresponding scip constraints pointer */
-)
-{
-   int consindex;
-   SCIP_CONS* cons;
-   int classCounter = 0;
-   std::vector<int> classes;
-   int consCounter = 0;
-
-   //fillout the distributionvector
-   std::vector<int> distribution (nConss);
-
-   for( size_t c = 0; c < indexToCons.size(); ++c )
-   {
-      cons = indexToCons[c];
-      if( find(consToScipCons.begin(), consToScipCons.end(), cons) == consToScipCons.end() )
-         continue;
-      consindex = getIndexForCons(cons);
-      distribution[consindex] = conssClassDistribution[c];
-      consCounter ++;
-      if( find( classes.begin(), classes.end(), conssClassDistribution[c]) == classes.end() )
-      {
-         classCounter++;
-         classes.push_back(conssClassDistribution[c]);
-      }
-
-   }
-
-   if( consCounter != nConss )
-   {
-      std::cout << "Distribution can not be added because of missing constraints!" << std::endl;
-      return;
-   }
-
-   //the different classes should be consecutively numbered
-   int maximum = *std::max_element(distribution.begin(), distribution.end());
-   assert( maximum >= classCounter - 1);
-   while( maximum != classCounter - 1 )
-   {
-      bool found;
-      int number = -1;
-
-      //search for a number between 0 and (classCounter - 1) which is not assigned to a class yet
-      do
-      {
-         found = false;
-         number++;
-         for( size_t j = 0; j < distribution.size(); ++j )
-         {
-            if( number == distribution[j] )
-            {
-               found = true;
-               break;
-            }
-         }
-      }
-      while( found && number < classCounter );
-
-      assert( number != classCounter );
-
-      for( size_t j = 0; j < distribution.size(); ++j )
-      {
-         if( distribution[j] == maximum )
-            distribution[j] = number;
-      }
-   }
-
-   if(distributionIsNoDuplicateOfDistributions(distribution, classCounter, consclassescollection))
-   {
-      consclassescollection.push_back( distribution );
-      consclassesnclasses.push_back( classCounter );
+      if ( equiv == NULL )
+         consclassescollection.push_back( givenClassifier );
+      else
+         std::cout << "  consclassifier " << givenClassifier->getName() << " not considered since it offers the same structure as " << equiv->getName() << std::endl;
    }
 }
 
-bool Seeedpool::distributionIsNoDuplicateOfDistributions(
-   std::vector<int>              compDistribution,
-   int                           nClasses,
-   std::vector<std::vector<int>> distributions
-)
-{
-   assert( (int) compDistribution.size() == nConss );
-   bool equal = false;
-   for( size_t j = 0; j < distributions.size(); ++j )
-   {
-      equal = true;
-      for( int k = 0; k < nClasses && equal; ++k )
-      {
-         int classnumber = -1;
-         for( size_t l = 0; l < compDistribution.size() && equal; ++l )
-         {
-            if( compDistribution[l] == k )
-            {
-               if( classnumber == -1 )
-                  classnumber = consclassescollection[j][l];
-               if( consclassescollection[j][l] != classnumber )
-                  equal = false;
-            }
-         }
-      }
-      if(equal)
-         return false;
-   }
-   return true;
-}
-
+/** adds constraint classifiers with a reduced number of classes */
 void Seeedpool::reduceConsclasses()
 {
    int maxnclasses = 9;
@@ -2524,58 +2321,141 @@ void Seeedpool::reduceConsclasses()
 
    for( size_t classifierid = 0; classifierid < consclassescollection.size(); ++classifierid )
    {
-      if( consclassesnclasses[classifierid] > maxnclasses && consclassesnclasses[classifierid] < maxnclasses*2 )
+      ConsClassifier* newclassifier = consclassescollection[classifierid]->reduceClasses( maxnclasses );
+
+      if ( newclassifier != NULL )
       {
-         std::vector<bool> classisremoved(consclassesnclasses[classifierid], false);
-         int enlargedclass = consclassesnclasses[classifierid] - maxnclasses;
-         int enlargedclassid = -1;
-         std::vector<int> newclassifier(consclassescollection[classifierid].size(), -1 );
-         std::vector<int> oldtonew( consclassesnclasses[classifierid], -1 );
-         int nclassesreassigned = 0;
+         std::cout <<  "add reduced version of consclassifier " << consclassescollection[classifierid]->getName() << " with " << maxnclasses << " classes" << std::endl;
+         addConsClassifier( newclassifier );
+      }
+   }
+}
 
-         /** try to reduce consclass */
-         std::vector<std::pair<int,int> > nmembers(consclassesnclasses[classifierid], std::pair<int,int>(0,0) );
-         for( size_t i = 0; i <  nmembers.size(); ++i)
-            nmembers[i].first = i;
-         std::vector<int>::const_iterator iter = consclassescollection[classifierid].begin();
-         std::vector<int>::const_iterator iterend = consclassescollection[classifierid].end();
+/** returns number of different variable classifiers */
+int Seeedpool::getNVarClassifiers()
+{
+   return (int) varclassescollection.size();
+}
 
-         for( ; iter < iterend; ++iter )
+/** returns pointer to a variable classifier */
+VarClassifier* Seeedpool::getVarClassifier( int givenClassifierIndex )
+{
+   assert( 0 <= givenClassifierIndex && givenClassifierIndex < (int) varclassescollection.size() );
+
+   return varclassescollection[givenClassifierIndex];
+}
+
+VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
+{
+   std::vector<SCIP_VARTYPE> foundVartypes(0);
+   std::vector<int> vartypesIndices(0);
+   std::vector<int> classForVars = std::vector<int>(getNVars(), -1);
+   VarClassifier* classifier;
+
+   for( int i = 0; i < getNVars(); ++i)
+   {
+      SCIP_VAR* var;
+      bool found = false;
+      var = getVarForIndex(i);
+      SCIP_VARTYPE vT = SCIPvarGetType( var );
+      size_t vartype;
+
+      /** find vartype or not */
+      for( vartype = 0; vartype < foundVartypes.size(); ++vartype )
+      {
+         if( foundVartypes[vartype] == vT )
          {
-            nmembers[*iter].second++;
+            found = true;
+            break;
          }
+      }
+      if( !found )
+      {
+         foundVartypes.push_back( vT );
+         classForVars[i] = foundVartypes.size() - 1;
+      }
+      else
+         classForVars[i] = vartype;
+   }
 
-         std::sort(nmembers.begin(), nmembers.end(), sort_pred() );
+   classifier = new VarClassifier( scip, "vartypes", (int) foundVartypes.size(), getNVars() );
 
-         for( size_t i = 0; i < (size_t) enlargedclass; ++i )
-            classisremoved[nmembers[i].first] = true;
+   for( int c = 0; c < classifier->getNClasses(); ++c )
+   {
+      std::string name;
+      std::stringstream text;
+      switch (foundVartypes[c])
+      {
+          case SCIP_VARTYPE_BINARY:
+             name = "bin";
+             break;
+          case SCIP_VARTYPE_INTEGER:
+             name = "int";
+             break;
+          case SCIP_VARTYPE_IMPLINT:
+             name = "impl";
+             break;
+          case SCIP_VARTYPE_CONTINUOUS:
+             name = "cont";
+             break;
+          default:
+             name = "newVartype";
+             break;
+      }
+      classifier->setClassName( c, name.c_str() );
+      text << "This class contains all variables that are of (SCIP) vartype \"" << name << "\".";
+      classifier->setClassDescription( c, text.str().c_str() );
+   }
+   for( int i = 0; i < classifier->getNVars(); ++i )
+   {
+      classifier->assignVarToClass( i, classForVars[i] );
+   }
 
-         enlargedclassid = nmembers[enlargedclass].first;
+   std::cout << " varclassifier scipvartypes:" << " yields a classification with " << foundVartypes.size()  << " different variable classes" << std::endl;
 
-         for( size_t i = 0; i < classisremoved.size() ; ++i )
+   return classifier;
+}
+
+/** adds a variable classifier if it is no duplicate of an existing variable classifier */
+void Seeedpool::addVarClassifier( VarClassifier* givenClassifier )
+{
+   if ( givenClassifier != NULL )
+   {
+      /** check whether there already exists an equivalent varclassifier */
+      VarClassifier* equiv = NULL;
+
+      for ( size_t i = 0; i < varclassescollection.size(); ++i )
+      {
+         if ( givenClassifier->classifierIsDuplicateOfClassifier( varclassescollection[i] ) )
          {
-            int oldclass = (int) i;
-            if( classisremoved[nmembers[i].first] )
-               oldclass =  enlargedclassid;
-            if( oldtonew[oldclass] == -1 )
-            {
-               oldtonew[oldclass] = nclassesreassigned;
-               nclassesreassigned++;
-            }
-            oldtonew[i] = oldtonew[oldclass];
+            equiv = varclassescollection[i];
+            break;
          }
+      }
 
-         for(size_t i = 0; i < newclassifier.size(); ++i)
-         {
-            if( classisremoved[consclassescollection[classifierid][i]] )
-               newclassifier[i] = oldtonew[consclassescollection[classifierid][enlargedclassid]];
-            else
-               newclassifier[i] = oldtonew[consclassescollection[classifierid][i]];
-         }
+      if ( equiv == NULL )
+         varclassescollection.push_back( givenClassifier );
+      else
+         std::cout << "  varclassifier " << givenClassifier->getName() << " not considered since it offers the same structure as " << equiv->getName() << std::endl;
+   }
+}
 
-         consclassescollection.push_back(newclassifier);
-         consclassesnclasses.push_back(maxnclasses );
-         std::cout <<  "addded new cons classifier with " << maxnclasses << std::endl;
+/** adds variable classifiers with a reduced number of classes */
+void Seeedpool::reduceVarclasses()
+{
+   int maxnclasses = 9;
+
+   if( getNConss() + getNVars() > 50000 )
+      maxnclasses = 3;
+
+   for( size_t classifierid = 0; classifierid < varclassescollection.size(); ++classifierid )
+   {
+      VarClassifier* newclassifier = varclassescollection[classifierid]->reduceClasses( maxnclasses );
+
+      if ( newclassifier != NULL )
+      {
+         std::cout <<  "add reduced version of consclassifier " << varclassescollection[classifierid]->getName() << " with " << maxnclasses << " classes" << std::endl;
+         addVarClassifier( newclassifier );
       }
    }
 }

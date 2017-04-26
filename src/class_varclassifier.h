@@ -25,123 +25,125 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   class_consclassifier.h
- * @brief  class for classifying constraints
+/**@file   class_varclassifier.h
+ * @brief  class for classifying variables
  * @author Julius Hense
  *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_CLASS_CONSCLASSIFIER_H__
-#define GCG_CLASS_CONSCLASSIFIER_H__
+#ifndef GCG_CLASS_VARCLASSIFIER_H__
+#define GCG_CLASS_VARCLASSIFIER_H__
 
 #include "class_indexclassifier.h"
 
 namespace gcg
 {
 
-enum ConsClassDecompInfo
+enum VarClassDecompInfo
 {
-   BOTH = 0,                     /**< assign class to master or pricing problem */
-   ONLY_MASTER = 1,              /**< assign class only to master problem */
-   ONLY_PRICING = 2              /**< assign class only to pricing problem */
+   ALL = 0,
+   LINKING = 1,
+   MASTER = 2,
+   BLOCK = 3
 };
-typedef enum ConsClassDecompInfo CONS_DECOMPINFO;
+typedef enum VarClassDecompInfo VAR_DECOMPINFO;
 
 
-class ConsClassifier : public IndexClassifier
+class VarClassifier : public IndexClassifier
 {
 
 public:
 
    /** constructor */
-   ConsClassifier(
+   VarClassifier(
       SCIP*                scip,                /**< scip data structure */
       const char*          name,                /**< name of classifier (will be copied) */
       int                  nClasses,            /**< initial number of classes */
-      int                  nConss               /**< number of constraints to be classified */
+      int                  nVars                /**< number of variables to be classified */
    );
 
    /** copy constructor */
-   ConsClassifier(
-      const ConsClassifier* toCopy              /**< ConsClassifier to be copied */
+   VarClassifier(
+      const VarClassifier* toCopy              /**< VarClassifier to be copied */
    );
 
 
    /** destructor */
-   ~ConsClassifier();
+   ~VarClassifier();
 
 
    /** creates a new class, returns index of the class */
    int addClass(
       const char* name,                /**< name of the class (will be copied) */
       const char* desc,                /**< description of the class (will be copied) */
-      CONS_DECOMPINFO decompInfo            /**< decomposition code of the class */
+      VAR_DECOMPINFO decompInfo        /**< decomposition code of the class */
    );
 
-   /** assigns a constraint to a class */
-   void assignConsToClass(
-      int consindex,                   /**< index of the constraint */
+   /** assigns a variable to a class */
+   void assignVarToClass(
+      int varindex,                    /**< index of the variable */
       int classindex                   /**< index of the class */
    );
 
    /** returns a vector containing all possible subsets of the chosen classindices */
    std::vector<std::vector<int>> getAllSubsets(
-      bool both,                       /**< true, if BOTH classes should be considered */
-      bool only_master,                /**< true, if ONLY_MASTER classes should be considered */
-      bool only_pricing                /**< true, if ONLY_PRICING classes should be considered */
+      bool all,                        /**< true, if ALL classes should be considered */
+      bool linking,                    /**< true, if LINKING classes should be considered */
+      bool master,                     /**< true, if MASTER classes should be considered */
+      bool block                       /**< true, if BLOCK classes should be considered */
    );
 
    /** returns the decomposition info of a class */
-   CONS_DECOMPINFO getClassDecompInfo(
+   VAR_DECOMPINFO getClassDecompInfo(
       int classindex                   /**< index of class */
    );
 
-   /** returns the name of the class a constraint is assigned to */
-   const char* getClassNameOfCons(
-      int consindex                    /**< index of constraint */
+   /** returns the name of the class a variable is assigned to */
+   const char* getClassNameOfVar(
+      int varindex                    /**< index of variable */
    );
 
 
-   /** returns the index of the class a constraint is assigned to */
-   int getClassOfCons(
-      int consindex                    /**< index of constraint */
+   /** returns the index of the class a variable is assigned to */
+   int getClassOfVar(
+      int varindex                    /**< index of variable */
    );
 
-   /** returns vector containing the assigned class of each constraint */
-   const int* getConssToClasses(
+   /** returns vector containing the assigned class of each variable */
+   const int* getVarsToClasses(
    );
 
-   /** returns the number of constraints */
-   int getNConss(
+   /** returns the number of variables */
+   int getNVars(
    );
 
-   /** returns a vector with the numbers of constraints that are assigned to the classes */
-   std::vector<int> getNConssOfClasses(
+   /** returns a vector with the numbers of variables that are assigned to the classes */
+   std::vector<int> getNVarsOfClasses(
    );
 
-   /** returns whether a constraint is already assigned to a class */
-   bool isConsClassified(
-      int consindex                    /**< index of constraint */
+   /** returns whether a variable is already assigned to a class */
+   bool isVarClassified(
+      int varindex                    /**< index of variable */
    );
 
 
    /** returns classifier with reduced number of classes
     *  if the current number of classes is greater than an upper bound
     *  and lower than 2*(upper bound) (returns NULL otherwise) */
-   ConsClassifier* reduceClasses(
+   VarClassifier* reduceClasses(
       int maxNumberOfClasses           /**< upper bound */
    );
 
    /** sets the decomposition code of a class */
    void setClassDecompInfo(
       int classindex,                  /**< index of class */
-      CONS_DECOMPINFO decompInfo            /**< decomposition code of class */
+      VAR_DECOMPINFO decompInfo        /**< decomposition code of class */
    );
 
 };
 
 
 } /* namespace gcg */
-#endif /* GCG_CLASS_CONSCLASSIFIER_H__ */
+#endif /* GCG_CLASS_VARCLASSIFIER_H__ */

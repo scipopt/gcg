@@ -3198,7 +3198,12 @@ SCIP_Bool GCGisMasterSetPartitioning(
    return relaxdata->masterissetpart;
 }
 
-/** start probing mode on master problem */
+/** start probing mode on both the original and master problems
+ *
+ *  @note This mode is intended for working on the original variables but using the master LP;
+ *        it currently only supports bound changes on the original variables,
+ *        but no additional rows
+ */
 SCIP_RETCODE GCGrelaxStartProbing(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_HEUR*            probingheur         /**< heuristic that started probing mode, or NULL */
@@ -3206,7 +3211,7 @@ SCIP_RETCODE GCGrelaxStartProbing(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* masterscip;
+   SCIP* masterprob;
 
    assert(scip != NULL);
 
@@ -3215,13 +3220,19 @@ SCIP_RETCODE GCGrelaxStartProbing(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   assert(!relaxdata->masterinprobing);
 
-   masterscip = relaxdata->masterprob;
-   assert(masterscip != NULL);
+   if( relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("already in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
 
-   /* start probing in the master problem */
-   SCIP_CALL( SCIPstartProbing(masterscip) );
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
+   /* start probing in both the original and the master problem */
+   SCIP_CALL( SCIPstartProbing(scip) );
+   SCIP_CALL( SCIPstartProbing(masterprob) );
 
    relaxdata->masterinprobing = TRUE;
    relaxdata->probingheur = probingheur;
@@ -3256,9 +3267,139 @@ SCIP_HEUR* GCGrelaxGetProbingheur(
    return relaxdata->probingheur;
 }
 
+/** add a new probing node the original problem together with an original branching constraint
+ *
+ *  @note A corresponding probing node must be added to the master problem right before solving the probing LP
+ */
+SCIP_RETCODE GCGrelaxNewProbingnodeOrig(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_CONS* probingcons;
+   SCIP_NODE* probingnode;
 
-/** for a probing node in the original problem, create a corresponding probing node in the master problem,
- *  propagate domains and solve the LP with or without pricing. */
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   if( SCIPgetProbingDepth(scip) != SCIPgetProbingDepth(GCGgetMasterprob(scip)) )
+   {
+      SCIPerrorMessage("original and master problem not at same probing depth\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   /* add a probing node in the original problem together with an original branching constraint */
+   SCIP_CALL( SCIPnewProbingNode(scip) );
+   probingnode = SCIPgetCurrentNode(scip);
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
+      GCGconsOrigbranchGetActiveCons(scip), NULL, NULL) );
+   SCIP_CALL( SCIPaddConsNode(scip, probingnode, probingcons, NULL) );
+   SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
+
+
+   return SCIP_OKAY;
+}
+
+/** add a new probing node the master problem together with a master branching constraint
+ *  which ensures that bound changes are transferred to master and pricing problems
+ *
+ *  @note A corresponding probing node must have been added to the original problem beforehand;
+ *        furthermore, this method must be called after bound changes to the original problem have been made
+ */
+SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP* masterprob;
+   SCIP_CONS* probingcons;
+   SCIP_NODE* probingnode;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
+   if( SCIPgetProbingDepth(scip) != SCIPgetProbingDepth(masterprob) + 1 )
+   {
+      SCIPerrorMessage("master probing node must be created after original probing node\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   /* add a probing node in the master problem together with a master branching constraint */
+   SCIP_CALL( SCIPnewProbingNode(masterprob) );
+   probingnode = SCIPgetCurrentNode(masterprob);
+   assert(GCGconsMasterbranchGetActiveCons(masterprob) != NULL);
+   SCIP_CALL( GCGcreateConsMasterbranch(masterprob, &probingcons, "mprobingcons", probingnode,
+      GCGconsMasterbranchGetActiveCons(masterprob), NULL, NULL, NULL, 0) );
+   SCIP_CALL( SCIPaddConsNode(masterprob, probingnode, probingcons, NULL) );
+   SCIP_CALL( SCIPreleaseCons(masterprob, &probingcons) );
+
+   return SCIP_OKAY;
+}
+
+/** add probing nodes to both the original and master problem;
+ *  furthermore, add origbranch and masterbranch constraints to transfer branching decisions
+ *  from the original to the master problem
+ */
+SCIP_RETCODE GCGrelaxBacktrackProbing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   probingdepth        /**< probing depth of the node in the probing path that should be reactivated */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP* masterprob;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
+   SCIP_CALL( SCIPbacktrackProbing(scip, probingdepth) );
+   SCIP_CALL( SCIPbacktrackProbing(masterprob, probingdepth) );
+
+   return SCIP_OKAY;
+}
+
+/** solve the master probing LP with or without pricing */
 static
 SCIP_RETCODE performProbing(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -3276,9 +3417,7 @@ SCIP_RETCODE performProbing(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* masterscip;
-   SCIP_NODE* mprobingnode;
-   SCIP_CONS* mprobingcons;
+   SCIP* masterprob;
    SCIP_LPSOLSTAT lpsolstat;
    SCIP_Longint oldnlpiters;
    int oldpricerounds;
@@ -3293,34 +3432,28 @@ SCIP_RETCODE performProbing(
    /* get the relaxator data */
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   assert(relaxdata->masterinprobing);
+
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
 
    /* get master problem */
-   masterscip = relaxdata->masterprob;
-   assert(masterscip != NULL);
-
-   /* create probing node in the master problem */
-   SCIP_CALL( SCIPnewProbingNode(masterscip) );
-
-   /* create master constraint that captures the branching decision in the original instance */
-   mprobingnode = SCIPgetCurrentNode(masterscip);
-   assert(GCGconsMasterbranchGetActiveCons(masterscip) != NULL);
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, "mprobingcons", mprobingnode,
-      GCGconsMasterbranchGetActiveCons(masterscip), NULL, NULL, NULL, 0) );
-   SCIP_CALL( SCIPaddConsNode(masterscip, mprobingnode, mprobingcons, NULL) );
-   SCIP_CALL( SCIPreleaseCons(masterscip, &mprobingcons) );
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
 
    /* increase node limit for the master problem by 1 */
-   SCIP_CALL( SCIPgetLongintParam(masterscip, "limits/nodes", &nodelimit) );
-   SCIP_CALL( SCIPsetLongintParam(masterscip, "limits/nodes", nodelimit + 1) );
+   SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &nodelimit) );
+   SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", nodelimit + 1) );
 
-   /* propagate */
-   SCIP_CALL( SCIPpropagateProbing(masterscip, -1, cutoff, NULL) );
+   /* propagate probing bound changes to the master problem */
+   SCIP_CALL( SCIPpropagateProbing(masterprob, -1, cutoff, NULL) );
    assert(!(*cutoff));
 
    /* remember LP iterations and pricing rounds before LP solving */
-   oldnlpiters = SCIPgetNLPIterations(masterscip);
-   oldpricerounds = SCIPgetNPriceRounds(masterscip);
+   oldnlpiters = SCIPgetNLPIterations(masterprob);
+   oldpricerounds = SCIPgetNPriceRounds(masterprob);
 
    *lpobjvalue = 0.0;
    *lpsolved = FALSE;
@@ -3330,23 +3463,23 @@ SCIP_RETCODE performProbing(
    {
       /* LP iterations are unlimited when probing LP is solved with pricing */
       assert(maxlpiterations == -1);
-      SCIP_CALL( SCIPsolveProbingLPWithPricing(masterscip, FALSE, TRUE, maxpricerounds, lperror, NULL) );
+      SCIP_CALL( SCIPsolveProbingLPWithPricing(masterprob, FALSE, TRUE, maxpricerounds, lperror, NULL) );
    }
    else
    {
       assert(maxpricerounds == 0);
-      SCIP_CALL( SCIPsolveProbingLP(masterscip, maxlpiterations, lperror, NULL) );
+      SCIP_CALL( SCIPsolveProbingLP(masterprob, maxlpiterations, lperror, NULL) );
    }
-   lpsolstat = SCIPgetLPSolstat(masterscip);
+   lpsolstat = SCIPgetLPSolstat(masterprob);
 
    /* reset the node limit */
-   SCIP_CALL( SCIPsetLongintParam(masterscip, "limits/nodes", nodelimit) );
+   SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", nodelimit) );
 
    /* calculate number of LP iterations and pricing rounds performed */
    if( nlpiterations != NULL )
-      *nlpiterations = SCIPgetNLPIterations(masterscip) - oldnlpiters;
+      *nlpiterations = SCIPgetNLPIterations(masterprob) - oldnlpiters;
    if( npricerounds != NULL )
-      *npricerounds = SCIPgetNPriceRounds(masterscip) - oldpricerounds;
+      *npricerounds = SCIPgetNPriceRounds(masterprob) - oldpricerounds;
 
    if( !(*lperror) )
    {
@@ -3354,8 +3487,8 @@ SCIP_RETCODE performProbing(
       *cutoff = *cutoff || (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE);
       if( lpsolstat == SCIP_LPSOLSTAT_OPTIMAL )
       {
-         SCIPdebugMessage("lpobjval = %g\n", SCIPgetLPObjval(masterscip));
-         *lpobjvalue = SCIPgetLPObjval(masterscip);
+         SCIPdebugMessage("lpobjval = %g\n", SCIPgetLPObjval(masterprob));
+         *lpobjvalue = SCIPgetLPObjval(masterprob);
          *lpsolved = TRUE;
          SCIP_CALL( GCGrelaxUpdateCurrentSol(scip) );
       }
@@ -3369,8 +3502,7 @@ SCIP_RETCODE performProbing(
 }
 
 
-/** for a probing node in the original problem, create a corresponding probing node in the master problem,
- *  propagate domains and solve the LP without pricing. */
+/** solve the master probing LP without pricing */
 SCIP_RETCODE GCGrelaxPerformProbing(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   maxlpiterations,    /**< maximum number of lp iterations allowed */
@@ -3389,8 +3521,7 @@ SCIP_RETCODE GCGrelaxPerformProbing(
 }
 
 
-/** for a probing node in the original problem, create a corresponding probing node in the master problem,
- *  propagate domains and solve the LP with pricing. */
+/** solve the master probing LP with pricing */
 SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   maxpricerounds,     /**< maximum number of pricing rounds allowed */
@@ -3410,14 +3541,14 @@ SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
 }
 
 
-/** end probing mode in master problem */
+/** end probing mode in both the original and master problems */
 SCIP_RETCODE GCGrelaxEndProbing(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* masterscip;
+   SCIP* masterprob;
 
    SCIP_VAR** vars;
    int nvars;
@@ -3429,27 +3560,35 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   assert(relaxdata->masterinprobing);
 
-   masterscip = relaxdata->masterprob;
-   assert(masterscip != NULL);
+   if( !relaxdata->masterinprobing )
+   {
+      SCIPerrorMessage("not in GCG probing mode\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
 
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
    assert(vars != NULL);
    assert(nvars >= 0);
 
-   SCIP_CALL( SCIPendProbing(masterscip) );
+   SCIP_CALL( SCIPendProbing(masterprob) );
+   SCIP_CALL( SCIPendProbing(scip) );
 
    relaxdata->masterinprobing = FALSE;
    relaxdata->probingheur = NULL;
 
-   /* if a new primal solution was found in the master problem, transfer it to the original problem */
-   if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
+   /* if a new primal solution was found in the master problem, transfer it to the original problem
+    * @todo: this is probably not necessary anymore since it is done by an event handler
+    */
+   if( SCIPgetBestSol(masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(masterprob) )
    {
       SCIP_SOL* newsol;
       SCIP_Bool stored;
 
-      relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
+      relaxdata->lastmastersol = SCIPgetBestSol(masterprob);
 
       SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
 

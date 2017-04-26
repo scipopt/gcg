@@ -490,8 +490,6 @@ SCIP_RETCODE applyProbing(
    )
 {
    SCIP* masterscip;
-   SCIP_NODE* probingnode;
-   SCIP_CONS* probingcons;
 
    /* SCIP_Real varsol; */
    SCIP_Real leftlbprobing;
@@ -539,15 +537,8 @@ SCIP_RETCODE applyProbing(
       SCIPvarGetNCliques(probingvar, FALSE), SCIPvarGetNCliques(probingvar, TRUE));
 
    /* start probing mode */
-   SCIP_CALL( SCIPstartProbing(scip) );
    SCIP_CALL( GCGrelaxStartProbing(scip, NULL) );
-   SCIP_CALL( SCIPnewProbingNode(scip) );
-
-   probingnode = SCIPgetCurrentNode(scip);
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
-         GCGconsOrigbranchGetActiveCons(scip), NULL, NULL) );
-   SCIP_CALL( SCIPaddConsNode(scip, probingnode, probingcons, NULL) );
-   SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
+   SCIP_CALL( GCGrelaxNewProbingnodeOrig(scip) );
 
    *lpsolved = FALSE;
    *lperror = FALSE;
@@ -586,12 +577,12 @@ SCIP_RETCODE applyProbing(
       *nlpiterations -= SCIPgetNLPIterations(masterscip);
 
       /** @todo handle the feasible result */
+      SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
       SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, -1, nlpiterations, NULL,
             lpobjvalue, lpsolved, lperror, cutoff) );
    }
 
    /* exit probing mode */
-   SCIP_CALL( SCIPendProbing(scip) );
    SCIP_CALL( GCGrelaxEndProbing(scip) );
 
    SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",

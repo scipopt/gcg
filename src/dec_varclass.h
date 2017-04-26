@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2015 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,66 +25,29 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_gp.h
- * @brief  GP file reader writing gnuplot files
- * @author Martin Bergner
- * @ingroup FILEREADERS
- *
- * This file reader will write the decomposed or original matrix to a file usuable by gnuplot. You can use this writer
- * like and other writer.
- *
- * To display your decomposition, you can write the following in the interactive shell
- * \verbatim
-GCG> write problem "prob.gp"
-\endverbatim
- * If you use this command before reading in a decomposition, you will get a picture of the original matrix. If you
- * call the writer after a decomposition was specified or detected, it will write out a picture of the structured,
- * reordered matrix  where the structure is further highlighted indicated by boxes. You can create a PDF file by then
- * calling <code>gnuplot prob.gp</code> from your systems command line. This will create a pdf file in your current
- * directory which contains the image.
+/**@file   dec_varclass.h
+ * @brief  varclass detector
+ * @author Julius Hense
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_READER_GP_H__
-#define GCG_READER_GP_H__
-
+#ifndef DEC_VARCLASS_H_
+#define DEC_VARCLASS_H_
 
 #include "scip/scip.h"
-#include "type_decomp.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** includes the gp file reader into SCIP */
+/** creates the handler for varclass detector and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeReaderGp(
+SCIP_RETCODE SCIPincludeDetectorVarclass(
    SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** writes the decomposition to the specific file */
-SCIP_RETCODE SCIPwriteGp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition, /**< whether to write decomposed problem */
-   SCIP_Bool             outputPDF           /**< if true give pdf file, if false give tex file instead */
-   );
-
-/** Getter of parameter draftmode */
-SCIP_Bool GCGgpGetDraftmode(
-   SCIP*                scip               /**< SCIP data structure */
-   );
-
-/** Setter of parameter draftmode */
-void GCGgpSetDraftmode(
-   SCIP*                scip,              /**< SCIP data structure */
-   SCIP_Bool            usedraftmode       /**< new value for draftmode */
    );
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif
+#endif /* DEC_VARCLASS_H_ */
