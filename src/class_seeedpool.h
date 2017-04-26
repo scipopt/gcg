@@ -46,6 +46,7 @@
 
 #include "class_seeed.h"
 #include "class_consclassifier.h"
+#include "class_varclassifier.h"
 
 
 
@@ -117,10 +118,8 @@ private:
    std::vector<std::pair<int,int> >                             candidatesNBlocks;      	/**< candidate for the number of blocks  */
 
 
-   std::vector<std::vector<int> >               consclassescollection;  /**< collection of different constraint class distributions  */
-   std::vector<int >                            consclassesnclasses;    /**< number of classes of the corresponding distribution */
-
-   std::vector<ConsClassifier*>                 consclassescollection2; /**< collection of different constraint class distributions  */
+   std::vector<ConsClassifier*>                 consclassescollection; /**< collection of different constraint class distributions  */
+   std::vector<VarClassifier*>                  varclassescollection;  /**< collection of different variabale class distributions   */
 
 
    SCIP_Bool                                    transformed;            /**< corresponds the matrix datastructure to the transformed problem */
@@ -154,7 +153,15 @@ public:
    void findDecompositions(
     );
 
-     std::vector<SeeedPtr> translateSeeeds( Seeedpool* otherpool, std::vector<Seeed*> otherseeeds );
+   void translateSeeedData(
+      Seeedpool* otherpool,                              /**< old seeedpool */
+      std::vector<Seeed*> otherseeeds,                   /**< seeeds to be translated */
+      std::vector<Seeed*>& newseeeds,                    /**< translated seeeds (pass empty vector) */
+      std::vector<ConsClassifier*> otherconsclassifiers, /**< consclassifiers to be translated */
+      std::vector<ConsClassifier*>& newconsclassifiers,  /**< translated consclassifiers (pass empty vector) */
+      std::vector<VarClassifier*> othervarclassifiers,  /**< varclassifiers to be translated */
+      std::vector<VarClassifier*>& newvarclassifiers    /**< translated varclassifiers (pass empty vector) */
+   );
 
    void populate(std::vector<SeeedPtr> seeeds);
 
@@ -235,38 +242,52 @@ public:
    int getNClassesOfDistribution(int consclassdistr);
 
    /** returns number of different constraint classifiers */
-   int getNConsClassifier();
+   int getNConsClassifiers();
 
    /** returns pointer to a constraint classifier */
    ConsClassifier* getConsClassifier(
       int classifierIndex                     /**< index of constraint classifier */
    );
 
-   void addConssClassesForSCIPConstypes(
+   ConsClassifier* createConsClassifierForSCIPConstypes(
       );
 
-   void addConssClassesForConsnamesDigitFreeIdentical(
+   ConsClassifier* createConsClassifierForConsnamesDigitFreeIdentical(
       );
 
-   void addConssClassesForConsnamesLevenshteinDistanceConnectivity(
+   ConsClassifier* createConsClassifierForConsnamesLevenshteinDistanceConnectivity(
       int connectivity
          );
 
-   void addConssClassesForNNonzeros(
+   ConsClassifier* createConsClassifierForNNonzeros(
       );
 
-   void addConssClassDistribution(
-      std::vector<int>              conssClassDistribution,
-      std::vector<SCIP_CONS*>       indexToCons
-      );
+   /** adds a constraint classifier if it is no duplicate of an existing constraint classifier */
+   void addConsClassifier(
+      ConsClassifier*               classifier              /**< consclassifier to be added */
+   );
 
-   bool distributionIsNoDuplicateOfDistributions(
-      std::vector<int>              compDistribution,
-      int                           nClasses,
-      std::vector<std::vector<int>> distributions
-      );
-
+   /** adds constraint classifiers with a reduced number of classes */
    void reduceConsclasses();
+
+   /** returns number of different variable classifiers */
+   int getNVarClassifiers();
+
+   /** returns pointer to a variable classifier */
+   VarClassifier* getVarClassifier(
+      int classifierIndex                     /**< index of variable classifier */
+   );
+
+   VarClassifier* createVarClassifierForSCIPVartypes(
+   );
+
+   /** adds a variable classifier if it is no duplicate of an existing variable classifier */
+   void addVarClassifier(
+      VarClassifier*               classifier              /**< varclassifier to be added */
+   );
+
+   /** adds variable classifiers with a reduced number of classes */
+   void reduceVarclasses();
 
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds);

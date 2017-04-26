@@ -56,6 +56,7 @@
 #include "scip/clock.h"
 #include "class_seeedpool.h"
 #include "class_seeed.h"
+#include "class_consclassifier.h"
 
 #include <vector>
 
@@ -86,6 +87,9 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_CONSSCLASSLEVENSHTEINENABLED          FALSE    /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
 #define DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG      TRUE     /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
 
+#define DEFAULT_VARCLASSSCIPVARTYPESENABLED           TRUE     /**< indicates whether variable classifier for scipvartypes is enabled */
+#define DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG       TRUE     /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
+
 #define DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER    10000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis default */
 #define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
 #define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000     /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
@@ -115,6 +119,8 @@ struct SCIP_ConshdlrData
    SCIP_Bool             consnamenonumbersenabledorig;      /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
    SCIP_Bool             conssclasslevenshteinabled;        /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
    SCIP_Bool             conssclasslevenshteinenabledorig;  /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
+   SCIP_Bool             varclassvartypesenabled;           /**< indicates whether variable classifier for scipvartypes is enabled */
+   SCIP_Bool             varclassvartypesenabledorig;       /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
 
    int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
    int*                  nCandidates;
@@ -369,6 +375,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", "indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem", &conshdlrdata->consnamenonumbersenabledorig, FALSE, DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled", &conshdlrdata->conssclasslevenshteinabled, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem", &conshdlrdata->conssclasslevenshteinenabledorig, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/enabled", "indicates whether variable classifier for scipvartypes is enabled", &conshdlrdata->varclassvartypesenabled, FALSE, DEFAULT_VARCLASSSCIPVARTYPESENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", "indicates whether variable classifier for scipvartypes is enabled for the original problem", &conshdlrdata->varclassvartypesenabledorig, FALSE, DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
@@ -675,11 +683,11 @@ SCIP_RETCODE DECdetectStructure(
 
    gcg::Seeedpool seeedpoolunpresolved(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
    std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
-   std::vector<std::vector<int>> conssClassDistributions;         /**< collection of different constraint class distributions */
+   std::vector<gcg::ConsClassifier*> consClassDistributions;         /**< collection of different constraint class distributions */
+   std::vector<gcg::VarClassifier*> varClassDistributions;           /**< collection of different variable class distributions */
    std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
 
    std::vector<gcg::SeeedPtr> seeedsunpresolved;                    /**< seeeds that were found for the unpresolved problem */
-
 
    SCIP_Real* scores;
    int i;
@@ -713,8 +721,16 @@ SCIP_RETCODE DECdetectStructure(
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "start finding decompositions for original problem!\n");
       seeedsunpresolved = seeedpoolunpresolved.findSeeeds();
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished finding decompositions for original problem!\n");
-      for( i = 0; i < seeedpoolunpresolved.getNConssClassDistributions(); ++i )
-         conssClassDistributions.push_back(seeedpoolunpresolved.getConssClassDistributionVector(i));
+      for( i = 0; i < seeedpoolunpresolved.getNConsClassifiers(); ++i )
+      {
+         gcg::ConsClassifier* classifier = new gcg::ConsClassifier( seeedpoolunpresolved.getConsClassifier(i) );
+         consClassDistributions.push_back( classifier );
+      }
+      for( i = 0; i < seeedpoolunpresolved.getNVarClassifiers(); ++i )
+      {
+         gcg::VarClassifier* classifier = new gcg::VarClassifier( seeedpoolunpresolved.getVarClassifier(i) );
+         varClassDistributions.push_back( classifier );
+      }
    }
 
 //   for( i = 0; i < seeedpoolunpresolved.getNConss(); ++i)
@@ -755,19 +771,27 @@ SCIP_RETCODE DECdetectStructure(
 	  if( calculateOrigDecomps )
 	  {
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");
-	     std::vector<gcg::Seeed*> translatedSeeeds = conshdlrdata->seeedpool->translateSeeeds(&seeedpoolunpresolved, seeedsunpresolved);
+	     std::vector<gcg::Seeed*> translatedSeeeds(0);
+	     std::vector<gcg::ConsClassifier*> translatedConsDistributions(0);
+	     std::vector<gcg::VarClassifier*> translatedVarDistributions(0);
+
+	     conshdlrdata->seeedpool->translateSeeedData( &seeedpoolunpresolved, seeedsunpresolved, translatedSeeeds,
+	        consClassDistributions, translatedConsDistributions, varClassDistributions, translatedVarDistributions );
+
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
 
 	     conshdlrdata->seeedpool->populate(translatedSeeeds);
+
+        for ( size_t d = 0; d < translatedConsDistributions.size(); ++d )
+           conshdlrdata->seeedpool->addConsClassifier( translatedConsDistributions[d] );
+
+//        for ( size_t d = 0; d < translatedVarDistributions.size(); ++d )
+//           conshdlrdata->seeedpool->addVarClassifier( translatedVarDistributions[d] );
 
         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished translate seeed method!\n");
 
         for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
            conshdlrdata->seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
-
-        for( size_t d = 0; d < conssClassDistributions.size(); ++d )
-           conshdlrdata->seeedpool->addConssClassDistribution(conssClassDistributions[d], indexToCons);
-
 	  }
 
 	  conshdlrdata->seeedpool->findDecompositions();
@@ -796,7 +820,6 @@ SCIP_RETCODE DECdetectStructure(
       scores[i] = score.totalscore;
    }
 
-   SCIPsortRealPtr(scores, (void**)conshdlrdata->decdecomps, conshdlrdata->ndecomps);
    SCIPfreeBufferArray(scip, &scores);
 
    SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );

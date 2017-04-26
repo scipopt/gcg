@@ -25,15 +25,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   class_consclassifier.cpp
- * @brief  class for classifying constraints
+/**@file   class_varclassifier.cpp
+ * @brief  class for classifying variables
  * @author Julius Hense
  *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "class_consclassifier.h"
+#include "class_varclassifier.h"
 
 #include <assert.h>
 #include <sstream>
@@ -44,31 +44,31 @@ namespace gcg {
 
 
 /** constructor */
-ConsClassifier::ConsClassifier(
+VarClassifier::VarClassifier(
    SCIP*          _scip,
    const char*    givenName,
    int            givenNClasses,
-   int            givenNCons
+   int            givenNVars
 ) :
-   IndexClassifier(_scip, givenName, givenNClasses, givenNCons)
+   IndexClassifier(_scip, givenName, givenNClasses, givenNVars)
 {
 
 }
 
 /** copy constructor */
-ConsClassifier::ConsClassifier(
-   const ConsClassifier* toCopy
+VarClassifier::VarClassifier(
+   const VarClassifier* toCopy
 ) : IndexClassifier( toCopy )
 {
 }
 
 /** destructor */
-ConsClassifier::~ConsClassifier()
+VarClassifier::~VarClassifier()
 {
 }
 
 /** creates a new class, returns index of the class */
-int ConsClassifier::addClass( const char* givenName, const char* givenDesc, CONS_DECOMPINFO givenDecompInfo )
+int VarClassifier::addClass( const char* givenName, const char* givenDesc, VAR_DECOMPINFO givenDecompInfo )
 {
    int classindex = IndexClassifier::addClass( givenName, givenDesc );
    setClassDecompInfo( classindex, givenDecompInfo );
@@ -76,120 +76,123 @@ int ConsClassifier::addClass( const char* givenName, const char* givenDesc, CONS
    return classindex;
 }
 
-/** assigns a constraint to a class */
-void ConsClassifier::assignConsToClass( int givenConsindex, int givenClassindex )
+/** assigns a variable to a class */
+void VarClassifier::assignVarToClass( int givenVarindex, int givenClassindex )
 {
-   IndexClassifier::assignIndexToClass( givenConsindex, givenClassindex );
+   IndexClassifier::assignIndexToClass( givenVarindex, givenClassindex );
 }
 
 /** returns a vector containing all possible subsets of the chosen classindices */
-std::vector<std::vector<int>> ConsClassifier::getAllSubsets( bool both, bool only_master, bool only_pricing )
+std::vector<std::vector<int>> VarClassifier::getAllSubsets( bool all, bool linking, bool master, bool block )
 {
    std::vector<int> classindices;
    for ( int i = 0; i < getNClasses(); ++i )
    {
-      if ( ( both && getClassDecompInfo( i ) == BOTH ) || ( only_master && getClassDecompInfo( i ) == ONLY_MASTER )
-            || ( only_pricing && getClassDecompInfo( i ) == ONLY_PRICING ) )
+      if ( ( all && getClassDecompInfo( i ) == ALL ) || ( linking && getClassDecompInfo( i ) == LINKING )
+            || ( master && getClassDecompInfo( i ) == MASTER ) || ( block && getClassDecompInfo( i ) == BLOCK ) )
          classindices.push_back( i );
    }
    return IndexClassifier::getAllSubsets( classindices );
 }
 
 /** returns the decomposition code of a class */
-CONS_DECOMPINFO ConsClassifier::getClassDecompInfo( int givenClassindex )
+VAR_DECOMPINFO VarClassifier::getClassDecompInfo( int givenClassindex )
 {
    int decompInfo = IndexClassifier::getClassDecompInfo( givenClassindex );
-   CONS_DECOMPINFO interp;
+   VAR_DECOMPINFO interp;
 
-   assert( 0 <= decompInfo && decompInfo <= 2);
+   assert( 0 <= decompInfo && decompInfo <= 3);
 
    switch ( decompInfo )
    {
    case 0:
-      interp = BOTH;
+      interp = ALL;
       break;
    case 1:
-      interp = ONLY_MASTER;
+      interp = LINKING;
       break;
    case 2:
-      interp = ONLY_PRICING;
+      interp = MASTER;
+      break;
+   case 3:
+      interp = BLOCK;
       break;
    default:
-      interp = BOTH;
+      interp = ALL;
       break;
    }
 
    return interp;
 }
 
-/** returns the name of the class a constraint is assigned to */
-const char* ConsClassifier::getClassNameOfCons( int givenConsindex )
+/** returns the name of the class a variable is assigned to */
+const char* VarClassifier::getClassNameOfVar( int givenVarindex )
 {
-   return IndexClassifier::getClassNameOfIndex( givenConsindex );
+   return IndexClassifier::getClassNameOfIndex( givenVarindex );
 }
 
-/** returns the index of the class a constraint is assigned to */
-int ConsClassifier::getClassOfCons( int givenConsindex )
+/** returns the index of the class a variable is assigned to */
+int VarClassifier::getClassOfVar( int givenVarindex )
 {
-   return IndexClassifier::getClassOfIndex( givenConsindex );
+   return IndexClassifier::getClassOfIndex( givenVarindex );
 }
 
-/** returns vector containing the assigned class of each constraint */
-const int* ConsClassifier::getConssToClasses()
+/** returns vector containing the assigned class of each variable */
+const int* VarClassifier::getVarsToClasses()
 {
-   std::vector<int> conssToClasses = IndexClassifier::getIndicesToClasses();
-   if ( conssToClasses.size() > 0 )
-      return &conssToClasses[0];
+   std::vector<int> varsToClasses = IndexClassifier::getIndicesToClasses();
+   if ( varsToClasses.size() > 0 )
+      return &varsToClasses[0];
    else
       return NULL;
 }
 
-/** returns the number of constraints */
-int ConsClassifier::getNConss()
+/** returns the number of variables */
+int VarClassifier::getNVars()
 {
    return IndexClassifier::getNIndices();
 }
 
-/** returns a vector with the numbers of constraints that are assigned to the classes */
-std::vector<int> ConsClassifier::getNConssOfClasses()
+/** returns a vector with the numbers of variables that are assigned to the classes */
+std::vector<int> VarClassifier::getNVarsOfClasses()
 {
    return IndexClassifier::getNIndicesOfClasses();
 }
 
 
-/** returns whether a constraint is already assigned to a class */
-bool ConsClassifier::isConsClassified( int givenConsindex )
+/** returns whether a variable is already assigned to a class */
+bool VarClassifier::isVarClassified( int givenVarindex )
 {
-   return IndexClassifier::isIndexClassified( givenConsindex );
+   return IndexClassifier::isIndexClassified( givenVarindex );
 }
 
 /** returns classifier with reduced number of classes */
-ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
+VarClassifier* VarClassifier::reduceClasses( int givenMaxNumber )
 {
    std::vector<int> classindexmapping = IndexClassifier::reduceClasses( givenMaxNumber );
-   ConsClassifier* newClassifier;
+   VarClassifier* newClassifier;
    std::stringstream newName;
    std::stringstream newClassdesc;
 
    if ( classindexmapping.empty() )
       return NULL;
 
-   /** create new ConsClassifier */
+   /** create new VarClassifier */
    newName << getName() << "-red-to-" << givenMaxNumber;
-   newClassifier = new ConsClassifier( scip, newName.str().c_str(), givenMaxNumber, getNConss() );
+   newClassifier = new VarClassifier( scip, newName.str().c_str(), givenMaxNumber, getNVars() );
 
-   /** reassign conss */
-   for( int i = 0; i < newClassifier->getNConss(); ++i)
+   /** reassign vars */
+   for( int i = 0; i < newClassifier->getNVars(); ++i)
    {
-      if ( getClassOfCons(i) != -1 )
+      if ( getClassOfVar(i) != -1 )
       {
-         newClassifier->assignConsToClass( i, classindexmapping[getClassOfCons(i)] );
+         newClassifier->assignVarToClass( i, classindexmapping[getClassOfVar(i)] );
       }
    }
 
    /** set new class names and descriptions (enlarged class has index 0) */
    newClassifier->setClassName( 0, "merged" );
-   newClassifier->setClassDecompInfo( 0, BOTH );
+   newClassifier->setClassDecompInfo( 0, ALL );
 
    for ( int i = 0; i < getNClasses(); ++i )
    {
@@ -212,9 +215,9 @@ ConsClassifier* ConsClassifier::reduceClasses( int givenMaxNumber )
 }
 
 /** sets the decomposition code of a class */
-void ConsClassifier::setClassDecompInfo( int givenClassindex, CONS_DECOMPINFO givenDecompInfo )
+void VarClassifier::setClassDecompInfo( int givenClassindex, VAR_DECOMPINFO givenDecompInfo )
 {
-   assert(givenDecompInfo == BOTH || givenDecompInfo == ONLY_MASTER || givenDecompInfo == ONLY_PRICING );
+   assert( givenDecompInfo == ALL || givenDecompInfo == LINKING || givenDecompInfo == MASTER || givenDecompInfo == BLOCK );
 
    IndexClassifier::setClassDecompInfo( givenClassindex, (int) givenDecompInfo );
 }
