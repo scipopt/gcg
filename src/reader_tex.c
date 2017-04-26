@@ -66,8 +66,7 @@ struct SCIP_ReaderData
 {
    SCIP_Bool       usegp;           /** if true uses gp files as intermediate step */
    SCIP_Bool       picturesonly;    /** if true only tex code for the pictures is generated (no statistics included) */
-   SCIP_Bool       draftmode;       /** if true shows no non-zeroes, recommended if too slow or too memory-intensive
-                                      * (not compatible with gp) */
+   SCIP_Bool       draftmode;       /** if true shows no non-zeroes, recommended if too slow or too memory-intensive */
 };
 
 /** Getter of parameter usegp */
@@ -271,8 +270,8 @@ SCIP_RETCODE GCGtexWriteTitlepage(
       pname);
    SCIPinfoMessage(scip, file, "                                                                              \n");
    SCIPinfoMessage(scip, file, "\\vspace{2cm}                                                                 \n");
-   SCIPinfoMessage(scip, file, "\\begin{tabular}{ll}                                                          \n");
-   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{0pt}                                 \n");
+   SCIPinfoMessage(scip, file, "\\begin{tabular}{{lp{10cm}}}                                                  \n");
+   SCIPinfoMessage(scip, file, "  \\textbf{Problem}: & \\begin{minipage}{10cm}                                \n");
    SCIPinfoMessage(scip, file, "                         \\begin{verbatim}%s\\end{verbatim}                   \n",
       pname);
    SCIPinfoMessage(scip, file, "                       \\end{minipage} \\\\                                   \n");
@@ -387,7 +386,6 @@ SCIP_RETCODE writeTikz(
    if( decomp != NULL )
    {
       /* go through the blocks and create the indices */
-      /* @todo add " && DECdecompGetType(decomp) != DEC_DECTYPE_ARROWHEAD" to this in seeed version */
       if( DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN && DECdecompGetType(decomp) != DEC_DECTYPE_STAIRCASE )
       {
          SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
@@ -430,7 +428,6 @@ SCIP_RETCODE writeTikz(
             consindex++;
          }
       }
-      /* @todo add " || DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD" to this in seeed version */
       else if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
       {
          /* get the computed index maps instead of computing them here */
@@ -491,13 +488,13 @@ SCIP_RETCODE writeTikz(
       endx += nlinkingvars;
       endy += nlinkingconss;
       SCIPinfoMessage(scip, file,
-         "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
+         "    \\draw [fill=orange] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
          (0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
       SCIPinfoMessage(scip, file,
-         "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
+         "    \\draw [fill=yellow] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
          (startx+0.5)/maxindvars, (+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
       SCIPinfoMessage(scip, file,
-         "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
+         "    \\draw [fill=purple] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
          (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
    }
    else
@@ -510,7 +507,7 @@ SCIP_RETCODE writeTikz(
             endx += nsubscipvars[i]+nstairlinkingvars[i];
             endy += nsubscipconss[i];
             SCIPinfoMessage(scip, file,
-               "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
+               "    \\draw [fill=pink] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
                (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
             startx = endx-nstairlinkingvars[i];
             starty = endy;
@@ -585,7 +582,6 @@ SCIP_RETCODE writeTikz(
 
    SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                                            \n");
 
-   /* @todo add " && DECdecompGetType(decomp) != DEC_DECTYPE_ARROWHEAD" to this in seeed version */
    if( DECdecompGetType(decomp) != DEC_DECTYPE_STAIRCASE )
    {
       SCIPhashmapFree(&varindexmap);
@@ -850,11 +846,11 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
       return SCIP_FILECREATEERROR;
    }
 
-   /*
+
    if( readerdata->usegp )
    {
-      SCIPinfoMessage(scip, makefile, "GNUPLOTFILES:=$(gnuplot $(wildcard *.gp))                                   \n");
-   } */
+      SCIPinfoMessage(scip, makefile, "GPFILES := $(wildcard *.gp)                                                 \n");
+   }
    SCIPinfoMessage(scip, makefile, "                                                                             \n");
    SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               \n");
    SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex                                                               \n",
@@ -950,7 +946,7 @@ SCIPincludeReaderTex(
 
    SCIP_CALL( SCIPaddBoolParam(scip,
          "reading/texreader/draftmode",
-         "if true shows no non-zeroes, recommended if too slow or too memory-intensive (not compatible with gp)",
+         "if true shows no non-zeroes, recommended if too slow or too memory-intensive",
          &readerdata->draftmode, FALSE, DEFAULT_DRAFTMODE, NULL, NULL) );
 
    return SCIP_OKAY;
