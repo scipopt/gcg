@@ -52,6 +52,7 @@
 #include "pub_gcgheur.h"
 #include "stat.h"
 #include "reader_dec.h"
+#include "reader_tex.h"
 
 /* display the reader information */
 static
@@ -249,8 +250,6 @@ SCIP_RETCODE writeFamilyTree(
 
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", dirname, filename, extension);
 
-
-   /*@todo y/ yes or anything for no*/
    SCIPdialogMessage(scip, NULL, "Draft mode will not visualize non-zero values but is faster and takes less memory.\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
       "To activate draft mode type 'yes', otherwise type anything different or just press Enter:",
@@ -264,9 +263,7 @@ SCIP_RETCODE writeFamilyTree(
    (void) SCIPsnprintf(tempstr, SCIP_MAXSTRLEN, "Maximum number of finished decompositions (default: %d): ", defaultndecs);
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, (char*)tempstr, &ndecstring, &endoffile) );
 
-   /*@todo is this possible in a more elegant way? it might be ok*/
    ndecs = atoi( ndecstring );
-
    if ( ndecs == 0 )
    {
 	   SCIPdialogMessage(scip, NULL,
@@ -275,8 +272,6 @@ SCIP_RETCODE writeFamilyTree(
    }
 
    retcode = DECwriteFamilyTree(scip, outname, dirname, ndecs, draft);
-
-
 
    if( retcode == SCIP_FILECREATEERROR )
    {
@@ -300,9 +295,6 @@ SCIP_RETCODE writeFamilyTree(
    return SCIP_OKAY;
 }
 
-
-
-
 /** writes out visualizations of all decompositions currently known to cons_decomp to a PDF file */
 static
 SCIP_RETCODE reportAllDecompositions(
@@ -312,16 +304,24 @@ SCIP_RETCODE reportAllDecompositions(
    SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
    )
 {
+   FILE* file;
+   DEC_DECOMP** decomps;
    char* pname;
    char* dirname;
-   char ppath[SCIP_MAXSTRLEN];
+   char* tempstring;
    const char* nameinfix = "report_";
    const char* extension = "tex";
+   char ppath[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
-   SCIP_RETCODE retcode;
    SCIP_Bool endoffile;
+   SCIP_Longint nmaxdecs;
    int ndecomps;
+   int ndecompsoftype;
+   int type;
+   int i;
+   int writtendecomps;
 
+   decomps = SCIPconshdlrDecompGetDecdecomps(scip);
    ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
 
    if( ndecomps == 0 )
@@ -332,6 +332,7 @@ SCIP_RETCODE reportAllDecompositions(
       return SCIP_OKAY;
    }
 
+   /* get a directory to write to */
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter an existing directory: ", &dirname, &endoffile) );
    if( endoffile )
    {
@@ -341,30 +342,86 @@ SCIP_RETCODE reportAllDecompositions(
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
+   /* create a name for the new file */
    strcpy(ppath, (char*) SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s%s.%s", dirname, nameinfix, pname, extension);
 
-   retcode = SCIPwriteTransProblem(scip, outname, extension, FALSE);
-   if( retcode == SCIP_FILECREATEERROR )
+   /* get a maximum number of decomps to output */
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
+      "Enter a maximum number of decompositions to visualize (ones with best score are preferred): ",
+      &tempstring, &endoffile) );
+
+   nmaxdecs = atoi( tempstring );
+   if ( nmaxdecs == 0 || nmaxdecs < 0)
+   {
+      SCIPdialogMessage(scip, NULL,
+         "This is not a compatible number, all decompositions will be included. \n");
+      nmaxdecs = SCIP_LONGINT_MAX;
+   }
+
+   /* check if only a certain dectype should be included */
+   SCIPdialogMessage(scip, NULL, "Only decompositions of a certain type? \n");
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
+      "Type number (0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered): ", &tempstring, &endoffile) );
+
+   type = atoi( tempstring );
+   /* there are decomp types 0-4 (see type_decomp.h for further infos) */
+   if(type < 0 || type > 4){
+      type = 0;
+      SCIPdialogMessage(scip, NULL,
+               "This is not a compatible number, all decompositions will be included. \n");
+   }
+   ndecompsoftype = 0;
+   if(type == 0)
+   {
+      ndecompsoftype = ndecomps;
+   }
+   else
+   {
+      for( i = 0; i < ndecomps; i++ )
+      {
+         if( DECdecompGetType(decomps[i]) == (DEC_DECTYPE) type )
+            ndecompsoftype = ndecompsoftype+1;
+      }
+   }
+
+   /* open the new file */
+   file = fopen(outname, "w");
+   if( file == NULL )
    {
       SCIPdialogMessage(scip, NULL, "error creating file\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
    }
-   else if( retcode == SCIP_WRITEERROR )
-   {
-      SCIPdialogMessage(scip, NULL, "error writing file\n");
-      SCIPdialoghdlrClearBuffer(dialoghdlr);
-   }
-   else
-   {
-      /* check for unexpected errors */
-      SCIP_CALL( retcode );
 
-      /* print result message if writing was successful */
-      SCIPdialogMessage(scip, NULL, "report is written to file %s%s.%s in directory %s\n", nameinfix, pname, extension, dirname);
+   /* write tex code for all decompositions (of right type) into file */
+   GCGtexWriteHeaderCode(scip, file);
+   GCGtexWriteTitlepage(scip, file, &ndecompsoftype);
+   if(!GCGtexGetPicturesonly(scip))
+   {
+      GCGtexWriteTableOfContents(scip, file);
    }
+   writtendecomps = 0;
+   for(i = 0; i < ndecomps; i++){
+      if(type == 0 || DECdecompGetType(decomps[i]) == (DEC_DECTYPE) type){
+         GCGtexWriteDecompCode(scip, file, decomps[i]);
+         ++writtendecomps;
+         /* stop if max number is reached */
+         if(writtendecomps >= nmaxdecs)
+         {
+            break;
+         }
+      }
+   }
+   GCGtexWriteEndCode(scip, file);
+   GCGtexWriteMakefileAndReadme(scip, file);
+
+   /* close the file */
+   fclose(file);
+
+   /* print result message if writing was successful */
+   SCIPdialogMessage(scip, NULL, "report is written to file %s%s.%s in directory %s\n", nameinfix, pname, extension, dirname);
 
    return SCIP_OKAY;
 }
