@@ -21,6 +21,9 @@ import matplotlib.ticker as mticker
 
 import math
 
+from matplotlib import gridspec
+
+
 
 
 
@@ -145,15 +148,24 @@ def generate_files(files):
                     
                     
                     
+                    #fig = plt.figure(figsize=(8, 6)) 
+                    gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1]) 
+                    ax = plt.subplot(gs[0])
+                    ax1 = plt.subplot(gs[1])
                     
-                    ax = None
-                    ax = df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.5);
-#                    ax = df.plot(kind='kde', y='nlpvars', color='blue', label='nlpvars', ax=ax, secondary_y=True);
-                    ax = plt.gca()
+                    ax2 = plt.gca()
                     myLocator = mticker.MultipleLocator(10 ** (math.floor(math.log10(len(df.index)))))
-                    ax.xaxis.set_major_locator(myLocator)
+                    ax2.xaxis.set_major_locator(myLocator)
+
+                    ax1 = df.plot(kind='bar', y=['nlpvars','nipvars'], color=['blue','red'], linewidth=0, label='nlpvars', ax=ax1, secondary_y=False);
+                    #ax = None
+                    ax = df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.5);
                     ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax);
                     ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);
+
+                    ax2 = plt.gca()
+                    myLocator = mticker.MultipleLocator(10 ** (math.floor(math.log10(len(df.index)))))
+                    ax2.xaxis.set_major_locator(myLocator)
                     
                     plt.savefig(params['outdir']+"/"+name+"_"+settings+".png")
                     
