@@ -1141,7 +1141,8 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
           #pragma omp critical (seeedcount)
           seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
 
-          std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;
+          if( verboseLevel > 2)
+             std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;
 
           /** if the finishing of the detector is not enabled go on with the next detector */
           if( !detector->enabledFinishing )

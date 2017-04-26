@@ -1067,7 +1067,12 @@ SCIP_RETCODE readDECFile(
             SCIP_CALL( readPresolved(scip, decinput) );
             if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
             {
+
+               SCIPinfoMessage(scip, NULL, "read presolved decomposition but problem is not presolved yet -> presolve()");
                SCIPpresolve(scip);
+
+
+
                assert(decinput->haspresolvesection);
 //               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
  //              retcode = SCIP_READERROR;
@@ -1141,7 +1146,7 @@ SCIP_RETCODE readDECFile(
       }
    }
 
-
+   SCIPinfoMessage(scip, NULL, "just read dec file:");
    SCIPconshdlrDecompUserSeeedFlush(scip);
 
 //   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );

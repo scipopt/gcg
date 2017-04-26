@@ -306,6 +306,8 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       SCIPfreeBlockMemory(scip, &detector);
    }
 
+
+
    /* @todo: This is also done in consExitDecomp() and therefore probably makes no sense here. */
    if( conshdlrdata->ndecomps > 0 )
    {
@@ -318,6 +320,8 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 
    if( conshdlrdata->seeedpool != NULL )
       delete conshdlrdata->seeedpool;
+
+   SCIPfreeMemoryArray(scip, &conshdlrdata->incompleteseeeds );
 
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
@@ -1178,6 +1182,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    gcg::Seeedpool* currseeedpool;
    SeeedPtr        seeed;
 
+   char const *            usergiveninfo;
+   char const *            presolvedinfo;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -1251,6 +1257,24 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       conshdlrdata->incompleteseeeds[conshdlrdata->nincompleteseeeds] = conshdlrdata->curruserseeed ;
       conshdlrdata->nincompleteseeeds = conshdlrdata->nincompleteseeeds+1;
    }
+
+   if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::PARTIAL )
+      usergiveninfo = "partial";
+   if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::COMPLETE )
+      usergiveninfo = "complete";
+   if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::COMPLETED_CONSTOMASTER )
+         usergiveninfo = "complete";
+   if( conshdlrdata->curruserseeed->stemsFromUnpresolved )
+         presolvedinfo = "unpresolved";
+   else presolvedinfo = "presolved";
+
+
+
+   SCIPinfoMessage(scip, NULL, " added %s decomp for %s problem with %d blocks and %d masterconss, %d linkingvars, "
+      "%d mastervars, and max white score of %s %f \n", usergiveninfo, presolvedinfo,
+      conshdlrdata->curruserseeed->getNBlocks(), conshdlrdata->curruserseeed->getNMasterconss(),
+      conshdlrdata->curruserseeed->getNLinkingvars(), conshdlrdata->curruserseeed->getNMastervars(), (conshdlrdata->curruserseeed->isComplete() ? " " : " at best "),
+      conshdlrdata->curruserseeed->getMaxWhiteScore() );
 
    conshdlrdata->curruserseeed = NULL;
 
