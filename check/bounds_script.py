@@ -62,9 +62,11 @@ def generate_files(files):
         # file = os.path.join(DIR, filename)
         with open(file) as _file:
             df=pd.DataFrame()
+            dfvar=pd.DataFrame()
             orig = False
             name = None
-            read = False
+            rootbounds = False
+            vardetails = False
             settings = 'default'
             for line in _file:
                 if line.startswith("loaded parameter file"):
@@ -87,35 +89,80 @@ def generate_files(files):
                     name = os.path.splitext(name)[0]
                     print name
                 elif line.startswith("Root bounds"):
-                    read = True
-                elif line.startswith("iter	pb	db"):
+                    rootbounds = True
+                elif line.startswith("iter	pb	db") and rootbounds:
                     line_array = line.split()
                     df = pd.DataFrame(columns = line_array, dtype = float)
-                elif line.startswith("Pricing Summary:"):
-                    read = False
-                    df = df.set_index('iter')
+                elif line.startswith("Pricing Summary:") and rootbounds:
+                    rootbounds = False
+                elif rootbounds:
+                    line_array = line.split()
+                    df.loc[line_array[0]] = line_array
+                elif line.startswith("AddedVarDetails:"):
+                    vardetails = True
+                elif line.startswith("VAR: name	node	time") and vardetails:
+                    line_array = line.split()
+                    dfvar = pd.DataFrame(columns = line_array[1:], dtype = float)
+                elif line.startswith("Root node:") and vardetails:
+                    vardetails = False
+                    print df
+                    print dfvar
+                    dfvar = dfvar.set_index('name')
+
+                    dfvar=dfvar.astype(float)
+
+                    df['nlpvars'] = 0
+
+                    for i in range(len(df)):
+                        df.set_value(str(i), 'nlpvars', len(dfvar[(dfvar['rootlpsolval'] > 0) & (dfvar['rootredcostcall'] == i)]))
+
+                    df['nipvars'] = 0
+
+                    for i in range(len(df)):
+                        df.set_value(str(i), 'nipvars', len(dfvar[(dfvar['solval'] > 0) & (dfvar['rootredcostcall'] == i)]))
 
                     print df
+
+                    df = df.set_index('iter')
+
+                    
                     if df.empty:
                         continue
                     
                     df=df.astype(float)
                     
-                    #fig, axes = plt.subplots(nrows=2, ncols=2)
+#                    fig, ax = plt.subplots()
+#                    ax2, ax3 = ax.twinx(), ax.twinx()
+#                    ax3.set_frame_on(True)
+#                    ax3.patch.set_visible(False)
+#                    fig.subplots_adjust(right=0.75)
+
+#                    ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax);
+#                    ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);                    
+#                    df.plot(kind='bar', y='nlpvars', color='purple', label='nlpvars', ax=ax3, secondary_y=True, alpha=0.2);
+#                    df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax2, secondary_y=True, alpha=0.5);
+
+                    
+                    
+                    
+                    
                     ax = None
                     ax = df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.5);
+#                    ax = df.plot(kind='kde', y='nlpvars', color='blue', label='nlpvars', ax=ax, secondary_y=True);
                     ax = plt.gca()
                     myLocator = mticker.MultipleLocator(10 ** (math.floor(math.log10(len(df.index)))))
                     ax.xaxis.set_major_locator(myLocator)
                     ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax);
                     ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);
                     
-
-                    #fig = plot.get_figure()
                     plt.savefig(params['outdir']+"/"+name+"_"+settings+".png")
-                elif read:
+                    
+                elif vardetails:
                     line_array = line.split()
-                    df.loc[line_array[0]] = line_array
+                    dfvar.loc[line_array[1]] = line_array[1:]
+
+
+                    
                                
 
 def main():

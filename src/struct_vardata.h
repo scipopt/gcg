@@ -111,6 +111,8 @@ struct SCIP_VarData
                                               *   or -1 if variable is directly transferred to the master problem,
                                               *   or -2 if variable is a linking variable */
    SCIP_Longint          creationnode;       /**< node where the variable is created */
+   SCIP_Longint          rootredcostcall;    /**< pricing reduced cost call when the variable is created
+                                              *   (-1 if variable was not created at the root node or was created in Farkas pricing) */
    SCIP_Real             creationtime;       /**< time when the variable is created */
    SCIP_Longint          iteration;          /**< iteration when the variable is created */
    SCIP_Real             gap;                /**< gap when the variable was created */
