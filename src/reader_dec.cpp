@@ -1043,8 +1043,7 @@ SCIP_RETCODE readDECFile(
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 
-   conss = SCIPgetConss(scip);
-   nconss = SCIPgetNConss(scip);
+
 
 
    /* parse the file */
@@ -1086,9 +1085,12 @@ SCIP_RETCODE readDECFile(
                SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
             }
             /* cons -> block mapping */
+            conss = SCIPgetConss(scip);
+            nconss = SCIPgetNConss(scip);
             SCIP_CALL( SCIPhashmapCreate(&readerdata->constoblock, SCIPblkmem(scip), nconss) );
             for( i = 0; i < nconss; i ++ )
             {
+               assert( !SCIPhashmapExists(readerdata->constoblock, conss[i] ) );
                SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, conss[i], (void*) (size_t) LINKINGVALUE) );
             }
 
