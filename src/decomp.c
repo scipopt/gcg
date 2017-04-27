@@ -1535,6 +1535,8 @@ SCIP_RETCODE DECdecompRemoveDeletedConss(
             SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->subscipconss[block][c]) );
          }
       }
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block],
+         SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]), SCIPcalcMemGrowSize(scip, pos)) );
       decdecomp->nsubscipconss[block] = pos;
    }
 
@@ -1550,6 +1552,8 @@ SCIP_RETCODE DECdecompRemoveDeletedConss(
          SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->linkingconss[c]) );
       }
    }
+   SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss,
+      SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss), SCIPcalcMemGrowSize(scip, pos)) );
    decdecomp->nlinkingconss = pos;
 
    return SCIP_OKAY;
@@ -1668,7 +1672,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
 
          SCIPdebugMessage("Cons <%s> in block %d = %d\n", SCIPconsGetName(cons), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1);  /*lint !e507*/
          assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
-         assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1 == b); /*lint !e507*/
+         assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) - 1 == b); /*lint !e507*/
          ncurvars = GCGconsGetNVars(scip, cons);
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
@@ -1681,7 +1685,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
             if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
                continue;
 
-            varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1;  /*lint !e507*/
+            varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) - 1;  /*lint !e507*/
             SCIPdebugMessage("\tVar <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
 
             assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
@@ -1695,7 +1699,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
       {
          int varblock;
          SCIP_VAR* var = DECdecompGetSubscipvars(decdecomp)[b][v];
-         varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1; /*lint !e507*/
+         varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) - 1; /*lint !e507*/
          SCIPdebugMessage("Var <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
          assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
          assert(SCIPvarIsActive(var));
@@ -2586,8 +2590,8 @@ SCIP_RETCODE DECevaluateDecomposition(
    DEC_SCORES*           score               /**< returns the score of the decomposition */
    )
 {
-   int matrixarea;
-   int borderarea;
+   SCIP_Longint matrixarea;
+   SCIP_Longint borderarea;
    int nvars;
    int nconss;
    int i;
@@ -2625,7 +2629,7 @@ SCIP_RETCODE DECevaluateDecomposition(
     */
 
    /* calculate matrix area */
-   matrixarea = nvars*nconss;
+   matrixarea = (SCIP_Longint) nvars*nconss;
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nblocks; ++i )
@@ -2712,7 +2716,7 @@ SCIP_RETCODE DECevaluateDecomposition(
       SCIPfreeBufferArray(scip, &ishandled);
    }
 
-   borderarea = DECdecompGetNLinkingconss(decdecomp)*nvars+DECdecompGetNLinkingvars(decdecomp)*(nconss-DECdecompGetNLinkingconss(decdecomp));
+   borderarea = (SCIP_Longint) DECdecompGetNLinkingconss(decdecomp)*nvars + (SCIP_Longint) DECdecompGetNLinkingvars(decdecomp)*(nconss-DECdecompGetNLinkingconss(decdecomp));
 
    density = 1E20;
    varratio = 1.0;
@@ -3297,13 +3301,21 @@ int DECfilterSimilarDecompositions(
    return nunique;
 }
 
-/** returns the number of the block that the constraint is with respect to the decomposition */
+/** returns the number of the block that the constraint is with respect to the decomposition; set
+ * *block = -2, if it has no variables
+ * *block = -1, if it has only variables belonging only to the master (meaning that this constraint should build a new block)
+ * *block in [0,...,nblocks-1] if it only contains variables of a particular block (plus linking variables)
+ * *block = nblocks, if it contains
+ *   - either variables from more than one block (plus linking variables or master only variables)
+ *   - or linking variables only
+ */
+/** @fixme: For linking variables, we should check which blocks they actually link */
 /** @todo: maybe this is possible in such a way that a staircase structure is preserved */
 SCIP_RETCODE DECdetermineConsBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_CONS*            cons,               /**< constraint to check */
-   int                   *block              /**< block of the constraint (or nblocks for master) */
+   int*                  block              /**< block of the constraint (or nblocks for master) */
 )
 {
    SCIP_VAR** curvars = NULL;
