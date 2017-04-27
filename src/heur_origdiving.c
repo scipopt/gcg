@@ -655,11 +655,12 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                SCIP_CALL( SCIPchgVarUbProbing(scip, bestcand, SCIPfeasFloor(scip, bestcandsol)) );
             }
 
+            /* apply domain propagation */
+            SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
+
             SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
          }
 
-         /* apply domain propagation */
-         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
          if( !cutoff || backtracked || farkaspricing )
          {
             /* resolve the diving LP */
