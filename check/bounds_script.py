@@ -149,23 +149,36 @@ def generate_files(files):
                     
                     
                     #fig = plt.figure(figsize=(8, 6)) 
-                    gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1]) 
+                    gs = gridspec.GridSpec(3, 1, height_ratios=[3, 1, 1]) 
                     ax = plt.subplot(gs[0])
                     ax1 = plt.subplot(gs[1])
-                    
-                    ax2 = plt.gca()
-                    myLocator = mticker.MultipleLocator(10 ** (math.floor(math.log10(len(df.index)))))
-                    ax2.xaxis.set_major_locator(myLocator)
+                    ax2 = plt.subplot(gs[2])
 
-                    ax1 = df.plot(kind='bar', y=['nlpvars','nipvars'], color=['blue','red'], linewidth=0, label='nlpvars', ax=ax1, secondary_y=False);
+#                    ax0 = plt.gca()
+#                    myLocator = mticker.MultipleLocator(10 ** (math.floor(math.log10(len(df.index)))))
+#                    ax0.xaxis.set_major_locator(plt.NullFormatter())
+                    
+                    #ax1 = df.plot(kind='bar', y=['nlpvars','nipvars'], color=['blue','red'], linewidth=0, label=['nlpvars','nipvars'], ax=ax1, secondary_y=False);
+  
+                    ax1 = df.plot(kind='bar', y='nlpvars', color='blue', label='nlpvars', ax=ax1, secondary_y=False);
+                    ax1.set_xticklabels([])
+                    x_axis = ax1.axes.get_xaxis()
+                    x_axis.set_label_text('')
+                    #x_axis = ax1.axes.get_xaxis()
+                    #x_axis.set_visible(False)                    
+                    base = 10 ** (math.floor(math.log10(len(df.index))))
+                    ax2 = df.plot(kind='bar', y='nipvars', color='red', label='nipvars', ax=ax2, secondary_y=False);
+                    myLocator = mticker.MultipleLocator(base)
+                    majorFormatter = mticker.FormatStrFormatter('%d')
+                    myLocator2 = mticker.MultipleLocator(1)
+                    ax2.xaxis.set_major_locator(myLocator)
+                    ax2.xaxis.set_major_formatter(majorFormatter)
+                    ax2.xaxis.set_minor_locator(myLocator2)                    
+
                     #ax = None
                     ax = df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.5);
                     ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax);
                     ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);
-
-                    ax2 = plt.gca()
-                    myLocator = mticker.MultipleLocator(10 ** (math.floor(math.log10(len(df.index)))))
-                    ax2.xaxis.set_major_locator(myLocator)
                     
                     plt.savefig(params['outdir']+"/"+name+"_"+settings+".png")
                     
