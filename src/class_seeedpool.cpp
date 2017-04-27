@@ -808,7 +808,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                #pragma omp critical (seeedcount)
                 seeedPropData->newSeeeds[j]->setID(getNewIdForSeeed());
                 prepareSeeed( seeedPropData->newSeeeds[j] );
-                seeedPropData->newSeeeds[j]->checkConsistency();
+                assert(seeedPropData->newSeeeds[j]->checkConsistency(this) );
                 seeedPropData->newSeeeds[j]->addDecChangesFromAncestor(seeedPtr);
              }
 
@@ -1068,7 +1068,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
     for(size_t i = 0; i < finishedSeeeds.size(); ++i)
     {
-       assert(finishedSeeeds[i]->checkConsistency() );
+       assert(finishedSeeeds[i]->checkConsistency(this) );
        assert(finishedSeeeds[i]->getNOpenconss() == 0);
        assert(finishedSeeeds[i]->getNOpenvars() == 0);
 
@@ -1251,7 +1251,7 @@ void Seeedpool::freeCurrSeeeds()
    {
       if ( currSeeeds[i] != NULL )
       {
-         currSeeeds[i]->checkConsistency();
+         currSeeeds[i]->checkConsistency(this);
          delete currSeeeds[i];
          currSeeeds[i] = NULL;
       }
@@ -1505,7 +1505,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
       newseeed->sort();
       newseeed->considerImplicits(this);
       newseeed->deleteEmptyBlocks();
-      newseeed->checkConsistency();
+      //assert(newseeed->checkConsistency(this) );
 
 
 
@@ -1515,7 +1515,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
          newseeed->showScatterPlot(this);
        */
 
-      if(newseeed->checkConsistency() )
+      if( newseeed->checkConsistency(this) )
          newseeeds.push_back(newseeed);
       else {
          delete newseeed;
@@ -2686,7 +2686,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    int size;
 
-   assert(seeed->checkConsistency() );
+   assert(seeed->checkConsistency(this) );
 
    /* create decomp data structure */
    SCIP_CALL_ABORT( DECdecompCreate( scip, newdecomp) );

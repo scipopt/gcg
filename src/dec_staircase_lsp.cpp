@@ -836,9 +836,8 @@ SCIP_RETCODE detection(
 
    currseeed->assignCurrentStairlinking(seeedpool);
    //currseeed->showScatterPlot(seeedpool);
-
    currseeed->considerImplicits(seeedpool);
-
+   currseeed->sort();
 
 
  //  currseeed->showScatterPlot(seeedpool);

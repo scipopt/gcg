@@ -246,6 +246,8 @@ public:
    bool checkAllConsAssigned(
    );
 
+   bool checkConsistency(
+      Seeedpool* seeedpool);
 
    /** check the consistency of this seeed */
    bool checkConsistency(

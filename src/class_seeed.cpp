@@ -903,6 +903,37 @@ bool Seeed::checkAllConsAssigned()
 }
 
 /** check the consistency of this seeed */
+bool Seeed::checkConsistency(Seeedpool* seeedpool)
+{
+   if( !checkConsistency() )
+      return false;
+
+   /** check if nonzero entries are either in a block or border */
+   for( int b = 0; b < nBlocks; ++b )
+   {
+      for( int c = 0; c < getNConssForBlock(b) ; ++c )
+      {
+         for ( int v = 0; v < seeedpool->getNVarsForCons( getConssForBlock(b)[c] ); ++v )
+         {
+            int varid = seeedpool->getVarsForCons(getConssForBlock(b)[c])[v];
+
+            if( ! (isVarBlockvarOfBlock(varid, b) || isVarLinkingvar(varid) || isVarStairlinkingvarOfBlock(varid, b) ) )
+            {
+               SCIPwarningMessage(scip, "WARNING! Variable %d is not part of block %d or linking as constraint %d suggests! \n ", varid, b, getConssForBlock(b)[c]);
+               return false;
+            }
+
+         }
+      }
+
+   }
+
+   return true;
+
+
+}
+
+/** check the consistency of this seeed */
 bool Seeed::checkConsistency()
 {
 
@@ -910,6 +941,8 @@ bool Seeed::checkConsistency()
    std::vector<int> stairlinkingvarsvec(0);
    std::vector<int>::const_iterator varIter = linkingVars.begin();
    std::vector<int>::const_iterator varIterEnd = linkingVars.end();
+
+
    int value;
 
    /** check if nblocks is set appropriate */
@@ -1161,6 +1194,7 @@ bool Seeed::checkConsistency()
       }
    }
 
+
    /** check if the seeed is sorted */
    for( int b = 0; b < nBlocks; ++b )
    {
@@ -1200,6 +1234,7 @@ bool Seeed::checkConsistency()
          assert(false);
          return false;
       }
+      value = getLinkingvars()[v];
    }
    value = -1;
    for( int v = 0; v < getNMastervars(); ++v )
@@ -1210,6 +1245,7 @@ bool Seeed::checkConsistency()
          assert(false);
          return false;
       }
+      value = getMastervars()[v];
    }
    for( int b = 0; b < nBlocks; ++b )
    {
@@ -1234,6 +1270,7 @@ bool Seeed::checkConsistency()
          assert(false);
          return false;
       }
+      value = getMasterconss()[v];
    }
 
    return true;
