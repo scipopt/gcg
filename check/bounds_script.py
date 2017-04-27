@@ -108,8 +108,7 @@ def generate_files(files):
                     dfvar = pd.DataFrame(columns = line_array[1:], dtype = float)
                 elif line.startswith("Root node:") and vardetails:
                     vardetails = False
-                    print df
-                    print dfvar
+
                     dfvar = dfvar.set_index('name')
 
                     dfvar=dfvar.astype(float)
@@ -124,9 +123,8 @@ def generate_files(files):
                     for i in range(len(df)):
                         df.set_value(str(i), 'nipvars', len(dfvar[(dfvar['solval'] > 0) & (dfvar['rootredcostcall'] == i)]))
 
-                    print df
 
-                    df = df.set_index('iter')
+                    #df = df.set_index('iter')
 
                     
                     if df.empty:
@@ -144,8 +142,11 @@ def generate_files(files):
 #                    ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);                    
 #                    df.plot(kind='bar', y='nlpvars', color='purple', label='nlpvars', ax=ax3, secondary_y=True, alpha=0.2);
 #                    df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax2, secondary_y=True, alpha=0.5);
-
                     
+                    infty = 10.0 ** 20
+                    df['db'][df['db'] <= -infty] = np.nan                    
+                    
+                    print df
                     
                     
                     #fig = plt.figure(figsize=(8, 6)) 
@@ -165,7 +166,7 @@ def generate_files(files):
                     x_axis = ax1.axes.get_xaxis()
                     x_axis.set_label_text('')
                     #x_axis = ax1.axes.get_xaxis()
-                    #x_axis.set_visible(False)                    
+                    x_axis.set_visible(False)                    
                     base = 10 ** (math.floor(math.log10(len(df.index))))
                     ax2 = df.plot(kind='bar', y='nipvars', color='red', label='nipvars', ax=ax2, secondary_y=False);
                     myLocator = mticker.MultipleLocator(base)
@@ -175,10 +176,17 @@ def generate_files(files):
                     ax2.xaxis.set_major_formatter(majorFormatter)
                     ax2.xaxis.set_minor_locator(myLocator2)                    
 
+                    ax.set_xticklabels([])
+                    x_axis = ax.axes.get_xaxis()
+                    x_axis.set_label_text('')
+                    #x_axis = ax1.axes.get_xaxis()
+                    x_axis.set_visible(False)
+
                     #ax = None
-                    ax = df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.5);
                     ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax);
                     ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);
+                    ax = df.plot(kind='scatter', x='iter', y='db', color='blue', label=None, ax=ax, s=1);
+                    ax = df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.5);
                     
                     plt.savefig(params['outdir']+"/"+name+"_"+settings+".png")
                     

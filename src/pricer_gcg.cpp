@@ -200,6 +200,7 @@ struct SCIP_PricerData
    int                   maxrootbounds;      /**< maximal number of bounds */
    SCIP_Real             rootfarkastime;     /**< time of last Farkas call */
    SCIP_Real             dualdiff;           /**< difference to last dual solution */
+   int                   dualdiffround;      /**< value of nrootbounds when difference to last dual solution was computed */
    SCIP_SOL*             rootlpsol;          /**< optimal root LP solution */
 };
 
@@ -2728,7 +2729,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    else if( pricinghaserror )
       *result = SCIP_DIDNOTRUN;
 
-   if( pricerdata->nroundsredcost > 0 && pricetype->getType() == GCG_PRICETYPE_REDCOST )
+   if( pricerdata->nroundsredcost > 0 && pricetype->getType() == GCG_PRICETYPE_REDCOST && pricerdata->nrootbounds != pricerdata->dualdiffround )
    {
       SCIP_Real dualdiff;
       int ndiffs;
@@ -2761,10 +2762,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       SCIPfreeBufferArray(scip_, &olddualconv);
 
       dualdiff = SQRT(ABS(dualdiff));
-
+      pricerdata->dualdiffround = pricerdata->nrootbounds;
       pricerdata->dualdiff = dualdiff;
    }
-   else
+   else if( pricerdata->nrootbounds != pricerdata->dualdiffround )
    {
       pricerdata->dualdiff = 0.0;
    }
@@ -3186,6 +3187,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->rootlpsol = NULL;
    pricerdata->rootfarkastime = 0.0;
    pricerdata->dualdiff = 0.0;
+   pricerdata->dualdiffround = -1;
    pricerdata->nrootbounds = 0;
    pricerdata->maxrootbounds = 50;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds) );
@@ -3346,7 +3348,7 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    retcode = priceNewVariables(reducedcostpricing, result, lowerbound);
    SCIP_CALL( reducedcostpricing->stopClock() );
 
-   if( SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) && *result != SCIP_DIDNOTRUN )
+   if( SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) && *result != SCIP_DIDNOTRUN && GCGsepaGetNCuts(scip_) == 0 )
    {
       SCIP_CALL( addRootBounds(SCIPgetLPObjval(scip_), *lowerbound) );
       SCIPdebugMessage("Add bounds, %f\n", *lowerbound);
