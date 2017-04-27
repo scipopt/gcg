@@ -1387,6 +1387,7 @@ SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
 
    for (int i = 0; i < conshdlrdata->ndecomps; ++i )
    {
+      assert(DECdecompCheckConsistency(scip, conshdlrdata->decdecomps[i] ));
       scores[i] = DECgetMaxWhiteScore(scip, conshdlrdata->decdecomps[i]);
    }
 

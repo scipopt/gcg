@@ -624,18 +624,19 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_PROBLEM:
    case SCIP_STAGE_TRANSFORMED:
    case SCIP_STAGE_PRESOLVING:
-      if( DEChasDetectionRun(scip) || (DECgetBestDecomp(scip) != NULL) )
-      {
-         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
-         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-      }
+//      if( DEChasDetectionRun(scip) || (DECgetBestDecomp(scip) != NULL) )
+//      {
+//         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+//         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+//      }
+      SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
 
    case SCIP_STAGE_PRESOLVED:
 
       if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
       {
          SCIP_Bool success;
-         SCIPinfoMessage(scip, NULL,"there is an unpresolved suer decomposition -> try to translate it to presolved problem...  \n");
+         SCIPinfoMessage(scip, NULL,"there is an unpresolved user decomposition -> try to translate it to presolved problem...  \n");
          SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
 
          if( !success )
