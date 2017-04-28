@@ -1022,7 +1022,6 @@ SCIP_RETCODE readDECFile(
    assert(scip != NULL);
    assert(reader != NULL);
 
-   assert(BMSgetNUsedBufferMemory(SCIPbuffer(scip)) == 0);
 
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
@@ -1199,7 +1198,6 @@ SCIP_DECL_READERFREE(readerFreeDec)
 static
 SCIP_DECL_READERREAD(readerReadDec)
 {  /*lint --e{715}*/
-   assert(BMSgetNUsedBufferMemory(SCIPbuffer(scip)) == 0);
 
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
@@ -1259,12 +1257,10 @@ SCIP_RETCODE SCIPreadDec(
    DECINPUT decinput;
    int i;
 
-   assert(BMSgetNUsedBufferMemory(SCIPbuffer(scip)) == 0);
 
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       SCIP_CALL( SCIPtransformProb(scip) );
 
-   assert(BMSgetNUsedBufferMemory(SCIPbuffer(scip)) == 0);
 
    reader = SCIPfindReader(scip, READER_NAME);
    assert(reader != NULL);
