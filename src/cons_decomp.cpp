@@ -321,7 +321,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    if( conshdlrdata->seeedpool != NULL )
       delete conshdlrdata->seeedpool;
 
-   SCIPfreeMemoryArray(scip, &conshdlrdata->incompleteseeeds );
+   SCIPfreeMemoryArrayNull(scip, &conshdlrdata->incompleteseeeds );
 
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
