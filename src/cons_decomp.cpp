@@ -1512,7 +1512,7 @@ SCIP_RETCODE DECdetectStructure(
      else
         SCIPdebugMessagePrint(scip, "seeedpool is not NULL \n");
 
-     conshdlrdata->seeedpool->calcConsClassifierAndNBlockCandidates(scip);
+     conshdlrdata->seeedpool->calcClassifierAndNBlockCandidates(scip);
 	  if( calculateOrigDecomps )
 	  {
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");
