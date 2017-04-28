@@ -145,8 +145,24 @@ def generate_files(files):
                     
                     infty = 10.0 ** 20
                     df['db'][df['db'] <= -infty] = np.nan                    
+
+
+                    #df['nlpvars'][df['nlpvars'] <= 0.5] = np.nan
+                    #df['nipvars'][df['nipvars'] <= 0.5] = np.nan
                     
-                    print df
+                    lpmax = df['nlpvars'].max()
+                    ipmax = df['nipvars'].max()
+                    
+                    if( np.isnan(ipmax) ):
+                        ipmax = 0.0    
+
+                    if( np.isnan(lpmax) ):
+                        lpmax = 0.0    
+                    
+#                    pd.set_option('display.max_rows', len(df))
+#                    print df
+#                    pd.reset_option('display.max_rows')
+
                     
                     
                     #fig = plt.figure(figsize=(8, 6)) 
@@ -160,22 +176,24 @@ def generate_files(files):
 #                    ax0.xaxis.set_major_locator(plt.NullFormatter())
                     
                     #ax1 = df.plot(kind='bar', y=['nlpvars','nipvars'], color=['blue','red'], linewidth=0, label=['nlpvars','nipvars'], ax=ax1, secondary_y=False);
-  
-                    ax1 = df.plot(kind='bar', y='nlpvars', color='blue', label='nlpvars', ax=ax1, secondary_y=False);
+                    
+                    ax1.set_ylim(bottom=0.0, top=lpmax+1)  
+                    ax1 = df.plot(kind='scatter', x='iter', y='nlpvars', color='blue', label='nlpvars', ax=ax1, secondary_y=False, s=6);
                     ax1.set_xticklabels([])
                     x_axis = ax1.axes.get_xaxis()
                     x_axis.set_label_text('')
                     #x_axis = ax1.axes.get_xaxis()
                     x_axis.set_visible(False)                    
                     base = 10 ** (math.floor(math.log10(len(df.index))))
-                    ax2 = df.plot(kind='bar', y='nipvars', color='red', label='nipvars', ax=ax2, secondary_y=False);
+                    ax2.set_ylim(bottom=0.0, top=ipmax+1)
+                    ax2 = df.plot(kind='scatter', x='iter', y='nipvars', color='red', label='nipvars', ax=ax2, secondary_y=False, s=6);
                     myLocator = mticker.MultipleLocator(base)
                     majorFormatter = mticker.FormatStrFormatter('%d')
-                    myLocator2 = mticker.MultipleLocator(1)
+#                    myLocator2 = mticker.MultipleLocator(1)
                     ax2.xaxis.set_major_locator(myLocator)
                     ax2.xaxis.set_major_formatter(majorFormatter)
-                    ax2.xaxis.set_minor_locator(myLocator2)                    
-
+                    ax2.xaxis.set_minor_locator(plt.NullLocator())                
+                    
                     ax.set_xticklabels([])
                     x_axis = ax.axes.get_xaxis()
                     x_axis.set_label_text('')
@@ -186,7 +204,7 @@ def generate_files(files):
                     ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax);
                     ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);
                     ax = df.plot(kind='scatter', x='iter', y='db', color='blue', label=None, ax=ax, s=1);
-                    ax = df.plot(kind='bar', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.5);
+                    ax = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.25);
                     
                     plt.savefig(params['outdir']+"/"+name+"_"+settings+".png")
                     
