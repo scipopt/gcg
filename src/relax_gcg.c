@@ -1359,6 +1359,10 @@ SCIP_RETCODE createMasterProblem(
    /* do not modify the time limit after solving the master problem */
    SCIP_CALL( SCIPsetBoolParam(masterscip, "reoptimization/commontimelimit", FALSE) );
 
+   /* disable aggregation and multiaggregation of variables, as this might lead to issues with copied original variables */
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
+
    return SCIP_OKAY;
 }
 
