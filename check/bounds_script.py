@@ -158,6 +158,8 @@ def generate_files(files):
 
                     if( np.isnan(lpmax) ):
                         lpmax = 0.0    
+                        
+                    xmax = len(df) - 1
                     
 #                    pd.set_option('display.max_rows', len(df))
 #                    print df
@@ -177,7 +179,8 @@ def generate_files(files):
                     
                     #ax1 = df.plot(kind='bar', y=['nlpvars','nipvars'], color=['blue','red'], linewidth=0, label=['nlpvars','nipvars'], ax=ax1, secondary_y=False);
                     
-                    ax1.set_ylim(bottom=0.0, top=lpmax+1)  
+                    ax1.set_ylim(bottom=0.0, top=lpmax+1) 
+                    ax1.set_xlim(left=0.0, right=xmax)
                     ax1 = df.plot(kind='scatter', x='iter', y='nlpvars', color='blue', label='nlpvars', ax=ax1, secondary_y=False, s=6);
                     ax1.set_xticklabels([])
                     x_axis = ax1.axes.get_xaxis()
@@ -186,6 +189,7 @@ def generate_files(files):
                     x_axis.set_visible(False)                    
                     base = 10 ** (math.floor(math.log10(len(df.index))))
                     ax2.set_ylim(bottom=0.0, top=ipmax+1)
+                    ax2.set_xlim(left=0.0, right=xmax)
                     ax2 = df.plot(kind='scatter', x='iter', y='nipvars', color='red', label='nipvars', ax=ax2, secondary_y=False, s=6);
                     myLocator = mticker.MultipleLocator(base)
                     majorFormatter = mticker.FormatStrFormatter('%d')
@@ -205,6 +209,7 @@ def generate_files(files):
                     ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);
                     ax = df.plot(kind='scatter', x='iter', y='db', color='blue', label=None, ax=ax, s=1);
                     ax = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.25);
+                    ax = df.plot(kind='line', y='dualoptdiff', color='orange', label='dualoptdiff', ax=ax, secondary_y=True, alpha=0.25);
                     
                     plt.savefig(params['outdir']+"/"+name+"_"+settings+".png")
                     

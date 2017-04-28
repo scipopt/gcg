@@ -137,6 +137,15 @@ public:
       SCIP_VAR**            addedvar            /**< pointer to store the created variable */
    );
 
+   /* Compute difference of two dual solutions */
+   SCIP_RETCODE computeDualDiff(
+      SCIP_Real**          dualvals1,           /**< array of dual values for each pricing problem */
+      SCIP_Real*           dualconv1,           /**< array of dual solutions for the convexity constraints  */
+      SCIP_Real**          dualvals2,           /**< array of dual values for each pricing problem */
+      SCIP_Real*           dualconv2,           /**< array of dual solutions for the convexity constraints  */
+      SCIP_Real*           dualdiff             /**< pointer to store difference of duals solutions */
+   );
+
    /** performs optimal or farkas pricing */
    SCIP_RETCODE performPricing(
       PricingType*   pricetype,          /**< type of pricing */
