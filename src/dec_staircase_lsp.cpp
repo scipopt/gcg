@@ -159,7 +159,7 @@ SCIP_RETCODE createGraph(
       if( ncurvars1 == 0 )
          continue;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &curvars1, ncurvars1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &curvars1, ncurvars1) );
 
       SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars1, ncurvars1) );
 
@@ -184,7 +184,7 @@ SCIP_RETCODE createGraph(
          if( ncurvars2 == 0 )
             continue;
 
-         SCIP_CALL( SCIPallocBufferArray(scip, &curvars2, ncurvars2) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars2, ncurvars2) );
 
          SCIP_CALL( GCGconsGetVars(scip, conss[j], curvars2, ncurvars2) );
 
@@ -197,10 +197,10 @@ SCIP_RETCODE createGraph(
             }
 
          }
-         SCIPfreeBufferArray(scip, &curvars2);
+         SCIPfreeMemoryArray(scip, &curvars2);
       }
 
-      SCIPfreeBufferArray(scip, &curvars1);
+      SCIPfreeMemoryArray(scip, &curvars1);
    }
 
    TCLIQUE_CALL( tcliqueFlush(*graph) );
@@ -340,12 +340,12 @@ SCIP_RETCODE findDiameter(
    graph = detectordata->graph;
    nnodes = tcliqueGetNNodes(graph);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &queue, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &marked, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &eccentricity, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &dist, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &degree, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &degreepos, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &marked, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &eccentricity, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &dist, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &degree, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &degreepos, nnodes) );
 
    /* get degrees of vertices and initialize all eccentricities of vertices to values representing upper bounds */
    origdegree = tcliqueGetDegrees(graph);
@@ -458,12 +458,12 @@ SCIP_RETCODE findDiameter(
       }
    }
 
-   SCIPfreeBufferArray(scip, &degreepos);
-   SCIPfreeBufferArray(scip, &degree);
-   SCIPfreeBufferArray(scip, &dist);
-   SCIPfreeBufferArray(scip, &eccentricity);
-   SCIPfreeBufferArray(scip, &marked);
-   SCIPfreeBufferArray(scip, &queue);
+   SCIPfreeMemoryArray(scip, &degreepos);
+   SCIPfreeMemoryArray(scip, &degree);
+   SCIPfreeMemoryArray(scip, &dist);
+   SCIPfreeMemoryArray(scip, &eccentricity);
+   SCIPfreeMemoryArray(scip, &marked);
+   SCIPfreeMemoryArray(scip, &queue);
 
    return SCIP_OKAY;
 }
@@ -495,14 +495,14 @@ SCIP_RETCODE findConnectedComponents(
 
    /* for each vertex the 'component' array contains a number from [0, ncomponents) */
    assert(detectordata->components == NULL);
-   SCIP_CALL( SCIPallocBufferArray(scip, &(detectordata->components), nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(detectordata->components), nnodes) );
    component = detectordata->components;
 
    /* component[i] == -1 if and only if vertex i has not been assigned to a component yet */
    for( i = 0; i < nnodes; ++i )
       component[i] = -1;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &queue, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, nnodes) );
 
    for( i = 0; i < nnodes; ++i )
    {
@@ -547,7 +547,7 @@ SCIP_RETCODE findConnectedComponents(
    detectordata->ncomponents = ncomps;
    SCIPdebugMessage("found %i components\n", ncomps);
 
-   SCIPfreeBufferArray(scip, &queue);
+   SCIPfreeMemoryArray(scip, &queue);
    return SCIP_OKAY;
 }
 
@@ -637,7 +637,7 @@ DEC_DECL_EXITDETECTOR(detectorExitStaircaseLsp)
 
    if( detectordata->components != NULL )
    {
-      SCIPfreeBufferArray(scip, &detectordata->components);
+      SCIPfreeMemoryArray(scip, &detectordata->components);
    }
 
    return SCIP_OKAY;
@@ -669,9 +669,9 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircaseLsp)
       /* find connected components of the graph. the result will be stored in 'detectordata->components' */
       SCIP_CALL( findConnectedComponents(scip, detectordata) );
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &nodes, nnodes) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &distances, nnodes) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nnodes) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &nodes, nnodes) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &distances, nnodes) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &blocks, nnodes) );
 
       for( i = 0; i < nnodes; ++i)
          blocks[i] = -1;
@@ -720,10 +720,10 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircaseLsp)
          *result = SCIP_SUCCESS;
       }
 
-      SCIPfreeBufferArray(scip, &blocks);
-      SCIPfreeBufferArray(scip, &nodes);
-      SCIPfreeBufferArray(scip, &distances);
-      SCIPfreeBufferArray(scip, &(detectordata->components));
+      SCIPfreeMemoryArray(scip, &blocks);
+      SCIPfreeMemoryArray(scip, &nodes);
+      SCIPfreeMemoryArray(scip, &distances);
+      SCIPfreeMemoryArray(scip, &(detectordata->components));
    }
 
    if( *result != SCIP_SUCCESS )
@@ -782,9 +782,9 @@ SCIP_RETCODE detection(
       /* find connected components of the graph. the result will be stored in 'detectordata->components' */
       SCIP_CALL( findConnectedComponents(scip, detectordata) );
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &nodes, nnodes) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &distances, nnodes) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nnodes) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &nodes, nnodes) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &distances, nnodes) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &blocks, nnodes) );
 
       for( i = 0; i < nnodes; ++i)
          blocks[i] = -1;
@@ -823,10 +823,10 @@ SCIP_RETCODE detection(
          }
       }
 
-      SCIPfreeBufferArray(scip, &blocks);
-      SCIPfreeBufferArray(scip, &nodes);
-      SCIPfreeBufferArray(scip, &distances);
-      SCIPfreeBufferArray(scip, &(detectordata->components));
+      SCIPfreeMemoryArray(scip, &blocks);
+      SCIPfreeMemoryArray(scip, &nodes);
+      SCIPfreeMemoryArray(scip, &distances);
+      SCIPfreeMemoryArray(scip, &(detectordata->components));
    }
 
    SCIP_CALL( currseeed->assignSeeedFromConstoblock(detectordata->constoblock, nblocks, seeedpool) );

@@ -116,8 +116,8 @@ SCIP_Bool isConsMaster(
    vals = NULL;
    if( nvars > 0 )
    {
-      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars) );
-      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars) );
+      SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &vars, nvars) );
+      SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &vals, nvars) );
       SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, vars, nvars) );
       SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, vals, nvars) );
    }
@@ -141,8 +141,8 @@ SCIP_Bool isConsMaster(
    }
 
    /* free temporary data  */
-   SCIPfreeBufferArrayNull(scip, &vals);
-   SCIPfreeBufferArrayNull(scip, &vars);
+   SCIPfreeMemoryArrayNull(scip, &vals);
+   SCIPfreeMemoryArrayNull(scip, &vars);
 
    SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
    return relevant;

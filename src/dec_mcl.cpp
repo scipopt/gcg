@@ -480,7 +480,7 @@ DEC_DECL_DETECTSTRUCTURE(detectMCL)
 //   time(&cp1);
 //
 //   int nMaxSeeeds = detectordata->n_iterations * detectordata->graphs->size();
-//   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
+//   SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
 //
 //
 //   const int max_blocks = std::min((int)round(0.3 * SCIPgetNConss(scip)), MAX_N_BLOCKS);
@@ -556,7 +556,7 @@ DEC_DECL_DETECTSTRUCTURE(detectMCL)
 //         ++s;
 //      }
 //   }
-//   SCIPfreeBufferArray(scip, &newSeeeds);
+//   SCIPfreeMemoryArray(scip, &newSeeeds);
 //
 //   detectordata->graphs->clear();
 //   time(&d_e);

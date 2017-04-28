@@ -546,7 +546,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
 
 
    int nMaxSeeeds = detectordata->n_iterations * detectordata->graphs->size();
-   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
 
 
    const int max_blocks = std::min((int)round(0.3 * SCIPgetNConss(scip)), MAX_N_BLOCKS);
@@ -631,7 +631,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
          ++s;
       }
    }
-   SCIPfreeBufferArray(scip, &newSeeeds);
+   SCIPfreeMemoryArray(scip, &newSeeeds);
 
    // empty the graphs vector
    //std::vector< RowGraphWeighted<GraphGCG>*>().swap(detectordata->graphs);

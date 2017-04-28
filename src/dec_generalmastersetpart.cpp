@@ -175,8 +175,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpart)
             relevant = false;
          if( nvars > 0 )
          {
-            SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
-            SCIP_CALL( SCIPallocBufferArray(scip, &vals, nvars) );
+            SCIP_CALL( SCIPallocMemoryArray(scip, &vars, nvars) );
+            SCIP_CALL( SCIPallocMemoryArray(scip, &vals, nvars) );
             SCIP_CALL( GCGconsGetVars(scip, cons, vars, nvars) );
             SCIP_CALL( GCGconsGetVals(scip, cons, vals, nvars) );
          }
@@ -196,8 +196,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpart)
                relevant = false;
             }
          }
-         SCIPfreeBufferArrayNull(scip, &vals);
-         SCIPfreeBufferArrayNull(scip, &vars);
+         SCIPfreeMemoryArrayNull(scip, &vals);
+         SCIPfreeMemoryArrayNull(scip, &vars);
 
          if(relevant)
          {

@@ -467,7 +467,7 @@ SCIP_RETCODE detection(
 
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
-   SCIP_CALL( SCIPallocBufferArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
 
    /* build the hypergraph structure from the original problem */
 
@@ -558,7 +558,7 @@ SCIP_RETCODE detection(
    }
 
 
-   SCIPfreeBufferArray(scip, &newSeeeds);
+   SCIPfreeMemoryArray(scip, &newSeeeds);
 
    if( detectordata->tidy )
    {

@@ -242,7 +242,7 @@ SCIP_RETCODE initData(
       ncurvars = GCGconsGetNVars(scip, conss[i]);
       if( ncurvars > 0 )
       {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
 
          ishandled = FALSE;
@@ -256,7 +256,7 @@ SCIP_RETCODE initData(
             k++;
          }
 
-         SCIPfreeBlockMemoryArrayNull(scip, &curvars, ncurvars);
+         SCIPfreeMemoryArrayNull(scip, &curvars);
       }
    }
 
@@ -298,7 +298,7 @@ SCIP_RETCODE initData(
       ncurvars = GCGconsGetNVars(scip, detectordata->graphs[0]->conss[i]);
       if( ncurvars > 0 )
       {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip,detectordata->graphs[0]->conss[i], curvars, ncurvars) );
 
          for( j = 0; j < ncurvars; ++j )
@@ -314,7 +314,7 @@ SCIP_RETCODE initData(
             }
          }
 
-         SCIPfreeBlockMemoryArrayNull(scip, &curvars, ncurvars);
+         SCIPfreeMemoryArrayNull(scip, &curvars);
       }
    }
 
@@ -378,11 +378,11 @@ SCIP_RETCODE createAdjlist(
    int* weights;
    int size;
 
-   SCIP_CALL( SCIPallocBlockMemory(scip, adjlist) );
+   SCIP_CALL( SCIPallocMemory(scip, adjlist) );
 
    size = SCIPcalcMemGrowSize(scip, 1);
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &conss, size) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &weights, size) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &conss, size) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &weights, size) );
 
    BMSclearMemoryArray(conss, size);
    BMSclearMemoryArray(weights, size);
@@ -402,9 +402,9 @@ SCIP_RETCODE freeAdjlist(
    ADJLIST**             adjlist
    )
 {
-   SCIPfreeBlockMemoryArray(scip, &((*adjlist)->weights), (*adjlist)->maxconss );
-   SCIPfreeBlockMemoryArray(scip, &((*adjlist)->conss), (*adjlist)->maxconss );
-   SCIPfreeBlockMemory(scip, adjlist);
+   SCIPfreeMemoryArray(scip, &((*adjlist)->weights) );
+   SCIPfreeMemoryArray(scip, &((*adjlist)->conss) );
+   SCIPfreeMemory(scip, adjlist);
    *adjlist = NULL;
 
    return SCIP_OKAY;
@@ -434,8 +434,8 @@ SCIP_RETCODE adjlistIncreaseEntry(
    {
       int newsize = SCIPcalcMemGrowSize(scip, adjlist->maxconss+1);
       assert(newsize > adjlist->maxconss);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(adjlist->conss), adjlist->maxconss, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(adjlist->weights), adjlist->maxconss, newsize) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(adjlist->conss), newsize) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(adjlist->weights), newsize) );
       adjlist->maxconss = newsize;
    }
 
@@ -513,8 +513,8 @@ SCIP_RETCODE copyAdjlist(
    {
       int newsize = SCIPcalcMemGrowSize(scip, source->nconss);
       assert(newsize > target->maxconss);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(target->conss), target->maxconss, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(target->weights), target->maxconss, newsize) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(target->conss), newsize) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(target->weights), newsize) );
       target->maxconss = newsize;
    }
 
@@ -934,7 +934,7 @@ SCIP_RETCODE buildNewGraphs(
     * count the number of constraints and linking constraints;
     * also, find the indices of cons1 and cons2, respectively in the graph
     */
-   SCIP_CALL( SCIPallocBufferArray(scip, &consslink, graph->nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &consslink, graph->nconss) );
    BMSclearMemoryArray(consslink, graph->nconss);
    nconsslink1 = 0;
    nconsslink2 = 0;
@@ -1001,7 +1001,7 @@ SCIP_RETCODE buildNewGraphs(
          SCIP_CALL( copyConss(scip, detectordata, graph, NULL, -1) );
          SCIP_CALL( freeGraph(scip, detectordata, detectordata->position, graph->nconss) );
          detectordata->ngraphs--;
-         SCIPfreeBufferArray(scip, &consslink);
+         SCIPfreeMemoryArray(scip, &consslink);
          return SCIP_OKAY;
       }
 
@@ -1087,7 +1087,7 @@ SCIP_RETCODE buildNewGraphs(
    SCIP_CALL( freeGraph(scip, detectordata, detectordata->position, graph->nconss) );
    detectordata->ngraphs--;
 
-   SCIPfreeBufferArray(scip, &consslink);
+   SCIPfreeMemoryArray(scip, &consslink);
 
    return SCIP_OKAY;
 }
@@ -1507,12 +1507,12 @@ SCIP_RETCODE applyStoerWagner(
 
    cut = NULL;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &merged, graph->nconss) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &tightness, graph->nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &merged, graph->nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &tightness, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &mincut, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &nmergedconss, graph->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &mergedconss, graph->nconss) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &adjlists, graph->nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &adjlists, graph->nconss) );
    for( i = 0; i < graph->nconss; ++i )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &(mergedconss[i]), graph->nconss) ); /*lint !e866*/
@@ -1727,14 +1727,14 @@ SCIP_RETCODE applyStoerWagner(
    for( i = 0; i < nmincut; ++i )
       detectordata->partition[(int) (size_t) SCIPhashmapGetImage(graph->constopos, mincut[i])] = 1; /*lint !e507*/
 
-   SCIPfreeBufferArray(scip, &tightness);
-   SCIPfreeBufferArray(scip, &merged);
+   SCIPfreeMemoryArray(scip, &tightness);
+   SCIPfreeMemoryArray(scip, &merged);
    for( i = 0; i < graph->nconss; ++i )
    {
       SCIP_CALL( freeAdjlist(scip, &adjlists[i]) );
       SCIPfreeMemoryArray(scip, &(mergedconss[i]));
    }
-   SCIPfreeBlockMemoryArrayNull(scip, &adjlists, graph->nconss);
+   SCIPfreeMemoryArrayNull(scip, &adjlists);
    SCIPhashmapFree(&represconss);
    SCIPfreeMemoryArray(scip, &mincut);
    SCIPfreeMemoryArray(scip, &nmergedconss);
