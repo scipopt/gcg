@@ -78,6 +78,7 @@ struct DecDecomp
    SCIP_Real*            pctconssfromopen;    /**< percentages of constraints assigned to a block or the border of the corresponding detectors on this decomposition */
    int*                  nnewblocks;          /**< number of new blocks of the corresponding detectors on this decomposition */
    char*                 detectorchainstring; /**< string for the detector information working on that decomposition */
+   SCIP_Real             maxwhitescore;       /**< maximum white score (i.e. 1 - [fraction of white area] (nonborder+nonblock)  ) */
 };
 
 #ifdef __cplusplus

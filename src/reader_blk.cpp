@@ -619,7 +619,10 @@ SCIP_RETCODE readNBlocks(
       if( isInt(scip, blkinput, &nblocks) )
       {
          if( blkinput->nblocks == NOVALUE )
+         {
             blkinput->nblocks = nblocks;
+            SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(scip, nblocks);
+         }
          else
             syntaxError(scip, blkinput, "2 integer values in nblocks section");
          SCIPdebugMessage("Number of blocks = %d\n", blkinput->nblocks);
@@ -670,6 +673,7 @@ SCIP_RETCODE readBlock(
          SCIPdebugMessage("\tVar %s temporary in block %d.\n", SCIPvarGetName(var), blockid);
          readerdata->varstoblock[varidx] = blockid;
          ++(readerdata->nblockvars[blockid]);
+         SCIPconshdlrDecompUserSeeedSetVarToBlock(scip, blkinput->token, blockid);
       }
       /* variable was assigned to another (non-linking) block before, so it becomes a linking variable, now */
       else if( (oldblock != LINKINGVALUE) )
@@ -689,6 +693,8 @@ SCIP_RETCODE readBlock(
          readerdata->linkingvarsblocks[varidx][0] = oldblock;
          readerdata->linkingvarsblocks[varidx][1] = blockid;
          readerdata->nlinkingvarsblocks[varidx] = 2;
+
+         SCIPconshdlrDecompUserSeeedSetVarToLinking(scip, blkinput->token);
       }
       /* variable is a linking variable already, store the new block to which it belongs */
       else
@@ -734,6 +740,7 @@ SCIP_RETCODE readMasterconss(
       {
          assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) NOVALUE);
          SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blkinput->nblocks +1)) );
+         SCIPconshdlrDecompUserSeeedSetConsToMaster(scip, blkinput->token);
       }
    }
 
@@ -752,6 +759,7 @@ SCIP_RETCODE fillDecompStruct(
 
    SCIP_HASHMAP* constoblock;
    SCIP_CONS** allcons;
+   SCIP_VAR** allvars;
 
    SCIP_VAR** consvars;
    SCIP_RETCODE retcode;
@@ -767,6 +775,7 @@ SCIP_RETCODE fillDecompStruct(
    assert(readerdata != NULL);
 
    allcons = SCIPgetConss(scip);
+   allvars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
    nblocks = blkinput->nblocks;
@@ -781,8 +790,19 @@ SCIP_RETCODE fillDecompStruct(
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &consvars, nvars) );
 
+   /* assign unassigned variables as master variables */
+   for( i = 0; i < nvars; ++i)
+   {
+      SCIP_VAR* var;
+      var = allvars[i];
+      if( readerdata->varstoblock[i] == NOVALUE )
+      {
+         SCIP_CALL( SCIPconshdlrDecompUserSeeedSetVarToMaster(scip, SCIPvarGetName(var) ) );
+      }
+   }
+
    /* assign constraints to blocks or declare them linking */
-   for( i = 0; i < nconss; i ++ )
+   for( i = 0; i < nconss;  ++i )
    {
       SCIP_CONS* cons;
 
@@ -809,7 +829,7 @@ SCIP_RETCODE fillDecompStruct(
          /* find the first unique assignment of a contained variable to a block */
          for( j = 0; j < nconsvars; ++j )
          {
-            /* if a contained variables is directly transferred to the master, the constraint is a linking constraint */
+            /* if a contained variable is directly transferred to the master, the constraint is a linking constraint */
             if( readerdata->varstoblock[SCIPvarGetProbindex(consvars[j])] == NOVALUE )
             {
                blocknr = -1;
@@ -859,6 +879,7 @@ SCIP_RETCODE fillDecompStruct(
          if( blocknr == -1 )
          {
             SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (nblocks+1)) );
+            SCIP_CALL( SCIPconshdlrDecompUserSeeedSetConsToMaster(scip, SCIPconsGetName(cons) ) );
 
             SCIPdebugMessage("constraint <%s> is a linking constraint\n",
                SCIPconsGetName(cons));
@@ -866,10 +887,13 @@ SCIP_RETCODE fillDecompStruct(
          else
          {
             SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (blocknr+1)) );
+            SCIP_CALL( SCIPconshdlrDecompUserSeeedSetConsToBlock(scip, SCIPconsGetName(cons), blocknr ) );
             SCIPdebugMessage("constraint <%s> is assigned to block %d\n", SCIPconsGetName(cons), blocknr);
          }
       }
    }
+
+   SCIPconshdlrDecompUserSeeedFlush(scip);
    retcode = DECfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
 
@@ -955,11 +979,28 @@ SCIP_RETCODE readBLKFile(
          SCIP_CALL( readPresolved(scip, blkinput) );
          if( blkinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
          {
+            SCIPpresolve(scip);
             assert(blkinput->haspresolvesection);
+
             /** @bug GCG should be able to presolve the problem first */
-            SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
-            goto TERMINATE;
+
+            //            SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
          }
+
+
+         if ( blkinput->presolved )
+         {
+            SCIPconshdlrDecompCreateSeeedpool(scip);
+            //             seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
+            //               decinput->seeed = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars() );
+
+         }
+         else
+         {
+            SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+         }
+
+         SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
          break;
 
       case BLK_NBLOCKS:
@@ -1009,15 +1050,9 @@ SCIP_RETCODE readBLKFile(
 
    /* fill decomp */
    retcode = fillDecompStruct(scip, blkinput, decdecomp, readerdata);
-   if( retcode == SCIP_OKAY )
-   {
-      /* add decomp to cons_decomp */
-      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
-   }
-   else
-   {
-      SCIP_CALL( DECdecompFree(scip, &decdecomp) );
-   }
+
+   SCIP_CALL( DECdecompFree(scip, &decdecomp) );
+
    for( i = 0; i < nvars; ++i )
    {
       assert(readerdata->linkingvarsblocks[i] != NULL || readerdata->nlinkingvarsblocks[i] == 0);

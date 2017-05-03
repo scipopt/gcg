@@ -631,7 +631,27 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       }
 
    case SCIP_STAGE_PRESOLVED:
-      if( !DEChasDetectionRun(scip) )
+
+      if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
+      {
+         SCIP_Bool success;
+         SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
+
+         if( !success )
+         {
+            SCIPdebugMessagePrint(scip, " revoke presolve; use unpresolved user decomposition  \n");
+            /* @TODO experimental */
+            SCIPfreeTransform(scip);
+            SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+            SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+            SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+            SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
+         }
+         else
+            SCIPdebugMessagePrint(scip, " origseeeds should be translated now \n");
+      }
+
+      if( !DEChasDetectionRun(scip) && DECgetBestDecomp(scip) == NULL )
       {
          SCIP_CALL( DECdetectStructure(scip, &result) );
          if( result == SCIP_DIDNOTFIND )

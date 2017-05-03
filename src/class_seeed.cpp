@@ -79,8 +79,8 @@ Seeed::Seeed(
    int         givenNConss,                /**number of constraints */
    int         givenNVars                  /**number of variables */
 ) :
-   scip(_scip), id(-1), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
-      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false)
+   scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
+      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false), usergiven(USERGIVEN::NOT)
 {
 }
 
@@ -119,6 +119,7 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    stemsFromUnpresolved = seeedToCopy->stemsFromUnpresolved;
    isFinishedByFinisherUnpresolved = seeedToCopy->isFinishedByFinisherUnpresolved;
    listofancestorids = seeedToCopy->listofancestorids;
+   usergiven = seeedToCopy->usergiven;
 
 }
 
@@ -2076,10 +2077,10 @@ SCIP_Real Seeed::evaluate(
    /* calculate matrix area */
    matrixarea = nVars*nConss;
 
-   blackarea += ( getNLinkingvars()+ getNTotalStairlinkingvars() ) * getNConss();
+   blackarea += ( getNLinkingvars() + getNTotalStairlinkingvars() + getNMastervars() ) * getNConss();
    blackarea += getNMasterconss() * getNVars();
 
-   blackarea -= getNMastervars() * getNLinkingvars();
+   blackarea -= getNMasterconss() * ( getNLinkingvars() + getNMastervars() );
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++i )
@@ -2510,6 +2511,8 @@ SCIP_RETCODE Seeed::flushBooked()
    std::vector<std::pair<int, int>>::iterator bookedIter2;
    std::vector<std::pair<int, int>>::iterator bookedIterEnd2;
 
+   std::vector<SCIP_Bool> varislinking(getNVars(), FALSE);
+
    changedHashvalue = true;
 
    bookedIter = bookedAsMasterConss.begin();
@@ -2534,6 +2537,7 @@ SCIP_RETCODE Seeed::flushBooked()
    bookedIterEnd = bookedAsLinkingVars.end();
    for( ; bookedIter != bookedIterEnd; ++bookedIter )
    {
+      varislinking[*bookedIter] = TRUE;
       setVarToLinking(*bookedIter);
       deleteOpenvar(*bookedIter);
    }
@@ -2552,6 +2556,8 @@ SCIP_RETCODE Seeed::flushBooked()
    bookedIterEnd2 = bookedAsBlockVars.end();
    for( ; bookedIter2 != bookedIterEnd2; ++bookedIter2 )
    {
+      if( varislinking[(*bookedIter2).first ] )
+         continue;
       setVarToBlock((*bookedIter2).first, (*bookedIter2).second);
       deleteOpenvar((*bookedIter2).first);
    }
@@ -2943,6 +2949,15 @@ bool Seeed::isTrivial()
    return false;
 }
 
+
+bool Seeed::isComplete()
+{
+
+   return ( 0 == getNOpenconss() && 0 == getNOpenvars() );
+}
+
+
+
 /** return whether the var is a var of the block */
 bool Seeed::isVarBlockvarOfBlock(int var, int block)
 {
@@ -3274,6 +3289,14 @@ void Seeed::showScatterPlot(
 //   system("rm helper.plg");
    return;
 }
+
+/** is this seeed a userseeed that should be completed by setting unspecified constraints to master */
+SCIP_Bool Seeed::shouldCompletedByConsToMaster(){
+
+   return usergiven == USERGIVEN::COMPLETED_CONSTOMASTER;
+}
+
+
 
 /** sorts the vars and conss according their numbers */
 void Seeed::sort()
