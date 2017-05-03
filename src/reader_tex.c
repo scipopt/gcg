@@ -849,11 +849,11 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
 
    if( readerdata->usegp )
    {
-      SCIPinfoMessage(scip, makefile, "GPFILES := $(wildcard *.gp)                                                 \n");
+      SCIPinfoMessage(scip, makefile, "GPFILES := $(wildcard *.gp)\n");
    }
    SCIPinfoMessage(scip, makefile, "                                                                             \n");
    SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               \n");
-   SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex                                                               \n",
+   SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex\n",
       filename, filename);
    if( readerdata->usegp )
    {
@@ -862,9 +862,10 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
       SCIPinfoMessage(scip, makefile, "\t@echo Compiling gp files to tex                                            \n");
       SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
       SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
-      /*SCIPinfoMessage(scip, makefile, "\t@echo $(gnuplot file)                                                      \n");
-       */
-      SCIPinfoMessage(scip, makefile, "\tgnuplot *.gp                                                               \n");
+      SCIPinfoMessage(scip, makefile, "\t$(SHELL) -ec  'for i in $(GPFILES); \\\n");
+      SCIPinfoMessage(scip, makefile, "\t\tdo \\\n");
+      SCIPinfoMessage(scip, makefile, "\t\tgnuplot $$i; \\\n");
+      SCIPinfoMessage(scip, makefile, "\t\tdone'\n");
    }
    SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
    SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
