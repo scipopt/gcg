@@ -322,7 +322,7 @@ public:
       );
 
    /**
-    * creates a seeed for a given decomposition
+    * creates a seeed for a given decomposition, atm dummy method
     */
    SCIP_RETCODE createSeeedFromDecomp(
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */

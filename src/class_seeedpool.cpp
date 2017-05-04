@@ -2649,6 +2649,8 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
    return SCIP_OKAY;
 }
 
+
+
 /**
  * creates a decomposition for a given seeed
  */
@@ -2988,7 +2990,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 /**
  * creates a seeed for a given decomposition
  */
-SCIP_RETCODE createSeeedFromDecomp(
+SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
   )
