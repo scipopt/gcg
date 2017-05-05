@@ -88,8 +88,8 @@ private:
 
    bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
-   const static int              primes[];
-   const static int              nPrimes;
+   const static int                 primes[];
+   const static int                 nPrimes;
 
 public:
 
@@ -117,19 +117,24 @@ public:
    DEC_DETECTOR*                    finishedUnpresolvedBy;           /**< index of dinishing detector of unpresolved ancestor seeed */
 
 
-   /** constructor(s) */
+   /** constructor */
    Seeed(
-      SCIP*          scip,
-	  int             id,      		   	/**< id that is given to this seeed */
-	  int             nDetectors,          /**< number of detectors */
-	  int				   nConss,				   /**number of constraints */
-	  int 				nVars				      /**number of variables */
-      );
+      SCIP* scip,                   /**< scip data structure */
+      int id,      		   	      /**< id that is given to this seeed */
+      int nDetectors,               /**< number of detectors */
+      int nConss,				         /**< number of constraints */
+      int nVars				         /**< number of variables */
+   );
 
+   /** copy constructor */
+   Seeed(
+      const Seeed *seeedToCopy,     /**< seeed to be copied */
+      Seeedpool* seeedpool          /**< TODO why? */
+   );
 
-   Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool);
-
-   ~Seeed();
+   /** destructor */
+   ~Seeed(
+   );
 
 
    /** adds a block, returns the number of the new block */
@@ -138,7 +143,7 @@ public:
 
    /** incorporates the the needed time of a certain detector in the detector chain */
    void addClockTime(
-      SCIP_Real clocktime
+      SCIP_Real clocktime           /**< time to be added */
    );
 
    /** incorporates the changes from ancestor seeed */
@@ -160,43 +165,43 @@ public:
 
    /** assigns open conss and vars if they can be found in blocks */
    SCIP_RETCODE assignAllDependent(
-      Seeedpool*       seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** fills out the border of the seeed with the hashmap constoblock if there are still assigned conss and vars */
    SCIP_RETCODE assignBorderFromConstoblock(
       SCIP_HASHMAP* constoblock,
       int givenNBlocks,
-      Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** assigns open vars to stairlinking if they can be found in two consecutive blocks, returns true if stairlinkingvars are assigned */
    bool assignCurrentStairlinking(
-      Seeedpool*       seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** assigns open conss if they include blockvars, returns true if open conss are assigned */
    bool assignHittingOpenconss(
-      Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** assigns open vars if they can be found in one block, returns true if open vars are assigned */
    bool assignHittingOpenvars(
-      Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** fills out the seeed with the hashmap constoblock if there are still assigned conss and vars */
    SCIP_RETCODE assignSeeedFromConstoblock(
       SCIP_HASHMAP* constoblock,
       int givenNBlocks,
-      Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** fills out the seeed with the vector constoblock  */
    SCIP_RETCODE assignSeeedFromConstoblockVector(
       std::vector<int> constoblock,
       int additionalNBlocks,
-      Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** books a constraint to be added to the block constraints of the given block (after calling flushBooked) */
@@ -248,45 +253,51 @@ public:
    bool checkAllConsAssigned(
    );
 
-   /** checks the consistency of this seeed */
+   /** TODO checks the consistency of this seeed */
    bool checkConsistency(
-      Seeedpool* seeedpool);
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
+   );
 
-   /** checks the consistency of this seeed */
+   /** TODO checks the consistency of this seeed */
    bool checkConsistency(
    );
 
+   /** TODO checks the consistency of this seeed partially */
    bool checkVarsAndConssConsistency(
-         Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** assigns the open cons and open vars */
+   /** assigns all open constraints and open variables
+    *  strategy: assigns all conss and vars to the same block if they are indirectly connected
+    *  a cons and a var are directly connected if the var appears in the cons */
    SCIP_RETCODE completeByConnected(
-         Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** assigns the open cons and open vars */
+   /** assigns all open constraints and open variables
+    *  strategy: assigns a cons (and related vars) to any block if possible by means of prior var assignments
+    *  and to master, if there does not exist such a block */
    SCIP_RETCODE completeGreedily(
-         Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** assigns the open cons and open vars which are implicit assigned */
+   /** assigns the open cons and open vars which are implicitly assigned */
    SCIP_RETCODE considerImplicits(
-         Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** deletes empty blocks */
    SCIP_RETCODE deleteEmptyBlocks(
    );
 
-   /** deletes an open conss */
+   /** deletes a cons from list of open conss */
    SCIP_RETCODE deleteOpencons(
-         int opencons
+      int opencons
    );
 
-   /** deletes an open var */
+   /** deletes a var from the list of open vars */
    SCIP_RETCODE deleteOpenvar(
-         int openvar
+      int openvar
    );
 
    /** displays the assignments of the conss */
@@ -294,62 +305,62 @@ public:
    );
 
    /** displays the relevant information of the seeed */
-   SCIP_RETCODE displaySeeed(Seeedpool* seeedpool = NULL
+   SCIP_RETCODE displaySeeed(
+      Seeedpool* seeedpool = NULL   /**< a seeedpool that uses this seeed */
    );
 
    /** displays the assignments of the vars */
-   SCIP_RETCODE displayVars( Seeedpool* seeedpool = NULL
+   SCIP_RETCODE displayVars(
+      Seeedpool* seeedpool = NULL   /**< a seeedpool that uses this seeed */
    );
 
    /** computes the score of the given seeed based on the border, the average density score and the ratio of linking variables*/
    SCIP_Real evaluate(
-      Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** fills out the border of the seeed with the hashmap constoblock */
    SCIP_RETCODE filloutBorderFromConstoblock(
-         SCIP_HASHMAP* constoblock,
-         int givenNBlocks,
-         Seeedpool* seeedpool
+      SCIP_HASHMAP* constoblock,
+      int givenNBlocks,
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** fills out a seeed with the hashmap constoblock */
    SCIP_RETCODE filloutSeeedFromConstoblock(
-         SCIP_HASHMAP* constoblock,
-         int givenNBlocks,
-         Seeedpool* seeedpool
+      SCIP_HASHMAP* constoblock,
+      int givenNBlocks,
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** finds linking-variables that are actually master-variables. I.e. the variable is adjacent to only master-constraints. */
+   /** finds linking-variables that are actually master-variables, i.e. the variable is adjacent to only master-constraint */
    SCIP_RETCODE findVarsLinkingToMaster(
-       Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** finds linking-variables that are actually stairlinking-ariables. I.e. the variable is adjacent to constraints in exactly two block. */
+   /** finds linking-variables that are actually stairlinking-variables, i.e. the variable is adjacent to constraints in exactly two block */
    SCIP_RETCODE findVarsLinkingToStairlinking(
-       Seeedpool* seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** add all booked constraints to master and delete them from openConss */
+   /** assigns all booked constraints and variables and deletes them from list of open cons and open vars */
    SCIP_RETCODE flushBooked(
    );
 
-   /** returns vector containing master conss */
+   /** returns array containing constraints assigned to a block */
    const int* getConssForBlock(
-         int block
+      int block
    );
 
    /** returns the detectorchain */
    DEC_DETECTOR** getDetectorchain(
    );
 
-   /** returns if theis seeed was finished by finishSeeed() method of a detector */
+   /** returns true if this seeed was finished by finishSeeed() method of a detector */
    bool getFinishedByFinisher(
    );
 
-
-
-   /** returns the calculated has value of this seeed */
+   /** returns the calculated hash value of this seeed */
    long getHashValue(
    );
 
@@ -357,53 +368,53 @@ public:
    int getID(
    );
 
-   /** returns vector containing linking vars */
+   /** returns array containing all linking vars */
    const int* getLinkingvars(
    );
 
-   /** returns array containing master conss */
+   /** returns array containing all master conss */
    const int* getMasterconss(
    );
 
-   /** returns vector containing master vars (every constraint containing a master var is in master )*/
+   /** returns array containing all master vars (hitting only constraints in the master) */
    const int* getMastervars(
    );
 
-   /** return the "maximum white score" (the smaller the better) */
+   /** returns the "maximum white score" (the smaller the better) */
    SCIP_Real getMaxWhiteScore();
 
    /** returns number of blocks */
    int getNBlocks(
    );
 
-   /** get number of conss */
+   /** returns number of conss */
    int getNConss(
    );
 
-   /** returns size of vector containing master conss */
+   /** returns size of the vector containing conss assigned to a block */
    int getNConssForBlock(
-         int block
+      int block
    );
 
    /** returns the number of detectors the seeed is propagated by */
    int getNDetectors(
    );
 
-   /** returns size ofvector containing linking vars */
+   /** returns size of the vector containing linking vars */
    int getNLinkingvars(
    );
 
-   /** returns size of array containing master conss */
+   /** returns size of the vector containing master conss */
    int getNMasterconss(
    );
 
-   /** returns size of array containing master vars */
+   /** returns size of the vector containing master vars (hitting only constraints in the master) */
    int getNMastervars(
    );
 
    /** returns total number of stairlinking vars */
    int getNTotalStairlinkingvars(
-      );
+   );
 
    /** returns size of vector containing constraints not assigned yet */
    int getNOpenconss(
@@ -413,216 +424,228 @@ public:
    int getNOpenvars(
    );
 
-   /** returns size of vector containing stairlinking vars */
+   /** returns size of the vector containing stairlinking vars */
    int getNStairlinkingvars(
-         int block
+      int block
    );
 
-   /** get number of vars */
+   /** returns number of vars */
    int getNVars(
    );
 
-   /** returns size of vector containing vars of a certain block */
+   /** returns size of the vector containing vars assigned to a block */
    int getNVarsForBlock(
-         int block
+      int block
    );
 
-   /**  returns vector containing constraints not assigned yet */
+   /** returns array containing constraints not assigned yet */
    const int* getOpenconss(
    );
 
-   /** returns vector containing variables not assigned yet */
+   /** returns array containing variables not assigned yet */
    const int* getOpenvars(
    );
 
-   /** returns vector containing stairlinking vars */
+   /** returns array containing stairlinking vars */
    const int* getStairlinkingvars(
-         int block
+      int block
    );
 
-   /** returns vector containing vars of a certain block */
+   /** returns array containing vars of a block */
    const int* getVarsForBlock(
-         int block
+      int block
    );
 
-   /** returns whether the cons is a cons of the block */
-   bool isConsBlockconsOfBlock(
-         int cons, int block
-   );
-
-   /** returns whether the cons is a master cons*/
-   bool isConsMastercons(
-         int cons
-   );
-
-   /** return whether the cons is an open conss */
-   bool isConsOpencons(
-         int cons
-   );
-
-   /** returns whether this seeed was propagated by certain detector */
-   bool isPropagatedBy(
-         DEC_DETECTOR* detectorID
-   );
-
-   /** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
-   bool isTrivial(
-   );
-
-   /** is this seeed complete (i.e. has it least one open constraint or one open variable ) */
+   /** returns true if this seeed is complete,
+    *  i.e. it has at no more open constraints and variables */
    bool isComplete(
    );
 
+   /** returns true if the cons is a cons of the block */
+   bool isConsBlockconsOfBlock(
+      int cons,
+      int block
+   );
 
-/* method to check whether seeed is equal to given other seeed */
+   /** returns true if the cons is a master cons */
+   bool isConsMastercons(
+      int cons
+   );
+
+   /** returns true if the cons is an open cons */
+   bool isConsOpencons(
+      int cons
+   );
+
+   /* method to check whether this seeed is equal to given other seeed (calls isEqual(Seeed*)) */
    SCIP_RETCODE isEqual(
-      Seeed*               otherseeed,          /**< other seeed */
-      SCIP_Bool*           isequal,             /**< pointer to store whether seeeds are identical */
-      bool                 sortseeeds           /**< should conss and vars be sorted before comparing the seeeds? */
-      );
+      Seeed* otherseeed,            /**< other seeed */
+      SCIP_Bool* isequal,           /**< pointer to store whether seeeds are identical */
+      bool sortseeeds               /**< should conss and vars be sorted before comparing the seeeds? */
+   );
 
-
+   /* method to check whether this seeed is equal to given other seeed */
    bool isEqual(
-      Seeed* other                              /**< other seeed */
-      );
+      Seeed* other                  /**< other seeed */
+   );
 
+   /** returns true if this seeed was propagated by a detector */
+   bool isPropagatedBy(
+      DEC_DETECTOR* detectorID
+   );
 
-   /** returns whether the var is a var of the block */
+   /** returns true if this seeed is trivial,
+    *  i.e. all conss are in one block, all conss are in border, all variables linking or mastervars */
+   bool isTrivial(
+   );
+
+   /** returns true if the var is assigned to the block */
    bool isVarBlockvarOfBlock(
-         int var,
-         int block
+      int var,
+      int block
    );
 
-   /** returns whether the var is a linking var */
+   /** returns true if the var is a linking var */
    bool isVarLinkingvar(
-         int var
+      int var
    );
 
-   /** returns whether the var is a master var */
+   /** returns true if the var is a master var */
    bool isVarMastervar(
-         int var
+      int var
    );
 
-   /** returns whether the var is an open var */
+   /** returns true if the var is an open var */
    bool isVarOpenvar(
-         int var
+      int var
    );
 
-   /** returns whether the var is a stairlinking var */
+   /** returns true if the var is a stairlinking var */
    bool isVarStairlinkingvar(
       int var
    );
 
-   /** returns whether the var is a stairlinkingvar of the block */
+   /** returns true if the var is a stairlinkingvar of the block */
    bool isVarStairlinkingvarOfBlock(
-         int var,
-         int block
+      int var,
+      int block
    );
 
    /** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments assignOpenPartialHittingToMaster() */
    SCIP_RETCODE refineToMaster(
-      Seeedpool*       seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** add a constraint to a block */
    SCIP_RETCODE setConsToBlock(
-         int consToBlock,
-         int block
+      int consToBlock,
+      int block
    );
 
    /** add a constraint to the master constraints */
    SCIP_RETCODE setConsToMaster(
-         int consToMaster
+      int consToMaster
    );
 
+   /** sets seeed to be propagated by a detector */
    SCIP_RETCODE setDetectorPropagated(
       DEC_DETECTOR* detectorID
    );
 
+   /** sets seeed to be propagated by a finishing detector */
    SCIP_RETCODE setFinishingDetectorPropagated(
       DEC_DETECTOR* detectorID
    );
 
-
-   /** set if this seeed was finished by finishSeeed() method of a detector */
+   /** sets whether this seeed was finished by a detector */
    void setFinishedByFinisher(
-         bool finished
-      );
+      bool finished
+   );
 
-   /** set number of blocks, atm only increasing number of blocks  */
+   /** sets number of blocks, only increasing number allowed */
    SCIP_RETCODE setNBlocks(
-         int nBlocks
+      int nBlocks
    );
 
-   /** set the id */
-
+   /** sets the id of this seeed */
    SCIP_RETCODE setID(
-            int id
-      );
+      int id
+   );
 
+   /** sets whether open vars and conss are calculated */
    SCIP_RETCODE setOpenVarsAndConssCalculated(
-         bool value
+      bool value
    );
 
-   /** add a variable to a block */
+   /** adds a variable to a block */
    SCIP_RETCODE setVarToBlock(
-         int varToBlock,
-         int block
+      int varToBlock,
+      int block
    );
 
-
-   /** add a variable to the linking variables */
+   /** adds a variable to the linking variables */
    SCIP_RETCODE setVarToLinking(
-         int varToLinking
+      int varToLinking
    );
 
-   /** add a variable to the master variables (every constraint consisting it is in master) */
+   /** adds a variable to the master variables (hitting only constraints in the master) */
    SCIP_RETCODE setVarToMaster(
-         int varToMaster
+      int varToMaster
    );
 
-   /** add a variable to the stair linking variables */
+   /** adds a variable to the stairlinking variables */
    SCIP_RETCODE setVarToStairlinking(
-         int varToStairLinking, int block1, int block2
+      int varToStairLinking,
+      int block1,
+      int block2
    );
 
-   void showScatterPlot(  Seeedpool* seeedpool, SCIP_Bool writeonly = FALSE, const char* filename = NULL, SCIP_Bool draft = FALSE, SCIP_Bool colored = TRUE );
+   /** displays seeed data in a scatterplot */
+   void showScatterPlot(
+      Seeedpool* seeedpool,         /**< a seeedpool that uses this seeed */
+      SCIP_Bool writeonly = FALSE,
+      const char* filename = NULL,
+      SCIP_Bool draft = FALSE,
+      SCIP_Bool colored = TRUE
+   );
 
-   /** is this seeed a userseeed that should be completed by setting unspecified constraints to master */
-   SCIP_Bool shouldCompletedByConsToMaster();
+   /** returns true if this seeed is a userseeed that should be completed by setting unspecified constraints to master */
+   SCIP_Bool shouldCompletedByConsToMaster(
+   );
 
-   /** sorts the vars and conss according their numbers */
+   /** sorts the vars and conss by their indices */
    void sort(
    );
 
-   const char* getShortCaption();
-
    /** displays the assignments of the vars */
    SCIP_RETCODE writeScatterPlot(
-         Seeedpool* seeedpool,
-         const char* filename
+      Seeedpool* seeedpool,         /**< a seeedpool that uses this seeed */
+      const char* filename
    );
 
+   /** returns a short caption for this seeed */
+   const char* getShortCaption(
+   );
 
 private:
 
    /** assigns open conss (and vars) that hit a block and other open vars (or conss) that are open to border */
    SCIP_RETCODE assignOpenPartialHittingToMaster(
-      Seeedpool*       seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** assigns open conss that hit a block and other open vars that are open to border */
    SCIP_RETCODE assignOpenPartialHittingConsToMaster(
-      Seeedpool*       seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
    /** assigns open vars that hit a block and other open conss that are open to border */
    SCIP_RETCODE assignOpenPartialHittingVarsToMaster(
-      Seeedpool*       seeedpool
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
 
- //  bool compare_blocks(int a, int b);
+   //  bool compare_blocks(int a, int b);
 
 };
 
