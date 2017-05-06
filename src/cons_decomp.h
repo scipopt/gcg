@@ -216,6 +216,15 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP_Bool*            success
    );
 
+SCIP_Bool SCIPconshdlrDecompCheckConsistency(
+   SCIP* scip
+   );
+
+/** returns the next seeed id managed by cons_decomp */
+   int SCIPconshdlrDecompGetNextSeeedID(
+   SCIP*   scip
+   );
+
 
 
 /** interface method to detect the structure */

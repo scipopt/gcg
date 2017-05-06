@@ -45,10 +45,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <sstream>
-#include <iomanip>
-#include <queue>
-#include <fstream>
-
 #include "cons_decomp.h"
 #include "dec_connected.h"
 #include "gcg.h"
@@ -61,7 +57,12 @@
 
 
 #include <vector>
+#include <iomanip>
+#include <queue>
+#include <fstream>
+#include <algorithm>
 
+#include <iterator>
 
 typedef gcg::Seeed* SeeedPtr;
 
@@ -155,6 +156,8 @@ struct SCIP_ConshdlrData
    std::vector<int>      selected;                          /** vector contianing the indices of selected decompositions */
    SCIP_Bool             selectedexists;                    /** are there some selected decompositions */
 
+   int                   seeedcounter;                      /** counts the number of seeeds, used for seeed ids */
+
 };
 
 /*
@@ -194,8 +197,11 @@ SCIP_RETCODE SCIPstoreSeeedAndDecomp(
    conshdlrdata->decdecomps[conshdlrdata->ndecomps] = dec;
    ++conshdlrdata->ndecomps;
 
-   SCIP_CALL( SCIPhashmapInsert(conshdlrdata->seeedtodecdecomp, (void* ) seeed, (void*) dec ) );
-   SCIP_CALL( SCIPhashmapInsert(conshdlrdata->decdecomptoseeed, (void* ) dec, (void*) seeed ) );
+   SCIP_CALL( SCIPhashmapInsert(conshdlrdata->seeedtodecdecomp, seeed, (void*) dec ) );
+   SCIP_CALL( SCIPhashmapInsert(conshdlrdata->decdecomptoseeed,  dec, (void*) seeed ) );
+
+
+   assert(SCIPhashmapExists( conshdlrdata->decdecomptoseeed,  dec) );
 
    return SCIP_OKAY;
 }
@@ -491,6 +497,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->selectedexists = FALSE;
    conshdlrdata->sizedecomps = 10;
    conshdlrdata->sizeincompleteseeeds = 10;
+   conshdlrdata->seeedcounter = 0;
 
    SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->decdecomps, conshdlrdata->sizedecomps) );
    SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->allrelevantfinishedseeeds, conshdlrdata->sizedecomps) );
@@ -1444,6 +1451,215 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    return SCIP_OKAY;
 }
 
+
+/** 1) all finished seeeds are part of the hash maps and */
+/** 2) hash maps are syncronized  */
+/** 3) all incomplete seeeds in cons_decomp are not preds of finished decomps (incomplete seeeds should be deleted in that case) */
+/** 4) all incomplete seeeds in seeedpoolunpresolved are not preds of finished seeeds in complete seeeds in seeedpoolunpresolved and any seeeds in cons_decomp or in seeedpool*/
+/** 5) there are no finished seeeds in seeedpool */
+/** 6) selected list is syncron with selected information in seeeds */
+/** 7) selected exists is syncronized with seleced list */
+
+
+SCIP_Bool SCIPconshdlrDecompCheckConsistency(
+   SCIP* scip
+   ){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   int ncompleteseeeds;
+   int nincompleteseeeds;
+   int ncompleteseeedsunpresolved;
+   int nincompleteseeedsunpresolved;
+
+   int i;
+   int selectedcounter;
+
+   std::vector<int> livingnoncompleteseeedids(0); /** this is a vector of seeed ids that should be living (living: there is no complete seeed having ) */
+   std::vector<int>::const_iterator selectediter;
+   std::vector<int>::const_iterator selectediterend;
+
+   std::vector<SeeedPtr>::const_iterator seeediter;
+    std::vector<SeeedPtr>::const_iterator seeediterend;
+
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   ncompleteseeeds = conshdlrdata->ndecomps;
+   nincompleteseeeds = conshdlrdata->nincompleteseeeds;
+   ncompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() );
+   nincompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->currSeeeds.size() ); /** @todo: check if is this wanted*/
+
+
+
+   /** 1) all finished seeeds are part of the hash maps and */
+   /** 2) hash maps are syncronized  */
+
+   for( i = 0; i < conshdlrdata->ndecomps ; ++i)
+   {
+      DEC_DECOMP* dec;
+      SeeedPtr seeed;
+
+      if( !SCIPhashmapExists( conshdlrdata->decdecomptoseeed, conshdlrdata->decdecomps[i] ) )
+      {
+         SCIPwarningMessage(scip, "Warning: Inconsistency in cons_decomp data structure: %d-th decomp is missing in decompToSeeed \n", i);
+         return FALSE;
+      }
+
+      if( !SCIPhashmapExists( conshdlrdata->seeedtodecdecomp, (void*) conshdlrdata->allrelevantfinishedseeeds[i] ) )
+      {
+         SCIPwarningMessage(scip, "Warning: Inconsistency in cons_decomp data structure: %d-th seeed is missing in seeedtodecomp \n", i);
+         return FALSE;
+      }
+
+      seeed = (SeeedPtr) SCIPhashmapGetImage(conshdlrdata->decdecomptoseeed, (void*) conshdlrdata->decdecomps[i]);
+      dec = (DEC_DECOMP*) SCIPhashmapGetImage(conshdlrdata->seeedtodecdecomp, (void*) conshdlrdata->allrelevantfinishedseeeds[i]);
+
+//      if ( !seeed->checkConsistency(conshdlrdata->seeedpool) )
+//         return FALSE;
+//
+//      if ( !DECdecompCheckConsistency(scip, dec) )
+//         return FALSE;
+
+      if( dec != conshdlrdata->decdecomps[i] )
+      {
+         SCIPwarningMessage(scip, "Warning: Inconsistency in cons_decomp data structure: %d-th decomp and complete seeed are out of sync (decs[i] != seeedtodec(seeeds[i])) \n", i);
+         return FALSE;
+      }
+
+      if( seeed != conshdlrdata->allrelevantfinishedseeeds[i] )
+      {
+         SCIPwarningMessage(scip, "Warning: Inconsistency in cons_decomp data structure: %d-th decomp and complete seeed are out of sync (seeeds[i] != dectoseeed(decs[i])) \n", i);
+         return FALSE;
+      }
+   }
+
+   /** 3) all incomplete seeeds in cons_decomp and complete seeeds in seeedpoolunpresolved  are not preds of finished decomps (incomplete seeeds should be deleted in that case) */
+
+   for( i = 0; i < nincompleteseeeds; ++i )
+   {
+      livingnoncompleteseeedids.push_back( conshdlrdata->incompleteseeeds[i]->getID() );
+   }
+
+   for( i = 0; i < ncompleteseeedsunpresolved; ++i )
+   {
+      livingnoncompleteseeedids.push_back( conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i]->getID() );
+   }
+
+   std::sort(livingnoncompleteseeedids.begin(), livingnoncompleteseeedids.end());
+
+   for ( i = 0; i < ncompleteseeeds && livingnoncompleteseeedids.size() > 0; ++i )
+   {
+      SeeedPtr seeed = conshdlrdata->allrelevantfinishedseeeds[i];
+
+      std::vector<int>::const_iterator iter = seeed->listofancestorids.begin();
+      std::vector<int>::const_iterator iterend = seeed->listofancestorids.end();
+
+      for( ; iter != iterend; ++iter)
+      {
+         int lower = *std::lower_bound( livingnoncompleteseeedids.begin(), livingnoncompleteseeedids.end(), *iter);
+         if ( lower == *iter )
+         {
+            SCIPwarningMessage(scip, "Warning: Inconsistency in cons_decomp data structure: finished seeed with id %d and has living incomplete pred with id %d  \n", seeed->getID(), *iter );
+            return FALSE;
+         }
+      }
+   }
+
+   /** 4) all incomplete seeeds in seeedpoolunpresolved are not preds of finished seeeds in complete seeeds in seeedpoolunpresolved and any seeeds in cons_decomp or in seeedpool*/
+
+
+
+   /** 5) there are no finished seeeds in seeedpool */
+
+   if ( conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->finishedSeeeds.size() > 0 )
+   {
+      SCIPwarningMessage(scip, "Warning: There are finished seeeds in seeedpool that should have been stores in cons_decomp  \n" );
+      return FALSE;
+
+   }
+
+   /** 6) selected list is syncronized with selected information in seeeds */
+
+   selectediter = conshdlrdata->selected.begin();
+   selectediterend = conshdlrdata->selected.end();
+
+   selectedcounter = 0;
+
+   for( ; selectediter != selectediterend; ++selectediter )
+   {
+      SeeedPtr seeed = conshdlrdata->listall[*selectediter];
+
+      if( !seeed->isSelected() )
+      {
+         SCIPwarningMessage(scip, "Warning: seeed %d is not selected but in slected list  \n", seeed->getID() );
+         return FALSE;
+      }
+   }
+
+   seeediter = conshdlrdata->listall.begin();
+   seeediterend = conshdlrdata->listall.end();
+
+   for( ; seeediter != seeediterend; ++seeediterend )
+   {
+      if( (*seeediter)->isSelected() )
+         ++selectedcounter;
+   }
+
+   if( selectedcounter != conshdlrdata->selected.size() )
+   {
+      SCIPwarningMessage(scip, "Warning: there are selected seeeds not part of the list  \n" );
+      return FALSE;
+   }
+
+
+   /** 7) selected exists is syncronized with seleced list */
+
+   if( conshdlrdata->selectedexists != (conshdlrdata->selected.size() > 0) )
+   {
+      SCIPwarningMessage(scip, "Warning: selectedexists is %d but number of selected is %d   \n", conshdlrdata->selectedexists, conshdlrdata->selected.size() );
+      return FALSE;
+   }
+
+
+
+   return TRUE;
+}
+
+/** returns the next seeed id managed by cons_decomp */
+   int SCIPconshdlrDecompGetNextSeeedID(
+     SCIP* scip
+   ){
+
+      SCIP_CONSHDLR* conshdlr;
+      SCIP_CONSHDLRDATA* conshdlrdata;
+
+      SCIP_Real* scores;
+      conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+      if( conshdlr == NULL )
+      {
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+         return SCIP_ERROR;
+      }
+
+      conshdlrdata = SCIPconshdlrGetData(conshdlr);
+      assert(conshdlrdata != NULL);
+
+      return ++conshdlrdata->seeedcounter;
+   }
+
+
 SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP*       scip
    )
@@ -1629,6 +1845,8 @@ SCIP_RETCODE DECdetectStructure(
 	  {
 	     SCIP_CALL( SCIPstoreSeeedAndDecomp(scip, conshdlrdata->seeedpool->finishedSeeeds[i], conshdlrdata->seeedpool->getDecompositions()[i] ) );
 	  }
+
+	  conshdlrdata->seeedpool->finishedSeeeds.clear();
 
 	  SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
 	  SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);

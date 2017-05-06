@@ -1713,16 +1713,8 @@ int Seeedpool::getIndexForFinishingDetector(DEC_DETECTOR* detector)
 
 int Seeedpool::getNewIdForSeeed()
 {
-   nTotalSeeeds++;
-   return (nTotalSeeeds-1);
+   return SCIPconshdlrDecompGetNextSeeedID(scip) ;
 }
-
-void Seeedpool::decrementSeeedcount()
-{
-   nTotalSeeeds--;
-   return;
-}
-
 
 DEC_DECOMP** Seeedpool::getDecompositions()
 {

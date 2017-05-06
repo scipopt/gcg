@@ -614,6 +614,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
+   assert(SCIPconshdlrDecompCheckConsistency(scip) );
+
    SCIPdialogMessage(scip, NULL, "\n");
    switch( SCIPgetStage(scip) )
    {
@@ -632,6 +634,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
 
    case SCIP_STAGE_PRESOLVED:
+
+      assert(SCIPconshdlrDecompCheckConsistency(scip) );
 
       if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
       {
@@ -672,6 +676,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       }
       /*lint -fallthrough*/
    case SCIP_STAGE_SOLVING:
+      assert( SCIPconshdlrDecompCheckConsistency(scip) );
       SCIP_CALL( SCIPsolve(scip) );
       break;
 

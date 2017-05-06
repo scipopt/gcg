@@ -85,11 +85,12 @@ private:
    long                             hashvalue;
    SCIP_Real                        score;                        /**< score to evaluate the seeeds */
    SCIP_Real                        maxwhitescore;                /**< score corresponding to the max white measure */
-
    bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
-   const static int              primes[];
-   const static int              nPrimes;
+   bool                             isselected;                   /**< is this seeed selected */
+
+   const static int                 primes[];
+   const static int                 nPrimes;
 
 public:
 
@@ -115,6 +116,7 @@ public:
    bool                             stemsFromUnpresolved;
    bool                             isFinishedByFinisherUnpresolved; /**< was the ancestor seeed for the unpresolved problem finished by the finishseeed() method of a detector */
    DEC_DETECTOR*                    finishedUnpresolvedBy;           /**< index of dinishing detector of unpresolved ancestor seeed */
+
 
 
    /** constructor(s) */
@@ -462,6 +464,9 @@ public:
          DEC_DETECTOR* detectorID
    );
 
+   bool isSelected(
+      );
+
    /** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
    bool isTrivial(
    );
@@ -560,6 +565,10 @@ public:
    SCIP_RETCODE setOpenVarsAndConssCalculated(
          bool value
    );
+
+   void setSelected(
+      bool selected
+      );
 
    /** add a variable to a block */
    SCIP_RETCODE setVarToBlock(

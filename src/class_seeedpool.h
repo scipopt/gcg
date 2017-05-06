@@ -84,8 +84,6 @@ class Seeedpool
 
 private:
    SCIP*                 						      scip;              	   /**< SCIP data structure */
-   std::vector<SeeedPtr> 						      currSeeeds;				   /**< vector of current (open) seeeds */
-
 
    std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
 
@@ -131,7 +129,8 @@ private:
 
 public:
 
-   std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of current (open) seeeds */
+   std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
+   std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of finished seeeds */
 
    /** constructor */
    Seeedpool(
