@@ -2298,7 +2298,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          /*&& GCGgetNLinkingvars(origprob) == 0 */&& GCGgetNTransvars(origprob) == 0;
 
       if( stabilized )
+      {
          stabilization->updateNode();
+         stabilization->updateHybrid();
+      }
 
       stabilized = stabilized && stabilization->isStabilized();
 

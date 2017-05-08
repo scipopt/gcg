@@ -55,9 +55,22 @@ private:
    int nstabcenterlinkingconss;
    SCIP_Real* stabcenterconv;
    int nstabcenterconv;
+   SCIP_Real dualdiffnorm; /**< norm of difference between stabcenter and current duals */
+   SCIP_Real* subgradientconss;
+   int subgradientconsssize;
+   int nsubgradientconss;
+   SCIP_Real* subgradientcuts;
+   int subgradientcutssize;
+   int nsubgradientcuts;
+   SCIP_Real* subgradientlinkingconss;
+   int nsubgradientlinkingconss;
+   SCIP_Real subgradientnorm;
+   SCIP_Real hybridfactor;
    PricingType* pricingtype;
    SCIP_Real alpha;
    SCIP_Real alphabar; /**< alpha that is used and updated in a mispricing schedule */
+   SCIP_Bool hybridascent; /**< hybridize smoothing with an ascent method? */
+   SCIP_Real beta;
    SCIP_Longint nodenr;
    int k; /**< counter for the number of stabilized pricing rounds in B&B node, excluding the mispricing schedule iterations  */
    int t; /**< counter for the number of pricing rounds during a mispricing schedule, restarted after a mispricing schedule is finished */
@@ -145,7 +158,11 @@ public:
       int i
       );
 
+   /**< update node */
    void updateNode();
+
+   /**< update information for hybrid stablization with dual ascent */
+   void updateHybrid();
 
 private:
    /** updates the number of iterations */
@@ -160,21 +177,44 @@ private:
    /** updates the cuts in the stability center (and allocates more memory) */
    SCIP_RETCODE updateStabcentercuts();
 
+   /** updates the constraints in the subgradient (and allocates more memory) */
+   SCIP_RETCODE updateSubgradientconss();
+
+   /** updates the cuts in the subgradient (and allocates more memory) */
+   SCIP_RETCODE updateSubgradientcuts();
+
    /** increase the alpha value */
    void increaseAlpha();
 
    /** decrease the alpha value */
    void decreaseAlpha();
 
-   /** calculates the subgradient (with linking variables */
-   SCIP_Real calculateSubgradient(
+   /** calculates the product of subgradient (with linking variables)
+    * with the difference of current duals and the stability center */
+   SCIP_Real calculateSubgradientProduct(
       GCG_COL**            pricingcols         /**< columns of the pricing problems */
    );
+
+   /** calculates the normalized subgradient (with linking variables) multiplied
+    * with the norm of the difference of current duals and the stability center */
+   void calculateSubgradient(
+      GCG_COL**            pricingcols         /**< columns of the pricing problems */
+   );
+
+   /**< calculate norm of difference between stabcenter and current duals */
+   void calculateDualdiffnorm();
+
+   /**< calculate beta */
+   void calculateBeta();
+
+   /**< calculate factor that is needed in hybrid stabilization */
+   void calculateHybridFactor();
 
    /** computes the new dual value based on the current and the stability center values */
    SCIP_Real computeDual(
       SCIP_Real          center,             /**< value of stabilility center */
-      SCIP_Real          current             /**< current dual value */
+      SCIP_Real          current,            /**< current dual value */
+      SCIP_Real          subgradient         /**< subgradient (or NULL if not needed) */
    ) const;
 };
 
