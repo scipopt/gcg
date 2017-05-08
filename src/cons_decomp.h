@@ -150,6 +150,12 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    SCIP_Bool             presolved           /**< should the user seeed be created for the presolved problem */
    );
 
+SCIP_RETCODE SCIPconshdlrDecompExecSelect(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   );
+
 SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    SCIP*                 scip                /**< SCIP data structure */
    );

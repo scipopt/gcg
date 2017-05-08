@@ -589,6 +589,16 @@ SCIP_RETCODE SCIPconshdlrDecompAddConsToBlock(
       }
 
 
+SCIP_RETCODE SCIPconshdlrDecompExecSelect(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog )
+{
+   return SCIP_OKAY;
+}
+
+
+
 /** returns the decomposition structure **/
 DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
    SCIP*                 scip                /**< SCIP data structure */

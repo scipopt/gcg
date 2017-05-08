@@ -612,7 +612,12 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
    int nconshdlrs;
    int i;
 
+
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   SCIP_CALL( SCIPconshdlrDecompExecSelect(scip, dialoghdlr, dialog ) );
+
+
 
    conshdlrs = SCIPgetConshdlrs(scip);
    nconshdlrs = SCIPgetNConshdlrs(scip);
