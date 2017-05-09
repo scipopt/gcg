@@ -82,7 +82,8 @@ public:
    /** constructor */
    Stabilization(
       SCIP*              scip,               /**< SCIP data structure */
-      PricingType*       pricingtype         /**< the pricing type when the stabilization should run */
+      PricingType*       pricingtype,        /**< the pricing type when the stabilization should run */
+      SCIP_Bool          hybridascent        /**< enable hybridization of smoothing with an ascent method? */
    );
    /** constructor */
    Stabilization();
@@ -110,7 +111,8 @@ public:
    /** updates the stability center if the bound has increased */
    SCIP_RETCODE updateStabilityCenter(
       SCIP_Real             lowerbound,         /**< lower bound due to lagrange function corresponding to current (stabilized) dual vars */
-      SCIP_Real*            dualsolconv         /**< corresponding feasible dual solution for convexity constraints */
+      SCIP_Real*            dualsolconv,        /**< corresponding feasible dual solution for convexity constraints */
+      GCG_COL**             pricingcols         /**< columns of the pricing problems */
    );
 
    /** updates the alpha after unsuccessful pricing */
@@ -214,7 +216,9 @@ private:
    SCIP_Real computeDual(
       SCIP_Real          center,             /**< value of stabilility center */
       SCIP_Real          current,            /**< current dual value */
-      SCIP_Real          subgradient         /**< subgradient (or NULL if not needed) */
+      SCIP_Real          subgradient,         /**< subgradient (or 0.0 if not needed) */
+      SCIP_Real          lhs,                 /**< lhs (or 0.0 if not needed) */
+      SCIP_Real          rhs                  /**< rhs (or 0.0 if not needed) */
    ) const;
 };
 

@@ -95,7 +95,8 @@ using namespace scip;
                                                      *    2 :   according to reliability from previous round)
                                                      */
 #define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
-#define DEFAULT_STABILIZATION            TRUE       /** should stabilization be used */
+#define DEFAULT_STABILIZATION            TRUE       /**< should stabilization be used */
+#define DEFAULT_HYBRIDASCENT             TRUE       /**< should hybridization of smoothing with an ascent method be enabled */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
 #define DEFAULT_COLPOOL_AGELIMIT         10         /**< maximum age of columns in column pool */
 #define DEFAULT_COLPOOL_COLPOOLSIZE      10         /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
@@ -169,6 +170,7 @@ struct SCIP_PricerData
    SCIP_Real             successfulmipsrel;  /**< Factor of successful MIPs solved until pricing be aborted */
    SCIP_Real             abortpricinggap;    /**< gap between dual bound and RMP objective at which pricing is aborted */
    SCIP_Bool             stabilization;      /**< should stabilization be used */
+   SCIP_Bool             hybridascent;       /**< should hybridization of smoothing with an ascent method be enabled */
    int                   colpoolsize;        /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
@@ -2295,7 +2297,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       stabilized = optimal && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
          && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)))
-         /*&& GCGgetNLinkingvars(origprob) == 0 */&& GCGgetNTransvars(origprob) == 0;
+         /*&& GCGgetNLinkingvars(origprob) == 0 && GCGgetNTransvars(origprob) == 0*/;
 
       if( stabilized )
       {
@@ -2421,7 +2423,19 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          SCIP_Real beststabredcost;
          SCIP_Real lowerboundcandidate;
          SCIP_Real stabdualval = 0.0;
+         GCG_COL** pricingcols = NULL;
          assert(lowerbound != NULL);
+
+         SCIP_CALL( SCIPallocBufferArray(scip_, &pricingcols, pricerdata->npricingprobs) );
+         BMSclearMemoryArray(pricingcols, pricerdata->npricingprobs);
+         for( i = 0; i < pricerdata->npricingprobs; ++i )
+         {
+            if( pricerdata->pricingprobs[i] != NULL )
+            {
+               assert(ncols[i] > 0);
+               pricingcols[i] = cols[i][0];
+            }
+         }
 
          SCIP_CALL( getStabilizedDualObjectiveValue(&stabdualval) );
          lowerboundcandidate = stabdualval + beststabobj;
@@ -2433,7 +2447,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             SCIP_Bool enableppobjcg;
 
-            SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals) );
+            SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals, pricingcols) );
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
 
             SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg) );
@@ -2459,26 +2473,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
          else if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0) )
          {
-            GCG_COL** pricingcols = NULL;
-
-            SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &pricingcols, pricerdata->npricingprobs) );
-            BMSclearMemoryArray(pricingcols, pricerdata->npricingprobs);
-            for( i = 0; i < pricerdata->npricingprobs; ++i )
-            {
-               if( pricerdata->pricingprobs[i] != NULL )
-               {
-                  assert(ncols[i] > 0);
-                  pricingcols[i] = cols[i][0];
-               }
-            }
-
             if( stabilization->isInMispricingSchedule() )
                stabilization->disablingMispricingSchedule();
             stabilization->updateAlpha(pricingcols);
-
-            SCIPfreeBlockMemoryArray(scip_, &pricingcols, pricerdata->npricingprobs);
          }
-
+         SCIPfreeBufferArray(scip_, &pricingcols);
       }
       else if( *bestredcostvalid && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
       {
@@ -3263,7 +3262,7 @@ SCIP_RETCODE ObjPricerGcg::createPricingTypes()
 
 void ObjPricerGcg::createStabilization()
 {
-   stabilization = new Stabilization(scip_, reducedcostpricing);
+   stabilization = new Stabilization(scip_, reducedcostpricing, pricerdata->hybridascent);
 }
 
 void ObjPricerGcg::createColpool()
@@ -3357,6 +3356,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/stabilization",
          "should stabilization be performed?",
          &pricerdata->stabilization, FALSE, DEFAULT_STABILIZATION, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/stabilization/hybridascent",
+         "should hybridization of smoothing with an ascent method be enabled?",
+         &pricerdata->hybridascent, FALSE, DEFAULT_HYBRIDASCENT, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpoolsize", "actual size is"
       "maxvarsround * npricingprobsnotnull * colpoolsize", &pricerdata->colpoolsize, FALSE,

@@ -50,7 +50,8 @@ namespace gcg {
 
 Stabilization::Stabilization(
    SCIP* scip,
-   PricingType* pricingtype_
+   PricingType* pricingtype_,
+   SCIP_Bool hybridascent_
    ) :scip_(scip), stabcenterconss((SCIP_Real*) NULL), stabcenterconsssize(0), nstabcenterconss(0),
       stabcentercuts((SCIP_Real*) NULL), stabcentercutssize(0), nstabcentercuts(0),
       stabcenterlinkingconss((SCIP_Real*) NULL), nstabcenterlinkingconss(0),
@@ -59,7 +60,7 @@ Stabilization::Stabilization(
       inmispricingschedule(FALSE), subgradientlinkingconss(NULL), nsubgradientlinkingconss(0),
       subgradientcuts(NULL), nsubgradientcuts(0), subgradientcutssize(0),
       subgradientconss(NULL), nsubgradientconss(0),subgradientconsssize(0),
-      dualdiffnorm(0.0), beta(0.0), subgradientnorm(0.0), hybridfactor(0.0), hybridascent(TRUE)
+      dualdiffnorm(0.0), beta(0.0), subgradientnorm(0.0), hybridfactor(0.0), hybridascent(hybridascent_)
 {
 
 }
@@ -229,7 +230,7 @@ SCIP_Real Stabilization::linkingconsGetDual(
    if( hybridascent )
       subgradient = subgradientlinkingconss[i];
 
-   return computeDual(stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons), subgradient);
+   return computeDual(stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons), subgradient, 0.0, 0.0);
 }
 
 SCIP_RETCODE Stabilization::consGetDual(
@@ -253,13 +254,13 @@ SCIP_RETCODE Stabilization::consGetDual(
    assert(i < nstabcenterconss);
    assert(stabcenterconss != NULL);
 
-   if( hybridascent )
-      subgradient = subgradientconss[i];
-
    if( i >= nstabcenterconss && hybridascent )
       SCIP_CALL( updateSubgradientconss() );
 
-   *dual = computeDual(stabcenterconss[i], pricingtype->consGetDual(scip_, cons), subgradient);
+   if( hybridascent && hasstabilitycenter )
+      subgradient = subgradientconss[i];
+
+   *dual = computeDual(stabcenterconss[i], pricingtype->consGetDual(scip_, cons), subgradient, SCIPgetLhsLinear(scip_, cons), SCIPgetRhsLinear(scip_, cons));
    return SCIP_OKAY;
 
 }
@@ -284,13 +285,13 @@ SCIP_RETCODE Stabilization::rowGetDual(
    assert(i < nstabcentercuts);
    assert(stabcentercuts != NULL);
 
-   if( hybridascent )
-      subgradient = subgradientcuts[i];
-
    if( i >= nstabcentercuts && hybridascent )
       SCIP_CALL( updateSubgradientcuts() );
 
-   *dual = computeDual(stabcentercuts[i], pricingtype->rowGetDual(row), subgradient);
+   if( hybridascent && hasstabilitycenter )
+      subgradient = subgradientcuts[i];
+
+   *dual = computeDual(stabcentercuts[i], pricingtype->rowGetDual(row), subgradient, SCIProwGetLhs(row), SCIProwGetRhs(row));
 
    return SCIP_OKAY;
 }
@@ -307,12 +308,13 @@ SCIP_Real Stabilization::convGetDual(
 
    SCIP_CONS* cons = GCGgetConvCons(origprob, i);
 
-   return computeDual(stabcenterconv[i], pricingtype->consGetDual(scip_, cons), 0.0);
+   return computeDual(stabcenterconv[i], pricingtype->consGetDual(scip_, cons), 0.0, 1.0, 1.0);
 }
 
 SCIP_RETCODE Stabilization::updateStabilityCenter(
    SCIP_Real             lowerbound,         /**< lower bound due to lagrange function corresponding to current (stabilized) dual vars */
-   SCIP_Real*            dualsolconv         /**< corresponding feasible dual solution for convexity constraints */
+   SCIP_Real*            dualsolconv,        /**< corresponding feasible dual solution for convexity constraints */
+   GCG_COL**             pricingcols         /**< columns of the pricing problems */
    )
 {
    assert(dualsolconv != NULL);
@@ -330,6 +332,12 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    /* first update the arrays */
    SCIP_CALL( updateStabcenterconss() );
    SCIP_CALL( updateStabcentercuts() );
+
+   if( hybridascent )
+   {
+      SCIP_CALL( updateSubgradientconss() );
+      SCIP_CALL( updateSubgradientcuts() );
+   }
 
    /* get new dual values */
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
@@ -365,6 +373,9 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
       stabcenterconv[i] = dualsolconv[i];
    }
 
+   if( hybridascent )
+      calculateSubgradient(pricingcols);
+
    hasstabilitycenter = TRUE;
    stabcenterbound = lowerbound;
 
@@ -374,7 +385,9 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 SCIP_Real Stabilization::computeDual(
       SCIP_Real         center,
       SCIP_Real         current,
-      SCIP_Real         subgradient          /**< subgradient (or NULL if not needed) */
+      SCIP_Real         subgradient,         /**< subgradient (or 0.0 if not needed) */
+      SCIP_Real         lhs,                 /**< lhs (or 0.0 if not needed) */
+      SCIP_Real         rhs                  /**< rhs (or 0.0 if not needed) */
       ) const
 {
    SCIP_Real usedalpha = alpha;
@@ -389,7 +402,17 @@ SCIP_Real Stabilization::computeDual(
    if( hasstabilitycenter && SCIPisZero(scip_, usedbeta) )
       return usedalpha*center+(1.0-usedalpha)*current;
    else if( hasstabilitycenter && SCIPisPositive(scip_, usedbeta) )
-      return center + hybridfactor * (beta * (center + subgradient * dualdiffnorm / subgradientnorm) + (1.0 - beta) * current - center);
+   {
+      SCIP_Real dual = center + hybridfactor * (beta * (center + subgradient * dualdiffnorm / subgradientnorm) + (1.0 - beta) * current - center);
+
+      /* make sure dual has the */
+      if( SCIPisInfinity(scip_, rhs) )
+         dual = MAX(dual, 0.0);
+      else if( SCIPisInfinity(scip_, -lhs) )
+         dual = MIN(dual, 0.0);
+
+      return dual;
+   }
    else
       return current;
 }
@@ -421,8 +444,15 @@ void Stabilization::updateNode()
 /**< update information for hybrid stablization with dual ascent */
 void Stabilization::updateHybrid()
 {
-   if( hasstabilitycenter && hybridascent )
+   if( hasstabilitycenter && hybridascent && !inmispricingschedule )
    {
+      /* first update the arrays */
+      updateStabcenterconss();
+      updateStabcentercuts();
+
+      updateSubgradientconss();
+      updateSubgradientcuts();
+
       calculateDualdiffnorm();
       calculateBeta();
       calculateHybridFactor();
@@ -924,10 +954,15 @@ void Stabilization::calculateBeta()
 
    for( int i = 0; i < nconss; ++i )
    {
-      SCIP_Real dualdiff = pricingtype->consGetDual(scip_, masterconss[i]) - stabcenterconss[i];
-      SCIP_Real product = dualdiff * subgradientconss[i];
+      SCIP_Real dualdiff = ABS(pricingtype->consGetDual(scip_, masterconss[i]) - stabcenterconss[i]);
+      SCIP_Real product = dualdiff * ABS(subgradientconss[i]);
+
+      SCIPdebugMessage("dualdiff = %g, subgradientconss[%d] = %g.\n", dualdiff, i, subgradientconss[i]);
+
+      SCIPdebugMessage("Add %g to beta.\n", product);
 
       if( SCIPisPositive(scip_, product) )
+//      if( !SCIPisZero(scip_, product) )
          beta += product;
    }
 
@@ -936,10 +971,13 @@ void Stabilization::calculateBeta()
 
    for( int i = 0; i < ncuts; ++i )
    {
-      SCIP_Real dualdiff = pricingtype->rowGetDual(mastercuts[i]) - stabcentercuts[i];
-      SCIP_Real product = dualdiff * stabcentercuts[i];
+      SCIP_Real dualdiff = ABS(pricingtype->rowGetDual(mastercuts[i]) - stabcentercuts[i]);
+      SCIP_Real product = dualdiff * ABS(stabcentercuts[i]);
+
+      SCIPdebugMessage("Add %g to beta.\n", product);
 
       if( SCIPisPositive(scip_, product) )
+//      if( !SCIPisZero(scip_, product) )
          beta += product;
    }
 
@@ -948,14 +986,20 @@ void Stabilization::calculateBeta()
 
    for( int i = 0; i < nlinkingconss; ++i )
    {
-      SCIP_Real dualdiff = pricingtype->consGetDual(scip_, linkingconss[i]) - stabcenterlinkingconss[i];
-      SCIP_Real product = dualdiff * stabcenterlinkingconss[i];
+      SCIP_Real dualdiff = ABS(pricingtype->consGetDual(scip_, linkingconss[i]) - stabcenterlinkingconss[i]);
+      SCIP_Real product = dualdiff * ABS(stabcenterlinkingconss[i]);
+
+      SCIPdebugMessage("Add %g to beta.\n", product);
 
       if( SCIPisPositive(scip_, product) )
+//      if( !SCIPisZero(scip_, product) )
          beta += product;
    }
+   SCIPdebugMessage("Divide beta <%g> by %g * %g.\n", beta, subgradientnorm, dualdiffnorm);
 
    beta = beta / (subgradientnorm * dualdiffnorm);
+
+//   cos(acos(beta));
 
    SCIPdebugMessage("Update beta with value %g.\n", beta);
 
