@@ -546,6 +546,19 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       SCIP_Real dual =  pricingtype->consGetDual(scip_, masterconss[i]);
       assert(!SCIPisInfinity(scip_, ABS(dual)));
 
+      if( SCIPisFeasPositive(scip_, dual) )
+      {
+         lhs = SCIPgetLhsLinear(origprob, origcons);
+      }
+      else if( SCIPisFeasNegative(scip_, dual) )
+      {
+         lhs = SCIPgetRhsLinear(origprob, origcons);
+      }
+      else
+      {
+         continue;
+      }
+
       for( int j = 0; j < nvars; ++j )
       {
          SCIP_Real val = 0.0;
@@ -575,18 +588,6 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
          gradientproduct += (stabcenterconss[i] - dual) * vals[j] * val;
       }
 
-      if( SCIPisFeasPositive(scip_, dual) )
-      {
-         lhs = SCIPgetLhsLinear(origprob, origcons);
-      }
-      else if( SCIPisFeasNegative(scip_, dual) )
-      {
-         lhs = SCIPgetRhsLinear(origprob, origcons);
-      }
-      else
-      {
-         continue;
-      }
       assert(stabcenterconss != NULL);
       assert(!SCIPisInfinity(scip_, ABS(lhs)));
 
@@ -608,6 +609,19 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
 
       SCIP_Real dual = pricingtype->rowGetDual(mastercuts[i]);
       assert(!SCIPisInfinity(scip_, ABS(dual)));
+
+      if( SCIPisFeasGT(scip_, dual, 0.0) )
+      {
+         lhs = SCIProwGetLhs(origcut);
+      }
+      else if( SCIPisFeasLT(scip_, dual, 0.0) )
+      {
+         lhs = SCIProwGetRhs(origcut);
+      }
+      else
+      {
+         continue;
+      }
       for( int j = 0; j < nvars; ++j )
       {
          SCIP_Real val = 0.0;
@@ -641,18 +655,6 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
          gradientproduct += (stabcentercuts[i] - dual) * vals[j] * val;
       }
 
-      if( SCIPisFeasGT(scip_, dual, 0.0) )
-      {
-         lhs = SCIProwGetLhs(origcut);
-      }
-      else if( SCIPisFeasLT(scip_, dual, 0.0) )
-      {
-         lhs = SCIProwGetRhs(origcut);
-      }
-      else
-      {
-         continue;
-      }
       assert(!SCIPisInfinity(scip_, ABS(lhs)));
       assert(stabcentercuts != NULL);
 
@@ -676,6 +678,10 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
 
       assert(stabcenterlinkingconss != NULL);
       SCIP_Real dual = stabcenterlinkingconss[i] - pricingtype->consGetDual(scip_, linkingcons);
+
+      if( SCIPisFeasZero(origprob, dual) )
+         continue;
+
       SCIP_Real masterval = SCIPgetSolVal(scip_, (SCIP_SOL*) NULL, mastervar);
       SCIP_Real pricingval = GCGcolGetSolVal(pricingprob, pricingcols[block], pricingvar);
       assert(!SCIPisInfinity(scip_, ABS(masterval)));
@@ -717,14 +723,16 @@ void Stabilization::calculateSubgradient(
       SCIP_Real* vals;
       int nvars;
       SCIP_Real activity;
-      SCIP_Real lhsinfeasibility;
-      SCIP_Real rhsinfeasibility;
       SCIP_Real infeasibility;
 
       SCIP_CONS* origcons = origmasterconss[i];
       nvars = SCIPgetNVarsLinear(origprob, origcons);
       vars = SCIPgetVarsLinear(origprob, origcons);
       vals = SCIPgetValsLinear(origprob, origcons);
+
+      SCIP_Real dual = stabcenterconss[i];
+      assert(!SCIPisInfinity(scip_, ABS(dual)));
+
 
       activity = 0.0;
 
@@ -756,10 +764,16 @@ void Stabilization::calculateSubgradient(
          activity += vals[j] * val;
       }
 
-      lhsinfeasibility = SCIPgetLhsLinear(origprob, origcons) - activity;
-      rhsinfeasibility = activity - SCIPgetRhsLinear(origprob, origcons);
+      infeasibility = 0.0;
 
-      infeasibility = MAX(lhsinfeasibility, rhsinfeasibility);
+      if( SCIPisFeasPositive(scip_, dual) )
+      {
+         infeasibility = SCIPgetLhsLinear(origprob, origcons) - activity;
+      }
+      else if( SCIPisFeasNegative(scip_, dual) )
+      {
+         infeasibility = SCIPgetRhsLinear(origprob, origcons) - activity;
+      }
 
       assert(subgradientconss != NULL);
       assert(!SCIPisInfinity(scip_, SQR(infeasibility)));
@@ -777,8 +791,6 @@ void Stabilization::calculateSubgradient(
       SCIP_Real* vals;
       int nvars;
       SCIP_Real activity;
-      SCIP_Real lhsinfeasibility;
-      SCIP_Real rhsinfeasibility;
       SCIP_Real infeasibility;
 
       SCIP_ROW* origcut = origmastercuts[i];
@@ -788,7 +800,7 @@ void Stabilization::calculateSubgradient(
 
       activity = 0.0;
 
-      SCIP_Real dual = pricingtype->rowGetDual(mastercuts[i]);
+      SCIP_Real dual = stabcentercuts[i];
       assert(!SCIPisInfinity(scip_, ABS(dual)));
       for( int j = 0; j < nvars; ++j )
       {
@@ -822,10 +834,17 @@ void Stabilization::calculateSubgradient(
          assert(vals != NULL);
          activity += vals[j] * val;
       }
-      lhsinfeasibility = SCIProwGetLhs(origcut) - activity;
-      rhsinfeasibility = activity - SCIProwGetRhs(origcut);
 
-      infeasibility = MAX(lhsinfeasibility, rhsinfeasibility);
+      infeasibility = 0.0;
+
+      if( SCIPisFeasPositive(scip_, dual) )
+      {
+         infeasibility = SCIProwGetLhs(origcut) - activity;
+      }
+      else if( SCIPisFeasNegative(scip_, dual) )
+      {
+         infeasibility = SCIProwGetRhs(origcut) - activity;
+      }
 
       assert(subgradientcuts != NULL);
       assert(!SCIPisInfinity(scip_, SQR(infeasibility)));
@@ -860,7 +879,7 @@ void Stabilization::calculateSubgradient(
       assert(!SCIPisInfinity(scip_, ABS(pricingval)));
       activity = (masterval - pricingval);
 
-      infeasibility = MAX(activity, -activity);
+      infeasibility = activity;
 
       assert(subgradientlinkingconss != NULL);
       assert(!SCIPisInfinity(scip_, SQR(infeasibility)));
