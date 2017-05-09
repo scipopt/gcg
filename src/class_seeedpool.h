@@ -328,6 +328,13 @@ public:
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
       );
 
+
+   /**
+    * returns transformation information
+    */
+   SCIP_Bool getTransformedInfo(
+      );
+
 private:
 
    /** calculates necessary data for translating seeeds and classifiers */

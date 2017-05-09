@@ -448,8 +448,8 @@ Seeedpool::Seeedpool(
    /** set detection data */
    SCIP_CALL_ABORT( SCIPgetIntParam(givenScip, "detection/maxrounds", &maxndetectionrounds) );
 
-   SCIPdebugMessagePrint(scip, " conshdlrname: %s \n ", conshdlrName);
-   SCIPdebugMessagePrint(scip, " number of detectors: %d \n ", conshdlrdata->ndetectors);
+//   SCIPdebugMessagePrint(scip, " conshdlrname: %s \n ", conshdlrName);
+ //  SCIPdebugMessagePrint(scip, " number of detectors: %d \n ", conshdlrdata->ndetectors);
 
    assert(conshdlrdata->ndetectors > 0);
 
@@ -754,7 +754,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
              }
           }
 
-          SCIPdebugMessagePrint(scip, "number of detectors: %d \n", nDetectors);
+//          SCIPdebugMessagePrint(scip, "number of detectors: %d \n", nDetectors);
 
           /** the current seeed is handled by all detectors */
           for( int d = 0; d < nDetectors; ++d )
@@ -2940,7 +2940,8 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       (void) strncat(detectorchaininfo, str, 1 );
    }
 
-   DECdecompSetDetectorChainString(scip, *newdecomp, detectorchaininfo);
+   SCIP_CALL(DECdecompSetDetectorChainString(scip, *newdecomp, detectorchaininfo) );
+   SCIP_CALL(seeed->setDetectorChainString(detectorchaininfo) );
 
    /** set dectype */
    if( (*newdecomp)->nlinkingvars == seeed->getNTotalStairlinkingvars() && (*newdecomp)->nlinkingconss == 0 && DECdecompGetNLinkingvars((*newdecomp)) > 0)
@@ -2993,6 +2994,15 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 
    return SCIP_OKAY;
 
+}
+
+/**
+ * returns transformation information
+ */
+SCIP_Bool Seeedpool::getTransformedInfo(
+   )
+{
+   return transformed;
 }
 
 

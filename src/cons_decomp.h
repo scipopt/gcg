@@ -48,7 +48,9 @@
 extern "C" {
 #endif
 
-
+SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
+   SCIP*          scip
+);
 
 /** creates the handler for decomp constraints and includes it in SCIP */
 extern
@@ -158,6 +160,10 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
 
 SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
+   SCIP*                 scip
    );
 
 /** sets the number of blocks */

@@ -112,8 +112,11 @@ public:
 
    USERGIVEN                        usergiven;                  /**< is this seeed partially or complete given by user */
 
+   char*                            detectorchainstring;
+
    /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
-   bool                             stemsFromUnpresolved;
+   bool                             stemsFromUnpresolved;       /**< seeed has at least one ancestor that is a seeed from unpresolved problem */
+   bool                             isfromunpresolved;          /**< seeed is from unpresolved problem */
    bool                             isFinishedByFinisherUnpresolved; /**< was the ancestor seeed for the unpresolved problem finished by the finishseeed() method of a detector */
    DEC_DETECTOR*                    finishedUnpresolvedBy;           /**< index of dinishing detector of unpresolved ancestor seeed */
 
@@ -609,6 +612,10 @@ public:
          const char* filename
    );
 
+   /** sets the detector chain short string */
+   SCIP_RETCODE setDetectorChainString(
+      char*                 detectorchainstring
+      );
 
 private:
 

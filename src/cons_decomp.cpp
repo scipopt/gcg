@@ -152,6 +152,7 @@ struct SCIP_ConshdlrData
 
    /** new data fields for selection management */
    int                   startidvisu;                       /** when displaying the list of decomps, this is the starting index */
+   int                   selectvisulength;                  /** number of decompositions to be displayed at once */
    std::vector<SeeedPtr> listall;                           /** vector containing the current list of decomps to visualize*/
    std::vector<int>      selected;                          /** vector contianing the indices of selected decompositions */
    SCIP_Bool             selectedexists;                    /** are there some selected decompositions */
@@ -492,6 +493,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->curruserseeed = NULL;
    conshdlrdata->unpresolveduserseeedadded = FALSE;
    conshdlrdata->startidvisu = 0;
+   conshdlrdata->selectvisulength = 10;
    conshdlrdata->listall = std::vector<SeeedPtr>(0);
    conshdlrdata->selected = std::vector<int>(0);
    conshdlrdata->selectedexists = FALSE;
@@ -539,6 +541,130 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
+   SCIP*                   scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   int ndetectedpresolved;
+   int ndetectedunpresolved;
+   int nuserpresolvedfull;
+   int nuserpresolvedpartial;
+   int nuserunpresolvedfull;
+   int nuserunpresolvedpartial;
+
+   size_t i;
+
+   ndetectedpresolved = 0;
+   ndetectedunpresolved = 0;
+   nuserpresolvedfull = 0;
+   nuserpresolvedpartial = 0;
+   nuserunpresolvedfull = 0;
+   nuserunpresolvedpartial = 0;
+
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   /** count corresponding seeeds */
+   for ( i = 0; i < conshdlrdata->listall.size(); ++i )
+   {
+      SeeedPtr seeed;
+      seeed = conshdlrdata->listall[i];
+      if( seeed->isComplete() && seeed->usergiven == gcg::USERGIVEN::NOT && !seeed->isfromunpresolved )
+         ++ndetectedpresolved;
+      if( seeed->isComplete() && seeed->usergiven == gcg::USERGIVEN::NOT && seeed->isfromunpresolved )
+         ++ndetectedunpresolved;
+      if( seeed->isComplete() && ( seeed->usergiven == gcg::USERGIVEN::COMPLETE || seeed->usergiven == gcg::USERGIVEN::COMPLETED_CONSTOMASTER) && !seeed->isfromunpresolved )
+         ++nuserpresolvedfull;
+      if( !seeed->isComplete() && seeed->usergiven == gcg::USERGIVEN::PARTIAL && !seeed->isfromunpresolved )
+         ++nuserpresolvedpartial;
+      if( seeed->isComplete() && ( seeed->usergiven == gcg::USERGIVEN::COMPLETE || seeed->usergiven == gcg::USERGIVEN::COMPLETED_CONSTOMASTER) && seeed->isfromunpresolved )
+         ++nuserunpresolvedfull;
+      if( !seeed->isComplete() && seeed->usergiven == gcg::USERGIVEN::PARTIAL && seeed->isfromunpresolved )
+         ++nuserunpresolvedpartial;
+
+   }
+
+   SCIPdialogMessage(scip, NULL, "\n");
+   SCIPdialogMessage(scip, NULL, "Summary:             presolved       original \n");
+   SCIPdialogMessage(scip, NULL, "detected             ");
+   SCIPdialogMessage(scip, NULL, "%9d       ", ndetectedpresolved );
+   SCIPdialogMessage(scip, NULL, "%8d\n", ndetectedunpresolved );
+   SCIPdialogMessage(scip, NULL, "user given (partial) ");
+   SCIPdialogMessage(scip, NULL, "%9d       ", nuserpresolvedpartial );
+   SCIPdialogMessage(scip, NULL, "%8d\n", nuserunpresolvedpartial );
+   SCIPdialogMessage(scip, NULL, "user given (full)    ");
+   SCIPdialogMessage(scip, NULL, "%9d       ", nuserpresolvedfull );
+   SCIPdialogMessage(scip, NULL, "%8d\n", nuserunpresolvedfull );
+
+
+   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  maxwhi  history  pre  nopcon  nopvar  usr  sel \n");
+   SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------  ---  --- \n");
+
+
+
+   return SCIP_OKAY;
+}
+
+
+/** sets (and adds) the decomposition structure;
+ * this method should only be called if there is no seeed for this decomposition
+ *
+ * **/
+SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
+   SCIP*                 scip               /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   size_t i;
+
+   for( i = conshdlrdata->startidvisu; i < (size_t) conshdlrdata->startidvisu + (size_t) conshdlrdata->selectvisulength && i < conshdlrdata->listall.size(); ++i)
+   {
+      SeeedPtr seeed;
+
+      seeed = conshdlrdata->listall[i];
+
+      assert( seeed->checkConsistency() );
+
+      SCIPdialogMessage(scip, NULL, " %4d   ", i );
+      SCIPdialogMessage(scip, NULL, "%5d  ", seeed->getNBlocks() );
+      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNMasterconss() );
+      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNLinkingvars() );
+      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNMastervars() );
+      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNTotalStairlinkingvars() );
+      if( seeed->isComplete() )
+         SCIPdialogMessage(scip, NULL, "%.4f  ", seeed->getMaxWhiteScore() );
+      else
+         SCIPdialogMessage(scip, NULL, ">=%.2f  ", seeed->getNTotalStairlinkingvars() );
+      SCIPdialogMessage(scip, NULL, "%7s  ", seeed->detectorchainstring );
+      SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->isfromunpresolved ? "no" : "yes")  );
+      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenconss() );
+      SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenvars() );
+      SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->usergiven == gcg::USERGIVEN::NOT ? "no" : "yes")   );
+      SCIPdialogMessage(scip, NULL, "%3s  \n", (seeed->isSelected() ? "yes" : "no")  );
+   }
+
+
+
+   return SCIP_OKAY;
+}
+
+
 /** sets (and adds) the decomposition structure;
  * this method should only be called if there is no seeed for this decomposition
  *
@@ -566,13 +692,34 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    return SCIP_OKAY;
 }
 
-/** sets (and adds) the decomposition structure **/
-SCIP_RETCODE SCIPconshdlrDecompAddConsToBlock(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_HASHMAP*         consToBlock,        /**< possible incomplete detection info */
-   SCIP_HASHMAP*         varsToBlock        /**< possible incomplete detection info stored as two hashmaps*/
+///** sets (and adds) the decomposition structure **/
+//SCIP_RETCODE SCIPconshdlrDecompAddConsToBlock(
+//   SCIP*                 scip,               /**< SCIP data structure */
+//   SCIP_HASHMAP*         consToBlock,        /**< possible incomplete detection info */
+//   SCIP_HASHMAP*         varsToBlock        /**< possible incomplete detection info stored as two hashmaps*/
+//   )
+//{
+//   SCIP_CONSHDLR* conshdlr;
+//   SCIP_CONSHDLRDATA* conshdlrdata;
+//   assert(scip != NULL);
+//   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+//   assert( conshdlr != NULL );
+//
+//   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+//   assert(conshdlrdata != NULL);
+//
+//   return SCIP_ERROR;
+//
+////   conshdlrdata->initalpartialdecomps.push_back(consToBlock);
+//
+//      }
+
+SCIP_RETCODE SCIPconshdlrDecompShowLegend(
+   SCIP* scip
    )
 {
+   int det;
+
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
@@ -582,11 +729,55 @@ SCIP_RETCODE SCIPconshdlrDecompAddConsToBlock(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return SCIP_ERROR;
 
-//   conshdlrdata->initalpartialdecomps.push_back(consToBlock);
+   SCIPdialogMessage(scip, NULL, "\n%30s  %4s\n", "detector" , "char"  );
 
-      }
+   for( int det = 0; det < conshdlrdata->ndetectors; ++det )
+   {
+      DEC_DETECTOR* detector;
+
+      detector = conshdlrdata->detectors[det];
+
+      SCIPdialogMessage(scip, NULL, "%30s  %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector)  );
+   }
+   SCIPdialogMessage(scip, NULL, "%30s  %4s\n", "given by user" , "U"  );
+
+   SCIPdialogMessage(scip, NULL, "\n" );
+
+//   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  maxwhi  history  pre  nopcon  nopvar"
+//      "  usr"
+//      "  sel \n");
+//   SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------"
+//      "  ---"
+//      "  --- \n");
+
+   SCIPdialogMessage(scip, NULL, "%8s  %s\n", "id", "id of the decomposition");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nbloc", "number of blocks");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nmacon", "number of master constraints");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nlivar", "number of linking variables");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nmavar", "number of master variables (do not occur in blocks)");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "maxwhi", "maximum white score (ie min black, black is block and border, stairlinking counts as linking)");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "history", "list of detector chars worked on this decomposition ");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "pre", "is this decomposition for the presolved problem");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nopcon", "number of open constraints");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nopvar", "number of open variables");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "usr", "is this decomposition given by the user");
+   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "sel", "is this decomposition selected at the moment");
+
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE SCIPconshdlrDecompShowHelp(
+   SCIP* scip
+   )
+{
+
+
+
+   return SCIP_OKAY;
+}
 
 
 SCIP_RETCODE SCIPconshdlrDecompExecSelect(
@@ -594,6 +785,80 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
    SCIP_DIALOGHDLR*        dialoghdlr,
    SCIP_DIALOG*            dialog )
 {
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Bool         finished;
+   char* command;
+   SCIP_Bool endoffile;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+   finished = FALSE;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   /** 1) update list of interesting seeeds */
+
+   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+
+   SCIP_CALL( SCIPconshdlrDecompShowListExtractHeader(scip) );
+
+   /** 2) while user has not aborted: show current list extract */
+
+   while ( !finished )
+   {
+      int commandlen;
+      SCIP_CALL( SCIPconshdlrDecompShowListExtract(scip) );
+
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter selection command or decomposition id to select: ", &command, &endoffile) );
+
+      commandlen = strlen(command);
+
+      /** case distinction: */
+      if( strncmp( command, "back", commandlen) == 0 )
+      {
+         conshdlrdata->startidvisu -= conshdlrdata->selectvisulength;
+         if(conshdlrdata->startidvisu < 0 )
+            conshdlrdata->startidvisu = 0;
+         continue;
+      }
+      if( strncmp( command, "next", commandlen) == 0 )
+      {
+         conshdlrdata->startidvisu += conshdlrdata->selectvisulength;
+         if(conshdlrdata->startidvisu > conshdlrdata->listall.size() - conshdlrdata->selectvisulength )
+            conshdlrdata->startidvisu = conshdlrdata->listall.size() - conshdlrdata->selectvisulength ;
+         continue;
+      }
+      if( strncmp( command, "top", commandlen) == 0 )
+      {
+         conshdlrdata->startidvisu = 0;
+         continue;
+      }
+      if( strncmp( command, "end", commandlen) == 0 )
+      {
+         conshdlrdata->startidvisu = conshdlrdata->listall.size() - conshdlrdata->selectvisulength ;
+         continue;
+      }
+
+      if( strncmp( command, "quit", commandlen) == 0 )
+      {
+         finished = TRUE;
+         continue;
+      }
+
+      if( strncmp( command, "legend", commandlen) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompShowLegend(scip) );
+         continue;
+      }
+
+
+
+   }
+
    return SCIP_OKAY;
 }
 
@@ -991,6 +1256,78 @@ SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    assert(conshdlrdata != NULL);
 
    return conshdlrdata->unpresolveduserseeedadded;
+}
+
+
+SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
+   SCIP*          scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   size_t i;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   assert( SCIPconshdlrDecompCheckConsistency(scip) );
+
+   conshdlrdata->startidvisu = 0;
+   conshdlrdata->listall.clear();
+
+   /** sort decomposition and finished seeeds according to max white score */
+   SCIP_CALL( DECconshdlrDecompSortDecompositionsByScore(scip) );
+
+   /** add seeeds to list */
+   /** 1) add presolved finished */
+   for( i = 0; i < (size_t) conshdlrdata->ndecomps ; ++i)
+    {
+       SeeedPtr seeed;
+       seeed = conshdlrdata->allrelevantfinishedseeeds[i];
+
+       conshdlrdata->listall.push_back(seeed);
+    }
+
+   /** 2) add presolved unfinished */
+   for( i = 0; i < (size_t) conshdlrdata->nincompleteseeeds ; ++i)
+   {
+      SeeedPtr seeed;
+      seeed = conshdlrdata->incompleteseeeds[i];
+
+      conshdlrdata->listall.push_back(seeed);
+   }
+
+   /** 3) add unpresolved finished */
+   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() ; ++i)
+   {
+      SeeedPtr seeed;
+      seeed = conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i];
+      seeed->isfromunpresolved = TRUE;
+
+      conshdlrdata->listall.push_back(seeed);
+   }
+
+   /** 4) add unpresolved finished */
+   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->currSeeeds.size() ; ++i)
+   {
+      SeeedPtr seeed;
+      seeed = conshdlrdata->seeedpoolunpresolved->currSeeeds[i];
+      seeed->isfromunpresolved = TRUE;
+
+      conshdlrdata->listall.push_back(seeed);
+   }
+
+
+   return SCIP_OKAY;
 }
 
 
@@ -1481,7 +1818,7 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    int ncompleteseeeds;
    int nincompleteseeeds;
    int ncompleteseeedsunpresolved;
-   int nincompleteseeedsunpresolved;
+ //  int nincompleteseeedsunpresolved;
 
    int i;
    int selectedcounter;
@@ -1508,7 +1845,7 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    ncompleteseeeds = conshdlrdata->ndecomps;
    nincompleteseeeds = conshdlrdata->nincompleteseeeds;
    ncompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() );
-   nincompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->currSeeeds.size() ); /** @todo: check if is this wanted*/
+//   nincompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->currSeeeds.size() ); /** @todo: check if is this wanted*/
 
 
 
@@ -1626,7 +1963,7 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
          ++selectedcounter;
    }
 
-   if( selectedcounter != conshdlrdata->selected.size() )
+   if( (size_t) selectedcounter != conshdlrdata->selected.size() )
    {
       SCIPwarningMessage(scip, "Warning: there are selected seeeds not part of the list  \n" );
       return FALSE;
@@ -1654,7 +1991,6 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
       SCIP_CONSHDLR* conshdlr;
       SCIP_CONSHDLRDATA* conshdlrdata;
 
-      SCIP_Real* scores;
       conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
       if( conshdlr == NULL )
