@@ -96,11 +96,13 @@ SCIP_RETCODE GCGmasterSetRootLPSol(
    SCIP_SOL**            sol                 /**< pointer to optimal solution to root LP */
    );
 
+#ifdef SCIP_STATISTIC
 /** gets the optimal LP solution in the pricerdata */
 extern
 SCIP_SOL* GCGmasterGetRootLPSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
+#endif
 
 /** includes a solver into the pricer data */
 extern
