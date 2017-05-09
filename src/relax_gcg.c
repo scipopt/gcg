@@ -178,7 +178,6 @@ SCIP_RETCODE setOriginalVarBlockNr(
    /* var belongs to no block so far, just set the new block number */
    if( blocknr == -1 )
    {
-      relaxdata->ntransvars++;
       GCGvarSetBlock(var, newblock);
    }
    /* if var already belongs to another block, it is a linking variable */
@@ -1243,6 +1242,7 @@ SCIP_RETCODE createPricingVariables(
          assert(GCGvarGetBlock(probvar) == -1);
          assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
          SCIPdebugPrintf("master!\n");
+         relaxdata->ntransvars++;
       }
       assert(SCIPhashmapExists(relaxdata->hashorig2origvar, probvar));
    }
@@ -2352,9 +2352,41 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          return SCIP_OKAY;
       }
 
+//      if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && SCIPgetNNodes(masterprob) == 1 )
+//      {
+//         SCIP_SOL* sol;
+//
+//         SCIPcreateSolCopy(masterprob, &sol, SCIPgetBestSol(masterprob));
+//         SCIP_CALL( GCGmasterSetRootLPSol(masterprob, &sol) );
+//      }
+//      else if( SCIPgetCurrentNode(masterprob) == SCIPgetRootNode(masterprob) && (SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING) )
+//      {
+//         SCIP_SOL* sol;
+//         SCIP_Real* solvals;
+//         SCIP_VAR** vars;
+//         int nvars;
+//
+//         nvars = SCIPgetNVars(masterprob);
+//         vars = SCIPgetVars(masterprob);
+//
+//         SCIP_CALL( SCIPallocMemoryArray(masterprob, &solvals, nvars) );
+//
+//         SCIP_CALL( SCIPgetSolVals(masterprob, NULL, nvars, vars, solvals) );
+//
+//         SCIP_CALL( SCIPcreateSol(masterprob, &sol, NULL) );
+//
+//         SCIP_CALL( SCIPsetSolVals(masterprob, sol, nvars, vars, solvals) );
+//
+//         SCIP_CALL( GCGmasterSetRootLPSol(masterprob, &sol) );
+//
+//         SCIPfreeMemoryArray(masterprob, &solvals);
+//      }
       /* set the lower bound pointer */
       if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
+      {
          *lowerbound = SCIPgetLocalDualbound(masterprob);
+
+      }
       else
       {
          SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));

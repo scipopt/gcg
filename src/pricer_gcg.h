@@ -89,6 +89,19 @@ SCIP_RETCODE GCGmasterAddMasterconsToHashmap(
    int                   pos                 /**< the position of the constraint in the relaxator's masterconss array */
    );
 
+/** sets the optimal LP solution in the pricerdata */
+extern
+SCIP_RETCODE GCGmasterSetRootLPSol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL**            sol                 /**< pointer to optimal solution to root LP */
+   );
+
+/** gets the optimal LP solution in the pricerdata */
+extern
+SCIP_SOL* GCGmasterGetRootLPSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** includes a solver into the pricer data */
 extern
 SCIP_RETCODE GCGpricerIncludeSolver(

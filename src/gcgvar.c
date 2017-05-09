@@ -1319,6 +1319,36 @@ SCIP_Real GCGgetCreationTime(
    return vardata->creationtime;
 }
 
+/** store pricing reduced cost call */
+void GCGsetRootRedcostCall(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable data structure */
+   SCIP_Longint          rootredcostcall     /**< iteration at which the variable is created */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(scip != NULL);
+   assert(var != NULL);
+   assert(rootredcostcall >= -1);
+
+   vardata = SCIPvarGetData(var);
+   vardata->rootredcostcall = rootredcostcall;
+}
+
+/** return stored pricing reduced cost call */
+SCIP_Longint GCGgetRootRedcostCall(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(scip != NULL);
+   assert(var != NULL);
+
+   vardata = SCIPvarGetData(var);
+   return vardata->rootredcostcall;
+}
+
 /** store iteration */
 void GCGsetIteration(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -1417,14 +1447,18 @@ void GCGupdateVarStatistics(
     SCIP_Real            redcost             /**< reduced cost of the variable */
     )
 {
+   SCIP_Longint redcostcall;
    assert(scip != NULL);
    assert(GCGisMaster(scip));
    assert(origprob != NULL);
    assert(GCGisOriginal(origprob));
    assert(newvar != NULL);
 
+   redcostcall = -1;
    GCGsetCreationNode(origprob, newvar, SCIPnodeGetNumber(SCIPgetCurrentNode(origprob)));
    GCGsetCreationTime(origprob, newvar, SCIPgetSolvingTime(scip));
+
+   GCGsetRootRedcostCall(origprob, newvar, redcostcall);
    GCGsetIteration(origprob, newvar, SCIPgetNLPIterations(scip));
    GCGsetGap(origprob, newvar, MIN(SCIPgetGap(origprob), SCIPgetGap(scip))); /*lint !e666*/
    GCGsetRedcost(origprob, newvar, redcost);
