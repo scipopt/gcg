@@ -164,7 +164,7 @@ public:
    void updateNode();
 
    /**< update information for hybrid stablization with dual ascent */
-   void updateHybrid();
+   SCIP_RETCODE updateHybrid();
 
 private:
    /** updates the number of iterations */

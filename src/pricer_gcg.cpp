@@ -2302,7 +2302,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( stabilized )
       {
          stabilization->updateNode();
-         stabilization->updateHybrid();
+         SCIP_CALL( stabilization->updateHybrid() );
       }
 
       stabilized = stabilized && stabilization->isStabilized();
