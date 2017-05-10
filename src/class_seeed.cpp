@@ -102,6 +102,10 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    detectorChainFinishingUsed = seeedToCopy->detectorChainFinishingUsed;
    detectorchaininfo = seeedToCopy->detectorchaininfo;
    openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
+   hashvalue = seeedToCopy->hashvalue; /* changed */
+   score = seeedToCopy->score;
+   maxwhitescore = seeedToCopy->maxwhitescore;
+   changedHashvalue = seeedToCopy->changedHashvalue;
    detectorClockTimes = seeedToCopy->detectorClockTimes;
    pctVarsToBorder = seeedToCopy->pctVarsToBorder;
    pctVarsToBlock = seeedToCopy->pctVarsToBlock;
@@ -109,17 +113,13 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    pctConssToBorder = seeedToCopy->pctConssToBorder;
    pctConssToBlock = seeedToCopy->pctConssToBlock;
    pctConssFromFree = seeedToCopy->pctConssFromFree;
-   nNewBlocks = seeedToCopy->nNewBlocks;
    isFinishedByFinisher = seeedToCopy->isFinishedByFinisher;
-   score = seeedToCopy->score;
-   maxwhitescore = seeedToCopy->maxwhitescore;
-   changedHashvalue = seeedToCopy->changedHashvalue;
-   stemsFromUnpresolved = seeedToCopy->stemsFromUnpresolved;
-   isFinishedByFinisherUnpresolved = seeedToCopy->isFinishedByFinisherUnpresolved;
+   nNewBlocks = seeedToCopy->nNewBlocks;
    listofancestorids = seeedToCopy->listofancestorids;
-   usergiven = seeedToCopy->usergiven;
-   finishedUnpresolvedBy = seeedToCopy->finishedUnpresolvedBy;
-   hashvalue = seeedToCopy->hashvalue;
+   usergiven = seeedToCopy->usergiven; /* changed */
+   stemsFromUnpresolved = seeedToCopy->stemsFromUnpresolved;
+   finishedUnpresolvedBy = seeedToCopy->finishedUnpresolvedBy; /* changed */
+   isFinishedByFinisherUnpresolved = seeedToCopy->isFinishedByFinisherUnpresolved;
 }
 
 /** destructor */
@@ -208,7 +208,7 @@ SCIP_RETCODE Seeed::assignAllDependent(Seeedpool* seeedpool)
    return SCIP_OKAY;
 }
 
-/** fills out the border of the seeed with the hashmap constoblock if there are still assigned conss and vars */
+/** assigns open conss to master according to the cons assignment information given in constoblock hashmap */
 SCIP_RETCODE Seeed::assignBorderFromConstoblock(SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool)
 {
    int cons;
@@ -477,10 +477,10 @@ bool Seeed::assignHittingOpenvars(Seeedpool* seeedpool)
    return assigned;
 }
 
-/** assigns open conss that hit a block and other open vars that are open to border */
-SCIP_RETCODE Seeed::assignOpenPartialHittingConsToMaster(
-   Seeedpool*       seeedpool
-)
+/** assigns every open cons to master that hits
+ *  - exactly one block var and at least one open var or
+ *  - a master var */
+SCIP_RETCODE Seeed::assignOpenPartialHittingConsToMaster(Seeedpool* seeedpool)
 {
    int cons;
    int var;
@@ -544,7 +544,7 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingConsToMaster(
    return SCIP_OKAY;
 }
 
-/** assigns open conss (and vars) that hit a block and other open vars (or conss) to border */
+/** assigns open conss/vars that hit exactly one block and at least one open var/cons to border */
 SCIP_RETCODE Seeed::assignOpenPartialHittingToMaster(Seeedpool* seeedpool)
 {
    changedHashvalue = true;
@@ -553,7 +553,8 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingToMaster(Seeedpool* seeedpool)
    return SCIP_OKAY;
 }
 
-/** assigns open vars that hit a block and other open conss that are open to border */
+/** assigns every open var to linking that hits
+ *  - exactly one block cons and at least one open cons */
 SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(Seeedpool* seeedpool)
 {
    int cons;
@@ -605,7 +606,8 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(Seeedpool* seeedpool)
    return SCIP_OKAY;
 }
 
-/** fills out the seeed with the hashmap constoblock if there are still assigned conss and vars */
+/** adds blocks and assigns open conss to such a new block or to master
+ *  according to the cons assignment information given in constoblock hashmap */
 SCIP_RETCODE Seeed::assignSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int additionalNBlocks, Seeedpool* seeedpool)
 {
    int oldNBlocks = nBlocks;
@@ -643,7 +645,8 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int ad
    return SCIP_OKAY;
 }
 
-/** fills out the seeed with the vector constoblock if there are still assigned conss and vars */
+/** adds blocks and assigns open conss to such a new block or to master
+ *  according to the cons assignment information given in constoblock vector */
 SCIP_RETCODE Seeed::assignSeeedFromConstoblockVector(std::vector<int> constoblock, int additionalNBlocks, Seeedpool* seeedpool)
 {
    int oldNBlocks = nBlocks;
@@ -1643,7 +1646,11 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
    return SCIP_OKAY;
 }
 
-/** assigns the open cons and open vars which are implicitly assigned, i.e. constraints having variables in more than one block or having variables only in one block and no open vars; vice versa for variables */
+/** assigns every open cons/var
+ *  - to the respective block if it hits exactly one blockvar/blockcons and no open vars/conss
+ *  - to master/linking if it hits blockvars/blockconss assigned to different blocks
+ *  - and every cons to master that hits a master var
+ *  - and every var to master if it does not hit any blockcons and has no open cons */
 SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
 {
    int cons;
@@ -1702,7 +1709,7 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
       if( blocksOfBlockvars.size() > 1 && !master )
          bookAsMasterCons(cons);
 
-      /* also assign open constraints that have only vars assigned to one single block and no open vars*/
+      /* also assign open constraints that only have vars assigned to one single block and no open vars*/
       if( blocksOfBlockvars.size() == 1 && !hitsOpenVar && !master)
          bookAsBlockCons(cons, blocksOfBlockvars[0]);
    }
@@ -2222,10 +2229,12 @@ SCIP_Real Seeed::evaluate(Seeedpool* seeedpool)
       break;
    case DEC_DECTYPE_UNKNOWN:
       assert(FALSE);
+      totalscore = 1.0;
       break;
    default:
       SCIPerrorMessage("No rule for this decomposition type, cannot compute score\n");
       assert(FALSE);
+      totalscore = 1.0;
       break;
    }
    if(nBlocks == 0)
@@ -2245,7 +2254,9 @@ SCIP_Real Seeed::evaluate(Seeedpool* seeedpool)
 }
 
 
-/** fills out the border of a seeed with the hashmap constoblock */
+/** assigns all conss to master or declares them to be open (and declares all vars to be open)
+ *  according to the cons assignment information given in constoblock hashmap
+ *  precondition: no cons or var is already assigned to a block */
 SCIP_RETCODE Seeed::filloutBorderFromConstoblock(SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool)
 {
    assert(givenNBlocks >= 0);
@@ -2286,7 +2297,10 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock(SCIP_HASHMAP* constoblock, int 
    return SCIP_OKAY;
 }
 
-/** fills out a seeed with the hashmap constoblock */
+/** assigns all conss to master or a block
+ *  according to the cons assignment information given in constoblock hashmap
+ *  calculates implicit variable assignment through cons assignment
+ *  precondition: no cons or var is already assigned to a block and constoblock contains information for every cons */
 SCIP_RETCODE Seeed::filloutSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int givenNBlocks, Seeedpool* seeedpool)
 {
    assert(givenNBlocks >= 0);

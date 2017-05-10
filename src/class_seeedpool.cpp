@@ -2254,9 +2254,7 @@ ConsClassifier* Seeedpool::createConsClassifierForConsnamesDigitFreeIdentical()
       std::stringstream text;
       text << "This class contains all constraints with a name similar to \"" << consnamesToCompare[firstUnreached]
          << "\".";
-      int newClass = classifier->addClass(consnamesToCompare[firstUnreached].c_str(), text.str().c_str(), BOTH);
-      assert(newClass == currentClass);
-
+      classifier->addClass(consnamesToCompare[firstUnreached].c_str(), text.str().c_str(), BOTH);
    } // endwhile( !openConss.empty() )
 
    /** assign constraint indices to classes */

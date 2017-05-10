@@ -168,10 +168,11 @@ public:
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** fills out the border of the seeed with the hashmap constoblock if there are still assigned conss and vars */
+   /** assigns open conss to master according to the cons assignment information given in constoblock hashmap */
    SCIP_RETCODE assignBorderFromConstoblock(
-      SCIP_HASHMAP* constoblock,
-      int givenNBlocks,
+      SCIP_HASHMAP* constoblock,    /**< hashmap containing an assignment of conss to a block or to master
+                                         (master is indicated by assigning cons to index givenNBlocks) */
+      int givenNBlocks,             /**< number of blocks the hashmap contains */
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
@@ -190,17 +191,21 @@ public:
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** fills out the seeed with the hashmap constoblock if there are still assigned conss and vars */
+   /** adds blocks and assigns open conss to such a new block or to master
+    *  according to the cons assignment information given in constoblock hashmap */
    SCIP_RETCODE assignSeeedFromConstoblock(
-      SCIP_HASHMAP* constoblock,
-      int givenNBlocks,
+      SCIP_HASHMAP* constoblock,    /**< hashmap containing an assignment of conss to a block or to master
+                                         (master is indicated by assigning cons to index additionalNBlocks) */
+      int additionalNBlocks,        /**< number of (additional) blocks the hashmap contains */
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** fills out the seeed with the vector constoblock  */
+   /** adds blocks and assigns open conss to such a new block or to master
+    *  according to the cons assignment information given in constoblock vector */
    SCIP_RETCODE assignSeeedFromConstoblockVector(
-      std::vector<int> constoblock,
-      int additionalNBlocks,
+      std::vector<int> constoblock, /**< vector containing an assignment of conss to a block or to master
+                                         (master is indicated by assigning cons to index additionalNBlocks) */
+      int additionalNBlocks,        /**< number of (additional) blocks the vector contains */
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
@@ -249,7 +254,7 @@ public:
    void  calcOpenvars(
    );
 
-   /** returns whether all constraints are assigned and deletes the vector open cons if all are assigned */
+   /** returns true if all constraints are assigned and deletes the vector open conss if so */
    bool checkAllConsAssigned(
    );
 
@@ -281,7 +286,11 @@ public:
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** assigns the open cons and open vars which are implicitly assigned */
+   /** assigns every open cons/var
+    *  - to the respective block if it hits exactly one blockvar/blockcons and no open vars/conss
+    *  - to master/linking if it hits blockvars/blockconss assigned to different blocks
+    *  - and every cons to master that hits a master var
+    *  - and every var to master if it does not hit any blockcons and has no open cons */
    SCIP_RETCODE considerImplicits(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
@@ -319,17 +328,24 @@ public:
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** fills out the border of the seeed with the hashmap constoblock */
+   /** assigns all conss to master or declares them to be open (and declares all vars to be open)
+    *  according to the cons assignment information given in constoblock hashmap
+    *  precondition: no cons or var is already assigned to a block */
    SCIP_RETCODE filloutBorderFromConstoblock(
-      SCIP_HASHMAP* constoblock,
-      int givenNBlocks,
+      SCIP_HASHMAP* constoblock,    /**< hashmap containing an assignment of conss to a block or to master
+                                         (master is indicated by assigning cons to index givenNBlocks) */
+      int givenNBlocks,             /**< number of blocks the hashmap contains */
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** fills out a seeed with the hashmap constoblock */
+   /** assigns all conss to master or a block
+    *  according to the cons assignment information given in constoblock hashmap
+    *  calculates implicit variable assignment through cons assignment
+    *  precondition: no cons or var is already assigned to a block and constoblock contains information for every cons */
    SCIP_RETCODE filloutSeeedFromConstoblock(
-      SCIP_HASHMAP* constoblock,
-      int givenNBlocks,
+      SCIP_HASHMAP* constoblock,    /**< hashmap containing an assignment of conss to a block or to master
+                                         (master is indicated by assigning cons to index givenNBlocks) */
+      int givenNBlocks,             /**< number of blocks the hashmap contains */
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
@@ -381,7 +397,8 @@ public:
    );
 
    /** returns the "maximum white score" (the smaller the better) */
-   SCIP_Real getMaxWhiteScore();
+   SCIP_Real getMaxWhiteScore(
+   );
 
    /** returns number of blocks */
    int getNBlocks(
@@ -629,17 +646,20 @@ public:
 
 private:
 
-   /** assigns open conss (and vars) that hit a block and other open vars (or conss) that are open to border */
-   SCIP_RETCODE assignOpenPartialHittingToMaster(
-      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
-   );
-
-   /** assigns open conss that hit a block and other open vars that are open to border */
+   /** assigns every open cons to master that hits
+    *  - exactly one block var and at least one open var or
+    *  - a master var */
    SCIP_RETCODE assignOpenPartialHittingConsToMaster(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** assigns open vars that hit a block and other open conss that are open to border */
+   /** assigns open conss/vars that hit exactly one block and at least one open var/cons to border */
+   SCIP_RETCODE assignOpenPartialHittingToMaster(
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
+   );
+
+   /** assigns every open var to linking that hits
+    *  - exactly one block cons and at least one open cons */
    SCIP_RETCODE assignOpenPartialHittingVarsToMaster(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
