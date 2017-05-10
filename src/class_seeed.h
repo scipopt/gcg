@@ -36,13 +36,10 @@
 #ifndef GCG_CLASS_SEEED_H__
 #define GCG_CLASS_SEEED_H__
 
-
 #include "objscip/objscip.h"
 #include <vector>
 #include "struct_detector.h"
 #include <string>
-
-
 
 namespace gcg {
 
@@ -55,7 +52,6 @@ enum USERGIVEN
 };
 
 class Seeedpool;
-
 
 class Seeed
 {
@@ -121,16 +117,14 @@ public:
    Seeed(
       SCIP*          scip,
 	  int             id,      		   	/**< id that is given to this seeed */
-	  int             nDetectors,          /**< number of detectors */
-	  int				   nConss,				   /**< number of constraints */
-	  int 				nVars				      /**< number of variables */
-      );
-
+	  int             ndetectors,          /**< number of detectors */
+	  int				   nconss,				   /**< number of constraints */
+	  int 				nvars				      /**< number of variables */
+   );
 
    Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool);
 
    ~Seeed();
-
 
    /** add a block, returns the number of the new block */
    int addBlock();
