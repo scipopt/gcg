@@ -2656,33 +2656,24 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    DEC_DECOMP**   newdecomp                              /** the new decomp created from the seeed */
   )
 {
-
    char detectorchaininfo[SCIP_MAXSTRLEN];
-
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* varindex;
    SCIP_HASHMAP* consindex;
-
    SCIP_VAR*** stairlinkingvars;
    SCIP_VAR*** subscipvars;
    SCIP_VAR**  linkingvars;
    SCIP_CONS**  linkingconss;
    SCIP_CONS*** subscipconss;
-
    DEC_SCORES scores;
-
-
-
    int* nsubscipconss;
    int* nsubscipvars;
    int* nstairlinkingvars;
    int  nlinkingvars;
-
    int varcounter = 1;  /* in varindex counting starts with 1 */
    int conscounter = 1; /* in consindex counting starts with 1 */
    int counterstairlinkingvars = 0;
-
    int size;
 
    assert(seeed->checkConsistency() );
@@ -2693,7 +2684,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    //           seeed->displayConss();
    //     if(seeed->detectorChain.size() > 2)
    //    seeed->showScatterPlot(this);
-
 
    /** set nblocks */
    DECdecompSetNBlocks( *newdecomp, seeed->getNBlocks() );
@@ -2743,7 +2733,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       }
    }
 
-
    DECdecompSetSubscipconss(scip, *newdecomp, subscipconss, nsubscipconss );
 
    DECdecompSetConstoblock(*newdecomp, constoblock);
@@ -2751,8 +2740,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    /* finished setting constraint data structures */
    /** now: set variables */
-
-
    SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nsubscipvars, seeed->getNBlocks() ) );
    SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipvars, seeed->getNBlocks() ) );
    SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars, seeed->getNBlocks() ) );
@@ -2762,7 +2749,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIP_CALL_ABORT( SCIPhashmapCreate( &varindex, SCIPblkmem(scip), seeed->getNVars() ) );
 
    /** set linkingvars */
-
    nlinkingvars = seeed->getNLinkingvars() + seeed->getNMastervars() + seeed->getNTotalStairlinkingvars();
 
    if( nlinkingvars != 0 )
@@ -2792,11 +2778,9 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       varcounter++;
    }
 
-
    /* set block variables */
    for ( int b = 0; b < seeed->getNBlocks(); ++b )
    {
-
       if(seeed->getNVarsForBlock(b) > 0)
          SCIP_CALL_ABORT(SCIPallocBufferArray(scip, &subscipvars[b], seeed->getNVarsForBlock(b) ) );
       else subscipvars[b] = NULL;
@@ -2841,12 +2825,9 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    DECdecompSetVarindex(*newdecomp, varindex);
    DECdecompSetVartoblock(*newdecomp, vartoblock) ;
 
-
-
    /** free stuff */
 
    /** free constraints */
-
    SCIPfreeBufferArrayNull(scip, &(linkingconss));
    SCIPfreeBufferArrayNull(scip, &(nsubscipconss));
    for( int b = seeed->getNBlocks()-1; b >= 0; --b )
@@ -2856,7 +2837,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIPfreeBufferArrayNull(scip, &(subscipconss));
 
    /** free vars stuff */
-
    SCIPfreeBufferArrayNull(scip, &(linkingvars) );
    for( int b = seeed->getNBlocks()-1; b >= 0; --b )
    {
@@ -2879,23 +2859,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIPfreeBufferArrayNull(scip, &(stairlinkingvars) );
    SCIPfreeBufferArrayNull(scip, &(nstairlinkingvars));
 
-
-   //            /** test detector chain output */
-   //            char detectorchainstring[SCIP_MAXSTRLEN];
-   //
-   //            sprintf(detectorchainstring, "%s", DECdetectorGetName(decompositions[i]->detectorchain[0]));
-   //
-   //              for( i=1; i < ndetectors; ++i )
-   //              {
-   //                 sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(decompositions[i]->detectorchain[i]) );
-   //              }
-   //
-   //              SCIPinfoMessage(scip, NULL, "%s %s", detectorchainstring, LINEBREAK);
-
-
-   /*** OLD stuff above */
-
-
    /** set detectorchain */
    int ndetectors = seeed->getNDetectors();
    (*newdecomp)->sizedetectorchain = ndetectors;
@@ -2911,9 +2874,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
          (*newdecomp)->detectorchain[k] = seeed->getDetectorchain()[k];
    }
 
-
    /** set statistical detector chain data */
-
    DECdecompSetSeeedID(*newdecomp, seeed->getID() );
    if( seeed->getNDetectors() > 0 )
    {
@@ -2928,7 +2889,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    }
 
    /** set detector chain info string */
-
    SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
    if( seeed->usergiven == USERGIVEN::PARTIAL || seeed->usergiven == USERGIVEN::COMPLETE || seeed->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
    {
@@ -2974,12 +2934,9 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIP_CALL(DECevaluateDecomposition(scip, *newdecomp, &scores) );
 
    assert(scores.maxwhitescore == seeed->getMaxWhiteScore() );
-
    assert(DECdecompCheckConsistency(scip, (*newdecomp) ) );
-
    assert(!SCIPhashmapIsEmpty((*newdecomp)->constoblock));
    assert(!SCIPhashmapIsEmpty((*newdecomp)->vartoblock));
-
 
    return SCIP_OKAY;
 }
@@ -2999,7 +2956,5 @@ SCIP_RETCODE createSeeedFromDecomp(
    return SCIP_OKAY;
 
 }
-
-
 
 } /* namespace gcg */
