@@ -212,7 +212,7 @@ def generate_files(files):
                     
                     ax1.set_ylim(bottom=0.0, top=lpmax+1) 
                     ax1.set_xlim(left=xmin, right=xmax)
-                    ax1 = df.plot(kind='scatter', x=xaxis, y='nlpvars', color='blue', label='nlpvars', ax=ax1, secondary_y=False, s=6);
+                    ax1 = df.plot(kind='scatter', x=xaxis, y='nlpvars', color='blue', label='nlpvars', ax=ax1, secondary_y=False, s=1);
                     ax1.set_xticklabels([])
                     x_axis = ax1.axes.get_xaxis()
                     x_axis.set_label_text('')
@@ -224,7 +224,7 @@ def generate_files(files):
                         base = 0.01
                     ax2.set_ylim(bottom=0.0, top=ipmax+1)
                     ax2.set_xlim(left=xmin, right=xmax)
-                    ax2 = df.plot(kind='scatter', x=xaxis, y='nipvars', color='red', label='nipvars', ax=ax2, secondary_y=False, s=6);
+                    ax2 = df.plot(kind='scatter', x=xaxis, y='nipvars', color='red', label='nipvars', ax=ax2, secondary_y=False, s=1);
                     myLocator = mticker.MultipleLocator(base)
                     if(xaxis == 'iter' or base > 0.5):
                         majorFormatter = mticker.FormatStrFormatter('%d')
