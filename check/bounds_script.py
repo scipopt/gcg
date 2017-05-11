@@ -42,6 +42,11 @@ def parse_arguments(args):
     parser.add_argument('-o', '--outdir', type=str,
                         default="plots",
                         help='Arguments to be passed on to the performance profiler')
+                        
+    parser.add_argument('-x', '--xaxis', type=str,
+                        default="time",
+                        help='Values to be used in x-axis (can be "time" or "iter")')
+
     parser.add_argument('filename', nargs='+',
                         help='Name of the files to be used for the creating the bound plots')
     parsed_args = parser.parse_args(args)
@@ -54,6 +59,7 @@ def set_params(args):
     :return:
     """
     params['outdir'] = args.outdir
+    params['xaxis'] = args.xaxis
 
 def generate_files(files):
     """
@@ -61,6 +67,7 @@ def generate_files(files):
     :param files: List of files to be parsed
     :return: A list of all the generated files to be deleted after performance profiling
     """
+    xaxis = params['xaxis']
     for file in files:
         # file = os.path.join(DIR, filename)
         with open(file) as _file:
@@ -123,11 +130,14 @@ def generate_files(files):
                         boundmap[i] = boundheader[i]
                        
                     df = pd.DataFrame.from_dict(data = boundlines, orient = 'index', dtype = float)
+                    
+                    if len(df) == 0:
+                        continue
                     #df.colums = boundheader
                     df.rename(columns = boundmap, inplace=True)
-                    df.sort_values(by='iter', inplace=True)
-                    #print df
 
+                    df.sort_values(by='iter', inplace=True)
+                    
                     dfvar = pd.DataFrame.from_dict(data = varlines, orient = 'index', dtype = float)
 
                     varmap = {}
@@ -138,7 +148,7 @@ def generate_files(files):
                     
                     #print dfvar
 
-                    dfvar = dfvar.set_index('name')
+                    dfvar = dfvar.set_index(keys='name')
 
                     dfvar=dfvar.astype(float)
 
@@ -151,8 +161,6 @@ def generate_files(files):
 
                     for i in range(len(df)):
                         df.set_value(str(i), 'nipvars', len(dfvar[(dfvar['solval'] > 0) & (dfvar['rootredcostcall'] == i)]))
-
-                    #df = df.set_index('iter')
                     
                     if df.empty:
                         continue
@@ -171,42 +179,97 @@ def generate_files(files):
                     if( np.isnan(lpmax) ):
                         lpmax = 0.0    
                         
-                    xmax = len(df) - 1
+                    #xmax = len(df) - 1
+                    
+                    #print df['time'].value_counts()
+                    #df_size = df.groupby('time').size() 
+                    
+                    #df_first =  df.groupby('time').first() 
 
+                    df['time_count'] = df.groupby('time')['time'].transform('count') 
+                    
+                    df['time_first'] = df.groupby('time')['iter'].transform('first') 
+                    
+                    df['time'] = df['time'] + 0.01*(df['iter'] - df['time_first'])/df['time_count']
+                    
+                    
+                    df['time_diff'] = df["time"].diff(1)
+                    df['time_diff'][0] = df['time'][0]
+
+                    xmax = df[xaxis].max()
+                    xmin = df[xaxis].min()
+                                    
+                    df = df.set_index(keys=xaxis, drop=False)
+                    
+                    #print df
+                    
+                    #gs = gridspec.GridSpec(4, 1, height_ratios=[3, 1, 1, 1]) 
                     gs = gridspec.GridSpec(3, 1, height_ratios=[3, 1, 1]) 
                     ax = plt.subplot(gs[0])
                     ax1 = plt.subplot(gs[1])
                     ax2 = plt.subplot(gs[2])
+                    #ax3 = plt.subplot(gs[3])
                     
                     ax1.set_ylim(bottom=0.0, top=lpmax+1) 
-                    ax1.set_xlim(left=0.0, right=xmax)
-                    ax1 = df.plot(kind='scatter', x='iter', y='nlpvars', color='blue', label='nlpvars', ax=ax1, secondary_y=False, s=6);
+                    ax1.set_xlim(left=xmin, right=xmax)
+                    ax1 = df.plot(kind='scatter', x=xaxis, y='nlpvars', color='blue', label='nlpvars', ax=ax1, secondary_y=False, s=6);
                     ax1.set_xticklabels([])
                     x_axis = ax1.axes.get_xaxis()
                     x_axis.set_label_text('')
                     x_axis.set_visible(False)                    
-                    base = 10 ** (math.floor(math.log10(len(df.index))))
+                    #base = 10 ** (math.floor(math.log10(len(df.index))))
+                    if( xmax > 0 ):
+                        base = 10.0 ** (math.floor(math.log10(xmax)))
+                    else:
+                        base = 0.01
                     ax2.set_ylim(bottom=0.0, top=ipmax+1)
-                    ax2.set_xlim(left=0.0, right=xmax)
-                    ax2 = df.plot(kind='scatter', x='iter', y='nipvars', color='red', label='nipvars', ax=ax2, secondary_y=False, s=6);
+                    ax2.set_xlim(left=xmin, right=xmax)
+                    ax2 = df.plot(kind='scatter', x=xaxis, y='nipvars', color='red', label='nipvars', ax=ax2, secondary_y=False, s=6);
                     myLocator = mticker.MultipleLocator(base)
-                    majorFormatter = mticker.FormatStrFormatter('%d')
+                    if(xaxis == 'iter' or base > 0.5):
+                        majorFormatter = mticker.FormatStrFormatter('%d')
+                    else:
+                        majorFormatter = mticker.FormatStrFormatter('%0.2f')
                     ax2.xaxis.set_major_locator(myLocator)
                     ax2.xaxis.set_major_formatter(majorFormatter)
                     ax2.xaxis.set_minor_locator(plt.NullLocator())                
+                    
+                    #ax3.set_ylim(bottom=0.0, top=ipmax)
+                    #ax3.set_xlim(left=xmin, right=xmax)
+                    ##ax3 = df.plot(kind='scatter', x=xaxis, y='time_diff', color='green', label='ptime', ax=ax3, secondary_y=False, s=6);
+                    #ax3 = df.plot(kind='line', x=xaxis, y='time_diff', color='green', label='ptime', ax=ax3, secondary_y=False);
+                    #myLocator = mticker.MultipleLocator(base)
+                    #if(xaxis == 'iter' or base > 0.5):
+                    #    majorFormatter = mticker.FormatStrFormatter('%d')
+                    #else:
+                    #    majorFormatter = mticker.FormatStrFormatter('%0.2f')
+                    #ax3.xaxis.set_major_locator(myLocator)
+                    #ax3.xaxis.set_major_formatter(majorFormatter)
+                    #ax3.xaxis.set_minor_locator(plt.NullLocator())                
+
                     
                     ax.set_xticklabels([])
                     x_axis = ax.axes.get_xaxis()
                     x_axis.set_label_text('')
                     x_axis.set_visible(False)
-
-                    ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax);
-                    ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax);
-                    ax = df.plot(kind='scatter', x='iter', y='db', color='blue', label=None, ax=ax, s=1);
-                    ax = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.25);
-                    ax = df.plot(kind='line', y='dualoptdiff', color='orange', label='dualoptdiff', ax=ax, secondary_y=True, alpha=0.25);
                     
-                    plt.savefig(params['outdir']+"/"+name+"_"+settings+".png")
+                    ax.set_xlim(left=xmin, right=xmax)
+
+                    ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax, linewidth=0.5);
+                    ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax, linewidth=0.5);
+                    ax = df.plot(kind='scatter', x=xaxis, y='db', color='blue', label=None, ax=ax, s=0.5);
+                    ax = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
+                    ax = df.plot(kind='line', y='dualoptdiff', color='orange', label='dualoptdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
+                    
+                    plt.savefig(params['outdir']+"/"+name+"_"+settings+"_"+xaxis+".png")
+                    
+                    df = None
+                    dfvar = None
+                    
+                    boundheader = None
+                    varheader = None
+                    varlines = {}
+                    boundlines = {}
                     
                 elif vardetails:
                     line_array = line.split()
