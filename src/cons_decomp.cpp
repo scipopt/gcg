@@ -591,8 +591,12 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
 
    }
 
+
    SCIPdialogMessage(scip, NULL, "\n");
-   SCIPdialogMessage(scip, NULL, "Summary:             presolved       original \n");
+   SCIPdialogMessage(scip, NULL, "============================================================================================= ");
+   SCIPdialogMessage(scip, NULL, "\n");
+   SCIPdialogMessage(scip, NULL, "Summary              presolved       original \n");
+   SCIPdialogMessage(scip, NULL, "                     ---------       -------- \n");
    SCIPdialogMessage(scip, NULL, "detected             ");
    SCIPdialogMessage(scip, NULL, "%9d       ", ndetectedpresolved );
    SCIPdialogMessage(scip, NULL, "%8d\n", ndetectedunpresolved );
@@ -603,7 +607,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    SCIPdialogMessage(scip, NULL, "%9d       ", nuserpresolvedfull );
    SCIPdialogMessage(scip, NULL, "%8d\n", nuserunpresolvedfull );
 
-
+   SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
    SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  maxwhi  history  pre  nopcon  nopvar  usr  sel \n");
    SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------  ---  --- \n");
 
@@ -659,7 +663,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
       SCIPdialogMessage(scip, NULL, "%3s  \n", (seeed->isSelected() ? "yes" : "no")  );
    }
 
-
+   SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
 
    return SCIP_OKAY;
 }
@@ -729,20 +733,23 @@ SCIP_RETCODE SCIPconshdlrDecompShowLegend(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n" );
 
-   SCIPdialogMessage(scip, NULL, "\n%30s  %4s\n", "detector" , "char"  );
-
+   SCIPdialogMessage(scip, NULL, "\n%30s    %4s\n", "detector" , "char"  );
+   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "--------" , "----"  );
    for( int det = 0; det < conshdlrdata->ndetectors; ++det )
    {
       DEC_DETECTOR* detector;
 
       detector = conshdlrdata->detectors[det];
 
-      SCIPdialogMessage(scip, NULL, "%30s  %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector)  );
+      SCIPdialogMessage(scip, NULL, "%30s    %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector)  );
    }
-   SCIPdialogMessage(scip, NULL, "%30s  %4s\n", "given by user" , "U"  );
+   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "given by user" , "U"  );
 
    SCIPdialogMessage(scip, NULL, "\n" );
+
+   SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
 
 //   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  maxwhi  history  pre  nopcon  nopvar"
 //      "  usr"
@@ -751,22 +758,100 @@ SCIP_RETCODE SCIPconshdlrDecompShowLegend(
 //      "  ---"
 //      "  --- \n");
 
-   SCIPdialogMessage(scip, NULL, "%8s  %s\n", "id", "id of the decomposition");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nbloc", "number of blocks");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nmacon", "number of master constraints");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nlivar", "number of linking variables");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nmavar", "number of master variables (do not occur in blocks)");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "maxwhi", "maximum white score (ie min black, black is block and border, stairlinking counts as linking)");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "history", "list of detector chars worked on this decomposition ");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "pre", "is this decomposition for the presolved problem");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nopcon", "number of open constraints");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "nopvar", "number of open variables");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "usr", "is this decomposition given by the user");
-   SCIPdialogMessage(scip, NULL, "%8s  %100s\n", "sel", "is this decomposition selected at the moment");
+   SCIPdialogMessage(scip, NULL, "\n" );
+
+   SCIPdialogMessage(scip, NULL, "List of abbreviations of decomposition table \n" );
+   SCIPdialogMessage(scip, NULL, "\n" );
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "abbreviation", "description");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------------", "-----------");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "id", "id of the decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nbloc", "number of blocks");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmacon", "number of master constraints");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nlivar", "number of linking variables");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmavar", "number of master variables (do not occur in blocks)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "maxwhi", "maximum white score (i.e. minimize black area, black area is block and border area, stairlinking counts as linking)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "history", "list of detector chars worked on this decomposition ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "pre", "is this decomposition for the presolved problem");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopcon", "number of open constraints");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopvar", "number of open variables");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "usr", "was this decomposition given by the user");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sel", "is this decomposition selected at the moment");
+
+   SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE SCIPconshdlrDecompModifyNVisualized(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   char* ntovisualize;
+   SCIP_Bool endoffile;
+   int newval;
+
+   int commandlen;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIPdialogMessage(scip, NULL, "Please specify the maximum number of decompositions displayed at once in the table [%d]:\n", conshdlrdata->selectvisulength );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
+   commandlen = strlen(ntovisualize);
+
+   newval = conshdlrdata->selectvisulength;
+   if( commandlen != 0)
+      newval = atoi(ntovisualize);
+
+   if (newval != 0)
+      conshdlrdata->selectvisulength = newval;
 
    return SCIP_OKAY;
 }
+
+SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   char* ntovisualize;
+   SCIP_Bool endoffile;
+   int idtovisu;
+
+   int commandlen;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIPdialogMessage(scip, NULL, "Please specify id of the decomposition to be visualized:\n", conshdlrdata->selectvisulength );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
+   commandlen = strlen(ntovisualize);
+
+   idtovisu = conshdlrdata->selectvisulength;
+   if( commandlen != 0)
+      idtovisu = atoi(ntovisualize);
+
+   gcg::Seeedpool* seeedpool = (conshdlrdata->listall[idtovisu]->isfromunpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+   conshdlrdata->listall[idtovisu]->showScatterPlot(seeedpool);
+
+   return SCIP_OKAY;
+}
+
 
 
 SCIP_RETCODE SCIPconshdlrDecompShowHelp(
@@ -774,6 +859,43 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    )
 {
 
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
+
+//   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  maxwhi  history  pre  nopcon  nopvar"
+//      "  usr"
+//      "  sel \n");
+//   SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------"
+//      "  ---"
+//      "  --- \n");
+
+   SCIPdialogMessage(scip, NULL, "\n" );
+
+   SCIPdialogMessage(scip, NULL, "List of selection commands \n" );
+   SCIPdialogMessage(scip, NULL, "\n" );
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "command", "description");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "-------", "-----------");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "[decomposition id]", "selects/unselects decomposition with given id");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "back", "displays the preceding decompositions (if there are some)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are some)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "top", "displays the first decompositions");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "end", "displays the last decompositions");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "legend", "displays the legend for table header and history abbreviations");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "help", "displays this help");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "modifies the number of displayed decompositions ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes selection and goes back to main menu");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "experimental feature: visualizes the specified decomposition ");
+
+   SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
    return SCIP_OKAY;
@@ -804,16 +926,20 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
 
    SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
 
-   SCIP_CALL( SCIPconshdlrDecompShowListExtractHeader(scip) );
 
    /** 2) while user has not aborted: show current list extract */
 
    while ( !finished )
    {
       int commandlen;
+
+      SCIP_CALL( SCIPconshdlrDecompShowListExtractHeader(scip) );
+
       SCIP_CALL( SCIPconshdlrDecompShowListExtract(scip) );
 
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter selection command or decomposition id to select: ", &command, &endoffile) );
+
+
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please enter selection command or decomposition id to select (or \"h\" for help) : ", &command, &endoffile) );
 
       commandlen = strlen(command);
 
@@ -855,7 +981,23 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
          continue;
       }
 
+      if( strncmp( command, "modify", commandlen) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompModifyNVisualized(scip, dialoghdlr, dialog) );
+         continue;
+      }
 
+      if( strncmp( command, "help", commandlen) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompShowHelp(scip) );
+         continue;
+      }
+
+      if( strncmp( command, "visualize", commandlen) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
+         continue;
+      }
 
    }
 

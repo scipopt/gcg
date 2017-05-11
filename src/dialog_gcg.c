@@ -617,36 +617,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
 
    SCIP_CALL( SCIPconshdlrDecompExecSelect(scip, dialoghdlr, dialog ) );
 
-
-
-   conshdlrs = SCIPgetConshdlrs(scip);
-   nconshdlrs = SCIPgetNConshdlrs(scip);
-
    /* display list of constraint handlers */
-   SCIPdialogMessage(scip, NULL, "\n");
-   SCIPdialogMessage(scip, NULL, " Legend:\n");
-   SCIPdialogMessage(scip, NULL, "  prestim (presolve timing): 'f'ast, 'm'edium, 'e'xhaustive\n\n");
-   SCIPdialogMessage(scip, NULL, " constraint handler   chckprio enfoprio sepaprio sepaf propf eager prestim description\n");
-   SCIPdialogMessage(scip, NULL, " ------------------   -------- -------- -------- ----- ----- ----- ------- -----------\n");
-   for( i = 0; i < nconshdlrs; ++i )
-   {
-      SCIPdialogMessage(scip, NULL, " %-20s ", SCIPconshdlrGetName(conshdlrs[i]));
-      if( strlen(SCIPconshdlrGetName(conshdlrs[i])) > 20 )
-         SCIPdialogMessage(scip, NULL, "\n %20s ", "-->");
-      SCIPdialogMessage(scip, NULL, "%8d %8d %8d %5d %5d %5d  ",
-         SCIPconshdlrGetCheckPriority(conshdlrs[i]),
-         SCIPconshdlrGetEnfoPriority(conshdlrs[i]),
-         SCIPconshdlrGetSepaPriority(conshdlrs[i]),
-         SCIPconshdlrGetSepaFreq(conshdlrs[i]),
-         SCIPconshdlrGetPropFreq(conshdlrs[i]),
-         SCIPconshdlrGetEagerFreq(conshdlrs[i]));
-      SCIPdialogMessage(scip, NULL, "   %c", (SCIPconshdlrGetPresolTiming(conshdlrs[i]) & SCIP_PRESOLTIMING_FAST) ? 'f' : ' ');
-      SCIPdialogMessage(scip, NULL, "%c", (SCIPconshdlrGetPresolTiming(conshdlrs[i]) & SCIP_PRESOLTIMING_MEDIUM) ? 'm' : ' ');
-      SCIPdialogMessage(scip, NULL, "%c  ", (SCIPconshdlrGetPresolTiming(conshdlrs[i]) & SCIP_PRESOLTIMING_EXHAUSTIVE) ? 'e' : ' ');
-      SCIPdialogMessage(scip, NULL, "%s", SCIPconshdlrGetDesc(conshdlrs[i]));
-      SCIPdialogMessage(scip, NULL, "\n");
-   }
-   SCIPdialogMessage(scip, NULL, "\n");
+    SCIPdialogMessage(scip, NULL, "\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
