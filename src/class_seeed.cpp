@@ -3247,7 +3247,8 @@ void Seeed::showScatterPlot(
    char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
    int rowboxcounter = 0;
    int colboxcounter = 0;
-
+   std::stringstream command;
+   char* buffer;
 
    if ( !draft )
 	   writeScatterPlot(seeedpool, help);
@@ -3255,6 +3256,16 @@ void Seeed::showScatterPlot(
    std::ofstream ofs;
 
    ofs.open ("helper.plg", std::ofstream::out );
+
+   /*experimental */
+   if( !writeonly )
+   {
+      writeonly= TRUE;
+      sprintf(buffer, "help%d.pdf", this->getID() );
+      filename = buffer;
+   }
+   /**/
+
 
    if( writeonly )
    {
@@ -3330,13 +3341,29 @@ void Seeed::showScatterPlot(
       ofs << "plot 0" << std::endl;
 
    if( !writeonly )
-      ofs << "pause -1" << std::endl;
+      ofs << "pause -1 " << std::endl;
 
    ofs.close();
-   if( !draft)
-	   system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+   if( writeonly )
+   {
+      if( !draft)
+         system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+      else
+         system("gnuplot helper.plg ");
+   }
    else
-	   system("gnuplot helper.plg ");
+   {
+      if( !draft)
+         system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+      else
+         system("gnuplot helper.plg");
+   }
+
+
+   command << "evince " << filename << " &";
+
+   system(command.str().c_str() );
+
 //   system("rm helpScatter.txt");
 //   system("rm helper.plg");
    return;
