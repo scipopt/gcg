@@ -71,6 +71,10 @@ def generate_files(files):
             rootbounds = False
             vardetails = False
             settings = 'default'
+            varlines = {}
+            varheader = None
+            boundlines = {}
+            boundheader = None
             for line in _file:
                 if line.startswith("loaded parameter file"):
                     settings=line.split()[-1]
@@ -83,6 +87,7 @@ def generate_files(files):
                 elif orig and line.startswith("Presolved Problem  :"):
                     orig = False
                 elif orig and line.startswith("  Problem name     :"):
+                    #print line
                     name = line.split()[3]      
                     name = name.split("/")[-1]
                     tmp_name = name.split(".")[-1]
@@ -94,21 +99,44 @@ def generate_files(files):
                     rootbounds = True
                 elif rootbounds and line.startswith("iter	pb	db") and rootbounds:
                     line_array = line.split()
-                    df = pd.DataFrame(columns = line_array, dtype = float)
+                    #df = pd.DataFrame(columns = line_array, dtype = float)
+                    boundheader = line_array
                 elif rootbounds and line.startswith("Pricing Summary:") and rootbounds:
                     rootbounds = False
                 elif rootbounds:
                     line_array = line.split()
-                    df.loc[line_array[0]] = line_array
+                    #df.loc[line_array[0]] = line_array
+                    boundlines[line_array[0]] = line_array
                 elif not vardetails and line.startswith("AddedVarDetails:"):
                     vardetails = True
                 elif vardetails and line.startswith("VAR: name	node	time") and vardetails:
                     line_array = line.split()
-                    dfvar = pd.DataFrame(columns = line_array[1:], dtype = float)
+                    #dfvar = pd.DataFrame(columns = line_array[1:], dtype = float)
+                    varheader = line_array[1:]
                 elif vardetails and line.startswith("VAR:") and not int(line.split()[2]) == 1:
                     continue
                 elif vardetails and line.startswith("Root node:"):
                     vardetails = False
+                                     
+                    boundmap = {}
+                    for i in range(len(boundheader)):
+                        boundmap[i] = boundheader[i]
+                       
+                    df = pd.DataFrame.from_dict(data = boundlines, orient = 'index', dtype = float)
+                    #df.colums = boundheader
+                    df.rename(columns = boundmap, inplace=True)
+                    df.sort_values(by='iter', inplace=True)
+                    #print df
+
+                    dfvar = pd.DataFrame.from_dict(data = varlines, orient = 'index', dtype = float)
+
+                    varmap = {}
+                    for i in range(len(varheader)):
+                        varmap[i] = varheader[i]
+
+                    dfvar.rename(columns = varmap, inplace=True)
+                    
+                    #print dfvar
 
                     dfvar = dfvar.set_index('name')
 
@@ -182,7 +210,8 @@ def generate_files(files):
                     
                 elif vardetails:
                     line_array = line.split()
-                    dfvar.loc[line_array[1]] = line_array[1:]
+                    varlines[line_array[1]] = line_array[1:]
+                    #dfvar.loc[line_array[1]] = line_array[1:]
 
 
                     
