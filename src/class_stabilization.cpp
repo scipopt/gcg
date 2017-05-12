@@ -544,13 +544,17 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       vals = SCIPgetValsLinear(origprob, origcons);
 
       SCIP_Real dual =  pricingtype->consGetDual(scip_, masterconss[i]);
+      SCIP_Real stabdual;
+
+      consGetDual(i, &stabdual);
+
       assert(!SCIPisInfinity(scip_, ABS(dual)));
 
-      if( SCIPisFeasPositive(scip_, dual) )
+      if( SCIPisFeasPositive(scip_, stabdual) )
       {
          lhs = SCIPgetLhsLinear(origprob, origcons);
       }
-      else if( SCIPisFeasNegative(scip_, dual) )
+      else if( SCIPisFeasNegative(scip_, stabdual) )
       {
          lhs = SCIPgetRhsLinear(origprob, origcons);
       }
@@ -585,13 +589,13 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
          }
          assert(stabcenterconss != NULL);
          assert(vals != NULL);
-         gradientproduct += (stabcenterconss[i] - dual) * vals[j] * val;
+         gradientproduct -= (dual - stabcenterconss[i]) * vals[j] * val;
       }
 
       assert(stabcenterconss != NULL);
       assert(!SCIPisInfinity(scip_, ABS(lhs)));
 
-      gradientproduct -= (stabcenterconss[i] - dual) * lhs;
+      gradientproduct += (dual - stabcenterconss[i]) * lhs;
    }
 
    /* mastercuts */
@@ -610,11 +614,15 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       SCIP_Real dual = pricingtype->rowGetDual(mastercuts[i]);
       assert(!SCIPisInfinity(scip_, ABS(dual)));
 
-      if( SCIPisFeasGT(scip_, dual, 0.0) )
+      SCIP_Real stabdual;
+
+      rowGetDual(i, &stabdual);
+
+      if( SCIPisFeasGT(scip_, stabdual, 0.0) )
       {
          lhs = SCIProwGetLhs(origcut);
       }
-      else if( SCIPisFeasLT(scip_, dual, 0.0) )
+      else if( SCIPisFeasLT(scip_, stabdual, 0.0) )
       {
          lhs = SCIProwGetRhs(origcut);
       }
@@ -652,13 +660,13 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
          }
          assert(stabcentercuts != NULL);
          assert(vals != NULL);
-         gradientproduct += (stabcentercuts[i] - dual) * vals[j] * val;
+         gradientproduct -= (dual - stabcentercuts[i]) * vals[j] * val;
       }
 
       assert(!SCIPisInfinity(scip_, ABS(lhs)));
       assert(stabcentercuts != NULL);
 
-      gradientproduct -=  (stabcentercuts[i] - dual) * lhs;
+      gradientproduct +=  (dual - stabcentercuts[i]) * lhs;
    }
 
    /* linkingconss */
@@ -677,9 +685,11 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       assert(pricingprob != NULL);
 
       assert(stabcenterlinkingconss != NULL);
-      SCIP_Real dual = stabcenterlinkingconss[i] - pricingtype->consGetDual(scip_, linkingcons);
+      SCIP_Real dual = pricingtype->consGetDual(scip_, linkingcons) - stabcenterlinkingconss[i];
 
-      if( SCIPisFeasZero(origprob, dual) )
+      SCIP_Real stabdual = linkingconsGetDual(i);
+
+      if( SCIPisFeasZero(origprob, stabdual) )
          continue;
 
       SCIP_Real masterval = SCIPgetSolVal(scip_, (SCIP_SOL*) NULL, mastervar);
@@ -687,7 +697,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       assert(!SCIPisInfinity(scip_, ABS(masterval)));
       assert(!SCIPisInfinity(scip_, ABS(pricingval)));
       assert(!SCIPisInfinity(scip_, ABS(dual)));
-      gradientproduct += dual * (masterval - pricingval);
+      gradientproduct -= dual * (masterval - pricingval);
    }
 
    SCIPdebugMessage("Update gradient with value %g.\n", gradientproduct);
