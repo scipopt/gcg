@@ -230,9 +230,23 @@ def generate_files(files):
                         majorFormatter = mticker.FormatStrFormatter('%d')
                     else:
                         majorFormatter = mticker.FormatStrFormatter('%0.2f')
+                    #ax2.xaxis.set_major_locator(mticker.LinearLocator())
                     ax2.xaxis.set_major_locator(myLocator)
                     ax2.xaxis.set_major_formatter(majorFormatter)
+                    #ax2.xaxis.set_major_locator(mticker.FixedLocator([xmax]))
+                    #ax2.xaxis.set_major_locator(mticker.MaxNLocator(prune='upper'))
+                    fixedFormatter = mticker.FormatStrFormatter('%g')
+                    ax2.xaxis.set_major_formatter(fixedFormatter)
                     ax2.xaxis.set_minor_locator(plt.NullLocator())                
+
+                    #ax2.xaxis.get_majorticklabels()[-1].set_visible(False)
+                    
+                    lim = ax2.get_xlim()
+
+                    ax2.set_xticks(list(ax2.get_xticks()) + [xmax])
+                    ax2.set_xlim(lim)
+                    
+                    ax2.xaxis.get_major_ticks()[-1].set_pad(15)
                     
                     #ax3.set_ylim(bottom=0.0, top=ipmax)
                     #ax3.set_xlim(left=xmin, right=xmax)
