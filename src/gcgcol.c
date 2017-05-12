@@ -43,6 +43,8 @@
 #include "scip_misc.h"
 #include "blockmemshell/memory.h"
 #include "relax_gcg.h"
+#include "pricer_gcg.h"
+#include "objpricer_gcg.h"
 
 #include <assert.h>
 
@@ -373,6 +375,34 @@ SCIP_RETCODE GCGcolUpdateRedcost(
 
    return SCIP_OKAY;
 }
+/** update reduced cost of variable and increase age */
+SCIP_RETCODE GCGcolSetMastercoefs(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           mastercoefs,        /**< pointer to new array of master coefficients */
+   int                  nmastercoefs        /**< new number of master coefficients */
+   )
+{
+   gcgcol->nmastercoefs = nmastercoefs;
+
+   gcgcol->mastercoefs = *mastercoefs;
+
+   return SCIP_OKAY;
+}
+
+/** update reduced cost of variable and increase age */
+SCIP_RETCODE GCGcolUpdateMastercuts(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           mastercuts,         /**< pointer to new array of master cut coefficients */
+   int                  nmastercuts         /**< new number of master cut coefficients */
+   )
+{
+   SCIPreallocBlockMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts), )
+   gcgcol->nmastercoefs = nmastercoefs;
+
+   gcgcol->mastercoefs = *mastercoefs;
+
+   return SCIP_OKAY;
+}
 
 /** return solution value of variable in gcg column */
 SCIP_Real GCGcolGetSolVal(
@@ -399,4 +429,53 @@ SCIP_Real GCGcolGetSolVal(
    }
 
    return vals[pos];
+}
+
+
+/** compute orthogonality of two gcg columns */
+SCIP_Real GCGcolComputeOrth(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COL*             gcgcol1,            /**< first gcg column */
+   GCG_COL*             gcgcol2             /**< second gcg column */
+)
+{
+   SCIP_Real orth = 0.0;
+
+   SCIP_Bool isray1;
+   int prob1;
+   SCIP* pricingprob1 = GCGcolGetPricingProb(gcgcol1);
+
+   SCIP_VAR** solvars1;
+   SCIP_Real* solvals1;
+   int nsolvars1;
+
+   SCIP_Bool isray2;
+   int prob2;
+   SCIP* pricingprob2 = GCGcolGetPricingProb(gcgcol2);
+
+   SCIP_VAR** solvars2;
+   SCIP_Real* solvals2;
+   int nsolvars2;
+
+
+   assert(scip != NULL);
+   assert(gcgcol1 != NULL);
+   assert(gcgcol2 != NULL);
+
+   prob1 = GCGcolGetProbNr(gcgcol1);
+   isray1 = GCGcolIsRay(gcgcol1);
+   nsolvars1 = GCGcolGetNVars(gcgcol1);
+   solvars1 = GCGcolGetVars(gcgcol1);
+   solvals1 = GCGcolGetVals(gcgcol1);
+
+   prob2 = GCGcolGetProbNr(gcgcol2);
+   isray2 = GCGcolIsRay(gcgcol2);
+   nsolvars2 = GCGcolGetNVars(gcgcol2);
+   solvars2 = GCGcolGetVars(gcgcol2);
+   solvals2 = GCGcolGetVals(gcgcol2);
+
+
+
+
+   return orth;
 }
