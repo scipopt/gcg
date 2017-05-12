@@ -179,7 +179,7 @@ public:
    );
 
 
-   /** TODO */
+   /** sorts the seeed and calculates a its implicit assignments, hashvalue and evaluation */
    SCIP_RETCODE prepareSeeed(
       SeeedPtr seeed
    );
@@ -395,7 +395,8 @@ public:
    );
 
 
-   /** TODO */
+   /** returns a vector of seeeds where all seeeds of given seeeds having only one block are removed
+    *  except for the two seeeds with the lowest numbers of masterconss */
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds
    );

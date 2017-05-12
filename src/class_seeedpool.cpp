@@ -637,6 +637,7 @@ Seeedpool::Seeedpool(SCIP* givenScip, const char* conshdlrName, SCIP_Bool _trans
 }//end constructor
 
 
+/** destructor */
 Seeedpool::~Seeedpool()
 {
    for( size_t i = 0; i < allrelevantseeeds.size(); ++i )
@@ -663,7 +664,7 @@ Seeedpool::~Seeedpool()
 
 
 /** creates constraint and variable classifiers, and deduces block number candidates */
-SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(SCIP* givenScip )
+SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(SCIP* givenScip)
 {
    SCIP_Bool conssclassnnonzeros;
    SCIP_Bool conssclassscipconstypes;
@@ -1041,7 +1042,7 @@ std::vector<SeeedPtr>    Seeedpool::findSeeeds()
             #pragma omp critical (seeedcount)
             seeed->setID( getNewIdForSeeed() );
 
-            seeed->calcHashvalue();
+            seeed->calcHashvalue();thinout
             seeed->addDecChangesFromAncestor(seeedPtr);
             seeed->setFinishedByFinisher(true);
 
@@ -1583,7 +1584,7 @@ std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers(std::vector<V
 }
 
 
-/** TODO */
+/** sorts the seeed and calculates a its implicit assignments, hashvalue and evaluation */
 SCIP_RETCODE Seeedpool::prepareSeeed(SeeedPtr seeed)
 {
    seeed->considerImplicits(this);
@@ -2542,6 +2543,8 @@ void Seeedpool::reduceVarclasses()
 }
 
 
+/** returns a vector of seeeds where all seeeds of the given seeeds having only one block are removed
+ *  except for the two seeeds with the lowest numbers of masterconss */
 std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(std::vector<SeeedPtr> seeeds)
 {
    std::vector<SeeedPtr> remainingSeeeds(0);
@@ -2552,13 +2555,15 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(std::vector<SeeedPtr>
 
    for( size_t i = 0; i < seeeds.size(); ++i )
    {
-      if( seeeds[i]->getNBlocks() == 1)
+      /** calculate lowest and second lowest number of masterconss of all one block seeeds */
+      if( seeeds[i]->getNBlocks() == 1 )
       {
-         if(seeeds[i]->getNMasterconss() < nmasterconssfirst )
+         if( seeeds[i]->getNMasterconss() < nmasterconssfirst )
          {
             nmasterconsssecond = nmasterconssfirst;
             nmasterconssfirst = seeeds[i]->getNMasterconss();
-         }else if(seeeds[i]->getNMasterconss() < nmasterconsssecond )
+         }
+         else if( seeeds[i]->getNMasterconss() < nmasterconsssecond )
             nmasterconsssecond = seeeds[i]->getNMasterconss();
 
       }
@@ -2566,15 +2571,18 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(std::vector<SeeedPtr>
          remainingSeeeds.push_back(seeeds[i]);
    }
 
-   for(int i = 0; i < (int) seeeds.size(); ++i)
+   /** the two one block seeeds with lowest number of masterconss remain */
+   for( int i = 0; i < (int)seeeds.size(); ++i )
    {
-      if( seeeds[i]->getNBlocks() == 1 && ( seeeds[i]->getNMasterconss() == nmasterconssfirst || seeeds[i]->getNMasterconss() == nmasterconsssecond ) )
+      if( seeeds[i]->getNBlocks() == 1
+         && (seeeds[i]->getNMasterconss() == nmasterconssfirst || seeeds[i]->getNMasterconss() == nmasterconsssecond) )
          remainingSeeeds.push_back(seeeds[i]);
-      else if (seeeds[i]->getNBlocks() == 1)
+      else if( seeeds[i]->getNBlocks() == 1 )
          oneBlockSeeeds.push_back(seeeds[i]);
    }
 
-   for(int i = 0; i < (int) oneBlockSeeeds.size(); ++i)
+   /** all other one block seeeds are removed */
+   for( int i = 0; i < (int)oneBlockSeeeds.size(); ++i )
    {
       delete oneBlockSeeeds[i];
       oneBlockSeeeds[i] = NULL;

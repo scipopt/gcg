@@ -71,7 +71,7 @@ const int Seeed::primes[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43
 
 const int Seeed::nPrimes = 70;
 
-/** constructor(s) */
+/** constructor */
 Seeed::Seeed(SCIP* _scip, int givenId, int givenNDetectors, int givenNConss, int givenNVars) :
    scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0),
    varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(std::vector<bool>(givenNDetectors, false)),
@@ -82,6 +82,7 @@ Seeed::Seeed(SCIP* _scip, int givenId, int givenNDetectors, int givenNConss, int
 {
 }
 
+/** copy constructor */
 Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
 {
    scip = (seeedToCopy->scip);
@@ -195,7 +196,8 @@ bool Seeed::areOpenVarsAndConssCalculated()
    return openVarsAndConssCalculated;
 }
 
-/** assigns open conss and vars if they can be found in blocks */
+/** assigns open conss and vars if they can be found in blocks
+ *  calls assignHittingOpenconss() and assignHittingOpenvars() */
 SCIP_RETCODE Seeed::assignAllDependent(Seeedpool* seeedpool)
 {
    bool success = true;
@@ -279,7 +281,12 @@ bool Seeed::assignCurrentStairlinking(Seeedpool* seeedpool)
    return assigned;
 }
 
-/** assigns open conss if they include blockvars, returns true if open conss are assigned */
+/** assigns every open cons
+ *  - to master if it hits blockvars of different blocks
+ *  - to the respective block if it hits a blockvar of exactly one block and no stairlinking var
+ *  - to master if it hits a stairlinking var but there is no block the cons may be assigned to
+ *  - to the block with the lowest number of conss if it hits a stairlinking var and there are blocks the cons may be assigned to
+ *  returns true if there is a cons that has been assigned */
 bool Seeed::assignHittingOpenconss(Seeedpool* seeedpool)
 {
    int cons;
@@ -289,7 +296,7 @@ bool Seeed::assignHittingOpenconss(Seeedpool* seeedpool)
    bool assigned = false; /** true if open conss get assigned in this function */
    std::vector<int>::iterator it;
    std::vector<int> blocksOfStairlinkingvars; /** first block of the stairlinkingvars which can be found in the conss */
-   std::vector<int> blocksOfVars; /** blocks in which can be found in the vars of the cons */
+   std::vector<int> blocksOfVars; /** blocks of the vars which can be found in the conss */
    std::vector<int> blocks; /** cons can be assigned to the blocks stored in this vector */
    std::vector<int> eraseBlock;
 
@@ -417,7 +424,10 @@ bool Seeed::assignHittingOpenconss(Seeedpool* seeedpool)
    return assigned;
 }
 
-/** assigns open vars if they can be found in one block, returns true if open vars are assigned */
+/** assigns every open var
+ *  - to the respective block if it hits blockconss of exactly one block
+ *  - to linking if it hits blockconss of more than one different blocks
+ *  returns true if there is a var that has been assigned */
 bool Seeed::assignHittingOpenvars(Seeedpool* seeedpool)
 {
    int cons;
@@ -3030,7 +3040,7 @@ bool Seeed::isVarStairlinkingvarOfBlock(int var, int block)
    }
 }
 
-/** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments assignOpenPartialHittingToMaster() */
+/** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments (assignOpenPartialHittingToMaster()) */
  SCIP_RETCODE Seeed::refineToMaster(Seeedpool* seeedpool)
 {
     changedHashvalue = true;

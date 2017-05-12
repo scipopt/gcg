@@ -163,7 +163,8 @@ public:
    bool areOpenVarsAndConssCalculated(
    );
 
-   /** assigns open conss and vars if they can be found in blocks */
+   /** assigns open conss and vars if they can be found in blocks
+    *  calls assignHittingOpenconss() and assignHittingOpenvars() */
    SCIP_RETCODE assignAllDependent(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
@@ -181,12 +182,20 @@ public:
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** assigns open conss if they include blockvars, returns true if open conss are assigned */
+   /** assigns every open cons
+    *  - to master if it hits blockvars of different blocks
+    *  - to the respective block if it hits a blockvar of exactly one block and no stairlinking var
+    *  - to master if it hits a stairlinking var but there is no block the cons may be assigned to
+    *  - to the block with the lowest number of conss if it hits a stairlinking var and there are blocks the cons may be assigned to
+    *  returns true if there is a cons that has been assigned */
    bool assignHittingOpenconss(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** assigns open vars if they can be found in one block, returns true if open vars are assigned */
+   /** assigns every open var
+    *  - to the respective block if it hits blockconss of exactly one block
+    *  - to linking if it hits blockconss of more than one different blocks
+    *  returns true if there is a var that has been assigned */
    bool assignHittingOpenvars(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
@@ -323,7 +332,7 @@ public:
       Seeedpool* seeedpool = NULL   /**< a seeedpool that uses this seeed */
    );
 
-   /** computes the score of the given seeed based on the border, the average density score and the ratio of linking variables*/
+   /** computes the score of the given seeed based on the border, the average density score and the ratio of linking variables */
    SCIP_Real evaluate(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
@@ -548,7 +557,7 @@ public:
       int block
    );
 
-   /** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments assignOpenPartialHittingToMaster() */
+   /** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments (assignOpenPartialHittingToMaster()) */
    SCIP_RETCODE refineToMaster(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
