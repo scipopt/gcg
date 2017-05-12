@@ -1184,7 +1184,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
        SeeedPtr seeed = finishedSeeeds[i];
 
        SCIP_CALL_ABORT( createDecompFromSeeed(seeed, &decompositions[i]) );
-
     }
 
     //SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );

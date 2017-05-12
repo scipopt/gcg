@@ -122,7 +122,7 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    usergiven = seeedToCopy->usergiven;
    isselected = false;
    detectorchainstring = NULL;
-
+   isfromunpresolved = FALSE;
 }
 
 Seeed::~Seeed()
@@ -164,6 +164,8 @@ int Seeed::addBlock()
  void Seeed::addDecChangesFromAncestor(Seeed* ancestor){
 
     /** add number of new blocks */
+    assert( ancestor != NULL );
+
     nNewBlocks.push_back( getNBlocks() -  ancestor->getNBlocks() );
     pctConssFromFree.push_back( (ancestor->getNOpenconss() - getNOpenconss() ) / (SCIP_Real) getNConss() );
     pctVarsFromFree.push_back( (ancestor->getNOpenvars() - getNOpenvars() ) / (SCIP_Real) getNVars() );
@@ -3248,7 +3250,7 @@ void Seeed::showScatterPlot(
    int rowboxcounter = 0;
    int colboxcounter = 0;
    std::stringstream command;
-   char* buffer;
+   char buffer[SCIP_MAXSTRLEN];
 
    if ( !draft )
 	   writeScatterPlot(seeedpool, help);

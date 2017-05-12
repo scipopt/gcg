@@ -151,13 +151,13 @@ struct SCIP_ConshdlrData
    SCIP_Bool             unpresolveduserseeedadded;         /**< stores whether or not an unpresolved user seeed was added */
 
    /** new data fields for selection management */
-   int                   startidvisu;                       /** when displaying the list of decomps, this is the starting index */
-   int                   selectvisulength;                  /** number of decompositions to be displayed at once */
-   std::vector<SeeedPtr> listall;                           /** vector containing the current list of decomps to visualize*/
-   std::vector<int>      selected;                          /** vector contianing the indices of selected decompositions */
-   SCIP_Bool             selectedexists;                    /** are there some selected decompositions */
+   int                    startidvisu;                       /** when displaying the list of decomps, this is the starting index */
+   int                    selectvisulength;                  /** number of decompositions to be displayed at once */
+   std::vector<SeeedPtr>* listall;                           /** vector containing the current list of decomps to visualize*/
+   std::vector<int>*      selected;                          /** vector contianing the indices of selected decompositions */
+   SCIP_Bool              selectedexists;                    /** are there some selected decompositions */
 
-   int                   seeedcounter;                      /** counts the number of seeeds, used for seeed ids */
+   int                    seeedcounter;                      /** counts the number of seeeds, used for seeed ids */
 
 };
 
@@ -421,6 +421,10 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
    SCIPfreeMemoryArrayNull(scip, &conshdlrdata->decdecomps);
+
+   delete &conshdlrdata->selected;
+   delete &conshdlrdata->listall;
+
    SCIPfreeMemory(scip, &conshdlrdata);
 
    return SCIP_OKAY;
@@ -494,8 +498,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->unpresolveduserseeedadded = FALSE;
    conshdlrdata->startidvisu = 0;
    conshdlrdata->selectvisulength = 10;
-   conshdlrdata->listall = std::vector<SeeedPtr>(0);
-   conshdlrdata->selected = std::vector<int>(0);
+   conshdlrdata->listall = new std::vector<SeeedPtr>(0, NULL);
+   conshdlrdata->selected = new std::vector<int>(0, -1);
    conshdlrdata->selectedexists = FALSE;
    conshdlrdata->sizedecomps = 10;
    conshdlrdata->sizeincompleteseeeds = 10;
@@ -572,10 +576,10 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    assert(conshdlrdata != NULL);
 
    /** count corresponding seeeds */
-   for ( i = 0; i < conshdlrdata->listall.size(); ++i )
+   for ( i = 0; i < conshdlrdata->listall->size(); ++i )
    {
       SeeedPtr seeed;
-      seeed = conshdlrdata->listall[i];
+      seeed = conshdlrdata->listall->at(i);
       if( seeed->isComplete() && seeed->usergiven == gcg::USERGIVEN::NOT && !seeed->isfromunpresolved )
          ++ndetectedpresolved;
       if( seeed->isComplete() && seeed->usergiven == gcg::USERGIVEN::NOT && seeed->isfromunpresolved )
@@ -637,11 +641,11 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
 
    size_t i;
 
-   for( i = conshdlrdata->startidvisu; i < (size_t) conshdlrdata->startidvisu + (size_t) conshdlrdata->selectvisulength && i < conshdlrdata->listall.size(); ++i)
+   for( i = conshdlrdata->startidvisu; i < (size_t) conshdlrdata->startidvisu + (size_t) conshdlrdata->selectvisulength && i < conshdlrdata->listall->size(); ++i)
    {
       SeeedPtr seeed;
 
-      seeed = conshdlrdata->listall[i];
+      seeed = conshdlrdata->listall->at(i);
 
       assert( seeed->checkConsistency() );
 
@@ -838,7 +842,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIPdialogMessage(scip, NULL, "Please specify id of the decomposition to be visualized:\n", conshdlrdata->selectvisulength );
+   SCIPdialogMessage(scip, NULL, "Please specify the id of the decomposition to be visualized:\n", conshdlrdata->selectvisulength );
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
@@ -846,8 +850,8 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    if( commandlen != 0)
       idtovisu = atoi(ntovisualize);
 
-   gcg::Seeedpool* seeedpool = (conshdlrdata->listall[idtovisu]->isfromunpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
-   conshdlrdata->listall[idtovisu]->showScatterPlot(seeedpool);
+   gcg::Seeedpool* seeedpool = (conshdlrdata->listall->at(idtovisu)->isfromunpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+   conshdlrdata->listall->at(idtovisu)->showScatterPlot(seeedpool);
 
    return SCIP_OKAY;
 }
@@ -954,8 +958,8 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
       if( strncmp( command, "next", commandlen) == 0 )
       {
          conshdlrdata->startidvisu += conshdlrdata->selectvisulength;
-         if(conshdlrdata->startidvisu > conshdlrdata->listall.size() - conshdlrdata->selectvisulength )
-            conshdlrdata->startidvisu = conshdlrdata->listall.size() - conshdlrdata->selectvisulength ;
+         if(conshdlrdata->startidvisu > conshdlrdata->listall->size() - conshdlrdata->selectvisulength )
+            conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
          continue;
       }
       if( strncmp( command, "top", commandlen) == 0 )
@@ -965,7 +969,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
       }
       if( strncmp( command, "end", commandlen) == 0 )
       {
-         conshdlrdata->startidvisu = conshdlrdata->listall.size() - conshdlrdata->selectvisulength ;
+         conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
          continue;
       }
 
@@ -1424,7 +1428,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    assert( SCIPconshdlrDecompCheckConsistency(scip) );
 
    conshdlrdata->startidvisu = 0;
-   conshdlrdata->listall.clear();
+   conshdlrdata->listall->clear();
 
    /** sort decomposition and finished seeeds according to max white score */
    SCIP_CALL( DECconshdlrDecompSortDecompositionsByScore(scip) );
@@ -1436,7 +1440,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
        SeeedPtr seeed;
        seeed = conshdlrdata->allrelevantfinishedseeeds[i];
 
-       conshdlrdata->listall.push_back(seeed);
+       conshdlrdata->listall->push_back(seeed);
     }
 
    /** 2) add presolved unfinished */
@@ -1445,7 +1449,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
       SeeedPtr seeed;
       seeed = conshdlrdata->incompleteseeeds[i];
 
-      conshdlrdata->listall.push_back(seeed);
+      conshdlrdata->listall->push_back(seeed);
    }
 
    /** 3) add unpresolved finished */
@@ -1455,7 +1459,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
       seeed = conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i];
       seeed->isfromunpresolved = TRUE;
 
-      conshdlrdata->listall.push_back(seeed);
+      conshdlrdata->listall->push_back(seeed);
    }
 
    /** 4) add unpresolved finished */
@@ -1465,7 +1469,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
       seeed = conshdlrdata->seeedpoolunpresolved->currSeeeds[i];
       seeed->isfromunpresolved = TRUE;
 
-      conshdlrdata->listall.push_back(seeed);
+      conshdlrdata->listall->push_back(seeed);
    }
 
 
@@ -2080,14 +2084,14 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
 
    /** 6) selected list is syncronized with selected information in seeeds */
 
-   selectediter = conshdlrdata->selected.begin();
-   selectediterend = conshdlrdata->selected.end();
+   selectediter = conshdlrdata->selected->begin();
+   selectediterend = conshdlrdata->selected->end();
 
    selectedcounter = 0;
 
    for( ; selectediter != selectediterend; ++selectediter )
    {
-      SeeedPtr seeed = conshdlrdata->listall[*selectediter];
+      SeeedPtr seeed = conshdlrdata->listall->at(*selectediter);
 
       if( !seeed->isSelected() )
       {
@@ -2096,8 +2100,8 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
       }
    }
 
-   seeediter = conshdlrdata->listall.begin();
-   seeediterend = conshdlrdata->listall.end();
+   seeediter = conshdlrdata->listall->begin();
+   seeediterend = conshdlrdata->listall->end();
 
    for( ; seeediter != seeediterend; ++seeediterend )
    {
@@ -2105,7 +2109,7 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
          ++selectedcounter;
    }
 
-   if( (size_t) selectedcounter != conshdlrdata->selected.size() )
+   if( (size_t) selectedcounter != conshdlrdata->selected->size() )
    {
       SCIPwarningMessage(scip, "Warning: there are selected seeeds not part of the list  \n" );
       return FALSE;
@@ -2114,9 +2118,9 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
 
    /** 7) selected exists is syncronized with seleced list */
 
-   if( conshdlrdata->selectedexists != (conshdlrdata->selected.size() > 0) )
+   if( conshdlrdata->selectedexists != (conshdlrdata->selected->size() > 0) )
    {
-      SCIPwarningMessage(scip, "Warning: selectedexists is %d but number of selected is %d   \n", conshdlrdata->selectedexists, conshdlrdata->selected.size() );
+      SCIPwarningMessage(scip, "Warning: selectedexists is %d but number of selected is %d   \n", conshdlrdata->selectedexists, conshdlrdata->selected->size() );
       return FALSE;
    }
 
