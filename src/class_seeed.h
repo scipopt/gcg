@@ -184,7 +184,7 @@ public:
 
    /** assigns every open cons
     *  - to master if it hits blockvars of different blocks
-    *  - to the respective block if it hits a blockvar of exactly one block and no stairlinking var
+    *  - to the respective blocfindVarsLinkingToStairlinkingk if it hits a blockvar of exactly one block and no stairlinking var
     *  - to master if it hits a stairlinking var but there is no block the cons may be assigned to
     *  - to the block with the lowest number of conss if it hits a stairlinking var and there are blocks the cons may be assigned to
     *  returns true if there is a cons that has been assigned */
@@ -264,7 +264,7 @@ public:
    );
 
    /** returns true if all constraints are assigned and deletes the vector open conss if so */
-   bool checkAllConsAssigned(
+   bool checkAllConssAssigned(
    );
 
    /** TODO checks the consistency of this seeed */

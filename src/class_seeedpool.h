@@ -87,10 +87,10 @@ private:
    std::vector<SeeedPtr> 						      currSeeeds;				   /**< vector of current (open) seeeds */
 
 
-   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
+   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are represented by a null pointer */
 
    int                                          maxndetectionrounds;    /**< maximum number of detection rounds */
-   int											         nTotalSeeeds;        	/**< number of created seeeeds, used to give next id */
+   int											         nTotalSeeeds;        	/**< number of created seeeds, used to give next id */
    std::vector<std::vector<int>> 				   varsForConss; 	   	   /**< stores for every constraint the indices of variables that are contained in the constraint */
    std::vector<std::vector<double>>             valsForConss;           /**< stores for every constraint the coefficients of variables that are contained in the constraint (i.e. have a nonzero coefficient) */
    std::vector<std::vector<int>>    				conssForVars;      		/**< stores for every variable the indices of constraints containing this variable */

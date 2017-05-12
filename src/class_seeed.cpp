@@ -77,10 +77,11 @@ Seeed::Seeed(SCIP* _scip, int givenId, int givenNDetectors, int givenNConss, int
    varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(std::vector<bool>(givenNDetectors, false)),
    openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false),
    detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0),
-   pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false),
-   isFinishedByFinisherUnpresolved(false), usergiven(USERGIVEN::NOT), finishedUnpresolvedBy(NULL)
+   pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), usergiven(USERGIVEN::NOT), stemsFromUnpresolved(false),
+   isFinishedByFinisherUnpresolved(false), finishedUnpresolvedBy(NULL) /* changed */
 {
 }
+
 
 /** copy constructor */
 Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
@@ -117,7 +118,7 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    isFinishedByFinisher = seeedToCopy->isFinishedByFinisher;
    nNewBlocks = seeedToCopy->nNewBlocks;
    listofancestorids = seeedToCopy->listofancestorids;
-   usergiven = seeedToCopy->usergiven; /* changed */
+   usergiven = seeedToCopy->usergiven;
    stemsFromUnpresolved = seeedToCopy->stemsFromUnpresolved;
    finishedUnpresolvedBy = seeedToCopy->finishedUnpresolvedBy; /* changed */
    isFinishedByFinisherUnpresolved = seeedToCopy->isFinishedByFinisherUnpresolved;
@@ -858,7 +859,7 @@ void Seeed::calcOpenvars()
 }
 
 /** returns whether all cons are assigned and deletes the vector open cons if all are assigned */
-bool Seeed::checkAllConsAssigned()
+bool Seeed::checkAllConssAssigned()
 {
    for( size_t i = 0; i < openConss.size(); ++i )
    {
@@ -1634,8 +1635,8 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
 
    flushBooked();
 
-   /** check if the open cons are all assigned */
-   if( !checkAllConsAssigned() )
+   /** check if the open conss are all assigned */
+   if( !checkAllConssAssigned() )
    {
       std::cout << "ERROR: Something went wrong, there are still open cons, although all should have been assigned ";
       assert(false);   /** assigns all open constraints and open variables

@@ -1042,7 +1042,7 @@ std::vector<SeeedPtr>    Seeedpool::findSeeeds()
             #pragma omp critical (seeedcount)
             seeed->setID( getNewIdForSeeed() );
 
-            seeed->calcHashvalue();thinout
+            seeed->calcHashvalue();
             seeed->addDecChangesFromAncestor(seeedPtr);
             seeed->setFinishedByFinisher(true);
 
@@ -1608,7 +1608,6 @@ void Seeedpool::freeCurrSeeeds()
          currSeeeds[i] = NULL;
       }
    }
-   return;
 }
 
 
@@ -1625,7 +1624,6 @@ void Seeedpool::addSeeedToFinished(SeeedPtr seeed)
 {
    finishedSeeeds.push_back(seeed);
    allrelevantseeeds.push_back(seeed);
-   return;
 }
 
 
