@@ -617,8 +617,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
 
    SCIP_CALL( SCIPconshdlrDecompExecSelect(scip, dialoghdlr, dialog ) );
 
-   /* display list of constraint handlers */
-    SCIPdialogMessage(scip, NULL, "\n");
+   SCIPdialogMessage(scip, NULL, "\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
@@ -634,10 +633,14 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    int presolrounds;
    presolrounds = -1;
 
+   SCIPdialogMessage(scip, NULL, "In optimize \n");
+
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   assert(SCIPconshdlrDecompCheckConsistency(scip) );
+   SCIPdialogMessage(scip, NULL, "In optimize2 \n");
 
+   assert(SCIPconshdlrDecompCheckConsistency(scip) );
+   SCIPdialogMessage(scip, NULL, "In optimize3 \n");
    SCIPdialogMessage(scip, NULL, "\n");
    switch( SCIPgetStage(scip) )
    {
@@ -647,8 +650,13 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
    case SCIP_STAGE_PROBLEM:
    case SCIP_STAGE_TRANSFORMED:
+      SCIPdialogMessage(scip, NULL, "in transformed \n");
+
    case SCIP_STAGE_PRESOLVING:
-//      if( DEChasDetectionRun(scip) || (DECgetBestDecomp(scip) != NULL) )
+      SCIPdialogMessage(scip, NULL, "in presolving \n");
+
+
+      //      if( DEChasDetectionRun(scip) || (DECgetBestDecomp(scip) != NULL) )
 //      {
 //         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
 //         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
@@ -658,6 +666,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_PRESOLVED:
 
       assert(SCIPconshdlrDecompCheckConsistency(scip) );
+
+      SCIPdialogMessage(scip, NULL, "In presolved \n");
 
       if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
       {
