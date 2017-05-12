@@ -674,7 +674,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
  /** finds decompositions  */
  /** access coefficient matrix constraint-wise */
- std::vector<SeeedPtr>    Seeedpool::findSeeeds(
+ std::vector<SeeedPtr> Seeedpool::findSeeeds(
  ){
     /** 1) read parameter, as there are: maxrounds
      *  2) loop rounds
@@ -2901,22 +2901,12 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 /**
  * creates a seeed for a given decomposition
  */
-SCIP_RETCODE createSeeedFromDecomp(
+SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
   )
 {
-   //SCIP_CONS** conss;
-   //int             id;                  /* id that is given to this seeed */
-   //int             ndetectors;          /* number of detectors */
-   //int             nconss;              /* number of constraints */
-   //int             nvars;               /* number of variables */
-
-   /*conss = SCIPgetConss(scip);
-   nconss = SCIPgetNConss(scip);
-   nvars = SCIPgetNVars(scip);
-
-   Seeed seeed(scip, id, ndetectors, nconss, nvars);*/
+   newseeed = new Seeed(scip, this->getNewIdForSeeed(), this->getNDetectors(), this->getNConss(), this->getNVars() );
 
    return SCIP_OKAY;
 
