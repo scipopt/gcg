@@ -250,6 +250,37 @@ private:
       int                   nsolvars            /**< number of variables in array solvars */
    );
 
+   /** add master variable to all constraints */
+   SCIP_RETCODE addVariableToMasterconstraintsFromGCGCol(
+      SCIP_VAR*             newvar,             /**< The new variable to add */
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   /** compute master coefficients of column */
+   SCIP_RETCODE computeColMastercoefs(
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   /** add variable with computed coefficients to the master cuts */
+   SCIP_RETCODE addVariableToMastercuts(
+      SCIP_VAR*             newvar,             /**< The new variable to add */
+      int                   prob,               /**< number of the pricing problem the solution belongs to */
+      SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
+      SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
+      int                   nsolvars            /**< number of variables in array solvars */
+      );
+
+   /** add variable with computed coefficients to the master cuts */
+   SCIP_RETCODE addVariableToMastercutsFromGCGCol(
+      SCIP_VAR*             newvar,             /**< The new variable to add */
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   /** compute master cut coefficients of column */
+   SCIP_RETCODE computeColMastercuts(
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
    /**
     * check whether pricing can be aborted:
     * if objective value is always integral and the current node's current

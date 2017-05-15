@@ -1162,9 +1162,92 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraints(
 }
 
 /** add master variable to all constraints */
+SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraintsFromGCGCol(
+   SCIP_VAR*             newvar,             /**< The new variable to add */
+   GCG_COL*              gcgcol              /**< GCG column data structure */
+   )
+{
+   SCIP_CONS** masterconss;
+   int nmasterconss;
+   SCIP_Real* mastercoefs;
+   int nlinkvars;
+   int* linkvars;
+
+   SCIP_VAR**            solvars;            /**< array of variables with non-zero value in the solution of the pricing problem */
+   SCIP_Real*            solvals;            /**< array of values in the solution of the pricing problem for variables in array solvars*/
+#ifndef NDEBUG
+   int                   nsolvars;            /**< number of variables in array solvars */
+#endif
+
+   int i;
+   int prob;
+
+   assert(pricerdata != NULL);
+
+   nmasterconss = GCGgetNMasterConss(origprob);
+   masterconss = GCGgetMasterConss(origprob);
+
+   SCIP_CALL( computeColMastercoefs(gcgcol) );
+
+   mastercoefs = GCGcolGetMastercoefs(gcgcol);
+
+   nlinkvars = GCGcolGetNLinkvars(gcgcol);
+   linkvars = GCGcolGetLinkvars(gcgcol);
+   solvars = GCGcolGetVars(gcgcol);
+   solvals = GCGcolGetVals(gcgcol);
+#ifndef NDEBUG
+   nsolvars = GCGcolGetNVars(gcgcol);
+#endif
+
+   prob = GCGcolGetProbNr(gcgcol);
+
+
+   /* compute coef of the variable in the master constraints */
+   for( i = 0; i < nlinkvars; i++ )
+   {
+      SCIP_CONS** linkconss;
+      SCIP_VAR** origvars;
+
+      assert(linkvars[i] < nsolvars );
+      assert(GCGvarIsPricing(solvars[linkvars[i]]));
+      origvars = GCGpricingVarGetOrigvars(solvars[linkvars[i]]);
+      assert(GCGvarIsOriginal(origvars[0]));
+
+      assert(!SCIPisInfinity(scip_, solvals[linkvars[i]]));
+
+      /* original variable is a linking variable, just add it to the linkcons */
+      if( GCGoriginalVarIsLinking(origvars[0]) )
+      {
+#ifndef NDEBUG
+         SCIP_VAR** pricingvars;
+         pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
+#endif
+         linkconss = GCGlinkingVarGetLinkingConss(origvars[0]);
+
+         assert(pricingvars[prob] == solvars[linkvars[i]]);
+         assert(linkconss[prob] != NULL);
+         SCIP_CALL( SCIPaddCoefLinear(scip_, linkconss[prob], newvar, -solvals[linkvars[i]]) );
+         continue;
+      }
+   }
+
+   /* add the variable to the master constraints */
+   for( i = 0; i < nmasterconss; i++ )
+   {
+      if( !SCIPisZero(scip_, mastercoefs[i]) )
+      {
+         assert(!SCIPisInfinity(scip_, mastercoefs[i]) && !SCIPisInfinity(scip_, -mastercoefs[i]));
+         SCIP_CALL( SCIPaddCoefLinear(scip_, masterconss[i], newvar, mastercoefs[i]) );
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
+/** compute master coefficients of column */
 SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
-   SCIP*                 scip,               /**< SCIP data structure */
-   GCG_COL*              gcgcol
+   GCG_COL*              gcgcol              /**< GCG column data structure */
    )
 {
    int prob;
@@ -1174,11 +1257,10 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
    SCIP_Real* solvals;
    int nsolvars;
 
-   int i;
    int c;
    int idx;
 
-   assert(scip != NULL);
+   assert(scip_ != NULL);
    assert(gcgcol != NULL);
 
    prob = GCGcolGetProbNr(gcgcol);
@@ -1192,18 +1274,32 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
    SCIP_CONS* linkcons;
    SCIP* pricingprob;
 
+   int* linkvars;
+   int nlinkvars;
+
    pricingprob = GCGcolGetPricingProb(gcgcol);
 
-   nmasterconss = GCGgetNMasterConss(scip);
-   masterconss = GCGgetMasterConss(scip);
+   nmasterconss = GCGgetNMasterConss(origprob);
+   masterconss = GCGgetMasterConss(origprob);
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &mastercoefs, nmasterconss) ); /*lint !e530*/
+   assert(GCGcolGetNMastercoefs(gcgcol) == 0 || GCGcolGetNMastercoefs(gcgcol) == nmasterconss);
+
+   if( GCGcolGetNMastercoefs(gcgcol) == nmasterconss )
+   {
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &mastercoefs, nmasterconss) ); /*lint !e530*/
    BMSclearMemoryArray(mastercoefs, nmasterconss);
+
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &linkvars, nsolvars) ); /*lint !e530*/
+
+   nlinkvars = 0;
 
    /* compute coef of the variable in the master constraints */
    for( i = 0; i < nsolvars; i++ )
    {
-      if( !SCIPisZero(scip, solvals[i]) )
+      if( !SCIPisZero(origprob, solvals[i]) )
       {
          SCIP_CONS** linkconss;
          SCIP_VAR** origvars;
@@ -1216,47 +1312,55 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
 
          coefs = GCGoriginalVarGetCoefs(origvars[0]);
          ncoefs = GCGoriginalVarGetNCoefs(origvars[0]);
-         assert(!SCIPisInfinity(scip, solvals[i]));
+         assert(!SCIPisInfinity(origprob, solvals[i]));
 
-//         /* original variable is a linking variable, just add it to the linkcons */
-//         if( GCGoriginalVarIsLinking(origvars[0]) )
-//         {
-//#ifndef NDEBUG
-//            SCIP_VAR** pricingvars;
-//            pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
-//#endif
-//            linkconss = GCGlinkingVarGetLinkingConss(origvars[0]);
-//
-//            assert(pricingvars[prob] == solvars[i]);
-//            assert(linkconss[prob] != NULL);
-//            SCIP_CALL( SCIPaddCoefLinear(scip, linkconss[prob], newvar, -solvals[i]) );
-//            continue;
-//         }
+         /* original variable is a linking variable, just add it to the linkcons */
+         if( GCGoriginalVarIsLinking(origvars[0]) )
+         {
+#ifndef NDEBUG
+            SCIP_VAR** pricingvars;
+            pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
+            linkconss = GCGlinkingVarGetLinkingConss(origvars[0]);
+#endif
+            assert(pricingvars[prob] == solvars[i]);
+            assert(linkconss[prob] != NULL);
+
+            linkvars[nlinkvars] = i;
+            ++nlinkvars;
+
+            continue;
+         }
 
          /* for each coef, add coef * solval to the coef of the new variable for the corresponding constraint */
          for( c = 0; c < ncoefs; c++ )
          {
             linkconss = GCGoriginalVarGetMasterconss(origvars[0]);
-            assert(!SCIPisZero(scip, coefs[c]));
-            SCIP_CALL( SCIPgetTransformedCons(scip, linkconss[c], &linkcons) );
+            assert(!SCIPisZero(origprob, coefs[c]));
+            SCIP_CALL( SCIPgetTransformedCons(scip_, linkconss[c], &linkcons) );
 
             idx = (int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, linkcons); /*lint !e507*/
             assert(0 <= idx && idx < nmasterconss);
             assert(masterconss[idx] == linkcons);
+            assert(!SCIPisInfinity(scip_, ABS(coefs[c] * solvals[i])));
             mastercoefs[idx] += coefs[c] * solvals[i];
+            assert(!SCIPisInfinity(scip_, ABS(mastercoefs[idx])));
          }
       }
    }
 
+   GCGcolSetMastercoefs(gcgcol, mastercoefs, nmasterconss);
 
+   GCGcolSetLinkvars(gcgcol, linkvars, nlinkvars);
 
+   SCIPfreeBufferArray(pricingprob, &linkvars); /*lint !e530*/
 
+   SCIPfreeBufferArray(pricingprob, &mastercoefs); /*lint !e530*/
+
+   return SCIP_OKAY;
 }
 
 /** add variable with computed coefficients to the master cuts */
-static
-SCIP_RETCODE addVariableToMastercuts(
-   SCIP*                 scip,               /**< SCIP data structure */
+SCIP_RETCODE ObjPricerGcg::addVariableToMastercuts(
    SCIP_VAR*             newvar,             /**< The new variable to add */
    int                   prob,               /**< number of the pricing problem the solution belongs to */
    SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -1277,15 +1381,15 @@ SCIP_RETCODE addVariableToMastercuts(
    int j;
    int k;
 
-   assert(scip != NULL);
+   assert(scip_ != NULL);
    assert(newvar != NULL);
    assert(solvars != NULL);
    assert(solvals != NULL);
 
    /* get the cuts of the master problem and the corresponding cuts in the original problem */
-   mastercuts = GCGsepaGetMastercuts(scip);
-   nmastercuts = GCGsepaGetNCuts(scip);
-   origcuts = GCGsepaGetOrigcuts(scip);
+   mastercuts = GCGsepaGetMastercuts(scip_);
+   nmastercuts = GCGsepaGetNCuts(scip_);
+   origcuts = GCGsepaGetOrigcuts(scip_);
 
    assert(mastercuts != NULL);
    assert(origcuts != NULL);
@@ -1319,9 +1423,153 @@ SCIP_RETCODE addVariableToMastercuts(
                }
       }
 
-      if( !SCIPisZero(scip, conscoef) )
-         SCIP_CALL( SCIPaddVarToRow(scip , mastercuts[i], newvar, conscoef) );
+      if( !SCIPisZero(scip_, conscoef) )
+         SCIP_CALL( SCIPaddVarToRow(scip_ , mastercuts[i], newvar, conscoef) );
    }
+
+   return SCIP_OKAY;
+}
+
+/** add variable with computed coefficients to the master cuts */
+SCIP_RETCODE ObjPricerGcg::addVariableToMastercutsFromGCGCol(
+   SCIP_VAR*             newvar,             /**< The new variable to add */
+   GCG_COL*              gcgcol              /**< GCG column data structure */
+   )
+{
+   SCIP_ROW** mastercuts;
+   int nmastercuts;
+   SCIP_Real* mastercutcoefs;
+   int nmastercutcoefs;
+   int i;
+
+   assert(scip_ != NULL);
+   assert(newvar != NULL);
+
+   /* get the cuts of the master problem and the corresponding cuts in the original problem */
+   mastercuts = GCGsepaGetMastercuts(scip_);
+   nmastercuts = GCGsepaGetNCuts(scip_);
+
+   assert(mastercuts != NULL);
+
+   SCIP_CALL( computeColMastercuts(gcgcol) );
+
+   mastercutcoefs = GCGcolGetMastercuts(gcgcol);
+   nmastercutcoefs = GCGcolGetNMastercuts(gcgcol);
+
+   assert(nmastercutcoefs == nmastercuts);
+
+   /* compute coef of the variable in the cuts and add it to the cuts */
+   for( i = 0; i < nmastercuts; i++ )
+   {
+      if( !SCIProwIsInLP(mastercuts[i]) )
+         continue;
+
+      if( !SCIPisZero(scip_, mastercutcoefs[i]) )
+         SCIP_CALL( SCIPaddVarToRow(scip_ , mastercuts[i], newvar, mastercutcoefs[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+/** compute master cut coefficients of column */
+SCIP_RETCODE ObjPricerGcg::computeColMastercuts(
+   GCG_COL*              gcgcol              /**< GCG column data structure */
+   )
+{
+   int prob;
+   int i;
+
+   SCIP_VAR** solvars;
+   SCIP_Real* solvals;
+   int nsolvars;
+   int noldmastercuts;
+   int nnewmastercuts;
+   SCIP_Real* newmastercuts;
+
+   assert(scip_ != NULL);
+   assert(gcgcol != NULL);
+
+   prob = GCGcolGetProbNr(gcgcol);
+   nsolvars = GCGcolGetNVars(gcgcol);
+   solvars = GCGcolGetVars(gcgcol);
+   solvals = GCGcolGetVals(gcgcol);
+
+   noldmastercuts = GCGcolGetNMastercuts(gcgcol);
+
+   SCIP_ROW** mastercuts;
+   int nmastercuts;
+   SCIP_ROW** origcuts;
+
+   SCIP_COL** cols;
+   SCIP_Real conscoef;
+   SCIP_VAR* var;
+   SCIP_Real* consvals;
+
+   int j;
+   int k;
+
+   assert(scip_ != NULL);
+   assert(solvars != NULL);
+   assert(solvals != NULL);
+
+   /* get the cuts of the master problem and the corresponding cuts in the original problem */
+   mastercuts = GCGsepaGetMastercuts(scip_);
+   nmastercuts = GCGsepaGetNCuts(scip_);
+   origcuts = GCGsepaGetOrigcuts(scip_);
+
+   assert(mastercuts != NULL);
+   assert(origcuts != NULL);
+
+   assert(nmastercuts - noldmastercuts >= 0);
+
+   if( nmastercuts - noldmastercuts == 0 )
+      return SCIP_OKAY;
+
+   SCIP_CALL( SCIPallocBufferArray(origprob, &newmastercuts, nmastercuts - noldmastercuts) );
+
+   nnewmastercuts = 0;
+
+   /* compute coef of the variable in the cuts and add it to the cuts */
+   for( i = noldmastercuts; i < nmastercuts; i++ )
+   {
+      if( !SCIProwIsInLP(mastercuts[i]) )
+      {
+         newmastercuts[nnewmastercuts] = 0.0;
+         ++nnewmastercuts;
+         continue;
+      }
+
+      /* get columns of the cut and their coefficients */
+      cols = SCIProwGetCols(origcuts[i]);
+      consvals = SCIProwGetVals(origcuts[i]);
+
+      conscoef = 0;
+
+      for( j = 0; j < SCIProwGetNNonz(origcuts[i]); j++ )
+      {
+         int blocknr;
+         var = SCIPcolGetVar(cols[j]);
+         blocknr = GCGvarGetBlock(var);
+         assert(GCGvarIsOriginal(var));
+
+         /* if the belongs to the same block and is no linking variable, update the coef */
+         if( blocknr == prob )
+            for( k = 0; k < nsolvars; k++ )
+               if( solvars[k] == GCGoriginalVarGetPricingVar(var) )
+               {
+                  conscoef += ( consvals[j] * solvals[k] );
+                  break;
+               }
+      }
+
+      newmastercuts[nnewmastercuts] = conscoef;
+      ++nnewmastercuts;
+   }
+
+   GCGcolUpdateMastercuts(gcgcol, newmastercuts, nnewmastercuts);
+
+   SCIPfreeBufferArray(origprob, &newmastercuts);
 
    return SCIP_OKAY;
 }
@@ -1695,7 +1943,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
 
    SCIP_CALL( addVariableToPricedvars(newvar) );
    SCIP_CALL( addVariableToMasterconstraints(newvar, prob, solvars, solvals, nsolvars) );
-   SCIP_CALL( addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars) );
+   SCIP_CALL( addVariableToMastercuts(newvar, prob, solvars, solvals, nsolvars) );
 
    /* add variable to convexity constraint */
    if( !solisray )
@@ -1846,8 +2094,8 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    }
 
    SCIP_CALL( addVariableToPricedvars(newvar) );
-   SCIP_CALL( addVariableToMasterconstraints(newvar, prob, solvars, solvals, nsolvars) );
-   SCIP_CALL( addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars) );
+   SCIP_CALL( addVariableToMasterconstraintsFromGCGCol(newvar, gcgcol) );
+   SCIP_CALL( addVariableToMastercutsFromGCGCol(newvar, gcgcol) );
 
    /* add variable to convexity constraint */
    if( !isray )

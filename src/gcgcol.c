@@ -44,7 +44,6 @@
 #include "blockmemshell/memory.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
-#include "objpricer_gcg.h"
 
 #include <assert.h>
 
@@ -74,6 +73,12 @@ SCIP_RETCODE GCGcreateGcgCol(
    (*gcgcol)->isray = isray;
    (*gcgcol)->redcost = redcost;
    (*gcgcol)->age = 0;
+   (*gcgcol)->mastercoefs = NULL;
+   (*gcgcol)->mastercuts = NULL;
+   (*gcgcol)->linkvars = NULL;
+   (*gcgcol)->nmastercoefs = 0;
+   (*gcgcol)->nmastercuts = 0;
+   (*gcgcol)->nlinkvars = 0;
 
    nnonz = 0;
    for( i = 0; i < nvars; ++i )
@@ -130,6 +135,9 @@ void GCGfreeGcgCol(
    SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vars);
    assert((*gcgcol)->vals != NULL);
    SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vals);
+   SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs);
+   SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars);
+   SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercuts);
    SCIPfreeMemory((*gcgcol)->pricingprob, gcgcol);
 }
 
@@ -375,31 +383,121 @@ SCIP_RETCODE GCGcolUpdateRedcost(
 
    return SCIP_OKAY;
 }
-/** update reduced cost of variable and increase age */
+
+/** get master coefficients of column */
+SCIP_Real* GCGcolGetMastercoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   return gcgcol->mastercoefs;
+}
+
+/** get number of master coefficients of column */
+int GCGcolGetNMastercoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   return gcgcol->nmastercoefs;
+}
+
+/** set master coefficients information of column */
 SCIP_RETCODE GCGcolSetMastercoefs(
    GCG_COL*             gcgcol,             /**< gcg column structure */
-   SCIP_Real*           mastercoefs,        /**< pointer to new array of master coefficients */
+   SCIP_Real*           mastercoefs,        /**< array of master coefficients */
    int                  nmastercoefs        /**< new number of master coefficients */
    )
 {
-   gcgcol->nmastercoefs = nmastercoefs;
+   int i;
 
-   gcgcol->mastercoefs = *mastercoefs;
+   assert(gcgcol->nmastercoefs == 0);
+
+   SCIPallocMemoryArray(gcgcol->pricingprob, &(gcgcol->mastercoefs), nmastercoefs);
+
+   for( i = 0; i < nmastercoefs; ++i )
+   {
+      SCIP_Real coef = mastercoefs[i];
+      gcgcol->mastercoefs[i] = coef;
+   }
+
+   gcgcol->nmastercoefs = nmastercoefs;
 
    return SCIP_OKAY;
 }
 
-/** update reduced cost of variable and increase age */
-SCIP_RETCODE GCGcolUpdateMastercuts(
-   GCG_COL*             gcgcol,             /**< gcg column structure */
-   SCIP_Real*           mastercuts,         /**< pointer to new array of master cut coefficients */
-   int                  nmastercuts         /**< new number of master cut coefficients */
+/** get master coefficients of column */
+int* GCGcolGetLinkvars(
+   GCG_COL*             gcgcol              /**< gcg column structure */
    )
 {
-   SCIPreallocBlockMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts), )
-   gcgcol->nmastercoefs = nmastercoefs;
+   return gcgcol->linkvars;
+}
 
-   gcgcol->mastercoefs = *mastercoefs;
+/** get number of master coefficients of column */
+int GCGcolGetNLinkvars(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   return gcgcol->nlinkvars;
+}
+
+/** set master coefficients information of column */
+SCIP_RETCODE GCGcolSetLinkvars(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   int*                 linkvars,           /**< array of linking variable indices for gcgcol->var */
+   int                  nlinkvars           /**< number of linking variables in gcgcol->var */
+   )
+{
+   int i;
+
+   assert(gcgcol->nlinkvars == 0);
+
+   SCIPallocMemoryArray(gcgcol->pricingprob, &(gcgcol->linkvars), nlinkvars);
+
+   for( i = 0; i < nlinkvars; ++i )
+   {
+      gcgcol->linkvars[i] = linkvars[i];
+   }
+
+   gcgcol->nlinkvars = nlinkvars;
+
+   return SCIP_OKAY;
+}
+
+/** get master cut coefficients of column */
+SCIP_Real* GCGcolGetMastercuts(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   return gcgcol->mastercuts;
+}
+
+/** get number of master cut coefficients of column */
+int GCGcolGetNMastercuts(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   return gcgcol->nmastercuts;
+}
+
+/** update master cut coefficients information of column */
+SCIP_RETCODE GCGcolUpdateMastercuts(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           newmastercuts,      /**< pointer to new array of master cut coefficients */
+   int                  nnewmastercuts      /**< new number of master cut coefficients */
+   )
+{
+   int i;
+
+   if( gcgcol->nmastercuts > 0 )
+      SCIPreallocMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts), gcgcol->nmastercuts + nnewmastercuts);
+   else
+      SCIPallocMemoryArray(GCGcolGetPricingProb(gcgcol), &(gcgcol->mastercuts), nnewmastercuts);
+
+   for( i = 0; i < nnewmastercuts; ++i )
+   {
+      gcgcol->mastercuts[gcgcol->nmastercuts] = newmastercuts[i];
+      ++(gcgcol->nmastercuts);
+   }
 
    return SCIP_OKAY;
 }

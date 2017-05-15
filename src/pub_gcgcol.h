@@ -164,6 +164,68 @@ SCIP_Real GCGcolGetSolVal(
    SCIP_VAR*            var                 /**< variable */
    );
 
+/** get master coefficients of column */
+extern
+SCIP_Real* GCGcolGetMastercoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get number of master coefficients of column */
+extern
+int GCGcolGetNMastercoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** set master coefficients of column */
+extern
+SCIP_RETCODE GCGcolSetMastercoefs(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           mastercoefs,        /**< array of master coefficients */
+   int                  nmastercoefs        /**< number of master coefficients */
+   );
+
+/** get master coefficients of column */
+extern
+int* GCGcolGetLinkvars(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get number of master coefficients of column */
+extern
+int GCGcolGetNLinkvars(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** set master coefficients information of column */
+extern
+SCIP_RETCODE GCGcolSetLinkvars(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   int*                 linkvars,           /**< array of linking variable indices for gcgcol->var */
+   int                  nlinkvars           /**< number of linking variables in gcgcol->var */
+   );
+
+/** get master cut coefficients of column */
+extern
+SCIP_Real* GCGcolGetMastercuts(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get number of master cut coefficients of column */
+extern
+int GCGcolGetNMastercuts(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** update master cut coefficients information of column */
+extern
+SCIP_RETCODE GCGcolUpdateMastercuts(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           newmastercuts,      /**< pointer to new array of master cut coefficients */
+   int                  nnewmastercuts      /**< new number of master cut coefficients */
+   );
+
+
+
 /**@} */
 
 
