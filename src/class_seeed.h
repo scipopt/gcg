@@ -617,6 +617,9 @@ public:
       char*                 detectorchainstring
       );
 
+   SCIP_RETCODE buildDecChainString(
+      );
+
 private:
 
    /** assign open conss (and vars) that hits a block and other open vars (or cons)  that are open to border */

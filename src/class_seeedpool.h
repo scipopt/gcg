@@ -153,6 +153,16 @@ public:
       );
 
 
+
+   /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
+   /*
+    * @return set of completed decomposition
+    * */
+
+   std::vector<SeeedPtr>  finishIncompleteSeeeds(
+      std::vector<SeeedPtr> incompleteseeeds
+    );
+
    /** finds decompositions  */
    void findDecompositions(
     );

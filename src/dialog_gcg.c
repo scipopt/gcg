@@ -709,6 +709,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       /*lint -fallthrough*/
    case SCIP_STAGE_SOLVING:
       assert( SCIPconshdlrDecompCheckConsistency(scip) );
+     SCIP_CALL( SCIPconshdlrDecompChooseBestFromSelected(scip ) );
+
+
       SCIP_CALL( SCIPsolve(scip) );
       break;
 

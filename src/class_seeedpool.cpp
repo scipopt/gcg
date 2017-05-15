@@ -1072,6 +1072,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
        assert(finishedSeeeds[i]->getNOpenconss() == 0);
        assert(finishedSeeeds[i]->getNOpenvars() == 0);
 
+       SCIP_CALL_ABORT(finishedSeeeds[i]->buildDecChainString() );
 
        for( int d = 0; d < nDetectors; ++d )
        {
@@ -1110,6 +1111,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     for( size_t c = 0; c < currSeeeds.size(); ++c )
     {
        duplicate = false;
+       SCIP_CALL_ABORT(currSeeeds[c]->buildDecChainString() );
        for(size_t d = 0; d < delSeeeds.size(); ++d)
        {
           if(currSeeeds[c]==delSeeeds[d])
@@ -1140,6 +1142,84 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     return finishedSeeeds;
 
  }
+
+
+ /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
+/*
+ * @return set of completed decomposition
+ * */
+
+ std::vector<SeeedPtr>    Seeedpool::finishIncompleteSeeeds(
+    std::vector<SeeedPtr> incompleteseeeds
+  )
+{
+    std::vector<SeeedPtr> finisheds(0, NULL);
+    int verboseLevel = 1;
+
+    #pragma omp parallel for schedule(static,1)
+    for( size_t i = 0; i < incompleteseeeds.size(); ++i )
+    {
+       SeeedPtr seeedPtr = incompleteseeeds[i];
+
+       for( int d = 0; d < nFinishingDetectors; ++d )
+       {
+          DEC_DETECTOR* detector = detectorToFinishingScipDetector[d];
+          SCIP_RESULT result = SCIP_DIDNOTFIND;
+          SEEED_PROPAGATION_DATA* seeedPropData;
+          seeedPropData = new SEEED_PROPAGATION_DATA();
+          seeedPropData->seeedpool = this;
+          seeedPropData->nNewSeeeds = 0;
+
+          #pragma omp critical (seeedcount)
+          seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
+
+          if( verboseLevel > 2)
+             std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;
+
+          /** if the finishing of the detector is not enabled go on with the next detector */
+          if( !detector->enabledFinishing )
+             continue;
+
+          std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
+
+          SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
+
+          for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished )
+          {
+             SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+#pragma omp critical (seeedcount)
+             seeed->setID( getNewIdForSeeed() );
+
+             seeed->calcHashvalue();
+             seeed->addDecChangesFromAncestor(seeedPtr);
+             seeed->setFinishedByFinisher(true);
+
+             if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
+             {
+                if( verboseLevel > 2 )
+                {
+                   std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
+                   seeed->showScatterPlot(this);
+                }
+#pragma omp critical (seeedptrstore)
+                {
+                   assert(seeed->getID() >= 0);
+                   finisheds.push_back(seeed);
+       //            allrelevantseeeds.push_back(seeed);
+                }
+             }
+
+             SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
+             seeedPropData->newSeeeds = NULL;
+             seeedPropData->nNewSeeeds = 0;
+          }
+
+          delete seeedPropData->seeedToPropagate;
+          delete seeedPropData;
+       }
+    }// end for finishing curr seeeds
+    return finisheds;
+}
 
  void    Seeedpool::findDecompositions(
  ){
@@ -2921,26 +3001,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       DECdecompSetNNewBlocks(scip, *newdecomp, &(seeed->nNewBlocks[0] ) );
    }
 
-   /** set detector chain info string */
-
-   SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
-   if( seeed->usergiven == USERGIVEN::PARTIAL || seeed->usergiven == USERGIVEN::COMPLETE || seeed->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
-   {
-      char str1[2] = "\0"; /* gives {\0, \0} */
-      str1[0] = 'U';
-      (void) strncat(detectorchaininfo, str1, 1 );
-
-   }
-   for( int d = 0; d < seeed->getNDetectors(); ++d )
-   {
-      //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(seeed->getDetectorchain()[d]));
-      char str[2] = "\0"; /* gives {\0, \0} */
-      str[0] = DECdetectorGetChar(seeed->getDetectorchain()[d]);
-      (void) strncat(detectorchaininfo, str, 1 );
-   }
-
-   SCIP_CALL(DECdecompSetDetectorChainString(scip, *newdecomp, detectorchaininfo) );
-   SCIP_CALL(seeed->setDetectorChainString(detectorchaininfo) );
+      SCIP_CALL(DECdecompSetDetectorChainString(scip, *newdecomp, seeed->detectorchainstring ) );
 
    /** set dectype */
    if( (*newdecomp)->nlinkingvars == seeed->getNTotalStairlinkingvars() && (*newdecomp)->nlinkingconss == 0 && DECdecompGetNLinkingvars((*newdecomp)) > 0)

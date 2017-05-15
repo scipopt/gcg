@@ -3528,5 +3528,30 @@ SCIP_RETCODE Seeed::setDetectorChainString(
 
 }
 
+SCIP_RETCODE Seeed::buildDecChainString(
+   )
+{
+   char detectorchaininfo[SCIP_MAXSTRLEN];
+   /** set detector chain info string */
+   SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
+   if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
+   {
+      char str1[2] = "\0"; /* gives {\0, \0} */
+      str1[0] = 'U';
+      (void) strncat(detectorchaininfo, str1, 1 );
 
+   }
+   for( int d = 0; d < this->getNDetectors(); ++d )
+   {
+      //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(this->getDetectorchain()[d]));
+      char str[2] = "\0"; /* gives {\0, \0} */
+      str[0] = DECdetectorGetChar(this->getDetectorchain()[d]);
+      (void) strncat(detectorchaininfo, str, 1 );
+   }
+
+
+   SCIP_CALL(this->setDetectorChainString(detectorchaininfo) );
+
+   return SCIP_OKAY;
+}
 } /* namespace gcg */

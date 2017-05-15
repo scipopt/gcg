@@ -228,6 +228,11 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP_Bool*            success
    );
 
+SCIP_RETCODE SCIPconshdlrDecompChooseBestFromSelected(
+   SCIP* scip
+   );
+
+
 SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    SCIP* scip
    );

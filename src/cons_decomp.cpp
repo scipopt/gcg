@@ -1559,7 +1559,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
       conshdlrdata->listall->push_back(seeed);
    }
 
-   /** 4) add unpresolved finished */
+   /** 4) add unpresolved partial */
    for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->currSeeeds.size() ; ++i)
    {
       SeeedPtr seeed;
@@ -2011,7 +2011,6 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       {
          assert( (*seeediter)->checkConsistency());
          seeedstotranslate.push_back(*seeediter);
-
       }
    }
 
@@ -2035,11 +2034,50 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       else {
          SCIPdebugMessagePrint(scip, " unpresolved complete seeed did not translate to complete presolved one \n");
       }
-
    }
 
    return SCIP_OKAY;
 }
+
+
+SCIP_RETCODE SCIPconshdlrDecompChooseBestFromSelected(
+   SCIP* scip
+   ){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* seeedpool;
+   gcg::Seeedpool* seeedpoolunpresolved;
+   std::vector<SeeedPtr>::iterator seeediter;
+   std::vector<SeeedPtr>::iterator seeediterend;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeedpool = conshdlrdata->seeedpool;
+   seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
+
+   /** if there are selected decomps, check if some of them needs to be finished and do so */
+
+
+   /** get decomp candidates and calculate corresponding score (possibly weighted for unpresolved) */
+
+   /* sort decomp candidates according score */
+
+   /* set decomposition to choose */
+
+
+   return SCIP_OKAY;
+}
+
 
 
 /** 1) all finished seeeds are part of the hash maps and */
@@ -2294,7 +2332,17 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-   gcg::Seeedpool seeedpoolunpresolved(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->seeedpool = NULL;
+
+
+   if ( conshdlrdata->seeedpoolunpresolved == NULL )
+      conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
    std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
    std::vector<gcg::ConsClassifier*> consClassDistributions;         /**< collection of different constraint class distributions */
@@ -2315,13 +2363,6 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
 
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   conshdlrdata->seeedpool = NULL;
 
    /** get data of the seeedpool with original vars and conss */
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
@@ -2334,22 +2375,22 @@ SCIP_RETCODE DECdetectStructure(
 //      seeedpoolunpresolved.calcConsClassifierAndNBlockCandidates(scip);
 //   }
 //=======
-   candidatesNBlocks = seeedpoolunpresolved.getSortedCandidatesNBlocks();
+   candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
 
    /** detection for original problem */
    if( conshdlrdata->ndecomps == 0 && calculateOrigDecomps )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "start finding decompositions for original problem!\n");
-      seeedsunpresolved = seeedpoolunpresolved.findSeeeds();
+      seeedsunpresolved = conshdlrdata->seeedpoolunpresolved->findSeeeds();
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished finding decompositions for original problem!\n");
-      for( i = 0; i < seeedpoolunpresolved.getNConsClassifiers(); ++i )
+      for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNConsClassifiers(); ++i )
       {
-         gcg::ConsClassifier* classifier = new gcg::ConsClassifier( seeedpoolunpresolved.getConsClassifier(i) );
+         gcg::ConsClassifier* classifier = new gcg::ConsClassifier( conshdlrdata->seeedpoolunpresolved->getConsClassifier(i) );
          consClassDistributions.push_back( classifier );
       }
-      for( i = 0; i < seeedpoolunpresolved.getNVarClassifiers(); ++i )
+      for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNVarClassifiers(); ++i )
       {
-         gcg::VarClassifier* classifier = new gcg::VarClassifier( seeedpoolunpresolved.getVarClassifier(i) );
+         gcg::VarClassifier* classifier = new gcg::VarClassifier( conshdlrdata->seeedpoolunpresolved->getVarClassifier(i) );
          varClassDistributions.push_back( classifier );
       }
    }
@@ -2407,7 +2448,7 @@ SCIP_RETCODE DECdetectStructure(
 	     std::vector<gcg::ConsClassifier*> translatedConsDistributions(0);
 	     std::vector<gcg::VarClassifier*> translatedVarDistributions(0);
 
-	     conshdlrdata->seeedpool->translateSeeedData( &seeedpoolunpresolved, seeedsunpresolved, translatedSeeeds,
+	     conshdlrdata->seeedpool->translateSeeedData( conshdlrdata->seeedpoolunpresolved, seeedsunpresolved, translatedSeeeds,
 	        consClassDistributions, translatedConsDistributions, varClassDistributions, translatedVarDistributions );
 
 	     SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
