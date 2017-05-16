@@ -477,6 +477,9 @@ void Stabilization::updateAlpha(
    SCIPdebugMessage("Alpha update after successful pricing\n");
    updateIterationCount();
 
+   /* There is a sign error in the stabilization paper:
+    * if the scalar product (subgradientproduct) is positive, the angle is less than 90° and we want to decrease alpha
+    */
    if( SCIPisNegative(scip_, subgradientproduct) )
    {
       increaseAlpha();
