@@ -2443,6 +2443,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          beststabredcost = beststabobj - dualconvsum;
 
+         /* update subgradient product before a potential change of the stability center */
+         stabilization->updateSubgradientProduct(pricingcols);
+
          if( *bestredcostvalid )
          {
             SCIP_Bool enableppobjcg;

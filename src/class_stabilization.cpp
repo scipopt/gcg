@@ -61,7 +61,7 @@ Stabilization::Stabilization(
       subgradientlinkingconss(NULL), nsubgradientlinkingconss(0),
       subgradientnorm(0.0), hybridfactor(0.0),
       pricingtype(pricingtype_), alpha(0.8), alphabar(0.8), hybridascent(hybridascent_), beta(0.0), nodenr(-1), k(0), t(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip)),
-      inmispricingschedule(FALSE)
+      inmispricingschedule(FALSE), subgradientproduct(0.0)
 {
 
 }
@@ -466,7 +466,7 @@ void Stabilization::updateAlphaMisprice()
 {
    SCIPdebugMessage("Alphabar update after mispricing\n");
    updateIterationCountMispricing();
-   alphabar = MAX(0, 1-k*(1-alpha));
+   alphabar = MAX(0.0, 1-k*(1-alpha));
    SCIPdebugMessage("alphabar updated to %g in mispricing iteration k=%d and node pricing iteration t=%d \n", alphabar, k, t);
 }
 
@@ -477,7 +477,7 @@ void Stabilization::updateAlpha(
    SCIPdebugMessage("Alpha update after successful pricing\n");
    updateIterationCount();
 
-   if( SCIPisPositive(scip_, calculateSubgradientProduct(pricingcols)) )
+   if( SCIPisPositive(scip_, subgradientproduct) )
    {
       increaseAlpha();
    }
@@ -498,14 +498,16 @@ void Stabilization::increaseAlpha()
 
 void Stabilization::decreaseAlpha()
 {
-   if( alpha >= 0.5 && alpha < 1 )
-   {
-      alpha = alpha/1.1;
-   }
-   else
-   {
-      alpha = MAX(0, alpha-(1-alpha)*0.1);
-   }
+   alpha = MAX(0.0, alpha-0.1);
+
+//   if( alpha >= 0.5 && alpha < 1 )
+//   {
+//      alpha = alpha/1.1;
+//   }
+//   else
+//   {
+//      alpha = MAX(0, alpha-(1-alpha)*0.1);
+//   }
    SCIPdebugMessage("alpha decreased to %g\n", alpha);
 }
 
@@ -1123,5 +1125,14 @@ SCIP_Bool Stabilization::isInMispricingSchedule(
 {
    return inmispricingschedule;
 }
+
+/** update subgradient product */
+void Stabilization::updateSubgradientProduct(
+   GCG_COL**            pricingcols         /**< solutions of the pricing problems */
+)
+{
+   subgradientproduct = calculateSubgradientProduct(pricingcols);
+}
+
 
 } /* namespace gcg */
