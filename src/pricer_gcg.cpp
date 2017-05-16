@@ -2207,6 +2207,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool added;
    SCIP_Bool colpoolupdated;
    SCIP_Bool enableppcuts;
+   SCIP_Bool enablestab;
    SCIP_STATUS* pricingstatus = NULL;
    int solvedmips;
    int successfulmips;
@@ -2295,17 +2296,17 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       beststabobj = 0.0;
       *bestredcostvalid = isMasterLPOptimal() && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
-      stabilized = optimal && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
+      enablestab = optimal && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
          && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)))
          /*&& GCGgetNLinkingvars(origprob) == 0 && GCGgetNTransvars(origprob) == 0*/;
 
-      if( stabilized )
+      if( enablestab )
       {
          stabilization->updateNode();
          SCIP_CALL( stabilization->updateHybrid() );
       }
 
-      stabilized = stabilized && stabilization->isStabilized();
+      stabilized = enablestab && stabilization->isStabilized();
 
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
@@ -2371,7 +2372,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             SCIP_Real convdual = 0.0;
             SCIP_CONS* cons = GCGgetConvCons(origprob, prob);
 
-            if( stabilized )
+            if( enablestab )
                convdual = stabilization->convGetDual(prob);
             else
                convdual = pricetype->consGetDual(scip_, cons);
@@ -2418,7 +2419,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
       }
 
-      if( stabilized && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
+      if( enablestab && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
       {
          SCIP_Real beststabredcost;
          SCIP_Real lowerboundcandidate;
