@@ -105,7 +105,7 @@ SCIP_RETCODE GCGpricestoreFree(
    GCG_PRICESTORE**      pricestore           /**< pointer to store price storage */
    )
 {
-   assert(scip == pricestore->scip);
+   assert(scip == (*pricestore)->scip);
    assert(pricestore != NULL);
    assert(*pricestore != NULL);
    assert((*pricestore)->ncols == 0);

@@ -361,7 +361,7 @@ SCIP_RETCODE GCGcolpoolFree(
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    )
 {
-   assert(scip == colpool->scip);
+   assert(scip == (*colpool)->scip);
    assert(colpool != NULL);
    assert(*colpool != NULL);
 
