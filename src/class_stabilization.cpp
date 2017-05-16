@@ -435,7 +435,7 @@ void Stabilization::updateNode()
       nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip_));
       k = 0;
       t = 1;
-      alpha= 0.8;
+      alpha = 0.8;
       hasstabilitycenter = FALSE;
       stabcenterbound = -SCIPinfinity(scip_);
       inmispricingschedule = FALSE;
@@ -477,7 +477,7 @@ void Stabilization::updateAlpha(
    SCIPdebugMessage("Alpha update after successful pricing\n");
    updateIterationCount();
 
-   if( SCIPisPositive(scip_, subgradientproduct) )
+   if( SCIPisNegative(scip_, subgradientproduct) )
    {
       increaseAlpha();
    }
@@ -702,7 +702,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       gradientproduct -= dual * (masterval - pricingval);
    }
 
-   SCIPdebugMessage("Update gradient with value %g.\n", gradientproduct);
+   SCIPdebugMessage("Update gradient product with value %g.\n", gradientproduct);
 
    return gradientproduct;
 }
@@ -954,7 +954,7 @@ void Stabilization::calculateDualdiffnorm()
          dualdiffnorm += dualdiff;
    }
    dualdiffnorm = SQRT(dualdiffnorm);
-   SCIPdebugMessage("Update dualdiffnorm with value %g.\n", dualdiffnorm);
+//   SCIPdebugMessage("Update dualdiffnorm with value %g.\n", dualdiffnorm);
 }
 
 /**< calculate beta */
@@ -982,9 +982,9 @@ void Stabilization::calculateBeta()
       SCIP_Real dualdiff = ABS(pricingtype->consGetDual(scip_, masterconss[i]) - stabcenterconss[i]);
       SCIP_Real product = dualdiff * ABS(subgradientconss[i]);
 
-      SCIPdebugMessage("dualdiff = %g, subgradientconss[%d] = %g.\n", dualdiff, i, subgradientconss[i]);
-
-      SCIPdebugMessage("Add %g to beta.\n", product);
+//      SCIPdebugMessage("dualdiff = %g, subgradientconss[%d] = %g.\n", dualdiff, i, subgradientconss[i]);
+//
+//      SCIPdebugMessage("Add %g to beta.\n", product);
 
       if( SCIPisPositive(scip_, product) )
 //      if( !SCIPisZero(scip_, product) )
@@ -999,7 +999,7 @@ void Stabilization::calculateBeta()
       SCIP_Real dualdiff = ABS(pricingtype->rowGetDual(mastercuts[i]) - stabcentercuts[i]);
       SCIP_Real product = dualdiff * ABS(stabcentercuts[i]);
 
-      SCIPdebugMessage("Add %g to beta.\n", product);
+//      SCIPdebugMessage("Add %g to beta.\n", product);
 
       if( SCIPisPositive(scip_, product) )
 //      if( !SCIPisZero(scip_, product) )
@@ -1014,19 +1014,19 @@ void Stabilization::calculateBeta()
       SCIP_Real dualdiff = ABS(pricingtype->consGetDual(scip_, linkingconss[i]) - stabcenterlinkingconss[i]);
       SCIP_Real product = dualdiff * ABS(stabcenterlinkingconss[i]);
 
-      SCIPdebugMessage("Add %g to beta.\n", product);
+//      SCIPdebugMessage("Add %g to beta.\n", product);
 
       if( SCIPisPositive(scip_, product) )
 //      if( !SCIPisZero(scip_, product) )
          beta += product;
    }
-   SCIPdebugMessage("Divide beta <%g> by %g * %g.\n", beta, subgradientnorm, dualdiffnorm);
+//   SCIPdebugMessage("Divide beta <%g> by %g * %g.\n", beta, subgradientnorm, dualdiffnorm);
 
    beta = beta / (subgradientnorm * dualdiffnorm);
 
 //   cos(acos(beta));
 
-   SCIPdebugMessage("Update beta with value %g.\n", beta);
+//   SCIPdebugMessage("Update beta with value %g.\n", beta);
 
    assert( SCIPisPositive(scip_, beta) && SCIPisLE(scip_, beta, 1.0) );
 }
@@ -1091,7 +1091,7 @@ void Stabilization::calculateHybridFactor()
 
    hybridfactor = ((1 - alpha) * dualdiffnorm) / divisornorm;
 
-   SCIPdebugMessage("Update hybridfactor with value %g.\n", hybridfactor);
+//   SCIPdebugMessage("Update hybridfactor with value %g.\n", hybridfactor);
 
    assert( SCIPisPositive(scip_, hybridfactor) );
 }
