@@ -92,9 +92,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    SCIP_SOL*             sol,                /**< primal solution that was pricerated, or NULL for LP solution */
    GCG_COL*              col,                /**< pricerated col */
-   SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
-   SCIP_Bool             root,               /**< are we at the root node? */
-   SCIP_Bool*            infeasible          /**< pointer to store whether the col is infeasible */
+   SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
    );
 
 /** adds cols to the LP and clears priceration storage */

@@ -70,6 +70,8 @@
 #include "class_stabilization.h"
 #include "branch_generic.h"
 #include "event_display.h"
+//#include "pub_colpool.h"
+#include "colpool.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -2623,7 +2625,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    }
 
    /* todo: We avoid checking for feasibility of the columns using this hack */
-   SCIP_CALL( colpool->updateNode() );
+   SCIP_CALL( colpoolold->updateNode() );
 
    colpoolupdated = FALSE;
 
@@ -2652,7 +2654,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          /* update reduced cost of cols in colpool */
          SCIP_CALL( updateRedcostColumnPool(pricetype) );
 
-         SCIP_CALL( colpool->resortColumns() );
+         SCIP_CALL( colpoolold->resortColumns() );
 
          colpoolupdated = TRUE;
       }
@@ -2662,7 +2664,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       {
          SCIP_Real redcost;
 
-         redcost = colpool->getBestColRedcost();
+         redcost = colpoolold->getBestColRedcost();
 
          if( SCIPisDualfeasNegative(scip_, redcost) )
          {
@@ -2867,7 +2869,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
                success = FALSE;
 
-               SCIP_CALL( colpool->addCol(cols[i][j], &success) );
+//               SCIP_CALL( colpoolold->addCol(cols[i][j], &success) );
+
+               SCIP_CALL( GCGcolpoolAddCol(colpool, cols[i][j], &success) );
 
                if( !success )
                {
@@ -2913,7 +2917,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             SCIPdebugMessage("Solution %d/%d of prob %d: ", j+1, ncols[prob], prob);
 
-            SCIP_CALL( colpool->addCol(cols[prob][j], &added) );
+            if( SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(cols[prob][j])) )
+               SCIP_CALL( colpoolold->addCol(cols[prob][j], &added) );
+            else
+               SCIP_CALL( GCGcolpoolAddCol(colpool, cols[prob][j], &added) );
 
             if( !added )
             {
@@ -2940,9 +2947,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       SCIPfreeMemoryArray(scip_, &(cols[i]));
    }
 
-   SCIP_CALL( priceColumnPool(pricetype, &nfoundvars) );
+   SCIP_CALL( priceColumnPoolOld(pricetype, &nfoundvars) );
 
-   SCIP_CALL( colpool->deleteOldestColumns() );
+   SCIP_CALL( colpoolold->deleteOldestColumns() );
 
    SCIPfreeBlockMemoryArray(scip_, &cols, pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip_, &ncols, pricerdata->npricingprobs);
@@ -3005,8 +3012,8 @@ SCIP_RETCODE ObjPricerGcg::updateRedcostColumnPool(
 
    int i;
 
-   ncols = colpool->getNCols();
-   cols = colpool->getCols();
+   ncols = colpoolold->getNCols();
+   cols = colpoolold->getCols();
 
    for( i = 0; i < ncols; ++i )
    {
@@ -3024,7 +3031,7 @@ SCIP_RETCODE ObjPricerGcg::updateRedcostColumnPool(
 }
 
 /** method to price new columns from Column Pool */
-SCIP_RETCODE ObjPricerGcg::priceColumnPool(
+SCIP_RETCODE ObjPricerGcg::priceColumnPoolOld(
    PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
    int*                  pnfoundvars         /**< pointer to store number of priced variables */
    )
@@ -3046,7 +3053,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
       nfoundvarsprob[i] = 0;
    }
 
-   while( (colpool->getNCols() > 0 &&
+   while( (colpoolold->getNCols() > 0 &&
       (pricetype->getType() == GCG_PRICETYPE_REDCOST || nfoundvars < pricetype->getMaxvarsround()) &&
       (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxvarsround() || GCGisRootNode(scip_) ) &&
       (nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !GCGisRootNode(scip_))))) )
@@ -3055,8 +3062,8 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
       SCIP_Real redcost;
       int probnr;
 
-      redcost = colpool->getBestColRedcost();
-      probnr = colpool->getBestColProbNr();
+      redcost = colpoolold->getBestColRedcost();
+      probnr = colpoolold->getBestColProbNr();
 
       SCIPdebugMessage("bestredcost = %g\n", redcost);
 
@@ -3066,7 +3073,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
          SCIP_Bool added;
          GCG_COL* gcgcol;
 
-         SCIP_CALL( colpool->getBestCol(&gcgcol) );
+         SCIP_CALL( colpoolold->getBestCol(&gcgcol) );
 
          /* todo: get column and add it */
          SCIP_CALL( createNewMasterVarFromGcgCol(scip_, pricetype, gcgcol, FALSE, &added, NULL) );
@@ -3094,6 +3101,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
 
    return SCIP_OKAY;
 }
+
 
 /** set pricing objectives */
 extern "C"
@@ -3229,7 +3237,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
     int                priority,           /**< priority of the variable pricer */
     SCIP_Bool          delay,
     SCIP_PRICERDATA*   p_pricerdata
-    ) : ObjPricer(scip, name, desc, priority, delay), colpool(NULL), reducedcostpricing(NULL), farkaspricing(NULL), stabilization(NULL)
+    ) : ObjPricer(scip, name, desc, priority, delay), colpoolold(NULL), colpool(NULL), pricestore(NULL), reducedcostpricing(NULL), farkaspricing(NULL), stabilization(NULL)
  {
 
     assert(origscip!= NULL);
@@ -3414,7 +3422,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    SCIP_CALL( stabilization->setNLinkingconss(GCGgetNVarLinkingconss(origprob)) );
    SCIP_CALL( stabilization->setNConvconss(GCGgetNPricingprobs(origprob)) );
 
-   createColpool();
+   SCIP_CALL( createColpool() );
 
    SCIP_CALL( SCIPactivateEventHdlrDisplay(scip_) );
 
@@ -3438,10 +3446,12 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 
    stabilization = NULL;
 
-   if( colpool != NULL )
-      delete colpool;
+   GCGcolpoolFree(scip_, &colpool);
 
-   colpool = NULL;
+   if( colpoolold != NULL )
+      delete colpoolold;
+
+   colpoolold = NULL;
 
    SCIPhashmapFree(&(pricerdata->mapcons2idx));
 
@@ -3617,7 +3627,7 @@ void ObjPricerGcg::createStabilization()
    stabilization = new Stabilization(scip_, reducedcostpricing);
 }
 
-void ObjPricerGcg::createColpool()
+SCIP_RETCODE ObjPricerGcg::createColpool()
 {
    int actualsize;
    int hardlimit;
@@ -3633,8 +3643,11 @@ void ObjPricerGcg::createColpool()
 
    hardlimit = actualsize + maxvarsround * pricerdata->npricingprobsnotnull;
 
-   colpool = new Colpool(scip_, pricerdata->colpoolagelimit, actualsize, hardlimit);
+   colpoolold = new Colpool(scip_, pricerdata->colpoolagelimit, actualsize, hardlimit);
 
+   SCIP_CALL( GCGcolpoolCreate(scip_, &colpool, pricerdata->colpoolagelimit, TRUE) );
+
+   return SCIP_OKAY;
 }
 /*
  * variable pricer specific interface methods

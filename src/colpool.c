@@ -40,11 +40,12 @@
 #include "pub_gcgcol.h"
 #include "colpool.h"
 #include "struct_colpool.h"
+#include "pricestore_gcg.h"
+#include "struct_pricestore_gcg.h"
 
 #define SCIP_HASHTABLE_USESMALL FALSE /**< size of hash table in col pools for small problems */
 #define SCIP_HASHSIZE_COLPOOLS_SMALL 100 /**< size of hash table in col pools for small problems */
 #define SCIP_HASHSIZE_COLPOOLS       500 /**< size of hash table in col pools */
-
 
 /*
  * Hash functions
@@ -70,163 +71,31 @@ SCIP_DECL_HASHKEYEQ(hashKeyEqCol)
    /* Warning: The comparison of real values is made against default epsilon.
     *          This is ugly, but we have no settings at hand.
     */
-   SCIP_ROW* row1;
-   SCIP_ROW* row2;
+   SCIP* scip;
+   GCG_COL* col1;
+   GCG_COL* col2;
+   int i;
 
-   row1 = (SCIP_ROW*)key1;
-   row2 = (SCIP_ROW*)key2;
-   assert(row1 != NULL);
-   assert(row2 != NULL);
+   scip = (SCIP*) userptr;
+   col1 = (GCG_COL*)key1;
+   col2 = (GCG_COL*)key2;
+   assert(col1 != NULL);
+   assert(col2 != NULL);
 
-   /* Sort the column indices of both rows.
-    *
-    * The columns in a row are divided into two parts: LP columns, which are currently in the LP and non-LP columns;
-    * we sort the rows, but that only ensures that within these two parts, columns are sorted w.r.t. their index.
-    * Normally, this should be suficient, because a column contained in both rows should either be one of the LP columns
-    * for both or one of the non-LP columns for both.
-    * However, directly after a row was created, before it is added to the LP, the row is not linked to all its
-    * columns and all columns are treated as non-LP columns.
-    * Therefore, if exactly one of the rows has no LP columns, we cannot rely on the partition, because this row might
-    * just have been created and also columns that are in the LP might be in the non-LP columns part.
-    */
-   SCIProwSort(row1);
-   SCIProwSort(row2);
-   assert(row1->lpcolssorted);
-   assert(row1->nonlpcolssorted);
-   assert(row1->validminmaxidx);
-   assert(row2->lpcolssorted);
-   assert(row2->nonlpcolssorted);
-   assert(row2->validminmaxidx);
-
-   /* currently we are only handling rows which are completely linked or not linked at all */
-   assert(row1->nunlinked == 0 || row1->nlpcols == 0);
-   assert(row2->nunlinked == 0 || row2->nlpcols == 0);
-
-   /* compare the trivial characteristics of the rows */
-   if( row1->len != row2->len
-      || row1->minidx != row2->minidx
-      || row1->maxidx != row2->maxidx
-      || row1->nummaxval != row2->nummaxval
-      || row1->numminval != row2->numminval
-      || REALABS(row1->lhs - row2->lhs) > SCIP_DEFAULT_EPSILON
-      || REALABS(row1->rhs - row2->rhs) > SCIP_DEFAULT_EPSILON
-      || REALABS(row1->maxval - row2->maxval) > SCIP_DEFAULT_EPSILON
-      || REALABS(row1->minval - row2->minval) > SCIP_DEFAULT_EPSILON
+   /* compare the trivial characteristics of the cols */
+   if( col1->probnr != col2->probnr
+      || col1->isray != col2->isray
+      || col1->nvars != col2->nvars
+      || !SCIPisEQ(scip, col1->redcost, col2->redcost)
        )
       return FALSE;
 
-   /* both rows have LP columns, or none of them has, or one has only LP colums and the other only non-LP columns,
-    * so we can rely on the sorting of the columns
-    */
-   if( (row1->nlpcols == 0) == (row2->nlpcols == 0)
-      || (row1->nlpcols == 0 && row2->nlpcols == row2->len)
-      || (row1->nlpcols == row1->len && row2->nlpcols == 0) )
+   /* compare variables and coresponding values in sorted arrays */
+   for( i = 0; i < col1->nvars; ++i )
    {
-      int i;
-
-      if( (row1->nlpcols == 0) == (row2->nlpcols == 0) )
-      {
-#ifndef NDEBUG
-         /* in debug mode, we check that we can rely on the partition into LP columns and non-LP columns */
-         int i2;
-
-         i = 0;
-         i2 = row2->nlpcols;
-         while( i < row1->nlpcols && i2 < row2->len )
-         {
-            assert(row1->cols[i] != row2->cols[i2]);
-            if( row1->cols[i]->index < row2->cols[i2]->index )
-               ++i;
-            else
-            {
-               assert(row1->cols[i]->index > row2->cols[i2]->index);
-               ++i2;
-            }
-         }
-         assert(i == row1->nlpcols || i2 == row2->len);
-
-         i = row1->nlpcols;
-         i2 = 0;
-         while( i < row1->len && i2 < row2->nlpcols )
-         {
-            assert(row1->cols[i] != row2->cols[i2]);
-            if( row1->cols[i]->index < row2->cols[i2]->index )
-               ++i;
-            else
-            {
-               assert(row1->cols[i]->index > row2->cols[i2]->index);
-               ++i2;
-            }
-         }
-         assert(i == row1->len || i2 == row2->nlpcols);
-#endif
-
-         /* both rows are linked and the number of lpcolumns is not equal so they cannot be equal */
-         if( row1->nlpcols != row2->nlpcols )
-            return FALSE;
-      }
-
-      /* compare the columns of the rows */
-      for( i = 0; i < row1->len; ++i )
-      {
-         if( row1->cols[i] != row2->cols[i] )
-            return FALSE;
-      }
-
-      /* compare the coefficients of the rows */
-      for( i = 0; i < row1->len; ++i )
-      {
-         if( REALABS(row1->vals[i] - row2->vals[i]) > SCIP_DEFAULT_EPSILON )
-            return FALSE;
-      }
-   }
-   /* one row has LP columns, but the other not, that could be because the one without was just created and isn't
-    * linked yet; in this case, one column could be an LP column in one row and a non-LP column in the other row, so we
-    * cannot rely on the partition; thus, we iteratively check whether the next column of row1 is either the next LP
-    * column of row2 or the next non-LP column of row2 and the coefficients are equal
-    */
-   else
-   {
-      int i1;
-      int ilp;
-      int inlp;
-
-      /* ensure that row1 is the row without LP columns, switch the rows, if neccessary */
-      if( row2->nlpcols == 0 )
-      {
-         SCIP_ROW* tmprow;
-         tmprow = row2;
-         row2 = row1;
-         row1 = tmprow;
-      }
-      assert(row1->nlpcols == 0 && row2->nlpcols > 0);
-
-      ilp = 0;
-      inlp = row2->nlpcols;
-
-      /* compare the columns and coefficients of the rows */
-      for( i1 = 0; i1 < row1->len; ++i1 )
-      {
-         /* current column of row1 is the current LP column of row2, check the coefficient */
-         if( ilp < row2->nlpcols && row1->cols[i1] == row2->cols[ilp] )
-         {
-            if( REALABS(row1->vals[i1] - row2->vals[ilp]) > SCIP_DEFAULT_EPSILON )
-               return FALSE;
-            else
-               ++ilp;
-         }
-         /* current column of row1 is the current non-LP column of row2, check the coefficient */
-         else if( inlp < row2->len && row1->cols[i1] == row2->cols[inlp] )
-         {
-            if( REALABS(row1->vals[i1] - row2->vals[inlp]) > SCIP_DEFAULT_EPSILON )
-               return FALSE;
-            else
-               ++inlp;
-         }
-         /* current column of row1 is neither the current LP column of row2, nor the current non-LP column of row 2 */
-         else
-            return FALSE;
-      }
+      if( col1->vars[i] != col2->vars[i]
+         || !SCIPisEQ(scip, col1->vals[i], col2->vals[i]))
+         return FALSE;
    }
 
    return TRUE;
@@ -235,26 +104,18 @@ SCIP_DECL_HASHKEYEQ(hashKeyEqCol)
 static
 SCIP_DECL_HASHKEYVAL(hashKeyValCol)
 {  /*lint --e{715}*/
-   SCIP_ROW* row;
+   GCG_COL* col;
    unsigned int keyval;
    SCIP_Real maxval;
    SCIP_Real minval;
-   SCIP_SET* set;
+   SCIP* set;
 
-   set = (SCIP_SET*) userptr;
-   row = (SCIP_ROW*)key;
-   assert(row != NULL);
+   set = (SCIP*) userptr;
+   col = (GCG_COL*)key;
+   assert(col != NULL);
 
-   maxval = SCIProwGetMaxval(row, set);
-   minval = SCIProwGetMinval(row, set);
-   assert(row->nummaxval > 0);
-   assert(row->numminval > 0);
-   assert(row->validminmaxidx);
-
-   keyval = SCIPhashFour(SCIPpositiveRealHashCode(maxval, 8),
-                         SCIPpositiveRealHashCode(minval, 12),
-                         SCIPcombineThreeInt(row->maxidx, row->len, row->minidx),
-                         SCIPcombineTwoInt(row->nummaxval, row->numminval));
+   keyval = SCIPhashTwo(SCIPpositiveRealHashCode(col->redcost, 8),
+                        SCIPcombineThreeInt(col->probnr, col->nvars, col->isray));
 
    return keyval;
 }
@@ -402,16 +263,21 @@ SCIP_RETCODE GCGcolpoolClear(
 /** if not already existing, adds row to col pool and captures it */
 SCIP_RETCODE GCGcolpoolAddCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
-   GCG_COL*              col                 /**< column to add */
+   GCG_COL*              col,                /**< column to add */
+   SCIP_Bool*            success             /**< pointer to store if col was added */
    )
 {
    assert(colpool != NULL);
    assert(col != NULL);
+   assert(success != NULL);
+
+   *success = FALSE;
 
    /* check in hash table, if col already exists in the pool */
    if( SCIPhashtableRetrieve(colpool->hashtable, (void*)col) == NULL )
    {
       SCIP_CALL( GCGcolpoolAddNewCol(colpool, col) );
+      *success = TRUE;
    }
 
    return SCIP_OKAY;
@@ -445,7 +311,8 @@ SCIP_RETCODE GCGcolpoolAddNewCol(
 static
 SCIP_RETCODE colpoolDelCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
-   GCG_COL*              col                 /**< col to remove */
+   GCG_COL*              col,                /**< col to remove */
+   SCIP_Bool             free                /**< should the col be freed? */
    )
 {
    int pos;
@@ -464,7 +331,8 @@ SCIP_RETCODE colpoolDelCol(
    SCIP_CALL( SCIPhashtableRemove(colpool->hashtable, (void*)col) );
 
    /* free the col */
-   GCGfreeGcgCol(&colpool->cols[pos]);
+   if( free )
+      GCGfreeGcgCol(&colpool->cols[pos]);
 
    /* move the last col of the pool to the free position */
    if( pos < colpool->ncols-1 )
@@ -481,7 +349,8 @@ SCIP_RETCODE colpoolDelCol(
 /** removes the LP row from the col pool */
 SCIP_RETCODE GCGcolpoolDelCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
-   GCG_COL*              col                 /**< col to remove */
+   GCG_COL*              col,                /**< col to remove */
+   SCIP_Bool             free                /**< should the col be freed? */
    )
 {
    assert(colpool != NULL);
@@ -495,7 +364,7 @@ SCIP_RETCODE GCGcolpoolDelCol(
       return SCIP_INVALIDDATA;
    }
 
-   SCIP_CALL( colpoolDelCol(colpool, col) );
+   SCIP_CALL( colpoolDelCol(colpool, col, free) );
 
    return SCIP_OKAY;
 }
@@ -503,8 +372,9 @@ SCIP_RETCODE GCGcolpoolDelCol(
 
 /** prices cols of the col pool */
 SCIP_RETCODE GCGcolpoolPrice(
+   SCIP*                 scip,               /**< SCIP data structure */
    GCG_COLPOOL*          colpool,            /**< col pool */
-   SCIP_SEPASTORE*       sepastore,          /**< separation storage */
+   GCG_PRICESTORE*       pricestore,         /**< GCG price storage */
    SCIP_SOL*             sol,                /**< solution to be separated (or NULL for LP-solution) */
    SCIP_Bool             colpoolisdelayed,   /**< is the colpool delayed (count cols found)? */
    SCIP_Bool             root,               /**< are we at the root node? */
@@ -531,56 +401,49 @@ SCIP_RETCODE GCGcolpoolPrice(
    SCIPstartClock(colpool->scip, colpool->poolclock);
 
    /* remember the current total number of found cols */
-//   oldncols = SCIPsepastoreGetNCols(sepastore);
+   //oldncols = getNCols();
    oldncols = 0;
 
    /* process all unprocessed cols in the pool */
    *foundvars = FALSE;
-   for( c = firstunproc; c < colpool->ncols; ++c )
+
+   for( c = 0; c < colpool->ncols; ++c )
    {
-      SCIP_Longint proclp;
+      SCIP_Real redcost;
+
 
       col = colpool->cols[c];
       assert(col != NULL);
       assert(col->pos == c);
 
-//      if( proclp < stat->lpcount )
-//      {
-//         SCIP_ROW* row;
-//
-//         if ( sol == NULL )
-//            col->processedlp = stat->lpcount;
-//         else
-//            col->processedlpsol = stat->lpcount;
-//
-//         row = col->row;
-//         if( !SCIProwIsInLP(row) )
-//         {
-//            /* TODO: use reduced costs? */
-//            if( (sol == NULL && SCIProwIsLPEfficacious(row, set, stat, lp, root)) || (sol != NULL && SCIProwIsSolEfficacious(row, set, stat, sol, root)) )
-//            {
-//               /* insert col in separation storage */
-//               SCIPdebugMessage(" -> separated col <%s> from the col pool (feasibility: %g)\n",
-//                  SCIProwGetName(row), ( sol == NULL ) ? SCIProwGetLPFeasibility(row, set, stat, lp) : SCIProwGetSolFeasibility(row, set, stat, sol) );
-//               SCIP_CALL( SCIPsepastoreAddCol(sepastore, blkmem, set, stat, eventqueue, eventfilter, lp, sol, row, FALSE, root, &foundvars) );
-//
-//               col->age = 0;
-//            }
-//            else
-//            {
-//               col->age++;
-//               if( colIsAged(col, colpool->agelimit) )
-//               {
-//                  SCIP_CALL( colpoolDelCol(colpool, col) );
-//               }
-//            }
-//         }
-//      }
+      redcost = GCGcolGetRedcost(col);
+
+      /* TODO: use reduced costs? */
+      if( SCIPisDualfeasNegative(scip, redcost) )
+      {
+         /* insert col in separation storage */
+         SCIPdebugMessage(" -> col %p from the col pool (redcost: %g)\n",
+            (void*)col, redcost );
+
+         SCIP_CALL( GCGpricestoreAddCol(scip, pricestore, NULL, col, FALSE) );
+
+         SCIP_CALL( GCGcolpoolDelCol(colpool, col, FALSE) );
+
+         col->age = 0;
+      }
+      else
+      {
+         col->age++;
+         if( colIsAged(col, colpool->agelimit) )
+         {
+            SCIP_CALL( colpoolDelCol(colpool, col, TRUE) );
+         }
+      }
    }
 
    /* update the number of found cols */
-   colpool->ncolsfound += SCIPsepastoreGetNCols(sepastore) - oldncols; /*lint !e776*/
-
+   colpool->ncolsfound = 0; /*lint !e776*/
+//   SCIPsepastoreGetNCols(sepastore) - oldncols
    /* stop timing */
    SCIPstopClock(colpool->scip, colpool->poolclock);
 

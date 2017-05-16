@@ -42,6 +42,8 @@
 #include "class_stabilization.h"
 #include "class_colpool.h"
 #include "pub_gcgcol.h"
+#include "pub_colpool.h"
+#include "pricestore_gcg.h"
 
 using gcg::Stabilization;
 using gcg::Colpool;
@@ -53,7 +55,10 @@ public:
 
    SCIP*              origprob;           /**< the original program */
    SCIP_PRICERDATA *pricerdata;           /**< pricerdata data structure */
-   Colpool *colpool;                      /**< column pool */
+   Colpool *colpoolold;                   /**< column pool */
+   GCG_COLPOOL* colpool;
+   GCG_PRICESTORE* pricestore;            /**< price storage */
+
    static int threads;
 
    /** default constructor */
@@ -100,7 +105,7 @@ public:
       PricingType*          pricetype           /**< type of pricing: reduced cost or Farkas */
       );
    /** method to price new columns from Column Pool */
-   SCIP_RETCODE priceColumnPool(
+   SCIP_RETCODE priceColumnPoolOld(
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
       int*                  pnfoundvars         /**< pointer to store number of priced variables */
       );
@@ -177,7 +182,7 @@ public:
    void createStabilization();
 
    /** create the pointers for the colpool */
-   void createColpool();
+   SCIP_RETCODE createColpool();
 
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
    SCIP_RETCODE getStabilizedDualObjectiveValue(

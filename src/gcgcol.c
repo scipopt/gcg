@@ -540,6 +540,33 @@ SCIP_Bool GCGcolIsAged(
    return (agelimit >= 0 && col->age > agelimit);
 }
 
+/** compute orthogonality of two gcg columns */
+SCIP_Real GCGcolComputeDualObjPara(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COL*             gcgcol              /**< gcg column */
+)
+{
+   SCIP_Real para = 0.0;
+
+   SCIP_Bool isray;
+   int prob;
+   SCIP* pricingprob = GCGcolGetPricingProb(gcgcol);
+
+   SCIP_VAR** solvars;
+   SCIP_Real* solvals;
+   int nsolvars;
+
+   assert(scip != NULL);
+   assert(gcgcol != NULL);
+
+   prob = GCGcolGetProbNr(gcgcol);
+   isray = GCGcolIsRay(gcgcol);
+   nsolvars = GCGcolGetNVars(gcgcol);
+   solvars = GCGcolGetVars(gcgcol);
+   solvals = GCGcolGetVals(gcgcol);
+
+   return para;
+}
 
 /** compute orthogonality of two gcg columns */
 SCIP_Real GCGcolComputeOrth(
@@ -548,7 +575,12 @@ SCIP_Real GCGcolComputeOrth(
    GCG_COL*             gcgcol2             /**< second gcg column */
 )
 {
+   int i;
+   int j;
    SCIP_Real orth = 0.0;
+   SCIP_Real norm1 = 0.0;
+   SCIP_Real norm2 = 0.0;
+
 
    SCIP_Bool isray1;
    int prob1;
@@ -557,6 +589,12 @@ SCIP_Real GCGcolComputeOrth(
    SCIP_VAR** solvars1;
    SCIP_Real* solvals1;
    int nsolvars1;
+   SCIP_Real* mastercoefs1;
+   int nmastercoefs1;
+   SCIP_Real* mastercuts1;
+   int nmastercuts1;
+   int* linkvars1;
+   int nlinkvars1;
 
    SCIP_Bool isray2;
    int prob2;
@@ -565,7 +603,12 @@ SCIP_Real GCGcolComputeOrth(
    SCIP_VAR** solvars2;
    SCIP_Real* solvals2;
    int nsolvars2;
-
+   SCIP_Real* mastercoefs2;
+   int nmastercoefs2;
+   SCIP_Real* mastercuts2;
+   int nmastercuts2;
+   int* linkvars2;
+   int nlinkvars2;
 
    assert(scip != NULL);
    assert(gcgcol1 != NULL);
@@ -576,15 +619,90 @@ SCIP_Real GCGcolComputeOrth(
    nsolvars1 = GCGcolGetNVars(gcgcol1);
    solvars1 = GCGcolGetVars(gcgcol1);
    solvals1 = GCGcolGetVals(gcgcol1);
+   nmastercoefs1 = GCGcolGetNMastercoefs(gcgcol1);
+   mastercoefs1 = GCGcolGetMastercoefs(gcgcol1);
+   nmastercuts1 = GCGcolGetNMastercuts(gcgcol1);
+   mastercuts1 = GCGcolGetMastercuts(gcgcol1);
+   nmastercuts1 = GCGcolGetNMastercuts(gcgcol1);
+   nlinkvars1 = GCGcolGetNLinkvars(gcgcol1);
+   linkvars1 = GCGcolGetLinkvars(gcgcol1);
 
    prob2 = GCGcolGetProbNr(gcgcol2);
    isray2 = GCGcolIsRay(gcgcol2);
    nsolvars2 = GCGcolGetNVars(gcgcol2);
    solvars2 = GCGcolGetVars(gcgcol2);
    solvals2 = GCGcolGetVals(gcgcol2);
+   nmastercoefs2 = GCGcolGetNMastercoefs(gcgcol2);
+   mastercoefs2 = GCGcolGetMastercoefs(gcgcol2);
+   nmastercuts2 = GCGcolGetNMastercuts(gcgcol2);
+   mastercuts2 = GCGcolGetMastercuts(gcgcol2);
+   nlinkvars2 = GCGcolGetNLinkvars(gcgcol2);
+   linkvars2 = GCGcolGetLinkvars(gcgcol2);
 
+   assert( nmastercoefs1 == nmastercoefs2 );
+   assert( nmastercuts1 == nmastercuts2 );
 
+   /** compute scalar of master values of gcg columns */
+   for( i = 0; i < nmastercoefs1; ++i )
+   {
+      if( SCIPisPositive(scip, mastercoefs1[i] * mastercoefs2[i]) )
+         orth += mastercoefs1[i] * mastercoefs2[i];
 
+      if( SCIPisPositive(scip, mastercoefs1[i]) )
+         norm1 += SQR(mastercoefs1[i]);
+      if( SCIPisPositive(scip, mastercoefs2[i]) )
+         norm2 += SQR(mastercoefs2[i]);
+   }
+
+   for( i = 0; i < nmastercuts1; ++i )
+   {
+      if( SCIPisPositive(scip, mastercuts1[i] * mastercuts2[i]) )
+         orth += mastercuts1[i] * mastercuts2[i];
+
+      if( SCIPisPositive(scip, mastercuts1[i]) )
+         norm1 += SQR(mastercuts1[i]);
+      if( SCIPisPositive(scip, mastercuts2[i]) )
+         norm2 += SQR(mastercuts2[i]);
+   }
+
+   for( i = 0; i < nlinkvars1; ++i )
+   {
+      SCIP_VAR* linkvar1;
+      SCIP_Real linkval1;
+      linkvar1 = solvars1[linkvars1[i]];
+      linkval1 = solvals1[linkvars1[i]];
+
+      norm1 += SQR(linkval1);
+
+      for( j = 0; j < nlinkvars2; ++j )
+      {
+         SCIP_VAR* linkvar2;
+         SCIP_Real linkval2;
+         linkvar2 = solvars2[linkvars2[i]];
+         linkval2 = solvals2[linkvars2[i]];
+
+         if( linkvar1 == linkvar2 )
+         {
+            orth += linkval1 * linkval2;
+            break;
+         }
+      }
+   }
+
+   for( i = 0; i < nlinkvars2; ++i )
+   {
+      SCIP_VAR* linkvar2;
+      SCIP_Real linkval2;
+      linkvar2 = solvars2[linkvars2[i]];
+      linkval2 = solvals2[linkvars2[i]];
+
+      norm2 += SQR(linkval2);
+   }
+
+   norm1 = SQRT(norm1);
+   norm1 = SQRT(norm2);
+
+   orth = orth/(norm1*norm2);
 
    return orth;
 }

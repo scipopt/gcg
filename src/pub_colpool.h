@@ -84,6 +84,50 @@ SCIP_Longint GCGcolpoolGetNColsFound(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
+/** creates col pool */
+EXTERN
+SCIP_RETCODE GCGcolpoolCreate(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COLPOOL**         colpool,            /**< pointer to store col pool */
+   int                   agelimit,           /**< maximum age a col can reach before it is deleted from the pool */
+   SCIP_Bool             globalcolpool       /**< is this the global col pool of SCIP? */
+   );
+
+/** frees col pool */
+EXTERN
+SCIP_RETCODE GCGcolpoolFree(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COLPOOL**        colpool             /**< pointer to store col pool */
+   );
+
+/** removes all rows from the col pool */
+EXTERN
+SCIP_RETCODE GCGcolpoolClear(
+   GCG_COLPOOL*         colpool             /**< col pool */
+   );
+
+/** if not already existing, adds row to col pool and captures it */
+EXTERN
+SCIP_RETCODE GCGcolpoolAddCol(
+   GCG_COLPOOL*          colpool,            /**< col pool */
+   GCG_COL*              col,                /**< column to add */
+   SCIP_Bool*            success             /**< pointer to store if col was added */
+   );
+
+/** adds row to col pool and captures it; doesn't check for multiple cols */
+EXTERN
+SCIP_RETCODE GCGcolpoolAddNewCol(
+   GCG_COLPOOL*         colpool,            /**< col pool */
+   GCG_COL*             col                 /**< column to add */
+   );
+
+/** removes the LP row from the col pool */
+EXTERN
+SCIP_RETCODE GCGcolpoolDelCol(
+   GCG_COLPOOL*          colpool,            /**< col pool */
+   GCG_COL*              col,                /**< col to remove */
+   SCIP_Bool             free                /**< should the col be freed? */
+   );
 /* @} */
 
 #ifdef __cplusplus
