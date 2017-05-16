@@ -77,6 +77,7 @@ private:
    SCIP_Bool hasstabilitycenter;
    SCIP_Real stabcenterbound;
    SCIP_Bool inmispricingschedule; /**< currently in mispricing schedule */
+   SCIP_Real subgradientproduct;
 
 public:
    /** constructor */
@@ -165,6 +166,11 @@ public:
 
    /**< update information for hybrid stablization with dual ascent */
    SCIP_RETCODE updateHybrid();
+
+   /** update subgradient product */
+   void updateSubgradientProduct(
+      GCG_COL**            pricingcols         /**< solutions of the pricing problems */
+   );
 
 private:
    /** updates the number of iterations */
