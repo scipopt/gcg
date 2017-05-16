@@ -529,6 +529,17 @@ SCIP_Real GCGcolGetSolVal(
    return vals[pos];
 }
 
+/** returns whether the col's age exceeds the age limit */
+SCIP_Bool GCGcolIsAged(
+   GCG_COL*             col,                /**< col to check */
+   int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool, or -1 */
+   )
+{
+   assert(col != NULL);
+
+   return (agelimit >= 0 && col->age > agelimit);
+}
+
 
 /** compute orthogonality of two gcg columns */
 SCIP_Real GCGcolComputeOrth(

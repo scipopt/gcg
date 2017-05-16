@@ -127,12 +127,6 @@ SCIP_Real GCGcolGetRedcost(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** get age of gcg column */
-extern
-int GCGcolGetAge(
-   GCG_COL*             gcgcol              /**< gcg column structure */
-);
-
 /** comparison method for sorting gcg columns by non-decreasing reduced cost */
 extern
 SCIP_DECL_SORTPTRCOMP(GCGcolCompRedcost);
@@ -224,6 +218,18 @@ SCIP_RETCODE GCGcolUpdateMastercuts(
    int                  nnewmastercuts      /**< new number of master cut coefficients */
    );
 
+/** gets the age of the col */
+extern
+int GCGcolGetAge(
+   GCG_COL*             col                 /**< col */
+   );
+
+/** returns whether the col's age exceeds the age limit */
+extern
+SCIP_Bool GCGcolIsAged(
+   GCG_COL*              col,                /**< col to check */
+   int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool, or -1 */
+   );
 
 
 /**@} */
