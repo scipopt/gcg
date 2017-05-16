@@ -104,7 +104,7 @@ def generate_files(files):
                     print name
                 elif not rootbounds and line.startswith("Root bounds"):
                     rootbounds = True
-                elif rootbounds and line.startswith("iter	pb	db") and rootbounds:
+                elif rootbounds and line.startswith("iter	pb	db"):
                     line_array = line.split()
                     #df = pd.DataFrame(columns = line_array, dtype = float)
                     boundheader = line_array

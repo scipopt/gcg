@@ -40,6 +40,8 @@
 #include <cassert>
 #include <cstring>
 
+#define SCIP_STATISTIC
+
 /*lint -e64 disable useless and wrong lint warning */
 
 #ifdef __INTEL_COMPILER
@@ -464,7 +466,7 @@ void GCGpricerCollectStatistic(
    assert(pricerdata != NULL);
    foundvars = pricerdata->npricedvars - pricerdata->oldvars;
 
-   SCIPstatisticMessage("Found %d new vars in prob %d\n", foundvars, probindex);
+//   SCIPstatisticMessage("Found %d new vars in prob %d\n", foundvars, probindex);
 
    if( type == GCG_PRICETYPE_FARKAS )
    {
@@ -879,7 +881,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
          {
 
 #ifdef SCIP_STATISTIC
-            SCIPinfoMessage(scip_, NULL, "collect stats\n");
+//            SCIPinfoMessage(scip_, NULL, "collect stats\n");
             #pragma omp critical (collectstats)
             GCGpricerCollectStatistic(pricerdata, pricetype->getType(), prob,
                SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
