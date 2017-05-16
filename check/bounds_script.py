@@ -94,7 +94,7 @@ def generate_files(files):
                 elif orig and line.startswith("Presolved Problem  :"):
                     orig = False
                 elif orig and line.startswith("  Problem name     :"):
-                    #print line
+                    print line
                     name = line.split()[3]      
                     name = name.split("/")[-1]
                     tmp_name = name.split(".")[-1]
@@ -130,7 +130,7 @@ def generate_files(files):
                         boundmap[i] = boundheader[i]
                        
                     df = pd.DataFrame.from_dict(data = boundlines, orient = 'index', dtype = float)
-                    
+                 
                     if len(df) == 0:
                         continue
                     #df.colums = boundheader
