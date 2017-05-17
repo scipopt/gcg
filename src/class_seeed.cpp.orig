@@ -71,7 +71,7 @@ const int Seeed::primes[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43
 
 const int Seeed::nPrimes = 70;
 
-
+<<<<<<< HEAD
 /** constructor */
 Seeed::Seeed(SCIP* _scip, int givenId, int givenNDetectors, int givenNConss, int givenNVars) :
    scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0),
@@ -79,9 +79,22 @@ Seeed::Seeed(SCIP* _scip, int givenId, int givenNDetectors, int givenNConss, int
    openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false),
    detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0),
    pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), usergiven(USERGIVEN::NOT), stemsFromUnpresolved(false),
-   isFinishedByFinisherUnpresolved(false), finishedUnpresolvedBy(NULL), isselected(false), isfromunpresolved(FALSE), detectorchainstring(NULL)
+   isFinishedByFinisherUnpresolved(false), finishedUnpresolvedBy(NULL)
+=======
+/** constructor(s) */
+Seeed::Seeed(
+   SCIP*       _scip,
+   int         givenId,                    /**< id that is given to this seeed */
+   int         givenNDetectors,            /**< number of detectors */
+   int         givenNConss,                /**number of constraints */
+   int         givenNVars                  /**number of variables */
+) :
+   scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
+      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false), usergiven(USERGIVEN::NOT), isselected(false), isfromunpresolved(FALSE), detectorchainstring(NULL)
+>>>>>>> feature/input_partial_decomps
 {
 }
+
 
 /** copy constructor */
 Seeed::Seeed(const Seeed *seeedToCopy)
@@ -119,12 +132,15 @@ Seeed::Seeed(const Seeed *seeedToCopy)
    nNewBlocks = seeedToCopy->nNewBlocks;
    listofancestorids = seeedToCopy->listofancestorids;
    usergiven = seeedToCopy->usergiven;
+<<<<<<< HEAD
    stemsFromUnpresolved = seeedToCopy->stemsFromUnpresolved;
    finishedUnpresolvedBy = seeedToCopy->finishedUnpresolvedBy;
    isFinishedByFinisherUnpresolved = seeedToCopy->isFinishedByFinisherUnpresolved;
+=======
    isselected = false;
    detectorchainstring = NULL;
    isfromunpresolved = FALSE;
+>>>>>>> feature/input_partial_decomps
 }
 
 /** destructor */
@@ -159,17 +175,47 @@ int Seeed::addBlock()
 }
 
 /** incorporates the the needed time of a certain detector in the detector chain */
+<<<<<<< HEAD
 void Seeed::addClockTime(SCIP_Real clocktime)
 {
    detectorClockTimes.push_back(clocktime);
 }
+=======
+ void Seeed::addClockTime(SCIP_Real clocktime){
+
+    /** add number of new blocks */
+    detectorClockTimes.push_back(clocktime);
+ }
+
+/** incorporates the changes from ancestor  seeed */
+ void Seeed::addDecChangesFromAncestor(Seeed* ancestor){
+
+    /** add number of new blocks */
+    assert( ancestor != NULL );
+
+    nNewBlocks.push_back( getNBlocks() -  ancestor->getNBlocks() );
+    pctConssFromFree.push_back( (ancestor->getNOpenconss() - getNOpenconss() ) / (SCIP_Real) getNConss() );
+    pctVarsFromFree.push_back( (ancestor->getNOpenvars() - getNOpenvars() ) / (SCIP_Real) getNVars() );
+    pctConssToBlock.push_back( (-getNOpenconss()-getNMasterconss()+ ancestor->getNOpenconss()+ ancestor->getNMasterconss() ) / getNConss() );
+    pctVarsToBlock.push_back( (-getNOpenvars()-getNMastervars() - getNLinkingvars() - getNTotalStairlinkingvars() + ancestor->getNOpenvars()+ ancestor->getNMastervars() + ancestor->getNLinkingvars() + ancestor->getNTotalStairlinkingvars() ) / getNVars() );
+    pctConssToBorder.push_back( ( getNMasterconss() - ancestor->getNMasterconss() ) / (SCIP_Real) getNConss() );
+    pctVarsToBorder.push_back( ( getNMastervars() + getNLinkingvars() + getNTotalStairlinkingvars() - ancestor->getNMastervars() - ancestor->getNLinkingvars() - ancestor->getNTotalStairlinkingvars()) / (SCIP_Real) getNVars() );
+    listofancestorids.push_back( ancestor->getID() );
+ }
+
+ void Seeed::addDetectorChainInfo(
+     const char* decinfo
+  )
+ {
+	 std::stringstream help;
+	 help << decinfo;
+    detectorchaininfo.push_back( help.str() );
+>>>>>>> feature/input_partial_decomps
 
 /** incorporates the changes from ancestor seeed */
 void Seeed::addDecChangesFromAncestor(Seeed* ancestor)
 {
    /** add number of new blocks */
-    assert( ancestor != NULL );
-
    nNewBlocks.push_back( getNBlocks() -  ancestor->getNBlocks() );
    pctConssFromFree.push_back( (ancestor->getNOpenconss() - getNOpenconss() ) / (SCIP_Real) getNConss() );
    pctVarsFromFree.push_back( (ancestor->getNOpenvars() - getNOpenvars() ) / (SCIP_Real) getNVars() );
@@ -2980,11 +3026,24 @@ bool Seeed::isTrivial()
    return false;
 }
 
+<<<<<<< HEAD
 /** returns true if the var is assigned to the block */
+=======
+
+bool Seeed::isComplete()
+{
+
+   return ( 0 == getNOpenconss() && 0 == getNOpenvars() );
+}
+
 bool Seeed::isSelected()
 {
    return isselected;
 }
+
+
+/** return whether the var is a var of the block */
+>>>>>>> feature/input_partial_decomps
 bool Seeed::isVarBlockvarOfBlock(int var, int block)
 {
    assert(var >= 0 && var < nVars);
@@ -3146,7 +3205,6 @@ SCIP_RETCODE Seeed::setID(
    return SCIP_OKAY;
 }
 
-
 /** sets whether open vars and conss are calculated */
 SCIP_RETCODE Seeed::setOpenVarsAndConssCalculated(bool value)
 {
@@ -3154,7 +3212,9 @@ SCIP_RETCODE Seeed::setOpenVarsAndConssCalculated(bool value)
    return SCIP_OKAY;
 }
 
-
+<<<<<<< HEAD
+/** adds a variable to a block */
+=======
 /** set selection information about this seeed */
 void Seeed::setSelected(
       bool selected
@@ -3164,6 +3224,7 @@ void Seeed::setSelected(
 
 
 /** add a variable to a block */
+>>>>>>> feature/input_partial_decomps
 SCIP_RETCODE Seeed::setVarToBlock(int varToBlock, int block)
 {
    assert(varToBlock >= 0 && varToBlock < nVars);

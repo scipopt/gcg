@@ -79,6 +79,11 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);
 
+/** dialog execution method for the select command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect);
+
+
 /** dialog execution method for the optimize command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize);

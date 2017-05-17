@@ -605,6 +605,27 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the displaying and selecting decompositions command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
+{  /*lint --e{715}*/
+   SCIP_CONSHDLR** conshdlrs;
+   int nconshdlrs;
+   int i;
+
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   SCIP_CALL( SCIPconshdlrDecompExecSelect(scip, dialoghdlr, dialog ) );
+
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
+
 /** dialog execution method for the optimize command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 {  /*lint --e{715}*/
@@ -612,8 +633,14 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    int presolrounds;
    presolrounds = -1;
 
+   SCIPdialogMessage(scip, NULL, "In optimize \n");
+
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
+   SCIPdialogMessage(scip, NULL, "In optimize2 \n");
+
+   assert(SCIPconshdlrDecompCheckConsistency(scip) );
+   SCIPdialogMessage(scip, NULL, "In optimize3 \n");
    SCIPdialogMessage(scip, NULL, "\n");
    switch( SCIPgetStage(scip) )
    {
@@ -623,8 +650,13 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
    case SCIP_STAGE_PROBLEM:
    case SCIP_STAGE_TRANSFORMED:
+      SCIPdialogMessage(scip, NULL, "in transformed \n");
+
    case SCIP_STAGE_PRESOLVING:
-//      if( DEChasDetectionRun(scip) || (DECgetBestDecomp(scip) != NULL) )
+      SCIPdialogMessage(scip, NULL, "in presolving \n");
+
+
+      //      if( DEChasDetectionRun(scip) || (DECgetBestDecomp(scip) != NULL) )
 //      {
 //         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
 //         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
@@ -632,6 +664,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
 
    case SCIP_STAGE_PRESOLVED:
+
+      assert(SCIPconshdlrDecompCheckConsistency(scip) );
+
+      SCIPdialogMessage(scip, NULL, "In presolved \n");
 
       if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
       {
@@ -672,6 +708,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       }
       /*lint -fallthrough*/
    case SCIP_STAGE_SOLVING:
+      assert( SCIPconshdlrDecompCheckConsistency(scip) );
+     SCIP_CALL( SCIPconshdlrDecompChooseBestFromSelected(scip ) );
+
+
       SCIP_CALL( SCIPsolve(scip) );
       break;
 
@@ -1034,6 +1074,17 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+   /* select */
+      if( !SCIPdialogHasEntry(root, "select") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+               NULL,
+               GCGdialogExecSelect, NULL, NULL,
+               "select", "select decompositions", FALSE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      }
 
 
    /* detect */

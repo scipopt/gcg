@@ -149,7 +149,9 @@ public:
    std::vector<SeeedPtr> findSeeeds(
    );
 
+<<<<<<< HEAD
    /** calls findSeeeds method and translates the resulting seeeds into decompositions */
+=======
 
    /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
    /*
@@ -160,6 +162,8 @@ public:
       std::vector<SeeedPtr> incompleteseeeds
     );
 
+   /** finds decompositions  */
+>>>>>>> feature/input_partial_decomps
    void findDecompositions(
    );
 
@@ -416,18 +420,24 @@ public:
       DEC_DECOMP**   newdecomp                              /** the new decomp created from the seeed */
    );
 
-   /** creates a seeed for a given decomposition, atm dummy method */
+<<<<<<< HEAD
+   /** creates a seeed for a given decomposition */
+=======
+   /**
+    * creates a seeed for a given decomposition, atm dummy method
+    */
+>>>>>>> feature/input_partial_decomps
    SCIP_RETCODE createSeeedFromDecomp(
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
-      );
+   );
 
 
    /**
     * returns transformation information
     */
    SCIP_Bool getTransformedInfo(
-   );
+      );
 
 private:
 

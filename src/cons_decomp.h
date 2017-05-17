@@ -48,7 +48,9 @@
 extern "C" {
 #endif
 
-
+SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
+   SCIP*          scip
+);
 
 /** creates the handler for decomp constraints and includes it in SCIP */
 extern
@@ -150,8 +152,18 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    SCIP_Bool             presolved           /**< should the user seeed be created for the presolved problem */
    );
 
+SCIP_RETCODE SCIPconshdlrDecompExecSelect(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   );
+
 SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
+   SCIP*                 scip
    );
 
 /** sets the number of blocks */
@@ -214,6 +226,20 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP*                 scip,                 /**< SCIP data structure */
    SCIP_Bool*            success
+   );
+
+SCIP_RETCODE SCIPconshdlrDecompChooseBestFromSelected(
+   SCIP* scip
+   );
+
+
+SCIP_Bool SCIPconshdlrDecompCheckConsistency(
+   SCIP* scip
+   );
+
+/** returns the next seeed id managed by cons_decomp */
+   int SCIPconshdlrDecompGetNextSeeedID(
+   SCIP*   scip
    );
 
 
