@@ -1711,7 +1711,7 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
          {
             if( isVarBlockvarOfBlock( var, b) )
             {
-               blocksOfBlockvars.push_back( b );
+               blocksOfBlockvars.push_back( b);
                break;
             }
          }

@@ -1596,21 +1596,6 @@ SCIP_RETCODE Seeedpool::prepareSeeed(SeeedPtr seeed)
 }
 
 
-/** deletes all current seeeds */
-void Seeedpool::freeCurrSeeeds()
-{
-   for( size_t i = 0; i < currSeeeds.size(); ++i )
-   {
-      if( currSeeeds[i] != NULL )
-      {
-         currSeeeds[i]->checkConsistency(this);
-         delete currSeeeds[i];
-         currSeeeds[i] = NULL;
-      }
-   }
-}
-
-
 /** adds a seeed to current seeeds */
 void Seeedpool::addSeeedToCurr(SeeedPtr seeed)
 {
@@ -1761,14 +1746,6 @@ int Seeedpool::getNewIdForSeeed()
 {
    nTotalSeeeds++;
    return (nTotalSeeeds-1);
-}
-
-
-/** decrements the number of seeeds */
-void Seeedpool::decrementSeeedcount()
-{
-   assert( nTotalSeeeds > 0 );
-   nTotalSeeeds--;
 }
 
 
