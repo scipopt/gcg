@@ -64,7 +64,6 @@ SCIP_RETCODE GCGcreateGcgCol(
 
    SCIP_CALL( SCIPallocMemory(pricingprob, gcgcol) );
 
-
    SCIP_CALL( SCIPallocMemoryArray(pricingprob, &((*gcgcol)->vars), nvars) );
    SCIP_CALL( SCIPallocMemoryArray(pricingprob, &((*gcgcol)->vals), nvars) );
 
@@ -424,6 +423,24 @@ SCIP_RETCODE GCGcolSetMastercoefs(
    return SCIP_OKAY;
 }
 
+/** get norm of column */
+void GCGcolSetNorm(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real            norm                /**< norm of column */
+   )
+{
+   gcgcol->norm = norm;
+}
+
+/** get norm of column */
+void GCGcolComputeNorm(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   gcgcol->norm = 0.0;
+}
+
+
 /** get master coefficients of column */
 int* GCGcolGetLinkvars(
    GCG_COL*             gcgcol              /**< gcg column structure */
@@ -477,6 +494,14 @@ int GCGcolGetNMastercuts(
    )
 {
    return gcgcol->nmastercuts;
+}
+
+/** get norm of column */
+int GCGcolGetNorm(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   return gcgcol->norm;
 }
 
 /** update master cut coefficients information of column */

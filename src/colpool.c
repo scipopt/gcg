@@ -14,15 +14,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   colpool.c
- * @brief  methods for storing cols in a col pool
- * @author Tobias Achterberg
- * @author Stefan Heinz
- * @author Gerald Gamrath
- * @author Marc Pfetsch
- * @author Kati Wolter
+ * @brief  methods for storing cols in a col pool (based on SCIP's cut pool)
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+//#define SCIP_DEBUG
 
 #include <assert.h>
 
@@ -82,11 +79,14 @@ SCIP_DECL_HASHKEYEQ(hashKeyEqCol)
    assert(col1 != NULL);
    assert(col2 != NULL);
 
+   assert(col1->vars != NULL || col1->nvars == 0);
+   assert(col2->vars != NULL || col2->nvars == 0);
+
    /* compare the trivial characteristics of the cols */
    if( col1->probnr != col2->probnr
       || col1->isray != col2->isray
       || col1->nvars != col2->nvars
-      || !SCIPisEQ(scip, col1->redcost, col2->redcost)
+      //|| !SCIPisEQ(scip, col1->redcost, col2->redcost)
        )
       return FALSE;
 
@@ -114,9 +114,8 @@ SCIP_DECL_HASHKEYVAL(hashKeyValCol)
    col = (GCG_COL*)key;
    assert(col != NULL);
 
-   keyval = SCIPhashTwo(SCIPpositiveRealHashCode(col->redcost, 8),
+   keyval = SCIPhashTwo(SCIPpositiveRealHashCode(0.0, 8),
                         SCIPcombineThreeInt(col->probnr, col->nvars, col->isray));
-
    return keyval;
 }
 
@@ -200,6 +199,8 @@ SCIP_RETCODE GCGcolpoolCreate(
          hashGetKeyCol, hashKeyEqCol, hashKeyValCol, (void*) scip) );
 
    (*colpool)->scip = scip;
+   (*colpool)->nodenr = -1;
+   (*colpool)->infarkas = FALSE;
    (*colpool)->cols = NULL;
    (*colpool)->colssize = 0;
    (*colpool)->ncols = 0;
@@ -241,6 +242,46 @@ SCIP_RETCODE GCGcolpoolFree(
    return SCIP_OKAY;
 }
 
+/** removes the col from the col pool */
+static
+SCIP_RETCODE colpoolDelCol(
+   GCG_COLPOOL*          colpool,            /**< col pool */
+   GCG_COL*              col,                /**< col to remove */
+   SCIP_Bool             free                /**< should the col be freed? */
+   )
+{
+   int pos;
+
+   assert(colpool != NULL);
+   assert(colpool->firstunprocessed <= colpool->ncols);
+   assert(colpool->firstunprocessedsol <= colpool->ncols);
+   assert(col != NULL);
+
+   pos = col->pos;
+   assert(0 <= pos && pos < colpool->ncols);
+   assert(colpool->cols[pos] == col);
+
+   /* remove the col from the hash table */
+   assert(SCIPhashtableExists(colpool->hashtable, (void*)col));
+   SCIP_CALL( SCIPhashtableRemove(colpool->hashtable, (void*)col) );
+
+   /* free the col */
+   if( free )
+      GCGfreeGcgCol(&colpool->cols[pos]);
+
+   /* move the last col of the pool to the free position */
+   if( pos < colpool->ncols-1 )
+   {
+      colpool->cols[pos] = colpool->cols[colpool->ncols-1];
+      colpool->cols[pos]->pos = pos;
+   }
+
+   colpool->ncols--;
+
+   return SCIP_OKAY;
+}
+
+
 /** removes all rows from the col pool */
 SCIP_RETCODE GCGcolpoolClear(
    GCG_COLPOOL*          colpool             /**< col pool */
@@ -250,10 +291,12 @@ SCIP_RETCODE GCGcolpoolClear(
 
    assert(colpool != NULL);
 
-   /* free cols */
-   for( i = 0; i < colpool->ncols; ++i )
+   SCIPinfoMessage(colpool->scip, NULL, "clear colpool \n");
+
+   /* free cols (in reverse order!) */
+   for( i = colpool->ncols - 1; i >= 0; --i )
    {
-      GCGfreeGcgCol(&colpool->cols[i]);
+      colpoolDelCol(colpool, colpool->cols[i], TRUE);
    }
    colpool->ncols = 0;
 
@@ -303,45 +346,6 @@ SCIP_RETCODE GCGcolpoolAddNewCol(
 
    /* insert col in the hash table */
    SCIP_CALL( SCIPhashtableInsert(colpool->hashtable, (void*)col) );
-
-   return SCIP_OKAY;
-}
-
-/** removes the col from the col pool */
-static
-SCIP_RETCODE colpoolDelCol(
-   GCG_COLPOOL*          colpool,            /**< col pool */
-   GCG_COL*              col,                /**< col to remove */
-   SCIP_Bool             free                /**< should the col be freed? */
-   )
-{
-   int pos;
-
-   assert(colpool != NULL);
-   assert(colpool->firstunprocessed <= colpool->ncols);
-   assert(colpool->firstunprocessedsol <= colpool->ncols);
-   assert(col != NULL);
-
-   pos = col->pos;
-   assert(0 <= pos && pos < colpool->ncols);
-   assert(colpool->cols[pos] == col);
-
-   /* remove the col from the hash table */
-   assert(SCIPhashtableExists(colpool->hashtable, (void*)col));
-   SCIP_CALL( SCIPhashtableRemove(colpool->hashtable, (void*)col) );
-
-   /* free the col */
-   if( free )
-      GCGfreeGcgCol(&colpool->cols[pos]);
-
-   /* move the last col of the pool to the free position */
-   if( pos < colpool->ncols-1 )
-   {
-      colpool->cols[pos] = colpool->cols[colpool->ncols-1];
-      colpool->cols[pos]->pos = pos;
-   }
-
-   colpool->ncols--;
 
    return SCIP_OKAY;
 }
@@ -407,10 +411,9 @@ SCIP_RETCODE GCGcolpoolPrice(
    /* process all unprocessed cols in the pool */
    *foundvars = FALSE;
 
-   for( c = 0; c < colpool->ncols; ++c )
+   for( c = colpool->ncols - 1; c >= 0; --c )
    {
       SCIP_Real redcost;
-
 
       col = colpool->cols[c];
       assert(col != NULL);
@@ -427,14 +430,14 @@ SCIP_RETCODE GCGcolpoolPrice(
 
          SCIP_CALL( GCGpricestoreAddCol(scip, pricestore, NULL, col, FALSE) );
 
-         SCIP_CALL( GCGcolpoolDelCol(colpool, col, FALSE) );
+         SCIP_CALL( colpoolDelCol(colpool, col, FALSE) );
 
          col->age = 0;
       }
       else
       {
          col->age++;
-         if( colIsAged(col, colpool->agelimit) )
+         if( GCGcolIsAged(col, colpool->agelimit) )
          {
             SCIP_CALL( colpoolDelCol(colpool, col, TRUE) );
          }
@@ -449,6 +452,74 @@ SCIP_RETCODE GCGcolpoolPrice(
 
    return SCIP_OKAY;
 }
+
+/** gets array of cols in the col pool */
+SCIP_RETCODE GCGcolpoolUpdateNode(
+   GCG_COLPOOL*         colpool             /**< col pool */
+   )
+{
+   assert(colpool != NULL);
+
+   if( colpool->nodenr < 0 )
+   {
+      colpool->nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip));
+   }
+   else if( colpool->nodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip)) )
+   {
+      SCIP_CALL( GCGcolpoolClear(colpool) );
+
+      colpool->nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip));
+   }
+
+   return SCIP_OKAY;
+}
+
+/** update reduced cost and compute master coefs of columns in column pool */
+SCIP_RETCODE GCGcolpoolUpdateRedcost(
+   GCG_COLPOOL*         colpool             /**< col pool */
+   )
+{
+   GCG_COL** cols;
+   int ncols;
+
+   int i;
+
+   ncols = GCGcolpoolGetNCols(colpool);
+   cols = GCGcolpoolGetCols(colpool);
+
+   for( i = 0; i < ncols; ++i )
+   {
+      GCG_COL* col;
+      SCIP_Real redcost;
+
+      col = cols[i];
+
+      SCIP_CALL( GCGcomputeColMastercoefs(colpool->scip, col) );
+
+      redcost = GCGcomputeRedCostGcgCol(colpool->scip, colpool->infarkas, col, NULL);
+
+      SCIP_CALL( GCGcolUpdateRedcost(col, redcost, FALSE) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** gets number of cols in the col pool */
+void GCGcolpoolStartFarkas(
+   GCG_COLPOOL*         colpool             /**< col pool */
+   )
+{
+   colpool->infarkas = TRUE;
+}
+
+/** gets number of cols in the col pool */
+void GCGcolpoolEndFarkas(
+   GCG_COLPOOL*         colpool             /**< col pool */
+   )
+{
+   colpool->infarkas = FALSE;
+}
+
 
 /** gets array of cols in the col pool */
 GCG_COL** GCGcolpoolGetCols(

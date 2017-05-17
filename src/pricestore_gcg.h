@@ -99,7 +99,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
 extern
 SCIP_RETCODE GCGpricestoreApplyCols(
    GCG_PRICESTORE*       pricestore,          /**< price storage */
-   SCIP_Bool             root                 /**< are we at the root node? */
+   int*                  nfoundvars           /**< pointer to store number of variables that were added to the problem */
    );
 
 /** clears the priceration storage without adding the cols to the LP */

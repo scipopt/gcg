@@ -184,10 +184,30 @@ public:
    /** create the pointers for the colpool */
    SCIP_RETCODE createColpool();
 
+   /** create the pointers for the pricestore */
+   SCIP_RETCODE createPricestore();
+
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
    SCIP_RETCODE getStabilizedDualObjectiveValue(
       SCIP_Real*         stabdualval         /**< pointer to store stabilized dual objective value */
    );
+
+   SCIP_Real computeRedCostGcgCol(
+      PricingType*          pricetype,          /**< type of pricing */
+      GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
+      SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
+      ) const;
+
+   /** compute master coefficients of column */
+   SCIP_RETCODE computeColMastercoefs(
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   /** compute master cut coefficients of column */
+   SCIP_RETCODE computeColMastercuts(
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
 private:
    ReducedCostPricing *reducedcostpricing;
    FarkasPricing *farkaspricing;
@@ -211,12 +231,6 @@ private:
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    ) const;
-
-   SCIP_Real computeRedCostGcgCol(
-      PricingType*          pricetype,          /**< type of pricing */
-      GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
-      SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
-      ) const;
 
    /** counts the number of variables with negative reduced cost */
    int countPricedVariables(
@@ -261,11 +275,6 @@ private:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** compute master coefficients of column */
-   SCIP_RETCODE computeColMastercoefs(
-      GCG_COL*              gcgcol              /**< GCG column data structure */
-      );
-
    /** add variable with computed coefficients to the master cuts */
    SCIP_RETCODE addVariableToMastercuts(
       SCIP_VAR*             newvar,             /**< The new variable to add */
@@ -278,11 +287,6 @@ private:
    /** add variable with computed coefficients to the master cuts */
    SCIP_RETCODE addVariableToMastercutsFromGCGCol(
       SCIP_VAR*             newvar,             /**< The new variable to add */
-      GCG_COL*              gcgcol              /**< GCG column data structure */
-      );
-
-   /** compute master cut coefficients of column */
-   SCIP_RETCODE computeColMastercuts(
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 

@@ -61,6 +61,7 @@ struct GCG_Col
    int                  nmastercoefs;       /**< number of master coefficients */
    SCIP_Real*           mastercuts;         /**< array of master cut coefficients */
    int                  nmastercuts;        /**< number of master cut coefficients */
+   SCIP_Real            norm;               /**< norm of the coefficients in the master */
    int*                 linkvars;           /**< array of indices of variables in var-array which are linking variables */
    int                  nlinkvars;          /**< number of variables in var-array which are linking variables */
 };

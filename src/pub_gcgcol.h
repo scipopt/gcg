@@ -210,6 +210,12 @@ int GCGcolGetNMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
+/** get norm of column */
+extern
+int GCGcolGetNorm(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
 /** update master cut coefficients information of column */
 extern
 SCIP_RETCODE GCGcolUpdateMastercuts(
@@ -231,6 +237,13 @@ SCIP_Bool GCGcolIsAged(
    int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool, or -1 */
    );
 
+/** compute orthogonality of two gcg columns */
+extern
+SCIP_Real GCGcolComputeOrth(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COL*             gcgcol1,            /**< first gcg column */
+   GCG_COL*             gcgcol2             /**< second gcg column */
+   );
 
 /**@} */
 

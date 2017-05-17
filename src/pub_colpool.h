@@ -128,6 +128,31 @@ SCIP_RETCODE GCGcolpoolDelCol(
    GCG_COL*              col,                /**< col to remove */
    SCIP_Bool             free                /**< should the col be freed? */
    );
+
+/** gets array of cols in the col pool */
+EXTERN
+SCIP_RETCODE GCGcolpoolUpdateNode(
+   GCG_COLPOOL*         colpool             /**< col pool */
+   );
+
+/** update reduced cost of columns in column pool */
+EXTERN
+SCIP_RETCODE GCGcolpoolUpdateRedcost(
+   GCG_COLPOOL*         colpool             /**< col pool */
+   );
+
+/** gets number of cols in the col pool */
+EXTERN
+void GCGcolpoolStartFarkas(
+   GCG_COLPOOL*         colpool             /**< col pool */
+   );
+
+/** gets number of cols in the col pool */
+EXTERN
+void GCGcolpoolEndFarkas(
+   GCG_COLPOOL*         colpool             /**< col pool */
+   );
+
 /* @} */
 
 #ifdef __cplusplus
