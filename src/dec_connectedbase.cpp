@@ -145,7 +145,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
    gcg::Seeed* seeed;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool );
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
    //complete the seeed by bfs
    seeed->completeByConnected(seeedPropagationData->seeedpool );
@@ -180,7 +180,7 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    char decinfo[SCIP_MAXSTRLEN];
 
    gcg::Seeed* seeed;
-   seeed  = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool );
+   seeed  = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
    //complete the seeed by bfs
    seeed->completeByConnected(seeedPropagationData->seeedpool );

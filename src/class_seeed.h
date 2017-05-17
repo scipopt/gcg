@@ -128,8 +128,7 @@ public:
 
    /** copy constructor */
    Seeed(
-      const Seeed *seeedToCopy,     /**< seeed to be copied */
-      Seeedpool* seeedpool          /**< TODO why? */
+      const Seeed *seeedToCopy      /**< seeed to be copied */
    );
 
    /** destructor */
@@ -358,12 +357,12 @@ public:
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** finds linking-variables that are actually master-variables, i.e. the variable is adjacent to only master-constraint */
+   /** reassigns variables classified as linking to master if the variable only hits master conss */
    SCIP_RETCODE findVarsLinkingToMaster(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** finds linking-variables that are actually stairlinking-variables, i.e. the variable is adjacent to constraints in exactly two block */
+   /** reassigns variables classified as linking to stairlinking if the variable hits conss in exactly two consecutive blocks */
    SCIP_RETCODE findVarsLinkingToStairlinking(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );

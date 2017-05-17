@@ -431,7 +431,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
    assert(detectordata != NULL);
    *result = SCIP_DIDNOTFIND;
 
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
    seeed->assignAllDependent(seeedPropagationData->seeedpool);
 
    if(!graphCompletible(seeedPropagationData->seeedpool, seeed))

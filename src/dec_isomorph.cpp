@@ -1048,7 +1048,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
       newconstoblock[cons] = consblock;
       SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(seeedpool->getConsForIndex(cons)));
    }
-   (*newSeeed) = new gcg::Seeed(seeed, seeedpool);
+   (*newSeeed) = new gcg::Seeed(seeed);
    SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblockVector(newconstoblock, nblocks, seeedpool) );
 
    (*newSeeed)->considerImplicits(seeedpool);

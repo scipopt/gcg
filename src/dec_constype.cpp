@@ -212,7 +212,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
       if(subsetsOfConstypes[subset].size() == 0)
           continue;
 
-      seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
+      seeed = new gcg::Seeed(seeedOrig);
          /** set open cons that have type of the current subset to Master */
       for( int i = 0; i < seeed->getNOpenconss(); ++i)
       {

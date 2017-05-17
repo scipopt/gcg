@@ -84,7 +84,7 @@ Seeed::Seeed(SCIP* _scip, int givenId, int givenNDetectors, int givenNConss, int
 
 
 /** copy constructor */
-Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
+Seeed::Seeed(const Seeed *seeedToCopy)
 {
    scip = (seeedToCopy->scip);
    id = seeedToCopy->id;
@@ -2408,7 +2408,7 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int g
    return SCIP_OKAY;
 }
 
-/** finds linking-variables that are actually master-variables, i.e. the variable is adjacent to only master-constraints */
+/** reassigns variables classified as linking to master if the variable only hits master conss */
 SCIP_RETCODE Seeed::findVarsLinkingToMaster(Seeedpool* seeedpool)
 {
    int i;
@@ -2451,7 +2451,7 @@ SCIP_RETCODE Seeed::findVarsLinkingToMaster(Seeedpool* seeedpool)
    return SCIP_OKAY;
 }
 
-/** finds linking-variables that are actually stairlinking-variables, i.e. the variable is adjacent to constraints in exactly two blocks */
+/** reassigns variables classified as linking to stairlinking if the variable hits conss in exactly two consecutive blocks */
 SCIP_RETCODE Seeed::findVarsLinkingToStairlinking(Seeedpool* seeedpool)
 {
    int i;

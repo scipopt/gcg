@@ -805,7 +805,7 @@ std::vector<SeeedPtr>    Seeedpool::findSeeeds()
                continue;
 
             #pragma omp critical (seeedcount)
-            seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
+            seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr);
 
 
             /** new seeeds are created by the current detector */
@@ -936,7 +936,7 @@ std::vector<SeeedPtr>    Seeedpool::findSeeeds()
             seeedPropData->seeedpool = this;
             seeedPropData->nNewSeeeds = 0;
             #pragma omp critical (seeedcount)
-            seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
+            seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr);
 
             if(verboseLevel > 2 )
             #pragma omp critical (ostream)
@@ -1023,7 +1023,7 @@ std::vector<SeeedPtr>    Seeedpool::findSeeeds()
          seeedPropData->nNewSeeeds = 0;
 
          #pragma omp critical (seeedcount)
-         seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
+         seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr);
 
          if( verboseLevel > 2)
             std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;

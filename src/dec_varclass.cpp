@@ -209,7 +209,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        if( subsetsOfVarclasses[subset].size() == 0 && varclassindices_master.size() == 0 && varclassindices_linking.size() == 0 )
           continue;
 
-       seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
+       seeed = new gcg::Seeed(seeedOrig);
 
        /** book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
        for( int i = 0; i < seeed->getNOpenvars(); ++i )

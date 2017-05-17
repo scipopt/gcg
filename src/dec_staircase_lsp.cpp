@@ -759,7 +759,7 @@ SCIP_RETCODE detection(
    char decinfo[SCIP_MAXSTRLEN];
 
    gcg::Seeedpool* seeedpool = seeedPropagationData->seeedpool;
-   gcg::Seeed* currseeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   gcg::Seeed* currseeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
    SCIP_CLOCK* temporaryClock;
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );

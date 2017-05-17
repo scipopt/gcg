@@ -197,7 +197,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        if( subsetsOfConsclasses[subset].size() == 0 && consclassindices_master.size() == 0 )
           continue;
 
-       seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
+       seeed = new gcg::Seeed(seeedOrig);
 
        /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
        for( int i = 0; i < seeed->getNOpenconss(); ++i )

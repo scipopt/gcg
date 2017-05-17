@@ -380,9 +380,9 @@ SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
 
    if( !emptyblocks )
    {
-      (*firstSeeed) = new Seeed(oldSeeed, seeedpool);
+      (*firstSeeed) = new Seeed(oldSeeed);
       SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
-      (*secondSeeed) = new Seeed(oldSeeed, seeedpool);
+      (*secondSeeed) = new Seeed(oldSeeed);
       SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks, seeedpool) );
       SCIPhashmapFree(&constoblock);
    }
