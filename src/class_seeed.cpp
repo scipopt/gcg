@@ -78,7 +78,7 @@ Seeed::Seeed(SCIP* _scip, int givenId, int givenNDetectors, int givenNConss, int
    openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false),
    detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0),
    pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), usergiven(USERGIVEN::NOT), stemsFromUnpresolved(false),
-   isFinishedByFinisherUnpresolved(false), finishedUnpresolvedBy(NULL) /* changed */
+   isFinishedByFinisherUnpresolved(false), finishedUnpresolvedBy(NULL)
 {
 }
 
@@ -104,7 +104,7 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    detectorChainFinishingUsed = seeedToCopy->detectorChainFinishingUsed;
    detectorchaininfo = seeedToCopy->detectorchaininfo;
    openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
-   hashvalue = seeedToCopy->hashvalue; /* changed */
+   hashvalue = seeedToCopy->hashvalue;
    score = seeedToCopy->score;
    maxwhitescore = seeedToCopy->maxwhitescore;
    changedHashvalue = seeedToCopy->changedHashvalue;
@@ -120,7 +120,7 @@ Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
    listofancestorids = seeedToCopy->listofancestorids;
    usergiven = seeedToCopy->usergiven;
    stemsFromUnpresolved = seeedToCopy->stemsFromUnpresolved;
-   finishedUnpresolvedBy = seeedToCopy->finishedUnpresolvedBy; /* changed */
+   finishedUnpresolvedBy = seeedToCopy->finishedUnpresolvedBy;
    isFinishedByFinisherUnpresolved = seeedToCopy->isFinishedByFinisherUnpresolved;
 }
 
@@ -583,7 +583,7 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(Seeedpool* seeedpool)
       openVarsAndConssCalculated = true;
    }
 
-   /** set open var to linking if it can be found in one block an open constraint */
+   /** set open var to linking if it can be found in one block and open constraint */
    for( size_t i = 0; i < openVars.size(); ++i )
    {
       blocksOfOpenvar.clear();
@@ -1709,9 +1709,9 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
 
          for( int b = 0; b < nBlocks && !master; ++b )
          {
-            if( isVarBlockvarOfBlock(var, b) )
+            if( isVarBlockvarOfBlock( var, b) )
             {
-               blocksOfBlockvars.push_back(b);
+               blocksOfBlockvars.push_back( b);
                break;
             }
          }
@@ -2514,7 +2514,7 @@ SCIP_RETCODE Seeed::findVarsLinkingToStairlinking(Seeedpool* seeedpool)
          }
       }
 
-      if( block1 != -1 && block2 != -1 )
+      if( block1 != -1 && block2 != -1 && ( block1 == block2+1 || block1+1 == block2 ) )
       {
          setVarToStairlinking(lvars[i], block1, block2);
          foundMasterVarIndices.push_back(i);
@@ -3188,7 +3188,7 @@ SCIP_RETCODE Seeed::setVarToStairlinking(int varToStairlinking, int block1, int 
 
    changedHashvalue = true;
 
-   stairlinkingVars[block1].push_back(varToStairlinking);
+   stairlinkingVars[( block1 < block2 ? block1 : block2 )].push_back(varToStairlinking);
 
    return SCIP_OKAY;
 }

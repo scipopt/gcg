@@ -184,10 +184,6 @@ public:
       SeeedPtr seeed
    );
 
-   /** deletes all current seeeds */
-   void freeCurrSeeeds(
-   );
-
    /** adds a seeed to current seeeds */
    void addSeeedToCurr(
       SeeedPtr seeed
@@ -276,10 +272,6 @@ public:
 
    /** returns a new unique id for a seeed */
    int getNewIdForSeeed(
-   );
-
-   /** decrements the number of seeeds */
-   void decrementSeeedcount(
    );
 
    /** returns the decompositions stored in the seeedpool */
