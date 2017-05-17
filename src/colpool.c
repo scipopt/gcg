@@ -291,8 +291,6 @@ SCIP_RETCODE GCGcolpoolClear(
 
    assert(colpool != NULL);
 
-   SCIPinfoMessage(colpool->scip, NULL, "clear colpool \n");
-
    /* free cols (in reverse order!) */
    for( i = colpool->ncols - 1; i >= 0; --i )
    {
@@ -406,7 +404,7 @@ SCIP_RETCODE GCGcolpoolPrice(
 
    /* remember the current total number of found cols */
    //oldncols = getNCols();
-   oldncols = 0;
+   oldncols = GCGpricestoreGetNCols(pricestore);
 
    /* process all unprocessed cols in the pool */
    *foundvars = FALSE;
@@ -445,8 +443,11 @@ SCIP_RETCODE GCGcolpoolPrice(
    }
 
    /* update the number of found cols */
-   colpool->ncolsfound = 0; /*lint !e776*/
-//   SCIPsepastoreGetNCols(sepastore) - oldncols
+   colpool->ncolsfound += GCGpricestoreGetNCols(pricestore) - oldncols; /*lint !e776*/
+
+   if( GCGpricestoreGetNCols(pricestore) - oldncols > 0 )
+      *foundvars = TRUE;
+
    /* stop timing */
    SCIPstopClock(colpool->scip, colpool->poolclock);
 
