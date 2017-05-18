@@ -713,7 +713,7 @@ SCIP_RETCODE solveCplex(
       {
          assert(!predisabled);
 
-         printf("disable presolving in CPLEX to get primal ray\n");
+         SCIPdebugMessage("disable presolving in CPLEX to get primal ray\n");
 
          CHECK_ZERO( CPXgetintparam(solverdata->cpxenv[probnr], CPX_PARAM_PREIND, &curpreind) );
          CHECK_ZERO( CPXgetintparam(solverdata->cpxenv[probnr], CPX_PARAM_ADVIND, &curadvind) );
