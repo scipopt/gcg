@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -293,7 +293,7 @@ SCIP_RETCODE filterInfiniteColumns(
                SCIPwarningMessage(pricingprob, "Removing solution with infinite value.\n");
             }
 
-            SCIP_CALL( GCGfreeGcgCol(&cols[s]) );
+            GCGfreeGcgCol(&cols[s]);
 
             cols[s] = cols[*ncols-1];
             --(*ncols);
@@ -412,7 +412,7 @@ SCIP_RETCODE solveProblem(
       *ncols = 0;
       *status = SCIP_STATUS_OPTIMAL;
 
-      for( s = 0; s < nprobsols && s < maxcols; s++ )
+      for( s = 0; s < nprobsols && *ncols < maxcols; s++ )
       {
          SCIP_Bool feasible;
          assert(probsols[s] != NULL);

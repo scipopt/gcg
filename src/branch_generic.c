@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -258,9 +258,9 @@ SCIP_RETCODE createBranchingCons(
 
    return SCIP_OKAY;
 }
-/** initialization method of event handler (called after problem was transformed) */
+/** solving process initialization method of event handler (called when branch and bound process is about to begin) */
 static
-SCIP_DECL_EVENTINIT(eventInitGenericbranchvaradd)
+SCIP_DECL_EVENTINITSOL(eventInitsolGenericbranchvaradd)
 {  /*lint --e{715}*/
     assert(scip != NULL);
     assert(eventhdlr != NULL);
@@ -272,9 +272,9 @@ SCIP_DECL_EVENTINIT(eventInitGenericbranchvaradd)
     return SCIP_OKAY;
 }
 
-/** deinitialization method of event handler (called before transformed problem is freed) */
+/** solving process deinitialization method of event handler (called before branch and bound process data is freed) */
 static
-SCIP_DECL_EVENTEXIT(eventExitGenericbranchvaradd)
+SCIP_DECL_EVENTEXITSOL(eventExitsolGenericbranchvaradd)
 {  /*lint --e{715}*/
     assert(scip != NULL);
     assert(eventhdlr != NULL);
@@ -2900,8 +2900,8 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
 
    /* include event handler for adding generated mastervars to the branching constraints */
    SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,
-         NULL, NULL, eventInitGenericbranchvaradd, eventExitGenericbranchvaradd,
-         NULL, NULL, NULL, eventExecGenericbranchvaradd,
+         NULL, NULL, NULL, NULL, eventInitsolGenericbranchvaradd, eventExitsolGenericbranchvaradd,
+         NULL, eventExecGenericbranchvaradd,
          NULL) );
 
    return SCIP_OKAY;

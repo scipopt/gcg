@@ -5,13 +5,44 @@ features
 - solve the problem with one single block if no decomposition is available ('SCIP mode')
 - extended isomorph detector by the possibility to identify blocks which are identical
   w.r.t. signs (but not necessarily values) of coefficients.
+- extended backtracking mechanism in diving heuristics:
+  single backtracking in addition to limited discrepancy search in master variable diving;
+  added branching on another variable and limited disc. search to original variable diving
+
+
+GCG Version 2.1.2
+=================
+
+- changed interface to SCIP 4.0.0
 
 code cleanup
 - cleanup for extreme point heuristics, moved code to own methods, added comments, remove redundant parameters
+- reallocate memory for origvars array in pricingvardate more efficiently
+- reallocate memory for original variable array in pricing variable data more efficiently
+- reorder permutations in isomorph detector according to orbit size and add maxdecomps parameter
 
 bug fixes
 - changed/corrected variable fixing behaviour of Extreme Point RINS in case of aggregated blocks
 - fixed handling of fixed variables in decompositions
+- update include method of solver template
+- fix GCGconsGet*() methods such that negated variables are handled correctly
+- fix bug in transformation of master solution to original solution
+- small bugfix in method that creates column graph from matrix
+- fixed memory errors in unit tests
+- fix memory issue with GCG_COL's
+- fix the deletion of old columns in the column pool
+- fix propagation of original variable bounds to the pricing problems:
+  propapagte bounds only if identical variables have the same bounds,
+  throw an error message otherwise
+- in case of global bound changes on original variables, check if the current relaxation
+  solution satisfies the new bound, and mark it invalid if not
+- stop the reduced cost pricing clock correctly
+- free redundant decompositions correctly
+- fix identity check of decompositions
+- fix bug in createPolishedDecomp()
+- fix bug in isomorph detector
+- avoid numerical troubles by rounding integral pricing solutions if possible
+
 
 GCG Version 2.1.1
 =================

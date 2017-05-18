@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -253,9 +253,9 @@ SCIP_RETCODE createNewSol(
 
    /* try to add new solution to original problem and free it immediately */
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, TRUE, TRUE, TRUE, TRUE, success) );
+   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, TRUE, TRUE, TRUE, TRUE, TRUE, success) );
 #else
-   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, FALSE, TRUE, TRUE, TRUE, success) );
+   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, FALSE, FALSE, TRUE, TRUE, TRUE, success) );
 #endif
 
    /* if we found a solution for the original problem,
@@ -263,9 +263,9 @@ SCIP_RETCODE createNewSol(
    if( success )
    {
 #ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
+      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, TRUE, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
 #else
-      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
+      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, FALSE, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
 #endif
       if( !masterfeas )
       {
@@ -436,7 +436,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    SCIP_CALL( SCIPcreate(&restmaster) );
 
    /* create the variable mapping hash map */
-   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(restmaster), SCIPcalcHashtableSize(5 * nmastervars)) );
+   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(restmaster), nmastervars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &restmastervars, nmastervars) );
 
    if( heurdata->uselprows )
@@ -453,7 +453,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
       SCIP_CALL( SCIPcreateProb(restmaster, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
       /* copy all variables */
-      SCIP_CALL( SCIPcopyVars(scip, restmaster, varmapfw, NULL, TRUE) );
+      SCIP_CALL( SCIPcopyVars(scip, restmaster, varmapfw, NULL, NULL, NULL, 0, TRUE) );
    }
    else
    {
@@ -518,11 +518,10 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    }
 
    /* disable conflict analysis */
-   SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/useprop", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/useinflp", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/useboundlp", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/usesb", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/usepseudo", FALSE) );
+   if( !SCIPisParamFixed(restmaster, "conflict/enable") )
+   {
+      SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/enable", FALSE) );
+   }
 
    /* if the subproblem could not be created, free memory and return */
    if( !success )

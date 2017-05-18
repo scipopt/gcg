@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -323,6 +323,8 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
       int nlocksup;
       int nviolrows;
 
+      int i;
+
       SCIP_Bool mayrounddown;
       SCIP_Bool mayroundup;
       SCIP_Bool roundup;
@@ -330,6 +332,14 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
 
       var = lpcands[c];
       frac = lpcandsfrac[c];
+
+      /* if the variable is on the tabu list, do not choose it */
+      for( i = 0; i < tabulistsize; ++i )
+         if( tabulist[i] == var )
+            break;
+      if( i < tabulistsize )
+         continue;
+
       if( divingdata->usemasterlocks )
       {
          SCIP_CALL( getNLocksDown(scip, var, &nlocksdown) );

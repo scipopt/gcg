@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -158,10 +158,13 @@ TEST_F(ColpoolTest, DeleteOldTest) {
 
    colpool->deleteOldColumns();
 
+   colpool->resortColumns();
+
    ASSERT_EQ(colpool->getNCols(), 2);
 
    colpool->getBestCol(&gcgcol);
    ASSERT_EQ(gcgcol, gcgcols[2]);
+
    GCGfreeGcgCol(&gcgcol);
 
    colpool->getBestCol(&gcgcol);

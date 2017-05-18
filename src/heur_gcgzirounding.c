@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -833,7 +833,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    if( currentlpcands == 0 )
    {
       SCIP_Bool stored;
-      SCIP_CALL( SCIPtrySol(scip, sol, FALSE, FALSE, TRUE, FALSE, &stored) );
+      SCIP_CALL( SCIPtrySol(scip, sol, FALSE, FALSE, FALSE, TRUE, FALSE, &stored) );
       if( stored )
       {
 #ifdef SCIP_DEBUG

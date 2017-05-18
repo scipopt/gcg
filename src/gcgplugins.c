@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -101,7 +101,6 @@
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_trivial.h"
 #include "scip/presol_boundshift.h"
-#include "scip/presol_components.h"
 #include "scip/presol_domcol.h"
 #include "scip/presol_convertinttobin.h"
 
@@ -181,6 +180,7 @@
 #include "dec_staircase.h"
 #include "dec_random.h"
 #include "dec_colors.h"
+#include "dec_consname.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -240,7 +240,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
-   SCIP_CALL( SCIPincludePresolComponents(scip) );
    SCIP_CALL( SCIPincludePresolDomcol(scip) );
    SCIP_CALL( SCIPincludePresolConvertinttobin(scip) );
 
@@ -340,6 +339,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );
    SCIP_CALL( SCIPincludeDetectorColors(scip) );
    SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
+   SCIP_CALL( SCIPincludeDetectorConsname(scip) );
 
 
 #ifndef NBLISS

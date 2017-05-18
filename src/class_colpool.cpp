@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -45,14 +45,14 @@
 
 #include <exception>
 
-#define SCIP_CALL_EXC(x)   do                                                                                  \
+#define SCIP_CALL_EXC(x)   do                                                                                 \
                        {                                                                                      \
                           SCIP_RETCODE _restat_;                                                              \
                           if( (_restat_ = (x)) !=  SCIP_OKAY )                                                \
                           {                                                                                   \
                              SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
                              throw std::exception();                                                          \
-                           }                                                                                  \
+                          }                                                                                   \
                        }                                                                                      \
                        while( FALSE )
 
@@ -79,7 +79,7 @@ namespace gcg {
 
       for( i = 0; i < ngcgcols; ++i )
       {
-         SCIP_CALL_EXC( GCGfreeGcgCol(&(gcgcols[i])) );
+         GCGfreeGcgCol(&(gcgcols[i]));
       }
       GCGpqueueFree(&pqueue);
       pqueue = NULL;
@@ -240,27 +240,43 @@ namespace gcg {
       return GCGpqueueNElems(pqueue);
    }
 
-   /**< delete all columns that are older than agelimit */
+   /**< delete all columns that are older than agelimit
+    * WARNING: This method changes the order in which the colums are stored.
+    * Use GCGpqueueResort() to resort the columns by reduced cost again */
    SCIP_RETCODE Colpool::deleteOldColumns()
    {
-      GCG_COL* gcgcol;
+      /* todo: get comperator of pqueue */
 
-      int i;
+      SCIP_CALL( GCGpqueueSetComperator(pqueue, GCGcolCompAge) );
 
-      for( i = 0; i < getNCols(); ++i )
+      SCIP_CALL( GCGpqueueResort(pqueue) );
+
+      while( GCGpqueueNElems(pqueue) > 0 )
       {
-         if( getColAge(i) > agelimit )
-         {
-            SCIP_CALL( GCGpqueueDelete(pqueue, i, (void**) &gcgcol) );
+         GCG_COL* gcgcol;
 
-            SCIP_CALL( GCGfreeGcgCol(&gcgcol) );
+         gcgcol = (GCG_COL*) GCGpqueueFirst(pqueue);
+
+         if( GCGcolGetAge(gcgcol) > agelimit)
+         {
+            gcgcol = (GCG_COL*) GCGpqueueRemove(pqueue);
+
+            GCGfreeGcgCol(&gcgcol);
          }
+         else
+            break;
       }
+
+      /* todo: use previous comperator of pqueue */
+      SCIP_CALL( GCGpqueueSetComperator(pqueue, GCGcolCompRedcost) );
+
       return SCIP_OKAY;
    }
 
    /**< delete the oldest columns such that number of columns in colpool is
-    *   lower than or equal to maxncolssoft */
+    *   lower than or equal to maxncolssoft
+    * WARNING: This method changes the order in which the colums are stored.
+    * Use GCGpqueueResort() to resort the columns by reduced cost again  */
    SCIP_RETCODE Colpool::deleteOldestColumns()
    {
       if( GCGpqueueNElems(pqueue) <= maxncolssoft )
@@ -287,7 +303,7 @@ namespace gcg {
 
          gcgcol = (GCG_COL*) GCGpqueueRemove(pqueue);
 
-         SCIP_CALL( GCGfreeGcgCol(&gcgcol) );
+         GCGfreeGcgCol(&gcgcol);
       }
 
       /* todo: use previous comperator of pqueue */
@@ -309,7 +325,7 @@ namespace gcg {
 
       for(i = 0; i < ncols; ++i)
       {
-         SCIP_CALL( GCGfreeGcgCol(&(cols[i])) );
+         GCGfreeGcgCol(&(cols[i]));
       }
 
       GCGpqueueClear(pqueue);
@@ -337,7 +353,7 @@ namespace gcg {
    SCIP_RETCODE Colpool::updateNode(
    )
    {
-      if( nodenr <= 0 )
+      if( nodenr < 0 )
       {
          nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
       }

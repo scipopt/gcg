@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -127,7 +127,12 @@ SCIP_Bool GCGrelaxIsOrigSolFeasible(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** start probing mode on master problem */
+/** start probing mode on both the original and master problems
+ *
+ *  @note This mode is intended for working on the original variables but using the master LP;
+ *        it currently only supports bound changes on the original variables,
+ *        but no additional rows
+ */
 extern
 SCIP_RETCODE GCGrelaxStartProbing(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -135,12 +140,42 @@ SCIP_RETCODE GCGrelaxStartProbing(
    );
 
 /** returns the  heuristic that started probing in the master problem, or NULL */
+extern
 SCIP_HEUR* GCGrelaxGetProbingheur(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** for a probing node in the original problem, create a corresponding probing node in the master problem,
- *  propagate domains and solve the LP without pricing. */
+/** add a new probing node the original problem together with an original branching constraint
+ *
+ *  @note A corresponding probing node must be added to the master problem right before solving the probing LP
+ */
+extern
+SCIP_RETCODE GCGrelaxNewProbingnodeOrig(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** add a new probing node the master problem together with a master branching constraint
+ *  which ensures that bound changes are transferred to master and pricing problems
+ *
+ *  @note A corresponding probing node must have been added to the original problem beforehand;
+ *        furthermore, this method must be called after bound changes to the original problem have been made
+ */
+extern
+SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** add probing nodes to both the original and master problem;
+ *  furthermore, add origbranch and masterbranch constraints to transfer branching decisions
+ *  from the original to the master problem
+ */
+extern
+SCIP_RETCODE GCGrelaxBacktrackProbing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   probingdepth        /**< probing depth of the node in the probing path that should be reactivated */
+   );
+
+/** solve the master probing LP without pricing */
 extern
 SCIP_RETCODE GCGrelaxPerformProbing(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -153,8 +188,7 @@ SCIP_RETCODE GCGrelaxPerformProbing(
    SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    );
 
-/** for a probing node in the original problem, create a corresponding probing node in the master problem,
- *  propagate domains and solve the LP with pricing. */
+/** solve the master probing LP with pricing */
 extern
 SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -168,7 +202,7 @@ SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
    SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    );
 
-/** end probing mode in master problem */
+/** end probing mode in both the original and master problems */
 extern
 SCIP_RETCODE GCGrelaxEndProbing(
    SCIP*                 scip                /**< SCIP data structure */

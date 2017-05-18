@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -61,7 +61,7 @@
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
 #define DEC_SKIP                 TRUE        /**< should the detector be skipped if others found decompositions */
 
-#define DEFAULT_NUMOFSOL         1          /**< default number of solutions */
+#define DEFAULT_MAXDECOMPS       1          /**< default maximum number of decompositions */
 #define DEFAULT_EXACT            TRUE       /**< default value using exact coefficients for detection */
 #define DEFAULT_EXTEND           FALSE      /**< default value for extending detection by using the sign of the coefficients instead of the coefficients */
 
@@ -73,7 +73,7 @@
 struct DEC_DetectorData
 {
    SCIP_RESULT          result;             /**< result pointer to indicate success or failure */
-   int                  numofsol;           /**< number of solutions */
+   int                  maxdecomps;         /**< maximum number of decompositions */
    SCIP_Bool            exact;              /**< Use exact coefficients for detection? */
    SCIP_Bool            extend;             /**< Extend detection by using the sign of the coefficients instead of the coefficients? */
 };
@@ -497,7 +497,6 @@ DEC_DECL_INITDETECTOR(detectorInitIsomorph)
    assert(detectordata != NULL);
 
    detectordata->result = SCIP_SUCCESS;
-   detectordata->numofsol = DEFAULT_NUMOFSOL;
 
    return SCIP_OKAY;
 }
@@ -557,17 +556,18 @@ void collapsePermutation(
    }
 }
 
-/** filters the best permutation */
-SCIP_RETCODE filterPermutation(
+/** reorder such that the best permutation is represented by 0, the second best by 1, etc. */
+SCIP_RETCODE reorderPermutations(
    SCIP*                 scip,               /**< SCIP data structure */
    int*                  permutation,        /**< the permutation */
    int                   permsize,           /**< size of the permutation */
    int                   nperms              /**< number of permutations */
 )
 {
-   int best = 0;
    int i;
    int* count;
+   int* order;
+   int* invorder;
 
    assert(scip != NULL);
    assert(permutation != NULL);
@@ -575,23 +575,59 @@ SCIP_RETCODE filterPermutation(
    assert(nperms > 0);
 
    SCIP_CALL( SCIPallocBufferArray(scip, &count, nperms) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &order, nperms) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &invorder, nperms) );
    BMSclearMemoryArray(count, nperms);
+   BMSclearMemoryArray(order, nperms);
+   BMSclearMemoryArray(invorder, nperms);
 
+   /* initialize order array that will give a mapping from new to old representatives */
+   for( i = 0; i < nperms; ++i )
+   {
+      order[i] = i;
+   }
+
+   /* count sizes of orbits */
    for( i = 0; i < permsize; ++i )
    {
       if( permutation[i] >= 0 )
+      {
          count[permutation[i]] += 1;
+
+         SCIPdebugMessage("permutation[i] = %d; count %d\n", permutation[i], count[permutation[i]]);
+      }
    }
 
-   best = count-std::max_element(count, count+nperms);
-   SCIPfreeBufferArray(scip, &count);
+   /* sort count and order array */
+   SCIPsortDownIntInt(count, order, nperms);
 
+#ifdef SCIP_DEBUG
+
+   for( i = 0; i < nperms; ++i )
+   {
+      SCIPdebugMessage("count[%d] = %d, order[%d] = %d\n", i, count[i], i, order[i]);
+   }
+#endif
+
+   /* compute invorder array that gives a mapping from old to new representatives */
+   for( i = 0; i < nperms; ++i )
+   {
+      invorder[order[i]] = i;
+      SCIPdebugMessage("invorder[%d] = %d\n", order[i], invorder[order[i]]);
+   }
+
+   SCIPdebugMessage("Best permutation with orbit of size %d, best %d\n", count[0], order[0]);
+
+   /* update representatives of constraints */
    for( i = 0; i < permsize; ++i )
    {
-      if( permutation[i] != best )
-         permutation[i] = -1;
+      if( permutation[i] >= 0 )
+         permutation[i] = invorder[permutation[i]];
    }
 
+   SCIPfreeBufferArray(scip, &count);
+   SCIPfreeBufferArray(scip, &order);
+   SCIPfreeBufferArray(scip, &invorder);
 
    return SCIP_OKAY;
 }
@@ -657,17 +693,16 @@ SCIP_RETCODE detectIsomorph(
       // renumbering from 0 to number of permutations
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
-      // filter decomposition with largest orbit
-      if( detectordata->numofsol == 1)
-         SCIP_CALL( filterPermutation(scip, ptrhook->conssperm, nconss, nperms) );
+      // reorder decomposition (corresponding to orbit size)
+      SCIP_CALL( reorderPermutations(scip, ptrhook->conssperm, nconss, nperms) );
 
       if( *ndecdecomps == 0 )
-         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->maxdecomps, nperms)) ); /*lint !e506*/
       else
-         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->numofsol, nperms)) ); /*lint !e506*/
+         SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps + MIN(detectordata->maxdecomps, nperms)) ); /*lint !e506*/
 
       int pos = *ndecdecomps;
-      for( p = *ndecdecomps; p < *ndecdecomps + nperms && pos < detectordata->numofsol; ++p )
+      for( p = *ndecdecomps; p < *ndecdecomps + nperms && pos < detectordata->maxdecomps; ++p )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
 
@@ -793,6 +828,9 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
       detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, NULL) );
 
    /* add isomorph constraint handler parameters */
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecomps",
+      "Maximum number of solutions/decompositions", &detectordata->maxdecomps, FALSE,
+      DEFAULT_MAXDECOMPS, 1, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/exact",
       "Use exact coefficients for detection?", &detectordata->exact, FALSE,
          DEFAULT_EXACT, NULL, NULL) );

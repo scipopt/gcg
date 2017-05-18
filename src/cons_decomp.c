@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -618,7 +618,15 @@ SCIP_RETCODE DECdetectStructure(
             }
             if( ndecdecomps > 2 )
             {
-               ndecdecomps = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+               int nunique = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+
+               for( j = nunique; j < ndecdecomps; ++j )
+               {
+                  SCIP_CALL( DECdecompFree(scip, &(decdecomps[j])) );
+                  decdecomps[j] = NULL;
+               }
+
+               ndecdecomps = nunique;
             }
             SCIPdebugPrintf("%d after filtering!\n", ndecdecomps);
 

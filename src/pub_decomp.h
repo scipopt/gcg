@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -491,15 +491,6 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    int*                  transferred         /**< number of master constraints reassigned */
    );
 
-/** removes a variable from the linking variable array */
-extern
-SCIP_RETCODE DECdecompRemoveLinkingVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   SCIP_VAR*             var,                /**< variable to remove */
-   SCIP_Bool*            success             /**< indicates whether the variable was successfully removed */
-   );
-
 /** tries to assign masterconss to new pricing problem */
 extern
 SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
@@ -522,7 +513,7 @@ extern
 SCIP_RETCODE DECpermuteDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   unsigned int          permutationseed     /**< permutation seed */
+   SCIP_RANDNUMGEN*      randnumgen          /**< random number generator */
    );
 
 #ifdef __cplusplus
