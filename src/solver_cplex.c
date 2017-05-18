@@ -986,12 +986,15 @@ static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
 {
    GCG_SOLVERDATA* solverdata;
+   SCIP_RETCODE retval;
 
    solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
    assert(solverdata->created != NULL);
 
    SCIPdebugMessage("calling heuristic pricing with CPLEX for pricing problem %d\n", probnr);
+
+   retval = SCIP_OKAY;
 
    /* build the pricing problem in CPLEX or update it */
    if( !solverdata->created[probnr] )
@@ -1013,7 +1016,8 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
    CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, -1LL) );
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, 0.0) );
 
-   return SCIP_OKAY;
+ TERMINATE:
+   return retval;
 }
 
 /** solving method for pricing solver which solves the pricing problem to optimality */
