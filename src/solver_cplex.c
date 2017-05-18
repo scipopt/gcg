@@ -987,6 +987,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
 {
    GCG_SOLVERDATA* solverdata;
    SCIP_RETCODE retval;
+   long long nodelim;
 
    solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
@@ -1006,14 +1007,15 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
       SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
    }
 
-   CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, solverdata->heurnodelimit) );
+   CHECK_ZERO( CPXgetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, &nodelim) );
+   CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, solverdata->heurnodelimit) );
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPAGAP, solverdata->heurgaplimit) );
 
    /* solve the pricing problem and evaluate solution */
    SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, result) );
    assert(*result != SCIP_STATUS_OPTIMAL || *ncols > 0);
 
-   CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, -1LL) );
+   CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, nodelim) );
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, 0.0) );
 
  TERMINATE:
