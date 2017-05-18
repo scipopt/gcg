@@ -1572,6 +1572,19 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
       }
 
       newseeed->detectorChain = otherseeed->detectorChain;
+      newseeed->detectorClockTimes = otherseeed->detectorClockTimes;
+      newseeed->pctVarsFromFree = otherseeed->pctVarsFromFree;
+      newseeed->pctVarsToBlock = otherseeed->pctVarsToBlock;
+      newseeed->pctVarsToBorder = otherseeed->pctVarsToBorder;
+      newseeed->pctConssToBorder = otherseeed->pctConssToBorder;
+      newseeed->pctConssFromFree = otherseeed->pctConssFromFree;
+      newseeed->pctConssToBlock = otherseeed->pctConssToBlock;
+      newseeed->nNewBlocks = otherseeed->nNewBlocks;
+      newseeed->detectorchainstring = otherseeed->detectorchainstring;
+
+
+
+
 
       newseeed->stemsFromUnpresolved = true;
       newseeed->isFinishedByFinisherUnpresolved  = otherseeed->isFinishedByFinisher;
@@ -1584,6 +1597,8 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
       newseeed->sort();
       newseeed->considerImplicits(this);
       newseeed->deleteEmptyBlocks();
+      newseeed->evaluate(this);
+
       //assert(newseeed->checkConsistency(this) );
 
 

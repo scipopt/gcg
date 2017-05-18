@@ -1959,6 +1959,9 @@ SCIP_RETCODE initRelaxator(
       }
    }
 
+   SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
+
+
    /* permute the decomposition if the permutation seed is set */
    SCIP_CALL( SCIPgetIntParam(scip, "randomization/permutationseed", &permutationseed) );
    if( permutationseed > 0 )

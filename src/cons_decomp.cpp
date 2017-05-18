@@ -159,11 +159,15 @@ struct SCIP_ConshdlrData
 
    int                    seeedcounter;                      /** counts the number of seeeds, used for seeed ids */
 
+   std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;
+
 };
 
 /*
  * Local methods
  */
+
+
 
 /** local method to handle storage of finished decompositions and corresponding seeeds */
 static
@@ -242,7 +246,11 @@ SCIP_RETCODE SCIPstoreIncompleteSeeed(
 }
 
 
-
+struct sort_pred {
+    bool operator()(const std::pair<SeeedPtr, SCIP_Real> &left, const std::pair<SeeedPtr, SCIP_Real> &right) {
+        return left.second < right.second;
+    }
+};
 
 
 /**
@@ -419,6 +427,8 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    if( conshdlrdata->seeedpoolunpresolved != NULL )
       delete conshdlrdata->seeedpoolunpresolved;
 
+   if( conshdlrdata->candidates != NULL )
+         delete &conshdlrdata->candidates;
 
    SCIPfreeMemoryArrayNull(scip, &conshdlrdata->incompleteseeeds );
    SCIPfreeMemoryArrayNull( scip, &conshdlrdata->allrelevantfinishedseeeds) ;
@@ -504,6 +514,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->selectvisulength = 10;
    conshdlrdata->listall = new std::vector<SeeedPtr>(0, NULL);
    conshdlrdata->selected = new std::vector<int>(0, -1);
+   conshdlrdata->candidates = new std::vector<std::pair<SeeedPtr, SCIP_Real > >(0);
    conshdlrdata->selectedexists = FALSE;
    conshdlrdata->sizedecomps = 10;
    conshdlrdata->sizeincompleteseeeds = 10;
@@ -545,6 +556,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
 
+   assert(conshdlrdata->candidates != NULL);
 
    return SCIP_OKAY;
 }
@@ -958,6 +970,26 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    return SCIP_OKAY;
 }
 
+SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
+   SCIP*                   scip
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   return conshdlrdata->candidates->at(0).first->isfromunpresolved;
+}
+
 
 SCIP_RETCODE SCIPconshdlrDecompExecSelect(
    SCIP*                   scip,
@@ -1029,6 +1061,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
       if( strncmp( command, "quit", commandlen) == 0 )
       {
          finished = TRUE;
+         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE) );
          continue;
       }
 
@@ -2039,9 +2072,43 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    return SCIP_OKAY;
 }
 
+/** method to adapt score for unpresolved decomps */
+SCIP_Real SCIPconshdlrDecompAdaptScore(
+   SCIP*             scip,
+   SCIP_Real         oldscore
+   )
+{
+   SCIP_Real score = oldscore;
 
-SCIP_RETCODE SCIPconshdlrDecompChooseBestFromSelected(
-   SCIP* scip
+   return score;
+}
+
+SCIP_Bool SCIPconshdlrDecompHasDecomp(
+   SCIP*    scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+         }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return (conshdlrdata->ndecomps > 0 || conshdlrdata->nincompleteseeeds > 0 ||
+      conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() > 0 ||
+      conshdlrdata->seeedpoolunpresolved->currSeeeds.size() > 0 ) ;
+}
+
+
+SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
+   SCIP* scip,
+   SCIP_Bool updatelist
    ){
 
    SCIP_CONSHDLR* conshdlr;
@@ -2050,6 +2117,12 @@ SCIP_RETCODE SCIPconshdlrDecompChooseBestFromSelected(
    gcg::Seeedpool* seeedpoolunpresolved;
    std::vector<SeeedPtr>::iterator seeediter;
    std::vector<SeeedPtr>::iterator seeediterend;
+
+   std::vector<SeeedPtr> tofinishpresolved(0);
+   std::vector<SeeedPtr> tofinishunpresolved(0);
+   std::vector<SeeedPtr> selectedseeeds(0);
+   std::vector<SeeedPtr> finished(0);
+   std::vector<SeeedPtr> finishedunpresolved(0);
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -2062,17 +2135,93 @@ SCIP_RETCODE SCIPconshdlrDecompChooseBestFromSelected(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   SCIPinfoMessage(scip, NULL, "Starting decomposition candidate choosing \n");
+
+   assert(conshdlrdata->candidates != NULL);
+
+  // std::vector<std::pair<SeeedPtr, SCIP_Real> > candidates(0);
+   conshdlrdata->candidates->clear();
+
+
+
    seeedpool = conshdlrdata->seeedpool;
    seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
 
-   /** if there are selected decomps, check if some of them needs to be finished and do so */
+   if( updatelist )
+      SCIP_CALL(SCIPconshdlrDecompUpdateSeeedlist(scip) );
 
+   for( size_t selid = 0; selid < conshdlrdata->selected->size(); ++selid )
+   {
+      selectedseeeds.push_back(conshdlrdata->listall->at(conshdlrdata->selected->at(selid) ) );
+   }
+
+   if ( selectedseeeds.size() == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "nothing selected, choose everything as selected: \n");
+      selectedseeeds = *conshdlrdata->listall;
+      SCIPinfoMessage(scip, NULL, "number that is examined: %d \n", selectedseeeds.size() );
+   }
+
+   /** if there are selected decomps, check if some of them needs to be finished and do so */
+   seeediter = selectedseeeds.begin();
+   seeediterend = selectedseeeds.end();
+
+   for( ; seeediter != seeediterend; ++seeediter)
+   {
+      if( !(*seeediter)->isComplete() && (*seeediter)->isfromunpresolved )
+      {
+         tofinishunpresolved.push_back(*seeediter);
+      }
+
+      if( !(*seeediter)->isComplete() && !(*seeediter)->isfromunpresolved )
+      {
+         tofinishpresolved.push_back(*seeediter);
+      }
+   }
+
+   finished = conshdlrdata->seeedpool->finishIncompleteSeeeds(tofinishpresolved);
+   finishedunpresolved = conshdlrdata->seeedpoolunpresolved->finishIncompleteSeeeds(tofinishunpresolved);
+
+
+   seeediter = selectedseeeds.begin();
+   seeediterend = selectedseeeds.end();
 
    /** get decomp candidates and calculate corresponding score (possibly weighted for unpresolved) */
+   for( ; seeediter != seeediterend; ++seeediter )
+   {
+      SeeedPtr seeed = *seeediter ;
+      if( seeed->isComplete() && !seeed->isfromunpresolved )
+      {
+         conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, seeed->getMaxWhiteScore() ) );
+      }
+      if( seeed->isComplete() && seeed->isfromunpresolved )
+      {
+         conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, SCIPconshdlrDecompAdaptScore(scip, seeed->getMaxWhiteScore() ) ) );
+      }
+   }
+
+
+
+   seeediter = finished.begin();
+   seeediterend = finished.end();
+
+   for( ; seeediter != seeediterend; ++seeediter)
+   {
+      conshdlrdata->candidates->push_back(std::pair<SeeedPtr, SCIP_Real>(*seeediter, (*seeediter)->getMaxWhiteScore() )  );
+   }
+
+   seeediter = finishedunpresolved.begin();
+   seeediterend = finishedunpresolved.end();
+
+   for( ; seeediter != seeediterend; ++seeediter)
+   {
+      conshdlrdata->candidates->push_back(std::pair<SeeedPtr, SCIP_Real>(*seeediter, SCIPconshdlrDecompAdaptScore(scip, (*seeediter)->getMaxWhiteScore() ) ) );
+   }
 
    /* sort decomp candidates according score */
+   std::sort( conshdlrdata->candidates->begin(), conshdlrdata->candidates->end(), sort_pred() );
 
-   /* set decomposition to choose */
+
 
 
    return SCIP_OKAY;
@@ -2195,8 +2344,9 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
 
       for( ; iter != iterend; ++iter)
       {
-         int lower = *std::lower_bound( livingnoncompleteseeedids.begin(), livingnoncompleteseeedids.end(), *iter);
-         if ( lower == *iter )
+
+         std::vector<int>::const_iterator loweriter = std::lower_bound( livingnoncompleteseeedids.begin(), livingnoncompleteseeedids.end(), *iter);
+         if ( loweriter!= livingnoncompleteseeedids.end() &&  *loweriter == *iter )
          {
             SCIPwarningMessage(scip, "Warning: Inconsistency in cons_decomp data structure: finished seeed with id %d and has living incomplete pred with id %d  \n", seeed->getID(), *iter );
             return FALSE;
@@ -2522,7 +2672,7 @@ SCIP_RETCODE DECdetectStructure(
 
    /* show that we done our duty */
    conshdlrdata->hasrun = TRUE;
-
+   SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
 
 //   SCIPhashmapFree( &consToIndex );
 
@@ -2721,6 +2871,11 @@ DEC_DECOMP* DECgetBestDecomp(
    SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
 
+   DEC_DECOMP* decomp;
+   gcg::Seeedpool* seeedpool;
+   gcg::Seeedpool* seeedpoolunpresolved;
+   SeeedPtr seeed;
+
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
@@ -2728,17 +2883,40 @@ DEC_DECOMP* DECgetBestDecomp(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+
+   //seeedpool = ( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) ? conshdlrdata->seeedpoolunpresolved :  conshdlrdata->seeedpool );
+
+   if( conshdlrdata->seeedpool == NULL )
+      conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+
+   seeedpool = conshdlrdata->seeedpool;
+   seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved ;
+
    DECconshdlrDecompSortDecompositionsByScore(scip);
 
-   SCIPdialogMessage(scip, NULL, "In get bestdecomp111!\n");
+   seeed = conshdlrdata->candidates->at( 0 ).first;
 
-   /** HACK! */
+   SCIPdialogMessage(scip, NULL, "In get bestdecomp\n");
+
+   if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
+   {
+      std::vector<SeeedPtr> seeedtotranslate(0);
+      std::vector<SeeedPtr> translatedseeeds(0);
+
+      seeedtotranslate.push_back(seeed);
+      seeedpool->translateSeeeds(seeedpoolunpresolved, seeedtotranslate, translatedseeeds);
+      seeed = translatedseeeds[0];
+   }
+
+
+   seeedpool->createDecompFromSeeed(seeed, &decomp) ;
+
+   return decomp;
+
+
+   /** OLD HACK! */
    if( conshdlrdata->selectedexists )
    {
-      DEC_DECOMP* decomp;
-      gcg::Seeedpool* seeedpool;
-      seeedpool = conshdlrdata->seeedpool;
-      SCIPdialogMessage(scip, NULL, "In get bestdecomp222!\n");
 
       seeedpool->createDecompFromSeeed(conshdlrdata->listall->at( conshdlrdata->selected->at(0) ), &decomp) ;
       return decomp;
