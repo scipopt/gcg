@@ -688,6 +688,7 @@ SCIP_RETCODE solveCplex(
    switch( status )
    {
    case CPXMIP_OPTIMAL: /* 101 */
+   case CPXMIP_OPTIMAL_TOL: /* 102 */
       assert(nsolscplex > 0);
       *result = SCIP_STATUS_OPTIMAL;
       break;
