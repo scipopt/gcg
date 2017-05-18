@@ -29,6 +29,7 @@
  * @brief  cplex solver for pricing problems
  * @author Gerald Gamrath
  * @author Alexander Gross
+ * @author Hanna Franzen
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -93,9 +94,6 @@ struct GCG_SolverData
     */
    SCIP_Bool             checksols;          /**< should solutions of the pricing MIPs be checked for duplicity? */
    int                   threads;            /**< number of threads the CPLEX pricing solver is allowed to use (0: automatic) */
-   /**
-    * limits for heuristic pricer
-    */
    SCIP_Longint          heurnodelimit;      /**< node limit for heuristic pricing */
    SCIP_Real             heurgaplimit;       /**< gap limit for heuristic pricing */
 };
@@ -860,7 +858,8 @@ SCIP_RETCODE solveCplex(
 
 
 /** destructor of pricing solver to free user data (called when SCIP is exiting) */
-static GCG_DECL_SOLVERFREE(solverFreeCplex)
+static
+GCG_DECL_SOLVERFREE(solverFreeCplex)
 {
    GCG_SOLVERDATA* solverdata;
 
@@ -877,7 +876,8 @@ static GCG_DECL_SOLVERFREE(solverFreeCplex)
 }
 
 /** solving process initialization method of pricing solver (called when branch and bound process is about to begin) */
-static GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
+static
+GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
 {
    GCG_SOLVERDATA* solverdata;
    int npricingprobs;
@@ -910,7 +910,8 @@ static GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
 }
 
 /** solving process deinitialization method of pricing solver (called before branch and bound process data is freed) */
-static GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
+static
+GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
 {
    GCG_SOLVERDATA* solverdata;
    SCIP_RETCODE retval;
@@ -981,7 +982,8 @@ static GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
 
 
 /** heuristic solving method of mip solver */
-static GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
+static
+GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
 {
    GCG_SOLVERDATA* solverdata;
 
@@ -989,7 +991,7 @@ static GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
    assert(solverdata != NULL);
    assert(solverdata->created != NULL);
 
-   SCIPdebugMessage("calling CPLEX pricing heuristic solver for pricing problem %d\n", probnr);
+   SCIPdebugMessage("calling heuristic pricing with CPLEX for pricing problem %d\n", probnr);
 
    /* build the pricing problem in CPLEX or update it */
    if( !solverdata->created[probnr] )
@@ -1015,7 +1017,8 @@ static GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
 }
 
 /** solving method for pricing solver which solves the pricing problem to optimality */
-static GCG_DECL_SOLVERSOLVE(solverSolveCplex)
+static
+GCG_DECL_SOLVERSOLVE(solverSolveCplex)
 {
    GCG_SOLVERDATA* solverdata;
 
@@ -1068,11 +1071,11 @@ SCIP_RETCODE GCGincludeSolverCplex(
          "number of threads the CPLEX pricing solver is allowed to use (0: automatic)",
          &solverdata->threads, TRUE, DEFAULT_THREADS, 0, INT_MAX, NULL, NULL));
 
-   SCIP_CALL( SCIPaddLongintParam(origprob, "pricingsolver/cplex/heurnodelimit",
-            "node limit for heuristic pricing",
-            &solverdata->heurnodelimit, TRUE, DEFAULT_HEURNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddLongintParam(solverdata->origprob, "pricingsolver/cplex/heurnodelimit",
+         "node limit for heuristic pricing",
+         &solverdata->heurnodelimit, TRUE, DEFAULT_HEURNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cplex/heurgaplimit",
+   SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/cplex/heurgaplimit",
          "gap limit for heuristic pricing",
          &solverdata->heurgaplimit, TRUE, DEFAULT_HEURGAPLIMIT, 0.0, 1.0, NULL, NULL) );
 #endif
