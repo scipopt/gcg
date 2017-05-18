@@ -14,9 +14,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_pricestore.h
- * @ingroup INTERNALAPI
  * @brief  datastructures for storing priced cols
- * @author Tobias Achterberg
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -52,6 +51,14 @@ struct GCG_PriceStore
    int                   ncolsapplied;       /**< total number of cols applied to the LPs */
    SCIP_Bool             infarkas;           /**< is the price storage currently being filled with the columns from farkas pricing? */
    SCIP_Bool             forcecols;          /**< should the cols be used despite the number of cols parameter limit? */
+   SCIP_Real             redcostfac;         /**< factor of -redcost/norm in score function */
+   SCIP_Real             objparalfac;        /**< factor of objective parallelism in score function */
+   SCIP_Real             orthofac;           /**< factor of orthogonalities in score function */
+   SCIP_Real             mincolorth;         /**< minimal orthogonality of columns to add
+                                                  (with respect to columns added in the current round) */
+   SCIP_Real             maxpricecolsroot;   /**< maximum number of columns per round */
+   SCIP_Real             maxpricecols;       /**< maximum number of columns per round */
+   SCIP_Real             maxpricecolsfarkas; /**< maximum number of columns per Farkas round */
 };
 
 #ifdef __cplusplus

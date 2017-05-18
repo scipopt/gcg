@@ -103,6 +103,12 @@ using namespace scip;
 #define DEFAULT_COLPOOL_AGELIMIT         100        /**< maximum age of columns in column pool */
 #define DEFAULT_COLPOOL_COLPOOLSIZE      10         /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
 
+#define DEFAULT_PRICE_ORTHOFAC 1.0
+#define DEFAULT_PRICE_OBJPARALFAC 0.1
+#define DEFAULT_PRICE_REDCOSTFAC 1.0
+#define DEFAULT_MAXPRICECOLS 100
+#define DEFAULT_PRICE_MINCOLORTH 0.25
+
 #define EVENTHDLR_NAME         "probdatavardeleted"
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
 
@@ -176,6 +182,15 @@ struct SCIP_PricerData
    int                   colpoolsize;        /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
+
+   /** price storage */
+   SCIP_Real             redcostfac;         /**< factor of -redcost/norm in score function */
+   SCIP_Real             objparalfac;        /**< factor of objective parallelism in score function */
+   SCIP_Real             orthofac;           /**< factor of orthogonalities in score function */
+   SCIP_Real             mincolorth;         /**< minimal orthogonality of columns to add
+                                                  (with respect to columns added in the current round) */
+   SCIP_Real             maxpricecols;       /**< maximum number of columns per round */
+   SCIP_Real             maxpricecolsfarkas; /**< maximum number of columns per Farkas round */
 
    /** statistics */
    int                   oldvars;            /**< Vars of last pricing iteration */
@@ -2629,6 +2644,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    colpoolupdated = FALSE;
 
+   if(SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_))
+      SCIPwriteTransProblem(scip_, "trans_master.lp", "lp", FALSE);
+
    do
    {
       bestredcost = 0.0;
@@ -3748,7 +3766,9 @@ SCIP_RETCODE ObjPricerGcg::createColpool()
 
 SCIP_RETCODE ObjPricerGcg::createPricestore()
 {
-   SCIP_CALL( GCGpricestoreCreate(scip_, &pricestore) );
+   SCIP_CALL( GCGpricestoreCreate(scip_, &pricestore,
+      pricerdata->redcostfac, pricerdata->objparalfac, pricerdata->orthofac,
+      pricerdata->mincolorth, reducedcostpricing->getMaxvarsroundroot(), reducedcostpricing->getMaxvarsround(), farkaspricing->getMaxvarsround()) );
 
    return SCIP_OKAY;
 }
@@ -3845,6 +3865,22 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/eagerfreq",
             "frequency at which all pricingproblems should be solved (0 to disable)",
             &pricerdata->eagerfreq, FALSE, DEFAULT_EAGERFREQ, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/pricestore/redcostfac",
+         "factor of -redcost/norm in score function",
+         &pricerdata->redcostfac, FALSE, DEFAULT_PRICE_REDCOSTFAC, 0.0, 10.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/pricestore/objparalfac",
+            "factor of objective parallelism in score function",
+            &pricerdata->objparalfac, FALSE, DEFAULT_PRICE_OBJPARALFAC, 0.0, 10.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/pricestore/orthofac",
+            "factor of orthogonalities in score function",
+            &pricerdata->orthofac, FALSE, DEFAULT_PRICE_ORTHOFAC, 0.0, 10.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/pricestore/mincolorth",
+            "minimal orthogonality of columns to add",
+            &pricerdata->mincolorth, FALSE, DEFAULT_PRICE_MINCOLORTH, 0.0, 1.0, NULL, NULL) );
 
    return SCIP_OKAY;
 }

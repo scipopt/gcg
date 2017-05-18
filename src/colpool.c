@@ -40,7 +40,6 @@
 #include "pricestore_gcg.h"
 #include "struct_pricestore_gcg.h"
 
-#define SCIP_HASHTABLE_USESMALL FALSE /**< size of hash table in col pools for small problems */
 #define SCIP_HASHSIZE_COLPOOLS_SMALL 100 /**< size of hash table in col pools for small problems */
 #define SCIP_HASHSIZE_COLPOOLS       500 /**< size of hash table in col pools */
 
@@ -114,8 +113,10 @@ SCIP_DECL_HASHKEYVAL(hashKeyValCol)
    col = (GCG_COL*)key;
    assert(col != NULL);
 
-   keyval = SCIPhashTwo(SCIPpositiveRealHashCode(0.0, 8),
-                        SCIPcombineThreeInt(col->probnr, col->nvars, col->isray));
+   /* TODO: Improve hash function */
+   keyval = SCIPhashTwo(SCIPpositiveRealHashCode(col->nvars > 0 ? col->vals[0] : 0.0, 8),
+      SCIPcombineThreeInt(col->probnr, col->nvars, col->isray));
+
    return keyval;
 }
 
@@ -147,33 +148,9 @@ SCIP_RETCODE colpoolEnsureColsMem(
    return SCIP_OKAY;
 }
 
-
-
 /*
  * Col methods
  */
-
-/* TODO: is this needed? */
-///** returns the ratio of LPs where the row belonging to this col was active in an LP solution, i.e.
-// *  where the age of its row has not been increased
-// *
-// *  @see SCIPcolGetAge() to get the age of a col
-// */
-//SCIP_Real SCIPcolGetLPActivityQuot(
-//   GCG_COL*             col                 /**< col */
-//   )
-//{
-//   SCIP_Longint nlpsaftercreation;
-//   SCIP_Longint activeinlpcounter;
-//
-//   assert(col != NULL);
-//   assert(col->row != NULL);
-//
-//   nlpsaftercreation = SCIProwGetNLPsAfterCreation(col->row);
-//   activeinlpcounter = SCIProwGetActiveLPCount(col->row);
-//
-//   return (nlpsaftercreation > 0 ? activeinlpcounter / (SCIP_Real)nlpsaftercreation : 0.0);
-//}
 
 /*
  * Colpool methods
@@ -195,7 +172,7 @@ SCIP_RETCODE GCGcolpoolCreate(
    SCIP_CALL( SCIPcreateClock(scip, &(*colpool)->poolclock) );
 
    SCIP_CALL( SCIPhashtableCreate(&(*colpool)->hashtable, SCIPblkmem(scip),
-         (SCIP_HASHTABLE_USESMALL ? SCIP_HASHSIZE_COLPOOLS_SMALL : SCIP_HASHSIZE_COLPOOLS),
+         (scip->set->misc_usesmalltables ? SCIP_HASHSIZE_COLPOOLS_SMALL :  SCIP_HASHSIZE_COLPOOLS),
          hashGetKeyCol, hashKeyEqCol, hashKeyValCol, (void*) scip) );
 
    (*colpool)->scip = scip;
@@ -419,7 +396,6 @@ SCIP_RETCODE GCGcolpoolPrice(
 
       redcost = GCGcolGetRedcost(col);
 
-      /* TODO: use reduced costs? */
       if( SCIPisDualfeasNegative(scip, redcost) )
       {
          /* insert col in separation storage */

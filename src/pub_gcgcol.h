@@ -178,6 +178,12 @@ SCIP_RETCODE GCGcolSetMastercoefs(
    int                  nmastercoefs        /**< number of master coefficients */
    );
 
+/** get norm of column */
+extern
+void GCGcolComputeNorm(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
 /** get master coefficients of column */
 extern
 int* GCGcolGetLinkvars(
@@ -235,6 +241,12 @@ extern
 SCIP_Bool GCGcolIsAged(
    GCG_COL*              col,                /**< col to check */
    int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool, or -1 */
+   );
+
+/** compute parallelism of column to dual objective */
+SCIP_Real GCGcolComputeDualObjPara(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COL*             gcgcol              /**< gcg column */
    );
 
 /** compute orthogonality of two gcg columns */

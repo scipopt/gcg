@@ -15,7 +15,7 @@
 
 /**@file   type_colpool.h
  * @brief  type definitions for storing cols in a col pool
- * @author Tobias Achterberg
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
