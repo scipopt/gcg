@@ -475,6 +475,33 @@ SCIP_Bool seeedIsNoDuplicate(
    return ( bool1 && bool2 );
 }
 
+/** TODO delete this method */
+void Seeedpool::displaySeeedDataStructures()
+{
+   size_t i;
+
+   std::cout << "currSeeeds:";
+   for( i = 0; i < currSeeeds.size(); ++i )
+   {
+      std::cout << " " << currSeeeds[i]->getID();
+   }
+   std::cout << std::endl;
+
+   std::cout << "finishedSeeeds:";
+   for( i = 0; i < finishedSeeeds.size(); ++i )
+   {
+      std::cout << " " << finishedSeeeds[i]->getID();
+   }
+   std::cout << std::endl;
+
+   std::cout << "allrelevantseeeds:";
+   for( i = 0; i < allrelevantseeeds.size(); ++i )
+   {
+      std::cout << " " << allrelevantseeeds[i]->getID();
+   }
+   std::cout << std::endl;
+}
+
 /** constructor */
 Seeedpool::Seeedpool(
    SCIP* givenScip,
@@ -1203,6 +1230,9 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
    sortAllRelevantSeeeds();
 
+   /* TODO todelete */
+   //displaySeeedDataStructures();
+
    return finishedSeeeds;
 }
 
@@ -1370,6 +1400,34 @@ void Seeedpool::findDecompositions()
       }
    }*/
 
+
+/** returns a seeed from current (open) seeed data structure */
+SeeedPtr Seeedpool::getCurrentSeeed(int seeedindex)
+{
+   assert( 0 <= seeedindex && seeedindex < (int) currSeeeds.size() );
+
+   return currSeeeds[seeedindex];
+}
+
+/** returns a seeed from finished seeed data structure */
+SeeedPtr Seeedpool::getFinishedSeeed(int seeedindex)
+{
+   assert( 0 <= seeedindex && seeedindex < (int) finishedSeeeds.size() );
+
+   return finishedSeeeds[seeedindex];
+}
+
+/** returns size of current (open) seeed data structure */
+int Seeedpool::getNCurrentSeeeds()
+{
+   return currSeeeds.size();
+}
+
+/** returns size of finished seeed data structure */
+int Seeedpool::getNFinishedSeeeds()
+{
+   return finishedSeeeds.size();
+}
 
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
 void Seeedpool::translateSeeedData(Seeedpool* origpool, std::vector<Seeed*> origseeeds, std::vector<Seeed*>& newseeeds,

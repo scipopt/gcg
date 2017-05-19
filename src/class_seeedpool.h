@@ -86,6 +86,7 @@ private:
    SCIP*                 						      scip;              	   /**< SCIP data structure */
 
    std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are represented by a null pointer */
+   std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
 
    int                                          maxndetectionrounds;    /**< maximum number of detection rounds */
    int											         nTotalSeeeds;        	/**< number of created seeeds, used to give next id */
@@ -125,8 +126,11 @@ private:
 
 public:
 
-   std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of finished seeeds */
+
+   /** TODO delete this method */
+   void displaySeeedDataStructures(
+   );
 
    /** constructor */
    Seeedpool(
@@ -149,20 +153,36 @@ public:
    std::vector<SeeedPtr> findSeeeds(
    );
 
-   /** calls findSeeeds method and translates the resulting seeeds into decompositions */
-
    /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
    /*
     * @return set of completed decomposition
     * */
-
    std::vector<SeeedPtr>  finishIncompleteSeeeds(
       std::vector<SeeedPtr> incompleteseeeds
     );
 
+   /** calls findSeeeds method and translates the resulting seeeds into decompositions */
    void findDecompositions(
    );
 
+
+   /** returns a seeed from current (open) seeed data structure */
+   SeeedPtr getCurrentSeeed(
+      int seeedindex                                     /**< index of seeed in current (open) seeed data structure */
+   );
+
+   /** returns a seeed from finished seeed data structure */
+   SeeedPtr getFinishedSeeed(
+      int seeedindex                                     /**< index of seeed in finished seeed data structure */
+   );
+
+   /** returns size of current (open) seeed data structure */
+   int getNCurrentSeeeds(
+   );
+
+   /** returns size of finished seeed data structure */
+   int getNFinishedSeeeds(
+   );
 
    /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
    void translateSeeedData(
