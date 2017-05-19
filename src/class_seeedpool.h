@@ -87,6 +87,7 @@ private:
 
    std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are represented by a null pointer */
    std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
+   std::vector<SeeedPtr>                        finishedSeeeds;         /**< vector of finished seeeds */
 
    int                                          maxndetectionrounds;    /**< maximum number of detection rounds */
    int											         nTotalSeeeds;        	/**< number of created seeeds, used to give next id */
@@ -126,8 +127,6 @@ private:
 
 public:
 
-   std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of finished seeeds */
-
    /** TODO delete this method */
    void displaySeeedDataStructures(
    );
@@ -165,6 +164,10 @@ public:
    void findDecompositions(
    );
 
+
+   /** clears finished seeed data structure */
+   void clearFinishedSeeeds(
+   );
 
    /** returns a seeed from current (open) seeed data structure */
    SeeedPtr getCurrentSeeed(

@@ -1954,7 +1954,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       /** stems from unpresolved problem */
       else
       {
-         conshdlrdata->seeedpoolunpresolved->finishedSeeeds.push_back(seeed);
+         conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed);
          conshdlrdata->unpresolveduserseeedadded = TRUE;
       }
 
@@ -2033,15 +2033,13 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    assert(seeedpool != NULL);
    assert(seeedpoolunpresolved != NULL);
 
-   seeediter = seeedpoolunpresolved->finishedSeeeds.begin();
-   seeediterend = seeedpoolunpresolved->finishedSeeeds.end();
-
-   for(; seeediter != seeediterend; ++seeediter )
+   for( int i = 0; i < seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
    {
-      if( (*seeediter)->isComplete() )
+      SeeedPtr finseeed = seeedpoolunpresolved->getFinishedSeeed(i);
+      if( finseeed->isComplete() )
       {
-         assert( (*seeediter)->checkConsistency(seeedpoolunpresolved));
-         seeedstotranslate.push_back(*seeediter);
+         assert( finseeed->checkConsistency(seeedpoolunpresolved) );
+         seeedstotranslate.push_back(finseeed);
       }
    }
 
@@ -2624,7 +2622,7 @@ SCIP_RETCODE DECdetectStructure(
 	     SCIP_CALL( SCIPstoreSeeedAndDecomp(scip, conshdlrdata->seeedpool->getFinishedSeeed(i), conshdlrdata->seeedpool->getDecompositions()[i] ) );
 	  }
 
-	  conshdlrdata->seeedpool->finishedSeeeds.clear(); // TODO why?
+	  conshdlrdata->seeedpool->clearFinishedSeeeds(); // TODO why?
 
 	  SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
 	  SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);

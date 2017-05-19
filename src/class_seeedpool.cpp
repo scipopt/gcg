@@ -483,21 +483,21 @@ void Seeedpool::displaySeeedDataStructures()
    std::cout << "currSeeeds:";
    for( i = 0; i < currSeeeds.size(); ++i )
    {
-      std::cout << " " << currSeeeds[i]->getID();
+      std::cout << " " << (currSeeeds[i] != NULL ? currSeeeds[i]->getID() : -1);
    }
    std::cout << std::endl;
 
    std::cout << "finishedSeeeds:";
    for( i = 0; i < finishedSeeeds.size(); ++i )
    {
-      std::cout << " " << finishedSeeeds[i]->getID();
+      std::cout << " " << (finishedSeeeds[i] != NULL ? finishedSeeeds[i]->getID() : -1);
    }
    std::cout << std::endl;
 
    std::cout << "allrelevantseeeds:";
    for( i = 0; i < allrelevantseeeds.size(); ++i )
    {
-      std::cout << " " << allrelevantseeeds[i]->getID();
+      std::cout << " " << (allrelevantseeeds[i] != NULL ? allrelevantseeeds[i]->getID() : -1);
    }
    std::cout << std::endl;
 }
@@ -816,8 +816,11 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
       SCIP_CALL_ABORT( prepareSeeed( translatedOrigSeeeds[i]) );
       translatedOrigSeeeds[i]->setID(getNewIdForSeeed() );
       if( seeedIsNoDuplicateOfSeeeds( translatedOrigSeeeds[i], currSeeeds, true ) )
-         currSeeeds.push_back( translatedOrigSeeeds[i] );
+         addSeeedToCurr( translatedOrigSeeeds[i] );
    }
+
+   /* TODO todelete */
+   displaySeeedDataStructures();
 
    for( int round = 0; round < maxndetectionrounds; ++round )
    {
@@ -969,8 +972,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                      #pragma omp critical ( seeedptrstore )
                      {
                         assert( seeedPropData->newSeeeds[seeed]->getID() >= 0 );
-                        finishedSeeeds.push_back( seeedPropData->newSeeeds[seeed] );
-                        allrelevantseeeds.push_back( seeedPropData->newSeeeds[seeed] );
+                        addSeeedToFinished( seeedPropData->newSeeeds[seeed] );
                      }
                   }
                   else
@@ -1051,8 +1053,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                   if( seeedIsNoDuplicateOfSeeeds( seeed, finishedSeeeds, false ) )
                   {
                      assert( seeed->getID() >= 0 );
-                     finishedSeeeds.push_back( seeed );
-                     allrelevantseeeds.push_back( seeed );
+                     addSeeedToFinished( seeed );
                   }
                   else
                   {
@@ -1140,8 +1141,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                #pragma omp critical ( seeedptrstore )
                {
                   assert( seeed->getID() >= 0 );
-                  finishedSeeeds.push_back( seeed );
-                  allrelevantseeeds.push_back( seeed );
+                  addSeeedToFinished( seeed );
                }
             }
 
@@ -1229,7 +1229,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    sortAllRelevantSeeeds();
 
    /* TODO todelete */
-   //displaySeeedDataStructures();
+   displaySeeedDataStructures();
 
    return finishedSeeeds;
 }
@@ -1398,6 +1398,12 @@ void Seeedpool::findDecompositions()
       }
    }*/
 
+
+/** clears finished seeed data structure */
+void Seeedpool::clearFinishedSeeeds()
+{
+   finishedSeeeds.clear();
+}
 
 /** returns a seeed from current (open) seeed data structure */
 SeeedPtr Seeedpool::getCurrentSeeed(int seeedindex)
