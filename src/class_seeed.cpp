@@ -3274,8 +3274,6 @@ void Seeed::showScatterPlot(
 	   else
 		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
    }
-   else
-      ofs << "plot 0" << std::endl;
 
    if( !writeonly )
       ofs << "pause -1" << std::endl;
