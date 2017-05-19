@@ -148,13 +148,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpart)
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
    seeed->setDetectorPropagated(detector);
 
-   if(!seeed->areOpenVarsAndConssCalculated())
-   {
-      seeed->calcOpenconss();
-      seeed->calcOpenvars();
-      seeed->setOpenVarsAndConssCalculated(true);
-   }
-
    for( int i = 0; i < seeed->getNOpenconss(); ++i)
    {
       cons = seeedPropagationData->seeedpool->getConsForIndex(seeed->getOpenconss()[i]);

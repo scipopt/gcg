@@ -178,13 +178,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
     seeedOrig = seeedPropagationData->seeedToPropagate;
     seeedOrig->setDetectorPropagated(detector);
 
-    if( !seeedOrig->areOpenVarsAndConssCalculated() )
-    {
-       seeedOrig->calcOpenconss();
-       seeedOrig->calcOpenvars();
-       seeedOrig->setOpenVarsAndConssCalculated(true);
-    }
-
     for( int i = 0; i < classifier->getNClasses(); ++ i )
     {
        switch( classifier->getClassDecompInfo( i ) )

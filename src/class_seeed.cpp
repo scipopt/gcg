@@ -72,15 +72,25 @@ const int Seeed::primes[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43
 const int Seeed::nPrimes = 70;
 
 
-/** constructor */
+/** constructor
+ *  initially, all conss and vars are open */
 Seeed::Seeed(SCIP* _scip, int givenId, int givenNDetectors, int givenNConss, int givenNVars) :
    scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0),
    varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(std::vector<bool>(givenNDetectors, false)),
-   openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false),
+   hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false),
    detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0),
    pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), usergiven(USERGIVEN::NOT), stemsFromUnpresolved(false),
    isFinishedByFinisherUnpresolved(false), finishedUnpresolvedBy(NULL), isselected(false), isfromunpresolved(FALSE), detectorchainstring(NULL)
 {
+   for( int i = 0; i < nConss; ++i )
+   {
+      openConss.push_back(i);
+   }
+
+   for( int i = 0; i < nVars; ++i )
+   {
+      openVars.push_back(i);
+   }
 }
 
 /** copy constructor */
@@ -103,7 +113,6 @@ Seeed::Seeed(const Seeed *seeedToCopy)
    detectorChain = seeedToCopy->detectorChain;
    detectorChainFinishingUsed = seeedToCopy->detectorChainFinishingUsed;
    detectorchaininfo = seeedToCopy->detectorchaininfo;
-   openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
    hashvalue = seeedToCopy->hashvalue;
    score = seeedToCopy->score;
    maxwhitescore = seeedToCopy->maxwhitescore;
@@ -197,12 +206,6 @@ bool Seeed::alreadyAssignedConssToBlocks()
    return false;
 }
 
-/** returns true if the open vars and conss are calculated */
-bool Seeed::areOpenVarsAndConssCalculated()
-{
-   return openVarsAndConssCalculated;
-}
-
 /** assigns open conss and vars if they can be found in blocks
  *  calls assignHittingOpenconss() and assignHittingOpenvars() */
 SCIP_RETCODE Seeed::assignAllDependent(Seeedpool* seeedpool)
@@ -236,7 +239,7 @@ SCIP_RETCODE Seeed::assignBorderFromConstoblock(SCIP_HASHMAP* constoblock, int g
    flushBooked();
 
    sort();
-   assert(checkConsistency());
+   assert(checkConsistency(seeedpool));
    return SCIP_OKAY;
 }
 
@@ -249,13 +252,6 @@ bool Seeed::assignCurrentStairlinking(Seeedpool* seeedpool)
    int cons;
 
    changedHashvalue = true;
-
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenvars();
-      calcOpenconss();
-      openVarsAndConssCalculated = true;
-   }
 
    /** assign all vars included in two consecutive blocks to stairlinking */
    for( int i = 0; i < getNOpenvars(); ++i )
@@ -308,13 +304,6 @@ bool Seeed::assignHittingOpenconss(Seeedpool* seeedpool)
    std::vector<int> eraseBlock;
 
    changedHashvalue = true;
-
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenvars();
-      calcOpenconss();
-      openVarsAndConssCalculated = true;
-   }
 
    for( size_t c = 0; c < openConss.size(); ++c )
    {
@@ -445,13 +434,6 @@ bool Seeed::assignHittingOpenvars(Seeedpool* seeedpool)
 
    changedHashvalue = true;
 
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenvars();
-      calcOpenconss();
-      openVarsAndConssCalculated = true;
-   }
-
    /** set vars to linking, if they can be found in more than one block; set vars to block if they can be found in only one block */
    for( size_t i = 0; i < openVars.size(); ++i )
    {
@@ -507,13 +489,6 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingConsToMaster(Seeedpool* seeedpool)
    bool hitsOpenVar;
 
    changedHashvalue = true;
-
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenvars();
-      calcOpenconss();
-      openVarsAndConssCalculated = true;
-   }
 
    /** set openConss with more than two blockvars to master */
    for( size_t c = 0; c < openConss.size(); ++c )
@@ -581,13 +556,6 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(Seeedpool* seeedpool)
    bool hitsOpenCons;
 
    changedHashvalue = true;
-
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenvars();
-      calcOpenconss();
-      openVarsAndConssCalculated = true;
-   }
 
    /** set open var to linking if it can be found in one block and open constraint */
    for( size_t i = 0; i < openVars.size(); ++i )
@@ -658,7 +626,7 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int ad
 
    deleteEmptyBlocks();
    sort();
-   assert(checkConsistency());
+   assert(checkConsistency(seeedpool));
    return SCIP_OKAY;
 }
 
@@ -698,7 +666,7 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblockVector(std::vector<int> constobloc
 
    deleteEmptyBlocks();
    sort();
-   assert(checkConsistency());
+   assert(checkConsistency(seeedpool));
    return SCIP_OKAY;
 }
 
@@ -798,72 +766,6 @@ void Seeed::calcHashvalue()
    this->hashvalue = hashval;
 }
 
-/** calculates vector containing constraints not assigned yet */
-void Seeed::calcOpenconss()
-{
-   std::vector<bool> openConssBool(nConss, true);
-   openConss.clear();
-   changedHashvalue = true;
-   std::vector<int>::const_iterator consIter = masterConss.begin();
-   std::vector<int>::const_iterator consIterEnd = masterConss.end();
-   for( ; consIter != consIterEnd; ++consIter )
-      openConssBool[*consIter] = false;
-   for( int b = 0; b < nBlocks; ++b )
-   {
-      consIter = conssForBlocks[b].begin();
-      consIterEnd = conssForBlocks[b].end();
-      for( ; consIter != consIterEnd; ++consIter )
-         openConssBool[*consIter] = false;
-   }
-
-   for( int i = 0; i < nConss; ++i )
-   {
-      if( openConssBool[i] )
-         openConss.push_back(i);
-   }
-}
-
-/** constructs vector containing variables not assigned yet */
-void Seeed::calcOpenvars()
-{
-   openVars.clear();
-   std::vector<bool> openVarsBool(nVars, true);
-
-   changedHashvalue = true;
-
-   std::vector<int>::const_iterator varIter = linkingVars.begin();
-   std::vector<int>::const_iterator varIterEnd = linkingVars.end();
-   for( ; varIter != varIterEnd; ++varIter )
-      openVarsBool[*varIter] = false;
-
-   varIter = masterVars.begin();
-   varIterEnd = masterVars.end();
-   for( ; varIter != varIterEnd; ++varIter )
-      openVarsBool[*varIter] = false;
-
-   for( int b = 0; b < nBlocks; ++b )
-   {
-      varIter = varsForBlocks[b].begin();
-      varIterEnd = varsForBlocks[b].end();
-      for( ; varIter != varIterEnd; ++varIter )
-         openVarsBool[*varIter] = false;
-   }
-
-   for( int b = 0; b < nBlocks; ++b )
-   {
-      varIter = stairlinkingVars[b].begin();
-      varIterEnd = stairlinkingVars[b].end();
-      for( ; varIter != varIterEnd; ++varIter )
-         openVarsBool[*varIter] = false;
-   }
-
-   for( int i = 0; i < nVars; ++i )
-   {
-      if( openVarsBool[i] )
-         openVars.push_back(i);
-   }
-}
-
 /** returns whether all cons are assigned and deletes the vector open cons if all are assigned */
 bool Seeed::checkAllConssAssigned()
 {
@@ -898,48 +800,18 @@ bool Seeed::checkAllConssAssigned()
    return true;
 }
 
-/** checks the consistency of this seeed */
+/** returns true if the assignments in the seeed are consistent */
 bool Seeed::checkConsistency(Seeedpool* seeedpool)
-{
-   if( !checkConsistency() )
-      return false;
-
-   /** check if nonzero entries are either in a block or border */
-   for( int b = 0; b < nBlocks; ++b )
-   {
-      for( int c = 0; c < getNConssForBlock(b); ++c )
-      {
-         for( int v = 0; v < seeedpool->getNVarsForCons(getConssForBlock(b)[c]); ++v )
-         {
-            int varid = seeedpool->getVarsForCons(getConssForBlock(b)[c])[v];
-
-            if( !(isVarBlockvarOfBlock(varid, b) || isVarLinkingvar(varid) || isVarStairlinkingvarOfBlock(varid, b)) )
-            {
-               SCIPwarningMessage(scip,
-                  "WARNING! Variable %d is not part of block %d or linking as constraint %d suggests! \n ", varid, b,
-                  getConssForBlock(b)[c]);
-               return false;
-            }
-         }
-      }
-   }
-
-   return true;
-}
-
-/** checks the consistency of this seeed */
-bool Seeed::checkConsistency()
 {
    std::vector<bool> openVarsBool(nVars, true);
    std::vector<int> stairlinkingvarsvec(0);
    std::vector<int>::const_iterator varIter = linkingVars.begin();
    std::vector<int>::const_iterator varIterEnd = linkingVars.end();
 
-
    int value;
 
    /** check if nblocks is set appropriately */
-   if( nBlocks != (int) conssForBlocks.size() )
+   if( nBlocks != (int)conssForBlocks.size() )
    {
       std::cout << "Warning! In (seeed " << id << ") nBlocks " << nBlocks << " and size of conssForBlocks "
          << conssForBlocks.size() << " are not identical" << std::endl;
@@ -947,7 +819,7 @@ bool Seeed::checkConsistency()
       return false;
    }
 
-   if( nBlocks != (int) varsForBlocks.size() )
+   if( nBlocks != (int)varsForBlocks.size() )
    {
       std::cout << "Warning! In (seeed " << id << ") nBlocks " << nBlocks << " and size of varsForBlocks"
          << varsForBlocks.size() << " are not identical" << std::endl;
@@ -1030,77 +902,69 @@ bool Seeed::checkConsistency()
       }
       if( (b == nBlocks - 1) && ((int)stairlinkingVars[b].size() != 0) )
       {
-         std::cout << "Warning! (seeed " << id << ") Variable with index " << *varIter << " is a stairlinkingvar of the last block."
-            << std::endl;
-         assert(false);
-         return false;
-      }
-   }
-
-//   /** vector of of all stairlinkingvars */
-//   for( int b = 0; b < nBlocks; ++b )
-//   {
-//      for( size_t i = 0; i < stairlinkingVars[b].size(); ++i )
-//      {
-//         if( find(stairlinkingvarsvec.begin(), stairlinkingvarsvec.end(), stairlinkingVars[b][i])
-//            == stairlinkingvarsvec.end() )
-//         {
-//            stairlinkingvarsvec.push_back(stairlinkingVars[b][i]);
-//         }
-//      }
-//   }
-//   varIter = stairlinkingvarsvec.begin();
-//   varIterEnd = stairlinkingvarsvec.end();
-//   for( ; varIter != varIterEnd; ++varIter )
-//   {
-//      firstFound = -1;
-//      for( int b = 0; b < nBlocks; ++b )
-//      {
-//         if( isVarStairlinkingvarOfBlock(*varIter, b) )
-//         {
-//            firstFound = b;
-//            openVarsBool[*varIter] = false;
-//            break;
-//         }
-//      }
-//      if( firstFound == -1 )
-//      {
-//         std::cout << "Warning! (seeed " << id << ") Variable with index " << *varIter
-//            << " is assigned to the stairlinkingvars but can not be found in a block" << std::endl;
-//         assert(false);
-//         return false;
-//      }
-
-      /**
-      if( firstFound == nBlocks - 1 || !isVarStairlinkingvarOfBlock(*varIter, firstFound + 1) )
-      {
          std::cout << "Warning! (seeed " << id << ") Variable with index " << *varIter
-            << " is assigned to the stairlinkingvars but doens't link blocks" << std::endl;
+            << " is a stairlinkingvar of the last block." << std::endl;
          assert(false);
          return false;
       }
-      */
-      /**
-      for( int b = firstFound + 2; b < nBlocks; ++b )
-      {
-         if( isVarBlockvarOfBlock(*varIter, b) )
-         {
-            std::cout << "Warning! (seeed " << id << ") Variable with index " << *varIter
-               << " is assigned to the stairlinkingvars but can be found in more than two blocks" << std::endl;
-            assert(false);
-            return false;
-         }
-      }
-      */
-//   }
-
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenconss();
-      calcOpenvars();
-
-      openVarsAndConssCalculated = true;
    }
+
+   //   /** vector of of all stairlinkingvars */
+   //   for( int b = 0; b < nBlocks; ++b )
+   //   {
+   //      for( size_t i = 0; i < stairlinkingVars[b].size(); ++i )
+   //      {
+   //         if( find(stairlinkingvarsvec.begin(), stairlinkingvarsvec.end(), stairlinkingVars[b][i])
+   //            == stairlinkingvarsvec.end() )
+   //         {
+   //            stairlinkingvarsvec.push_back(stairlinkingVars[b][i]);
+   //         }
+   //      }
+   //   }
+   //   varIter = stairlinkingvarsvec.begin();
+   //   varIterEnd = stairlinkingvarsvec.end();
+   //   for( ; varIter != varIterEnd; ++varIter )
+   //   {
+   //      firstFound = -1;
+   //      for( int b = 0; b < nBlocks; ++b )
+   //      {
+   //         if( isVarStairlinkingvarOfBlock(*varIter, b) )
+   //         {
+   //            firstFound = b;
+   //            openVarsBool[*varIter] = false;
+   //            break;
+   //         }
+   //      }
+   //      if( firstFound == -1 )
+   //      {
+   //         std::cout << "Warning! (seeed " << id << ") Variable with index " << *varIter
+   //            << " is assigned to the stairlinkingvars but can not be found in a block" << std::endl;
+   //         assert(false);
+   //         return false;
+   //      }
+
+   /**
+    if( firstFound == nBlocks - 1 || !isVarStairlinkingvarOfBlock(*varIter, firstFound + 1) )
+    {
+    std::cout << "Warning! (seeed " << id << ") Variable with index " << *varIter
+    << " is assigned to the stairlinkingvars but doens't link blocks" << std::endl;
+    assert(false);
+    return false;
+    }
+    */
+   /**
+    for( int b = firstFound + 2; b < nBlocks; ++b )
+    {
+    if( isVarBlockvarOfBlock(*varIter, b) )
+    {
+    std::cout << "Warning! (seeed " << id << ") Variable with index " << *varIter
+    << " is assigned to the stairlinkingvars but can be found in more than two blocks" << std::endl;
+    assert(false);
+    return false;
+    }
+    }
+    */
+   //   }
 
    /** check if all not assigned variables are open vars */
    for( int v = 0; v < nVars; ++v )
@@ -1185,7 +1049,6 @@ bool Seeed::checkConsistency()
       }
    }
 
-
    /** check if the seeed is sorted */
    for( int b = 0; b < nBlocks; ++b )
    {
@@ -1264,32 +1127,26 @@ bool Seeed::checkConsistency()
       value = getMasterconss()[v];
    }
 
-   return true;
-}
-
-bool Seeed::checkVarsAndConssConsistency(Seeedpool* seeedpool)
-{
-   std::vector<int>::const_iterator consIter;
-   std::vector<int>::const_iterator consIterEnd;
-   int var;
-
+   /** check if nonzero entries are either in a block or border */
    for( int b = 0; b < nBlocks; ++b )
    {
-      consIter = conssForBlocks[b].begin();
-      consIterEnd = conssForBlocks[b].end();
-      for( ; consIter != consIterEnd; ++consIter )
+      for( int c = 0; c < getNConssForBlock(b); ++c )
       {
-         for( int v = 0; v < seeedpool->getNVarsForCons(*consIter); ++v )
+         for( int v = 0; v < seeedpool->getNVarsForCons(getConssForBlock(b)[c]); ++v )
          {
-            var = seeedpool->getVarsForCons(*consIter)[v];
-            if( !isVarMastervar(var) && !isVarBlockvarOfBlock(var, b) && !isVarStairlinkingvarOfBlock(var, b) && !isVarLinkingvar(var) && !isVarOpenvar(var) )
+            int varid = seeedpool->getVarsForCons(getConssForBlock(b)[c])[v];
+
+            if( !(isVarBlockvarOfBlock(varid, b) || isVarLinkingvar(varid) || isVarStairlinkingvarOfBlock(varid, b)) )
             {
-               if (b==0 || !isVarStairlinkingvarOfBlock(var, b-1) )
-                  return false;
+               SCIPwarningMessage(scip,
+                  "WARNING! Variable %d is not part of block %d or linking as constraint %d suggests! \n ", varid, b,
+                  getConssForBlock(b)[c]);
+               return false;
             }
          }
       }
    }
+
    return true;
 }
 
@@ -1319,13 +1176,6 @@ SCIP_RETCODE Seeed::completeByConnected(Seeedpool* seeedpool)
    std::queue<int> helpqueue = std::queue<int>();
    std::vector<int> neighborConss(0);
    std::vector<int> neighborVars(0);
-
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenconss();
-      calcOpenvars();
-      openVarsAndConssCalculated = true;
-   }
 
    assert((int ) conssForBlocks.size() == nBlocks);
    assert((int ) varsForBlocks.size() == nBlocks);
@@ -1434,7 +1284,7 @@ SCIP_RETCODE Seeed::completeByConnected(Seeedpool* seeedpool)
    assert(openVars.empty());
 
    sort();
-   assert(checkConsistency());
+   assert(checkConsistency(seeedpool));
 
    return SCIP_OKAY;
 }
@@ -1452,16 +1302,6 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
 
    /** tools to check if the openVars can still be found in a constraint yet*/
    std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
-
-   /** tools to update openVars */
-
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenconss();
-      calcOpenvars();
-
-      openVarsAndConssCalculated = true;
-   }
 
    assert((int ) conssForBlocks.size() == nBlocks);
    assert((int ) varsForBlocks.size() == nBlocks);
@@ -1658,7 +1498,7 @@ SCIP_RETCODE Seeed::completeGreedily(Seeedpool* seeedpool)
    }
 
    sort();
-   assert(checkConsistency());
+   assert(checkConsistency(seeedpool));
 
    return SCIP_OKAY;
 }
@@ -1679,13 +1519,6 @@ SCIP_RETCODE Seeed::considerImplicits(Seeedpool* seeedpool)
    bool hitsOpenCons;
 
    changedHashvalue = true;
-
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenvars();
-      calcOpenconss();
-      openVarsAndConssCalculated = true;
-   }
 
    /** set openConss with more than two blockvars to master */
    for( size_t c = 0; c < openConss.size(); ++c )
@@ -2310,7 +2143,7 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock(SCIP_HASHMAP* constoblock, int 
 
    nBlocks = 0;
    sort();
-   assert(checkConsistency());
+   assert(checkConsistency(seeedpool));
    return SCIP_OKAY;
 }
 
@@ -2404,12 +2237,10 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int g
    sort();
    openVars = std::vector<int>(0);
    openConss = std::vector<int>(0);
-   openVarsAndConssCalculated = true;
 
    deleteEmptyBlocks();
    sort();
-   assert(checkConsistency());
-   assert(checkVarsAndConssConsistency(seeedpool));
+   assert(checkConsistency(seeedpool));
 
    return SCIP_OKAY;
 }
@@ -2723,26 +2554,12 @@ int Seeed::getNTotalStairlinkingvars()
 /** returns size of vector containing constraints not assigned yet */
 int Seeed::getNOpenconss()
 {
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenconss();
-      calcOpenvars();
-
-      openVarsAndConssCalculated = true;
-   }
    return (int)openConss.size();
 }
 
 /** returns size of vector containing variables not assigned yet */
 int Seeed::getNOpenvars()
 {
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenconss();
-      calcOpenvars();
-
-      openVarsAndConssCalculated = true;
-   }
    return (int)openVars.size();
 }
 
@@ -2769,27 +2586,12 @@ int Seeed::getNVarsForBlock(int block)
 /** returns array containing constraints not assigned yet */
 const int* Seeed::getOpenconss()
 {
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenconss();
-      calcOpenvars();
-      openVarsAndConssCalculated = true;
-   }
-
    return &openConss[0];
 }
 
 /** returns array containing variables not assigned yet*/
 const int* Seeed::getOpenvars()
 {
-   if( !openVarsAndConssCalculated )
-   {
-      calcOpenconss();
-      calcOpenvars();
-
-      openVarsAndConssCalculated = true;
-   }
-
    return &openVars[0];
 }
 
@@ -3062,7 +2864,8 @@ bool Seeed::isVarStairlinkingvarOfBlock(int var, int block)
     return SCIP_OKAY;
  }
 
-/** add a constraint to a block */
+ /** directly adds a constraint to a block
+  *  does not delete this cons from list of open conss */
 SCIP_RETCODE Seeed::setConsToBlock(int consToBlock, int block)
 {
    assert(consToBlock >= 0 && consToBlock < nConss);
@@ -3076,7 +2879,8 @@ SCIP_RETCODE Seeed::setConsToBlock(int consToBlock, int block)
    return SCIP_OKAY;
 }
 
-/** add a constraint to the master constraints */
+/** directly adds a constraint to the master constraints
+ *  does not delete this cons from list of open conss */
 SCIP_RETCODE Seeed::setConsToMaster(int consToMaster)
 {
    assert(consToMaster >= 0 && consToMaster < nConss);
@@ -3147,14 +2951,6 @@ SCIP_RETCODE Seeed::setID(
 }
 
 
-/** sets whether open vars and conss are calculated */
-SCIP_RETCODE Seeed::setOpenVarsAndConssCalculated(bool value)
-{
-   openVarsAndConssCalculated = value;
-   return SCIP_OKAY;
-}
-
-
 /** set selection information about this seeed */
 void Seeed::setSelected(
       bool selected
@@ -3163,7 +2959,8 @@ void Seeed::setSelected(
 }
 
 
-/** add a variable to a block */
+/** directly adds a variable to the linking variables
+ *  does not delete this var from list of open vars */
 SCIP_RETCODE Seeed::setVarToBlock(int varToBlock, int block)
 {
    assert(varToBlock >= 0 && varToBlock < nVars);
@@ -3172,13 +2969,12 @@ SCIP_RETCODE Seeed::setVarToBlock(int varToBlock, int block)
 
    changedHashvalue = true;
 
-   changedHashvalue = true;
-
    varsForBlocks[block].push_back(varToBlock);
    return SCIP_OKAY;
 }
 
-/** adds a variable to the linking variables */
+/** directly adds a variable to the linking variables
+ *  does not delete this var from list of open vars */
 SCIP_RETCODE Seeed::setVarToLinking(int varToLinking)
 {
    assert(varToLinking >= 0 && varToLinking < nVars);
@@ -3188,7 +2984,8 @@ SCIP_RETCODE Seeed::setVarToLinking(int varToLinking)
    return SCIP_OKAY;
 }
 
-/** adds a variable to the master variables (hitting only constraints in the master) */
+/** directly adds a variable to the master variables (hitting only constraints in the master)
+ *  does not delete this var from list of open vars */
 SCIP_RETCODE Seeed::setVarToMaster(int varToMaster)
 {
    assert(varToMaster >= 0 && varToMaster < nVars);
@@ -3198,7 +2995,8 @@ SCIP_RETCODE Seeed::setVarToMaster(int varToMaster)
    return SCIP_OKAY;
 }
 
-/** adds a variable to the stairlinking variables */
+/** directly adds a variable to the stairlinking variables
+ *  does not delete this var from list of open vars */
 SCIP_RETCODE Seeed::setVarToStairlinking(int varToStairlinking, int block1, int block2)
 {
    assert(varToStairlinking >= 0 && varToStairlinking < nVars);

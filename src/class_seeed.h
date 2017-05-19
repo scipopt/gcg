@@ -81,7 +81,6 @@ private:
    std::vector<std::pair<int, int>> bookedAsBlockVars;            /**< vector containing indices of variables that are not assigned yet but booked as block vars and the block */
    std::vector<std::pair<int, int>> bookedAsStairlinkingVars;     /**< vector containing indices of variables that are not assigned yet but booked as stairlinking vars and the first block of the stairlinking var */
    std::vector<bool> 				   propagatedByDetector;	      /**< propagatedByDetector[i] is this seeed propagated by detector i */
-   bool 							         openVarsAndConssCalculated;   /**< are the openVars and openCons calculated */
    long                             hashvalue;
    SCIP_Real                        score;                        /**< score to evaluate the seeeds */
    SCIP_Real                        maxwhitescore;                /**< score corresponding to the max white measure */
@@ -121,7 +120,8 @@ public:
    DEC_DETECTOR*                    finishedUnpresolvedBy;           /**< index of dinishing detector of unpresolved ancestor seeed */
 
 
-   /** constructor */
+   /** constructor
+    *  initially, all conss and vars are open */
    Seeed(
       SCIP* scip,                   /**< scip data structure */
       int id,      		   	      /**< id that is given to this seeed */
@@ -161,10 +161,6 @@ public:
 
    /** returns true if at least one constraint is assigned to a block */
    bool alreadyAssignedConssToBlocks();
-
-   /** returns true if the open vars and conss are calculated */
-   bool areOpenVarsAndConssCalculated(
-   );
 
    /** assigns open conss and vars if they can be found in blocks
     *  calls assignHittingOpenconss() and assignHittingOpenvars() */
@@ -258,29 +254,12 @@ public:
    void calcHashvalue(
    );
 
-   /** calculates vector containing constraints not assigned yet */
-   void  calcOpenconss(
-   );
-
-   /** constructs vector containing variables not assigned yet */
-   void  calcOpenvars(
-   );
-
    /** returns true if all constraints are assigned and deletes the vector open conss if so */
    bool checkAllConssAssigned(
    );
 
-   /** TODO checks the consistency of this seeed */
+   /** returns true if the assignments in the seeed are consistent */
    bool checkConsistency(
-      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
-   );
-
-   /** TODO checks the consistency of this seeed */
-   bool checkConsistency(
-   );
-
-   /** TODO checks the consistency of this seeed partially */
-   bool checkVarsAndConssConsistency(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
@@ -568,13 +547,15 @@ public:
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
-   /** add a constraint to a block */
+   /** directly adds a constraint to a block
+    *  does not delete this cons from list of open conss */
    SCIP_RETCODE setConsToBlock(
       int consToBlock,
       int block
    );
 
-   /** add a constraint to the master constraints */
+   /** directly adds a constraint to the master constraints
+    *  does not delete this cons from list of open conss */
    SCIP_RETCODE setConsToMaster(
       int consToMaster
    );
@@ -604,31 +585,31 @@ public:
       int id
    );
 
-   /** sets whether open vars and conss are calculated */
-   SCIP_RETCODE setOpenVarsAndConssCalculated(
-      bool value
-   );
-
    void setSelected(
       bool selected
       );
 
+   /** directly adds a variable to the linking variables
+    *  does not delete this var from list of open vars */
    SCIP_RETCODE setVarToBlock(
       int varToBlock,
       int block
    );
 
-   /** adds a variable to the linking variables */
+   /** directly adds a variable to the linking variables
+    *  does not delete this var from list of open vars */
    SCIP_RETCODE setVarToLinking(
       int varToLinking
    );
 
-   /** adds a variable to the master variables (hitting only constraints in the master) */
+   /** directly adds a variable to the master variables (hitting only constraints in the master)
+    *  does not delete this var from list of open vars */
    SCIP_RETCODE setVarToMaster(
       int varToMaster
    );
 
-   /** adds a variable to the stairlinking variables */
+   /** directly adds a variable to the stairlinking variables
+    *  does not delete this var from list of open vars */
    SCIP_RETCODE setVarToStairlinking(
       int varToStairLinking,
       int block1,

@@ -146,13 +146,6 @@ SCIP_RETCODE detection(
    gcg::Seeed* seeed;
    seeed = seeedPropagationData->seeedToPropagate;
 
-   if(!seeed->areOpenVarsAndConssCalculated())
-   {
-      seeed->calcOpenconss();
-      seeed->calcOpenvars();
-      seeed->setOpenVarsAndConssCalculated(true);
-   }
-
    seeed->considerImplicits(seeedPropagationData->seeedpool);
 
    //assign all dependent open vars and conss

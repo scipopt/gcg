@@ -145,15 +145,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
    seeed->setDetectorPropagated(detector);
 
 
-   if(!seeed->areOpenVarsAndConssCalculated())
-   {
-      seeed->calcOpenconss();
-      seeed->calcOpenvars();
-      seeed->setOpenVarsAndConssCalculated(true);
-   }
-
-
-
    /** set open setcovering constraints to Master */
    for( int i = 0; i < seeed->getNOpenconss(); ++i )
    {

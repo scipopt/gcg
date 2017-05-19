@@ -177,13 +177,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
     seeedOrig = seeedPropagationData->seeedToPropagate;
     seeedOrig->setDetectorPropagated(detector);
 
-    if( !seeedOrig->areOpenVarsAndConssCalculated() )
-    {
-       seeedOrig->calcOpenconss();
-       seeedOrig->calcOpenvars();
-       seeedOrig->setOpenVarsAndConssCalculated(true);
-    }
-
     for( int i = 0; i < classifier->getNClasses(); ++ i )
     {
        if ( classifier->getClassDecompInfo( i ) == gcg::ONLY_MASTER )

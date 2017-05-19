@@ -849,7 +849,7 @@ SCIP_RETCODE detection(
       SCIPhashmapFree(&detectordata->vartoblock);
 
 
-   assert(currseeed->checkConsistency() );
+   assert(currseeed->checkConsistency(seeedpool) );
 
   // currseeed->showScatterPlot(seeedpool);
 

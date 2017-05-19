@@ -954,8 +954,6 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                noduplicate = seeedIsNoDuplicate( seeedPropData->newSeeeds[seeed], nextSeeeds, finishedSeeeds, false );
                if( !seeedPropData->newSeeeds[seeed]->isTrivial() && noduplicate )
                {
-                  seeedPropData->newSeeeds[seeed]->calcOpenconss();
-                  seeedPropData->newSeeeds[seeed]->calcOpenvars();
                   if( seeedPropData->newSeeeds[seeed]->getNOpenconss() == 0
                      && seeedPropData->newSeeeds[seeed]->getNOpenvars() == 0 )
                   {
@@ -1566,10 +1564,6 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(std::vector<Seeed*>& origseee
       newseeed = new Seeed(scip, this->getNewIdForSeeed(), this->getNDetectors(), this->getNConss(), this->getNVars());
 
       /** prepare new seeed */
-      newseeed->calcOpenconss();
-      newseeed->calcOpenvars();
-      newseeed->setOpenVarsAndConssCalculated(true);
-
       newseeed->setNBlocks(otherseeed->getNBlocks());
 
       newseeed->usergiven = otherseeed->usergiven;

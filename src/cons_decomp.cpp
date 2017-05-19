@@ -663,7 +663,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
 
       seeed = conshdlrdata->listall->at(i);
 
-      assert( seeed->checkConsistency() );
+      assert( seeed->checkConsistency(conshdlrdata->seeedpool) ); // TODO correct?
 
       SCIPdialogMessage(scip, NULL, " %4d   ", i );
       SCIPdialogMessage(scip, NULL, "%5d  ", seeed->getNBlocks() );
@@ -1466,8 +1466,6 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    assert( conshdlrdata->curruserseeed == NULL );
 
    conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool->getNDetectors(), currseeedpool->getNConss(), currseeedpool->getNVars() );
-   conshdlrdata->curruserseeed->calcOpenconss();
-   conshdlrdata->curruserseeed->calcOpenvars();
 
 
    conshdlrdata->curruserseeed->stemsFromUnpresolved = !presolved;
@@ -2042,7 +2040,7 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    {
       if( (*seeediter)->isComplete() )
       {
-         assert( (*seeediter)->checkConsistency());
+         assert( (*seeediter)->checkConsistency(seeedpoolunpresolved));
          seeedstotranslate.push_back(*seeediter);
       }
    }

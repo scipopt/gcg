@@ -167,13 +167,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   seeedOrig = seeedPropagationData->seeedToPropagate;
   seeedOrig->setDetectorPropagated(detector);
 
-  if(!seeedOrig->areOpenVarsAndConssCalculated())
-  {
-      seeedOrig->calcOpenconss();
-      seeedOrig->calcOpenvars();
-      seeedOrig->setOpenVarsAndConssCalculated(true);
-  }
-
 
 
   for( int i = 0; i < seeedOrig->getNOpenconss(); ++i)
