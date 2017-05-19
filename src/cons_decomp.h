@@ -166,6 +166,10 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    SCIP*                 scip
    );
 
+SCIP_Bool SCIPconshdlrDecompHasDecomp(
+   SCIP*    scip
+   );
+
 /** sets the number of blocks */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetnumberOfBlocks(
    SCIP*                 scip,                /**< SCIP data structure */
@@ -228,8 +232,13 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP_Bool*            success
    );
 
-SCIP_RETCODE SCIPconshdlrDecompChooseBestFromSelected(
-   SCIP* scip
+SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
+   SCIP* scip,
+   SCIP_Bool updatelist
+   );
+
+SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
+   SCIP*                   scip
    );
 
 
