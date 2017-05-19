@@ -819,9 +819,6 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          addSeeedToCurr( translatedOrigSeeeds[i] );
    }
 
-   /* TODO todelete */
-   displaySeeedDataStructures();
-
    for( int round = 0; round < maxndetectionrounds; ++round )
    {
       std::cout << "currently in detection round " << round << std::endl;
@@ -1227,9 +1224,6 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    }
 
    sortAllRelevantSeeeds();
-
-   /* TODO todelete */
-   displaySeeedDataStructures();
 
    return finishedSeeeds;
 }
@@ -3181,7 +3175,11 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
       DECdecompSetNNewBlocks(scip, *newdecomp, &(seeed->nNewBlocks[0] ) );
    }
 
-      SCIP_CALL(DECdecompSetDetectorChainString(scip, *newdecomp, seeed->detectorchainstring ) );
+   if( seeed->detectorchainstring == NULL)
+   {
+      seeed->buildDecChainString();
+   }
+   SCIP_CALL(DECdecompSetDetectorChainString(scip, *newdecomp, seeed->detectorchainstring ) );
 
    /** set dectype */
    if( (*newdecomp)->nlinkingvars == seeed->getNTotalStairlinkingvars() && (*newdecomp)->nlinkingconss == 0 && DECdecompGetNLinkingvars((*newdecomp)) > 0)

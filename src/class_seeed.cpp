@@ -1134,17 +1134,17 @@ bool Seeed::checkConsistency(
    /** check if nonzero entries are either in a block or border */
 //   for( int b = 0; b < nBlocks; ++b )
 //   {
-      for( int c = 0; c < getNConssForBlock( b ); ++c )
+//      for( int c = 0; c < getNConssForBlock( b ); ++c )
 //      {
-         for( int v = 0; v < seeedpool->getNVarsForCons( getConssForBlock( b )[c] ); ++v )
+//         for( int v = 0; v < seeedpool->getNVarsForCons( getConssForBlock( b )[c] ); ++v )
 //         {
-            int varid = seeedpool->getVarsForCons( getConssForBlock( b )[c] )[v];
+//            int varid = seeedpool->getVarsForCons( getConssForBlock( b )[c] )[v];
 //
-            if( !( isVarBlockvarOfBlock( varid, b ) || isVarLinkingvar( varid ) || isVarStairlinkingvarOfBlock( varid, b) ) )
+//            if( !( isVarBlockvarOfBlock( varid, b ) || isVarLinkingvar( varid ) || isVarStairlinkingvarOfBlock( varid, b) ) )
 //            {
 //               SCIPwarningMessage(scip,
 //                  "WARNING! Variable %d is not part of block %d or linking as constraint %d suggests! \n ", varid, b,
-                  getConssForBlock( b )[c]);
+//                  getConssForBlock( b )[c]);
 //               return false;
 //            }
 //         }
