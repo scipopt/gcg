@@ -231,6 +231,9 @@ SCIP_RETCODE GCGpricestoreAddCol(
    assert(pricestore->nforcedcols <= pricestore->ncols);
    assert(col != NULL);
 
+   /* start timing */
+   SCIPstartClock(pricestore->scip, pricestore->priceclock);
+
    /* update statistics of total number of found cols */
    pricestore->ncolsfound++;
    pricestore->ncolsfoundround++;
@@ -240,7 +243,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
     *  - it has infinite score factor, or
     * if it is a non-forced col and no cols should be added, abort
     */
-   forcecol = forcecol || pricestore->infarkas || pricestore->forcecols;
+   forcecol = forcecol /* || pricestore->infarkas */|| pricestore->forcecols;
 
    /* get enough memory to store the col */
    SCIP_CALL( pricestoreEnsureColsMem(pricestore, pricestore->ncols+1) );
@@ -289,6 +292,9 @@ SCIP_RETCODE GCGpricestoreAddCol(
    pricestore->orthogonalities[pos] = 1.0;
    pricestore->scores[pos] = colscore;
    pricestore->ncols++;
+
+   /* stop timing */
+   SCIPstopClock(pricestore->scip, pricestore->priceclock);
 
    return SCIP_OKAY;
 }
