@@ -709,8 +709,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       /*lint -fallthrough*/
    case SCIP_STAGE_SOLVING:
       assert( SCIPconshdlrDecompCheckConsistency(scip) );
-      SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
-
+      if( SCIPconshdlrDecompExistsSelected(scip) )
+         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
+      else
+         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE ) );
       if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
       {
          SCIPinfoMessage(scip, NULL,"best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");

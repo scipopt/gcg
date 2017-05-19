@@ -2101,10 +2101,28 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
    assert(conshdlrdata != NULL);
 
    return (conshdlrdata->ndecomps > 0 || conshdlrdata->nincompleteseeeds > 0 ||
-      conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() > 0 ||
-      conshdlrdata->seeedpoolunpresolved->currSeeeds.size() > 0 ) ;
+      (conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() > 0 ) ||
+      (conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->currSeeeds.size() > 0 ) ) ;
 }
+SCIP_Bool SCIPconshdlrDecompExistsSelected(
+   SCIP* scip
+   ){
+   SCIP_CONSHDLR* conshdlr;
+    SCIP_CONSHDLRDATA* conshdlrdata;
 
+    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+    if( conshdlr == NULL )
+    {
+       SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+       return SCIP_ERROR;
+    }
+
+    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+    assert(conshdlrdata != NULL);
+
+    return conshdlrdata->selectedexists;
+}
 
 SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    SCIP* scip,

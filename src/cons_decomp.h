@@ -232,6 +232,11 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP_Bool*            success
    );
 
+SCIP_Bool SCIPconshdlrDecompExistsSelected(
+   SCIP* scip
+   );
+
+
 SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    SCIP* scip,
    SCIP_Bool updatelist

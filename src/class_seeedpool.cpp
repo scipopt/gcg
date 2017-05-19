@@ -3016,7 +3016,11 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       DECdecompSetNNewBlocks(scip, *newdecomp, &(seeed->nNewBlocks[0] ) );
    }
 
-      SCIP_CALL(DECdecompSetDetectorChainString(scip, *newdecomp, seeed->detectorchainstring ) );
+   if( seeed->detectorchainstring == NULL)
+   {
+      seeed->buildDecChainString();
+   }
+   SCIP_CALL(DECdecompSetDetectorChainString(scip, *newdecomp, seeed->detectorchainstring ) );
 
    /** set dectype */
    if( (*newdecomp)->nlinkingvars == seeed->getNTotalStairlinkingvars() && (*newdecomp)->nlinkingconss == 0 && DECdecompGetNLinkingvars((*newdecomp)) > 0)
