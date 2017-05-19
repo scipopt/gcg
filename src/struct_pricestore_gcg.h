@@ -51,7 +51,7 @@ struct GCG_PriceStore
    int                   ncolsapplied;       /**< total number of cols applied to the LPs */
    SCIP_Bool             infarkas;           /**< is the price storage currently being filled with the columns from farkas pricing? */
    SCIP_Bool             forcecols;          /**< should the cols be used despite the number of cols parameter limit? */
-   SCIP_Real             redcostfac;         /**< factor of -redcost/norm in score function */
+   SCIP_Real             efficiacyfac;       /**< factor of efficiacy in score function */
    SCIP_Real             objparalfac;        /**< factor of objective parallelism in score function */
    SCIP_Real             orthofac;           /**< factor of orthogonalities in score function */
    SCIP_Real             mincolorth;         /**< minimal orthogonality of columns to add
@@ -59,6 +59,8 @@ struct GCG_PriceStore
    SCIP_Real             maxpricecolsroot;   /**< maximum number of columns per round */
    SCIP_Real             maxpricecols;       /**< maximum number of columns per round */
    SCIP_Real             maxpricecolsfarkas; /**< maximum number of columns per Farkas round */
+   SCIP_CLOCK*           priceclock;         /**< pricing time */
+   GCG_EFFICIACYCHOICE   efficiacychoice;    /**< choice to base efficiacy on */
 };
 
 #ifdef __cplusplus

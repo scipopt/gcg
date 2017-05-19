@@ -42,7 +42,7 @@ struct GCG_Colpool
    SCIP_Bool             infarkas;           /**< in Farkas pricing? */
    SCIP_Longint          ncalls;             /**< number of times, the colpool was separated */
    SCIP_Longint          ncolsfound;         /**< total number of cols that were separated from the pool */
-   SCIP_CLOCK*           poolclock;          /**< separation time */
+   SCIP_CLOCK*           poolclock;          /**< pricing time */
    SCIP_HASHTABLE*       hashtable;          /**< hash table to identify already stored cols */
    GCG_COL**             cols;               /**< stored cols of the pool */
    SCIP_Longint          processedlp;        /**< last LP that has been processed for separating the LP */

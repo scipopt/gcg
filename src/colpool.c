@@ -160,8 +160,7 @@ SCIP_RETCODE colpoolEnsureColsMem(
 SCIP_RETCODE GCGcolpoolCreate(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_COLPOOL**         colpool,            /**< pointer to store col pool */
-   int                   agelimit,           /**< maximum age a col can reach before it is deleted from the pool */
-   SCIP_Bool             globalcolpool       /**< is this the global col pool of SCIP? */
+   int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool */
    )
 {
    assert(colpool != NULL);
@@ -189,7 +188,6 @@ SCIP_RETCODE GCGcolpoolCreate(
    (*colpool)->maxncols = 0;
    (*colpool)->ncalls = 0;
    (*colpool)->ncolsfound = 0;
-   (*colpool)->globalcolpool = globalcolpool;
 
    return SCIP_OKAY;
 }
@@ -206,6 +204,8 @@ SCIP_RETCODE GCGcolpoolFree(
 
    /* remove all cols from the pool */
    SCIP_CALL( GCGcolpoolClear(*colpool) );
+
+   SCIPinfoMessage(scip, NULL, "Pricing time in colpool = %f sec\n", GCGcolpoolGetTime(*colpool));
 
    /* free clock */
    SCIPfreeClock(scip, &(*colpool)->poolclock);

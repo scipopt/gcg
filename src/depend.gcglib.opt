@@ -5409,7 +5409,8 @@ $(LIBOBJDIR)/colpool.o: src/colpool.c lib/scip/src/scip/def.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/solve.h src/colpool.h src/type_colpool.h \
- src/pub_colpool.h src/struct_colpool.h
+ src/pub_colpool.h src/type_pricestore_gcg.h src/struct_colpool.h \
+ src/pricestore_gcg.h src/struct_pricestore_gcg.h
 $(LIBOBJDIR)/pricestore_gcg.o: src/pricestore_gcg.c lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
@@ -5452,8 +5453,7 @@ $(LIBOBJDIR)/pricestore_gcg.o: src/pricestore_gcg.c lib/scip/src/scip/def.h \
  lib/scip/src/scip/pub_reopt.h lib/scip/src/scip/struct_reopt.h \
  lib/scip/src/scip/type_sepastore.h lib/scip/src/scip/type_cutpool.h \
  lib/scip/src/scip/cons.h lib/scip/src/scip/pub_cons.h \
- lib/scip/src/scip/struct_cons.h src/pricestore_gcg.h \
- src/type_pricestore_gcg.h src/struct_pricestore_gcg.h src/pub_gcgcol.h \
+ lib/scip/src/scip/struct_cons.h src/pricestore_gcg.h src/pub_gcgcol.h \
  src/type_gcgcol.h src/struct_gcgcol.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/type_nlp.h lib/scip/src/scip/pub_branch.h \
  lib/scip/src/scip/pub_conflict.h lib/scip/src/scip/pub_cutpool.h \
@@ -5471,7 +5471,8 @@ $(LIBOBJDIR)/pricestore_gcg.o: src/pricestore_gcg.c lib/scip/src/scip/def.h \
  lib/scip/src/scip/presolve.h lib/scip/src/scip/cuts.h \
  lib/scip/src/scip/heuristics.h lib/scip/src/scip/struct_scip.h \
  lib/scip/src/scip/type_interrupt.h lib/scip/src/scip/type_pricestore.h \
- lib/scip/src/scip/misc.h lib/scip/src/scip/solve.h
+ lib/scip/src/scip/misc.h lib/scip/src/scip/solve.h \
+ src/type_pricestore_gcg.h src/struct_pricestore_gcg.h
 $(LIBOBJDIR)/pricer_gcg.o: src/pricer_gcg.cpp lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
@@ -5549,9 +5550,11 @@ $(LIBOBJDIR)/pricer_gcg.o: src/pricer_gcg.cpp lib/scip/src/scip/scip.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
  src/class_pricingtype.h src/class_stabilization.h src/class_colpool.h \
  src/gcgpqueue.h src/struct_gcgpqueue.h src/type_gcgpqueue.h \
- src/pub_gcgpqueue.h src/sepa_master.h src/sepa_basis.h src/relax_gcg.h \
- src/struct_solver.h src/scip_misc.h lib/scip/src/scip/cons_setppc.h \
- src/cons_masterbranch.h src/branch_generic.h src/event_display.h
+ src/pub_gcgpqueue.h src/pub_colpool.h src/type_colpool.h \
+ src/pricestore_gcg.h src/type_pricestore_gcg.h src/sepa_master.h \
+ src/sepa_basis.h src/relax_gcg.h src/struct_solver.h src/scip_misc.h \
+ lib/scip/src/scip/cons_setppc.h src/cons_masterbranch.h \
+ src/branch_generic.h src/event_display.h src/colpool.h
 $(LIBOBJDIR)/dec_arrowheur.o: src/dec_arrowheur.cpp src/dec_arrowheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \

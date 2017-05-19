@@ -26,6 +26,7 @@
 #include "scip/def.h"
 #include "scip/set.h"
 #include "scip/stat.h"
+#include "scip/clock.h"
 #include "scip/lp.h"
 #include "scip/var.h"
 #include "scip/tree.h"
@@ -71,19 +72,22 @@ SCIP_RETCODE pricestoreEnsureColsMem(
 SCIP_RETCODE GCGpricestoreCreate(
    SCIP*                 scip,                /**< SCIP data structure */
    GCG_PRICESTORE**      pricestore,          /**< pointer to store price storage */
-   SCIP_Real             redcostfac,          /**< factor of -redcost/norm in score function */
+   SCIP_Real             efficiacyfac,          /**< factor of -redcost/norm in score function */
    SCIP_Real             objparalfac,         /**< factor of objective parallelism in score function */
    SCIP_Real             orthofac,            /**< factor of orthogonalities in score function */
    SCIP_Real             mincolorth,          /**< minimal orthogonality of columns to add
                                                   (with respect to columns added in the current round) */
    SCIP_Real             maxpricecolsroot,    /**< maximum number of columns per round */
    SCIP_Real             maxpricecols,        /**< maximum number of columns per round */
-   SCIP_Real             maxpricecolsfarkas   /**< maximum number of columns per Farkas round */
+   SCIP_Real             maxpricecolsfarkas,  /**< maximum number of columns per Farkas round */
+   GCG_EFFICIACYCHOICE   efficiacychoice      /**< choice to base efficiacy on */
    )
 {
    assert(pricestore != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, pricestore) );
+
+   SCIP_CALL( SCIPcreateClock(scip, &(*pricestore)->priceclock) );
 
    (*pricestore)->scip = scip;
    (*pricestore)->cols = NULL;
@@ -98,11 +102,12 @@ SCIP_RETCODE GCGpricestoreCreate(
    (*pricestore)->ncolsapplied = 0;
    (*pricestore)->infarkas = FALSE;
    (*pricestore)->forcecols = FALSE;
-   (*pricestore)->redcostfac = redcostfac;         /**< factor of -redcost/norm in score function */
+   (*pricestore)->efficiacyfac = efficiacyfac;         /**< factor of -redcost/norm in score function */
    (*pricestore)->objparalfac = objparalfac;        /**< factor of objective parallelism in score function */
    (*pricestore)->orthofac = orthofac;           /**< factor of orthogonalities in score function */
-   (*pricestore)->mincolorth= mincolorth;         /**< minimal orthogonality of columns to add
-                                     (with respect to columns added in the current round) */
+   (*pricestore)->mincolorth = mincolorth;         /**< minimal orthogonality of columns to add
+                                                       (with respect to columns added in the current round) */
+   (*pricestore)->efficiacychoice = efficiacychoice;
    (*pricestore)->maxpricecolsroot = maxpricecolsroot;       /**< maximum number of columns per round */
    (*pricestore)->maxpricecols = maxpricecols;       /**< maximum number of columns per round */
    (*pricestore)->maxpricecolsfarkas = maxpricecolsfarkas; /**< maximum number of columns per Farkas round */
@@ -120,6 +125,11 @@ SCIP_RETCODE GCGpricestoreFree(
    assert(pricestore != NULL);
    assert(*pricestore != NULL);
    assert((*pricestore)->ncols == 0);
+
+   SCIPinfoMessage(scip, NULL, "Pricing time in pricestore = %f sec\n", GCGpricestoreGetTime(*pricestore));
+
+   /* free clock */
+   SCIPfreeClock(scip, &(*pricestore)->priceclock);
 
    SCIPfreeMemoryArrayNull(scip, &(*pricestore)->cols);
    SCIPfreeMemoryArrayNull(scip, &(*pricestore)->objparallelisms);
@@ -315,11 +325,33 @@ SCIP_RETCODE pricestoreUpdateOrthogonalities(
          }
          else
          {
+            SCIP_Real colefficiacy;
+
+            /* calculate cut's efficacy */
+            switch ( pricestore->efficiacychoice )
+            {
+            case GCG_EFFICIACYCHOICE_DANTZIG:
+               colefficiacy = -1.0 *GCGcolGetRedcost(pricestore->cols[pos]);
+               break;
+            case GCG_EFFICIACYCHOICE_STEEPESTEDGE:
+               colefficiacy = -1.0 *GCGcolGetRedcost(pricestore->cols[pos])/ GCGcolGetNorm(col);
+               break;
+            case GCG_EFFICIACYCHOICE_LAMBDA:
+               SCIPerrorMessage("Lambda pricing not yet implemented.\n");
+               return SCIP_INVALIDCALL;
+               break;
+            default:
+               SCIPerrorMessage("Invalid efficiacy choice.\n");
+               return SCIP_INVALIDCALL;
+            }
+
             /* recalculate score */
             pricestore->orthogonalities[pos] = thisortho;
             assert( pricestore->objparallelisms[pos] != SCIP_INVALID ); /*lint !e777*/
             assert( pricestore->scores[pos] != SCIP_INVALID ); /*lint !e777*/
-            pricestore->scores[pos] = pricestore->redcostfac * -1.0 *GCGcolGetRedcost(pricestore->cols[pos])/ GCGcolGetNorm(col)
+
+
+            pricestore->scores[pos] = pricestore->efficiacyfac * colefficiacy
                + pricestore->objparalfac * pricestore->objparallelisms[pos]
                + pricestore->orthofac * thisortho;
          }
@@ -354,8 +386,9 @@ SCIP_RETCODE pricestoreApplyCol(
       (*ncolsapplied)++;
    }
 
-   /* update the orthogonalities */
-   SCIP_CALL( pricestoreUpdateOrthogonalities(pricestore, col, mincolorthogonality) );
+   /* update the orthogonalities if needed */
+   if( SCIPisGT(pricestore->scip, mincolorthogonality, SCIPepsilon(pricestore->scip)) || SCIPisPositive(pricestore->scip, pricestore->orthofac))
+      SCIP_CALL( pricestoreUpdateOrthogonalities(pricestore, col, mincolorthogonality) );
 
    return SCIP_OKAY;
 }
@@ -397,15 +430,31 @@ SCIP_RETCODE computeScore(
    )
 {
    GCG_COL* col;
-   SCIP_Real colefficacy;
+   SCIP_Real colefficiacy;
    SCIP_Real colscore;
 
    col = pricestore->cols[pos];
 
-   colefficacy = -1.0*GCGcolGetRedcost(col) / GCGcolGetNorm(col);
+   /* calculate cut's efficacy */
+   switch ( pricestore->efficiacychoice )
+   {
+   case GCG_EFFICIACYCHOICE_DANTZIG:
+      colefficiacy = -1.0 *GCGcolGetRedcost(pricestore->cols[pos]);
+      break;
+   case GCG_EFFICIACYCHOICE_STEEPESTEDGE:
+      colefficiacy = -1.0 *GCGcolGetRedcost(pricestore->cols[pos])/ GCGcolGetNorm(col);
+      break;
+   case GCG_EFFICIACYCHOICE_LAMBDA:
+      SCIPerrorMessage("Lambda pricing not yet implemented.\n");
+      return SCIP_INVALIDCALL;
+      break;
+   default:
+      SCIPerrorMessage("Invalid efficiacy choice.\n");
+      return SCIP_INVALIDCALL;
+   }
 
    assert( pricestore->objparallelisms[pos] != SCIP_INVALID ); /*lint !e777*/
-   colscore = pricestore->redcostfac * colefficacy
+   colscore = pricestore->efficiacyfac * colefficiacy
             + pricestore->objparalfac * pricestore->objparallelisms[pos]
             + pricestore->orthofac * 1.0;;
    assert( !SCIPisInfinity(pricestore->scip, colscore) );
@@ -438,6 +487,9 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    scip = pricestore->scip;
 
    SCIPdebugMessage("applying %d cols\n", pricestore->ncols);
+
+   /* start timing */
+   SCIPstartClock(pricestore->scip, pricestore->priceclock);
 
    node = SCIPgetCurrentNode(scip);
    assert(node != NULL);
@@ -521,6 +573,9 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 
    /* clear the price storage and reset statistics for price round */
    SCIP_CALL( GCGpricestoreClearCols(pricestore) );
+
+   /* stop timing */
+   SCIPstopClock(pricestore->scip, pricestore->priceclock);
 
    return SCIP_OKAY;
 }
@@ -635,3 +690,14 @@ int GCGpricestoreGetNColsApplied(
 
    return pricestore->ncolsapplied;
 }
+
+/** gets time in seconds used for pricing cols from the pricestore */
+SCIP_Real GCGpricestoreGetTime(
+   GCG_PRICESTORE*       pricestore           /**< price storage */
+   )
+{
+   assert(pricestore != NULL);
+
+   return SCIPclockGetTime(pricestore->priceclock);
+}
+

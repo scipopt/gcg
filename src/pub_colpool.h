@@ -89,8 +89,7 @@ EXTERN
 SCIP_RETCODE GCGcolpoolCreate(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_COLPOOL**         colpool,            /**< pointer to store col pool */
-   int                   agelimit,           /**< maximum age a col can reach before it is deleted from the pool */
-   SCIP_Bool             globalcolpool       /**< is this the global col pool of SCIP? */
+   int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool */
    );
 
 /** frees col pool */

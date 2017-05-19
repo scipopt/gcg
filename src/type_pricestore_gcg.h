@@ -27,6 +27,14 @@
 extern "C" {
 #endif
 
+/** possible settings for specifying the solution for which cuts are selected */
+enum GCG_Efficiacychoice
+{
+   GCG_EFFICIACYCHOICE_DANTZIG = 0,          /**< use Dantzig's rule (reduced cost) to base efficacy on */
+   GCG_EFFICIACYCHOICE_STEEPESTEDGE = 1,     /**< use steepest edge rule s( to base efficacy on */
+   GCG_EFFICIACYCHOICE_LAMBDA = 2            /**< use lambda pricing to base efficacy on */
+};
+typedef enum GCG_Efficiacychoice GCG_EFFICIACYCHOICE;
 
 typedef struct GCG_PriceStore GCG_PRICESTORE;     /**< storage for priced variables */
 

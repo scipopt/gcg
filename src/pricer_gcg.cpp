@@ -99,15 +99,16 @@ using namespace scip;
 #define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
 #define DEFAULT_STABILIZATION            TRUE       /**< should stabilization be used */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
-#define DEFAULT_USECOLPOOL               TRUE       /**< should the colpool be checked for negative redcost cols before solving the pricing problems? */
+#define DEFAULT_USECOLPOOL               FALSE       /**< should the colpool be checked for negative redcost cols before solving the pricing problems? */
 #define DEFAULT_COLPOOL_AGELIMIT         100        /**< maximum age of columns in column pool */
 #define DEFAULT_COLPOOL_COLPOOLSIZE      10         /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
 
-#define DEFAULT_PRICE_ORTHOFAC 1.0
-#define DEFAULT_PRICE_OBJPARALFAC 0.1
+#define DEFAULT_PRICE_ORTHOFAC 0.0
+#define DEFAULT_PRICE_OBJPARALFAC 0.0
 #define DEFAULT_PRICE_REDCOSTFAC 1.0
-#define DEFAULT_MAXPRICECOLS 100
-#define DEFAULT_PRICE_MINCOLORTH 0.25
+#define DEFAULT_PRICE_MINCOLORTH 0.5
+#define DEFAULT_PRICE_EFFICIACYCHOICE 0
+
 
 #define EVENTHDLR_NAME         "probdatavardeleted"
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
@@ -191,6 +192,7 @@ struct SCIP_PricerData
                                                   (with respect to columns added in the current round) */
    SCIP_Real             maxpricecols;       /**< maximum number of columns per round */
    SCIP_Real             maxpricecolsfarkas; /**< maximum number of columns per Farkas round */
+   GCG_EFFICIACYCHOICE   efficiacychoice;    /**< choice to base efficiacy on */
 
    /** statistics */
    int                   oldvars;            /**< Vars of last pricing iteration */
@@ -3759,7 +3761,7 @@ SCIP_RETCODE ObjPricerGcg::createColpool()
 
    hardlimit = actualsize + maxvarsround * pricerdata->npricingprobsnotnull;
 
-   SCIP_CALL( GCGcolpoolCreate(scip_, &colpool, pricerdata->colpoolagelimit, TRUE) );
+   SCIP_CALL( GCGcolpoolCreate(scip_, &colpool, pricerdata->colpoolagelimit) );
 
    return SCIP_OKAY;
 }
@@ -3768,7 +3770,9 @@ SCIP_RETCODE ObjPricerGcg::createPricestore()
 {
    SCIP_CALL( GCGpricestoreCreate(scip_, &pricestore,
       pricerdata->redcostfac, pricerdata->objparalfac, pricerdata->orthofac,
-      pricerdata->mincolorth, reducedcostpricing->getMaxvarsroundroot(), reducedcostpricing->getMaxvarsround(), farkaspricing->getMaxvarsround()) );
+      pricerdata->mincolorth,
+      reducedcostpricing->getMaxvarsroundroot(), reducedcostpricing->getMaxvarsround(), farkaspricing->getMaxvarsround(),
+      pricerdata->efficiacychoice) );
 
    return SCIP_OKAY;
 }
@@ -3881,6 +3885,11 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/pricestore/mincolorth",
             "minimal orthogonality of columns to add",
             &pricerdata->mincolorth, FALSE, DEFAULT_PRICE_MINCOLORTH, 0.0, 1.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/pricestore/efficiacychoice",
+            "choice to base efficiacy on",
+            (int*)&pricerdata->efficiacychoice, FALSE, DEFAULT_PRICE_EFFICIACYCHOICE, 0, 2, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }
