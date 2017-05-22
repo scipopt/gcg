@@ -122,13 +122,14 @@ private:
 
    SCIP_Bool                                    transformed;            /**< corresponds the matrix datastructure to the transformed problem */
 
-   std::vector<SeeedPtr>                        translatedOrigSeeeds;   /**< seeeds that are translated seeeds from found ones for the original problem */
+   std::vector<SeeedPtr>                        seeedstopopulate;      /**< seeeds that are translated seeeds from found ones for the original problem */
 
    int											         helpvisucounter;        /** help counter for family tree visualization to iterate the heights */
 
 
 public:
 
+   std::vector<SeeedPtr>                        incompleteSeeeds;       /**< vector of incomplete seeeds that can be used for initialization */
    std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of finished seeeds */
 

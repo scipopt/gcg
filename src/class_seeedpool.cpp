@@ -423,7 +423,7 @@ Seeedpool::Seeedpool(
    SCIP*               givenScip, /**< SCIP data structure */
    const char*       conshdlrName,
    SCIP_Bool         _transformed
-):scip(givenScip), currSeeeds(0), allrelevantseeeds(0), nTotalSeeeds(0), nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0), transformed(_transformed), helpvisucounter(0)
+):scip(givenScip), currSeeeds(0), incompleteSeeeds(0), allrelevantseeeds(0), nTotalSeeeds(0), nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0), transformed(_transformed), helpvisucounter(0)
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
@@ -439,7 +439,7 @@ Seeedpool::Seeedpool(
    int relevantVarCounter = 0;
    int relevantConsCounter = 0;
 
-   /** store all enabled detectors */
+   /** get conshdlrdata */
    conshdlr = SCIPfindConshdlr(scip, conshdlrName);
    assert(conshdlr != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
@@ -447,9 +447,6 @@ Seeedpool::Seeedpool(
 
    /** set detection data */
    SCIP_CALL_ABORT( SCIPgetIntParam(givenScip, "detection/maxrounds", &maxndetectionrounds) );
-
-//   SCIPdebugMessagePrint(scip, " conshdlrname: %s \n ", conshdlrName);
- //  SCIPdebugMessagePrint(scip, " number of detectors: %d \n ", conshdlrdata->ndetectors);
 
    assert(conshdlrdata->ndetectors > 0);
 
@@ -469,7 +466,7 @@ Seeedpool::Seeedpool(
 
    SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
 
-   /** set up enabled detectors */
+   /** set up enabled detectors and store them */
    for( int d = 0; d < conshdlrdata->ndetectors; ++d )
    {
       DEC_DETECTOR* detector;
@@ -583,8 +580,8 @@ Seeedpool::Seeedpool(
 
       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVars, nCurrVars) ); /** free in line 321 */
       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVals, nCurrVars) ); /** free in line 321 */
-      SCIP_CALL_ABORT(GCGconsGetVars(scip, cons, currVars, nCurrVars));
-      SCIP_CALL_ABORT(GCGconsGetVals(scip, cons, currVals, nCurrVars));
+      SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, currVars, nCurrVars) );
+      SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, currVals, nCurrVars) );
 
       for( int currVar = 0; currVar < nCurrVars; ++currVar )
       {
@@ -592,7 +589,7 @@ Seeedpool::Seeedpool(
          std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
 
          /** because of the bug of GCGconsGet*()-methods some variables have to be negated */
-         if(!SCIPvarIsNegated(currVars[currVar]))
+         if( !SCIPvarIsNegated(currVars[currVar]) )
             iterVar = scipVarToIndex.find(currVars[currVar]);
          else
             iterVar = scipVarToIndex.find(SCIPvarGetNegatedVar(currVars[currVar]));
@@ -611,7 +608,7 @@ Seeedpool::Seeedpool(
       SCIPfreeBufferArrayNull(scip, &currVals);
    }
 
-   /*  init  seeedpool with empty seeed and translated original seeeds*/
+   /*  init  seeedpool with empty seeed */
    addSeeedToCurr( new Seeed( scip, -1, nDetectors, nConss, nVars) );
 
    decompositions = NULL;
@@ -724,12 +721,12 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     }
 
     /** add translated original seeeds (of unpresolved problem) */
-    for( size_t i = 0; i < translatedOrigSeeeds.size(); ++i )
+    for( size_t i = 0; i < seeedstopopulate.size(); ++i )
     {
-       SCIP_CALL_ABORT( prepareSeeed( translatedOrigSeeeds[i]) );
-       translatedOrigSeeeds[i]->setID(getNewIdForSeeed() );
-       if( seeedIsNoDuplicateOfSeeeds(translatedOrigSeeeds[i], currSeeeds, true) )
-          currSeeeds.push_back(translatedOrigSeeeds[i] );
+       SCIP_CALL_ABORT( prepareSeeed( seeedstopopulate[i]) );
+       seeedstopopulate[i]->setID(getNewIdForSeeed() );
+       if( seeedIsNoDuplicateOfSeeeds(seeedstopopulate[i], currSeeeds, true) )
+          currSeeeds.push_back(seeedstopopulate[i] );
     }
 
     for( int round = 0; round < maxndetectionrounds; ++round )
@@ -933,7 +930,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
              if(verboseLevel > 2 )
              #pragma omp critical (ostream)
              {
-                std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
+                SCIPdebugMessage("call finisher for detector %s\n", DECdetectorGetName(detectorToFinishingScipDetector[d] ) );
              }
              SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d], seeedPropData, &result) );
 
@@ -1008,13 +1005,13 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
           seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
 
           if( verboseLevel > 2)
-             std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;
+             SCIPdebugMessage("check if finisher of detector %s is enabled\n", DECdetectorGetName(detectorToScipDetector[d] ) ) ;
 
           /** if the finishing of the detector is not enabled go on with the next detector */
           if( !detector->enabledFinishing )
              continue;
 
-          std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
+          SCIPdebugMessage( "call finisher for detector %s \n ", DECdetectorGetName(detectorToFinishingScipDetector[d] ) );
 
           SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
 
@@ -1053,7 +1050,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
        }
     }// end for finishing curr seeeds
 
-    std::cout << (int) finishedSeeeds.size() << " finished seeeds are found." << std::endl;
+    SCIPdebugMessage("%d  finished seeeds are found.\n", (int) finishedSeeeds.size() );
 
     if( displaySeeeds )
     {
@@ -1066,7 +1063,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
     /** count the successful refinement calls for each detector */
 
-    for(size_t i = 0; i < finishedSeeeds.size(); ++i)
+    for( size_t i = 0; i < finishedSeeeds.size(); ++i )
     {
        assert(finishedSeeeds[i]->checkConsistency(this) );
        assert(finishedSeeeds[i]->getNOpenconss() == 0);
@@ -1180,7 +1177,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
           if( !detector->enabledFinishing )
              continue;
 
-          std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
+          SCIPdebugMessage( "call finisher for detector %s\n", DECdetectorGetName(detectorToFinishingScipDetector[d] ) );
 
           SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
 
@@ -1724,7 +1721,7 @@ std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers( std::vector<
 
 void Seeedpool::populate(std::vector<SeeedPtr> seeeds)
 {
-   translatedOrigSeeeds = seeeds;
+   seeedstopopulate = seeeds;
 }
 
 const  int * Seeedpool::getVarsForCons(int cons)

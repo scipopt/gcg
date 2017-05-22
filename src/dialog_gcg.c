@@ -591,6 +591,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
+
+
+
       SCIP_CALL( DECdetectStructure(scip, &result) );
       if( result == SCIP_SUCCESS )
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was successful.\n");
@@ -718,7 +721,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIPinfoMessage(scip, NULL,"best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
          /* @TODO experimental */
          SCIPfreeTransform(scip);
-         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
          SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
          SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
 
