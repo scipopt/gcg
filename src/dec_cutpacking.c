@@ -1376,7 +1376,7 @@ SCIP_RETCODE getLinkingVars(
 #endif
 
    SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-   SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, 0) );
    DECdecompSetVartoblock(decdecomp, vartoblock);
 
    for( i = 0; i < detectordata->nblocks; ++i )

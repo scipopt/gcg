@@ -2923,7 +2923,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    DECdecompSetSubscipvars(scip, *newdecomp, subscipvars, nsubscipvars);
    DECdecompSetStairlinkingvars(scip, *newdecomp, stairlinkingvars, nstairlinkingvars);
-   DECdecompSetLinkingvars(scip, *newdecomp, linkingvars, nlinkingvars);
+   DECdecompSetLinkingvars(scip, *newdecomp, linkingvars, nlinkingvars, seeed->getNMastervars());
    DECdecompSetVarindex(*newdecomp, varindex);
    DECdecompSetVartoblock(*newdecomp, vartoblock) ;
 

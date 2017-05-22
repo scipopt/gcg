@@ -135,6 +135,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
 
    SCIP_VAR** linkingvars;
    int nlinkingvars;
+   int nmastervars;
    int i;
 
    assert(scip != NULL);
@@ -149,6 +150,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
    SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
 
    nlinkingvars = 0;
+   nmastervars = 0;
 
    *haslinking = FALSE;
 
@@ -191,8 +193,10 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
          if( block == nblocks+2 )
             SCIPdebugMessage("var %s is linking.\n", SCIPvarGetName(var));
          else
+         {
             SCIPdebugMessage("var %s is in master only.\n", SCIPvarGetName(var));
-
+            ++nmastervars;
+         }
          linkingvars[nlinkingvars] = var;
          ++nlinkingvars;
       }
@@ -200,7 +204,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
 
    if( nlinkingvars > 0 )
    {
-      SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, nmastervars) );
       *haslinking = TRUE;
    }
 
@@ -842,7 +846,8 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
-   int                   nlinkingvars        /**< number of linkingvars per block */
+   int                   nlinkingvars,       /**< number of linkingvars */
+   int                   nmastervars         /**< number of linking variables thta are purely master variables */
    )
 {
    assert(scip != NULL);
@@ -853,6 +858,7 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    assert(decomp->nlinkingvars == 0);
 
    decomp->nlinkingvars = nlinkingvars;
+   decomp->nmastervars = nmastervars;
 
    if( nlinkingvars > 0 )
    {
@@ -901,6 +907,18 @@ int DECdecompGetNLinkingvars(
 
    return decomp->nlinkingvars;
 }
+
+/** returns the number of linking variables that are purely master variables of the given decomposition */
+int DECdecompGetNMastervars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   assert(decomp != NULL);
+   assert(decomp->nmastervars >= 0);
+
+   return decomp->nmastervars;
+}
+
 
 /** copies the input stairlinkingvars array to the given decomposition */
 SCIP_RETCODE DECdecompSetStairlinkingvars(
@@ -3075,10 +3093,10 @@ SCIP_RETCODE DECevaluateDecomposition(
    /* calculate matrix area */
    matrixarea = (SCIP_Longint) nvars*nconss;
 
-   blackarea += ( DECdecompGetNLinkingvars(decdecomp)  ) * nconss;
+   blackarea += ( DECdecompGetNLinkingvars(decdecomp) - DECdecompGetNMastervars(decdecomp) ) * nconss;
    blackarea += DECdecompGetNLinkingconss(decdecomp) * nvars;
 
-   blackarea -= (DECdecompGetNLinkingvars(decdecomp) - DECdecompGetNTotalStairlinkingvars(decdecomp) ) * DECdecompGetNLinkingconss(decdecomp);
+   blackarea -= (DECdecompGetNLinkingvars(decdecomp) - DECdecompGetNMastervars(decdecomp) ) * DECdecompGetNLinkingconss(decdecomp);
 
 
    /* calculate slave sizes, nonzeros and linkingvars */
