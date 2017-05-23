@@ -769,7 +769,13 @@ void Seeed::calcHashvalue()
    /** find sorting for blocks (non decreasing according smallest row index) */
    for( int i = 0; i < this->nBlocks; ++i )
    {
-      blockorder.push_back(std::pair<int, int>(i, this->conssForBlocks[i][0]));
+      if( this->conssForBlocks[i].size() > 0)
+         blockorder.push_back(std::pair<int, int>(i, this->conssForBlocks[i][0]));
+      else
+      {
+         assert(this->varsForBlocks[i].size() > 0);
+         blockorder.push_back(std::pair<int, int>(i, this->getNConss() + this->varsForBlocks[i][0] ) );
+      }
    }
 
    std::sort(blockorder.begin(), blockorder.end(), compare_blocks);
