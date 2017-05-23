@@ -120,6 +120,7 @@ struct SCIP_ConshdlrData
    int                   sizedecomps;                       /**< size of the decomp and complete seeeds array */
    int                   sizeincompleteseeeds;              /**< size of the incomplete seeeds array */
    int                   maxndetectionrounds;               /**< maximum number of detection loop rounds  */
+   int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
    SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
@@ -162,6 +163,14 @@ struct SCIP_ConshdlrData
    std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;
 
 };
+
+enum weightinggpresolvedoriginaldecomps{
+   NO_MODIF = 0,
+   FRACTION_OF_NNONZEROS,
+   FRACTION_OF_NROWS,
+   FAVOUR_PRESOLVED
+};
+
 
 /*
  * Local methods
@@ -555,6 +564,10 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/origprob/weightinggpresolvedoriginaldecomps",
+      "Weighting method when comparing decompositions for presolved and unpresolved problem", &conshdlrdata->weightinggpresolvedoriginaldecomps, TRUE,
+      NO_MODIF, 0, 3, NULL, NULL) );
+
 
    assert(conshdlrdata->candidates != NULL);
 
@@ -2192,6 +2205,49 @@ SCIP_Real SCIPconshdlrDecompAdaptScore(
    )
 {
    SCIP_Real score = oldscore;
+   int method;
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   gcg::Seeedpool* seeedpool;
+   gcg::Seeedpool* seeedpoolunpresolved;
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeedpool = conshdlrdata->seeedpool;
+   seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
+
+   SCIP_CALL(SCIPgetIntParam(scip, "detection/origprob/weightinggpresolvedoriginaldecomps", &method) );
+
+   if( method == FRACTION_OF_NNONZEROS )
+   {
+      if ( seeedpool == NULL || seeedpoolunpresolved == NULL )
+         return score;
+
+      score *= (SCIP_Real) seeedpoolunpresolved->getNNonzeros() / seeedpool->getNNonzeros();
+   }
+
+   if( method == FRACTION_OF_NROWS )
+   {
+      if ( seeedpool == NULL || seeedpoolunpresolved == NULL )
+         return score;
+
+      score *= (SCIP_Real) seeedpoolunpresolved->getNConss() / seeedpool->getNConss();
+
+   }
+
+   if( method == FAVOUR_PRESOLVED )
+   {
+      score += 1.;
+   }
 
    return score;
 }

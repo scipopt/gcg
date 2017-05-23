@@ -106,6 +106,8 @@ private:
    int 										         	nConss;                 /**< number of constraints */
    int										         	nDetectors;             /**< number of detectors */
 
+   int                                          nnonzeros;              /**< number of nonzeros */
+
    int                                          nFinishingDetectors;             /**< number of detectors */
 
 
@@ -239,6 +241,8 @@ public:
    DEC_DECOMP** getDecompositions();
 
    int getNDecompositions();
+
+   int getNNonzeros();
 
    int getNDetectors();
 

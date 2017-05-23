@@ -3544,7 +3544,7 @@ SCIP_RETCODE Seeed::buildDecChainString(
    char detectorchaininfo[SCIP_MAXSTRLEN];
    /** set detector chain info string */
    SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
-   if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER || this->getDetectorchain()[0] == NULL )
+   if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER || this->getDetectorchain() == NULL  || this->getDetectorchain()[0] == NULL )
    {
       char str1[2] = "\0"; /* gives {\0, \0} */
       str1[0] = 'U';
