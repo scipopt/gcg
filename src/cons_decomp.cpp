@@ -2093,6 +2093,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       conshdlrdata->curruserseeed->nNewBlocks.push_back(conshdlrdata->curruserseeed->getNBlocks());
    }
 
+   conshdlrdata->curruserseeed->findVarsLinkingToMaster(currseeedpool);
+   conshdlrdata->curruserseeed->findVarsLinkingToStairlinking(currseeedpool);
 
 
    if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::PARTIAL )
@@ -2106,6 +2108,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    else presolvedinfo = "presolved";
 
    conshdlrdata->curruserseeed->buildDecChainString();
+
 
 
    SCIPinfoMessage(scip, NULL, " added %s decomp for %s problem with %d blocks and %d masterconss, %d linkingvars, "

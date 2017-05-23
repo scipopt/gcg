@@ -3242,7 +3242,10 @@ SCIP_RETCODE Seeed::setVarToStairlinking(int varToStairlinking, int block1, int 
 
    changedHashvalue = true;
 
-   stairlinkingVars[block1].push_back(varToStairlinking);
+   if( block1 > block2)
+      stairlinkingVars[block2].push_back(varToStairlinking);
+   else
+      stairlinkingVars[block1].push_back(varToStairlinking);
 
    return SCIP_OKAY;
 }
