@@ -672,9 +672,9 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNMastervars() );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNTotalStairlinkingvars() );
       if( seeed->isComplete() )
-         SCIPdialogMessage(scip, NULL, "%.4f  ", seeed->getMaxWhiteScore() );
+         SCIPdialogMessage(scip, NULL, "%.4f  ", 1. - seeed->getMaxWhiteScore() );
       else
-         SCIPdialogMessage(scip, NULL, ">=%.2f  ", seeed->getNTotalStairlinkingvars() );
+         SCIPdialogMessage(scip, NULL, "<=%.2f  ", 1. - seeed->getMaxWhiteScore() );
       SCIPdialogMessage(scip, NULL, "%7s  ", seeed->detectorchainstring );
       SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->isfromunpresolved ? "no" : "yes")  );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenconss() );
@@ -790,7 +790,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowLegend(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nlivar", "number of linking variables");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmavar", "number of master variables (do not occur in blocks)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "maxwhi", "maximum white score (i.e. minimize black area, black area is block and border area, stairlinking counts as linking)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "maxwhi", "maximum white are score (i.e. maximize fraction of white score; white area is nonblock and nonborder area, stairlinking variables count as linking)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "history", "list of detector chars worked on this decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "pre", "is this decomposition for the presolved problem");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopcon", "number of open constraints");
