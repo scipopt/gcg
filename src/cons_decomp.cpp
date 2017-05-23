@@ -2056,6 +2056,30 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
    }
 
+   /** set statistics */
+
+
+   {
+      int nvarstoblock = 0;
+      int nconsstoblock = 0;
+
+      for ( int b = 0; b < conshdlrdata->curruserseeed->getNBlocks(); ++b )
+      {
+         nvarstoblock += conshdlrdata->curruserseeed->getNVarsForBlock(b);
+         nconsstoblock += conshdlrdata->curruserseeed->getNConssForBlock(b);
+      }
+      conshdlrdata->curruserseeed->setDetectorPropagated(NULL);
+
+      conshdlrdata->curruserseeed->detectorClockTimes.push_back(0.);
+      conshdlrdata->curruserseeed->pctVarsFromFree.push_back( (nvarstoblock + conshdlrdata->curruserseeed->getNMastervars() +conshdlrdata->curruserseeed->getNLinkingvars())/(SCIP_Real) conshdlrdata->curruserseeed->getNVars()  );
+      conshdlrdata->curruserseeed->pctVarsToBlock.push_back((nvarstoblock )/(SCIP_Real) conshdlrdata->curruserseeed->getNVars() );
+      conshdlrdata->curruserseeed->pctVarsToBorder.push_back( (conshdlrdata->curruserseeed->getNMastervars() +conshdlrdata->curruserseeed->getNLinkingvars())/(SCIP_Real) conshdlrdata->curruserseeed->getNVars() ) ;
+      conshdlrdata->curruserseeed->pctConssToBorder.push_back( (conshdlrdata->curruserseeed->getNMasterconss() ) / (SCIP_Real) conshdlrdata->curruserseeed->getNConss() ) ;
+      conshdlrdata->curruserseeed->pctConssFromFree.push_back( (conshdlrdata->curruserseeed->getNMasterconss() + nconsstoblock ) / (SCIP_Real) conshdlrdata->curruserseeed->getNConss() ) ;
+      conshdlrdata->curruserseeed->pctConssToBlock.push_back( (nconsstoblock ) / (SCIP_Real) conshdlrdata->curruserseeed->getNConss() );
+      conshdlrdata->curruserseeed->nNewBlocks.push_back(conshdlrdata->curruserseeed->getNBlocks());
+   }
+
    if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::PARTIAL )
       usergiveninfo = "partial";
    if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::COMPLETE )

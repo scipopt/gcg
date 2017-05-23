@@ -1969,7 +1969,11 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
    if( getNDetectors() != 0 )
    {
       std::string detectorrepres;
-      detectorrepres = (getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[0]) : "(finish)" + std::string(DECdetectorGetName(detectorChain[0]))   );
+
+      if( detectorChain[0] == NULL )
+         detectorrepres = "user";
+      else
+         detectorrepres = (getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[0]) : "(finish)" + std::string(DECdetectorGetName(detectorChain[0]))   );
 
       std::cout << ": " <<  detectorrepres;
 
@@ -3540,7 +3544,7 @@ SCIP_RETCODE Seeed::buildDecChainString(
    char detectorchaininfo[SCIP_MAXSTRLEN];
    /** set detector chain info string */
    SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
-   if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
+   if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER || this->getDetectorchain()[0] == NULL )
    {
       char str1[2] = "\0"; /* gives {\0, \0} */
       str1[0] = 'U';
@@ -3549,6 +3553,8 @@ SCIP_RETCODE Seeed::buildDecChainString(
    }
    for( int d = 0; d < this->getNDetectors(); ++d )
    {
+      if( d == 0 && this->getDetectorchain()[d] == NULL)
+         continue;
       //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(this->getDetectorchain()[d]));
       char str[2] = "\0"; /* gives {\0, \0} */
       str[0] = DECdetectorGetChar(this->getDetectorchain()[d]);
