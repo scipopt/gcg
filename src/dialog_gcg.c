@@ -672,25 +672,28 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
      // SCIPdialogMessage(scip, NULL, "In presolved \n");
 
-      if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
+      if( !SCIPconshdlrDecompExistsSelected(scip) )
       {
-         SCIP_Bool success;
-         SCIPinfoMessage(scip, NULL,"there is an unpresolved user decomposition -> try to translate it to presolved problem...  \n");
-         SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
-
-         if( !success )
+         if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
          {
-            SCIPinfoMessage(scip, NULL,"translatation was not successfull -> revoke presolving and use user given decomposition   \n");
-            /* @TODO experimental */
-            SCIPfreeTransform(scip);
-            SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
-            SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-            SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+            SCIP_Bool success;
+            SCIPinfoMessage(scip, NULL,"there is an unpresolved user decomposition -> try to translate it to presolved problem...  \n");
             SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
-            assert(success);
+
+            if( !success )
+            {
+               SCIPinfoMessage(scip, NULL,"translatation was not successfull -> revoke presolving and use user given decomposition   \n");
+               /* @TODO experimental */
+               SCIPfreeTransform(scip);
+               SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+               SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+               SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+               SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
+               assert(success);
+            }
+            else
+               SCIPinfoMessage(scip, NULL,"translation was successfull \n");
          }
-         else
-            SCIPinfoMessage(scip, NULL,"translatation was successfull \n");
       }
 
       if( !DEChasDetectionRun(scip) && !SCIPconshdlrDecompHasDecomp(scip) )
@@ -1090,15 +1093,15 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    }
 
    /* select */
-      if( !SCIPdialogHasEntry(root, "select") )
-      {
-         SCIP_CALL( SCIPincludeDialog(scip, &dialog,
-               NULL,
-               GCGdialogExecSelect, NULL, NULL,
-               "select", "select decompositions", FALSE, NULL) );
-         SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
-         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
-      }
+   if( !SCIPdialogHasEntry(root, "select") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+         NULL,
+         GCGdialogExecSelect, NULL, NULL,
+         "select", "select decompositions", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+   }
 
 
    /* detect */

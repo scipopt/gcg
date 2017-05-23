@@ -653,18 +653,18 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
    if( transformed )
      {
-        SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", &conssclassnnonzeros);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", &conssclassscipconstypes);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
+        SCIPgetBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", &conssclassnnonzeros);
+        SCIPgetBoolParam(scip, "detection/consclassifier/scipconstype/enabled", &conssclassscipconstypes);
+        SCIPgetBoolParam(scip, "detection/consclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
+        SCIPgetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
         SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/enabled", &varclassscipvartypes);
      }
      else
      {
-        SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/origenabled", &conssclassnnonzeros);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/origenabled", &conssclassscipconstypes);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
+        SCIPgetBoolParam(scip, "detection/consclassifier/nnonzeros/origenabled", &conssclassnnonzeros);
+        SCIPgetBoolParam(scip, "detection/consclassifier/scipconstype/origenabled", &conssclassscipconstypes);
+        SCIPgetBoolParam(scip, "detection/consclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
+        SCIPgetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
         SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", &varclassscipvartypes);
      }
 

@@ -1028,7 +1028,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
 
 
 
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please enter selection command or decomposition id to select (or \"h\" for help) : ", &command, &endoffile) );
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please enter selection command or decomposition id to select (or \"h\" for help) : \nGCG/select> ", &command, &endoffile) );
 
       commandlen = strlen(command);
 
@@ -2080,6 +2080,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       conshdlrdata->curruserseeed->nNewBlocks.push_back(conshdlrdata->curruserseeed->getNBlocks());
    }
 
+
+
    if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::PARTIAL )
       usergiveninfo = "partial";
    if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::COMPLETE )
@@ -2090,6 +2092,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
          presolvedinfo = "unpresolved";
    else presolvedinfo = "presolved";
 
+   conshdlrdata->curruserseeed->buildDecChainString();
 
 
    SCIPinfoMessage(scip, NULL, " added %s decomp for %s problem with %d blocks and %d masterconss, %d linkingvars, "
@@ -3205,14 +3208,14 @@ SCIP_RETCODE setDetectionDefault(
    SCIP_CALL (SCIPsetIntParam(scip, "detection/maxrounds", 2) );
    SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob/enabled", FALSE) );
 
-   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", TRUE) );
-   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
-   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/scipconstype/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamenonumbers/enabled", TRUE) );
 
    if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
-      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", TRUE) );
    else
-      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", FALSE) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
@@ -3282,14 +3285,14 @@ SCIP_RETCODE setDetectionAggressive(
 
    SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob/enabled", TRUE) );
 
-   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", TRUE) );
-   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
-   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/scipconstype/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamenonumbers/enabled", TRUE) );
 
    if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
-      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", TRUE) );
    else
-      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", FALSE) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
@@ -3381,14 +3384,14 @@ SCIP_RETCODE setDetectionFast(
    SCIP_CALL (SCIPsetIntParam(scip, "detection/maxrounds", 1) );
    SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob/enabled", FALSE) );
 
-   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", TRUE) );
-   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", TRUE) );
-   SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/scipconstype/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamenonumbers/enabled", TRUE) );
 
    if( SCIPgetNVars(scip) + SCIPgetNConss(scip) < FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER )
-      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", TRUE) );
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", TRUE) );
    else
-      SCIP_CALL(SCIPsetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", FALSE) );
+      SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", FALSE) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
