@@ -48,8 +48,6 @@
 #include "class_consclassifier.h"
 #include "class_varclassifier.h"
 
-
-
 struct Seeed_Propagation_Data
 {
    gcg::Seeedpool* seeedpool;
@@ -60,10 +58,8 @@ struct Seeed_Propagation_Data
 
 namespace gcg {
 
-
 //typedef boost::shared_ptr<Seeed> SeeedPtr;
 typedef Seeed* SeeedPtr;
-
 
 // Only for pairs of std::hash-able types for simplicity.
 // You can of course template this struct to allow other hash functions
@@ -77,7 +73,6 @@ struct pair_hash {
         return h1 ^ h2;
     }
 };
-
 
 class Seeedpool
 {   /*lint -esym(1712,Seeedpool)*/
@@ -124,13 +119,13 @@ private:
 
    int											         helpvisucounter;        /** help counter for family tree visualization to iterate the heights */
 
-
 public:
 
    /** TODO delete this method */
    void displaySeeedDataStructures(
    );
 
+   /*@todo add comments for parameters*/
    /** constructor */
    Seeedpool(
       SCIP*             scip,              /**< SCIP data structure */
@@ -152,18 +147,18 @@ public:
    std::vector<SeeedPtr> findSeeeds(
    );
 
+   /*@todo commnets for parameter */
    /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
    /*
     * @return set of completed decomposition
     * */
-   std::vector<SeeedPtr>  finishIncompleteSeeeds(
+   std::vector<SeeedPtr> finishIncompleteSeeeds(
       std::vector<SeeedPtr> incompleteseeeds
     );
 
    /** calls findSeeeds method and translates the resulting seeeds into decompositions */
    void findDecompositions(
    );
-
 
    /** clears finished seeed data structure */
    void clearFinishedSeeeds(
@@ -210,7 +205,6 @@ public:
       std::vector<SeeedPtr> seeeds
    );
 
-
    /** sorts the seeed and calculates a its implicit assignments, hashvalue and evaluation */
    SCIP_RETCODE prepareSeeed(
       SeeedPtr seeed
@@ -229,7 +223,6 @@ public:
    /** sorts seeeds in allrelevantseeeds data structure by ascending id */
    void sortAllRelevantSeeeds(
    );
-
 
    /** returns the variable indices of the coefficient matrix for a constraint */
    const int* getVarsForCons(
@@ -330,7 +323,6 @@ public:
    int getNConss(
    );
 
-
    /** returns the candidates for block size sorted in descending order by how often a candidate was added */
    std::vector<int> getSortedCandidatesNBlocks(
    );
@@ -343,7 +335,6 @@ public:
    /** calculates and adds block size candidates using constraint classifications and variable classifications */
    void calcCandidatesNBlocks(
    );
-
 
    /** adds a constraint classifier if it is no duplicate of an existing constraint classifier */
    void addConsClassifier(
@@ -418,7 +409,6 @@ public:
    void reduceVarclasses(
    );
 
-
    /** returns a vector of seeeds where all seeeds of given seeeds having only one block are removed
     *  except for the two seeeds with the lowest numbers of masterconss */
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
@@ -444,7 +434,6 @@ public:
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
       );
-
 
    /**
     * returns transformation information
