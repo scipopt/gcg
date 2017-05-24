@@ -149,7 +149,7 @@ SCIP_RETCODE detection(
    seeed->considerImplicits(seeedPropagationData->seeedpool);
 
    //assign all dependent open vars and conss
-   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+   seeed->refineToBlocks(seeedPropagationData->seeedpool);
 
    //complete the seeed by bfs
    seeed->completeByConnected(seeedPropagationData->seeedpool);

@@ -2640,7 +2640,7 @@ SCIP_RETCODE DECdetectStructure(
 	     SCIP_CALL( SCIPstoreSeeedAndDecomp(scip, conshdlrdata->seeedpool->getFinishedSeeed(i), conshdlrdata->seeedpool->getDecompositions()[i] ) );
 	  }
 
-	  conshdlrdata->seeedpool->clearFinishedSeeeds(); // TODO why?
+	  conshdlrdata->seeedpool->clearFinishedSeeeds();
 
 	  SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
 	  SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);

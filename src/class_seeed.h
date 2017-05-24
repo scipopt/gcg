@@ -155,12 +155,6 @@ public:
    /** returns true if at least one constraint is assigned to a block */
    bool alreadyAssignedConssToBlocks();
 
-   /** assigns open conss and vars if they can be found in blocks
-    *  calls assignHittingOpenconss() and assignHittingOpenvars() */
-   SCIP_RETCODE assignAllDependent(
-      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
-   );
-
    /** assigns open conss to master according to the cons assignment information given in constoblock hashmap */
    SCIP_RETCODE assignBorderFromConstoblock(
       SCIP_HASHMAP* constoblock,    /**< hashmap containing an assignment of conss to a block or to master
@@ -171,24 +165,6 @@ public:
 
    /** assigns open vars to stairlinking if they can be found in two consecutive blocks, returns true if stairlinkingvars are assigned */
    bool assignCurrentStairlinking(
-      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
-   );
-
-   /** assigns every open cons
-    *  - to master if it hits blockvars of different blocks
-    *  - to the respective block if it hits a blockvar of exactly one block and no stairlinking var
-    *  - to master if it hits a stairlinking var but there is no block the cons may be assigned to
-    *  - to the block with the lowest number of conss if it hits a stairlinking var and there are blocks the cons may be assigned to
-    *  returns true if there is a cons that has been assigned */
-   bool assignHittingOpenconss(
-      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
-   );
-
-   /** assigns every open var
-    *  - to the respective block if it hits blockconss of exactly one block
-    *  - to linking if it hits blockconss of more than one different blocks
-    *  returns true if there is a var that has been assigned */
-   bool assignHittingOpenvars(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
 
@@ -507,7 +483,14 @@ public:
       int block
    );
 
-   /** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments (assignOpenPartialHittingToMaster()) */
+   /** refine seeed with focus on blocks: assigns open conss and vars if they can be found
+    *  in blocks without respect to open vars and conss (assignHittingOpenconss(), assignHittingOpenvars()) */
+   SCIP_RETCODE refineToBlocks(
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
+   );
+
+   /** refine seeed with focus on master: do obvious (considerImplicits()) assignments and
+    *  assign other conss and vars to master if possible (assignOpenPartialHittingToMaster()) */
    SCIP_RETCODE refineToMaster(
       Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
    );
@@ -613,6 +596,24 @@ public:
    SCIP_RETCODE buildDecChainString();
 
 private:
+
+   /** assigns every open cons
+    *  - to master if it hits blockvars of different blocks
+    *  - to the respective block if it hits a blockvar of exactly one block and no stairlinking var
+    *  - to master if it hits a stairlinking var but there is no block the cons may be assigned to
+    *  - to the block with the lowest number of conss if it hits a stairlinking var and there are blocks the cons may be assigned to
+    *  returns true if there is a cons that has been assigned */
+   bool assignHittingOpenconss(
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
+   );
+
+   /** assigns every open var
+    *  - to the respective block if it hits blockconss of exactly one block
+    *  - to linking if it hits blockconss of more than one different blocks
+    *  returns true if there is a var that has been assigned */
+   bool assignHittingOpenvars(
+      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
+   );
 
    /** assigns every open cons to master that hits
     *  - exactly one block var and at least one open var or

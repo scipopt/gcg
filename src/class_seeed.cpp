@@ -227,22 +227,6 @@ bool Seeed::alreadyAssignedConssToBlocks()
    return false;
 }
 
-/** assigns open conss and vars if they can be found in blocks
- *  calls assignHittingOpenconss() and assignHittingOpenvars() */
-SCIP_RETCODE Seeed::assignAllDependent(
-   Seeedpool* seeedpool
-   )
-{
-   bool success = true;
-
-   changedHashvalue = true;
-
-   while( success )
-      success = assignHittingOpenconss( seeedpool ) || assignHittingOpenvars( seeedpool );
-   sort();
-   return SCIP_OKAY;
-}
-
 /** assigns open conss to master according to the cons assignment information given in constoblock hashmap */
 SCIP_RETCODE Seeed::assignBorderFromConstoblock(
    SCIP_HASHMAP* constoblock,
@@ -2125,7 +2109,6 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock(
    nConss = seeedpool->getNConss();
    int consnum;
    int consblock;
-   int varnum;
 
    changedHashvalue = true;
 
@@ -2135,20 +2118,17 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock(
       consblock = ( (int) (size_t) SCIPhashmapGetImage( constoblock, (void*) (size_t) i ) ) - 1;
       assert( consblock >= 0 && consblock <= nBlocks );
       if( consblock == nBlocks )
-         setConsToMaster( consnum );
-      else
-         openConss.push_back( consnum );
-   }
-
-   for( int i = 0; i < nVars; ++i )
-   {
-      varnum = i;
-      openVars.push_back( varnum );
+      {
+         setConsToMaster(consnum);
+         deleteOpencons(consnum);
+      }
    }
 
    nBlocks = 0;
    sort();
+
    assert( checkConsistency( seeedpool ) );
+
    return SCIP_OKAY;
 }
 
@@ -2905,7 +2885,24 @@ bool Seeed::isVarStairlinkingvarOfBlock(
    }
 }
 
-/** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments (assignOpenPartialHittingToMaster()) */
+/** refine seeed with focus on blocks: assigns open conss and vars if they can be
+ *  found in blocks (assignHittingOpenconss(), assignHittingOpenvars()) */
+SCIP_RETCODE Seeed::refineToBlocks(
+   Seeedpool* seeedpool
+   )
+{
+   bool success = true;
+
+   changedHashvalue = true;
+
+   while( success )
+      success = assignHittingOpenconss( seeedpool ) || assignHittingOpenvars( seeedpool );
+   sort();
+   return SCIP_OKAY;
+}
+
+/** refine seeed with focus on master: do obvious (considerImplicits()) assignments and
+ *  assign other conss and vars to master if possible (assignOpenPartialHittingToMaster()) */
  SCIP_RETCODE Seeed::refineToMaster(
     Seeedpool* seeedpool
     )
@@ -3371,34 +3368,33 @@ const char* Seeed::getShortCaption()
 
 /** sets the detector chain short string */
 SCIP_RETCODE Seeed::setDetectorChainString(
-   char* detectorchainstring
+   char* givenDetectorchainstring
    )
 {
    SCIP_CALL ( SCIPduplicateBlockMemoryArray( scip, &this->detectorchainstring, detectorchainstring, SCIP_MAXSTRLEN ) );
    return SCIP_OKAY;
-
 }
 
 SCIP_RETCODE Seeed::buildDecChainString()
 {
-   char detectorchaininfo[SCIP_MAXSTRLEN];
+   char decchaininfo[SCIP_MAXSTRLEN];
    /** set detector chain info string */
-   SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "" ) ;
+   SCIPsnprintf( decchaininfo, SCIP_MAXSTRLEN, "" ) ;
+
    if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
    {
       char str1[2] = "\0"; /* gives {\0, \0} */
       str1[0] = 'U';
-      (void) strncat( detectorchaininfo, str1, 1 );
-
+      (void) strncat( decchaininfo, str1, 1 );
    }
    for( int d = 0; d < this->getNDetectors(); ++d )
    {
       char str[2] = "\0"; /* gives {\0, \0} */
       str[0] = DECdetectorGetChar( this->getDetectorchain()[d] );
-      (void) strncat( detectorchaininfo, str, 1 );
+      (void) strncat( decchaininfo, str, 1 );
    }
 
-   SCIP_CALL( this->setDetectorChainString( detectorchaininfo ) );
+   SCIP_CALL( this->setDetectorChainString( decchaininfo ) );
 
    return SCIP_OKAY;
 }
