@@ -2122,7 +2122,6 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock(
    nConss = seeedpool->getNConss();
    int consnum;
    int consblock;
-   int varnum;
 
    changedHashvalue = true;
 
@@ -2133,19 +2132,13 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock(
       assert(consblock >= 0 && consblock <= nBlocks);
       if( consblock == nBlocks )
          setConsToMaster(consnum);
-      else
-         openConss.push_back(consnum);
-   }
-
-   for( int i = 0; i < nVars; ++i )
-   {
-      varnum = i;
-      openVars.push_back(varnum);
+         deleteOpencons(consnum);
    }
 
    nBlocks = 0;
    sort();
    assert(checkConsistency(seeedpool));
+
    return SCIP_OKAY;
 }
 
