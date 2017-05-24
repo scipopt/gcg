@@ -195,7 +195,6 @@ SCIP_Bool finishnextchild(
    return FALSE;
 }
 
-
 /** returns the detector chain info of a seeed in a latex format */
 std::string writeSeeedDetectorChainInfoLatex(
    SeeedPtr seeed,
@@ -263,7 +262,10 @@ std::string writeSeeedInfoLatex(
 }
 
 /** returns the include graphics line for a seeed in a latex format */
-std::string writeSeeedIncludeLatex(SeeedPtr seeed, std::string workfolder)
+std::string writeSeeedIncludeLatex(
+   SeeedPtr seeed,
+   std::string workfolder
+   )
 {
    std::stringstream line;
    line << " (s" << seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{" << getSeeedFolderLatex(seeed) << "} }"
@@ -504,7 +506,7 @@ void Seeedpool::displaySeeedDataStructures()
 
 /** constructor */
 Seeedpool::Seeedpool(
-   SCIP* givenScip,
+   SCIP* givenScip,           /**< SCIP data structure */
    const char* conshdlrName,
    SCIP_Bool _transformed
    ) :
@@ -733,7 +735,7 @@ Seeedpool::~Seeedpool()
 
 /** creates constraint and variable classifiers, and deduces block number candidates */
 SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
-   SCIP* givenScip
+   SCIP* givenScip   /**< SCIP data structure */
    )
 {
    SCIP_Bool conssclassnnonzeros;
@@ -1228,13 +1230,12 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    return finishedSeeeds;
 }
 
-
  /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
 /*
  * @return set of completed decomposition
  * */
 
- std::vector<SeeedPtr>    Seeedpool::finishIncompleteSeeeds(
+ std::vector<SeeedPtr> Seeedpool::finishIncompleteSeeeds(
     std::vector<SeeedPtr> incompleteseeeds
   )
 {
@@ -1272,7 +1273,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
           for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished )
           {
              SeeedPtr seeed = seeedPropData->newSeeeds[finished];
-#pragma omp critical (seeedcount)
+         #pragma omp critical (seeedcount)
              seeed->setID( getNewIdForSeeed() );
 
              seeed->calcHashvalue();
@@ -1286,7 +1287,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                    std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
                    seeed->showScatterPlot(this);
                 }
-#pragma omp critical (seeedptrstore)
+               #pragma omp critical (seeedptrstore)
                 {
                    assert(seeed->getID() >= 0);
                    finisheds.push_back(seeed);
@@ -1314,7 +1315,6 @@ void Seeedpool::findDecompositions()
    std::vector<SeeedPtr> delSeeeds;
    SCIP_Bool usemaxwhitescore;
    SCIP_Bool dothinout;
-
 
    size_t nDecomps = 6;
 
@@ -1379,7 +1379,6 @@ void Seeedpool::findDecompositions()
    delSeeeds.clear();
 }
 
-
 /*SCIP_RETCODE DECdecompCheckConsistency(DEC_DECOMP* decomp)
    {
       int c;
@@ -1392,7 +1391,6 @@ void Seeedpool::findDecompositions()
       }
    }*/
 
-
 /** clears finished seeed data structure */
 void Seeedpool::clearFinishedSeeeds()
 {
@@ -1400,7 +1398,9 @@ void Seeedpool::clearFinishedSeeeds()
 }
 
 /** returns a seeed from current (open) seeed data structure */
-SeeedPtr Seeedpool::getCurrentSeeed(int seeedindex)
+SeeedPtr Seeedpool::getCurrentSeeed(
+   int seeedindex    /**< index of seeed in current (open) seeed data structure */
+   )
 {
    assert( 0 <= seeedindex && seeedindex < (int) currSeeeds.size() );
 
@@ -1408,7 +1408,9 @@ SeeedPtr Seeedpool::getCurrentSeeed(int seeedindex)
 }
 
 /** returns a seeed from finished seeed data structure */
-SeeedPtr Seeedpool::getFinishedSeeed(int seeedindex)
+SeeedPtr Seeedpool::getFinishedSeeed(
+   int seeedindex
+   )
 {
    assert( 0 <= seeedindex && seeedindex < (int) finishedSeeeds.size() );
 
@@ -1428,9 +1430,15 @@ int Seeedpool::getNFinishedSeeeds()
 }
 
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
-void Seeedpool::translateSeeedData(Seeedpool* origpool, std::vector<Seeed*> origseeeds, std::vector<Seeed*>& newseeeds,
-   std::vector<ConsClassifier*> otherconsclassifiers, std::vector<ConsClassifier*>& newconsclassifiers,
-   std::vector<VarClassifier*> othervarclassifiers, std::vector<VarClassifier*>& newvarclassifiers)
+void Seeedpool::translateSeeedData(
+   Seeedpool* origpool,
+   std::vector<Seeed*> origseeeds,
+   std::vector<Seeed*>& newseeeds,
+   std::vector<ConsClassifier*> otherconsclassifiers,
+   std::vector<ConsClassifier*>& newconsclassifiers,
+   std::vector<VarClassifier*> othervarclassifiers,
+   std::vector<VarClassifier*>& newvarclassifiers
+   )
 {
    assert( newseeeds.empty() );
    assert( newconsclassifiers.empty() );
@@ -1453,9 +1461,12 @@ void Seeedpool::translateSeeedData(Seeedpool* origpool, std::vector<Seeed*> orig
    newvarclassifiers = getTranslatedVarClassifiers( othervarclassifiers, colothertothis, colthistoother );
 }
 
-
 /** translates seeeds if the index structure of the problem has changed, e.g. due to presolving */
-void Seeedpool::translateSeeeds(Seeedpool* origpool, std::vector<Seeed*> origseeeds, std::vector<Seeed*>& newseeeds)
+void Seeedpool::translateSeeeds(
+   Seeedpool* origpool,
+   std::vector<Seeed*> origseeeds,
+   std::vector<Seeed*>& newseeeds
+   )
 {
    assert( newseeeds.empty() );
 
@@ -1474,17 +1485,23 @@ void Seeedpool::translateSeeeds(Seeedpool* origpool, std::vector<Seeed*> origsee
    newseeeds = getTranslatedSeeeds( origseeeds, rowothertothis, rowthistoother, colothertothis, colthistoother );
 }
 
-
 /** registers translated seeeds from the original problem */
-void Seeedpool::populate(std::vector<SeeedPtr> seeeds)
+void Seeedpool::populate(
+   std::vector<SeeedPtr> seeeds
+   )
 {
    translatedOrigSeeeds = seeeds;
 }
 
-
 /** calculates necessary data for translating seeeds and classifiers */
-void Seeedpool::calcTranslationMapping(Seeedpool* origpool, std::vector<int>& rowothertothis, std::vector<int>& rowthistoother,
-   std::vector<int>& colothertothis, std::vector<int>& colthistoother, std::vector<int>& missingrowinthis)
+void Seeedpool::calcTranslationMapping(
+   Seeedpool* origpool,
+   std::vector<int>& rowothertothis,
+   std::vector<int>& rowthistoother,
+   std::vector<int>& colothertothis,
+   std::vector<int>& colthistoother,
+   std::vector<int>& missingrowinthis
+   )
 {
    int nrowsother = origpool->nConss;
    int nrowsthis = nConss;
@@ -1539,10 +1556,14 @@ void Seeedpool::calcTranslationMapping(Seeedpool* origpool, std::vector<int>& ro
    }
 }
 
-
 /** returns translated seeeds derived from given mapping data */
-std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(std::vector<Seeed*>& origseeeds, std::vector<int>& rowothertothis, std::vector<int>& rowthistoother,
-   std::vector<int>& colothertothis, std::vector<int>& colthistoother)
+std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
+   std::vector<Seeed*>& origseeeds,
+   std::vector<int>& rowothertothis,
+   std::vector<int>& rowthistoother,
+   std::vector<int>& colothertothis,
+   std::vector<int>& colthistoother
+   )
 {
    std::vector<Seeed*> newseeeds(0);
 
@@ -1634,11 +1655,6 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(std::vector<Seeed*>& origseee
       newseeed->pctConssToBlock = otherseeed->pctConssToBlock;
       newseeed->nNewBlocks = otherseeed->nNewBlocks;
       newseeed->detectorchainstring = otherseeed->detectorchainstring;
-
-
-
-
-
       newseeed->stemsFromUnpresolved = true;
       newseeed->isFinishedByFinisherUnpresolved = otherseeed->isFinishedByFinisher;
 
@@ -1671,10 +1687,12 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(std::vector<Seeed*>& origseee
    return newseeeds;
 }
 
-
 /** returns translated ConsClassifiers derived from given mapping data */
-std::vector<ConsClassifier*> Seeedpool::getTranslatedConsClassifiers(std::vector<ConsClassifier*>& otherclassifiers,
-   std::vector<int>& rowothertothis, std::vector<int>& rowthistoother)
+std::vector<ConsClassifier*> Seeedpool::getTranslatedConsClassifiers(
+   std::vector<ConsClassifier*>& otherclassifiers,
+   std::vector<int>& rowothertothis,
+   std::vector<int>& rowthistoother
+   )
 {
    std::vector<ConsClassifier*> newclassifiers(0);
 
@@ -1724,10 +1742,12 @@ std::vector<ConsClassifier*> Seeedpool::getTranslatedConsClassifiers(std::vector
    return newclassifiers;
 }
 
-
 /** returns translated VarClassifiers derived from given mapping data */
-std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers(std::vector<VarClassifier*>& otherclassifiers,
-   std::vector<int>& colothertothis, std::vector<int>& colthistoother)
+std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers(
+   std::vector<VarClassifier*>& otherclassifiers,
+   std::vector<int>& colothertothis,
+   std::vector<int>& colthistoother
+   )
 {
    std::vector<VarClassifier*> newclassifiers(0);
 
@@ -1777,9 +1797,10 @@ std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers(std::vector<V
    return newclassifiers;
 }
 
-
 /** sorts the seeed and calculates a its implicit assignments, hashvalue and evaluation */
-SCIP_RETCODE Seeedpool::prepareSeeed(SeeedPtr seeed)
+SCIP_RETCODE Seeedpool::prepareSeeed(
+   SeeedPtr seeed
+   )
 {
    seeed->considerImplicits(this);
    seeed->sort();
@@ -1789,22 +1810,23 @@ SCIP_RETCODE Seeedpool::prepareSeeed(SeeedPtr seeed)
    return SCIP_OKAY;
 }
 
-
 /** adds a seeed to current seeeds */
-void Seeedpool::addSeeedToCurr(SeeedPtr seeed)
+void Seeedpool::addSeeedToCurr(
+   SeeedPtr seeed
+   )
 {
    currSeeeds.push_back(seeed);
    allrelevantseeeds.push_back(seeed);
 }
 
-
 /** adds a seeed to finished seeeds */
-void Seeedpool::addSeeedToFinished(SeeedPtr seeed)
+void Seeedpool::addSeeedToFinished(
+   SeeedPtr seeed
+   )
 {
    finishedSeeeds.push_back(seeed);
    allrelevantseeeds.push_back(seeed);
 }
-
 
 /** sorts seeeds in allrelevantseeeds data structure by ascending id */
 void Seeedpool::sortAllRelevantSeeeds()
@@ -1830,28 +1852,29 @@ void Seeedpool::sortAllRelevantSeeeds()
    allrelevantseeeds = tmpAllRelevantSeeeds;
 }
 
-
-
 /** returns the variable indices of the matrix for a constraint */
-const int* Seeedpool::getVarsForCons(int cons)
+const int* Seeedpool::getVarsForCons(
+   int cons
+   )
 {
    return &varsForConss[cons][0];
 }
 
-
 /** returns the coefficients of the matrix for a constraint */
-const  SCIP_Real * Seeedpool::getValsForCons(int cons)
+const  SCIP_Real * Seeedpool::getValsForCons(
+   int cons
+   )
 {
    return &valsForConss[cons][0];
 }
 
-
 /** returns the constraint indices of the coefficient matrix for a variable */
-const int* Seeedpool::getConssForVar(int var)
+const int* Seeedpool::getConssForVar(
+   int var
+   )
 {
    return &conssForVars[var][0];
 }
-
 
 /** returns the number of variables for a given constraint */
 int Seeedpool::getNVarsForCons(int cons)
@@ -1859,44 +1882,51 @@ int Seeedpool::getNVarsForCons(int cons)
    return varsForConss[cons].size();
 }
 
-
 /** returns the number of constraints for a given variable */
-int Seeedpool::getNConssForVar(int var)
+int Seeedpool::getNConssForVar(
+   int var
+   )
 {
    return conssForVars[var].size();
 }
 
-
 /** returns the SCIP variable related to a variable index */
-SCIP_VAR* Seeedpool::getVarForIndex(int varIndex)
+SCIP_VAR* Seeedpool::getVarForIndex(
+   int varIndex
+   )
 {
    return varToScipVar[varIndex];
 }
 
-
 /** returns the SCIP constraint related to a constraint index */
-SCIP_CONS* Seeedpool::getConsForIndex(int consIndex)
+SCIP_CONS* Seeedpool::getConsForIndex(
+   int consIndex
+   )
 {
    return consToScipCons[consIndex];
 }
 
-
 /** returns the SCIP detector related to a detector index */
-DEC_DETECTOR* Seeedpool::getDetectorForIndex(int detectorIndex)
+DEC_DETECTOR* Seeedpool::getDetectorForIndex(
+   int detectorIndex
+   )
 {
    return detectorToScipDetector[detectorIndex];
 }
 
-
 /** returns the SCIP detector related to a finishing detector index */
-DEC_DETECTOR* Seeedpool::getFinishingDetectorForIndex(int detectorIndex)
+DEC_DETECTOR* Seeedpool::getFinishingDetectorForIndex(
+   int detectorIndex
+   )
 {
    return detectorToFinishingScipDetector[detectorIndex];
 }
 
-
 /** returns a coefficient from the coefficient matrix */
-SCIP_Real Seeedpool::getVal(int row, int col)
+SCIP_Real Seeedpool::getVal(
+   int row,
+   int col
+   )
 {
    std::tr1::unordered_map<std::pair<int, int>, SCIP_Real, pair_hash>::const_iterator iter = valsMap.find(std::pair<int, int>(row, col));
 
@@ -1906,34 +1936,37 @@ SCIP_Real Seeedpool::getVal(int row, int col)
    return iter->second;
 }
 
-
 /** returns the variable index related to a SCIP variable */
-int Seeedpool::getIndexForVar(SCIP_VAR* var)
+int Seeedpool::getIndexForVar(
+   SCIP_VAR* var
+   )
 {
    return scipVarToIndex[var];
 }
 
-
 /** returns the constraint index related to a SCIP constraint */
-int Seeedpool::getIndexForCons(SCIP_CONS* cons)
+int Seeedpool::getIndexForCons(
+   SCIP_CONS* cons
+   )
 {
    return scipConsToIndex[cons];
 }
 
-
 /** returns the detector index related to a detector */
-int Seeedpool::getIndexForDetector(DEC_DETECTOR* detector)
+int Seeedpool::getIndexForDetector(
+   DEC_DETECTOR* detector
+   )
 {
    return scipDetectorToIndex[detector];
 }
 
-
 /** returns the finishing detector index related to a detector */
-int Seeedpool::getIndexForFinishingDetector(DEC_DETECTOR* detector)
+int Seeedpool::getIndexForFinishingDetector(
+   DEC_DETECTOR* detector
+   )
 {
    return scipFinishingDetectorToIndex[detector];
 }
-
 
 /** returns a new unique id for a seeed */
 int Seeedpool::getNewIdForSeeed()
@@ -1941,13 +1974,11 @@ int Seeedpool::getNewIdForSeeed()
    return SCIPconshdlrDecompGetNextSeeedID(scip) ;
 }
 
-
 /** returns the decompositions stored in the seeedpool */
 DEC_DECOMP** Seeedpool::getDecompositions()
 {
    return decompositions;
 }
-
 
 /** returns the number of decompositions stored in the seeedpool */
 int Seeedpool::getNDecompositions()
@@ -1955,13 +1986,11 @@ int Seeedpool::getNDecompositions()
    return ndecompositions;
 }
 
-
 /** returns the number of detectors used in the seeedpool */
 int Seeedpool::getNDetectors()
 {
    return nDetectors;
 }
-
 
 /** returns the number of finishing detectors used in the seeedpool */
 int Seeedpool::getNFinishingDetectors()
@@ -1969,20 +1998,17 @@ int Seeedpool::getNFinishingDetectors()
    return nFinishingDetectors;
 }
 
-
 /** returns the number of variables considered in the seeedpool */
 int Seeedpool::getNVars()
 {
    return nVars;
 }
 
-
 /** returns the number of constraints considered in the seeedpool */
 int Seeedpool::getNConss()
 {
    return nConss;
 }
-
 
 /** returns the candidates for block size sorted in descending order by how often a candidate was added */
 std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
@@ -2008,9 +2034,10 @@ std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
    return toreturn;
 }
 
-
 /** adds a candidate for block size and counts how often a candidate is added */
-void Seeedpool::addCandidatesNBlocks(int candidate)
+void Seeedpool::addCandidatesNBlocks(
+   int candidate
+   )
 {
    if( candidate > 1 )
    {
@@ -2031,7 +2058,6 @@ void Seeedpool::addCandidatesNBlocks(int candidate)
       }
    }
 }
-
 
 /** calculates and adds block size candidates using constraint classifications and variable classifications */
 void Seeedpool::calcCandidatesNBlocks()
@@ -2125,9 +2151,10 @@ void Seeedpool::calcCandidatesNBlocks()
    }
 }
 
-
 /** adds a constraint classifier if it is no duplicate of an existing classifier */
-void Seeedpool::addConsClassifier(ConsClassifier* givenClassifier)
+void Seeedpool::addConsClassifier(
+   ConsClassifier* givenClassifier
+   )
 {
    if( givenClassifier != NULL )
    {
@@ -2150,7 +2177,6 @@ void Seeedpool::addConsClassifier(ConsClassifier* givenClassifier)
             << " not considered since it offers the same structure as " << equiv->getName() << std::endl;
    }
 }
-
 
 /** returns a new constraint classifier
  *  where all constraints with identical SCIP constype are assigned to the same class */
@@ -2253,7 +2279,6 @@ ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
    return classifier;
 }
 
-
 /** returns a new constraint classifier
  *  where all constraints with identical consname (ignoring digits) are assigned to the same class */
 ConsClassifier* Seeedpool::createConsClassifierForConsnamesDigitFreeIdentical()
@@ -2329,7 +2354,9 @@ ConsClassifier* Seeedpool::createConsClassifierForConsnamesDigitFreeIdentical()
 /** returns a new constraint classifier
  *  where all constraints whose consnames do not a have levenshtein distance to each other
  *  higher than a given connectivity are assigned to the same class */
- ConsClassifier* Seeedpool::createConsClassifierForConsnamesLevenshteinDistanceConnectivity(int connectivity)
+ ConsClassifier* Seeedpool::createConsClassifierForConsnamesLevenshteinDistanceConnectivity(
+    int connectivity
+    )
 {
    std::vector<std::string> consnamesToCompare(getNConss(), "");
    std::vector<int> nConssConstype(0);
@@ -2438,7 +2465,6 @@ ConsClassifier* Seeedpool::createConsClassifierForConsnamesDigitFreeIdentical()
    return classifier;
 }
 
-
 /** returns a new constraint classifier
  *  where all constraints with identical number of nonzero coefficients are assigned to the same class */
 ConsClassifier* Seeedpool::createConsClassifierForNNonzeros()
@@ -2503,18 +2529,20 @@ ConsClassifier* Seeedpool::createConsClassifierForNNonzeros()
    return classifier;
 }
 
-
 /** returns pointer to a constraint classifier */
-ConsClassifier* Seeedpool::getConsClassifier( int givenClassifierIndex )
+ConsClassifier* Seeedpool::getConsClassifier(
+   int givenClassifierIndex
+   )
 {
    assert(0 <= givenClassifierIndex && givenClassifierIndex < (int ) consclassescollection.size());
 
    return consclassescollection[givenClassifierIndex];
 }
 
-
 /** returns the assignment of constraints to classes of a classifier as integer array */
-int* Seeedpool::getConsClassifierArray(int givenClassifierIndex)
+int* Seeedpool::getConsClassifierArray(
+   int givenClassifierIndex
+   )
 {
    int nconss = consclassescollection[givenClassifierIndex]->getNConss();
    int* output = new int[nconss];
@@ -2523,13 +2551,11 @@ int* Seeedpool::getConsClassifierArray(int givenClassifierIndex)
    return &output[0];
 }
 
-
 /** returns number of different constraint classifiers */
 int Seeedpool::getNConsClassifiers()
 {
    return (int) consclassescollection.size();
 }
-
 
 /** adds constraint classifiers with a reduced number of classes */
 void Seeedpool::reduceConsclasses()
@@ -2553,9 +2579,10 @@ void Seeedpool::reduceConsclasses()
    }
 }
 
-
 /** adds a variable classifier if it is no duplicate of an existing variable classifier */
-void Seeedpool::addVarClassifier(VarClassifier* givenClassifier)
+void Seeedpool::addVarClassifier(
+   VarClassifier* givenClassifier
+   )
 {
    if( givenClassifier != NULL )
    {
@@ -2578,7 +2605,6 @@ void Seeedpool::addVarClassifier(VarClassifier* givenClassifier)
             << " not considered since it offers the same structure as " << equiv->getName() << std::endl;
    }
 }
-
 
 /** returns a new variable classifier
  *  where all variables with identical SCIP vartype are assigned to the same class */
@@ -2660,18 +2686,20 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
    return classifier;
 }
 
-
 /** returns pointer to a variable classifier */
-VarClassifier* Seeedpool::getVarClassifier( int givenClassifierIndex )
+VarClassifier* Seeedpool::getVarClassifier(
+   int givenClassifierIndex
+   )
 {
    assert( 0 <= givenClassifierIndex && givenClassifierIndex < (int) varclassescollection.size() );
 
    return varclassescollection[givenClassifierIndex];
 }
 
-
 /** returns the assignment of variables to classes of a classifier as integer array */
-int* Seeedpool::getVarClassifierArray(int givenClassifierIndex)
+int* Seeedpool::getVarClassifierArray(
+   int givenClassifierIndex
+   )
 {
    int nvars = varclassescollection[givenClassifierIndex]->getNVars();
    int* output = new int[nvars];
@@ -2680,13 +2708,11 @@ int* Seeedpool::getVarClassifierArray(int givenClassifierIndex)
    return &output[0];
 }
 
-
 /** returns number of different variable classifiers */
 int Seeedpool::getNVarClassifiers()
 {
    return (int) varclassescollection.size();
 }
-
 
 /** adds variable classifiers with a reduced number of classes */
 void Seeedpool::reduceVarclasses()
@@ -2710,10 +2736,11 @@ void Seeedpool::reduceVarclasses()
    }
 }
 
-
 /** returns a vector of seeeds where all seeeds of the given seeeds having only one block are removed
  *  except for the two seeeds with the lowest numbers of masterconss */
-std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(std::vector<SeeedPtr> seeeds)
+std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
+   std::vector<SeeedPtr> seeeds
+   )
 {
    std::vector<SeeedPtr> remainingSeeeds(0);
    std::vector<SeeedPtr> oneBlockSeeeds(0);
@@ -2759,9 +2786,13 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(std::vector<SeeedPtr>
    return remainingSeeeds;
 }
 
-
 /** creates a latex file illustrating a family tree of given seeeds */
-SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(const char* filename, const char* workfolder, std::vector<SeeedPtr> seeeds, SCIP_Bool draft)
+SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
+   const char* filename,
+   const char* workfolder,
+   std::vector<SeeedPtr> seeeds,
+   SCIP_Bool draft
+   )
 {
    std::ofstream ofs;
    int curr = -1;
@@ -2904,7 +2935,10 @@ SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(const char* filename, const cha
 }
 
 /** creates a decomposition for a given seeed */
-SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newdecomp)
+SCIP_RETCODE Seeedpool::createDecompFromSeeed(
+   SeeedPtr seeed,
+   DEC_DECOMP** newdecomp
+   )
 {
    char detectorchaininfo[SCIP_MAXSTRLEN];
 
@@ -2920,7 +2954,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
    SCIP_CONS*** subscipconss;
 
    DEC_SCORES scores;
-
 
    int* nsubscipconss;
    int* nsubscipvars;
@@ -2941,7 +2974,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
    //           seeed->displayConss();
    //     if(seeed->detectorChain.size() > 2)
    //    seeed->showScatterPlot(this);
-
 
    /** set nblocks */
    DECdecompSetNBlocks( *newdecomp, seeed->getNBlocks() );
@@ -2991,7 +3023,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
       }
    }
 
-
    DECdecompSetSubscipconss(scip, *newdecomp, subscipconss, nsubscipconss );
 
    DECdecompSetConstoblock(*newdecomp, constoblock);
@@ -2999,7 +3030,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
 
    /* finished setting constraint data structures */
    /** now: set variables */
-
 
    SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nsubscipvars, seeed->getNBlocks() ) );
    SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipvars, seeed->getNBlocks() ) );
@@ -3010,7 +3040,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
    SCIP_CALL_ABORT( SCIPhashmapCreate( &varindex, SCIPblkmem(scip), seeed->getNVars() ) );
 
    /** set linkingvars */
-
    nlinkingvars = seeed->getNLinkingvars() + seeed->getNMastervars() + seeed->getNTotalStairlinkingvars();
 
    if( nlinkingvars != 0 )
@@ -3039,7 +3068,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
       SCIP_CALL_ABORT( SCIPhashmapInsert(varindex, scipvar, (void*) (size_t) varcounter) );
       varcounter++;
    }
-
 
    /* set block variables */
    for ( int b = 0; b < seeed->getNBlocks(); ++b )
@@ -3089,8 +3117,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
    DECdecompSetVarindex(*newdecomp, varindex);
    DECdecompSetVartoblock(*newdecomp, vartoblock) ;
 
-
-
    /** free stuff */
 
    /** free constraints */
@@ -3127,7 +3153,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
    SCIPfreeBufferArrayNull(scip, &(stairlinkingvars) );
    SCIPfreeBufferArrayNull(scip, &(nstairlinkingvars));
 
-
    //            /** test detector chain output */
    //            char detectorchainstring[SCIP_MAXSTRLEN];
    //
@@ -3139,7 +3164,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
    //              }
    //
    //              SCIPinfoMessage(scip, NULL, "%s %s", detectorchainstring, LINEBREAK);
-
 
    /*** OLD stuff above */
 
@@ -3158,7 +3182,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
       }else
          (*newdecomp)->detectorchain[k] = seeed->getDetectorchain()[k];
    }
-
 
    /** set statistical detector chain data */
 
@@ -3214,12 +3237,14 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(SeeedPtr seeed, DEC_DECOMP** newde
    assert(!SCIPhashmapIsEmpty((*newdecomp)->constoblock));
    assert(!SCIPhashmapIsEmpty((*newdecomp)->vartoblock));
 
-
    return SCIP_OKAY;
 }
 
 /** creates a seeed for a given decomposition */
-SCIP_RETCODE Seeedpool::createSeeedFromDecomp(DEC_DECOMP* decomp, SeeedPtr* newseeed)
+SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
+   DEC_DECOMP* decomp,
+   SeeedPtr* newseeed
+   )
 {
    SeeedPtr seeed;
 
@@ -3231,8 +3256,7 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(DEC_DECOMP* decomp, SeeedPtr* news
 /**
  * returns transformation information
  */
-SCIP_Bool Seeedpool::getTransformedInfo(
-   )
+SCIP_Bool Seeedpool::getTransformedInfo()
 {
    return transformed;
 }

@@ -83,10 +83,10 @@ Seeed::Seeed(
    conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0),
    propagatedByDetector(std::vector<bool>(givenNDetectors, false)), hashvalue(0), score(1.), maxwhitescore(1.),
    changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0),
-   detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0),
-   pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), usergiven(USERGIVEN::NOT), stemsFromUnpresolved(false),
-   isFinishedByFinisherUnpresolved(false), finishedUnpresolvedBy(NULL), isselected(false), isfromunpresolved(FALSE),
-   detectorchainstring(NULL)
+   detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0),
+   pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), usergiven(USERGIVEN::NOT),
+   stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false), finishedUnpresolvedBy(NULL), isselected(false),
+   isfromunpresolved(FALSE), detectorchainstring(NULL)
 {
    for( int i = 0; i < nConss; ++i )
    {
@@ -150,7 +150,6 @@ Seeed::~Seeed()
    SCIPfreeBlockMemoryArrayNull( scip, &detectorchainstring, SCIP_MAXSTRLEN );
 }
 
-
 bool compare_blocks(
    std::pair<int, int> const & a,
    std::pair<int, int> const & b
@@ -158,7 +157,6 @@ bool compare_blocks(
 {
    return ( a.second < b.second );
 }
-
 
 /** adds a block, returns the number of the new block */
 int Seeed::addBlock()
@@ -718,8 +716,6 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblockVector(
    return SCIP_OKAY;
 }
 
-
-
 /** books a constraint to be added to the block constraints of the given block (after calling flushBooked) */
 SCIP_RETCODE Seeed::bookAsBlockCons(
    int consToBlock,
@@ -1130,26 +1126,6 @@ bool Seeed::checkConsistency(
       }
       value = getMasterconss()[v];
    }
-
-   /** check if nonzero entries are either in a block or border */
-//   for( int b = 0; b < nBlocks; ++b )
-//   {
-//      for( int c = 0; c < getNConssForBlock( b ); ++c )
-//      {
-//         for( int v = 0; v < seeedpool->getNVarsForCons( getConssForBlock( b )[c] ); ++v )
-//         {
-//            int varid = seeedpool->getVarsForCons( getConssForBlock( b )[c] )[v];
-//
-//            if( !( isVarBlockvarOfBlock( varid, b ) || isVarLinkingvar( varid ) || isVarStairlinkingvarOfBlock( varid, b) ) )
-//            {
-//               SCIPwarningMessage(scip,
-//                  "WARNING! Variable %d is not part of block %d or linking as constraint %d suggests! \n ", varid, b,
-//                  getConssForBlock( b )[c]);
-//               return false;
-//            }
-//         }
-//      }
-//   }
 
    return true;
 }
@@ -2638,7 +2614,9 @@ const int* Seeed::getStairlinkingvars(
 }
 
 /** returns array containing vars of a block */
-const int* Seeed::getVarsForBlock(int block)
+const int* Seeed::getVarsForBlock(
+   int block
+   )
 {
    assert(block >= 0 && block < nBlocks);
    return &varsForBlocks[block][0];
@@ -2977,7 +2955,6 @@ SCIP_RETCODE Seeed::setFinishingDetectorPropagated(
    DEC_DETECTOR* detectorID
    )
 {
-
    isFinishedByFinisher = true;
    detectorChain.push_back(detectorID);
    detectorChainFinishingUsed.push_back(TRUE);
@@ -3373,7 +3350,7 @@ const char* Seeed::getShortCaption()
 
 /** sets the detector chain short string */
 SCIP_RETCODE Seeed::setDetectorChainString(
-   char*                 detectorchainstring
+   char* detectorchainstring
    )
 {
    SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &this->detectorchainstring, detectorchainstring, SCIP_MAXSTRLEN ) );
@@ -3381,8 +3358,7 @@ SCIP_RETCODE Seeed::setDetectorChainString(
 
 }
 
-SCIP_RETCODE Seeed::buildDecChainString(
-   )
+SCIP_RETCODE Seeed::buildDecChainString()
 {
    char detectorchaininfo[SCIP_MAXSTRLEN];
    /** set detector chain info string */
@@ -3402,9 +3378,9 @@ SCIP_RETCODE Seeed::buildDecChainString(
       (void) strncat(detectorchaininfo, str, 1 );
    }
 
-
    SCIP_CALL(this->setDetectorChainString(detectorchaininfo) );
 
    return SCIP_OKAY;
 }
+
 } /* namespace gcg */
