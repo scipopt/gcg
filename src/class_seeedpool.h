@@ -63,11 +63,13 @@ typedef Seeed* SeeedPtr;
 
 // Only for pairs of std::hash-able types for simplicity.
 // You can of course template this struct to allow other hash functions
-struct pair_hash {
+struct pair_hash
+{
     template <class T1, class T2>
-    std::size_t operator () (const std::pair<T1,T2> &p) const {
-        auto h1 = std::hash<T1>{}(p.first);
-        auto h2 = std::hash<T2>{}(p.second);
+    std::size_t operator()( const std::pair<T1,T2> &p ) const
+    {
+        auto h1 = std::hash<T1>{}( p.first );
+        auto h2 = std::hash<T2>{}( p.second );
 
         // overly simple hash combination
         return h1 ^ h2;
