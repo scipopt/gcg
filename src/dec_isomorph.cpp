@@ -1052,7 +1052,7 @@ SCIP_RETCODE createSeeedFromMasterconss(
    SCIP_CALL( (*newSeeed)->assignSeeedFromConstoblockVector(newconstoblock, nblocks, seeedpool) );
 
    (*newSeeed)->considerImplicits(seeedpool);
-   (*newSeeed)->assignAllDependent(seeedpool);
+   (*newSeeed)->refineToBlocks(seeedpool);
 
    if( exact )
       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "isomorph\\_exact");

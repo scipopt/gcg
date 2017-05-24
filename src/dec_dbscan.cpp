@@ -438,7 +438,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedDBSCAN)
    *result = SCIP_DIDNOTFIND;
 
    seeed = seeedPropagationData->seeedToPropagate;
-   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+   seeed->refineToBlocks(seeedPropagationData->seeedpool);
    if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
    {
       delete seeed;

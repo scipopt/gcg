@@ -384,7 +384,7 @@ DEC_DECL_DETECTSTRUCTURE(detectMCL)
 //   *result = SCIP_DIDNOTFIND;
 //
 //   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
-//   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+//   seeed->refineToBlocks(seeedPropagationData->seeedpool);
 //   if(!graphCompletible(seeedPropagationData->seeedpool, seeed))
 //   {
 //      delete seeed;

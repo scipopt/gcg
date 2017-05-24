@@ -695,7 +695,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
    gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
 
    seeed->considerImplicits(seeedPropagationData->seeedpool);
-   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+   seeed->refineToBlocks(seeedPropagationData->seeedpool);
 
    if( !connected(seeedPropagationData->seeedpool, seeed ) )
    {
@@ -709,7 +709,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
    for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
    {
       seeedPropagationData->newSeeeds[s]->considerImplicits(seeedPropagationData->seeedpool);
-      seeedPropagationData->newSeeeds[s]->assignAllDependent(seeedPropagationData->seeedpool);
+      seeedPropagationData->newSeeeds[s]->refineToBlocks(seeedPropagationData->seeedpool);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenconss() == 0);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenvars() == 0);
    }

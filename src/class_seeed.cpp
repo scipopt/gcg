@@ -82,11 +82,10 @@ Seeed::Seeed(
    ) : scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0),
    conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0),
    propagatedByDetector(std::vector<bool>(givenNDetectors, false)), hashvalue(0), score(1.), maxwhitescore(1.),
-   changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0),
+   changedHashvalue(false), isselected(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0),
    detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0),
-   pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), usergiven(USERGIVEN::NOT), stemsFromUnpresolved(false),
-   isFinishedByFinisherUnpresolved(false), finishedUnpresolvedBy(NULL), isselected(false), isfromunpresolved(FALSE),
-   detectorchainstring(NULL)
+   pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), usergiven(USERGIVEN::NOT), detectorchainstring(NULL),
+   stemsFromUnpresolved(false), isfromunpresolved(FALSE), isFinishedByFinisherUnpresolved(false), finishedUnpresolvedBy(NULL)
 {
    for( int i = 0; i < nConss; ++i )
    {
@@ -226,22 +225,6 @@ bool Seeed::alreadyAssignedConssToBlocks()
       if( conssForBlocks[b].size() != 0 )
          return true;
    return false;
-}
-
-/** assigns open conss and vars if they can be found in blocks
- *  calls assignHittingOpenconss() and assignHittingOpenvars() */
-SCIP_RETCODE Seeed::assignAllDependent(
-   Seeedpool* seeedpool
-   )
-{
-   bool success = true;
-
-   changedHashvalue = true;
-
-   while( success )
-      success = assignHittingOpenconss( seeedpool ) || assignHittingOpenvars( seeedpool );
-   sort();
-   return SCIP_OKAY;
 }
 
 /** assigns open conss to master according to the cons assignment information given in constoblock hashmap */
@@ -2916,7 +2899,24 @@ bool Seeed::isVarStairlinkingvarOfBlock(
    }
 }
 
-/** refine seeed: do obvious (considerImplicits()) and some non-obvious assignments (assignOpenPartialHittingToMaster()) */
+/** refine seeed with focus on blocks: assigns open conss and vars if they can be
+ *  found in blocks (assignHittingOpenconss(), assignHittingOpenvars()) */
+SCIP_RETCODE Seeed::refineToBlocks(
+   Seeedpool* seeedpool
+   )
+{
+   bool success = true;
+
+   changedHashvalue = true;
+
+   while( success )
+      success = assignHittingOpenconss( seeedpool ) || assignHittingOpenvars( seeedpool );
+   sort();
+   return SCIP_OKAY;
+}
+
+/** refine seeed with focus on master: do obvious (considerImplicits()) assignments and
+ *  assign other conss and vars to master if possible (assignOpenPartialHittingToMaster()) */
  SCIP_RETCODE Seeed::refineToMaster(
     Seeedpool* seeedpool
     )
@@ -3373,10 +3373,10 @@ const char* Seeed::getShortCaption()
 
 /** sets the detector chain short string */
 SCIP_RETCODE Seeed::setDetectorChainString(
-   char*                 detectorchainstring
+   char*                 givenDetectorchainstring
    )
 {
-   SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &this->detectorchainstring, detectorchainstring, SCIP_MAXSTRLEN ) );
+   SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &this->detectorchainstring, givenDetectorchainstring, SCIP_MAXSTRLEN ) );
    return SCIP_OKAY;
 
 }
@@ -3384,26 +3384,26 @@ SCIP_RETCODE Seeed::setDetectorChainString(
 SCIP_RETCODE Seeed::buildDecChainString(
    )
 {
-   char detectorchaininfo[SCIP_MAXSTRLEN];
+   char decchaininfo[SCIP_MAXSTRLEN];
    /** set detector chain info string */
-   SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
+   SCIPsnprintf( decchaininfo, SCIP_MAXSTRLEN, "") ;
    if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
    {
       char str1[2] = "\0"; /* gives {\0, \0} */
       str1[0] = 'U';
-      (void) strncat(detectorchaininfo, str1, 1 );
+      (void) strncat(decchaininfo, str1, 1 );
 
    }
    for( int d = 0; d < this->getNDetectors(); ++d )
    {
-      //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(this->getDetectorchain()[d]));
+      //SCIPsnprintf(decchaininfo, SCIP_MAXSTRLEN, "%s%c", decchaininfo, DECdetectorGetChar(this->getDetectorchain()[d]));
       char str[2] = "\0"; /* gives {\0, \0} */
       str[0] = DECdetectorGetChar(this->getDetectorchain()[d]);
-      (void) strncat(detectorchaininfo, str, 1 );
+      (void) strncat(decchaininfo, str, 1 );
    }
 
 
-   SCIP_CALL(this->setDetectorChainString(detectorchaininfo) );
+   SCIP_CALL(this->setDetectorChainString(decchaininfo) );
 
    return SCIP_OKAY;
 }
