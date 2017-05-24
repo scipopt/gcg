@@ -155,10 +155,11 @@ struct SCIP_ConshdlrData
    int                    startidvisu;                       /** when displaying the list of decomps, this is the starting index */
    int                    selectvisulength;                  /** number of decompositions to be displayed at once */
    std::vector<SeeedPtr>* listall;                           /** vector containing the current list of decomps to visualize*/
-   std::vector<int>*      selected;                          /** vector contianing the indices of selected decompositions */
+   std::vector<int>*      selected;                          /** vector containing the indices of selected decompositions */
    SCIP_Bool              selectedexists;                    /** are there some selected decompositions */
 
    int                    seeedcounter;                      /** counts the number of seeeds, used for seeed ids */
+   int                    helpvisucounter;                   /** help counter for family tree visualization to iterate the heights */
 
    std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;
 
@@ -176,6 +177,130 @@ enum weightinggpresolvedoriginaldecomps{
  * Local methods
  */
 
+std::string getSeeedFolderLatex( SeeedPtr seeed )
+{
+   std::stringstream decompfilename;
+   decompfilename << "dec" << seeed->getID() << ".pdf";
+
+   return decompfilename.str();
+}
+
+
+SCIP_Bool unfinishedchildexists(std::vector<SCIP_Bool> const& childsfinished)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return true;
+   }
+   return false;
+}
+
+int getfirstunfinishedchild(std::vector<SCIP_Bool> const& childsfinished, std::vector<int> const& childs)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return childs[s];
+   }
+   return -1;
+}
+
+int getfirstunfinishedchildid(std::vector<SCIP_Bool> const& childsfinished, std::vector<int> const& childs)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return (int)s;
+   }
+   return -1;
+}
+
+
+/**
+ * @return is nextchild the last unfinished child
+ */
+SCIP_Bool finishnextchild( std::vector<int>& childs, std::vector<SCIP_Bool>& childsfinished, int child )
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+      {
+         assert(childs[s] == child);
+         childsfinished[s] = TRUE;
+         return s == childsfinished.size() - 1;
+      }
+   }
+   return FALSE;
+}
+
+std::string writeSeeedDetectorChainInfoLatex( SeeedPtr seeed, int currheight, int visucounter )
+{
+   std::stringstream line;
+   std::string relposition;
+   int position = visucounter % 3;
+   if( position == 0 )
+      relposition = "above";
+   else if ( position == 1)
+      relposition = "";
+   else if ( position == 2)
+      relposition = "below";
+   else
+      relposition = "below left";
+
+   if ( currheight != 1)
+      relposition = "";
+
+   if ( (size_t) currheight >  seeed->detectorchaininfo.size() )
+      line << "edge from parent node [" << relposition << "] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
+   else
+   {
+      std::string oldinfo = seeed->detectorchaininfo[ currheight - 1];
+      /** take latexified detctorchaininfo */
+      size_t index = 0;
+      while (true) {
+         /* Locate the substring to replace. */
+         index = oldinfo.find("_", index);
+         if (index == std::string::npos)
+            break;
+         if ( index > 0 &&   oldinfo.at(index-1) == '\\' )
+         {
+            ++index;
+            continue;
+         }
+
+         /* Make the replacement. */
+         oldinfo.replace(index, 1, "\\_");
+
+         /* Advance index forward so the next iteration doesn't pick it up as well. */
+         index += 2;
+      }
+      std::cout << "oldinfo: " << oldinfo << std::endl;
+
+      line << "edge from parent node [" << relposition << "] {" << oldinfo <<"} " ;
+   }
+
+
+   return line.str();
+}
+
+
+std::string writeSeeedInfoLatex( SeeedPtr seeed )
+{
+   std::stringstream line;
+   line << "\\node[below = \\belowcaptionskip of s" << seeed->getID() << "] (caps" << seeed->getID() << ") {\\scriptsize " << seeed->getShortCaption() << "}; " << std::endl;
+
+   return line.str();
+}
+
+
+std::string writeSeeedIncludeLatex( SeeedPtr seeed, std::string workfolder )
+{
+   std::stringstream line;
+   line << " (s" << seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{" << getSeeedFolderLatex(seeed) << "} }" << std::endl;
+
+   return line.str();
+}
 
 
 /** local method to handle storage of finished decompositions and corresponding seeeds */
@@ -3034,6 +3159,231 @@ SCIP_RETCODE DECwriteAllDecomps(
    return SCIP_OKAY;
 }
 
+std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
+   SCIP* scip
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+ //  std::vector<SeeedPtr> relevantseeeds(0);
+
+   int maxid  = 0;
+   std::vector<SeeedPtr> tmpAllRelevantSeeeds(0);
+
+   for ( size_t i = 0; i < conshdlrdata->seeedpool->allrelevantseeeds.size(); ++i )
+   {
+      if( conshdlrdata->seeedpool->allrelevantseeeds[i] != NULL && conshdlrdata->seeedpool->allrelevantseeeds[i]->getID() > maxid )
+         maxid = conshdlrdata->seeedpool->allrelevantseeeds[i]->getID();
+   }
+
+   for ( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->allrelevantseeeds.size(); ++i )
+   {
+      if( conshdlrdata->seeedpoolunpresolved->allrelevantseeeds[i] != NULL &&  conshdlrdata->seeedpoolunpresolved->allrelevantseeeds[i]->getID() > maxid )
+         maxid = conshdlrdata->seeedpoolunpresolved->allrelevantseeeds[i]->getID();
+   }
+
+   tmpAllRelevantSeeeds = std::vector<SeeedPtr>(maxid+1, NULL );
+
+   for ( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->allrelevantseeeds.size(); ++i )
+      {
+         if ( conshdlrdata->seeedpoolunpresolved->allrelevantseeeds[i] == NULL || conshdlrdata->seeedpoolunpresolved->allrelevantseeeds[i]->getID() < 0  )
+            continue;
+         tmpAllRelevantSeeeds[conshdlrdata->seeedpoolunpresolved->allrelevantseeeds[i]->getID()] = conshdlrdata->seeedpoolunpresolved->allrelevantseeeds[i];
+      }
+
+   for ( size_t i = 0; i < conshdlrdata->seeedpool->allrelevantseeeds.size(); ++i )
+      {
+         if ( conshdlrdata->seeedpool->allrelevantseeeds[i] == NULL || conshdlrdata->seeedpool->allrelevantseeeds[i]->getID() < 0  )
+            continue;
+         tmpAllRelevantSeeeds[conshdlrdata->seeedpool->allrelevantseeeds[i]->getID()] = conshdlrdata->seeedpool->allrelevantseeeds[i];
+      }
+
+   return tmpAllRelevantSeeeds;
+}
+
+
+
+
+SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
+   SCIP*       scip,
+   const char* filename,                                 /* filename the output should be written to (including directory) */
+   const char* workfolder,                               /* directory in which should be worked */
+   std::vector<SeeedPtr> seeeds,                         /* vector of seeed pointers the  family tree should be constructed for */
+   SCIP_Bool draft
+){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   std::ofstream ofs;
+   int curr = -1;
+   int currheight = 0;
+   SCIP_Real firstsibldist = -1.;
+
+   std::stringstream preambel;
+   std::string closing = "\\end{tikzpicture}\n\\end{document}";
+
+   /* collectiotn of treeseeds */
+   std::vector<SeeedPtr> treeseeeds(0);
+   std::vector<int> treeseeedids(0);
+   std::vector<SeeedPtr> allrelevantseeeds = SCIPconshdlrDecompGetAllRelevantSeeeds(scip);
+
+   std::vector<SCIP_Bool> isseeedintree(allrelevantseeeds.size(), FALSE );
+
+   int root = -1;
+   std::vector<int> parents(allrelevantseeeds.size(), -1);
+   std::vector<std::vector<int> > childs (allrelevantseeeds.size(), std::vector<int>(0));
+   std::vector<std::vector<SCIP_Bool> > childsfinished(allrelevantseeeds.size(), std::vector<SCIP_Bool>(0));
+   std::vector<SCIP_Bool> visited(allrelevantseeeds.size(), FALSE);
+
+
+   conshdlrdata->helpvisucounter = 0;
+
+   /** check allrelevant seeeds **/
+   for( size_t s = 0; s < allrelevantseeeds.size(); ++s )
+   {
+      assert(allrelevantseeeds[s] == NULL || (int) s == allrelevantseeeds[s]->getID() );
+   }
+
+   /** 1) find relevant seeeds in tree and build tree */
+   for( size_t s = 0; s < seeeds.size(); ++s )
+   {
+      int currid;
+      if ( seeeds[s] == NULL )
+         continue;
+      currid = seeeds[s]->getID();
+      if( !isseeedintree[seeeds[s]->getID()] )
+      {
+         isseeedintree[seeeds[s]->getID()] = TRUE;
+         treeseeeds.push_back( seeeds[s]);
+         treeseeedids.push_back(seeeds[s]->getID());
+      }
+      else
+         break;
+
+      for( size_t i = 0; i < seeeds[s]->listofancestorids.size(); ++i )
+      {
+         int ancestorid;
+         ancestorid = seeeds[s]->listofancestorids[seeeds[s]->listofancestorids.size() - i -1];
+         parents[currid] = ancestorid;
+         childs[ancestorid].push_back(currid);
+         childsfinished[ancestorid].push_back(FALSE);
+
+         if( !isseeedintree[ancestorid] )
+         {
+            isseeedintree[ancestorid] = TRUE;
+            assert(allrelevantseeeds[ancestorid] != NULL);
+            treeseeeds.push_back( allrelevantseeeds[ancestorid] );
+            treeseeedids.push_back(ancestorid);
+            if( i == seeeds[s]->listofancestorids.size() -1 )
+            {
+               root = ancestorid;
+            }
+            currid = ancestorid;
+         }
+         else
+            break;
+      }
+   }
+
+   for( size_t i = 0; i < treeseeeds.size(); ++i )
+   {
+      SeeedPtr seeed;
+      std::stringstream decompfilename;
+
+      seeed = treeseeeds[i];
+
+      decompfilename << workfolder << "/" << getSeeedFolderLatex(seeed);
+
+      seeed->showScatterPlot(conshdlrdata->seeedpool, TRUE, decompfilename.str().c_str(), draft );
+   }
+
+   //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
+
+   firstsibldist = 1. / (childs[root].size() - 1 );
+   preambel.precision(2);
+
+   preambel << "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
+   preambel << "\n\\usetikzlibrary{positioning}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
+   preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
+
+
+
+   /** start writing file */
+   ofs.open (filename, std::ofstream::out );
+   ofs << preambel.str();
+
+   /** iterate tree and write file */
+   curr = root;
+   while ( curr != -1 )
+   {
+      if( !visited[curr] )
+      {
+         /** write node */
+         ofs << writeSeeedIncludeLatex( allrelevantseeeds[curr], workfolder );
+         /* set node visited */
+         visited[curr] = TRUE;
+         if( parents[curr] != -1 )
+            finishnextchild(childs[parents[curr]], childsfinished[parents[curr]], curr);
+
+      }
+      if ( unfinishedchildexists(childsfinished[curr] ) )
+      {
+         int unfinishedchild = getfirstunfinishedchild(childsfinished[curr], childs[curr] );
+         /* is first child unfinihsed? */
+         //         if( unfinishedchild == childs[curr][0] )
+         ofs << " child { node " ;
+         curr = unfinishedchild;
+         ++currheight;
+      }
+      else
+      {
+         if ( parents[curr] != -1 ){
+            ofs << writeSeeedDetectorChainInfoLatex( allrelevantseeeds[curr], currheight, conshdlrdata->helpvisucounter);
+            ++conshdlrdata->helpvisucounter;
+         }
+         --currheight;
+         curr = parents[curr];
+         if( curr != -1)
+            ofs << " } " ;
+      }
+   }
+
+   ofs << ";" << std::endl;
+   for( size_t i = 0; i < treeseeeds.size(); ++i)
+   {
+      ofs << writeSeeedInfoLatex( treeseeeds[i] );
+   }
+
+   ofs << closing << std::endl;
+
+   ofs.close();
+
+   return SCIP_OKAY;
+}
+
+
+
+
 /** write
  *  out all detected or provided decompositions */
 /** write family tree **/
@@ -3058,15 +3408,27 @@ SCIP_RETCODE DECwriteFamilyTree(
 	std::vector<SeeedPtr> tovisualize(0);
 	assert(conshdlrdata != NULL);
 
-	 /* test familiy tree visualization */
+	if ( SCIPconshdlrDecompExistsSelected(scip) )
+	{
+	   for ( size_t i = 0; tovisualize.size() <= (size_t) ndecompositions &&  i < conshdlrdata->selected->size(); ++i )
+	   {
+	      if( conshdlrdata->listall->at(conshdlrdata->selected->at(i))->isComplete() )
+	         tovisualize.push_back( conshdlrdata->listall->at(conshdlrdata->selected->at(i)  ) );
+	   }
+	}
+	else
+	{
+	   SCIPconshdlrDecompUpdateSeeedlist(scip);
+	   for ( size_t i = 0; tovisualize.size() <= (size_t) ndecompositions &&  i < conshdlrdata->listall->size(); ++i )
+	   {
+	      if( conshdlrdata->listall->at(i)->isComplete() )
+	         tovisualize.push_back( conshdlrdata->listall->at(i) );
+	   }
+	}
 
-	for( int i = 0; i < ndecompositions; ++i)
-		tovisualize.push_back(conshdlrdata->seeedpool->finishedSeeeds[i]);
+	SCIPconshdlrDecompWriteFamilyTreeLatexFile(scip, filename, workfolder, tovisualize, draft);
 
-	conshdlrdata->seeedpool->writeFamilyTreeLatexFile( filename, workfolder, tovisualize, draft);
-
-
-	   return SCIP_OKAY;
+	return SCIP_OKAY;
 }
 
 /** returns the best known decomposition, if available and NULL otherwise */
@@ -3520,7 +3882,6 @@ SCIP_RETCODE GCGsetDetection(
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
-   assert(scip != NULL);
 
    switch( paramsetting )
    {

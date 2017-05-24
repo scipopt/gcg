@@ -327,7 +327,6 @@ SCIP_RETCODE GCGsetDetection(
    );
 
 
-
 #ifdef __cplusplus
 }
 #endif

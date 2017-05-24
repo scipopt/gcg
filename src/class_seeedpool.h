@@ -85,7 +85,7 @@ class Seeedpool
 private:
    SCIP*                 						      scip;              	   /**< SCIP data structure */
 
-   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
+
 
    int                                          maxndetectionrounds;    /**< maximum number of detection rounds */
    int											         nTotalSeeeds;        	/**< number of created seeeeds, used to give next id */
@@ -126,7 +126,6 @@ private:
 
    std::vector<SeeedPtr>                        seeedstopopulate;      /**< seeeds that are translated seeeds from found ones for the original problem */
 
-   int											         helpvisucounter;        /** help counter for family tree visualization to iterate the heights */
 
 
 public:
@@ -134,6 +133,7 @@ public:
    std::vector<SeeedPtr>                        incompleteSeeeds;       /**< vector of incomplete seeeds that can be used for initialization */
    std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of finished seeeds */
+   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
 
    /** constructor */
    Seeedpool(
@@ -319,12 +319,6 @@ public:
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds);
 
-   SCIP_RETCODE writeFamilyTreeLatexFile(
-      const char* filename,                                 /* filename the output should be written to */
-      const char* workfolder,                               /* directory in which should be worked */
-      std::vector<SeeedPtr> seeeds,                         /* vector of seeed pointers the  family tree should be constructed for */
-	  SCIP_Bool draft
-   );
 
 
    /**
