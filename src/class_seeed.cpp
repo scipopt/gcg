@@ -776,7 +776,13 @@ void Seeed::calcHashvalue()
    /** find sorting for blocks (non decreasing according smallest row index) */
    for( int i = 0; i < this->nBlocks; ++i )
    {
+      if( this->conssForBlocks[i].size() > 0)
       blockorder.push_back( std::pair<int, int>( i, this->conssForBlocks[i][0] ) );
+      else
+      {
+         assert(this->varsForBlocks[i].size() > 0);
+         blockorder.push_back(std::pair<int, int>(i, this->getNConss() + this->varsForBlocks[i][0] ) );
+      }
    }
 
    std::sort( blockorder.begin(), blockorder.end(), compare_blocks );
@@ -1759,8 +1765,11 @@ SCIP_RETCODE Seeed::displaySeeed(
    if( getNDetectors() != 0 )
    {
       std::string detectorrepres;
-      detectorrepres = ( getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName( detectorChain[0]) : "(finish)"
-         + std::string( DECdetectorGetName( detectorChain[0] ) ) );
+
+      if( detectorChain[0] == NULL )
+         detectorrepres = "user";
+      else
+         detectorrepres = ( getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName( detectorChain[0] ) : "(finish)" + std::string( DECdetectorGetName( detectorChain[0] ) ) );
 
       std::cout << ": " <<  detectorrepres;
 
@@ -1925,10 +1934,10 @@ SCIP_Real Seeed::evaluate(
    /* calculate matrix area */
    matrixarea = nVars*nConss;
 
-   blackarea += ( getNLinkingvars() + getNTotalStairlinkingvars() + getNMastervars() ) * getNConss();
+   blackarea += ( getNLinkingvars() + getNTotalStairlinkingvars() ) * getNConss();
    blackarea += getNMasterconss() * getNVars();
 
-   blackarea -= getNMasterconss() * ( getNLinkingvars() + getNMastervars() );
+   blackarea -= getNMasterconss() * ( getNLinkingvars() + getNTotalStairlinkingvars() );
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++i )
@@ -3079,7 +3088,10 @@ SCIP_RETCODE Seeed::setVarToStairlinking(
 
    changedHashvalue = true;
 
-   stairlinkingVars[( block1 < block2 ? block1 : block2 )].push_back( varToStairlinking );
+   if( block1 > block2 )
+      stairlinkingVars[block2].push_back( varToStairlinking );
+   else
+      stairlinkingVars[block1].push_back( varToStairlinking );
 
    return SCIP_OKAY;
 }
@@ -3380,8 +3392,7 @@ SCIP_RETCODE Seeed::buildDecChainString()
    char decchaininfo[SCIP_MAXSTRLEN];
    /** set detector chain info string */
    SCIPsnprintf( decchaininfo, SCIP_MAXSTRLEN, "" ) ;
-
-   if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
+   if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER || this->getDetectorchain() == NULL  || this->getDetectorchain()[0] == NULL )
    {
       char str1[2] = "\0"; /* gives {\0, \0} */
       str1[0] = 'U';
@@ -3389,6 +3400,8 @@ SCIP_RETCODE Seeed::buildDecChainString()
    }
    for( int d = 0; d < this->getNDetectors(); ++d )
    {
+      if( d == 0 && this->getDetectorchain()[d] == NULL)
+         continue;
       char str[2] = "\0"; /* gives {\0, \0} */
       str[0] = DECdetectorGetChar( this->getDetectorchain()[d] );
       (void) strncat( decchaininfo, str, 1 );

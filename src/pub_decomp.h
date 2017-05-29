@@ -186,7 +186,8 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
-   int                   nlinkingvars        /**< number of linkingvars per block */
+   int                   nlinkingvars,       /**< number of linkingvars per block */
+   int                   nmastervars         /**< number of linkingvars that are purely master variables */
    );
 
 /** returns the linkingvars array of the given decomposition */
@@ -194,6 +195,13 @@ extern
 SCIP_VAR** DECdecompGetLinkingvars(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
+
+/** returns the number of master variables of the given decomposition */
+extern
+int DECdecompGetNMastervars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
 
 /** returns the nlinkingvars array of the given decomposition */
 extern
@@ -662,15 +670,6 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  transferred         /**< number of master constraints reassigned */
-   );
-
-/** removes a variable from the linking variable array */
-extern
-SCIP_RETCODE DECdecompRemoveLinkingVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   SCIP_VAR*             var,                /**< variable to remove */
-   SCIP_Bool*            success             /**< indicates whether the variable was successfully removed */
    );
 
 /** tries to assign masterconss to new pricing problem */

@@ -639,8 +639,10 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 
    detectorchain = DECdecompGetDetectorChain(decomp);
    sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
-
-   sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
+   if( detectorchain[0] != NULL)
+      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
+   else
+      sprintf(fulldetectorstring, "%s", "user");
    for( i=1; i < sizedetectorchain; ++i )
    {
       sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );

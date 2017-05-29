@@ -82,10 +82,6 @@ class Seeedpool
 private:
    SCIP*                 						      scip;              	   /**< SCIP data structure */
 
-   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are represented by a null pointer */
-   std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
-   std::vector<SeeedPtr>                        finishedSeeeds;         /**< vector of finished seeeds */
-
    int                                          maxndetectionrounds;    /**< maximum number of detection rounds */
    int											         nTotalSeeeds;        	/**< number of created seeeds, used to give next id */
    std::vector<std::vector<int>> 				   varsForConss; 	   	   /**< stores for every constraint the indices of variables that are contained in the constraint */
@@ -105,6 +101,8 @@ private:
    int 										         	nConss;                 /**< number of constraints */
    int										         	nDetectors;             /**< number of detectors */
    int                                          nFinishingDetectors;    /**< number of finishing detectors */
+   int                                          nnonzeros;              /**< number of nonzeros */
+
 
    DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
    int                                          ndecompositions;        /**< number of decompositions found by the detectors */
@@ -117,12 +115,16 @@ private:
 
    SCIP_Bool                                    transformed;            /**< corresponds the matrix datastructure to the transformed problem */
 
-   std::vector<SeeedPtr>                        translatedOrigSeeeds;   /**< seeeds that are translated seeeds from found ones for the original problem */
+   std::vector<SeeedPtr>                        seeedstopopulate;      /**< seeeds that are translated seeeds from found ones for the original problem */
 
-   int											         helpvisucounter;        /** help counter for family tree visualization to iterate the heights */
 
 public:
 
+   std::vector<SeeedPtr>                        incompleteSeeeds;       /**< vector of incomplete seeeds that can be used for initialization */
+   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
+   std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
+   std::vector<SeeedPtr>                        finishedSeeeds;         /**< vector of finished seeeds */
+   
    /** TODO delete this method */
    void displaySeeedDataStructures(
    );
@@ -312,6 +314,8 @@ public:
    /** returns the number of detectors used in the seeedpool */
    int getNDetectors(
    );
+
+   int getNNonzeros();
 
    /** returns the number of finishing detectors used in the seeedpool */
    int getNFinishingDetectors(
