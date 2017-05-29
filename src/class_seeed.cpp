@@ -3383,7 +3383,7 @@ SCIP_RETCODE Seeed::setDetectorChainString(
    char* givenDetectorchainstring
    )
 {
-   SCIP_CALL ( SCIPduplicateBlockMemoryArray( scip, &this->detectorchainstring, detectorchainstring, SCIP_MAXSTRLEN ) );
+   SCIP_CALL ( SCIPduplicateBlockMemoryArray( scip, &this->detectorchainstring, givenDetectorchainstring, SCIP_MAXSTRLEN ) );
    return SCIP_OKAY;
 }
 
