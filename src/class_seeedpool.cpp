@@ -510,7 +510,7 @@ Seeedpool::Seeedpool(
    const char* conshdlrName,
    SCIP_Bool _transformed
    ) :
-   scip( givenScip), currSeeeds( 0), allrelevantseeeds( 0), nTotalSeeeds( 0), nVars( SCIPgetNVars( givenScip)),
+   scip( givenScip), allrelevantseeeds( 0), currSeeeds( 0), nTotalSeeeds( 0), nVars( SCIPgetNVars( givenScip)),
    nConss( SCIPgetNConss( givenScip)), nDetectors( 0), nFinishingDetectors( 0), ndecompositions( 0), candidatesNBlocks( 0),
    transformed( _transformed), helpvisucounter( 0)
 {
