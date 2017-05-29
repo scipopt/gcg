@@ -124,10 +124,7 @@ public:
    std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
    std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
    std::vector<SeeedPtr>                        finishedSeeeds;         /**< vector of finished seeeds */
-   
-   /** TODO delete this method */
-   void displaySeeedDataStructures(
-   );
+
 
    /*@todo add comments for parameters*/
    /** constructor */

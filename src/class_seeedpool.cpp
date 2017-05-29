@@ -477,33 +477,6 @@ SCIP_Bool seeedIsNoDuplicate(
    return ( bool1 && bool2 );
 }
 
-/** TODO delete this method */
-void Seeedpool::displaySeeedDataStructures()
-{
-   size_t i;
-
-   std::cout << "currSeeeds:";
-   for( i = 0; i < currSeeeds.size(); ++i )
-   {
-      std::cout << " " << ( currSeeeds[i] != NULL ? currSeeeds[i]->getID() : -1);
-   }
-   std::cout << std::endl;
-
-   std::cout << "finishedSeeeds:";
-   for( i = 0; i < finishedSeeeds.size(); ++i )
-   {
-      std::cout << " " << ( finishedSeeeds[i] != NULL ? finishedSeeeds[i]->getID() : -1);
-   }
-   std::cout << std::endl;
-
-   std::cout << "allrelevantseeeds:";
-   for( i = 0; i < allrelevantseeeds.size(); ++i )
-   {
-      std::cout << " " << ( allrelevantseeeds[i] != NULL ? allrelevantseeeds[i]->getID() : -1);
-   }
-   std::cout << std::endl;
-}
-
 /** constructor */
 Seeedpool::Seeedpool(
    SCIP* givenScip,           /**< SCIP data structure */
