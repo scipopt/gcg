@@ -326,7 +326,7 @@ SCIP_RETCODE getColumnsFromPricingprob(
 
          SCIPdebugMessage("solution has infinite values, create a copy with finite values\n");
 
-         SCIP_CALL( SCIPcreateFiniteSolCopy(pricingprob, &newsol, SCIPgetBestSol(pricingprob), &success) );
+         SCIP_CALL( SCIPcreateFiniteSolCopy(pricingprob, &newsol, probsols[0], &success) );
          assert(success);
          assert(newsol != NULL);
 
