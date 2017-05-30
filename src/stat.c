@@ -41,6 +41,8 @@
 #include "cons_decomp.h"
 #include "struct_detector.h"
 #include "pub_gcgvar.h"
+#include "pricer_gcg.h"
+
 
 /** prints information about the best decomposition*/
 SCIP_RETCODE GCGwriteDecompositionData(
@@ -155,8 +157,9 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
 
       rootlpsolval = NAN;
 
-      SCIPstatistic(SCIPgetSolVal(scip, GCGmasterGetRootLPSol(scip), vars[i]));
-
+#ifdef SCIP_STATISTIC
+      rootlpsolval = SCIPgetSolVal(scip, GCGmasterGetRootLPSol(scip), vars[i]);
+#endif
       SCIPinfoMessage(scip, NULL, "VAR: <%s>\t%lld\t%f\t%lld\t%lld\t%f\t%f\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time,
          iteration, rootredcostcall, redcost, gap, SCIPgetSolVal(scip, sol, vars[i]), rootlpsolval);
 

@@ -462,8 +462,6 @@ void GCGpricerCollectStatistic(
    assert(pricerdata != NULL);
    foundvars = pricerdata->npricedvars - pricerdata->oldvars;
 
-   SCIPstatisticMessage("Found %d new vars in prob %d\n", foundvars, probindex);
-
    if( type == GCG_PRICETYPE_FARKAS )
    {
 
@@ -877,7 +875,6 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
          {
 
 #ifdef SCIP_STATISTIC
-            SCIPinfoMessage(scip_, NULL, "collect stats\n");
             #pragma omp critical (collectstats)
             GCGpricerCollectStatistic(pricerdata, pricetype->getType(), prob,
                SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
@@ -3498,7 +3495,9 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       if( norigsols > 0 )
       {
          farkaspricing->incCalls();
-         SCIPstatistic(pricerdata->rootfarkastime =  SCIPgetSolvingTime(scip_));
+#ifdef SCIP_STATISTIC
+         pricerdata->rootfarkastime =  SCIPgetSolvingTime(scip_);
+#endif
          return SCIP_OKAY;
       }
    }
@@ -3507,7 +3506,9 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    retcode = priceNewVariables(farkaspricing, result, NULL);
    SCIP_CALL( farkaspricing->stopClock() );
 
-   SCIPstatistic(pricerdata->rootfarkastime =  SCIPgetSolvingTime(scip_));
+#ifdef SCIP_STATISTIC
+   pricerdata->rootfarkastime =  SCIPgetSolvingTime(scip_);
+#endif
 
    return retcode;
 }

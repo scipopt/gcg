@@ -94,7 +94,7 @@ def generate_files(files):
                 elif orig and line.startswith("Presolved Problem  :"):
                     orig = False
                 elif orig and line.startswith("  Problem name     :"):
-                    print line
+                    #print line
                     name = line.split()[3]      
                     name = name.split("/")[-1]
                     tmp_name = name.split(".")[-1]
@@ -108,7 +108,7 @@ def generate_files(files):
                     line_array = line.split()
                     #df = pd.DataFrame(columns = line_array, dtype = float)
                     boundheader = line_array
-                elif rootbounds and line.startswith("Pricing Summary:") and rootbounds:
+                elif rootbounds and line.startswith("Pricing Summary:"):
                     rootbounds = False
                 elif rootbounds:
                     line_array = line.split()
@@ -157,10 +157,30 @@ def generate_files(files):
                     for i in range(len(df)):
                         df.set_value(str(i), 'nlpvars', len(dfvar[(dfvar['rootlpsolval'] > 0) & (dfvar['rootredcostcall'] == i)]))
 
+                    df['nlpvars_cum'] = df[(df['iter'] <= i)].cumsum(axis=0)['nlpvars']
+
+                    nlpvars_total = len(dfvar[dfvar['rootlpsolval'] > 0])
+                    #nlpvars_farkas = len(dfvar[(dfvar['rootlpsolval'] > 0) & (dfvar['rootredcostcall'] == -1)])
+
+                    df['lpvars'] = df['nlpvars_cum']/nlpvars_total
+                    
+                    #for i in range(len(df)):
+                        #df.set_value(str(i), 'nlpvars_cum', df[(df['nlpvars'] > 0) & (df['iter'] <= i)].cumsum()['nlpvars'] )
+                        #print df[(df['iter'] <= i)].cumsum(axis=0)['nlpvars']
+                                            
+                    #print df
+                    
                     df['nipvars'] = 0
 
                     for i in range(len(df)):
                         df.set_value(str(i), 'nipvars', len(dfvar[(dfvar['solval'] > 0) & (dfvar['rootredcostcall'] == i)]))
+                    
+                    df['nipvars_cum'] = df[(df['iter'] <= i)].cumsum(axis=0)['nipvars']
+
+                    nipvars_total = len(dfvar[dfvar['solval'] > 0])
+                    #nlpvars_farkas = len(dfvar[(dfvar['rootlpsolval'] > 0) & (dfvar['rootredcostcall'] == -1)])
+
+                    df['ipvars'] = df['nipvars_cum']/nipvars_total
                     
                     if df.empty:
                         continue
@@ -210,9 +230,9 @@ def generate_files(files):
                     ax2 = plt.subplot(gs[2])
                     #ax3 = plt.subplot(gs[3])
                     
-                    ax1.set_ylim(bottom=0.0, top=lpmax+1) 
+                    ax1.set_ylim(bottom=0.0, top=1.1) 
                     ax1.set_xlim(left=xmin, right=xmax)
-                    ax1 = df.plot(kind='scatter', x=xaxis, y='nlpvars', color='blue', label='nlpvars', ax=ax1, secondary_y=False, s=1);
+                    ax1 = df.plot(kind='scatter', x=xaxis, y='lpvars', color='blue', label='lpvars', ax=ax1, secondary_y=False, s=1);
                     ax1.set_xticklabels([])
                     x_axis = ax1.axes.get_xaxis()
                     x_axis.set_label_text('')
@@ -222,9 +242,9 @@ def generate_files(files):
                         base = 10.0 ** (math.floor(math.log10(xmax)))
                     else:
                         base = 0.01
-                    ax2.set_ylim(bottom=0.0, top=ipmax+1)
+                    ax2.set_ylim(bottom=0.0, top=1.1)
                     ax2.set_xlim(left=xmin, right=xmax)
-                    ax2 = df.plot(kind='scatter', x=xaxis, y='nipvars', color='red', label='nipvars', ax=ax2, secondary_y=False, s=1);
+                    ax2 = df.plot(kind='scatter', x=xaxis, y='ipvars', color='red', label='ipvars', ax=ax2, secondary_y=False, s=1);
                     myLocator = mticker.MultipleLocator(base)
                     if(xaxis == 'iter' or base > 0.5):
                         majorFormatter = mticker.FormatStrFormatter('%d')
@@ -274,6 +294,8 @@ def generate_files(files):
                     ax = df.plot(kind='scatter', x=xaxis, y='db', color='blue', label=None, ax=ax, s=0.5);
                     ax = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
                     ax = df.plot(kind='line', y='dualoptdiff', color='orange', label='dualoptdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
+                    
+                    plt.ylabel('diff', fontsize=10, rotation=-90, labelpad=15)
                     
                     plt.savefig(params['outdir']+"/"+name+"_"+settings+"_"+xaxis+".png")
                     
