@@ -139,7 +139,8 @@ public:
       GCG_COL*              gcgcol,             /**< GCG column data structure */
       SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */
       SCIP_Bool*            added,              /**< pointer to store whether the variable was successfully added */
-      SCIP_VAR**            addedvar            /**< pointer to store the created variable */
+      SCIP_VAR**            addedvar,           /**< pointer to store the created variable */
+      SCIP_Real             score               /**< score of column (or -1.0 if not specified) */
    );
 
    /** performs optimal or farkas pricing */

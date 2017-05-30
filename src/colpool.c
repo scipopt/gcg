@@ -171,7 +171,7 @@ SCIP_RETCODE GCGcolpoolCreate(
    SCIP_CALL( SCIPcreateClock(scip, &(*colpool)->poolclock) );
 
    SCIP_CALL( SCIPhashtableCreate(&(*colpool)->hashtable, SCIPblkmem(scip),
-         (scip->set->misc_usesmalltables ? SCIP_HASHSIZE_COLPOOLS_SMALL :  SCIP_HASHSIZE_COLPOOLS),
+         (FALSE /*scip->set->misc_usesmalltables*/ ? SCIP_HASHSIZE_COLPOOLS_SMALL :  SCIP_HASHSIZE_COLPOOLS),
          hashGetKeyCol, hashKeyEqCol, hashKeyValCol, (void*) scip) );
 
    (*colpool)->scip = scip;

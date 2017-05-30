@@ -106,7 +106,7 @@ using namespace scip;
 #define DEFAULT_PRICE_ORTHOFAC 0.0
 #define DEFAULT_PRICE_OBJPARALFAC 0.0
 #define DEFAULT_PRICE_REDCOSTFAC 1.0
-#define DEFAULT_PRICE_MINCOLORTH 0.5
+#define DEFAULT_PRICE_MINCOLORTH 0.0
 #define DEFAULT_PRICE_EFFICIACYCHOICE 0
 
 
@@ -1988,7 +1988,8 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    GCG_COL*              gcgcol,             /**< GCG column data structure */
    SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */
    SCIP_Bool*            added,              /**< pointer to store whether the variable was successfully added */
-   SCIP_VAR**            addedvar            /**< pointer to store the created variable */
+   SCIP_VAR**            addedvar,           /**< pointer to store the created variable */
+   SCIP_Real             score               /**< score of column (or -1.0 if not specified) */
    )
 {
    char varname[SCIP_MAXSTRLEN];
@@ -2101,11 +2102,13 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    SCIP_CALL( SCIPcatchVarEvent(scip, newvar, SCIP_EVENTTYPE_VARDELETED,
          pricerdata->eventhdlr, NULL, NULL) );
 
+   if( SCIPisNegative(scip, score) )
+      score = pricerdata->dualsolconv[prob] - objvalue;
 
    /* add variable */
    if( !force )
    {
-      SCIP_CALL( SCIPaddPricedVar(scip, newvar, pricerdata->dualsolconv[prob] - objvalue) );
+      SCIP_CALL( SCIPaddPricedVar(scip, newvar, score /* pricerdata->dualsolconv[prob] - objvalue */ ) );
    }
    else
    {
@@ -2658,7 +2661,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       stabilized = optimal && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
          && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)))
-         /*&& GCGgetNLinkingvars(origprob) == 0 && GCGgetNTransvars(origprob) == 0 */;
+         /*&& GCGgetNLinkingvars(origprob) == 0 */ && GCGgetNTransvars(origprob) == 0;
 
       if( stabilized )
          stabilization->updateNode();
@@ -3176,7 +3179,8 @@ SCIP_RETCODE GCGcreateNewMasterVarFromGcgCol(
    GCG_COL*              gcgcol,             /**< GCG column data structure */
    SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */
    SCIP_Bool*            added,              /**< pointer to store whether the variable was successfully added */
-   SCIP_VAR**            addedvar            /**< pointer to store the created variable */
+   SCIP_VAR**            addedvar,           /**< pointer to store the created variable */
+   SCIP_Real             score               /**< score of column (or -1.0 if not specified) */
 )
 {
   ObjPricerGcg* pricer;
@@ -3194,7 +3198,7 @@ SCIP_RETCODE GCGcreateNewMasterVarFromGcgCol(
      pricer->getReducedCostPricingNonConst();
 
 
-  SCIP_CALL( pricer->createNewMasterVarFromGcgCol(scip, pricetype, gcgcol, force, added, addedvar) );
+  SCIP_CALL( pricer->createNewMasterVarFromGcgCol(scip, pricetype, gcgcol, force, added, addedvar, score) );
 
   return SCIP_OKAY;
 }
