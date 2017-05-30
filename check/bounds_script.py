@@ -94,7 +94,7 @@ def generate_files(files):
                 elif orig and line.startswith("Presolved Problem  :"):
                     orig = False
                 elif orig and line.startswith("  Problem name     :"):
-                    print line
+                    #print line
                     name = line.split()[3]      
                     name = name.split("/")[-1]
                     tmp_name = name.split(".")[-1]
