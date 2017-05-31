@@ -403,6 +403,7 @@ public:
    int getNMastervars(
    );
 
+   /** returns number of blocks a detector added */
    int getNNewBlocks(
       int detectorchainindex              /**< index of the detector in the detectorchain */
    );
@@ -441,26 +442,32 @@ public:
    const int* getOpenvars(
    );
 
+   /** returns fraction of variables assigned to the border for a detector */
    SCIP_Real getPctVarsToBorder(
       int detectorchainindex              /**< index of the detector in the detectorchain */
    );
 
+   /** returns fraction of variables assigned to a block for a detector */
    SCIP_Real getPctVarsToBlock(
       int detectorchainindex              /**< index of the detector in the detectorchain */
    );
 
+   /** returns fraction of variables that are not longer open for a detector */
    SCIP_Real getPctVarsFromFree(
       int detectorchainindex              /**< index of the detector in the detectorchain */
    );
 
+   /** returns fraction of constraints assigned to the border for a detector */
    SCIP_Real getPctConssToBorder(
       int detectorchainindex              /**< index of the detector in the detectorchain */
    );
 
+   /** returns fraction of constraints assigned to a block for a detector */
    SCIP_Real getPctConssToBlock(
       int detectorchainindex              /**< index of the detector in the detectorchain */
    );
 
+   /** returns fraction of constraints that are not longer open for a detector */
    SCIP_Real getPctConssFromFree(
       int detectorchainindex              /**< index of the detector in the detectorchain */
    );
@@ -587,6 +594,7 @@ public:
          int nBlocks
    );
 
+   /** sets number of new blocks created by a detector */
    void setNNewBlocks(
       int detectorchainindex,             /**< index of the detector in the detectorchain */
       int nnewblocks
@@ -602,31 +610,37 @@ public:
          bool value
    );
 
+   /** sets fraction of variables assigned to the border for a detector */
    void setPctVarsToBorder(
       int detectorchainindex,             /**< index of the detector in the detectorchain */
       SCIP_Real pct
    );
 
+   /** sets fraction of variables assigned to a block for a detector */
    void setPctVarsToBlock(
       int detectorchainindex,             /**< index of the detector in the detectorchain */
       SCIP_Real pct
    );
 
+   /** sets fraction of variables that are not longer open for a detector */
    void setPctVarsFromFree(
       int detectorchainindex,             /**< index of the detector in the detectorchain */
       SCIP_Real pct
    );
 
+   /** sets fraction of constraints assigned to the border for a detector */
    void setPctConssToBorder(
       int detectorchainindex,             /**< index of the detector in the detectorchain */
       SCIP_Real pct
    );
 
+   /** sets fraction of constraints assigned to a block for a detector */
    void setPctConssToBlock(
       int detectorchainindex,             /**< index of the detector in the detectorchain */
       SCIP_Real pct
    );
 
+   /** sets fraction of constraints that are not longer open for a detector */
    void setPctConssFromFree(
       int detectorchainindex,             /**< index of the detector in the detectorchain */
       SCIP_Real pct

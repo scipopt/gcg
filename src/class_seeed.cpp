@@ -2717,10 +2717,13 @@ int Seeed::getNLinkingvars()
    return (int)linkingVars.size();
 }
 
+/** returns number of blocks a detector added */
 int Seeed::getNNewBlocks(
       int detectorchainindex
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    return nNewBlocks[detectorchainindex];
 }
 
@@ -2820,45 +2823,63 @@ const int* Seeed::getOpenvars()
    return &openVars[0];
 }
 
+/** returns fraction of variables assigned to the border for a detector */
 SCIP_Real Seeed::getPctVarsToBorder(
    int detectorchainindex
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    return pctVarsToBorder[detectorchainindex];
 }
 
+/** returns fraction of variables assigned to a block for a detector */
 SCIP_Real Seeed::getPctVarsToBlock(
    int detectorchainindex
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    return pctVarsToBlock[detectorchainindex];
 }
 
+/** returns fraction of variables that are not longer open for a detector */
 SCIP_Real Seeed::getPctVarsFromFree(
    int detectorchainindex
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    return pctVarsFromFree[detectorchainindex];
 }
 
+/** returns fraction of constraints assigned to the border for a detector */
 SCIP_Real Seeed::getPctConssToBorder(
    int detectorchainindex
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    return pctConssToBorder[detectorchainindex];
 }
 
+/** returns fraction of constraints assigned to a block for a detector */
 SCIP_Real Seeed::getPctConssToBlock(
    int detectorchainindex
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    return pctConssToBlock[detectorchainindex];
 }
 
+/** returns fraction of constraints that are not longer open for a detector */
 SCIP_Real Seeed::getPctConssFromFree(
    int detectorchainindex
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    return pctConssFromFree[detectorchainindex];
 }
 
@@ -3220,11 +3241,14 @@ SCIP_RETCODE Seeed::setNBlocks(int newNBlocks)
    return SCIP_OKAY;
 }
 
+/** sets number of new blocks created by a detector */
 void Seeed::setNNewBlocks(
    int detectorchainindex,
    int nnewblocks
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    nNewBlocks[detectorchainindex] = nnewblocks;
 }
 
@@ -3246,48 +3270,69 @@ SCIP_RETCODE Seeed::setOpenVarsAndConssCalculated(bool value)
    return SCIP_OKAY;
 }
 
+/** sets fraction of variables assigned to the border for a detector */
 void Seeed::setPctVarsToBorder(
    int detectorchainindex,
    SCIP_Real pct
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    pctVarsToBorder[detectorchainindex] = pct;
 }
 
+/** sets fraction of variables assigned to a block for a detector */
 void Seeed::setPctVarsToBlock(
    int detectorchainindex,
    SCIP_Real pct
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    pctVarsToBlock[detectorchainindex] = pct;
 }
 
+/** sets fraction of variables that are not longer open for a detector */
 void Seeed::setPctVarsFromFree(
    int detectorchainindex,
    SCIP_Real pct
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    pctVarsFromFree[detectorchainindex] = pct;
 }
+
+/** sets fraction of constraints assigned to the border for a detector */
 void Seeed::setPctConssToBorder(
    int detectorchainindex,
    SCIP_Real pct
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    pctConssToBorder[detectorchainindex] = pct;
 }
+
+/** sets fraction of constraints assigned to a block for a detector */
 void Seeed::setPctConssToBlock(
    int detectorchainindex,
    SCIP_Real pct
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    pctConssToBlock[detectorchainindex] = pct;
 }
+
+/** sets fraction of constraints that are not longer open for a detector */
 void Seeed::setPctConssFromFree(
    int detectorchainindex,
    SCIP_Real pct
    )
 {
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorChain.size() );
+
    pctConssFromFree[detectorchainindex] = pct;
 }
 
