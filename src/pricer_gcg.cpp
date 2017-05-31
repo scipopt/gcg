@@ -1293,7 +1293,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToPricedvars(
 }
 
 #ifdef SCIP_STATISTIC
-/** adds new bounds to the bound arrays */
+/** adds new bounds to the bound arrays as well as some additional information on dual variables and root lp solution */
 SCIP_RETCODE ObjPricerGcg::addRootBounds(
    SCIP_Real             primalbound,        /**< new primal bound for the root master LP */
    SCIP_Real             dualbound           /**< new dual bound for the root master LP */
@@ -1316,7 +1316,7 @@ SCIP_RETCODE ObjPricerGcg::addRootBounds(
    pricerdata->rootdbs[pricerdata->nrootbounds] = dualbound;
    pricerdata->roottimes[pricerdata->nrootbounds] = SCIPgetSolvingTime(scip_) - pricerdata->rootfarkastime;
    pricerdata->rootdualdiffs[pricerdata->nrootbounds] = pricerdata->dualdiff;
-   //SCIPinfoMessage(scip_, NULL, "Add new bounds: \n pb = %f\n db = %f\n", primalbound, dualbound);
+
    SCIPdebugMessage("Add new bounds: \n pb = %f\n db = %f\n", primalbound, dualbound);
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &pricerdata->dualvalues[pricerdata->nrootbounds], pricerdata->npricingprobs) );
@@ -2488,11 +2488,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( stabilized )
          stabilization->updateNode();
 
-//      SCIPinfoMessage(scip_, NULL, "stab = %d\n",stabilized);
-
       stabilized = stabilized && stabilization->isStabilized();
-
-//      SCIPinfoMessage(scip_, NULL, "stab = %d\n",stabilized);
 
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
