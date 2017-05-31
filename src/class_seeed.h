@@ -106,7 +106,7 @@ public:
    std::vector<SCIP_Real>           pctConssToBorder;           /**< vector containing the fraction of constraints assigned to the border for each detector working on that seeed*/
    std::vector<SCIP_Real>           pctConssToBlock;            /**< vector containing the fraction of constraints assigned to a block for each detector working on that seeed*/
    std::vector<SCIP_Real>           pctConssFromFree;           /**< vector containing the fraction of constraints that are not longer open for each detector working on that seeed*/
-   std::vector<int>                 nNewBlocks;                 /**< vector containing detector indices that worked on that seeed */
+   std::vector<int>                 nNewBlocks;                 /**< number of new blocks of the corresponding detectors on this decomposition */
 
    std::vector<int>                 listofancestorids;          /**< vector containing detector indices that worked on that seeed */
 
@@ -403,6 +403,10 @@ public:
    int getNMastervars(
    );
 
+   int getNNewBlocks(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
    /** returns total number of stairlinking vars */
    int getNTotalStairlinkingvars(
       );
@@ -581,6 +585,11 @@ public:
    /** set number of blocks, atm only increasing number of blocks  */
    SCIP_RETCODE setNBlocks(
          int nBlocks
+   );
+
+   void setNNewBlocks(
+      int detectorchainindex,             /**< index of the detector in the detectorchain */
+      int nnewblocks
    );
 
    /** set the id */
