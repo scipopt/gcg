@@ -2815,14 +2815,14 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       seeed->setPctVarsFromFree( i, 1 - *(DECdecompGetDetectorPctVarsFromOpen( decomp )) );
       seeed->setPctVarsToBlock( i, *(DECdecompGetDetectorPctVarsToBlock( decomp )) );
       seeed->setPctVarsToBorder( i, *(DECdecompGetDetectorPctVarsToBorder( decomp )) );
+      seeed->setNNewBlocks(i, *(DECdecompGetNNewBlocks( decomp )) );
    }
 
    seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
 
-
    /*@todo detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings
+    *@todo some setters are still missing
    */
-
 
    return SCIP_OKAY;
 }
