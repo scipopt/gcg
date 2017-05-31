@@ -2801,12 +2801,26 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
   )
 {
-   SeeedPtr seeed;
+   SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nDetectors, nConss, nVars );
 
-   seeed = NULL;
+   /*fillout blocks: assigns all cons and vars to blocks (only works for complete decomps)*/
+   seeed->filloutSeeedFromConstoblock( DECdecompGetConstoblock( decomp ), DECdecompGetNBlocks( decomp ), this );
+
+   /*set all detector-related information*/
+   for( int i = 0; i < DECdecompGetDetectorChainSize( decomp ); ++i )
+   {
+      seeed->setDetectorPropagated( DECdecompGetDetectorChain( decomp )[i] );
+      seeed->addClockTime( DECdecompGetDetectorClockTimes( decomp )[i] );
+   }
+
+   seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
+
+
+   /*@todo detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings
+   */
+
 
    return SCIP_OKAY;
-
 }
 
 /**
@@ -2817,7 +2831,5 @@ SCIP_Bool Seeedpool::getTransformedInfo(
 {
    return transformed;
 }
-
-
 
 } /* namespace gcg */
