@@ -286,6 +286,7 @@ def generate_files(files):
                     varlines = {}
                     boundlines = {}
 
+                    print "   -> success"
                 elif vardetails:
                     # store details of variable
                     line_array = line.split()
