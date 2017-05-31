@@ -42,7 +42,7 @@ def parse_arguments(args):
     parser.add_argument('-o', '--outdir', type=str,
                         default="plots",
                         help='Arguments to be passed on to the performance profiler')
-                        
+
     parser.add_argument('-x', '--xaxis', type=str,
                         default="time",
                         help='Values to be used in x-axis (can be "time" or "iter")')
@@ -96,7 +96,7 @@ def generate_files(files):
                     orig = False
                 elif orig and line.startswith("  Problem name     :"):
                     # store problem name
-                    name = line.split()[3]      
+                    name = line.split()[3]
                     name = name.split("/")[-1]
                     tmp_name = name.split(".")[-1]
                     if tmp_name[-1] == "gz" or tmp_name[-1] == "z" or tmp_name[-1] == "GZ" or tmp_name[-1] == "Z":
@@ -106,7 +106,7 @@ def generate_files(files):
                 elif not rootbounds and line.startswith("Root bounds"):
                     # prepare storage of root bounds
                     rootbounds = True
-                elif rootbounds and line.startswith("iter	pb	db") and rootbounds:
+                elif rootbounds and line.startswith("iter	pb	db"):
                     # store root bounds header
                     line_array = line.split()
                     boundheader = line_array
@@ -128,28 +128,28 @@ def generate_files(files):
                     # ignore variables that were not create in the root node
                     continue
                 elif vardetails and line.startswith("Root node:"):
-                    # finished reading var details (and root bounds) 
+                    # finished reading var details (and root bounds)
                     vardetails = False
-                                     
+
                     # create dict with root bounds header
                     boundmap = {}
                     for i in range(len(boundheader)):
                         boundmap[i] = boundheader[i]
-                       
+
                     # use boundlines dict to create data frame
                     df = pd.DataFrame.from_dict(data = boundlines, orient = 'index', dtype = float)
-                 
+
                     # if no root bounds are present, ignore instance
                     if len(df) == 0:
                         print "   -> ignored"
                         continue
-                    
+
                     # use root bounds header to rename columns of data frame
                     df.rename(columns = boundmap, inplace=True)
 
                     # sort lines according to iteration
                     df.sort_values(by='iter', inplace=True)
-                    
+
                     # create var data frame from varlines dict
                     dfvar = pd.DataFrame.from_dict(data = varlines, orient = 'index', dtype = float)
 
@@ -160,10 +160,10 @@ def generate_files(files):
 
                     # use var header to rename columns of var data frame
                     dfvar.rename(columns = varmap, inplace=True)
-                    
+
                     # set index of var data frame to name of var
                     dfvar = dfvar.set_index(keys='name')
-                    
+
                     # set type of var data frame
                     dfvar=dfvar.astype(float)
 
@@ -174,68 +174,68 @@ def generate_files(files):
 
                     # create new column in data frame containing the number of lp vars generated until each iteration
                     df['nlpvars_cum'] = df[(df['iter'] <= i)].cumsum(axis=0)['nlpvars']
-                    
+
                     # compute total number of vars in root lp solution
                     nlpvars_total = len(dfvar[dfvar['rootlpsolval'] > 0])
 
                     # create new column in data frame containing the percentage of lp vars generated until each iteration
                     df['lpvars'] = df['nlpvars_cum']/nlpvars_total
-                    
+
                     # repeat this for the vars (generated at the root) in ip solution
                     df['nipvars'] = 0
 
                     for i in range(len(df)):
                         df.set_value(str(i), 'nipvars', len(dfvar[(dfvar['solval'] > 0) & (dfvar['rootredcostcall'] == i)]))
-                    
+
                     df['nipvars_cum'] = df[(df['iter'] <= i)].cumsum(axis=0)['nipvars']
 
                     nipvars_total = len(dfvar[dfvar['solval'] > 0])
 
                     df['ipvars'] = df['nipvars_cum']/nipvars_total
-                    
+
                     # set type of data frame
                     df=df.astype(float)
-                    
+
                     # set infty
                     infty = 10.0 ** 20
-                    
+
                     # set dual bounds of -infinity to NAN
-                    df['db'][df['db'] <= -infty] = np.nan                    
-                    
+                    df['db'][df['db'] <= -infty] = np.nan
+
                     # workaround for iterations that were done at the same time (SCIP only counts in 1/100 of a second)
-                    df['time_count'] = df.groupby('time')['time'].transform('count') 
-                    df['time_first'] = df.groupby('time')['iter'].transform('first')                     
-                    df['time'] = df['time'] + 0.01*(df['iter'] - df['time_first'])/df['time_count']                    
+                    df['time_count'] = df.groupby('time')['time'].transform('count')
+                    df['time_first'] = df.groupby('time')['iter'].transform('first')
+                    df['time'] = df['time'] + 0.01*(df['iter'] - df['time_first'])/df['time_count']
                     df['time_diff'] = df["time"].diff(1)
                     df['time_diff'][0] = df['time'][0]
-                    
+
                     # set maximum and minimum of x values (time or iterations) to synchronize the plots
                     xmax = df[xaxis].max()
                     xmin = df[xaxis].min()
-                    
-                    # set index to time or oterations (depending on which is used)                                    
+
+                    # set index to time or oterations (depending on which is used)
                     df = df.set_index(keys=xaxis, drop=False)
-                    
+
                     # create grid of 3 plots
-                    gs = gridspec.GridSpec(3, 1, height_ratios=[3, 1, 1]) 
+                    gs = gridspec.GridSpec(3, 1, height_ratios=[3, 1, 1])
                     ax = plt.subplot(gs[0])
                     ax1 = plt.subplot(gs[1])
                     ax2 = plt.subplot(gs[2])
 
-                    # lp vars plot                    
-                    ax1.set_ylim(bottom=0.0, top=1.1) 
+                    # lp vars plot
+                    ax1.set_ylim(bottom=0.0, top=1.1)
                     ax1.set_xlim(left=xmin, right=xmax)
                     ax1 = df.plot(kind='scatter', x=xaxis, y='lpvars', color='blue', label='lpvars', ax=ax1, secondary_y=False, s=1);
                     ax1.set_xticklabels([])
                     x_axis = ax1.axes.get_xaxis()
                     x_axis.set_label_text('')
-                    x_axis.set_visible(False)                    
-                        
+                    x_axis.set_visible(False)
+
                     # ip vars plot
                     ax2.set_ylim(bottom=0.0, top=1.1)
                     ax2.set_xlim(left=xmin, right=xmax)
                     ax2 = df.plot(kind='scatter', x=xaxis, y='ipvars', color='red', label='ipvars', ax=ax2, secondary_y=False, s=1);
-                    
+
                     # set base for x labels
                     if( xmax > 0 ):
                         base = 10.0 ** (math.floor(math.log10(xmax)))
@@ -252,10 +252,10 @@ def generate_files(files):
                     ax2.xaxis.set_major_formatter(majorFormatter)
                     fixedFormatter = mticker.FormatStrFormatter('%g')
                     ax2.xaxis.set_major_formatter(fixedFormatter)
-                    ax2.xaxis.set_minor_locator(plt.NullLocator())                                    
+                    ax2.xaxis.set_minor_locator(plt.NullLocator())
                     lim = ax2.get_xlim()
                     ax2.set_xticks(list(ax2.get_xticks()) + [xmax])
-                    ax2.set_xlim(lim)                    
+                    ax2.set_xlim(lim)
                     ax2.xaxis.get_major_ticks()[-1].set_pad(15)
 
                     # set limits and lables for bounds/dualdiff  plot
@@ -271,13 +271,13 @@ def generate_files(files):
                     ax = df.plot(kind='scatter', x=xaxis, y='db', color='blue', label=None, ax=ax, s=0.5);
                     ax = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
                     ax = df.plot(kind='line', y='dualoptdiff', color='orange', label='dualoptdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
-                    
+
                     # set y label of secondary y-axis
                     plt.ylabel('diff', fontsize=10, rotation=-90, labelpad=15)
-                    
+
                     # save figure
                     plt.savefig(params['outdir']+"/"+name+"_"+settings+"_"+xaxis+".png")
-                    
+
                     # reset python variables for next instance
                     df = None
                     dfvar = None
@@ -285,7 +285,7 @@ def generate_files(files):
                     varheader = None
                     varlines = {}
                     boundlines = {}
-                    
+
                 elif vardetails:
                     # store details of variable
                     line_array = line.split()
