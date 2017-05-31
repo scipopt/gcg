@@ -2480,8 +2480,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
   )
 {
 
-   char detectorchaininfo[SCIP_MAXSTRLEN];
-
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* varindex;
@@ -2811,6 +2809,12 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    {
       seeed->setDetectorPropagated( DECdecompGetDetectorChain( decomp )[i] );
       seeed->addClockTime( DECdecompGetDetectorClockTimes( decomp )[i] );
+      seeed->setPctConssFromFree( i, 1 - *(DECdecompGetDetectorPctConssFromOpen( decomp )) );
+      seeed->setPctConssToBlock( i, *(DECdecompGetDetectorPctConssToBlock( decomp )) );
+      seeed->setPctConssToBorder( i, *(DECdecompGetDetectorPctConssToBorder( decomp )) );
+      seeed->setPctVarsFromFree( i, 1 - *(DECdecompGetDetectorPctVarsFromOpen( decomp )) );
+      seeed->setPctVarsToBlock( i, *(DECdecompGetDetectorPctVarsToBlock( decomp )) );
+      seeed->setPctVarsToBorder( i, *(DECdecompGetDetectorPctVarsToBorder( decomp )) );
    }
 
    seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
