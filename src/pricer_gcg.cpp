@@ -36,9 +36,12 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+//#define SCIP_DEBUG
+
 #include <cassert>
 #include <cstring>
+
+#define SCIP_STATISTIC
 
 /*lint -e64 disable useless and wrong lint warning */
 
@@ -2456,6 +2459,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    colpoolupdated = FALSE;
 
+#ifdef SCIP_STATISTIC
+
    if( pricerdata->nroundsredcost > 0 && pricetype->getType() == GCG_PRICETYPE_REDCOST )
    {
       SCIP_CALL( SCIPallocBufferArray(scip_, &olddualvalues, pricerdata->npricingprobs) );
@@ -2475,7 +2480,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             olddualvalues[i][j] = pricerdata->realdualvalues[i][j];
       }
    }
-
+#endif
 
    do
    {
@@ -2837,23 +2842,25 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       *result = SCIP_DIDNOTRUN;
 
 #ifdef SCIP_STATISTIC
-   if( pricerdata->nroundsredcost > 0 && pricetype->getType() == GCG_PRICETYPE_REDCOST && pricerdata->nrootbounds != pricerdata->dualdiffround )
+   if( pricerdata->nroundsredcost > 0 && pricetype->getType() == GCG_PRICETYPE_REDCOST )
    {
-      SCIP_Real dualdiff;
+      if( pricerdata->nrootbounds != pricerdata->dualdiffround )
+      {
+         SCIP_Real dualdiff;
+         SCIP_CALL( computeDualDiff(olddualvalues, olddualconv, pricerdata->realdualvalues, pricerdata->dualsolconv, &dualdiff) );
+         pricerdata->dualdiffround = pricerdata->nrootbounds;
+         pricerdata->dualdiff = dualdiff;
+      }
 
-      SCIP_CALL( computeDualDiff(olddualvalues, olddualconv, pricerdata->realdualvalues, pricerdata->dualsolconv, &dualdiff) );
-
-      for( i = 0; i < pricerdata->npricingprobs; i++ )
+      for( i = pricerdata->npricingprobs - 1; i >= 0; i-- )
       {
          if( pricerdata->pricingprobs[i] == NULL )
             continue;
          SCIPfreeBufferArray(scip_, &(olddualvalues[i]));
       }
-      SCIPfreeBufferArray(scip_, &olddualvalues);
       SCIPfreeBufferArray(scip_, &olddualconv);
+      SCIPfreeBufferArray(scip_, &olddualvalues);
 
-      pricerdata->dualdiffround = pricerdata->nrootbounds;
-      pricerdata->dualdiff = dualdiff;
    }
    else if( pricerdata->nrootbounds != pricerdata->dualdiffround )
    {
@@ -3205,7 +3212,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    BMSclearMemoryArray(pricerdata->nodetimehist, PRICER_STAT_ARRAYLEN_TIME);
    BMSclearMemoryArray(pricerdata->foundvarshist, PRICER_STAT_ARRAYLEN_VARS);
 
-   pricerdata->oldvars=0;
+   pricerdata->oldvars = 0;
 
    pricerdata->npricingprobsnotnull = 0;
 
@@ -3281,6 +3288,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->dualdiffround = -1;
    pricerdata->nrootbounds = 0;
    pricerdata->maxrootbounds = 50;
+   pricerdata->nroundsredcost = 0;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->rootdbs, pricerdata->maxrootbounds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->roottimes, pricerdata->maxrootbounds) );
@@ -4151,8 +4159,8 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
       representative = GCGgetBlockRepresentative(origprob, i);
       npricingvars[i] = 0;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars[i], SCIPgetNVars(pricerdata->pricingprobs[representative])) ); /*lint !e866*/
-      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals[i], SCIPgetNVars(pricerdata->pricingprobs[representative])) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &(pricingvars[i]), SCIPgetNVars(pricerdata->pricingprobs[representative])) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &(pricingvals[i]), SCIPgetNVars(pricerdata->pricingprobs[representative])) ); /*lint !e866*/
    }
 
    /* get solution values */
@@ -4243,8 +4251,8 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    /* free memory for storing variables and solution values from the solution */
    for( i = pricerdata->npricingprobs - 1; i>= 0; i-- )
    {
-      SCIPfreeBufferArray(scip, &pricingvals[i]);
-      SCIPfreeBufferArray(scip, &pricingvars[i]);
+      SCIPfreeBufferArray(scip, &(pricingvals[i]));
+      SCIPfreeBufferArray(scip, &(pricingvars[i]));
    }
 
    SCIPfreeBufferArray(scip, &npricingvars);
