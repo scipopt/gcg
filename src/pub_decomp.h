@@ -491,15 +491,6 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    int*                  transferred         /**< number of master constraints reassigned */
    );
 
-/** removes a variable from the linking variable array */
-extern
-SCIP_RETCODE DECdecompRemoveLinkingVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition data structure */
-   SCIP_VAR*             var,                /**< variable to remove */
-   SCIP_Bool*            success             /**< indicates whether the variable was successfully removed */
-   );
-
 /** tries to assign masterconss to new pricing problem */
 extern
 SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
