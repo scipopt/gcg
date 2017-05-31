@@ -378,6 +378,21 @@ SCIP_Real GCGgetCreationTime(
    SCIP_VAR*             var                 /**< created variable */
    );
 
+/** store pricing reduced cost call */
+extern
+void GCGsetRootRedcostCall(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable data structure */
+   SCIP_Longint          rootredcostcall     /**< iteration at which the variable is created */
+   );
+
+/** return stored pricing reduced cost call */
+extern
+SCIP_Longint GCGgetRootRedcostCall(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
+   );
+
 /** returns the iteration when the var was created */
 extern
 SCIP_Longint GCGgetIteration(
