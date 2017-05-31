@@ -527,6 +527,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
    SCIP_Bool conssclassconsnamenonumbers;
    SCIP_Bool conssclassconsnamelevenshtein;
    SCIP_Bool varclassscipvartypes;
+   SCIP_Bool varclassobjvals;
 
    if( transformed )
      {
@@ -535,6 +536,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
         SCIPgetBoolParam(scip, "detection/consclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
         SCIPgetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
         SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/enabled", &varclassscipvartypes);
+        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", &varclassobjvals);
      }
      else
      {
@@ -543,6 +545,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
         SCIPgetBoolParam(scip, "detection/consclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
         SCIPgetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
         SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", &varclassscipvartypes);
+        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", &varclassobjvals);
      }
 
      std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
@@ -558,6 +561,8 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
      if ( varclassscipvartypes )
         addVarClassifier( createVarClassifierForSCIPVartypes() );
+     if ( varclassobjvals )
+        addVarClassifier( createVarClassifierForObjValues() );
 
      reduceConsclasses();
      reduceVarclasses();
@@ -2311,10 +2316,74 @@ VarClassifier* Seeedpool::getVarClassifier( int givenClassifierIndex )
    return varclassescollection[givenClassifierIndex];
 }
 
+/** returns a new variable classifier
+ *  where all variables with identical objective function value are assigned to the same class */
+VarClassifier* Seeedpool::createVarClassifierForObjValues()
+{
+   std::vector<SCIP_Real> foundobjvals( 0 ); /** all found objective fuction values */
+   std::vector<int> classforvars( getNVars(), -1 ); /** vector assigning a class index to each variable */
+   int curclassindex; /** stores a var's classindex if the objective value of a var has already been found for another var */
+   SCIP_Real curobjval;
+   VarClassifier* classifier; /** new VarClassifier */
+
+   for( int v = 0; v < getNVars(); ++v )
+   {
+      assert( getVarForIndex( v ) != NULL );
+      curobjval = SCIPvarGetObj( getVarForIndex( v ) );
+      curclassindex = -1;
+
+      /** check whether current objective funtion value already exists */
+      for( size_t c = 0; c < foundobjvals.size(); ++c )
+      {
+         /* TODO is == operator adequate for comparing SCIP_Real? - I did not find a compare function */
+         if( curobjval == foundobjvals[c] )
+         {
+            curclassindex = c;
+            break;
+         }
+      }
+
+      /** assign var to class and save objective function value, if it is new */
+      if( curclassindex == -1 )
+      {
+         foundobjvals.push_back( curobjval );
+         classforvars[v] = foundobjvals.size() - 1;
+      }
+      else
+      {
+         classforvars[v] = curclassindex;
+      }
+   }
+
+   classifier = new VarClassifier( scip, "varobjvals", (int) foundobjvals.size(), getNVars() );
+
+   /** set up class information */
+   for ( int c = 0; c < classifier->getNClasses(); ++c )
+   {
+      std::stringstream name;
+      std::stringstream text;
+
+      name << std::setprecision( 5 ) << foundobjvals[c];
+      text << "This class contains all variables with objective function value " << name.str() << ".";
+
+      classifier->setClassName( c, name.str().c_str() );
+      classifier->setClassDescription( c, text.str().c_str() );
+   }
+
+   /** assign vars according to classforvars vactor */
+   for ( int v = 0; v < classifier->getNVars(); ++v )
+   {
+      classifier->assignVarToClass( v, classforvars[v] );
+   }
+
+   std::cout << " varclassifier varobjvals:" << " yields a classification with " << classifier->getNClasses() << " different variable classes" << std::endl;
+
+   return classifier;
+}
+
 VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
 {
    std::vector<SCIP_VARTYPE> foundVartypes(0);
-   std::vector<int> vartypesIndices(0);
    std::vector<int> classForVars = std::vector<int>(getNVars(), -1);
    VarClassifier* classifier;
 

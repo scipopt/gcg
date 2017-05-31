@@ -84,9 +84,9 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_ENABLEORIGDETECTION TRUE /**< indicates whether to start detection for the original problem */
 
 #define DEFAULT_CONSSCLASSNNONZENABLED                TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled */
-#define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE     /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
+#define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
 
-#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED         TRUE     /**< indicates whether constraint classifier for scipconstype is enabled */
+#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED         TRUE    /**< indicates whether constraint classifier for scipconstype is enabled */
 #define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     TRUE    /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED     FALSE    /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
@@ -98,8 +98,11 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_VARCLASSSCIPVARTYPESENABLED           TRUE     /**< indicates whether variable classifier for scipvartypes is enabled */
 #define DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG       TRUE     /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
 
+#define DEFAULT_VARCLASSOBJVALSENABLED                TRUE     /**< indicates whether variable classifier for objective function values is enabled */
+#define DEFAULT_VARCLASSOBJVALSENABLEDORIG            TRUE     /**< indicates whether variable classifier for objective function values is enabled for the original problem */
+
 #define DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER    10000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis default */
-#define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
+#define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000   /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
 #define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000     /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
 
 /*
@@ -133,6 +136,8 @@ struct SCIP_ConshdlrData
    SCIP_Bool             conssclasslevenshteinenabledorig;  /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
    SCIP_Bool             varclassvartypesenabled;           /**< indicates whether variable classifier for scipvartypes is enabled */
    SCIP_Bool             varclassvartypesenabledorig;       /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
+   SCIP_Bool             varclassobjvalsenabled;            /**< indicates whether variable classifier for objective function values is enabled */
+   SCIP_Bool             varclassobjvalsenabledorig;        /**< indicates whether variable classifier for objective function values is enabled for the original problem */
 
    int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
    int*                  nCandidates;
@@ -686,6 +691,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/consnamelevenshtein/origenabled", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem", &conshdlrdata->conssclasslevenshteinenabledorig, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/enabled", "indicates whether variable classifier for scipvartypes is enabled", &conshdlrdata->varclassvartypesenabled, FALSE, DEFAULT_VARCLASSSCIPVARTYPESENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", "indicates whether variable classifier for scipvartypes is enabled for the original problem", &conshdlrdata->varclassvartypesenabledorig, FALSE, DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", "indicates whether variable classifier for objective function values is enabled", &conshdlrdata->varclassobjvalsenabled, FALSE, DEFAULT_VARCLASSOBJVALSENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", "indicates whether variable classifier for objective function values is enabled for the original problem", &conshdlrdata->varclassobjvalsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
