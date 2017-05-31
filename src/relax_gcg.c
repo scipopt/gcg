@@ -178,7 +178,6 @@ SCIP_RETCODE setOriginalVarBlockNr(
    /* var belongs to no block so far, just set the new block number */
    if( blocknr == -1 )
    {
-      relaxdata->ntransvars++;
       GCGvarSetBlock(var, newblock);
    }
    /* if var already belongs to another block, it is a linking variable */
@@ -1243,6 +1242,7 @@ SCIP_RETCODE createPricingVariables(
          assert(GCGvarGetBlock(probvar) == -1);
          assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
          SCIPdebugPrintf("master!\n");
+         relaxdata->ntransvars++;
       }
       assert(SCIPhashmapExists(relaxdata->hashorig2origvar, probvar));
    }
@@ -2354,7 +2354,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
       /* set the lower bound pointer */
       if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
+      {
          *lowerbound = SCIPgetLocalDualbound(masterprob);
+
+      }
       else
       {
          SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));

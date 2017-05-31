@@ -214,11 +214,13 @@ do
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
                 echo display statistics            >> $TMPFILE
+                echo display additionalstatistics  >> $TMPFILE
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
                 echo write prob bip\/$NAME-dec.bip >> $TMPFILE
                 echo display statistics            >> $TMPFILE
+                echo display additionalstatistics  >> $TMPFILE
             elif test $MODE = "detectall"
             then
                 echo presolve                      >> $TMPFILE
@@ -260,6 +262,7 @@ EOF
                 fi
                 echo optimize                      >> $TMPFILE
                 echo display statistics            >> $TMPFILE
+                echo display additionalstatistics  >> $TMPFILE
 #               echo display additionalstatistics  >> $TMPFILE
 #               echo display solution              >> $TMPFILE
                 echo checksol                      >> $TMPFILE
