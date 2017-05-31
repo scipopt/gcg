@@ -2717,6 +2717,13 @@ int Seeed::getNLinkingvars()
    return (int)linkingVars.size();
 }
 
+int Seeed::getNNewBlocks(
+      int detectorchainindex
+   )
+{
+   return nNewBlocks[detectorchainindex];
+}
+
 /** returns vector containing master conss */
 int Seeed::getNMasterconss()
 {
@@ -3211,6 +3218,14 @@ SCIP_RETCODE Seeed::setNBlocks(int newNBlocks)
    nBlocks = newNBlocks;
 
    return SCIP_OKAY;
+}
+
+void Seeed::setNNewBlocks(
+   int detectorchainindex,
+   int nnewblocks
+   )
+{
+   nNewBlocks[detectorchainindex] = nnewblocks;
 }
 
 SCIP_RETCODE Seeed::setID(
