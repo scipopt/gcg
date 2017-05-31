@@ -801,7 +801,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
 
       seeed = conshdlrdata->listall->at(i);
 
-      assert( seeed->checkConsistency(conshdlrdata->seeedpool) ); // TODO correct?
+      assert( seeed->checkConsistency( conshdlrdata->seeedpool, false ) ); // TODO correct?
 
       SCIPdialogMessage(scip, NULL, " %4d   ", i );
       SCIPdialogMessage(scip, NULL, "%5d  ", seeed->getNBlocks() );
@@ -2292,7 +2292,7 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       SeeedPtr finseeed = seeedpoolunpresolved->getFinishedSeeed(i);
       if( finseeed->isComplete() )
       {
-         assert( finseeed->checkConsistency(seeedpoolunpresolved) );
+         assert( finseeed->checkConsistency( seeedpoolunpresolved, false ) );
          seeedstotranslate.push_back(finseeed);
       }
    }

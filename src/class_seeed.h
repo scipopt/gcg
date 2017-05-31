@@ -227,7 +227,10 @@ public:
 
    /** returns true if the assignments in the seeed are consistent */
    bool checkConsistency(
-      Seeedpool* seeedpool          /**< a seeedpool that uses this seeed */
+      Seeedpool* seeedpool,               /**< a seeedpool that uses this seeed */
+      bool considerImplicitAssignments    /**< pass true if you want to additionally check whether every var that
+                                               hits a block cons is assigned to a block, is linking or stairlinking,
+                                               i.e. especially not open but assigned consistently */
    );
 
    /** assigns all open constraints and open variables

@@ -870,7 +870,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
                seeedPropData->newSeeeds[j]->setID( getNewIdForSeeed() );
                prepareSeeed( seeedPropData->newSeeeds[j] );
-               assert( seeedPropData->newSeeeds[j]->checkConsistency( this ) );
+               assert( seeedPropData->newSeeeds[j]->checkConsistency( this, true ) );
                seeedPropData->newSeeeds[j]->addDecChangesFromAncestor( seeedPtr );
             }
 
@@ -1135,7 +1135,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
    for( size_t i = 0; i < finishedSeeeds.size(); ++i )
    {
-      assert( finishedSeeeds[i]->checkConsistency( this ) );
+      assert( finishedSeeeds[i]->checkConsistency( this, true ) );
       assert( finishedSeeeds[i]->getNOpenconss() == 0 );
       assert( finishedSeeeds[i]->getNOpenvars() == 0);
 
@@ -1585,7 +1585,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->deleteEmptyBlocks();
       newseeed->evaluate( this);
 
-      if( newseeed->checkConsistency( this ) )
+      if( newseeed->checkConsistency( this, true ) )
          newseeeds.push_back( newseeed );
       else
       {
@@ -2876,7 +2876,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    int size;
 
-   assert( seeed->checkConsistency( this ) );
+   assert( seeed->checkConsistency( this, true ) );
 
    /* create decomp data structure */
    SCIP_CALL_ABORT( DECdecompCreate( scip, newdecomp ) );

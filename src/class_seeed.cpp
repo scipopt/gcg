@@ -250,7 +250,7 @@ SCIP_RETCODE Seeed::assignBorderFromConstoblock(
    flushBooked();
 
    sort();
-   assert( checkConsistency( seeedpool ) );
+   assert( checkConsistency( seeedpool, false ) );
    return SCIP_OKAY;
 }
 
@@ -651,7 +651,7 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblock(
 
    deleteEmptyBlocks();
    sort();
-   assert( checkConsistency( seeedpool ) );
+   assert( checkConsistency( seeedpool, false ) );
    return SCIP_OKAY;
 }
 
@@ -693,7 +693,7 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblockVector(
 
    deleteEmptyBlocks();
    sort();
-   assert( checkConsistency( seeedpool ) );
+   assert( checkConsistency( seeedpool, false ) );
    return SCIP_OKAY;
 }
 
@@ -848,7 +848,8 @@ bool Seeed::checkAllConssAssigned()
 
 /** returns true if the assignments in the seeed are consistent */
 bool Seeed::checkConsistency(
-   Seeedpool* seeedpool
+   Seeedpool* seeedpool,
+   bool considerImplicitAssignments
    )
 {
    std::vector<bool> openVarsBool( nVars, true );
@@ -1114,6 +1115,29 @@ bool Seeed::checkConsistency(
       value = getMasterconss()[v];
    }
 
+   /** if desired, check if nonzero entries are either in a block or border */
+   if ( considerImplicitAssignments )
+   {
+      for( int b = 0; b < nBlocks; ++b )
+      {
+         for( int c = 0; c < getNConssForBlock(b); ++c )
+         {
+            for( int v = 0; v < seeedpool->getNVarsForCons(getConssForBlock(b)[c]); ++v )
+            {
+               int varid = seeedpool->getVarsForCons(getConssForBlock(b)[c])[v];
+
+               if( !(isVarBlockvarOfBlock(varid, b) || isVarLinkingvar(varid) || isVarStairlinkingvarOfBlock(varid, b)) )
+               {
+                  SCIPwarningMessage(scip,
+                     "WARNING! Variable %d is not part of block %d or linking as constraint %d suggests! \n ", varid, b,
+                     getConssForBlock(b)[c]);
+                  return false;
+               }
+            }
+         }
+      }
+   }
+
    return true;
 }
 
@@ -1253,7 +1277,7 @@ SCIP_RETCODE Seeed::completeByConnected(
    assert( openVars.empty() );
 
    sort();
-   assert( checkConsistency( seeedpool ) );
+   assert( checkConsistency( seeedpool, false ) );
 
    return SCIP_OKAY;
 }
@@ -1468,7 +1492,7 @@ SCIP_RETCODE Seeed::completeGreedily(
    }
 
    sort();
-   assert( checkConsistency( seeedpool ) );
+   assert( checkConsistency( seeedpool, false ) );
 
    return SCIP_OKAY;
 }
@@ -2136,7 +2160,7 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock(
    nBlocks = 0;
    sort();
 
-   assert( checkConsistency( seeedpool ) );
+   assert( checkConsistency( seeedpool, false ) );
 
    return SCIP_OKAY;
 }
@@ -2238,7 +2262,7 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock(
 
    deleteEmptyBlocks();
    sort();
-   assert( checkConsistency( seeedpool ) );
+   assert( checkConsistency( seeedpool, false ) );
 
    return SCIP_OKAY;
 }
