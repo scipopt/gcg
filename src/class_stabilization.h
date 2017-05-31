@@ -64,6 +64,7 @@ private:
    int nsubgradientcuts;
    SCIP_Real* subgradientlinkingconss;
    int nsubgradientlinkingconss;
+   SCIP_Real* subgradientconv;
    SCIP_Real subgradientnorm;
    SCIP_Real hybridfactor;
    PricingType* pricingtype;
