@@ -255,7 +255,7 @@ private:
       int                   size                /**< needed size */
    );
 
-   /** adds new bounds to the bound arrays */
+   /** adds new bounds to the bound arrays as well as some additional information on dual variables and root lp solution */
    SCIP_RETCODE addRootBounds(
       SCIP_Real             primalbound,        /**< new primal bound for the root master LP */
       SCIP_Real             dualbound           /**< new dual bound for the root master LP */

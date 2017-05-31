@@ -47,7 +47,7 @@ extern "C" {
  *
  *  - SCIP_PARAMSETTING_DEFAULT which are the default values of all heuristic parameters
  *  - SCIP_PARAMSETTING_FAST such that the time spent for heuristic is decreased
- *  - SCIP_PARAMSETTING_AGGRESSIVE such that the heuristic are called more aggregative
+ *  - SCIP_PARAMSETTING_AGGRESSIVE such that the heuristic are called more aggressively
  *  - SCIP_PARAMSETTING_OFF which turns off all heuristics
  */
 SCIP_RETCODE GCGsetHeuristics(

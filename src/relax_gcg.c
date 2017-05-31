@@ -2352,35 +2352,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          return SCIP_OKAY;
       }
 
-//      if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && SCIPgetNNodes(masterprob) == 1 )
-//      {
-//         SCIP_SOL* sol;
-//
-//         SCIPcreateSolCopy(masterprob, &sol, SCIPgetBestSol(masterprob));
-//         SCIP_CALL( GCGmasterSetRootLPSol(masterprob, &sol) );
-//      }
-//      else if( SCIPgetCurrentNode(masterprob) == SCIPgetRootNode(masterprob) && (SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING) )
-//      {
-//         SCIP_SOL* sol;
-//         SCIP_Real* solvals;
-//         SCIP_VAR** vars;
-//         int nvars;
-//
-//         nvars = SCIPgetNVars(masterprob);
-//         vars = SCIPgetVars(masterprob);
-//
-//         SCIP_CALL( SCIPallocMemoryArray(masterprob, &solvals, nvars) );
-//
-//         SCIP_CALL( SCIPgetSolVals(masterprob, NULL, nvars, vars, solvals) );
-//
-//         SCIP_CALL( SCIPcreateSol(masterprob, &sol, NULL) );
-//
-//         SCIP_CALL( SCIPsetSolVals(masterprob, sol, nvars, vars, solvals) );
-//
-//         SCIP_CALL( GCGmasterSetRootLPSol(masterprob, &sol) );
-//
-//         SCIPfreeMemoryArray(masterprob, &solvals);
-//      }
       /* set the lower bound pointer */
       if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
       {
