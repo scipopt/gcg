@@ -437,6 +437,30 @@ public:
    const int* getOpenvars(
    );
 
+   SCIP_Real getPctVarsToBorder(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
+   SCIP_Real getPctVarsToBlock(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
+   SCIP_Real getPctVarsFromFree(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
+   SCIP_Real getPctConssToBorder(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
+   SCIP_Real getPctConssToBlock(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
+   SCIP_Real getPctConssFromFree(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
    /** returns vector containing stairlinking vars */
    const int* getStairlinkingvars(
          int block
@@ -567,6 +591,36 @@ public:
 
    SCIP_RETCODE setOpenVarsAndConssCalculated(
          bool value
+   );
+
+   void setPctVarsToBorder(
+      int detectorchainindex,             /**< index of the detector in the detectorchain */
+      SCIP_Real pct
+   );
+
+   void setPctVarsToBlock(
+      int detectorchainindex,             /**< index of the detector in the detectorchain */
+      SCIP_Real pct
+   );
+
+   void setPctVarsFromFree(
+      int detectorchainindex,             /**< index of the detector in the detectorchain */
+      SCIP_Real pct
+   );
+
+   void setPctConssToBorder(
+      int detectorchainindex,             /**< index of the detector in the detectorchain */
+      SCIP_Real pct
+   );
+
+   void setPctConssToBlock(
+      int detectorchainindex,             /**< index of the detector in the detectorchain */
+      SCIP_Real pct
+   );
+
+   void setPctConssFromFree(
+      int detectorchainindex,             /**< index of the detector in the detectorchain */
+      SCIP_Real pct
    );
 
    void setSelected(

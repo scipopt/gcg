@@ -2813,6 +2813,48 @@ const int* Seeed::getOpenvars()
    return &openVars[0];
 }
 
+SCIP_Real Seeed::getPctVarsToBorder(
+   int detectorchainindex
+   )
+{
+   return pctVarsToBorder[detectorchainindex];
+}
+
+SCIP_Real Seeed::getPctVarsToBlock(
+   int detectorchainindex
+   )
+{
+   return pctVarsToBlock[detectorchainindex];
+}
+
+SCIP_Real Seeed::getPctVarsFromFree(
+   int detectorchainindex
+   )
+{
+   return pctVarsFromFree[detectorchainindex];
+}
+
+SCIP_Real Seeed::getPctConssToBorder(
+   int detectorchainindex
+   )
+{
+   return pctConssToBorder[detectorchainindex];
+}
+
+SCIP_Real Seeed::getPctConssToBlock(
+   int detectorchainindex
+   )
+{
+   return pctConssToBlock[detectorchainindex];
+}
+
+SCIP_Real Seeed::getPctConssFromFree(
+   int detectorchainindex
+   )
+{
+   return pctConssFromFree[detectorchainindex];
+}
+
 /** returns vector containing stairlinking vars */
 const int* Seeed::getStairlinkingvars(int block)
 {
@@ -3187,6 +3229,51 @@ SCIP_RETCODE Seeed::setOpenVarsAndConssCalculated(bool value)
 {
    openVarsAndConssCalculated = value;
    return SCIP_OKAY;
+}
+
+void Seeed::setPctVarsToBorder(
+   int detectorchainindex,
+   SCIP_Real pct
+   )
+{
+   pctVarsToBorder[detectorchainindex] = pct;
+}
+
+void Seeed::setPctVarsToBlock(
+   int detectorchainindex,
+   SCIP_Real pct
+   )
+{
+   pctVarsToBlock[detectorchainindex] = pct;
+}
+
+void Seeed::setPctVarsFromFree(
+   int detectorchainindex,
+   SCIP_Real pct
+   )
+{
+   pctVarsFromFree[detectorchainindex] = pct;
+}
+void Seeed::setPctConssToBorder(
+   int detectorchainindex,
+   SCIP_Real pct
+   )
+{
+   pctConssToBorder[detectorchainindex] = pct;
+}
+void Seeed::setPctConssToBlock(
+   int detectorchainindex,
+   SCIP_Real pct
+   )
+{
+   pctConssToBlock[detectorchainindex] = pct;
+}
+void Seeed::setPctConssFromFree(
+   int detectorchainindex,
+   SCIP_Real pct
+   )
+{
+   pctConssFromFree[detectorchainindex] = pct;
 }
 
 /** set selection information about this seeed */
