@@ -135,7 +135,7 @@ std::string getSeeedFolderLatex(
 }
 
 /** returns true if there exists an unfinished child in childsfinished array */
-SCIP_Bool unfinishedchildexists(
+SCIP_Bool unfinishedChildExists(
    std::vector<SCIP_Bool> const& childsfinished
    )
 {
@@ -148,7 +148,7 @@ SCIP_Bool unfinishedchildexists(
 }
 
 /** returns first unfinished child in childfinished array (-1 if there is none) */
-int getfirstunfinishedchild(
+int getFirstUnfinishedChild(
    std::vector<SCIP_Bool> const& childsfinished,
    std::vector<int> const& childs
    )
@@ -162,7 +162,7 @@ int getfirstunfinishedchild(
 }
 
 /** returns index of first unfinished child in childfinished array (-1 if there is none) */
-int getfirstunfinishedchildid(
+int getFirstUnfinishedChildId(
    std::vector<SCIP_Bool> const& childsfinished,
    std::vector<int> const& childs
    )
@@ -177,7 +177,7 @@ int getfirstunfinishedchildid(
 
 /** sets next possible child finished (should equal child)
  *  returns true if next child is the last unfinished child */
-SCIP_Bool finishnextchild(
+SCIP_Bool finishNextChild(
    std::vector<int>& childs,
    std::vector<SCIP_Bool>& childsfinished,
    int child
@@ -318,29 +318,29 @@ SCIP_Bool cmpSeeedsMaxWhite(
 
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout(
-   std::vector<SeeedPtr> finishedSeeeds,
-   size_t nDecomps,
-   SCIP_Bool addTrivialDecomp
+   std::vector<SeeedPtr> finishedseeeds,
+   size_t ndecomps,
+   SCIP_Bool addtrivialdecomp
    )
 {
-   std::vector<SeeedPtr> justBest( 0 );
-   for( size_t dec = 0; dec < nDecomps && dec < finishedSeeeds.size(); ++dec )
+   std::vector<SeeedPtr> justbest( 0 );
+   for( size_t dec = 0; dec < ndecomps && dec < finishedseeeds.size(); ++dec )
    {
-      justBest.push_back( finishedSeeeds[dec] );
+      justbest.push_back( finishedseeeds[dec] );
    }
 
-   if( addTrivialDecomp )
+   if( addtrivialdecomp )
    {
-      for( size_t dec = 0; dec < finishedSeeeds.size(); ++dec )
+      for( size_t dec = 0; dec < finishedseeeds.size(); ++dec )
       {
-         if( finishedSeeeds[dec]->getNMasterconss() == 0 && finishedSeeeds[dec]->getNLinkingvars() == 0
-            && finishedSeeeds[dec]->getNBlocks() == 1 )
+         if( finishedseeeds[dec]->getNMasterconss() == 0 && finishedseeeds[dec]->getNLinkingvars() == 0
+            && finishedseeeds[dec]->getNBlocks() == 1 )
          {
-            justBest.push_back( finishedSeeeds[dec] );
+            justbest.push_back( finishedseeeds[dec] );
          }
       }
    }
-   return justBest;
+   return justbest;
 }
 
 /** returns levenshtein distance between two strings */
@@ -451,14 +451,14 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(
    )
 {
    assert( compseeed != NULL );
-   SCIP_Bool isDuplicate;
+   SCIP_Bool isduplicate;
 
    for( size_t i = 0; i < seeeds.size(); ++i )
    {
       assert( seeeds[i] != NULL );
 
-      compseeed->isEqual( seeeds[i], &isDuplicate, sort );
-      if ( isDuplicate )
+      compseeed->isEqual( seeeds[i], &isduplicate, sort );
+      if ( isduplicate )
          return FALSE;
    }
    return TRUE;
@@ -467,13 +467,13 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(
 /** returns FALSE if there exists a seed in currSeeeds or finishedSeeeds that is a duplicate of seeed */
 SCIP_Bool seeedIsNoDuplicate(
    SeeedPtr seeed,
-   std::vector<SeeedPtr> const & currSeeeds,
-   std::vector<SeeedPtr> const & finishedSeeeds,
+   std::vector<SeeedPtr> const & currseeeds,
+   std::vector<SeeedPtr> const & finishedseeeds,
    bool sort
    )
 {
-   SCIP_Bool bool1 = seeedIsNoDuplicateOfSeeeds( seeed, currSeeeds, sort );
-   SCIP_Bool bool2 = seeedIsNoDuplicateOfSeeeds( seeed, finishedSeeeds, sort );
+   SCIP_Bool bool1 = seeedIsNoDuplicateOfSeeeds( seeed, currseeeds, sort );
+   SCIP_Bool bool2 = seeedIsNoDuplicateOfSeeeds( seeed, finishedseeeds, sort );
    return ( bool1 && bool2 );
 }
 
