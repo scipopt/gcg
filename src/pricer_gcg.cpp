@@ -36,7 +36,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+/* #define SCIP_DEBUG */
 
 #include <cassert>
 #include <cstring>
@@ -949,7 +949,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], pricetype->varGetObj(probvars[j])));
 
          pricerdata->realdualvalues[i][j] = pricetype->varGetObj(probvars[j]);
+#ifdef PRINTDUALSOLS
          SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n", SCIPvarGetName(probvars[j]), pricetype->varGetObj(probvars[j]), pricerdata->realdualvalues[i][j]);
+#endif
       }
    }
 
@@ -992,7 +994,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[block], pricingvar, dualsol) );
       assert(SCIPvarGetProbindex(pricingvar) >= 0 && SCIPvarGetProbindex(pricingvar) < SCIPgetNVars(pricerdata->pricingprobs[block]));
       pricerdata->realdualvalues[block][SCIPvarGetProbindex(pricingvar)] +=  pricetype->consGetDual(scip_, linkcons);
+#ifdef PRINTDUALSOLS
       SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n", SCIPvarGetName(pricingvar), dualsol, pricetype->consGetDual(scip_, linkcons));
+#endif
    }
 
    /* compute reduced cost and update objectives in the pricing problems */
@@ -2486,6 +2490,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    {
       bestredcost = 0.0;
       beststabobj = 0.0;
+      dualconvsum = 0.0;
       *bestredcostvalid = isMasterLPOptimal() && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
       for( i = 0; i < pricerdata->npricingprobs; i++ )
@@ -2568,10 +2573,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             SCIP_Real convdual = 0.0;
             SCIP_CONS* cons = GCGgetConvCons(origprob, prob);
 
-            if( enablestab )
-               convdual = stabilization->convGetDual(prob);
-            else
-               convdual = pricetype->consGetDual(scip_, cons);
+//            if( enablestab )
+//               convdual = stabilization->convGetDual(prob);
+//            else
+            convdual = pricetype->consGetDual(scip_, cons);
 
             #pragma omp atomic
             beststabobj += GCGgetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
@@ -2625,9 +2630,14 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          SCIP_CALL( getStabilizedDualObjectiveValue(&stabdualval) );
          lowerboundcandidate = stabdualval + beststabobj;
-         SCIPdebugMessage("lowerboundcandidate: %.8g stabdualval %.8g, besttabobj %.8g\n", lowerboundcandidate, stabdualval, beststabobj);
+         SCIPdebugMessage("lowerboundcandidate: %.8g stabdualval %.8g, besttabobj %.8g, beststabredcost %.8g\n", lowerboundcandidate, stabdualval, beststabobj, beststabobj - dualconvsum);
 
          beststabredcost = beststabobj - dualconvsum;
+
+         assert(!*bestredcostvalid || stabilized || SCIPisEQ(scip_, beststabredcost, bestredcost));
+
+         assert(!*bestredcostvalid || stabilized || SCIPisEQ(scip_, lowerboundcandidate, SCIPgetLPObjval(scip_) + bestredcost));
+
 
          if( *bestredcostvalid )
          {
@@ -2667,11 +2677,16 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          if( nfoundvars == 0 )
          {
-            SCIPdebugMessage("enabling mispricing schedule\n");
-            stabilization->activateMispricingSchedule();
-            stabilization->updateAlphaMisprice();
+            if( stabilized )
+            {
+               SCIPdebugMessage("enabling mispricing schedule\n");
+               stabilization->activateMispricingSchedule();
+               stabilization->updateAlphaMisprice();
+            }
+            else
+               stabilization->disablingMispricingSchedule();
          }
-         else if( *bestredcostvalid && !SCIPisGE(scip_, beststabredcost, 0.0) )
+         else if( *bestredcostvalid && SCIPisDualfeasNegative(scip_, beststabredcost) )
          {
             if( stabilization->isInMispricingSchedule() )
                stabilization->disablingMispricingSchedule();

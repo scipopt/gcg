@@ -215,12 +215,12 @@ SCIP_RETCODE Stabilization::setNConvconss(
    SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconv, nstabcenterconv); /*lint !e64*/
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &stabcenterconv, nconvconssnew) );
 
-   if( hybridascent )
-   {
-      SCIPfreeBlockMemoryArrayNull(scip_, &subgradientconv, nstabcenterconv); /*lint !e64*/
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &subgradientconv, nconvconssnew) );
-      BMSclearMemoryArray(subgradientconv, nconvconssnew);
-   }
+//   if( hybridascent )
+//   {
+//      SCIPfreeBlockMemoryArrayNull(scip_, &subgradientconv, nstabcenterconv); /*lint !e64*/
+//      SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &subgradientconv, nconvconssnew) );
+//      BMSclearMemoryArray(subgradientconv, nconvconssnew);
+//   }
 
    nstabcenterconv = nconvconssnew;
    BMSclearMemoryArray(stabcenterconv, nstabcenterconv);
@@ -241,7 +241,7 @@ SCIP_Real Stabilization::linkingconsGetDual(
 
    SCIP_CONS* cons = GCGgetVarLinkingconss(origprob)[i];
 
-   if( hybridascent )
+   if( hybridascent && hasstabilitycenter )
       subgradient = subgradientlinkingconss[i];
 
    return computeDual(stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons), subgradient, 0.0, 0.0);
@@ -326,8 +326,8 @@ SCIP_Real Stabilization::convGetDual(
    SCIP_CONS* cons = GCGgetConvCons(origprob, i);
    SCIP_Real subgradient = 0.0;
 
-   if( hybridascent )
-      subgradient = subgradientconv[i];
+//   if( hybridascent && hasstabilitycenter )
+//      subgradient = subgradientconv[i];
 
    return computeDual(stabcenterconv[i], pricingtype->consGetDual(scip_, cons), subgradient, (SCIP_Real) GCGgetNIdenticalBlocks(origprob, i), (SCIP_Real) GCGgetNIdenticalBlocks(origprob, i));
 }
@@ -390,7 +390,8 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    {
       if(!GCGisPricingprobRelevant(origprob, i))
          continue;
-      stabcenterconv[i] = convGetDual(i);
+      stabcenterconv[i] = dualsolconv[i];
+         //convGetDual(i);
    }
 
    if( hybridascent )
@@ -419,7 +420,7 @@ SCIP_Real Stabilization::computeDual(
       usedbeta = 0.0;
    }
 
-   if( hasstabilitycenter && SCIPisZero(scip_, usedbeta) )
+   if( hasstabilitycenter && (SCIPisZero(scip_, usedbeta) || SCIPisZero(scip_, usedalpha)) )
       return usedalpha*center+(1.0-usedalpha)*current;
    else if( hasstabilitycenter && SCIPisPositive(scip_, usedbeta) )
    {
@@ -473,9 +474,12 @@ SCIP_RETCODE Stabilization::updateHybrid()
       SCIP_CALL( updateSubgradientconss() );
       SCIP_CALL( updateSubgradientcuts() );
 
-      calculateDualdiffnorm();
-      calculateBeta();
-      calculateHybridFactor();
+      if( SCIPisPositive(scip_, alpha) )
+      {
+         calculateDualdiffnorm();
+         calculateBeta();
+         calculateHybridFactor();
+      }
    }
 
    return SCIP_OKAY;
@@ -570,7 +574,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       SCIP_Real dual =  pricingtype->consGetDual(scip_, masterconss[i]);
       SCIP_Real stabdual;
 
-      consGetDual(i, &stabdual);
+      SCIP_CALL( consGetDual(i, &stabdual) );
 
       assert(!SCIPisInfinity(scip_, ABS(dual)));
 
@@ -724,21 +728,20 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       gradientproduct -= dual * (masterval - pricingval);
    }
 
-
-   for( int i = 0; i < npricingprobs; ++i )
-   {
-      SCIP_CONS* convcons;
-
-      if( !GCGisPricingprobRelevant(origprob, i) )
-         continue;
-
-      if( GCGgetNIdenticalBlocks(origprob, i) == 1)
-         continue;
-
-      convcons = GCGgetConvCons(origprob, i);
-      gradientproduct += (stabcenterconv[i] - pricingtype->consGetDual(scip_, convcons)) *
-                         (GCGgetNIdenticalBlocks(origprob, i) - 1.0);
-   }
+//   for( int i = 0; i < npricingprobs; ++i )
+//   {
+//      SCIP_CONS* convcons;
+//
+//      if( !GCGisPricingprobRelevant(origprob, i) )
+//         continue;
+//
+//      if( GCGgetNIdenticalBlocks(origprob, i) == 1)
+//         continue;
+//
+//      convcons = GCGgetConvCons(origprob, i);
+//      gradientproduct += (stabcenterconv[i] - pricingtype->consGetDual(scip_, convcons)) *
+//                         (GCGgetNIdenticalBlocks(origprob, i) - 1.0);
+//   }
 
    SCIPdebugMessage("Update gradient product with value %g.\n", gradientproduct);
 
@@ -784,7 +787,6 @@ void Stabilization::calculateSubgradient(
       SCIP_Real dual = stabcenterconss[i];
       assert(!SCIPisInfinity(scip_, ABS(dual)));
 
-
       activity = 0.0;
 
       for( int j = 0; j < nvars; ++j )
@@ -825,6 +827,10 @@ void Stabilization::calculateSubgradient(
       {
          infeasibility = SCIPgetRhsLinear(origprob, origcons) - activity;
       }
+//      else
+//      {
+//         infeasibility = - activity;
+//      }
 
       assert(subgradientconss != NULL);
       assert(!SCIPisInfinity(scip_, SQR(infeasibility)));
@@ -896,10 +902,10 @@ void Stabilization::calculateSubgradient(
       {
          infeasibility = SCIProwGetRhs(origcut) - activity;
       }
-      else
-      {
-         infeasibility = - activity;
-      }
+//      else
+//      {
+//         infeasibility = SCIProwGetLhs(origcut)- activity;
+//      }
 
       assert(subgradientcuts != NULL);
       assert(!SCIPisInfinity(scip_, SQR(infeasibility)));
@@ -946,25 +952,25 @@ void Stabilization::calculateSubgradient(
    }
 
 
-   for( int i = 0; i < npricingprobs; ++i )
-   {
-      SCIP_Real infeasibility;
+//   for( int i = 0; i < npricingprobs; ++i )
+//   {
+//      SCIP_Real infeasibility;
+//
+//      if( !GCGisPricingprobRelevant(origprob, i) )
+//         continue;
+//
+//      if( GCGgetNIdenticalBlocks(origprob, i) == 1)
+//         continue;
+//
+//      infeasibility = GCGgetNIdenticalBlocks(origprob, i) - 1.0;
+//
+//      subgradientconv[i] = infeasibility;
+//
+//      assert(SCIPisPositive(scip_, SQR(infeasibility)));
+//      subgradientnorm += SQR(infeasibility);
+//   }
 
-      if( !GCGisPricingprobRelevant(origprob, i) )
-         continue;
-
-      if( GCGgetNIdenticalBlocks(origprob, i) == 1)
-         continue;
-
-      infeasibility = GCGgetNIdenticalBlocks(origprob, i) - 1.0;
-
-      subgradientconv[i] = infeasibility;
-
-      assert(SCIPisPositive(scip_, SQR(infeasibility)));
-      subgradientnorm += SQR(infeasibility);
-   }
-
-   assert(SCIPisPositive(scip_, subgradientnorm));
+   //assert(SCIPisPositive(scip_, subgradientnorm));
 
    subgradientnorm = SQRT(subgradientnorm);
 
@@ -1021,20 +1027,20 @@ void Stabilization::calculateDualdiffnorm()
          dualdiffnorm += dualdiff;
    }
 
-   for( int i = 0; i < npricingprobs; ++i )
-   {
-      SCIP_CONS* convcons;;
-      SCIP_Real dualdiff;
-
-      if( !GCGisPricingprobRelevant(origprob, i) )
-         continue;
-
-      convcons = GCGgetConvCons(origprob, i);
-      dualdiff = SQR(pricingtype->consGetDual(scip_, convcons) - stabcenterconv[i]);
-
-      if( SCIPisPositive(scip_, dualdiff) )
-         dualdiffnorm += dualdiff;
-   }
+//   for( int i = 0; i < npricingprobs; ++i )
+//   {
+//      SCIP_CONS* convcons;;
+//      SCIP_Real dualdiff;
+//
+//      if( !GCGisPricingprobRelevant(origprob, i) )
+//         continue;
+//
+//      convcons = GCGgetConvCons(origprob, i);
+//      dualdiff = SQR(pricingtype->consGetDual(scip_, convcons) - stabcenterconv[i]);
+//
+//      if( SCIPisPositive(scip_, dualdiff) )
+//         dualdiffnorm += dualdiff;
+//   }
 
    dualdiffnorm = SQRT(dualdiffnorm);
    SCIPdebugMessage("Update dualdiffnorm with value %g.\n", dualdiffnorm);
@@ -1093,28 +1099,29 @@ void Stabilization::calculateBeta()
          beta += product;
    }
 
-   for( int i = 0; i < npricingprobs; ++i )
-   {
-      SCIP_CONS* convcons;;
-      SCIP_Real dualdiff;
-      SCIP_Real product;
+//   for( int i = 0; i < npricingprobs; ++i )
+//   {
+//      SCIP_CONS* convcons;;
+//      SCIP_Real dualdiff;
+//      SCIP_Real product;
+//
+//      if( !GCGisPricingprobRelevant(origprob, i) )
+//         continue;
+//
+//      convcons = GCGgetConvCons(origprob, i);
+//      dualdiff = ABS(pricingtype->consGetDual(scip_, convcons) - stabcenterconv[i]);
+//      product = dualdiff * ABS(subgradientconv[i]);
+//
+//      if( SCIPisPositive(scip_, product) )
+//         beta += product;
+//   }
 
-      if( !GCGisPricingprobRelevant(origprob, i) )
-         continue;
-
-      convcons = GCGgetConvCons(origprob, i);
-      dualdiff = ABS(pricingtype->consGetDual(scip_, convcons) - stabcenterconv[i]);
-      product = dualdiff * ABS(subgradientconv[i]);
-
-      if( SCIPisPositive(scip_, product) )
-         beta += product;
-   }
-
-   beta = beta / (subgradientnorm * dualdiffnorm);
+   if( SCIPisPositive(scip_, subgradientnorm) )
+      beta = beta / (subgradientnorm * dualdiffnorm);
 
    SCIPdebugMessage("Update beta with value %g.\n", beta);
 
-   assert( ( SCIPisPositive(scip_, beta) || SCIPisZero(scip_, subgradientproduct)) && SCIPisLE(scip_, beta, 1.0) );
+   assert( ( SCIPisPositive(scip_, beta) || SCIPisZero(scip_, subgradientnorm)) && SCIPisLE(scip_, beta, 1.0) );
 }
 
 /**< calculate factor that is needed in hybrid stabilization */
