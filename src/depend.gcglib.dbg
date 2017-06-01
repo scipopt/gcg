@@ -4104,7 +4104,8 @@ $(LIBOBJDIR)/stat.o: src/stat.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h
  lib/scip/src/scip/cuts.h lib/scip/src/scip/heuristics.h src/stat.h \
  src/scip_misc.h lib/scip/src/scip/cons_setppc.h src/pub_decomp.h \
  src/type_decomp.h src/type_detector.h src/cons_decomp.h \
- src/struct_detector.h src/pub_gcgvar.h
+ src/struct_detector.h src/pub_gcgvar.h src/pricer_gcg.h \
+ src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h
 $(LIBOBJDIR)/gcgpqueue.o: src/gcgpqueue.c src/gcgpqueue.h src/struct_gcgpqueue.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
