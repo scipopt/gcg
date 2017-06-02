@@ -161,8 +161,16 @@ public:
    void findDecompositions(
    );
 
+   /** clears current seeed data structure */
+   void clearCurrentSeeeds(
+   );
+
    /** clears finished seeed data structure */
    void clearFinishedSeeeds(
+   );
+
+   /** clears incomplete seeed data structure */
+   void clearIncompleteSeeeds(
    );
 
    /** returns a seeed from current (open) seeed data structure */
@@ -175,12 +183,21 @@ public:
       int seeedindex                                     /**< index of seeed in finished seeed data structure */
    );
 
+   /** returns a seeed from incomplete seeed data structure */
+   SeeedPtr getIncompleteSeeed(
+      int seeedindex                                     /**< index of seeed in incomplete seeed data structure */
+   );
+
    /** returns size of current (open) seeed data structure */
    int getNCurrentSeeeds(
    );
 
    /** returns size of finished seeed data structure */
    int getNFinishedSeeeds(
+   );
+
+   /** returns size of incomplete seeed data structure */
+   int getNIncompleteSeeeds(
    );
 
    /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */

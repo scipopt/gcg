@@ -675,6 +675,9 @@ Seeedpool::Seeedpool(
    addSeeedToCurr( new Seeed( scip, -1, nDetectors, nConss, nVars ) );
 
    decompositions = NULL;
+
+
+  std::cout << "- monitor nts: " << nTotalSeeeds << std::endl;
 }//end constructor
 
 
@@ -1055,6 +1058,8 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
       }
 
       currSeeeds = nextSeeeds;
+
+      std::cout << "- monitor nts: " << nTotalSeeeds << std::endl;
    } // end for rounds
 
    /** complete the currseeeds with finishing detectors and add them to finished seeeds */
@@ -1317,10 +1322,22 @@ void Seeedpool::findDecompositions()
    delSeeeds.clear();
 }
 
+/** clears current seeed data structure */
+void Seeedpool::clearCurrentSeeeds()
+{
+   currSeeeds.clear();
+}
+
 /** clears finished seeed data structure */
 void Seeedpool::clearFinishedSeeeds()
 {
    finishedSeeeds.clear();
+}
+
+/** clears incomplete seeed data structure */
+void Seeedpool::clearIncompleteSeeeds()
+{
+   incompleteSeeeds.clear();
 }
 
 /** returns a seeed from current (open) seeed data structure */
@@ -1343,6 +1360,16 @@ SeeedPtr Seeedpool::getFinishedSeeed(
    return finishedSeeeds[seeedindex];
 }
 
+/** returns a seeed from incomplete seeed data structure */
+SeeedPtr Seeedpool::getIncompleteSeeed(
+   int seeedindex
+   )
+{
+   assert( 0 <= seeedindex && seeedindex < (int) incompleteSeeeds.size() );
+
+   return incompleteSeeeds[seeedindex];
+}
+
 /** returns size of current (open) seeed data structure */
 int Seeedpool::getNCurrentSeeeds()
 {
@@ -1353,6 +1380,12 @@ int Seeedpool::getNCurrentSeeeds()
 int Seeedpool::getNFinishedSeeeds()
 {
    return finishedSeeeds.size();
+}
+
+/** returns size of incomplete seeed data structure */
+int Seeedpool::getNIncompleteSeeeds()
+{
+   return incompleteSeeeds.size();
 }
 
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
