@@ -2335,7 +2335,6 @@ VarClassifier* Seeedpool::createVarClassifierForObjValues()
       /** check whether current objective funtion value already exists */
       for( size_t c = 0; c < foundobjvals.size(); ++c )
       {
-         /* TODO is == operator adequate for comparing SCIP_Real? - I did not find a compare function */
          if( curobjval == foundobjvals[c] )
          {
             curclassindex = c;
@@ -2489,7 +2488,7 @@ void Seeedpool::reduceVarclasses()
 
       if ( newclassifier != NULL )
       {
-         std::cout <<  "add reduced version of consclassifier " << varclassescollection[classifierid]->getName() << " with " << maxnclasses << " classes" << std::endl;
+         std::cout <<  "add reduced version of varclassifier " << varclassescollection[classifierid]->getName() << " with " << maxnclasses << " classes" << std::endl;
          addVarClassifier( newclassifier );
       }
    }
