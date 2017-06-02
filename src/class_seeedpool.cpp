@@ -2335,7 +2335,7 @@ VarClassifier* Seeedpool::createVarClassifierForObjValues()
       /** check whether current objective funtion value already exists */
       for( size_t c = 0; c < foundobjvals.size(); ++c )
       {
-         if( curobjval == foundobjvals[c] )
+         if( SCIPisEQ( scip, curobjval, foundobjvals[c] ) )
          {
             curclassindex = c;
             break;
