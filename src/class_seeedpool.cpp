@@ -1201,11 +1201,8 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    return finishedSeeeds;
 }
 
- /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
-/*
- * @return set of completed decomposition
- * */
-
+/** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
+ *  @return set of completed decomposition */
  std::vector<SeeedPtr> Seeedpool::finishIncompleteSeeeds(
     std::vector<SeeedPtr> incompleteseeeds
   )

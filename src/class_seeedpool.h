@@ -126,12 +126,11 @@ public:
    std::vector<SeeedPtr>                        finishedSeeeds;         /**< vector of finished seeeds */
 
 
-   /*@todo add comments for parameters*/
    /** constructor */
    Seeedpool(
-      SCIP*             scip,              /**< SCIP data structure */
-	   const char*	      conshdlrName,
-	   SCIP_Bool         transformed
+      SCIP*             scip,                /**< SCIP data structure */
+	   const char*	      conshdlrName,        /**< name of the conshandler maintaining the seeedpool */
+	   SCIP_Bool         transformed          /**< true if the seeedpool is created for the presolved version of the problem */
    );
 
    /** destructor */
@@ -140,7 +139,7 @@ public:
 
    /** creates constraint and variable classifiers, and deduces block number candidates */
    SCIP_RETCODE calcClassifierAndNBlockCandidates(
-      SCIP*             givenScip         /**< SCIP data structure */
+      SCIP*             givenScip            /**< SCIP data structure */
    );
 
    /** constructs seeeds using the registered detectors
@@ -148,13 +147,10 @@ public:
    std::vector<SeeedPtr> findSeeeds(
    );
 
-   /*@todo commnets for parameter */
-   /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
-   /*
-    * @return set of completed decomposition
-    * */
+   /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
+    *  @return set of completed decomposition */
    std::vector<SeeedPtr> finishIncompleteSeeeds(
-      std::vector<SeeedPtr> incompleteseeeds
+      std::vector<SeeedPtr> incompleteseeeds /**< the set of incompleted seeeds */
     );
 
    /** calls findSeeeds method and translates the resulting seeeds into decompositions */
