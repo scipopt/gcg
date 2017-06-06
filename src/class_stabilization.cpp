@@ -524,7 +524,6 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
    SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origprob);
    SCIP_CONS** masterconss = GCGgetMasterConss(origprob);
-   int npricingprobs = GCGgetNPricingprobs(origprob);
    SCIP_CONS** linkingconss = GCGgetVarLinkingconss(origprob);
    int nlinkingconss = GCGgetNVarLinkingconss(origprob);
    int* linkingconsblocks = GCGgetVarLinkingconssBlock(origprob);
@@ -720,8 +719,6 @@ void Stabilization::calculateSubgradient(
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
    SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origprob);
-
-   int npricingprobs = GCGgetNPricingprobs(origprob);
 
    SCIP_CONS** linkingconss = GCGgetVarLinkingconss(origprob);
    int nlinkingconss = GCGgetNVarLinkingconss(origprob);
@@ -921,7 +918,6 @@ void Stabilization::calculateDualdiffnorm()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
    SCIP_CONS** masterconss = GCGgetMasterConss(origprob);
-   int npricingprobs = GCGgetNPricingprobs(origprob);
    SCIP_CONS** linkingconss = GCGgetVarLinkingconss(origprob);
    int nlinkingconss = GCGgetNVarLinkingconss(origprob);
    assert(nstabcenterlinkingconss <= GCGgetNVarLinkingconss(origprob) );
@@ -975,7 +971,6 @@ void Stabilization::calculateBeta()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
    SCIP_CONS** masterconss = GCGgetMasterConss(origprob);
-   int npricingprobs = GCGgetNPricingprobs(origprob);
    SCIP_CONS** linkingconss = GCGgetVarLinkingconss(origprob);
    int nlinkingconss = GCGgetNVarLinkingconss(origprob);
    assert(nstabcenterlinkingconss <= GCGgetNVarLinkingconss(origprob) );
