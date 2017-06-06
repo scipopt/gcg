@@ -2386,10 +2386,12 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    int j;
    int nfoundvars;
 
+#ifdef SCIP_STATISTIC
    SCIP_Real** olddualvalues;
    SCIP_Real* olddualconv;
 
    int nprobvars;
+#endif
 
 #ifndef NDEBUG
    int oldnfoundvars;
@@ -2464,7 +2466,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    colpoolupdated = FALSE;
 
 #ifdef SCIP_STATISTIC
-
    if( pricerdata->nroundsredcost > 0 && pricetype->getType() == GCG_PRICETYPE_REDCOST )
    {
       SCIP_CALL( SCIPallocBufferArray(scip_, &olddualvalues, pricerdata->npricingprobs) );

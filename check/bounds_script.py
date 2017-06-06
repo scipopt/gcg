@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python2
 
 import sys
 import os
@@ -41,11 +41,11 @@ def parse_arguments(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--outdir', type=str,
                         default="plots",
-                        help='Arguments to be passed on to the performance profiler')
+                        help='output directory (default: "plots")')
 
     parser.add_argument('-x', '--xaxis', type=str,
                         default="time",
-                        help='Values to be used in x-axis (can be "time" or "iter")')
+                        help='Values to be used in x-axis (can be "time" or "iter"; default: "time")')
 
     parser.add_argument('filename', nargs='+',
                         help='Name of the files to be used for the creating the bound plots')
