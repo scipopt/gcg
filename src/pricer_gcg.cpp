@@ -2499,8 +2499,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          pricingstatus[i] = SCIP_STATUS_UNKNOWN;
       }
       enablestab = optimal && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
-         && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)))
-         /*&& GCGgetNLinkingvars(origprob) == 0 && GCGgetNTransvars(origprob) == 0*/;
+         && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
       if( enablestab )
       {
@@ -2574,9 +2573,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             SCIP_Real convdual = 0.0;
             SCIP_CONS* cons = GCGgetConvCons(origprob, prob);
 
-//            if( enablestab )
-//               convdual = stabilization->convGetDual(prob);
-//            else
             convdual = pricetype->consGetDual(scip_, cons);
 
             #pragma omp atomic
