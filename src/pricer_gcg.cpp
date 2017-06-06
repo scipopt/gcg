@@ -3319,9 +3319,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    SCIP_CALL( solversInitsol() );
 
-   if( GCGgetNPricingprobs(origprob) == GCGgetNRelPricingprobs(origprob) && pricerdata->hybridascentnoagg )
-      pricerdata->hybridascent = TRUE;
-
    createStabilization();
    SCIP_CALL( stabilization->setNLinkingconss(GCGgetNVarLinkingconss(origprob)) );
    SCIP_CALL( stabilization->setNConvconss(GCGgetNPricingprobs(origprob)) );
@@ -3557,7 +3554,13 @@ SCIP_RETCODE ObjPricerGcg::createPricingTypes()
 
 void ObjPricerGcg::createStabilization()
 {
-   stabilization = new Stabilization(scip_, reducedcostpricing, pricerdata->hybridascent);
+   SCIP_Bool usehybridascent;
+
+   usehybridascent = pricerdata->hybridascent ||
+                     (GCGgetNPricingprobs(origprob) == GCGgetNRelPricingprobs(origprob) && pricerdata->hybridascentnoagg);
+
+
+   stabilization = new Stabilization(scip_, reducedcostpricing, usehybridascent);
 }
 
 void ObjPricerGcg::createColpool()
