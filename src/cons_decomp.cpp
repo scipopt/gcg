@@ -2150,12 +2150,23 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
    seeed->flushBooked();
 
+
+
+
    if( seeed->shouldCompletedByConsToMaster() )
    {
       for( int opencons = 0; opencons < seeed->getNOpenconss(); ++opencons)
          seeed->bookAsMasterCons( seeed->getOpenconss()[opencons] );
       seeed->flushBooked();
    }
+
+   if( !seeed->checkConsistency(currseeedpool) )
+   {
+      SCIPconshdlrDecompUserSeeedReject(scip);
+      SCIPwarningMessage(scip, "seeed that was given by the user was rejected because of inconsistencies! \n");
+      return SCIP_OKAY;
+   }
+
 
    currseeedpool->prepareSeeed(conshdlrdata->curruserseeed);
 
@@ -2246,6 +2257,46 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
    return SCIP_OKAY;
 }
+
+/** deletes the current user seer */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
+   SCIP*                 scip                 /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   SeeedPtr        seeed;
+
+   char const *            usergiveninfo;
+   char const *            presolvedinfo;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->curruserseeed == NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one  before you can reject it\n");
+      return SCIP_OKAY;
+   }
+
+   delete conshdlrdata->curruserseeed;
+
+   conshdlrdata->curruserseeed = NULL;
+
+   return SCIP_OKAY;
+}
+
+
+
 
 SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP*                 scip,                 /**< SCIP data structure */
