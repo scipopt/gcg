@@ -226,6 +226,12 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
    const char*           varname              /**< name of the variable */
    );
 
+/** rejects and deletes the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
+   SCIP*                 scip                 /**< SCIP data structure */
+   );
+
+
 /** finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if complete etc */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    SCIP*                 scip                 /**< SCIP data structure */

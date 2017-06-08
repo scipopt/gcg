@@ -1212,6 +1212,13 @@ void Seeedpool::freeCurrSeeeds()
    return;
 }
 
+void Seeedpool::addSeeedToIncomplete(SeeedPtr seeed){
+
+   incompleteSeeeds.push_back(seeed);
+   allrelevantseeeds.push_back(seeed);
+   return;
+}
+
 
 void Seeedpool::addSeeedToCurr(SeeedPtr seeed){
 

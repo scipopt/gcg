@@ -194,6 +194,9 @@ public:
 
    void freeCurrSeeeds();
 
+
+   void addSeeedToIncomplete(SeeedPtr seeed);
+
    void addSeeedToCurr(SeeedPtr seeed);
 
    void addSeeedToFinished(SeeedPtr seeed);
