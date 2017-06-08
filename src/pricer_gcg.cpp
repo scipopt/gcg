@@ -102,6 +102,7 @@ using namespace scip;
 #define DEFAULT_HYBRIDASCENT             FALSE      /**< should hybridization of smoothing with an ascent method be enabled */
 #define DEFAULT_HYBRIDASCENT_NOAGG       FALSE      /**< should hybridization of smoothing with an ascent method be enabled
                                                      *   if pricing problems cannot be aggregation */
+#define DEFAULT_FARKASSTAB               TRUE       /**< should stabilization in Farkas be used */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
 #define DEFAULT_COLPOOL_AGELIMIT         10         /**< maximum age of columns in column pool */
 #define DEFAULT_COLPOOL_COLPOOLSIZE      10         /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
@@ -947,9 +948,25 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
       for( j = 0; j < nprobvars; j++ )
       {
+         SCIP_Real obj;
          assert(GCGvarGetBlock(probvars[j]) == i);
          assert( GCGoriginalVarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
 
+         obj = pricetype->varGetObj(probvars[j]);
+
+         if( stabilize && stabilization->inFarkas() )
+         {
+            SCIP_VAR* origvar;
+            assert(probvars[j] != NULL);
+
+            origvar = GCGpricingVarGetOrigvars(probvars[j])[0];
+
+            if( GCGoriginalVarIsLinking(origvar) )
+               obj = 0.0;
+            else
+               obj = stabilization->getFarkasAlpha() * SCIPvarGetObj(origvar);
+
+         }
          SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], pricetype->varGetObj(probvars[j])));
 
          pricerdata->realdualvalues[i][j] = pricetype->varGetObj(probvars[j]);
@@ -982,7 +999,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
       SCIP_VAR* pricingvar = GCGlinkingVarGetPricingVars(GCGmasterVarGetOrigvars(linkvar)[0])[block];
       assert(GCGvarIsPricing(pricingvar));
-
       if( stabilize )
       {
          dualsol = stabilization->linkingconsGetDual(i);
@@ -2502,7 +2518,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       {
          pricingstatus[i] = SCIP_STATUS_UNKNOWN;
       }
-      enablestab = optimal && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
+      enablestab = optimal &&
+         ((pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST)
+         || (DEFAULT_FARKASSTAB && pricetype->getType() == GCG_PRICETYPE_FARKAS))
          && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
       if( enablestab )

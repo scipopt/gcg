@@ -78,7 +78,9 @@ private:
    SCIP_Real stabcenterbound;
    SCIP_Bool inmispricingschedule; /**< currently in mispricing schedule */
    SCIP_Real subgradientproduct;
-
+   SCIP_Real farkasalpha; /**< alpha that is used for Farkas pricing (in convex combination of original objective with dual basis and dual ray) */
+   SCIP_Real farkasalphabar; /**< alpha that is used for Farkas mispricing */
+   SCIP_Bool infarkas;
 public:
    /** constructor */
    Stabilization(
@@ -137,6 +139,22 @@ public:
 
    /** is mispricing schedule enabled */
    SCIP_Bool isInMispricingSchedule(
+   ) const;
+
+   /** enabling Farkas */
+   void activateFarkas(
+   );
+
+   /** disabling Farkas */
+   void disablingFarkas(
+   );
+
+   /** in Farkas*/
+   SCIP_Bool inFarkas(
+   ) const;
+
+   /** get Farkas alpha */
+   SCIP_Real getFarkasAlpha(
    ) const;
 
    /** sets the variable linking constraints in the master */
