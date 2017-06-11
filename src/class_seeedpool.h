@@ -111,8 +111,8 @@ private:
    int                                          nFinishingDetectors;             /**< number of detectors */
 
 
-   DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
-   int                                          ndecompositions;        /**< number of decompositions found by the detectors */
+//   DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
+//   int                                          ndecompositions;        /**< number of decompositions found by the detectors */
 
    /** oracle data */
    std::vector<std::pair<int,int> >                             candidatesNBlocks;      	/**< candidate for the number of blocks  */
@@ -155,6 +155,8 @@ public:
    std::vector<SeeedPtr> findSeeeds(
       );
 
+
+   void  sortFinishedForScore();
 
 
    /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */

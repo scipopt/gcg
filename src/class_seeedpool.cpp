@@ -98,13 +98,13 @@
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
-   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
+//   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
    DEC_DETECTOR**        detectors;          /**< array of structure detectors */
    int*                  priorities;         /**< priorities of the detectors */
    int                   ndetectors;         /**< number of detectors */
    SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
    SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
-   int                   ndecomps;           /**< number of decomposition structures  */
+//   int                   ndecomps;           /**< number of decomposition structures  */
    SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    int                   nthreads;
 };
@@ -1018,6 +1018,12 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
  }
 
 
+ void  Seeedpool::sortFinishedForScore()
+ {
+    std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
+ }
+
+
  /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
 /*
  * @return set of completed decomposition
@@ -1123,22 +1129,25 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     finishedSeeeds = findSeeeds();
 
     /* sort the seeeds according to maximum white measure */
+    sortFinishedForScore();
 
-    std::sort (finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
+
 
     /** hack to just use max white seeed */
-    if( usemaxwhitescore && dothinout )
-       finishedSeeeds = thinout( finishedSeeeds, nDecomps, addTrivialDecomp );
+//    if( usemaxwhitescore && dothinout )
+//       finishedSeeeds = thinout( finishedSeeeds, nDecomps, addTrivialDecomp );
+
+
 
     /** fill out the decompositions */
-
-    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
-    for( size_t i = 0; i < finishedSeeeds.size(); ++i )
-    {
-       SeeedPtr seeed = finishedSeeeds[i];
-
-       SCIP_CALL_ABORT( createDecompFromSeeed(seeed, &decompositions[i]) );
-    }
+    /* @TODO: instead of creating decomps for every seeed we only create them for the used ones */
+//    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
+//    for( size_t i = 0; i < finishedSeeeds.size(); ++i )
+//    {
+//       SeeedPtr seeed = finishedSeeeds[i];
+//
+//       SCIP_CALL_ABORT( createDecompFromSeeed(seeed, &decompositions[i]) );
+//    }
 
     //SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
