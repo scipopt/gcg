@@ -303,6 +303,24 @@ void DECprintListOfDetectors(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
+   SCIP*     scip
+   );
+
+int SCIPconshdlrDecompGetNFinishedDecomps(
+   SCIP*       scip
+   );
+
+int SCIPconshdlrDecompGetNDetectors(
+   SCIP* scip
+   );
+
+
+DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
+   SCIP* scip
+   );
+
+
 /** returns whether the detection has been performed */
 SCIP_Bool DEChasDetectionRun(
    SCIP*                 scip                /**< SCIP data structure */

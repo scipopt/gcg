@@ -478,6 +478,13 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromPresolved(
       conshdlrdata = SCIPconshdlrGetData(conshdlr);
       assert(conshdlrdata != NULL);
 
+      for( size_t i = 0; i < conshdlrdata->seeedpool->allrelevantseeeds.size(); ++i)
+      {
+         if( conshdlrdata->seeedpool->allrelevantseeeds[i]->getID() == seeedid )
+            return conshdlrdata->seeedpool->allrelevantseeeds[i];
+      }
+
+
       for( size_t i = 0; i < conshdlrdata->seeedpool->incompleteSeeeds.size(); ++i)
       {
          if( conshdlrdata->seeedpool->incompleteSeeeds[i]->getID() == seeedid )
@@ -519,6 +526,14 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromUnpresolved(
          if( conshdlrdata->seeedpoolunpresolved->incompleteSeeeds[i]->getID() == seeedid )
             return conshdlrdata->seeedpoolunpresolved->incompleteSeeeds[i];
       }
+
+      for( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->allrelevantseeeds.size(); ++i)
+          {
+             if( conshdlrdata->seeedpoolunpresolved->allrelevantseeeds[i]->getID() == seeedid )
+                return conshdlrdata->seeedpoolunpresolved->allrelevantseeeds[i];
+          }
+
+
 
       for( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size(); ++i)
       {
@@ -604,7 +619,8 @@ SCIP_RETCODE SCIPstoreSeeedAndDecomp(
    return SCIP_OKAY;
 }
 
-/** local method to handle storage of finished decompositions and corresponding seeeds */
+/** local method to handle storage of finished decompositions and corresponding seeeds
+ * DEPRECATED */
 static
 SCIP_RETCODE SCIPstoreIncompleteSeeed(
   SCIP*                 scip,
@@ -623,17 +639,19 @@ SCIP_RETCODE SCIPstoreIncompleteSeeed(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   assert(FALSE);
+
    /** check if reallocation is needed */
-   if ( conshdlrdata->nincompleteseeeds == conshdlrdata->sizeincompleteseeeds )
-   {
-      conshdlrdata->sizeincompleteseeeds  = SCIPcalcMemGrowSize(scip, conshdlrdata->sizeincompleteseeeds + 1);
+//   if ( conshdlrdata->nincompleteseeeds == conshdlrdata->sizeincompleteseeeds )
+//   {
+//      conshdlrdata->sizeincompleteseeeds  = SCIPcalcMemGrowSize(scip, conshdlrdata->sizeincompleteseeeds + 1);
+//
+//      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->incompleteseeeds, (size_t) conshdlrdata->sizeincompleteseeeds ) );
+//   }
 
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->incompleteseeeds, (size_t) conshdlrdata->sizeincompleteseeeds ) );
-   }
+ ///  conshdlrdata->incompleteseeeds[conshdlrdata->nincompleteseeeds] = seeed;
 
-   conshdlrdata->incompleteseeeds[conshdlrdata->nincompleteseeeds] = seeed;
-
-   ++conshdlrdata->nincompleteseeeds;
+//   ++conshdlrdata->nincompleteseeeds;
 
    return SCIP_OKAY;
 }
@@ -764,7 +782,7 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       detector = conshdlrdata->detectors[i];
       assert(detector != NULL);
 
-      detector->ndecomps = 0;
+//      detector->ndecomps = 0;
       SCIPfreeMemoryArrayNull(scip, &detector->decomps);
       if( detector->exitDetector != NULL )
       {
@@ -808,14 +826,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 
 
    /* @todo: This is also done in consExitDecomp() and therefore probably makes no sense here. */
-   if( conshdlrdata->ndecomps > 0 )
-   {
-      for( i = 0; i < conshdlrdata->ndecomps; ++i )
-      {
-         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
-      }
-      SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
-   }
+   SCIP_CALL( DECdecompFree(scip, &conshdlrdata->useddecomp) );
 
    if( conshdlrdata->seeedpool != NULL )
       delete conshdlrdata->seeedpool;
@@ -912,12 +923,12 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->candidates = new std::vector<std::pair<SeeedPtr, SCIP_Real > >(0);
    conshdlrdata->selectedexists = FALSE;
    conshdlrdata->sizedecomps = 10;
-   conshdlrdata->sizeincompleteseeeds = 10;
+ //  conshdlrdata->sizeincompleteseeeds = 10;
    conshdlrdata->seeedcounter = 0;
 
  //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->decdecomps, conshdlrdata->sizedecomps) );
  //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->allrelevantfinishedseeeds, conshdlrdata->sizedecomps) );
-   SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->incompleteseeeds, conshdlrdata->sizeincompleteseeeds) );
+//   SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->incompleteseeeds, conshdlrdata->sizeincompleteseeeds) );
 
    SCIP_CALL( SCIPcreateWallClock(scip, &conshdlrdata->detectorclock) );
 
@@ -1975,10 +1986,10 @@ SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
 
 
    /** get unfinished presolved */
-   for( i = 0; i < (size_t) conshdlrdata->nincompleteseeeds ; ++i)
+   for( i = 0; i < conshdlrdata->seeedpool->incompleteSeeeds.size() ; ++i)
    {
       SeeedPtr seeed;
-      seeed = conshdlrdata->incompleteseeeds[i];
+      seeed = conshdlrdata->seeedpool->incompleteSeeeds[i];
 
       if( seeed->isSelected() || (!selectedexists && seeed->usergiven != gcg::USERGIVEN::NOT && !seeed->isComplete() ) )
          unfinishedpresolved.push_back(seeed);
@@ -1987,8 +1998,8 @@ SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
    /** clear old seeds   */
    conshdlrdata->seeedpoolunpresolved->currSeeeds.clear();
    conshdlrdata->seeedpool->currSeeeds.clear();
-   conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.clear();
-   conshdlrdata->seeedpool->incompleteSeeeds.clear();
+ //  conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.clear();
+ //  conshdlrdata->seeedpool->incompleteSeeeds.clear();
 
    /** populate unpresolved */
    for( i = 0 ; i < unfinishedunpresolved.size() ; ++i)
@@ -2044,7 +2055,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    for( i = 0; i < conshdlrdata->seeedpool->finishedSeeeds.size() ; ++i)
     {
        SeeedPtr seeed;
-       seeed = conshdlrdata->seeedpool->finishedSeeeds.size()[i];
+       seeed = conshdlrdata->seeedpool->finishedSeeeds[i];
 
        conshdlrdata->listall->push_back(seeed);
     }
@@ -2705,7 +2716,8 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return (conshdlrdata->ndecomps > 0 || conshdlrdata->nincompleteseeeds > 0 ||
+   return ( (conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->finishedSeeeds.size() > 0 )  ||
+      ( conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->incompleteSeeeds.size() > 0 ) ||
       (conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() > 0 ) ||
       (conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.size() > 0 ) ) ;
 }
@@ -2888,7 +2900,6 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    SCIP_CONSHDLRDATA* conshdlrdata;
 
    int ncompleteseeeds;
-   int nincompleteseeeds;
    int ncompleteseeedsunpresolved;
  //  int nincompleteseeedsunpresolved;
 
@@ -2914,8 +2925,6 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   ncompleteseeeds = conshdlrdata->ndecomps;
-   nincompleteseeeds = conshdlrdata->nincompleteseeeds;
    ncompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() );
 //   nincompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->currSeeeds.size() ); /** @todo: check if is this wanted*/
 
@@ -2929,9 +2938,9 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    {
       SeeedPtr seeed = *seeediter;
 
-      for( size_t i = 0; i < seeed->listofancestorids.size(); ++i )
+      for( size_t j = 0; j < seeed->listofancestorids.size(); ++j )
       {
-         int id = seeed->listofancestorids[i];
+         int id = seeed->listofancestorids[j];
          if( SCIPconshdlrDecompGetSeeed(scip, id) == NULL )
          {
             SCIPwarningMessage(scip, "Warning: presolved seeed %d has an ancestor (id: %d) that is not found! \n", seeed->getID(), id );
@@ -2948,9 +2957,9 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    {
       SeeedPtr seeed = *seeediter;
 
-      for( size_t i = 0; i < seeed->listofancestorids.size(); ++i )
+      for( size_t j = 0; j < seeed->listofancestorids.size(); ++j )
       {
-         int id = seeed->listofancestorids[i];
+         int id = seeed->listofancestorids[j];
          if( SCIPconshdlrDecompGetSeeed(scip, id) == NULL )
          {
             SCIPwarningMessage(scip, "Warning: unpresolved seeed %d has an ancestor (id: %d) that is not found! \n", seeed->getID(), id );
@@ -3218,8 +3227,10 @@ SCIP_RETCODE DECdetectStructure(
 
    conshdlrdata->seeedpool->findDecompositions();
 
-   SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
-   SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
+//   SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
+//   SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
+
+
    //	  seeedpool.freeCurrSeeeds();
 
    SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );
@@ -3338,7 +3349,7 @@ SCIP_RETCODE DECwriteAllDecomps(
    tmp = conshdlrdata->useddecomp;
 
    /** write orig decomps */
-   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() ; ++i )
+   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && (size_t) i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() ; ++i )
    {
       SeeedPtr seeed;
       DEC_DECOMP* decomp;
@@ -3432,6 +3443,43 @@ SCIP_RETCODE DECwriteAllDecomps(
 
    return SCIP_OKAY;
 }
+
+int SCIPconshdlrDecompGetNDetectors(
+   SCIP* scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+    SCIP_CONSHDLRDATA* conshdlrdata;
+
+    assert(scip != NULL);
+
+    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+    assert(conshdlr != NULL);
+
+    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+    assert(conshdlrdata != NULL);
+
+    return conshdlrdata->ndetectors;
+}
+
+DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
+   SCIP* scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+    SCIP_CONSHDLRDATA* conshdlrdata;
+
+    assert(scip != NULL);
+
+    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+    assert(conshdlr != NULL);
+
+    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+    assert(conshdlrdata != NULL);
+
+    return conshdlrdata->detectors;
+}
+
 
 std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
    SCIP* scip
@@ -3855,6 +3903,69 @@ char DECdetectorGetChar(
    else
       return detector->decchar;
 }
+
+
+DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
+   SCIP*     scip
+){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   DEC_DECOMP** decomps;
+
+   int ndecomps;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   ndecomps = SCIPconshdlrDecompGetNFinishedDecomps(scip);
+
+   SCIP_CALL_ABORT(SCIPallocMemoryArray(scip, &decomps, ndecomps ) );
+
+   for( size_t i = 0; i < conshdlrdata->seeedpool->finishedSeeeds.size(); ++i )
+   {
+      DEC_DECOMP* decomp;
+      conshdlrdata->seeedpool->createDecompFromSeeed(conshdlrdata->seeedpool->finishedSeeeds[i], &decomp );
+
+      decomps[i] = decomp;
+   }
+
+   for( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size(); ++i )
+   {
+      DEC_DECOMP* decomp;
+      conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i], &decomp );
+
+      decomps[i + conshdlrdata->seeedpool->finishedSeeeds.size()] = decomp;
+   }
+
+   return decomps;
+}
+
+int SCIPconshdlrDecompGetNFinishedDecomps(
+   SCIP*       scip
+   ){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return (int) conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() + conshdlrdata->seeedpool->finishedSeeeds.size();
+
+}
+
 
 /** display statistics about detectors */
 SCIP_RETCODE GCGprintDetectorStatistics(

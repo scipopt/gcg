@@ -260,7 +260,7 @@ SCIP_RETCODE GCGtexWriteTitlepage(
    char ppath[SCIP_MAXSTRLEN];
    int ndecomps;
 
-   ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
+   ndecomps = SCIPconshdlrDecompGetNFinishedDecomps(scip);
    strcpy(ppath, (char*) SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
@@ -282,7 +282,7 @@ SCIP_RETCODE GCGtexWriteTitlepage(
    SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\                       \n",
       SCIPgetNOrigConss(scip));
    SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                  \n",
-      SCIPconshdlrDecompGetNDecdecomps(scip));
+      SCIPconshdlrDecompGetNFinishedDecomps(scip));
    if(npresenteddecomps != NULL){
       if( ndecomps > *npresenteddecomps )
       {

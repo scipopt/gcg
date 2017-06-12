@@ -243,10 +243,6 @@ public:
 
    void decrementSeeedcount();
 
-   DEC_DECOMP** getDecompositions();
-
-   int getNDecompositions();
-
    int getNNonzeros();
 
    int getNDetectors();

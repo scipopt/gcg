@@ -98,13 +98,13 @@
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
-//   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
+   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
    DEC_DETECTOR**        detectors;          /**< array of structure detectors */
    int*                  priorities;         /**< priorities of the detectors */
    int                   ndetectors;         /**< number of detectors */
    SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
    SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
-//   int                   ndecomps;           /**< number of decomposition structures  */
+   int                   ndecomps;           /**< number of decomposition structures  */
    SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    int                   nthreads;
 };
@@ -299,12 +299,15 @@ Seeedpool::Seeedpool(
    SCIP*               givenScip, /**< SCIP data structure */
    const char*       conshdlrName,
    SCIP_Bool         _transformed
-):scip(givenScip), currSeeeds(0), incompleteSeeeds(0), allrelevantseeeds(0), nTotalSeeeds(0), nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nnonzeros(0), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0), transformed(_transformed)
+):scip(givenScip), currSeeeds(0), incompleteSeeeds(0), allrelevantseeeds(0), nTotalSeeeds(0), nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nnonzeros(0), nDetectors(0), nFinishingDetectors(0), candidatesNBlocks(0), transformed(_transformed)
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
    SCIP_CONSHDLR* conshdlr;  /** cons_decomp to get detectors */
    SCIP_CONSHDLRDATA* conshdlrdata;
+
+   int ndetectors;
+   DEC_Detector** detectors;
 
    if( !transformed )
    {
@@ -321,33 +324,21 @@ Seeedpool::Seeedpool(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   detectors = SCIPconshdlrDecompGetDetectors(scip);
+   ndetectors = SCIPconshdlrDecompGetNDetectors(scip);
+
    /** set detection data */
    SCIP_CALL_ABORT( SCIPgetIntParam(givenScip, "detection/maxrounds", &maxndetectionrounds) );
 
-   assert(conshdlrdata->ndetectors > 0);
+   assert(ndetectors > 0);
 
-   /** store priorities of the detectors */
-   for( int d = 0; d < conshdlrdata->ndetectors; ++d )
-   {
-      DEC_DETECTOR *detector;
-      detector = conshdlrdata->detectors[d];
-      assert(detector != NULL);
-      conshdlrdata->priorities[d] = detector->priority;
-   }
-
-   SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
-
-   /** sort the detectors according their priorities */
-   SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
-
-   SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
 
    /** set up enabled detectors and store them */
-   for( int d = 0; d < conshdlrdata->ndetectors; ++d )
+   for( int d = 0; d < ndetectors; ++d )
    {
       DEC_DETECTOR* detector;
+      detector = detectors[d];
 
-      detector = conshdlrdata->detectors[d];
       assert(detector != NULL);
       if( transformed )
       {
@@ -366,11 +357,11 @@ Seeedpool::Seeedpool(
    }
 
    /** set up enabled finishing detectors */
-   for( int d = 0; d < conshdlrdata->ndetectors; ++d )
+   for( int d = 0; d < ndetectors; ++d )
    {
       DEC_DETECTOR* detector;
 
-      detector = conshdlrdata->detectors[d];
+      detector = detectors[d];
       assert(detector != NULL);
       if( !detector->enabledFinishing || detector->finishSeeed == NULL)
          continue;
@@ -488,7 +479,6 @@ Seeedpool::Seeedpool(
    /*  init  seeedpool with empty seeed */
    addSeeedToCurr( new Seeed( scip, -1, nDetectors, nConss, nVars) );
 
-   decompositions = NULL;
 
 }//end constructor
 
@@ -585,7 +575,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     bool duplicate;
 
     successDetectors = std::vector<int>(nDetectors, 0);
-    ndecompositions = 0;
 
     delSeeeds = std::vector<SeeedPtr>(0);
 
@@ -1121,7 +1110,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     SCIP_Bool addTrivialDecomp = FALSE;
 
     successDetectors = std::vector<int>(nDetectors, 0);
-    ndecompositions = 0;
     delSeeeds = std::vector<SeeedPtr>(0);
     usemaxwhitescore = TRUE;
     dothinout = FALSE;
@@ -1700,15 +1688,8 @@ int Seeedpool::getNewIdForSeeed()
    return SCIPconshdlrDecompGetNextSeeedID(scip) ;
 }
 
-DEC_DECOMP** Seeedpool::getDecompositions()
-{
-   return decompositions;
-}
 
-int Seeedpool::getNDecompositions()
-{
-   return ndecompositions;
-}
+
 
 int Seeedpool::getNDetectors()
 {
@@ -2794,7 +2775,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       (*newdecomp)->type = DEC_DECTYPE_UNKNOWN;
    }
 
-   ndecompositions++;
 
    SCIP_CALL(DECevaluateDecomposition(scip, *newdecomp, &scores) );
 
