@@ -494,6 +494,13 @@ touchexternal: | $(LIBOBJDIR)
 ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
 		@-touch $(SRCDIR)/solver_cplex.c
 endif
+ifneq ($(LAST_STATISTICS),$(STATISTICS))
+		@-touch $(SRCDIR)/pricer_gcg.h
+		@-touch $(SRCDIR)/pricer_gcg.c
+		@-touch $(SRCDIR)/stat.c
+		@-touch $(SRCDIR)/event_bestsol.h
+endif
+
 ifneq ($(LAST_BLISS),$(BLISS))
 		@-touch $(SRCDIR)/dec_isomorph.cpp
 		@-touch $(SRCDIR)/relax_gcg.c
@@ -541,6 +548,7 @@ endif
 		@echo "LAST_USRDFLAGS=$(USRDFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_OPENMP=$(OPENMP)" >> $(LASTSETTINGS)
 		@echo "LAST_CPLEXSOLVER=$(CPLEXSOLVER)" >> $(LASTSETTINGS)
+		@echo "LAST_STATISTICS=$(STATISTICS)" >> $(LASTSETTINGS)
 
 .PHONY: $(SOFTLINKS)
 $(SOFTLINKS):

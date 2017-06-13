@@ -41,8 +41,6 @@
 #include <cassert>
 #include <cstring>
 
-#define SCIP_STATISTIC
-
 /*lint -e64 disable useless and wrong lint warning */
 
 #ifdef __INTEL_COMPILER
