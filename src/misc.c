@@ -154,6 +154,13 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
          mastervals[i] = 0.0;
          continue;
       }
+      if( blocknr == -2 )
+      {
+         assert(norigvars == 0);
+
+         mastervals[i] = 0.0;
+         continue;
+      }
 
       /* handle the variables with value >= 1 to get integral values in original solution */
       while( SCIPisFeasGE(masterprob, mastervals[i], 1.0) )

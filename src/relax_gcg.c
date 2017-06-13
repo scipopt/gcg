@@ -2353,18 +2353,17 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       /* set the lower bound pointer */
-      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
+      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING && GCGmasterIsCurrentSolValid(masterprob) )
       {
          *lowerbound = SCIPgetLocalDualbound(masterprob);
-
       }
       else
       {
          SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
          assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
-         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && GCGmasterIsCurrentSolValid(masterprob) )
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT )
+         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || !GCGmasterIsCurrentSolValid(masterprob) )
          {
             SCIP_Real tilim;
             SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
@@ -2396,7 +2395,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       /* if a new primal solution was found in the master problem, transfer it to the original problem */
-      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
+      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) && GCGmasterIsCurrentSolValid(masterprob) )
       {
          SCIP_SOL* newsol;
 

@@ -184,6 +184,13 @@ SCIP_Real GCGmasterGetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** return if artifical variables are used in current solution */
+extern
+SCIP_Bool GCGmasterIsCurrentSolValid(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+
 /** get number of iterations in pricing problems */
 extern
 SCIP_Longint GCGmasterGetPricingSimplexIters(

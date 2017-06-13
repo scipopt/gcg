@@ -179,6 +179,9 @@ public:
       return origprob;
    }
 
+   /** add artificial vars */
+   SCIP_RETCODE addArtificialVars();
+
    /** create the pointers for the pricing types */
    SCIP_RETCODE createPricingTypes();
 

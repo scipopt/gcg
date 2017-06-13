@@ -1259,6 +1259,33 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    return SCIP_OKAY;
 }
 
+/** creates artificial variable and the vardata */
+SCIP_RETCODE GCGcreateArtificialVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            newvar              /**< pointer to store new variable */
+   )
+{
+   SCIP_VARDATA* newvardata;
+   int blocknr;
+
+   /* create vardata */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
+   newvardata->vartype = GCG_VARTYPE_MASTER;
+   newvardata->blocknr = -2;
+   newvardata->data.mastervardata.isray = FALSE;
+   newvardata->data.mastervardata.norigvars = 0;
+
+   newvardata->data.mastervardata.origvars = NULL;
+   newvardata->data.mastervardata.origvals = NULL;
+
+   /* create variable in the master problem */
+   SCIP_CALL( SCIPcreateVar(scip, newvar, "artificial_var",
+         0.0, SCIPinfinity(scip), 100000.0, SCIP_VARTYPE_IMPLINT,
+         TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
+
+   return SCIP_OKAY;
+}
+
 /** set creation node of variable */
 void GCGsetCreationNode(
    SCIP*                 scip,               /**< SCIP data structure */
