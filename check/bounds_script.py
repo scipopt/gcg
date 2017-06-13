@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python2
 
 import sys
 import os
@@ -41,11 +41,11 @@ def parse_arguments(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--outdir', type=str,
                         default="plots",
-                        help='Arguments to be passed on to the performance profiler')
+                        help='output directory (default: "plots")')
 
     parser.add_argument('-x', '--xaxis', type=str,
                         default="time",
-                        help='Values to be used in x-axis (can be "time" or "iter")')
+                        help='Values to be used in x-axis (can be "time" or "iter"; default: "time")')
 
     parser.add_argument('filename', nargs='+',
                         help='Name of the files to be used for the creating the bound plots')
@@ -208,6 +208,8 @@ def generate_files(files):
                     df['time'] = df['time'] + 0.01*(df['iter'] - df['time_first'])/df['time_count']
                     df['time_diff'] = df["time"].diff(1)
                     df['time_diff'][0] = df['time'][0]
+                    
+                    df['db_ma'] = df['db'].rolling(window=5,center=False).mean()
 
                     # set maximum and minimum of x values (time or iterations) to synchronize the plots
                     xmax = df[xaxis].max()
@@ -268,6 +270,7 @@ def generate_files(files):
                     # bounds/dualdiff plot
                     ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax, linewidth=0.5);
                     ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax, linewidth=0.5);
+                    ax = df.plot(kind='line', y='db_ma', color='purple', label='db', ax=ax, linewidth=0.5);
                     ax = df.plot(kind='scatter', x=xaxis, y='db', color='blue', label=None, ax=ax, s=0.5);
                     ax = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
                     ax = df.plot(kind='line', y='dualoptdiff', color='orange', label='dualoptdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
