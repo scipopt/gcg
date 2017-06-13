@@ -133,7 +133,7 @@ public:
    std::vector<SeeedPtr>                        incompleteSeeeds;       /**< vector of incomplete seeeds that can be used for initialization */
    std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of finished seeeds */
-   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
+   std::vector<SeeedPtr>                        ancestorseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
 
    /** constructor */
    Seeedpool(
@@ -198,6 +198,8 @@ public:
 
 
    void addSeeedToIncomplete(SeeedPtr seeed);
+
+   void addSeeedToAncestor(SeeedPtr seeed);
 
    void addSeeedToCurr(SeeedPtr seeed);
 

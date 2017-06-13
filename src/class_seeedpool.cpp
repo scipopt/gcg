@@ -299,7 +299,7 @@ Seeedpool::Seeedpool(
    SCIP*               givenScip, /**< SCIP data structure */
    const char*       conshdlrName,
    SCIP_Bool         _transformed
-):scip(givenScip), currSeeeds(0), incompleteSeeeds(0), allrelevantseeeds(0), nTotalSeeeds(0), nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nnonzeros(0), nDetectors(0), nFinishingDetectors(0), candidatesNBlocks(0), transformed(_transformed)
+):scip(givenScip), currSeeeds(0), incompleteSeeeds(0), ancestorseeeds(0), nTotalSeeeds(0), nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nnonzeros(0), nDetectors(0), nFinishingDetectors(0), candidatesNBlocks(0), transformed(_transformed)
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
@@ -484,11 +484,11 @@ Seeedpool::Seeedpool(
 
 Seeedpool::~Seeedpool()
 {
-   for( size_t i = 0; i < allrelevantseeeds.size(); ++i )
+   for( size_t i = 0; i < ancestorseeeds.size(); ++i )
    {
-      size_t help = allrelevantseeeds.size() - i - 1;
-      if( allrelevantseeeds[help] != NULL && allrelevantseeeds[help]->getID() >= 0 )
-         delete allrelevantseeeds[help];
+      size_t help = ancestorseeeds.size() - i - 1;
+      if( ancestorseeeds[help] != NULL && ancestorseeeds[help]->getID() >= 0 )
+         delete ancestorseeeds[help];
    }
 
    for ( size_t i = 0; i < consclassescollection.size(); ++i )
@@ -580,19 +580,24 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
     verboseLevel = 1;
 
+    /** @TODO this does not look well streamlined: currseeeds should be empty here, and seeedstopopulate should be the only seeeds to poopulate */
     for( size_t i = 0; i < currSeeeds.size(); ++i )
     {
        SCIP_CALL_ABORT( prepareSeeed( currSeeeds[i]) );
-       currSeeeds[i]->setID(getNewIdForSeeed() );
+       if( currSeeeds[i]->getID() < 0 )
+          currSeeeds[i]->setID(getNewIdForSeeed() );
     }
 
     /** add translated original seeeds (of unpresolved problem) */
     for( size_t i = 0; i < seeedstopopulate.size(); ++i )
     {
        SCIP_CALL_ABORT( prepareSeeed( seeedstopopulate[i]) );
-       seeedstopopulate[i]->setID(getNewIdForSeeed() );
        if( seeedIsNoDuplicateOfSeeeds(seeedstopopulate[i], currSeeeds, true) )
           currSeeeds.push_back(seeedstopopulate[i] );
+       else
+          continue;
+       if( seeedstopopulate[i]->getID() < 0 )
+          seeedstopopulate[i]->setID(getNewIdForSeeed() );
     }
 
     for( int round = 0; round < maxndetectionrounds; ++round )
@@ -713,7 +718,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                    std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds" << std::endl;
                 }
 
-             /** if the new seeeds are no duplicate they're added to the currSeeeds */
+             /** if a new seeed is no duplicate it is either added to the nextRoundSeeeds or the finishedSeeeds  */
              for( int seeed = 0; seeed < seeedPropData->nNewSeeeds; ++seeed )
              {
                 SCIP_Bool noduplicate;
@@ -737,7 +742,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                       {
                          assert(seeedPropData->newSeeeds[seeed]->getID() >= 0);
                          finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
-                         allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
                       }
                    }
                    else
@@ -753,7 +757,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                       #pragma omp critical (seeedptrstore)
                       {
                          nextSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
-                         allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
                       }
                    }
                 }
@@ -815,7 +818,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                    {
                       assert(seeed->getID() >= 0);
                       finishedSeeeds.push_back(seeed);
-                      allrelevantseeeds.push_back(seeed);
                    }
                    else
                    {
@@ -842,6 +844,8 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
              seeedPropData->nNewSeeeds = 0;
              delete seeedPropData;
           }
+          #pragma omp critical (seeedptrstore)
+          addSeeedToAncestor(seeedPtr);
        }// end for currseeeds
 
        for(size_t s = 0; s < currSeeedsToDelete.size(); ++s )
@@ -902,7 +906,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                 {
                    assert(seeed->getID() >= 0);
                    finishedSeeeds.push_back(seeed);
-                   allrelevantseeeds.push_back(seeed);
                 }
              }
 
@@ -914,6 +917,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
           delete seeedPropData->seeedToPropagate;
           delete seeedPropData;
        }
+       addSeeedToAncestor(seeedPtr);
     }// end for finishing curr seeeds
 
     SCIPdebugMessage("%d  finished seeeds are found.\n", (int) finishedSeeeds.size() );
@@ -983,7 +987,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
              break;
           }
        }
-       if(!duplicate)
+       if( !duplicate )
        {
           delSeeeds.push_back(currSeeeds[c]);
        }
@@ -1209,10 +1213,16 @@ void Seeedpool::freeCurrSeeeds()
    return;
 }
 
+void Seeedpool::addSeeedToAncestor(SeeedPtr seeed){
+
+   ancestorseeeds.push_back(seeed);
+   return;
+}
+
+
 void Seeedpool::addSeeedToIncomplete(SeeedPtr seeed){
 
    incompleteSeeeds.push_back(seeed);
-   allrelevantseeeds.push_back(seeed);
    return;
 }
 
@@ -1220,14 +1230,12 @@ void Seeedpool::addSeeedToIncomplete(SeeedPtr seeed){
 void Seeedpool::addSeeedToCurr(SeeedPtr seeed){
 
    currSeeeds.push_back(seeed);
-   allrelevantseeeds.push_back(seeed);
    return;
 }
 
 void Seeedpool::addSeeedToFinished(SeeedPtr seeed){
 
    finishedSeeeds.push_back(seeed);
-   allrelevantseeeds.push_back(seeed);
    return;
 }
 
@@ -1236,22 +1244,22 @@ void Seeedpool::sortAllRelevantSeeeds(){
    int maxid  = 0;
    std::vector<SeeedPtr> tmpAllRelevantSeeeds(0);
 
-   for ( size_t i = 0; i < allrelevantseeeds.size(); ++i )
+   for ( size_t i = 0; i < ancestorseeeds.size(); ++i )
    {
-      if( allrelevantseeeds[i]->getID() > maxid )
-         maxid = allrelevantseeeds[i]->getID();
+      if( ancestorseeeds[i]->getID() > maxid )
+         maxid = ancestorseeeds[i]->getID();
    }
 
    tmpAllRelevantSeeeds = std::vector<SeeedPtr>(maxid+1, NULL );
 
-   for ( size_t i = 0; i < allrelevantseeeds.size(); ++i )
+   for ( size_t i = 0; i < ancestorseeeds.size(); ++i )
    {
-      if ( allrelevantseeeds[i]->getID() < 0  )
+      if ( ancestorseeeds[i]->getID() < 0  )
          continue;
-      tmpAllRelevantSeeeds[allrelevantseeeds[i]->getID()] = allrelevantseeeds[i];
+      tmpAllRelevantSeeeds[ancestorseeeds[i]->getID()] = ancestorseeeds[i];
    }
 
-   allrelevantseeeds = tmpAllRelevantSeeeds;
+   ancestorseeeds = tmpAllRelevantSeeeds;
 
 }
 
