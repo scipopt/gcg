@@ -45,25 +45,25 @@ class Stabilization
 {
 private:
    SCIP* scip_;
-   SCIP_Real* stabcenterconss;
-   int stabcenterconsssize;
-   int nstabcenterconss;
-   SCIP_Real* stabcentercuts;
-   int stabcentercutssize;
-   int nstabcentercuts;
-   SCIP_Real* stabcenterlinkingconss;
-   int nstabcenterlinkingconss;
+   SCIP_Real* stabcenterconsvals;
+   int stabcenterconsvalssize;
+   int nstabcenterconsvals;
+   SCIP_Real* stabcentercutvals;
+   int stabcentercutvalssize;
+   int nstabcentercutvals;
+   SCIP_Real* stabcenterlinkingconsvals;
+   int nstabcenterlinkingconsvals;
    SCIP_Real* stabcenterconv;
    int nstabcenterconv;
    SCIP_Real dualdiffnorm; /**< norm of difference between stabcenter and current duals */
-   SCIP_Real* subgradientconss;
-   int subgradientconsssize;
-   int nsubgradientconss;
-   SCIP_Real* subgradientcuts;
-   int subgradientcutssize;
-   int nsubgradientcuts;
-   SCIP_Real* subgradientlinkingconss;
-   int nsubgradientlinkingconss;
+   SCIP_Real* subgradientconsvals;
+   int subgradientconsvalssize;
+   int nsubgradientconsvals;
+   SCIP_Real* subgradientcutvals;
+   int subgradientcutvalssize;
+   int nsubgradientcutvals;
+   SCIP_Real* subgradientlinkingconsvals;
+   int nsubgradientlinkingconsvals;
    SCIP_Real subgradientnorm;
    SCIP_Real hybridfactor;
    PricingType* pricingtype;
@@ -147,12 +147,12 @@ public:
    );
 
    /** increases the number of new variable linking constraints */
-   SCIP_RETCODE setNLinkingconss(
+   SCIP_RETCODE setNLinkingconsvals(
       int                nlinkingconssnew    /**< number of new linking constraints */
    );
 
    /** increases the number of new convexity constraints */
-   SCIP_RETCODE setNConvconss(
+   SCIP_RETCODE setNConvconsvals(
       int nconvconssnew
    );
 
@@ -180,16 +180,16 @@ private:
    void updateIterationCountMispricing();
 
    /** updates the constraints in the stability center (and allocates more memory) */
-   SCIP_RETCODE updateStabcenterconss();
+   SCIP_RETCODE updateStabcenterconsvals();
 
    /** updates the cuts in the stability center (and allocates more memory) */
-   SCIP_RETCODE updateStabcentercuts();
+   SCIP_RETCODE updateStabcentercutvals();
 
    /** updates the constraints in the subgradient (and allocates more memory) */
-   SCIP_RETCODE updateSubgradientconss();
+   SCIP_RETCODE updateSubgradientconsvals();
 
    /** updates the cuts in the subgradient (and allocates more memory) */
-   SCIP_RETCODE updateSubgradientcuts();
+   SCIP_RETCODE updateSubgradientcutvals();
 
    /** increase the alpha value */
    void increaseAlpha();

@@ -3318,8 +3318,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    SCIP_CALL( solversInitsol() );
 
    createStabilization();
-   SCIP_CALL( stabilization->setNLinkingconss(GCGgetNVarLinkingconss(origprob)) );
-   SCIP_CALL( stabilization->setNConvconss(GCGgetNPricingprobs(origprob)) );
+   SCIP_CALL( stabilization->setNLinkingconsvals(GCGgetNVarLinkingconss(origprob)) );
+   SCIP_CALL( stabilization->setNConvconsvals(GCGgetNPricingprobs(origprob)) );
 
    createColpool();
 
