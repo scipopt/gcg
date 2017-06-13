@@ -254,6 +254,18 @@ SCIP_RETCODE Stabilization::consGetDual(
 
    SCIP_CONS* cons = GCGgetMasterConss(origprob)[i];
 
+   if( infarkas )
+   {
+      SCIP_Real usedalpha;
+      usedalpha = farkasalpha;
+      if( inmispricingschedule )
+         usedalpha = farkasalphabar;
+
+      *dual = usedalpha * SCIPgetDualsolLinear(scip_, cons) + (1-usedalpha) * SCIPgetDualfarkasLinear(scip_, cons);
+
+      return SCIP_OKAY;
+   }
+
    if( i >= nstabcenterconss )
       SCIP_CALL( updateStabcenterconss() );
 
@@ -486,7 +498,7 @@ void Stabilization::updateAlphaMisprice()
    updateIterationCountMispricing();
    if( infarkas )
    {
-      farkasalphabar = MAX(0.0, 1-k*(1-farkasalpha));
+      farkasalphabar = MAX(0.0, farkasalpha-k*0.1);
       SCIPdebugMessage("farkasalphabar updated to %g in mispricing iteration k=%d and node pricing iteration t=%d \n", farkasalphabar, k, t);
    }
    else

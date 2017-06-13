@@ -2639,7 +2639,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
       }
 
-      if( enablestab && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
+      if( enablestab  && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
       {
          SCIP_Real beststabredcost;
          SCIP_Real lowerboundcandidate;
@@ -2736,6 +2736,25 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
                SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i], TRUE) );
             }
+         }
+      }
+      else if( enablestab && (pricetype->getType() == GCG_PRICETYPE_FARKAS) )
+      {
+         if( nfoundvars == 0 )
+         {
+            if( stabilized )
+            {
+               SCIPdebugMessage("enabling mispricing schedule\n");
+               stabilization->activateMispricingSchedule();
+               stabilization->updateAlphaMisprice();
+            }
+            else
+               stabilization->disablingMispricingSchedule();
+         }
+         else
+         {
+            if( stabilization->isInMispricingSchedule() )
+               stabilization->disablingMispricingSchedule();
          }
       }
 
@@ -3550,10 +3569,13 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       }
    }
 
+   stabilization->activateFarkas();
+
    SCIP_CALL( farkaspricing->startClock() );
    retcode = priceNewVariables(farkaspricing, result, NULL);
    SCIP_CALL( farkaspricing->stopClock() );
 
+   stabilization->disablingFarkas();
 #ifdef SCIP_STATISTIC
    pricerdata->rootfarkastime =  SCIPgetSolvingTime(scip_);
 #endif
