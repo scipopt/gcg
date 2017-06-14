@@ -33,7 +33,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+/* #define SCIP_DEBUG */
 #include <assert.h>
 
 #include "solver_knapsack.h"
@@ -179,11 +179,13 @@ SCIP_RETCODE solveKnapsack(
          if( SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])) )
          {
             *result = SCIP_STATUS_UNKNOWN;
+            SCIPdebugMessage("cannot apply knapsack\n");
             return SCIP_OKAY;
          }
          else if( SCIPisNegative(pricingprob, SCIPvarGetObj(consvars[i])) )
          {
             *result = SCIP_STATUS_UNKNOWN;
+            SCIPdebugMessage("cannot apply knapsack\n");
             return SCIP_OKAY;
          }
 

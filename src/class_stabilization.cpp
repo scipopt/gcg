@@ -43,6 +43,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
+
 #include "class_stabilization.h"
 #include "pricer_gcg.h"
 #include "gcg.h"
@@ -535,19 +536,45 @@ void Stabilization::updateAlpha(
    }
 }
 
+void Stabilization::increaseFarkasAlpha()
+{
+   if( infarkas )
+   {
+      farkasalpha = MIN(1.0, alpha+0.1);
+      SCIPdebugMessage("farkasalpha increased to %g\n", farkasalpha);
+   }
+}
+
 void Stabilization::increaseAlpha()
 {
-   /* to avoid numerical problems, we assure alpha <= 0.9 */
-   alpha = MIN(0.9, alpha+(1-alpha)*0.1);
+   if( infarkas )
+   {
+      farkasalpha = MIN(1.0, alpha+0.1);
+      SCIPdebugMessage("farkasalpha increased to %g\n", farkasalpha);
+   }
+   else
+   {
+      /* to avoid numerical problems, we assure alpha <= 0.9 */
+      alpha = MIN(0.9, alpha+(1-alpha)*0.1);
 
-   SCIPdebugMessage("alpha increased to %g\n", alpha);
+      SCIPdebugMessage("alpha increased to %g\n", alpha);
+   }
 }
 
 void Stabilization::decreaseAlpha()
 {
-   alpha = MAX(0.0, alpha-0.1);
+   if( infarkas )
+   {
+      alpha = MAX(0.0, alpha-0.1);
 
-   SCIPdebugMessage("alpha decreased to %g\n", alpha);
+      SCIPdebugMessage("farkasalpha decreased to %g\n", farkasalpha);
+   }
+   else
+   {
+      alpha = MAX(0.0, alpha-0.1);
+
+      SCIPdebugMessage("alpha decreased to %g\n", alpha);
+   }
 }
 
 SCIP_Real Stabilization::calculateSubgradientProduct(
@@ -1149,6 +1176,11 @@ void Stabilization::activateMispricingSchedule(
 void Stabilization::disablingMispricingSchedule(
 )
 {
+   if( infarkas )
+   {
+      farkasalpha = farkasalphabar;
+      SCIPdebugMessage("farkasalphabar updated to %g after mispricing \n", farkasalpha);
+   }
    inmispricingschedule = FALSE;
    k=0;
 }

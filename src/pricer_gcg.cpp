@@ -2518,10 +2518,16 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       {
          pricingstatus[i] = SCIP_STATUS_UNKNOWN;
       }
+      SCIP_LPI* lpi;
+      SCIPgetLPI(scip_, &lpi);
+
       enablestab = optimal &&
          ((pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST)
-         || (DEFAULT_FARKASSTAB && pricetype->getType() == GCG_PRICETYPE_FARKAS))
+         || (DEFAULT_FARKASSTAB && pricetype->getType() == GCG_PRICETYPE_FARKAS && SCIPlpiIsDualFeasible(lpi)))
          && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
+
+//      if(pricetype->getType() == GCG_PRICETYPE_FARKAS && SCIPlpiIsDualFeasible(lpi))
+//         SCIPinfoMessage(scip_, NULL, "Dual is feasible in Farkas\n");
 
       if( enablestab )
       {
@@ -2755,6 +2761,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             if( stabilization->isInMispricingSchedule() )
                stabilization->disablingMispricingSchedule();
+            else
+               stabilization->increaseFarkasAlpha();
          }
       }
 

@@ -190,6 +190,8 @@ public:
       GCG_COL**            pricingcols         /**< solutions of the pricing problems */
    );
 
+   void increaseFarkasAlpha();
+
 private:
    /** updates the number of iterations */
    void updateIterationCount();
