@@ -227,13 +227,11 @@ public:
 
    /** returns true if the assignments in the seeed are consistent */
    bool checkConsistency(
-      Seeedpool* seeedpool,               /**< a seeedpool that uses this seeed */
-      bool considerImplicitAssignments    /**< pass true if you want to additionally check whether every var that
-                                               hits a block cons is assigned to a block, is linking or stairlinking,
-                                               i.e. especially not open but assigned consistently */
+      Seeedpool* seeedpool                /**< a seeedpool that uses this seeed */
    );
 
-   /** assigns all open constraints and open variables
+   /** @todo review due to bug
+    *  assigns all open constraints and open variables
     *  strategy: assigns all conss and vars to the same block if they are indirectly connected
     *  a cons and a var are directly connected if the var appears in the cons */
    SCIP_RETCODE completeByConnected(
