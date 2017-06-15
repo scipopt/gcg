@@ -674,9 +674,6 @@ Seeedpool::Seeedpool(
    addSeeedToCurr( new Seeed( scip, -1, nDetectors, nConss, nVars ) );
 
    decompositions = NULL;
-
-
-  std::cout << "- monitor nts: " << nTotalSeeeds << std::endl;
 }//end constructor
 
 
@@ -872,7 +869,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
                seeedPropData->newSeeeds[j]->setID( getNewIdForSeeed() );
                prepareSeeed( seeedPropData->newSeeeds[j] );
-               assert( seeedPropData->newSeeeds[j]->checkConsistency( this, true ) );
+               assert( seeedPropData->newSeeeds[j]->checkConsistency( this ) );
                seeedPropData->newSeeeds[j]->addDecChangesFromAncestor( seeedPtr );
             }
 
@@ -1057,8 +1054,6 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
       }
 
       currSeeeds = nextSeeeds;
-
-      std::cout << "- monitor nts: " << nTotalSeeeds << std::endl;
    } // end for rounds
 
    /** complete the currseeeds with finishing detectors and add them to finished seeeds */
@@ -1140,7 +1135,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
    for( size_t i = 0; i < finishedSeeeds.size(); ++i )
    {
-      assert( finishedSeeeds[i]->checkConsistency( this, true ) );
+      assert( finishedSeeeds[i]->checkConsistency( this ) );
       assert( finishedSeeeds[i]->getNOpenconss() == 0 );
       assert( finishedSeeeds[i]->getNOpenvars() == 0);
 
@@ -1615,7 +1610,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->deleteEmptyBlocks();
       newseeed->evaluate( this);
 
-      if( newseeed->checkConsistency( this, true ) )
+      if( newseeed->checkConsistency( this ) )
          newseeeds.push_back( newseeed );
       else
       {
@@ -2761,7 +2756,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    int size;
 
-   assert( seeed->checkConsistency( this, true ) );
+   assert( seeed->checkConsistency( this ) );
 
    /* create decomp data structure */
    SCIP_CALL_ABORT( DECdecompCreate( scip, newdecomp ) );
