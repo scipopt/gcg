@@ -33,8 +33,10 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+/*@todo don't disable lint */
 /*lint -e64 disable useless and wrong lint warning */
 
+/*@todo this looks like a workaround, is disabling warnings a good idea? */
 #ifdef __INTEL_COMPILER
 #ifndef _OPENMP
 #pragma warning disable 3180  /* disable wrong and useless omp warnings */
@@ -68,26 +70,21 @@
 #include <omp.h>
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
-#define LINEBREAK "\r\n"
-#else
-#define LINEBREAK "\n"
-#endif
-
-#define SCIP_CALL_EXC( x ) do                                                                                  \
+#define SCIP_CALL_EXC( x ) do                                                                                 \
                        {                                                                                      \
                           SCIP_RETCODE _restat_;                                                              \
-                          if( (_restat_ = ( x ) ) != SCIP_OKAY )                                                \
+                          if( ( _restat_ = ( x ) ) != SCIP_OKAY )                                             \
                           {                                                                                   \
-                             SCIPerrorMessage( "Error <%d> in function call\n", _restat_);                     \
+                             SCIPerrorMessage( "Error <%d> in function call\n", _restat_);                    \
                              throw std::exception();                                                          \
-                           }                                                                                  \
+                          }                                                                                   \
                        }                                                                                      \
-                       while( FALSE )
+                       while( false )
 
 #define ENUM_TO_STRING( x ) # x
 #define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
 
+/*@todo use structs in c++ or would it better to create a (local) conshdlrData class? */
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
@@ -98,13 +95,13 @@ struct SCIP_ConshdlrData
    SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
    SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
    int                   ndecomps;           /**< number of decomposition structures  */
-   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the
+                                               *  master if no other specified */
    int                   nthreads;           /**< number of threads in case OpenMP is used */
 };
 
-namespace gcg {
+namespace gcg{
 
-/** @todo include the structs in local methods?*/
 /** local methods */
 
 struct sort_decr
@@ -188,11 +185,11 @@ SCIP_Bool finishNextChild(
       if( !childsfinished[s] )
       {
          assert( childs[s] == child );
-         childsfinished[s] = TRUE;
+         childsfinished[s] = true;
          return s == childsfinished.size() - 1;
       }
    }
-   return FALSE;
+   return false;
 }
 
 /** returns the detector chain info of a seeed in a latex format */
@@ -222,7 +219,7 @@ std::string writeSeeedDetectorChainInfoLatex(
    else
    {
       std::string oldinfo = seeed->detectorchaininfo[currheight - 1];
-      /** take latexified detctorchaininfo */
+      /* take latexified detctorchaininfo */
       size_t index = 0;
       while( true )
       {
@@ -245,7 +242,6 @@ std::string writeSeeedDetectorChainInfoLatex(
       std::cout << "oldinfo: " << oldinfo << std::endl;
       line << "edge from parent node [" << relposition << "] {" << oldinfo <<"} ";
    }
-
    return line.str();
 }
 
@@ -361,18 +357,20 @@ int calcLevenshteinDistance(
    std::vector<int> v0( t.length() + 1 );
    std::vector<int> v1( t.length() + 1 );
 
-   // initialize v0 (the previous row of distances)
-   // this row is A[0][i]: edit distance for an empty s
-   // the distance is just the number of characters to delete from t
+   /* initialize v0 (the previous row of distances)
+    * this row is A[0][i]: edit distance for an empty s
+    * the distance is just the number of characters to delete from t */
    for( size_t i = 0; i < v0.size(); i++ )
+   {
       v0[i] = i;
+   }
 
    for( size_t i = 0; i < s.length(); i++ )
    {
       // calculate v1 (current row distances) from the previous row v0
 
-      // first element of v1 is A[i+1][0]
-      //   edit distance is delete (i+1) chars from s to match empty t
+      /* first element of v1 is A[i+1][0]
+       * edit distance is delete (i+1) chars from s to match empty t */
       v1[0] = i + 1;
 
       // use formula to fill in the rest of the row
@@ -459,9 +457,9 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(
 
       compseeed->isEqual( seeeds[i], &isduplicate, sort );
       if ( isduplicate )
-         return FALSE;
+         return false;
    }
-   return TRUE;
+   return true;
 }
 
 /** returns FALSE if there exists a seed in currSeeeds or finishedSeeeds that is a duplicate of seeed */
@@ -650,7 +648,8 @@ Seeedpool::Seeedpool(
          int varIndex;
          std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
 
-         /** because of the bug of GCGconsGet*()-methods some variables have to be negated */
+         /*@todo remove this after the bug is fixed */
+         /* because of the bug of GCGconsGet*()-methods some variables have to be negated */
          if( !SCIPvarIsNegated( currVars[currVar] ) )
             iterVar = scipVarToIndex.find( currVars[currVar] );
          else
@@ -789,9 +788,9 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
     for( size_t i = 0; i < seeedstopopulate.size(); ++i )
    {
        SCIP_CALL_ABORT( prepareSeeed( seeedstopopulate[i]) );
-       seeedstopopulate[i]->setID(getNewIdForSeeed() );
-       if( seeedIsNoDuplicateOfSeeeds(seeedstopopulate[i], currSeeeds, true) )
-          currSeeeds.push_back(seeedstopopulate[i] );
+       seeedstopopulate[i]->setID( getNewIdForSeeed() );
+       if( seeedIsNoDuplicateOfSeeeds( seeedstopopulate[i], currSeeeds, true) )
+          currSeeeds.push_back( seeedstopopulate[i] );
    }
 
    for( int round = 0; round < maxndetectionrounds; ++round )
@@ -800,7 +799,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
       std::vector<SeeedPtr> nextSeeeds = std::vector<SeeedPtr>( 0 );
       std::vector<SeeedPtr> currSeeedsToDelete = std::vector<SeeedPtr>( 0 );
 
-      #pragma omp parallel for schedule( static,1 )
+      #pragma omp parallel for schedule( static, 1 )
       for( size_t s = 0; s < currSeeeds.size(); ++s )
       {
          SeeedPtr seeedPtr;
@@ -1003,7 +1002,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             if( verboseLevel > 2 )
             #pragma omp critical ( ostream )
             {
-                SCIPdebugMessage( "call finisher for detector %s\n", DECdetectorGetName(detectorToFinishingScipDetector[d] ) );
+                SCIPdebugMessage( "call finisher for detector %s\n", DECdetectorGetName( detectorToFinishingScipDetector[d] ) );
             }
             SCIP_CALL_ABORT( detectorToFinishingScipDetector[d]->finishSeeed( scip, detectorToFinishingScipDetector[d],
                seeedPropData, &result ) );
@@ -1063,7 +1062,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    } // end for rounds
 
    /** complete the currseeeds with finishing detectors and add them to finished seeeds */
-   #pragma omp parallel for schedule( static,1 )
+   #pragma omp parallel for schedule( static, 1 )
    for( size_t i = 0; i < currSeeeds.size(); ++i )
    {
       SeeedPtr seeedPtr = currSeeeds[i];
@@ -1080,13 +1079,14 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          seeedPropData->seeedToPropagate = new gcg::Seeed( seeedPtr );
 
          if( verboseLevel > 2 )
-             SCIPdebugMessage( "check if finisher of detector %s is enabled\n", DECdetectorGetName(detectorToScipDetector[d] ) );
+             SCIPdebugMessage( "check if finisher of detector %s is enabled\n",
+                DECdetectorGetName( detectorToScipDetector[d] ) );
 
          /** if the finishing of the detector is not enabled go on with the next detector */
          if( !detector->enabledFinishing )
             continue;
 
-         SCIPdebugMessage( "call finisher for detector %s \n ", DECdetectorGetName(detectorToFinishingScipDetector[d] ) );
+         SCIPdebugMessage( "call finisher for detector %s \n ", DECdetectorGetName( detectorToFinishingScipDetector[d] ) );
 
          SCIP_CALL_ABORT( detectorToFinishingScipDetector[d]->finishSeeed( scip, detectorToFinishingScipDetector[d],
             seeedPropData, &result) );
@@ -1210,7 +1210,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
     std::vector<SeeedPtr> finisheds( 0, NULL );
     int verboseLevel = 1;
 
-    #pragma omp parallel for schedule( static,1 )
+    #pragma omp parallel for schedule( static, 1 )
     for( size_t i = 0; i < incompleteseeeds.size(); ++i )
     {
        SeeedPtr seeedPtr = incompleteseeeds[i];
@@ -1235,7 +1235,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
           if( !detector->enabledFinishing )
              continue;
 
-          SCIPdebugMessage( "call finisher for detector %s\n", DECdetectorGetName(detectorToFinishingScipDetector[d] ) );
+          SCIPdebugMessage( "call finisher for detector %s\n", DECdetectorGetName( detectorToFinishingScipDetector[d] ) );
 
           SCIP_CALL_ABORT( detectorToFinishingScipDetector[d]->finishSeeed( scip, detectorToFinishingScipDetector[d],
              seeedPropData, &result) );
@@ -1287,13 +1287,13 @@ void Seeedpool::findDecompositions()
 
    size_t nDecomps = 6;
 
-   SCIP_Bool addTrivialDecomp = FALSE;
+   SCIP_Bool addTrivialDecomp = false;
 
    successDetectors = std::vector<int>( nDetectors, 0);
    ndecompositions = 0;
    delSeeeds = std::vector<SeeedPtr>( 0 );
-   usemaxwhitescore = TRUE;
-   dothinout = FALSE;
+   usemaxwhitescore = true;
+   dothinout = false;
 
    finishedSeeeds = findSeeeds();
 
@@ -1480,7 +1480,7 @@ void Seeedpool::calcTranslationMapping(
    {
       SCIP_CONS* otherrow = origpool->getConsForIndex( i );
       assert( otherrow != NULL);
-      SCIP_Bool foundmaintained = FALSE;
+      SCIP_Bool foundmaintained = false;
       for( int j = 0; j < nrowsthis; ++j )
       {
          SCIP_CONS* thisrow = this->getConsForIndex( j );
@@ -1493,7 +1493,7 @@ void Seeedpool::calcTranslationMapping(
          {
             rowothertothis[i] = j;
             rowthistoother[j] = i;
-            foundmaintained = TRUE;
+            foundmaintained = true;
             break;
          }
       }
@@ -1650,9 +1650,9 @@ std::vector<ConsClassifier*> Seeedpool::getTranslatedConsClassifiers(
       /** copy class information */
       for( int j = 0; j < oldclassifier->getNClasses(); ++j )
       {
-         newclassifier->setClassName( j, oldclassifier->getClassName(j));
-         newclassifier->setClassDescription( j, oldclassifier->getClassDescription(j));
-         newclassifier->setClassDecompInfo( j, oldclassifier->getClassDecompInfo(j));
+         newclassifier->setClassName( j, oldclassifier->getClassName( j ) );
+         newclassifier->setClassDescription( j, oldclassifier->getClassDescription( j ) );
+         newclassifier->setClassDecompInfo( j, oldclassifier->getClassDecompInfo( j ) );
       }
 
       /** assign new conss to classes */
@@ -1962,7 +1962,7 @@ int Seeedpool::getNConss()
 std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
 {
    std::vector<int> toreturn( 0 );
-   SCIP_Bool output = FALSE;
+   SCIP_Bool output = false;
 
    /** firstly: sort the current candidates by the number of occurences */
    std::sort( candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
@@ -2981,7 +2981,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    /** set dectype */
    if( (*newdecomp)->nlinkingvars == seeed->getNTotalStairlinkingvars() && (*newdecomp)->nlinkingconss == 0 &&
-      DECdecompGetNLinkingvars( (*newdecomp) ) > 0 )
+      DECdecompGetNLinkingvars(*newdecomp) > 0 )
    {
       (*newdecomp)->type = DEC_DECTYPE_STAIRCASE;
    }
