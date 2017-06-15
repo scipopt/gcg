@@ -82,25 +82,25 @@
                        while( false )
 
 #define ENUM_TO_STRING( x ) # x
-#define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
+#define DEFAULT_THREADS    0     /**< number of threads (0 is OpenMP default) */
 
 /*@todo use structs in c++ or would it better to create a (local) conshdlrData class? */
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
-   DEC_DECOMP** decdecomps; /**< array of decomposition structures */
-   DEC_DETECTOR** detectors; /**< array of structure detectors */
-   int* priorities; /**< priorities of the detectors */
-   int ndetectors; /**< number of detectors */
-   SCIP_CLOCK* detectorclock; /**< clock to measure detection time */
-   SCIP_Bool hasrun; /**< flag to indicate whether we have already detected */
-   int ndecomps; /**< number of decomposition structures  */
-   SCIP_Bool createbasicdecomp; /**< indicates whether to create a decomposition with all constraints in the
-    *  master if no other specified */
-   int nthreads; /**< number of threads in case OpenMP is used */
+   DEC_DECOMP** decdecomps;      /**< array of decomposition structures */
+   DEC_DETECTOR** detectors;     /**< array of structure detectors */
+   int* priorities;              /**< priorities of the detectors */
+   int ndetectors;               /**< number of detectors */
+   SCIP_CLOCK* detectorclock;    /**< clock to measure detection time */
+   SCIP_Bool hasrun;             /**< flag to indicate whether we have already detected */
+   int ndecomps;                 /**< number of decomposition structures  */
+   SCIP_Bool createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the
+                                   *< master if no other specified */
+   int nthreads;                 /**< number of threads in case OpenMP is used */
 };
 
-namespace gcg {
+namespace gcg{
 
 /** local methods */
 
@@ -126,7 +126,8 @@ struct sort_pred
 
 /** returns a folder name for a seeed */
 std::string getSeeedFolderLatex(
-   SeeedPtr seeed)
+   SeeedPtr seeed
+   )
 {
    std::stringstream decompfilename;
    decompfilename << "dec" << seeed->getID() << ".pdf";
@@ -136,7 +137,8 @@ std::string getSeeedFolderLatex(
 
 /** returns true if there exists an unfinished child in childsfinished array */
 SCIP_Bool unfinishedChildExists(
-   std::vector<SCIP_Bool> const& childsfinished)
+   std::vector<SCIP_Bool> const& childsfinished
+   )
 {
    for( size_t s = 0; s < childsfinished.size(); ++ s )
    {
@@ -149,7 +151,8 @@ SCIP_Bool unfinishedChildExists(
 /** returns first unfinished child in childfinished array (-1 if there is none) */
 int getFirstUnfinishedChild(
    std::vector<SCIP_Bool> const& childsfinished,
-   std::vector<int> const& childs)
+   std::vector<int> const& childs
+   )
 {
    for( size_t s = 0; s < childsfinished.size(); ++ s )
    {
@@ -162,7 +165,8 @@ int getFirstUnfinishedChild(
 /** returns index of first unfinished child in childfinished array (-1 if there is none) */
 int getFirstUnfinishedChildId(
    std::vector<SCIP_Bool> const& childsfinished,
-   std::vector<int> const& childs)
+   std::vector<int> const& childs
+   )
 {
    for( size_t s = 0; s < childsfinished.size(); ++ s )
    {
@@ -177,7 +181,8 @@ int getFirstUnfinishedChildId(
 SCIP_Bool finishNextChild(
    std::vector<int>& childs,
    std::vector<SCIP_Bool>& childsfinished,
-   int child)
+   int child
+   )
 {
    for( size_t s = 0; s < childsfinished.size(); ++ s )
    {
@@ -195,7 +200,8 @@ SCIP_Bool finishNextChild(
 std::string writeSeeedDetectorChainInfoLatex(
    SeeedPtr seeed,
    int currheight,
-   int visucounter)
+   int visucounter
+   )
 {
    std::stringstream line;
    std::string relposition;
@@ -245,7 +251,8 @@ std::string writeSeeedDetectorChainInfoLatex(
 
 /** returns the seeed info of a seeed in a latex format */
 std::string writeSeeedInfoLatex(
-   SeeedPtr seeed)
+   SeeedPtr seeed
+   )
 {
    std::stringstream line;
    line << "\\node[below = \\belowcaptionskip of s" << seeed->getID() << "] (caps" << seeed->getID() << ") {\\scriptsize "
@@ -257,7 +264,8 @@ std::string writeSeeedInfoLatex(
 /** returns the include graphics line for a seeed in a latex format */
 std::string writeSeeedIncludeLatex(
    SeeedPtr seeed,
-   std::string workfolder)
+   std::string workfolder
+   )
 {
    std::stringstream line;
    line << " (s" << seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{" << getSeeedFolderLatex( seeed )
@@ -273,7 +281,8 @@ SCIP_RETCODE getDetectorCallRoundInfo(
    SCIP_Bool transformed,
    int* maxcallround,
    int* mincallround,
-   int* freqcallround)
+   int* freqcallround
+   )
 {
    char setstr[SCIP_MAXSTRLEN];
    if( transformed )
@@ -301,7 +310,8 @@ SCIP_RETCODE getDetectorCallRoundInfo(
 /** returns TRUE if seeed i has a lower MaxWhiteScore than seeed j */
 SCIP_Bool cmpSeeedsMaxWhite(
    SeeedPtr i,
-   SeeedPtr j)
+   SeeedPtr j
+   )
 {
    return ( i->getMaxWhiteScore() < j->getMaxWhiteScore() );
 }
@@ -310,7 +320,8 @@ SCIP_Bool cmpSeeedsMaxWhite(
 std::vector<SeeedPtr> thinout(
    std::vector<SeeedPtr> finishedseeeds,
    size_t ndecomps,
-   SCIP_Bool addtrivialdecomp)
+   SCIP_Bool addtrivialdecomp
+   )
 {
    std::vector<SeeedPtr> justbest( 0 );
    for( size_t dec = 0; dec < ndecomps && dec < finishedseeeds.size(); ++ dec )
@@ -335,7 +346,8 @@ std::vector<SeeedPtr> thinout(
 /** returns levenshtein distance between two strings */
 int calcLevenshteinDistance(
    std::string s,
-   std::string t)
+   std::string t
+   )
 {
    // trivial cases
    if( s.compare( t ) == 0 )
@@ -383,7 +395,8 @@ int calcLevenshteinDistance(
 /** removes all digits from string str */
 void removeDigits(
    char *str,
-   int *nremoved)
+   int *nremoved
+   )
 {
    char digits[11] = "0123456789";
    * nremoved = 0;
@@ -411,21 +424,24 @@ void removeDigits(
 /** method to calculate the greatest common divisor */
 int gcd(
    int a,
-   int b)
+   int b
+   )
 {
    return b == 0 ? a : gcd( b, a % b );
 }
 
 SCIP_CONS* consGetRelevantRepr(
    SCIP* scip,
-   SCIP_CONS* cons)
+   SCIP_CONS* cons
+   )
 {
    return cons;
 }
 
 SCIP_VAR* varGetRelevantRepr(
    SCIP* scip,
-   SCIP_VAR* var)
+   SCIP_VAR* var
+   )
 {
    return SCIPvarGetProbvar( var );
 }
@@ -434,7 +450,8 @@ SCIP_VAR* varGetRelevantRepr(
 SCIP_Bool seeedIsNoDuplicateOfSeeeds(
    SeeedPtr compseeed,
    std::vector<SeeedPtr> const & seeeds,
-   bool sort)
+   bool sort
+   )
 {
    assert( compseeed != NULL );
    SCIP_Bool isduplicate;
@@ -455,7 +472,8 @@ SCIP_Bool seeedIsNoDuplicate(
    SeeedPtr seeed,
    std::vector<SeeedPtr> const & currseeeds,
    std::vector<SeeedPtr> const & finishedseeeds,
-   bool sort)
+   bool sort
+   )
 {
    SCIP_Bool bool1 = seeedIsNoDuplicateOfSeeeds( seeed, currseeeds, sort );
    SCIP_Bool bool2 = seeedIsNoDuplicateOfSeeeds( seeed, finishedseeeds, sort );
@@ -466,10 +484,11 @@ SCIP_Bool seeedIsNoDuplicate(
 Seeedpool::Seeedpool(
    SCIP* givenScip, /**< SCIP data structure */
    const char* conshdlrName,
-   SCIP_Bool _transformed) :
-   scip( givenScip ), allrelevantseeeds( 0 ), currSeeeds( 0 ), nTotalSeeeds( 0 ), nVars( SCIPgetNVars( givenScip ) ), nConss(
-      SCIPgetNConss( givenScip ) ), nDetectors( 0 ), nFinishingDetectors( 0 ), ndecompositions( 0 ), candidatesNBlocks( 0 ), transformed(
-      _transformed )
+   SCIP_Bool _transformed
+   ) :
+   scip( givenScip ), allrelevantseeeds( 0 ), currSeeeds( 0 ), nTotalSeeeds( 0 ), nVars( SCIPgetNVars( givenScip ) ),
+   nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ), nFinishingDetectors( 0 ), ndecompositions( 0 ),
+   candidatesNBlocks( 0 ), transformed( _transformed )
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
@@ -1188,7 +1207,8 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
  *  @return set of completed decomposition */
 std::vector<SeeedPtr> Seeedpool::finishIncompleteSeeeds(
-   std::vector<SeeedPtr> incompleteseeeds)
+   std::vector<SeeedPtr> incompleteseeeds
+   )
 {
    std::vector<SeeedPtr> finisheds( 0, NULL );
    int verboseLevel = 1;
@@ -1332,7 +1352,8 @@ SeeedPtr Seeedpool::getCurrentSeeed(
 
 /** returns a seeed from finished seeed data structure */
 SeeedPtr Seeedpool::getFinishedSeeed(
-   int seeedindex)
+   int seeedindex
+   )
 {
    assert( 0 <= seeedindex && seeedindex < (int) finishedSeeeds.size() );
 
@@ -1341,7 +1362,8 @@ SeeedPtr Seeedpool::getFinishedSeeed(
 
 /** returns a seeed from incomplete seeed data structure */
 SeeedPtr Seeedpool::getIncompleteSeeed(
-   int seeedindex)
+   int seeedindex
+   )
 {
    assert( 0 <= seeedindex && seeedindex < (int) incompleteSeeeds.size() );
 
@@ -1374,7 +1396,8 @@ void Seeedpool::translateSeeedData(
    std::vector<ConsClassifier*> otherconsclassifiers,
    std::vector<ConsClassifier*>& newconsclassifiers,
    std::vector<VarClassifier*> othervarclassifiers,
-   std::vector<VarClassifier*>& newvarclassifiers)
+   std::vector<VarClassifier*>& newvarclassifiers
+   )
 {
    assert( newseeeds.empty() );
    assert( newconsclassifiers.empty() );
@@ -1403,7 +1426,8 @@ void Seeedpool::translateSeeedData(
 void Seeedpool::translateSeeeds(
    Seeedpool* origpool,
    std::vector<Seeed*> origseeeds,
-   std::vector<Seeed*>& newseeeds)
+   std::vector<Seeed*>& newseeeds
+   )
 {
    assert( newseeeds.empty() );
 
@@ -1426,7 +1450,8 @@ void Seeedpool::translateSeeeds(
 
 /** registers translated seeeds from the original problem */
 void Seeedpool::populate(
-   std::vector<SeeedPtr> seeeds)
+   std::vector<SeeedPtr> seeeds
+   )
 {
    seeedstopopulate = seeeds;
 }
@@ -1438,7 +1463,8 @@ void Seeedpool::calcTranslationMapping(
    std::vector<int>& rowthistoother,
    std::vector<int>& colothertothis,
    std::vector<int>& colthistoother,
-   std::vector<int>& missingrowinthis)
+   std::vector<int>& missingrowinthis
+   )
 {
    int nrowsother = origpool->nConss;
    int nrowsthis = nConss;
@@ -1499,7 +1525,8 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
    std::vector<int>& rowothertothis,
    std::vector<int>& rowthistoother,
    std::vector<int>& colothertothis,
-   std::vector<int>& colthistoother)
+   std::vector<int>& colthistoother
+   )
 {
    std::vector<Seeed*> newseeeds( 0 );
 
@@ -1607,7 +1634,8 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
 std::vector<ConsClassifier*> Seeedpool::getTranslatedConsClassifiers(
    std::vector<ConsClassifier*>& otherclassifiers,
    std::vector<int>& rowothertothis,
-   std::vector<int>& rowthistoother)
+   std::vector<int>& rowthistoother
+   )
 {
    std::vector<ConsClassifier*> newclassifiers( 0 );
 
@@ -1661,7 +1689,8 @@ std::vector<ConsClassifier*> Seeedpool::getTranslatedConsClassifiers(
 std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers(
    std::vector<VarClassifier*>& otherclassifiers,
    std::vector<int>& colothertothis,
-   std::vector<int>& colthistoother)
+   std::vector<int>& colthistoother
+   )
 {
    std::vector<VarClassifier*> newclassifiers( 0 );
 
@@ -1713,7 +1742,8 @@ std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers(
 
 /** sorts the seeed and calculates a its implicit assignments, hashvalue and evaluation */
 SCIP_RETCODE Seeedpool::prepareSeeed(
-   SeeedPtr seeed)
+   SeeedPtr seeed
+   )
 {
    seeed->considerImplicits( this );
    seeed->sort();
@@ -1725,7 +1755,8 @@ SCIP_RETCODE Seeedpool::prepareSeeed(
 
 /** adds a seeed to current seeeds */
 void Seeedpool::addSeeedToCurr(
-   SeeedPtr seeed)
+   SeeedPtr seeed
+   )
 {
    currSeeeds.push_back( seeed );
    allrelevantseeeds.push_back( seeed );
@@ -1733,7 +1764,8 @@ void Seeedpool::addSeeedToCurr(
 
 /** adds a seeed to finished seeeds */
 void Seeedpool::addSeeedToFinished(
-   SeeedPtr seeed)
+   SeeedPtr seeed
+   )
 {
    finishedSeeeds.push_back( seeed );
    allrelevantseeeds.push_back( seeed );
@@ -1765,63 +1797,72 @@ void Seeedpool::sortAllRelevantSeeeds()
 
 /** returns the variable indices of the matrix for a constraint */
 const int* Seeedpool::getVarsForCons(
-   int cons)
+   int cons
+   )
 {
    return & varsForConss[cons][0];
 }
 
 /** returns the coefficients of the matrix for a constraint */
 const SCIP_Real * Seeedpool::getValsForCons(
-   int cons)
+   int cons
+   )
 {
    return & valsForConss[cons][0];
 }
 
 /** returns the constraint indices of the coefficient matrix for a variable */
 const int* Seeedpool::getConssForVar(
-   int var)
+   int var
+   )
 {
    return & conssForVars[var][0];
 }
 
 /** returns the number of variables for a given constraint */
 int Seeedpool::getNVarsForCons(
-   int cons)
+   int cons
+   )
 {
    return varsForConss[cons].size();
 }
 
 /** returns the number of constraints for a given variable */
 int Seeedpool::getNConssForVar(
-   int var)
+   int var
+   )
 {
    return conssForVars[var].size();
 }
 
 /** returns the SCIP variable related to a variable index */
 SCIP_VAR* Seeedpool::getVarForIndex(
-   int varIndex)
+   int varIndex
+   )
 {
    return varToScipVar[varIndex];
 }
 
 /** returns the SCIP constraint related to a constraint index */
 SCIP_CONS* Seeedpool::getConsForIndex(
-   int consIndex)
+   int consIndex
+   )
 {
    return consToScipCons[consIndex];
 }
 
 /** returns the SCIP detector related to a detector index */
 DEC_DETECTOR* Seeedpool::getDetectorForIndex(
-   int detectorIndex)
+   int detectorIndex
+   )
 {
    return detectorToScipDetector[detectorIndex];
 }
 
 /** returns the SCIP detector related to a finishing detector index */
 DEC_DETECTOR* Seeedpool::getFinishingDetectorForIndex(
-   int detectorIndex)
+   int detectorIndex
+   )
 {
    return detectorToFinishingScipDetector[detectorIndex];
 }
@@ -1829,7 +1870,8 @@ DEC_DETECTOR* Seeedpool::getFinishingDetectorForIndex(
 /** returns a coefficient from the coefficient matrix */
 SCIP_Real Seeedpool::getVal(
    int row,
-   int col)
+   int col
+   )
 {
    std::tr1::unordered_map<std::pair<int, int>, SCIP_Real, pair_hash>::const_iterator iter = valsMap.find(
       std::pair<int, int>( row, col ) );
@@ -1842,28 +1884,32 @@ SCIP_Real Seeedpool::getVal(
 
 /** returns the variable index related to a SCIP variable */
 int Seeedpool::getIndexForVar(
-   SCIP_VAR* var)
+   SCIP_VAR* var
+   )
 {
    return scipVarToIndex[var];
 }
 
 /** returns the constraint index related to a SCIP constraint */
 int Seeedpool::getIndexForCons(
-   SCIP_CONS* cons)
+   SCIP_CONS* cons
+   )
 {
    return scipConsToIndex[cons];
 }
 
 /** returns the detector index related to a detector */
 int Seeedpool::getIndexForDetector(
-   DEC_DETECTOR* detector)
+   DEC_DETECTOR* detector
+   )
 {
    return scipDetectorToIndex[detector];
 }
 
 /** returns the finishing detector index related to a detector */
 int Seeedpool::getIndexForFinishingDetector(
-   DEC_DETECTOR* detector)
+   DEC_DETECTOR* detector
+   )
 {
    return scipFinishingDetectorToIndex[detector];
 }
@@ -1942,7 +1988,8 @@ std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
 
 /** adds a candidate for block size and counts how often a candidate is added */
 void Seeedpool::addCandidatesNBlocks(
-   int candidate)
+   int candidate
+   )
 {
    if( candidate > 1 )
    {
@@ -2058,7 +2105,8 @@ void Seeedpool::calcCandidatesNBlocks()
 
 /** adds a constraint classifier if it is no duplicate of an existing classifier */
 void Seeedpool::addConsClassifier(
-   ConsClassifier* givenClassifier)
+   ConsClassifier* givenClassifier
+   )
 {
    if( givenClassifier != NULL )
    {
@@ -2257,7 +2305,8 @@ ConsClassifier* Seeedpool::createConsClassifierForConsnamesDigitFreeIdentical()
  *  where all constraints whose consnames do not a have levenshtein distance to each other
  *  higher than a given connectivity are assigned to the same class */
 ConsClassifier* Seeedpool::createConsClassifierForConsnamesLevenshteinDistanceConnectivity(
-   int connectivity)
+   int connectivity
+   )
 {
    std::vector < std::string > consnamesToCompare( getNConss(), "" );
    std::vector<int> nConssConstype( 0 );
@@ -2426,7 +2475,8 @@ ConsClassifier* Seeedpool::createConsClassifierForNNonzeros()
 
 /** returns pointer to a constraint classifier */
 ConsClassifier* Seeedpool::getConsClassifier(
-   int givenClassifierIndex)
+   int givenClassifierIndex
+   )
 {
    assert( 0 <= givenClassifierIndex && givenClassifierIndex < (int) consclassescollection.size() );
 
@@ -2435,7 +2485,8 @@ ConsClassifier* Seeedpool::getConsClassifier(
 
 /** returns the assignment of constraints to classes of a classifier as integer array */
 int* Seeedpool::getConsClassifierArray(
-   int givenClassifierIndex)
+   int givenClassifierIndex
+   )
 {
    int nconss = consclassescollection[givenClassifierIndex]->getNConss();
    int* output = new int[nconss];
@@ -2474,7 +2525,8 @@ void Seeedpool::reduceConsclasses()
 
 /** adds a variable classifier if it is no duplicate of an existing variable classifier */
 void Seeedpool::addVarClassifier(
-   VarClassifier* givenClassifier)
+   VarClassifier* givenClassifier
+   )
 {
    if( givenClassifier != NULL )
    {
@@ -2580,7 +2632,8 @@ VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
 
 /** returns pointer to a variable classifier */
 VarClassifier* Seeedpool::getVarClassifier(
-   int givenClassifierIndex)
+   int givenClassifierIndex
+   )
 {
    assert( 0 <= givenClassifierIndex && givenClassifierIndex < (int) varclassescollection.size() );
 
@@ -2589,7 +2642,8 @@ VarClassifier* Seeedpool::getVarClassifier(
 
 /** returns the assignment of variables to classes of a classifier as integer array */
 int* Seeedpool::getVarClassifierArray(
-   int givenClassifierIndex)
+   int givenClassifierIndex
+   )
 {
    int nvars = varclassescollection[givenClassifierIndex]->getNVars();
    int* output = new int[nvars];
@@ -2629,7 +2683,8 @@ void Seeedpool::reduceVarclasses()
 /** returns a vector of seeeds where all seeeds of the given seeeds having only one block are removed
  *  except for the two seeeds with the lowest numbers of masterconss */
 std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
-   std::vector<SeeedPtr> seeeds)
+   std::vector<SeeedPtr> seeeds
+   )
 {
    std::vector<SeeedPtr> remainingSeeeds( 0 );
    std::vector<SeeedPtr> oneBlockSeeeds( 0 );
@@ -2678,7 +2733,8 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
 /** creates a decomposition for a given seeed */
 SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SeeedPtr seeed,
-   DEC_DECOMP** newdecomp)
+   DEC_DECOMP** newdecomp
+   )
 {
    char detectorchaininfo[SCIP_MAXSTRLEN];
 
@@ -2968,7 +3024,8 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 /** creates a seeed for a given decomposition */
 SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    DEC_DECOMP* decomp,
-   SeeedPtr* newseeed)
+   SeeedPtr* newseeed
+   )
 {
    SeeedPtr seeed;
 

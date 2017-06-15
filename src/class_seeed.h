@@ -406,14 +406,16 @@ public:
 
    /** returns size of the vector containing stairlinking vars */
    int getNStairlinkingvars(
-      int block);
+      int block
+      );
 
    /** returns number of vars */
    int getNVars();
 
    /** returns size of the vector containing vars assigned to a block */
    int getNVarsForBlock(
-      int block);
+      int block
+      );
 
    /** returns array containing constraints not assigned yet */
    const int* getOpenconss();

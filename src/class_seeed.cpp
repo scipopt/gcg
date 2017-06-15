@@ -78,14 +78,16 @@ Seeed::Seeed(
    int givenId,
    int givenNDetectors,
    int givenNConss,
-   int givenNVars) :
-   scip( _scip ), id( givenId ), nBlocks( 0 ), nVars( givenNVars ), nConss( givenNConss ), masterConss( 0 ), masterVars( 0 ), conssForBlocks(
-      0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), openVars( 0 ), openConss( 0 ), propagatedByDetector(
-      std::vector<bool>( givenNDetectors, false ) ), hashvalue( 0 ), score( 1. ), maxwhitescore( 1. ), changedHashvalue(
-      false ), isselected( false ), isFinishedByFinisher( false ), detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes(
-      0 ), pctVarsToBorder( 0 ), pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree(
-      0 ), nNewBlocks( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), detectorchainstring( NULL ), stemsFromUnpresolved(
-      false ), isfromunpresolved( FALSE ), isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
+   int givenNVars
+   ) :
+   scip( _scip ), id( givenId ), nBlocks( 0 ), nVars( givenNVars ), nConss( givenNConss ), masterConss( 0 ),
+   masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), openVars( 0 ),
+   openConss( 0 ), propagatedByDetector( std::vector<bool>( givenNDetectors, false ) ), hashvalue( 0 ), score( 1. ),
+   maxwhitescore( 1. ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ), detectorChain( 0 ),
+   detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ), pctVarsToBlock( 0 ),
+   pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ), nNewBlocks( 0 ),
+   listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), detectorchainstring( NULL ), stemsFromUnpresolved( false ),
+   isfromunpresolved( FALSE ), isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
 {
    for( int i = 0; i < nConss; ++ i )
    {
@@ -100,7 +102,8 @@ Seeed::Seeed(
 
 /** copy constructor */
 Seeed::Seeed(
-   const Seeed *seeedToCopy)
+   const Seeed *seeedToCopy
+   )
 {
    scip = ( seeedToCopy->scip );
    id = seeedToCopy->id;
@@ -150,7 +153,8 @@ Seeed::~Seeed()
 
 bool compare_blocks(
    std::pair<int, int> const & a,
-   std::pair<int, int> const & b)
+   std::pair<int, int> const & b
+   )
 {
    return ( a.second < b.second );
 }
@@ -175,14 +179,16 @@ int Seeed::addBlock()
 
 /** incorporates the the needed time of a certain detector in the detector chain */
 void Seeed::addClockTime(
-   SCIP_Real clocktime)
+   SCIP_Real clocktime
+   )
 {
    detectorClockTimes.push_back( clocktime );
 }
 
 /** incorporates the changes from ancestor seeed */
 void Seeed::addDecChangesFromAncestor(
-   Seeed* ancestor)
+   Seeed* ancestor
+   )
 {
    /** add number of new blocks */
    assert( ancestor != NULL );
@@ -204,7 +210,8 @@ void Seeed::addDecChangesFromAncestor(
 
 /** adds a detector chain info */
 void Seeed::addDetectorChainInfo(
-   const char* decinfo)
+   const char* decinfo
+   )
 {
    std::stringstream help;
    help << decinfo;
@@ -224,7 +231,8 @@ bool Seeed::alreadyAssignedConssToBlocks()
 SCIP_RETCODE Seeed::assignBorderFromConstoblock(
    SCIP_HASHMAP* constoblock,
    int givenNBlocks,
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    int cons;
 
@@ -249,7 +257,8 @@ SCIP_RETCODE Seeed::assignBorderFromConstoblock(
 /** assigns open vars to stairlinking if they can be found in two consecutive blocks, returns true if stairlinkingvars
  * are assigned */
 bool Seeed::assignCurrentStairlinking(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    std::vector<int> blocksOfOpenvar;
    bool assigned = false;
@@ -296,7 +305,8 @@ bool Seeed::assignCurrentStairlinking(
  *  - to the block with the lowest number of conss if it hits a stairlinking var and there are blocks the cons may be assigned to
  *  returns true if there is a cons that has been assigned */
 bool Seeed::assignHittingOpenconss(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    int cons;
    int var;
@@ -430,7 +440,8 @@ bool Seeed::assignHittingOpenconss(
  *  - to linking if it hits blockconss of more than one different blocks
  *  returns true if there is a var that has been assigned */
 bool Seeed::assignHittingOpenvars(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    int cons;
    int var;
@@ -487,7 +498,8 @@ bool Seeed::assignHittingOpenvars(
  *  - exactly one block var and at least one open var or
  *  - a master var */
 SCIP_RETCODE Seeed::assignOpenPartialHittingConsToMaster(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    int cons;
    int var;
@@ -545,7 +557,8 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingConsToMaster(
 
 /** assigns open conss/vars that hit exactly one block and at least one open var/cons to border */
 SCIP_RETCODE Seeed::assignOpenPartialHittingToMaster(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    changedHashvalue = true;
    assignOpenPartialHittingConsToMaster( seeedpool );
@@ -556,7 +569,8 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingToMaster(
 /** assigns every open var to linking that hits
  *  - exactly one block cons and at least one open cons */
 SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    int cons;
    int var;
@@ -605,7 +619,8 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
 SCIP_RETCODE Seeed::assignSeeedFromConstoblock(
    SCIP_HASHMAP* constoblock,
    int additionalNBlocks,
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    int oldNBlocks = nBlocks;
    int consblock;
@@ -645,7 +660,8 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblock(
 SCIP_RETCODE Seeed::assignSeeedFromConstoblockVector(
    std::vector<int> constoblock,
    int additionalNBlocks,
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    int oldNBlocks = nBlocks;
    int consblock;
@@ -684,7 +700,8 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblockVector(
 /** books a constraint to be added to the block constraints of the given block (after calling flushBooked) */
 SCIP_RETCODE Seeed::bookAsBlockCons(
    int consToBlock,
-   int block)
+   int block
+   )
 {
    assert( consToBlock >= 0 && consToBlock < nConss );
    assert( block >= 0 && block < nBlocks );
@@ -696,7 +713,8 @@ SCIP_RETCODE Seeed::bookAsBlockCons(
 /** books a variable to be added to the block variables of the given block (after calling flushBooked) */
 SCIP_RETCODE Seeed::bookAsBlockVar(
    int varToBlock,
-   int block)
+   int block
+   )
 {
    assert( varToBlock >= 0 && varToBlock < nVars );
    assert( block >= 0 && block < nBlocks );
@@ -707,7 +725,8 @@ SCIP_RETCODE Seeed::bookAsBlockVar(
 
 /** books a constraint to be added to the master constraints (after calling flushBooked)*/
 SCIP_RETCODE Seeed::bookAsMasterCons(
-   int consToMaster)
+   int consToMaster
+   )
 {
    assert( consToMaster >= 0 && consToMaster < nConss );
    bookedAsMasterConss.push_back( consToMaster );
@@ -716,7 +735,8 @@ SCIP_RETCODE Seeed::bookAsMasterCons(
 
 /** books a variable to be added to the master variables (after calling flushBooked) */
 SCIP_RETCODE Seeed::bookAsMasterVar(
-   int varToMaster)
+   int varToMaster
+   )
 {
    assert( varToMaster >= 0 && varToMaster < nVars );
    bookedAsMasterVars.push_back( varToMaster );
@@ -725,7 +745,8 @@ SCIP_RETCODE Seeed::bookAsMasterVar(
 
 /** books a variable to be added to the linking variables (after calling flushBooked) */
 SCIP_RETCODE Seeed::bookAsLinkingVar(
-   int varToLinking)
+   int varToLinking
+   )
 {
    assert( varToLinking >= 0 && varToLinking < nVars );
    bookedAsLinkingVars.push_back( varToLinking );
@@ -735,7 +756,8 @@ SCIP_RETCODE Seeed::bookAsLinkingVar(
 /** books a variable to be added to the stairlinking variables of the given block and the following block (after calling flushBooked) */
 SCIP_RETCODE Seeed::bookAsStairlinkingVar(
    int varToStairlinking,
-   int firstBlock)
+   int firstBlock
+   )
 {
    assert( varToStairlinking >= 0 && varToStairlinking < nVars );
    assert( firstBlock >= 0 && firstBlock < ( nBlocks - 1 ) );
@@ -826,7 +848,8 @@ bool Seeed::checkAllConssAssigned()
 
 /** returns true if the assignments in the seeed are consistent */
 bool Seeed::checkConsistency(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    std::vector<bool> openVarsBool( nVars, true );
    std::vector<int> stairlinkingvarsvec( 0 );
@@ -1120,15 +1143,9 @@ bool Seeed::checkConsistency(
  *  strategy: assigns all conss and vars to the same block if they are indirectly connected
  *  a cons and a var are directly connected if the var appears in the cons */
 SCIP_RETCODE Seeed::completeByConnected(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
-   /* debugging stuff */
-//   return completeGreedily( seeedpool );
-//   displaySeeed();
-//   displayConss();
-//   displayVars();
-//   assert( checkConsistency( seeedpool ) );
-   /* end */
 
    int cons;
    int var;
@@ -1260,12 +1277,6 @@ SCIP_RETCODE Seeed::completeByConnected(
 
    sort();
 
-   /* debugging stuff */
-//   displaySeeed();
-//   displayConss();
-//   displayVars();
-   /* end */
-
    assert( checkConsistency( seeedpool ) );
 
    return SCIP_OKAY;
@@ -1275,7 +1286,8 @@ SCIP_RETCODE Seeed::completeByConnected(
  *  strategy: assigns a cons (and related vars) to any block if possible by means of prior var assignments
  *  and to master, if there does not exist such a block */
 SCIP_RETCODE Seeed::completeGreedily(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    bool checkVar;
    bool varInBlock;
@@ -1491,7 +1503,8 @@ SCIP_RETCODE Seeed::completeGreedily(
  *  - and every cons to master that hits a master var
  *  - and every var to master if it does not hit any blockcons and has no open cons */
 SCIP_RETCODE Seeed::considerImplicits(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    int cons;
    int var;
@@ -1672,7 +1685,8 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks()
 
 /** deletes a cons from list of open conss */
 SCIP_RETCODE Seeed::deleteOpencons(
-   int opencons)
+   int opencons
+   )
 {
    assert( opencons >= 0 && opencons < nConss );
    std::vector<int>::iterator it;
@@ -1686,7 +1700,8 @@ SCIP_RETCODE Seeed::deleteOpencons(
 
 /** deletes a var from the list of open vars */
 SCIP_RETCODE Seeed::deleteOpenvar(
-   int openvar)
+   int openvar
+   )
 {
    assert( openvar >= 0 && openvar < nVars );
    std::vector<int>::iterator it;
@@ -1741,7 +1756,8 @@ SCIP_RETCODE Seeed::displayConss()
 
 /** displays the relevant information of the seeed */
 SCIP_RETCODE Seeed::displaySeeed(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    std::cout << "ID: " << id << std::endl;
    std::cout << "number of blocks: " << nBlocks << std::endl;
@@ -1799,7 +1815,8 @@ SCIP_RETCODE Seeed::displaySeeed(
 
 /** displays the assignments of the vars */
 SCIP_RETCODE Seeed::displayVars(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    for( int b = 0; b < nBlocks; ++ b )
    {
@@ -1878,7 +1895,8 @@ SCIP_RETCODE Seeed::displayVars(
 /** computes the score of the given seeed based on the border, the average density score and the ratio of linking variables
  *  @todo bound calculation for unfinished decompositions could be more precise */
 SCIP_Real Seeed::evaluate(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    SCIP_Real borderscore; /**< score of the border */
    SCIP_Real densityscore; /**< score of block densities */
@@ -2116,7 +2134,8 @@ SCIP_Real Seeed::evaluate(
 SCIP_RETCODE Seeed::filloutBorderFromConstoblock(
    SCIP_HASHMAP* constoblock,
    int givenNBlocks,
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    assert( givenNBlocks >= 0 );
    assert( nBlocks == 0 );
@@ -2159,7 +2178,8 @@ SCIP_RETCODE Seeed::filloutBorderFromConstoblock(
 SCIP_RETCODE Seeed::filloutSeeedFromConstoblock(
    SCIP_HASHMAP* constoblock,
    int givenNBlocks,
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    assert( givenNBlocks >= 0 );
    assert( nBlocks == 0 );
@@ -2255,7 +2275,8 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock(
 
 /** reassigns variables classified as linking to master if the variable only hits master conss */
 SCIP_RETCODE Seeed::findVarsLinkingToMaster(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    int i;
    int j;
@@ -2299,7 +2320,8 @@ SCIP_RETCODE Seeed::findVarsLinkingToMaster(
 
 /** reassigns variables classified as linking to stairlinking if the variable hits conss in exactly two consecutive blocks */
 SCIP_RETCODE Seeed::findVarsLinkingToStairlinking(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    int i;
    int j;
@@ -2450,7 +2472,8 @@ SCIP_RETCODE Seeed::flushBooked()
 
 /** returns array containing constraints assigned to a block */
 const int* Seeed::getConssForBlock(
-   int block)
+   int block
+   )
 {
    assert( block >= 0 && block < nBlocks );
    return & conssForBlocks[block][0];
@@ -2521,7 +2544,8 @@ int Seeed::getNConss()
 
 /** returns size of the vector containing conss assigned to a block */
 int Seeed::getNConssForBlock(
-   int block)
+   int block
+   )
 {
    assert( block >= 0 && block < nBlocks );
    return (int) conssForBlocks[block].size();
@@ -2575,7 +2599,8 @@ int Seeed::getNOpenvars()
 
 /** returns size of the vector containing stairlinking vars */
 int Seeed::getNStairlinkingvars(
-   int block)
+   int block
+   )
 {
    assert( block >= 0 && block < nBlocks );
    return (int) stairlinkingVars[block].size();
@@ -2589,7 +2614,8 @@ int Seeed::getNVars()
 
 /** returns size of the vector containing vars assigned to a block */
 int Seeed::getNVarsForBlock(
-   int block)
+   int block
+   )
 {
    assert( block >= 0 && block < nBlocks );
    return (int) varsForBlocks[block].size();
@@ -2609,7 +2635,8 @@ const int* Seeed::getOpenvars()
 
 /** returns array containing stairlinking vars */
 const int* Seeed::getStairlinkingvars(
-   int block)
+   int block
+   )
 {
    assert( block >= 0 && block < nBlocks );
    return & stairlinkingVars[block][0];
@@ -2617,7 +2644,8 @@ const int* Seeed::getStairlinkingvars(
 
 /** returns array containing vars of a block */
 const int* Seeed::getVarsForBlock(
-   int block)
+   int block
+   )
 {
    assert( block >= 0 && block < nBlocks );
    return & varsForBlocks[block][0];
@@ -2633,7 +2661,8 @@ bool Seeed::isComplete()
 /** returns true if the cons is a cons of the block */
 bool Seeed::isConsBlockconsOfBlock(
    int cons,
-   int block)
+   int block
+   )
 {
    assert( cons >= 0 && cons < nConss );
    assert( block >= 0 && block < nBlocks );
@@ -2645,7 +2674,8 @@ bool Seeed::isConsBlockconsOfBlock(
 
 /** returns true if the cons is a master cons */
 bool Seeed::isConsMastercons(
-   int cons)
+   int cons
+   )
 {
    assert( cons >= 0 && cons < nConss );
    if( find( masterConss.begin(), masterConss.end(), cons ) != masterConss.end() )
@@ -2656,7 +2686,8 @@ bool Seeed::isConsMastercons(
 
 /** returns true if the cons is an open cons */
 bool Seeed::isConsOpencons(
-   int cons)
+   int cons
+   )
 {
    assert( cons >= 0 && cons < nConss );
    if( find( openConss.begin(), openConss.end(), cons ) != openConss.end() )
@@ -2669,7 +2700,8 @@ bool Seeed::isConsOpencons(
 SCIP_RETCODE Seeed::isEqual(
    Seeed* otherseeed,
    SCIP_Bool* isequal,
-   bool sortseeeds)
+   bool sortseeeds
+   )
 {
    if( sortseeeds )
    {
@@ -2684,7 +2716,8 @@ SCIP_RETCODE Seeed::isEqual(
 
 /* method to check whether this seeed is equal to given other seeed */
 bool Seeed::isEqual(
-   Seeed* other)
+   Seeed* other
+   )
 {
    if( getNMasterconss() != other->getNMasterconss() || getNMastervars() != other->getNMastervars()
       || getNBlocks() != other->getNBlocks() || getNLinkingvars() != other->getNLinkingvars() )
@@ -2778,7 +2811,8 @@ bool Seeed::isEqual(
 
 /** returns true if this seeed was propagated by a detector */
 bool Seeed::isPropagatedBy(
-   DEC_DETECTOR* detectorID)
+   DEC_DETECTOR* detectorID
+   )
 {
    std::vector<DEC_DETECTOR*>::const_iterator iter = std::find( detectorChain.begin(), detectorChain.end(), detectorID );
 
@@ -2811,7 +2845,8 @@ bool Seeed::isSelected()
 }
 bool Seeed::isVarBlockvarOfBlock(
    int var,
-   int block)
+   int block
+   )
 {
    assert( var >= 0 && var < nVars );
    assert( block >= 0 && block < nConss );
@@ -2823,7 +2858,8 @@ bool Seeed::isVarBlockvarOfBlock(
 
 /** returns true if the var is a master var */
 bool Seeed::isVarMastervar(
-   int var)
+   int var
+   )
 {
    assert( var >= 0 && var < nVars );
    if( find( masterVars.begin(), masterVars.end(), var ) != masterVars.end() )
@@ -2834,7 +2870,8 @@ bool Seeed::isVarMastervar(
 
 /** returns true if the var is a linking var */
 bool Seeed::isVarLinkingvar(
-   int var)
+   int var
+   )
 {
    assert( var >= 0 && var < nVars );
    if( find( linkingVars.begin(), linkingVars.end(), var ) != linkingVars.end() )
@@ -2845,7 +2882,8 @@ bool Seeed::isVarLinkingvar(
 
 /** returns true if the var is an open var */
 bool Seeed::isVarOpenvar(
-   int var)
+   int var
+   )
 {
    assert( var >= 0 && var < nVars );
    if( find( openVars.begin(), openVars.end(), var ) != openVars.end() )
@@ -2856,7 +2894,8 @@ bool Seeed::isVarOpenvar(
 
 /** returns true if the var is a stairlinking var */
 bool Seeed::isVarStairlinkingvar(
-   int var)
+   int var
+   )
 {
    for( int b = 0; b < nBlocks; ++ b )
    {
@@ -2869,7 +2908,8 @@ bool Seeed::isVarStairlinkingvar(
 /** returns true if the var is a stairlinkingvar of the block */
 bool Seeed::isVarStairlinkingvarOfBlock(
    int var,
-   int block)
+   int block
+   )
 {
    assert( var >= 0 && var < nVars );
    assert( block >= 0 && block < nBlocks );
@@ -2888,7 +2928,8 @@ bool Seeed::isVarStairlinkingvarOfBlock(
 /** refine seeed with focus on blocks: assigns open conss and vars if they can be
  *  found in blocks (assignHittingOpenconss(), assignHittingOpenvars()) */
 SCIP_RETCODE Seeed::refineToBlocks(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    bool success = true;
 
@@ -2903,7 +2944,8 @@ SCIP_RETCODE Seeed::refineToBlocks(
 /** refine seeed with focus on master: do obvious (considerImplicits()) assignments and
  *  assign other conss and vars to master if possible (assignOpenPartialHittingToMaster()) */
 SCIP_RETCODE Seeed::refineToMaster(
-   Seeedpool* seeedpool)
+   Seeedpool* seeedpool
+   )
 {
    changedHashvalue = true;
 
@@ -2917,7 +2959,8 @@ SCIP_RETCODE Seeed::refineToMaster(
  *  does not delete this cons from list of open conss */
 SCIP_RETCODE Seeed::setConsToBlock(
    int consToBlock,
-   int block)
+   int block
+   )
 {
    assert( consToBlock >= 0 && consToBlock < nConss );
    assert( block >= 0 && block < nBlocks );
@@ -2933,7 +2976,8 @@ SCIP_RETCODE Seeed::setConsToBlock(
 /** directly adds a constraint to the master constraints
  *  does not delete this cons from list of open conss */
 SCIP_RETCODE Seeed::setConsToMaster(
-   int consToMaster)
+   int consToMaster
+   )
 {
    assert( consToMaster >= 0 && consToMaster < nConss );
    masterConss.push_back( consToMaster );
@@ -2945,7 +2989,8 @@ SCIP_RETCODE Seeed::setConsToMaster(
 
 /** sets seeed to be propagated by a detector */
 SCIP_RETCODE Seeed::setDetectorPropagated(
-   DEC_DETECTOR* detectorID)
+   DEC_DETECTOR* detectorID
+   )
 {
    detectorChain.push_back( detectorID );
    detectorChainFinishingUsed.push_back( FALSE );
@@ -2955,7 +3000,8 @@ SCIP_RETCODE Seeed::setDetectorPropagated(
 
 /** sets seeed to be propagated by a finishing detector */
 SCIP_RETCODE Seeed::setFinishingDetectorPropagated(
-   DEC_DETECTOR* detectorID)
+   DEC_DETECTOR* detectorID
+   )
 {
    isFinishedByFinisher = true;
    detectorChain.push_back( detectorID );
@@ -2966,14 +3012,16 @@ SCIP_RETCODE Seeed::setFinishingDetectorPropagated(
 
 /** sets whether this seeed was finished by a detector */
 void Seeed::setFinishedByFinisher(
-   bool finished)
+   bool finished
+   )
 {
    isFinishedByFinisher = finished;
 }
 
 /** sets number of blocks, only increasing number allowed */
 SCIP_RETCODE Seeed::setNBlocks(
-   int newNBlocks)
+   int newNBlocks
+   )
 {
    assert( newNBlocks >= nBlocks );
 
@@ -2998,7 +3046,8 @@ SCIP_RETCODE Seeed::setNBlocks(
 
 /** sets the id of this seeed */
 SCIP_RETCODE Seeed::setID(
-   int newid)
+   int newid
+   )
 {
    this->id = newid;
    return SCIP_OKAY;
@@ -3006,7 +3055,8 @@ SCIP_RETCODE Seeed::setID(
 
 /** set selection information about this seeed */
 void Seeed::setSelected(
-   bool selected)
+   bool selected
+   )
 {
    isselected = selected;
 }
@@ -3015,7 +3065,8 @@ void Seeed::setSelected(
  *  does not delete this var from list of open vars */
 SCIP_RETCODE Seeed::setVarToBlock(
    int varToBlock,
-   int block)
+   int block
+   )
 {
    assert( varToBlock >= 0 && varToBlock < nVars );
    assert( block >= 0 && block < nBlocks );
@@ -3030,7 +3081,8 @@ SCIP_RETCODE Seeed::setVarToBlock(
 /** directly adds a variable to the linking variables
  *  does not delete this var from list of open vars */
 SCIP_RETCODE Seeed::setVarToLinking(
-   int varToLinking)
+   int varToLinking
+   )
 {
    assert( varToLinking >= 0 && varToLinking < nVars );
    linkingVars.push_back( varToLinking );
@@ -3042,7 +3094,8 @@ SCIP_RETCODE Seeed::setVarToLinking(
 /** directly adds a variable to the master variables (hitting only constraints in the master)
  *  does not delete this var from list of open vars */
 SCIP_RETCODE Seeed::setVarToMaster(
-   int varToMaster)
+   int varToMaster
+   )
 {
    assert( varToMaster >= 0 && varToMaster < nVars );
    masterVars.push_back( varToMaster );
@@ -3056,7 +3109,8 @@ SCIP_RETCODE Seeed::setVarToMaster(
 SCIP_RETCODE Seeed::setVarToStairlinking(
    int varToStairlinking,
    int block1,
-   int block2)
+   int block2
+   )
 {
    assert( varToStairlinking >= 0 && varToStairlinking < nVars );
    assert( block1 >= 0 && block1 <= nBlocks );
@@ -3079,7 +3133,8 @@ void Seeed::showScatterPlot(
    SCIP_Bool writeonly,
    const char* filename,
    SCIP_Bool draft,
-   SCIP_Bool colored)
+   SCIP_Bool colored
+   )
 {
    char help[SCIP_MAXSTRLEN] = "helpScatter.txt";
    int rowboxcounter = 0;
@@ -3236,7 +3291,8 @@ void Seeed::sort()
 /** displays the assignments of the vars */
 SCIP_RETCODE Seeed::writeScatterPlot(
    Seeedpool* seeedpool,
-   const char* filename)
+   const char* filename
+   )
 {
    std::vector<int> orderToRows( nConss, - 1 );
    std::vector<int> rowToOrder( nConss, - 1 );
@@ -3356,7 +3412,8 @@ const char* Seeed::getShortCaption()
 
 /** sets the detector chain short string */
 SCIP_RETCODE Seeed::setDetectorChainString(
-   char* givenDetectorchainstring)
+   char* givenDetectorchainstring
+   )
 {
    SCIP_CALL( SCIPduplicateBlockMemoryArray( scip, & this->detectorchainstring, givenDetectorchainstring, SCIP_MAXSTRLEN ) );
    return SCIP_OKAY;
