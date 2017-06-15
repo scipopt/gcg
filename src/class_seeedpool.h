@@ -65,434 +65,395 @@ typedef Seeed* SeeedPtr;
 // You can of course template this struct to allow other hash functions
 struct pair_hash
 {
-    template <class T1, class T2>
-    std::size_t operator()( const std::pair<T1,T2> &p ) const
-    {
-        auto h1 = std::hash<T1>{}( p.first );
-        auto h2 = std::hash<T2>{}( p.second );
+   template<class T1, class T2>
+   std::size_t operator()(
+      const std::pair<T1, T2> &p) const
+   {
+      auto h1 = std::hash<T1>{}( p.first );
+      auto h2 = std::hash<T2>{}( p.second );
 
-        // overly simple hash combination
-        return h1 ^ h2;
-    }
+      // overly simple hash combination
+      return h1 ^ h2;
+   }
 };
 
 class Seeedpool
-{   /*lint -esym(1712,Seeedpool)*/
+{ /*lint -esym(1712,Seeedpool)*/
 
 private:
-   SCIP*                 						      scip;              	   /**< SCIP data structure */
+   SCIP* scip; /**< SCIP data structure */
 
-   int                                          maxndetectionrounds;    /**< maximum number of detection rounds */
-   int											         nTotalSeeeds;        	/**< number of created seeeds, used to give next id */
-   std::vector<std::vector<int>> 				   varsForConss; 	   	   /**< stores for every constraint the indices of variables that are contained in the constraint */
-   std::vector<std::vector<double>>             valsForConss;           /**< stores for every constraint the coefficients of variables that are contained in the constraint (i.e. have a nonzero coefficient) */
-   std::vector<std::vector<int>>    				conssForVars;      		/**< stores for every variable the indices of constraints containing this variable */
-   std::vector<SCIP_CONS*> 			   			consToScipCons;	      /**< stores the corresponding scip constraints pointer */
-   std::vector<SCIP_VAR*> 				       		varToScipVar;		      /**< stores the corresponding scip variable pointer */
-   std::vector<DEC_DETECTOR*> 				   	detectorToScipDetector; /**< stores the corresponding SCIP detector pinter */
-   std::vector<DEC_DETECTOR*>                   detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pointer*/
-   std::tr1::unordered_map<SCIP_CONS*, int> 	   scipConsToIndex;	      /**< maps SCIP_CONS* to the corresponding index */
-   std::tr1::unordered_map<SCIP_VAR*, int>  	   scipVarToIndex;		   /**< maps SCIP_VAR* to the corresponding index */
-   std::tr1::unordered_map<DEC_DETECTOR*, int>  scipDetectorToIndex;		/**< maps SCIP_VAR* to the corresponding index */
-   std::tr1::unordered_map<DEC_DETECTOR*, int>  scipFinishingDetectorToIndex;    /**< maps SCIP_VAR* to the corresponding index */
-   std::tr1::unordered_map< std::pair<int, int>, SCIP_Real, pair_hash>  valsMap;    /**< maps an entry of the matrix to its value, zeros are omitted */
+   int maxndetectionrounds; /**< maximum number of detection rounds */
+   int nTotalSeeeds; /**< number of created seeeds, used to give next id */
+   std::vector<std::vector<int>> varsForConss; /**< stores for every constraint the indices of variables that are contained in the constraint */
+   std::vector<std::vector<double>> valsForConss; /**< stores for every constraint the coefficients of variables that are contained in the constraint (i.e. have a nonzero coefficient) */
+   std::vector<std::vector<int>> conssForVars; /**< stores for every variable the indices of constraints containing this variable */
+   std::vector<SCIP_CONS*> consToScipCons; /**< stores the corresponding scip constraints pointer */
+   std::vector<SCIP_VAR*> varToScipVar; /**< stores the corresponding scip variable pointer */
+   std::vector<DEC_DETECTOR*> detectorToScipDetector; /**< stores the corresponding SCIP detector pinter */
+   std::vector<DEC_DETECTOR*> detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pointer*/
+   std::tr1::unordered_map<SCIP_CONS*, int> scipConsToIndex; /**< maps SCIP_CONS* to the corresponding index */
+   std::tr1::unordered_map<SCIP_VAR*, int> scipVarToIndex; /**< maps SCIP_VAR* to the corresponding index */
+   std::tr1::unordered_map<DEC_DETECTOR*, int> scipDetectorToIndex; /**< maps SCIP_VAR* to the corresponding index */
+   std::tr1::unordered_map<DEC_DETECTOR*, int> scipFinishingDetectorToIndex; /**< maps SCIP_VAR* to the corresponding index */
+   std::tr1::unordered_map<std::pair<int, int>, SCIP_Real, pair_hash> valsMap; /**< maps an entry of the matrix to its value, zeros are omitted */
 
-   int 										         	nVars;                  /**< number of variables */
-   int 										         	nConss;                 /**< number of constraints */
-   int										         	nDetectors;             /**< number of detectors */
-   int                                          nFinishingDetectors;    /**< number of finishing detectors */
-   int                                          nnonzeros;              /**< number of nonzeros */
+   int nVars; /**< number of variables */
+   int nConss; /**< number of constraints */
+   int nDetectors; /**< number of detectors */
+   int nFinishingDetectors; /**< number of finishing detectors */
+   int nnonzeros; /**< number of nonzeros */
 
-
-   DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
-   int                                          ndecompositions;        /**< number of decompositions found by the detectors */
+   DEC_DECOMP** decompositions; /**< decompositions found by the detectors */
+   int ndecompositions; /**< number of decompositions found by the detectors */
 
    /** oracle data */
-   std::vector<std::pair<int,int> >             candidatesNBlocks;      /**< candidate for the number of blocks  */
+   std::vector<std::pair<int, int> > candidatesNBlocks; /**< candidate for the number of blocks  */
 
-   std::vector<ConsClassifier*>                 consclassescollection;  /**< collection of different constraint class distributions  */
-   std::vector<VarClassifier*>                  varclassescollection;   /**< collection of different variabale class distributions   */
+   std::vector<ConsClassifier*> consclassescollection; /**< collection of different constraint class distributions  */
+   std::vector<VarClassifier*> varclassescollection; /**< collection of different variabale class distributions   */
 
-   SCIP_Bool                                    transformed;            /**< corresponds the matrix datastructure to the transformed problem */
+   SCIP_Bool transformed; /**< corresponds the matrix datastructure to the transformed problem */
 
-   std::vector<SeeedPtr>                        seeedstopopulate;      /**< seeeds that are translated seeeds from found ones for the original problem */
-
+   std::vector<SeeedPtr> seeedstopopulate; /**< seeeds that are translated seeeds from found ones for the original problem */
 
 public:
 
-   std::vector<SeeedPtr>                        incompleteSeeeds;       /**< vector of incomplete seeeds that can be used for initialization */
-   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
-   std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
-   std::vector<SeeedPtr>                        finishedSeeeds;         /**< vector of finished seeeds */
-
+   std::vector<SeeedPtr> incompleteSeeeds; /**< vector of incomplete seeeds that can be used for initialization */
+   std::vector<SeeedPtr> allrelevantseeeds; /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
+   std::vector<SeeedPtr> currSeeeds; /**< vector of current (open) seeeds */
+   std::vector<SeeedPtr> finishedSeeeds; /**< vector of finished seeeds */
 
    /** constructor */
    Seeedpool(
-      SCIP*             scip,                /**< SCIP data structure */
-	   const char*	      conshdlrName,        /**< name of the conshandler maintaining the seeedpool */
-	   SCIP_Bool         transformed          /**< true if the seeedpool is created for the presolved version of the problem */
-   );
+      SCIP* scip, /**< SCIP data structure */
+      const char* conshdlrName, /**< name of the conshandler maintaining the seeedpool */
+      SCIP_Bool transformed /**< true if the seeedpool is created for the presolved version of the problem */
+      );
 
    /** destructor */
-   ~Seeedpool(
-   );
+   ~Seeedpool();
 
    /** creates constraint and variable classifiers, and deduces block number candidates */
    SCIP_RETCODE calcClassifierAndNBlockCandidates(
-      SCIP*             givenScip            /**< SCIP data structure */
-   );
+      SCIP* givenScip /**< SCIP data structure */
+      );
 
    /** constructs seeeds using the registered detectors
     *  @return user has to free seeeds */
-   std::vector<SeeedPtr> findSeeeds(
-   );
+   std::vector<SeeedPtr> findSeeeds();
 
    /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
     *  @return set of completed decomposition */
    std::vector<SeeedPtr> finishIncompleteSeeeds(
       std::vector<SeeedPtr> incompleteseeeds /**< the set of incompleted seeeds */
-    );
+      );
 
    /** calls findSeeeds method and translates the resulting seeeds into decompositions */
-   void findDecompositions(
-   );
+   void findDecompositions();
 
    /** clears current seeed data structure */
-   void clearCurrentSeeeds(
-   );
+   void clearCurrentSeeeds();
 
    /** clears finished seeed data structure */
-   void clearFinishedSeeeds(
-   );
+   void clearFinishedSeeeds();
 
    /** clears incomplete seeed data structure */
-   void clearIncompleteSeeeds(
-   );
+   void clearIncompleteSeeeds();
 
    /** returns a seeed from current (open) seeed data structure */
    SeeedPtr getCurrentSeeed(
-      int seeedindex                                     /**< index of seeed in current (open) seeed data structure */
-   );
+      int seeedindex /**< index of seeed in current (open) seeed data structure */
+      );
 
    /** returns a seeed from finished seeed data structure */
    SeeedPtr getFinishedSeeed(
-      int seeedindex                                     /**< index of seeed in finished seeed data structure */
-   );
+      int seeedindex /**< index of seeed in finished seeed data structure */
+      );
 
    /** returns a seeed from incomplete seeed data structure */
    SeeedPtr getIncompleteSeeed(
-      int seeedindex                                     /**< index of seeed in incomplete seeed data structure */
-   );
+      int seeedindex /**< index of seeed in incomplete seeed data structure */
+      );
 
    /** returns size of current (open) seeed data structure */
-   int getNCurrentSeeeds(
-   );
+   int getNCurrentSeeeds();
 
    /** returns size of finished seeed data structure */
-   int getNFinishedSeeeds(
-   );
+   int getNFinishedSeeeds();
 
    /** returns size of incomplete seeed data structure */
-   int getNIncompleteSeeeds(
-   );
+   int getNIncompleteSeeeds();
 
    /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
    void translateSeeedData(
-      Seeedpool* otherpool,                              /**< old seeedpool */
-      std::vector<Seeed*> otherseeeds,                   /**< seeeds to be translated */
-      std::vector<Seeed*>& newseeeds,                    /**< translated seeeds (pass empty vector) */
+      Seeedpool* otherpool, /**< old seeedpool */
+      std::vector<Seeed*> otherseeeds, /**< seeeds to be translated */
+      std::vector<Seeed*>& newseeeds, /**< translated seeeds (pass empty vector) */
       std::vector<ConsClassifier*> otherconsclassifiers, /**< consclassifiers to be translated */
-      std::vector<ConsClassifier*>& newconsclassifiers,  /**< translated consclassifiers (pass empty vector) */
-      std::vector<VarClassifier*> othervarclassifiers,   /**< varclassifiers to be translated */
-      std::vector<VarClassifier*>& newvarclassifiers     /**< translated varclassifiers (pass empty vector) */
-   );
+      std::vector<ConsClassifier*>& newconsclassifiers, /**< translated consclassifiers (pass empty vector) */
+      std::vector<VarClassifier*> othervarclassifiers, /**< varclassifiers to be translated */
+      std::vector<VarClassifier*>& newvarclassifiers /**< translated varclassifiers (pass empty vector) */
+      );
 
    /** translates seeeds if the index structure of the problem has changed, e.g. due to presolving */
    void translateSeeeds(
-      Seeedpool* otherpool,                              /**< old seeedpool */
-      std::vector<Seeed*> otherseeeds,                   /**< seeeds to be translated */
-      std::vector<Seeed*>& newseeeds                     /**< translated seeeds (pass empty vector) */
-   );
+      Seeedpool* otherpool, /**< old seeedpool */
+      std::vector<Seeed*> otherseeeds, /**< seeeds to be translated */
+      std::vector<Seeed*>& newseeeds /**< translated seeeds (pass empty vector) */
+      );
 
    /** registers translated seeeds from the original problem */
    void populate(
-      std::vector<SeeedPtr> seeeds
-   );
+      std::vector<SeeedPtr> seeeds);
 
    /** sorts the seeed and calculates a its implicit assignments, hashvalue and evaluation */
    SCIP_RETCODE prepareSeeed(
-      SeeedPtr seeed
-   );
+      SeeedPtr seeed);
 
    /** adds a seeed to current seeeds */
    void addSeeedToCurr(
-      SeeedPtr seeed
-   );
+      SeeedPtr seeed);
 
    /** adds a seeed to finished seeeds */
    void addSeeedToFinished(
-      SeeedPtr seeed
-   );
+      SeeedPtr seeed);
 
    /** sorts seeeds in allrelevantseeeds data structure by ascending id */
-   void sortAllRelevantSeeeds(
-   );
+   void sortAllRelevantSeeeds();
 
    /** returns the variable indices of the coefficient matrix for a constraint */
    const int* getVarsForCons(
-      int consIndex                 /**< index of the constraint to be considered */
-   );
+      int consIndex /**< index of the constraint to be considered */
+      );
 
    /** returns the coefficients of the coefficient matrix for a constraint */
-    const SCIP_Real* getValsForCons(
-       int consIndex                /**< index of the constraint to be considered */
-    );
+   const SCIP_Real* getValsForCons(
+      int consIndex /**< index of the constraint to be considered */
+      );
 
    /** returns the constraint indices of the coefficient matrix for a variable */
    const int* getConssForVar(
-      int varIndex                  /**< index of the variable to be considered */
-   );
+      int varIndex /**< index of the variable to be considered */
+      );
 
    /** returns the number of variables for a given constraint */
    int getNVarsForCons(
-      int consIndex                 /**< index of the constraint to be considered */
-   );
+      int consIndex /**< index of the constraint to be considered */
+      );
 
    /** returns the number of constraints for a given variable */
    int getNConssForVar(
-      int varIndex                  /**< index of the variable to be considered */
-   );
+      int varIndex /**< index of the variable to be considered */
+      );
 
    /** returns the SCIP variable related to a variable index */
    SCIP_VAR* getVarForIndex(
-      int varIndex                  /**< index of the variable to be considered */
-   );
+      int varIndex /**< index of the variable to be considered */
+      );
 
    /** returns the SCIP constraint related to a constraint index */
    SCIP_CONS* getConsForIndex(
-      int consIndex                 /**< index of the constraint to be considered */
-   );
+      int consIndex /**< index of the constraint to be considered */
+      );
 
    /** returns the detector related to a detector index */
    DEC_DETECTOR* getDetectorForIndex(
-      int detectorIndex             /**< index of the detector to be considered */
-   );
+      int detectorIndex /**< index of the detector to be considered */
+      );
 
    /** returns the detector related to a finishing detector index */
    DEC_DETECTOR* getFinishingDetectorForIndex(
-      int detectorIndex             /**< index of the finishing detector to be considered */
-   );
+      int detectorIndex /**< index of the finishing detector to be considered */
+      );
 
    /** returns a coefficient from the coefficient matrix */
    SCIP_Real getVal(
-      int row,                      /**< index of the constraint to be considered */
-      int col                       /**< index of the variable to be considered */
-   );
+      int row, /**< index of the constraint to be considered */
+      int col /**< index of the variable to be considered */
+      );
 
    /** returns the variable index related to a SCIP variable */
    int getIndexForVar(
-      SCIP_VAR* var
-   );
+      SCIP_VAR* var);
 
    /** returns the constraint index related to a SCIP constraint */
    int getIndexForCons(
-      SCIP_CONS* cons
-   );
+      SCIP_CONS* cons);
 
    /** returns the detector index related to a detector */
    int getIndexForDetector(
-      DEC_DETECTOR* detector
-   );
+      DEC_DETECTOR* detector);
 
    /** returns the finishing detector index related to a detector */
    int getIndexForFinishingDetector(
-      DEC_DETECTOR* detector
-   );
+      DEC_DETECTOR* detector);
 
    /** returns a new unique id for a seeed */
-   int getNewIdForSeeed(
-   );
+   int getNewIdForSeeed();
 
    /** returns the decompositions stored in the seeedpool */
-   DEC_DECOMP** getDecompositions(
-   );
+   DEC_DECOMP** getDecompositions();
 
    /** returns the number of decompositions stored in the seeedpool */
-   int getNDecompositions(
-   );
+   int getNDecompositions();
 
    /** returns the number of detectors used in the seeedpool */
-   int getNDetectors(
-   );
+   int getNDetectors();
 
    int getNNonzeros();
 
    /** returns the number of finishing detectors used in the seeedpool */
-   int getNFinishingDetectors(
-   );
+   int getNFinishingDetectors();
 
    /** returns the number of variables considered in the seeedpool */
-   int getNVars(
-   );
+   int getNVars();
 
    /** returns the number of constraints considered in the seeedpool */
-   int getNConss(
-   );
+   int getNConss();
 
    /** returns the candidates for block size sorted in descending order by how often a candidate was added */
-   std::vector<int> getSortedCandidatesNBlocks(
-   );
+   std::vector<int> getSortedCandidatesNBlocks();
 
    /** adds a candidate for block size and counts how often a candidate is added */
    void addCandidatesNBlocks(
-      int candidate                 /**< candidate for block size */
-   );
+      int candidate /**< candidate for block size */
+      );
 
    /** calculates and adds block size candidates using constraint classifications and variable classifications */
-   void calcCandidatesNBlocks(
-   );
+   void calcCandidatesNBlocks();
 
    /** adds a constraint classifier if it is no duplicate of an existing constraint classifier */
    void addConsClassifier(
-      ConsClassifier* classifier    /**< consclassifier to be added */
-   );
+      ConsClassifier* classifier /**< consclassifier to be added */
+      );
 
    /** returns a new constraint classifier
     *  where all constraints with identical SCIP constype are assigned to the same class */
-   ConsClassifier* createConsClassifierForSCIPConstypes(
-   );
+   ConsClassifier* createConsClassifierForSCIPConstypes();
 
    /** returns a new constraint classifier
     *  where all constraints with identical consname (ignoring digits) are assigned to the same class */
-   ConsClassifier* createConsClassifierForConsnamesDigitFreeIdentical(
-   );
+   ConsClassifier* createConsClassifierForConsnamesDigitFreeIdentical();
 
    /** returns a new constraint classifier
     *  where all constraints whose consnames do not a have levenshtein distance to each other
     *  higher than a given connectivity are assigned to the same class */
    ConsClassifier* createConsClassifierForConsnamesLevenshteinDistanceConnectivity(
-      int connectivity              /**< given connectivity */
-   );
+      int connectivity /**< given connectivity */
+      );
 
    /** returns a new constraint classifier
     *  where all constraints with identical number of nonzero coefficients are assigned to the same class */
-   ConsClassifier* createConsClassifierForNNonzeros(
-   );
+   ConsClassifier* createConsClassifierForNNonzeros();
 
    /** returns pointer to a constraint classifier */
    ConsClassifier* getConsClassifier(
-      int classifierIndex           /**< index of constraint classifier */
-   );
+      int classifierIndex /**< index of constraint classifier */
+      );
 
    /** returns the assignment of constraints to classes of a classifier as integer array */
    int* getConsClassifierArray(
-      int classifierIndex           /**< index of constraint classifier */
-   );
+      int classifierIndex /**< index of constraint classifier */
+      );
 
    /** returns number of different constraint classifiers */
-   int getNConsClassifiers(
-   );
+   int getNConsClassifiers();
 
    /** adds constraint classifiers with a reduced number of classes */
-   void reduceConsclasses(
-   );
+   void reduceConsclasses();
 
    /** adds a variable classifier if it is no duplicate of an existing variable classifier */
    void addVarClassifier(
-      VarClassifier*               classifier              /**< varclassifier to be added */
-   );
+      VarClassifier* classifier /**< varclassifier to be added */
+      );
 
    /** returns a new variable classifier
     *  where all variables with identical SCIP vartype are assigned to the same class */
-   VarClassifier* createVarClassifierForSCIPVartypes(
-   );
+   VarClassifier* createVarClassifierForSCIPVartypes();
 
    /** returns the assignment of variables to classes of a classifier as integer array */
    int* getVarClassifierArray(
-      int classifierIndex           /**< index of variable classifier */
-   );
+      int classifierIndex /**< index of variable classifier */
+      );
 
    /** returns number of different variable classifiers */
-   int getNVarClassifiers(
-   );
+   int getNVarClassifiers();
 
    /** returns pointer to a variable classifier */
    VarClassifier* getVarClassifier(
-      int classifierIndex           /**< index of variable classifier */
-   );
+      int classifierIndex /**< index of variable classifier */
+      );
 
    /** adds variable classifiers with a reduced number of classes */
-   void reduceVarclasses(
-   );
+   void reduceVarclasses();
 
    /** returns a vector of seeeds where all seeeds of given seeeds having only one block are removed
     *  except for the two seeeds with the lowest numbers of masterconss */
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
-      std::vector<SeeedPtr> givenseeeds
-   );
+      std::vector<SeeedPtr> givenseeeds);
 
    /** creates a latex file illustrating a family tree of given seeeds */
    SCIP_RETCODE writeFamilyTreeLatexFile(
-      const char* filename,                                 /* filename the output should be written to */
-      const char* workfolder,                               /* directory in which should be worked */
-      std::vector<SeeedPtr> seeeds,                         /* vector of seeed pointers the  family tree should be constructed for */
-      SCIP_Bool draft
-   );
+      const char* filename, /* filename the output should be written to */
+      const char* workfolder, /* directory in which should be worked */
+      std::vector<SeeedPtr> seeeds, /* vector of seeed pointers the  family tree should be constructed for */
+      SCIP_Bool draft);
 
    /** creates a decomposition for a given seeed */
    SCIP_RETCODE createDecompFromSeeed(
-      SeeedPtr       seeed,                                 /** seeed the decomposition is created for */
-      DEC_DECOMP**   newdecomp                              /** the new decomp created from the seeed */
-   );
+      SeeedPtr seeed, /** seeed the decomposition is created for */
+      DEC_DECOMP** newdecomp /** the new decomp created from the seeed */
+      );
 
    /** creates a seeed for a given decomposition, atm dummy method */
    SCIP_RETCODE createSeeedFromDecomp(
-      DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
-      SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
+      DEC_DECOMP* decomp, /** decomposition the seeed is created for */
+      SeeedPtr* newseeed /** the new seeed created from the decomp */
       );
 
    /**
     * returns transformation information
     */
-   SCIP_Bool getTransformedInfo(
-   );
+   SCIP_Bool getTransformedInfo();
 
 private:
 
    /** calculates necessary data for translating seeeds and classifiers */
    void calcTranslationMapping(
-      Seeedpool* origpool,                                  /** original seeedpool */
-      std::vector<int>& rowothertothis,                     /** constraint index mapping from old to new seeedpool */
-      std::vector<int>& rowthistoother,                     /** constraint index mapping new to old seeedpool */
-      std::vector<int>& colothertothis,                     /** variable index mapping from old to new seeedpool */
-      std::vector<int>& colthistoother,                     /** variable index mapping from new to old seeedpool */
-      std::vector<int>& missingrowinthis                    /** missing constraint indices in new seeedpool */
-   );
+      Seeedpool* origpool, /** original seeedpool */
+      std::vector<int>& rowothertothis, /** constraint index mapping from old to new seeedpool */
+      std::vector<int>& rowthistoother, /** constraint index mapping new to old seeedpool */
+      std::vector<int>& colothertothis, /** variable index mapping from old to new seeedpool */
+      std::vector<int>& colthistoother, /** variable index mapping from new to old seeedpool */
+      std::vector<int>& missingrowinthis /** missing constraint indices in new seeedpool */
+      );
 
    /** returns translated Seeeds derived from given mapping data */
    std::vector<Seeed*> getTranslatedSeeeds(
-      std::vector<Seeed*>& otherseeeds,                     /**< seeeds to be translated */
-      std::vector<int>& rowothertothis,                     /** constraint index mapping from old to new seeedpool */
-      std::vector<int>& rowthistoother,                     /** constraint index mapping new to old seeedpool */
-      std::vector<int>& colothertothis,                     /** variable index mapping from old to new seeedpool */
-      std::vector<int>& colthistoother                      /** variable index mapping from new to old seeedpool */
-   );
+      std::vector<Seeed*>& otherseeeds, /**< seeeds to be translated */
+      std::vector<int>& rowothertothis, /** constraint index mapping from old to new seeedpool */
+      std::vector<int>& rowthistoother, /** constraint index mapping new to old seeedpool */
+      std::vector<int>& colothertothis, /** variable index mapping from old to new seeedpool */
+      std::vector<int>& colthistoother /** variable index mapping from new to old seeedpool */
+      );
 
    /** returns translated ConsClassifiers derived from given mapping data */
    std::vector<ConsClassifier*> getTranslatedConsClassifiers(
-      std::vector<ConsClassifier*>& otherclassifiers,       /**< consclassifiers to be translated */
-      std::vector<int>& rowothertothis,                     /** constraint index mapping from old to new seeedpool */
-      std::vector<int>& rowthistoother                      /** constraint index mapping new to old seeedpool */
-   );
+      std::vector<ConsClassifier*>& otherclassifiers, /**< consclassifiers to be translated */
+      std::vector<int>& rowothertothis, /** constraint index mapping from old to new seeedpool */
+      std::vector<int>& rowthistoother /** constraint index mapping new to old seeedpool */
+      );
 
    /** returns translated VarClassifiers derived from given mapping data */
    std::vector<VarClassifier*> getTranslatedVarClassifiers(
-      std::vector<VarClassifier*>& otherclassifiers,        /**< varclassifiers to be translated */
-      std::vector<int>& colothertothis,                     /** variable index mapping from old to new seeedpool */
-      std::vector<int>& colthistoother                      /** variable index mapping from new to old seeedpool */
-   );
+      std::vector<VarClassifier*>& otherclassifiers, /**< varclassifiers to be translated */
+      std::vector<int>& colothertothis, /** variable index mapping from old to new seeedpool */
+      std::vector<int>& colthistoother /** variable index mapping from new to old seeedpool */
+      );
 
-}; /* class Seeedpool */
+};
+/* class Seeedpool */
 
 } /* namespace gcg */
 #endif /* GCG_CLASS_SEEEDPOOL_H__ */
