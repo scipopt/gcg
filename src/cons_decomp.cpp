@@ -1395,6 +1395,8 @@ SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   if( conshdlrdata->candidates->size() == 0 )
+      return FALSE;
 
    return conshdlrdata->candidates->at(0).first->isfromunpresolved;
 }
@@ -2049,6 +2051,8 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    conshdlrdata->listall->clear();
 
 
+   if( conshdlrdata->hasrun && conshdlrdata->seeedpool == NULL )
+      return SCIP_OKAY;
 
    /** sort decomposition and finished seeeds according to max white score */
    SCIP_CALL( DECconshdlrDecompSortDecompositionsByScore(scip) );
@@ -3791,6 +3795,9 @@ DEC_DECOMP* DECgetBestDecomp(
    seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved ;
 
  //  DECconshdlrDecompSortDecompositionsByScore(scip);
+
+   if( conshdlrdata->candidates->size() == 0 )
+      return NULL;
 
    seeed = conshdlrdata->candidates->at( 0 ).first;
 
