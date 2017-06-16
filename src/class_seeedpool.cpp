@@ -2799,9 +2799,12 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
   )
 {
+   assert( nConss == DECdecompGetNConss( decomp ) );
+
    SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nDetectors, nConss, nVars );
 
-   /*fillout blocks: assigns all cons and vars to blocks (only works for complete decomps)*/
+   /* fillout blocks: assigns all cons and vars to blocks (this works only for complete decomps) */
+   /* @todo does not work; does constoblock hashmap always hold sufficient information? */
    seeed->filloutSeeedFromConstoblock( DECdecompGetConstoblock( decomp ), DECdecompGetNBlocks( decomp ), this );
 
    /*set all detector-related information*/
@@ -2821,8 +2824,15 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
 
    /*@todo detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings
-    *@todo some setters are still missing
-   */
+    *@todo how to handle missing attributes? */
+
+   /* calc maxwhitescore and hashvalue */
+   prepareSeeed( seeed );
+
+   assert( DECgetMaxWhiteScore( scip, decomp ) == seeed->getMaxWhiteScore() );
+   assert( seeed->checkConsistency( this ) );
+
+   *newseeed = seeed;
 
    return SCIP_OKAY;
 }

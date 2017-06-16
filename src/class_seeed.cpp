@@ -2360,6 +2360,7 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock(SCIP_HASHMAP* constoblock, int g
 
    for( int c = 0; c < nConss; ++c )
    {
+      std::cout << c << std::endl;
       assert(SCIPhashmapExists(constoblock, (void* ) (size_t ) c));
       assert((int )(size_t )SCIPhashmapGetImage(constoblock, (void* ) (size_t ) c) - 1 <= nBlocks);
       assert((int )(size_t )SCIPhashmapGetImage(constoblock, (void* ) (size_t ) c) - 1 >= 0);
