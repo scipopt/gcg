@@ -151,6 +151,7 @@ Seeed::~Seeed()
    SCIPfreeBlockMemoryArrayNull( scip, & detectorchainstring, SCIP_MAXSTRLEN );
 }
 
+/** returns true iff the second value of a is lower than the second value of b */
 bool compare_blocks(
    std::pair<int, int> const & a,
    std::pair<int, int> const & b
@@ -3419,6 +3420,7 @@ SCIP_RETCODE Seeed::setDetectorChainString(
    return SCIP_OKAY;
 }
 
+/** creates and sets a detector chain short string for this seeed */
 SCIP_RETCODE Seeed::buildDecChainString()
 {
    char decchaininfo[SCIP_MAXSTRLEN];

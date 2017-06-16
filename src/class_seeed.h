@@ -56,7 +56,7 @@ class Seeedpool;
 class Seeed
 {
 private:
-   SCIP* scip;
+   SCIP* scip;                                                 /**< SCIP data structure */
    int id;                                                     /**< id of the seeed */
    int nBlocks;                                                /**< number of blocks the decomposition currently has */
    int nVars;                                                  /**< number of variables */
@@ -90,7 +90,7 @@ private:
                                                                  *< first block of the stairlinking var */
    std::vector<bool> propagatedByDetector;                     /**< propagatedByDetector[i] is this seeed propagated by
                                                                  *< detector i */
-   long hashvalue;
+   long hashvalue;                                             /**< a hashvalue of the seeed for comparing it with other seeeds */
    SCIP_Real score;                                            /**< score to evaluate the seeeds */
    SCIP_Real maxwhitescore;                                    /**< score corresponding to the max white measure */
    bool changedHashvalue;                                      /**< are there any changes concerning the hash value since it
@@ -103,8 +103,8 @@ private:
 
 public:
 
-   bool isFinishedByFinisher;                         /**< was this seeed finished by the finishseeed() method of a detector
-                                                        */
+   bool isFinishedByFinisher;                         /**< was this seeed finished by the finishseeed() method of a detector */
+
    /** statistic information */
    std::vector<DEC_DETECTOR*> detectorChain;          /**< vector containing detectors that worked on that seeed */
    std::vector<std::string> detectorchaininfo;        /**< vector containing information about the detector call */
@@ -381,7 +381,8 @@ public:
 
    /** returns size of the vector containing conss assigned to a block */
    int getNConssForBlock(
-      int block);
+      int block
+      );
 
    /** returns the number of detectors the seeed is propagated by */
    int getNDetectors();
@@ -434,7 +435,7 @@ public:
       );
 
    /** returns true if this seeed is complete,
-    *  i.e. it has at no more open constraints and variables */
+    *  i.e. it has no more open constraints and variables */
    bool isComplete();
 
    /** returns true if the cons is a cons of the block */
@@ -453,16 +454,16 @@ public:
       int cons
       );
 
-   /* method to check whether this seeed is equal to given other seeed (calls isEqual(Seeed*)) */
    bool isSelected();
 
+   /* method to check whether this seeed is equal to a given other seeed (calls isEqual(Seeed*)) */
    SCIP_RETCODE isEqual(
       Seeed* otherseeed,   /**< other seeed */
       SCIP_Bool* isequal,  /**< pointer to store whether seeeds are identical */
       bool sortseeeds      /**< should conss and vars be sorted before comparing the seeeds? */
       );
 
-   /* method to check whether this seeed is equal to given other seeed */
+   /* method to check whether this seeed is equal to a given other seeed */
    bool isEqual(
       Seeed* other /**< other seeed */
       );
@@ -558,6 +559,7 @@ public:
       int id
       );
 
+   /** sets whether this seeed is selected */
    void setSelected(
       bool selected
       );
@@ -618,6 +620,7 @@ public:
       char* detectorchainstring
       );
 
+   /** creates and sets a detector chain short string for this seeed */
    SCIP_RETCODE buildDecChainString();
 
 private:
