@@ -708,6 +708,7 @@ SCIP_RETCODE readBlockconss(
       if( cons == NULL )
       {
          syntaxError(scip, decinput, "unknown constraint in block section");
+         decinput->haserror = TRUE;
          break;
       }
 
@@ -754,7 +755,12 @@ SCIP_RETCODE readBlockconss(
        * saving block <-> constraint
        */
 
-      assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*)(size_t) LINKINGVALUE);
+      if( SCIPhashmapGetImage(readerdata->constoblock, cons) != (void*)(size_t) LINKINGVALUE )
+      {
+         decinput->haserror = TRUE;
+         SCIPinfoMessage(scip,  NULL,"cons %s is already assigned\n", SCIPconsGetName(cons) );
+         return SCIP_OKAY;
+      }
 
       SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(cons), blockid);
       SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blockid+1)) );
@@ -1147,9 +1153,16 @@ SCIP_RETCODE readDECFile(
       }
    }
 
-   SCIPinfoMessage(scip, NULL, "just read dec file:");
-   SCIPconshdlrDecompUserSeeedFlush(scip);
-
+   if( decinput->haserror)
+   {
+      SCIPinfoMessage(scip, NULL, "error occured while reading dec file");
+      SCIPconshdlrDecompUserSeeedReject(scip);
+   }
+   else
+   {
+      SCIPinfoMessage(scip, NULL, "just read dec file:");
+      SCIPconshdlrDecompUserSeeedFlush(scip);
+   }
 //   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
 //
 //   if( retcode == SCIP_OKAY )
