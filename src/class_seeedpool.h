@@ -308,6 +308,18 @@ public:
       int classifierIndex                     /**< index of variable classifier */
    );
 
+   /** returns a new variable classifier
+    *  where all variables with identical objective function value are assigned to the same class */
+   VarClassifier* createVarClassifierForObjValues(
+   );
+
+   /** returns a new variable classifier
+    *  where all variables are assigned to class zero, positive or negative according to their objective function value sign
+    *  all class zero variables are assumed to be only master variables (set via DECOMPINFO)
+    *  @todo correct? */
+   VarClassifier* createVarClassifierForObjValueSigns(
+   );
+
    VarClassifier* createVarClassifierForSCIPVartypes(
    );
 
