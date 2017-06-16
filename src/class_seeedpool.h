@@ -109,7 +109,7 @@ private:
    int nConss;                   /**< number of constraints */
    int nDetectors;               /**< number of detectors */
    int nFinishingDetectors;      /**< number of finishing detectors */
-   int nnonzeros;                /**< number of nonzeros */
+   int nnonzeros;                /**< number of nonzero entries in the coefficient matrix */
 
    DEC_DECOMP** decompositions;  /**< decompositions found by the detectors */
    int ndecompositions;          /**< number of decompositions found by the detectors */
@@ -218,7 +218,7 @@ public:
       std::vector<SeeedPtr> seeeds
       );
 
-   /** sorts the seeed and calculates a its implicit assignments, hashvalue and evaluation */
+   /** sorts the seeed and calculates its implicit assignments, hashvalue and evaluation */
    SCIP_RETCODE prepareSeeed(
       SeeedPtr seeed
       );
@@ -230,6 +230,11 @@ public:
 
    /** adds a seeed to finished seeeds */
    void addSeeedToFinished(
+      SeeedPtr seeed
+      );
+
+   /** adds a seeed to incomplete seeeds */
+   void addSeeedToIncomplete(
       SeeedPtr seeed
       );
 
@@ -319,6 +324,7 @@ public:
    /** returns the number of detectors used in the seeedpool */
    int getNDetectors();
 
+   /** returns the number of nonzero entries in the coefficient matrix */
    int getNNonzeros();
 
    /** returns the number of finishing detectors used in the seeedpool */
@@ -390,17 +396,17 @@ public:
     *  where all variables with identical SCIP vartype are assigned to the same class */
    VarClassifier* createVarClassifierForSCIPVartypes();
 
-   /** returns the assignment of variables to classes of a classifier as integer array */
-   int* getVarClassifierArray(
-      int classifierIndex /**< index of variable classifier */
-      );
-
    /** returns number of different variable classifiers */
    int getNVarClassifiers();
 
    /** returns pointer to a variable classifier */
    VarClassifier* getVarClassifier(
       int classifierIndex /**< index of variable classifier */
+      );
+
+   /** returns the assignment of variables to classes of a classifier as integer array */
+   int* getVarClassifierArray(
+      int classifierIndex /**< index of constraint classifier */
       );
 
    /** adds variable classifiers with a reduced number of classes */
@@ -410,14 +416,6 @@ public:
     *  except for the two seeeds with the lowest numbers of masterconss */
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds
-      );
-
-   /** creates a latex file illustrating a family tree of given seeeds */
-   SCIP_RETCODE writeFamilyTreeLatexFile(
-      const char* filename,         /* filename the output should be written to */
-      const char* workfolder,       /* directory in which should be worked */
-      std::vector<SeeedPtr> seeeds, /* vector of seeed pointers the  family tree should be constructed for */
-      SCIP_Bool draft
       );
 
    /** creates a decomposition for a given seeed */
@@ -432,10 +430,9 @@ public:
       SeeedPtr* newseeed   /** the new seeed created from the decomp */
       );
 
-   /**
-    * returns transformation information
-    */
+   /** returns true if the matrix structure corresponds to the transformed problem */
    SCIP_Bool getTransformedInfo();
+
 
 private:
 

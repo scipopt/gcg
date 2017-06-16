@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   class_seeedpool.cpp
- * @brief  class with functions for seeedpool
+ * @brief  class with functions for seeedpoolnTotalSeeeds
  * @author Michael Bastubbe
  *
  */
@@ -84,7 +84,7 @@
 #define ENUM_TO_STRING( x ) # x
 #define DEFAULT_THREADS    0     /**< number of threads (0 is OpenMP default) */
 
-/*@todo use structs in c++ or would it better to create a (local) conshdlrData class? */
+/* @todo use structs in c++ or would it be better to create a (local) conshdlrData class? */
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
@@ -430,6 +430,7 @@ int gcd(
    return b == 0 ? a : gcd( b, a % b );
 }
 
+/** returns the relevant representative of a cons */
 SCIP_CONS* consGetRelevantRepr(
    SCIP* scip,
    SCIP_CONS* cons
@@ -438,6 +439,7 @@ SCIP_CONS* consGetRelevantRepr(
    return cons;
 }
 
+/** returns the relevant representative of a var */
 SCIP_VAR* varGetRelevantRepr(
    SCIP* scip,
    SCIP_VAR* var
@@ -679,8 +681,6 @@ Seeedpool::Seeedpool(
    addSeeedToCurr( new Seeed( scip, - 1, nDetectors, nConss, nVars ) );
 
    decompositions = NULL;
-
-   std::cout << "- monitor nts: " << nTotalSeeeds << std::endl;
 } //end constructor
 
 /** destructor */
@@ -874,7 +874,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
                seeedPropData->newSeeeds[j]->setID( getNewIdForSeeed() );
                prepareSeeed( seeedPropData->newSeeeds[j] );
-               assert( seeedPropData->newSeeeds[j]->checkConsistency( this, true ) );
+               assert( seeedPropData->newSeeeds[j]->checkConsistency( this ) );
                seeedPropData->newSeeeds[j]->addDecChangesFromAncestor( seeedPtr );
             }
 
@@ -1059,8 +1059,6 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
       }
 
       currSeeeds = nextSeeeds;
-
-      std::cout << "- monitor nts: " << nTotalSeeeds << std::endl;
    } // end for rounds
 
    /** complete the currseeeds with finishing detectors and add them to finished seeeds */
@@ -1143,7 +1141,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
    for( size_t i = 0; i < finishedSeeeds.size(); ++ i )
    {
-      assert( finishedSeeeds[i]->checkConsistency( this, true ) );
+      assert( finishedSeeeds[i]->checkConsistency( this ) );
       assert( finishedSeeeds[i]->getNOpenconss() == 0 );
       assert( finishedSeeeds[i]->getNOpenvars() == 0 );
 
@@ -1618,7 +1616,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->deleteEmptyBlocks();
       newseeed->evaluate( this );
 
-      if( newseeed->checkConsistency( this, true ) )
+      if( newseeed->checkConsistency( this ) )
          newseeeds.push_back( newseeed );
       else
       {
@@ -1768,6 +1766,15 @@ void Seeedpool::addSeeedToFinished(
    )
 {
    finishedSeeeds.push_back( seeed );
+   allrelevantseeeds.push_back( seeed );
+}
+
+/** adds a seeed to incomplete seeeds */
+void Seeedpool::addSeeedToIncomplete(
+   SeeedPtr seeed
+   )
+{
+   incompleteSeeeds.push_back( seeed );
    allrelevantseeeds.push_back( seeed );
 }
 
@@ -1938,6 +1945,7 @@ int Seeedpool::getNDetectors()
    return nDetectors;
 }
 
+/** returns the number of nonzero entries in the coefficient matrix */
 int Seeedpool::getNNonzeros()
 {
    return nnonzeros;
@@ -2421,13 +2429,13 @@ ConsClassifier* Seeedpool::createConsClassifierForNNonzeros()
    /** firstly, assign all constraints to classindices */
    for( int i = 0; i < getNConss(); ++ i )
    {
-      int nnonzeros = getNVarsForCons( i );
+      int consnnonzeros = getNVarsForCons( i );
       bool nzalreadyfound = false;
 
       /** check if number of nonzeros belongs to an existing class index */
       for( size_t nzid = 0; nzid < differentNNonzeros.size(); ++ nzid )
       {
-         if( nnonzeros == differentNNonzeros[nzid] )
+         if( consnnonzeros == differentNNonzeros[nzid] )
          {
             nzalreadyfound = true;
             classForCons[i] = nzid;
@@ -2441,7 +2449,7 @@ ConsClassifier* Seeedpool::createConsClassifierForNNonzeros()
       {
          classForCons[i] = counterClasses;
          ++ counterClasses;
-         differentNNonzeros.push_back( nnonzeros );
+         differentNNonzeros.push_back( consnnonzeros );
          nconssforclass.push_back( 1 );
       }
    }
@@ -2736,8 +2744,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    DEC_DECOMP** newdecomp
    )
 {
-   char detectorchaininfo[SCIP_MAXSTRLEN];
-
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* varindex;
@@ -2762,7 +2768,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    int size;
 
-   assert( seeed->checkConsistency( this, true ) );
+   assert( seeed->checkConsistency( this ) );
 
    /* create decomp data structure */
    SCIP_CALL_ABORT( DECdecompCreate( scip, newdecomp ) );
@@ -3034,9 +3040,7 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    return SCIP_OKAY;
 }
 
-/**
- * returns transformation information
- */
+/** returns true if the matrix structure corresponds to the transformed problem */
 SCIP_Bool Seeedpool::getTransformedInfo()
 {
    return transformed;
