@@ -736,7 +736,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIPfreeTransform(scip);
          SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
          SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
-
       }
 
       SCIP_CALL( SCIPsolve(scip) );

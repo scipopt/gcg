@@ -478,6 +478,9 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromPresolved(
       conshdlrdata = SCIPconshdlrGetData(conshdlr);
       assert(conshdlrdata != NULL);
 
+      if( conshdlrdata->seeedpool == NULL )
+         return NULL;
+
       for( size_t i = 0; i < conshdlrdata->seeedpool->ancestorseeeds.size(); ++i)
       {
          if( conshdlrdata->seeedpool->ancestorseeeds[i]!= NULL && conshdlrdata->seeedpool->ancestorseeeds[i]->getID() == seeedid )
