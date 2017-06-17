@@ -2057,7 +2057,8 @@ SCIP_RETCODE Seeed::displayVars(Seeedpool* seeedpool)
  * @todo bound calculation for unfinished decompositions could be more precise
  */
 SCIP_Real Seeed::evaluate(
-   Seeedpool* seeedpool
+   Seeedpool* seeedpool,
+   SCORETYPE sctype
    )
 {
 
@@ -2108,6 +2109,7 @@ SCIP_Real Seeed::evaluate(
 	   maxwhitescore = blackarea/( getNConss() * getNVars() );
 
 	   return maxwhitescore;
+
    }
 
    if( getNOpenconss() != 0 || getNOpenvars() != 0 )
@@ -2133,6 +2135,7 @@ SCIP_Real Seeed::evaluate(
    blackarea += getNMasterconss() * getNVars();
 
    blackarea -= getNMasterconss() * ( getNLinkingvars() + getNTotalStairlinkingvars() );
+
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++i )
@@ -2202,7 +2205,6 @@ SCIP_Real Seeed::evaluate(
    }
 
    borderarea = getNMasterconss()*nVars+(getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars())*(nConss-getNMasterconss());
-
    maxwhitescore = blackarea/( getNConss() * getNVars() );
 
    density = 1E20;
@@ -2226,7 +2228,7 @@ SCIP_Real Seeed::evaluate(
    densityscore = (1-density);
 
 
-
+   borderareascore = borderscore;
 
    DEC_DECTYPE type;
    if(getNLinkingvars() == getNTotalStairlinkingvars() && getNMasterconss() == 0 && getNLinkingvars() > 0)
@@ -2292,7 +2294,9 @@ SCIP_Real Seeed::evaluate(
    SCIPfreeBufferArray(scip, &nlinkvarsblocks);
    SCIPfreeBufferArray(scip, &nzblocks);
    score = totalscore;
-   return totalscore;
+
+   return   getScore(sctype);
+
 }
 
 
@@ -2684,6 +2688,23 @@ const int* Seeed::getMastervars()
    SCIP_Real Seeed::getMaxWhiteScore(){
       return maxwhitescore;
    }
+
+/** return the "maximum white score" (the smaller the better) */
+SCIP_Real Seeed::getScore(
+   SCORETYPE type
+   ){
+
+   if( type == scoretype::MAX_WHITE )
+      return maxwhitescore;
+
+   if( type == scoretype::CLASSIC )
+         return score;
+
+   if( type == scoretype::BORDER_AREA )
+      return borderareascore;
+
+   }
+
 
 
 /** returns number of blocks */

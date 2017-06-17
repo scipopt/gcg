@@ -176,6 +176,8 @@ struct SCIP_ConshdlrData
 
    std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;
 
+   scoretype              currscoretype;
+
 };
 
 enum weightinggpresolvedoriginaldecomps{
@@ -186,9 +188,67 @@ enum weightinggpresolvedoriginaldecomps{
 };
 
 
+
 /*
  * Local methods
  */
+
+char*  SCIPconshdlrDecompGetScoretypeShortName(
+   SCIP*       scip,
+   SCORETYPE   sctype
+   )
+{
+   char scoretypename[SCIP_MAXSTRLEN];
+   char* copy;
+   /** set detector chain info string */
+   SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
+
+
+   if( sctype == scoretype::MAX_WHITE)
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maxwhi") ;
+
+   if( sctype == scoretype::CLASSIC)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classi") ;
+
+   if( sctype == scoretype::BORDER_AREA)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border") ;
+
+
+   SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
+
+   return copy;
+
+}
+
+char*  SCIPconshdlrDecompGetScoretypeDescription(
+   SCIP*       scip,
+   SCORETYPE   sctype
+      )
+{
+   char scoretypename[SCIP_MAXSTRLEN];
+   char* copy;
+      /** set detector chain info string */
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "") ;
+
+
+      if( sctype == scoretype::MAX_WHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)") ;
+
+      if( sctype == scoretype::CLASSIC)
+            SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "classical score") ;
+
+      if( sctype == scoretype::BORDER_AREA)
+            SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score; )")  ;
+
+
+      SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
+
+      return copy;
+
+}
+
+
+
 
 std::string getSeeedFolderLatex( SeeedPtr seeed )
 {
@@ -938,6 +998,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->sizedecomps = 10;
  //  conshdlrdata->sizeincompleteseeeds = 10;
    conshdlrdata->seeedcounter = 0;
+   conshdlrdata->currscoretype = scoretype::MAX_WHITE;
 
  //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->decdecomps, conshdlrdata->sizedecomps) );
  //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->allrelevantfinishedseeeds, conshdlrdata->sizedecomps) );
@@ -1002,7 +1063,11 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    int nuserunpresolvedfull;
    int nuserunpresolvedpartial;
 
+   char* scorename;
+
    size_t i;
+
+   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, conshdlrdata->currscoretype);
 
    ndetectedpresolved = 0;
    ndetectedunpresolved = 0;
@@ -1052,9 +1117,10 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    SCIPdialogMessage(scip, NULL, "%8d\n", nuserunpresolvedfull );
 
    SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
-   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  maxwhi  history  pre  nopcon  nopvar  usr  sel \n");
+   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  %.6s  history  pre  nopcon  nopvar  usr  sel \n", scorename );
    SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------  ---  --- \n");
 
+   SCIPfreeBlockMemoryArrayNull(scip, &scorename, SCIP_MAXSTRLEN);
 
 
    return SCIP_OKAY;
@@ -1172,6 +1238,11 @@ SCIP_RETCODE SCIPconshdlrDecompShowLegend(
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert( conshdlr != NULL );
+   char * scorename;
+   char * scoredescr;
+
+   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, conshdlrdata->currscoretype);
+   scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, conshdlrdata->currscoretype);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
@@ -1214,7 +1285,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowLegend(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nlivar", "number of linking variables");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmavar", "number of master variables (do not occur in blocks)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "maxwhi", "maximum white area score (i.e. maximize fraction of white area score; white area is nonblock and nonborder area, stairlinking variables count as linking)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, conshdlrdata->currscoretype), scoredescr);
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "history", "list of detector chars worked on this decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "pre", "is this decomposition for the presolved problem");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopcon", "number of open constraints");
@@ -1223,7 +1294,12 @@ SCIP_RETCODE SCIPconshdlrDecompShowLegend(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sel", "is this decomposition selected at the moment");
 
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
-   return SCIP_OKAY;
+
+
+SCIPfreeBlockMemoryArrayNull(scip, &scorename, SCIP_MAXSTRLEN);
+SCIPfreeBlockMemoryArrayNull(scip, &scoredescr, SCIP_MAXSTRLEN);
+
+return SCIP_OKAY;
 }
 
 SCIP_RETCODE SCIPconshdlrDecompModifyNVisualized(
@@ -3901,6 +3977,28 @@ void DECprintListOfDetectors(
       SCIPdialogMessage(scip, NULL,  "  %s\n", conshdlrdata->detectors[i]->description);
    }
 }
+
+
+scoretype SCIPconshdlrDecompGetCurrScoretype(
+      SCIP* scip
+){
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return  conshdlrdata->currscoretype;
+
+}
+
+
+
 
 /** returns whether the detection has been performed */
 SCIP_Bool DEChasDetectionRun(

@@ -969,11 +969,11 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
     if( (int) finishedSeeeds.size() != 0)
     {
-       SCIP_Real minscore = finishedSeeeds[0]->evaluate(this);
+       SCIP_Real minscore = finishedSeeeds[0]->evaluate(this, SCIPconshdlrDecompGetCurrScoretype(scip) );
        //            SeeedPtr bestSeeed = finishedSeeeds[0];
        for( size_t i = 1; i < finishedSeeeds.size(); ++i )
        {
-          SCIP_Real score = finishedSeeeds[i]->evaluate(this);
+          SCIP_Real score = finishedSeeeds[i]->evaluate(this, SCIPconshdlrDecompGetCurrScoretype(scip) );
           if (score < minscore)
           {
              minscore = score;
@@ -1203,7 +1203,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
    seeed->considerImplicits(this);
    seeed->sort();
    seeed->calcHashvalue();
-   seeed->evaluate(this);
+   seeed->evaluate(this, SCIPconshdlrDecompGetCurrScoretype(scip ) );
 
    return SCIP_OKAY;
  }
@@ -1493,7 +1493,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
       newseeed->sort();
       newseeed->considerImplicits(this);
       newseeed->deleteEmptyBlocks();
-      newseeed->evaluate(this);
+      newseeed->evaluate(this, SCIPconshdlrDecompGetCurrScoretype(scip) ) ;
 
       //assert(newseeed->checkConsistency(this) );
 

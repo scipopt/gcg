@@ -41,7 +41,7 @@
 #include <vector>
 #include "struct_detector.h"
 #include <string>
-
+#include "cons_decomp.h"
 
 
 namespace gcg {
@@ -85,6 +85,7 @@ private:
    long                             hashvalue;
    SCIP_Real                        score;                        /**< score to evaluate the seeeds */
    SCIP_Real                        maxwhitescore;                /**< score corresponding to the max white measure */
+   SCIP_Real                        borderareascore;
    bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
    bool                             isselected;                   /**< is this seeed selected */
@@ -305,8 +306,11 @@ public:
 
    /** computes the score of the given seeed based on the border, the average density score and the ratio of linking variables*/
    SCIP_Real evaluate(
-      Seeedpool* seeedpool
+      Seeedpool* seeedpool,
+      SCORETYPE  type
    );
+
+
 
    /** fills out the border of the seeed with the hashmap constoblock */
    SCIP_RETCODE filloutBorderFromConstoblock(
@@ -373,6 +377,10 @@ public:
 
    /** return the "maximum white score" (the smaller the better) */
    SCIP_Real getMaxWhiteScore();
+
+   SCIP_Real getScore(
+      SCORETYPE type
+      );
 
    /** returns number of blocks */
    int getNBlocks(

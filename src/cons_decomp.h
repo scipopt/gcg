@@ -48,6 +48,14 @@
 extern "C" {
 #endif
 
+enum scoretype {
+   MAX_WHITE = 0,
+   BORDER_AREA,
+   CLASSIC
+};
+
+typedef enum scoretype SCORETYPE;
+
 SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP*          scip
 );
@@ -267,6 +275,21 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    );
 
 
+   SCORETYPE SCIPconshdlrDecompGetCurrScoretype(
+         SCIP* scip
+   );
+
+//    char*  SCIPconshdlrDecompGetScoretypeShortName(
+//      SCIP*       scip,
+//      SCORETYPE   sctype
+//      );
+//
+//   char*  SCIPconshdlrDecompGetScoretypeDescription(
+//      SCIP*          scip,
+//      SCORETYPE      sctype
+//         );
+
+
 
 /** interface method to detect the structure */
 extern
@@ -319,6 +342,8 @@ int SCIPconshdlrDecompGetNDetectors(
 DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
    SCIP* scip
    );
+
+
 
 
 /** returns whether the detection has been performed */
