@@ -162,6 +162,18 @@ SCIP_Bool cmpSeeedsMaxWhite(SeeedPtr i, SeeedPtr j)
    return (i->getMaxWhiteScore() < j->getMaxWhiteScore() );
 }
 
+SCIP_Bool cmpSeeedsBorderArea(SeeedPtr i, SeeedPtr j)
+{
+   return (i->borderareascore < j->borderareascore );
+}
+
+
+SCIP_Bool cmpSeeedsClassic(SeeedPtr i, SeeedPtr j)
+{
+   return (i->score < j->score );
+}
+
+
 
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout( std::vector<SeeedPtr> finishedSeeeds, size_t nDecomps, SCIP_Bool addTrivialDecomp )
@@ -1023,7 +1035,17 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
  void  Seeedpool::sortFinishedForScore()
  {
-    std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
+
+    if ( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_WHITE )
+       std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
+
+    if ( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::BORDER_AREA )
+       std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBorderArea);
+
+    if ( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::CLASSIC )
+       std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsClassic);
+
+
  }
 
 

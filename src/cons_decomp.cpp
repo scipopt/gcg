@@ -176,7 +176,8 @@ struct SCIP_ConshdlrData
 
    std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;
 
-   scoretype              currscoretype;
+   int                    currscoretype;
+   SCIP_Bool              resortcandidates;
 
 };
 
@@ -192,6 +193,15 @@ enum weightinggpresolvedoriginaldecomps{
 /*
  * Local methods
  */
+
+SCORETYPE SCIPconshdlrdataGetScoretype(
+   SCIP_CONSHDLRDATA* conshdlrdata
+)
+{
+   return  static_cast<scoretype>(conshdlrdata->currscoretype);
+}
+
+
 
 char*  SCIPconshdlrDecompGetScoretypeShortName(
    SCIP*       scip,
@@ -999,6 +1009,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
  //  conshdlrdata->sizeincompleteseeeds = 10;
    conshdlrdata->seeedcounter = 0;
    conshdlrdata->currscoretype = scoretype::MAX_WHITE;
+   conshdlrdata->resortcandidates = TRUE;
 
  //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->decdecomps, conshdlrdata->sizedecomps) );
  //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->allrelevantfinishedseeeds, conshdlrdata->sizedecomps) );
@@ -1040,6 +1051,11 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
       "Weighting method when comparing decompositions for presolved and unpresolved problem", &conshdlrdata->weightinggpresolvedoriginaldecomps, TRUE,
       NO_MODIF, 0, 3, NULL, NULL) );
 
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/scoretype",
+         "indicates which score should be used for comparing (partial) decompositions (0:max white, 1: border area, 2:classic): ", &conshdlrdata->currscoretype, TRUE,
+         scoretype::MAX_WHITE, 0, 2, NULL, NULL) );
+
+
 
    assert(conshdlrdata->candidates != NULL);
 
@@ -1067,7 +1083,11 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
 
    size_t i;
 
-   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, conshdlrdata->currscoretype);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrdataGetScoretype(conshdlrdata) );
 
    ndetectedpresolved = 0;
    ndetectedunpresolved = 0;
@@ -1077,8 +1097,6 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    nuserunpresolvedpartial = 0;
 
 
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
 
    /** count corresponding seeeds */
    for ( i = 0; i < conshdlrdata->listall->size(); ++i )
@@ -1162,9 +1180,9 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNMastervars() );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNTotalStairlinkingvars() );
       if( seeed->isComplete() )
-         SCIPdialogMessage(scip, NULL, "%.4f  ", 1. - seeed->getMaxWhiteScore() );
+         SCIPdialogMessage(scip, NULL, "%.4f  ", 1. - seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) );
       else
-         SCIPdialogMessage(scip, NULL, "<=%.2f  ", 1. - seeed->getMaxWhiteScore() );
+         SCIPdialogMessage(scip, NULL, "<=%.2f  ", 1. - seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) );
       SCIPdialogMessage(scip, NULL, "%7s  ", seeed->detectorchainstring );
       SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->isfromunpresolved ? "no" : "yes")  );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenconss() );
@@ -1241,11 +1259,12 @@ SCIP_RETCODE SCIPconshdlrDecompShowLegend(
    char * scorename;
    char * scoredescr;
 
-   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, conshdlrdata->currscoretype);
-   scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, conshdlrdata->currscoretype);
-
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+
+   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrdataGetScoretype(conshdlrdata) );
+   scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrdataGetScoretype(conshdlrdata) );
+
 
    SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n" );
 
@@ -1285,7 +1304,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowLegend(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nlivar", "number of linking variables");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmavar", "number of master variables (do not occur in blocks)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", SCIPconshdlrDecompGetScoretypeShortName(scip, conshdlrdata->currscoretype), scoredescr);
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", scorename, scoredescr);
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "history", "list of detector chars worked on this decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "pre", "is this decomposition for the presolved problem");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopcon", "number of open constraints");
@@ -1911,6 +1930,7 @@ SCIP_RETCODE DECincludeDetector(
    SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->priority), FALSE, priority, INT_MIN, INT_MAX, NULL, NULL) );
 
 
+
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, (size_t)conshdlrdata->ndetectors+1) );
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->priorities,(size_t) conshdlrdata->ndetectors+1) );
 
@@ -2149,7 +2169,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
 
    /** add seeeds to list */
    /** 1) add presolved finished */
-   for( i = 0; i < conshdlrdata->seeedpool->finishedSeeeds.size() ; ++i)
+   for( i = 0;  conshdlrdata->seeedpool != NULL && i < conshdlrdata->seeedpool->finishedSeeeds.size() ; ++i)
     {
        SeeedPtr seeed;
        seeed = conshdlrdata->seeedpool->finishedSeeeds[i];
@@ -2158,7 +2178,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
     }
 
    /** 2) add presolved unfinished */
-   for( i = 0; i < (size_t) conshdlrdata->seeedpool->incompleteSeeeds.size() ; ++i)
+   for( i = 0; conshdlrdata->seeedpool != NULL && i <  (size_t) conshdlrdata->seeedpool->incompleteSeeeds.size() ; ++i)
    {
       SeeedPtr seeed;
       seeed = conshdlrdata->seeedpool->incompleteSeeeds[i];
@@ -2896,6 +2916,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
   // std::vector<std::pair<SeeedPtr, SCIP_Real> > candidates(0);
    conshdlrdata->candidates->clear();
+   conshdlrdata->resortcandidates = TRUE;
 
 
 
@@ -2947,11 +2968,11 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
       SeeedPtr seeed = *seeediter ;
       if( seeed->isComplete() && !seeed->isfromunpresolved )
       {
-         conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, seeed->getMaxWhiteScore() ) );
+         conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) ) );
       }
       if( seeed->isComplete() && seeed->isfromunpresolved )
       {
-         conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, SCIPconshdlrDecompAdaptScore(scip, seeed->getMaxWhiteScore() ) ) );
+         conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, SCIPconshdlrDecompAdaptScore(scip, seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) ) ) );
       }
    }
 
@@ -2962,7 +2983,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    for( ; seeediter != seeediterend; ++seeediter)
    {
-      conshdlrdata->candidates->push_back(std::pair<SeeedPtr, SCIP_Real>(*seeediter, (*seeediter)->getMaxWhiteScore() )  );
+      conshdlrdata->candidates->push_back(std::pair<SeeedPtr, SCIP_Real>(*seeediter, (*seeediter)->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) )  );
    }
 
    seeediter = finishedunpresolved.begin();
@@ -2970,7 +2991,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    for( ; seeediter != seeediterend; ++seeediter)
    {
-      conshdlrdata->candidates->push_back(std::pair<SeeedPtr, SCIP_Real>(*seeediter, SCIPconshdlrDecompAdaptScore(scip, (*seeediter)->getMaxWhiteScore() ) ) );
+      conshdlrdata->candidates->push_back(std::pair<SeeedPtr, SCIP_Real>(*seeediter, SCIPconshdlrDecompAdaptScore(scip, (*seeediter)->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) ) ) );
    }
 
    /* sort decomp candidates according score */
@@ -3993,7 +4014,7 @@ scoretype SCIPconshdlrDecompGetCurrScoretype(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return  conshdlrdata->currscoretype;
+   return  static_cast<scoretype>(conshdlrdata->currscoretype);
 
 }
 

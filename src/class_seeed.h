@@ -83,9 +83,6 @@ private:
    std::vector<bool> 				   propagatedByDetector;	      /**< propagatedByDetector[i] is this seeed propagated by detector i */
    bool 							         openVarsAndConssCalculated;   /**< are the openVars and openCons calculated */
    long                             hashvalue;
-   SCIP_Real                        score;                        /**< score to evaluate the seeeds */
-   SCIP_Real                        maxwhitescore;                /**< score corresponding to the max white measure */
-   SCIP_Real                        borderareascore;
    bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
    bool                             isselected;                   /**< is this seeed selected */
@@ -112,6 +109,11 @@ public:
    std::vector<int>                 listofancestorids;          /**< vector containing detector indices that worked on that seeed */
 
    USERGIVEN                        usergiven;                  /**< is this seeed partially or complete given by user */
+   SCIP_Real                        score;                        /**< score to evaluate the seeeds */
+   SCIP_Real                        maxwhitescore;                /**< score corresponding to the max white measure */
+
+   SCIP_Real                        borderareascore;
+
 
    char*                            detectorchainstring;
 
