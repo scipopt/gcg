@@ -56,7 +56,8 @@ namespace gcg {
 Stabilization::Stabilization(
    SCIP* scip,
    PricingType* pricingtype_,
-   SCIP_Bool hybridascent_
+   SCIP_Bool hybridascent_,
+   SCIP_Real farkasalpha_
    ) :scip_(scip), stabcenterconss((SCIP_Real*) NULL), stabcenterconsssize(0), nstabcenterconss(0),
       stabcentercuts((SCIP_Real*) NULL), stabcentercutssize(0), nstabcentercuts(0),
       stabcenterlinkingconss((SCIP_Real*) NULL), nstabcenterlinkingconss(0),
@@ -66,7 +67,7 @@ Stabilization::Stabilization(
       subgradientlinkingconss(NULL), nsubgradientlinkingconss(0),
       subgradientnorm(0.0), hybridfactor(0.0),
       pricingtype(pricingtype_), alpha(0.8), alphabar(0.8), hybridascent(hybridascent_), beta(0.0), nodenr(-1), k(0), t(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip)),
-      inmispricingschedule(FALSE), subgradientproduct(0.0), farkasalpha(1.0), farkasalphabar(1.0), infarkas(FALSE)
+      inmispricingschedule(FALSE), subgradientproduct(0.0), farkasalpha(farkasalpha_), farkasalphabar(farkasalpha_), infarkas(FALSE)
 {
 
 }
@@ -499,7 +500,8 @@ void Stabilization::updateAlphaMisprice()
    updateIterationCountMispricing();
    if( infarkas )
    {
-      farkasalphabar = MAX(0.0, farkasalpha-k*0.1);
+      //farkasalphabar = MAX(0.0, farkasalpha-k*0.1);
+      farkasalphabar = 0.0;
       SCIPdebugMessage("farkasalphabar updated to %g in mispricing iteration k=%d and node pricing iteration t=%d \n", farkasalphabar, k, t);
    }
    else
@@ -513,7 +515,7 @@ void Stabilization::updateAlpha(
    GCG_COL**            pricingcols         /**< solutions of the pricing problems */
    )
 {
-   if( !infarkas )
+   if( infarkas )
    {
 
    }
@@ -549,8 +551,8 @@ void Stabilization::increaseAlpha()
 {
    if( infarkas )
    {
-      farkasalpha = MIN(1.0, alpha+0.1);
-      SCIPdebugMessage("farkasalpha increased to %g\n", farkasalpha);
+//      farkasalpha = MIN(1.0, alpha+0.1);
+//      SCIPdebugMessage("farkasalpha increased to %g\n", farkasalpha);
    }
    else
    {
@@ -565,9 +567,9 @@ void Stabilization::decreaseAlpha()
 {
    if( infarkas )
    {
-      alpha = MAX(0.0, alpha-0.1);
-
-      SCIPdebugMessage("farkasalpha decreased to %g\n", farkasalpha);
+//      alpha = MAX(0.0, alpha-0.1);
+//
+//      SCIPdebugMessage("farkasalpha decreased to %g\n", farkasalpha);
    }
    else
    {
@@ -1178,8 +1180,8 @@ void Stabilization::disablingMispricingSchedule(
 {
    if( infarkas )
    {
-      farkasalpha = farkasalphabar;
-      SCIPdebugMessage("farkasalphabar updated to %g after mispricing \n", farkasalpha);
+//      farkasalpha = farkasalphabar;
+//      SCIPdebugMessage("farkasalphabar updated to %g after mispricing \n", farkasalpha);
    }
    inmispricingschedule = FALSE;
    k=0;

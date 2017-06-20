@@ -222,6 +222,12 @@ private:
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
       ) const;
 
+   SCIP_Real computeQuasiRedCostGcgCol(
+      PricingType*          pricetype,          /**< type of pricing */
+      GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
+      SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
+      ) const;
+
    /** counts the number of variables with negative reduced cost */
    int countPricedVariables(
       PricingType*          pricetype,          /**< pricing type, farkas or redcost */

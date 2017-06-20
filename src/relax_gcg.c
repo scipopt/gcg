@@ -1367,9 +1367,11 @@ SCIP_RETCODE createMasterProblem(
    SCIPsetParam(masterscip, "conflict/enable", FALSE);
 
    SCIPsetIntParam(masterscip, "lp/disablecutoff", 1);
+   SCIPsetIntParam(masterscip, "lp/scaling", 0);
 
    SCIPsetCharParam(masterscip, "lp/initalgorithm", 'd');
    SCIPsetCharParam(masterscip, "lp/resolvealgorithm", 'd');
+
 
    SCIPsetBoolParam(masterscip, "misc/alwaysgetduals", TRUE);
 

@@ -86,7 +86,8 @@ public:
    Stabilization(
       SCIP*              scip,               /**< SCIP data structure */
       PricingType*       pricingtype,        /**< the pricing type when the stabilization should run */
-      SCIP_Bool          hybridascent        /**< enable hybridization of smoothing with an ascent method? */
+      SCIP_Bool          hybridascent,       /**< enable hybridization of smoothing with an ascent method? */
+      SCIP_Real          farkasalpha_        /**< initial value for farkas alpha */
    );
    /** constructor */
    Stabilization();
