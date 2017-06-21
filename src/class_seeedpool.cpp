@@ -1138,6 +1138,12 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
        SeeedPtr seeed = finishedSeeeds[i];
 
        SCIP_CALL_ABORT( createDecompFromSeeed(seeed, &decompositions[i]) );
+
+       SeeedPtr trseeed;
+
+       createSeeedFromDecomp( decompositions[i], &trseeed );
+
+       assert( seeed->isEqual( trseeed ) );
     }
 
     //SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
@@ -2732,7 +2738,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
          (*newdecomp)->detectorchain[k] = seeed->getDetectorchain()[k];
    }
 
-
    /** set statistical detector chain data */
 
    DECdecompSetSeeedID(*newdecomp, seeed->getID() );
@@ -2802,10 +2807,79 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    assert( nConss == DECdecompGetNConss( decomp ) );
 
    SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nDetectors, nConss, nVars );
+   seeed->setNBlocks( DECdecompGetNBlocks( decomp ) );
 
    /* fillout blocks: assigns all cons and vars to blocks (this works only for complete decomps) */
    /* @todo does not work; does constoblock hashmap always hold sufficient information? */
-   seeed->filloutSeeedFromConstoblock( DECdecompGetConstoblock( decomp ), DECdecompGetNBlocks( decomp ), this );
+//   seeed->filloutSeeedFromConstoblock( DECdecompGetConstoblock( decomp ), DECdecompGetNBlocks( decomp ), this );
+
+   /* @todo do we need to consider the consindex and varindex hashmaps from decomp or is it sufficient to
+    * use the index strcuture given in this seeedpool? */
+   /* @todo add assertions */
+
+   SCIP_CONS** linkingconss = DECdecompGetLinkingconss( decomp );
+   int nlinkingconss = *DECdecompGetNLinkingconss( decomp );
+   SCIP_HASHMAP* constoblock = DECdecompGetConstoblock( decomp );
+   int nblock;
+
+   /* set linking conss */
+   for( int c = 0; c < nlinkingconss; ++c )
+   {
+      seeed->bookAsMasterCons( getIndexForCons( linkingconss[c] ) );
+   }
+
+   /* set block conss */
+   for ( int c = 0; c < nConss; ++c )
+   {
+      nblock = (int) (size_t) SCIPhashmapGetImage( constoblock, (void*) (size_t) getConsForIndex( c ) );
+      if ( nblock >= 1 && nblock <= seeed->getNBlocks() )
+      {
+         seeed->bookAsBlockCons( c, nblock - 1 );
+      }
+   }
+
+   SCIP_VAR*** stairlinkingvars = DECdecompGetStairlinkingvars( decomp );
+   int nstairlinkingvars = *DECdecompGetNStairlinkingvars( decomp );
+   int varindex;
+   SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock( decomp );
+
+   /* set stairlinkingvars */
+   for( int b = 0; b < seeed->getNBlocks(); ++b )
+   {
+      for( int v = 0; v < nstairlinkingvars; ++v )
+      {
+         if( stairlinkingvars[b][v] != NULL )
+         {
+            /* probvar re-transformation? */
+            varindex = getIndexForVar( stairlinkingvars[b][v] );
+            seeed->bookAsStairlinkingVar( v, b );
+         }
+      }
+   }
+
+   /* flush booked conss and vars in order to be able to check whether a var is already */
+   seeed->flushBooked();
+
+   /* set other vars */
+   for ( int v = 0; v < getNVars(); ++v )
+   {
+      nblock = (int) (size_t) SCIPhashmapGetImage( vartoblock, (void*) (size_t) SCIPvarGetProbvar( getVarForIndex( v ) ) );
+      if ( nblock == seeed->getNBlocks() + 2 && !seeed->isVarStairlinkingvar( v ) )
+      {
+         seeed->bookAsLinkingVar( v );
+      }
+      else if ( nblock == seeed->getNBlocks() + 1 )
+      {
+         seeed->bookAsMasterVar( v );
+      }
+      else if ( nblock >= 1 && nblock <= seeed->getNBlocks() )
+      {
+         seeed->bookAsBlockVar( v, nblock - 1 );
+      }
+   }
+
+   seeed->flushBooked();
+
 
    /*set all detector-related information*/
    for( int i = 0; i < DECdecompGetDetectorChainSize( decomp ); ++i )
