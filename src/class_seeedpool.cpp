@@ -2906,8 +2906,7 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
   )
 {
-   /* @todo convert to SeeedPtr */
-   /*newseeed =  new Seeed( scip, this->getNewIdForSeeed(), this->getNDetectors(), this->getNConss(), this->getNVars() );*/
+   *newseeed = new Seeed(scip, this->getNewIdForSeeed(), this->getNDetectors(), this->getNConss(), this->getNVars() );
 
    return SCIP_OKAY;
 
