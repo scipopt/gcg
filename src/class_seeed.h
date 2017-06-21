@@ -216,7 +216,7 @@ public:
 
    /** book a constraint to be added to the master constraints (after calling flushBooked) */
    SCIP_RETCODE bookAsMasterCons(
-         int consToMaster
+         int consToMaster  /* this index can be computed by the function Seeedpool::getIndexForCons */
    );
 
    /** book a variable to be added to the master variables (after calling flushBooked) */

@@ -2814,11 +2814,11 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 //   seeed->filloutSeeedFromConstoblock( DECdecompGetConstoblock( decomp ), DECdecompGetNBlocks( decomp ), this );
 
    /* @todo do we need to consider the consindex and varindex hashmaps from decomp or is it sufficient to
-    * use the index strcuture given in this seeedpool? */
+    * use the index structure given in this seeedpool? */
    /* @todo add assertions */
 
    SCIP_CONS** linkingconss = DECdecompGetLinkingconss( decomp );
-   int nlinkingconss = *DECdecompGetNLinkingconss( decomp );
+   int nlinkingconss = DECdecompGetNLinkingconss( decomp );
    SCIP_HASHMAP* constoblock = DECdecompGetConstoblock( decomp );
    int nblock;
 
@@ -2829,10 +2829,10 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    }
 
    /* set block conss */
-   for ( int c = 0; c < nConss; ++c )
+   for( int c = 0; c < nConss; ++c )
    {
       nblock = (int) (size_t) SCIPhashmapGetImage( constoblock, (void*) (size_t) getConsForIndex( c ) );
-      if ( nblock >= 1 && nblock <= seeed->getNBlocks() )
+      if( nblock >= 1 && nblock <= seeed->getNBlocks() )
       {
          seeed->bookAsBlockCons( c, nblock - 1 );
       }
@@ -2850,7 +2850,7 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       {
          if( stairlinkingvars[b][v] != NULL )
          {
-            /* probvar re-transformation? */
+            /* @todo probvar re-transformation? -> SCIPgetTransformedVar(...) might do (see SCIP doc)? */
             varindex = getIndexForVar( stairlinkingvars[b][v] );
             seeed->bookAsStairlinkingVar( v, b );
          }
@@ -2879,7 +2879,6 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    }
 
    seeed->flushBooked();
-
 
    /*set all detector-related information*/
    for( int i = 0; i < DECdecompGetDetectorChainSize( decomp ); ++i )
