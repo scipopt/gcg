@@ -49,6 +49,29 @@ GCG> write problem "prob.gp"
 #ifndef GCG_READER_GP_H__
 #define GCG_READER_GP_H__
 
+#define COLOR_WHITE     "#FFFFFF"
+#define COLOR_BLUE      "#00549F"
+#define COLOR_LBLUE     "#8EBAE5"
+#define COLOR_PURPLE    "#7A6FAC"
+#define COLOR_VIOLET    "#612158"
+#define COLOR_CARMINE   "#A11035"
+#define COLOR_RED       "#CC071E"
+#define COLOR_MAGENTA   "#E30066"
+#define COLOR_ORANGE    "#F6A800"
+#define COLOR_YELLOW    "#FFED00"
+#define COLOR_GRASS     "#BDAB27"
+#define COLOR_GREEN     "#57AB27"
+#define COLOR_CYAN      "#0098A1"
+#define COLOR_TEAL      "#006165"
+#define COLOR_BLACK     "#000000"
+
+#define COLOR_MASTERVARS   COLOR_WHITE   /* for mastervars in block area */
+#define COLOR_MASTERCONS   COLOR_BLUE    /* for mastercons */
+#define COLOR_LINKING      COLOR_PURPLE
+#define COLOR_STAIRLINKING COLOR_MAGENTA
+#define COLOR_BLOCK        COLOR_TEAL
+#define COLOR_OPEN         COLOR_GREEN
+#define COLOR_NONZERO      COLOR_BLACK
 
 #include "scip/scip.h"
 #include "type_decomp.h"

@@ -50,7 +50,7 @@
 #define READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, x1, y1, x2, y2, color) "set object %d rect from %.1f,%.1f to %.1f,%.1f fc rgb \"%s\"\n", (i), (x1), (y1), (x2), (y2), (color)
 #define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\n", (outputname)
 #define READERGP_GNUPLOT_RANGES(xmax, ymax) "set xrange [-1:%d]\nset yrange[%d:-1]\n", (xmax), (ymax)
-#define READERGP_GNUPLOT_PLOTCMD "plot \"-\" using 1:2:3 notitle with circles fc rgb \"red\" fill solid\n"
+#define READERGP_GNUPLOT_PLOTCMD "plot \"-\" using 1:2:3 notitle with circles fc rgb \"%s\" fill solid\n", COLOR_NONZERO
 
 #define READERGP_GNUPLOT_HEADER_TEX(outputname) "set terminal tikz\nset output \"%s.tex\"\nunset xtics\nunset ytics\nunset border\nunset key\nset style fill solid 1.0 noborder\nset size ratio -1\n", (outputname)
 
@@ -132,15 +132,15 @@ SCIP_RETCODE writeDecompositionHeader(
    starty = 0;
    i = 1;
    /** write linking var box */
-   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, decdecomp->nlinkingvars - nstairlinkingvars - nmastervars + 0.5, nconss + 0.5, "purple"));
+   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, decdecomp->nlinkingvars - nstairlinkingvars - nmastervars + 0.5, nconss + 0.5, COLOR_LINKING));
    i++;
    startx += decdecomp->nlinkingvars - nstairlinkingvars - nmastervars;
    /** write master var box */
-   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, startx + nmastervars + 0.5, nconss + 0.5, "yellow"));
+   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, startx + nmastervars + 0.5, nconss + 0.5, COLOR_MASTERVARS));
    i++;
   startx += nmastervars;
   /** write linking cons box */
-  SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, 0 + 0.5, 0 + 0.5, nvars + 0.5, decdecomp->nlinkingconss + 0.5, "orange"));
+  SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, 0 + 0.5, 0 + 0.5, nvars + 0.5, decdecomp->nlinkingconss + 0.5, COLOR_MASTERCONS));
   i++;
   starty += decdecomp->nlinkingconss;
 
@@ -150,7 +150,7 @@ SCIP_RETCODE writeDecompositionHeader(
   {
      endx += decdecomp->nsubscipvars[b];
      endy += decdecomp->nsubscipconss[b];
-     SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, endx + 0.5, endy + 0.5, "grey"));
+     SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, endx + 0.5, endy + 0.5, COLOR_BLOCK));
      i++;
      if(decdecomp->nstairlinkingvars != NULL )
      {
@@ -158,7 +158,7 @@ SCIP_RETCODE writeDecompositionHeader(
         {
         startx = endx;
         endx += decdecomp->nstairlinkingvars[b];
-        SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, endx + 0.5, starty + decdecomp->nsubscipconss[b] + decdecomp->nsubscipconss[b+1] + 0.5, "pink"));
+        SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, endx + 0.5, starty + decdecomp->nsubscipconss[b] + decdecomp->nsubscipconss[b+1] + 0.5, COLOR_STAIRLINKING));
         i++;
         }
      }

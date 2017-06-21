@@ -113,7 +113,7 @@ SCIP_RETCODE writeAllDecompositions(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory and/or extension: ", &dirname, &endoffile) );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory: ", &dirname, &endoffile) );
    if( endoffile )
    {
       *nextdialog = NULL;
@@ -125,10 +125,8 @@ SCIP_RETCODE writeAllDecompositions(
       filename = dirname;
       dirname = NULL;
    }
-   else
-   {
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
-   }
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
 
    if( filename[0] != '\0' )
    {
