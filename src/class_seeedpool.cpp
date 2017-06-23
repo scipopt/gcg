@@ -2796,9 +2796,8 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    return SCIP_OKAY;
 }
 
-/**
- * creates a seeed for a given decomposition
- */
+/** creates a seeed for a given decomposition
+ *  missing information: ... */
 SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
@@ -2862,18 +2861,18 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    seeed->flushBooked();
 
    /* set other vars */
-   for ( int v = 0; v < getNVars(); ++v )
+   for( int v = 0; v < getNVars(); ++v )
    {
       nblock = (int) (size_t) SCIPhashmapGetImage( vartoblock, (void*) (size_t) SCIPvarGetProbvar( getVarForIndex( v ) ) );
-      if ( nblock == seeed->getNBlocks() + 2 && !seeed->isVarStairlinkingvar( v ) )
+      if( nblock == seeed->getNBlocks() + 2 && !seeed->isVarStairlinkingvar( v ) )
       {
          seeed->bookAsLinkingVar( v );
       }
-      else if ( nblock == seeed->getNBlocks() + 1 )
+      else if( nblock == seeed->getNBlocks() + 1 )
       {
          seeed->bookAsMasterVar( v );
       }
-      else if ( nblock >= 1 && nblock <= seeed->getNBlocks() )
+      else if( nblock >= 1 && nblock <= seeed->getNBlocks() )
       {
          seeed->bookAsBlockVar( v, nblock - 1 );
       }

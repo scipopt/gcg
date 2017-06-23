@@ -329,9 +329,8 @@ public:
       DEC_DECOMP**   newdecomp                              /** the new decomp created from the seeed */
       );
 
-   /**
-    * creates a seeed for a given decomposition, atm dummy method
-    */
+   /** creates a seeed for a given decomposition
+    *  missing information: ... */
    SCIP_RETCODE createSeeedFromDecomp(
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
