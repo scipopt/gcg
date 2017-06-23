@@ -2804,18 +2804,19 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
   )
 {
+   assert( decomp != NULL );
+   assert( DECdecompCheckConsistency( scip, decomp ) );
    assert( nConss == DECdecompGetNConss( decomp ) );
 
+   /* create new seeed and initialize its data */
    SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nDetectors, nConss, nVars );
    seeed->setNBlocks( DECdecompGetNBlocks( decomp ) );
+   /* @todo delete this after merging with seeedpool_cleanup !!! */
+   seeed->calcOpenconss();
+   seeed->calcOpenvars();
 
-   /* fillout blocks: assigns all cons and vars to blocks (this works only for complete decomps) */
-   /* @todo does not work; does constoblock hashmap always hold sufficient information? */
-//   seeed->filloutSeeedFromConstoblock( DECdecompGetConstoblock( decomp ), DECdecompGetNBlocks( decomp ), this );
-
-   /* @todo do we need to consider the consindex and varindex hashmaps from decomp or is it sufficient to
-    * use the index structure given in this seeedpool? */
-   /* @todo add assertions */
+   assert( seeed->getNOpenconss() == nConss );
+   assert( seeed->getNOpenvars() == nVars );
 
    SCIP_CONS** linkingconss = DECdecompGetLinkingconss( decomp );
    int nlinkingconss = DECdecompGetNLinkingconss( decomp );
@@ -2839,25 +2840,25 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    }
 
    SCIP_VAR*** stairlinkingvars = DECdecompGetStairlinkingvars( decomp );
-   int nstairlinkingvars = *DECdecompGetNStairlinkingvars( decomp );
+   int* nstairlinkingvars = DECdecompGetNStairlinkingvars( decomp );
    int varindex;
    SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock( decomp );
 
    /* set stairlinkingvars */
    for( int b = 0; b < seeed->getNBlocks(); ++b )
    {
-      for( int v = 0; v < nstairlinkingvars; ++v )
+      for( int v = 0; v < nstairlinkingvars[b]; ++v )
       {
          if( stairlinkingvars[b][v] != NULL )
          {
             /* @todo probvar re-transformation? -> SCIPgetTransformedVar(...) might do (see SCIP doc)? */
             varindex = getIndexForVar( stairlinkingvars[b][v] );
-            seeed->bookAsStairlinkingVar( v, b );
+            seeed->bookAsStairlinkingVar( varindex, b );
          }
       }
    }
 
-   /* flush booked conss and vars in order to be able to check whether a var is already */
+   /* flush booked conss and vars in order to be able to check whether a var is already assigned to stairlinking */
    seeed->flushBooked();
 
    /* set other vars */
@@ -2880,24 +2881,27 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 
    seeed->flushBooked();
 
+   /* now all conss and vars should be assigned */
+   assert( seeed->isComplete() );
+
    /*set all detector-related information*/
    for( int i = 0; i < DECdecompGetDetectorChainSize( decomp ); ++i )
    {
       seeed->setDetectorPropagated( DECdecompGetDetectorChain( decomp )[i] );
       seeed->addClockTime( DECdecompGetDetectorClockTimes( decomp )[i] );
-      seeed->setPctConssFromFree( i, 1 - *(DECdecompGetDetectorPctConssFromOpen( decomp )) );
-      seeed->setPctConssToBlock( i, *(DECdecompGetDetectorPctConssToBlock( decomp )) );
-      seeed->setPctConssToBorder( i, *(DECdecompGetDetectorPctConssToBorder( decomp )) );
-      seeed->setPctVarsFromFree( i, 1 - *(DECdecompGetDetectorPctVarsFromOpen( decomp )) );
-      seeed->setPctVarsToBlock( i, *(DECdecompGetDetectorPctVarsToBlock( decomp )) );
-      seeed->setPctVarsToBorder( i, *(DECdecompGetDetectorPctVarsToBorder( decomp )) );
-      seeed->setNNewBlocks(i, *(DECdecompGetNNewBlocks( decomp )) );
+      seeed->addPctConssFromFree( 1 - *(DECdecompGetDetectorPctConssFromOpen( decomp )) );
+      seeed->addPctConssToBlock( *(DECdecompGetDetectorPctConssToBlock( decomp )) );
+      seeed->addPctConssToBorder( *(DECdecompGetDetectorPctConssToBorder( decomp )) );
+      seeed->addPctVarsFromFree( 1 - *(DECdecompGetDetectorPctVarsFromOpen( decomp )) );
+      seeed->addPctVarsToBlock( *(DECdecompGetDetectorPctVarsToBlock( decomp )) );
+      seeed->addPctVarsToBorder( *(DECdecompGetDetectorPctVarsToBorder( decomp )) );
+      seeed->addNNewBlocks( *(DECdecompGetNNewBlocks( decomp )) );
    }
 
    seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
 
    /*@todo detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings
-    *@todo how to handle missing attributes? */
+     @todo how to handle missing attributes? */
 
    /* calc maxwhitescore and hashvalue */
    prepareSeeed( seeed );
