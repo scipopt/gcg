@@ -508,16 +508,18 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingConsToMaster(
    std::vector<int> blocksOfOpenvar; /** blocks in which the open var can be found */
    bool master;
    bool hitsOpenVar;
-
+   std::vector<bool> isblockhit;
    changedHashvalue = true;
 
    /** set openConss with more than two blockvars to master */
    for( size_t c = 0; c < openConss.size(); ++ c )
    {
+      isblockhit= std::vector<bool>(getNBlocks(), false );
       blocksOfBlockvars.clear();
       master = false;
       hitsOpenVar = false;
       cons = openConss[c];
+
 
       for( int v = 0; v < seeedpool->getNVarsForCons( cons ) && ! master; ++ v )
       {
@@ -538,9 +540,13 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingConsToMaster(
 
          for( int b = 0; b < nBlocks; ++ b )
          {
+            if( isblockhit[b] )
+               continue;
+
             if( isVarBlockvarOfBlock( var, b ) )
             {
                blocksOfBlockvars.push_back( b );
+               isblockhit[b] = true;
                break;
             }
          }
@@ -578,12 +584,14 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
    std::vector<int> blocksOfBlockvars; /** blocks with blockvars which can be found in the cons */
    std::vector<int> blocksOfOpenvar; /** blocks in which the open var can be found */
    bool hitsOpenCons;
+   std::vector<bool> isblockhit;
 
    changedHashvalue = true;
 
    /** set open var to linking if it can be found in one block and open constraint */
    for( size_t i = 0; i < openVars.size(); ++ i )
    {
+      isblockhit= std::vector<bool>(getNBlocks(), false );
       blocksOfOpenvar.clear();
       var = openVars[i];
       hitsOpenCons = false;
@@ -598,11 +606,19 @@ SCIP_RETCODE Seeed::assignOpenPartialHittingVarsToMaster(
          }
          for( int b = 0; b < nBlocks; ++ b )
          {
+            if ( isblockhit[b] )
+               continue;
+
             if( isConsBlockconsOfBlock( cons, b ) )
+            {
                blocksOfOpenvar.push_back( b );
+               isblockhit[b] = true;
+               break;
+            }
          }
 
       }
+
 
       if( blocksOfOpenvar.size() == 1 && hitsOpenCons )
       {
@@ -1130,6 +1146,7 @@ bool Seeed::checkConsistency(
                SCIPwarningMessage( scip,
                   "WARNING! Variable %d is not part of block %d or linking or open as constraint %d suggests! \n ", varid, b,
                   getConssForBlock( b )[c] );
+
                return false;
             }
          }
