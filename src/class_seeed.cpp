@@ -76,18 +76,16 @@ const int Seeed::nPrimes = 70;
 Seeed::Seeed(
    SCIP* _scip,
    int givenId,
-   int givenNDetectors,
    int givenNConss,
    int givenNVars
    ) :
    scip( _scip ), id( givenId ), nBlocks( 0 ), nVars( givenNVars ), nConss( givenNConss ), masterConss( 0 ),
    masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), openVars( 0 ),
-   openConss( 0 ), propagatedByDetector( std::vector<bool>( givenNDetectors, false ) ), hashvalue( 0 ), score( 1. ),
-   maxwhitescore( 1. ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ), detectorChain( 0 ),
-   detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ), pctVarsToBlock( 0 ),
-   pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ), nNewBlocks( 0 ),
-   listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), detectorchainstring( NULL ), stemsFromUnpresolved( false ),
-   isfromunpresolved( FALSE ), isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
+   openConss( 0 ) , hashvalue( 0 ), score( 1. ), maxwhitescore( 1. ), changedHashvalue( false ), isselected( false ),
+   isFinishedByFinisher( false ), detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ),
+   pctVarsToBorder( 0 ), pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ),
+   pctConssFromFree( 0 ), nNewBlocks( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), detectorchainstring( NULL ),
+   stemsFromUnpresolved( false ), isfromunpresolved( FALSE ), isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
 {
    for( int i = 0; i < nConss; ++ i )
    {
@@ -118,7 +116,6 @@ Seeed::Seeed(
    stairlinkingVars = seeedToCopy->stairlinkingVars;
    openVars = seeedToCopy->openVars;
    openConss = seeedToCopy->openConss;
-   propagatedByDetector = seeedToCopy->propagatedByDetector;
    detectorChain = seeedToCopy->detectorChain;
    detectorChainFinishingUsed = seeedToCopy->detectorChainFinishingUsed;
    detectorchaininfo = seeedToCopy->detectorchaininfo;
@@ -1156,8 +1153,7 @@ bool Seeed::checkConsistency(
    return true;
 }
 
-/** @todo review due to bug
- *  assigns all open constraints and open variables
+/** assigns all open constraints and open variables
  *  strategy: assigns all conss and vars to the same block if they are indirectly connected
  *  a cons and a var are directly connected if the var appears in the cons */
 SCIP_RETCODE Seeed::completeByConnected(

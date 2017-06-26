@@ -88,8 +88,6 @@ private:
    std::vector<std::pair<int, int>> bookedAsStairlinkingVars;  /**< vector containing indices of variables that are not
                                                                  *< assigned yet but booked as stairlinking vars and the
                                                                  *< first block of the stairlinking var */
-   std::vector<bool> propagatedByDetector;                     /**< propagatedByDetector[i] is this seeed propagated by
-                                                                 *< detector i */
    long hashvalue;                                             /**< a hashvalue of the seeed for comparing it with other seeeds */
    SCIP_Real score;                                            /**< score to evaluate the seeeds */
    SCIP_Real maxwhitescore;                                    /**< score corresponding to the max white measure */
@@ -140,7 +138,6 @@ public:
    Seeed(
       SCIP* scip,       /**< scip data structure */
       int id,           /**< id that is given to this seeed */
-      int nDetectors,   /**< number of detectors */
       int nConss,       /**< number of constraints */
       int nVars         /**< number of variables */
       );
@@ -176,8 +173,8 @@ public:
 
    /** assigns open conss to master according to the cons assignment information given in constoblock hashmap */
    SCIP_RETCODE assignBorderFromConstoblock(
-      SCIP_HASHMAP* constoblock, /**< hashmap containing an assignment of conss to a block or to master
-                                   *< (master is indicated by assigning cons to index givenNBlocks) */
+      SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
+                                   *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
       int givenNBlocks,          /**< number of blocks the hashmap contains */
       Seeedpool* seeedpool       /**< a seeedpool that uses this seeed */
       );
@@ -191,8 +188,8 @@ public:
    /** adds blocks and assigns open conss to such a new block or to master
     *  according to the cons assignment information given in constoblock hashmap */
    SCIP_RETCODE assignSeeedFromConstoblock(
-      SCIP_HASHMAP* constoblock, /**< hashmap containing an assignment of conss to a block or to master
-                                   *< (master is indicated by assigning cons to index additionalNBlocks) */
+      SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
+                                   *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
       int additionalNBlocks,     /**< number of (additional) blocks the hashmap contains */
       Seeedpool* seeedpool       /**< a seeedpool that uses this seeed */
       );
@@ -251,8 +248,7 @@ public:
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
-   /** @todo review due to bug
-    *  assigns all open constraints and open variables
+   /** assigns all open constraints and open variables
     *  strategy: assigns all conss and vars to the same block if they are indirectly connected
     *  a cons and a var are directly connected if the var appears in the cons */
    SCIP_RETCODE completeByConnected(
@@ -313,8 +309,8 @@ public:
     *  according to the cons assignment information given in constoblock hashmap
     *  precondition: no cons or var is already assigned to a block */
    SCIP_RETCODE filloutBorderFromConstoblock(
-      SCIP_HASHMAP* constoblock, /**< hashmap containing an assignment of conss to a block or to master
-                                   *< (master is indicated by assigning cons to index givenNBlocks) */
+      SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
+                                   *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
       int givenNBlocks,          /**< number of blocks the hashmap contains */
       Seeedpool* seeedpool       /**< a seeedpool that uses this seeed */
       );
@@ -324,8 +320,8 @@ public:
     *  calculates implicit variable assignment through cons assignment
     *  precondition: no cons or var is already assigned to a block and constoblock contains information for every cons */
    SCIP_RETCODE filloutSeeedFromConstoblock(
-      SCIP_HASHMAP* constoblock, /**< hashmap containing an assignment of conss to a block or to master
-                                   *< (master is indicated by assigning cons to index givenNBlocks) */
+      SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons* !!) to block indices
+                                   *< (master assignment is indicated by assigning cons to index additionalNBlocks) */
       int givenNBlocks,          /**< number of blocks the hashmap contains */
       Seeedpool* seeedpool       /**< a seeedpool that uses this seeed */
       );

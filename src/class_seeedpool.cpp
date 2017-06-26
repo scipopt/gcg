@@ -488,7 +488,7 @@ Seeedpool::Seeedpool(
    const char* conshdlrName,
    SCIP_Bool _transformed
    ) :
-   scip( givenScip ), allrelevantseeeds( 0 ), currSeeeds( 0 ), nTotalSeeeds( 0 ), nVars( SCIPgetNVars( givenScip ) ),
+   scip( givenScip ), allrelevantseeeds( 0 ), currSeeeds( 0 ), nVars( SCIPgetNVars( givenScip ) ),
    nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ), nFinishingDetectors( 0 ), ndecompositions( 0 ),
    candidatesNBlocks( 0 ), transformed( _transformed )
 {
@@ -678,7 +678,7 @@ Seeedpool::Seeedpool(
    }
 
    /*  init  seeedpool with empty seeed */
-   addSeeedToCurr( new Seeed( scip, - 1, nDetectors, nConss, nVars ) );
+   addSeeedToCurr( new Seeed( scip, - 1, nConss, nVars ) );
 
    decompositions = NULL;
 } //end constructor
@@ -1541,7 +1541,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
 
       SCIPdebugMessagePrint( this->scip, " transform seeed %d \n", otherseeed->getID() );
 
-      newseeed = new Seeed( scip, this->getNewIdForSeeed(), this->getNDetectors(), this->getNConss(), this->getNVars() );
+      newseeed = new Seeed( scip, this->getNewIdForSeeed(), this->getNConss(), this->getNVars() );
 
       /** prepare new seeed */
       newseeed->setNBlocks( otherseeed->getNBlocks() );

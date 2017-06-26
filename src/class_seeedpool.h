@@ -84,7 +84,6 @@ private:
    SCIP* scip;                                                 /**< SCIP data structure */
 
    int maxndetectionrounds;                                    /**< maximum number of detection rounds */
-   int nTotalSeeeds;                                           /**< number of created seeeds, used to give next id */
    std::vector<std::vector<int>> varsForConss;                 /**< stores for every constraint the indices of variables
                                                                  *< that are contained in the constraint */
    std::vector<std::vector<double>> valsForConss;              /**< stores for every constraint the coefficients of
