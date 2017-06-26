@@ -2043,6 +2043,12 @@ SCIP_RETCODE initRelaxator(
       relaxdata->varlinkconss[i] = transcons;
    }
 
+   /* set objective limit in master problem if objective limit in original problem is finite */
+   if( !SCIPisInfinity(masterprob, SCIPgetObjlimit(scip)) )
+   {
+      SCIP_CALL( SCIPsetObjlimit(masterprob, SCIPgetObjlimit(scip)) );
+   }
+
    return SCIP_OKAY;
 }
 
