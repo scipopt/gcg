@@ -2678,6 +2678,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    DEC_DECOMP**   newdecomp                              /** the new decomp created from the seeed */
   )
 {
+   char detectorchaininfo[SCIP_MAXSTRLEN];
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* varindex;
