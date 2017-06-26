@@ -40,7 +40,7 @@
 #include <vector>
 #include "struct_detector.h"
 #include <string>
-
+#include "cons_decomp.h"
 namespace gcg {
 
 enum USERGIVEN
@@ -88,9 +88,7 @@ private:
    std::vector<std::pair<int, int>> bookedAsStairlinkingVars;  /**< vector containing indices of variables that are not
                                                                  *< assigned yet but booked as stairlinking vars and the
                                                                  *< first block of the stairlinking var */
-   long hashvalue;                                             /**< a hashvalue of the seeed for comparing it with other seeeds */
-   SCIP_Real score;                                            /**< score to evaluate the seeeds */
-   SCIP_Real maxwhitescore;                                    /**< score corresponding to the max white measure */
+   long hashvalue;
    bool changedHashvalue;                                      /**< are there any changes concerning the hash value since it
                                                                  *< was calculated last time */
 
@@ -124,6 +122,11 @@ public:
    std::vector<int> nNewBlocks;                       /**< vector containing detector indices that worked on that seeed */
    std::vector<int> listofancestorids;                /**< vector containing detector indices that worked on that seeed */
    USERGIVEN usergiven;                               /**< is this seeed partially or completely given by user */
+   SCIP_Real                        score;                        /**< score to evaluate the seeeds */
+   SCIP_Real                        maxwhitescore;                /**< score corresponding to the max white measure */
+
+   SCIP_Real                        borderareascore;
+
    char* detectorchainstring;
 
    /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
@@ -146,14 +149,13 @@ public:
    Seeed(
       const Seeed *seeedToCopy /**< seeed to be copied */
       );
-
    /** destructor */
    ~Seeed();
 
    /** adds a block, returns the number of the new block */
    int addBlock();
 
-   /** incorporates the the needed time of a certain detector in the detector chain */
+   /** incorporates the needed time of a certain detector in the detector chain */
    void addClockTime(
       SCIP_Real clocktime /**< time to be added */
       );
@@ -237,7 +239,7 @@ public:
       int firstBlock
       );
 
-   /** calculates the hashvalue of the seeed for comparing */
+   /** calculates the hash value of the seeed for comparing */
    void calcHashvalue();
 
    /** returns true if all constraints are assigned and deletes the vector open conss if so */
@@ -302,7 +304,8 @@ public:
    /** computes the score of the given seeed based on the border, the average density score and the ratio of linking
     * variables */
    SCIP_Real evaluate(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      SCORETYPE  type
       );
 
    /** assigns all conss to master or declares them to be open (and declares all vars to be open)
@@ -347,10 +350,8 @@ public:
 
    /** returns the detectorchain */
    DEC_DETECTOR** getDetectorchain();
-
    /** returns true if this seeed was finished by finishSeeed() method of a detector */
    bool getFinishedByFinisher();
-
    /** returns the calculated hash value of this seeed */
    long getHashValue();
 
@@ -368,6 +369,10 @@ public:
 
    /** returns the "maximum white score" (the smaller the better) */
    SCIP_Real getMaxWhiteScore();
+
+   SCIP_Real getScore(
+      SCORETYPE type
+      );
 
    /** returns number of blocks */
    int getNBlocks();
@@ -457,18 +462,17 @@ public:
       Seeed* otherseeed,   /**< other seeed */
       SCIP_Bool* isequal,  /**< pointer to store whether seeeds are identical */
       bool sortseeeds      /**< should conss and vars be sorted before comparing the seeeds? */
-      );
+   );
 
    /* method to check whether this seeed is equal to a given other seeed */
    bool isEqual(
       Seeed* other /**< other seeed */
-      );
+   );
 
    /** returns true if this seeed was propagated by a detector */
    bool isPropagatedBy(
       DEC_DETECTOR* detectorID
       );
-
    /** returns true if this seeed is trivial,
     *  i.e. all conss are in one block, all conss are in border, all variables linking or mastervars */
    bool isTrivial();
@@ -543,7 +547,7 @@ public:
    /** sets whether this seeed was finished by a detector */
    void setFinishedByFinisher(
       bool finished
-      );
+   );
 
    /** sets number of blocks, only increasing number allowed */
    SCIP_RETCODE setNBlocks(
@@ -553,7 +557,7 @@ public:
    /** sets the id of this seeed */
    SCIP_RETCODE setID(
       int id
-      );
+   );
 
    /** sets whether this seeed is selected */
    void setSelected(
@@ -601,6 +605,7 @@ public:
 
    /** sorts the vars and conss by their indices */
    void sort();
+   /*@todo description of this function*/
 
    /** displays the assignments of the vars */
    SCIP_RETCODE writeScatterPlot(
@@ -651,13 +656,11 @@ private:
    SCIP_RETCODE assignOpenPartialHittingToMaster(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
-
    /** assigns every open var to linking that hits
     *  - exactly one block cons and at least one open cons */
    SCIP_RETCODE assignOpenPartialHittingVarsToMaster(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
-
 };
 
 } /* namespace gcg */

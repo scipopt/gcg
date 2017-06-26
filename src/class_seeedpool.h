@@ -110,8 +110,8 @@ private:
    int nFinishingDetectors;      /**< number of finishing detectors */
    int nnonzeros;                /**< number of nonzero entries in the coefficient matrix */
 
-   DEC_DECOMP** decompositions;  /**< decompositions found by the detectors */
-   int ndecompositions;          /**< number of decompositions found by the detectors */
+//   DEC_DECOMP** decompositions;  /**< decompositions found by the detectors */
+//   int ndecompositions;          /**< number of decompositions found by the detectors */
 
    /** oracle data */
    std::vector<std::pair<int, int> > candidatesNBlocks;  /**< candidate for the number of blocks  */
@@ -132,6 +132,7 @@ public:
                                                *< id i; non relevant seeeds are repepresented by a null pointer */
    std::vector<SeeedPtr> currSeeeds;         /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> finishedSeeeds;     /**< vector of finished seeeds */
+   std::vector<SeeedPtr> ancestorseeeds;     /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
 
    /** constructor */
    Seeedpool(
@@ -163,6 +164,8 @@ public:
 
    /** clears current seeed data structure */
    void clearCurrentSeeeds();
+
+   void  sortFinishedForScore();
 
    /** clears finished seeed data structure */
    void clearFinishedSeeeds();
@@ -231,6 +234,10 @@ public:
    void addSeeedToFinished(
       SeeedPtr seeed
       );
+
+   void addSeeedToIncomplete(SeeedPtr seeed);
+
+   void addSeeedToAncestor(SeeedPtr seeed);
 
    /** adds a seeed to incomplete seeeds */
    void addSeeedToIncomplete(
@@ -315,11 +322,7 @@ public:
    int getNewIdForSeeed();
 
    /** returns the decompositions stored in the seeedpool */
-   DEC_DECOMP** getDecompositions();
-
    /** returns the number of decompositions stored in the seeedpool */
-   int getNDecompositions();
-
    /** returns the number of detectors used in the seeedpool */
    int getNDetectors();
 
@@ -401,6 +404,18 @@ public:
    /** returns pointer to a variable classifier */
    VarClassifier* getVarClassifier(
       int classifierIndex /**< index of variable classifier */
+   );
+
+   /** returns a new variable classifier
+    *  where all variables with identical objective function value are assigned to the same class */
+   VarClassifier* createVarClassifierForObjValues(
+   );
+
+   /** returns a new variable classifier
+    *  where all variables are assigned to class zero, positive or negative according to their objective function value sign
+    *  all class zero variables are assumed to be only master variables (set via DECOMPINFO)
+    *  @todo correct? */
+   VarClassifier* createVarClassifierForObjValueSigns(
       );
 
    /** returns the assignment of variables to classes of a classifier as integer array */
