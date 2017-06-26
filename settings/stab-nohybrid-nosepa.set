@@ -1,0 +1,9 @@
+# SCIP version 4.0.0
+
+pricing/masterpricer/stabilization = TRUE
+
+pricing/masterpricer/stabilization/hybridascent = FALSE
+
+sepa/basis/enable = FALSE
+
+sepa/master/enable = FALSE
