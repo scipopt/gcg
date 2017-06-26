@@ -54,7 +54,7 @@
 #include "scip_misc.h"
 #include "scip/clock.h"
 #include "scip/cons.h"
-
+#include "scip/scip.h"
 
 #include <algorithm>
 #include <iostream>
@@ -68,7 +68,6 @@
 #include <omp.h>
 #endif
 
-
 #include <exception>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -76,8 +75,6 @@
 #else
 #define LINEBREAK "\n"
 #endif
-
-
 
 #define SCIP_CALL_EXC(x)   do                                                                                  \
                        {                                                                                      \
@@ -94,7 +91,6 @@
 #define ENUM_TO_STRING(x) # x
 #define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
 
-
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
@@ -109,10 +105,7 @@ struct SCIP_ConshdlrData
    int                   nthreads;
 };
 
-
-
 namespace gcg {
-
 
 /** local methods */
 
@@ -124,12 +117,132 @@ struct sort_decr
    }
 };
 
-
 struct sort_pred {
    bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
       return left.second < right.second;
    }
 };
+
+
+std::string getSeeedFolderLatex( SeeedPtr seeed )
+{
+   std::stringstream decompfilename;
+   decompfilename << "dec" << seeed->getID() << ".pdf";
+
+   return decompfilename.str();
+}
+
+SCIP_Bool unfinishedchildexists(std::vector<SCIP_Bool> const& childsfinished)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return true;
+   }
+   return false;
+}
+
+int getfirstunfinishedchild(std::vector<SCIP_Bool> const& childsfinished, std::vector<int> const& childs)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return childs[s];
+   }
+   return -1;
+}
+
+int getfirstunfinishedchildid(std::vector<SCIP_Bool> const& childsfinished, std::vector<int> const& childs)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return (int)s;
+   }
+   return -1;
+}
+
+/**
+ * @return is nextchild the last unfinished child
+ */
+SCIP_Bool finishnextchild( std::vector<int>& childs, std::vector<SCIP_Bool>& childsfinished, int child )
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+      {
+         assert(childs[s] == child);
+         childsfinished[s] = TRUE;
+         return s == childsfinished.size() - 1;
+      }
+   }
+   return FALSE;
+}
+
+std::string writeSeeedDetectorChainInfoLatex( SeeedPtr seeed, int currheight, int visucounter )
+{
+   std::stringstream line;
+   std::string relposition;
+   int position = visucounter % 3;
+   if( position == 0 )
+      relposition = "above";
+   else if ( position == 1)
+      relposition = "";
+   else if ( position == 2)
+      relposition = "below";
+   else
+      relposition = "below left";
+
+   if ( currheight != 1)
+      relposition = "";
+
+   if ( (size_t) currheight >  seeed->detectorchaininfo.size() )
+      line << "edge from parent node [" << relposition << "] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
+   else
+   {
+      std::string oldinfo = seeed->detectorchaininfo[ currheight - 1];
+      /** take latexified detctorchaininfo */
+      size_t index = 0;
+      while (true) {
+         /* Locate the substring to replace. */
+         index = oldinfo.find("_", index);
+         if (index == std::string::npos)
+            break;
+         if ( index > 0 &&   oldinfo.at(index-1) == '\\' )
+         {
+            ++index;
+            continue;
+         }
+
+         /* Make the replacement. */
+         oldinfo.replace(index, 1, "\\_");
+
+         /* Advance index forward so the next iteration doesn't pick it up as well. */
+         index += 2;
+      }
+      std::cout << "oldinfo: " << oldinfo << std::endl;
+
+      line << "edge from parent node [" << relposition << "] {" << oldinfo <<"} " ;
+   }
+
+   return line.str();
+}
+
+std::string writeSeeedInfoLatex( SeeedPtr seeed )
+{
+   std::stringstream line;
+   line << "\\node[below = \\belowcaptionskip of s" << seeed->getID() << "] (caps" << seeed->getID() << ") {\\scriptsize " << seeed->getShortCaption() << "}; " << std::endl;
+
+   return line.str();
+}
+
+std::string writeSeeedIncludeLatex( SeeedPtr seeed, std::string workfolder )
+{
+   std::stringstream line;
+   line << " (s" << seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{" << getSeeedFolderLatex(seeed) << "} }" << std::endl;
+
+   return line.str();
+}
 
 
 SCIP_RETCODE getDetectorCallRoundInfo(SCIP* scip, const char* detectorname, SCIP_Bool transformed, int* maxcallround, int* mincallround, int* freqcallround)
@@ -162,6 +275,7 @@ SCIP_Bool cmpSeeedsMaxWhite(SeeedPtr i, SeeedPtr j)
    return (i->getMaxWhiteScore() < j->getMaxWhiteScore() );
 }
 
+
 SCIP_Bool cmpSeeedsBorderArea(SeeedPtr i, SeeedPtr j)
 {
    return (i->borderareascore < j->borderareascore );
@@ -174,10 +288,9 @@ SCIP_Bool cmpSeeedsClassic(SeeedPtr i, SeeedPtr j)
 }
 
 
-
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout( std::vector<SeeedPtr> finishedSeeeds, size_t nDecomps, SCIP_Bool addTrivialDecomp )
-         {
+{
    std::vector<SeeedPtr> justBest(0);
    for( size_t dec = 0; dec < nDecomps && dec < finishedSeeeds.size(); ++dec)
    {
@@ -195,8 +308,7 @@ std::vector<SeeedPtr> thinout( std::vector<SeeedPtr> finishedSeeeds, size_t nDec
       }
    }
    return justBest;
-      }
-
+}
 
 int calcLevenshteinDistance(std::string s, std::string t)
 {
@@ -238,7 +350,6 @@ int calcLevenshteinDistance(std::string s, std::string t)
    return v1[t.length()];
 }
 
-
 void removeDigits(char *str, int *nremoved)
 {
    char digits[11] = "0123456789";
@@ -264,12 +375,10 @@ void removeDigits(char *str, int *nremoved)
 }
 
 /** method to calculate the greatest common divisor */
-
 int gcd(int a, int b)
 {
    return b == 0 ? a : gcd(b, a % b);
 }
-
 
 SCIP_CONS* consGetRelevantRepr(SCIP* scip, SCIP_CONS* cons)
 {
@@ -297,7 +406,6 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(SeeedPtr compseeed, std::vector<SeeedPtr> c
    return TRUE;
 }
 
-
 SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currSeeeds, std::vector<SeeedPtr> const & finishedSeeeds, bool sort)
 {
    SCIP_Bool bool1 = seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, sort);
@@ -305,10 +413,9 @@ SCIP_Bool seeedIsNoDuplicate(SeeedPtr seeed, std::vector<SeeedPtr> const & currS
    return ( bool1 && bool2 );
 }
 
-
 /** constructor */
 Seeedpool::Seeedpool(
-   SCIP*               givenScip, /**< SCIP data structure */
+   SCIP*              givenScip,   /**< SCIP data structure */
    const char*       conshdlrName,
    SCIP_Bool         _transformed
 ):scip(givenScip), currSeeeds(0), incompleteSeeeds(0), ancestorseeeds(0), nTotalSeeeds(0), nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nnonzeros(0), nDetectors(0), nFinishingDetectors(0), candidatesNBlocks(0), transformed(_transformed)
@@ -518,7 +625,6 @@ Seeedpool::~Seeedpool()
    }
 }
 
-
 /** calculates constraint and variables classes, and find block number candidates */
 SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
    SCIP*               givenScip /**< SCIP data structure */
@@ -579,10 +685,9 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
      return SCIP_OKAY;
 }
 
-
  /** finds decompositions  */
-  /** access coefficient matrix constraint-wise */
- std::vector<SeeedPtr>    Seeedpool::findSeeeds(
+ /** access coefficient matrix constraint-wise */
+ std::vector<SeeedPtr> Seeedpool::findSeeeds(
  ){
     /** 1) read parameter, as there are: maxrounds
      *  2) loop rounds
@@ -1024,12 +1129,9 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     //
     //         delSeeeds.clear();
 
-
-
     sortAllRelevantSeeeds();
 
     return finishedSeeeds;
-
  }
 
 
@@ -1134,7 +1236,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
      */
 
     std::vector<int> successDetectors;
-    std::vector<SeeedPtr> delSeeeds;
     SCIP_Bool usemaxwhitescore;
     SCIP_Bool dothinout;
 
@@ -1146,7 +1247,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     SCIP_Bool addTrivialDecomp = FALSE;
 
     successDetectors = std::vector<int>(nDetectors, 0);
-    delSeeeds = std::vector<SeeedPtr>(0);
     usemaxwhitescore = TRUE;
     dothinout = FALSE;
 
@@ -1163,62 +1263,21 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
 
 
-    /** fill out the decompositions */
-    /* @TODO: instead of creating decomps for every seeed we only create them for the used ones */
-//    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
-//    for( size_t i = 0; i < finishedSeeeds.size(); ++i )
-//    {
-//       SeeedPtr seeed = finishedSeeeds[i];
-//
-//       SCIP_CALL_ABORT( createDecompFromSeeed(seeed, &decompositions[i]) );
-//    }
 
-    //SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+    }
 
-    /** delete the seeeds */
-
-    //         for(size_t f = 0; f < finishedSeeeds.size(); ++f)
-    //         {
-    //            duplicate = false;
-    //            for(size_t d = 0; d < delSeeeds.size(); ++d)
-    //            {
-    //               if(finishedSeeeds[f]==delSeeeds[d])
-    //               {
-    //                  duplicate=true;
-    //                  break;
-    //               }
-    //            }
-    //            if(!duplicate)
-    //            {
-    //               delSeeeds.push_back(finishedSeeeds[f]);
-    //            }
-    //         }
-    //
-    //
-    //         for( size_t d =  delSeeeds.size(); d > 0; d--)
-    //         {
-    //            delete delSeeeds[d-1];
-    //            delSeeeds[d-1] = NULL;
-    //         }
-
-    delSeeeds.clear();
-
-    return;
-
-}
 
 /*SCIP_RETCODE DECdecompCheckConsistency(DEC_DECOMP* decomp)
+{
+   int c;
+   int b;
+   int v;
+
+   for( v = 0; v < SCIPgetNVars(scip); ++v )
    {
-      int c;
-      int b;
-      int v;
-
-      for( v = 0; v < SCIPgetNVars(scip); ++v )
-      {
-         assert(SCIPhashmapExists(DECdecompGetVartoblock(decomp), SCIPgetVars(scip)[v]));
-      }
-   }*/
-
+      assert(SCIPhashmapExists(DECdecompGetVartoblock(decomp), SCIPgetVars(scip)[v]));
+   }
+}*/
 
  SCIP_RETCODE Seeedpool::prepareSeeed( SeeedPtr seeed)
  {
@@ -1229,7 +1288,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
    return SCIP_OKAY;
  }
-
 
 void Seeedpool::freeCurrSeeeds()
 {
@@ -1245,6 +1303,7 @@ void Seeedpool::freeCurrSeeeds()
    return;
 }
 
+
 void Seeedpool::addSeeedToAncestor(SeeedPtr seeed){
 
    ancestorseeeds.push_back(seeed);
@@ -1257,6 +1316,7 @@ void Seeedpool::addSeeedToIncomplete(SeeedPtr seeed){
    incompleteSeeeds.push_back(seeed);
    return;
 }
+
 
 
 void Seeedpool::addSeeedToCurr(SeeedPtr seeed){
@@ -1293,8 +1353,8 @@ void Seeedpool::sortAllRelevantSeeeds(){
 
    ancestorseeeds = tmpAllRelevantSeeeds;
 
-}
 
+}
 
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
 void Seeedpool::translateSeeedData( Seeedpool* origpool, std::vector<Seeed*> origseeeds, std::vector<Seeed*>& newseeeds,
@@ -1341,7 +1401,6 @@ void Seeedpool::translateSeeeds( Seeedpool* origpool, std::vector<Seeed*> origse
 
    newseeeds = getTranslatedSeeeds( origseeeds, rowothertothis, rowthistoother, colothertothis, colthistoother );
 }
-
 
 /** calculates necessary data for translating seeeds and classifiers */
 void Seeedpool::calcTranslationMapping( Seeedpool* origpool, std::vector<int>& rowothertothis, std::vector<int>& rowthistoother,
@@ -1519,8 +1578,6 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
 
       //assert(newseeed->checkConsistency(this) );
 
-
-
       /*std::cout << "unpresolved seeed " << std::endl;
          otherseeed->showScatterPlot(origpool);
          std::cout << "has become " << std::endl;
@@ -1537,7 +1594,6 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
 
    return newseeeds;
 }
-
 
 /** returns translated ConsClassifiers derived from given mapping data */
 std::vector<ConsClassifier*> Seeedpool::getTranslatedConsClassifiers( std::vector<ConsClassifier*>& otherclassifiers,
@@ -1588,7 +1644,6 @@ std::vector<ConsClassifier*> Seeedpool::getTranslatedConsClassifiers( std::vecto
 
    return newclassifiers;
 }
-
 
 /** returns translated VarClassifiers derived from given mapping data */
 std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers( std::vector<VarClassifier*>& otherclassifiers,
@@ -1691,7 +1746,6 @@ DEC_DETECTOR* Seeedpool::getFinishingDetectorForIndex(int detectorIndex)
    return detectorToFinishingScipDetector[detectorIndex];
 }
 
-
 SCIP_Real Seeedpool::getVal(int row, int col)
 {
    std::tr1::unordered_map< std::pair<int, int>, SCIP_Real, pair_hash>::const_iterator iter =  valsMap.find(std::pair<int, int>(row, col) ) ;
@@ -1722,7 +1776,6 @@ int Seeedpool::getIndexForFinishingDetector(DEC_DETECTOR* detector)
    return scipFinishingDetectorToIndex[detector];
 }
 
-
 int Seeedpool::getNewIdForSeeed()
 {
    return SCIPconshdlrDecompGetNextSeeedID(scip) ;
@@ -1746,7 +1799,6 @@ int Seeedpool::getNFinishingDetectors()
 {
    return nFinishingDetectors;
 }
-
 
 int Seeedpool::getNVars()
 {
@@ -2626,33 +2678,24 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    DEC_DECOMP**   newdecomp                              /** the new decomp created from the seeed */
   )
 {
-
    char detectorchaininfo[SCIP_MAXSTRLEN];
-
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* varindex;
    SCIP_HASHMAP* consindex;
-
    SCIP_VAR*** stairlinkingvars;
    SCIP_VAR*** subscipvars;
    SCIP_VAR**  linkingvars;
    SCIP_CONS**  linkingconss;
    SCIP_CONS*** subscipconss;
-
    DEC_SCORES scores;
-
-
-
    int* nsubscipconss;
    int* nsubscipvars;
    int* nstairlinkingvars;
    int  nlinkingvars;
-
    int varcounter = 1;  /* in varindex counting starts with 1 */
    int conscounter = 1; /* in consindex counting starts with 1 */
    int counterstairlinkingvars = 0;
-
    int size;
 
    assert(seeed->checkConsistency(this) );
@@ -2663,7 +2706,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    //           seeed->displayConss();
    //     if(seeed->detectorChain.size() > 2)
    //    seeed->showScatterPlot(this);
-
 
    /** set nblocks */
    DECdecompSetNBlocks( *newdecomp, seeed->getNBlocks() );
@@ -2713,7 +2755,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       }
    }
 
-
    DECdecompSetSubscipconss(scip, *newdecomp, subscipconss, nsubscipconss );
 
    DECdecompSetConstoblock(*newdecomp, constoblock);
@@ -2721,8 +2762,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    /* finished setting constraint data structures */
    /** now: set variables */
-
-
    SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &nsubscipvars, seeed->getNBlocks() ) );
    SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &subscipvars, seeed->getNBlocks() ) );
    SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stairlinkingvars, seeed->getNBlocks() ) );
@@ -2732,7 +2771,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIP_CALL_ABORT( SCIPhashmapCreate( &varindex, SCIPblkmem(scip), seeed->getNVars() ) );
 
    /** set linkingvars */
-
    nlinkingvars = seeed->getNLinkingvars() + seeed->getNMastervars() + seeed->getNTotalStairlinkingvars();
 
    if( nlinkingvars != 0 )
@@ -2762,11 +2800,9 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       varcounter++;
    }
 
-
    /* set block variables */
    for ( int b = 0; b < seeed->getNBlocks(); ++b )
    {
-
       if(seeed->getNVarsForBlock(b) > 0)
          SCIP_CALL_ABORT(SCIPallocBufferArray(scip, &subscipvars[b], seeed->getNVarsForBlock(b) ) );
       else subscipvars[b] = NULL;
@@ -2811,12 +2847,9 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    DECdecompSetVarindex(*newdecomp, varindex);
    DECdecompSetVartoblock(*newdecomp, vartoblock) ;
 
-
-
    /** free stuff */
 
    /** free constraints */
-
    SCIPfreeBufferArrayNull(scip, &(linkingconss));
    SCIPfreeBufferArrayNull(scip, &(nsubscipconss));
    for( int b = seeed->getNBlocks()-1; b >= 0; --b )
@@ -2826,7 +2859,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIPfreeBufferArrayNull(scip, &(subscipconss));
 
    /** free vars stuff */
-
    SCIPfreeBufferArrayNull(scip, &(linkingvars) );
    for( int b = seeed->getNBlocks()-1; b >= 0; --b )
    {
@@ -2849,23 +2881,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIPfreeBufferArrayNull(scip, &(stairlinkingvars) );
    SCIPfreeBufferArrayNull(scip, &(nstairlinkingvars));
 
-
-   //            /** test detector chain output */
-   //            char detectorchainstring[SCIP_MAXSTRLEN];
-   //
-   //            sprintf(detectorchainstring, "%s", DECdetectorGetName(decompositions[i]->detectorchain[0]));
-   //
-   //              for( i=1; i < ndetectors; ++i )
-   //              {
-   //                 sprintf(detectorchainstring, "%s-%s",detectorchainstring, DECdetectorGetName(decompositions[i]->detectorchain[i]) );
-   //              }
-   //
-   //              SCIPinfoMessage(scip, NULL, "%s %s", detectorchainstring, LINEBREAK);
-
-
-   /*** OLD stuff above */
-
-
    /** set detectorchain */
    int ndetectors = seeed->getNDetectors();
    (*newdecomp)->sizedetectorchain = ndetectors;
@@ -2881,9 +2896,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
          (*newdecomp)->detectorchain[k] = seeed->getDetectorchain()[k];
    }
 
-
    /** set statistical detector chain data */
-
    DECdecompSetSeeedID(*newdecomp, seeed->getID() );
    if( seeed->getNDetectors() > 0 )
    {
@@ -2897,7 +2910,10 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       DECdecompSetNNewBlocks(scip, *newdecomp, &(seeed->nNewBlocks[0] ) );
    }
 
-   if( seeed->detectorchainstring == NULL)
+
+   /** set detector chain info string */
+   SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
+   if( seeed->usergiven == USERGIVEN::PARTIAL || seeed->usergiven == USERGIVEN::COMPLETE || seeed->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
    {
       seeed->buildDecChainString();
    }
@@ -2929,12 +2945,9 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIP_CALL(DECevaluateDecomposition(scip, *newdecomp, &scores) );
 
    assert(scores.maxwhitescore == seeed->getMaxWhiteScore() );
-
    assert(DECdecompCheckConsistency(scip, (*newdecomp) ) );
-
    assert(!SCIPhashmapIsEmpty((*newdecomp)->constoblock));
    assert(!SCIPhashmapIsEmpty((*newdecomp)->vartoblock));
-
 
    return SCIP_OKAY;
 }
@@ -2947,13 +2960,12 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
   )
 {
-   SeeedPtr seeed;
-
-   seeed = NULL;
+   *newseeed = new Seeed(scip, this->getNewIdForSeeed(), this->getNDetectors(), this->getNConss(), this->getNVars() );
 
    return SCIP_OKAY;
 
 }
+
 
 /**
  * returns transformation information
@@ -2963,7 +2975,5 @@ SCIP_Bool Seeedpool::getTransformedInfo(
 {
    return transformed;
 }
-
-
 
 } /* namespace gcg */
