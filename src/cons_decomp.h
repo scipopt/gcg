@@ -48,6 +48,14 @@
 extern "C" {
 #endif
 
+enum scoretype {
+   MAX_WHITE = 0,
+   BORDER_AREA,
+   CLASSIC
+};
+
+typedef enum scoretype SCORETYPE;
+
 SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP*          scip
 );
@@ -226,6 +234,12 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
    const char*           varname              /**< name of the variable */
    );
 
+/** rejects and deletes the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
+   SCIP*                 scip                 /**< SCIP data structure */
+   );
+
+
 /** finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if complete etc */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    SCIP*                 scip                 /**< SCIP data structure */
@@ -259,6 +273,21 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    int SCIPconshdlrDecompGetNextSeeedID(
    SCIP*   scip
    );
+
+
+   SCORETYPE SCIPconshdlrDecompGetCurrScoretype(
+         SCIP* scip
+   );
+
+//    char*  SCIPconshdlrDecompGetScoretypeShortName(
+//      SCIP*       scip,
+//      SCORETYPE   sctype
+//      );
+//
+//   char*  SCIPconshdlrDecompGetScoretypeDescription(
+//      SCIP*          scip,
+//      SCORETYPE      sctype
+//         );
 
 
 
@@ -296,6 +325,26 @@ DEC_DECOMP* DECgetBestDecomp(
 void DECprintListOfDetectors(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
+DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
+   SCIP*     scip
+   );
+
+int SCIPconshdlrDecompGetNFinishedDecomps(
+   SCIP*       scip
+   );
+
+int SCIPconshdlrDecompGetNDetectors(
+   SCIP* scip
+   );
+
+
+DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
+   SCIP* scip
+   );
+
+
+
 
 /** returns whether the detection has been performed */
 SCIP_Bool DEChasDetectionRun(

@@ -105,7 +105,7 @@ SCIP_RETCODE writeAllDecompositions(
    char* dirname;
    SCIP_Bool endoffile;
 
-   if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
+   if( SCIPconshdlrDecompGetNFinishedDecomps(scip) == 0 )
    {
       SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
@@ -217,7 +217,7 @@ SCIP_RETCODE writeFamilyTree(
    ndecs = 5;
    tempstr[0] = '\0';
 
-   if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
+   if( SCIPconshdlrDecompGetNFinishedDecomps(scip) == 0 )
    {
       SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
@@ -295,7 +295,8 @@ SCIP_RETCODE writeFamilyTree(
    return SCIP_OKAY;
 }
 
-/** writes out visualizations of all decompositions currently known to cons_decomp to a PDF file */
+/** writes out visualizations of all decompositions currently known to cons_decomp to a PDF file
+ * @TODO:   */
 static
 SCIP_RETCODE reportAllDecompositions(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -321,8 +322,10 @@ SCIP_RETCODE reportAllDecompositions(
    int i;
    int writtendecomps;
 
-   decomps = SCIPconshdlrDecompGetDecdecomps(scip);
-   ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
+
+   /** get temporary decomp files */
+   ndecomps = SCIPconshdlrDecompGetNFinishedDecomps(scip);
+   decomps = SCIPconshdlrDecompGetFinishedDecomps(scip);
 
    if( ndecomps == 0 )
    {
@@ -403,7 +406,7 @@ SCIP_RETCODE reportAllDecompositions(
       GCGtexWriteTableOfContents(scip, file);
    }
    writtendecomps = 0;
-   for(i = 0; i < ndecomps; i++){
+   for( i = 0; i < ndecomps; i++ ){
       if(type == 0 || DECdecompGetType(decomps[i]) == (DEC_DECTYPE) type){
          GCGtexWriteDecompCode(scip, file, decomps[i]);
          ++writtendecomps;
@@ -422,6 +425,13 @@ SCIP_RETCODE reportAllDecompositions(
 
    /* print result message if writing was successful */
    SCIPdialogMessage(scip, NULL, "report is written to file %s%s.%s in directory %s\n", nameinfix, pname, extension, dirname);
+
+
+   /* free the decomp files */
+   for( i = 0; i < ndecomps; ++i )
+   {
+      DECdecompFree(scip, &decomps[ndecomps - i - 1]);
+   }
 
    return SCIP_OKAY;
 }
@@ -726,7 +736,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIPfreeTransform(scip);
          SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
          SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
-
       }
 
       SCIP_CALL( SCIPsolve(scip) );

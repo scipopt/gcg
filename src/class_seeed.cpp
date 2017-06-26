@@ -74,55 +74,63 @@ const int Seeed::nPrimes = 70;
 /** constructor(s) */
 Seeed::Seeed(
    SCIP*       _scip,
-   int         givenId,                    /**< id that is given to this seeed */
-   int         givenNDetectors,            /**< number of detectors */
-   int         givenNConss,                /**< number of constraints */
-   int         givenNVars                  /**< number of variables */
+   int         givenid,                    /**< id that is given to this seeed */
+   int         givenndetectors,            /**< number of detectors */
+   int         givennconss,                /**< number of constraints */
+   int         givennvars                  /**< number of variables */
 ) :
-   scip(_scip), id(givenId), nBlocks(0), nVars(givenNVars), nConss(givenNConss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
-      std::vector<bool>(givenNDetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false), usergiven(USERGIVEN::NOT), isselected(false), isfromunpresolved(FALSE), detectorchainstring(NULL)
+
+   scip(_scip), id(givenid), nBlocks(0), nVars(givennvars), nConss(givennconss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0),
+   stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(std::vector<bool>(givenndetectors, false) ),
+   openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false),
+   isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0),
+   pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0),
+   listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false), usergiven(USERGIVEN::NOT),
+   isselected(false), isfromunpresolved(FALSE), detectorchainstring(NULL)
 {
 }
 
-Seeed::Seeed(const Seeed *seeedToCopy, Seeedpool* seeedpool)
+Seeed::Seeed(const Seeed *seeedtocopy, Seeedpool* seeedpool)
 {
-   scip = (seeedToCopy->scip);
-   id = seeedToCopy->id;
-   nBlocks = seeedToCopy->nBlocks;
-   nVars = seeedToCopy->nVars;
-   nConss = seeedToCopy->nConss;
-   masterConss = seeedToCopy->masterConss;
-   masterVars = seeedToCopy->masterVars;
-   conssForBlocks = seeedToCopy->conssForBlocks;
-   varsForBlocks = seeedToCopy->varsForBlocks;
-   linkingVars = seeedToCopy->linkingVars;
-   stairlinkingVars = seeedToCopy->stairlinkingVars;
-   openVars = seeedToCopy->openVars;
-   openConss = seeedToCopy->openConss;
-   propagatedByDetector = seeedToCopy->propagatedByDetector;
-   detectorChain = seeedToCopy->detectorChain;
-   detectorChainFinishingUsed = seeedToCopy->detectorChainFinishingUsed;
-   detectorchaininfo = seeedToCopy->detectorchaininfo;
-   openVarsAndConssCalculated = seeedToCopy->openVarsAndConssCalculated;
-   detectorClockTimes = seeedToCopy->detectorClockTimes;
-   pctVarsToBorder = seeedToCopy->pctVarsToBorder;
-   pctVarsToBlock = seeedToCopy->pctVarsToBlock;
-   pctVarsFromFree = seeedToCopy->pctVarsFromFree;
-   pctConssToBorder = seeedToCopy->pctConssToBorder;
-   pctConssToBlock = seeedToCopy->pctConssToBlock;
-   pctConssFromFree = seeedToCopy->pctConssFromFree;
-   nNewBlocks = seeedToCopy->nNewBlocks;
-   isFinishedByFinisher = seeedToCopy->isFinishedByFinisher;
-   score = seeedToCopy->score;
-   maxwhitescore = seeedToCopy->maxwhitescore;
-   changedHashvalue = seeedToCopy->changedHashvalue;
-   stemsFromUnpresolved = seeedToCopy->stemsFromUnpresolved;
-   isFinishedByFinisherUnpresolved = seeedToCopy->isFinishedByFinisherUnpresolved;
-   listofancestorids = seeedToCopy->listofancestorids;
-   usergiven = seeedToCopy->usergiven;
+   scip = (seeedtocopy->scip);
+   id = seeedtocopy->id;
+   nBlocks = seeedtocopy->nBlocks;
+   nVars = seeedtocopy->nVars;
+   nConss = seeedtocopy->nConss;
+   masterConss = seeedtocopy->masterConss;
+   masterVars = seeedtocopy->masterVars;
+   conssForBlocks = seeedtocopy->conssForBlocks;
+   varsForBlocks = seeedtocopy->varsForBlocks;
+   linkingVars = seeedtocopy->linkingVars;
+   stairlinkingVars = seeedtocopy->stairlinkingVars;
+   openVars = seeedtocopy->openVars;
+   openConss = seeedtocopy->openConss;
+   propagatedByDetector = seeedtocopy->propagatedByDetector;
+   detectorChain = seeedtocopy->detectorChain;
+   detectorChainFinishingUsed = seeedtocopy->detectorChainFinishingUsed;
+   detectorchaininfo = seeedtocopy->detectorchaininfo;
+   openVarsAndConssCalculated = seeedtocopy->openVarsAndConssCalculated;
+   detectorClockTimes = seeedtocopy->detectorClockTimes;
+   pctVarsToBorder = seeedtocopy->pctVarsToBorder;
+   pctVarsToBlock = seeedtocopy->pctVarsToBlock;
+   pctVarsFromFree = seeedtocopy->pctVarsFromFree;
+   pctConssToBorder = seeedtocopy->pctConssToBorder;
+   pctConssToBlock = seeedtocopy->pctConssToBlock;
+   pctConssFromFree = seeedtocopy->pctConssFromFree;
+   nNewBlocks = seeedtocopy->nNewBlocks;
+   isFinishedByFinisher = seeedtocopy->isFinishedByFinisher;
+   score = seeedtocopy->score;
+   maxwhitescore = seeedtocopy->maxwhitescore;
+   changedHashvalue = seeedtocopy->changedHashvalue;
+   stemsFromUnpresolved = seeedtocopy->stemsFromUnpresolved;
+   isFinishedByFinisherUnpresolved = seeedtocopy->isFinishedByFinisherUnpresolved;
+   listofancestorids = seeedtocopy->listofancestorids;
+   usergiven = seeedtocopy->usergiven;
    isselected = false;
    detectorchainstring = NULL;
    isfromunpresolved = FALSE;
+
+
 }
 
 Seeed::~Seeed()
@@ -2126,7 +2134,8 @@ SCIP_RETCODE Seeed::displayVars(Seeedpool* seeedpool)
  * @todo bound calculation for unfinished decompositions could be more precise
  */
 SCIP_Real Seeed::evaluate(
-   Seeedpool* seeedpool
+   Seeedpool* seeedpool,
+   SCORETYPE sctype
    )
 {
 
@@ -2177,6 +2186,7 @@ SCIP_Real Seeed::evaluate(
 	   maxwhitescore = blackarea/( getNConss() * getNVars() );
 
 	   return maxwhitescore;
+
    }
 
    if( getNOpenconss() != 0 || getNOpenvars() != 0 )
@@ -2202,6 +2212,7 @@ SCIP_Real Seeed::evaluate(
    blackarea += getNMasterconss() * getNVars();
 
    blackarea -= getNMasterconss() * ( getNLinkingvars() + getNTotalStairlinkingvars() );
+
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++i )
@@ -2271,7 +2282,6 @@ SCIP_Real Seeed::evaluate(
    }
 
    borderarea = getNMasterconss()*nVars+(getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars())*(nConss-getNMasterconss());
-
    maxwhitescore = blackarea/( getNConss() * getNVars() );
 
    density = 1E20;
@@ -2295,7 +2305,7 @@ SCIP_Real Seeed::evaluate(
    densityscore = (1-density);
 
 
-
+   borderareascore = borderscore;
 
    DEC_DECTYPE type;
    if(getNLinkingvars() == getNTotalStairlinkingvars() && getNMasterconss() == 0 && getNLinkingvars() > 0)
@@ -2361,7 +2371,9 @@ SCIP_Real Seeed::evaluate(
    SCIPfreeBufferArray(scip, &nlinkvarsblocks);
    SCIPfreeBufferArray(scip, &nzblocks);
    score = totalscore;
-   return totalscore;
+
+   return   getScore(sctype);
+
 }
 
 
@@ -2754,6 +2766,23 @@ const int* Seeed::getMastervars()
    SCIP_Real Seeed::getMaxWhiteScore(){
       return maxwhitescore;
    }
+
+/** return the "maximum white score" (the smaller the better) */
+SCIP_Real Seeed::getScore(
+   SCORETYPE type
+   ){
+
+   if( type == scoretype::MAX_WHITE )
+      return maxwhitescore;
+
+   if( type == scoretype::CLASSIC )
+         return score;
+
+   if( type == scoretype::BORDER_AREA )
+      return borderareascore;
+
+   }
+
 
 
 /** returns number of blocks */

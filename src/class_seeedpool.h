@@ -111,8 +111,8 @@ private:
    int                                          nFinishingDetectors;             /**< number of detectors */
 
 
-   DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
-   int                                          ndecompositions;        /**< number of decompositions found by the detectors */
+//   DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
+//   int                                          ndecompositions;        /**< number of decompositions found by the detectors */
 
    /** oracle data */
    std::vector<std::pair<int,int> >                             candidatesNBlocks;      	/**< candidate for the number of blocks  */
@@ -133,7 +133,7 @@ public:
    std::vector<SeeedPtr>                        incompleteSeeeds;       /**< vector of incomplete seeeds that can be used for initialization */
    std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of finished seeeds */
-   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
+   std::vector<SeeedPtr>                        ancestorseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
 
    /** constructor */
    Seeedpool(
@@ -155,6 +155,8 @@ public:
    std::vector<SeeedPtr> findSeeeds(
       );
 
+
+   void  sortFinishedForScore();
 
 
    /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
@@ -193,6 +195,11 @@ public:
    SCIP_RETCODE prepareSeeed( SeeedPtr seeed);
 
    void freeCurrSeeeds();
+
+
+   void addSeeedToIncomplete(SeeedPtr seeed);
+
+   void addSeeedToAncestor(SeeedPtr seeed);
 
    void addSeeedToCurr(SeeedPtr seeed);
 
@@ -237,10 +244,6 @@ public:
    int getNewIdForSeeed();
 
    void decrementSeeedcount();
-
-   DEC_DECOMP** getDecompositions();
-
-   int getNDecompositions();
 
    int getNNonzeros();
 
@@ -303,6 +306,18 @@ public:
    /** returns pointer to a variable classifier */
    VarClassifier* getVarClassifier(
       int classifierIndex                     /**< index of variable classifier */
+   );
+
+   /** returns a new variable classifier
+    *  where all variables with identical objective function value are assigned to the same class */
+   VarClassifier* createVarClassifierForObjValues(
+   );
+
+   /** returns a new variable classifier
+    *  where all variables are assigned to class zero, positive or negative according to their objective function value sign
+    *  all class zero variables are assumed to be only master variables (set via DECOMPINFO)
+    *  @todo correct? */
+   VarClassifier* createVarClassifierForObjValueSigns(
    );
 
    VarClassifier* createVarClassifierForSCIPVartypes(
