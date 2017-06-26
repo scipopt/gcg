@@ -2040,9 +2040,9 @@ SCIP_RETCODE initRelaxator(
    }
 
    /* set objective limit in master problem if objective limit in original problem is finite */
-   if( !SCIPisInfinity(masterprob, SCIPgetObjlimit(scip)) )
+   if( !SCIPisInfinity(scip, SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) )
    {
-      SCIP_CALL( SCIPsetObjlimit(masterprob, SCIPgetObjlimit(scip)) );
+      SCIP_CALL( SCIPsetObjlimit(masterprob, SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) );
    }
 
    return SCIP_OKAY;
