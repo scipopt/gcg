@@ -115,7 +115,8 @@ private:
 //   int                                          ndecompositions;        /**< number of decompositions found by the detectors */
 
    /** oracle data */
-   std::vector<std::pair<int,int> >                             candidatesNBlocks;      	/**< candidate for the number of blocks  */
+   std::vector<int >                            usercandidatesnblocks;     /**< candidate for the number of blocks that were given by the user and thus will be handled priorized */
+   std::vector<std::pair<int,int> >             candidatesNBlocks;      	/**< candidate for the number of blocks  */
 
 
    std::vector<ConsClassifier*>                 consclassescollection; /**< collection of different constraint class distributions  */
@@ -260,6 +261,14 @@ public:
    void addCandidatesNBlocks(
       int                 candidate            /**< candidate for block size */
       );
+
+   void addUserCandidatesNBlocks(
+      int                 candidate            /**< candidate for block size */
+      );
+
+   int getNUserCandidatesNBlocks(
+         );
+
 
    void calcCandidatesNBlocks();
 
