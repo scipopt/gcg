@@ -330,7 +330,7 @@ public:
       );
 
    /** creates a seeed for a given decomposition
-    *  missing information: ... */
+    *  the resulting seeed will not have a detectorchaininfo or any ancestor or finishing detector data */
    SCIP_RETCODE createSeeedFromDecomp(
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */

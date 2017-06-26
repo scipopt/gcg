@@ -1138,12 +1138,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
        SeeedPtr seeed = finishedSeeeds[i];
 
        SCIP_CALL_ABORT( createDecompFromSeeed(seeed, &decompositions[i]) );
-
-       SeeedPtr trseeed;
-
-       createSeeedFromDecomp( decompositions[i], &trseeed );
-
-       assert( seeed->isEqual( trseeed ) );
     }
 
     //SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
@@ -2797,7 +2791,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 }
 
 /** creates a seeed for a given decomposition
- *  missing information: ... */
+ *  the resulting seeed will not have a detectorchaininfo or any ancestor or finishing detector data */
 SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
@@ -2806,6 +2800,8 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    assert( decomp != NULL );
    assert( DECdecompCheckConsistency( scip, decomp ) );
    assert( nConss == DECdecompGetNConss( decomp ) );
+   assert( DECdecompGetPresolved( decomp ) );
+   assert( transformed );
 
    /* create new seeed and initialize its data */
    SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nDetectors, nConss, nVars );
@@ -2899,8 +2895,7 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 
    seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
 
-   /*@todo detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings
-     @todo how to handle missing attributes? */
+   /* detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings
 
    /* calc maxwhitescore and hashvalue */
    prepareSeeed( seeed );
