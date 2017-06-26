@@ -3375,7 +3375,7 @@ SCIP_RETCODE DECdetectStructure(
 
    /* show that we done our duty */
    conshdlrdata->hasrun = TRUE;
-
+   *result = SCIP_SUCCESS;
    SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
 
 //   SCIPhashmapFree( &consToIndex );
