@@ -1559,20 +1559,16 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
       else
          dualsol = pricetype->consGetDual(scip_, linkcons);
 
-      if(SCIPisFeasPositive(scip_, dualsol))
-      {
+      if( SCIPisFeasPositive(scip_, dualsol) )
          boundval = SCIPgetLhsLinear(scip_, linkcons);
-      }
       else if( SCIPisFeasNegative(scip_, dualsol) )
-      {
          boundval = SCIPgetRhsLinear(scip_, linkcons);
-      }
       else
          continue;
 
       assert( SCIPisZero(scip_, boundval) );
 
-      if( SCIPisPositive(scip_, boundval) )
+      if( !SCIPisZero(scip_, boundval) )
          dualobjval += boundval*dualsol;
    }
 
@@ -1585,18 +1581,14 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
       else
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
 
-      if(SCIPisFeasPositive(scip_, dualsol))
-      {
+      if( SCIPisFeasPositive(scip_, dualsol) )
          boundval = SCIPgetLhsLinear(scip_, masterconss[i]);
-      }
       else if( SCIPisFeasNegative(scip_, dualsol) )
-      {
          boundval = SCIPgetRhsLinear(scip_, masterconss[i]);
-      }
       else
          continue;
 
-      if( SCIPisPositive(scip_, boundval) )
+      if( !SCIPisZero(scip_, boundval) )
          dualobjval += boundval*dualsol;
    }
 
@@ -1608,18 +1600,14 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
       else
          dualsol = pricetype->rowGetDual(mastercuts[i]);
 
-      if(SCIPisFeasPositive(scip_, dualsol))
-      {
+      if( SCIPisFeasPositive(scip_, dualsol) )
          boundval = SCIProwGetLhs(mastercuts[i]);
-      }
       else if( SCIPisFeasNegative(scip_, dualsol) )
-      {
          boundval = SCIProwGetRhs(mastercuts[i]);
-      }
       else
          continue;
 
-      if( SCIPisPositive(scip_, boundval) )
+      if( !SCIPisZero(scip_, boundval) )
          dualobjval += boundval*dualsol;
    }
 
