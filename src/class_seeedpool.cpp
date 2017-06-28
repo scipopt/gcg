@@ -500,8 +500,8 @@ Seeedpool::Seeedpool(
    const char* conshdlrName,
    SCIP_Bool _transformed
    ) :
-   scip( givenScip ), allrelevantseeeds( 0 ), currSeeeds( 0 ), nVars( SCIPgetNVars( givenScip ) ),
-   nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ), nFinishingDetectors( 0 ),
+   scip( givenScip ), currSeeeds( 0 ), incompleteSeeeds( 0 ), ancestorseeeds( 0 ), nVars( SCIPgetNVars( givenScip ) ),
+   nConss( SCIPgetNConss( givenScip ) ), nnonzeros( 0 ), nDetectors( 0 ), nFinishingDetectors( 0 ),
    candidatesNBlocks( 0 ), transformed( _transformed )
 {
    SCIP_CONS** conss;
@@ -1220,19 +1220,17 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    return finishedSeeeds;
  }
 
+/* @todo comment */
+ void Seeedpool::sortFinishedForScore()
+{
+   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_WHITE )
+      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
 
- void  Seeedpool::sortFinishedForScore()
- {
+   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::BORDER_AREA )
+      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBorderArea);
 
-    if ( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_WHITE )
-       std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
-
-    if ( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::BORDER_AREA )
-       std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBorderArea);
-
-    if ( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::CLASSIC )
-       std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsClassic);
-
+   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::CLASSIC )
+      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsClassic);
 }
 
 /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
@@ -1375,21 +1373,23 @@ SeeedPtr Seeedpool::getCurrentSeeed(
 
    return currSeeeds[seeedindex];
 }
-   
-void Seeedpool::addSeeedToAncestor(SeeedPtr seeed){
+
+/** adds a seeed to current seeeds */
+void Seeedpool::addSeeedToAncestor(
+   SeeedPtr seeed
+   )
+{
    ancestorseeeds.push_back(seeed);
-   return;
 }
 
-void Seeedpool::addSeeedToIncomplete(SeeedPtr seeed){
-
+/** adds a seeed to incomplete seeeds */
+void Seeedpool::addSeeedToIncomplete(
+   SeeedPtr seeed
+   )
+{
    incompleteSeeeds.push_back(seeed);
-   return;
 }
 
-
-
-}
 
 /** returns a seeed from finished seeed data structure */
 SeeedPtr Seeedpool::getFinishedSeeed(
@@ -1788,7 +1788,7 @@ SCIP_RETCODE Seeedpool::prepareSeeed(
    seeed->considerImplicits( this );
    seeed->sort();
    seeed->calcHashvalue();
-   seeed->evaluate( this );
+   seeed->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
 
    return SCIP_OKAY;
 }
@@ -1799,7 +1799,6 @@ void Seeedpool::addSeeedToCurr(
    )
 {
    currSeeeds.push_back( seeed );
-   allrelevantseeeds.push_back( seeed );
 }
 
 /** adds a seeed to finished seeeds */
@@ -1808,7 +1807,6 @@ void Seeedpool::addSeeedToFinished(
    )
 {
    finishedSeeeds.push_back( seeed );
-   allrelevantseeeds.push_back( seeed );
 }
 
 /** sorts seeeds in allrelevantseeeds data structure by ascending id */
@@ -1817,22 +1815,22 @@ void Seeedpool::sortAllRelevantSeeeds()
    int maxid = 0;
    std::vector<SeeedPtr> tmpAllRelevantSeeeds( 0 );
 
-   for( size_t i = 0; i < allrelevantseeeds.size(); ++ i )
+   for( size_t i = 0; i < ancestorseeeds.size(); ++ i )
    {
-      if( allrelevantseeeds[i]->getID() > maxid )
-         maxid = allrelevantseeeds[i]->getID();
+      if( ancestorseeeds[i]->getID() > maxid )
+         maxid = ancestorseeeds[i]->getID();
    }
 
    tmpAllRelevantSeeeds = std::vector < SeeedPtr > ( maxid + 1, NULL );
 
-   for( size_t i = 0; i < allrelevantseeeds.size(); ++ i )
+   for( size_t i = 0; i < ancestorseeeds.size(); ++ i )
    {
-      if( allrelevantseeeds[i]->getID() < 0 )
+      if( ancestorseeeds[i]->getID() < 0 )
          continue;
-      tmpAllRelevantSeeeds[allrelevantseeeds[i]->getID()] = allrelevantseeeds[i];
+      tmpAllRelevantSeeeds[ancestorseeeds[i]->getID()] = ancestorseeeds[i];
    }
 
-   allrelevantseeeds = tmpAllRelevantSeeeds;
+   ancestorseeeds = tmpAllRelevantSeeeds;
 }
 
 /** returns the variable indices of the matrix for a constraint */
@@ -2810,7 +2808,7 @@ void Seeedpool::reduceVarclasses()
 
       if( newclassifier != NULL )
       {
-         std::cout <<  "add reduced version of varclassifier " << varclassescollection[classifierid]->getName() << " with " << maxnclasses << " classes" << std::endl;
+         std::cout <<  "add reduced version of varclassifier " << varclassescollection[classifierid]->getName() << " with "
             << maxnclasses << " classes" << std::endl;
          addVarClassifier( newclassifier );
       }
@@ -2873,6 +2871,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    DEC_DECOMP** newdecomp
    )
 {
+   char detectorchaininfo[SCIP_MAXSTRLEN];
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* varindex;
@@ -3153,7 +3152,7 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    SeeedPtr* newseeed
    )
 {
-   *newseeed = new Seeed(scip, this->getNewIdForSeeed(), this->getNDetectors(), this->getNConss(), this->getNVars() );
+   *newseeed = new Seeed( scip, this->getNewIdForSeeed(), this->getNConss(), this->getNVars() );
 
    return SCIP_OKAY;
 }

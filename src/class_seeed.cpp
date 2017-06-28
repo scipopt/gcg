@@ -81,11 +81,12 @@ Seeed::Seeed(
    ) :
    scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
    masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), openVars( 0 ),
-   openConss( 0 ) , hashvalue( 0 ), score( 1. ), maxwhitescore( 1. ), changedHashvalue( false ), isselected( false ),
-   isFinishedByFinisher( false ), detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ),
-   pctVarsToBorder( 0 ), pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ),
-   pctConssFromFree( 0 ), nNewBlocks( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), detectorchainstring( NULL ),
-   stemsFromUnpresolved( false ), isfromunpresolved( FALSE ), isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
+   openConss( 0 ) , hashvalue( 0 ), score( 1. ), maxwhitescore( 1. ), borderareascore( 1. ), changedHashvalue( false ),
+   isselected( false ), isFinishedByFinisher( false ), detectorChain( 0 ), detectorChainFinishingUsed( 0 ),
+   detectorClockTimes( 0 ), pctVarsToBorder( 0 ), pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ),
+   pctConssToBlock( 0 ), pctConssFromFree( 0 ), nNewBlocks( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ),
+   detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
+   isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
 {
    for( int i = 0; i < nConss; ++ i )
    {
@@ -120,7 +121,9 @@ Seeed::Seeed(
    detectorChainFinishingUsed = seeedtocopy->detectorChainFinishingUsed;
    detectorchaininfo = seeedtocopy->detectorchaininfo;
    hashvalue = seeedtocopy->hashvalue;
+   usergiven = seeedtocopy->usergiven;
    score = seeedtocopy->score;
+   borderareascore = seeedtocopy->borderareascore;
    maxwhitescore = seeedtocopy->maxwhitescore;
    changedHashvalue = seeedtocopy->changedHashvalue;
    detectorClockTimes = seeedtocopy->detectorClockTimes;

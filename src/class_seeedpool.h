@@ -77,6 +77,7 @@ struct pair_hash
    }
 };
 
+
 class Seeedpool
 { /*lint -esym(1712,Seeedpool)*/
 
@@ -128,8 +129,6 @@ private:
 public:
 
    std::vector<SeeedPtr> incompleteSeeeds;   /**< vector of incomplete seeeds that can be used for initialization */
-   std::vector<SeeedPtr> allrelevantseeeds;  /**< collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with
-                                               *< id i; non relevant seeeds are repepresented by a null pointer */
    std::vector<SeeedPtr> currSeeeds;         /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> finishedSeeeds;     /**< vector of finished seeeds */
    std::vector<SeeedPtr> ancestorseeeds;     /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
@@ -153,6 +152,9 @@ public:
     *  @return user has to free seeeds */
    std::vector<SeeedPtr> findSeeeds();
 
+   /* @todo comment */
+   void sortFinishedForScore();
+
    /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
     *  @return set of completed decomposition */
    std::vector<SeeedPtr> finishIncompleteSeeeds(
@@ -164,8 +166,6 @@ public:
 
    /** clears current seeed data structure */
    void clearCurrentSeeeds();
-
-   void  sortFinishedForScore();
 
    /** clears finished seeed data structure */
    void clearFinishedSeeeds();
@@ -226,6 +226,11 @@ public:
       );
 
    /** adds a seeed to current seeeds */
+   void addSeeedToAncestor(
+      SeeedPtr seeed
+      );
+
+   /** adds a seeed to current seeeds */
    void addSeeedToCurr(
       SeeedPtr seeed
       );
@@ -235,16 +240,12 @@ public:
       SeeedPtr seeed
       );
 
-   void addSeeedToIncomplete(SeeedPtr seeed);
-
-   void addSeeedToAncestor(SeeedPtr seeed);
-
    /** adds a seeed to incomplete seeeds */
    void addSeeedToIncomplete(
       SeeedPtr seeed
       );
 
-   /** sorts seeeds in allrelevantseeeds data structure by ascending id */
+   /** @todo revise comment! sorts seeeds in allrelevantseeeds data structure by ascending id */
    void sortAllRelevantSeeeds();
 
    /** returns the variable indices of the coefficient matrix for a constraint */
@@ -321,8 +322,6 @@ public:
    /** returns a new unique id for a seeed */
    int getNewIdForSeeed();
 
-   /** returns the decompositions stored in the seeedpool */
-   /** returns the number of decompositions stored in the seeedpool */
    /** returns the number of detectors used in the seeedpool */
    int getNDetectors();
 
@@ -395,6 +394,16 @@ public:
       );
 
    /** returns a new variable classifier
+    *  where all variables with identical objective function value are assigned to the same class */
+   VarClassifier* createVarClassifierForObjValues();
+
+   /** returns a new variable classifier
+    *  where all variables are assigned to class zero, positive or negative according to their objective function value sign
+    *  all class zero variables are assumed to be only master variables (set via DECOMPINFO)
+    *  @todo correct? */
+   VarClassifier* createVarClassifierForObjValueSigns();
+
+   /** returns a new variable classifier
     *  where all variables with identical SCIP vartype are assigned to the same class */
    VarClassifier* createVarClassifierForSCIPVartypes();
 
@@ -405,18 +414,6 @@ public:
    VarClassifier* getVarClassifier(
       int classifierIndex /**< index of variable classifier */
    );
-
-   /** returns a new variable classifier
-    *  where all variables with identical objective function value are assigned to the same class */
-   VarClassifier* createVarClassifierForObjValues(
-   );
-
-   /** returns a new variable classifier
-    *  where all variables are assigned to class zero, positive or negative according to their objective function value sign
-    *  all class zero variables are assumed to be only master variables (set via DECOMPINFO)
-    *  @todo correct? */
-   VarClassifier* createVarClassifierForObjValueSigns(
-      );
 
    /** returns the assignment of variables to classes of a classifier as integer array */
    int* getVarClassifierArray(

@@ -122,12 +122,12 @@ public:
    std::vector<int> nNewBlocks;                       /**< vector containing detector indices that worked on that seeed */
    std::vector<int> listofancestorids;                /**< vector containing detector indices that worked on that seeed */
    USERGIVEN usergiven;                               /**< is this seeed partially or completely given by user */
-   SCIP_Real                        score;                        /**< score to evaluate the seeeds */
-   SCIP_Real                        maxwhitescore;                /**< score corresponding to the max white measure */
+   SCIP_Real score;                                   /**< score to evaluate the seeeds */
+   SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
 
-   SCIP_Real                        borderareascore;
+   SCIP_Real borderareascore;                         /**< @todo comment */
 
-   char* detectorchainstring;
+   char* detectorchainstring;                         /**< @todo comment */
 
    /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
    bool stemsFromUnpresolved;             /**< seeed has at least one ancestor that is a seeed from unpresolved problem */
@@ -605,7 +605,6 @@ public:
 
    /** sorts the vars and conss by their indices */
    void sort();
-   /*@todo description of this function*/
 
    /** displays the assignments of the vars */
    SCIP_RETCODE writeScatterPlot(
