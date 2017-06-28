@@ -708,6 +708,7 @@ SCIP_RETCODE readBlockconss(
       if( cons == NULL )
       {
          syntaxError(scip, decinput, "unknown constraint in block section");
+         decinput->haserror = TRUE;
          break;
       }
 
@@ -754,7 +755,12 @@ SCIP_RETCODE readBlockconss(
        * saving block <-> constraint
        */
 
-      assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*)(size_t) LINKINGVALUE);
+      if( SCIPhashmapGetImage(readerdata->constoblock, cons) != (void*)(size_t) LINKINGVALUE )
+      {
+         decinput->haserror = TRUE;
+         SCIPinfoMessage(scip,  NULL,"cons %s is already assigned\n", SCIPconsGetName(cons) );
+         return SCIP_OKAY;
+      }
 
       SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(cons), blockid);
       SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) (blockid+1)) );
@@ -1022,7 +1028,6 @@ SCIP_RETCODE readDECFile(
    assert(scip != NULL);
    assert(reader != NULL);
 
-   assert(BMSgetNUsedBufferMemory(SCIPbuffer(scip)) == 0);
 
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
@@ -1066,7 +1071,12 @@ SCIP_RETCODE readDECFile(
             SCIP_CALL( readPresolved(scip, decinput) );
             if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
             {
+
+               SCIPinfoMessage(scip, NULL, "read presolved decomposition but problem is not presolved yet -> presolve()");
                SCIPpresolve(scip);
+
+
+
                assert(decinput->haspresolvesection);
 //               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
  //              retcode = SCIP_READERROR;
@@ -1143,9 +1153,16 @@ SCIP_RETCODE readDECFile(
       }
    }
 
-
-   SCIPconshdlrDecompUserSeeedFlush(scip);
-
+   if( decinput->haserror)
+   {
+      SCIPinfoMessage(scip, NULL, "error occured while reading dec file");
+      SCIPconshdlrDecompUserSeeedReject(scip);
+   }
+   else
+   {
+      SCIPinfoMessage(scip, NULL, "just read dec file:");
+      SCIPconshdlrDecompUserSeeedFlush(scip);
+   }
 //   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
 //
 //   if( retcode == SCIP_OKAY )
@@ -1194,7 +1211,6 @@ SCIP_DECL_READERFREE(readerFreeDec)
 static
 SCIP_DECL_READERREAD(readerReadDec)
 {  /*lint --e{715}*/
-   assert(BMSgetNUsedBufferMemory(SCIPbuffer(scip)) == 0);
 
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
@@ -1254,12 +1270,10 @@ SCIP_RETCODE SCIPreadDec(
    DECINPUT decinput;
    int i;
 
-   assert(BMSgetNUsedBufferMemory(SCIPbuffer(scip)) == 0);
 
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       SCIP_CALL( SCIPtransformProb(scip) );
 
-   assert(BMSgetNUsedBufferMemory(SCIPbuffer(scip)) == 0);
 
    reader = SCIPfindReader(scip, READER_NAME);
    assert(reader != NULL);

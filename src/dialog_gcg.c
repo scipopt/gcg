@@ -105,7 +105,7 @@ SCIP_RETCODE writeAllDecompositions(
    char* dirname;
    SCIP_Bool endoffile;
 
-   if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
+   if( SCIPconshdlrDecompGetNFinishedDecomps(scip) == 0 )
    {
       SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
@@ -215,7 +215,7 @@ SCIP_RETCODE writeFamilyTree(
    ndecs = 5;
    tempstr[0] = '\0';
 
-   if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
+   if( SCIPconshdlrDecompGetNFinishedDecomps(scip) == 0 )
    {
       SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
@@ -293,7 +293,8 @@ SCIP_RETCODE writeFamilyTree(
    return SCIP_OKAY;
 }
 
-/** writes out visualizations of all decompositions currently known to cons_decomp to a PDF file */
+/** writes out visualizations of all decompositions currently known to cons_decomp to a PDF file
+ * @TODO:   */
 static
 SCIP_RETCODE reportAllDecompositions(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -319,8 +320,10 @@ SCIP_RETCODE reportAllDecompositions(
    int i;
    int writtendecomps;
 
-   decomps = SCIPconshdlrDecompGetDecdecomps(scip);
-   ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
+
+   /** get temporary decomp files */
+   ndecomps = SCIPconshdlrDecompGetNFinishedDecomps(scip);
+   decomps = SCIPconshdlrDecompGetFinishedDecomps(scip);
 
    if( ndecomps == 0 )
    {
@@ -401,7 +404,7 @@ SCIP_RETCODE reportAllDecompositions(
       GCGtexWriteTableOfContents(scip, file);
    }
    writtendecomps = 0;
-   for(i = 0; i < ndecomps; i++){
+   for( i = 0; i < ndecomps; i++ ){
       if(type == 0 || DECdecompGetType(decomps[i]) == (DEC_DECTYPE) type){
          GCGtexWriteDecompCode(scip, file, decomps[i]);
          ++writtendecomps;
@@ -421,6 +424,13 @@ SCIP_RETCODE reportAllDecompositions(
    /* print result message if writing was successful */
    SCIPdialogMessage(scip, NULL, "report is written to file %s%s.%s in directory %s\n", nameinfix, pname, extension, dirname);
 
+
+   /* free the decomp files */
+   for( i = 0; i < ndecomps; ++i )
+   {
+      DECdecompFree(scip, &decomps[ndecomps - i - 1]);
+   }
+
    return SCIP_OKAY;
 }
 
@@ -435,6 +445,39 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
 
    return SCIP_OKAY;
 }
+
+/** dialog execution method for the display statistics command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
+{  /*lint --e{715}*/
+
+   char* blocknrchar;
+   int blocknr;
+   char tempstr[SCIP_MAXSTRLEN];
+   SCIP_Bool endoffile;
+   SCIP_RETCODE retcode;
+
+   tempstr[0] = '\0';
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   (void) SCIPsnprintf(tempstr, SCIP_MAXSTRLEN, "Please type the block number candidate you want to add: ");
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, (char*)tempstr, &blocknrchar, &endoffile) );
+
+   blocknr = atoi( blocknrchar );
+   if ( blocknr == 0 )
+   {
+      SCIPdialogMessage(scip, NULL,
+         "This is not a compatible number; no new block number candidate added. \n");
+      return SCIP_OKAY;
+   }
+
+   SCIPconshdlrDecompAddBlockNumberCandidate(scip, blocknr);
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
 
 /** dialog execution method for the display decomposition command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
@@ -589,6 +632,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
+
+
+
       SCIP_CALL( DECdetectStructure(scip, &result) );
       if( result == SCIP_SUCCESS )
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was successful.\n");
@@ -603,6 +649,27 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the displaying and selecting decompositions command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
+{  /*lint --e{715}*/
+   SCIP_CONSHDLR** conshdlrs;
+   int nconshdlrs;
+   int i;
+
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   SCIP_CALL( SCIPconshdlrDecompExecSelect(scip, dialoghdlr, dialog ) );
+
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
+
 /** dialog execution method for the optimize command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 {  /*lint --e{715}*/
@@ -610,8 +677,14 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    int presolrounds;
    presolrounds = -1;
 
+   //SCIPdialogMessage(scip, NULL, "In optimize \n");
+
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
+   //SCIPdialogMessage(scip, NULL, "In optimize2 \n");
+
+   assert(SCIPconshdlrDecompCheckConsistency(scip) );
+ //  SCIPdialogMessage(scip, NULL, "In optimize3 \n");
    SCIPdialogMessage(scip, NULL, "\n");
    switch( SCIPgetStage(scip) )
    {
@@ -621,35 +694,50 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 
    case SCIP_STAGE_PROBLEM:
    case SCIP_STAGE_TRANSFORMED:
+ //     SCIPdialogMessage(scip, NULL, "in transformed \n");
+
    case SCIP_STAGE_PRESOLVING:
-      if( DEChasDetectionRun(scip) || (DECgetBestDecomp(scip) != NULL) )
-      {
-         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
-         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-      }
+ //     SCIPdialogMessage(scip, NULL, "in presolving \n");
+
+
+      //      if( DEChasDetectionRun(scip) || (DECgetBestDecomp(scip) != NULL) )
+//      {
+//         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+//         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+//      }
+      SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
 
    case SCIP_STAGE_PRESOLVED:
 
-      if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
-      {
-         SCIP_Bool success;
-         SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
+      assert(SCIPconshdlrDecompCheckConsistency(scip) );
 
-         if( !success )
+     // SCIPdialogMessage(scip, NULL, "In presolved \n");
+
+      if( !SCIPconshdlrDecompExistsSelected(scip) )
+      {
+         if( SCIPconshdlrDecompUnpresolvedUserSeeedAdded(scip) )
          {
-            SCIPdebugMessagePrint(scip, " revoke presolve; use unpresolved user decomposition  \n");
-            /* @TODO experimental */
-            SCIPfreeTransform(scip);
-            SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
-            SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-            SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+            SCIP_Bool success;
+            SCIPinfoMessage(scip, NULL,"there is an unpresolved user decomposition -> try to translate it to presolved problem...  \n");
             SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
+
+            if( !success )
+            {
+               SCIPinfoMessage(scip, NULL,"translatation was not successfull -> revoke presolving and use user given decomposition   \n");
+               /* @TODO experimental */
+               SCIPfreeTransform(scip);
+               SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+               SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+               SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+               SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(scip, &success);
+               assert(success);
+            }
+            else
+               SCIPinfoMessage(scip, NULL,"translation was successfull \n");
          }
-         else
-            SCIPdebugMessagePrint(scip, " origseeeds should be translated now \n");
       }
 
-      if( !DEChasDetectionRun(scip) && DECgetBestDecomp(scip) == NULL )
+      if( !DEChasDetectionRun(scip) && !SCIPconshdlrDecompHasDecomp(scip) )
       {
          SCIP_CALL( DECdetectStructure(scip, &result) );
          if( result == SCIP_DIDNOTFIND )
@@ -659,14 +747,28 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
             break;
          }
       }
-      else if( DECgetBestDecomp(scip) == NULL )
+      else if(! SCIPconshdlrDecompHasDecomp(scip) )
       {
-         assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
+         //assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
          SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
          break;
       }
       /*lint -fallthrough*/
    case SCIP_STAGE_SOLVING:
+      assert( SCIPconshdlrDecompCheckConsistency(scip) );
+      if( SCIPconshdlrDecompExistsSelected(scip) )
+         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
+      else
+         SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE ) );
+      if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
+      {
+         SCIPinfoMessage(scip, NULL,"best candidate decomposition is from unpresolved problem -> revoke presolving and use it \n");
+         /* @TODO experimental */
+         SCIPfreeTransform(scip);
+         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+         SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+      }
+
       SCIP_CALL( SCIPsolve(scip) );
       break;
 
@@ -1030,12 +1132,23 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
+   /* select */
+   if( !SCIPdialogHasEntry(root, "select") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+         NULL,
+         GCGdialogExecSelect, NULL, NULL,
+         "select", "select decompositions", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+   }
+
 
    /* detect */
    if( !SCIPdialogHasEntry(root, "detect") )
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDetect, NULL, NULL,
-            "detect", "Detect structure", FALSE, NULL) );
+            "detect", "detect structure", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
@@ -1246,6 +1359,35 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+
+   /* change */
+      if( !SCIPdialogHasEntry(root, "change") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+               NULL,
+               SCIPdialogExecMenu, NULL, NULL,
+               "change", "change the problem", TRUE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+      }
+      if( SCIPdialogFindEntry(root, "change", &submenu) != 1 )
+      {
+         SCIPerrorMessage("change sub menu not found\n");
+         return SCIP_PLUGINNOTFOUND;
+      }
+
+      /* change add */
+      if( !SCIPdialogHasEntry(submenu, "blocknr") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+               NULL,
+               GCGdialogExecChangeAddBlocknr, NULL, NULL,
+               "blocknr", "add block number candidate", FALSE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      }
+
 
 
    return SCIP_OKAY;

@@ -387,8 +387,8 @@ SCIP_RETCODE setupArrays(
       if( !added )
          delete scons;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
 
       SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
       SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
@@ -428,8 +428,8 @@ SCIP_RETCODE setupArrays(
          delete scoef;
 
    }
-   SCIPfreeBufferArray(scip, &curvars);
-   SCIPfreeBufferArray(scip, &curvals);
+   SCIPfreeMemoryArray(scip, &curvars);
+   SCIPfreeMemoryArray(scip, &curvals);
 }
    return SCIP_OKAY;
 }
@@ -601,9 +601,9 @@ SCIP_RETCODE createGraph(
       ncurvars = GCGconsGetNVars(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
-      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
       SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
       SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
 
       for( j = 0; j < ncurvars; j++ )
@@ -656,8 +656,8 @@ SCIP_RETCODE createGraph(
 
       }
 
-      SCIPfreeBufferArray(scip, &curvals);
-      SCIPfreeBufferArray(scip, &curvars);
+      SCIPfreeMemoryArray(scip, &curvals);
+      SCIPfreeMemoryArray(scip, &curvars);
 
    }
    SCIPdebugMessage("Iteration 1: nnodes = %ud, Cons = %d, Vars = %d\n", nnodes, colorinfo.getLenCons(), colorinfo.getLenVar()); /*lint !e864 */
@@ -848,9 +848,9 @@ SCIP_RETCODE createSeeedFromMasterconss(
    nblocks = nconss-nmasterconss+1;
    assert(nblocks > 0);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &blockrepresentative, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &consismaster, nconss) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &vartoblock, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &blockrepresentative, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &consismaster, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &vartoblock, nvars) );
 
    for( i = 0; i < nmasterconss; ++i )
    {
@@ -1064,9 +1064,9 @@ SCIP_RETCODE createSeeedFromMasterconss(
 
    //(*newSeeed)->showScatterPlot(seeedpool);
 
-   SCIPfreeBufferArray(scip, &vartoblock);
-   SCIPfreeBufferArray(scip, &consismaster);
-   SCIPfreeBufferArray(scip, &blockrepresentative);
+   SCIPfreeMemoryArray(scip, &vartoblock);
+   SCIPfreeMemoryArray(scip, &consismaster);
+   SCIPfreeMemoryArray(scip, &blockrepresentative);
 
    return SCIP_OKAY;
 }
@@ -1204,9 +1204,9 @@ SCIP_RETCODE reorderPermutations(
    assert(permsize > 0);
    assert(nperms > 0);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &count, nperms) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &order, nperms) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &invorder, nperms) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &count, nperms) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &order, nperms) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &invorder, nperms) );
    BMSclearMemoryArray(count, nperms);
    BMSclearMemoryArray(order, nperms);
    BMSclearMemoryArray(invorder, nperms);
@@ -1299,9 +1299,9 @@ SCIP_RETCODE reorderPermutations(
    }
 
 
-   SCIPfreeBufferArray(scip, &count);
-   SCIPfreeBufferArray(scip, &order);
-   SCIPfreeBufferArray(scip, &invorder);
+   SCIPfreeMemoryArray(scip, &count);
+   SCIPfreeMemoryArray(scip, &order);
+   SCIPfreeMemoryArray(scip, &invorder);
 
    return SCIP_OKAY;
 }

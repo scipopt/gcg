@@ -259,7 +259,7 @@ SCIP_RETCODE GCGtexWriteTitlepage(
    char ppath[SCIP_MAXSTRLEN];
    int ndecomps;
 
-   ndecomps = SCIPconshdlrDecompGetNDecdecomps(scip);
+   ndecomps = SCIPconshdlrDecompGetNFinishedDecomps(scip);
    strcpy(ppath, (char*) SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
@@ -281,7 +281,7 @@ SCIP_RETCODE GCGtexWriteTitlepage(
    SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\                       \n",
       SCIPgetNOrigConss(scip));
    SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                  \n",
-      SCIPconshdlrDecompGetNDecdecomps(scip));
+      SCIPconshdlrDecompGetNFinishedDecomps(scip));
    if(npresenteddecomps != NULL){
       if( ndecomps > *npresenteddecomps )
       {
@@ -636,8 +636,10 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 
    detectorchain = DECdecompGetDetectorChain(decomp);
    sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
-
-   sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
+   if( detectorchain[0] != NULL)
+      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
+   else
+      sprintf(fulldetectorstring, "%s", "user");
    for( i=1; i < sizedetectorchain; ++i )
    {
       sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );

@@ -79,8 +79,14 @@ Seeed::Seeed(
    int         givennconss,                /**< number of constraints */
    int         givennvars                  /**< number of variables */
 ) :
-   scip(_scip), id(givenid), nBlocks(0), nVars(givennvars), nConss(givennconss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0), stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(
-      std::vector<bool>(givenndetectors, false)), openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false), isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0), pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0), listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false), usergiven(USERGIVEN::NOT)
+
+   scip(_scip), id(givenid), nBlocks(0), nVars(givennvars), nConss(givennconss), masterConss(0), masterVars(0), conssForBlocks(0), varsForBlocks(0), linkingVars(0),
+   stairlinkingVars(0), openVars(0), openConss(0), propagatedByDetector(std::vector<bool>(givenndetectors, false) ),
+   openVarsAndConssCalculated(false), hashvalue(0), score(1.), maxwhitescore(1.), changedHashvalue(false),
+   isFinishedByFinisher(false), detectorChain(0), detectorChainFinishingUsed(0), detectorClockTimes(0),
+   pctVarsToBorder(0), pctVarsToBlock(0), pctVarsFromFree(0), pctConssToBorder(0), pctConssToBlock(0), pctConssFromFree(0), nNewBlocks(0),
+   listofancestorids(0), stemsFromUnpresolved(false), isFinishedByFinisherUnpresolved(false), usergiven(USERGIVEN::NOT),
+   isselected(false), isfromunpresolved(FALSE), detectorchainstring(NULL)
 {
 }
 
@@ -120,11 +126,16 @@ Seeed::Seeed(const Seeed *seeedtocopy, Seeedpool* seeedpool)
    isFinishedByFinisherUnpresolved = seeedtocopy->isFinishedByFinisherUnpresolved;
    listofancestorids = seeedtocopy->listofancestorids;
    usergiven = seeedtocopy->usergiven;
+   isselected = false;
+   detectorchainstring = NULL;
+   isfromunpresolved = FALSE;
+
 
 }
 
 Seeed::~Seeed()
 {
+   SCIPfreeBlockMemoryArrayNull(scip, &detectorchainstring, SCIP_MAXSTRLEN);
 }
 
 bool compare_blocks(std::pair<int, int> const & a, std::pair<int, int> const & b)
@@ -161,6 +172,8 @@ int Seeed::addBlock()
  void Seeed::addDecChangesFromAncestor(Seeed* ancestor){
 
     /** add number of new blocks */
+    assert( ancestor != NULL );
+
     nNewBlocks.push_back( getNBlocks() -  ancestor->getNBlocks() );
     pctConssFromFree.push_back( (ancestor->getNOpenconss() - getNOpenconss() ) / (SCIP_Real) getNConss() );
     pctVarsFromFree.push_back( (ancestor->getNOpenvars() - getNOpenvars() ) / (SCIP_Real) getNVars() );
@@ -764,7 +777,13 @@ void Seeed::calcHashvalue()
    /** find sorting for blocks (non decreasing according smallest row index) */
    for( int i = 0; i < this->nBlocks; ++i )
    {
-      blockorder.push_back(std::pair<int, int>(i, this->conssForBlocks[i][0]));
+      if( this->conssForBlocks[i].size() > 0)
+         blockorder.push_back(std::pair<int, int>(i, this->conssForBlocks[i][0]));
+      else
+      {
+         assert(this->varsForBlocks[i].size() > 0);
+         blockorder.push_back(std::pair<int, int>(i, this->getNConss() + this->varsForBlocks[i][0] ) );
+      }
    }
 
    std::sort(blockorder.begin(), blockorder.end(), compare_blocks);
@@ -903,6 +922,37 @@ bool Seeed::checkAllConsAssigned()
 }
 
 /** check the consistency of this seeed */
+bool Seeed::checkConsistency(Seeedpool* seeedpool)
+{
+   if( !checkConsistency() )
+      return false;
+
+   /** check if nonzero entries are either in a block or border */
+   for( int b = 0; b < nBlocks; ++b )
+   {
+      for( int c = 0; c < getNConssForBlock(b) ; ++c )
+      {
+         for ( int v = 0; v < seeedpool->getNVarsForCons( getConssForBlock(b)[c] ); ++v )
+         {
+            int varid = seeedpool->getVarsForCons(getConssForBlock(b)[c])[v];
+
+            if( ! (isVarBlockvarOfBlock(varid, b) || isVarLinkingvar(varid) || isVarStairlinkingvarOfBlock(varid, b) ) )
+            {
+               SCIPwarningMessage(scip, "WARNING! Variable %d is not part of block %d or linking as constraint %d suggests! \n ", varid, b, getConssForBlock(b)[c]);
+               return false;
+            }
+
+         }
+      }
+
+   }
+
+   return true;
+
+
+}
+
+/** check the consistency of this seeed */
 bool Seeed::checkConsistency()
 {
 
@@ -910,6 +960,8 @@ bool Seeed::checkConsistency()
    std::vector<int> stairlinkingvarsvec(0);
    std::vector<int>::const_iterator varIter = linkingVars.begin();
    std::vector<int>::const_iterator varIterEnd = linkingVars.end();
+
+
    int value;
 
    /** check if nblocks is set appropriate */
@@ -1161,6 +1213,7 @@ bool Seeed::checkConsistency()
       }
    }
 
+
    /** check if the seeed is sorted */
    for( int b = 0; b < nBlocks; ++b )
    {
@@ -1200,6 +1253,7 @@ bool Seeed::checkConsistency()
          assert(false);
          return false;
       }
+      value = getLinkingvars()[v];
    }
    value = -1;
    for( int v = 0; v < getNMastervars(); ++v )
@@ -1210,6 +1264,7 @@ bool Seeed::checkConsistency()
          assert(false);
          return false;
       }
+      value = getMastervars()[v];
    }
    for( int b = 0; b < nBlocks; ++b )
    {
@@ -1234,6 +1289,7 @@ bool Seeed::checkConsistency()
          assert(false);
          return false;
       }
+      value = getMasterconss()[v];
    }
 
    return true;
@@ -1921,7 +1977,11 @@ SCIP_RETCODE Seeed::displaySeeed(Seeedpool* seeedpool)
    if( getNDetectors() != 0 )
    {
       std::string detectorrepres;
-      detectorrepres = (getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[0]) : "(finish)" + std::string(DECdetectorGetName(detectorChain[0]))   );
+
+      if( detectorChain[0] == NULL )
+         detectorrepres = "user";
+      else
+         detectorrepres = (getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[0]) : "(finish)" + std::string(DECdetectorGetName(detectorChain[0]))   );
 
       std::cout << ": " <<  detectorrepres;
 
@@ -2005,7 +2065,8 @@ SCIP_RETCODE Seeed::displayVars(Seeedpool* seeedpool)
  * @todo bound calculation for unfinished decompositions could be more precise
  */
 SCIP_Real Seeed::evaluate(
-   Seeedpool* seeedpool
+   Seeedpool* seeedpool,
+   SCORETYPE sctype
    )
 {
 
@@ -2056,6 +2117,7 @@ SCIP_Real Seeed::evaluate(
 	   maxwhitescore = blackarea/( getNConss() * getNVars() );
 
 	   return maxwhitescore;
+
    }
 
    if( getNOpenconss() != 0 || getNOpenvars() != 0 )
@@ -2077,10 +2139,11 @@ SCIP_Real Seeed::evaluate(
    /* calculate matrix area */
    matrixarea = nVars*nConss;
 
-   blackarea += ( getNLinkingvars() + getNTotalStairlinkingvars() + getNMastervars() ) * getNConss();
+   blackarea += ( getNLinkingvars() + getNTotalStairlinkingvars() ) * getNConss();
    blackarea += getNMasterconss() * getNVars();
 
-   blackarea -= getNMasterconss() * ( getNLinkingvars() + getNMastervars() );
+   blackarea -= getNMasterconss() * ( getNLinkingvars() + getNTotalStairlinkingvars() );
+
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++i )
@@ -2150,7 +2213,6 @@ SCIP_Real Seeed::evaluate(
    }
 
    borderarea = getNMasterconss()*nVars+(getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars())*(nConss-getNMasterconss());
-
    maxwhitescore = blackarea/( getNConss() * getNVars() );
 
    density = 1E20;
@@ -2174,7 +2236,7 @@ SCIP_Real Seeed::evaluate(
    densityscore = (1-density);
 
 
-
+   borderareascore = borderscore;
 
    DEC_DECTYPE type;
    if(getNLinkingvars() == getNTotalStairlinkingvars() && getNMasterconss() == 0 && getNLinkingvars() > 0)
@@ -2240,7 +2302,9 @@ SCIP_Real Seeed::evaluate(
    SCIPfreeBufferArray(scip, &nlinkvarsblocks);
    SCIPfreeBufferArray(scip, &nzblocks);
    score = totalscore;
-   return totalscore;
+
+   return   getScore(sctype);
+
 }
 
 
@@ -2633,6 +2697,23 @@ const int* Seeed::getMastervars()
       return maxwhitescore;
    }
 
+/** return the "maximum white score" (the smaller the better) */
+SCIP_Real Seeed::getScore(
+   SCORETYPE type
+   ){
+
+   if( type == scoretype::MAX_WHITE )
+      return maxwhitescore;
+
+   if( type == scoretype::CLASSIC )
+         return score;
+
+   if( type == scoretype::BORDER_AREA )
+      return borderareascore;
+
+   }
+
+
 
 /** returns number of blocks */
 int Seeed::getNBlocks()
@@ -2956,6 +3037,10 @@ bool Seeed::isComplete()
    return ( 0 == getNOpenconss() && 0 == getNOpenvars() );
 }
 
+bool Seeed::isSelected()
+{
+   return isselected;
+}
 
 
 /** return whether the var is a var of the block */
@@ -3133,6 +3218,14 @@ SCIP_RETCODE Seeed::setOpenVarsAndConssCalculated(bool value)
    return SCIP_OKAY;
 }
 
+/** set selection information about this seeed */
+void Seeed::setSelected(
+      bool selected
+      ){
+   isselected  = selected;
+}
+
+
 /** add a variable to a block */
 SCIP_RETCODE Seeed::setVarToBlock(int varToBlock, int block)
 {
@@ -3178,7 +3271,10 @@ SCIP_RETCODE Seeed::setVarToStairlinking(int varToStairlinking, int block1, int 
 
    changedHashvalue = true;
 
-   stairlinkingVars[block1].push_back(varToStairlinking);
+   if( block1 > block2)
+      stairlinkingVars[block2].push_back(varToStairlinking);
+   else
+      stairlinkingVars[block1].push_back(varToStairlinking);
 
    return SCIP_OKAY;
 }
@@ -3195,7 +3291,8 @@ void Seeed::showScatterPlot(
    char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
    int rowboxcounter = 0;
    int colboxcounter = 0;
-
+   std::stringstream command;
+   char buffer[SCIP_MAXSTRLEN];
 
    if ( !draft )
 	   writeScatterPlot(seeedpool, help);
@@ -3203,6 +3300,16 @@ void Seeed::showScatterPlot(
    std::ofstream ofs;
 
    ofs.open ("helper.plg", std::ofstream::out );
+
+   /*experimental */
+   if( !writeonly )
+   {
+      writeonly= TRUE;
+      sprintf(buffer, "help%d.pdf", this->getID() );
+      filename = buffer;
+   }
+   /**/
+
 
    if( writeonly )
    {
@@ -3276,13 +3383,29 @@ void Seeed::showScatterPlot(
    }
 
    if( !writeonly )
-      ofs << "pause -1" << std::endl;
+      ofs << "pause -1 " << std::endl;
 
    ofs.close();
-   if( !draft)
-	   system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+   if( writeonly )
+   {
+      if( !draft)
+         system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+      else
+         system("gnuplot helper.plg ");
+   }
    else
-	   system("gnuplot helper.plg ");
+   {
+      if( !draft)
+         system("gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg ");
+      else
+         system("gnuplot helper.plg");
+   }
+
+
+   command << "evince " << filename << " &";
+
+   system(command.str().c_str() );
+
 //   system("rm helpScatter.txt");
 //   system("rm helper.plg");
    return;
@@ -3435,5 +3558,42 @@ const char* Seeed::getShortCaption(){
 
 }
 
+/** sets the detector chain short string */
+SCIP_RETCODE Seeed::setDetectorChainString(
+   char*                 detectorchainstring
+   )
+{
+   SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &this->detectorchainstring, detectorchainstring, SCIP_MAXSTRLEN ) );
+   return SCIP_OKAY;
 
+}
+
+SCIP_RETCODE Seeed::buildDecChainString(
+   )
+{
+   char detectorchaininfo[SCIP_MAXSTRLEN];
+   /** set detector chain info string */
+   SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
+   if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER || this->getDetectorchain() == NULL  || this->getDetectorchain()[0] == NULL )
+   {
+      char str1[2] = "\0"; /* gives {\0, \0} */
+      str1[0] = 'U';
+      (void) strncat(detectorchaininfo, str1, 1 );
+
+   }
+   for( int d = 0; d < this->getNDetectors(); ++d )
+   {
+      if( d == 0 && this->getDetectorchain()[d] == NULL)
+         continue;
+      //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(this->getDetectorchain()[d]));
+      char str[2] = "\0"; /* gives {\0, \0} */
+      str[0] = DECdetectorGetChar(this->getDetectorchain()[d]);
+      (void) strncat(detectorchaininfo, str, 1 );
+   }
+
+
+   SCIP_CALL(this->setDetectorChainString(detectorchaininfo) );
+
+   return SCIP_OKAY;
+}
 } /* namespace gcg */

@@ -422,7 +422,7 @@ SCIP_RETCODE plotInitialProblem(
          /* Get array of variables from constraint */
          SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
          assert(success);
-         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
          SCIP_CALL( SCIPgetConsVars(scip, cons, curvars, ncurvars, &success) );
          assert(success);
          for( j = 0; j < ncurvars; ++j )
@@ -436,7 +436,7 @@ SCIP_RETCODE plotInitialProblem(
             assert(consindex > 0);
             fprintf(output, "%d %d\n", varindex, consindex);
          }
-         SCIPfreeBufferArray(scip, &curvars);
+         SCIPfreeMemoryArray(scip, &curvars);
       }
    }
    fclose(output);
@@ -678,7 +678,7 @@ SCIP_RETCODE createRowindexList(
       cons = (SCIP_CONS*) SCIPhashmapGetImage(indexcons, (void*) hashmapindex);
       nvars = GCGconsGetNVars(scip, cons);
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &vars, nvars) );
       SCIP_CALL( GCGconsGetVars(scip, cons, vars, nvars) );
       SCIP_CALL( SCIPallocMemoryArray(scip, &probindices, nvars) );
 
@@ -697,7 +697,7 @@ SCIP_RETCODE createRowindexList(
       }
 
       SCIPfreeMemoryArray(scip, &probindices);
-      SCIPfreeBufferArray(scip, &vars);
+      SCIPfreeMemoryArray(scip, &vars);
 
       /* add rowindices_row to the vector rowindices */
       rowindices.push_back(rowindices_row);

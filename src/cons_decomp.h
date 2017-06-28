@@ -48,7 +48,17 @@
 extern "C" {
 #endif
 
+enum scoretype {
+   MAX_WHITE = 0,
+   BORDER_AREA,
+   CLASSIC
+};
 
+typedef enum scoretype SCORETYPE;
+
+SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
+   SCIP*          scip
+);
 
 /** creates the handler for decomp constraints and includes it in SCIP */
 extern
@@ -150,8 +160,26 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    SCIP_Bool             presolved           /**< should the user seeed be created for the presolved problem */
    );
 
+SCIP_RETCODE SCIPconshdlrDecompExecSelect(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   );
+
 SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
+   SCIP*       scip
+   );
+
+SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
+   SCIP*                 scip
+   );
+
+SCIP_Bool SCIPconshdlrDecompHasDecomp(
+   SCIP*    scip
    );
 
 /** sets the number of blocks */
@@ -206,6 +234,29 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
    const char*           varname              /**< name of the variable */
    );
 
+
+SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
+   SCIP*                 scip,                /**< SCIP data structure */
+   int                   blockNumberCandidate /**< name of the variable */
+   );
+
+ int SCIPconshdlrDecompGetNBlockNumberCandidates(
+   SCIP*                 scip                /**< SCIP data structure */
+    );
+
+ int SCIPconshdlrDecompGetBlockNumberCandidate(
+    SCIP*                 scip,                /**< SCIP data structure */
+    int                   index
+     );
+
+
+
+/** rejects and deletes the current user seeed */
+SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
+   SCIP*                 scip                 /**< SCIP data structure */
+   );
+
+
 /** finalizes and flushes the current user seeed, i.e. consider implicits, calc hashvalue, construct decdecomp if complete etc */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    SCIP*                 scip                 /**< SCIP data structure */
@@ -215,6 +266,47 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP*                 scip,                 /**< SCIP data structure */
    SCIP_Bool*            success
    );
+
+SCIP_Bool SCIPconshdlrDecompExistsSelected(
+   SCIP* scip
+   );
+
+
+SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
+   SCIP* scip,
+   SCIP_Bool updatelist
+   );
+
+
+
+SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
+   SCIP*                   scip
+   );
+
+
+SCIP_Bool SCIPconshdlrDecompCheckConsistency(
+   SCIP* scip
+   );
+
+/** returns the next seeed id managed by cons_decomp */
+   int SCIPconshdlrDecompGetNextSeeedID(
+   SCIP*   scip
+   );
+
+
+   SCORETYPE SCIPconshdlrDecompGetCurrScoretype(
+         SCIP* scip
+   );
+
+//    char*  SCIPconshdlrDecompGetScoretypeShortName(
+//      SCIP*       scip,
+//      SCORETYPE   sctype
+//      );
+//
+//   char*  SCIPconshdlrDecompGetScoretypeDescription(
+//      SCIP*          scip,
+//      SCORETYPE      sctype
+//         );
 
 
 
@@ -253,6 +345,26 @@ void DECprintListOfDetectors(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
+   SCIP*     scip
+   );
+
+int SCIPconshdlrDecompGetNFinishedDecomps(
+   SCIP*       scip
+   );
+
+int SCIPconshdlrDecompGetNDetectors(
+   SCIP* scip
+   );
+
+
+DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
+   SCIP* scip
+   );
+
+
+
+
 /** returns whether the detection has been performed */
 SCIP_Bool DEChasDetectionRun(
    SCIP*                 scip                /**< SCIP data structure */
@@ -281,7 +393,6 @@ SCIP_RETCODE GCGsetDetection(
    SCIP_PARAMSETTING     paramsetting,       /**< parameter settings */
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
    );
-
 
 
 #ifdef __cplusplus

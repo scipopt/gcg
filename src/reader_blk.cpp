@@ -893,7 +893,11 @@ SCIP_RETCODE fillDecompStruct(
       }
    }
 
+   SCIPinfoMessage(scip, NULL, "just read blk file:");
    SCIPconshdlrDecompUserSeeedFlush(scip);
+
+
+
    retcode = DECfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
 

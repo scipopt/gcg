@@ -40,6 +40,8 @@
 #include <vector>
 #include "struct_detector.h"
 #include <string>
+#include "cons_decomp.h"
+
 
 namespace gcg {
 
@@ -79,13 +81,12 @@ private:
    std::vector<bool> 				   propagatedByDetector;	      /**< propagatedByDetector[i] is this seeed propagated by detector i */
    bool 							         openVarsAndConssCalculated;   /**< are the openVars and openCons calculated */
    long                             hashvalue;
-   SCIP_Real                        score;                        /**< score to evaluate the seeeds */
-   SCIP_Real                        maxwhitescore;                /**< score corresponding to the max white measure */
-
    bool                             changedHashvalue;             /**< are there any changes concerning the hash value since it was calculated last time */
 
-   const static int              primes[];
-   const static int              nPrimes;
+   bool                             isselected;                   /**< is this seeed selected */
+
+   const static int                 primes[];
+   const static int                 nPrimes;
 
 public:
 
@@ -106,11 +107,20 @@ public:
    std::vector<int>                 listofancestorids;          /**< vector containing detector indices that worked on that seeed */
 
    USERGIVEN                        usergiven;                  /**< is this seeed partially or complete given by user */
+   SCIP_Real                        score;                        /**< score to evaluate the seeeds */
+   SCIP_Real                        maxwhitescore;                /**< score corresponding to the max white measure */
+
+   SCIP_Real                        borderareascore;
+
+
+   char*                            detectorchainstring;
 
    /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
-   bool                             stemsFromUnpresolved;
+   bool                             stemsFromUnpresolved;       /**< seeed has at least one ancestor that is a seeed from unpresolved problem */
+   bool                             isfromunpresolved;          /**< seeed is from unpresolved problem */
    bool                             isFinishedByFinisherUnpresolved; /**< was the ancestor seeed for the unpresolved problem finished by the finishseeed() method of a detector */
    DEC_DETECTOR*                    finishedUnpresolvedBy;           /**< index of dinishing detector of unpresolved ancestor seeed */
+
 
 
    /** constructor(s) */
@@ -242,6 +252,9 @@ public:
    bool checkAllConsAssigned(
    );
 
+   bool checkConsistency(
+      Seeedpool* seeedpool);
+
    /** check the consistency of this seeed */
    bool checkConsistency(
    );
@@ -295,8 +308,11 @@ public:
    /** computes the score of the given seeed based on the border,
     *  the average density score and the ratio of linking variables*/
    SCIP_Real evaluate(
-      Seeedpool* seeedpool
+      Seeedpool* seeedpool,
+      SCORETYPE  type
    );
+
+
 
    /** fills out the border of the seeed with the hashmap constoblock */
    SCIP_RETCODE filloutBorderFromConstoblock(
@@ -363,6 +379,10 @@ public:
 
    /** return the "maximum white score" (the smaller the better) */
    SCIP_Real getMaxWhiteScore();
+
+   SCIP_Real getScore(
+      SCORETYPE type
+      );
 
    /** returns number of blocks */
    int getNBlocks(
@@ -456,6 +476,10 @@ public:
    bool isPropagatedBy(
          DEC_DETECTOR* detectorID
    );
+
+
+   bool isSelected(
+      );
 
    /** is this seeed trivial (i.e. all constraints in one block,
     *  or all conss in border, or all variables linking or mastervars) */
@@ -552,6 +576,10 @@ public:
          bool value
    );
 
+   void setSelected(
+      bool selected
+      );
+
    /** add a variable to a block */
    SCIP_RETCODE setVarToBlock(
          int varToBlock,
@@ -596,6 +624,14 @@ public:
          Seeedpool* seeedpool,
          const char* filename
    );
+
+   /** sets the detector chain short string */
+   SCIP_RETCODE setDetectorChainString(
+      char*                 detectorchainstring
+      );
+
+   SCIP_RETCODE buildDecChainString(
+      );
 
 private:
 

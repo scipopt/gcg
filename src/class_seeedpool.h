@@ -84,10 +84,8 @@ class Seeedpool
 
 private:
    SCIP*                 						      scip;              	   /**< SCIP data structure */
-   std::vector<SeeedPtr> 						      currSeeeds;				   /**< vector of current (open) seeeds */
 
 
-   std::vector<SeeedPtr>                        allrelevantseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
 
    int                                          maxndetectionrounds;    /**< maximum number of detection rounds */
    int											         nTotalSeeeds;        	/**< number of created seeeeds, used to give next id */
@@ -108,14 +106,17 @@ private:
    int 										         	nConss;                 /**< number of constraints */
    int										         	nDetectors;             /**< number of detectors */
 
+   int                                          nnonzeros;              /**< number of nonzeros */
+
    int                                          nFinishingDetectors;             /**< number of detectors */
 
 
-   DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
-   int                                          ndecompositions;        /**< number of decompositions found by the detectors */
+//   DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
+//   int                                          ndecompositions;        /**< number of decompositions found by the detectors */
 
    /** oracle data */
-   std::vector<std::pair<int,int> >                             candidatesNBlocks;      	/**< candidate for the number of blocks  */
+   std::vector<int >                            usercandidatesnblocks;     /**< candidate for the number of blocks that were given by the user and thus will be handled priorized */
+   std::vector<std::pair<int,int> >             candidatesNBlocks;      	/**< candidate for the number of blocks  */
 
 
    std::vector<ConsClassifier*>                 consclassescollection; /**< collection of different constraint class distributions  */
@@ -124,14 +125,16 @@ private:
 
    SCIP_Bool                                    transformed;            /**< corresponds the matrix datastructure to the transformed problem */
 
-   std::vector<SeeedPtr>                        translatedOrigSeeeds;   /**< seeeds that are translated seeeds from found ones for the original problem */
+   std::vector<SeeedPtr>                        seeedstopopulate;      /**< seeeds that are translated seeeds from found ones for the original problem */
 
-   int											         helpvisucounter;        /** help counter for family tree visualization to iterate the heights */
 
 
 public:
 
-   std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of current (open) seeeds */
+   std::vector<SeeedPtr>                        incompleteSeeeds;       /**< vector of incomplete seeeds that can be used for initialization */
+   std::vector<SeeedPtr>                        currSeeeds;             /**< vector of current (open) seeeds */
+   std::vector<SeeedPtr> 						      finishedSeeeds;		   /**< vector of finished seeeds */
+   std::vector<SeeedPtr>                        ancestorseeeds;      /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
 
    /** constructor */
    Seeedpool(
@@ -153,6 +156,18 @@ public:
    std::vector<SeeedPtr> findSeeeds(
       );
 
+
+   void  sortFinishedForScore();
+
+
+   /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
+   /*
+    * @return set of completed decomposition
+    * */
+
+   std::vector<SeeedPtr>  finishIncompleteSeeeds(
+      std::vector<SeeedPtr> incompleteseeeds
+    );
 
    /** finds decompositions  */
    void findDecompositions(
@@ -181,6 +196,11 @@ public:
    SCIP_RETCODE prepareSeeed( SeeedPtr seeed);
 
    void freeCurrSeeeds();
+
+
+   void addSeeedToIncomplete(SeeedPtr seeed);
+
+   void addSeeedToAncestor(SeeedPtr seeed);
 
    void addSeeedToCurr(SeeedPtr seeed);
 
@@ -226,9 +246,7 @@ public:
 
    void decrementSeeedcount();
 
-   DEC_DECOMP** getDecompositions();
-
-   int getNDecompositions();
+   int getNNonzeros();
 
    int getNDetectors();
 
@@ -243,6 +261,14 @@ public:
    void addCandidatesNBlocks(
       int                 candidate            /**< candidate for block size */
       );
+
+   void addUserCandidatesNBlocks(
+      int                 candidate            /**< candidate for block size */
+      );
+
+   int getNUserCandidatesNBlocks(
+         );
+
 
    void calcCandidatesNBlocks();
 
@@ -291,6 +317,18 @@ public:
       int classifierIndex                     /**< index of variable classifier */
    );
 
+   /** returns a new variable classifier
+    *  where all variables with identical objective function value are assigned to the same class */
+   VarClassifier* createVarClassifierForObjValues(
+   );
+
+   /** returns a new variable classifier
+    *  where all variables are assigned to class zero, positive or negative according to their objective function value sign
+    *  all class zero variables are assumed to be only master variables (set via DECOMPINFO)
+    *  @todo correct? */
+   VarClassifier* createVarClassifierForObjValueSigns(
+   );
+
    VarClassifier* createVarClassifierForSCIPVartypes(
    );
 
@@ -305,12 +343,6 @@ public:
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds);
 
-   SCIP_RETCODE writeFamilyTreeLatexFile(
-      const char* filename,                                 /* filename the output should be written to */
-      const char* workfolder,                               /* directory in which should be worked */
-      std::vector<SeeedPtr> seeeds,                         /* vector of seeed pointers the  family tree should be constructed for */
-	  SCIP_Bool draft
-   );
 
 
    /**
@@ -322,11 +354,18 @@ public:
       );
 
    /**
-    * creates a seeed for a given decomposition
+    * creates a seeed for a given decomposition, atm dummy method
     */
    SCIP_RETCODE createSeeedFromDecomp(
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
+      );
+
+
+   /**
+    * returns transformation information
+    */
+   SCIP_Bool getTransformedInfo(
       );
 
 private:

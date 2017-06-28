@@ -92,18 +92,18 @@
 #define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
 
 /** constraint handler data */
-struct SCIP_ConshdlrData
-{
-   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
-   DEC_DETECTOR**        detectors;          /**< array of structure detectors */
-   int*                  priorities;         /**< priorities of the detectors */
-   int                   ndetectors;         /**< number of detectors */
-   SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
-   SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
-   int                   ndecomps;           /**< number of decomposition structures  */
-   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
-   int                   nthreads;
-};
+//struct SCIP_ConshdlrData
+//{
+//   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
+//   DEC_DETECTOR**        detectors;          /**< array of structure detectors */
+//   int*                  priorities;         /**< priorities of the detectors */
+//   int                   ndetectors;         /**< number of detectors */
+//   SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
+//   SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
+//   int                   ndecomps;           /**< number of decomposition structures  */
+//   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+//   int                   nthreads;
+//};
 
 namespace gcg {
 
@@ -122,6 +122,7 @@ struct sort_pred {
       return left.second < right.second;
    }
 };
+
 
 std::string getSeeedFolderLatex( SeeedPtr seeed )
 {
@@ -243,6 +244,7 @@ std::string writeSeeedIncludeLatex( SeeedPtr seeed, std::string workfolder )
    return line.str();
 }
 
+
 SCIP_RETCODE getDetectorCallRoundInfo(SCIP* scip, const char* detectorname, SCIP_Bool transformed, int* maxcallround, int* mincallround, int* freqcallround)
 {
    char  setstr[SCIP_MAXSTRLEN];
@@ -272,6 +274,19 @@ SCIP_Bool cmpSeeedsMaxWhite(SeeedPtr i, SeeedPtr j)
 {
    return (i->getMaxWhiteScore() < j->getMaxWhiteScore() );
 }
+
+
+SCIP_Bool cmpSeeedsBorderArea(SeeedPtr i, SeeedPtr j)
+{
+   return (i->borderareascore < j->borderareascore );
+}
+
+
+SCIP_Bool cmpSeeedsClassic(SeeedPtr i, SeeedPtr j)
+{
+   return (i->score < j->score );
+}
+
 
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout( std::vector<SeeedPtr> finishedSeeeds, size_t nDecomps, SCIP_Bool addTrivialDecomp )
@@ -403,12 +418,15 @@ Seeedpool::Seeedpool(
    SCIP*              givenScip,   /**< SCIP data structure */
    const char*       conshdlrName,
    SCIP_Bool         _transformed
-):scip(givenScip), currSeeeds(0), allrelevantseeeds(0), nTotalSeeeds(0), nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nDetectors(0), nFinishingDetectors(0),ndecompositions(0), candidatesNBlocks(0), transformed(_transformed), helpvisucounter(0)
+):scip(givenScip), currSeeeds(0), incompleteSeeeds(0), ancestorseeeds(0), nTotalSeeeds(0), nVars(SCIPgetNVars(givenScip) ), nConss(SCIPgetNConss(givenScip) ), nnonzeros(0), nDetectors(0), nFinishingDetectors(0), candidatesNBlocks(0), transformed(_transformed)
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
    SCIP_CONSHDLR* conshdlr;  /** cons_decomp to get detectors */
    SCIP_CONSHDLRDATA* conshdlrdata;
+
+   int ndetectors;
+   DEC_Detector** detectors;
 
    if( !transformed )
    {
@@ -419,42 +437,27 @@ Seeedpool::Seeedpool(
    int relevantVarCounter = 0;
    int relevantConsCounter = 0;
 
-   /** store all enabled detectors */
+   /** get conshdlrdata */
    conshdlr = SCIPfindConshdlr(scip, conshdlrName);
    assert(conshdlr != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   detectors = SCIPconshdlrDecompGetDetectors(scip);
+   ndetectors = SCIPconshdlrDecompGetNDetectors(scip);
+
    /** set detection data */
    SCIP_CALL_ABORT( SCIPgetIntParam(givenScip, "detection/maxrounds", &maxndetectionrounds) );
 
-   SCIPdebugMessagePrint(scip, " conshdlrname: %s \n ", conshdlrName);
-   SCIPdebugMessagePrint(scip, " number of detectors: %d \n ", conshdlrdata->ndetectors);
+   assert(ndetectors > 0);
 
-   assert(conshdlrdata->ndetectors > 0);
 
-   /** store priorities of the detectors */
-   for( int d = 0; d < conshdlrdata->ndetectors; ++d )
-   {
-      DEC_DETECTOR *detector;
-      detector = conshdlrdata->detectors[d];
-      assert(detector != NULL);
-      conshdlrdata->priorities[d] = detector->priority;
-   }
-
-   SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
-
-   /** sort the detectors according their priorities */
-   SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
-
-   SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
-
-   /** set up enabled detectors */
-   for( int d = 0; d < conshdlrdata->ndetectors; ++d )
+   /** set up enabled detectors and store them */
+   for( int d = 0; d < ndetectors; ++d )
    {
       DEC_DETECTOR* detector;
+      detector = detectors[d];
 
-      detector = conshdlrdata->detectors[d];
       assert(detector != NULL);
       if( transformed )
       {
@@ -473,11 +476,11 @@ Seeedpool::Seeedpool(
    }
 
    /** set up enabled finishing detectors */
-   for( int d = 0; d < conshdlrdata->ndetectors; ++d )
+   for( int d = 0; d < ndetectors; ++d )
    {
       DEC_DETECTOR* detector;
 
-      detector = conshdlrdata->detectors[d];
+      detector = detectors[d];
       assert(detector != NULL);
       if( !detector->enabledFinishing || detector->finishSeeed == NULL)
          continue;
@@ -563,8 +566,8 @@ Seeedpool::Seeedpool(
 
       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVars, nCurrVars) ); /** free in line 321 */
       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &currVals, nCurrVars) ); /** free in line 321 */
-      SCIP_CALL_ABORT(GCGconsGetVars(scip, cons, currVars, nCurrVars));
-      SCIP_CALL_ABORT(GCGconsGetVals(scip, cons, currVals, nCurrVars));
+      SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, currVars, nCurrVars) );
+      SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, currVals, nCurrVars) );
 
       for( int currVar = 0; currVar < nCurrVars; ++currVar )
       {
@@ -572,7 +575,7 @@ Seeedpool::Seeedpool(
          std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
 
          /** because of the bug of GCGconsGet*()-methods some variables have to be negated */
-         if(!SCIPvarIsNegated(currVars[currVar]))
+         if( !SCIPvarIsNegated(currVars[currVar]) )
             iterVar = scipVarToIndex.find(currVars[currVar]);
          else
             iterVar = scipVarToIndex.find(SCIPvarGetNegatedVar(currVars[currVar]));
@@ -586,25 +589,32 @@ Seeedpool::Seeedpool(
          conssForVars[varIndex].push_back(i);
          valsForConss[i].push_back(currVals[currVar]);
          valsMap[std::pair<int,int>(i, varIndex)] =  currVals[currVar];
+         ++nnonzeros;
       }
       SCIPfreeBufferArrayNull(scip, &currVars);
       SCIPfreeBufferArrayNull(scip, &currVals);
    }
 
-   /*  init  seeedpool with empty seeed and translated original seeeds*/
+   /*  init  seeedpool with empty seeed */
    addSeeedToCurr( new Seeed( scip, -1, nDetectors, nConss, nVars) );
 
-   decompositions = NULL;
+
+   for ( int i = 0; i < SCIPconshdlrDecompGetNBlockNumberCandidates(scip); ++i )
+   {
+         addUserCandidatesNBlocks(SCIPconshdlrDecompGetBlockNumberCandidate(scip, i) );
+   }
+
+
 
 }//end constructor
 
 Seeedpool::~Seeedpool()
 {
-   for( size_t i = 0; i < allrelevantseeeds.size(); ++i )
+   for( size_t i = 0; i < ancestorseeeds.size(); ++i )
    {
-      size_t help = allrelevantseeeds.size() - i - 1;
-      if( allrelevantseeeds[help] != NULL && allrelevantseeeds[help]->getID() >= 0 )
-         delete allrelevantseeeds[help];
+      size_t help = ancestorseeeds.size() - i - 1;
+      if( ancestorseeeds[help] != NULL && ancestorseeeds[help]->getID() >= 0 )
+         delete ancestorseeeds[help];
    }
 
    for ( size_t i = 0; i < consclassescollection.size(); ++i )
@@ -632,22 +642,28 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
    SCIP_Bool conssclassconsnamenonumbers;
    SCIP_Bool conssclassconsnamelevenshtein;
    SCIP_Bool varclassscipvartypes;
+   SCIP_Bool varclassobjvals;
+   SCIP_Bool varclassobjvalsigns;
 
    if( transformed )
      {
-        SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/enabled", &conssclassnnonzeros);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/enabled", &conssclassscipconstypes);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
+        SCIPgetBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", &conssclassnnonzeros);
+        SCIPgetBoolParam(scip, "detection/consclassifier/scipconstype/enabled", &conssclassscipconstypes);
+        SCIPgetBoolParam(scip, "detection/consclassifier/consnamenonumbers/enabled", &conssclassconsnamenonumbers);
+        SCIPgetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", &conssclassconsnamelevenshtein);
         SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/enabled", &varclassscipvartypes);
+        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/enabled", &varclassobjvals);
+        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/enabled", &varclassobjvalsigns);
      }
      else
      {
-        SCIPgetBoolParam(scip, "detection/conssclassifier/nnonzeros/origenabled", &conssclassnnonzeros);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/scipconstype/origenabled", &conssclassscipconstypes);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
-        SCIPgetBoolParam(scip, "detection/conssclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
+        SCIPgetBoolParam(scip, "detection/consclassifier/nnonzeros/origenabled", &conssclassnnonzeros);
+        SCIPgetBoolParam(scip, "detection/consclassifier/scipconstype/origenabled", &conssclassscipconstypes);
+        SCIPgetBoolParam(scip, "detection/consclassifier/consnamenonumbers/origenabled", &conssclassconsnamenonumbers);
+        SCIPgetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/origenabled", &conssclassconsnamelevenshtein);
         SCIPgetBoolParam(scip, "detection/varclassifier/scipvartype/origenabled", &varclassscipvartypes);
+        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", &varclassobjvals);
+        SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", &varclassobjvalsigns);
      }
 
      std::cout << "consclass nonzeros enabled: " <<conssclassnnonzeros << std::endl;
@@ -663,6 +679,10 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
      if ( varclassscipvartypes )
         addVarClassifier( createVarClassifierForSCIPVartypes() );
+     if ( varclassobjvals )
+        addVarClassifier( createVarClassifierForObjValues() );
+     if ( varclassobjvalsigns )
+        addVarClassifier( createVarClassifierForObjValueSigns() );
 
      reduceConsclasses();
      reduceVarclasses();
@@ -689,25 +709,29 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     bool duplicate;
 
     successDetectors = std::vector<int>(nDetectors, 0);
-    ndecompositions = 0;
 
     delSeeeds = std::vector<SeeedPtr>(0);
 
     verboseLevel = 1;
 
+    /** @TODO this does not look well streamlined: currseeeds should be empty here, and seeedstopopulate should be the only seeeds to poopulate */
     for( size_t i = 0; i < currSeeeds.size(); ++i )
     {
        SCIP_CALL_ABORT( prepareSeeed( currSeeeds[i]) );
-       currSeeeds[i]->setID(getNewIdForSeeed() );
+       if( currSeeeds[i]->getID() < 0 )
+          currSeeeds[i]->setID(getNewIdForSeeed() );
     }
 
     /** add translated original seeeds (of unpresolved problem) */
-    for( size_t i = 0; i < translatedOrigSeeeds.size(); ++i )
+    for( size_t i = 0; i < seeedstopopulate.size(); ++i )
     {
-       SCIP_CALL_ABORT( prepareSeeed( translatedOrigSeeeds[i]) );
-       translatedOrigSeeeds[i]->setID(getNewIdForSeeed() );
-       if( seeedIsNoDuplicateOfSeeeds(translatedOrigSeeeds[i], currSeeeds, true) )
-          currSeeeds.push_back(translatedOrigSeeeds[i] );
+       SCIP_CALL_ABORT( prepareSeeed( seeedstopopulate[i]) );
+       if( seeedIsNoDuplicateOfSeeeds(seeedstopopulate[i], currSeeeds, true) )
+          currSeeeds.push_back(seeedstopopulate[i] );
+       else
+          continue;
+       if( seeedstopopulate[i]->getID() < 0 )
+          seeedstopopulate[i]->setID(getNewIdForSeeed() );
     }
 
     for( int round = 0; round < maxndetectionrounds; ++round )
@@ -732,7 +756,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
              }
           }
 
-          SCIPdebugMessagePrint(scip, "number of detectors: %d \n", nDetectors);
+//          SCIPdebugMessagePrint(scip, "number of detectors: %d \n", nDetectors);
 
           /** the current seeed is handled by all detectors */
           for( int d = 0; d < nDetectors; ++d )
@@ -786,7 +810,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                #pragma omp critical (seeedcount)
                 seeedPropData->newSeeeds[j]->setID(getNewIdForSeeed());
                 prepareSeeed( seeedPropData->newSeeeds[j] );
-                seeedPropData->newSeeeds[j]->checkConsistency();
+                assert(seeedPropData->newSeeeds[j]->checkConsistency(this) );
                 seeedPropData->newSeeeds[j]->addDecChangesFromAncestor(seeedPtr);
              }
 
@@ -828,7 +852,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                    std::cout << "detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " found 0 new seeeds" << std::endl;
                 }
 
-             /** if the new seeeds are no duplicate they're added to the currSeeeds */
+             /** if a new seeed is no duplicate it is either added to the nextRoundSeeeds or the finishedSeeeds  */
              for( int seeed = 0; seeed < seeedPropData->nNewSeeeds; ++seeed )
              {
                 SCIP_Bool noduplicate;
@@ -852,7 +876,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                       {
                          assert(seeedPropData->newSeeeds[seeed]->getID() >= 0);
                          finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
-                         allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
                       }
                    }
                    else
@@ -868,7 +891,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                       #pragma omp critical (seeedptrstore)
                       {
                          nextSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
-                         allrelevantseeeds.push_back(seeedPropData->newSeeeds[seeed]);
                       }
                    }
                 }
@@ -911,7 +933,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
              if(verboseLevel > 2 )
              #pragma omp critical (ostream)
              {
-                std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
+                SCIPdebugMessage("call finisher for detector %s\n", DECdetectorGetName(detectorToFinishingScipDetector[d] ) );
              }
              SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d], seeedPropData, &result) );
 
@@ -930,7 +952,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                    {
                       assert(seeed->getID() >= 0);
                       finishedSeeeds.push_back(seeed);
-                      allrelevantseeeds.push_back(seeed);
                    }
                    else
                    {
@@ -957,6 +978,8 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
              seeedPropData->nNewSeeeds = 0;
              delete seeedPropData;
           }
+          #pragma omp critical (seeedptrstore)
+          addSeeedToAncestor(seeedPtr);
        }// end for currseeeds
 
        for(size_t s = 0; s < currSeeedsToDelete.size(); ++s )
@@ -985,13 +1008,14 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
           #pragma omp critical (seeedcount)
           seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
 
-          std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;
+          if( verboseLevel > 2)
+             SCIPdebugMessage("check if finisher of detector %s is enabled\n", DECdetectorGetName(detectorToScipDetector[d] ) ) ;
 
           /** if the finishing of the detector is not enabled go on with the next detector */
           if( !detector->enabledFinishing )
              continue;
 
-          std::cout << "call finisher for detector " << DECdetectorGetName(detectorToFinishingScipDetector[d] ) << std::endl;
+          SCIPdebugMessage( "call finisher for detector %s \n ", DECdetectorGetName(detectorToFinishingScipDetector[d] ) );
 
           SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
 
@@ -1016,7 +1040,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                 {
                    assert(seeed->getID() >= 0);
                    finishedSeeeds.push_back(seeed);
-                   allrelevantseeeds.push_back(seeed);
                 }
              }
 
@@ -1028,9 +1051,10 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
           delete seeedPropData->seeedToPropagate;
           delete seeedPropData;
        }
+       addSeeedToAncestor(seeedPtr);
     }// end for finishing curr seeeds
 
-    std::cout << (int) finishedSeeeds.size() << " finished seeeds are found." << std::endl;
+    SCIPdebugMessage("%d  finished seeeds are found.\n", (int) finishedSeeeds.size() );
 
     if( displaySeeeds )
     {
@@ -1043,12 +1067,13 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
     /** count the successful refinement calls for each detector */
 
-    for(size_t i = 0; i < finishedSeeeds.size(); ++i)
+    for( size_t i = 0; i < finishedSeeeds.size(); ++i )
     {
-       assert(finishedSeeeds[i]->checkConsistency() );
+       assert(finishedSeeeds[i]->checkConsistency(this) );
        assert(finishedSeeeds[i]->getNOpenconss() == 0);
        assert(finishedSeeeds[i]->getNOpenvars() == 0);
 
+       SCIP_CALL_ABORT(finishedSeeeds[i]->buildDecChainString() );
 
        for( int d = 0; d < nDetectors; ++d )
        {
@@ -1068,11 +1093,11 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
 
     if( (int) finishedSeeeds.size() != 0)
     {
-       SCIP_Real minscore = finishedSeeeds[0]->evaluate(this);
+       SCIP_Real minscore = finishedSeeeds[0]->evaluate(this, SCIPconshdlrDecompGetCurrScoretype(scip) );
        //            SeeedPtr bestSeeed = finishedSeeeds[0];
        for( size_t i = 1; i < finishedSeeeds.size(); ++i )
        {
-          SCIP_Real score = finishedSeeeds[i]->evaluate(this);
+          SCIP_Real score = finishedSeeeds[i]->evaluate(this, SCIPconshdlrDecompGetCurrScoretype(scip) );
           if (score < minscore)
           {
              minscore = score;
@@ -1087,6 +1112,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     for( size_t c = 0; c < currSeeeds.size(); ++c )
     {
        duplicate = false;
+       SCIP_CALL_ABORT(currSeeeds[c]->buildDecChainString() );
        for(size_t d = 0; d < delSeeeds.size(); ++d)
        {
           if(currSeeeds[c]==delSeeeds[d])
@@ -1095,7 +1121,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
              break;
           }
        }
-       if(!duplicate)
+       if( !duplicate )
        {
           delSeeeds.push_back(currSeeeds[c]);
        }
@@ -1115,6 +1141,100 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     return finishedSeeeds;
  }
 
+
+ void  Seeedpool::sortFinishedForScore()
+ {
+
+    if ( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_WHITE )
+       std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
+
+    if ( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::BORDER_AREA )
+       std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsBorderArea);
+
+    if ( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::CLASSIC )
+       std::sort ( finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsClassic);
+
+
+ }
+
+
+ /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
+/*
+ * @return set of completed decomposition
+ * */
+
+ std::vector<SeeedPtr>    Seeedpool::finishIncompleteSeeeds(
+    std::vector<SeeedPtr> incompleteseeeds
+  )
+{
+    std::vector<SeeedPtr> finisheds(0, NULL);
+    int verboseLevel = 1;
+
+    #pragma omp parallel for schedule(static,1)
+    for( size_t i = 0; i < incompleteseeeds.size(); ++i )
+    {
+       SeeedPtr seeedPtr = incompleteseeeds[i];
+
+       for( int d = 0; d < nFinishingDetectors; ++d )
+       {
+          DEC_DETECTOR* detector = detectorToFinishingScipDetector[d];
+          SCIP_RESULT result = SCIP_DIDNOTFIND;
+          SEEED_PROPAGATION_DATA* seeedPropData;
+          seeedPropData = new SEEED_PROPAGATION_DATA();
+          seeedPropData->seeedpool = this;
+          seeedPropData->nNewSeeeds = 0;
+
+          #pragma omp critical (seeedcount)
+          seeedPropData->seeedToPropagate = new gcg::Seeed(seeedPtr, this );
+
+          if( verboseLevel > 2)
+             std::cout << "check if finisher of detector " << DECdetectorGetName(detectorToScipDetector[d] ) << " is enabled " << std::endl;
+
+          /** if the finishing of the detector is not enabled go on with the next detector */
+          if( !detector->enabledFinishing )
+             continue;
+
+          SCIPdebugMessage( "call finisher for detector %s\n", DECdetectorGetName(detectorToFinishingScipDetector[d] ) );
+
+          SCIP_CALL_ABORT(detectorToFinishingScipDetector[d]->finishSeeed(scip, detectorToFinishingScipDetector[d],seeedPropData, &result) );
+
+          for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++finished )
+          {
+             SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+#pragma omp critical (seeedcount)
+             seeed->setID( getNewIdForSeeed() );
+
+             seeed->calcHashvalue();
+             seeed->addDecChangesFromAncestor(seeedPtr);
+             seeed->setFinishedByFinisher(true);
+
+             if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
+             {
+                if( verboseLevel > 2 )
+                {
+                   std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
+                   seeed->showScatterPlot(this);
+                }
+#pragma omp critical (seeedptrstore)
+                {
+                   assert(seeed->getID() >= 0);
+                   finisheds.push_back(seeed);
+       //            allrelevantseeeds.push_back(seeed);
+                }
+             }
+
+             SCIPfreeMemoryArrayNull(scip, &seeedPropData->newSeeeds);
+             seeedPropData->newSeeeds = NULL;
+             seeedPropData->nNewSeeeds = 0;
+          }
+
+          delete seeedPropData->seeedToPropagate;
+          delete seeedPropData;
+       }
+    }// end for finishing curr seeeds
+    return finisheds;
+}
+
  void    Seeedpool::findDecompositions(
  ){
 
@@ -1123,7 +1243,6 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
      */
 
     std::vector<int> successDetectors;
-    std::vector<SeeedPtr> delSeeeds;
     SCIP_Bool usemaxwhitescore;
     SCIP_Bool dothinout;
 
@@ -1135,63 +1254,25 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     SCIP_Bool addTrivialDecomp = FALSE;
 
     successDetectors = std::vector<int>(nDetectors, 0);
-    ndecompositions = 0;
-    delSeeeds = std::vector<SeeedPtr>(0);
     usemaxwhitescore = TRUE;
     dothinout = FALSE;
 
     finishedSeeeds = findSeeeds();
 
     /* sort the seeeds according to maximum white measure */
+    sortFinishedForScore();
 
-    std::sort (finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsMaxWhite);
+
 
     /** hack to just use max white seeed */
-    if( usemaxwhitescore && dothinout )
-       finishedSeeeds = thinout( finishedSeeeds, nDecomps, addTrivialDecomp );
+//    if( usemaxwhitescore && dothinout )
+//       finishedSeeeds = thinout( finishedSeeeds, nDecomps, addTrivialDecomp );
 
-    /** fill out the decompositions */
 
-    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decompositions, (int) finishedSeeeds.size())); /** free in decomp.c:470 */
-    for( size_t i = 0; i < finishedSeeeds.size(); ++i )
-    {
-       SeeedPtr seeed = finishedSeeeds[i];
 
-       SCIP_CALL_ABORT( createDecompFromSeeed(seeed, &decompositions[i]) );
 
     }
-    //SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
 
-    /** delete the seeeds */
-
-    //         for(size_t f = 0; f < finishedSeeeds.size(); ++f)
-    //         {
-    //            duplicate = false;
-    //            for(size_t d = 0; d < delSeeeds.size(); ++d)
-    //            {
-    //               if(finishedSeeeds[f]==delSeeeds[d])
-    //               {
-    //                  duplicate=true;
-    //                  break;
-    //               }
-    //            }
-    //            if(!duplicate)
-    //            {
-    //               delSeeeds.push_back(finishedSeeeds[f]);
-    //            }
-    //         }
-    //
-    //
-    //         for( size_t d =  delSeeeds.size(); d > 0; d--)
-    //         {
-    //            delete delSeeeds[d-1];
-    //            delSeeeds[d-1] = NULL;
-    //         }
-
-    delSeeeds.clear();
-
-    return;
-}
 
 /*SCIP_RETCODE DECdecompCheckConsistency(DEC_DECOMP* decomp)
 {
@@ -1210,7 +1291,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
    seeed->considerImplicits(this);
    seeed->sort();
    seeed->calcHashvalue();
-   seeed->evaluate(this);
+   seeed->evaluate(this, SCIPconshdlrDecompGetCurrScoretype(scip ) );
 
    return SCIP_OKAY;
  }
@@ -1221,7 +1302,7 @@ void Seeedpool::freeCurrSeeeds()
    {
       if ( currSeeeds[i] != NULL )
       {
-         currSeeeds[i]->checkConsistency();
+         currSeeeds[i]->checkConsistency(this);
          delete currSeeeds[i];
          currSeeeds[i] = NULL;
       }
@@ -1229,17 +1310,31 @@ void Seeedpool::freeCurrSeeeds()
    return;
 }
 
+
+void Seeedpool::addSeeedToAncestor(SeeedPtr seeed){
+
+   ancestorseeeds.push_back(seeed);
+   return;
+}
+
+
+void Seeedpool::addSeeedToIncomplete(SeeedPtr seeed){
+
+   incompleteSeeeds.push_back(seeed);
+   return;
+}
+
+
+
 void Seeedpool::addSeeedToCurr(SeeedPtr seeed){
 
    currSeeeds.push_back(seeed);
-   allrelevantseeeds.push_back(seeed);
    return;
 }
 
 void Seeedpool::addSeeedToFinished(SeeedPtr seeed){
 
    finishedSeeeds.push_back(seeed);
-   allrelevantseeeds.push_back(seeed);
    return;
 }
 
@@ -1248,22 +1343,24 @@ void Seeedpool::sortAllRelevantSeeeds(){
    int maxid  = 0;
    std::vector<SeeedPtr> tmpAllRelevantSeeeds(0);
 
-   for ( size_t i = 0; i < allrelevantseeeds.size(); ++i )
+   for ( size_t i = 0; i < ancestorseeeds.size(); ++i )
    {
-      if( allrelevantseeeds[i]->getID() > maxid )
-         maxid = allrelevantseeeds[i]->getID();
+      if( ancestorseeeds[i]->getID() > maxid )
+         maxid = ancestorseeeds[i]->getID();
    }
 
    tmpAllRelevantSeeeds = std::vector<SeeedPtr>(maxid+1, NULL );
 
-   for ( size_t i = 0; i < allrelevantseeeds.size(); ++i )
+   for ( size_t i = 0; i < ancestorseeeds.size(); ++i )
    {
-      if ( allrelevantseeeds[i]->getID() < 0  )
+      if ( ancestorseeeds[i]->getID() < 0  )
          continue;
-      tmpAllRelevantSeeeds[allrelevantseeeds[i]->getID()] = allrelevantseeeds[i];
+      tmpAllRelevantSeeeds[ancestorseeeds[i]->getID()] = ancestorseeeds[i];
    }
 
-   allrelevantseeeds = tmpAllRelevantSeeeds;
+   ancestorseeeds = tmpAllRelevantSeeeds;
+
+
 }
 
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
@@ -1459,6 +1556,19 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
       }
 
       newseeed->detectorChain = otherseeed->detectorChain;
+      newseeed->detectorClockTimes = otherseeed->detectorClockTimes;
+      newseeed->pctVarsFromFree = otherseeed->pctVarsFromFree;
+      newseeed->pctVarsToBlock = otherseeed->pctVarsToBlock;
+      newseeed->pctVarsToBorder = otherseeed->pctVarsToBorder;
+      newseeed->pctConssToBorder = otherseeed->pctConssToBorder;
+      newseeed->pctConssFromFree = otherseeed->pctConssFromFree;
+      newseeed->pctConssToBlock = otherseeed->pctConssToBlock;
+      newseeed->nNewBlocks = otherseeed->nNewBlocks;
+      newseeed->detectorchainstring = otherseeed->detectorchainstring;
+
+
+
+
 
       newseeed->stemsFromUnpresolved = true;
       newseeed->isFinishedByFinisherUnpresolved  = otherseeed->isFinishedByFinisher;
@@ -1471,7 +1581,9 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
       newseeed->sort();
       newseeed->considerImplicits(this);
       newseeed->deleteEmptyBlocks();
-      newseeed->checkConsistency();
+      newseeed->evaluate(this, SCIPconshdlrDecompGetCurrScoretype(scip) ) ;
+
+      //assert(newseeed->checkConsistency(this) );
 
       /*std::cout << "unpresolved seeed " << std::endl;
          otherseeed->showScatterPlot(origpool);
@@ -1479,7 +1591,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
          newseeed->showScatterPlot(this);
        */
 
-      if(newseeed->checkConsistency() )
+      if( newseeed->checkConsistency(this) )
          newseeeds.push_back(newseeed);
       else {
          delete newseeed;
@@ -1592,7 +1704,7 @@ std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers( std::vector<
 
 void Seeedpool::populate(std::vector<SeeedPtr> seeeds)
 {
-   translatedOrigSeeeds = seeeds;
+   seeedstopopulate = seeeds;
 }
 
 const  int * Seeedpool::getVarsForCons(int cons)
@@ -1673,30 +1785,22 @@ int Seeedpool::getIndexForFinishingDetector(DEC_DETECTOR* detector)
 
 int Seeedpool::getNewIdForSeeed()
 {
-   nTotalSeeeds++;
-   return (nTotalSeeeds-1);
+   return SCIPconshdlrDecompGetNextSeeedID(scip) ;
 }
 
-void Seeedpool::decrementSeeedcount()
-{
-   nTotalSeeeds--;
-   return;
-}
 
-DEC_DECOMP** Seeedpool::getDecompositions()
-{
-   return decompositions;
-}
 
-int Seeedpool::getNDecompositions()
-{
-   return ndecompositions;
-}
 
 int Seeedpool::getNDetectors()
 {
    return nDetectors;
 }
+
+int Seeedpool::getNNonzeros()
+{
+   return nnonzeros;
+}
+
 
 int Seeedpool::getNFinishingDetectors()
 {
@@ -1718,12 +1822,31 @@ std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
    std::vector<int> toreturn(0);
    SCIP_Bool output = FALSE;
 
-   /** first: sort the current candidates */
+   /** first: get the block number candidates directly given by the user */
+   if( output && !usercandidatesnblocks.empty() )
+   {
+      std::cout << "nuber of user block number candidates: " << usercandidatesnblocks.size() << std::endl;
+   }
+
+   for( size_t i = 0; i < usercandidatesnblocks.size() ; ++i)
+   {
+      toreturn.push_back( usercandidatesnblocks[i]);
+
+      if( output )
+      {
+         std::cout << usercandidatesnblocks[i] << " " << std::endl;
+      }
+
+   }
+
+   /** second: sort the current candidates */
    std::sort(candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
 
    if( output )
    {
       std::cout << "nCandidates: " << candidatesNBlocks.size() << std::endl;
+
+
       for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
          std::cout << "nblockcandides: " << candidatesNBlocks[i].first << " ; " << candidatesNBlocks[i].second << " times prop " << std::endl;
    }
@@ -1758,6 +1881,37 @@ void Seeedpool::addCandidatesNBlocks(
    }
    return;
 }
+
+
+void Seeedpool::addUserCandidatesNBlocks(
+   int                 candidate            /**< candidate for block size */
+   ){
+
+   bool alreadyIn = false;
+   for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
+   {
+      if( usercandidatesnblocks[i] == candidate)
+      {
+         std::cout <<  candidate <<  " is already given by the user as a block number candidate " << std::endl;
+         return;
+      }
+   }
+   if( !alreadyIn )
+   {
+      std::cout << "added user block number candidate : " << candidate << std::endl;
+      usercandidatesnblocks.push_back( candidate );
+   }
+
+
+   return;
+}
+
+int Seeedpool::getNUserCandidatesNBlocks(
+      ){
+   return (int) usercandidatesnblocks.size();
+}
+
+
 
 void Seeedpool::calcCandidatesNBlocks()
  {
@@ -2303,10 +2457,120 @@ VarClassifier* Seeedpool::getVarClassifier( int givenClassifierIndex )
    return varclassescollection[givenClassifierIndex];
 }
 
+/** returns a new variable classifier
+ *  where all variables with identical objective function value are assigned to the same class */
+VarClassifier* Seeedpool::createVarClassifierForObjValues()
+{
+   std::vector<SCIP_Real> foundobjvals( 0 ); /** all found objective function values */
+   std::vector<int> classforvars( getNVars(), -1 ); /** vector assigning a class index to each variable */
+   int curclassindex; /** stores a var's classindex if the objective value of a var has already been found for another var */
+   SCIP_Real curobjval;
+   VarClassifier* classifier; /** new VarClassifier */
+
+   for( int v = 0; v < getNVars(); ++v )
+   {
+      assert( getVarForIndex( v ) != NULL );
+      curobjval = SCIPvarGetObj( getVarForIndex( v ) );
+      curclassindex = -1;
+
+      /** check whether current objective funtion value already exists */
+      for( size_t c = 0; c < foundobjvals.size(); ++c )
+      {
+         if( SCIPisEQ( scip, curobjval, foundobjvals[c] ) )
+         {
+            curclassindex = c;
+            break;
+         }
+      }
+
+      /** assign var to class and save objective function value, if it is new */
+      if( curclassindex == -1 )
+      {
+         foundobjvals.push_back( curobjval );
+         classforvars[v] = foundobjvals.size() - 1;
+      }
+      else
+      {
+         classforvars[v] = curclassindex;
+      }
+   }
+
+   classifier = new VarClassifier( scip, "varobjvals", (int) foundobjvals.size(), getNVars() );
+
+   /** set up class information */
+   for ( int c = 0; c < classifier->getNClasses(); ++c )
+   {
+      std::stringstream name;
+      std::stringstream text;
+
+      name << std::setprecision( 5 ) << foundobjvals[c];
+      text << "This class contains all variables with objective function value " << name.str() << ".";
+
+      classifier->setClassName( c, name.str().c_str() );
+      classifier->setClassDescription( c, text.str().c_str() );
+   }
+
+   /** assign vars according to classforvars vactor */
+   for ( int v = 0; v < classifier->getNVars(); ++v )
+   {
+      classifier->assignVarToClass( v, classforvars[v] );
+   }
+
+   std::cout << " varclassifier varobjvals:" << " yields a classification with " << classifier->getNClasses() << " different variable classes" << std::endl;
+
+   return classifier;
+}
+
+/** returns a new variable classifier
+ *  where all variables are assigned to class zero, positive or negative according to their objective function value sign
+ *  all class zero variables are assumed to be only master variables (set via DECOMPINFO) */
+VarClassifier* Seeedpool::createVarClassifierForObjValueSigns()
+{
+   VarClassifier* classifier= new VarClassifier( scip, "varobjvalsigns", 3, getNVars() ); /** new VarClassifier */
+   SCIP_Real curobjval;
+
+   /** set up class information */
+   classifier->setClassName( 0, "zero" );
+   classifier->setClassDescription( 0, "This class contains all variables with objective function value zero." );
+   classifier->setClassDecompInfo( 0, MASTER );
+   classifier->setClassName( 1, "positive" );
+   classifier->setClassDescription( 1, "This class contains all variables with positive objective function value." );
+   classifier->setClassDecompInfo( 1, ALL );
+   classifier->setClassName( 2, "negative" );
+   classifier->setClassDescription( 2, "This class contains all variables with negative objective function value." );
+   classifier->setClassDecompInfo( 2, ALL );
+
+   /** assign vars */
+   for( int v = 0; v < getNVars(); ++v )
+   {
+      assert( getVarForIndex( v ) != NULL );
+      curobjval = SCIPvarGetObj( getVarForIndex( v ) );
+
+      if( SCIPisZero( scip, curobjval ) )
+      {
+         classifier->assignVarToClass( v, 0 );
+      }
+      else if ( SCIPisPositive( scip, curobjval ) )
+      {
+         classifier->assignVarToClass( v, 1 );
+      }
+      else
+      {
+         classifier->assignVarToClass( v, 2 );
+      }
+   }
+
+   /* remove a class if there is no variable with the respective sign */
+   classifier->removeEmptyClasses();
+
+   std::cout << " varclassifier varobjvalsigns:" << " yields a classification with " << classifier->getNClasses() << " different variable classes" << std::endl;
+
+   return classifier;
+}
+
 VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
 {
    std::vector<SCIP_VARTYPE> foundVartypes(0);
-   std::vector<int> vartypesIndices(0);
    std::vector<int> classForVars = std::vector<int>(getNVars(), -1);
    VarClassifier* classifier;
 
@@ -2412,7 +2676,7 @@ void Seeedpool::reduceVarclasses()
 
       if ( newclassifier != NULL )
       {
-         std::cout <<  "add reduced version of consclassifier " << varclassescollection[classifierid]->getName() << " with " << maxnclasses << " classes" << std::endl;
+         std::cout <<  "add reduced version of varclassifier " << varclassescollection[classifierid]->getName() << " with " << maxnclasses << " classes" << std::endl;
          addVarClassifier( newclassifier );
       }
    }
@@ -2460,150 +2724,8 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
    return remainingSeeeds;
 }
 
-SCIP_RETCODE Seeedpool::writeFamilyTreeLatexFile(
-   const char* filename,                                 /* filename the output should be written to (including directory) */
-   const char* workfolder,                               /* directory in which should be worked */
-   std::vector<SeeedPtr> seeeds,                         /* vector of seeed pointers the  family tree should be constructed for */
-   SCIP_Bool draft
-){
 
-   std::ofstream ofs;
-   int curr = -1;
-   int currheight = 0;
-   SCIP_Real firstsibldist = -1.;
 
-   std::stringstream preambel;
-   std::string closing = "\\end{tikzpicture}\n\\end{document}";
-
-   /* collectiotn of treeseeds */
-   std::vector<SeeedPtr> treeseeeds(0);
-   std::vector<int> treeseeedids(0);
-   std::vector<SCIP_Bool> isseeedintree(allrelevantseeeds.size(), FALSE );
-
-   int root = -1;
-   std::vector<int> parents(allrelevantseeeds.size(), -1);
-   std::vector<std::vector<int> > childs (allrelevantseeeds.size(), std::vector<int>(0));
-   std::vector<std::vector<SCIP_Bool> > childsfinished(allrelevantseeeds.size(), std::vector<SCIP_Bool>(0));
-   std::vector<SCIP_Bool> visited(allrelevantseeeds.size(), FALSE);
-
-   /** check allrelevant seeeds **/
-   for( size_t s = 0; s < allrelevantseeeds.size(); ++s )
-   {
-      assert(allrelevantseeeds[s] == NULL || (int) s == allrelevantseeeds[s]->getID() );
-   }
-
-   /** 1) find relevant seeeds in tree and build tree */
-   for( size_t s = 0; s < seeeds.size(); ++s )
-   {
-      int currid;
-      if ( seeeds[s] == NULL )
-         continue;
-      currid = seeeds[s]->getID();
-      if( !isseeedintree[seeeds[s]->getID()] )
-      {
-         isseeedintree[seeeds[s]->getID()] = TRUE;
-         treeseeeds.push_back( seeeds[s]);
-         treeseeedids.push_back(seeeds[s]->getID());
-      }
-      else
-         break;
-
-      for( size_t i = 0; i < seeeds[s]->listofancestorids.size(); ++i )
-      {
-         int ancestorid;
-         ancestorid = seeeds[s]->listofancestorids[seeeds[s]->listofancestorids.size() - i -1];
-         parents[currid] = ancestorid;
-         childs[ancestorid].push_back(currid);
-         childsfinished[ancestorid].push_back(FALSE);
-
-         if( !isseeedintree[ancestorid] )
-         {
-            isseeedintree[ancestorid] = TRUE;
-            treeseeeds.push_back( allrelevantseeeds[ancestorid] );
-            treeseeedids.push_back(ancestorid);
-            if( i == seeeds[s]->listofancestorids.size() -1 )
-            {
-               root = ancestorid;
-            }
-            currid = ancestorid;
-         }
-         else
-            break;
-      }
-   }
-
-   for( size_t i = 0; i < treeseeeds.size(); ++i )
-   {
-      SeeedPtr seeed = treeseeeds[i];
-      std::stringstream decompfilename;
-
-      seeed = treeseeeds[i];
-      decompfilename << workfolder << "/" << getSeeedFolderLatex(seeed);
-
-      seeed->showScatterPlot(this, TRUE, decompfilename.str().c_str(), draft );
-   }
-
-   //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
-
-   firstsibldist = 1. / (childs[root].size() - 1 );
-   preambel.precision(2);
-
-   preambel << "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
-   preambel << "\n\\usetikzlibrary{positioning}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
-   preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
-
-   /** start writing file */
-   ofs.open (filename, std::ofstream::out );
-   ofs << preambel.str();
-
-   /** iterate tree and write file */
-   curr = root;
-   while ( curr != -1 )
-   {
-      if( !visited[curr] )
-      {
-         /** write node */
-         ofs << writeSeeedIncludeLatex( allrelevantseeeds[curr], workfolder );
-         /* set node visited */
-         visited[curr] = TRUE;
-         if( parents[curr] != -1 )
-            finishnextchild(childs[parents[curr]], childsfinished[parents[curr]], curr);
-
-      }
-      if ( unfinishedchildexists(childsfinished[curr] ) )
-      {
-         int unfinishedchild = getfirstunfinishedchild(childsfinished[curr], childs[curr] );
-         /* is first child unfinihsed? */
-         //         if( unfinishedchild == childs[curr][0] )
-         ofs << " child { node " ;
-         curr = unfinishedchild;
-         ++currheight;
-      }
-      else
-      {
-         if ( parents[curr] != -1 ){
-            ofs << writeSeeedDetectorChainInfoLatex( allrelevantseeeds[curr], currheight, helpvisucounter);
-            ++helpvisucounter;
-         }
-         --currheight;
-         curr = parents[curr];
-         if( curr != -1)
-            ofs << " } " ;
-      }
-   }
-
-   ofs << ";" << std::endl;
-   for( size_t i = 0; i < treeseeeds.size(); ++i)
-   {
-      ofs << writeSeeedInfoLatex( treeseeeds[i] );
-   }
-
-   ofs << closing << std::endl;
-
-   ofs.close();
-
-   return SCIP_OKAY;
-}
 
 /**
  * creates a decomposition for a given seeed
@@ -2633,7 +2755,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    int counterstairlinkingvars = 0;
    int size;
 
-   assert(seeed->checkConsistency() );
+   assert(seeed->checkConsistency(this) );
 
    /* create decomp data structure */
    SCIP_CALL_ABORT( DECdecompCreate( scip, newdecomp) );
@@ -2778,7 +2900,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    DECdecompSetSubscipvars(scip, *newdecomp, subscipvars, nsubscipvars);
    DECdecompSetStairlinkingvars(scip, *newdecomp, stairlinkingvars, nstairlinkingvars);
-   DECdecompSetLinkingvars(scip, *newdecomp, linkingvars, nlinkingvars);
+   DECdecompSetLinkingvars(scip, *newdecomp, linkingvars, nlinkingvars, seeed->getNMastervars());
    DECdecompSetVarindex(*newdecomp, varindex);
    DECdecompSetVartoblock(*newdecomp, vartoblock) ;
 
@@ -2845,24 +2967,14 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       DECdecompSetNNewBlocks(scip, *newdecomp, &(seeed->nNewBlocks[0] ) );
    }
 
+
    /** set detector chain info string */
    SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
    if( seeed->usergiven == USERGIVEN::PARTIAL || seeed->usergiven == USERGIVEN::COMPLETE || seeed->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
    {
-      char str1[2] = "\0"; /* gives {\0, \0} */
-      str1[0] = 'U';
-      (void) strncat(detectorchaininfo, str1, 1 );
-
+      seeed->buildDecChainString();
    }
-   for( int d = 0; d < seeed->getNDetectors(); ++d )
-   {
-      //SCIPsnprintf(detectorchaininfo, SCIP_MAXSTRLEN, "%s%c", detectorchaininfo, DECdetectorGetChar(seeed->getDetectorchain()[d]));
-      char str[2] = "\0"; /* gives {\0, \0} */
-      str[0] = DECdetectorGetChar(seeed->getDetectorchain()[d]);
-      (void) strncat(detectorchaininfo, str, 1 );
-   }
-
-   DECdecompSetDetectorChainString(scip, *newdecomp, detectorchaininfo);
+   SCIP_CALL(DECdecompSetDetectorChainString(scip, *newdecomp, seeed->detectorchainstring ) );
 
    /** set dectype */
    if( (*newdecomp)->nlinkingvars == seeed->getNTotalStairlinkingvars() && (*newdecomp)->nlinkingconss == 0 && DECdecompGetNLinkingvars((*newdecomp)) > 0)
@@ -2886,7 +2998,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       (*newdecomp)->type = DEC_DECTYPE_UNKNOWN;
    }
 
-   ndecompositions++;
 
    SCIP_CALL(DECevaluateDecomposition(scip, *newdecomp, &scores) );
 
@@ -2910,6 +3021,16 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 
    return SCIP_OKAY;
 
+}
+
+
+/**
+ * returns transformation information
+ */
+SCIP_Bool Seeedpool::getTransformedInfo(
+   )
+{
+   return transformed;
 }
 
 } /* namespace gcg */
