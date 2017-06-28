@@ -1330,13 +1330,11 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteFamilyTree, NULL, NULL,
             "familytree",
-            "write all decompositions (including partial decompositions) that are part of the family tree given by the current settings as pdf files and creates a latex file displaying corresponding the family tree",
+            "write all (partial) decompositions that are part of the family tree to pdf files and creates a latex file displaying the family tree",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
-
-
 
    /* write reportdecompositions */
       if( !SCIPdialogHasEntry(submenu, "reportdecompositions") )
