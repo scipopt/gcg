@@ -168,6 +168,19 @@ SCIP_RETCODE GCGgetFilePath(
    return SCIP_OKAY;
 }
 
+/*@todo */
+static
+SCIP_RETCODE getRgbDecFromHex(
+   char*    hex,     /**< input hex rgb code of form "#000000" */
+   int*     red,     /**< output decimal r */
+   int*     green,   /**< output decimal g */
+   int*     blue     /**< output decimal b */
+   )
+{
+
+   return SCIP_OKAY;
+}
+
 /** write LaTeX code header & begin of document
  * The proper order in which a tex file is written goes as follows:
  *    -> GCGtexWriteHeaderCode         (required)
@@ -236,6 +249,8 @@ SCIP_RETCODE GCGtexWriteHeaderCode(
    SCIPinfoMessage(scip, file, "                                                                                 \n");
    SCIPinfoMessage(scip, file, "\\begin{document}                                                                \n");
    SCIPinfoMessage(scip, file, "                                                                                 \n");
+
+   /*@todo add defines of the current default colors here (use getRgbDecFromHex) */
 
    return SCIP_OKAY;
 }
@@ -840,14 +855,12 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    strcat(name, ".make");
    strcat(makefilename, name);
 
-
    /* open and write makefile */
    makefile = fopen(makefilename, "w");
    if( makefile == NULL )
    {
       return SCIP_FILECREATEERROR;
    }
-
 
    if( readerdata->usegp )
    {
