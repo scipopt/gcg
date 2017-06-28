@@ -1319,7 +1319,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteAllDecompositions, NULL, NULL,
             "alldecompositions",
-            "write all known decompositions to files (format is given by file extension, e.g., {dec,blk,ref})",
+            "write all known decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -1341,7 +1341,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       {
          SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecReportAllDecompositions, NULL, NULL,
                "reportdecompositions",
-               "write report of all known decompositions to PDF file ",
+               "write report of all known decompositions to LaTeX format",
                FALSE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );

@@ -61,6 +61,7 @@
 #define DEFAULT_COLOR_BLOCK        COLOR_TEAL
 #define DEFAULT_COLOR_OPEN         COLOR_GREEN   /* for open (not assigned) elements */
 #define DEFAULT_COLOR_NONZERO      COLOR_BLACK
+#define DEFAULT_COLOR_LINE         COLOR_BLACK   /* for outlines of blocks */
 
 #ifdef __cplusplus
 extern "C" {

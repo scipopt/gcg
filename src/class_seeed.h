@@ -602,7 +602,7 @@ public:
    );
 
    /*@todo description of this function*/
-   void showScatterPlot( Seeedpool* seeedpool,
+   void showVisualisation( Seeedpool* seeedpool,
       SCIP_Bool writeonly = FALSE,
       const char* filename = NULL,
       SCIP_Bool draft = FALSE,

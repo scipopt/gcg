@@ -1390,7 +1390,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
       idtovisu = atoi(ntovisualize);
 
    gcg::Seeedpool* seeedpool = (conshdlrdata->listall->at(idtovisu)->isfromunpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
-   conshdlrdata->listall->at(idtovisu)->showScatterPlot(seeedpool);
+   conshdlrdata->listall->at(idtovisu)->showVisualisation(seeedpool);
 
    return SCIP_OKAY;
 }
@@ -3882,7 +3882,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
 
       decompfilename << workfolder << "/" << getSeeedFolderLatex(seeed);
 
-      seeed->showScatterPlot(conshdlrdata->seeedpool, TRUE, decompfilename.str().c_str(), draft );
+      seeed->showVisualisation(conshdlrdata->seeedpool, TRUE, decompfilename.str().c_str(), draft );
    }
 
    //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;

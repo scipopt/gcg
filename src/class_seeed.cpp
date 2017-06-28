@@ -43,6 +43,7 @@
 #include "struct_detector.h"
 #include "struct_decomp.h"
 #include "cons_decomp.h"
+#include "params_visu.h"
 
 #include <sstream>
 #include <iostream>
@@ -3279,15 +3280,15 @@ SCIP_RETCODE Seeed::setVarToStairlinking(int varToStairlinking, int block1, int 
    return SCIP_OKAY;
 }
 
-/** just for debugging */
-void Seeed::showScatterPlot(
+/*@todo describtion of this function */
+void Seeed::showVisualisation(
       Seeedpool* seeedpool,
       SCIP_Bool writeonly,
       const char* filename,
 	  SCIP_Bool draft,
 	  SCIP_Bool colored
-){
-
+   )
+{
    char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
    int rowboxcounter = 0;
    int colboxcounter = 0;
@@ -3308,40 +3309,33 @@ void Seeed::showScatterPlot(
       sprintf(buffer, "help%d.pdf", this->getID() );
       filename = buffer;
    }
-   /**/
-
 
    if( writeonly )
    {
-	  ofs << "set terminal pdf " << std::endl;
+      ofs << "set terminal pdf " << std::endl;
       ofs << "set output \"" << filename  << "\"" << std::endl;
-	//  ofs << "set terminal postscript" << std::endl;
-	//  ofs << "set output \"| ps2pdf - " << filename  << "\"" << std::endl;
    }
    ofs << "set xrange [-1:" << getNVars() << "]\nset yrange[" << getNConss() << ":-1]\n";
 
-
    /* write linking var */
    if(colored)
-      ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fc rgb \"purple\"\n" ;
+      ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fc rgb \"DEFAULT_COLOR_LINKING\"\n" ;
    else
       ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fillstyle solid noborder fc rgb \"grey60\"\n" ;
    colboxcounter+=getNLinkingvars();
 
    if(colored)
-      ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fc rgb \"yellow\"\n" ;
+      ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fc rgb \"DEFAULT_COLOR_MASTERVARS\"\n" ;
    else
       ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fillstyle solid noborder fc rgb \"grey80\"\n" ;
    colboxcounter+=getNMastervars();
 
-
    displaySeeed(seeedpool);
    // std::cout << " nmasterconss: " << getNMasterconss() << std::endl;
 
-
    /* write linking cons box */
    if(colored)
-      ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fc rgb \"orange\"\n" ;
+      ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fc rgb \"DEFAULT_COLOR_MASTERCONS\"\n" ;
    else
       ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fillstyle solid noborder fc rgb \"grey40\"\n" ;
    rowboxcounter += getNMasterconss();
@@ -3349,7 +3343,7 @@ void Seeed::showScatterPlot(
    for( int b = 0; b < getNBlocks() ; ++b )
    {
       if(colored)
-         ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"grey\"\n" ;
+         ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"DEFAULT_COLOR_BLOCK\"\n" ;
       else
          ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fillstyle solid noborder fc rgb \"grey70\"\n" ;
       colboxcounter += getNVarsForBlock(b);
@@ -3357,7 +3351,7 @@ void Seeed::showScatterPlot(
       if ( getNStairlinkingvars(b) != 0 )
       {
          if(colored)
-            ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fc rgb \"pink\"\n" ;
+            ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fc rgb \"DEFAULT_COLOR_STAIRLINKING\"\n" ;
          else
             ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fillstyle solid noborder fc rgb \"grey90\"\n" ;
       }
@@ -3367,7 +3361,7 @@ void Seeed::showScatterPlot(
    }
 
    if(colored)
-      ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  getNMasterconss() << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"green\"\n" ;
+      ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  getNMasterconss() << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"DEFAULT_COLOR_OPEN\"\n" ;
    else
       ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fillstyle solid noborder fc rgb \"grey50\"\n" ;
 
@@ -3377,7 +3371,7 @@ void Seeed::showScatterPlot(
    if( !draft )
    {
 	   if(colored)
-		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
+		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"DEFAULT_COLOR_NONZERO\" fill solid" << std::endl;
 	   else
 		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
    }
@@ -3401,13 +3395,10 @@ void Seeed::showScatterPlot(
          system("gnuplot helper.plg");
    }
 
-
    command << "evince " << filename << " &";
 
    system(command.str().c_str() );
 
-//   system("rm helpScatter.txt");
-//   system("rm helper.plg");
    return;
 }
 
@@ -3416,8 +3407,6 @@ SCIP_Bool Seeed::shouldCompletedByConsToMaster(){
 
    return usergiven == USERGIVEN::COMPLETED_CONSTOMASTER;
 }
-
-
 
 /** sorts the vars and conss according their numbers */
 void Seeed::sort()

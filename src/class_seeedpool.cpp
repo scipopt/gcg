@@ -869,7 +869,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                          #pragma omp critical (ostream)
                          {
                             std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to finished seeeds!" << std::endl;
-                            seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
+                            seeedPropData->newSeeeds[seeed]->showVisualisation(this);
                          }
                       }
                       #pragma omp critical (seeedptrstore)
@@ -885,7 +885,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                          #pragma omp critical (ostream)
                          {
                             std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID() << " is addded to next round seeeds!" << std::endl;
-                            seeedPropData->newSeeeds[seeed]->showScatterPlot(this);
+                            seeedPropData->newSeeeds[seeed]->showVisualisation(this);
                          }
                       }
                       #pragma omp critical (seeedptrstore)
@@ -1034,7 +1034,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                 if( verboseLevel > 2 )
                 {
                    std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
-                   seeed->showScatterPlot(this);
+                   seeed->showVisualisation(this);
                 }
                 #pragma omp critical (seeedptrstore)
                 {
@@ -1213,7 +1213,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                 if( verboseLevel > 2 )
                 {
                    std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
-                   seeed->showScatterPlot(this);
+                   seeed->showVisualisation(this);
                 }
 #pragma omp critical (seeedptrstore)
                 {
