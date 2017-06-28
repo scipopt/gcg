@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,62 +25,48 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_gp.h
- * @brief  GP file reader writing gnuplot files
- * @author Martin Bergner
- * @ingroup FILEREADERS
- *
- * This file reader will write the decomposed or original matrix to a file usuable by gnuplot. You can use this writer
- * like and other writer.
- *
- * To display your decomposition, you can write the following in the interactive shell
- * \verbatim
-GCG> write problem "prob.gp"
-\endverbatim
- * If you use this command before reading in a decomposition, you will get a picture of the original matrix. If you
- * call the writer after a decomposition was specified or detected, it will write out a picture of the structured,
- * reordered matrix  where the structure is further highlighted indicated by boxes. You can create a PDF file by then
- * calling <code>gnuplot prob.gp</code> from your systems command line. This will create a pdf file in your current
- * directory which contains the image.
+/**@file   reader_tex.h
+ * @brief  tex file reader for writing decomposition details to LaTeX files
+ * @author Hanna Franzen
+
+ * This file provides universally used parameters for visualizations.
+
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_READER_GP_H__
-#define GCG_READER_GP_H__
+#ifndef GCG_PARAMS_VISU_H__
+#define GCG_PARAMS_VISU_H__
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+#define COLOR_WHITE     "#FFFFFF"
+#define COLOR_BLUE      "#00549F"
+#define COLOR_LBLUE     "#8EBAE5"
+#define COLOR_PURPLE    "#7A6FAC"
+#define COLOR_VIOLET    "#612158"
+#define COLOR_CARMINE   "#A11035"
+#define COLOR_RED       "#CC071E"
+#define COLOR_MAGENTA   "#E30066"
+#define COLOR_ORANGE    "#F6A800"
+#define COLOR_YELLOW    "#FFED00"
+#define COLOR_GRASS     "#BDAB27"
+#define COLOR_GREEN     "#57AB27"
+#define COLOR_CYAN      "#0098A1"
+#define COLOR_TEAL      "#006165"
+#define COLOR_BLACK     "#000000"
+
+#define DEFAULT_COLOR_MASTERVARS   COLOR_WHITE   /* for mastervars (in block area) */
+#define DEFAULT_COLOR_MASTERCONS   COLOR_BLUE    /* for mastercons */
+#define DEFAULT_COLOR_LINKING      COLOR_PURPLE
+#define DEFAULT_COLOR_STAIRLINKING COLOR_MAGENTA
+#define DEFAULT_COLOR_BLOCK        COLOR_TEAL
+#define DEFAULT_COLOR_OPEN         COLOR_GREEN   /* for open (not assigned) elements */
+#define DEFAULT_COLOR_NONZERO      COLOR_BLACK
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** includes the gp file reader into SCIP */
-extern
-SCIP_RETCODE SCIPincludeReaderGp(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** writes the decomposition to the specific file */
-SCIP_RETCODE SCIPwriteGp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition, /**< whether to write decomposed problem */
-   SCIP_Bool             outputPDF           /**< if true give pdf file, if false give tex file instead */
-   );
-
-/** Getter of parameter draftmode */
-SCIP_Bool GCGgpGetDraftmode(
-   SCIP*                scip               /**< SCIP data structure */
-   );
-
-/** Setter of parameter draftmode */
-void GCGgpSetDraftmode(
-   SCIP*                scip,              /**< SCIP data structure */
-   SCIP_Bool            usedraftmode       /**< new value for draftmode */
-   );
+/* function headers here */
 
 #ifdef __cplusplus
 }
