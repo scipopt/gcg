@@ -777,6 +777,7 @@ SCIP_RETCODE setupSubproblem(
 
    /* set limits for the subproblem */
    SCIP_CALL( SCIPsetLongintParam(subscip, "limits/nodes", nstallnodes) );
+   SCIP_CALL( SCIPsetLongintParam(subscip, "limits/stallnodes", MAX(10, nstallnodes/10)) );
    SCIP_CALL( SCIPsetRealParam(subscip, "limits/time", timelimit) );
    SCIP_CALL( SCIPsetRealParam(subscip, "limits/memory", memorylimit) );
 
