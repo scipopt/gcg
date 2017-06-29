@@ -2061,7 +2061,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && pricetype != NULL && pricetype->getType() == GCG_PRICETYPE_REDCOST )
       GCGsetRootRedcostCall(origprob, newvar, pricerdata->nrootbounds );
 #else
-   GCGsetRootRedcostCall(origprob, newvar, NAN);
+   GCGsetRootRedcostCall(origprob, newvar, -1);
 #endif
 
    SCIPdebugMessage("Added variable <%s>\n", varname);
@@ -2221,7 +2221,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && pricetype->getType() == GCG_PRICETYPE_REDCOST )
       GCGsetRootRedcostCall(origprob, newvar, pricerdata->nrootbounds );
 #else
-   GCGsetRootRedcostCall(origprob, newvar, NAN);
+   GCGsetRootRedcostCall(origprob, newvar, -1);
 #endif
 
    SCIPdebugMessage("Added variable <%s>\n", varname);
