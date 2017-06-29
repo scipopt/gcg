@@ -1695,6 +1695,11 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
             int blocknr;
 
             assert(GCGvarIsOriginal(consvars[j]));
+
+            if( GCGoriginalVarGetNMastervars(consvars[j]) == 0 )
+               continue;
+            assert( GCGoriginalVarGetNMastervars(consvars[j]) > 0 );
+
             mastervar = GCGoriginalVarGetMastervars(consvars[j])[0];
             blocknr = GCGvarGetBlock(mastervar);
 
@@ -1752,6 +1757,11 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
             int blocknr;
 
             assert(GCGvarIsOriginal(consvars[j]));
+
+            if( GCGoriginalVarGetNMastervars(consvars[j]) == 0 )
+               continue;
+            assert( GCGoriginalVarGetNMastervars(consvars[j]) > 0 );
+
             mastervar = GCGoriginalVarGetMastervars(consvars[j])[0];
             blocknr = GCGvarGetBlock(mastervar);
 
@@ -2858,7 +2868,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                }
             }
             /* update subgradient product before a potential change of the stability center */
-            stabilization->updateSubgradientProduct(pricingcols);
+            SCIP_CALL( stabilization->updateSubgradientProduct(pricingcols) );
 
             SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals, pricingcols) );
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
