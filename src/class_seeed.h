@@ -350,8 +350,10 @@ public:
 
    /** returns the detectorchain */
    DEC_DETECTOR** getDetectorchain();
+
    /** returns true if this seeed was finished by finishSeeed() method of a detector */
    bool getFinishedByFinisher();
+
    /** returns the calculated hash value of this seeed */
    long getHashValue();
 
@@ -370,6 +372,7 @@ public:
    /** returns the "maximum white score" (the smaller the better) */
    SCIP_Real getMaxWhiteScore();
 
+   /** @todo comment */
    SCIP_Real getScore(
       SCORETYPE type
       );
@@ -455,6 +458,7 @@ public:
       int cons
       );
 
+   /** @todo comment */
    bool isSelected();
 
    /* method to check whether this seeed is equal to a given other seeed (calls isEqual(Seeed*)) */
@@ -473,6 +477,7 @@ public:
    bool isPropagatedBy(
       DEC_DETECTOR* detectorID
       );
+
    /** returns true if this seeed is trivial,
     *  i.e. all conss are in one block, all conss are in border, all variables linking or mastervars */
    bool isTrivial();
@@ -547,7 +552,7 @@ public:
    /** sets whether this seeed was finished by a detector */
    void setFinishedByFinisher(
       bool finished
-   );
+      );
 
    /** sets number of blocks, only increasing number allowed */
    SCIP_RETCODE setNBlocks(

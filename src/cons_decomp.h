@@ -234,6 +234,23 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
    const char*           varname              /**< name of the variable */
    );
 
+
+SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
+   SCIP*                 scip,                /**< SCIP data structure */
+   int                   blockNumberCandidate /**< name of the variable */
+   );
+
+ int SCIPconshdlrDecompGetNBlockNumberCandidates(
+   SCIP*                 scip                /**< SCIP data structure */
+    );
+
+ int SCIPconshdlrDecompGetBlockNumberCandidate(
+    SCIP*                 scip,                /**< SCIP data structure */
+    int                   index
+     );
+
+
+
 /** rejects and deletes the current user seeed */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
    SCIP*                 scip                 /**< SCIP data structure */
@@ -259,6 +276,8 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    SCIP* scip,
    SCIP_Bool updatelist
    );
+
+
 
 SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
    SCIP*                   scip

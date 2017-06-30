@@ -28,7 +28,7 @@
 /**@file   class_seeedpool.cpp
  * @brief  class with functions for seeedpoolnTotalSeeeds
  * @author Michael Bastubbe
- *
+ * @author Julius Hense
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -86,19 +86,18 @@
 
 /* @todo use structs in c++ or would it be better to create a (local) conshdlrData class? */
 /** constraint handler data */
-struct SCIP_ConshdlrData
-{
-   DEC_DECOMP** decdecomps;      /**< array of decomposition structures */
-   DEC_DETECTOR** detectors;     /**< array of structure detectors */
-   int* priorities;              /**< priorities of the detectors */
-   int ndetectors;               /**< number of detectors */
-   SCIP_CLOCK* detectorclock;    /**< clock to measure detection time */
-   SCIP_Bool hasrun;             /**< flag to indicate whether we have already detected */
-   int ndecomps;                 /**< number of decomposition structures  */
-   SCIP_Bool createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the
-                                   *< master if no other specified */
-   int nthreads;                 /**< number of threads in case OpenMP is used */
-};
+//struct SCIP_ConshdlrData
+//{
+//   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
+//   DEC_DETECTOR**        detectors;          /**< array of structure detectors */
+//   int*                  priorities;         /**< priorities of the detectors */
+//   int                   ndetectors;         /**< number of detectors */
+//   SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
+//   SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
+//   int                   ndecomps;           /**< number of decomposition structures  */
+//   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+//   int                   nthreads;
+//};
 
 namespace gcg{
 
@@ -316,17 +315,17 @@ SCIP_Bool cmpSeeedsMaxWhite(
    return ( i->getMaxWhiteScore() < j->getMaxWhiteScore() );
 }
 
+/** @todo comment */
 SCIP_Bool cmpSeeedsBorderArea(SeeedPtr i, SeeedPtr j)
 {
    return (i->borderareascore < j->borderareascore );
 }
 
-
+/** @todo comment */
 SCIP_Bool cmpSeeedsClassic(SeeedPtr i, SeeedPtr j)
 {
    return (i->score < j->score );
 }
-
 
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout(
@@ -496,13 +495,13 @@ SCIP_Bool seeedIsNoDuplicate(
 
 /** constructor */
 Seeedpool::Seeedpool(
-   SCIP* givenScip, /**< SCIP data structure */
+   SCIP* givenScip,
    const char* conshdlrName,
    SCIP_Bool _transformed
    ) :
-   scip( givenScip ), currSeeeds( 0 ), incompleteSeeeds( 0 ), ancestorseeeds( 0 ), nVars( SCIPgetNVars( givenScip ) ),
-   nConss( SCIPgetNConss( givenScip ) ), nnonzeros( 0 ), nDetectors( 0 ), nFinishingDetectors( 0 ),
-   candidatesNBlocks( 0 ), transformed( _transformed )
+   scip( givenScip ), nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
+   nFinishingDetectors( 0 ), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed ),
+   incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 )
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
@@ -682,6 +681,13 @@ Seeedpool::Seeedpool(
 
    /*  init  seeedpool with empty seeed */
    addSeeedToCurr( new Seeed( scip, - 1, nConss, nVars ) );
+
+   for ( int i = 0; i < SCIPconshdlrDecompGetNBlockNumberCandidates(scip); ++i )
+   {
+         addUserCandidatesNBlocks(SCIPconshdlrDecompGetBlockNumberCandidate(scip, i) );
+   }
+
+
 
 } //end constructor
 
@@ -1347,6 +1353,44 @@ void Seeedpool::findDecompositions()
    }
 }*/
 
+/** adds a seeed to current seeeds */
+void Seeedpool::addSeeedToAncestor(
+   SeeedPtr seeed
+   )
+{
+   ancestorseeeds.push_back(seeed);
+}
+
+/** adds a seeed to current seeeds */
+void Seeedpool::addSeeedToCurr(
+   SeeedPtr seeed
+   )
+{
+   currSeeeds.push_back( seeed );
+}
+
+/** adds a seeed to finished seeeds */
+void Seeedpool::addSeeedToFinished(
+   SeeedPtr seeed
+   )
+{
+   finishedSeeeds.push_back( seeed );
+}
+
+/** adds a seeed to incomplete seeeds */
+void Seeedpool::addSeeedToIncomplete(
+   SeeedPtr seeed
+   )
+{
+   incompleteSeeeds.push_back(seeed);
+}
+
+/** clear ancestor seeed data structure */
+void Seeedpool::clearAncestorSeeeds()
+{
+   ancestorseeeds.clear();
+}
+
 /** clears current seeed data structure */
 void Seeedpool::clearCurrentSeeeds()
 {
@@ -1364,6 +1408,16 @@ void Seeedpool::clearIncompleteSeeeds()
    incompleteSeeeds.clear();
 }
 
+/** returns a seeed from ancestor seeed data structure */
+SeeedPtr Seeedpool::getAncestorSeeed(
+   int seeedindex /**< index of seeed in current (open) seeed data structure */
+   )
+{
+   assert( 0 <= seeedindex && seeedindex < (int) ancestorseeeds.size() );
+
+   return ancestorseeeds[seeedindex];
+}
+
 /** returns a seeed from current (open) seeed data structure */
 SeeedPtr Seeedpool::getCurrentSeeed(
    int seeedindex /**< index of seeed in current (open) seeed data structure */
@@ -1373,23 +1427,6 @@ SeeedPtr Seeedpool::getCurrentSeeed(
 
    return currSeeeds[seeedindex];
 }
-
-/** adds a seeed to current seeeds */
-void Seeedpool::addSeeedToAncestor(
-   SeeedPtr seeed
-   )
-{
-   ancestorseeeds.push_back(seeed);
-}
-
-/** adds a seeed to incomplete seeeds */
-void Seeedpool::addSeeedToIncomplete(
-   SeeedPtr seeed
-   )
-{
-   incompleteSeeeds.push_back(seeed);
-}
-
 
 /** returns a seeed from finished seeed data structure */
 SeeedPtr Seeedpool::getFinishedSeeed(
@@ -1411,6 +1448,12 @@ SeeedPtr Seeedpool::getIncompleteSeeed(
    return incompleteSeeeds[seeedindex];
 }
 
+/** returns size of ancestor seeed data structure */
+int Seeedpool::getNAncestorSeeeds()
+{
+   return currSeeeds.size();
+}
+
 /** returns size of current (open) seeed data structure */
 int Seeedpool::getNCurrentSeeeds()
 {
@@ -1429,6 +1472,7 @@ int Seeedpool::getNIncompleteSeeeds()
    return incompleteSeeeds.size();
 
 }
+
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
 void Seeedpool::translateSeeedData(
    Seeedpool* origpool,
@@ -1489,13 +1533,6 @@ void Seeedpool::translateSeeeds(
    newseeeds = getTranslatedSeeeds( origseeeds, rowothertothis, rowthistoother, colothertothis, colthistoother );
 }
 
-/** registers translated seeeds from the original problem */
-void Seeedpool::populate(
-   std::vector<SeeedPtr> seeeds
-   )
-{
-   seeedstopopulate = seeeds;
-}
 /** calculates necessary data for translating seeeds and classifiers */
 void Seeedpool::calcTranslationMapping(
    Seeedpool* origpool,
@@ -1780,6 +1817,14 @@ std::vector<VarClassifier*> Seeedpool::getTranslatedVarClassifiers(
    return newclassifiers;
 }
 
+/** registers translated seeeds from the original problem */
+void Seeedpool::populate(
+   std::vector<SeeedPtr> seeeds
+   )
+{
+   seeedstopopulate = seeeds;
+}
+
 /** sorts the seeed and calculates a its implicit assignments, hashvalue and evaluation */
 SCIP_RETCODE Seeedpool::prepareSeeed(
    SeeedPtr seeed
@@ -1791,22 +1836,6 @@ SCIP_RETCODE Seeedpool::prepareSeeed(
    seeed->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
 
    return SCIP_OKAY;
-}
-
-/** adds a seeed to current seeeds */
-void Seeedpool::addSeeedToCurr(
-   SeeedPtr seeed
-   )
-{
-   currSeeeds.push_back( seeed );
-}
-
-/** adds a seeed to finished seeeds */
-void Seeedpool::addSeeedToFinished(
-   SeeedPtr seeed
-   )
-{
-   finishedSeeeds.push_back( seeed );
 }
 
 /** sorts seeeds in allrelevantseeeds data structure by ascending id */
@@ -1994,13 +2023,32 @@ std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
    std::vector<int> toreturn( 0 );
    SCIP_Bool output = false;
 
-   /** firstly: sort the current candidates by the number of occurences */
+   /** first: get the block number candidates directly given by the user */
+   if( output && !usercandidatesnblocks.empty() )
+   {
+      std::cout << "nuber of user block number candidates: " << usercandidatesnblocks.size() << std::endl;
+   }
+
+   for( size_t i = 0; i < usercandidatesnblocks.size() ; ++i)
+   {
+      toreturn.push_back( usercandidatesnblocks[i]);
+
+      if( output )
+      {
+         std::cout << usercandidatesnblocks[i] << " " << std::endl;
+      }
+
+   }
+
+   /** second: sort the current candidates */
    std::sort( candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
 
    /** optional: print sorted candidates */
    if( output )
    {
       std::cout << "nCandidates: " << candidatesNBlocks.size() << std::endl;
+
+
       for( size_t i = 0; i < candidatesNBlocks.size(); ++ i )
          std::cout << "nblockcandides: " << candidatesNBlocks[i].first << " ; " << candidatesNBlocks[i].second
             << " times prop " << std::endl;
@@ -2036,6 +2084,33 @@ void Seeedpool::addCandidatesNBlocks(
          candidatesNBlocks.push_back( std::pair<int, int>( candidate, 1 ) );
       }
    }
+}
+
+/* @todo comment */
+void Seeedpool::addUserCandidatesNBlocks(
+   int candidate
+   )
+{
+   bool alreadyIn = false;
+   for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
+   {
+      if( usercandidatesnblocks[i] == candidate )
+      {
+         std::cout << candidate << " is already given by the user as a block number candidate " << std::endl;
+         return;
+      }
+   }
+   if( !alreadyIn )
+   {
+      std::cout << "added user block number candidate : " << candidate << std::endl;
+      usercandidatesnblocks.push_back(candidate);
+   }
+}
+
+/** @todo comment! */
+int Seeedpool::getNUserCandidatesNBlocks()
+{
+   return (int) usercandidatesnblocks.size();
 }
 
 /** calculates and adds block size candidates using constraint classifications and variable classifications */

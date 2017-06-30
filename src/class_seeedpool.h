@@ -28,6 +28,7 @@
 /**@file   class_seeedpool.h
  * @brief  class with functions for seeed pool where a seeed is a (potentially incomplete) description of a decomposition (not to confuse with the band from German capital)
  * @author Michael Bastubbe
+ * @author Julius Hense
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -115,7 +116,8 @@ private:
 //   int ndecompositions;          /**< number of decompositions found by the detectors */
 
    /** oracle data */
-   std::vector<std::pair<int, int> > candidatesNBlocks;  /**< candidate for the number of blocks  */
+   std::vector<int> usercandidatesnblocks;               /**< candidate for the number of blocks that were given by the user and thus will be handled priorized */
+   std::vector<std::pair<int, int>> candidatesNBlocks;   /**< candidate for the number of blocks  */
 
    std::vector<ConsClassifier*> consclassescollection;   /**< collection of different constraint class distributions  */
    std::vector<VarClassifier*> varclassescollection;     /**< collection of different variabale class distributions   */
@@ -131,7 +133,7 @@ public:
    std::vector<SeeedPtr> incompleteSeeeds;   /**< vector of incomplete seeeds that can be used for initialization */
    std::vector<SeeedPtr> currSeeeds;         /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> finishedSeeeds;     /**< vector of finished seeeds */
-   std::vector<SeeedPtr> ancestorseeeds;     /** collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
+   std::vector<SeeedPtr> ancestorseeeds;     /**< @todo revise! collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
 
    /** constructor */
    Seeedpool(
@@ -164,6 +166,29 @@ public:
    /** calls findSeeeds method and translates the resulting seeeds into decompositions */
    void findDecompositions();
 
+   /** adds a seeed to current seeeds */
+   void addSeeedToAncestor(
+      SeeedPtr seeed
+      );
+
+   /** adds a seeed to current seeeds */
+   void addSeeedToCurr(
+      SeeedPtr seeed
+      );
+
+   /** adds a seeed to finished seeeds */
+   void addSeeedToFinished(
+      SeeedPtr seeed
+      );
+
+   /** adds a seeed to incomplete seeeds */
+   void addSeeedToIncomplete(
+      SeeedPtr seeed
+      );
+
+   /** clears ancestor seeed data structure */
+   void clearAncestorSeeeds();
+
    /** clears current seeed data structure */
    void clearCurrentSeeeds();
 
@@ -172,6 +197,11 @@ public:
 
    /** clears incomplete seeed data structure */
    void clearIncompleteSeeeds();
+
+   /** returns a seeed from ancestor seeed data structure */
+   SeeedPtr getAncestorSeeed(
+      int seeedindex /**< index of seeed in ancestor seeed data structure */
+      );
 
    /** returns a seeed from current (open) seeed data structure */
    SeeedPtr getCurrentSeeed(
@@ -187,6 +217,9 @@ public:
    SeeedPtr getIncompleteSeeed(
       int seeedindex /**< index of seeed in incomplete seeed data structure */
       );
+
+   /** returns size of ancestor seeed data structure */
+   int getNAncestorSeeeds();
 
    /** returns size of current (open) seeed data structure */
    int getNCurrentSeeeds();
@@ -225,27 +258,7 @@ public:
       SeeedPtr seeed
       );
 
-   /** adds a seeed to current seeeds */
-   void addSeeedToAncestor(
-      SeeedPtr seeed
-      );
-
-   /** adds a seeed to current seeeds */
-   void addSeeedToCurr(
-      SeeedPtr seeed
-      );
-
-   /** adds a seeed to finished seeeds */
-   void addSeeedToFinished(
-      SeeedPtr seeed
-      );
-
-   /** adds a seeed to incomplete seeeds */
-   void addSeeedToIncomplete(
-      SeeedPtr seeed
-      );
-
-   /** @todo revise comment! sorts seeeds in allrelevantseeeds data structure by ascending id */
+   /** @todo revise comment and probably rename! sorts seeeds in allrelevantseeeds data structure by ascending id */
    void sortAllRelevantSeeeds();
 
    /** returns the variable indices of the coefficient matrix for a constraint */
@@ -344,6 +357,14 @@ public:
    void addCandidatesNBlocks(
       int candidate /**< candidate for block size */
       );
+
+   /** @todo comment */
+   void addUserCandidatesNBlocks(
+      int candidate /**< candidate for block size */
+      );
+
+   /** @todo comment */
+   int getNUserCandidatesNBlocks();
 
    /** calculates and adds block size candidates using constraint classifications and variable classifications */
    void calcCandidatesNBlocks();

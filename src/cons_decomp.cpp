@@ -179,6 +179,8 @@ struct SCIP_ConshdlrData
    int                    currscoretype;
    SCIP_Bool              resortcandidates;
 
+   std::vector<int>*       userblocknrcandidates;
+
 };
 
 enum weightinggpresolvedoriginaldecomps{
@@ -928,6 +930,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 
    delete &conshdlrdata->selected;
    delete &conshdlrdata->listall;
+   delete &conshdlrdata->userblocknrcandidates;
 
    SCIPfreeMemory(scip, &conshdlrdata);
 
@@ -1010,6 +1013,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->seeedcounter = 0;
    conshdlrdata->currscoretype = scoretype::MAX_WHITE;
    conshdlrdata->resortcandidates = TRUE;
+   conshdlrdata->userblocknrcandidates = new std::vector<int>(0);
 
  //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->decdecomps, conshdlrdata->sizedecomps) );
  //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->allrelevantfinishedseeeds, conshdlrdata->sizedecomps) );
@@ -2456,6 +2460,126 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToMaster(
 
 }
 
+SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
+   SCIP*                 scip,                /**< SCIP data structure */
+   int                   blockNumberCandidate /**< name of the variable */
+   ){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   int varindex;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->userblocknrcandidates->push_back(blockNumberCandidate);
+
+   if( conshdlrdata->seeedpool != NULL ){
+      conshdlrdata->seeedpool->addUserCandidatesNBlocks(blockNumberCandidate);
+   }
+
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+         conshdlrdata->seeedpoolunpresolved->addUserCandidatesNBlocks(blockNumberCandidate);
+
+   return SCIP_OKAY;
+}
+
+
+int SCIPconshdlrDecompGetNBlockNumberCandidates(
+  SCIP*                 scip                /**< SCIP data structure */
+   ){
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   int varindex;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   return (int) conshdlrdata->userblocknrcandidates->size();
+}
+
+int SCIPconshdlrDecompGetBlockNumberCandidate(
+   SCIP*                 scip,                /**< SCIP data structure */
+   int                   index
+    ){
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   int varindex;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   return conshdlrdata->userblocknrcandidates->at(index);
+}
+
+
+
+
+SCIP_RETCODE SCIPconshdlrDecompBlockNumberCandidateToSeeedpool(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP_Bool             transformed
+   ){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   int varindex;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   for ( size_t i = 0; i < conshdlrdata->userblocknrcandidates->size(); ++i )
+   {
+      if( transformed )
+         conshdlrdata->seeedpool->addUserCandidatesNBlocks(conshdlrdata->userblocknrcandidates->at(i) );
+      else
+         conshdlrdata->seeedpoolunpresolved->addUserCandidatesNBlocks(conshdlrdata->userblocknrcandidates->at(i) );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
+
 
 /** sets a variable by name to the linking variables in the current user seeed */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
@@ -2464,26 +2588,26 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
    )
 {
    SCIP_CONSHDLR* conshdlr;
-      SCIP_CONSHDLRDATA* conshdlrdata;
-      gcg::Seeedpool* currseeedpool;
-      int varindex;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   int varindex;
 
-      conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
-      if( conshdlr == NULL )
-      {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-         return SCIP_ERROR;
-      }
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
 
-      conshdlrdata = SCIPconshdlrGetData(conshdlr);
-      assert(conshdlrdata != NULL);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
 
-      if( conshdlrdata->curruserseeed == NULL )
-      {
-         SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
-         return SCIP_OKAY;
-      }
+   if( conshdlrdata->curruserseeed == NULL )
+   {
+      SCIPwarningMessage(scip, "there is no current user seeed, you have to create one..!\n");
+      return SCIP_OKAY;
+   }
 
       currseeedpool = conshdlrdata->curruserseeed->stemsFromUnpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
       varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );

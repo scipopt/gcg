@@ -81,11 +81,11 @@ Seeed::Seeed(
    ) :
    scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
    masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), openVars( 0 ),
-   openConss( 0 ) , hashvalue( 0 ), score( 1. ), maxwhitescore( 1. ), borderareascore( 1. ), changedHashvalue( false ),
-   isselected( false ), isFinishedByFinisher( false ), detectorChain( 0 ), detectorChainFinishingUsed( 0 ),
-   detectorClockTimes( 0 ), pctVarsToBorder( 0 ), pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ),
-   pctConssToBlock( 0 ), pctConssFromFree( 0 ), nNewBlocks( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ),
-   detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
+   openConss( 0 ) , hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
+   detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
+   pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
+   nNewBlocks( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), score( 1. ), maxwhitescore( 1. ),
+   borderareascore( 1. ), detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
    isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
 {
    for( int i = 0; i < nConss; ++ i )
@@ -2551,22 +2551,22 @@ SCIP_Real Seeed::getMaxWhiteScore()
    return maxwhitescore;
 }
 
-/** return the "maximum white score" (the smaller the better) */
+/** @todo comment */
 SCIP_Real Seeed::getScore(
    SCORETYPE type
-   ){
-
+   )
+{
    if( type == scoretype::MAX_WHITE )
       return maxwhitescore;
 
    if( type == scoretype::CLASSIC )
-         return score;
+      return score;
 
    if( type == scoretype::BORDER_AREA )
       return borderareascore;
 
-   }
-
+   return 0;
+}
 
 /** returns number of blocks */
 int Seeed::getNBlocks()
@@ -2876,11 +2876,13 @@ bool Seeed::isTrivial()
    return false;
 }
 
-/** returns true if the var is assigned to the block */
+/** @todo comment */
 bool Seeed::isSelected()
 {
    return isselected;
 }
+
+/** returns true if the var is assigned to the block */
 bool Seeed::isVarBlockvarOfBlock(
    int var,
    int block
