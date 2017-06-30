@@ -448,6 +448,39 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the display statistics command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
+{  /*lint --e{715}*/
+
+   char* blocknrchar;
+   int blocknr;
+   char tempstr[SCIP_MAXSTRLEN];
+   SCIP_Bool endoffile;
+   SCIP_RETCODE retcode;
+
+   tempstr[0] = '\0';
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   (void) SCIPsnprintf(tempstr, SCIP_MAXSTRLEN, "Please type the block number candidate you want to add: ");
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, (char*)tempstr, &blocknrchar, &endoffile) );
+
+   blocknr = atoi( blocknrchar );
+   if ( blocknr == 0 )
+   {
+      SCIPdialogMessage(scip, NULL,
+         "This is not a compatible number; no new block number candidate added. \n");
+      return SCIP_OKAY;
+   }
+
+   SCIPconshdlrDecompAddBlockNumberCandidate(scip, blocknr);
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
+
 /** dialog execution method for the display decomposition command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
 {  /*lint --e{715}*/
@@ -1117,7 +1150,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    if( !SCIPdialogHasEntry(root, "detect") )
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDetect, NULL, NULL,
-            "detect", "Detect structure", FALSE, NULL) );
+            "detect", "detect structure", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
@@ -1328,6 +1361,35 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+
+   /* change */
+      if( !SCIPdialogHasEntry(root, "change") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+               NULL,
+               SCIPdialogExecMenu, NULL, NULL,
+               "change", "change the problem", TRUE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+      }
+      if( SCIPdialogFindEntry(root, "change", &submenu) != 1 )
+      {
+         SCIPerrorMessage("change sub menu not found\n");
+         return SCIP_PLUGINNOTFOUND;
+      }
+
+      /* change add */
+      if( !SCIPdialogHasEntry(submenu, "blocknr") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+               NULL,
+               GCGdialogExecChangeAddBlocknr, NULL, NULL,
+               "blocknr", "add block number candidate", FALSE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      }
+
 
 
    return SCIP_OKAY;

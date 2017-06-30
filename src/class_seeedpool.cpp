@@ -92,18 +92,18 @@
 #define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
 
 /** constraint handler data */
-struct SCIP_ConshdlrData
-{
-   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
-   DEC_DETECTOR**        detectors;          /**< array of structure detectors */
-   int*                  priorities;         /**< priorities of the detectors */
-   int                   ndetectors;         /**< number of detectors */
-   SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
-   SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
-   int                   ndecomps;           /**< number of decomposition structures  */
-   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
-   int                   nthreads;
-};
+//struct SCIP_ConshdlrData
+//{
+//   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
+//   DEC_DETECTOR**        detectors;          /**< array of structure detectors */
+//   int*                  priorities;         /**< priorities of the detectors */
+//   int                   ndetectors;         /**< number of detectors */
+//   SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
+//   SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
+//   int                   ndecomps;           /**< number of decomposition structures  */
+//   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+//   int                   nthreads;
+//};
 
 namespace gcg {
 
@@ -597,6 +597,13 @@ Seeedpool::Seeedpool(
 
    /*  init  seeedpool with empty seeed */
    addSeeedToCurr( new Seeed( scip, -1, nDetectors, nConss, nVars) );
+
+
+   for ( int i = 0; i < SCIPconshdlrDecompGetNBlockNumberCandidates(scip); ++i )
+   {
+         addUserCandidatesNBlocks(SCIPconshdlrDecompGetBlockNumberCandidate(scip, i) );
+   }
+
 
 
 }//end constructor
@@ -1815,12 +1822,31 @@ std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
    std::vector<int> toreturn(0);
    SCIP_Bool output = FALSE;
 
-   /** first: sort the current candidates */
+   /** first: get the block number candidates directly given by the user */
+   if( output && !usercandidatesnblocks.empty() )
+   {
+      std::cout << "nuber of user block number candidates: " << usercandidatesnblocks.size() << std::endl;
+   }
+
+   for( size_t i = 0; i < usercandidatesnblocks.size() ; ++i)
+   {
+      toreturn.push_back( usercandidatesnblocks[i]);
+
+      if( output )
+      {
+         std::cout << usercandidatesnblocks[i] << " " << std::endl;
+      }
+
+   }
+
+   /** second: sort the current candidates */
    std::sort(candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
 
    if( output )
    {
       std::cout << "nCandidates: " << candidatesNBlocks.size() << std::endl;
+
+
       for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
          std::cout << "nblockcandides: " << candidatesNBlocks[i].first << " ; " << candidatesNBlocks[i].second << " times prop " << std::endl;
    }
@@ -1855,6 +1881,37 @@ void Seeedpool::addCandidatesNBlocks(
    }
    return;
 }
+
+
+void Seeedpool::addUserCandidatesNBlocks(
+   int                 candidate            /**< candidate for block size */
+   ){
+
+   bool alreadyIn = false;
+   for( size_t i = 0; i < candidatesNBlocks.size(); ++i )
+   {
+      if( usercandidatesnblocks[i] == candidate)
+      {
+         std::cout <<  candidate <<  " is already given by the user as a block number candidate " << std::endl;
+         return;
+      }
+   }
+   if( !alreadyIn )
+   {
+      std::cout << "added user block number candidate : " << candidate << std::endl;
+      usercandidatesnblocks.push_back( candidate );
+   }
+
+
+   return;
+}
+
+int Seeedpool::getNUserCandidatesNBlocks(
+      ){
+   return (int) usercandidatesnblocks.size();
+}
+
+
 
 void Seeedpool::calcCandidatesNBlocks()
  {
