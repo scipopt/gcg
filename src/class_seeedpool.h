@@ -354,12 +354,13 @@ public:
       );
 
    /** creates a seeed for a given decomposition
-    *  the resulting seeed will not have a detectorchaininfo or any ancestor or finishing detector data */
+    *  the resulting seeed will not have a detectorchaininfo or any ancestor or finishing detector data
+    *  only use this method if the seeedpool is for the transformed problem
+    *  the resulting seeed may only be added to the seeedpool for the presolved problem */
    SCIP_RETCODE createSeeedFromDecomp(
-      DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
-      SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
+      DEC_DECOMP* decomp, /**< decomposition the seeed is created for */
+      SeeedPtr* newseeed /**< the new seeed created from the decomp */
       );
-
 
    /**
     * returns transformation information

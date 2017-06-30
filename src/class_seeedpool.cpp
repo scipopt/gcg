@@ -3010,11 +3010,13 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 }
 
 /** creates a seeed for a given decomposition
- *  the resulting seeed will not have a detectorchaininfo or any ancestor or finishing detector data */
+ *  the resulting seeed will not have a detectorchaininfo or any ancestor or finishing detector data
+ *  only use this method if the seeedpool is for the transformed problem
+ *  the resulting seeed may only be added to the seeedpool for the presolved problem */
 SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
-      DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
-      SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
-  )
+   DEC_DECOMP* decomp,
+   SeeedPtr* newseeed
+   )
 {
    assert( decomp != NULL );
    assert( DECdecompCheckConsistency( scip, decomp ) );
@@ -3065,7 +3067,6 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       {
          if( stairlinkingvars[b][v] != NULL )
          {
-            /* @todo probvar re-transformation? -> SCIPgetTransformedVar(...) might do (see SCIP doc)? */
             varindex = getIndexForVar( stairlinkingvars[b][v] );
             seeed->bookAsStairlinkingVar( varindex, b );
          }
