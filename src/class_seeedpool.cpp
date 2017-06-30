@@ -1364,7 +1364,7 @@ void Seeedpool::addSeeedToAncestor(
    SeeedPtr seeed
    )
 {
-   ancestorseeeds.push_back(seeed);
+   ancestorseeeds.push_back( seeed );
 }
 
 /** adds a seeed to current seeeds */
@@ -1388,7 +1388,7 @@ void Seeedpool::addSeeedToIncomplete(
    SeeedPtr seeed
    )
 {
-   incompleteSeeeds.push_back(seeed);
+   incompleteSeeeds.push_back( seeed );
 }
 
 /** clear ancestor seeed data structure */

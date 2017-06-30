@@ -570,10 +570,10 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromPresolved(
       }
 
 
-      for( size_t i = 0; i < conshdlrdata->seeedpool->incompleteSeeeds.size(); ++i)
+      for( size_t i = 0; i < conshdlrdata->seeedpool->getNIncompleteSeeeds(); ++i)
       {
-         if( conshdlrdata->seeedpool->incompleteSeeeds[i]->getID() == seeedid )
-            return conshdlrdata->seeedpool->incompleteSeeeds[i];
+         if( conshdlrdata->seeedpool->getIncompleteSeeed( i )->getID() == seeedid )
+            return conshdlrdata->seeedpool->getIncompleteSeeed( i );
       }
 
       for( size_t i = 0; i < conshdlrdata->seeedpool->finishedSeeeds.size(); ++i)
@@ -606,10 +606,10 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromUnpresolved(
       conshdlrdata = SCIPconshdlrGetData(conshdlr);
       assert(conshdlrdata != NULL);
 
-      for( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.size(); ++i)
+      for( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds(); ++i)
       {
-         if(  conshdlrdata->seeedpoolunpresolved->incompleteSeeeds[i]->getID() == seeedid )
-            return conshdlrdata->seeedpoolunpresolved->incompleteSeeeds[i];
+         if(  conshdlrdata->seeedpoolunpresolved->getIncompleteSeeed( i )->getID() == seeedid )
+            return conshdlrdata->seeedpoolunpresolved->getIncompleteSeeed( i );
       }
 
       for( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->ancestorseeeds.size(); ++i)
@@ -2087,10 +2087,10 @@ SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
 
 
    /** get unfinished unpresolved */
-   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.size() ; ++i)
+   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds(); ++i)
    {
       SeeedPtr seeed;
-      seeed = conshdlrdata->seeedpoolunpresolved->incompleteSeeeds[i];
+      seeed = conshdlrdata->seeedpoolunpresolved->getIncompleteSeeed( i );
       seeed->isfromunpresolved = TRUE;
 
       if( seeed->isSelected() || (!selectedexists && seeed->usergiven != gcg::USERGIVEN::NOT && !seeed->isComplete() ) )
@@ -2103,18 +2103,18 @@ SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
 
 
    /** get unfinished presolved */
-   for( i = 0; i < conshdlrdata->seeedpool->incompleteSeeeds.size() ; ++i)
+   for( i = 0; i < conshdlrdata->seeedpool->getNIncompleteSeeeds(); ++i)
    {
       SeeedPtr seeed;
-      seeed = conshdlrdata->seeedpool->incompleteSeeeds[i];
+      seeed = conshdlrdata->seeedpool->getIncompleteSeeed( i );
 
       if( seeed->isSelected() || (!selectedexists && seeed->usergiven != gcg::USERGIVEN::NOT && !seeed->isComplete() ) )
          unfinishedpresolved.push_back(seeed);
    }
 
    /** clear old seeds   */
-   conshdlrdata->seeedpoolunpresolved->currSeeeds.clear();
-   conshdlrdata->seeedpool->currSeeeds.clear();
+   conshdlrdata->seeedpoolunpresolved->clearCurrentSeeeds();
+   conshdlrdata->seeedpool->clearCurrentSeeeds();
  //  conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.clear();
  //  conshdlrdata->seeedpool->incompleteSeeeds.clear();
 
@@ -2180,10 +2180,10 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
     }
 
    /** 2) add presolved unfinished */
-   for( i = 0; conshdlrdata->seeedpool != NULL && i <  (size_t) conshdlrdata->seeedpool->incompleteSeeeds.size() ; ++i)
+   for( i = 0; conshdlrdata->seeedpool != NULL && i <  (size_t) conshdlrdata->seeedpool->getNIncompleteSeeeds(); ++i)
    {
       SeeedPtr seeed;
-      seeed = conshdlrdata->seeedpool->incompleteSeeeds[i];
+      seeed = conshdlrdata->seeedpool->getIncompleteSeeed( i );
 
       conshdlrdata->listall->push_back(seeed);
    }
@@ -2199,10 +2199,10 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    }
 
    /** 4) add unpresolved partial */
-   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.size() ; ++i )
+   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds(); ++i )
    {
       SeeedPtr seeed;
-      seeed = conshdlrdata->seeedpoolunpresolved->incompleteSeeeds[i];
+      seeed = conshdlrdata->seeedpoolunpresolved->getIncompleteSeeed( i );
       seeed->isfromunpresolved = TRUE;
 
       conshdlrdata->listall->push_back(seeed);
@@ -2709,7 +2709,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       if ( !conshdlrdata->curruserseeed->stemsFromUnpresolved )
          SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, conshdlrdata->curruserseeed) );
       else
-         conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.push_back(conshdlrdata->curruserseeed);
+         conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete( conshdlrdata->curruserseeed );
 
    }
 
@@ -2954,8 +2954,8 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
    assert(conshdlrdata != NULL);
 
    return ( (conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->finishedSeeeds.size() > 0 )  ||
-      ( conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->incompleteSeeeds.size() > 0 ) ||
-      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.size() > 0 ) ) ;
+      ( conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->getNIncompleteSeeeds() > 0 ) ||
+      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->getNIncompleteSeeeds() > 0 ) ) ;
 }
 
 /** returns TRUE iff there is at least one full decompositions */
