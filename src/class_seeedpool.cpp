@@ -315,16 +315,22 @@ SCIP_Bool cmpSeeedsMaxWhite(
    return ( i->getMaxWhiteScore() < j->getMaxWhiteScore() );
 }
 
-/** @todo comment */
-SCIP_Bool cmpSeeedsBorderArea(SeeedPtr i, SeeedPtr j)
+/** returns TRUE if seeed i has a lower border area score than seeed j */
+SCIP_Bool cmpSeeedsBorderArea(
+   SeeedPtr i,
+   SeeedPtr j
+   )
 {
-   return (i->borderareascore < j->borderareascore );
+   return ( i->borderareascore < j->borderareascore );
 }
 
-/** @todo comment */
-SCIP_Bool cmpSeeedsClassic(SeeedPtr i, SeeedPtr j)
+/** returns TRUE if seeed i has a lower score than seeed j */
+SCIP_Bool cmpSeeedsClassic(
+   SeeedPtr i,
+   SeeedPtr j
+   )
 {
-   return (i->score < j->score );
+   return ( i->score < j->score );
 }
 
 /* method to thin out the vector of given seeeds */
@@ -1226,7 +1232,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    return finishedSeeeds;
  }
 
-/* @todo comment */
+/* sorts seeeds in finished seeeds data structure according to their score */
  void Seeedpool::sortFinishedForScore()
 {
    if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_WHITE )
@@ -2086,7 +2092,7 @@ void Seeedpool::addCandidatesNBlocks(
    }
 }
 
-/* @todo comment */
+/** adds a candidate for block size given by the user */
 void Seeedpool::addUserCandidatesNBlocks(
    int candidate
    )
@@ -2107,7 +2113,7 @@ void Seeedpool::addUserCandidatesNBlocks(
    }
 }
 
-/** @todo comment! */
+/** returns number of user-given block size candidates */
 int Seeedpool::getNUserCandidatesNBlocks()
 {
    return (int) usercandidatesnblocks.size();

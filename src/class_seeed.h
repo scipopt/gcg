@@ -372,7 +372,7 @@ public:
    /** returns the "maximum white score" (the smaller the better) */
    SCIP_Real getMaxWhiteScore();
 
-   /** @todo comment */
+   /** returns the score of the seeed (depending on used scoretype) */
    SCIP_Real getScore(
       SCORETYPE type
       );
@@ -458,7 +458,7 @@ public:
       int cons
       );
 
-   /** @todo comment */
+   /** returns true if the seeed is selected */
    bool isSelected();
 
    /* method to check whether this seeed is equal to a given other seeed (calls isEqual(Seeed*)) */

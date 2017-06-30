@@ -2551,7 +2551,7 @@ SCIP_Real Seeed::getMaxWhiteScore()
    return maxwhitescore;
 }
 
-/** @todo comment */
+/** returns the score of the seeed (depending on used scoretype) */
 SCIP_Real Seeed::getScore(
    SCORETYPE type
    )
@@ -2876,7 +2876,7 @@ bool Seeed::isTrivial()
    return false;
 }
 
-/** @todo comment */
+/** returns true if the seeed is selected */
 bool Seeed::isSelected()
 {
    return isselected;

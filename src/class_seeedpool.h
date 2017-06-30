@@ -154,7 +154,7 @@ public:
     *  @return user has to free seeeds */
    std::vector<SeeedPtr> findSeeeds();
 
-   /* @todo comment */
+   /* sorts seeeds in finished seeeds data structure according to their score */
    void sortFinishedForScore();
 
    /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
@@ -358,12 +358,12 @@ public:
       int candidate /**< candidate for block size */
       );
 
-   /** @todo comment */
+   /** adds a candidate for block size given by the user */
    void addUserCandidatesNBlocks(
       int candidate /**< candidate for block size */
       );
 
-   /** @todo comment */
+   /** returns number of user-given block size candidates */
    int getNUserCandidatesNBlocks();
 
    /** calculates and adds block size candidates using constraint classifications and variable classifications */
