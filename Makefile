@@ -205,6 +205,7 @@ LIBOBJ		=	reader_blk.o \
 			gcgheur.o \
 			gcgvar.o \
 			class_pricingtype.o \
+			class_pricingcontroller.o \
 			class_stabilization.o \
 			graph/weights.o \
 			graph/inst.o \
@@ -214,7 +215,8 @@ LIBOBJ		=	reader_blk.o \
 			dialog_graph.o \
 			gcgpqueue.o \
 			gcgcol.o \
-			class_colpool.o
+			class_colpool.o \
+			pricingjob.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \

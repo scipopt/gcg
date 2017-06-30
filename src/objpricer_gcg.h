@@ -39,10 +39,12 @@
 
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
+#include "class_pricingcontroller.h"
 #include "class_stabilization.h"
 #include "class_colpool.h"
 #include "pub_gcgcol.h"
 
+using gcg::Pricingcontroller;
 using gcg::Stabilization;
 using gcg::Colpool;
 
@@ -51,10 +53,10 @@ class ObjPricerGcg : public scip::ObjPricer
 public:
    /*lint --e{1540}*/
 
-   SCIP*              origprob;           /**< the original program */
-   SCIP_PRICERDATA *pricerdata;           /**< pricerdata data structure */
-   Colpool *colpool;                      /**< column pool */
-   static int threads;
+   SCIP*                  origprob;           /**< the original program */
+   SCIP_PRICERDATA*       pricerdata;         /**< pricerdata data structure */
+   Colpool*               colpool;            /**< column pool */
+   static int             threads;
 
    /** default constructor */
    ObjPricerGcg(
@@ -146,10 +148,9 @@ public:
       SCIP_Real*           dualdiff             /**< pointer to store difference of duals solutions */
    );
 
-   /** performs optimal or farkas pricing */
+   /** perform Farkas or reduced cost pricing */
    SCIP_RETCODE performPricing(
       PricingType*   pricetype,          /**< type of pricing */
-      unsigned int   optimal,            /**< heuristic or optimal pricing */
       SCIP_RESULT*   result,             /**< result pointer */
       int*           nfoundvars,         /**< pointer to store number of found variables */
       SCIP_Real*     lowerbound,         /**< pointer to store lowerbound obtained due to lagrange bound */
@@ -182,6 +183,9 @@ public:
    /** create the pointers for the pricing types */
    SCIP_RETCODE createPricingTypes();
 
+   /** create the pricing controller */
+   SCIP_RETCODE createPricingcontroller();
+
    /** create the pointers for the stabilization */
    void createStabilization();
 
@@ -194,21 +198,15 @@ public:
       SCIP_Real*         stabdualval,        /**< pointer to store stabilized dual objective value */
       SCIP_Bool          stabilize           /**< stabilize? */
    );
+
 private:
-   ReducedCostPricing *reducedcostpricing;
-   FarkasPricing *farkaspricing;
-   Stabilization *stabilization;
+   ReducedCostPricing*    reducedcostpricing;
+   FarkasPricing*         farkaspricing;
+   Pricingcontroller*     pricingcontroller;
+   Stabilization*         stabilization;
+
    /** free pricing problems */
    SCIP_RETCODE freePricingProblems();
-
-   /** returns whether pricing can be aborted */
-   SCIP_Bool abortPricing(
-      PricingType*          pricetype,          /**< type of pricing*/
-      int                   nfoundvars,         /**< number of variables found so far */
-      int                   solvedmips,         /**< number of MIPS solved so far */
-      int                   successfulmips,     /**< number of sucessful mips solved so far */
-      SCIP_Bool             optimal             /**< optimal or heuristic pricing */
-   ) const;
 
    SCIP_Real  computeRedCost(
       PricingType*          pricetype,          /**< type of pricing */
