@@ -168,7 +168,7 @@ SCIP_RETCODE GCGgetFilePath(
    return SCIP_OKAY;
 }
 
-/*@todo */
+/* outputs the r, g, b decimal values for the rgb hex input */
 static
 SCIP_RETCODE getRgbDecFromHex(
    char*    hex,     /**< input hex rgb code of form "#000000" */
@@ -177,6 +177,25 @@ SCIP_RETCODE getRgbDecFromHex(
    int*     blue     /**< output decimal b */
    )
 {
+   char* temp = '\0';
+   int check = 0;
+   unsigned int r = 0;
+   unsigned int g = 0;
+   unsigned int b = 0;
+
+   assert( hex[0] == '#' );
+
+   /* remove the # at the beginning */
+   strcpy( temp, hex );
+   memmove( temp, temp+1, strlen( temp ) );
+
+   /* extract int values from the rest */
+   check = sscanf( temp, "%02x%02x%02x", &r, &g, &b );
+   assert( check == 3 );
+
+   *red = (int) r;
+   *green = (int) g;
+   *blue = (int) b;
 
    return SCIP_OKAY;
 }
