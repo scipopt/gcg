@@ -1227,13 +1227,19 @@ SCIP_Real Stabilization::getFarkasAlpha(
 }
 
 /** update subgradient product */
-void Stabilization::updateSubgradientProduct(
+SCIP_RETCODE Stabilization::updateSubgradientProduct(
    GCG_COL**            pricingcols         /**< solutions of the pricing problems */
 )
 {
    if( !infarkas )
-      subgradientproduct = calculateSubgradientProduct(pricingcols);
-}
+   {
+      /* first update the arrays */
+      SCIP_CALL( updateStabcenterconsvals() );
+      SCIP_CALL( updateStabcentercutvals() );
 
+      subgradientproduct = calculateSubgradientProduct(pricingcols);
+   }
+   return SCIP_OKAY;
+}
 
 } /* namespace gcg */
