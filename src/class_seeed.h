@@ -97,15 +97,17 @@ private:
    const static int primes[];
    const static int nPrimes;
 
-public:
-
    bool isFinishedByFinisher;                         /**< was this seeed finished by the finishseeed() method of a detector */
 
    /** statistic information */
    std::vector<DEC_DETECTOR*> detectorChain;          /**< vector containing detectors that worked on that seeed */
+
+public:
    std::vector<std::string> detectorchaininfo;        /**< vector containing information about the detector call */
+private:
    std::vector<SCIP_Bool> detectorChainFinishingUsed; /**< vector containing whether the finishing method of the
                                                         *< corresponding detector was used on that seeed */
+public:
    std::vector<SCIP_Real> detectorClockTimes;         /**< vector containing detector times in seconds  */
    std::vector<SCIP_Real> pctVarsToBorder;            /**< vector containing the fraction of variables assigned to the
                                                         *< border for each detector working on that seeed*/
@@ -351,6 +353,9 @@ public:
    /** returns the detectorchain */
    DEC_DETECTOR** getDetectorchain();
 
+   /** returns the detectorchain as a vector */
+   std::vector<DEC_DETECTOR*> getDetectorchainVector();
+
    /** returns true if this seeed was finished by finishSeeed() method of a detector */
    bool getFinishedByFinisher();
 
@@ -537,6 +542,11 @@ public:
     *  does not delete this cons from list of open conss */
    SCIP_RETCODE setConsToMaster(
       int consToMaster
+      );
+
+   /** sets the whole detectorchain */
+   void setDetectorchain(
+      std::vector<DEC_DETECTOR*> detectorChain
       );
 
    /** sets seeed to be propagated by a detector */

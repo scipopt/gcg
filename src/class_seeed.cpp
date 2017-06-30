@@ -2506,6 +2506,12 @@ DEC_DETECTOR** Seeed::getDetectorchain()
    return & detectorChain[0];
 }
 
+/** returns the detectorchain as a vector */
+std::vector<DEC_DETECTOR*> Seeed::getDetectorchainVector()
+{
+   return detectorChain;
+}
+
 /** returns true if this seeed was finished by finishSeeed() method of a detector */
 bool Seeed::getFinishedByFinisher()
 {
@@ -3025,6 +3031,14 @@ SCIP_RETCODE Seeed::setConsToMaster(
    changedHashvalue = true;
 
    return SCIP_OKAY;
+}
+
+/** sets the whole detectorchain */
+void Seeed::setDetectorchain(
+   std::vector<DEC_DETECTOR*> givenDetectorChain
+   )
+{
+   detectorChain = givenDetectorChain;
 }
 
 /** sets seeed to be propagated by a detector */

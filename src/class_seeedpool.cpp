@@ -1679,7 +1679,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          }
       }
 
-      newseeed->detectorChain = otherseeed->detectorChain;
+      newseeed->setDetectorchain( otherseeed->getDetectorchainVector() );
       newseeed->detectorClockTimes = otherseeed->detectorClockTimes;
       newseeed->pctVarsFromFree = otherseeed->pctVarsFromFree;
       newseeed->pctVarsToBlock = otherseeed->pctVarsToBlock;
@@ -1690,12 +1690,12 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->nNewBlocks = otherseeed->nNewBlocks;
       newseeed->detectorchainstring = otherseeed->detectorchainstring;
       newseeed->stemsFromUnpresolved = true;
-      newseeed->isFinishedByFinisherUnpresolved = otherseeed->isFinishedByFinisher;
+      newseeed->isFinishedByFinisherUnpresolved = otherseeed->getFinishedByFinisher();
 
-      if( otherseeed->isFinishedByFinisher )
-         newseeed->finishedUnpresolvedBy = otherseeed->detectorChain[otherseeed->detectorChain.size() - 1];
+      if( otherseeed->getFinishedByFinisher() )
+         newseeed->finishedUnpresolvedBy = otherseeed->getDetectorchain()[otherseeed->getNDetectors() - 1];
 
-      newseeed->setFinishedByFinisher( otherseeed->isFinishedByFinisher );
+      newseeed->setFinishedByFinisher( otherseeed->getFinishedByFinisher() );
       newseeed->sort();
       newseeed->considerImplicits( this );
       newseeed->deleteEmptyBlocks();

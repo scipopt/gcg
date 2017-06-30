@@ -85,6 +85,9 @@ class Seeedpool
 private:
    SCIP* scip;                                                 /**< SCIP data structure */
    std::vector<SeeedPtr> incompleteSeeeds;                     /**< vector of incomplete seeeds that can be used for initialization */
+   std::vector<SeeedPtr> currSeeeds;                           /**< vector of current (open) seeeds */
+   std::vector<SeeedPtr> finishedSeeeds;                       /**< vector of finished seeeds */
+   std::vector<SeeedPtr> ancestorseeeds;                       /**< @todo revise! collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
    int maxndetectionrounds;                                    /**< maximum number of detection rounds */
    std::vector<std::vector<int>> varsForConss;                 /**< stores for every constraint the indices of variables
                                                                  *< that are contained in the constraint */
@@ -128,11 +131,8 @@ private:
    std::vector<SeeedPtr> seeedstopopulate;               /**< seeeds that are translated seeeds from found ones for the
                                                           *< original problem */
 
-public:
 
-   std::vector<SeeedPtr> currSeeeds;         /**< vector of current (open) seeeds */
-   std::vector<SeeedPtr> finishedSeeeds;     /**< vector of finished seeeds */
-   std::vector<SeeedPtr> ancestorseeeds;     /**< @todo revise! collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
+public:
 
    /** constructor */
    Seeedpool(
