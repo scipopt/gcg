@@ -3305,8 +3305,6 @@ SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIP_CALL_ABORT(SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
-
    if( conshdlrdata->seeedpool != NULL )
       conshdlrdata->seeedpool->sortFinishedForScore();
 
@@ -3326,7 +3324,6 @@ SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    */
 
 
-   SCIPfreeBufferArray(scip, &scores);
 
    return SCIP_OKAY;
 }
@@ -3594,32 +3591,34 @@ SCIP_RETCODE DECwriteAllDecomps(
 
    tmp = conshdlrdata->useddecomp;
 
-   /** write orig decomps */
-   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && (size_t) i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() ; ++i )
+   /** write orig decomps currently disabled*/
+   if( FALSE )
    {
-      SeeedPtr seeed;
-      DEC_DECOMP* decomp;
-
-      seeed = conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i];
-
-      if( directory != NULL )
+      for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && (size_t) i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() ; ++i )
       {
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_o%d.%s", directory, pname, i, extension);
+         SeeedPtr seeed;
+         DEC_DECOMP* decomp;
+
+         seeed = conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i];
+
+         if( directory != NULL )
+         {
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_o%d.%s", directory, pname, i, extension);
+         }
+         else
+         {
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_o%d.%s", pname, i, extension);
+         }
+
+         conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &decomp) ;
+
+         conshdlrdata->useddecomp = decomp;
+
+         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
+
+         DECdecompFree(scip, &decomp);
       }
-      else
-      {
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_o%d.%s", pname, i, extension);
-      }
-
-      conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &decomp) ;
-
-      conshdlrdata->useddecomp = decomp;
-
-      SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
-
-      DECdecompFree(scip, &decomp);
    }
-
 
    /** write presolved decomps */
      for( i = 0; conshdlrdata->seeedpool!= NULL && i < conshdlrdata->seeedpool->finishedSeeeds.size() ; ++i )
@@ -4202,17 +4201,21 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
    for( size_t i = 0; i < conshdlrdata->seeedpool->finishedSeeeds.size(); ++i )
    {
       DEC_DECOMP* decomp;
-      conshdlrdata->seeedpool->createDecompFromSeeed(conshdlrdata->seeedpool->finishedSeeeds[i], &decomp );
+      SCIP_CALL_ABORT( conshdlrdata->seeedpool->createDecompFromSeeed(conshdlrdata->seeedpool->finishedSeeeds[i], &decomp ) );
 
       decomps[i] = decomp;
    }
 
-   for( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size(); ++i )
+   /** currently disabled for unpresolved decompositions */
+   if ( FALSE )
    {
-      DEC_DECOMP* decomp;
-      conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i], &decomp );
+      for( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size(); ++i )
+      {
+         DEC_DECOMP* decomp;
+         conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i], &decomp );
 
-      decomps[i + conshdlrdata->seeedpool->finishedSeeeds.size()] = decomp;
+         decomps[i + conshdlrdata->seeedpool->finishedSeeeds.size()] = decomp;
+      }
    }
 
    return decomps;
@@ -4233,7 +4236,7 @@ int SCIPconshdlrDecompGetNFinishedDecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return (int) conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() + conshdlrdata->seeedpool->finishedSeeeds.size();
+   return (int) /*conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() + */ conshdlrdata->seeedpool->finishedSeeeds.size();
 
 }
 
