@@ -3760,6 +3760,21 @@ std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
          maxid = conshdlrdata->seeedpoolunpresolved->ancestorseeeds[i]->getID();
    }
 
+   for ( size_t i = 0; i < conshdlrdata->seeedpool->finishedSeeeds.size(); ++i )
+      {
+         if( conshdlrdata->seeedpool->finishedSeeeds[i] != NULL && conshdlrdata->seeedpool->finishedSeeeds[i]->getID() > maxid )
+            maxid = conshdlrdata->seeedpool->finishedSeeeds[i]->getID();
+      }
+
+      for ( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size(); ++i )
+      {
+         if( conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i] != NULL &&  conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i]->getID() > maxid )
+            maxid = conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i]->getID();
+      }
+
+
+
+
    tmpAllRelevantSeeeds = std::vector<SeeedPtr>(maxid+1, NULL );
 
    for ( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->ancestorseeeds.size(); ++i )
@@ -3775,6 +3790,21 @@ std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
             continue;
          tmpAllRelevantSeeeds[conshdlrdata->seeedpool->ancestorseeeds[i]->getID()] = conshdlrdata->seeedpool->ancestorseeeds[i];
       }
+
+   for ( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size(); ++i )
+      {
+         if ( conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i] == NULL || conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i]->getID() < 0  )
+            continue;
+         tmpAllRelevantSeeeds[conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i]->getID()] = conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i];
+      }
+
+   for ( size_t i = 0; i < conshdlrdata->seeedpool->finishedSeeeds.size(); ++i )
+      {
+         if ( conshdlrdata->seeedpool->finishedSeeeds[i] == NULL || conshdlrdata->seeedpool->finishedSeeeds[i]->getID() < 0  )
+            continue;
+         tmpAllRelevantSeeeds[conshdlrdata->seeedpool->finishedSeeeds[i]->getID()] = conshdlrdata->seeedpool->finishedSeeeds[i];
+      }
+
 
    return tmpAllRelevantSeeeds;
 }
@@ -3888,6 +3918,9 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
 
    firstsibldist = 1. / (childs[root].size() - 1 );
+   if( childs[root].size() == 1 ){
+      firstsibldist = 1;
+   }
    preambel.precision(2);
 
    preambel << "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";

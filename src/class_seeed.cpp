@@ -3304,14 +3304,13 @@ void Seeed::showScatterPlot(
    /*experimental */
    if( !writeonly )
    {
-      writeonly= TRUE;
       sprintf(buffer, "help%d.pdf", this->getID() );
       filename = buffer;
    }
    /**/
 
 
-   if( writeonly )
+
    {
 	  ofs << "set terminal pdf " << std::endl;
       ofs << "set output \"" << filename  << "\"" << std::endl;
@@ -3406,7 +3405,8 @@ void Seeed::showScatterPlot(
 
    command << "evince " << filename << " &";
 
-   system(command.str().c_str() );
+   if( !writeonly )
+      system(command.str().c_str() );
 
 //   system("rm helpScatter.txt");
 //   system("rm helper.plg");

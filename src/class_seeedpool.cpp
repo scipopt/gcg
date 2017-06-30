@@ -596,7 +596,10 @@ Seeedpool::Seeedpool(
    }
 
    /*  init  seeedpool with empty seeed */
-   addSeeedToCurr( new Seeed( scip, -1, nDetectors, nConss, nVars) );
+   SeeedPtr emptyseeed =new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), nDetectors, nConss, nVars);
+
+   addSeeedToCurr( emptyseeed );
+   addSeeedToAncestor(emptyseeed);
 
 
    for ( int i = 0; i < SCIPconshdlrDecompGetNBlockNumberCandidates(scip); ++i )
