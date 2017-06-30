@@ -1359,7 +1359,7 @@ void Seeedpool::findDecompositions()
    }
 }*/
 
-/** adds a seeed to current seeeds */
+/** adds a seeed to ancestor seeeds */
 void Seeedpool::addSeeedToAncestor(
    SeeedPtr seeed
    )
@@ -1391,7 +1391,7 @@ void Seeedpool::addSeeedToIncomplete(
    incompleteSeeeds.push_back( seeed );
 }
 
-/** clear ancestor seeed data structure */
+/** clears ancestor seeed data structure */
 void Seeedpool::clearAncestorSeeeds()
 {
    ancestorseeeds.clear();
@@ -1402,6 +1402,7 @@ void Seeedpool::clearCurrentSeeeds()
 {
    currSeeeds.clear();
 }
+
 /** clears finished seeed data structure */
 void Seeedpool::clearFinishedSeeeds()
 {
@@ -1416,7 +1417,7 @@ void Seeedpool::clearIncompleteSeeeds()
 
 /** returns a seeed from ancestor seeed data structure */
 SeeedPtr Seeedpool::getAncestorSeeed(
-   int seeedindex /**< index of seeed in current (open) seeed data structure */
+   int seeedindex
    )
 {
    assert( 0 <= seeedindex && seeedindex < (int) ancestorseeeds.size() );
@@ -1426,7 +1427,7 @@ SeeedPtr Seeedpool::getAncestorSeeed(
 
 /** returns a seeed from current (open) seeed data structure */
 SeeedPtr Seeedpool::getCurrentSeeed(
-   int seeedindex /**< index of seeed in current (open) seeed data structure */
+   int seeedindex
    )
 {
    assert( 0 <= seeedindex && seeedindex < (int) currSeeeds.size() );
@@ -1457,7 +1458,7 @@ SeeedPtr Seeedpool::getIncompleteSeeed(
 /** returns size of ancestor seeed data structure */
 int Seeedpool::getNAncestorSeeeds()
 {
-   return currSeeeds.size();
+   return ancestorseeeds.size();
 }
 
 /** returns size of current (open) seeed data structure */
@@ -1476,7 +1477,6 @@ int Seeedpool::getNFinishedSeeeds()
 int Seeedpool::getNIncompleteSeeeds()
 {
    return incompleteSeeeds.size();
-
 }
 
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */

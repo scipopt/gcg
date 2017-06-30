@@ -165,7 +165,7 @@ public:
    /** calls findSeeeds method and translates the resulting seeeds into decompositions */
    void findDecompositions();
 
-   /** adds a seeed to current seeeds */
+   /** adds a seeed to ancestor seeeds */
    void addSeeedToAncestor(
       SeeedPtr seeed
       );
