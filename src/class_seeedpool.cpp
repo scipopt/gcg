@@ -1568,8 +1568,8 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds( std::vector<Seeed*>& origsee
       newseeed->pctConssToBlock = otherseeed->pctConssToBlock;
       newseeed->nNewBlocks = otherseeed->nNewBlocks;
       newseeed->detectorchainstring = otherseeed->detectorchainstring;
-
-
+      newseeed->listofancestorids = otherseeed->listofancestorids;
+      newseeed->listofancestorids.push_back(otherseeed->getID() );
 
 
 
