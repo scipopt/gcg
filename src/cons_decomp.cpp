@@ -3847,6 +3847,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    std::vector<SCIP_Bool> isseeedintree(allrelevantseeeds.size(), FALSE );
 
    int root = -1;
+   int root2 = -1;
    std::vector<int> parents(allrelevantseeeds.size(), -1);
    std::vector<std::vector<int> > childs (allrelevantseeeds.size(), std::vector<int>(0));
    std::vector<std::vector<SCIP_Bool> > childsfinished(allrelevantseeeds.size(), std::vector<SCIP_Bool>(0));
@@ -3893,7 +3894,10 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
             treeseeedids.push_back(ancestorid);
             if( i == seeeds[s]->listofancestorids.size() -1 )
             {
-               root = ancestorid;
+               if( root == -1 )
+                  root = ancestorid;
+               else if( ancestorid != root )
+                  root2 = ancestorid;
             }
             currid = ancestorid;
          }
@@ -3910,9 +3914,30 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
       seeed = treeseeeds[i];
 
       decompfilename << workfolder << "/" << getSeeedFolderLatex(seeed);
-
-      seeed->showVisualisation(conshdlrdata->seeedpool, TRUE, decompfilename.str().c_str(), draft );
+      if( seeed->isfromunpresolved )
+         seeed->showVisualisation(conshdlrdata->seeedpoolunpresolved, TRUE, decompfilename.str().c_str(), draft );
+      else
+         seeed->showVisualisation(conshdlrdata->seeedpool, TRUE, decompfilename.str().c_str(), draft );
    }
+
+   /* merge both roots in the first one*/
+
+   for( size_t s = 0; root2 != -1 && s < treeseeeds.size(); ++s )
+   {
+      int seeedid = treeseeeds[s]->getID();
+      if ( parents[seeedid] == root2 )
+      {
+         parents[seeedid] = root;
+      }
+   }
+
+   for( size_t s = 0; root2 != -1 && s < childs[root2].size(); ++s )
+   {
+      childs[root].push_back(childs[root2][s] );
+      childsfinished[root].push_back(FALSE );
+   }
+
+
 
    //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
 
@@ -3922,7 +3947,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    }
    preambel.precision(2);
 
-   preambel << "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
+   preambel << "\\documentclass[a3paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
    preambel << "\n\\usetikzlibrary{positioning}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
    preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
 
@@ -3971,6 +3996,8 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    ofs << ";" << std::endl;
    for( size_t i = 0; i < treeseeeds.size(); ++i)
    {
+      if ( treeseeeds[i]->getID() == root2 )
+         continue;
       ofs << writeSeeedInfoLatex( treeseeeds[i] );
    }
 
