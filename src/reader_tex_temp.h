@@ -37,15 +37,13 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_READER_TEX_H__
-#define GCG_READER_TEX_H__
+#ifndef SRC_READER_TEX_TEMP_H_
+#define SRC_READER_TEX_TEMP_H_
 
 #include "scip/scip.h"
 #include "type_decomp.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern "C"{
 
 /** includes the tex file reader into SCIP */
 extern SCIP_RETCODE SCIPincludeReaderTex(SCIP* scip /**< SCIP data structure */
@@ -152,9 +150,7 @@ extern
 SCIP_Bool GCGtexGetDraftmode(SCIP* scip /**< SCIP data structure */
 );
 
-#ifdef __cplusplus
+/*extern C*/
 }
-#endif
 
-#endif
-
+#endif /* SRC_READER_TEX_TEMP_H_ */

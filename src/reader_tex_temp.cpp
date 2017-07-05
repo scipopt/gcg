@@ -44,7 +44,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "reader_tex.h"
+#include "reader_tex_temp.h"
 #include "scip_misc.h"
 #include "pub_gcgvar.h"
 #include "reader_gp.h"
@@ -60,6 +60,8 @@
 #define DEFAULT_USEGP            FALSE
 #define DEFAULT_PICTURESONLY     FALSE
 #define DEFAULT_DRAFTMODE        FALSE
+
+extern "C"{
 
 
 /** data for dec reader */
@@ -986,4 +988,7 @@ SCIPincludeReaderTex(
          &readerdata->draftmode, FALSE, DEFAULT_DRAFTMODE, NULL, NULL) );
 
    return SCIP_OKAY;
+}
+
+/*extern "C"*/
 }

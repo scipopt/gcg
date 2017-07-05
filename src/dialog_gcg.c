@@ -454,7 +454,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
    int blocknr;
    char tempstr[SCIP_MAXSTRLEN];
    SCIP_Bool endoffile;
-   SCIP_RETCODE retcode;
 
    tempstr[0] = '\0';
 
@@ -652,11 +651,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 /** dialog execution method for the displaying and selecting decompositions command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
 {  /*lint --e{715}*/
-   SCIP_CONSHDLR** conshdlrs;
-   int nconshdlrs;
-   int i;
-
-
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIP_CALL( SCIPconshdlrDecompExecSelect(scip, dialoghdlr, dialog ) );
