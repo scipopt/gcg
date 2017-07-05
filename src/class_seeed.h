@@ -107,7 +107,6 @@ public:
 private:
    std::vector<SCIP_Bool> detectorChainFinishingUsed; /**< vector containing whether the finishing method of the
                                                         *< corresponding detector was used on that seeed */
-public:
    std::vector<SCIP_Real> detectorClockTimes;         /**< vector containing detector times in seconds  */
    std::vector<SCIP_Real> pctVarsToBorder;            /**< vector containing the fraction of variables assigned to the
                                                         *< border for each detector working on that seeed*/
@@ -134,6 +133,7 @@ public:
    /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
    bool stemsFromUnpresolved;             /**< seeed has at least one ancestor that is a seeed from unpresolved problem */
    bool isfromunpresolved;                /**< seeed is from unpresolved problem */
+public:
    bool isFinishedByFinisherUnpresolved;  /**< was the ancestor seeed for the unpresolved problem finished by the
                                             *< finishseeed() method of a detector */
    DEC_DETECTOR* finishedUnpresolvedBy;   /**< index of dinishing detector of unpresolved ancestor seeed */
@@ -171,6 +171,41 @@ public:
    void addDetectorChainInfo(
       const char* decinfo
       );
+
+   /** adds number of new blocks created by a detector added to detector chain */
+   void addNNewBlocks(
+      int nnewblocks
+   );
+
+   /** adds fraction of constraints that are not longer open for a detector added to detector chain */
+   void addPctConssFromFree(
+      SCIP_Real pct
+   );
+
+   /** adds fraction of constraints assigned to a block for a detector added to detector chain */
+   void addPctConssToBlock(
+      SCIP_Real pct
+   );
+
+   /** adds fraction of constraints assigned to the border for a detector added to detector chain */
+   void addPctConssToBorder(
+      SCIP_Real pct
+   );
+
+   /** adds fraction of variables that are not longer open for a detector added to detector chain */
+   void addPctVarsFromFree(
+      SCIP_Real pct
+   );
+
+   /** adds fraction of variables assigned to a block for a detector added to detector chain */
+   void addPctVarsToBlock(
+      SCIP_Real pct
+   );
+
+   /** adds fraction of variables assigned to the border for a detector added to detector chain */
+   void addPctVarsToBorder(
+      SCIP_Real pct
+   );
 
    /** returns true if at least one constraint is assigned to a block */
    bool alreadyAssignedConssToBlocks();
@@ -221,7 +256,7 @@ public:
 
    /** books a constraint to be added to the master constraints (after calling flushBooked) */
    SCIP_RETCODE bookAsMasterCons(
-      int consToMaster
+         int consToMaster /*< this index can be computed by the function Seeedpool::getIndexForCons */
       );
 
    /** books a variable to be added to the master variables (after calling flushBooked) */
@@ -345,6 +380,22 @@ public:
    /** assigns all booked constraints and variables and deletes them from list of open cons and open vars */
    SCIP_RETCODE flushBooked();
 
+   /** returns ancestor id of given ancestor */
+   int getAncestorID(
+      int ancestorindex /**< index of ancestor in listofancestorids data structure */
+      );
+
+   /** returns detectorchainstring */
+   char* getDetectorChainString();
+
+   /** returns the time that the detector related to the given detectorchainindex needed for detecting */
+   SCIP_Real getDetectorClockTime(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
+   /** returns the time that the detectors needed for detecting */
+   std::vector<SCIP_Real> getDetectorClockTimes();
+
    /** returns array containing constraints assigned to a block */
    const int* getConssForBlock(
       int block
@@ -382,6 +433,12 @@ public:
       SCORETYPE type
       );
 
+   /** returns whether this seeed is usergiven */
+   USERGIVEN getUsergiven();
+
+   /** returns number of ancestor seeeds */
+   int getNAncestors();
+
    /** returns number of blocks */
    int getNBlocks();
 
@@ -404,6 +461,14 @@ public:
 
    /** returns size of the vector containing master vars (hitting only constraints in the master) */
    int getNMastervars();
+
+   /** returns number of blocks a detector added */
+   int getNNewBlocks(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+   );
+
+   /** returns number of blocks the detectors in the detectorchain added */
+   std::vector<int> getNNewBlocksVector();
 
    /** returns total number of stairlinking vars */
    int getNTotalStairlinkingvars();
@@ -433,10 +498,61 @@ public:
    /** returns array containing variables not assigned yet */
    const int* getOpenvars();
 
+   /** returns fraction of variables assigned to the border for a detector */
+   SCIP_Real getPctVarsToBorder(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
+   /** returns fraction of variables assigned to the border for detectors in detectorchain */
+   std::vector<SCIP_Real> getPctVarsToBorderVector();
+
+   /** returns fraction of variables assigned to a block for a detector */
+   SCIP_Real getPctVarsToBlock(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
+   /** returns fraction of variables assigned to a block for detectors in detectorchain */
+   std::vector<SCIP_Real> getPctVarsToBlockVector();
+
+   /** returns fraction of variables that are not longer open for a detector */
+   SCIP_Real getPctVarsFromFree(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
+   /** returns fraction of variables that are not longer open for detectors in detectorchain */
+   std::vector<SCIP_Real> getPctVarsFromFreeVector();
+
+   /** returns fraction of constraints assigned to the border for a detector */
+   SCIP_Real getPctConssToBorder(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
+   /** returns fraction of constraints assigned to the border for detectors in detectorchain */
+   std::vector<SCIP_Real> getPctConssToBorderVector();
+
+   /** returns fraction of constraints assigned to a block for a detector */
+   SCIP_Real getPctConssToBlock(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
+   /** returns fraction of constraints assigned to a block for detectors in detectorchain */
+   std::vector<SCIP_Real> getPctConssToBlockVector();
+
+   /** returns fraction of constraints that are not longer open for a detector */
+   SCIP_Real getPctConssFromFree(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
+   /** returns fraction of constraints that are not longer open for detectors in detectorchain */
+   std::vector<SCIP_Real> getPctConssFromFreeVector();
+
    /** returns array containing stairlinking vars */
    const int* getStairlinkingvars(
       int block
       );
+
+   /** returns true if this seeed stems from the unpresolved problem */
+   bool getStemsFromUnpresolved();
 
    /** returns array containing vars of a block */
    const int* getVarsForBlock(
@@ -462,6 +578,9 @@ public:
    bool isConsOpencons(
       int cons
       );
+
+   /** returns true if the seeed is from the unpresolved problem */
+   bool isFromUnpresolved();
 
    /** returns true if the seeed is selected */
    bool isSelected();
@@ -574,9 +693,24 @@ public:
       int id
    );
 
+   /** sets whether this seeed is from the unpresolved problem */
+   void setIsFromUnpresolved(
+      bool unpresolved
+      );
+
    /** sets whether this seeed is selected */
    void setSelected(
       bool selected
+      );
+
+   /** sets whether this seeed stems from an unpresolved problem seeed */
+   void setStemsFromUnpresolved(
+      bool stemsfromunpresolved
+      );
+
+   /** sets whether this seeed is usergiven */
+   void setUsergiven(
+      USERGIVEN usergiven
       );
 
    /** directly adds a variable to the linking variables

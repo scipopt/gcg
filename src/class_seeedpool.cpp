@@ -321,7 +321,7 @@ SCIP_Bool cmpSeeedsBorderArea(
    SeeedPtr j
    )
 {
-   return ( i->borderareascore < j->borderareascore );
+   return ( i->getScore( BORDER_AREA ) < j->getScore( BORDER_AREA ) );
 }
 
 /** returns TRUE if seeed i has a lower score than seeed j */
@@ -330,7 +330,7 @@ SCIP_Bool cmpSeeedsClassic(
    SeeedPtr j
    )
 {
-   return ( i->score < j->score );
+   return ( i->getScore( CLASSIC )  < j->getScore( CLASSIC ) );
 }
 
 /* method to thin out the vector of given seeeds */
@@ -505,9 +505,9 @@ Seeedpool::Seeedpool(
    const char* conshdlrName,
    SCIP_Bool _transformed
    ) :
-   scip( givenScip ), nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
-   nFinishingDetectors( 0 ), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed ),
-   incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 )
+   scip( givenScip ), incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 ),
+   nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
+   nFinishingDetectors( 0 ), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed )
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
@@ -686,14 +686,15 @@ Seeedpool::Seeedpool(
    }
 
    /*  init  seeedpool with empty seeed */
-   addSeeedToCurr( new Seeed( scip, - 1, nConss, nVars ) );
+   SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), nConss, nVars );
 
-   for ( int i = 0; i < SCIPconshdlrDecompGetNBlockNumberCandidates(scip); ++i )
+   addSeeedToCurr( emptyseeed );
+   addSeeedToAncestor(emptyseeed);
+
+   for( int i = 0; i < SCIPconshdlrDecompGetNBlockNumberCandidates( scip ); ++i )
    {
-         addUserCandidatesNBlocks(SCIPconshdlrDecompGetBlockNumberCandidate(scip, i) );
+      addUserCandidatesNBlocks(SCIPconshdlrDecompGetBlockNumberCandidate( scip, i ) );
    }
-
-
 
 } //end constructor
 
@@ -1339,13 +1340,13 @@ void Seeedpool::findDecompositions()
    finishedSeeeds = findSeeeds();
 
    /* sort the seeeds according to maximum white measure */
-    sortFinishedForScore();
-
+   sortFinishedForScore();
 
     /** hack to just use max white seeed */
 //    if( usemaxwhitescore && dothinout )
 //       finishedSeeeds = thinout( finishedSeeeds, nDecomps, addTrivialDecomp );
-    }
+
+}
 
 /*SCIP_RETCODE DECdecompCheckConsistency(DEC_DECOMP* decomp)
 {
@@ -1631,7 +1632,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       /** prepare new seeed */
       newseeed->setNBlocks( otherseeed->getNBlocks() );
 
-      newseeed->usergiven = otherseeed->usergiven;
+      newseeed->setUsergiven( otherseeed->getUsergiven() );
 
       /** set all (which have representative in the unpresolved seeed) constraints according to their representatives in the unpresolved seeed */
       for( int b = 0; b < otherseeed->getNBlocks(); ++ b )
@@ -1680,16 +1681,21 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       }
 
       newseeed->setDetectorchain( otherseeed->getDetectorchainVector() );
-      newseeed->detectorClockTimes = otherseeed->detectorClockTimes;
-      newseeed->pctVarsFromFree = otherseeed->pctVarsFromFree;
-      newseeed->pctVarsToBlock = otherseeed->pctVarsToBlock;
-      newseeed->pctVarsToBorder = otherseeed->pctVarsToBorder;
-      newseeed->pctConssToBorder = otherseeed->pctConssToBorder;
-      newseeed->pctConssFromFree = otherseeed->pctConssFromFree;
-      newseeed->pctConssToBlock = otherseeed->pctConssToBlock;
-      newseeed->nNewBlocks = otherseeed->nNewBlocks;
-      newseeed->detectorchainstring = otherseeed->detectorchainstring;
-      newseeed->stemsFromUnpresolved = true;
+
+      for( int i = 0; i < otherseeed->getNDetectors(); ++i )
+      {
+         newseeed->addClockTime( otherseeed->getDetectorClockTime( i ) );
+         newseeed->addPctConssFromFree( otherseeed->getPctConssFromFree( i ) );
+         newseeed->addPctConssToBlock( otherseeed->getPctConssToBlock( i ) );
+         newseeed->addPctConssToBorder( otherseeed->getPctConssToBorder( i ) );
+         newseeed->addPctVarsFromFree( otherseeed->getPctVarsFromFree( i ) );
+         newseeed->addPctVarsToBlock( otherseeed->getPctVarsToBlock( i ) );
+         newseeed->addPctVarsToBorder( otherseeed->getPctVarsToBorder( i ) );
+         newseeed->addNNewBlocks( otherseeed->getNNewBlocks( i ) );
+      }
+
+      newseeed->setDetectorChainString( otherseeed->getDetectorChainString() );
+      newseeed->setStemsFromUnpresolved( true );
       newseeed->isFinishedByFinisherUnpresolved = otherseeed->getFinishedByFinisher();
 
       if( otherseeed->getFinishedByFinisher() )
@@ -2724,7 +2730,8 @@ VarClassifier* Seeedpool::createVarClassifierForObjValues()
 
 /** returns a new variable classifier
  *  where all variables are assigned to class zero, positive or negative according to their objective function value sign
- *  all class zero variables are assumed to be only master variables (set via DECOMPINFO) */
+ *  all class zero variables are assumed to be only master variables (set via DECOMPINFO)
+ *  @todo correct? */
 VarClassifier* Seeedpool::createVarClassifierForObjValueSigns()
 {
    VarClassifier* classifier= new VarClassifier( scip, "varobjvalsigns", 3, getNVars() ); /** new VarClassifier */
@@ -2769,6 +2776,8 @@ VarClassifier* Seeedpool::createVarClassifierForObjValueSigns()
    return classifier;
 }
 
+/** returns a new variable classifier
+ *  where all variables with identical SCIP vartype are assigned to the same class */
 VarClassifier* Seeedpool::createVarClassifierForSCIPVartypes()
 {
    std::vector < SCIP_VARTYPE > foundVartypes( 0 );
@@ -3174,24 +3183,24 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    DECdecompSetSeeedID( * newdecomp, seeed->getID() );
    if( seeed->getNDetectors() > 0 )
    {
-      DECdecompSetDetectorClockTimes( scip, * newdecomp, & ( seeed->detectorClockTimes[0] ) );
-      DECdecompSetDetectorPctVarsToBorder( scip, * newdecomp, & ( seeed->pctVarsToBorder[0] ) );
-      DECdecompSetDetectorPctVarsToBlock( scip, * newdecomp, & ( seeed->pctVarsToBlock[0] ) );
-      DECdecompSetDetectorPctVarsFromOpen( scip, * newdecomp, & ( seeed->pctVarsFromFree[0] ) );
-      DECdecompSetDetectorPctConssToBorder( scip, * newdecomp, & ( seeed->pctConssToBorder[0] ) );
-      DECdecompSetDetectorPctConssToBlock( scip, * newdecomp, & ( seeed->pctConssToBlock[0] ) );
-      DECdecompSetDetectorPctConssFromOpen( scip, * newdecomp, & ( seeed->pctConssFromFree[0] ) );
-      DECdecompSetNNewBlocks( scip, * newdecomp, & ( seeed->nNewBlocks[0] ) );
+      DECdecompSetDetectorClockTimes( scip, * newdecomp, & ( seeed->getDetectorClockTimes()[0] ) );
+      DECdecompSetDetectorPctVarsToBorder( scip, * newdecomp, & ( seeed->getPctVarsToBorderVector()[0] ) );
+      DECdecompSetDetectorPctVarsToBlock( scip, * newdecomp, & ( seeed->getPctVarsToBlockVector()[0] ) );
+      DECdecompSetDetectorPctVarsFromOpen( scip, * newdecomp, & ( seeed->getPctVarsFromFreeVector()[0] ) );
+      DECdecompSetDetectorPctConssToBorder( scip, * newdecomp, & ( seeed->getPctConssToBorderVector()[0] ) );
+      DECdecompSetDetectorPctConssToBlock( scip, * newdecomp, & ( seeed->getPctConssToBlockVector()[0] ) );
+      DECdecompSetDetectorPctConssFromOpen( scip, * newdecomp, & ( seeed->getPctConssFromFreeVector()[0] ) );
+      DECdecompSetNNewBlocks( scip, * newdecomp, & ( seeed->getNNewBlocksVector()[0] ) );
    }
 
 
    /** set detector chain info string */
    SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "") ;
-   if( seeed->usergiven == USERGIVEN::PARTIAL || seeed->usergiven == USERGIVEN::COMPLETE || seeed->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER)
+   if( seeed->getUsergiven() == USERGIVEN::PARTIAL || seeed->getUsergiven() == USERGIVEN::COMPLETE || seeed->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER)
    {
       seeed->buildDecChainString();
    }
-   SCIP_CALL( DECdecompSetDetectorChainString( scip, * newdecomp, seeed->detectorchainstring ) );
+   SCIP_CALL( DECdecompSetDetectorChainString( scip, * newdecomp, seeed->getDetectorChainString() ) );
 
    /** set dectype */
    if( ( * newdecomp )->nlinkingvars == seeed->getNTotalStairlinkingvars() && ( * newdecomp )->nlinkingconss == 0
@@ -3227,13 +3236,117 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    return SCIP_OKAY;
 }
 
-/** creates a seeed for a given decomposition */
+/** creates a seeed for a given decomposition
+ *  the resulting seeed will not have a detectorchaininfo or any ancestor or finishing detector data
+ *  only use this method if the seeedpool is for the transformed problem
+ *  the resulting seeed may only be added to the seeedpool for the presolved problem */
 SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    DEC_DECOMP* decomp,
    SeeedPtr* newseeed
    )
 {
-   *newseeed = new Seeed( scip, this->getNewIdForSeeed(), this->getNConss(), this->getNVars() );
+   assert( decomp != NULL );
+   assert( DECdecompCheckConsistency( scip, decomp ) );
+   assert( nConss == DECdecompGetNConss( decomp ) );
+   assert( DECdecompGetPresolved( decomp ) );
+   assert( transformed );
+
+   /* create new seeed and initialize its data */
+   SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nConss, nVars );
+   seeed->setNBlocks( DECdecompGetNBlocks( decomp ) );
+
+   assert( seeed->getNOpenconss() == nConss );
+   assert( seeed->getNOpenvars() == nVars );
+
+   SCIP_CONS** linkingconss = DECdecompGetLinkingconss( decomp );
+   int nlinkingconss = DECdecompGetNLinkingconss( decomp );
+   SCIP_HASHMAP* constoblock = DECdecompGetConstoblock( decomp );
+   int nblock;
+
+   /* set linking conss */
+   for( int c = 0; c < nlinkingconss; ++c )
+   {
+      seeed->bookAsMasterCons( getIndexForCons( linkingconss[c] ) );
+   }
+
+   /* set block conss */
+   for( int c = 0; c < nConss; ++c )
+   {
+      nblock = (int) (size_t) SCIPhashmapGetImage( constoblock, (void*) (size_t) getConsForIndex( c ) );
+      if( nblock >= 1 && nblock <= seeed->getNBlocks() )
+      {
+         seeed->bookAsBlockCons( c, nblock - 1 );
+      }
+   }
+
+   SCIP_VAR*** stairlinkingvars = DECdecompGetStairlinkingvars( decomp );
+   int* nstairlinkingvars = DECdecompGetNStairlinkingvars( decomp );
+   int varindex;
+   SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock( decomp );
+
+   /* set stairlinkingvars */
+   for( int b = 0; b < seeed->getNBlocks(); ++b )
+   {
+      for( int v = 0; v < nstairlinkingvars[b]; ++v )
+      {
+         if( stairlinkingvars[b][v] != NULL )
+         {
+            varindex = getIndexForVar( stairlinkingvars[b][v] );
+            seeed->bookAsStairlinkingVar( varindex, b );
+         }
+      }
+   }
+
+   /* flush booked conss and vars in order to be able to check whether a var is already assigned to stairlinking */
+   seeed->flushBooked();
+
+   /* set other vars */
+   for( int v = 0; v < getNVars(); ++v )
+   {
+      nblock = (int) (size_t) SCIPhashmapGetImage( vartoblock, (void*) (size_t) SCIPvarGetProbvar( getVarForIndex( v ) ) );
+      if( nblock == seeed->getNBlocks() + 2 && !seeed->isVarStairlinkingvar( v ) )
+      {
+         seeed->bookAsLinkingVar( v );
+      }
+      else if( nblock == seeed->getNBlocks() + 1 )
+      {
+         seeed->bookAsMasterVar( v );
+      }
+      else if( nblock >= 1 && nblock <= seeed->getNBlocks() )
+      {
+         seeed->bookAsBlockVar( v, nblock - 1 );
+      }
+   }
+
+   seeed->flushBooked();
+
+   /* now all conss and vars should be assigned */
+   assert( seeed->isComplete() );
+   /*set all detector-related information*/
+   for( int i = 0; i < DECdecompGetDetectorChainSize( decomp ); ++i )
+   {
+      seeed->setDetectorPropagated( DECdecompGetDetectorChain( decomp )[i] );
+      seeed->addClockTime( DECdecompGetDetectorClockTimes( decomp )[i] );
+      seeed->addPctConssFromFree( 1 - *(DECdecompGetDetectorPctConssFromOpen( decomp )) );
+      seeed->addPctConssToBlock( *(DECdecompGetDetectorPctConssToBlock( decomp )) );
+      seeed->addPctConssToBorder( *(DECdecompGetDetectorPctConssToBorder( decomp )) );
+      seeed->addPctVarsFromFree( 1 - *(DECdecompGetDetectorPctVarsFromOpen( decomp )) );
+      seeed->addPctVarsToBlock( *(DECdecompGetDetectorPctVarsToBlock( decomp )) );
+      seeed->addPctVarsToBorder( *(DECdecompGetDetectorPctVarsToBorder( decomp )) );
+      seeed->addNNewBlocks( *(DECdecompGetNNewBlocks( decomp )) );
+   }
+
+   seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
+
+   /* detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings */
+
+   /* calc maxwhitescore and hashvalue */
+   prepareSeeed( seeed );
+
+   assert( DECgetMaxWhiteScore( scip, decomp ) == seeed->getMaxWhiteScore() );
+   assert( seeed->checkConsistency( this ) );
+
+   *newseeed = seeed;
 
    return SCIP_OKAY;
 }

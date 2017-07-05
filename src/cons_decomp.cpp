@@ -408,7 +408,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
       assert(conshdlrdata != NULL);
 
      assert( seeed->isComplete() );
-     assert( seeed->isfromunpresolved );
+     assert( seeed->isFromUnpresolved() );
 
      conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed);
 
@@ -437,7 +437,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
       assert(conshdlrdata != NULL);
 
      assert( seeed->isComplete() );
-     assert( !seeed->isfromunpresolved );
+     assert( !seeed->isFromUnpresolved() );
 
      conshdlrdata->seeedpool->addSeeedToFinished(seeed);
 
@@ -466,7 +466,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForUnpresolved(
       assert(conshdlrdata != NULL);
 
      assert( !seeed->isComplete() );
-     assert( seeed->isfromunpresolved );
+     assert( seeed->isFromUnpresolved() );
 
      conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete(seeed);
 
@@ -494,7 +494,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForPresolved(
       assert(conshdlrdata != NULL);
 
      assert( !seeed->isComplete() );
-     assert( !seeed->isfromunpresolved );
+     assert( !seeed->isFromUnpresolved() );
 
      conshdlrdata->seeedpool->addSeeedToIncomplete(seeed);
 
@@ -524,14 +524,14 @@ SCIP_RETCODE  SCIPconshdlrDecompAddSeeed(
 
       if( seeed->isComplete() )
       {
-         if( seeed->isfromunpresolved)
+         if( seeed->isFromUnpresolved())
             SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(scip, seeed);
          else
             SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, seeed);
       }
       else
       {
-         if( seeed->isfromunpresolved)
+         if( seeed->isFromUnpresolved())
             SCIPconshdlrDecompAddPartialSeeedForUnpresolved(scip, seeed);
          else
             SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, seeed);
@@ -1107,17 +1107,17 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    {
       SeeedPtr seeed;
       seeed = conshdlrdata->listall->at(i);
-      if( seeed->isComplete() && seeed->usergiven == gcg::USERGIVEN::NOT && !seeed->isfromunpresolved )
+      if( seeed->isComplete() && seeed->getUsergiven() == gcg::USERGIVEN::NOT && !seeed->isFromUnpresolved() )
          ++ndetectedpresolved;
-      if( seeed->isComplete() && seeed->usergiven == gcg::USERGIVEN::NOT && seeed->isfromunpresolved )
+      if( seeed->isComplete() && seeed->getUsergiven() == gcg::USERGIVEN::NOT && seeed->isFromUnpresolved() )
          ++ndetectedunpresolved;
-      if( seeed->isComplete() && ( seeed->usergiven == gcg::USERGIVEN::COMPLETE || seeed->usergiven == gcg::USERGIVEN::COMPLETED_CONSTOMASTER) && !seeed->isfromunpresolved )
+      if( seeed->isComplete() && ( seeed->getUsergiven() == gcg::USERGIVEN::COMPLETE || seeed->getUsergiven() == gcg::USERGIVEN::COMPLETED_CONSTOMASTER) && !seeed->isFromUnpresolved() )
          ++nuserpresolvedfull;
-      if( !seeed->isComplete() && seeed->usergiven == gcg::USERGIVEN::PARTIAL && !seeed->isfromunpresolved )
+      if( !seeed->isComplete() && seeed->getUsergiven() == gcg::USERGIVEN::PARTIAL && !seeed->isFromUnpresolved() )
          ++nuserpresolvedpartial;
-      if( seeed->isComplete() && ( seeed->usergiven == gcg::USERGIVEN::COMPLETE || seeed->usergiven == gcg::USERGIVEN::COMPLETED_CONSTOMASTER) && seeed->isfromunpresolved )
+      if( seeed->isComplete() && ( seeed->getUsergiven() == gcg::USERGIVEN::COMPLETE || seeed->getUsergiven() == gcg::USERGIVEN::COMPLETED_CONSTOMASTER) && seeed->isFromUnpresolved() )
          ++nuserunpresolvedfull;
-      if( !seeed->isComplete() && seeed->usergiven == gcg::USERGIVEN::PARTIAL && seeed->isfromunpresolved )
+      if( !seeed->isComplete() && seeed->getUsergiven() == gcg::USERGIVEN::PARTIAL && seeed->isFromUnpresolved() )
          ++nuserunpresolvedpartial;
 
    }
@@ -1187,11 +1187,11 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
          SCIPdialogMessage(scip, NULL, "%.4f  ", 1. - seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) );
       else
          SCIPdialogMessage(scip, NULL, "<=%.2f  ", 1. - seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) );
-      SCIPdialogMessage(scip, NULL, "%7s  ", seeed->detectorchainstring );
-      SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->isfromunpresolved ? "no" : "yes")  );
+      SCIPdialogMessage(scip, NULL, "%7s  ", seeed->getDetectorChainString() );
+      SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->isFromUnpresolved() ? "no" : "yes")  );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenconss() );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenvars() );
-      SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->usergiven == gcg::USERGIVEN::NOT ? "no" : "yes")   );
+      SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->getUsergiven() == gcg::USERGIVEN::NOT ? "no" : "yes")   );
       SCIPdialogMessage(scip, NULL, "%3s  \n", (seeed->isSelected() ? "yes" : "no")  );
    }
 
@@ -1389,7 +1389,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    if( commandlen != 0)
       idtovisu = atoi(ntovisualize);
 
-   gcg::Seeedpool* seeedpool = (conshdlrdata->listall->at(idtovisu)->isfromunpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+   gcg::Seeedpool* seeedpool = (conshdlrdata->listall->at(idtovisu)->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
    conshdlrdata->listall->at(idtovisu)->showScatterPlot(seeedpool);
 
    return SCIP_OKAY;
@@ -1425,7 +1425,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectSelect(
    if( commandlen != 0)
       idtovisu = atoi(ntovisualize);
 
-//   seeedpool = (conshdlrdata->listall->at(idtovisu)->isfromunpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+//   seeedpool = (conshdlrdata->listall->at(idtovisu)->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
    toselect = conshdlrdata->listall->at(idtovisu);
 
    toselect->setSelected(!toselect->isSelected() );
@@ -1511,7 +1511,7 @@ SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(
    if( conshdlrdata->candidates->size() == 0 )
       return FALSE;
 
-   return conshdlrdata->candidates->at(0).first->isfromunpresolved;
+   return conshdlrdata->candidates->at(0).first->isFromUnpresolved();
 }
 
 
@@ -1993,7 +1993,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool->getNConss(), currseeedpool->getNVars() );
 
 
-   conshdlrdata->curruserseeed->stemsFromUnpresolved = !presolved;
+   conshdlrdata->curruserseeed->setStemsFromUnpresolved( !presolved );
 
    return SCIP_OKAY;
 }
@@ -2091,9 +2091,9 @@ SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
    {
       SeeedPtr seeed;
       seeed = conshdlrdata->seeedpoolunpresolved->getIncompleteSeeed( i );
-      seeed->isfromunpresolved = TRUE;
+      seeed->setIsFromUnpresolved( TRUE );
 
-      if( seeed->isSelected() || (!selectedexists && seeed->usergiven != gcg::USERGIVEN::NOT && !seeed->isComplete() ) )
+      if( seeed->isSelected() || (!selectedexists && seeed->getUsergiven() != gcg::USERGIVEN::NOT && !seeed->isComplete() ) )
          unfinishedunpresolved.push_back(seeed);
    }
 
@@ -2108,7 +2108,7 @@ SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
       SeeedPtr seeed;
       seeed = conshdlrdata->seeedpool->getIncompleteSeeed( i );
 
-      if( seeed->isSelected() || (!selectedexists && seeed->usergiven != gcg::USERGIVEN::NOT && !seeed->isComplete() ) )
+      if( seeed->isSelected() || (!selectedexists && seeed->getUsergiven() != gcg::USERGIVEN::NOT && !seeed->isComplete() ) )
          unfinishedpresolved.push_back(seeed);
    }
 
@@ -2193,7 +2193,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    {
       SeeedPtr seeed;
       seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed(i);
-      seeed->isfromunpresolved = TRUE;
+      seeed->setIsFromUnpresolved( TRUE );
 
       conshdlrdata->listall->push_back(seeed);
    }
@@ -2203,7 +2203,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    {
       SeeedPtr seeed;
       seeed = conshdlrdata->seeedpoolunpresolved->getIncompleteSeeed( i );
-      seeed->isfromunpresolved = TRUE;
+      seeed->setIsFromUnpresolved( TRUE );
 
       conshdlrdata->listall->push_back(seeed);
    }
@@ -2295,7 +2295,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsDefaultMaster(
    }
 
 
-   conshdlrdata->curruserseeed->usergiven = gcg::USERGIVEN::COMPLETED_CONSTOMASTER;
+   conshdlrdata->curruserseeed->setUsergiven( gcg::USERGIVEN::COMPLETED_CONSTOMASTER );
 
 
    return SCIP_OKAY;
@@ -2334,8 +2334,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
       return SCIP_OKAY;
    }
 
-   currseeedpool = conshdlrdata->curruserseeed->stemsFromUnpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
-   cons = conshdlrdata->curruserseeed->stemsFromUnpresolved ? SCIPfindOrigCons(scip, consname ) : SCIPfindCons(scip, consname );
+   currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+   cons = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? SCIPfindOrigCons(scip, consname ) : SCIPfindCons(scip, consname );
    consindex = currseeedpool->getIndexForCons( cons ) ;
 
    conshdlrdata->curruserseeed->bookAsBlockCons(consindex, blockid);
@@ -2373,9 +2373,9 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToMaster(
       return SCIP_OKAY;
    }
 
-   currseeedpool = conshdlrdata->curruserseeed->stemsFromUnpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+   currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
 
-   cons = conshdlrdata->curruserseeed->stemsFromUnpresolved ? SCIPfindOrigCons(scip, consname ) : SCIPfindCons(scip, consname );
+   cons = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? SCIPfindOrigCons(scip, consname ) : SCIPfindCons(scip, consname );
    consindex = currseeedpool->getIndexForCons( cons );
 
    conshdlrdata->curruserseeed->bookAsMasterCons(consindex);
@@ -2414,7 +2414,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
       return SCIP_OKAY;
    }
 
-   currseeedpool = conshdlrdata->curruserseeed->stemsFromUnpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+   currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
    varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
 
    conshdlrdata->curruserseeed->bookAsBlockVar(varindex, blockid);
@@ -2451,7 +2451,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToMaster(
       return SCIP_OKAY;
    }
 
-   currseeedpool = conshdlrdata->curruserseeed->stemsFromUnpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+   currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
    varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
 
    conshdlrdata->curruserseeed->bookAsMasterVar(varindex);
@@ -2609,7 +2609,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
       return SCIP_OKAY;
    }
 
-      currseeedpool = conshdlrdata->curruserseeed->stemsFromUnpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+      currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
       varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
 
       conshdlrdata->curruserseeed->bookAsLinkingVar(varindex);
@@ -2651,7 +2651,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
    seeed = conshdlrdata->curruserseeed;
 
-   currseeedpool = seeed->stemsFromUnpresolved ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+   currseeedpool = seeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
 
    seeed->flushBooked();
 
@@ -2681,9 +2681,9 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    if( conshdlrdata->curruserseeed->isComplete() )
    {
       if( !seeed->shouldCompletedByConsToMaster() )
-         conshdlrdata->curruserseeed->usergiven = gcg::USERGIVEN::COMPLETE;
+         conshdlrdata->curruserseeed->setUsergiven( gcg::USERGIVEN::COMPLETE );
       /** stems from presolved problem? */
-      if( !conshdlrdata->curruserseeed->stemsFromUnpresolved )
+      if( !conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
       {
          DEC_DECOMP* newdecomp;
 
@@ -2704,9 +2704,9 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    else
    {
       assert( !seeed->shouldCompletedByConsToMaster() );
-      conshdlrdata->curruserseeed->usergiven = gcg::USERGIVEN::PARTIAL;
+      conshdlrdata->curruserseeed->setUsergiven( gcg::USERGIVEN::PARTIAL );
 
-      if ( !conshdlrdata->curruserseeed->stemsFromUnpresolved )
+      if ( !conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
          SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, conshdlrdata->curruserseeed) );
       else
          conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete( conshdlrdata->curruserseeed );
@@ -2727,27 +2727,27 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       }
       conshdlrdata->curruserseeed->setDetectorPropagated(NULL);
 
-      conshdlrdata->curruserseeed->detectorClockTimes.push_back(0.);
-      conshdlrdata->curruserseeed->pctVarsFromFree.push_back( (nvarstoblock + conshdlrdata->curruserseeed->getNMastervars() +conshdlrdata->curruserseeed->getNLinkingvars())/(SCIP_Real) conshdlrdata->curruserseeed->getNVars()  );
-      conshdlrdata->curruserseeed->pctVarsToBlock.push_back((nvarstoblock )/(SCIP_Real) conshdlrdata->curruserseeed->getNVars() );
-      conshdlrdata->curruserseeed->pctVarsToBorder.push_back( (conshdlrdata->curruserseeed->getNMastervars() +conshdlrdata->curruserseeed->getNLinkingvars())/(SCIP_Real) conshdlrdata->curruserseeed->getNVars() ) ;
-      conshdlrdata->curruserseeed->pctConssToBorder.push_back( (conshdlrdata->curruserseeed->getNMasterconss() ) / (SCIP_Real) conshdlrdata->curruserseeed->getNConss() ) ;
-      conshdlrdata->curruserseeed->pctConssFromFree.push_back( (conshdlrdata->curruserseeed->getNMasterconss() + nconsstoblock ) / (SCIP_Real) conshdlrdata->curruserseeed->getNConss() ) ;
-      conshdlrdata->curruserseeed->pctConssToBlock.push_back( (nconsstoblock ) / (SCIP_Real) conshdlrdata->curruserseeed->getNConss() );
-      conshdlrdata->curruserseeed->nNewBlocks.push_back(conshdlrdata->curruserseeed->getNBlocks());
+      conshdlrdata->curruserseeed->addClockTime(0.);
+      conshdlrdata->curruserseeed->addPctVarsFromFree( (nvarstoblock + conshdlrdata->curruserseeed->getNMastervars() +conshdlrdata->curruserseeed->getNLinkingvars())/(SCIP_Real) conshdlrdata->curruserseeed->getNVars()  );
+      conshdlrdata->curruserseeed->addPctVarsToBlock((nvarstoblock )/(SCIP_Real) conshdlrdata->curruserseeed->getNVars() );
+      conshdlrdata->curruserseeed->addPctVarsToBorder( (conshdlrdata->curruserseeed->getNMastervars() +conshdlrdata->curruserseeed->getNLinkingvars())/(SCIP_Real) conshdlrdata->curruserseeed->getNVars() ) ;
+      conshdlrdata->curruserseeed->addPctConssToBorder( (conshdlrdata->curruserseeed->getNMasterconss() ) / (SCIP_Real) conshdlrdata->curruserseeed->getNConss() ) ;
+      conshdlrdata->curruserseeed->addPctConssFromFree( (conshdlrdata->curruserseeed->getNMasterconss() + nconsstoblock ) / (SCIP_Real) conshdlrdata->curruserseeed->getNConss() ) ;
+      conshdlrdata->curruserseeed->addPctConssToBlock( (nconsstoblock ) / (SCIP_Real) conshdlrdata->curruserseeed->getNConss() );
+      conshdlrdata->curruserseeed->addNNewBlocks(conshdlrdata->curruserseeed->getNBlocks());
    }
 
    conshdlrdata->curruserseeed->findVarsLinkingToMaster(currseeedpool);
    conshdlrdata->curruserseeed->findVarsLinkingToStairlinking(currseeedpool);
 
 
-   if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::PARTIAL )
+   if( conshdlrdata->curruserseeed->getUsergiven() == gcg::USERGIVEN::PARTIAL )
       usergiveninfo = "partial";
-   if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::COMPLETE )
+   if( conshdlrdata->curruserseeed->getUsergiven() == gcg::USERGIVEN::COMPLETE )
       usergiveninfo = "complete";
-   if( conshdlrdata->curruserseeed->usergiven == gcg::USERGIVEN::COMPLETED_CONSTOMASTER )
+   if( conshdlrdata->curruserseeed->getUsergiven() == gcg::USERGIVEN::COMPLETED_CONSTOMASTER )
          usergiveninfo = "complete";
-   if( conshdlrdata->curruserseeed->stemsFromUnpresolved )
+   if( conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
          presolvedinfo = "unpresolved";
    else presolvedinfo = "presolved";
 
@@ -3063,12 +3063,12 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    for( ; seeediter != seeediterend; ++seeediter)
    {
-      if( !(*seeediter)->isComplete() && (*seeediter)->isfromunpresolved )
+      if( !(*seeediter)->isComplete() && (*seeediter)->isFromUnpresolved() )
       {
          tofinishunpresolved.push_back(*seeediter);
       }
 
-      if( !(*seeediter)->isComplete() && !(*seeediter)->isfromunpresolved )
+      if( !(*seeediter)->isComplete() && !(*seeediter)->isFromUnpresolved() )
       {
          tofinishpresolved.push_back(*seeediter);
       }
@@ -3085,11 +3085,11 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    for( ; seeediter != seeediterend; ++seeediter )
    {
       SeeedPtr seeed = *seeediter ;
-      if( seeed->isComplete() && !seeed->isfromunpresolved )
+      if( seeed->isComplete() && !seeed->isFromUnpresolved() )
       {
          conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) ) );
       }
-      if( seeed->isComplete() && seeed->isfromunpresolved )
+      if( seeed->isComplete() && seeed->isFromUnpresolved() )
       {
          conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, SCIPconshdlrDecompAdaptScore(scip, seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) ) ) );
       }
@@ -3174,9 +3174,9 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
       {
          SeeedPtr seeed = conshdlrdata->seeedpool->getFinishedSeeed( i );
 
-         for( size_t j = 0; j < seeed->listofancestorids.size(); ++j )
+         for( int j = 0; j < seeed->getNAncestors(); ++j )
          {
-            int id = seeed->listofancestorids[j];
+            int id = seeed->getAncestorID( j );
             if( SCIPconshdlrDecompGetSeeed(scip, id) == NULL )
             {
                SCIPwarningMessage(scip, "Warning: presolved seeed %d has an ancestor (id: %d) that is not found! \n", seeed->getID(), id );
@@ -3193,9 +3193,9 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
       {
          SeeedPtr seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
 
-         for( size_t j = 0; j < seeed->listofancestorids.size(); ++j )
+         for( int j = 0; j < seeed->getNAncestors(); ++j )
          {
-            int id = seeed->listofancestorids[j];
+            int id = seeed->getAncestorID( j );
             if( SCIPconshdlrDecompGetSeeed(scip, id) == NULL )
             {
                SCIPwarningMessage(scip, "Warning: unpresolved seeed %d has an ancestor (id: %d) that is not found! \n", seeed->getID(), id );
@@ -3750,6 +3750,21 @@ std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
          maxid = conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID();
    }
 
+   for ( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+      {
+         if( conshdlrdata->seeedpool->getFinishedSeeed( i ) != NULL && conshdlrdata->seeedpool->getFinishedSeeed( i )->getID() > maxid )
+            maxid = conshdlrdata->seeedpool->getFinishedSeeed( i )->getID();
+      }
+
+      for ( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+      {
+         if( conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ) != NULL &&  conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID() > maxid )
+            maxid = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID();
+      }
+
+
+
+
    tmpAllRelevantSeeeds = std::vector<SeeedPtr>(maxid+1, NULL );
 
    for ( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
@@ -3765,6 +3780,21 @@ std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
             continue;
          tmpAllRelevantSeeeds[conshdlrdata->seeedpool->getAncestorSeeed( i )->getID()] = conshdlrdata->seeedpool->getAncestorSeeed( i );
       }
+
+   for ( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+      {
+         if ( conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ) == NULL || conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID() < 0  )
+            continue;
+         tmpAllRelevantSeeeds[conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID()] = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
+      }
+
+   for ( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+      {
+         if ( conshdlrdata->seeedpool->getFinishedSeeed( i ) == NULL || conshdlrdata->seeedpool->getFinishedSeeed( i )->getID() < 0  )
+            continue;
+         tmpAllRelevantSeeeds[conshdlrdata->seeedpool->getFinishedSeeed( i )->getID()] = conshdlrdata->seeedpool->getFinishedSeeed( i );
+      }
+
 
    return tmpAllRelevantSeeeds;
 }
@@ -3838,10 +3868,10 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
       else
          break;
 
-      for( size_t i = 0; i < seeeds[s]->listofancestorids.size(); ++i )
+      for( int i = 0; i < seeeds[s]->getNAncestors(); ++i )
       {
          int ancestorid;
-         ancestorid = seeeds[s]->listofancestorids[seeeds[s]->listofancestorids.size() - i -1];
+         ancestorid = seeeds[s]->getAncestorID( seeeds[s]->getNAncestors() - i - 1 );
          parents[currid] = ancestorid;
          childs[ancestorid].push_back(currid);
          childsfinished[ancestorid].push_back(FALSE);
@@ -3852,7 +3882,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
             assert(allrelevantseeeds[ancestorid] != NULL);
             treeseeeds.push_back( allrelevantseeeds[ancestorid] );
             treeseeedids.push_back(ancestorid);
-            if( i == seeeds[s]->listofancestorids.size() -1 )
+            if( i == seeeds[s]->getNAncestors() -1 )
             {
                root = ancestorid;
             }
@@ -3878,6 +3908,9 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
 
    firstsibldist = 1. / (childs[root].size() - 1 );
+   if( childs[root].size() == 1 ){
+      firstsibldist = 1;
+   }
    preambel.precision(2);
 
    preambel << "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";

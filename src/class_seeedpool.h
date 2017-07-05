@@ -87,7 +87,7 @@ private:
    std::vector<SeeedPtr> incompleteSeeeds;                     /**< vector of incomplete seeeds that can be used for initialization */
    std::vector<SeeedPtr> currSeeeds;                           /**< vector of current (open) seeeds */
    std::vector<SeeedPtr> finishedSeeeds;                       /**< vector of finished seeeds */
-   std::vector<SeeedPtr> ancestorseeeds;                       /**< @todo revise! collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
+   std::vector<SeeedPtr> ancestorseeeds;                       /**< @todo revise comment! collection of all relevant seeeds, allrelevaseeeds[i] contains seeed with id i; non relevant seeeds are repepresented by a null pointer */
    int maxndetectionrounds;                                    /**< maximum number of detection rounds */
    std::vector<std::vector<int>> varsForConss;                 /**< stores for every constraint the indices of variables
                                                                  *< that are contained in the constraint */
@@ -433,7 +433,7 @@ public:
    /** returns pointer to a variable classifier */
    VarClassifier* getVarClassifier(
       int classifierIndex /**< index of variable classifier */
-   );
+      );
 
    /** returns the assignment of variables to classes of a classifier as integer array */
    int* getVarClassifierArray(
@@ -455,15 +455,17 @@ public:
       DEC_DECOMP** newdecomp  /** the new decomp created from the seeed */
       );
 
-   /** creates a seeed for a given decomposition, atm dummy method */
+   /** creates a seeed for a given decomposition
+    *  the resulting seeed will not have a detectorchaininfo or any ancestor or finishing detector data
+    *  only use this method if the seeedpool is for the transformed problem
+    *  the resulting seeed may only be added to the seeedpool for the presolved problem */
    SCIP_RETCODE createSeeedFromDecomp(
-      DEC_DECOMP* decomp,  /** decomposition the seeed is created for */
-      SeeedPtr* newseeed   /** the new seeed created from the decomp */
+      DEC_DECOMP* decomp, /**< decomposition the seeed is created for */
+      SeeedPtr* newseeed /**< the new seeed created from the decomp */
       );
 
    /** returns true if the matrix structure corresponds to the transformed problem */
    SCIP_Bool getTransformedInfo();
-
 
 private:
 
