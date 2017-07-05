@@ -137,15 +137,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetpart)
    SCIP_CONS* cons;
 
    gcg::Seeed* seeed;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
    seeed->setDetectorPropagated(detector);
-
-   if(!seeed->areOpenVarsAndConssCalculated())
-   {
-      seeed->calcOpenconss();
-      seeed->calcOpenvars();
-      seeed->setOpenVarsAndConssCalculated(true);
-   }
 
    /** set open setpartitioning constraints to Master */
    for( int i = 0; i < seeed->getNOpenconss(); ++i)

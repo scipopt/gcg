@@ -1175,7 +1175,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
 
       seeed = conshdlrdata->listall->at(i);
 
-      assert( seeed->checkConsistency() );
+      assert( seeed->checkConsistency( conshdlrdata->seeedpool ) );
 
       SCIPdialogMessage(scip, NULL, " %4d   ", i );
       SCIPdialogMessage(scip, NULL, "%5d  ", seeed->getNBlocks() );
@@ -1990,9 +1990,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    assert( currseeedpool != NULL );
    assert( conshdlrdata->curruserseeed == NULL );
 
-   conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool->getNDetectors(), currseeedpool->getNConss(), currseeedpool->getNVars() );
-   conshdlrdata->curruserseeed->calcOpenconss();
-   conshdlrdata->curruserseeed->calcOpenvars();
+   conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool->getNConss(), currseeedpool->getNVars() );
 
 
    conshdlrdata->curruserseeed->stemsFromUnpresolved = !presolved;
@@ -2145,7 +2143,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-   size_t i;
+   int i;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -2173,7 +2171,7 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
 
    /** add seeeds to list */
    /** 1) add presolved finished */
-   for( i = 0;  conshdlrdata->seeedpool != NULL && i < conshdlrdata->seeedpool->finishedSeeeds.size() ; ++i)
+   for( i = 0; conshdlrdata->seeedpool != NULL && i < conshdlrdata->seeedpool->finishedSeeeds.size(); ++i )
     {
        SeeedPtr seeed;
        seeed = conshdlrdata->seeedpool->finishedSeeeds[i];
@@ -2191,17 +2189,17 @@ SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(
    }
 
    /** 3) add unpresolved finished */
-   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() ; ++i)
+   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i)
    {
       SeeedPtr seeed;
-      seeed = conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i];
+      seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed(i);
       seeed->isfromunpresolved = TRUE;
 
       conshdlrdata->listall->push_back(seeed);
    }
 
    /** 4) add unpresolved partial */
-   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.size() ; ++i)
+   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.size() ; ++i )
    {
       SeeedPtr seeed;
       seeed = conshdlrdata->seeedpoolunpresolved->incompleteSeeeds[i];
@@ -2698,7 +2696,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       /** stems from unpresolved problem */
       else
       {
-         conshdlrdata->seeedpoolunpresolved->finishedSeeeds.push_back(seeed);
+         conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed);
          conshdlrdata->unpresolveduserseeedadded = TRUE;
       }
 
@@ -2850,15 +2848,13 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    assert(seeedpool != NULL);
    assert(seeedpoolunpresolved != NULL);
 
-   seeediter = seeedpoolunpresolved->finishedSeeeds.begin();
-   seeediterend = seeedpoolunpresolved->finishedSeeeds.end();
-
-   for(; seeediter != seeediterend; ++seeediter )
+   for( int i = 0; i < seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
    {
-      if( (*seeediter)->isComplete() )
+      SeeedPtr finseeed = seeedpoolunpresolved->getFinishedSeeed(i);
+      if( finseeed->isComplete() )
       {
-         assert( (*seeediter)->checkConsistency());
-         seeedstotranslate.push_back(*seeediter);
+         assert( finseeed->checkConsistency( seeedpoolunpresolved ) );
+         seeedstotranslate.push_back(finseeed);
       }
    }
 
@@ -2959,8 +2955,7 @@ SCIP_Bool SCIPconshdlrDecompHasDecomp(
 
    return ( (conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->finishedSeeeds.size() > 0 )  ||
       ( conshdlrdata->seeedpool != NULL && conshdlrdata->seeedpool->incompleteSeeeds.size() > 0 ) ||
-      (conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() > 0 ) ||
-      (conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.size() > 0 ) ) ;
+      ( conshdlrdata->seeedpoolunpresolved != NULL && conshdlrdata->seeedpoolunpresolved->incompleteSeeeds.size() > 0 ) ) ;
 }
 
 /** returns TRUE iff there is at least one full decompositions */
@@ -3167,7 +3162,7 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   ncompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size() );
+   ncompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() );
 //   nincompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->currSeeeds.size() ); /** @todo: check if is this wanted*/
 
 
@@ -3380,12 +3375,12 @@ SCIP_RETCODE DECdetectStructure(
 //   if( conshdlrdata->ndecomps == 0)
 //   {
 //      candidatesNBlocks = seeedpoolunpresolved.getSortedCandidatesNBlocks();
-//      seeedpoolunpresolved.calcConsClassifierAndNBlockCandidates(scip);
+//      seeedpoolunpresolved.calcClassifierAndNBlockCandidates(scip);
 //   }
 //=======
 
    /** get block number candidates and conslcassifier for original problem*/
-   conshdlrdata->seeedpoolunpresolved->calcConsClassifierAndNBlockCandidates(scip);
+   conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
 
    candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
 
@@ -3443,7 +3438,7 @@ SCIP_RETCODE DECdetectStructure(
    else
       SCIPdebugMessagePrint(scip, "seeedpool is not NULL \n");
 
-   conshdlrdata->seeedpool->calcConsClassifierAndNBlockCandidates(scip);
+     conshdlrdata->seeedpool->calcClassifierAndNBlockCandidates(scip);
 
    /** get block number candidates and translate orig classification and found seeeds (if any) to presolved problem */
    {
