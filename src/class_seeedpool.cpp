@@ -878,7 +878,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                       #pragma omp critical (seeedptrstore)
                       {
                          assert(seeedPropData->newSeeeds[seeed]->getID() >= 0);
-                         finishedSeeeds.push_back(seeedPropData->newSeeeds[seeed]);
+                         addSeeedToFinished(seeedPropData->newSeeeds[seeed] );
                       }
                    }
                    else
@@ -954,7 +954,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                    if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
                    {
                       assert(seeed->getID() >= 0);
-                      finishedSeeeds.push_back(seeed);
+                      addSeeedToFinished(seeed);
                    }
                    else
                    {
@@ -1042,7 +1042,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
                 #pragma omp critical (seeedptrstore)
                 {
                    assert(seeed->getID() >= 0);
-                   finishedSeeeds.push_back(seeed);
+                   addSeeedToFinished(seeed);
                 }
              }
 
@@ -1260,7 +1260,7 @@ SCIP_RETCODE Seeedpool::calcConsClassifierAndNBlockCandidates(
     usemaxwhitescore = TRUE;
     dothinout = FALSE;
 
-    finishedSeeeds = findSeeeds();
+    findSeeeds();
 
     /* sort the seeeds according to maximum white measure */
     sortFinishedForScore();
@@ -1331,13 +1331,15 @@ void Seeedpool::addSeeedToIncomplete(SeeedPtr seeed){
 
 void Seeedpool::addSeeedToCurr(SeeedPtr seeed){
 
-   currSeeeds.push_back(seeed);
+   if( seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, false) )
+      currSeeeds.push_back(seeed);
    return;
 }
 
 void Seeedpool::addSeeedToFinished(SeeedPtr seeed){
 
-   finishedSeeeds.push_back(seeed);
+   if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
+      finishedSeeeds.push_back(seeed);
    return;
 }
 
