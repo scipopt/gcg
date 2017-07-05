@@ -1857,7 +1857,8 @@ void DECdecompSetDetectorPctConssFromOpen(
    return;
 }
 
-/** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+/** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain)
+ *  on this decomposition */
 SCIP_Real* DECdecompGetDetectorPctConssFromOpen(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    )

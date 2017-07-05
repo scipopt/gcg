@@ -102,7 +102,7 @@ public:
    std::vector<SCIP_Real>           pctConssToBorder;           /**< vector containing the fraction of constraints assigned to the border for each detector working on that seeed*/
    std::vector<SCIP_Real>           pctConssToBlock;            /**< vector containing the fraction of constraints assigned to a block for each detector working on that seeed*/
    std::vector<SCIP_Real>           pctConssFromFree;           /**< vector containing the fraction of constraints that are not longer open for each detector working on that seeed*/
-   std::vector<int>                 nNewBlocks;                 /**< vector containing detector indices that worked on that seeed */
+   std::vector<int>                 nNewBlocks;                 /**< number of new blocks of the corresponding detectors on this decomposition */
 
    std::vector<int>                 listofancestorids;          /**< vector containing detector indices that worked on that seeed */
 
@@ -151,6 +151,41 @@ public:
 
    void addDetectorChainInfo(
       const char* decinfo
+   );
+
+   /** adds number of new blocks created by a detector added to detector chain */
+   void addNNewBlocks(
+      int nnewblocks
+   );
+
+   /** adds fraction of constraints that are not longer open for a detector added to detector chain */
+   void addPctConssFromFree(
+      SCIP_Real pct
+   );
+
+   /** adds fraction of constraints assigned to a block for a detector added to detector chain */
+   void addPctConssToBlock(
+      SCIP_Real pct
+   );
+
+   /** adds fraction of constraints assigned to the border for a detector added to detector chain */
+   void addPctConssToBorder(
+      SCIP_Real pct
+   );
+
+   /** adds fraction of variables that are not longer open for a detector added to detector chain */
+   void addPctVarsFromFree(
+      SCIP_Real pct
+   );
+
+   /** adds fraction of variables assigned to a block for a detector added to detector chain */
+   void addPctVarsToBlock(
+      SCIP_Real pct
+   );
+
+   /** adds fraction of variables assigned to the border for a detector added to detector chain */
+   void addPctVarsToBorder(
+      SCIP_Real pct
    );
 
    /** are already assigned constraints to blocks */
@@ -216,7 +251,7 @@ public:
 
    /** book a constraint to be added to the master constraints (after calling flushBooked) */
    SCIP_RETCODE bookAsMasterCons(
-         int consToMaster
+         int consToMaster  /* this index can be computed by the function Seeedpool::getIndexForCons */
    );
 
    /** book a variable to be added to the master variables (after calling flushBooked) */
@@ -413,6 +448,11 @@ public:
    int getNMastervars(
    );
 
+   /** returns number of blocks a detector added */
+   int getNNewBlocks(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
    /** returns total number of stairlinking vars */
    int getNTotalStairlinkingvars(
       );
@@ -445,6 +485,36 @@ public:
 
    /** returns vector containing variables not assigned yet */
    const int* getOpenvars(
+   );
+
+   /** returns fraction of variables assigned to the border for a detector */
+   SCIP_Real getPctVarsToBorder(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
+   /** returns fraction of variables assigned to a block for a detector */
+   SCIP_Real getPctVarsToBlock(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
+   /** returns fraction of variables that are not longer open for a detector */
+   SCIP_Real getPctVarsFromFree(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
+   /** returns fraction of constraints assigned to the border for a detector */
+   SCIP_Real getPctConssToBorder(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
+   /** returns fraction of constraints assigned to a block for a detector */
+   SCIP_Real getPctConssToBlock(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
+   );
+
+   /** returns fraction of constraints that are not longer open for a detector */
+   SCIP_Real getPctConssFromFree(
+      int detectorchainindex              /**< index of the detector in the detectorchain */
    );
 
    /** returns vector containing stairlinking vars */

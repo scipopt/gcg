@@ -3012,18 +3012,123 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    return SCIP_OKAY;
 }
 
-/**
- * creates a seeed for a given decomposition
- */
+/** creates a seeed for a given decomposition
+ *  the resulting seeed will not have a detectorchaininfo or any ancestor or finishing detector data
+ *  only use this method if the seeedpool is for the transformed problem
+ *  the resulting seeed may only be added to the seeedpool for the presolved problem */
 SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
-      DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
-      SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
-  )
+   DEC_DECOMP* decomp,
+   SeeedPtr* newseeed
+   )
 {
-   *newseeed = new Seeed(scip, this->getNewIdForSeeed(), this->getNDetectors(), this->getNConss(), this->getNVars() );
+   assert( decomp != NULL );
+   assert( DECdecompCheckConsistency( scip, decomp ) );
+   assert( nConss == DECdecompGetNConss( decomp ) );
+   assert( DECdecompGetPresolved( decomp ) );
+   assert( transformed );
+
+   /* create new seeed and initialize its data */
+   SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nDetectors, nConss, nVars );
+   seeed->setNBlocks( DECdecompGetNBlocks( decomp ) );
+   /* @todo delete this after merging with seeedpool_cleanup !!! */
+   seeed->calcOpenconss();
+   seeed->calcOpenvars();
+
+   assert( seeed->getNOpenconss() == nConss );
+   assert( seeed->getNOpenvars() == nVars );
+
+   SCIP_CONS** linkingconss = DECdecompGetLinkingconss( decomp );
+   int nlinkingconss = DECdecompGetNLinkingconss( decomp );
+   SCIP_HASHMAP* constoblock = DECdecompGetConstoblock( decomp );
+   int nblock;
+
+   /* set linking conss */
+   for( int c = 0; c < nlinkingconss; ++c )
+   {
+      seeed->bookAsMasterCons( getIndexForCons( linkingconss[c] ) );
+   }
+
+   /* set block conss */
+   for( int c = 0; c < nConss; ++c )
+   {
+      nblock = (int) (size_t) SCIPhashmapGetImage( constoblock, (void*) (size_t) getConsForIndex( c ) );
+      if( nblock >= 1 && nblock <= seeed->getNBlocks() )
+      {
+         seeed->bookAsBlockCons( c, nblock - 1 );
+      }
+   }
+
+   SCIP_VAR*** stairlinkingvars = DECdecompGetStairlinkingvars( decomp );
+   int* nstairlinkingvars = DECdecompGetNStairlinkingvars( decomp );
+   int varindex;
+   SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock( decomp );
+
+   /* set stairlinkingvars */
+   for( int b = 0; b < seeed->getNBlocks(); ++b )
+   {
+      for( int v = 0; v < nstairlinkingvars[b]; ++v )
+      {
+         if( stairlinkingvars[b][v] != NULL )
+         {
+            varindex = getIndexForVar( stairlinkingvars[b][v] );
+            seeed->bookAsStairlinkingVar( varindex, b );
+         }
+      }
+   }
+
+   /* flush booked conss and vars in order to be able to check whether a var is already assigned to stairlinking */
+   seeed->flushBooked();
+
+   /* set other vars */
+   for( int v = 0; v < getNVars(); ++v )
+   {
+      nblock = (int) (size_t) SCIPhashmapGetImage( vartoblock, (void*) (size_t) SCIPvarGetProbvar( getVarForIndex( v ) ) );
+      if( nblock == seeed->getNBlocks() + 2 && !seeed->isVarStairlinkingvar( v ) )
+      {
+         seeed->bookAsLinkingVar( v );
+      }
+      else if( nblock == seeed->getNBlocks() + 1 )
+      {
+         seeed->bookAsMasterVar( v );
+      }
+      else if( nblock >= 1 && nblock <= seeed->getNBlocks() )
+      {
+         seeed->bookAsBlockVar( v, nblock - 1 );
+      }
+   }
+
+   seeed->flushBooked();
+
+   /* now all conss and vars should be assigned */
+   assert( seeed->isComplete() );
+
+   /*set all detector-related information*/
+   for( int i = 0; i < DECdecompGetDetectorChainSize( decomp ); ++i )
+   {
+      seeed->setDetectorPropagated( DECdecompGetDetectorChain( decomp )[i] );
+      seeed->addClockTime( DECdecompGetDetectorClockTimes( decomp )[i] );
+      seeed->addPctConssFromFree( 1 - *(DECdecompGetDetectorPctConssFromOpen( decomp )) );
+      seeed->addPctConssToBlock( *(DECdecompGetDetectorPctConssToBlock( decomp )) );
+      seeed->addPctConssToBorder( *(DECdecompGetDetectorPctConssToBorder( decomp )) );
+      seeed->addPctVarsFromFree( 1 - *(DECdecompGetDetectorPctVarsFromOpen( decomp )) );
+      seeed->addPctVarsToBlock( *(DECdecompGetDetectorPctVarsToBlock( decomp )) );
+      seeed->addPctVarsToBorder( *(DECdecompGetDetectorPctVarsToBorder( decomp )) );
+      seeed->addNNewBlocks( *(DECdecompGetNNewBlocks( decomp )) );
+   }
+
+   seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
+
+   /* detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings
+
+   /* calc maxwhitescore and hashvalue */
+   prepareSeeed( seeed );
+
+   assert( DECgetMaxWhiteScore( scip, decomp ) == seeed->getMaxWhiteScore() );
+   assert( seeed->checkConsistency( this ) );
+
+   *newseeed = seeed;
 
    return SCIP_OKAY;
-
 }
 
 
