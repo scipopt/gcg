@@ -3339,7 +3339,6 @@ void Seeed::setFinishedByFinisher(
    isFinishedByFinisher = finished;
 }
 
-
 /** sets whether this seeed is finished by a finisher in the unpresolved problem */
 void Seeed::setFinishedByFinisherUnpresolved(
    bool finishedByFinisherUnpresolved

@@ -150,6 +150,7 @@ public:
    Seeed(
       const Seeed *seeedToCopy /**< seeed to be copied */
       );
+
    /** destructor */
    ~Seeed();
 
@@ -174,37 +175,37 @@ public:
    /** adds number of new blocks created by a detector added to detector chain */
    void addNNewBlocks(
       int nnewblocks
-   );
+      );
 
    /** adds fraction of constraints that are not longer open for a detector added to detector chain */
    void addPctConssFromFree(
       SCIP_Real pct
-   );
+      );
 
    /** adds fraction of constraints assigned to a block for a detector added to detector chain */
    void addPctConssToBlock(
       SCIP_Real pct
-   );
+      );
 
    /** adds fraction of constraints assigned to the border for a detector added to detector chain */
    void addPctConssToBorder(
       SCIP_Real pct
-   );
+      );
 
    /** adds fraction of variables that are not longer open for a detector added to detector chain */
    void addPctVarsFromFree(
       SCIP_Real pct
-   );
+      );
 
    /** adds fraction of variables assigned to a block for a detector added to detector chain */
    void addPctVarsToBlock(
       SCIP_Real pct
-   );
+      );
 
    /** adds fraction of variables assigned to the border for a detector added to detector chain */
    void addPctVarsToBorder(
       SCIP_Real pct
-   );
+      );
 
    /** returns true if at least one constraint is assigned to a block */
    bool alreadyAssignedConssToBlocks();
@@ -478,7 +479,7 @@ public:
    /** returns number of blocks a detector added */
    int getNNewBlocks(
       int detectorchainindex /**< index of the detector in the detectorchain */
-   );
+      );
 
    /** returns number of blocks the detectors in the detectorchain added */
    std::vector<int> getNNewBlocksVector();
@@ -603,12 +604,12 @@ public:
       Seeed* otherseeed,   /**< other seeed */
       SCIP_Bool* isequal,  /**< pointer to store whether seeeds are identical */
       bool sortseeeds      /**< should conss and vars be sorted before comparing the seeeds? */
-   );
+      );
 
    /* method to check whether this seeed is equal to a given other seeed */
    bool isEqual(
       Seeed* other /**< other seeed */
-   );
+      );
 
    /** returns true if this seeed was propagated by a detector */
    bool isPropagatedBy(
