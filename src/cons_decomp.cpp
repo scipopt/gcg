@@ -1805,6 +1805,7 @@ SCIP_RETCODE DECincludeDetector(
    SCIP_Bool             enabledFinishing,       /**< whether the finishing should be enabled */
    SCIP_Bool             skip,                   /**< whether the detector should be skipped if others found structure   */
    SCIP_Bool             usefulRecall,           /** is it useful to call this detector on a descendant of the propagated seeed */
+   SCIP_Bool             legacymode,             /**< whether (old) DETECTSTRUCTURE method should also be used for detection */
    DEC_DETECTORDATA*     detectordata,           /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)), /**< the method that will detect the structure (must not be NULL)*/
    DEC_DECL_FREEDETECTOR((*freeDetector)),       /**< destructor of detector (or NULL) */
@@ -1879,6 +1880,7 @@ SCIP_RETCODE DECincludeDetector(
    detector->enabledFinishing = enabledFinishing;
    detector->skip = skip;
    detector->usefulRecall = usefulRecall;
+   detector->legacymode = legacymode;
    detector->ndecomps = 0;
    detector->decomps = NULL;
    detector->dectime = 0.;
@@ -1903,6 +1905,10 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/usefullrecall", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> should be called on descendants of the current seeed", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->usefulRecall), FALSE, usefulRecall, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/legacymode", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether (old) DETECTSTRUCTURE method of detector <%s> should also be used for detection", name);
+   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->legacymode), FALSE, legacymode, NULL, NULL) );
 
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallround", name);
