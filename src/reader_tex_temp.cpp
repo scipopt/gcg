@@ -60,8 +60,6 @@
 #define DEFAULT_PICTURESONLY     FALSE
 #define DEFAULT_DRAFTMODE        FALSE
 
-extern "C" {
-
 /** data for dec reader */
 struct SCIP_ReaderData
 {
@@ -976,7 +974,4 @@ SCIP_RETCODE SCIPincludeReaderTex(
       SCIPaddBoolParam(scip, "reading/texreader/draftmode", "if true shows no non-zeroes, recommended if too slow or too memory-intensive", &readerdata->draftmode, FALSE, DEFAULT_DRAFTMODE, NULL, NULL));
 
    return SCIP_OKAY;
-}
-
-/*extern "C"*/
 }

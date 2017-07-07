@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_tex.cpp
+/**@file   reader_tex.c
  * @brief  tex file reader for writing decomposition details to LaTeX files
  * @author Hanna Franzen
  */

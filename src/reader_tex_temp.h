@@ -43,7 +43,9 @@
 #include "scip/scip.h"
 #include "type_decomp.h"
 
-extern "C"{
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** includes the tex file reader into SCIP */
 extern SCIP_RETCODE SCIPincludeReaderTex(
@@ -161,7 +163,8 @@ SCIP_Bool GCGtexGetDraftmode(
    SCIP* scip /**< SCIP data structure */
 );
 
-/*extern C*/
+#ifdef __cplusplus
 }
+#endif
 
 #endif /* SRC_READER_TEX_TEMP_H_ */
