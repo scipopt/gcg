@@ -217,11 +217,11 @@ std::string writeSeeedDetectorChainInfoLatex(
    if( currheight != 1 )
       relposition = "";
 
-   if( (size_t) currheight > seeed->detectorchaininfo.size() )
+   if( currheight > seeed->getNDetectorchainInfo() )
       line << "edge from parent node [" << relposition << "] {no info" << seeed->getID() << "-" << currheight - 1 << " } ";
    else
    {
-      std::string oldinfo = seeed->detectorchaininfo[currheight - 1];
+      std::string oldinfo = seeed->getDetectorchainInfo( currheight - 1 );
       /* take latexified detctorchaininfo */
       size_t index = 0;
       while( true )
@@ -1696,10 +1696,10 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
 
       newseeed->setDetectorChainString( otherseeed->getDetectorChainString() );
       newseeed->setStemsFromUnpresolved( true );
-      newseeed->isFinishedByFinisherUnpresolved = otherseeed->getFinishedByFinisher();
+      newseeed->setFinishedByFinisherUnpresolved( otherseeed->getFinishedByFinisher() );
 
       if( otherseeed->getFinishedByFinisher() )
-         newseeed->finishedUnpresolvedBy = otherseeed->getDetectorchain()[otherseeed->getNDetectors() - 1];
+         newseeed->setFinishedUnpresolvedBy( otherseeed->getDetectorchain()[otherseeed->getNDetectors() - 1] );
 
       newseeed->setFinishedByFinisher( otherseeed->getFinishedByFinisher() );
       newseeed->sort();

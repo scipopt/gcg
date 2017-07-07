@@ -2578,6 +2578,16 @@ char* Seeed::getDetectorChainString()
    return detectorchainstring;
 }
 
+/** returns detectorchain info of detetctor related to given detectorchain index */
+std::string Seeed::getDetectorchainInfo(
+   int detectorchainindex
+   )
+{
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) detectorchaininfo.size() );
+
+   return detectorchaininfo[detectorchainindex];
+}
+
 /** returns the time that the detector related to the given detectorchainindex needed for detecting */
 SCIP_Real Seeed::getDetectorClockTime(
    int detectorchainindex
@@ -2619,6 +2629,18 @@ std::vector<DEC_DETECTOR*> Seeed::getDetectorchainVector()
 bool Seeed::getFinishedByFinisher()
 {
    return isFinishedByFinisher;
+}
+
+/** returns true if the seeed is finished by a finisher in the unpresolved problem */
+bool Seeed::getFinishedByFinisherUnpresolved()
+{
+   return isFinishedByFinisherUnpresolved;
+}
+
+/** returns the detector that finished this seeed in the unpresolved problem if there exists one, NULL otherwise */
+DEC_DETECTOR* Seeed::getFinishedUnpresolvedBy()
+{
+   return finishedUnpresolvedBy;
 }
 
 /** returns the calculated hash value of this seeed */
@@ -2708,6 +2730,12 @@ int Seeed::getNConssForBlock(
 {
    assert( block >= 0 && block < nBlocks );
    return (int) conssForBlocks[block].size();
+}
+
+/** returns size of the detectorchain info vector */
+int Seeed::getNDetectorchainInfo()
+{
+   return detectorchaininfo.size();
 }
 
 /** returns the number of detectors the seeed is propagated by */
@@ -3309,6 +3337,23 @@ void Seeed::setFinishedByFinisher(
    )
 {
    isFinishedByFinisher = finished;
+}
+
+
+/** sets whether this seeed is finished by a finisher in the unpresolved problem */
+void Seeed::setFinishedByFinisherUnpresolved(
+   bool finishedByFinisherUnpresolved
+   )
+{
+   isFinishedByFinisherUnpresolved = finishedByFinisherUnpresolved;
+}
+
+/** sets the detector that finished the seeed in the unpresolved problem */
+void Seeed::setFinishedUnpresolvedBy(
+   DEC_DETECTOR* detector
+   )
+{
+   finishedUnpresolvedBy = detector;
 }
 
 /** sets number of blocks, only increasing number allowed */

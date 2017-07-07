@@ -101,10 +101,7 @@ private:
 
    /** statistic information */
    std::vector<DEC_DETECTOR*> detectorChain;          /**< vector containing detectors that worked on that seeed */
-
-public:
    std::vector<std::string> detectorchaininfo;        /**< vector containing information about the detector call */
-private:
    std::vector<SCIP_Bool> detectorChainFinishingUsed; /**< vector containing whether the finishing method of the
                                                         *< corresponding detector was used on that seeed */
    std::vector<SCIP_Real> detectorClockTimes;         /**< vector containing detector times in seconds  */
@@ -133,10 +130,12 @@ private:
    /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
    bool stemsFromUnpresolved;             /**< seeed has at least one ancestor that is a seeed from unpresolved problem */
    bool isfromunpresolved;                /**< seeed is from unpresolved problem */
-public:
    bool isFinishedByFinisherUnpresolved;  /**< was the ancestor seeed for the unpresolved problem finished by the
                                             *< finishseeed() method of a detector */
-   DEC_DETECTOR* finishedUnpresolvedBy;   /**< index of dinishing detector of unpresolved ancestor seeed */
+   DEC_DETECTOR* finishedUnpresolvedBy;   /**< index of finishing detector of unpresolved ancestor seeed */
+
+
+public:
 
    /** constructor
     *  initially, all conss and vars are open */
@@ -388,6 +387,11 @@ public:
    /** returns detectorchainstring */
    char* getDetectorChainString();
 
+   /** returns detectorchain info of detetctor related to given detectorchain index */
+   std::string getDetectorchainInfo(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
    /** returns the time that the detector related to the given detectorchainindex needed for detecting */
    SCIP_Real getDetectorClockTime(
       int detectorchainindex /**< index of the detector in the detectorchain */
@@ -409,6 +413,12 @@ public:
 
    /** returns true if this seeed was finished by finishSeeed() method of a detector */
    bool getFinishedByFinisher();
+
+   /** returns true if the seeed is finished by a finisher in the unpresolved problem */
+   bool getFinishedByFinisherUnpresolved();
+
+   /** returns the detector that finished this seeed in the unpresolved problem if there exists one, NULL otherwise */
+   DEC_DETECTOR* getFinishedUnpresolvedBy();
 
    /** returns the calculated hash value of this seeed */
    long getHashValue();
@@ -449,6 +459,9 @@ public:
    int getNConssForBlock(
       int block
       );
+
+   /** returns size of the detectorchain info vector */
+   int getNDetectorchainInfo();
 
    /** returns the number of detectors the seeed is propagated by */
    int getNDetectors();
@@ -683,6 +696,16 @@ public:
       bool finished
       );
 
+   /** sets whether this seeed is finished by a finisher in the unpresolved problem */
+   void setFinishedByFinisherUnpresolved(
+      bool finishedByFinisherUnpresolved
+      );
+
+   /** sets the detector that finished the seeed in the unpresolved problem */
+   void setFinishedUnpresolvedBy(
+      DEC_DETECTOR* detector
+      );
+
    /** sets number of blocks, only increasing number allowed */
    SCIP_RETCODE setNBlocks(
       int nBlocks
@@ -691,7 +714,7 @@ public:
    /** sets the id of this seeed */
    SCIP_RETCODE setID(
       int id
-   );
+      );
 
    /** sets whether this seeed is from the unpresolved problem */
    void setIsFromUnpresolved(
