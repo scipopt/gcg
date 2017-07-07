@@ -46,14 +46,16 @@
 extern "C"{
 
 /** includes the tex file reader into SCIP */
-extern SCIP_RETCODE SCIPincludeReaderTex(SCIP* scip /**< SCIP data structure */
+extern SCIP_RETCODE SCIPincludeReaderTex(
+   SCIP* scip  /**< SCIP data structure */
 );
 
 /** gets the path of the file */
-extern SCIP_RETCODE GCGgetFilePath(SCIP* scip, /**< SCIP data structure */
-FILE* file, /**< file */
-char* pfile /**< return path of file */
-);
+extern SCIP_RETCODE GCGgetFilePath(
+   SCIP* scip,    /**< SCIP data structure */
+   FILE* file,       /**< file */
+   char* pfile       /**< return path of file */
+   );
 
 /** write LaTeX code header & begin of document
  * The proper order in which a tex file is written goes as follows:
@@ -64,8 +66,9 @@ char* pfile /**< return path of file */
  *    GCGtexWriteEndCode               (required)
  *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
  */
-extern SCIP_RETCODE GCGtexWriteHeaderCode(SCIP* scip, /**< SCIP data structure */
-FILE* file /**< File pointer to write to */
+extern SCIP_RETCODE GCGtexWriteHeaderCode(
+   SCIP* scip,    /**< SCIP data structure */
+   FILE* file     /**< File pointer to write to */
 );
 
 /** write LaTeX code title page that includes general statistics about the problem
@@ -77,9 +80,10 @@ FILE* file /**< File pointer to write to */
  *    GCGtexWriteEndCode               (required)
  *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
  */
-extern SCIP_RETCODE GCGtexWriteTitlepage(SCIP* scip, /**< SCIP data structure */
-FILE* file, /**< File pointer to write to */
-int* npresenteddecomps /**< Number of decompositions to be shown in the file or NULL if unknown */
+extern SCIP_RETCODE GCGtexWriteTitlepage(
+   SCIP* scip,             /**< SCIP data structure */
+   FILE* file,             /**< File pointer to write to */
+   int* npresenteddecomps  /**< Number of decompositions to be shown in the file or NULL if unknown */
 );
 
 /** write LaTeX code for table of contents
@@ -91,8 +95,9 @@ int* npresenteddecomps /**< Number of decompositions to be shown in the file or 
  *    GCGtexWriteEndCode               (required)
  *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
  */
-extern SCIP_RETCODE GCGtexWriteTableOfContents(SCIP* scip, /**< SCIP data structure */
-FILE* file /**< File pointer to write to */
+extern SCIP_RETCODE GCGtexWriteTableOfContents(
+   SCIP* scip, /**< SCIP data structure */
+   FILE* file  /**< File pointer to write to */
 );
 
 /** write LaTeX code for one decomposition
@@ -104,9 +109,10 @@ FILE* file /**< File pointer to write to */
  *    GCGtexWriteEndCode               (required)
  *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
  */
-extern SCIP_RETCODE GCGtexWriteDecompCode(SCIP* scip, /**< SCIP data structure */
-FILE* file, /**< File pointer to write to */
-DEC_DECOMP* decomp /**< Decomposition pointer */
+extern SCIP_RETCODE GCGtexWriteDecompCode(
+   SCIP* scip,          /**< SCIP data structure */
+   FILE* file,          /**< File pointer to write to */
+   DEC_DECOMP* decomp   /**< Decomposition pointer */
 );
 
 /** write LaTeX code for end of document
@@ -118,8 +124,9 @@ DEC_DECOMP* decomp /**< Decomposition pointer */
  *    -> GCGtexWriteEndCode            (required)
  *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
  */
-extern SCIP_RETCODE GCGtexWriteEndCode(SCIP* scip, /**< SCIP data structure */
-FILE* file /**< File pointer to write to */
+extern SCIP_RETCODE GCGtexWriteEndCode(
+   SCIP* scip, /**< SCIP data structure */
+   FILE* file  /**< File pointer to write to */
 );
 
 /** makes a new makefile and readme for the given .tex file
@@ -131,23 +138,27 @@ FILE* file /**< File pointer to write to */
  *    GCGtexWriteEndCode               (required)
  *    -> GCGtexWriteMakefileAndReadme  (optional but highly recommended)
  */
-extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(SCIP* scip, /**< SCIP data structure */
-FILE* file /**< File for which the makefile & readme are generated */
+extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(
+   SCIP* scip, /**< SCIP data structure */
+   FILE* file  /**< File for which the makefile & readme are generated */
 );
 
 /** Getter of parameter usegp */
 extern
-SCIP_Bool GCGtexGetUseGp(SCIP* scip /**< SCIP data structure */
+SCIP_Bool GCGtexGetUseGp(
+   SCIP* scip /**< SCIP data structure */
 );
 
 /** Getter of parameter picturesonly */
 extern
-SCIP_Bool GCGtexGetPicturesonly(SCIP* scip /**< SCIP data structure */
+SCIP_Bool GCGtexGetPicturesonly(
+   SCIP* scip /**< SCIP data structure */
 );
 
 /** Getter of parameter draftmode */
 extern
-SCIP_Bool GCGtexGetDraftmode(SCIP* scip /**< SCIP data structure */
+SCIP_Bool GCGtexGetDraftmode(
+   SCIP* scip /**< SCIP data structure */
 );
 
 /*extern C*/
