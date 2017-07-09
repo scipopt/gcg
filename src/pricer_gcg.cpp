@@ -888,6 +888,18 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
    return SCIP_OKAY;
 }
 
+/** for a pricing problem, get the dual solution value or Farkas value of the convexity constraint */
+SCIP_Real ObjPricerGcg::getConvconsDualsol(
+   PricingType*          pricetype,           /**< Farkas or Reduced cost pricing */
+   int                   probnr               /**< index of corresponding pricing problem */
+   )
+{
+   if( !GCGisPricingprobRelevant(origprob, probnr) )
+      return -1.0 * SCIPinfinity(scip_);
+   else
+      return pricetype->consGetDual(scip_, GCGgetConvCons(origprob, probnr));
+}
+
 /** computes the pricing problem objectives
  *  @todo this method could use more parameters as it is private
  */
@@ -1098,13 +1110,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       assert( GCGisPricingprobRelevant(origprob, i) == (GCGgetConvCons(origprob, i) != NULL) );
-      if( !GCGisPricingprobRelevant(origprob, i) )
-      {
-         pricerdata->dualsolconv[i] = -1.0 * SCIPinfinity(scip_);
-         continue;
-      }
 
-      pricerdata->dualsolconv[i] = pricetype->consGetDual(scip_, GCGgetConvCons(origprob, i));
+      pricerdata->dualsolconv[i] = getConvconsDualsol(pricetype, i);
+
 #ifdef PRINTDUALSOLS
       if( GCGisPricingprobRelevant(origprob, i) )
       {
@@ -2680,18 +2688,27 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          colpoolupdated = TRUE;
       }
 
+      /* @todo: setup the queue which should contain all pricing problems to be solved in some order */
       pricingcontroller->sortPricingProblems(pricerdata->dualsolconv, pricerdata->npointsprob, pricerdata->nraysprob);
 
       SCIPdebugMessage("pricing iteration: %s, stabilized = %u\n", heuristic ? "heuristic" : "exact", stabilized);
 
       /* perform all pricing jobs */
       #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, cols, ncols, maxcols, pricetype, bestredcost, beststabobj, bestredcostvalid, nfoundvars, successfulmips, infeasible, pricinghaserror) reduction(+:solvedmips) schedule(static,1)
+      /* @todo: check abortion criterion here */
       while( (prob = pricingcontroller->getNextPricingprob()) != -1 )
       {
          SCIP_RETCODE private_retcode;
 
-         int nvarsfound = nfoundvars;
+         int nvarsfound = nfoundvars; // @todo: more meaningful variable names
 
+         /* @todo: retrieve the next element from the priority queue */
+
+         /* @todo: re-organize:
+          *  * check for NULL pricing problem not needed anymore
+          *  * abortion criteria will be checked above
+          *  * replace the 'goto' statements by an 'if'
+          */
          #pragma omp flush(retcode)
          if( pricerdata->pricingprobs[prob] == NULL || retcode != SCIP_OKAY )
             goto done;
@@ -3231,6 +3248,8 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    bestredcostvalid = TRUE;
 
+   pricingcontroller->initPricing(pricetype);
+
    SCIP_CALL( performPricing(pricetype, result, &nfoundvars, lowerbound, &bestredcostvalid) );
 
    if( pricetype->getType() == GCG_PRICETYPE_REDCOST && bestredcostvalid )
@@ -3262,6 +3281,8 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
       ++pricerdata->ndegeneracycalcs;
       pricerdata->avgrootnodedegeneracy -= (pricerdata->avgrootnodedegeneracy/(pricerdata->ndegeneracycalcs) - degeneracy/(pricerdata->ndegeneracycalcs));
    }
+
+   pricingcontroller->exitPricing();
 
    return SCIP_OKAY;
 }
@@ -4288,6 +4309,54 @@ SCIP_RETCODE GCGpricerExistRays(
    }
 
    return SCIP_OKAY;
+}
+
+/** get the number of extreme points that a pricing problem has generated so far */
+extern "C"
+int GCGpricerGetNPointsProb(
+   SCIP*                 scip,               /**< master SCIP data structure */
+   int                   prob                /**< index of pricing problem */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   if( !GCGisPricingprobRelevant(scip, prob) )
+      return 0;
+   else
+      return pricerdata->npointsprob[prob];
+}
+
+/** get the number of extreme rays that a pricing problem has generated so far */
+extern "C"
+int GCGpricerGetNRaysProb(
+   SCIP*                 scip,               /**< master SCIP data structure */
+   int                   prob                /**< index of pricing problem */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   if( !GCGisPricingprobRelevant(scip, prob) )
+      return 0;
+   else
+      return pricerdata->nraysprob[prob];
 }
 
 /** transfers a primal solution of the original problem into the master variable space,

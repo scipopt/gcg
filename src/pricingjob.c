@@ -35,6 +35,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#include "pricingjob.h"
 #include "pub_pricingjob.h"
 
 #include "gcg.h"
@@ -53,6 +54,7 @@ SCIP_RETCODE GCGcreatePricingjob(
 
    (*pricingjob)->pricingscip = pricingscip;
    (*pricingjob)->probnr = probnr;
+   (*pricingjob)->score = 0.0;
    (*pricingjob)->heuristic = FALSE;
    (*pricingjob)->cols = NULL;
    (*pricingjob)->ncols = 0;
@@ -68,4 +70,71 @@ void GCGfreePricingjob(
 {
    SCIPfreeMemory(scip, pricingjob);
    *pricingjob = NULL;
+}
+
+/** setup a pricing job at the beginning of the pricing loop */
+void GCGpricingjobSetup(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
+   int                   scoring,            /**< scoring parameter */
+   SCIP_Real             dualsolconv,        /**< dual solution value of corresponding convexity constraint */
+   int                   npointsprob,        /**< total number of extreme points generated so far by the pricing problem */
+   int                   nraysprob           /**< total number of extreme rays generated so far by the pricing problem */
+   )
+{
+   pricingjob->heuristic = heuristic;
+
+   /* set the score */
+   switch( scoring )
+   {
+   case 1:
+      pricingjob->score = dualsolconv;
+      break;
+   case 2:
+      pricingjob->score = -(0.2 * npointsprob + nraysprob);
+      break;
+   default:
+      pricingjob->score = 0.0;
+      break;
+   }
+}
+
+/** get the index of the corresponding pricing problem */
+int GCGpricingjobGetProbnr(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->probnr;
+}
+
+/** return whether the pricing job is to be performed heuristically */
+SCIP_Bool GCGpricingjobIsHeuristic(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->heuristic;
+}
+
+/** set the pricing job to be performed heuristically */
+void GCGpricingjobSetHeuristic(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   pricingjob->heuristic = TRUE;
+}
+
+/** set the pricing job to be performed exactly */
+void GCGpricingjobSetExact(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   pricingjob->heuristic = FALSE;
+}
+
+/** get the score of a pricing job */
+SCIP_Real GCGpricingjobGetScore(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->score;
 }

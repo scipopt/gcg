@@ -25,45 +25,51 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_gcgcol.h
- * @brief  struct to store pricing jobs
+/**@file   pricingjob.h
+ * @brief  private methods for working with pricing jobs
  * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#ifndef GCG_PRICINGJOBL_H__
+#define GCG_PRICINGJOBL_H__
 
-#ifndef GCG_STRUCT_PRICINGJOB_H_
-#define GCG_STRUCT_PRICINGJOB_H_
-
-#include "scip/def.h"
-#include "scip/type_misc.h"
-#include "scip/scip.h"
-
+#include "struct_pricingjob.h"
 #include "type_pricingjob.h"
-#include "type_gcgcol.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct GCG_PricingJob
-{
-   /* problem data */
-   SCIP*                pricingscip;        /**< SCIP data structure of the corresponding pricing problem */
-   int                  probnr;             /**< index of the corresponding pricing problem */
+/** comparison operator for pricing jobs w.r.t. their solution priority */
+EXTERN
+SCIP_DECL_SORTPTRCOMP(GCGcomparePricingjobs);
 
-   /* strategic parameters */
-   SCIP_Real            score;              /**< current score of the pricing job */
-   SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
+/** setup a pricing job at the beginning of the pricing loop */
+EXTERN
+void GCGpricingjobSetup(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
+   int                   scoring,            /**< scoring parameter */
+   SCIP_Real             dualsolconv,        /**< dual solution value of corresponding convexity constraint */
+   int                   npointsprob,        /**< total number of extreme points generated so far by the pricing problem */
+   int                   nraysprob           /**< total number of extreme rays generated so far by the pricing problem */
+   );
 
-   /* statistical values */
-   SCIP_STATUS          pricingstatus;      /**< current solution status of the pricing problem */
-   GCG_COL**            cols;               /**< array of columns found by the pricing problem */
-   int                  ncols;              /**< number of columns found by the pricing problem */
-};
+/** set the pricing job to be performed heuristically */
+EXTERN
+void GCGpricingjobSetHeuristic(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** set the pricing job to be performed exactly */
+EXTERN
+void GCGpricingjobSetExact(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRUCT_PRICINGJOB_H_ */
+#endif

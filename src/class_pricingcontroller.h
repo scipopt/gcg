@@ -36,6 +36,7 @@
 #define CLASS_PRICINGCONTROLLER_H_
 
 #include "class_pricingtype.h"
+#include "type_gcgpqueue.h"
 #include "type_pricingjob.h"
 #include "objscip/objscip.h"
 
@@ -54,14 +55,15 @@ private:
    SCIP_Real             successfulmipsrel;  /**< factor of MIPs to be solved successfully until pricing is aborted */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
 
-   /* strategic variables */
+   /* strategy */
+   GCG_PQUEUE*           pqueue;             /**< priority queue containing the pricing jobs */
    SCIP_Real*            score;              /**< scores of the pricing problems */
    int*                  order;              /**< current order of the pricing problems */
+   PricingType*          pricingtype_;       /**< current pricing type */
 
    /* statistics */
    int                   previdx;            /**< previously solved pricing problem */
    int                   eagerage;           /**< iterations since last eager iteration */
-
 
 
 public:
@@ -77,6 +79,14 @@ public:
 
    SCIP_RETCODE exitSol();
 
+   /** pricing initialization, called right at the beginning of pricing */
+   void initPricing(
+      PricingType*          pricingtype         /**< type of pricing */
+   );
+
+   /** pricing deinitialization, called when pricing is finished */
+   void exitPricing();
+
    /** sorts pricing problems according to their score */
    void sortPricingProblems(
       SCIP_Real*            dualsolconv,         /**< array of dual solutions for the convexity constraints */
@@ -87,6 +97,18 @@ public:
 
    /** get the next pricing problem to be solved */
    int getNextPricingprob();
+
+   /** setup the priority queue (done once per stabilization round): add all pricing jobs to be performed */
+   SCIP_RETCODE setupPriorityQueue(
+      SCIP_Bool             useheurpricing,     /**< is heuristic pricing activated?  */
+      SCIP_Real*            dualsolconv         /**< dual solution values / Farkas coefficients of convexity constraints */
+      );
+
+   /** get the next pricing job to be performed */
+   GCG_PRICINGJOB* getNextPricingjob();
+
+   /** update statistics of a pricing job, and possibly add it again to the queue with different settings */
+   void updatePricingjob();
 
    /** returns whether pricing can be aborted */
    SCIP_Bool abortPricing(
@@ -100,6 +122,12 @@ public:
    void resetEagerage();
 
    void increaseEagerage();
+
+
+private:
+   /** comparison operator for pricing jobs w.r.t. their solution priority */
+   static
+   SCIP_DECL_SORTPTRCOMP(comparePricingjobs);
 };
 
 } /* namespace gcg */

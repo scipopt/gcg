@@ -162,6 +162,19 @@ SCIP_RETCODE GCGpricerExistRays(
    SCIP_Bool*            exist               /**< pointer to store if there exists any ray */
    );
 
+/** get the number of extreme points that a pricing problem has generated so far */
+extern
+int GCGpricerGetNPointsProb(
+   SCIP*                 scip,               /**< master SCIP data structure */
+   int                   prob                /**< index of pricing problem */
+   );
+
+/** get the number of extreme rays that a pricing problem has generated so far */
+extern
+int GCGpricerGetNRaysProb(
+   SCIP*                 scip,               /**< master SCIP data structure */
+   int                   prob                /**< index of pricing problem */
+   );
 
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */

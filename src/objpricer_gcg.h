@@ -91,6 +91,12 @@ public:
       return pricerdata;
    }
 
+   /** for a pricing problem, get the dual solution value or Farkas value of the convexity constraint */
+   SCIP_Real getConvconsDualsol(
+      PricingType*          pricetype,           /**< Farkas or Reduced cost pricing */
+      int                   probnr               /**< index of corresponding pricing problem */
+      );
+
    /** computes the pricing problem objectives */
    SCIP_RETCODE setPricingObjs(
       PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */

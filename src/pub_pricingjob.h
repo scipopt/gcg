@@ -67,6 +67,24 @@ void GCGfreePricingjob(
    GCG_PRICINGJOB**      pricingjob          /**< pricing job to be freed */
 );
 
+/** get the index of the corresponding pricing problem */
+EXTERN
+int GCGpricingjobGetProbnr(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** return whether the pricing job is to be performed heuristically */
+EXTERN
+SCIP_Bool GCGpricingjobIsHeuristic(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the score of a pricing job */
+EXTERN
+SCIP_Real GCGpricingjobGetScore(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
 /**@} */
 
 
