@@ -2256,7 +2256,7 @@ SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
 }
 
 /** add bounds change from constraint from the pricing problem at this node
- * @note This message has to be threadsafe!
+ * @note This method has to be threadsafe!
  */
 SCIP_RETCODE ObjPricerGcg::addBranchingBoundChangesToPricing(
    int                   prob,               /**< index of pricing problem */
@@ -2295,7 +2295,7 @@ SCIP_RETCODE ObjPricerGcg::addBranchingBoundChangesToPricing(
 }
 
 /** check bounds change from constraint from the pricing problem at this node
- * @note This message has to be threadsafe!
+ * @note This method has to be threadsafe!
  */
 SCIP_RETCODE ObjPricerGcg::checkBranchingBoundChanges(
    int                   prob,               /**< index of pricing problem */
@@ -2335,7 +2335,7 @@ SCIP_RETCODE ObjPricerGcg::checkBranchingBoundChanges(
 
 
 /** check bounds change from constraint from the pricing problem at this node
- * @note This message has to be threadsafe!
+ * @note This method has to be threadsafe!
  */
 SCIP_RETCODE ObjPricerGcg::checkBranchingBoundChangesGcgCol(
    GCG_COL*              gcgcol,             /**< gcg column to check */
@@ -2377,7 +2377,7 @@ SCIP_RETCODE ObjPricerGcg::checkBranchingBoundChangesGcgCol(
 
 /** generic method to generate feasible columns from the pricing problem
  * @todo we could benefit from using more than just the best solution
- * @note This message has to be threadsafe!
+ * @note This method has to be threadsafe!
  */
 SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job to be performed */

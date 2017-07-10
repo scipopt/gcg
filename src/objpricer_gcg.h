@@ -312,7 +312,7 @@ private:
    );
 
    /** generic method to generate feasible columns from the pricing problem
-    * @note This message has to be threadsafe!
+    * @note This method has to be threadsafe!
     */
    SCIP_RETCODE generateColumnsFromPricingProblem(
       GCG_PRICINGJOB*       pricingjob,         /**< pricing job to be performed */
@@ -323,7 +323,7 @@ private:
 
    /** solves a specific pricing problem
     * @todo simplify
-    * @note This message has to be threadsafe!
+    * @note This method has to be threadsafe!
     */
    SCIP_RETCODE solvePricingProblem(
       GCG_PRICINGJOB*       pricingjob,         /**< pricing job to be performed */
@@ -348,7 +348,7 @@ private:
    SCIP_RETCODE solversExitsol();
 
    /** computes the stack of masterbranch constraints up to the last generic branching node
-    * @note This message has to be threadsafe!
+    * @note This method has to be threadsafe!
     */
    SCIP_RETCODE computeGenericBranchingconssStack(
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
@@ -359,7 +359,7 @@ private:
    ) const;
 
    /** add bounds change from constraint from the pricing problem at this node
-    * @note This message has to be threadsafe!
+    * @note This method has to be threadsafe!
     */
    SCIP_RETCODE addBranchingBoundChangesToPricing(
       int                   prob,               /**< index of pricing problem */
@@ -374,7 +374,7 @@ private:
    ) const;
 
    /** check bounds change from constraint from the pricing problem at this node
-    * @note This message has to be threadsafe!
+    * @note This method has to be threadsafe!
     */
    SCIP_RETCODE checkBranchingBoundChangesGcgCol(
       GCG_COL*              gcgcol,             /**< gcg column to check */
