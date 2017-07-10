@@ -56,8 +56,9 @@ struct GCG_PricingJob
    SCIP_Real            score;              /**< current score of the pricing job */
    SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
 
-   /* statistical values */
+   /* result values */
    SCIP_STATUS          pricingstatus;      /**< current solution status of the pricing problem */
+   SCIP_Real            lowerbound;         /**< lower bound obtained by solving the pricing problem */
    GCG_COL**            cols;               /**< array of columns found by the pricing problem */
    int                  ncols;              /**< number of columns found by the pricing problem */
 };

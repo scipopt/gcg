@@ -51,21 +51,19 @@ extern "C" {
  * @{
  */
 
-/** create a pricing job */
-EXTERN
-SCIP_RETCODE GCGcreatePricingjob(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
-   GCG_PRICINGJOB**      pricingjob,         /**< pricing job to be created */
-   SCIP*                 pricingscip,        /**< SCIP data structure of the corresponding pricing problem */
-   int                   probnr              /**< index of the corresponding pricing problem */
-);
 
-/** free a pricing job */
+/** free all columns of a pricing job */
+/* @todo: Move this to pricingjob.h ? */
 EXTERN
-void GCGfreePricingjob(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
-   GCG_PRICINGJOB**      pricingjob          /**< pricing job to be freed */
-);
+void GCGpricingjobFreeCols(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the SCIP instance corresponding to the pricing job */
+EXTERN
+SCIP* GCGpricingjobGetPricingscip(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
 
 /** get the index of the corresponding pricing problem */
 EXTERN
@@ -82,6 +80,31 @@ SCIP_Bool GCGpricingjobIsHeuristic(
 /** get the score of a pricing job */
 EXTERN
 SCIP_Real GCGpricingjobGetScore(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/* get the status of a pricing job */
+EXTERN
+SCIP_STATUS GCGpricingjobGetStatus(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/* get the lower bound of a pricing job */
+EXTERN
+SCIP_Real GCGpricingjobGetLowerbound(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/* get a column found by a pricing job */
+EXTERN
+GCG_COL* GCGpricingjobGetCol(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   idx                 /**< index of a column */
+   );
+
+/* get the number of columns found by a pricing job */
+EXTERN
+int GCGpricingjobGetNCols(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 

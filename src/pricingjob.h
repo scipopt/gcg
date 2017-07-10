@@ -26,34 +26,59 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pricingjob.h
- * @brief  private methods for working with pricing jobs
+ * @brief  private methods for working with pricing jobs, to be used by the pricing controller only
  * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#ifndef GCG_PRICINGJOBL_H__
-#define GCG_PRICINGJOBL_H__
+#ifndef GCG_PRICINGJOB_H__
+#define GCG_PRICINGJOB_H__
 
 #include "struct_pricingjob.h"
 #include "type_pricingjob.h"
+#include "type_gcgcol.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** comparison operator for pricing jobs w.r.t. their solution priority */
+/** create a pricing job */
 EXTERN
-SCIP_DECL_SORTPTRCOMP(GCGcomparePricingjobs);
+SCIP_RETCODE GCGpricingjobCreate(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_PRICINGJOB**      pricingjob,         /**< pricing job to be created */
+   SCIP*                 pricingscip,        /**< SCIP data structure of the corresponding pricing problem */
+   int                   probnr              /**< index of the corresponding pricing problem */
+);
+
+/** free a pricing job */
+EXTERN
+void GCGpricingjobFree(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG_PRICINGJOB**      pricingjob          /**< pricing job to be freed */
+);
 
 /** setup a pricing job at the beginning of the pricing loop */
 EXTERN
-void GCGpricingjobSetup(
+SCIP_RETCODE GCGpricingjobSetup(
+   SCIP*                 scip,               /**< master SCIP instance */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
    int                   scoring,            /**< scoring parameter */
    SCIP_Real             dualsolconv,        /**< dual solution value of corresponding convexity constraint */
    int                   npointsprob,        /**< total number of extreme points generated so far by the pricing problem */
-   int                   nraysprob           /**< total number of extreme rays generated so far by the pricing problem */
+   int                   nraysprob,          /**< total number of extreme rays generated so far by the pricing problem */
+   int                   maxcols             /**< maximum number of columns to be generated */
+   );
+
+/** update a pricing job after the pricing problem has been solved */
+EXTERN
+void GCGpricingjobUpdate(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   SCIP_STATUS           status,             /**< status after solving the pricing problem */
+   SCIP_Real             lowerbound,         /**< lower bound returned by the pricing problem */
+   GCG_COL**             cols,               /**< columns found by the last solving of the pricing problem */
+   int                   ncols               /**< number of columns found */
    );
 
 /** set the pricing job to be performed heuristically */
@@ -66,6 +91,26 @@ void GCGpricingjobSetHeuristic(
 EXTERN
 void GCGpricingjobSetExact(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** set the lower bound of a pricing job */
+EXTERN
+void GCGpricingjobSetLowerbound(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   SCIP_Real             lowerbound          /**< new lower bound */
+   );
+
+/* get a column array of a pricing job */
+EXTERN
+GCG_COL** GCGpricingjobGetCols(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/* set the number of columns found by a pricing job */
+EXTERN
+void GCGpricingjobSetNCols(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   ncols               /**< number of columns */
    );
 
 #ifdef __cplusplus

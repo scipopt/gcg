@@ -35,6 +35,7 @@
 #ifndef CLASS_PRICINGCONTROLLER_H_
 #define CLASS_PRICINGCONTROLLER_H_
 
+#include "class_colpool.h"
 #include "class_pricingtype.h"
 #include "type_gcgpqueue.h"
 #include "type_pricingjob.h"
@@ -58,11 +59,9 @@ private:
    /* strategy */
    GCG_PQUEUE*           pqueue;             /**< priority queue containing the pricing jobs */
    SCIP_Real*            score;              /**< scores of the pricing problems */
-   int*                  order;              /**< current order of the pricing problems */
    PricingType*          pricingtype_;       /**< current pricing type */
 
    /* statistics */
-   int                   previdx;            /**< previously solved pricing problem */
    int                   eagerage;           /**< iterations since last eager iteration */
 
 
@@ -87,28 +86,50 @@ public:
    /** pricing deinitialization, called when pricing is finished */
    void exitPricing();
 
-   /** sorts pricing problems according to their score */
-   void sortPricingProblems(
-      SCIP_Real*            dualsolconv,         /**< array of dual solutions for the convexity constraints */
-      int*                  npointsprob,
-      int*                  nraysprob
-
-   );
-
-   /** get the next pricing problem to be solved */
-   int getNextPricingprob();
-
    /** setup the priority queue (done once per stabilization round): add all pricing jobs to be performed */
    SCIP_RETCODE setupPriorityQueue(
       SCIP_Bool             useheurpricing,     /**< is heuristic pricing activated?  */
-      SCIP_Real*            dualsolconv         /**< dual solution values / Farkas coefficients of convexity constraints */
+      SCIP_Real*            dualsolconv,        /**< dual solution values / Farkas coefficients of convexity constraints */
+      int                   maxcols             /**< maximum number of columns to be generated */
       );
 
    /** get the next pricing job to be performed */
    GCG_PRICINGJOB* getNextPricingjob();
 
    /** update statistics of a pricing job, and possibly add it again to the queue with different settings */
-   void updatePricingjob();
+   void updatePricingjob(
+      GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+      SCIP_STATUS           status,             /**< status after solving the pricing problem */
+      SCIP_Real             lowerbound,         /**< lower bound returned by the pricing problem */
+      GCG_COL**             cols,               /**< columns found by the last solving of the pricing problem */
+      int                   ncols               /**< number of columns found */
+      );
+
+   /** decide whether a pricing job must be treated again */
+   void evaluatePricingjob(
+      GCG_PRICINGJOB*       pricingjob         /**< pricing job */
+      );
+
+   /** return whether the reduced cost is valid */
+   SCIP_Bool redcostIsValid();
+
+   /** reset the lower bound of a pricing job */
+   void resetPricingjobLowerbound(
+      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+      );
+
+   /** for all pricing jobs, move their columns to the column pool */
+   SCIP_RETCODE moveColsToColpool(
+      Colpool*           colpool             /**< column pool */
+      );
+
+   /** get best columns found by the pricing jobs */
+   void getBestCols(
+      GCG_COL**             cols                /**< column array to be filled */
+      );
+
+   /** free all columns of the pricing jobs */
+   void freeCols();
 
    /** returns whether pricing can be aborted */
    SCIP_Bool abortPricing(
@@ -117,7 +138,7 @@ public:
       int                   solvedmips,         /**< number of MIPS solved so far */
       int                   successfulmips,     /**< number of successful mips solved so far */
       SCIP_Bool             optimal             /**< optimal or heuristic pricing */
-   ) const;
+      ) const;
 
    void resetEagerage();
 

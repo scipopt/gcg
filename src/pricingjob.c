@@ -43,7 +43,7 @@
 #include <assert.h>
 
 /** create a pricing job */
-SCIP_RETCODE GCGcreatePricingjob(
+SCIP_RETCODE GCGpricingjobCreate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB**      pricingjob,         /**< pricing job to be created */
    SCIP*                 pricingscip,        /**< SCIP data structure of the corresponding pricing problem */
@@ -63,23 +63,26 @@ SCIP_RETCODE GCGcreatePricingjob(
 }
 
 /** free a pricing job */
-void GCGfreePricingjob(
+void GCGpricingjobFree(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB**      pricingjob          /**< pricing job to be freed */
 )
 {
+   SCIPfreeMemoryArrayNull(scip, &(*pricingjob)->cols);
    SCIPfreeMemory(scip, pricingjob);
    *pricingjob = NULL;
 }
 
 /** setup a pricing job at the beginning of the pricing loop */
-void GCGpricingjobSetup(
+SCIP_RETCODE GCGpricingjobSetup(
+   SCIP*                 scip,               /**< master SCIP instance */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
    int                   scoring,            /**< scoring parameter */
    SCIP_Real             dualsolconv,        /**< dual solution value of corresponding convexity constraint */
    int                   npointsprob,        /**< total number of extreme points generated so far by the pricing problem */
-   int                   nraysprob           /**< total number of extreme rays generated so far by the pricing problem */
+   int                   nraysprob,          /**< total number of extreme rays generated so far by the pricing problem */
+   int                   maxcols             /**< maximum number of columns to be generated */
    )
 {
    pricingjob->heuristic = heuristic;
@@ -97,6 +100,55 @@ void GCGpricingjobSetup(
       pricingjob->score = 0.0;
       break;
    }
+
+   /* initialize result variables */
+   pricingjob->pricingstatus = SCIP_STATUS_UNKNOWN;
+   pricingjob->lowerbound = -SCIPinfinity(scip);
+   if( pricingjob->cols == NULL )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricingjob->cols, maxcols) ); /*lint !e866*/
+   }
+   BMSclearMemoryArray(pricingjob->cols, maxcols);
+   pricingjob->ncols = 0;
+
+   return SCIP_OKAY;
+}
+
+/** update a pricing job after the pricing problem has been solved */
+void GCGpricingjobUpdate(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   SCIP_STATUS           status,             /**< status after solving the pricing problem */
+   SCIP_Real             lowerbound,         /**< lower bound returned by the pricing problem */
+   GCG_COL**             cols,               /**< columns found by the last solving of the pricing problem */
+   int                   ncols               /**< number of columns found */
+   )
+{
+   pricingjob->pricingstatus = status;
+   pricingjob->lowerbound = lowerbound;
+   for( int i = 0; i < ncols; ++i )
+      pricingjob->cols[i] = cols[i];
+   pricingjob->ncols = ncols;
+}
+
+/** free all columns of a pricing job */
+void GCGpricingjobFreeCols(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   for( int i = 0; i < pricingjob->ncols; ++i )
+   {
+      GCGfreeGcgCol(&pricingjob->cols[i]);
+      pricingjob->cols[i] = NULL;
+   }
+   pricingjob->ncols = 0;
+}
+
+/** get the SCIP instance corresponding to the pricing job */
+SCIP* GCGpricingjobGetPricingscip(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->pricingscip;
 }
 
 /** get the index of the corresponding pricing problem */
@@ -137,4 +189,63 @@ SCIP_Real GCGpricingjobGetScore(
    )
 {
    return pricingjob->score;
+}
+
+/* get the status of a pricing job */
+SCIP_STATUS GCGpricingjobGetStatus(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->pricingstatus;
+}
+
+/* get the lower bound of a pricing job */
+SCIP_Real GCGpricingjobGetLowerbound(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->lowerbound;
+}
+
+/** set the lower bound of a pricing job */
+void GCGpricingjobSetLowerbound(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   SCIP_Real             lowerbound          /**< new lower bound */
+   )
+{
+   pricingjob->lowerbound = lowerbound;
+}
+
+/* get a column array of a pricing job */
+GCG_COL** GCGpricingjobGetCols(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->cols;
+}
+
+/* get a column found by a pricing job */
+GCG_COL* GCGpricingjobGetCol(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   idx                 /**< index of a column */
+   )
+{
+   return pricingjob->cols[idx];
+}
+
+/* get the number of columns found by a pricing job */
+int GCGpricingjobGetNCols(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->ncols;
+}
+
+/* set the number of columns found by a pricing job */
+void GCGpricingjobSetNCols(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   ncols               /**< number of columns */
+   )
+{
+   pricingjob->ncols = ncols;
 }

@@ -230,21 +230,12 @@ private:
 
    /** counts the number of variables with negative reduced cost */
    int countPricedVariables(
-      PricingType*          pricetype,          /**< pricing type, farkas or redcost */
-      int&                  prob,               /**< number of the pricing problem */
-      GCG_COL**             cols,               /**< columns corresponding to solutions which should be investigated */
-      int                   ncols               /**< number of columns */
-   ) const;
+      GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+      PricingType*          pricetype           /**< pricing type, farkas or redcost */
+      ) const;
 
    /** return TRUE or FALSE whether the master LP is solved to optimality */
    SCIP_Bool isMasterLPOptimal() const;
-
-
-   /** return TRUE or FALSE whether pricing problem has been solved to optimality */
-   SCIP_Bool  isPricingOptimal(
-      SCIP*                 scip,               /**< SCIP data structure */
-      SCIP_STATUS           status              /**< status of problem */
-   ) const;
 
    /** ensures size of pricedvars array */
    SCIP_RETCODE ensureSizePricedvars(
@@ -324,30 +315,22 @@ private:
     * @note This message has to be threadsafe!
     */
    SCIP_RETCODE generateColumnsFromPricingProblem(
-      int                   prob,               /**< index of pricing problem */
+      GCG_PRICINGJOB*       pricingjob,         /**< pricing job to be performed */
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
       SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
-      SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
-      GCG_COL**             cols,               /**< pointer to store columns corresponding to solutions */
-      int                   maxcols,            /**< size of the cols array to indicate maximum columns */
-      int*                  ncols,              /**< number of columns */
-      SCIP_STATUS*          status              /**< solution status of the pricing problem */
-   );
+      int                   maxcols             /**< size of the cols array to indicate maximum columns */
+      );
 
    /** solves a specific pricing problem
     * @todo simplify
     * @note This message has to be threadsafe!
     */
    SCIP_RETCODE solvePricingProblem(
-      int                   prob,               /**< index of pricing problem */
+      GCG_PRICINGJOB*       pricingjob,         /**< pricing job to be performed */
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
       SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
-      SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
-      GCG_COL**             cols,               /**< pointer to store columns corresponding to solutions */
-      int                   maxcols,            /**< size of the cols array to indicate maximum columns */
-      int*                  ncols,              /**< number of columns */
-      SCIP_STATUS*          status              /**< solution status of the pricing problem */
-   );
+      int                   maxcols             /**< size of the cols array to indicate maximum columns */
+      );
 
    /** frees all solvers */
    SCIP_RETCODE solversFree();
