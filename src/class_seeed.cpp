@@ -43,6 +43,7 @@
 #include "struct_detector.h"
 #include "struct_decomp.h"
 #include "cons_decomp.h"
+#include "params_visu.h"
 
 #include <sstream>
 #include <iostream>
@@ -2572,6 +2573,38 @@ int Seeed::getAncestorID(
    return listofancestorids[ancestorindex];
 }
 
+
+
+/** returns ancestor id of given ancestor */
+std::vector<int> Seeed::getAncestorList(
+   )
+{
+   return listofancestorids;
+}
+
+/** returns ancestor id of given ancestor */
+void Seeed::setAncestorList(
+   std::vector<int> newlist
+   )
+{
+   listofancestorids = newlist ;
+}
+
+
+
+/** returns ancestor id of given ancestor */
+void Seeed::addAncestorID(
+   int ancestor
+   )
+{
+   assert( 0 <= ancestor );
+
+   listofancestorids.push_back(ancestor);
+}
+
+
+
+
 /** returns detectorchainstring */
 char* Seeed::getDetectorChainString()
 {
@@ -2603,6 +2636,15 @@ std::vector<SCIP_Real> Seeed::getDetectorClockTimes()
 {
    return detectorClockTimes;
 }
+
+
+/** returns the time that the detectors needed for detecting */
+void Seeed::setDetectorClockTimes(
+   std::vector<SCIP_Real> newvector)
+{
+   detectorClockTimes = newvector;
+}
+
 
 /** returns array containing constraints assigned to a block */
 const int* Seeed::getConssForBlock(
@@ -2766,6 +2808,15 @@ std::vector<int> Seeed::getNNewBlocksVector()
    return nNewBlocks;
 }
 
+/** returns number of blocks the detectors in the detectorchain added */
+void Seeed::setNNewBlocksVector(
+   std::vector<int>  newvector
+   )
+{
+   nNewBlocks = newvector;
+}
+
+
 /** returns size of the vector containing master conss */
 int Seeed::getNMasterconss()
 {
@@ -2852,6 +2903,16 @@ std::vector<SCIP_Real> Seeed::getPctVarsToBorderVector()
    return pctVarsToBorder;
 }
 
+/** returns fraction of variables assigned to the border for detectors in detectorchain */
+void Seeed::setPctVarsToBorderVector(
+   std::vector<SCIP_Real> newvector
+   )
+{
+   pctVarsToBorder = newvector;
+}
+
+
+
 /** returns fraction of variables assigned to a block for a detector */
 SCIP_Real Seeed::getPctVarsToBlock(
    int detectorchainindex
@@ -2867,6 +2928,17 @@ std::vector<SCIP_Real> Seeed::getPctVarsToBlockVector()
 {
    return pctVarsToBlock;
 }
+
+
+/** returns fraction of variables assigned to a block for detectors in detectorchain */
+void Seeed::setPctVarsToBlockVector(
+   std::vector<SCIP_Real> newvector
+)
+{
+   pctVarsToBlock = newvector;
+}
+
+
 
 /** returns fraction of variables that are not longer open for a detector */
 SCIP_Real Seeed::getPctVarsFromFree(
@@ -2884,6 +2956,15 @@ std::vector<SCIP_Real> Seeed::getPctVarsFromFreeVector()
    return pctVarsFromFree;
 }
 
+/** returns fraction of variables that are not longer open for detectors in detectorchain */
+void Seeed::setPctVarsFromFreeVector(
+   std::vector<SCIP_Real> newvector
+   )
+{
+   pctVarsFromFree = newvector;
+}
+
+
 /** returns fraction of constraints assigned to the border for a detector */
 SCIP_Real Seeed::getPctConssToBorder(
    int detectorchainindex
@@ -2899,6 +2980,15 @@ std::vector<SCIP_Real> Seeed::getPctConssToBorderVector()
 {
    return pctConssToBorder;
 }
+
+/** returns fraction of constraints assigned to the border for detectors in detectorchain */
+void Seeed::setPctConssToBorderVector(
+   std::vector<SCIP_Real> newvector
+   )
+{
+   pctConssToBorder = newvector;
+}
+
 
 /** returns fraction of constraints assigned to a block for a detector */
 SCIP_Real Seeed::getPctConssToBlock(
@@ -2916,6 +3006,14 @@ std::vector<SCIP_Real> Seeed::getPctConssToBlockVector()
    return pctConssToBlock;
 }
 
+/** returns fraction of constraints assigned to a block for detectors in detectorchain */
+void Seeed::setPctConssToBlockVector(
+   std::vector<SCIP_Real> newvector  )
+{
+   pctConssToBlock = newvector;
+}
+
+
 /** returns fraction of constraints that are not longer open for a detector */
 SCIP_Real Seeed::getPctConssFromFree(
    int detectorchainindex
@@ -2931,6 +3029,15 @@ std::vector<SCIP_Real> Seeed::getPctConssFromFreeVector()
 {
    return pctConssFromFree;
 }
+
+
+/** returns fraction of constraints that are not longer open for detectors in detectorchain */
+void Seeed::setPctConssFromFreeVector(
+   std::vector<SCIP_Real> newvector)
+{
+   pctConssFromFree = newvector;
+}
+
 
 /** returns array containing stairlinking vars */
 const int* Seeed::getStairlinkingvars(
@@ -3488,16 +3595,16 @@ SCIP_RETCODE Seeed::setVarToStairlinking(
    return SCIP_OKAY;
 }
 
-/** displays seeed data in a scatterplot */
-void Seeed::showScatterPlot(
+/*@todo describtion of this function */
+void Seeed::showVisualisation(
    Seeedpool* seeedpool,
    SCIP_Bool writeonly,
    const char* filename,
    SCIP_Bool draft,
    SCIP_Bool colored
-   )
+)
 {
-   char help[SCIP_MAXSTRLEN] = "helpScatter.txt";
+   char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
    int rowboxcounter = 0;
    int colboxcounter = 0;
    std::stringstream command;
@@ -3527,26 +3634,25 @@ void Seeed::showScatterPlot(
    ofs << "set xrange [-1:" << getNVars() << "]\nset yrange[" << getNConss() << ":-1]\n";
 
    /* write linking var */
-   if( colored )
-      ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss() << " fc rgb \"purple\"\n";
+   if(colored)
+      ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()  << " fc rgb \"" << DEFAULT_COLOR_LINKING << "\"\n" ;
    else
       ofs << "set object 1 rect from  0,0 to " << getNLinkingvars() << "," << getNConss()
          << " fillstyle solid noborder fc rgb \"grey60\"\n";
    colboxcounter += getNLinkingvars();
 
-   if( colored )
-      ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars() + colboxcounter << "," << getNConss()
-         << " fc rgb \"yellow\"\n";
+   if(colored)
+      ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fc rgb \"" << DEFAULT_COLOR_MASTERVARS << "\"\n" ;
    else
-      ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars() + colboxcounter << "," << getNConss()
-         << " fillstyle solid noborder fc rgb \"grey80\"\n";
-   colboxcounter += getNMastervars();
+      ofs << "set object 2 rect from " << colboxcounter << ",0 to " << getNMastervars()+colboxcounter  << "," << getNConss()  << " fillstyle solid noborder fc rgb \"grey80\"\n" ;
+   colboxcounter+=getNMastervars();
 
-   displaySeeed( seeedpool );
+   displaySeeed(seeedpool);
+   // std::cout << " nmasterconss: " << getNMasterconss() << std::endl;
 
    /* write linking cons box */
-   if( colored )
-      ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " << getNMasterconss() << " fc rgb \"orange\"\n";
+   if(colored)
+      ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " <<  getNMasterconss()  << " fc rgb \"" << DEFAULT_COLOR_MASTERCONS << "\"\n" ;
    else
       ofs << "set object 3 rect from 0,0 to " << getNVars() << ", " << getNMasterconss()
          << " fillstyle solid noborder fc rgb \"grey40\"\n";
@@ -3554,10 +3660,8 @@ void Seeed::showScatterPlot(
 
    for( int b = 0; b < getNBlocks(); ++ b )
    {
-      if( colored )
-         ofs << "set object " << 2 * b + 4 << " rect from " << colboxcounter << ", " << rowboxcounter << " to "
-            << colboxcounter + getNVarsForBlock( b ) << ", " << rowboxcounter + getNConssForBlock( b )
-            << " fc rgb \"grey\"\n";
+      if(colored)
+         ofs << "set object " << 2*b+4 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNVarsForBlock(b) << ", "  <<  rowboxcounter+getNConssForBlock(b) << " fc rgb \"" << DEFAULT_COLOR_BLOCK << "\"\n" ;
       else
          ofs << "set object " << 2 * b + 4 << " rect from " << colboxcounter << ", " << rowboxcounter << " to "
             << colboxcounter + getNVarsForBlock( b ) << ", " << rowboxcounter + getNConssForBlock( b )
@@ -3566,10 +3670,8 @@ void Seeed::showScatterPlot(
 
       if( getNStairlinkingvars( b ) != 0 )
       {
-         if( colored )
-            ofs << "set object " << 2 * b + 5 << " rect from " << colboxcounter << ", " << rowboxcounter << " to "
-               << colboxcounter + getNStairlinkingvars( b ) << ", "
-               << rowboxcounter + getNConssForBlock( b ) + getNConssForBlock( b + 1 ) << " fc rgb \"pink\"\n";
+         if(colored)
+            ofs << "set object " << 2*b+5 << " rect from " << colboxcounter << ", "  <<  rowboxcounter << " to " << colboxcounter+getNStairlinkingvars(b) << ", "  <<  rowboxcounter+getNConssForBlock(b)+ getNConssForBlock(b+1) << " fc rgb \"" << DEFAULT_COLOR_STAIRLINKING<< "\"\n" ;
          else
             ofs << "set object " << 2 * b + 5 << " rect from " << colboxcounter << ", " << rowboxcounter << " to "
                << colboxcounter + getNStairlinkingvars( b ) << ", "
@@ -3581,9 +3683,8 @@ void Seeed::showScatterPlot(
       rowboxcounter += getNConssForBlock( b );
    }
 
-   if( colored )
-      ofs << "set object " << 2 * getNBlocks() + 4 << " rect from " << colboxcounter << ", " << getNMasterconss() << " to "
-         << colboxcounter + getNOpenvars() << ", " << rowboxcounter + getNOpenconss() << " fc rgb \"green\"\n";
+   if(colored)
+      ofs << "set object " << 2*getNBlocks()+4 << " rect from " << colboxcounter << ", "  <<  getNMasterconss() << " to " << colboxcounter+getNOpenvars() << ", "  <<  rowboxcounter+getNOpenconss() << " fc rgb \"" << DEFAULT_COLOR_OPEN << "\"\n" ;
    else
       ofs << "set object " << 2 * getNBlocks() + 4 << " rect from " << colboxcounter << ", " << rowboxcounter << " to "
          << colboxcounter + getNOpenvars() << ", " << rowboxcounter + getNOpenconss()
@@ -3594,13 +3695,11 @@ void Seeed::showScatterPlot(
 
    if( ! draft )
    {
-      if( colored )
-         ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"red\" fill solid" << std::endl;
-      else
-         ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
+	   if(colored)
+		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"" << DEFAULT_COLOR_NONZERO << "\" fill solid" << std::endl;
+	   else
+		  ofs << "plot filename using 1:2:(0.25) notitle with circles fc rgb \"black\" fill solid" << std::endl;
    }
-   else
-      ofs << "plot 0" << std::endl;
 
    if( ! writeonly )
       ofs << "pause -1 " << std::endl;

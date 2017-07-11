@@ -1390,7 +1390,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
       idtovisu = atoi(ntovisualize);
 
    gcg::Seeedpool* seeedpool = (conshdlrdata->listall->at(idtovisu)->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
-   conshdlrdata->listall->at(idtovisu)->showScatterPlot(seeedpool);
+   conshdlrdata->listall->at(idtovisu)->showVisualisation(seeedpool);
 
    return SCIP_OKAY;
 }
@@ -3295,8 +3295,6 @@ SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIP_CALL_ABORT(SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
-
    if( conshdlrdata->seeedpool != NULL )
       conshdlrdata->seeedpool->sortFinishedForScore();
 
@@ -3316,7 +3314,6 @@ SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    */
 
 
-   SCIPfreeBufferArray(scip, &scores);
 
    return SCIP_OKAY;
 }
@@ -3584,32 +3581,35 @@ SCIP_RETCODE DECwriteAllDecomps(
 
    tmp = conshdlrdata->useddecomp;
 
-   /** write orig decomps */
-   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+
+   /** write orig decomps currently disabled*/
+   if( FALSE )
    {
-      SeeedPtr seeed;
-      DEC_DECOMP* decomp;
-
-      seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
-
-      if( directory != NULL )
+      for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && (size_t) i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i )
       {
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_o%d.%s", directory, pname, i, extension);
+         SeeedPtr seeed;
+         DEC_DECOMP* decomp;
+
+         seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
+
+         if( directory != NULL )
+         {
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_o%d.%s", directory, pname, i, extension);
+         }
+         else
+         {
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_o%d.%s", pname, i, extension);
+         }
+
+         conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &decomp) ;
+
+         conshdlrdata->useddecomp = decomp;
+
+         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
+
+         DECdecompFree(scip, &decomp);
       }
-      else
-      {
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_o%d.%s", pname, i, extension);
-      }
-
-      conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &decomp) ;
-
-      conshdlrdata->useddecomp = decomp;
-
-      SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
-
-      DECdecompFree(scip, &decomp);
    }
-
 
    /** write presolved decomps */
      for( i = 0; conshdlrdata->seeedpool!= NULL && i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
@@ -3838,6 +3838,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    std::vector<SCIP_Bool> isseeedintree(allrelevantseeeds.size(), FALSE );
 
    int root = -1;
+   int root2 = -1;
    std::vector<int> parents(allrelevantseeeds.size(), -1);
    std::vector<std::vector<int> > childs (allrelevantseeeds.size(), std::vector<int>(0));
    std::vector<std::vector<SCIP_Bool> > childsfinished(allrelevantseeeds.size(), std::vector<SCIP_Bool>(0));
@@ -3884,7 +3885,10 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
             treeseeedids.push_back(ancestorid);
             if( i == seeeds[s]->getNAncestors() -1 )
             {
-               root = ancestorid;
+               if( root == -1 )
+                  root = ancestorid;
+               else if( ancestorid != root )
+                  root2 = ancestorid;
             }
             currid = ancestorid;
          }
@@ -3901,9 +3905,30 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
       seeed = treeseeeds[i];
 
       decompfilename << workfolder << "/" << getSeeedFolderLatex(seeed);
-
-      seeed->showScatterPlot(conshdlrdata->seeedpool, TRUE, decompfilename.str().c_str(), draft );
+      if( seeed->isFromUnpresolved() )
+         seeed->showVisualisation(conshdlrdata->seeedpoolunpresolved, TRUE, decompfilename.str().c_str(), draft );
+      else
+         seeed->showVisualisation(conshdlrdata->seeedpool, TRUE, decompfilename.str().c_str(), draft );
    }
+
+   /* merge both roots in the first one*/
+
+   for( size_t s = 0; root2 != -1 && s < treeseeeds.size(); ++s )
+   {
+      int seeedid = treeseeeds[s]->getID();
+      if ( parents[seeedid] == root2 )
+      {
+         parents[seeedid] = root;
+      }
+   }
+
+   for( size_t s = 0; root2 != -1 && s < childs[root2].size(); ++s )
+   {
+      childs[root].push_back(childs[root2][s] );
+      childsfinished[root].push_back(FALSE );
+   }
+
+
 
    //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
 
@@ -3913,7 +3938,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    }
    preambel.precision(2);
 
-   preambel << "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
+   preambel << "\\documentclass[a3paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
    preambel << "\n\\usetikzlibrary{positioning}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
    preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
 
@@ -3962,6 +3987,8 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    ofs << ";" << std::endl;
    for( size_t i = 0; i < treeseeeds.size(); ++i)
    {
+      if ( treeseeeds[i]->getID() == root2 )
+         continue;
       ofs << writeSeeedInfoLatex( treeseeeds[i] );
    }
 
@@ -4225,10 +4252,11 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
    for( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
    {
       DEC_DECOMP* decomp;
-      conshdlrdata->seeedpool->createDecompFromSeeed(conshdlrdata->seeedpool->getFinishedSeeed( i ), &decomp );
+      SCIP_CALL_ABORT(conshdlrdata->seeedpool->createDecompFromSeeed(conshdlrdata->seeedpool->getFinishedSeeed( i ), &decomp ) );
 
       decomps[i] = decomp;
    }
+
 
    for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
    {
@@ -4256,7 +4284,7 @@ int SCIPconshdlrDecompGetNFinishedDecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return (int) conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() + conshdlrdata->seeedpool->getNFinishedSeeeds();
+   return (int) /*conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() +*/ conshdlrdata->seeedpool->getNFinishedSeeeds();
 
 }
 

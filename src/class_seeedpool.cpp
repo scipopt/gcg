@@ -964,7 +964,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                         {
                            std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID()
                               << " is addded to finished seeeds!" << std::endl;
-                           seeedPropData->newSeeeds[seeed]->showScatterPlot( this );
+                           seeedPropData->newSeeeds[seeed]->showVisualisation( this );
                         }
                      }
 #pragma omp critical ( seeedptrstore )
@@ -981,7 +981,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                         {
                            std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID()
                               << " is addded to next round seeeds!" << std::endl;
-                           seeedPropData->newSeeeds[seeed]->showScatterPlot( this );
+                           seeedPropData->newSeeeds[seeed]->showVisualisation( this );
                         }
                      }
 #pragma omp critical ( seeedptrstore )
@@ -1137,7 +1137,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                if( verboseLevel > 2 )
                {
                   std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
-                  seeed->showScatterPlot( this );
+                  seeed->showVisualisation( this );
                }
 #pragma omp critical ( seeedptrstore )
                {
@@ -1301,7 +1301,7 @@ std::vector<SeeedPtr> Seeedpool::finishIncompleteSeeeds(
                if( verboseLevel > 2 )
                {
                   std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
-                  seeed->showScatterPlot( this );
+                  seeed->showVisualisation( this );
                }
 #pragma omp critical ( seeedptrstore )
                {
@@ -1680,7 +1680,11 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          }
       }
 
+
       newseeed->setDetectorchain( otherseeed->getDetectorchainVector() );
+      newseeed->setAncestorList( otherseeed->getAncestorList() );
+
+      newseeed->addAncestorID( otherseeed->getID() );
 
       for( int i = 0; i < otherseeed->getNDetectors(); ++i )
       {

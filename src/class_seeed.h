@@ -385,6 +385,21 @@ public:
       int ancestorindex /**< index of ancestor in listofancestorids data structure */
       );
 
+   /** returns ancestor id of given ancestor */
+   std::vector<int> getAncestorList(
+      );
+
+   void setAncestorList(
+      std::vector<int> newlist
+      );
+
+
+   /** adds ancestor id of given ancestor */
+   void addAncestorID(
+      int ancestor
+      );
+
+
    /** returns detectorchainstring */
    char* getDetectorChainString();
 
@@ -764,10 +779,9 @@ public:
       int block2
       );
 
-   /** displays seeed data in a scatterplot */
-   void showScatterPlot(
-      Seeedpool* seeedpool,         /**< a seeedpool that uses this seeed */
-      SCIP_Bool writeonly = false,
+   /*@todo description of this function*/
+   void showVisualisation( Seeedpool* seeedpool,
+      SCIP_Bool writeonly = FALSE,
       const char* filename = NULL,
       SCIP_Bool draft = false,
       SCIP_Bool colored = true
@@ -792,6 +806,47 @@ public:
    SCIP_RETCODE setDetectorChainString(
       char* detectorchainstring
       );
+
+   void setNNewBlocksVector(
+      std::vector<int>  newvector
+);
+
+   void setPctConssToBlockVector(
+      std::vector<SCIP_Real> newvector
+      );
+
+   /** returns fraction of constraints that are not longer open for detectors in detectorchain */
+   void setPctConssFromFreeVector(
+      std::vector<SCIP_Real> newvector
+      );
+
+   /** returns fraction of constraints assigned to the border for detectors in detectorchain */
+   void setPctConssToBorderVector(
+      std::vector<SCIP_Real> newvector
+      );
+
+   /** returns fraction of variables assigned to the border for detectors in detectorchain */
+   void setPctVarsToBorderVector(
+      std::vector<SCIP_Real> newvector
+      );
+
+   /** returns fraction of variables assigned to a block for detectors in detectorchain */
+   void setPctVarsToBlockVector(
+      std::vector<SCIP_Real> newvector
+   );
+
+   /** returns fraction of variables that are not longer open for detectors in detectorchain */
+   void setPctVarsFromFreeVector(
+      std::vector<SCIP_Real> newvector
+      );
+
+   /** returns the time that the detectors needed for detecting */
+   void setDetectorClockTimes(
+      std::vector<SCIP_Real> newvector
+      );
+
+
+
 
    /** creates and sets a detector chain short string for this seeed */
    SCIP_RETCODE buildDecChainString();
