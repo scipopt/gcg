@@ -271,6 +271,8 @@ SCIP_RETCODE Pricingcontroller::moveColsToColpool(
    Colpool*              colpool             /**< column pool */
    )
 {
+   SCIPdebugMessage("Move columns to column pool\n");
+
    for( int i = 0; i < npricingprobs; ++i )
    {
       if( pricingjobs[i] != NULL )
@@ -283,14 +285,14 @@ SCIP_RETCODE Pricingcontroller::moveColsToColpool(
 
          for( int j = 0; j < ncols; ++j )
          {
-            SCIPdebugMessage("(prob %3d) column %d/%d: ", GCGpricingjobGetProbnr(pricingjobs[i]), j, ncols);
+            SCIPdebugMessage("  (prob %d) column %d/%d <%p>: ", GCGpricingjobGetProbnr(pricingjobs[i]), j+1, ncols, (void*) cols[j]);
 
             SCIP_CALL( colpool->addCol(cols[j], &added) );
 
             if( !added )
             {
                GCGfreeGcgCol(&cols[j]);
-               SCIPdebugPrintf("not added.\n");
+               SCIPdebugPrintf("freed.\n");
             }
             else
             {

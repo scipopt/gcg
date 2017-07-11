@@ -317,7 +317,6 @@ private:
    SCIP_RETCODE generateColumnsFromPricingProblem(
       GCG_PRICINGJOB*       pricingjob,         /**< pricing job to be performed */
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-      SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
       int                   maxcols             /**< size of the cols array to indicate maximum columns */
       );
 
@@ -328,7 +327,6 @@ private:
    SCIP_RETCODE solvePricingProblem(
       GCG_PRICINGJOB*       pricingjob,         /**< pricing job to be performed */
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-      SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
       int                   maxcols             /**< size of the cols array to indicate maximum columns */
       );
 
