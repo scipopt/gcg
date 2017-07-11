@@ -183,9 +183,6 @@ SCIP_RETCODE setOriginalVarBlockNr(
    /* if var already belongs to another block, it is a linking variable */
    else if( blocknr != newblock )
    {
-      if( !GCGoriginalVarIsLinking(var) )
-         relaxdata->nlinkingvars++;
-
       SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock, relaxdata->npricingprobs) );
       assert(GCGisLinkingVarInBlock(var, newblock));
       assert(GCGoriginalVarIsLinking(var));
@@ -347,7 +344,6 @@ SCIP_RETCODE convertStructToGCG(
    SCIPdebugMessage("\tProcessing linking variables.\n");
    for( i = 0; i < nlinkingvars; ++i )
    {
-
       if( GCGoriginalVarIsLinking(linkingvars[i]) )
          continue;
 
@@ -1217,7 +1213,7 @@ SCIP_RETCODE createPricingVariables(
       {
          SCIP_VAR** pricingvars;
          SCIPdebugPrintf("linking.\n");
-
+         relaxdata->nlinkingvars++;
          SCIP_CALL( createLinkingPricingVars(scip, relaxdata, probvar) );
          assert(GCGlinkingVarGetPricingVars(probvar) != NULL);
 
@@ -2041,6 +2037,12 @@ SCIP_RETCODE initRelaxator(
 
       SCIP_CALL( SCIPreleaseCons(masterprob, &relaxdata->varlinkconss[i]) );
       relaxdata->varlinkconss[i] = transcons;
+   }
+
+   /* set objective limit in master problem if objective limit in original problem is finite */
+   if( !SCIPisInfinity(scip, SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) )
+   {
+      SCIP_CALL( SCIPsetObjlimit(masterprob, SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) );
    }
 
    return SCIP_OKAY;
