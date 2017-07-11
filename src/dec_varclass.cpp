@@ -176,7 +176,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
     }
 
     seeedOrig = seeedPropagationData->seeedToPropagate;
-    seeedOrig->setDetectorPropagated(detector);
 
     for( int i = 0; i < classifier->getNClasses(); ++ i )
     {
@@ -267,6 +266,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        seeed->flushBooked();
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
        seeed->addDetectorChainInfo(decinfo);
+       seeed->setDetectorPropagated(detector);
 
        foundseeeds.push_back(seeed);
     }
