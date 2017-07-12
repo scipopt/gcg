@@ -40,7 +40,7 @@ def parse_arguments(args):
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--outdir', type=str,
-                        default="plots",
+                        default="plots_test",
                         help='output directory (default: "plots")')
 
     parser.add_argument('-x', '--xaxis', type=str,
@@ -171,6 +171,9 @@ def generate_files(files):
                     df['nlpvars'] = 0
                     for i in range(len(df)):
                         df.set_value(str(i), 'nlpvars', len(dfvar[(dfvar['rootlpsolval'] > 0) & (dfvar['rootredcostcall'] == i)]))
+                    
+                    # add the number of all lp-variables, not created by reduced cost pricing (e.g. by Farkas-Pricing)
+                    df.set_value(str(0),'nlpvars', df['nlpvars'][0] + len(dfvar[(dfvar['rootlpsolval'] > 0) & (dfvar['rootredcostcall'] == -1.)]))
 
                     # create new column in data frame containing the number of lp vars generated until each iteration
                     df['nlpvars_cum'] = df[(df['iter'] <= i)].cumsum(axis=0)['nlpvars']
@@ -180,22 +183,26 @@ def generate_files(files):
 
                     # create new column in data frame containing the percentage of lp vars generated until each iteration
                     df['lpvars'] = df['nlpvars_cum']/nlpvars_total
+                    #lpfarvars = nlpfarvars/nlpvars_total
 
                     # repeat this for the vars (generated at the root) in ip solution
                     df['nipvars'] = 0
-
+                    
                     for i in range(len(df)):
                         df.set_value(str(i), 'nipvars', len(dfvar[(dfvar['solval'] > 0) & (dfvar['rootredcostcall'] == i)]))
+                    
+                    df.set_value(str(0),'nipvars', df['nipvars'][0] + len(dfvar[(dfvar['solval'] > 0) & (dfvar['rootredcostcall'] == -1.)]))
 
                     df['nipvars_cum'] = df[(df['iter'] <= i)].cumsum(axis=0)['nipvars']
 
                     nipvars_total = len(dfvar[dfvar['solval'] > 0])
 
                     df['ipvars'] = df['nipvars_cum']/nipvars_total
+                    #ipfarvars = nipfarvars/nipvars_total
 
                     # set type of data frame
                     df=df.astype(float)
-
+                    
                     # set infty
                     infty = 10.0 ** 20
 
@@ -277,6 +284,9 @@ def generate_files(files):
 
                     # set y label of secondary y-axis
                     plt.ylabel('diff', fontsize=10, rotation=-90, labelpad=15)
+                    
+                    # ensure, that there is enough space for labels
+                    plt.tight_layout()
 
                     # save figure
                     plt.savefig(params['outdir']+"/"+name+"_"+settings+"_"+xaxis+".png")
@@ -290,6 +300,7 @@ def generate_files(files):
                     boundlines = {}
 
                     print "   -> success"
+                    
                 elif vardetails:
                     # store details of variable
                     line_array = line.split()
