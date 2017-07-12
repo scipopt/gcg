@@ -48,8 +48,6 @@
 #include "class_consclassifier.h"
 #include "class_varclassifier.h"
 
-
-
 struct Seeed_Propagation_Data
 {
    gcg::Seeedpool* seeedpool;
@@ -60,10 +58,8 @@ struct Seeed_Propagation_Data
 
 namespace gcg {
 
-
 //typedef boost::shared_ptr<Seeed> SeeedPtr;
 typedef Seeed* SeeedPtr;
-
 
 // Only for pairs of std::hash-able types for simplicity.
 // You can of course template this struct to allow other hash functions
@@ -78,15 +74,11 @@ struct pair_hash {
     }
 };
 
-
 class Seeedpool
 {   /*lint -esym(1712,Seeedpool)*/
 
 private:
    SCIP*                 						      scip;              	   /**< SCIP data structure */
-
-
-
    int                                          maxndetectionrounds;    /**< maximum number of detection rounds */
    int											         nTotalSeeeds;        	/**< number of created seeeeds, used to give next id */
    std::vector<std::vector<int>> 				   varsForConss; 	   	   /**< stores for every constraint the indices of variables that are contained in the constraint */
@@ -110,24 +102,16 @@ private:
 
    int                                          nFinishingDetectors;             /**< number of detectors */
 
-
-//   DEC_DECOMP**                                 decompositions;         /**< decompositions found by the detectors */
-//   int                                          ndecompositions;        /**< number of decompositions found by the detectors */
-
    /** oracle data */
    std::vector<int >                            usercandidatesnblocks;     /**< candidate for the number of blocks that were given by the user and thus will be handled priorized */
    std::vector<std::pair<int,int> >             candidatesNBlocks;      	/**< candidate for the number of blocks  */
 
-
    std::vector<ConsClassifier*>                 consclassescollection; /**< collection of different constraint class distributions  */
    std::vector<VarClassifier*>                  varclassescollection;  /**< collection of different variabale class distributions   */
-
 
    SCIP_Bool                                    transformed;            /**< corresponds the matrix datastructure to the transformed problem */
 
    std::vector<SeeedPtr>                        seeedstopopulate;      /**< seeeds that are translated seeeds from found ones for the original problem */
-
-
 
 public:
 
@@ -158,7 +142,6 @@ public:
 
 
    void  sortFinishedForScore();
-
 
    /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method */
    /*
@@ -197,7 +180,6 @@ public:
 
    void freeCurrSeeeds();
 
-
    void addSeeedToIncomplete(SeeedPtr seeed);
 
    void addSeeedToAncestor(SeeedPtr seeed);
@@ -213,7 +195,6 @@ public:
 
    /** access the coefficients constraint-wise */
     const  SCIP_Real *  getValsForCons(int consIndex);
-
 
    /** access coefficient matrix variable-wise */
    const  int * getConssForVar(int varIndex);
@@ -266,9 +247,7 @@ public:
       int                 candidate            /**< candidate for block size */
       );
 
-   int getNUserCandidatesNBlocks(
-         );
-
+   int getNUserCandidatesNBlocks();
 
    void calcCandidatesNBlocks();
 
@@ -343,8 +322,6 @@ public:
    std::vector<SeeedPtr> removeSomeOneblockDecomps(
       std::vector<SeeedPtr> givenseeeds);
 
-
-
    /**
     * creates a decomposition for a given seeed
     */
@@ -360,7 +337,6 @@ public:
       DEC_DECOMP* decomp,                                    /** decomposition the seeed is created for */
       SeeedPtr*   newseeed                                   /** the new seeed created from the decomp */
       );
-
 
    /**
     * returns transformation information

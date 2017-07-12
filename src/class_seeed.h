@@ -37,11 +37,11 @@
 #define GCG_CLASS_SEEED_H__
 
 #include "objscip/objscip.h"
-#include <vector>
 #include "struct_detector.h"
-#include <string>
 #include "cons_decomp.h"
 
+#include <string>
+#include <vector>
 
 namespace gcg {
 
@@ -312,8 +312,6 @@ public:
       SCORETYPE  type
    );
 
-
-
    /** fills out the border of the seeed with the hashmap constoblock */
    SCIP_RETCODE filloutBorderFromConstoblock(
          SCIP_HASHMAP* constoblock,
@@ -476,7 +474,6 @@ public:
    bool isPropagatedBy(
          DEC_DETECTOR* detectorID
    );
-
 
    bool isSelected(
       );

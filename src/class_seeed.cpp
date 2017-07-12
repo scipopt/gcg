@@ -2659,7 +2659,6 @@ DEC_DETECTOR** Seeed::getDetectorchain()
       return isFinishedByFinisher;
    }
 
-
 /** returns the calculated has value of this seeed */
 long Seeed::getHashValue()
 {
@@ -2701,7 +2700,8 @@ const int* Seeed::getMastervars()
 /** return the "maximum white score" (the smaller the better) */
 SCIP_Real Seeed::getScore(
    SCORETYPE type
-   ){
+   )
+{
 
    if( type == scoretype::MAX_WHITE )
       return maxwhitescore;
@@ -2712,9 +2712,7 @@ SCIP_Real Seeed::getScore(
    if( type == scoretype::BORDER_AREA )
       return borderareascore;
 
-   }
-
-
+}
 
 /** returns number of blocks */
 int Seeed::getNBlocks()
@@ -2758,7 +2756,6 @@ int Seeed::getNMastervars()
 {
    return (int)masterVars.size();
 }
-
 
 /** returns vector containing master vars (every constraint containing a master var is in master)*/
 int Seeed::getNTotalStairlinkingvars()
@@ -2896,7 +2893,6 @@ bool Seeed::isPropagatedBy(DEC_DETECTOR* detectorID)
    return iter != detectorChain.end();
 }
 
-
 /* method to check whether seeed is equal to given other seeed */
 SCIP_RETCODE Seeed::isEqual(
    Seeed*               otherseeed,          /**< other seeed */
@@ -2915,6 +2911,7 @@ SCIP_RETCODE Seeed::isEqual(
    return SCIP_OKAY;
 
 }
+
 bool Seeed::isEqual
 (
    Seeed* other
@@ -3011,8 +3008,6 @@ bool Seeed::isEqual
    return true;
 }
 
-
-
 /** is this seeed trivial (i.e. all constraints in one block, or all conss in border, or all variables linking or mastervars  ) */
 bool Seeed::isTrivial()
 {
@@ -3031,7 +3026,6 @@ bool Seeed::isTrivial()
    return false;
 }
 
-
 bool Seeed::isComplete()
 {
 
@@ -3042,7 +3036,6 @@ bool Seeed::isSelected()
 {
    return isselected;
 }
-
 
 /** return whether the var is a var of the block */
 bool Seeed::isVarBlockvarOfBlock(int var, int block)
@@ -3175,8 +3168,6 @@ SCIP_RETCODE Seeed::setFinishingDetectorPropagated(DEC_DETECTOR* detectorID)
       isFinishedByFinisher = finished;
    }
 
-
-
 /** set number of blocks, atm only increasing number of blocks  */
 SCIP_RETCODE Seeed::setNBlocks(int newNBlocks)
 {
@@ -3209,9 +3200,6 @@ SCIP_RETCODE Seeed::setID(
    return SCIP_OKAY;
 }
 
-
-
-
 /** sets open vars and conss to be calculated  */
 SCIP_RETCODE Seeed::setOpenVarsAndConssCalculated(bool value)
 {
@@ -3225,7 +3213,6 @@ void Seeed::setSelected(
       ){
    isselected  = selected;
 }
-
 
 /** add a variable to a block */
 SCIP_RETCODE Seeed::setVarToBlock(int varToBlock, int block)
@@ -3308,7 +3295,6 @@ void Seeed::showVisualisation(
       sprintf(buffer, "help%d.pdf", this->getID() );
       filename = buffer;
    }
-
 
    {
       ofs << "set terminal pdf " << std::endl;

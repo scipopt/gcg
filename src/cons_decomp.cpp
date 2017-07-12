@@ -55,7 +55,6 @@
 #include "class_seeed.h"
 #include "class_seeedpool.h"
 
-
 #include <vector>
 #include <iomanip>
 #include <queue>
@@ -183,14 +182,18 @@ struct SCIP_ConshdlrData
 
 };
 
+struct sort_pred {
+    bool operator()(const std::pair<SeeedPtr, SCIP_Real> &left, const std::pair<SeeedPtr, SCIP_Real> &right) {
+        return left.second < right.second;
+    }
+};
+
 enum weightinggpresolvedoriginaldecomps{
    NO_MODIF = 0,
    FRACTION_OF_NNONZEROS,
    FRACTION_OF_NROWS,
    FAVOUR_PRESOLVED
 };
-
-
 
 /*
  * Local methods
@@ -742,11 +745,7 @@ SCIP_RETCODE SCIPstoreIncompleteSeeed(
 }
 
 
-struct sort_pred {
-    bool operator()(const std::pair<SeeedPtr, SCIP_Real> &left, const std::pair<SeeedPtr, SCIP_Real> &right) {
-        return left.second < right.second;
-    }
-};
+
 
 
 /**

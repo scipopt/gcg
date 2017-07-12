@@ -125,7 +125,7 @@ endif
 
 MAINNAME	=	gcg
 
-LIBOBJ		=	reader_tex_temp.o \
+LIBOBJ		=	reader_tex.o \
 			reader_blk.o \
 			reader_dec.o \
 			reader_ref.o \
