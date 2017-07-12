@@ -114,7 +114,7 @@ SCIP_DECL_HASHKEYVAL(hashKeyValCol)
    assert(col != NULL);
 
    /* TODO: Improve hash function */
-   keyval = SCIPhashTwo(SCIPpositiveRealHashCode(col->nvars > 0 ? col->vals[0] : 0.0, 8),
+   keyval = SCIPhashTwo(SCIPrealHashCode(col->nvars > 0 ? col->vals[0] : 0.0),
       SCIPcombineThreeInt(col->probnr, col->nvars, col->isray));
 
    return keyval;
