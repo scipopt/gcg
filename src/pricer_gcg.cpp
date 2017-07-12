@@ -3228,10 +3228,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          beststabredcost = beststabobj - dualconvsum;
 
-         assert(!*bestredcostvalid || stabilized || SCIPisDualfeasEQ(scip_, beststabredcost, bestredcost));
-
          assert(!*bestredcostvalid || stabilized || SCIPisDualfeasEQ(scip_, lowerboundcandidate, SCIPgetLPObjval(scip_) + bestredcost));
-
 
          if( *bestredcostvalid )
          {
