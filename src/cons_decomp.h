@@ -278,6 +278,9 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    SCIP_Bool updatelist
    );
 
+SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
+   SCIP* scip
+   );
 
 
 SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(

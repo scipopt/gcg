@@ -3128,6 +3128,74 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
+   SCIP* scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* seeedpool;
+   int d;
+   SCIP_RESULT* result;
+
+   DEC_DETECTOR* detector;
+   int dec;
+   gcg::SeeedPtr seeed;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeedpool = conshdlrdata->seeedpool;
+   assert( seeedpool != NULL );
+
+   SCIPdebugMessagePrint(scip, "Checking %d detectors for legacymode.\n", conshdlrdata->ndetectors);
+   for( d = 0; d < conshdlrdata->ndetectors; ++d )
+   {
+      DEC_DECOMP** decdecomps;
+      int ndecdecomps;
+      detector = conshdlrdata->detectors[d];
+      assert(detector != NULL);
+      std::cout << "Flag for detector " << detector->name << " is " <<  ( detector->legacymode ? "TRUE.\n" : "FALSE.\n" );
+
+      if( detector->legacymode /* && possible */ ) // @todo
+      {
+         SCIPdebugMessagePrint(scip, "Calling detectStructure of %s: ", detector->name);
+
+         SCIP_CALL( (*detector->detectStructure)( scip, detector->decdata, &decdecomps, &ndecdecomps, result ) );
+
+         std::cout << "check";
+
+         if( *result == SCIP_SUCCESS )
+         {
+            SCIPdebugMessagePrint(scip, "Translate %d found decomps into seeeds.", ndecdecomps);
+            for( dec = 0; dec < ndecdecomps; ++dec )
+            {
+               seeedpool->createSeeedFromDecomp( decdecomps[dec], &seeed );
+               seeedpool->addSeeedToFinished( seeed );
+            }
+            /* @todo duplicate check and add detector data to decomp */
+         }
+         else
+         {
+            SCIPdebugPrintf("Failure!\n");
+         }
+         SCIPfreeMemoryArrayNull(scip, &decdecomps);
+      }
+   }
+
+   seeedpool->sortFinishedForScore();
+
+   return SCIP_OKAY;
+}
+
 
 
 /** 1) the predecessors of all finished seeeds in both seeedpools can be found */
@@ -3474,6 +3542,12 @@ SCIP_RETCODE DECdetectStructure(
 
 
    //	  seeedpool.freeCurrSeeeds();
+
+   /* start of legacy mode stuff */
+   SCIPdebugMessagePrint(scip, "Start legacy checking.\n");
+   SCIPconshdlrDecompAddLegacymodeDecompositions( scip );
+   SCIPdebugMessagePrint(scip, "Finished legacy checking.\n");
+
 
    SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );
 
