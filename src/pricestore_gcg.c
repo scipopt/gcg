@@ -37,6 +37,7 @@
 
 #include "pricestore_gcg.h"
 #include "struct_pricestore_gcg.h"
+#include "pricer_gcg.h"
 
 /*
  * dynamic memory arrays
@@ -220,7 +221,6 @@ SCIP_RETCODE GCGpricestoreAddCol(
    SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
    )
 {
-   SCIP_Real colefficacy;
    SCIP_Real colobjparallelism;
    SCIP_Real colscore;
 
@@ -252,14 +252,12 @@ SCIP_RETCODE GCGpricestoreAddCol(
 
    if( forcecol )
    {
-      colefficacy = SCIPinfinity(scip);
       colscore = SCIPinfinity(scip);
       colobjparallelism = 1.0;
    }
    else
    {
       /* initialize values to invalid (will be initialized during col filtering) */
-      colefficacy = -1.0*GCGcolGetRedcost(col) / GCGcolGetNorm(col);
       colscore = SCIP_INVALID;
 
       if( SCIPisPositive(scip, pricestore->objparalfac) )
@@ -384,7 +382,7 @@ SCIP_RETCODE pricestoreApplyCol(
    assert(ncolsapplied != NULL);
 
    /* a row could have been added twice to the price store; add it only once! */
-   SCIP_CALL( GCGcreateNewMasterVarFromGcgCol(pricestore->scip, pricestore->infarkas, col, force, &added, NULL) );
+   SCIP_CALL( GCGcreateNewMasterVarFromGcgCol(pricestore->scip, pricestore->infarkas, col, force, &added, NULL, score) );
 
    assert(added);
    /* update statistics -> only if we are not in the initial lp (cols are only counted if added during run) */
@@ -483,7 +481,6 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    SCIP* scip;
    SCIP_NODE* node;
    SCIP_Real mincolorthogonality;
-   SCIP_Bool applied;
    int depth;
    int maxpricecols;
    int ncolsapplied;
@@ -496,7 +493,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    SCIPdebugMessage("applying %d cols\n", pricestore->ncols);
 
    /* start timing */
-   SCIPstartClock(pricestore->scip, pricestore->priceclock);
+   SCIPstartClock(scip, pricestore->priceclock);
 
    node = SCIPgetCurrentNode(scip);
    assert(node != NULL);
@@ -505,7 +502,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    /* TODO: get from pricer */
    if( pricestore->infarkas )
       maxpricecols = pricestore->maxpricecolsfarkas;
-   else if( SCIPgetCurrentNode(pricestore->scip) == SCIPgetRootNode(pricestore->scip) )
+   else if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) )
       maxpricecols = pricestore->maxpricecolsroot;
    else
       maxpricecols = pricestore->maxpricecols;
@@ -533,9 +530,6 @@ SCIP_RETCODE GCGpricestoreApplyCols(
       col = pricestore->cols[pos];
       assert(SCIPisInfinity(scip, pricestore->scores[pos]));
 
-      /* if the col is a bound change (i.e. a row with only one variable), add it as bound change instead of LP row */
-      applied = FALSE;
-
       /* add col to the LP and update orthogonalities */
       SCIPdebugMessage(" -> applying forced col %p\n", (void*) col);
 
@@ -561,6 +555,9 @@ SCIP_RETCODE GCGpricestoreApplyCols(
          (void*)col, bestpos, pricestore->ncols, GCGcolGetRedcost(pricestore->cols[bestpos]), pricestore->objparallelisms[bestpos],
          pricestore->orthogonalities[bestpos], pricestore->scores[bestpos]);
 
+      /* release the row and delete the col (also issuing ROWDELETEDPRICE event) */
+      SCIP_CALL( pricestoreDelCol(pricestore, bestpos, FALSE) );
+
       /* Do not add (non-forced) non-violated cols.
        * Note: do not take SCIPsetIsEfficacious(), because constraint handlers often add cols w.r.t. SCIPsetIsFeasPositive().
        * Note2: if pricerating/feastolfac != -1, constraint handlers may even add cols w.r.t. SCIPsetIsPositive(); those are currently rejected here
@@ -569,12 +566,9 @@ SCIP_RETCODE GCGpricestoreApplyCols(
       {
          /* add col to the LP and update orthogonalities */
          SCIP_CALL( pricestoreApplyCol(pricestore, col, FALSE, mincolorthogonality, depth, &ncolsapplied, score) );
-
-         /* release the row and delete the col (also issuing ROWDELETEDPRICE event) */
-         SCIP_CALL( pricestoreDelCol(pricestore, bestpos, TRUE) );
       }
-      else
-         break;
+
+      GCGfreeGcgCol(&col);
    }
 
    *nfoundvars = ncolsapplied;

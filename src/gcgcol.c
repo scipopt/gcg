@@ -40,10 +40,12 @@
 #include "gcg.h"
 #include "scip/def.h"
 #include "scip/scip.h"
+#include "scip/cons_linear.h"
 #include "scip_misc.h"
 #include "blockmemshell/memory.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "sepa_master.h"
 
 #include <assert.h>
 
@@ -428,7 +430,7 @@ SCIP_RETCODE GCGcolSetMastercoefs(
    return SCIP_OKAY;
 }
 
-/** get norm of column */
+/** set norm of column */
 void GCGcolSetNorm(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real            norm                /**< norm of column */
@@ -444,22 +446,9 @@ void GCGcolComputeNorm(
    )
 {
    int i;
-   int j;
    SCIP_Real norm = 0.0;
 
-   SCIP_CONS** masterconss;
-   SCIP_ROW** cuts;
-   int nmasterconss;
-   int ncuts;
-
-
-   SCIP_Bool isray;
-   int prob;
-   SCIP* pricingprob = GCGcolGetPricingProb(gcgcol);
-
-   SCIP_VAR** solvars;
    SCIP_Real* solvals;
-   int nsolvars;
    SCIP_Real* mastercoefs;
    int nmastercoefs;
    SCIP_Real* mastercuts;
@@ -470,10 +459,6 @@ void GCGcolComputeNorm(
    assert(scip != NULL);
    assert(gcgcol != NULL);
 
-   prob = GCGcolGetProbNr(gcgcol);
-   isray = GCGcolIsRay(gcgcol);
-   nsolvars = GCGcolGetNVars(gcgcol);
-   solvars = GCGcolGetVars(gcgcol);
    solvals = GCGcolGetVals(gcgcol);
    nmastercoefs = GCGcolGetNMastercoefs(gcgcol);
    mastercoefs = GCGcolGetMastercoefs(gcgcol);
@@ -482,18 +467,6 @@ void GCGcolComputeNorm(
    nmastercuts = GCGcolGetNMastercuts(gcgcol);
    nlinkvars = GCGcolGetNLinkvars(gcgcol);
    linkvars = GCGcolGetLinkvars(gcgcol);
-
-   nmasterconss = GCGgetNMasterConss(GCGmasterGetOrigprob(scip));
-   masterconss = GCGgetMasterConss(GCGmasterGetOrigprob(scip));
-   ncuts = GCGsepaGetNCuts(scip);
-   cuts = GCGsepaGetMastercuts(scip);
-
-   assert( nmastercoefs == nmasterconss );
-   assert( nmastercuts == ncuts );
-
-   SCIP_Real dualobjnorm;
-
-   dualobjnorm = 0.0;
 
    norm = 0.0;
    /** compute scalar of master values of gcg columns */
@@ -673,57 +646,33 @@ SCIP_Real GCGcolComputeDualObjPara(
    SCIP_Real para = 0.0;
 
    int i;
-   int j;
-   SCIP_Real orth = 0.0;
-   SCIP_Real norm = 0.0;
 
    SCIP_CONS** masterconss;
    SCIP_ROW** cuts;
-   int nmasterconss;
-   int ncuts;
 
-
-   SCIP_Bool isray;
    int prob;
-   SCIP* pricingprob = GCGcolGetPricingProb(gcgcol);
 
-   SCIP_VAR** solvars;
-   SCIP_Real* solvals;
-   int nsolvars;
    SCIP_Real* mastercoefs;
    int nmastercoefs;
    SCIP_Real* mastercuts;
    int nmastercuts;
-   int* linkvars;
-   int nlinkvars;
+
+   SCIP_Real dualobjnorm;
+
 
    assert(scip != NULL);
    assert(gcgcol != NULL);
 
    prob = GCGcolGetProbNr(gcgcol);
-   isray = GCGcolIsRay(gcgcol);
-   nsolvars = GCGcolGetNVars(gcgcol);
-   solvars = GCGcolGetVars(gcgcol);
-   solvals = GCGcolGetVals(gcgcol);
    nmastercoefs = GCGcolGetNMastercoefs(gcgcol);
    mastercoefs = GCGcolGetMastercoefs(gcgcol);
    nmastercuts = GCGcolGetNMastercuts(gcgcol);
    mastercuts = GCGcolGetMastercuts(gcgcol);
    nmastercuts = GCGcolGetNMastercuts(gcgcol);
-   nlinkvars = GCGcolGetNLinkvars(gcgcol);
-   linkvars = GCGcolGetLinkvars(gcgcol);
-
-   nmasterconss = GCGgetNMasterConss(GCGmasterGetOrigprob(scip));
    masterconss = GCGgetMasterConss(GCGmasterGetOrigprob(scip));
-   ncuts = GCGsepaGetNCuts(scip);
    cuts = GCGsepaGetMastercuts(scip);
 
-   assert( nmastercoefs == nmasterconss );
-   assert( nmastercuts == ncuts );
-
    para = 0.0;
-
-   SCIP_Real dualobjnorm;
 
    dualobjnorm = 0.0;
 
@@ -818,14 +767,10 @@ SCIP_Real GCGcolComputeOrth(
    SCIP_Real norm1 = 0.0;
    SCIP_Real norm2 = 0.0;
 
-
-   SCIP_Bool isray1;
    int prob1;
-   SCIP* pricingprob1 = GCGcolGetPricingProb(gcgcol1);
 
    SCIP_VAR** solvars1;
    SCIP_Real* solvals1;
-   int nsolvars1;
    SCIP_Real* mastercoefs1;
    int nmastercoefs1;
    SCIP_Real* mastercuts1;
@@ -833,17 +778,12 @@ SCIP_Real GCGcolComputeOrth(
    int* linkvars1;
    int nlinkvars1;
 
-   SCIP_Bool isray2;
    int prob2;
-   SCIP* pricingprob2 = GCGcolGetPricingProb(gcgcol2);
 
    SCIP_VAR** solvars2;
    SCIP_Real* solvals2;
-   int nsolvars2;
    SCIP_Real* mastercoefs2;
-   int nmastercoefs2;
    SCIP_Real* mastercuts2;
-   int nmastercuts2;
    int* linkvars2;
    int nlinkvars2;
 
@@ -852,8 +792,6 @@ SCIP_Real GCGcolComputeOrth(
    assert(gcgcol2 != NULL);
 
    prob1 = GCGcolGetProbNr(gcgcol1);
-   isray1 = GCGcolIsRay(gcgcol1);
-   nsolvars1 = GCGcolGetNVars(gcgcol1);
    solvars1 = GCGcolGetVars(gcgcol1);
    solvals1 = GCGcolGetVals(gcgcol1);
    nmastercoefs1 = GCGcolGetNMastercoefs(gcgcol1);
@@ -865,19 +803,12 @@ SCIP_Real GCGcolComputeOrth(
    linkvars1 = GCGcolGetLinkvars(gcgcol1);
 
    prob2 = GCGcolGetProbNr(gcgcol2);
-   isray2 = GCGcolIsRay(gcgcol2);
-   nsolvars2 = GCGcolGetNVars(gcgcol2);
    solvars2 = GCGcolGetVars(gcgcol2);
    solvals2 = GCGcolGetVals(gcgcol2);
-   nmastercoefs2 = GCGcolGetNMastercoefs(gcgcol2);
    mastercoefs2 = GCGcolGetMastercoefs(gcgcol2);
-   nmastercuts2 = GCGcolGetNMastercuts(gcgcol2);
    mastercuts2 = GCGcolGetMastercuts(gcgcol2);
    nlinkvars2 = GCGcolGetNLinkvars(gcgcol2);
    linkvars2 = GCGcolGetLinkvars(gcgcol2);
-
-   assert( nmastercoefs1 == nmastercoefs2 );
-   assert( nmastercuts1 == nmastercuts2 );
 
    /** compute scalar of master values of gcg columns */
    for( i = 0; i < nmastercoefs1; ++i )
@@ -915,8 +846,8 @@ SCIP_Real GCGcolComputeOrth(
       {
          SCIP_VAR* linkvar2;
          SCIP_Real linkval2;
-         linkvar2 = solvars2[linkvars2[i]];
-         linkval2 = solvals2[linkvars2[i]];
+         linkvar2 = solvars2[linkvars2[j]];
+         linkval2 = solvals2[linkvars2[j]];
 
          if( linkvar1 == linkvar2 )
          {
@@ -928,9 +859,8 @@ SCIP_Real GCGcolComputeOrth(
 
    for( i = 0; i < nlinkvars2; ++i )
    {
-      SCIP_VAR* linkvar2;
       SCIP_Real linkval2;
-      linkvar2 = solvars2[linkvars2[i]];
+
       linkval2 = solvals2[linkvars2[i]];
 
       norm2 += SQR(linkval2);

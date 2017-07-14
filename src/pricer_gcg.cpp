@@ -1322,7 +1322,6 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
    GCG_COL*              gcgcol              /**< GCG column data structure */
    )
 {
-   int prob;
    int i;
 
    SCIP_VAR** solvars;
@@ -1335,12 +1334,10 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
    assert(scip_ != NULL);
    assert(gcgcol != NULL);
 
-   prob = GCGcolGetProbNr(gcgcol);
    nsolvars = GCGcolGetNVars(gcgcol);
    solvars = GCGcolGetVars(gcgcol);
    solvals = GCGcolGetVals(gcgcol);
 
-   SCIP_CONS** masterconss;
    int nmasterconss;
    SCIP_Real* mastercoefs;
    SCIP_CONS* linkcons;
@@ -1352,7 +1349,6 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
    pricingprob = GCGcolGetPricingProb(gcgcol);
 
    nmasterconss = GCGgetNMasterConss(origprob);
-   masterconss = GCGgetMasterConss(origprob);
 
    assert(GCGcolGetNMastercoefs(gcgcol) == 0 || GCGcolGetNMastercoefs(gcgcol) == nmasterconss);
 
@@ -1393,14 +1389,6 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
          /* original variable is a linking variable, just add it to the linkcons */
          if( GCGoriginalVarIsLinking(origvars[0]) )
          {
-#ifndef NDEBUG
-            SCIP_VAR** pricingvars;
-            pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
-            linkconss = GCGlinkingVarGetLinkingConss(origvars[0]);
-#endif
-            assert(pricingvars[prob] == solvars[i]);
-            assert(linkconss[prob] != NULL);
-
             linkvars[nlinkvars] = i;
             ++nlinkvars;
 
@@ -1416,7 +1404,6 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
 
             idx = (int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, linkcons); /*lint !e507*/
             assert(0 <= idx && idx < nmasterconss);
-            assert(masterconss[idx] == linkcons);
             assert(!SCIPisInfinity(scip_, ABS(coefs[c] * solvals[i])));
             mastercoefs[idx] += coefs[c] * solvals[i];
             assert(!SCIPisInfinity(scip_, ABS(mastercoefs[idx])));
@@ -1518,7 +1505,6 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMastercutsFromGCGCol(
    SCIP_ROW** mastercuts;
    int nmastercuts;
    SCIP_Real* mastercutcoefs;
-   int nmastercutcoefs;
    int i;
 
    assert(scip_ != NULL);
@@ -1533,9 +1519,6 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMastercutsFromGCGCol(
    SCIP_CALL( computeColMastercuts(gcgcol) );
 
    mastercutcoefs = GCGcolGetMastercuts(gcgcol);
-   nmastercutcoefs = GCGcolGetNMastercuts(gcgcol);
-
-   assert(nmastercutcoefs == nmastercuts);
 
    /* compute coef of the variable in the cuts and add it to the cuts */
    for( i = 0; i < nmastercuts; i++ )
@@ -3109,8 +3092,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       {
          SCIP_Bool foundvarscolpool;
 
-         SCIP_Real redcost;
-
          foundvarscolpool = FALSE;
 
          SCIP_CALL( GCGcolpoolPrice(scip_, colpool, pricestore, NULL, FALSE, TRUE, &foundvarscolpool) );
@@ -3658,7 +3639,6 @@ SCIP_RETCODE GCGcreateNewMasterVarFromGcgCol(
 {
   ObjPricerGcg* pricer;
   PricingType* pricetype;
-  int i;
 
   assert(scip != NULL);
 
@@ -3684,9 +3664,6 @@ SCIP_RETCODE GCGcomputeColMastercoefs(
    )
 {
    ObjPricerGcg* pricer;
-   PricingType* pricetype;
-   SCIP_Real redcost;
-   int i;
 
    assert(scip != NULL);
 
@@ -3711,7 +3688,6 @@ SCIP_Real GCGcomputeRedCostGcgCol(
    ObjPricerGcg* pricer;
    PricingType* pricetype;
    SCIP_Real redcost;
-   int i;
 
    assert(scip != NULL);
 
@@ -3719,9 +3695,9 @@ SCIP_Real GCGcomputeRedCostGcgCol(
    assert(pricer != NULL);
 
    if( infarkas )
-      pricer->getFarkasPricing();
+      pricetype = pricer->getFarkasPricingNonConst();
    else
-      pricer->getReducedCostPricingNonConst();
+      pricetype = pricer->getReducedCostPricingNonConst();
 
    redcost = pricer->computeRedCostGcgCol(pricetype, gcgcol, objvalptr);
 
@@ -4284,19 +4260,9 @@ void ObjPricerGcg::createStabilization()
 
 SCIP_RETCODE ObjPricerGcg::createColpool()
 {
-   int actualsize;
-   int hardlimit;
-   int maxvarsround;
-
    assert(farkaspricing != NULL);
    assert(reducedcostpricing != NULL);
    assert(pricerdata != NULL);
-
-   maxvarsround = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()), reducedcostpricing->getMaxvarsroundroot()); /*lint !e666*/
-
-   actualsize = maxvarsround * pricerdata->npricingprobsnotnull * pricerdata->colpoolsize;
-
-   hardlimit = actualsize + maxvarsround * pricerdata->npricingprobsnotnull;
 
    SCIP_CALL( GCGcolpoolCreate(scip_, &colpool, pricerdata->colpoolagelimit) );
 

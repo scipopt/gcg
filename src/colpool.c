@@ -39,6 +39,7 @@
 #include "struct_colpool.h"
 #include "pricestore_gcg.h"
 #include "struct_pricestore_gcg.h"
+#include "pricer_gcg.h"
 
 #define SCIP_HASHSIZE_COLPOOLS_SMALL 100 /**< size of hash table in col pools for small problems */
 #define SCIP_HASHSIZE_COLPOOLS       500 /**< size of hash table in col pools */
@@ -105,11 +106,7 @@ SCIP_DECL_HASHKEYVAL(hashKeyValCol)
 {  /*lint --e{715}*/
    GCG_COL* col;
    unsigned int keyval;
-   SCIP_Real maxval;
-   SCIP_Real minval;
-   SCIP* set;
 
-   set = (SCIP*) userptr;
    col = (GCG_COL*)key;
    assert(col != NULL);
 
@@ -361,7 +358,6 @@ SCIP_RETCODE GCGcolpoolPrice(
    )
 {
    GCG_COL* col;
-   SCIP_Bool found;
    int firstunproc;
    int oldncols;
    int c;
@@ -372,7 +368,6 @@ SCIP_RETCODE GCGcolpoolPrice(
    assert(foundvars != NULL);
 
    colpool->ncalls++;
-   found = FALSE;
 
    SCIPdebugMessage("separating%s col pool %p with %d cols, beginning with col %d\n", ( sol == NULL ) ? "" : " solution from", (void*)colpool, colpool->ncols, firstunproc);
 

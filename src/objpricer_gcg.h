@@ -167,6 +167,11 @@ public:
       return farkaspricing;
    }
 
+   FarkasPricing *getFarkasPricingNonConst()
+   {
+      return farkaspricing;
+   }
+
    const ReducedCostPricing *getReducedCostPricing() const
    {
       return reducedcostpricing;

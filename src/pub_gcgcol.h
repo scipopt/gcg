@@ -178,6 +178,12 @@ SCIP_RETCODE GCGcolSetMastercoefs(
    int                  nmastercoefs        /**< number of master coefficients */
    );
 
+/** set norm of column */
+extern
+void GCGcolSetNorm(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real            norm                /**< norm of column */
+   );
 /** get norm of column */
 extern
 void GCGcolComputeNorm(
