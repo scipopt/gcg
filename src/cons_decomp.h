@@ -278,6 +278,8 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    SCIP_Bool updatelist
    );
 
+/** calls old detectStructure methods of chosen detectors, translates the resulting decompositions
+ *  into seeeds and adds these seeeds to (presolved) seeedpool */
 SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    SCIP* scip
    );

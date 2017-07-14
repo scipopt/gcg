@@ -41,28 +41,44 @@
 
 //#define SCIP_DEBUG
 
-#include <assert.h>
-#include <iostream>
-#include <stdio.h>
-#include <sstream>
 #include "cons_decomp.h"
-#include "dec_connected.h"
-#include "gcg.h"
-#include "struct_detector.h"
-#include "string.h"
-#include "scip_misc.h"
-#include "scip/clock.h"
+
+#include <assert.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+#include <algorithm>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "../lib/scip-git/src/scip/clock.h"
+#include "../lib/scip-git/src/scip/def.h"
+#include "../lib/scip-git/src/scip/pub_cons.h"
+#include "../lib/scip-git/src/scip/pub_dialog.h"
+#include "../lib/scip-git/src/scip/pub_message.h"
+#include "../lib/scip-git/src/scip/pub_misc.h"
+#include "../lib/scip-git/src/scip/type_clock.h"
+#include "../lib/scip-git/src/scip/type_cons.h"
+#include "../lib/scip-git/src/scip/type_dialog.h"
+#include "../lib/scip-git/src/scip/type_message.h"
+#include "../lib/scip-git/src/scip/type_misc.h"
+#include "../lib/scip-git/src/scip/type_paramset.h"
+#include "../lib/scip-git/src/scip/type_result.h"
+#include "../lib/scip-git/src/scip/type_retcode.h"
+#include "../lib/scip-git/src/scip/type_scip.h"
+#include "../lib/scip-git/src/scip/type_set.h"
+#include "class_consclassifier.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
-
-
-#include <vector>
-#include <iomanip>
-#include <queue>
-#include <fstream>
-#include <algorithm>
-
-#include <iterator>
+#include "class_varclassifier.h"
+#include "pub_decomp.h"
+#include "type_decomp.h"
 
 typedef gcg::Seeed* SeeedPtr;
 
@@ -1827,7 +1843,7 @@ SCIP_RETCODE DECincludeDetector(
    assert(scip != NULL);
    assert(name != NULL);
    assert(description != NULL);
-   assert(detectStructure != NULL);
+//   assert(detectStructure != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
    if( conshdlr == NULL )
@@ -1836,7 +1852,7 @@ SCIP_RETCODE DECincludeDetector(
       return SCIP_ERROR;
    }
 
-   assert(detectStructure != NULL);
+//   assert(detectStructure != NULL);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
@@ -3128,20 +3144,25 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    return SCIP_OKAY;
 }
 
+/** calls old detectStructure methods of chosen detectors, translates the resulting decompositions
+ *  into seeeds and adds these seeeds to (presolved) seeedpool */
 SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    SCIP* scip
    )
 {
+   /* access to relevant data structures of the conshdlr */
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    gcg::Seeedpool* seeedpool;
 
+   /* detector data and their detection results */
    int d;
    DEC_DETECTOR* detector;
    DEC_DECOMP** decdecomps;
    int ndecdecomps;
    SCIP_RESULT result;
 
+   /* decompositions and seeeds */
    int dec;
    gcg::SeeedPtr seeed;
 
@@ -3159,39 +3180,51 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    seeedpool = conshdlrdata->seeedpool;
    assert( seeedpool != NULL );
 
-   SCIPdebugMessagePrint(scip, "Checking %d detectors for legacymode.\n", conshdlrdata->ndetectors);
+   SCIPdebugMessagePrint(scip, "Checking %d detectors for legacy mode.\n", conshdlrdata->ndetectors);
 
+   /* for each detector: check whether legacymode is enabled */
    for( d = 0; d < conshdlrdata->ndetectors; ++d )
    {
       decdecomps = NULL;
       ndecdecomps = -1;
       detector = conshdlrdata->detectors[d];
       assert(detector != NULL);
-      std::cout << "Flag for detector " << detector->name << " is " <<  ( detector->legacymode ? "TRUE.\n" : "FALSE.\n" );
 
-      if( detector->legacymode /* && possible */ ) // @todo
+      if( detector->legacymode )
       {
-         SCIPdebugMessagePrint(scip, "Calling detectStructure of %s: ", detector->name);
-
-         SCIP_CALL( (*detector->detectStructure)( scip, detector->decdata, &decdecomps, &ndecdecomps, &result ) );
-
-         std::cout << "check";
-
-         if( result == SCIP_SUCCESS )
+         if( detector->detectStructure == NULL )
          {
-            SCIPdebugMessagePrint(scip, "Translate %d found decomps into seeeds.", ndecdecomps);
-            for( dec = 0; dec < ndecdecomps; ++dec )
-            {
-               seeedpool->createSeeedFromDecomp( decdecomps[dec], &seeed );
-               seeedpool->addSeeedToFinished( seeed );
-            }
-            /* @todo duplicate check and add detector data to decomp */
+            SCIPverbMessage( scip, SCIP_VERBLEVEL_NORMAL , NULL,
+               "Legacy mode is not supported by detector <%s>.\n", detector->name );
          }
          else
          {
-            SCIPdebugPrintf("Failure!\n");
+            SCIPverbMessage( scip, SCIP_VERBLEVEL_NORMAL , NULL,
+               "Start legacy mode detection for detector <%s>.\n", detector->name );
+
+            /* call old detectStructure callback method */
+            SCIP_CALL( (*detector->detectStructure)( scip, detector->decdata, &decdecomps, &ndecdecomps, &result ) );
+
+            if( result == SCIP_SUCCESS )
+            {
+               SCIPdebugMessagePrint( scip, "Translate %d found decompositions into seeeds.\n", ndecdecomps );
+
+               /* translate found decompositions to seeeds and add them to (presolved) seeedpool */
+               for( dec = 0; dec < ndecdecomps; ++dec )
+               {
+                  DECdecompSetDetector( decdecomps[dec], detector );
+                  seeedpool->createSeeedFromDecomp( decdecomps[dec], &seeed );
+                  seeedpool->addSeeedToFinished( seeed );
+               }
+               /* @todo duplicate check and add detector data to decomp */
+               /* @todo set detectorchainstring and potentially statistical data of seeed */
+            }
+            else
+            {
+               SCIPdebugPrintf("Failure!\n");
+            }
+            SCIPfreeMemoryArrayNull(scip, &decdecomps); // @todo necessary/correct?
          }
-         SCIPfreeMemoryArrayNull(scip, &decdecomps);
       }
    }
 
@@ -3548,9 +3581,9 @@ SCIP_RETCODE DECdetectStructure(
    //	  seeedpool.freeCurrSeeeds();
 
    /* start of legacy mode stuff */
-   SCIPdebugMessagePrint(scip, "Start legacy checking.\n");
+   SCIPdebugMessagePrint(scip, "Start legacy mode.\n");
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip );
-   SCIPdebugMessagePrint(scip, "Finished legacy checking.\n");
+   SCIPdebugMessagePrint(scip, "Finished legacy mode.\n");
 
 
    SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );

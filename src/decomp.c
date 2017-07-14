@@ -497,6 +497,8 @@ SCIP_RETCODE DECdecompCreate(
    decomp->detector = NULL;
 
    decomp->detectorchain = NULL;
+   decomp->sizedetectorchain = 0;
+   decomp->detectorchainstring = NULL;
    decomp->seeedid = -1;
    decomp->detectorclocktimes = NULL;
    decomp->pctvarstoborder= NULL;

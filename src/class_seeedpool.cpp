@@ -3280,19 +3280,26 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    }
 
    SCIP_VAR*** stairlinkingvars = DECdecompGetStairlinkingvars( decomp );
-   int* nstairlinkingvars = DECdecompGetNStairlinkingvars( decomp );
-   int varindex;
-   SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock( decomp );
+   SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock(decomp);
+   assert( vartoblock != NULL );
 
-   /* set stairlinkingvars */
-   for( int b = 0; b < seeed->getNBlocks(); ++b )
+   if( stairlinkingvars != NULL )
    {
-      for( int v = 0; v < nstairlinkingvars[b]; ++v )
+      SCIPdebugMessagePrint(scip, "Check. Has stairlinking.\n");
+
+      int* nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
+      int varindex;
+
+      /* set stairlinkingvars */
+      for( int b = 0; b < seeed->getNBlocks(); ++b )
       {
-         if( stairlinkingvars[b][v] != NULL )
+         for( int v = 0; v < nstairlinkingvars[b]; ++v )
          {
-            varindex = getIndexForVar( stairlinkingvars[b][v] );
-            seeed->bookAsStairlinkingVar( varindex, b );
+            if( stairlinkingvars[b][v] != NULL )
+            {
+               varindex = getIndexForVar(stairlinkingvars[b][v]);
+               seeed->bookAsStairlinkingVar(varindex, b);
+            }
          }
       }
    }
@@ -3318,6 +3325,8 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       }
    }
 
+   SCIPdebugMessagePrint(scip, "Check. Chainsize: %d\n", DECdecompGetDetectorChainSize( decomp ) );
+
    seeed->flushBooked();
 
    /* now all conss and vars should be assigned */
@@ -3336,14 +3345,20 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       seeed->addNNewBlocks( *(DECdecompGetNNewBlocks( decomp )) );
    }
 
-   seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
+   if ( DECdecompGetDetectorChainString( scip, decomp ) != NULL )
+      seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
 
    /* detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings */
 
    /* calc maxwhitescore and hashvalue */
    prepareSeeed( seeed );
 
-   assert( DECgetMaxWhiteScore( scip, decomp ) == seeed->getMaxWhiteScore() );
+   seeed->setIsFromUnpresolved( false );
+
+//   SCIPdebugMessagePrint(scip, "Check. DEC: %f, seeed: %f\n", DECgetMaxWhiteScore( scip, decomp ), seeed->getMaxWhiteScore() );
+
+//   assert( DECgetMaxWhiteScore( scip, decomp ) == seeed->getMaxWhiteScore() );
+
    assert( seeed->checkConsistency( this ) );
 
    *newseeed = seeed;

@@ -119,15 +119,17 @@ DEC_DECL_INITDETECTOR(initGeneralmastersetpack)
 #endif
 
 /** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectGeneralmastersetpack)
-{ /*lint --e{715}*/
-   *result = SCIP_DIDNOTFIND;
+//static DEC_DECL_DETECTSTRUCTURE(detectGeneralmastersetpack)
+//{ /*lint --e{715}*/
+//   *result = SCIP_DIDNOTFIND;
+//
+//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
+//;   SCIPABORT(); /*lint --e{527}*/
+//
+//   return SCIP_OKAY;
+//}
 
-   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
-;   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
+#define detectGeneralmastersetpack NULL
 
 static DEC_DECL_PROPAGATESEEED(propagateSeeedGeneralmastersetpack)
 {
