@@ -3135,10 +3135,13 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    gcg::Seeedpool* seeedpool;
-   int d;
-   SCIP_RESULT* result;
 
+   int d;
    DEC_DETECTOR* detector;
+   DEC_DECOMP** decdecomps;
+   int ndecdecomps;
+   SCIP_RESULT result;
+
    int dec;
    gcg::SeeedPtr seeed;
 
@@ -3157,10 +3160,11 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    assert( seeedpool != NULL );
 
    SCIPdebugMessagePrint(scip, "Checking %d detectors for legacymode.\n", conshdlrdata->ndetectors);
+
    for( d = 0; d < conshdlrdata->ndetectors; ++d )
    {
-      DEC_DECOMP** decdecomps;
-      int ndecdecomps;
+      decdecomps = NULL;
+      ndecdecomps = -1;
       detector = conshdlrdata->detectors[d];
       assert(detector != NULL);
       std::cout << "Flag for detector " << detector->name << " is " <<  ( detector->legacymode ? "TRUE.\n" : "FALSE.\n" );
@@ -3169,11 +3173,11 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
       {
          SCIPdebugMessagePrint(scip, "Calling detectStructure of %s: ", detector->name);
 
-         SCIP_CALL( (*detector->detectStructure)( scip, detector->decdata, &decdecomps, &ndecdecomps, result ) );
+         SCIP_CALL( (*detector->detectStructure)( scip, detector->decdata, &decdecomps, &ndecdecomps, &result ) );
 
          std::cout << "check";
 
-         if( *result == SCIP_SUCCESS )
+         if( result == SCIP_SUCCESS )
          {
             SCIPdebugMessagePrint(scip, "Translate %d found decomps into seeeds.", ndecdecomps);
             for( dec = 0; dec < ndecdecomps; ++dec )
