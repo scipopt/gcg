@@ -78,6 +78,8 @@ SCIP_RETCODE GCGcreateGcgCol(
    (*gcgcol)->nmastercoefs = 0;
    (*gcgcol)->nmastercuts = 0;
    (*gcgcol)->nlinkvars = 0;
+   (*gcgcol)->initcoefs = FALSE;
+
 
    nnonz = 0;
    for( i = 0; i < nvars; ++i )
@@ -408,7 +410,10 @@ SCIP_RETCODE GCGcolSetMastercoefs(
 {
    int i;
 
+   SCIPdebugMessage("Col set master coefs\n");
    assert(gcgcol->nmastercoefs == 0);
+   if( nmastercoefs == 0 )
+      return SCIP_OKAY;
 
    SCIPallocMemoryArray(gcgcol->pricingprob, &(gcgcol->mastercoefs), nmastercoefs);
 
@@ -517,6 +522,23 @@ void GCGcolComputeNorm(
    gcgcol->norm = norm;
 }
 
+/** set master coefficients of column as initialized */
+SCIP_RETCODE GCGcolSetInitializedCoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   assert(!gcgcol->initcoefs);
+   gcgcol->initcoefs = TRUE;
+   return SCIP_OKAY;
+}
+
+/** return if master coefficients of column have been initialized */
+SCIP_Bool GCGcolGetInitializedCoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   )
+{
+   return gcgcol->initcoefs;
+}
 
 /** get master coefficients of column */
 int* GCGcolGetLinkvars(

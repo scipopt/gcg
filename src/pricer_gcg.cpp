@@ -1277,7 +1277,6 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraintsFromGCGCol(
 
    prob = GCGcolGetProbNr(gcgcol);
 
-
    /* compute coef of the variable in the master constraints */
    for( i = 0; i < nlinkvars; i++ )
    {
@@ -1291,20 +1290,17 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraintsFromGCGCol(
 
       assert(!SCIPisInfinity(scip_, solvals[linkvars[i]]));
 
+      assert(GCGoriginalVarIsLinking(origvars[0]));
       /* original variable is a linking variable, just add it to the linkcons */
-      if( GCGoriginalVarIsLinking(origvars[0]) )
-      {
 #ifndef NDEBUG
-         SCIP_VAR** pricingvars;
-         pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
+      SCIP_VAR** pricingvars;
+      pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
 #endif
-         linkconss = GCGlinkingVarGetLinkingConss(origvars[0]);
+      linkconss = GCGlinkingVarGetLinkingConss(origvars[0]);
 
-         assert(pricingvars[prob] == solvars[linkvars[i]]);
-         assert(linkconss[prob] != NULL);
-         SCIP_CALL( SCIPaddCoefLinear(scip_, linkconss[prob], newvar, -solvals[linkvars[i]]) );
-         continue;
-      }
+      assert(pricingvars[prob] == solvars[linkvars[i]]);
+      assert(linkconss[prob] != NULL);
+      SCIP_CALL( SCIPaddCoefLinear(scip_, linkconss[prob], newvar, -solvals[linkvars[i]]) );
    }
 
    /* add the variable to the master constraints */
@@ -1360,13 +1356,17 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
 
    assert(GCGcolGetNMastercoefs(gcgcol) == 0 || GCGcolGetNMastercoefs(gcgcol) == nmasterconss);
 
-   if( GCGcolGetNMastercoefs(gcgcol) == nmasterconss )
+   if( GCGcolGetInitializedCoefs(gcgcol) )
    {
+      SCIPdebugMessage("Coeffictions already computed, nmastercoefs = %d\n", GCGcolGetNMastercoefs(gcgcol));
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPallocBufferArray(pricingprob, &mastercoefs, nmasterconss) ); /*lint !e530*/
-   BMSclearMemoryArray(mastercoefs, nmasterconss);
+   if( nmasterconss > 0)
+   {
+      SCIP_CALL( SCIPallocBufferArray(pricingprob, &mastercoefs, nmasterconss) ); /*lint !e530*/
+      BMSclearMemoryArray(mastercoefs, nmasterconss);
+   }
 
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &linkvars, nsolvars) ); /*lint !e530*/
 
@@ -1428,9 +1428,12 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
 
    GCGcolSetLinkvars(gcgcol, linkvars, nlinkvars);
 
+   GCGcolSetInitializedCoefs(gcgcol);
+
    SCIPfreeBufferArray(pricingprob, &linkvars); /*lint !e530*/
 
-   SCIPfreeBufferArray(pricingprob, &mastercoefs); /*lint !e530*/
+   if( nmasterconss > 0)
+      SCIPfreeBufferArray(pricingprob, &mastercoefs); /*lint !e530*/
 
    return SCIP_OKAY;
 }
@@ -3379,16 +3382,24 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             SCIPdebugMessage("Solution %d/%d of prob %d: ", j+1, ncols[prob], prob);
 
+            added = FALSE;
+
             if( SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(cols[prob][j])) )
             {
                SCIP_CALL( computeColMastercoefs(cols[prob][j]) );
                SCIP_CALL( computeColMastercuts(cols[prob][j]) );
 
-               SCIP_CALL( GCGpricestoreAddCol(scip_, pricestore, NULL, cols[prob][j], FALSE) );
+               SCIP_CALL( GCGpricestoreAddCol(scip_, pricestore, cols[prob][j], FALSE) );
                added = TRUE;
             }
             else if( pricerdata->usecolpool )
+            {
                SCIP_CALL( GCGcolpoolAddCol(colpool, cols[prob][j], &added) );
+            }
+            else
+            {
+               added = FALSE;
+            }
 
             if( !added )
             {

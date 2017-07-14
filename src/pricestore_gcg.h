@@ -98,7 +98,6 @@ extern
 SCIP_RETCODE GCGpricestoreAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
-   SCIP_SOL*             sol,                /**< primal solution that was pricerated, or NULL for LP solution */
    GCG_COL*              col,                /**< pricerated col */
    SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
    );

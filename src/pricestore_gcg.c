@@ -198,7 +198,7 @@ SCIP_RETCODE pricestoreDelCol(
 
    /* release the row */
    if( free )
-      GCGfreeGcgCol(&pricestore->cols[pos]);
+      GCGfreeGcgCol(&(pricestore->cols[pos]));
 
    /* move last col to the empty position */
    pricestore->cols[pos] = pricestore->cols[pricestore->ncols-1];
@@ -216,7 +216,6 @@ SCIP_RETCODE pricestoreDelCol(
 SCIP_RETCODE GCGpricestoreAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
-   SCIP_SOL*             sol,                /**< primal solution that was pricerated, or NULL for LP solution */
    GCG_COL*              col,                /**< pricerated col */
    SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
    )
@@ -562,9 +561,6 @@ SCIP_RETCODE GCGpricestoreApplyCols(
          (void*)col, bestpos, pricestore->ncols, GCGcolGetRedcost(pricestore->cols[bestpos]), pricestore->objparallelisms[bestpos],
          pricestore->orthogonalities[bestpos], pricestore->scores[bestpos]);
 
-      /* release the row and delete the col (also issuing ROWDELETEDPRICE event) */
-      SCIP_CALL( pricestoreDelCol(pricestore, bestpos, FALSE) );
-
       /* Do not add (non-forced) non-violated cols.
        * Note: do not take SCIPsetIsEfficacious(), because constraint handlers often add cols w.r.t. SCIPsetIsFeasPositive().
        * Note2: if pricerating/feastolfac != -1, constraint handlers may even add cols w.r.t. SCIPsetIsPositive(); those are currently rejected here
@@ -573,10 +569,12 @@ SCIP_RETCODE GCGpricestoreApplyCols(
       {
          /* add col to the LP and update orthogonalities */
          SCIP_CALL( pricestoreApplyCol(pricestore, col, FALSE, mincolorthogonality, depth, &ncolsapplied, score) );
-      }
 
-      /* release col */
-      GCGfreeGcgCol(&col);
+         /* release the row and delete the col (also issuing ROWDELETEDPRICE event) */
+         SCIP_CALL( pricestoreDelCol(pricestore, bestpos, TRUE) );
+      }
+      else
+         break;
    }
 
    *nfoundvars = ncolsapplied;
@@ -604,7 +602,7 @@ SCIP_RETCODE GCGpricestoreClearCols(
    /* release cols */
    for( c = 0; c < pricestore->ncols; ++c )
    {
-      GCGfreeGcgCol(&pricestore->cols[c]);
+      GCGfreeGcgCol(&(pricestore->cols[c]));
    }
 
    /* reset counters */

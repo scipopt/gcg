@@ -64,6 +64,7 @@ struct GCG_Col
    SCIP_Real            norm;               /**< norm of the coefficients in the master */
    int*                 linkvars;           /**< array of indices of variables in var-array which are linking variables */
    int                  nlinkvars;          /**< number of variables in var-array which are linking variables */
+   SCIP_Bool            initcoefs;          /**< returns if mastercoefs and linkvars have been computed */
 };
 
 #ifdef __cplusplus

@@ -184,6 +184,19 @@ void GCGcolComputeNorm(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
+
+/** set master coefficients of column as initialized */
+extern
+SCIP_RETCODE GCGcolSetInitializedCoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** return if master coefficients of column have been initialized */
+extern
+SCIP_Bool GCGcolGetInitializedCoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
 /** get master coefficients of column */
 extern
 int* GCGcolGetLinkvars(
