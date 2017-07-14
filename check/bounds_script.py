@@ -36,20 +36,70 @@ def parse_arguments(args):
     """
     Parse the command-line arguments
     :param args: Command-line arguments provided during execution
-    :return: Parsed argumetns
+    :return: Parsed arguments
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--outdir', type=str,
-                        default="plots_test",
+                        default="plots",
                         help='output directory (default: "plots")')
 
     parser.add_argument('-x', '--xaxis', type=str,
                         default="time",
+                        choices=['time','iter'],
                         help='Values to be used in x-axis (can be "time" or "iter"; default: "time")')
 
+    parser.add_argument('-f', '--farkas', action='store_true',
+                        default=False,
+                        help='Include variables produced by Farkas-Pricing in the plot')
+
+    parser.add_argument('-dd', '--dualdiff', action='store_true',
+                        default=False,
+                        help='Plot difference from current to last dual solution')
+
+    parser.add_argument('-dod', '--dualoptdiff', action='store_true',
+                        default=False,
+                        help='Plot difference from current to optimal dual solution')
+
+    parser.add_argument('-a', '--average', action='store_true',
+                        default=False,
+                        help='Plot the moving average for the dualbounds')
+
+    parser.add_argument('-nodb', '--nodualbounds', action='store_true',
+                        default=False,
+                        help='Disable the dualbounds-subplot')
+
+    parser.add_argument('-dbl', '--dblinestyle', type=str,
+                        default="line",
+                        choices=['line','points'],
+                        help='Linestyle of the dualbounds-plot (can be "line" or "points"; default "line"')
+
+    parser.add_argument('-nolp', '--nolpvars', action='store_true',
+                        default=False,
+                        help='Disable the lpvars-subplot')
+
+    parser.add_argument('-lpl', '--lplinestyle', type=str,
+                        default="line",
+                        choices=['line','points'],
+                        help='Linestyle of the lpvars-plot (can be "line" or "points"; default "line"')
+
+    parser.add_argument('-noip', '--noipvars', action='store_true',
+                        default=False,
+                        help='Disable the ipvars-subplot')
+
+    parser.add_argument('-ipl', '--iplinestyle', type=str,
+                        default="line",
+                        choices=['line','points'],
+                        help='Linestyle of the ipvars-plot (can be "line" or "points"; default "line"')
+
     parser.add_argument('filename', nargs='+',
-                        help='Name of the files to be used for the creating the bound plots')
+                        help='Names of the files to be used for creating the bound plots')
     parsed_args = parser.parse_args(args)
+
+    # check that at least one subplot is enabled, otherwise exit
+    if parsed_args.nodualbounds and parsed_args.nolpvars and parsed_args.noipvars:
+        print 'All plots are disabled. Exiting script.'
+        exit()
+
     return parsed_args
 
 def set_params(args):
@@ -60,6 +110,16 @@ def set_params(args):
     """
     params['outdir'] = args.outdir
     params['xaxis'] = args.xaxis
+    params['farkas'] = args.farkas
+    params['dualdiff'] = args.dualdiff
+    params['dualoptdiff'] = args.dualoptdiff
+    params['average'] = args.average
+    params['dualbounds'] = not args.nodualbounds
+    params['dblinestyle'] = args.dblinestyle
+    params['lpvars'] = not args.nolpvars
+    params['lplinestyle'] = args.lplinestyle
+    params['ipvars'] = not args.noipvars
+    params['iplinestyle'] = args.iplinestyle
 
 def generate_files(files):
     """
@@ -173,17 +233,17 @@ def generate_files(files):
                         df.set_value(str(i), 'nlpvars', len(dfvar[(dfvar['rootlpsolval'] > 0) & (dfvar['rootredcostcall'] == i)]))
                     
                     # add the number of all lp-variables, not created by reduced cost pricing (e.g. by Farkas-Pricing)
-                    df.set_value(str(0),'nlpvars', df['nlpvars'][0] + len(dfvar[(dfvar['rootlpsolval'] > 0) & (dfvar['rootredcostcall'] == -1.)]))
+                    if params['farkas']:
+                        df.set_value(str(0),'nlpvars', df['nlpvars'][0] + len(dfvar[(dfvar['rootlpsolval'] > 0) & (dfvar['rootredcostcall'] == -1.)]))
 
                     # create new column in data frame containing the number of lp vars generated until each iteration
                     df['nlpvars_cum'] = df[(df['iter'] <= i)].cumsum(axis=0)['nlpvars']
 
-                    # compute total number of vars in root lp solution
-                    nlpvars_total = len(dfvar[dfvar['rootlpsolval'] > 0])
+                    # compute total number of vars in root lp solution, that are included in the plot
+                    nlpvars_total = df['nlpvars_cum'].iloc[-1]
 
                     # create new column in data frame containing the percentage of lp vars generated until each iteration
                     df['lpvars'] = df['nlpvars_cum']/nlpvars_total
-                    #lpfarvars = nlpfarvars/nlpvars_total
 
                     # repeat this for the vars (generated at the root) in ip solution
                     df['nipvars'] = 0
@@ -191,14 +251,14 @@ def generate_files(files):
                     for i in range(len(df)):
                         df.set_value(str(i), 'nipvars', len(dfvar[(dfvar['solval'] > 0) & (dfvar['rootredcostcall'] == i)]))
                     
-                    df.set_value(str(0),'nipvars', df['nipvars'][0] + len(dfvar[(dfvar['solval'] > 0) & (dfvar['rootredcostcall'] == -1.)]))
+                    if params['farkas']:
+                        df.set_value(str(0),'nipvars', df['nipvars'][0] + len(dfvar[(dfvar['solval'] > 0) & (dfvar['rootredcostcall'] == -1.)]))
 
                     df['nipvars_cum'] = df[(df['iter'] <= i)].cumsum(axis=0)['nipvars']
 
-                    nipvars_total = len(dfvar[dfvar['solval'] > 0])
+                    nipvars_total = df['nipvars_cum'].iloc[-1]
 
                     df['ipvars'] = df['nipvars_cum']/nipvars_total
-                    #ipfarvars = nipfarvars/nipvars_total
 
                     # set type of data frame
                     df=df.astype(float)
@@ -277,10 +337,13 @@ def generate_files(files):
                     # bounds/dualdiff plot
                     ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax, linewidth=0.5);
                     ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax, linewidth=0.5);
-                    ax = df.plot(kind='line', y='db_ma', color='purple', label='db', ax=ax, linewidth=0.5);
+                    if params['average']:
+                        ax = df.plot(kind='line', y='db_ma', color='purple', label='db', ax=ax, linewidth=0.5);
                     ax = df.plot(kind='scatter', x=xaxis, y='db', color='blue', label=None, ax=ax, s=0.5);
-                    ax = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
-                    ax = df.plot(kind='line', y='dualoptdiff', color='orange', label='dualoptdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
+                    if params['dualdiff']:
+                        ax = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
+                    if params['dualoptdiff']:
+                        ax = df.plot(kind='line', y='dualoptdiff', color='orange', label='dualoptdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
 
                     # set y label of secondary y-axis
                     plt.ylabel('diff', fontsize=10, rotation=-90, labelpad=15)
