@@ -47,6 +47,7 @@
 
 #include "gcg.h"
 #include "objscip/objscip.h"
+#include "scip/scip.h"
 #include "class_seeedpool.h"
 #include "struct_detector.h"
 #include "pub_decomp.h"
@@ -84,20 +85,33 @@
 #define ENUM_TO_STRING( x ) # x
 #define DEFAULT_THREADS    0     /**< number of threads (0 is OpenMP default) */
 
-/* @todo use structs in c++ or would it be better to create a (local) conshdlrData class? */
-/** constraint handler data */
-//struct SCIP_ConshdlrData
-//{
-//   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
-//   DEC_DETECTOR**        detectors;          /**< array of structure detectors */
-//   int*                  priorities;         /**< priorities of the detectors */
-//   int                   ndetectors;         /**< number of detectors */
-//   SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
-//   SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
-//   int                   ndecomps;           /**< number of decomposition structures  */
-//   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
-//   int                   nthreads;
-//};
+
+//#ifdef WITH_PRINTORIGCONSTYPES
+/** constraint type */
+enum SCIP_Constype_orig
+{
+   SCIP_CONSTYPE_EMPTY         =  0,         /**<  */
+   SCIP_CONSTYPE_FREE          =  1,         /**<  */
+   SCIP_CONSTYPE_SINGLETON     =  2,         /**<  */
+   SCIP_CONSTYPE_AGGREGATION   =  3,         /**<  */
+   SCIP_CONSTYPE_VARBOUND      =  4,         /**<  */
+   SCIP_CONSTYPE_SETPARTITION  =  5,         /**<  */
+   SCIP_CONSTYPE_SETPACKING    =  6,         /**<  */
+   SCIP_CONSTYPE_SETCOVERING   =  7,         /**<  */
+   SCIP_CONSTYPE_CARDINALITY   =  8,         /**<  */
+   SCIP_CONSTYPE_INVKNAPSACK   =  9,         /**<  */
+   SCIP_CONSTYPE_EQKNAPSACK    = 10,         /**<  */
+   SCIP_CONSTYPE_BINPACKING    = 11,         /**<  */
+   SCIP_CONSTYPE_KNAPSACK      = 12,         /**<  */
+   SCIP_CONSTYPE_INTKNAPSACK   = 13,         /**<  */
+   SCIP_CONSTYPE_MIXEDBINARY   = 14,         /**<  */
+   SCIP_CONSTYPE_GENERAL       = 15          /**<  */
+};
+typedef enum SCIP_Constype_orig SCIP_CONSTYPE_ORIG;
+//#endif
+
+
+
 
 namespace gcg{
 
@@ -122,6 +136,36 @@ struct sort_pred
       return left.second < right.second;
    }
 };
+
+/** is constraint ranged row, i.e., -inf < lhs < rhs < inf? */
+static
+SCIP_Bool isRangedRow(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real             lhs,
+   SCIP_Real             rhs
+   )
+{
+   assert(scip != NULL);
+
+   return !(SCIPisEQ(scip, lhs, rhs)
+      || SCIPisInfinity(scip, -lhs) || SCIPisInfinity(scip, rhs) );
+}
+
+/** is constraint ranged row, i.e., -inf < lhs < rhs < inf? */
+static
+SCIP_Bool isFiniteNonnegativeIntegral(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real             x                   /**< value */
+   )
+{
+   assert(scip != NULL);
+
+   return (!SCIPisInfinity(scip, x) && !SCIPisNegative(scip, x) && SCIPisIntegral(scip, x));
+}
+
+
+
+
 
 /** returns a folder name for a seeed */
 std::string getSeeedFolderLatex(
@@ -730,6 +774,7 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
 {
    SCIP_Bool conssclassnnonzeros;
    SCIP_Bool conssclassscipconstypes;
+   SCIP_Bool conssclassmiplibconstypes;
    SCIP_Bool conssclassconsnamenonumbers;
    SCIP_Bool conssclassconsnamelevenshtein;
    SCIP_Bool varclassscipvartypes;
@@ -740,6 +785,7 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
    {
       SCIPgetBoolParam( scip, "detection/consclassifier/nnonzeros/enabled", & conssclassnnonzeros );
       SCIPgetBoolParam( scip, "detection/consclassifier/scipconstype/enabled", & conssclassscipconstypes );
+      SCIPgetBoolParam( scip, "detection/consclassifier/miplibconstype/enabled", & conssclassmiplibconstypes );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamenonumbers/enabled", & conssclassconsnamenonumbers );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamelevenshtein/enabled", & conssclassconsnamelevenshtein );
       SCIPgetBoolParam( scip, "detection/varclassifier/scipvartype/enabled", & varclassscipvartypes );
@@ -750,6 +796,7 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
    {
       SCIPgetBoolParam( scip, "detection/consclassifier/nnonzeros/origenabled", & conssclassnnonzeros );
       SCIPgetBoolParam( scip, "detection/consclassifier/scipconstype/origenabled", & conssclassscipconstypes );
+      SCIPgetBoolParam( scip, "detection/consclassifier/miplibconstype/origenabled", & conssclassmiplibconstypes );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamenonumbers/origenabled", & conssclassconsnamenonumbers );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamelevenshtein/origenabled", & conssclassconsnamelevenshtein );
       SCIPgetBoolParam( scip, "detection/varclassifier/scipvartype/origenabled", & varclassscipvartypes );
@@ -763,6 +810,9 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
       addConsClassifier( createConsClassifierForNNonzeros() );
    if( conssclassscipconstypes )
       addConsClassifier( createConsClassifierForSCIPConstypes() );
+   if( conssclassmiplibconstypes )
+      addConsClassifier( createConsClassifierForMiplibConstypes() );
+
    if( conssclassconsnamenonumbers )
       addConsClassifier( createConsClassifierForConsnamesDigitFreeIdentical() );
    if( conssclassconsnamelevenshtein )
@@ -2348,6 +2398,127 @@ ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
 
    return classifier;
 }
+
+
+/** returns a new constraint classifier
+ *  where all constraints with identical SCIP constype are assigned to the same class */
+ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
+{
+   std::vector<int> foundConstypes( (int) SCIP_CONSTYPE_GENERAL + 1, 0 );
+//   std::vector<int> constypesIndices( 0 );
+   std::vector<int> classForCons = std::vector<int>( getNConss(), - 1 );
+   ConsClassifier* classifier;
+
+   /** firstly, assign all constraints to classindices */
+   for( int i = 0; i < getNConss(); ++ i )
+   {
+      SCIP_CONS* cons;
+      SCIP_Real lhs;
+      SCIP_Real rhs;
+      SCIP_Real* vals;
+      SCIP_VAR** vars;
+      int nvars;
+
+      consType cT = GCGconsGetType( cons );
+
+
+
+
+
+
+
+
+
+
+
+      /** check whether the constraint's constype is new */
+      for( constype = 0; constype < foundConstypes.size(); ++ constype )
+      {
+         if( foundConstypes[constype] == cT )
+         {
+            found = true;
+            break;
+         }
+      }
+      /** if it is new, create a new classindex */
+      if( ! found )
+      {
+         foundConstypes.push_back( GCGconsGetType( cons ) );
+         classForCons[i] = foundConstypes.size() - 1;
+      }
+      else
+         classForCons[i] = constype;
+   }
+
+   /** secondly, use these information to create a ConsClassifier */
+   classifier = new ConsClassifier( scip, "constypes", (int) foundConstypes.size(), getNConss() );
+
+   /** set class names and descriptions of every class */
+   for( int c = 0; c < classifier->getNClasses(); ++ c )
+   {
+      std::string name;
+      std::stringstream text;
+      switch( foundConstypes[c] )
+      {
+         case linear:
+            name = "linear";
+            break;
+         case knapsack:
+            name = "knapsack";
+            break;
+         case varbound:
+            name = "varbound";
+            break;
+         case setpacking:
+            name = "setpacking";
+            break;
+         case setcovering:
+            name = "setcovering";
+            break;
+         case setpartitioning:
+            name = "setpartitioning";
+            break;
+         case logicor:
+            name = "logicor";
+            break;
+         case sos1:
+            name = "sos1";
+            break;
+         case sos2:
+            name = "sos2";
+            break;
+         case unknown:
+            name = "unknown";
+            break;
+         case nconsTypeItems:
+            name = "nconsTypeItems";
+            break;
+         default:
+            name = "newConstype";
+            break;
+      }
+      classifier->setClassName( c, name.c_str() );
+      text << "This class contains all constraints that are of (SCIP) constype \"" << name << "\".";
+      classifier->setClassDescription( c, text.str().c_str() );
+   }
+
+   /** copy the constraint assignment information found in first step */
+   for( int i = 0; i < classifier->getNConss(); ++ i )
+   {
+      classifier->assignConsToClass( i, classForCons[i] );
+   }
+
+   std::cout << " consclassifier scipconstypes:" << " yields a classification with " << foundConstypes.size()
+      << " different constraint classes" << std::endl;
+
+   return classifier;
+}
+
+
+
+
+
+
 
 /** returns a new constraint classifier
  *  where all constraints with identical consname (ignoring digits) are assigned to the same class */

@@ -57,6 +57,9 @@ struct Seeed_Propagation_Data
    int nNewSeeeds;
 };
 
+
+
+
 namespace gcg{
 
 //typedef boost::shared_ptr<Seeed> SeeedPtr;
@@ -376,6 +379,11 @@ public:
    /** returns a new constraint classifier
     *  where all constraints with identical SCIP constype are assigned to the same class */
    ConsClassifier* createConsClassifierForSCIPConstypes();
+
+   /** returns a new constraint classifier
+    *  where all constraints with identical Miplib constype are assigned to the same class */
+   ConsClassifier* createConsClassifierForMiplibConstypes();
+
 
    /** returns a new constraint classifier
     *  where all constraints with identical consname (ignoring digits) are assigned to the same class */
