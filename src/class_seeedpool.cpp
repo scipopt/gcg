@@ -2656,6 +2656,7 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
             {
                SCIPfreeBufferArray(scip, &vals);
                SCIPfreeBufferArray(scip, &vars);
+               continue;
             }
             else
                rhs = SCIPinfinity(scip);
