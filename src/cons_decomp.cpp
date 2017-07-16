@@ -82,6 +82,7 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 #define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
 #define DEFAULT_ENABLEORIGDETECTION TRUE /**< indicates whether to start detection for the original problem */
+#define DEFAULT_ENABLEORIGCLASSIFICATION TRUE /**< indicates whether to start detection for the original problem */
 
 #define DEFAULT_CONSSCLASSNNONZENABLED                TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled */
 #define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
@@ -133,7 +134,8 @@ struct SCIP_ConshdlrData
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
-   SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
+   SCIP_Bool             enableorigclassification;               /**< indicates whether to start constraint classification for the original problem */
+      SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
    SCIP_Bool             conssclassnnonzenabledorig;        /**< indicates whether constraint classifier for nonzero entries is enabled for the original problem */
    SCIP_Bool             conssclassnconstypeenabled;        /**< indicates whether constraint classifier for scipconstype is enabled */
    SCIP_Bool             conssclassnconstypeenabledorig;    /**< indicates whether constraint classifier for scipconstype is enabled for the original problem */
@@ -1039,6 +1041,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/enabled", "indicates whether to start detection for the original problem", &conshdlrdata->enableorigdetection, FALSE, DEFAULT_ENABLEORIGDETECTION, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/classificationenabled", "indicates whether to classify constraints and variables for the original problem", &conshdlrdata->enableorigclassification, FALSE, DEFAULT_ENABLEORIGCLASSIFICATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", "indicates whether constraint classifier for nonzero entries is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSNNONZENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/nnonzeros/origenabled", "indicates whether constraint classifier for nonzero entries is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSNNONZENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/scipconstype/enabled", "indicates whether constraint classifier for scipconstype is enabled", &conshdlrdata->conssclassnconstypeenabled, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED, NULL, NULL) );
@@ -3346,7 +3349,7 @@ SCIP_RETCODE DECdetectStructure(
    if ( conshdlrdata->seeedpoolunpresolved == NULL )
       conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
-   std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
+   std::vector<int> candidatesNBlocks(0);                            /**< candidates for number of blocks */
    std::vector<gcg::ConsClassifier*> consClassDistributions;         /**< collection of different constraint class distributions */
    std::vector<gcg::VarClassifier*> varClassDistributions;           /**< collection of different variable class distributions */
    std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
@@ -3358,12 +3361,14 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIP_Bool presolveOrigProblem;
    SCIP_Bool calculateOrigDecomps;
+   SCIP_Bool classifyOrig;
 
    assert(scip != NULL);
 
    presolveOrigProblem = TRUE;
 
    SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
+   SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
 
 
 
@@ -3379,9 +3384,11 @@ SCIP_RETCODE DECdetectStructure(
 //=======
 
    /** get block number candidates and conslcassifier for original problem*/
-   conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
-
-   candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
+   if( classifyOrig )
+   {
+      conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
+      candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
+   }
 
    /** detection for original problem */
    if( calculateOrigDecomps )
