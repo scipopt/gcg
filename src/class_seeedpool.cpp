@@ -43,6 +43,7 @@
 #endif
 #endif
 
+//#define WRITE_ORIG_CONSTYPES
 //#define SCIP_DEBUG
 
 #include "gcg.h"
@@ -66,6 +67,8 @@
 #include <queue>
 #include <fstream>
 #include <exception>
+
+
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -2742,6 +2745,13 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
    classifier = new ConsClassifier( scip, "constypes according to miplip", (int) SCIP_CONSTYPE_GENERAL + 1, getNConss() );
 
+#ifdef WRITE_ORIG_CONSTYPES
+   std::ofstream myfile;
+   myfile.open ("origconstypes.csv", std::ios::app );
+   myfile << SCIPgetProbName(scip) << ", ";
+#endif
+
+
 
    /** set class names and descriptions of every class */
    for( int c = 0; c < classifier->getNClasses(); ++ c )
@@ -2801,17 +2811,33 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
          default:
             name = "unknown";
             break;
+
+
       }
+
+
+#ifdef WRITE_ORIG_CONSTYPES
+         myfile << " " <<  nfoundconstypesrangeddoublecount[c] << ",";
+#endif
+
       classifier->setClassName( c, name.c_str() );
       text << "This class contains all constraints that are of (miplib) constype \"" << name << "\".";
       classifier->setClassDescription( c, text.str().c_str() );
    }
 
-   /** copy the constraint assignment information found in first step */
+#ifdef WRITE_ORIG_CONSTYPES
+      myfile << std::endl;
+      myfile.close();
+#endif
+
+
+
    for( int i = 0; i < classifier->getNConss(); ++ i )
    {
       classifier->assignConsToClass( i, classforcons[i] );
    }
+
+
 
    classifier->removeEmptyClasses();
 
