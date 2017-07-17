@@ -2716,30 +2716,30 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          if( GCGpricingjobGetNCols(pricingjob) > 0 )
          {
             int probnr = GCGpricingjobGetProbnr(pricingjob);
+            SCIP_CONS* convcons = GCGgetConvCons(origprob, probnr);
             GCG_COL* bestcol = GCGpricingjobGetCol(pricingjob, 0);
-            SCIP_Real pricinglowerbound = GCGpricingjobGetLowerbound(pricingjob);
-            SCIP_CONS* cons = GCGgetConvCons(origprob, probnr);
-            SCIP_Real convdual = pricetype->consGetDual(scip_, cons);
 
-            #pragma omp atomic
-            beststabobj += GCGgetNIdenticalBlocks(origprob, probnr) * pricinglowerbound - bestobjvals[probnr];
+            SCIP_Real objval = GCGgetNIdenticalBlocks(origprob, probnr) * GCGpricingjobGetLowerbound(pricingjob);
+            SCIP_Real convdual = GCGgetNIdenticalBlocks(origprob, probnr) * pricetype->consGetDual(scip_, convcons);
+            SCIP_Real redcost = GCGgetNIdenticalBlocks(origprob, probnr) * GCGcolGetRedcost(bestcol);
 
-            #pragma omp atomic write
-            bestobjvals[probnr] = GCGgetNIdenticalBlocks(origprob, probnr) * pricinglowerbound;
-
-            if( !GCGcolIsRay(bestcol) )
+            if( SCIPisDualfeasLT(scip_, objval, bestobjvals[probnr]) )
             {
-               #pragma omp atomic
-               dualconvsum += GCGgetNIdenticalBlocks(origprob, probnr) * convdual - convduals[probnr];
-
                #pragma omp atomic write
-               convduals[probnr] = GCGgetNIdenticalBlocks(origprob, probnr) * convdual;
+               bestobjvals[probnr] = objval;
             }
-            #pragma omp atomic
-            bestredcost += GCGgetNIdenticalBlocks(origprob, probnr) * GCGcolGetRedcost(bestcol) - bestredcosts[probnr];
 
-            #pragma omp atomic write
-            bestredcosts[probnr] = GCGgetNIdenticalBlocks(origprob, probnr) * GCGcolGetRedcost(bestcol);
+            if( !SCIPisEQ(scip_, convdual, convduals[probnr]) && !GCGcolIsRay(bestcol) )
+            {
+               #pragma omp atomic write
+               convduals[probnr] = convdual;
+            }
+
+            if( SCIPisDualfeasLT(scip_, redcost, bestredcosts[probnr]) )
+            {
+               #pragma omp atomic write
+               bestredcosts[probnr] = redcost;
+            }
          }
 
          #pragma omp atomic
@@ -2747,6 +2747,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       done:
          ;
+      }
+
+      for( i = 0; i < pricerdata->npricingprobs; ++i )
+      {
+         beststabobj += bestobjvals[i];
+         dualconvsum += convduals[i];
+         bestredcost += bestredcosts[i];
       }
 
       SCIP_CALL( retcode );
