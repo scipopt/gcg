@@ -882,6 +882,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
       }
    }
 
+   updateRedcosts(pricetype, cols, ncols);
    pricingcontroller->updatePricingjob(pricingjob, status, lowerbound, cols, ncols);
 
    SCIPfreeMemoryArray(scip, &cols);
@@ -1404,7 +1405,7 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    /* Compute path to last generic branching node */
    SCIP_CALL_ABORT( computeGenericBranchingconssStack(pricetype, prob, &branchconss, &nbranchconss, &branchduals) );
 
-   for( i = nbranchconss -1; i >= 0; --i )
+   for( i = nbranchconss - 1; i >= 0; --i )
    {
       SCIP_Bool feasible;
       SCIP_CALL_ABORT( checkBranchingBoundChanges(prob, sol, branchconss[i], &feasible) );
@@ -1452,7 +1453,7 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
    solvals = GCGcolGetVals(gcgcol);
    isray = GCGcolIsRay(gcgcol);
 
-   /* compute the objective function value of the solution */
+   /* compute the objective function value of the column */
    for( i = 0; i < nsolvars; i++ )
       objvalue += solvals[i] * pricerdata->realdualvalues[prob][SCIPvarGetProbindex(solvars[i])];
 
@@ -1476,10 +1477,25 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
 
    redcost = (isray ? objvalue : objvalue - pricerdata->dualsolconv[prob]);
 
-   SCIP_CALL_ABORT( GCGcolUpdateRedcost(gcgcol, redcost, FALSE) );
-
-   /* compute reduced cost of variable (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
+   /* compute reduced cost of column (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
    return redcost;
+}
+
+
+/** for given columns, (re-)compute and update their reduced costs */
+void ObjPricerGcg::updateRedcosts(
+   PricingType*          pricetype,          /**< type of pricing */
+   GCG_COL**             cols,               /**< columns to compute reduced costs for */
+   int                   ncols               /**< number of columns */
+   )
+{
+   for( int i = 0; i < ncols; ++i )
+   {
+      SCIP_Real redcost = computeRedCostGcgCol(pricetype, cols[i], NULL);
+      GCGcolUpdateRedcost(cols[i], redcost, FALSE);
+
+      SCIPdebugMessage("column %d/%d <%p>, reduced cost = %g\n", i+1, ncols, (void*) cols[i], redcost);
+   }
 }
 
 
@@ -2174,33 +2190,22 @@ SCIP_RETCODE ObjPricerGcg::freePricingProblems()
    return SCIP_OKAY;
 }
 
-/** counts the number of variables with negative reduced cost */
-int ObjPricerGcg::countPricedVariables(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   PricingType*          pricetype           /**< pricing type, farkas or redcost */
+/** counts the number of negative reduced cost columns that a pricing job has found*/
+int ObjPricerGcg::countImprovingColumns(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    ) const
 {
-   int ncols = GCGpricingjobGetNCols(pricingjob);
-   int nfoundvars = 0;
+   int nimprovingcols = 0;
 
-   if( ncols == 0 )
-      return 0;
-
-   for( int j = 0; j < ncols; ++j )
+   for( int j = 0; j < GCGpricingjobGetNCols(pricingjob); ++j )
    {
-      GCG_COL* col = GCGpricingjobGetCol(pricingjob, j);
-
-      SCIP_Real redcost = computeRedCostGcgCol(pricetype, col, NULL);
-      SCIP_CALL_ABORT( GCGcolUpdateRedcost(col, redcost, FALSE) );
-
-      SCIPdebugMessage("    -> column %d/%d <%p>, reduced cost = %g\n", j+1, ncols, (void*) col, redcost);
-      if( SCIPisDualfeasNegative(scip_, redcost) )
-         ++nfoundvars;
+      if( SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(GCGpricingjobGetCol(pricingjob, j))) )
+         ++nimprovingcols;
    }
 
-   SCIPdebugMessage("  -> %d columns with negative reduced cost\n", nfoundvars);
+   SCIPdebugMessage("  -> %d columns with negative reduced cost\n", nimprovingcols);
 
-   return nfoundvars;
+   return nimprovingcols;
 }
 
 /** computes the stack of masterbranch constraints up to the last generic branching node
@@ -2385,6 +2390,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    )
 {
    GCG_COL* bestcol; /* the column corresponding to the current best solution from the sequence of solves */
+   SCIP_Real redcost;
    SCIP_Bool found = FALSE; /* whether a feasible solution has been found */
    int i;
 
@@ -2413,8 +2419,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 
    SCIP_CALL( solvePricingProblem(pricingjob, pricetype, maxcols) );
    bestcol = GCGpricingjobGetCol(pricingjob, 0);
-   SCIP_Real redcost = computeRedCostGcgCol(pricetype, bestcol, NULL);
-   SCIP_CALL( GCGcolUpdateRedcost(bestcol, redcost, FALSE) );
+   redcost = GCGcolGetRedcost(bestcol);
 
    if( SCIPisDualfeasNegative(scip_, redcost) )
       found = TRUE;
@@ -2450,7 +2455,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 
       /* update objective value for new solution */
       bestcol = GCGpricingjobGetCol(pricingjob, 0);
-      redcost = computeRedCostGcgCol(pricetype, bestcol, NULL);
+      redcost = GCGcolGetRedcost(bestcol);
 
       if( SCIPisDualfeasNegative(scip_, redcost) )
          found = TRUE;
@@ -2628,7 +2633,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       /* check preliminary conditions for stabilization */
       enablestab = pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
-         && !GCGisBranchruleGeneric( GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
+         && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
       /* initialize stabilization parameters if we are at a new node */
       if( enablestab )
@@ -2647,7 +2652,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( !colpoolupdated )
       {
          /* update reduced cost of cols in colpool */
-         SCIP_CALL( updateRedcostColumnPool(pricetype) );
+         updateRedcostColumnPool(pricetype);
 
          SCIP_CALL( colpool->resortColumns() );
 
@@ -2701,7 +2706,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             if( !infeasible )
             {
                #pragma omp atomic
-               nfoundvars += countPricedVariables(pricingjob, pricetype);
+               nfoundvars += countImprovingColumns(pricingjob);
             }
 
             if( oldnfoundvars < nfoundvars )
@@ -2968,31 +2973,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 }
 
 /** update reduced cost of columns in column pool */
-SCIP_RETCODE ObjPricerGcg::updateRedcostColumnPool(
+void ObjPricerGcg::updateRedcostColumnPool(
    PricingType*          pricetype           /**< type of pricing: reduced cost or Farkas */
    )
 {
-   GCG_COL** cols;
-   int ncols;
-
-   int i;
-
-   ncols = colpool->getNCols();
-   cols = colpool->getCols();
-
-   for( i = 0; i < ncols; ++i )
-   {
-      GCG_COL* col;
-      SCIP_Real redcost;
-
-      col = cols[i];
-
-      redcost = computeRedCostGcgCol(pricetype, col, NULL);
-
-      SCIP_CALL( GCGcolUpdateRedcost(col, redcost, TRUE) );
-   }
-
-   return SCIP_OKAY;
+   updateRedcosts(pricetype, colpool->getCols(), colpool->getNCols());
 }
 
 /** method to price new columns from Column Pool */

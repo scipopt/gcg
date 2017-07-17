@@ -104,7 +104,7 @@ public:
    );
 
    /** update reduced cost of columns in column pool */
-   SCIP_RETCODE updateRedcostColumnPool(
+   void updateRedcostColumnPool(
       PricingType*          pricetype           /**< type of pricing: reduced cost or Farkas */
       );
    /** method to price new columns from Column Pool */
@@ -214,7 +214,7 @@ private:
    /** free pricing problems */
    SCIP_RETCODE freePricingProblems();
 
-   SCIP_Real  computeRedCost(
+   SCIP_Real computeRedCost(
       PricingType*          pricetype,          /**< type of pricing */
       SCIP_SOL*             sol,                /**< solution to compute reduced cost for */
       SCIP_Bool             solisray,           /**< is the solution a ray? */
@@ -228,10 +228,16 @@ private:
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
       ) const;
 
-   /** counts the number of variables with negative reduced cost */
-   int countPricedVariables(
-      GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-      PricingType*          pricetype           /**< pricing type, farkas or redcost */
+   /** for given columns, (re-)compute and update their reduced costs */
+   void updateRedcosts(
+      PricingType*          pricetype,          /**< type of pricing */
+      GCG_COL**             cols,               /**< columns to compute reduced costs for */
+      int                   ncols               /**< number of columns */
+      );
+
+   /** counts the number of negative reduced cost columns that a pricing job has found*/
+   int countImprovingColumns(
+      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
       ) const;
 
    /** return TRUE or FALSE whether the master LP is solved to optimality */
