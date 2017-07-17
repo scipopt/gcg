@@ -232,8 +232,10 @@ void Pricingcontroller::evaluatePricingjob(
    GCG_PRICINGJOB*       pricingjob         /**< pricing job */
    )
 {
-   if( GCGpricingjobIsHeuristic(pricingjob) && GCGpricingjobGetStatus(pricingjob) != SCIP_STATUS_OPTIMAL )
+   if( GCGpricingjobIsHeuristic(pricingjob)
+      && (GCGpricingjobGetNCols(pricingjob) == 0 || !SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(GCGpricingjobGetCol(pricingjob, 0)))) )
    {
+      SCIPdebugMessage("Problem %d has not yielded neg. recost column, now solving exactly\n", GCGpricingjobGetProbnr(pricingjob));
       GCGpricingjobSetExact(pricingjob);
       // @todo: update score of pricing job
       SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
@@ -248,7 +250,7 @@ SCIP_Bool Pricingcontroller::redcostIsValid()
       if( pricingjobs[i] == NULL )
          continue;
 
-      if( GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL )
+      if( GCGpricingjobIsHeuristic(pricingjobs[i]) || GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL )
       {
          SCIPdebugMessage("Pricing prob %d has not been solved to optimality, reduced cost invalid\n", i);
          return FALSE;

@@ -2686,8 +2686,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          private_retcode = generateColumnsFromPricingProblem(pricingjob, pricetype, maxcols);
          SCIPdebugMessage("  -> ncols: %d, pricinglowerbound: %.4g\n", GCGpricingjobGetNCols(pricingjob), GCGpricingjobGetLowerbound(pricingjob));
 
-         pricingcontroller->evaluatePricingjob(pricingjob);
-
          /* handle result */
          #pragma omp ordered
          {
@@ -2712,6 +2710,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                ++successfulmips;
             }
          }
+
+         pricingcontroller->evaluatePricingjob(pricingjob);
 
          if( GCGpricingjobGetNCols(pricingjob) > 0 )
          {
