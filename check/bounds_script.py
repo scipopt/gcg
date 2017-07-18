@@ -70,17 +70,17 @@ def parse_arguments(args):
 
     parser.add_argument('-dbl', '--dblinestyle', type=str,
                         default="line",
-                        choices=['line','points'],
-                        help='Linestyle of the dualbounds-plot (can be "line" or "points"; default "line"')
+                        choices=['line','scatter'],
+                        help='Linestyle of the dualbounds-plot (can be "line" or "scatter"; default "line"')
 
     parser.add_argument('-nolp', '--nolpvars', action='store_true',
                         default=False,
                         help='Disable the lpvars-subplot')
 
     parser.add_argument('-lpl', '--lplinestyle', type=str,
-                        default="line",
-                        choices=['line','points'],
-                        help='Linestyle of the lpvars-plot (can be "line" or "points"; default "line"')
+                        default='line',
+                        choices=['line','scatter'],
+                        help='Linestyle of the lpvars-plot (can be "line" or "scatter"; default "line"')
 
     parser.add_argument('-noip', '--noipvars', action='store_true',
                         default=False,
@@ -88,8 +88,8 @@ def parse_arguments(args):
 
     parser.add_argument('-ipl', '--iplinestyle', type=str,
                         default="line",
-                        choices=['line','points'],
-                        help='Linestyle of the ipvars-plot (can be "line" or "points"; default "line"')
+                        choices=['line','scatter'],
+                        help='Linestyle of the ipvars-plot (can be "line" or "scatter"; default "line"')
 
     parser.add_argument('filename', nargs='+',
                         help='Names of the files to be used for creating the bound plots')
@@ -285,25 +285,38 @@ def generate_files(files):
                     # set index to time or oterations (depending on which is used)
                     df = df.set_index(keys=xaxis, drop=False)
 
-                    # create grid of 3 plots
-                    gs = gridspec.GridSpec(3, 1, height_ratios=[3, 1, 1])
-                    ax = plt.subplot(gs[0])
-                    ax1 = plt.subplot(gs[1])
-                    ax2 = plt.subplot(gs[2])
+                    # number of plots, the user wants
+                    nplots = params['dualbounds'] + params['lpvars'] + params['ipvars']
+
+                    # create grid of nplots plots
+                    if params['dualbounds']:
+                        height_ratios = [3]+[1]*(nplots-1)
+                    else:
+                        height_ratios = [1]*nplots
+                    gs = list(gridspec.GridSpec(nplots, 1, height_ratios=height_ratios))
+                    axes = {}
+                    if params['ipvars']:
+                        axes['ip'] = plt.subplot(gs.pop())
+                    if params['lpvars']:
+                        axes['lp'] = plt.subplot(gs.pop())
+                    if params['dualbounds']:
+                        axes['db'] = plt.subplot(gs.pop())
 
                     # lp vars plot
-                    ax1.set_ylim(bottom=0.0, top=1.1)
-                    ax1.set_xlim(left=xmin, right=xmax)
-                    ax1 = df.plot(kind='scatter', x=xaxis, y='lpvars', color='blue', label='lpvars', ax=ax1, secondary_y=False, s=1);
-                    ax1.set_xticklabels([])
-                    x_axis = ax1.axes.get_xaxis()
-                    x_axis.set_label_text('')
-                    x_axis.set_visible(False)
+                    if params['lpvars']:
+                        axes['lp'].set_ylim(bottom=0.0, top=1.1)
+                        axes['lp'].set_xlim(left=xmin, right=xmax)
+                        axes['lp'] = df.plot(kind=params['lplinestyle'], x=xaxis, y='lpvars', color='blue', label='lpvars', ax=axes['lp'], secondary_y=False, linewidth=0.8)
+                        axes['lp'].set_xticklabels([])
+                        x_axis = axes['lp'].axes.get_xaxis()
+                        x_axis.set_label_text('')
+                        x_axis.set_visible(False)
 
                     # ip vars plot
-                    ax2.set_ylim(bottom=0.0, top=1.1)
-                    ax2.set_xlim(left=xmin, right=xmax)
-                    ax2 = df.plot(kind='scatter', x=xaxis, y='ipvars', color='red', label='ipvars', ax=ax2, secondary_y=False, s=1);
+                    if params['ipvars']:
+                        axes['ip'].set_ylim(bottom=0.0, top=1.1)
+                        axes['ip'].set_xlim(left=xmin, right=xmax)
+                        axes['ip'] = df.plot(kind=params['lplinestyle'], x=xaxis, y='ipvars', color='red', label='ipvars', ax=axes['ip'], secondary_y=False, linewidth=0.8)
 
                     # set base for x labels
                     if( xmax > 0 ):
@@ -313,37 +326,43 @@ def generate_files(files):
                     myLocator = mticker.MultipleLocator(base)
 
                     # specify labels etc. of plot
+                    if params['ipvars']:
+                        lowest_ax = axes['ip']
+                    elif params['lpvars']:
+                        lowest_ax = axes['lp']
+                    elif params['dualbounds']:
+                        lowest_ax = axes['db']
                     if(xaxis == 'iter' or base > 0.5):
                         majorFormatter = mticker.FormatStrFormatter('%d')
                     else:
                         majorFormatter = mticker.FormatStrFormatter('%0.2f')
-                    ax2.xaxis.set_major_locator(myLocator)
-                    ax2.xaxis.set_major_formatter(majorFormatter)
+                    lowest_ax.xaxis.set_major_locator(myLocator)
+                    lowest_ax.xaxis.set_major_formatter(majorFormatter)
                     fixedFormatter = mticker.FormatStrFormatter('%g')
-                    ax2.xaxis.set_major_formatter(fixedFormatter)
-                    ax2.xaxis.set_minor_locator(plt.NullLocator())
-                    lim = ax2.get_xlim()
-                    ax2.set_xticks(list(ax2.get_xticks()) + [xmax])
-                    ax2.set_xlim(lim)
-                    ax2.xaxis.get_major_ticks()[-1].set_pad(15)
+                    lowest_ax.xaxis.set_major_formatter(fixedFormatter)
+                    lowest_ax.xaxis.set_minor_locator(plt.NullLocator())
+                    lim = lowest_ax.get_xlim()
+                    lowest_ax.set_xticks(list(lowest_ax.get_xticks()) + [xmax])
+                    lowest_ax.set_xlim(lim)
+                    lowest_ax.xaxis.get_major_ticks()[-1].set_pad(15)
 
-                    # set limits and lables for bounds/dualdiff  plot
-                    ax.set_xticklabels([])
-                    x_axis = ax.axes.get_xaxis()
-                    x_axis.set_label_text('')
-                    x_axis.set_visible(False)
-                    ax.set_xlim(left=xmin, right=xmax)
+                    if params['dualbounds']:
+                        # set limits and lables for bounds/dualdiff  plot
+                        axes['db'].set_xticklabels([])
+                        x_axis = axes['db'].axes.get_xaxis()
+                        x_axis.set_label_text('')
+                        x_axis.set_visible(False)
+                        axes['db'].set_xlim(left=xmin, right=xmax)
 
-                    # bounds/dualdiff plot
-                    ax = df.plot(kind='line', y='pb', color='red', label='pb', ax=ax, linewidth=0.5);
-                    ax = df.plot(kind='line', y='db', color='blue', label='db', ax=ax, linewidth=0.5);
-                    if params['average']:
-                        ax = df.plot(kind='line', y='db_ma', color='purple', label='db', ax=ax, linewidth=0.5);
-                    ax = df.plot(kind='scatter', x=xaxis, y='db', color='blue', label=None, ax=ax, s=0.5);
-                    if params['dualdiff']:
-                        ax = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
-                    if params['dualoptdiff']:
-                        ax = df.plot(kind='line', y='dualoptdiff', color='orange', label='dualoptdiff', ax=ax, secondary_y=True, alpha=0.25, linewidth=1);
+                        # bounds/dualdiff plot
+                        axes['db'] = df.plot(kind='line', y='pb', color='red', label='pb', ax=axes['db'], linewidth=0.8)
+                        axes['db'] = df.plot(kind=params['dblinestyle'], y='db', color='blue', label='db', ax=axes['db'], linewidth=0.8)
+                        if params['average']:
+                            axes['db'] = df.plot(kind='line', y='db_ma', color='purple', label='db (average)', ax=axes['db'], linewidth=0.5)
+                        if params['dualdiff']:
+                            axes['db'] = df.plot(kind='line', y='dualdiff', color='green', label='dualdiff', ax=axes['db'], secondary_y=True, alpha=0.25, linewidth=1)
+                        if params['dualoptdiff']:
+                            axes['db'] = df.plot(kind='line', y='dualoptdiff', color='orange', label='dualoptdiff', ax=axes['db'], secondary_y=True, alpha=0.25, linewidth=1)
 
                     # set y label of secondary y-axis
                     plt.ylabel('diff', fontsize=10, rotation=-90, labelpad=15)
