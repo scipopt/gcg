@@ -41,8 +41,9 @@
 #include "struct_pricestore_gcg.h"
 #include "pricer_gcg.h"
 
-#define SCIP_HASHSIZE_COLPOOLS_SMALL 100 /**< size of hash table in col pools for small problems */
-#define SCIP_HASHSIZE_COLPOOLS       500 /**< size of hash table in col pools */
+#define GCG_USESMALLTABLES FALSE
+#define GCG_HASHSIZE_COLPOOLS_SMALL 100 /**< size of hash table in col pools for small problems */
+#define GCG_HASHSIZE_COLPOOLS       500 /**< size of hash table in col pools */
 
 /*
  * Hash functions
@@ -86,7 +87,6 @@ SCIP_DECL_HASHKEYEQ(hashKeyEqCol)
    if( col1->probnr != col2->probnr
       || col1->isray != col2->isray
       || col1->nvars != col2->nvars
-      //|| !SCIPisEQ(scip, col1->redcost, col2->redcost)
        )
       return FALSE;
 
@@ -110,7 +110,7 @@ SCIP_DECL_HASHKEYVAL(hashKeyValCol)
    col = (GCG_COL*)key;
    assert(col != NULL);
 
-   /* TODO: Improve hash function */
+   /* TODO: Improve hash function (but then we would have to store additional values for each col) */
    keyval = SCIPhashTwo(SCIPrealHashCode(col->nvars > 0 ? col->vals[0] : 0.0),
       SCIPcombineThreeInt(col->probnr, col->nvars, col->isray));
 
@@ -168,7 +168,7 @@ SCIP_RETCODE GCGcolpoolCreate(
    SCIP_CALL( SCIPcreateClock(scip, &(*colpool)->poolclock) );
 
    SCIP_CALL( SCIPhashtableCreate(&(*colpool)->hashtable, SCIPblkmem(scip),
-         (FALSE /*scip->set->misc_usesmalltables*/ ? SCIP_HASHSIZE_COLPOOLS_SMALL :  SCIP_HASHSIZE_COLPOOLS),
+         (GCG_USESMALLTABLES ? GCG_HASHSIZE_COLPOOLS_SMALL :  GCG_HASHSIZE_COLPOOLS),
          hashGetKeyCol, hashKeyEqCol, hashKeyValCol, (void*) scip) );
 
    (*colpool)->scip = scip;
@@ -275,7 +275,7 @@ SCIP_RETCODE GCGcolpoolClear(
    return SCIP_OKAY;
 }
 
-/** if not already existing, adds row to col pool and captures it */
+/** if not already existing, adds col to col pool and captures it */
 SCIP_RETCODE GCGcolpoolAddCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_COL*              col,                /**< column to add */
@@ -375,7 +375,6 @@ SCIP_RETCODE GCGcolpoolPrice(
    SCIPstartClock(colpool->scip, colpool->poolclock);
 
    /* remember the current total number of found cols */
-   //oldncols = getNCols();
    oldncols = GCGpricestoreGetNCols(pricestore);
 
    /* process all unprocessed cols in the pool */

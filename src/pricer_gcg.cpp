@@ -71,8 +71,7 @@
 #include "class_stabilization.h"
 #include "branch_generic.h"
 #include "event_display.h"
-//#include "pub_colpool.h"
-#include "colpool.h"
+#include "pub_colpool.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -103,9 +102,8 @@ using namespace scip;
 #define DEFAULT_HYBRIDASCENT_NOAGG       FALSE      /**< should hybridization of smoothing with an ascent method be enabled
                                                      *   if pricing problems cannot be aggregation */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
-#define DEFAULT_USECOLPOOL               FALSE       /**< should the colpool be checked for negative redcost cols before solving the pricing problems? */
-#define DEFAULT_COLPOOL_AGELIMIT         100        /**< maximum age of columns in column pool */
-#define DEFAULT_COLPOOL_COLPOOLSIZE      10         /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
+#define DEFAULT_USECOLPOOL               TRUE       /**< should the colpool be checked for negative redcost cols before solving the pricing problems? */
+
 
 #define DEFAULT_PRICE_ORTHOFAC 0.0
 #define DEFAULT_PRICE_OBJPARALFAC 0.0
@@ -4364,15 +4362,8 @@ SCIP_RETCODE SCIPincludePricerGcg(
          "should hybridization of smoothing with an ascent method be enabled if pricing problems cannot be aggregation?",
          &pricerdata->hybridascentnoagg, FALSE, DEFAULT_HYBRIDASCENT_NOAGG, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpoolsize", "actual size is"
-      "maxvarsround * npricingprobsnotnull * colpoolsize", &pricerdata->colpoolsize, FALSE,
-      DEFAULT_COLPOOL_COLPOOLSIZE, 0, 100, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpoolagelimit", "maximum age of cols in colpool"
-      "(if age limit is set to 0, no columns are stored from the last pricing round)",
-         &pricerdata->colpoolagelimit, FALSE, DEFAULT_COLPOOL_AGELIMIT, 0, 100, NULL, NULL) );
-
    SCIP_CALL( SCIPsetIntParam(scip, "lp/disablecutoff", DEFAULT_DISABLECUTOFF) );
+
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/disablecutoff",
          "should the cutoffbound be applied in master LP solving (0: on, 1:off, 2:auto)?",
          &pricerdata->disablecutoff, FALSE, DEFAULT_DISABLECUTOFF, 0, 2, paramChgdDisablecutoff, NULL) );

@@ -28,6 +28,8 @@
 #include "scip/def.h"
 #include "type_colpool.h"
 #include "type_gcgcol.h"
+#include "type_pricestore_gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,16 +39,6 @@ extern "C" {
  *
  * @{
  */
-
-///** returns the ratio of LPs where the row belonging to this col was active in an LP solution, i.e.
-// *  where the age of its row has not been increased
-// *
-// *  @see SCIPcolGetAge() to get the age of a col
-// */
-//EXTERN
-//SCIP_Real SCIPcolGetLPActivityQuot(
-//   GCG_COL*             col                 /**< col */
-//   );
 
 /** gets array of cols in the col pool */
 EXTERN
@@ -66,7 +58,7 @@ int GCGcolpoolGetMaxNCols(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
-/** gets time in seconds used for separating cols from the pool */
+/** gets time in seconds used for pricing cols from the pool */
 EXTERN
 SCIP_Real GCGcolpoolGetTime(
    GCG_COLPOOL*         colpool             /**< col pool */
@@ -78,7 +70,7 @@ SCIP_Longint GCGcolpoolGetNCalls(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
-/** get total number of cols that were separated from the col pool */
+/** get total number of cols that were priced from the col pool */
 EXTERN
 SCIP_Longint GCGcolpoolGetNColsFound(
    GCG_COLPOOL*         colpool             /**< col pool */
@@ -99,13 +91,13 @@ SCIP_RETCODE GCGcolpoolFree(
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    );
 
-/** removes all rows from the col pool */
+/** removes all cols from the col pool */
 EXTERN
 SCIP_RETCODE GCGcolpoolClear(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
-/** if not already existing, adds row to col pool and captures it */
+/** if not already existing, adds col to col pool and captures it */
 EXTERN
 SCIP_RETCODE GCGcolpoolAddCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
@@ -113,14 +105,14 @@ SCIP_RETCODE GCGcolpoolAddCol(
    SCIP_Bool*            success             /**< pointer to store if col was added */
    );
 
-/** adds row to col pool and captures it; doesn't check for multiple cols */
+/** adds col to col pool and captures it; doesn't check for multiple cols */
 EXTERN
 SCIP_RETCODE GCGcolpoolAddNewCol(
    GCG_COLPOOL*         colpool,            /**< col pool */
    GCG_COL*             col                 /**< column to add */
    );
 
-/** removes the LP row from the col pool */
+/** removes the col from the col pool */
 EXTERN
 SCIP_RETCODE GCGcolpoolDelCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
@@ -150,6 +142,18 @@ void GCGcolpoolStartFarkas(
 EXTERN
 void GCGcolpoolEndFarkas(
    GCG_COLPOOL*         colpool             /**< col pool */
+   );
+
+/** prices cols of the col pool */
+EXTERN
+SCIP_RETCODE GCGcolpoolPrice(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COLPOOL*          colpool,            /**< col pool */
+   GCG_PRICESTORE*       pricestore,         /**< GCG price storage */
+   SCIP_SOL*             sol,                /**< solution to be separated (or NULL for LP-solution) */
+   SCIP_Bool             colpoolisdelayed,   /**< is the colpool delayed (count cols found)? */
+   SCIP_Bool             root,               /**< are we at the root node? */
+   SCIP_Bool*            foundvars           /**< pointer to store the result of the separation call */
    );
 
 /* @} */
