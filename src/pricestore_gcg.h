@@ -67,13 +67,13 @@ SCIP_RETCODE GCGpricestoreFree(
    GCG_PRICESTORE**      pricestore           /**< pointer to store price storage */
    );
 
-/** informs price storage, that the setup in Farkas pricing starts now */
+/** informs price storage, that Farkas pricing starts now */
 extern
 void GCGpricestoreStartFarkas(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
-/** informs price storage, that the setup in Farkas pricing is now finished */
+/** informs price storage, that Farkas pricing is now finished */
 extern
 void GCGpricestoreEndFarkas(
    GCG_PRICESTORE*       pricestore           /**< price storage */
@@ -91,7 +91,7 @@ void GCGpricestoreEndForceCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
-/** adds col to price storage and captures it;
+/** adds col to price storage;
  *  if the col should be forced to enter the LP, an infinite score has to be used
  */
 extern
@@ -102,14 +102,14 @@ SCIP_RETCODE GCGpricestoreAddCol(
    SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
    );
 
-/** adds cols to the LP and clears price storage */
+/** adds cols to priced vars and clears price storage */
 extern
 SCIP_RETCODE GCGpricestoreApplyCols(
    GCG_PRICESTORE*       pricestore,          /**< price storage */
    int*                  nfoundvars           /**< pointer to store number of variables that were added to the problem */
    );
 
-/** clears the price storage without adding the cols to the LP */
+/** clears the price storage without adding the cols to priced vars */
 extern
 SCIP_RETCODE GCGpricestoreClearCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
