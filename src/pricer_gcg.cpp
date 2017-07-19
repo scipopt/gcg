@@ -1534,8 +1534,10 @@ void ObjPricerGcg::updateRedcosts(
    SCIP_Real* stabredcosts;
 
    assert(stabilization != NULL);
-   assert( stabdualval != NULL );
+   assert(stabdualval != NULL);
+
    *stabdualval = 0.0;
+
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
@@ -1546,13 +1548,14 @@ void ObjPricerGcg::updateRedcosts(
    nlinkconss = GCGgetNVarLinkingconss(origprob);
    linkconss = GCGgetVarLinkingconss(origprob);
 
-   /* get the cuts of the master problem */   mastercuts = GCGsepaGetMastercuts(scip_);
+   /* get the cuts of the master problem */
+   mastercuts = GCGsepaGetMastercuts(scip_);
    nmastercuts = GCGsepaGetNCuts(scip_);
 
    assert(mastercuts != NULL);
 
    /* compute lhs/rhs * dual for linking constraints and add it to dualobjval */
-   for( i = 0; i < nlinkconss; ++i)
+   for( i = 0; i < nlinkconss; ++i )
    {
       SCIP_CONS* linkcons = linkconss[i];
 #ifndef NDEBUG
@@ -1578,10 +1581,10 @@ void ObjPricerGcg::updateRedcosts(
       else
          continue;
 
-      assert( SCIPisZero(scip_, boundval) );
+      assert(SCIPisZero(scip_, boundval));
 
       if( !SCIPisZero(scip_, boundval) )
-         dualobjval += boundval*dualsol;
+         dualobjval += boundval * dualsol;
    }
 
 
@@ -1601,7 +1604,7 @@ void ObjPricerGcg::updateRedcosts(
          continue;
 
       if( !SCIPisZero(scip_, boundval) )
-         dualobjval += boundval*dualsol;
+         dualobjval += boundval * dualsol;
    }
 
    /* compute lhs/rhs * dual for master cuts and add it to dualobjval */
@@ -1620,7 +1623,7 @@ void ObjPricerGcg::updateRedcosts(
          continue;
 
       if( !SCIPisZero(scip_, boundval) )
-         dualobjval += boundval*dualsol;
+         dualobjval += boundval * dualsol;
    }
 
    /* get master variables that were directly transferred or that are linking */
@@ -1655,7 +1658,7 @@ void ObjPricerGcg::updateRedcosts(
    nlinkconss = GCGgetNVarLinkingconss(origprob);
    linkconss = GCGgetVarLinkingconss(origprob);
 
-   for( i = 0; i < nlinkconss; ++i)
+   for( i = 0; i < nlinkconss; ++i )
    {
       SCIP_VAR** linkconsvars;
       SCIP_CONS* linkcons = linkconss[i];
@@ -1803,7 +1806,7 @@ void ObjPricerGcg::updateRedcosts(
          continue;
 
       if( SCIPisPositive(scip_, boundval) )
-         dualobjval += boundval*stabredcost;
+         dualobjval += boundval * stabredcost;
 
    }
 
@@ -2779,7 +2782,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          lowerboundcandidate = stabdualval + beststabobj;
          beststabredcost = beststabobj - dualconvsum;
 
-         SCIPdebugMessage("lowerboundcandidate: %.8g stabdualval %.8g, beststabobj %.8g, beststabredcost %.8g)\n", lowerboundcandidate, stabdualval, beststabobj, beststabredcost);
+         SCIPdebugMessage("lowerboundcandidate: %.8g, stabdualval %.8g, beststabobj %.8g, beststabredcost %.8g)\n", lowerboundcandidate, stabdualval, beststabobj, beststabredcost);
 
          assert(!*bestredcostvalid || stabilized || SCIPisDualfeasEQ(scip_, beststabredcost, bestredcost));
          assert(!*bestredcostvalid || stabilized || SCIPisDualfeasEQ(scip_, lowerboundcandidate, SCIPgetLPObjval(scip_) + bestredcost));
