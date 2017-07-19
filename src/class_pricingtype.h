@@ -28,6 +28,7 @@
 /**@file   class_pricingtype.h
  * @brief  abstraction for SCIP pricing types
  * @author Martin Bergner
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -40,17 +41,19 @@
 class PricingType
 {
 protected:
-   SCIP_CLOCK* clock;
+  SCIP*                 scip_;
+  GCG_PRICETYPE         type;
+  SCIP_CLOCK*           clock;
 
-   int calls;
-   int maxvarsround;
-   int maxvarsroundroot;
-   int maxsuccessfulmips;
-   int maxrounds;
-   double mipsrel;
-   double mipsrelroot;
-   GCG_PRICETYPE type;
-   SCIP *scip_;
+  int                   calls;
+  int                   maxrounds;
+  int                   maxcolsroundroot;
+  int                   maxcolsround;
+  int                   maxcolsprobroot;
+  int                   maxcolsprob;
+  int                   maxsuccessfulmips;
+  double                mipsrelroot;
+  double                mipsrel;
 
 public:
    /** constructor */
@@ -82,7 +85,7 @@ public:
 
    /** returns whether the optimal pricing can be aborted */
    virtual SCIP_Bool canOptimalPricingBeAborted(
-      int               nfoundvars,         /**< number of variables found so far */
+      int               nfoundcols,         /**< number of variables found so far */
       int               solvedmips,         /**< number of MIPS solved so far */
       int               successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */
@@ -91,7 +94,7 @@ public:
 
    /** returns whether the heuristic pricing can be aborted */
    virtual SCIP_Bool canHeuristicPricingBeAborted(
-      int               nfoundvars,         /**< number of variables found so far */
+      int               nfoundcols,         /**< number of variables found so far */
       int               solvedmips,         /**< number of MIPS solved so far */
       int               successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */
@@ -113,16 +116,34 @@ public:
       return maxrounds;
    }
 
-   /** returns the maximal number of successful mip solutions */
+  /** returns the maximal number of successful mip solutions */
    int getMaxsuccessfulmips() const
    {
       return maxsuccessfulmips;
    }
 
-   /** returns the maximal number of variables at the root node */
-   int getMaxvarsroundroot() const
+   /** returns the maximal number of columns per pricing round at root node */
+   int getMaxcolsroundroot() const
    {
-      return maxvarsroundroot;
+      return maxcolsroundroot;
+   }
+
+   /** returns the maximal number of columns per pricing round */
+   int getMaxcolsround() const
+   {
+      return maxcolsround;
+   }
+
+   /** returns the maximal number of columns per problem to be generated during pricing at root node */
+   int getMaxcolsprobroot() const
+   {
+      return maxcolsprobroot;
+   }
+
+   /** returns the maximal number of columns per problem to be generated during pricing */
+   int getMaxcolsprob() const
+   {
+      return maxcolsprob;
    }
 
    /** returns the relative ratio of MIPs to be solved */
@@ -147,12 +168,6 @@ public:
    int getCalls() const
    {
       return calls;
-   }
-
-   /** returns the maximal number of vars per pricing round */
-   int getMaxvarsround() const
-   {
-      return maxvarsround;
    }
 
    /** increases the number of calls */
@@ -188,7 +203,7 @@ public:
     virtual SCIP_Real rowGetDual(SCIP_ROW* row) const;
     virtual SCIP_Real varGetObj(SCIP_VAR *var) const ;
     virtual SCIP_Bool canOptimalPricingBeAborted(
-          int                  nfoundvars,         /**< number of variables found so far */
+          int                  nfoundcols,         /**< number of variables found so far */
           int                  solvedmips,         /**< number of MIPS solved so far */
           int                  successfulmips,     /**< number of sucessful mips solved so far */
           SCIP_Real            successfulmipsrel,  /**< number of sucessful mips solved so far */
@@ -196,7 +211,7 @@ public:
       ) const ;
 
     virtual SCIP_Bool canHeuristicPricingBeAborted(
-        int                  nfoundvars,         /**< number of variables found so far */
+        int                  nfoundcols,         /**< number of variables found so far */
         int                  solvedmips,         /**< number of MIPS solved so far */
         int                  successfulmips,     /**< number of sucessful mips solved so far */
         SCIP_Real            successfulmipsrel,  /**< number of sucessful mips solved so far */
@@ -220,14 +235,14 @@ public:
    virtual SCIP_Real rowGetDual(SCIP_ROW* row) const;
    virtual SCIP_Real varGetObj(SCIP_VAR *var) const;
    virtual SCIP_Bool canOptimalPricingBeAborted(
-      int               nfoundvars,         /**< number of variables found so far */
+      int               nfoundcols,         /**< number of variables found so far */
       int               solvedmips,         /**< number of MIPS solved so far */
       int               successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */
       int               npricingprobsnotnull /**< number of non-Null pricing problems*/
    ) const;
    virtual SCIP_Bool canHeuristicPricingBeAborted(
-      int               nfoundvars,         /**< number of variables found so far */
+      int               nfoundcols,         /**< number of variables found so far */
       int               solvedmips,         /**< number of MIPS solved so far */
       int               successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */

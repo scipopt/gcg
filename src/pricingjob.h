@@ -64,11 +64,12 @@ SCIP_RETCODE GCGpricingjobSetup(
    SCIP*                 scip,               /**< master SCIP instance */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
+   int                   maxcolsprob,        /**< maximum number of columns that the problem should be looking for */
    int                   scoring,            /**< scoring parameter */
    SCIP_Real             dualsolconv,        /**< dual solution value of corresponding convexity constraint */
    int                   npointsprob,        /**< total number of extreme points generated so far by the pricing problem */
    int                   nraysprob,          /**< total number of extreme rays generated so far by the pricing problem */
-   int                   maxcols             /**< maximum number of columns to be generated */
+   int                   maxcols             /**< maximum number of columns to be generated in total */
    );
 
 /** update a pricing job after the pricing problem has been solved */

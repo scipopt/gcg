@@ -547,7 +547,6 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", solverdata->heurstallnodelimit) );
    SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", solverdata->heurnodelimit) );
    SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", solverdata->heurgaplimit) );
-   /*SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/bestsol", 5) );*/ /* TODO: do we want a solution limit? */
 
    SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, cols, maxcols, ncols, lowerbound, result) );
 
@@ -559,7 +558,6 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", -1LL) );
    SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", -1LL) );
    SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", 0.0) );
-   SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/bestsol", -1) );
 
    return SCIP_OKAY;
 }

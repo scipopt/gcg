@@ -84,8 +84,7 @@ using namespace scip;
 #define PRICER_PRIORITY        5000000
 #define PRICER_DELAY           TRUE     /* only call pricer if all problem variables have non-negative reduced costs */
 
-#define DEFAULT_MAXSOLSPROB              INT_MAX    /**< maximal number of solution per pricing problem*/
-#define DEFAULT_USEHEURPRICING           FALSE      /**< should heuristic pricing be used */
+#define DEFAULT_MAXVARSPROB              INT_MAX    /**< maximal number of variables per block to be added in a pricer call */
 #define DEFAULT_ABORTPRICINGINT          TRUE       /**< should the pricing be aborted when integral */
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap between dual bound and RMP objective at which pricing is aborted */
 #define DEFAULT_DISPINFOS                FALSE      /**< should additional information be displayed */
@@ -96,7 +95,7 @@ using namespace scip;
 #define DEFAULT_HYBRIDASCENT_NOAGG       FALSE      /**< should hybridization of smoothing with an ascent method be enabled
                                                      *   if pricing problems cannot be aggregation */
 #define DEFAULT_COLPOOL_AGELIMIT         10         /**< maximum age of columns in column pool */
-#define DEFAULT_COLPOOL_COLPOOLSIZE      10         /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
+#define DEFAULT_COLPOOL_COLPOOLSIZE      10         /**< actual size of colpool is maxcolsround * npricingprobsnotnull * colpoolsize */
 
 #define EVENTHDLR_NAME         "probdatavardeleted"
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
@@ -155,9 +154,8 @@ struct SCIP_PricerData
 
    /** parameter values */
    SCIP_VARTYPE          vartype;            /**< vartype of created master variables */
-   int                   maxsolsprob;        /**< maximal number of solutions per pricing problem */
+   int                   maxvarsprob;        /**< maximal number of variables per block to be added in a pricer call */
    int                   nroundsredcost;     /**< number of reduced cost rounds */
-   SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
    SCIP_Bool             abortpricingint;    /**< should the pricing be aborted on integral solutions? */
    SCIP_Bool             dispinfos;          /**< should pricing information be displayed? */
    int                   disablecutoff;      /**< should the cutoffbound be applied in master LP solving (0: on, 1:off, 2:auto)? */
@@ -166,7 +164,7 @@ struct SCIP_PricerData
    SCIP_Bool             hybridascent;       /**< should hybridization of smoothing with an ascent method be enabled */
    SCIP_Bool             hybridascentnoagg;  /**< should hybridization of smoothing with an ascent method be enabled
                                               *   if pricing problems cannot be aggregation */
-   int                   colpoolsize;        /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
+   int                   colpoolsize;        /**< actual size of colpool is maxcolsround * npricingprobsnotnull * colpoolsize */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
 
    /** statistics */
@@ -2562,7 +2560,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip_);
 
-   maxcols = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()),reducedcostpricing->getMaxvarsroundroot()); /*lint !e666*/
+   maxcols = MAX(MAX(farkaspricing->getMaxcolsround(),reducedcostpricing->getMaxcolsround()),reducedcostpricing->getMaxcolsroundroot()); /*lint !e666*/
 
    /* allocate memory */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs) );
@@ -2659,7 +2657,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          colpoolupdated = TRUE;
       }
 
-      pricingcontroller->setupPriorityQueue(pricerdata->useheurpricing, pricerdata->dualsolconv, maxcols);
+      pricingcontroller->setupPriorityQueue(pricerdata->dualsolconv, maxcols);
 
       /* perform all pricing jobs */
       #pragma omp parallel for ordered firstprivate(pricingjob) private(oldnfoundvars) shared(retcode, optimal, cols, ncols, maxcols, pricetype, bestredcost, beststabobj, bestredcostvalid, nfoundvars, successfulmips, infeasible, pricinghaserror) reduction(+:solvedmips) schedule(static,1)
@@ -2714,6 +2712,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                #pragma omp atomic
                ++successfulmips;
             }
+
+            #pragma omp atomic
+            solvedmips++;
          }
 
          pricingcontroller->evaluatePricingjob(pricingjob);
@@ -2746,9 +2747,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                bestredcosts[probnr] = redcost;
             }
          }
-
-         #pragma omp atomic
-         solvedmips++;
 
       done:
          ;
@@ -3006,9 +3004,9 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
    SCIPdebugMessage("Price variables from column pool\n");
 
    while( (colpool->getNCols() > 0 &&
-      (pricetype->getType() == GCG_PRICETYPE_REDCOST || nfoundvars < pricetype->getMaxvarsround()) &&
-      (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxvarsround() || GCGisRootNode(scip_) ) &&
-      (nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !GCGisRootNode(scip_))))) )
+      (pricetype->getType() == GCG_PRICETYPE_REDCOST || nfoundvars < pricetype->getMaxcolsround()) &&
+      (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxcolsround() || GCGisRootNode(scip_) ) &&
+      (nfoundvars < reducedcostpricing->getMaxcolsroundroot() || !GCGisRootNode(scip_))))) )
    {
 
       SCIP_Real redcost;
@@ -3020,7 +3018,7 @@ SCIP_RETCODE ObjPricerGcg::priceColumnPool(
       SCIPdebugMessage("  bestredcost = %g\n", redcost);
 
       /** add variable only if we cannot abort */
-      if( nfoundvarsprob[probnr] <= pricerdata->maxsolsprob && SCIPisDualfeasNegative(scip_, redcost) )
+      if( nfoundvarsprob[probnr] <= pricerdata->maxvarsprob && SCIPisDualfeasNegative(scip_, redcost) )
       {
          SCIP_Bool added;
          GCG_COL* gcgcol;
@@ -3641,17 +3639,17 @@ void ObjPricerGcg::createColpool()
 {
    int actualsize;
    int hardlimit;
-   int maxvarsround;
+   int maxcolsround;
 
    assert(farkaspricing != NULL);
    assert(reducedcostpricing != NULL);
    assert(pricerdata != NULL);
 
-   maxvarsround = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()), reducedcostpricing->getMaxvarsroundroot()); /*lint !e666*/
+   maxcolsround = MAX(MAX(farkaspricing->getMaxcolsround(),reducedcostpricing->getMaxcolsround()), reducedcostpricing->getMaxcolsroundroot()); /*lint !e666*/
 
-   actualsize = maxvarsround * pricerdata->npricingprobsnotnull * pricerdata->colpoolsize;
+   actualsize = maxcolsround * pricerdata->npricingprobsnotnull * pricerdata->colpoolsize;
 
-   hardlimit = actualsize + maxvarsround * pricerdata->npricingprobsnotnull;
+   hardlimit = actualsize + maxcolsround * pricerdata->npricingprobsnotnull;
 
    colpool = new Colpool(scip_, pricerdata->colpoolagelimit, actualsize, hardlimit);
 
@@ -3694,13 +3692,9 @@ SCIP_RETCODE SCIPincludePricerGcg(
 
    pricerdata->eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
 
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxsolsprob",
-         "maximal number of variables added for each block in a pricinground",
-         &pricerdata->maxsolsprob, FALSE, DEFAULT_MAXSOLSPROB, 0, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/useheurpricing",
-         "should pricing be performed heuristically before solving the MIPs to optimality?",
-         &pricerdata->useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxvarsprob",
+         "maximal number of variables per block to be added in a pricer call",
+         &pricerdata->maxvarsprob, FALSE, DEFAULT_MAXVARSPROB, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/abortpricingint",
          "should pricing be aborted due to integral objective function?",
@@ -3731,7 +3725,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
          &pricerdata->hybridascentnoagg, FALSE, DEFAULT_HYBRIDASCENT_NOAGG, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpoolsize", "actual size is"
-      "maxvarsround * npricingprobsnotnull * colpoolsize", &pricerdata->colpoolsize, FALSE,
+      "maxcolsround * npricingprobsnotnull * colpoolsize", &pricerdata->colpoolsize, FALSE,
       DEFAULT_COLPOOL_COLPOOLSIZE, 0, 100, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpoolagelimit", "maximum age of cols in colpool"

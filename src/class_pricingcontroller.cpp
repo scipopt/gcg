@@ -36,6 +36,7 @@
 #include "pricer_gcg.h"
 #include "class_pricingtype.h"
 #include "gcg.h"
+#include "scip_misc.h"
 #include "pub_gcgpqueue.h"
 #include "pub_pricingjob.h"
 #include "pricingjob.h"
@@ -45,6 +46,7 @@
 
 #include <exception>
 
+#define DEFAULT_USEHEURPRICING           FALSE      /**< should heuristic pricing be used */
 #define DEFAULT_SORTING                  2          /**< default sorting method for pricing mips
                                                      *    0 :   order of pricing problems
                                                      *    1 :   according to dual solution of convexity constraint
@@ -93,13 +95,19 @@ Pricingcontroller::~Pricingcontroller()
 SCIP_RETCODE Pricingcontroller::addParameters()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
+   
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/useheurpricing",
+         "should pricing be performed heuristically before solving the MIPs to optimality?",
+         &useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/sorting",
          "which sorting method should be used to sort the pricing problems (0 = order of pricing problems, 1 = according to dual solution of convexity constraint, 2 = according to reliability from previous round)",
          &sorting, FALSE, DEFAULT_SORTING, 0, 5, NULL, NULL) );
+
    SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/successfulsubmipsrel",
          "part of the submips that are solved and lead to new variables before pricing round is aborted? (1.0 = solve all pricing MIPs)",
          &successfulmipsrel, FALSE, DEFAULT_SUCCESSFULMIPSREL, 0.0, 1.0, NULL, NULL) );
+   
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/eagerfreq",
          "frequency at which all pricingproblems should be solved (0 to disable)",
          &eagerfreq, FALSE, DEFAULT_EAGERFREQ, 0, INT_MAX, NULL, NULL) );
@@ -192,16 +200,23 @@ void Pricingcontroller::exitPricing()
 
 /** setup the priority queue (done once per stabilization round): add all pricing jobs to be performed */
 SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
-   SCIP_Bool             useheurpricing,     /**< is heuristic pricing activated? */
    SCIP_Real*            dualsolconv,        /**< dual solution values / Farkas coefficients of convexity constraints */
    int                   maxcols             /**< maximum number of columns to be generated */
    )
 {
+   int maxcolsprob = INT_MAX;
+
+   if( pricingtype_->getType() == GCG_PRICETYPE_REDCOST && GCGisRootNode(scip_) )
+      maxcolsprob = pricingtype_->getMaxcolsprobroot();
+   else
+      maxcolsprob = pricingtype_->getMaxcolsprob();
+
    for( int i = 0; i < npricingprobs; ++i )
    {
       if( pricingjobs[i] != NULL )
       {
-        SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], useheurpricing, sorting, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
+        SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], useheurpricing, maxcolsprob,
+         sorting, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjobs[i]) );
       }
    }

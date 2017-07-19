@@ -52,6 +52,7 @@ private:
    int                   npricingprobs;      /**< number of pricing problems */
 
    /* parameters */
+   SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
    int                   sorting;            /**< how should pricing problems be sorted */
    SCIP_Real             successfulmipsrel;  /**< factor of MIPs to be solved successfully until pricing is aborted */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
@@ -88,7 +89,6 @@ public:
 
    /** setup the priority queue (done once per stabilization round): add all pricing jobs to be performed */
    SCIP_RETCODE setupPriorityQueue(
-      SCIP_Bool             useheurpricing,     /**< is heuristic pricing activated?  */
       SCIP_Real*            dualsolconv,        /**< dual solution values / Farkas coefficients of convexity constraints */
       int                   maxcols             /**< maximum number of columns to be generated */
       );
