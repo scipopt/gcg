@@ -3405,10 +3405,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       SCIPfreeMemoryArray(scip_, &(cols[i]));
    }
 
-   //SCIP_CALL( priceColumnPoolOld(pricetype, &nfoundvars) );
    SCIP_CALL( GCGpricestoreApplyCols(pricestore, &nfoundvars) );
-
-   //SCIP_CALL( colpoolold->deleteOldestColumns() );
 
    SCIPfreeBlockMemoryArray(scip_, &cols, pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip_, &ncols, pricerdata->npricingprobs);
@@ -3487,106 +3484,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    return SCIP_OKAY;
 }
-
-///** update reduced cost of columns in column pool */
-//SCIP_RETCODE ObjPricerGcg::updateRedcostColumnPool(
-//   PricingType*          pricetype           /**< type of pricing: reduced cost or Farkas */
-//   )
-//{
-//   GCG_COL** cols;
-//   int ncols;
-//
-//   int i;
-//
-//   ncols = colpoolold->getNCols();
-//   cols = colpoolold->getCols();
-//
-//   for( i = 0; i < ncols; ++i )
-//   {
-//      GCG_COL* col;
-//      SCIP_Real redcost;
-//
-//      col = cols[i];
-//
-//      redcost = computeRedCostGcgCol(pricetype, col, NULL);
-//
-//      SCIP_CALL( GCGcolUpdateRedcost(col, redcost, TRUE) );
-//   }
-//
-//   return SCIP_OKAY;
-//}
-
-///** method to price new columns from Column Pool */
-//SCIP_RETCODE ObjPricerGcg::priceColumnPoolOld(
-//   PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-//   int*                  pnfoundvars         /**< pointer to store number of priced variables */
-//   )
-//{
-//   int* nfoundvarsprob;
-//   int nfoundvars;
-//
-//   int npricingprobs;
-//
-//   int i;
-//
-//   npricingprobs = pricerdata->npricingprobs;
-//   nfoundvars = 0;
-//
-//   SCIP_CALL( SCIPallocBufferArray(scip_, &nfoundvarsprob, npricingprobs) );  /*lint !e530*/
-//
-//   for( i = 0; i < npricingprobs; ++i )
-//   {
-//      nfoundvarsprob[i] = 0;
-//   }
-//
-//   while( (colpoolold->getNCols() > 0 &&
-//      (pricetype->getType() == GCG_PRICETYPE_REDCOST || nfoundvars < pricetype->getMaxvarsround()) &&
-//      (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxvarsround() || GCGisRootNode(scip_) ) &&
-//      (nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !GCGisRootNode(scip_))))) )
-//   {
-//
-//      SCIP_Real redcost;
-//      int probnr;
-//
-//      redcost = colpoolold->getBestColRedcost();
-//      probnr = colpoolold->getBestColProbNr();
-//
-//      SCIPdebugMessage("bestredcost = %g\n", redcost);
-//
-//      /** add variable only if we cannot abort */
-//      if( nfoundvarsprob[probnr] <= pricerdata->maxsolsprob &&  SCIPisDualfeasNegative(scip_, redcost) )
-//      {
-//         SCIP_Bool added;
-//         GCG_COL* gcgcol;
-//
-//         SCIP_CALL( colpoolold->getBestCol(&gcgcol) );
-//
-//         /* todo: get column and add it */
-//         SCIP_CALL( createNewMasterVarFromGcgCol(scip_, pricetype, gcgcol, FALSE, &added, NULL) );
-//
-//         assert(added);
-//         ++(nfoundvarsprob[probnr]);
-//         ++nfoundvars;
-//
-//         GCGfreeGcgCol(&gcgcol);
-//
-//         SCIPdebugMessage("added\n");
-//      }
-//      else
-//      {
-//         SCIPdebugMessage("not added\n");
-//         break;
-//      }
-//   }
-//
-//   SCIPfreeBufferArray(scip_, &nfoundvarsprob);
-//
-//   SCIPdebugMessage("nfoundvars = %d\n", nfoundvars);
-//
-//   *pnfoundvars = nfoundvars;
-//
-//   return SCIP_OKAY;
-//}
 
 
 /** set pricing objectives */
