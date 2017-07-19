@@ -40,6 +40,8 @@
 
 #include "gcg.h"
 
+#include "scip/scip.h"
+
 #include <assert.h>
 
 /** create a pricing job */
@@ -58,6 +60,7 @@ SCIP_RETCODE GCGpricingjobCreate(
    (*pricingjob)->heuristic = FALSE;
    (*pricingjob)->cols = NULL;
    (*pricingjob)->ncols = 0;
+   (*pricingjob)->nimpcols = 0;
 
    return SCIP_OKAY;
 }
@@ -89,7 +92,8 @@ SCIP_RETCODE GCGpricingjobSetup(
    pricingjob->heuristic = heuristic;
 
    /* set the solution limit on the pricing problem */
-   SCIP_CALL( SCIPsetIntParam(pricingjob->pricingscip, "limits/solutions", SCIPgetNLimSolsFound(pricingjob->pricingscip) + maxcolsprob) );
+   /* @todo: MIP solver does not support solution limits yet */
+   /* SCIP_CALL( SCIPsetIntParam(pricingjob->pricingscip, "limits/solutions", SCIPgetNLimSolsFound(pricingjob->pricingscip) + maxcolsprob) ); */
 
    /* set the score */
    switch( scoring )
@@ -106,6 +110,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    }
 
    /* initialize result variables */
+   pricingjob->nsolves = 0;
    pricingjob->pricingstatus = SCIP_STATUS_UNKNOWN;
    pricingjob->lowerbound = -SCIPinfinity(scip);
    if( pricingjob->cols == NULL )
@@ -114,12 +119,14 @@ SCIP_RETCODE GCGpricingjobSetup(
    }
    BMSclearMemoryArray(pricingjob->cols, maxcols);
    pricingjob->ncols = 0;
+   pricingjob->nimpcols = 0;
 
    return SCIP_OKAY;
 }
 
 /** update a pricing job after the pricing problem has been solved */
 void GCGpricingjobUpdate(
+   SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_STATUS           status,             /**< status after solving the pricing problem */
    SCIP_Real             lowerbound,         /**< lower bound returned by the pricing problem */
@@ -127,11 +134,16 @@ void GCGpricingjobUpdate(
    int                   ncols               /**< number of columns found */
    )
 {
+   ++pricingjob->nsolves;
    pricingjob->pricingstatus = status;
    pricingjob->lowerbound = lowerbound;
    for( int i = 0; i < ncols; ++i )
-      pricingjob->cols[i] = cols[i];
-   pricingjob->ncols = ncols;
+   {
+      pricingjob->cols[pricingjob->ncols + i] = cols[i];
+      if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(cols[i])) )
+         ++pricingjob->nimpcols;
+   }
+   pricingjob->ncols += ncols;
 }
 
 /** free all columns of a pricing job */
@@ -195,6 +207,14 @@ SCIP_Real GCGpricingjobGetScore(
    return pricingjob->score;
 }
 
+/** get the number of times the pricing job was performed during the loop */
+int GCGpricingjobGetNSolves(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->nsolves;
+}
+
 /* get the status of a pricing job */
 SCIP_STATUS GCGpricingjobGetStatus(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
@@ -252,4 +272,12 @@ void GCGpricingjobSetNCols(
    )
 {
    pricingjob->ncols = ncols;
+}
+
+/* get the number of improving columns found by a pricing job */
+int GCGpricingjobGetNImpCols(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->nimpcols;
 }

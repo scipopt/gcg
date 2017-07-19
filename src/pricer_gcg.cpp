@@ -2191,24 +2191,6 @@ SCIP_RETCODE ObjPricerGcg::freePricingProblems()
    return SCIP_OKAY;
 }
 
-/** counts the number of negative reduced cost columns that a pricing job has found*/
-int ObjPricerGcg::countImprovingColumns(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   ) const
-{
-   int nimprovingcols = 0;
-
-   for( int j = 0; j < GCGpricingjobGetNCols(pricingjob); ++j )
-   {
-      if( SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(GCGpricingjobGetCol(pricingjob, j))) )
-         ++nimprovingcols;
-   }
-
-   SCIPdebugMessage("  -> %d columns with negative reduced cost\n", nimprovingcols);
-
-   return nimprovingcols;
-}
-
 /** computes the stack of masterbranch constraints up to the last generic branching node
  * @note This method has to be threadsafe!
  */
@@ -2529,8 +2511,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool colpoolupdated;
    SCIP_Bool enableppcuts;
    SCIP_Bool enablestab;
-   int solvedmips;
-   int successfulmips;
+   int nsolvedprobs;
+   int nsuccessfulprobs;
    int maxcols;
    int i;
    int j;
@@ -2552,8 +2534,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    assert(pnfoundvars != NULL);
 
    /* initializations */
-   solvedmips = 0;
-   successfulmips = 0;
    retcode = SCIP_OKAY;
    *pnfoundvars = 0;
    nfoundvars = 0;
@@ -2623,6 +2603,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    {
       SCIPdebugMessage("****************************** Stabilization loop ******************************\n");
 
+      nsolvedprobs = 0;
+      nsuccessfulprobs = 0;
       bestredcost = 0.0;
       beststabobj = 0.0;
       dualconvsum = 0.0;
@@ -2663,13 +2645,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       pricingcontroller->setupPriorityQueue(pricerdata->dualsolconv, maxcols);
 
       /* perform all pricing jobs */
-      #pragma omp parallel for ordered firstprivate(pricingjob) private(oldnfoundvars) shared(retcode, optimal, cols, ncols, maxcols, pricetype, bestredcost, beststabobj, bestredcostvalid, nfoundvars, successfulmips, infeasible, pricinghaserror) reduction(+:solvedmips) schedule(static,1)
+      #pragma omp parallel for ordered firstprivate(pricingjob) private(oldnfoundvars) shared(retcode, optimal, cols, ncols, maxcols, pricetype, bestredcost, beststabobj, bestredcostvalid, nfoundvars, nsuccessfulprobs, infeasible, pricinghaserror) reduction(+:nsolvedprobs) schedule(static,1)
       /* @todo: check abortion criterion here; pricingjob must be private? */
       while( (pricingjob = pricingcontroller->getNextPricingjob()) != NULL )
       {
          SCIP_RETCODE private_retcode;
 
-         int oldnfoundvars = nfoundvars;
+         int oldnimpcols = GCGpricingjobGetNImpCols(pricingjob);
 
          /* @todo: re-organize:
           *  * abortion criteria will be checked above
@@ -2679,8 +2661,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          if( retcode != SCIP_OKAY )
             goto done;
 
-         #pragma omp flush(infeasible, nfoundvars, successfulmips)
-         if( (pricingcontroller->abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, !GCGpricingjobIsHeuristic(pricingjob)) || infeasible) && !stabilized )
+         #pragma omp flush(infeasible, nfoundvars, nsuccessfulprobs)
+         if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsolvedprobs, nsuccessfulprobs, !GCGpricingjobIsHeuristic(pricingjob)) || infeasible) && !stabilized )
          {
             goto done;
          }
@@ -2707,17 +2689,20 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             if( !infeasible )
             {
                #pragma omp atomic
-               nfoundvars += countImprovingColumns(pricingjob);
+               nfoundvars += GCGpricingjobGetNImpCols(pricingjob) - oldnimpcols;
             }
 
-            if( oldnfoundvars < nfoundvars )
+            if( oldnimpcols == 0 && GCGpricingjobGetNImpCols(pricingjob) > 0 )
             {
                #pragma omp atomic
-               ++successfulmips;
+               ++nsuccessfulprobs;
             }
 
-            #pragma omp atomic
-            solvedmips++;
+            if( GCGpricingjobGetNSolves(pricingjob) == 1 )
+            {
+               #pragma omp atomic
+               ++nsolvedprobs;
+            }
          }
 
          pricingcontroller->evaluatePricingjob(pricingjob);

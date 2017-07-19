@@ -57,10 +57,12 @@ struct GCG_PricingJob
    SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
 
    /* result values */
+   int                  nsolves;            /**< number of times the pricing job was performed during the loop */
    SCIP_STATUS          pricingstatus;      /**< current solution status of the pricing problem */
    SCIP_Real            lowerbound;         /**< lower bound obtained by solving the pricing problem */
    GCG_COL**            cols;               /**< array of columns found by the pricing problem */
    int                  ncols;              /**< number of columns found by the pricing problem */
+   int                  nimpcols;           /**< number of improving columns found by the pricing problem */
 };
 
 #ifdef __cplusplus

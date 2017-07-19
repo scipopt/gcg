@@ -83,6 +83,12 @@ SCIP_Real GCGpricingjobGetScore(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
+/** get the number of times the pricing job was performed during the loop */
+EXTERN
+int GCGpricingjobGetNSolves(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
 /* get the status of a pricing job */
 EXTERN
 SCIP_STATUS GCGpricingjobGetStatus(
@@ -105,6 +111,12 @@ GCG_COL* GCGpricingjobGetCol(
 /* get the number of columns found by a pricing job */
 EXTERN
 int GCGpricingjobGetNCols(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/* get the number of improving columns found by a pricing job */
+EXTERN
+int GCGpricingjobGetNImpCols(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 

@@ -52,7 +52,7 @@
                                                      *    1 :   according to dual solution of convexity constraint
                                                      *    2 :   according to reliability from previous round)
                                                      */
-#define DEFAULT_SUCCESSFULMIPSREL        1.0        /**< factor of successful mips to be solved */
+#define DEFAULT_RELMAXSUCCESSFULPROBS    1.0        /**< maximal percentage of pricing problems that need to be solved successfully */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
 
 #define SCIP_CALL_EXC(x)   do                                                                                 \
@@ -78,7 +78,7 @@ Pricingcontroller::Pricingcontroller(
    npricingprobs = 0;
 
    sorting = DEFAULT_SORTING;
-   successfulmipsrel = DEFAULT_SUCCESSFULMIPSREL;
+   relmaxsuccessfulprobs = DEFAULT_RELMAXSUCCESSFULPROBS;
    eagerfreq = DEFAULT_EAGERFREQ;
 
    pqueue = NULL;
@@ -104,9 +104,9 @@ SCIP_RETCODE Pricingcontroller::addParameters()
          "which sorting method should be used to sort the pricing problems (0 = order of pricing problems, 1 = according to dual solution of convexity constraint, 2 = according to reliability from previous round)",
          &sorting, FALSE, DEFAULT_SORTING, 0, 5, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/successfulsubmipsrel",
-         "part of the submips that are solved and lead to new variables before pricing round is aborted? (1.0 = solve all pricing MIPs)",
-         &successfulmipsrel, FALSE, DEFAULT_SUCCESSFULMIPSREL, 0.0, 1.0, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/relmaxsuccessfulprobs",
+         "maximal percentage of pricing problems that need to be solved successfully",
+         &relmaxsuccessfulprobs, FALSE, DEFAULT_RELMAXSUCCESSFULPROBS, 0.0, 1.0, NULL, NULL) );
    
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/eagerfreq",
          "frequency at which all pricingproblems should be solved (0 to disable)",
@@ -239,7 +239,7 @@ void Pricingcontroller::updatePricingjob(
    int                   ncols               /**< number of columns found */
    )
 {
-   GCGpricingjobUpdate(pricingjob, status, lowerbound, cols, ncols);
+   GCGpricingjobUpdate(scip_, pricingjob, status, lowerbound, cols, ncols);
 }
 
 /** decide whether a pricing job must be treated again */
@@ -247,8 +247,7 @@ void Pricingcontroller::evaluatePricingjob(
    GCG_PRICINGJOB*       pricingjob         /**< pricing job */
    )
 {
-   if( GCGpricingjobIsHeuristic(pricingjob)
-      && (GCGpricingjobGetNCols(pricingjob) == 0 || !SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(GCGpricingjobGetCol(pricingjob, 0)))) )
+   if( GCGpricingjobIsHeuristic(pricingjob) && GCGpricingjobGetNImpCols(pricingjob) == 0 )
    {
       SCIPdebugMessage("Problem %d has not yielded neg. recost column, now solving exactly\n", GCGpricingjobGetProbnr(pricingjob));
       GCGpricingjobSetExact(pricingjob);
@@ -356,14 +355,14 @@ void Pricingcontroller::freeCols()
    }
 }
 
-/** returns whether pricing can be aborted */
-SCIP_Bool Pricingcontroller::abortPricing(
-   PricingType*          pricetype,          /**< type of pricing */
-   int                   nfoundvars,         /**< number of variables found so far */
-   int                   solvedmips,         /**< number of MIPS solved so far */
-   int                   successfulmips,     /**< number of successful mips solved so far */
+/** decide whether the pricing loop can be aborted */
+SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
+   PricingType*          pricetype,          /**< type of pricing (reduced cost or Farkas) */
+   int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
+   int                   nsolvedprobs,       /**< number of pricing problems solved so far */
+   int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
    SCIP_Bool             optimal             /**< optimal or heuristic pricing */
-) const
+   ) const
 {
    int nrelpricingprobs = GCGgetNRelPricingprobs(GCGmasterGetOrigprob(scip_));
 
@@ -371,9 +370,9 @@ SCIP_Bool Pricingcontroller::abortPricing(
       return FALSE;
 
    if( optimal )
-      return pricetype->canOptimalPricingBeAborted(nfoundvars, solvedmips, successfulmips, successfulmipsrel, nrelpricingprobs);
+      return pricetype->canOptimalPricingBeAborted(nfoundcols, nsolvedprobs, nsuccessfulprobs, relmaxsuccessfulprobs, nrelpricingprobs);
    else
-      return pricetype->canHeuristicPricingBeAborted(nfoundvars, solvedmips, successfulmips, successfulmipsrel, nrelpricingprobs);
+      return pricetype->canHeuristicPricingBeAborted(nfoundcols, nsolvedprobs, nsuccessfulprobs, relmaxsuccessfulprobs, nrelpricingprobs);
 }
 
 void Pricingcontroller::resetEagerage()

@@ -450,7 +450,7 @@ SCIP_RETCODE solveProblem(
    }
    else
    {
-      SCIPerrorMessage("invalid status of pricing problem %d: %d", probnr, SCIPgetStatus(pricingprob));
+      SCIPerrorMessage("invalid status of pricing problem %d: %d\n", probnr, SCIPgetStatus(pricingprob));
       *status = SCIP_STATUS_UNKNOWN;
    }
 

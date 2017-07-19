@@ -235,11 +235,6 @@ private:
       int                   ncols               /**< number of columns */
       );
 
-   /** counts the number of negative reduced cost columns that a pricing job has found*/
-   int countImprovingColumns(
-      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-      ) const;
-
    /** return TRUE or FALSE whether the master LP is solved to optimality */
    SCIP_Bool isMasterLPOptimal() const;
 

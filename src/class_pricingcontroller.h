@@ -54,7 +54,7 @@ private:
    /* parameters */
    SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
    int                   sorting;            /**< how should pricing problems be sorted */
-   SCIP_Real             successfulmipsrel;  /**< factor of MIPs to be solved successfully until pricing is aborted */
+   SCIP_Real             relmaxsuccessfulprobs; /**< factor of MIPs to be solved successfully until pricing is aborted */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
 
    /* strategy */
@@ -131,12 +131,12 @@ public:
    /** free all columns of the pricing jobs */
    void freeCols();
 
-   /** returns whether pricing can be aborted */
-   SCIP_Bool abortPricing(
-      PricingType*          pricetype,          /**< type of pricing */
-      int                   nfoundvars,         /**< number of variables found so far */
-      int                   solvedmips,         /**< number of MIPS solved so far */
-      int                   successfulmips,     /**< number of successful mips solved so far */
+   /** decide whether the pricing loop can be aborted */
+   SCIP_Bool canPricingloopBeAborted(
+      PricingType*          pricetype,          /**< type of pricing (reduced cost or Farkas) */
+      int                   nfoundcols,         /**< number of negative reduced cost columns found so far */
+      int                   nsolvedprobs,       /**< number of pricing problems solved so far */
+      int                   nsuccessfulprobs,   /**< number of pricing problems solved successfully so far */
       SCIP_Bool             optimal             /**< optimal or heuristic pricing */
       ) const;
 
