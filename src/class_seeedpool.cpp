@@ -3285,8 +3285,6 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 
    if( stairlinkingvars != NULL )
    {
-      SCIPdebugMessagePrint(scip, "Check. Has stairlinking.\n");
-
       int* nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
       int varindex;
 
@@ -3324,8 +3322,6 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
          seeed->bookAsBlockVar( v, nblock - 1 );
       }
    }
-
-   SCIPdebugMessagePrint(scip, "Check. Chainsize: %d\n", DECdecompGetDetectorChainSize( decomp ) );
 
    seeed->flushBooked();
 

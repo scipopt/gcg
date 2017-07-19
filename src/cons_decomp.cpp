@@ -3156,6 +3156,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    gcg::Seeedpool* seeedpool;
 
    /* detector data and their detection results */
+   char detectorchaininfo[SCIP_MAXSTRLEN];
    int d;
    DEC_DETECTOR* detector;
    DEC_DECOMP** decdecomps;
@@ -3177,8 +3178,11 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   if ( conshdlrdata->seeedpool == NULL )
+   {
+      conshdlrdata->seeedpool = new gcg::Seeedpool( scip, CONSHDLR_NAME, TRUE );
+   }
    seeedpool = conshdlrdata->seeedpool;
-   assert( seeedpool != NULL );
 
    SCIPdebugMessagePrint(scip, "Checking %d detectors for legacy mode.\n", conshdlrdata->ndetectors);
 
@@ -3207,17 +3211,39 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
 
             if( result == SCIP_SUCCESS )
             {
-               SCIPdebugMessagePrint( scip, "Translate %d found decompositions into seeeds.\n", ndecdecomps );
+               /* check for duplicates and redundant information */
+               /* @todo should duplicate check be executed on this level */
+               for( dec = 0; dec < ndecdecomps; ++dec )
+               {
+                  assert(decdecomps != NULL);
+                  DECdecompSetDetector(decdecomps[dec], detector);
+               }
+               if( ndecdecomps > 2 )
+               {
+                  int nunique = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+
+                  for( dec = nunique; dec < ndecdecomps; ++dec )
+                  {
+                     SCIP_CALL( DECdecompFree(scip, &(decdecomps[dec])) );
+                     decdecomps[dec] = NULL;
+                  }
+
+                  ndecdecomps = nunique;
+               }
+
+               SCIPdebugMessagePrint( scip, "Translate %d non-redundant decompositions into seeeds.\n", ndecdecomps );
+
+               /* set up detectorchaininfo */
+               SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "%c(lgc)", detector->decchar );
 
                /* translate found decompositions to seeeds and add them to (presolved) seeedpool */
                for( dec = 0; dec < ndecdecomps; ++dec )
                {
-                  DECdecompSetDetector( decdecomps[dec], detector );
                   seeedpool->createSeeedFromDecomp( decdecomps[dec], &seeed );
+                  seeed->setDetectorChainString( detectorchaininfo );
                   seeedpool->addSeeedToFinished( seeed );
                }
-               /* @todo duplicate check and add detector data to decomp */
-               /* @todo set detectorchainstring and potentially statistical data of seeed */
+               /* @todo set statistical data of seeed? */
             }
             else
             {
