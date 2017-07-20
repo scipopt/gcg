@@ -92,8 +92,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    pricingjob->heuristic = heuristic;
 
    /* set the solution limit on the pricing problem */
-   /* @todo: MIP solver does not support solution limits yet */
-   /* SCIP_CALL( SCIPsetIntParam(pricingjob->pricingscip, "limits/solutions", SCIPgetNLimSolsFound(pricingjob->pricingscip) + maxcolsprob) ); */
+   SCIP_CALL( SCIPsetIntParam(pricingjob->pricingscip, "limits/solutions", SCIPgetNLimSolsFound(pricingjob->pricingscip) + maxcolsprob) );
 
    /* set the score */
    switch( scoring )
