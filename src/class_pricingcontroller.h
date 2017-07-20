@@ -54,8 +54,9 @@ private:
    /* parameters */
    SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
    int                   sorting;            /**< how should pricing problems be sorted */
-   SCIP_Real             relmaxsuccessfulprobs; /**< factor of MIPs to be solved successfully until pricing is aborted */
-   int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
+   SCIP_Real             relmaxsuccessfulprobs; /**< maximal percentage of pricing problems that need to be solved successfully */
+   int                   eagerfreq;          /**< frequency at which all pricing problems should be solved */
+   SCIP_Real             jobtimelimit;       /**< time limit per iteration of a pricing job */
 
    /* strategy */
    GCG_PQUEUE*           pqueue;             /**< priority queue containing the pricing jobs */
@@ -95,6 +96,11 @@ public:
 
    /** get the next pricing job to be performed */
    GCG_PRICINGJOB* getNextPricingjob();
+
+   /** set an individual time limit for a pricing job */
+   SCIP_RETCODE setPricingjobTimelimit(
+      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+      );
 
    /** update statistics of a pricing job, and possibly add it again to the queue with different settings */
    void updatePricingjob(

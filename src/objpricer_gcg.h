@@ -295,21 +295,9 @@ private:
       GCG_DECL_SOLVERSOLVE((**solversolve))     /**< solving function belonging to this setting */
    ) const;
 
-   /** set subproblem timelimit */
-   SCIP_RETCODE setPricingProblemTimelimit(
-      SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
-   );
-
    /** set subproblem memory limit */
    SCIP_RETCODE setPricingProblemMemorylimit(
       SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
-   );
-
-   /** set all pricing problem limits */
-   SCIP_RETCODE setPricingProblemLimits(
-      int                   prob,               /**< index of the pricing problem */
-      PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-      SCIP_Bool             optimal             /**< heuristic or optimal pricing */
    );
 
    /** generic method to generate feasible columns from the pricing problem

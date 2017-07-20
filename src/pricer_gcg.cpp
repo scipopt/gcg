@@ -687,33 +687,6 @@ SCIP_RETCODE ObjPricerGcg::getSolverPointers(
    return SCIP_OKAY;
 }
 
-
-/** set subproblem timelimit */
-SCIP_RETCODE ObjPricerGcg::setPricingProblemTimelimit(
-   SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
-   )
-{
-   SCIP_Real timelimit;
-
-   assert(pricingscip != NULL);
-
-   /* set time limit */
-   SCIP_CALL( SCIPgetRealParam(scip_, "limits/time", &timelimit) );
-   if( !SCIPisInfinity(scip_, timelimit) )
-   {
-      if( timelimit - SCIPgetSolvingTime(scip_) > 0 )
-      {
-         SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/time", timelimit - SCIPgetSolvingTime(scip_)) );
-         SCIPdebugMessage("Time limit for prob <%s> is %f\n", SCIPgetProbName(pricingscip), timelimit- SCIPgetSolvingTime(scip_));
-      }
-      else
-      {
-         SCIPdebugMessage("Time limit for prob <%s> is < 0\n", SCIPgetProbName(pricingscip));
-      }
-   }
-   return SCIP_OKAY;
-}
-
 /** set subproblem memory limit */
 SCIP_RETCODE ObjPricerGcg::setPricingProblemMemorylimit(
    SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
@@ -734,35 +707,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemMemorylimit(
          memlimit = 0.0;
       SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/memory", memlimit) );
    }
-
-   return SCIP_OKAY;
-}
-
-
-/** set all pricing problem limits */
-SCIP_RETCODE ObjPricerGcg::setPricingProblemLimits(
-   int                   prob,               /**< index of the pricing problem */
-   PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-   SCIP_Bool             optimal             /**< heuristic or optimal pricing */
-   )
-{
-   assert(pricerdata != NULL);
-   assert(prob >= 0 && prob < pricerdata->npricingprobs);
-
-#if 0
-   /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
-   if( !optimal && pricetype->getType() == GCG_PRICETYPE_REDCOST )
-   {
-      SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
-   }
-   else
-   {
-      SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], SCIPinfinity(pricerdata->pricingprobs[prob])) );
-   }
-#endif
-
-   SCIP_CALL( setPricingProblemTimelimit(pricerdata->pricingprobs[prob]) );
-   SCIP_CALL( setPricingProblemMemorylimit(pricerdata->pricingprobs[prob]) );
 
    return SCIP_OKAY;
 }
@@ -817,7 +761,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
 
       #pragma omp critical (limits)
       {
-         retcode = setPricingProblemLimits(probnr, pricetype, !GCGpricingjobIsHeuristic(pricingjob));
+         retcode = setPricingProblemMemorylimit(pricingscip);
       }
       SCIP_CALL( retcode );
 
@@ -2669,6 +2613,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          SCIPdebugMessage("*** Solve pricing problem %d, stabilized = %u, %s\n",
             GCGpricingjobGetProbnr(pricingjob), stabilized, GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
+
+         #pragma omp critical (limits)
+         /* @todo: update time limits after each solver call */
+         SCIP_CALL( pricingcontroller->setPricingjobTimelimit(pricingjob) );
 
          /* solve the pricing problem */
          private_retcode = generateColumnsFromPricingProblem(pricingjob, pricetype, maxcols);
