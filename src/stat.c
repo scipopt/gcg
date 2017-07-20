@@ -41,6 +41,8 @@
 #include "cons_decomp.h"
 #include "struct_detector.h"
 #include "pub_gcgvar.h"
+#include "pricer_gcg.h"
+
 
 /** prints information about the best decomposition*/
 SCIP_RETCODE GCGwriteDecompositionData(
@@ -121,7 +123,6 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
    sol = SCIPgetBestSol(scip);
 
    solvingtime = SCIPgetSolvingTime(scip);
-
    assert(nnodes < INT_MAX);
    SCIP_CALL( SCIPallocMemoryArray(scip, &createnodestat, (int)nnodes) ); /* lld doesn't work here */
 
@@ -136,7 +137,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
    nodes[0] = 0;
    nodes[1] = 0;
 
-   SCIPinfoMessage(scip, NULL, "VAR: name\tnode\ttime\titer\tredcost\tgap\tsolval\n");
+   SCIPinfoMessage(scip, NULL, "VAR: name\tnode\ttime\titer\trootredcostcall\tredcost\tgap\tsolval\trootlpsolval\n");
    for( i = 0; i < nvars; i++ )
    {
       SCIP_Real redcost;
@@ -144,15 +145,23 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
       SCIP_Longint  node;
       SCIP_Real time;
       SCIP_Longint iteration;
+      SCIP_Longint rootredcostcall;
+      SCIP_Real rootlpsolval;
 
       node = GCGgetCreationNode(scip, vars[i]);
       time = GCGgetCreationTime(scip, vars[i]);
       iteration = GCGgetIteration(scip, vars[i]);
       redcost = GCGgetRedcost(scip, vars[i]);
       gap = GCGgetGap(scip, vars[i]);
+      rootredcostcall = GCGgetRootRedcostCall(scip, vars[i]);
 
-      SCIPinfoMessage(scip, NULL, "VAR: <%s>\t%lld\t%f\t%lld\t%f\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time,
-         iteration, redcost, gap, SCIPgetSolVal(scip, sol, vars[i]));
+      rootlpsolval = NAN;
+
+#ifdef SCIP_STATISTIC
+      rootlpsolval = SCIPgetSolVal(scip, GCGmasterGetRootLPSol(scip), vars[i]);
+#endif
+      SCIPinfoMessage(scip, NULL, "VAR: <%s>\t%lld\t%f\t%lld\t%lld\t%f\t%f\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time,
+         iteration, rootredcostcall, redcost, gap, SCIPgetSolVal(scip, sol, vars[i]), rootlpsolval);
 
       if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, vars[i]), 0.0) )
       {

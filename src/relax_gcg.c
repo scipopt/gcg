@@ -178,15 +178,11 @@ SCIP_RETCODE setOriginalVarBlockNr(
    /* var belongs to no block so far, just set the new block number */
    if( blocknr == -1 )
    {
-      relaxdata->ntransvars++;
       GCGvarSetBlock(var, newblock);
    }
    /* if var already belongs to another block, it is a linking variable */
    else if( blocknr != newblock )
    {
-      if( !GCGoriginalVarIsLinking(var) )
-         relaxdata->nlinkingvars++;
-
       SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock, relaxdata->npricingprobs) );
       assert(GCGisLinkingVarInBlock(var, newblock));
       assert(GCGoriginalVarIsLinking(var));
@@ -348,7 +344,6 @@ SCIP_RETCODE convertStructToGCG(
    SCIPdebugMessage("\tProcessing linking variables.\n");
    for( i = 0; i < nlinkingvars; ++i )
    {
-
       if( GCGoriginalVarIsLinking(linkingvars[i]) )
          continue;
 
@@ -1218,7 +1213,7 @@ SCIP_RETCODE createPricingVariables(
       {
          SCIP_VAR** pricingvars;
          SCIPdebugPrintf("linking.\n");
-
+         relaxdata->nlinkingvars++;
          SCIP_CALL( createLinkingPricingVars(scip, relaxdata, probvar) );
          assert(GCGlinkingVarGetPricingVars(probvar) != NULL);
 
@@ -1243,6 +1238,7 @@ SCIP_RETCODE createPricingVariables(
          assert(GCGvarGetBlock(probvar) == -1);
          assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
          SCIPdebugPrintf("master!\n");
+         relaxdata->ntransvars++;
       }
       assert(SCIPhashmapExists(relaxdata->hashorig2origvar, probvar));
    }
@@ -1358,6 +1354,10 @@ SCIP_RETCODE createMasterProblem(
 
    /* do not modify the time limit after solving the master problem */
    SCIP_CALL( SCIPsetBoolParam(masterscip, "reoptimization/commontimelimit", FALSE) );
+
+   /* disable aggregation and multiaggregation of variables, as this might lead to issues with copied original variables */
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
 
    return SCIP_OKAY;
 }
@@ -2039,6 +2039,12 @@ SCIP_RETCODE initRelaxator(
       relaxdata->varlinkconss[i] = transcons;
    }
 
+   /* set objective limit in master problem if objective limit in original problem is finite */
+   if( !SCIPisInfinity(scip, SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) )
+   {
+      SCIP_CALL( SCIPsetObjlimit(masterprob, SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) );
+   }
+
    return SCIP_OKAY;
 }
 
@@ -2350,7 +2356,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
       /* set the lower bound pointer */
       if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
+      {
          *lowerbound = SCIPgetLocalDualbound(masterprob);
+
+      }
       else
       {
          SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));

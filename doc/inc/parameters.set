@@ -724,7 +724,7 @@ reoptimization/sepabestsol = FALSE
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
 reoptimization/storevarhistory = FALSE
 
-# re-use pseudo costs if the objective function changed only slightly 
+# re-use pseudo costs if the objective function changed only slightly
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
 reoptimization/usepscost = FALSE
 

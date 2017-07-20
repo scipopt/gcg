@@ -180,6 +180,7 @@ BEGIN {
    timeout = 0;
    feasible = 0;
    pb = +infty;
+   objectivelimit = +infty;
    firstpb = +infty;
    db = -infty;
    rootdb = -infty;
@@ -209,6 +210,7 @@ BEGIN {
    sollimitreached = 0;
    memlimitreached = 0;
    nodelimitreached = 0;
+   objlimitreached = 0;
    starttime = 0.0;
    endtime = 0.0;
    timelimit = 0.0;
@@ -286,6 +288,9 @@ BEGIN {
 /^loaded parameter file/ { settings = $4; sub(/<.*settings\//, "", settings); sub(/\.set>/, "", settings); }
 /^parameter <limits\/time> set to/ { timelimit = $5; }
 /^limits\/time =/ { timelimit = $3; }
+/set limits objective/ {
+   objectivelimit = $4;
+}
 #
 # get objective sense
 #
@@ -470,6 +475,10 @@ BEGIN {
 #
 /^Original Problem   : no problem exists./ { if( inoriginalprob ) readerror = 1; }
 /^SCIP Status        :/ { aborted = 0; }
+# grep for an objective limit induced infeasibility
+/^SCIP Status        : problem is solved \[infeasible\] \(objective limit reached\)/ {
+    objlimitreached = 1;
+}
 /solving was interrupted/ { if( inoriginalprob ) timeout = 1; }
 /gap limit reached/ { if( inoriginalprob ) gapreached = 1; }
 /solution limit reached/ { if( inoriginalprob ) sollimitreached = 1; }
@@ -645,6 +654,13 @@ BEGIN {
 	    objsense = 1;   # minimize
 	 else
 	    objsense = -1;  # maximize
+      }
+
+      # treat primal and dual bound differently if objective limit was reached
+      if( objlimitreached && objectivelimit < +infty )
+      {
+          pb = objectivelimit;
+          db = objectivelimit;
       }
 
       # modify primal bound for maximization problems without primal solution

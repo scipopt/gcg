@@ -25,22 +25,24 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   gcgcol.h
- * @brief  private methods for working with gcg column data structure
- * @author Jonas Witt
+/**@file   type_pricingjob.h
+ * @ingroup TYPEDEFINITIONS
+ * @brief  type definitions for pricing job data structure
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#ifndef GCG_GCGCOL_H__
-#define GCG_GCGCOL_H__
 
-#include "struct_gcgcol.h"
-#include "type_gcgcol.h"
+#ifndef GCG_TYPE_PRICINGJOB_H__
+#define GCG_TYPE_PRICINGJOB_H__
+
+#include "struct_pricingjob.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef struct GCG_PricingJob GCG_PRICINGJOB; /**< data structure to store pricing jobs */
 
 #ifdef __cplusplus
 }

@@ -64,9 +64,9 @@
 #define DEF_PI_MIN             0.3        /**< percentage of rows to be removed after fixing columns                                               */
 #define DEF_PI_ALPHA           1.1        /**< increase of pi when no improvement was made, i.e. more columns will be fixed                        */
 #define DEF_BETA               1.025      /**< allowed gap between lowerbound and upper bound during the subgradient phase                         */
-#define DEF_MAX_ITER           300        /**< maximum number of iterations of three-phase                                                         */
+#define DEF_MAX_ITER           150        /**< maximum number of iterations of three-phase                                                         */
 #define DEF_MAX_ITER_NO_IMP    5          /**< stop of no improvements during the last X iterations of three-phase                                 */
-#define DEF_GREEDY_MAX_ITER    250        /**< number of multipliers that are used for computing greedy solutions during each iteration            */
+#define DEF_GREEDY_MAX_ITER    100        /**< number of multipliers that are used for computing greedy solutions during each iteration            */
 #define DEF_MIN_PROB_SIZE      1000       /**< minimum number of variables the problem has to contain for the heuristic to start                   */
 #define DEFAULT_RANDSEED       19         /**< initial random seed                                                                                 */
 

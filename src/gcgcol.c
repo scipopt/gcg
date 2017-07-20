@@ -179,8 +179,8 @@ SCIP_RETCODE GCGcreateGcgColFromSol(
 
    SCIP_CALL( GCGcreateGcgCol(pricingprob, gcgcol, prob, colvars, colvals, ncolvars, isray, redcost) );
 
-   SCIPfreeBufferArray(pricingprob, &colvars);
    SCIPfreeBufferArray(pricingprob, &colvals);
+   SCIPfreeBufferArray(pricingprob, &colvars);
 
    return SCIP_OKAY;
 }
@@ -349,7 +349,7 @@ int GCGcolGetAge(
 }
 
 /** update reduced cost of variable and increase age */
-SCIP_RETCODE GCGcolUpdateRedcost(
+void GCGcolUpdateRedcost(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real            redcost,            /**< new reduced cost */
    SCIP_Bool            growold             /**< change age depending on reduced cost? */
@@ -358,20 +358,12 @@ SCIP_RETCODE GCGcolUpdateRedcost(
    gcgcol->redcost = redcost;
 
    if( !growold )
-   {
-      return SCIP_OKAY;
-   }
+      return;
 
    if( !SCIPisNegative(gcgcol->pricingprob, redcost) )
-   {
       ++(gcgcol->age);
-   }
    else
-   {
       gcgcol->age = 0;
-   }
-
-   return SCIP_OKAY;
 }
 
 /** return solution value of variable in gcg column */

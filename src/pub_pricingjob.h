@@ -25,25 +25,105 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   gcgcol.h
- * @brief  private methods for working with gcg column data structure
- * @author Jonas Witt
+/**@file   pub_pricingjob.h
+ * @ingroup PUBLICMETHODS
+ * @brief  public methods for working with pricing jobs
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#ifndef GCG_GCGCOL_H__
-#define GCG_GCGCOL_H__
+#ifndef GCG_PUB_PRICINGJOB_H__
+#define GCG_PUB_PRICINGJOB_H__
 
-#include "struct_gcgcol.h"
-#include "type_gcgcol.h"
+#include "type_pricingjob.h"
+#include "scip/type_scip.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/*
+ * GCG Pricing Job
+ */
+
+/**@defgroup GCG_PricingJob gcg pricingjob
+ *
+ * @{
+ */
+
+
+/** free all columns of a pricing job */
+/* @todo: Move this to pricingjob.h ? */
+EXTERN
+void GCGpricingjobFreeCols(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the SCIP instance corresponding to the pricing job */
+EXTERN
+SCIP* GCGpricingjobGetPricingscip(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the index of the corresponding pricing problem */
+EXTERN
+int GCGpricingjobGetProbnr(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** return whether the pricing job is to be performed heuristically */
+EXTERN
+SCIP_Bool GCGpricingjobIsHeuristic(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the score of a pricing job */
+EXTERN
+SCIP_Real GCGpricingjobGetScore(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** get the number of times the pricing job was performed during the loop */
+EXTERN
+int GCGpricingjobGetNSolves(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/* get the status of a pricing job */
+EXTERN
+SCIP_STATUS GCGpricingjobGetStatus(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/* get the lower bound of a pricing job */
+EXTERN
+SCIP_Real GCGpricingjobGetLowerbound(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/* get a column found by a pricing job */
+EXTERN
+GCG_COL* GCGpricingjobGetCol(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   idx                 /**< index of a column */
+   );
+
+/* get the number of columns found by a pricing job */
+EXTERN
+int GCGpricingjobGetNCols(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/* get the number of improving columns found by a pricing job */
+EXTERN
+int GCGpricingjobGetNImpCols(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/**@} */
+
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif
