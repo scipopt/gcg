@@ -93,7 +93,7 @@ public:
     * @return path of file
     * */
    std::string GCGshowVisualization(
-      std::string filename,   /**< filename (including path) */
+      std::string filename    /**< filename (including path) */
       );
 };
 

@@ -43,20 +43,29 @@
 #include "scip/scip.h"
 #include "type_decomp.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** includes the tex file reader into SCIP */
 extern SCIP_RETCODE SCIPincludeReaderTex(
    SCIP* scip /**< SCIP data structure */
    );
 
-/** gets the path of the file */
-extern SCIP_RETCODE GCGgetFilePath(
-   SCIP* scip, /**< SCIP data structure */
-   FILE* file, /**< file */
-   char* pfile /**< return path of file */
+/** writes a visualization for the given seeed */
+extern SCIP_RETCODE GCGwriteTexVisualization(
+   char* filename,   /**< filename including path */
+   int seeedid       /**< id of seeed to visualize */
+   );
+
+/** writes a visualization of the family tree of the current seeedpool */
+extern SCIP_RETCODE GCGwriteTexFamilyTree(
+   char* filename,   /**< filename including path */
+   //@todo how to get/give the seeedpool?
+   );
+
+/*@todo more params? statistics, titlepage, toc, etc? */
+/*@todo is a int* of seeedids the best option? */
+/** writes a report for the given seeeds */
+extern SCIP_RETCODE GCGwriteTexReport(
+   char* filename,   /**< filename including path */
+   int* seeedids     /**< ids of seeeds to visualize */
    );
 
 /** write LaTeX code header & begin of document
@@ -142,24 +151,5 @@ extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(SCIP* scip, /**< SCIP data stru
 FILE* file /**< File for which the makefile & readme are generated */
 );
 
-/** Getter of parameter usegp */
-extern
-SCIP_Bool GCGtexGetUseGp(SCIP* scip /**< SCIP data structure */
-);
-
-/** Getter of parameter picturesonly */
-extern
-SCIP_Bool GCGtexGetPicturesonly(SCIP* scip /**< SCIP data structure */
-);
-
-/** Getter of parameter draftmode */
-extern
-SCIP_Bool GCGtexGetDraftmode(SCIP* scip /**< SCIP data structure */
-);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+#endif /* GCG_READER_TEX_H__ */
 
