@@ -48,14 +48,16 @@ extern "C" {
 #endif
 
 /** includes the tex file reader into SCIP */
-extern SCIP_RETCODE SCIPincludeReaderTex(SCIP* scip /**< SCIP data structure */
-);
+extern SCIP_RETCODE SCIPincludeReaderTex(
+   SCIP* scip /**< SCIP data structure */
+   );
 
 /** gets the path of the file */
-extern SCIP_RETCODE GCGgetFilePath(SCIP* scip, /**< SCIP data structure */
-FILE* file, /**< file */
-char* pfile /**< return path of file */
-);
+extern SCIP_RETCODE GCGgetFilePath(
+   SCIP* scip, /**< SCIP data structure */
+   FILE* file, /**< file */
+   char* pfile /**< return path of file */
+   );
 
 /** write LaTeX code header & begin of document
  * The proper order in which a tex file is written goes as follows:
@@ -66,9 +68,10 @@ char* pfile /**< return path of file */
  *    GCGtexWriteEndCode               (required)
  *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
  */
-extern SCIP_RETCODE GCGtexWriteHeaderCode(SCIP* scip, /**< SCIP data structure */
-FILE* file /**< File pointer to write to */
-);
+extern SCIP_RETCODE GCGtexWriteHeaderCode(
+   SCIP* scip, /**< SCIP data structure */
+   FILE* file /**< File pointer to write to */
+   );
 
 /** write LaTeX code title page that includes general statistics about the problem
  *  * The proper order in which a tex file is written goes as follows:
@@ -79,10 +82,11 @@ FILE* file /**< File pointer to write to */
  *    GCGtexWriteEndCode               (required)
  *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
  */
-extern SCIP_RETCODE GCGtexWriteTitlepage(SCIP* scip, /**< SCIP data structure */
-FILE* file, /**< File pointer to write to */
-int* npresenteddecomps /**< Number of decompositions to be shown in the file or NULL if unknown */
-);
+extern SCIP_RETCODE GCGtexWriteTitlepage(
+   SCIP* scip, /**< SCIP data structure */
+   FILE* file, /**< File pointer to write to */
+   int* npresenteddecomps /**< Number of decompositions to be shown in the file or NULL if unknown */
+   );
 
 /** write LaTeX code for table of contents
  * The proper order in which a tex file is written goes as follows:
@@ -93,9 +97,10 @@ int* npresenteddecomps /**< Number of decompositions to be shown in the file or 
  *    GCGtexWriteEndCode               (required)
  *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
  */
-extern SCIP_RETCODE GCGtexWriteTableOfContents(SCIP* scip, /**< SCIP data structure */
-FILE* file /**< File pointer to write to */
-);
+extern SCIP_RETCODE GCGtexWriteTableOfContents(
+   SCIP* scip, /**< SCIP data structure */
+   FILE* file /**< File pointer to write to */
+   );
 
 /** write LaTeX code for one decomposition
  * The proper order in which a tex file is written goes as follows:

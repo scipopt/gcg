@@ -3784,9 +3784,6 @@ std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
    return tmpAllRelevantSeeeds;
 }
 
-
-
-
 SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    SCIP*       scip,
    const char* filename,                                 /* filename the output should be written to (including directory) */
@@ -3828,7 +3825,6 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    std::vector<std::vector<int> > childs (allrelevantseeeds.size(), std::vector<int>(0));
    std::vector<std::vector<SCIP_Bool> > childsfinished(allrelevantseeeds.size(), std::vector<SCIP_Bool>(0));
    std::vector<SCIP_Bool> visited(allrelevantseeeds.size(), FALSE);
-
 
    conshdlrdata->helpvisucounter = 0;
 
@@ -3913,8 +3909,6 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
       childsfinished[root].push_back(FALSE );
    }
 
-
-
    //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
 
    firstsibldist = 1. / (childs[root].size() - 1 );
@@ -3926,8 +3920,6 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    preambel << "\\documentclass[a3paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
    preambel << "\n\\usetikzlibrary{positioning}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
    preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
-
-
 
    /** start writing file */
    ofs.open (filename, std::ofstream::out );
@@ -3983,9 +3975,6 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
 
    return SCIP_OKAY;
 }
-
-
-
 
 /** write
  *  out all detected or provided decompositions */

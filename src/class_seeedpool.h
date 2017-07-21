@@ -122,10 +122,10 @@ public:
 
    /** constructor */
    Seeedpool(
-      SCIP*             scip, /**< SCIP data structure */
+     SCIP*        scip, /**< SCIP data structure */
 	  const char*	conshdlrName,
 	  SCIP_Bool    transformed
-      );
+     );
 
    ~Seeedpool();
 
