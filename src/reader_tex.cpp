@@ -25,8 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_tex.c
- * @brief  tex file reader for writing decomposition details to LaTeX files
+/**@file   reader_tex.cpp
+ * @brief  tex file reader for writing seeeds to LaTeX files
  * @author Hanna Franzen
  */
 
@@ -54,7 +54,7 @@
 
 
 #define READER_NAME             "texreader"
-#define READER_DESC             "file reader for writing decomposition details to LaTeX files"
+#define READER_DESC             "LaTeX file writer for seeed visualization"
 #define READER_EXTENSION        "tex"
 
 #define DEFAULT_USEGP            FALSE
@@ -221,7 +221,7 @@ SCIP_RETCODE GCGtexWriteHeaderCode(
 
    readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
 
-   strcpy(ppath, (char*) SCIPgetProbName(scip));
+   strcpy(ppath, SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
    SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n");
@@ -295,7 +295,7 @@ SCIP_RETCODE GCGtexWriteTitlepage(
    int ndecomps;
 
    ndecomps = SCIPconshdlrDecompGetNFinishedDecomps(scip);
-   strcpy(ppath, (char*) SCIPgetProbName(scip));
+   strcpy(ppath, SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
    SCIPinfoMessage(scip, file, "\\begin{titlepage}                                                            \n");
@@ -702,7 +702,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
       strcat(gpfilename, "/");
 
       /* get name of file and attach it to gpfilename */
-      strcpy(ppath, (char*) SCIPgetProbName(scip));
+      strcpy(ppath, SCIPgetProbName(scip));
       SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
       if( pname != NULL &&  pname[0] != '\0' )
       {
