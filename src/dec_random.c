@@ -57,7 +57,7 @@
 #define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
 #define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
-#define DEC_DECCHAR               'r'         /**< display character of detector */
+#define DEC_DECCHAR               'R'         /**< display character of detector */
 #define DEC_ENABLED               FALSE       /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       FALSE       /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */

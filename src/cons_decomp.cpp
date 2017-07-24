@@ -128,6 +128,8 @@ typedef gcg::Seeed* SeeedPtr;
 #define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000   /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
 #define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000     /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
 
+#define DEFAULT_ONLYLEGACYMODE                        FALSE    /**< indicates whether detection should only consist of legacy mode detection */
+
 /*
  * Data structures
  */
@@ -167,6 +169,7 @@ struct SCIP_ConshdlrData
    SCIP_Bool             varclassobjvalsenabledorig;        /**< indicates whether variable classifier for objective function values is enabled for the original problem */
    SCIP_Bool             varclassobjvalsignsenabled;        /**< indicates whether variable classifier for objective function value signs is enabled */
    SCIP_Bool             varclassobjvalsignsenabledorig;    /**< indicates whether variable classifier for objective function value signs is enabled for the original problem */
+   SCIP_Bool             onlylegacymode;                    /**< indicates whether detection should only consist of legacy mode detection */
 
    int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
    int*                  nCandidates;
@@ -1074,6 +1077,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevalues/origenabled", "indicates whether variable classifier for objective function values is enabled for the original problem", &conshdlrdata->varclassobjvalsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/enabled", "indicates whether variable classifier for objective function value signs is enabled", &conshdlrdata->varclassobjvalsignsenabled, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", "indicates whether variable classifier for objective function value signs is enabled for the original problem", &conshdlrdata->varclassobjvalsignsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/onlylegacymode", "indicates whether detection should only consist of legacy mode detection", &conshdlrdata->onlylegacymode, FALSE, DEFAULT_ONLYLEGACYMODE, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
@@ -3190,10 +3194,16 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   /* do transformations and initializations if necessary */
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb( scip ) );
+
+   if ( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+      SCIP_CALL( SCIPpresolve( scip ) );
+
    if ( conshdlrdata->seeedpool == NULL )
-   {
       conshdlrdata->seeedpool = new gcg::Seeedpool( scip, CONSHDLR_NAME, TRUE );
-   }
+
    seeedpool = conshdlrdata->seeedpool;
 
    SCIPdebugMessagePrint(scip, "Checking %d detectors for legacy mode.\n", conshdlrdata->ndetectors);
@@ -3499,6 +3509,12 @@ SCIP_RETCODE DECdetectStructure(
 
    conshdlrdata->seeedpool = NULL;
 
+   /* only legacy mode */
+   SCIP_Bool onlylegacymode;
+   SCIPgetBoolParam(scip, "detection/onlylegacymode", &onlylegacymode);
+   if( !onlylegacymode )
+   {
+
    /** get data of the seeedpool with original vars and conss */
    if ( conshdlrdata->seeedpoolunpresolved == NULL )
       conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
@@ -3634,13 +3650,17 @@ SCIP_RETCODE DECdetectStructure(
 
    //	  seeedpool.freeCurrSeeeds();
 
+   /* @todo measure legacy mode too */
+   SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );
+
+   SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
+
    /* start of legacy mode stuff */
+   } /* end of ugly only legacy mode if */
+
    SCIPdebugMessagePrint(scip, "Start legacy mode.\n");
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip );
    SCIPdebugMessagePrint(scip, "Finished legacy mode.\n");
-
-
-   SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );
 
 //   if( conshdlrdata->ndecomps > 0 )
 //   {
@@ -3656,7 +3676,6 @@ SCIP_RETCODE DECdetectStructure(
 //      SCIP_CALL( createOneBlockDecomp(scip) );
 //      *result = SCIP_SUCCESS;
 //   }
-   SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
 
    /* show that we done our duty */
    conshdlrdata->hasrun = TRUE;
