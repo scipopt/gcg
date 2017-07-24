@@ -232,6 +232,12 @@ public:
    /** returns size of incomplete seeed data structure */
    int getNIncompleteSeeeds();
 
+   /** returns true if the given seeed is a duplicate of a seeed that is already contained in
+    *  finished seeeds or current seeeds data structure */
+   bool hasDuplicate(
+      SeeedPtr seeed
+      );
+
    /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
    void translateSeeedData(
       Seeedpool* otherpool,                              /**< old seeedpool */

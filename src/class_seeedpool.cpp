@@ -1533,6 +1533,17 @@ int Seeedpool::getNIncompleteSeeeds()
    return incompleteSeeeds.size();
 }
 
+/** returns true if the given seeed is a duplicate of a seeed that is already contained in
+ *  finished seeeds or current seeeds data structure */
+bool Seeedpool::hasDuplicate(
+   SeeedPtr seeed
+   )
+{
+   assert( seeed != NULL );
+
+   return seeedIsNoDuplicate( seeed, currSeeeds, finishedSeeeds, true );
+}
+
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
 void Seeedpool::translateSeeedData(
    Seeedpool* origpool,

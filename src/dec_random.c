@@ -240,19 +240,22 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectRandom)
       SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
 
       SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[0], detectordata->constoblock, detectordata->nblocks, FALSE) );
+
+      /* delete, debugging */
+      SCIP_CALL( DECdecompCheckConsistency( scip, (*decdecomps)[0] ) );
+
       *ndecdecomps = 1;
 
-      detectordata->constoblock = NULL;
       *result = SCIP_SUCCESS;
    }
    else
    {
-      SCIPhashmapFree(&detectordata->constoblock);
-      detectordata->constoblock = NULL;
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
    }
 
-   SCIPhashmapFree(&detectordata->constoblock);
+   /* do not free hashmap since this would also delete assignments in decdecomps */
+   // SCIPhashmapFree(&detectordata->constoblock);
+   detectordata->constoblock = NULL;
 
    return SCIP_OKAY;
 }

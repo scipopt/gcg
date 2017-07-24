@@ -3177,6 +3177,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    /* decompositions and seeeds */
    int dec;
    gcg::SeeedPtr seeed;
+   int dupcount;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -3247,12 +3248,27 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
                /* set up detectorchaininfo */
                SCIPsnprintf( detectorchaininfo, SCIP_MAXSTRLEN, "%c(lgc)", detector->decchar );
 
+               dupcount = 0;
+
                /* translate found decompositions to seeeds and add them to (presolved) seeedpool */
                for( dec = 0; dec < ndecdecomps; ++dec )
                {
                   seeedpool->createSeeedFromDecomp( decdecomps[dec], &seeed );
-                  seeed->setDetectorChainString( detectorchaininfo );
-                  seeedpool->addSeeedToFinished( seeed );
+
+                  if ( !seeedpool->hasDuplicate( seeed ) )
+                  {
+                     seeed->setDetectorChainString( detectorchaininfo );
+                     seeedpool->addSeeedToFinished( seeed );
+                  }
+                  else
+                  {
+                     ++dupcount;
+                  }
+               }
+
+               if ( dupcount > 0 )
+               {
+                  SCIPdebugMessagePrint( scip, "%d of the resulting seeeds are already contained in the seeedpool.\n", dupcount );
                }
                /* @todo set statistical data of seeed? */
             }
@@ -4647,6 +4663,30 @@ SCIP_RETCODE setDetectionOff(
       (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
 
       SCIP_CALL( SCIPsetBoolParam(scip, paramname, FALSE) );
+      if( !quiet )
+      {
+         SCIPinfoMessage(scip, NULL, "%s = FALSE\n", paramname);
+      }
+   }
+
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      char paramname[SCIP_MAXSTRLEN];
+      (void)SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/origenabled", conshdlrdata->detectors[i]->name);
+
+      SCIP_CALL(SCIPsetBoolParam(scip, paramname, FALSE));
+      if( !quiet )
+      {
+         SCIPinfoMessage(scip, NULL, "%s = FALSE\n", paramname);
+      }
+   }
+
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      char paramname[SCIP_MAXSTRLEN];
+      (void)SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/legacymode", conshdlrdata->detectors[i]->name);
+
+      SCIP_CALL(SCIPsetBoolParam(scip, paramname, FALSE));
       if( !quiet )
       {
          SCIPinfoMessage(scip, NULL, "%s = FALSE\n", paramname);
