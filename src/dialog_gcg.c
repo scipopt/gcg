@@ -113,7 +113,7 @@ SCIP_RETCODE writeAllDecompositions(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory and/or extension: ", &dirname, &endoffile) );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory: ", &dirname, &endoffile) );
    if( endoffile )
    {
       *nextdialog = NULL;
@@ -125,10 +125,8 @@ SCIP_RETCODE writeAllDecompositions(
       filename = dirname;
       dirname = NULL;
    }
-   else
-   {
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
-   }
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
 
    if( filename[0] != '\0' )
    {
@@ -1321,7 +1319,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteAllDecompositions, NULL, NULL,
             "alldecompositions",
-            "write all known decompositions to files (format is given by file extension, e.g., {dec,blk,ref})",
+            "write all known decompositions to files (format is given by file extension, e.g. {dec,blk,ref,gp,tex})",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -1332,20 +1330,18 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteFamilyTree, NULL, NULL,
             "familytree",
-            "write all decompositions (including partial decompositions) that are part of the family tree given by the current settings as pdf files and creates a latex file displaying corresponding the family tree",
+            "write all (partial) decompositions that are part of the family tree to pdf files and creates a latex file displaying the family tree",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
-
-
 
    /* write reportdecompositions */
       if( !SCIPdialogHasEntry(submenu, "reportdecompositions") )
       {
          SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecReportAllDecompositions, NULL, NULL,
                "reportdecompositions",
-               "write report of all known decompositions to PDF file ",
+               "write report of all known decompositions to LaTeX format",
                FALSE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );

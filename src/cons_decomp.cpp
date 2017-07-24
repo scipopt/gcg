@@ -98,12 +98,16 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 #define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
 #define DEFAULT_ENABLEORIGDETECTION TRUE /**< indicates whether to start detection for the original problem */
+#define DEFAULT_ENABLEORIGCLASSIFICATION TRUE /**< indicates whether to start detection for the original problem */
 
 #define DEFAULT_CONSSCLASSNNONZENABLED                TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled */
 #define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED         TRUE    /**< indicates whether constraint classifier for scipconstype is enabled */
 #define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     TRUE    /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
+
+#define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLED         TRUE    /**< indicates whether constraint classifier for miplib consstype is enabled */
+#define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLEDORIG     TRUE    /**< indicates whether constraint classifier for miplib consstype is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED     FALSE    /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
 #define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG TRUE     /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
@@ -146,10 +150,13 @@ struct SCIP_ConshdlrData
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
-   SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
+   SCIP_Bool             enableorigclassification;               /**< indicates whether to start constraint classification for the original problem */
+      SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
    SCIP_Bool             conssclassnnonzenabledorig;        /**< indicates whether constraint classifier for nonzero entries is enabled for the original problem */
    SCIP_Bool             conssclassnconstypeenabled;        /**< indicates whether constraint classifier for scipconstype is enabled */
    SCIP_Bool             conssclassnconstypeenabledorig;    /**< indicates whether constraint classifier for scipconstype is enabled for the original problem */
+   SCIP_Bool             conssclassnmiplibconstypeenabled;        /**< indicates whether constraint classifier for miplib constype is enabled */
+   SCIP_Bool             conssclassnmiplibconstypeenabledorig;    /**< indicates whether constraint classifier for miplib constype is enabled for the original problem */
    SCIP_Bool             consnamenonumbersenabled;          /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
    SCIP_Bool             consnamenonumbersenabledorig;      /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
    SCIP_Bool             conssclasslevenshteinabled;        /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
@@ -1050,10 +1057,13 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/enabled", "indicates whether to start detection for the original problem", &conshdlrdata->enableorigdetection, FALSE, DEFAULT_ENABLEORIGDETECTION, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/classificationenabled", "indicates whether to classify constraints and variables for the original problem", &conshdlrdata->enableorigclassification, FALSE, DEFAULT_ENABLEORIGCLASSIFICATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", "indicates whether constraint classifier for nonzero entries is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSNNONZENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/nnonzeros/origenabled", "indicates whether constraint classifier for nonzero entries is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSNNONZENABLEDORIG, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/scipconstype/enabled", "indicates whether constraint classifier for scipconstype is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/scipconstype/origenabled", "indicates whether constraint classifier for scipconsstype is enabled for the original problem", &conshdlrdata->conssclassnnonzenabledorig, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/scipconstype/enabled", "indicates whether constraint classifier for scipconstype is enabled", &conshdlrdata->conssclassnconstypeenabled, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/scipconstype/origenabled", "indicates whether constraint classifier for scipconsstype is enabled for the original problem", &conshdlrdata->conssclassnconstypeenabledorig, FALSE, DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/miplibconstype/enabled", "indicates whether constraint classifier for miplib constypes is enabled", &conshdlrdata->conssclassnmiplibconstypeenabled, FALSE, DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLED, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/miplibconstype/origenabled", "indicates whether constraint classifier for miplib consstype is enabled for the original problem", &conshdlrdata->conssclassnmiplibconstypeenabledorig, FALSE, DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/consnamenonumbers/enabled", "indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled", &conshdlrdata->consnamenonumbersenabled, FALSE, DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/consnamenonumbers/origenabled", "indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem", &conshdlrdata->consnamenonumbersenabledorig, FALSE, DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", "indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled", &conshdlrdata->conssclasslevenshteinabled, FALSE, DEFAULT_CONSSCLASSLEVENSHTEINENABLED, NULL, NULL) );
@@ -1191,7 +1201,8 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
 
       seeed = conshdlrdata->listall->at(i);
 
-      assert( seeed->checkConsistency( conshdlrdata->seeedpool ) );
+      assert( seeed->checkConsistency( seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved
+                                                                  : conshdlrdata->seeedpool ) );
 
       SCIPdialogMessage(scip, NULL, " %4d   ", i );
       SCIPdialogMessage(scip, NULL, "%5d  ", seeed->getNBlocks() );
@@ -1406,7 +1417,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
       idtovisu = atoi(ntovisualize);
 
    gcg::Seeedpool* seeedpool = (conshdlrdata->listall->at(idtovisu)->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
-   conshdlrdata->listall->at(idtovisu)->showScatterPlot(seeedpool);
+   conshdlrdata->listall->at(idtovisu)->showVisualisation(seeedpool);
 
    return SCIP_OKAY;
 }
@@ -3432,8 +3443,6 @@ SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIP_CALL_ABORT(SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
-
    if( conshdlrdata->seeedpool != NULL )
       conshdlrdata->seeedpool->sortFinishedForScore();
 
@@ -3453,7 +3462,6 @@ SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    */
 
 
-   SCIPfreeBufferArray(scip, &scores);
 
    return SCIP_OKAY;
 }
@@ -3479,7 +3487,7 @@ SCIP_RETCODE DECdetectStructure(
    if ( conshdlrdata->seeedpoolunpresolved == NULL )
       conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
-   std::vector<int> candidatesNBlocks;                            /**< candidates for number of blocks */
+   std::vector<int> candidatesNBlocks(0);                            /**< candidates for number of blocks */
    std::vector<gcg::ConsClassifier*> consClassDistributions;         /**< collection of different constraint class distributions */
    std::vector<gcg::VarClassifier*> varClassDistributions;           /**< collection of different variable class distributions */
    std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
@@ -3491,12 +3499,14 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIP_Bool presolveOrigProblem;
    SCIP_Bool calculateOrigDecomps;
+   SCIP_Bool classifyOrig;
 
    assert(scip != NULL);
 
    presolveOrigProblem = TRUE;
 
    SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
+   SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
 
 
 
@@ -3512,9 +3522,11 @@ SCIP_RETCODE DECdetectStructure(
 //=======
 
    /** get block number candidates and conslcassifier for original problem*/
-   conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
-
-   candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
+   if( classifyOrig )
+   {
+      conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
+      candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
+   }
 
    /** detection for original problem */
    if( calculateOrigDecomps )
@@ -3727,32 +3739,35 @@ SCIP_RETCODE DECwriteAllDecomps(
 
    tmp = conshdlrdata->useddecomp;
 
-   /** write orig decomps */
-   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+
+   /** write orig decomps currently disabled*/
+   if( FALSE )
    {
-      SeeedPtr seeed;
-      DEC_DECOMP* decomp;
-
-      seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
-
-      if( directory != NULL )
+      for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && (size_t) i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i )
       {
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_o%d.%s", directory, pname, i, extension);
+         SeeedPtr seeed;
+         DEC_DECOMP* decomp;
+
+         seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
+
+         if( directory != NULL )
+         {
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_o%d.%s", directory, pname, i, extension);
+         }
+         else
+         {
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_o%d.%s", pname, i, extension);
+         }
+
+         conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &decomp) ;
+
+         conshdlrdata->useddecomp = decomp;
+
+         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
+
+         DECdecompFree(scip, &decomp);
       }
-      else
-      {
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_o%d.%s", pname, i, extension);
-      }
-
-      conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &decomp) ;
-
-      conshdlrdata->useddecomp = decomp;
-
-      SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
-
-      DECdecompFree(scip, &decomp);
    }
-
 
    /** write presolved decomps */
      for( i = 0; conshdlrdata->seeedpool!= NULL && i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
@@ -3981,6 +3996,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    std::vector<SCIP_Bool> isseeedintree(allrelevantseeeds.size(), FALSE );
 
    int root = -1;
+   int root2 = -1;
    std::vector<int> parents(allrelevantseeeds.size(), -1);
    std::vector<std::vector<int> > childs (allrelevantseeeds.size(), std::vector<int>(0));
    std::vector<std::vector<SCIP_Bool> > childsfinished(allrelevantseeeds.size(), std::vector<SCIP_Bool>(0));
@@ -4027,7 +4043,10 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
             treeseeedids.push_back(ancestorid);
             if( i == seeeds[s]->getNAncestors() -1 )
             {
-               root = ancestorid;
+               if( root == -1 )
+                  root = ancestorid;
+               else if( ancestorid != root )
+                  root2 = ancestorid;
             }
             currid = ancestorid;
          }
@@ -4044,9 +4063,30 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
       seeed = treeseeeds[i];
 
       decompfilename << workfolder << "/" << getSeeedFolderLatex(seeed);
-
-      seeed->showScatterPlot(conshdlrdata->seeedpool, TRUE, decompfilename.str().c_str(), draft );
+      if( seeed->isFromUnpresolved() )
+         seeed->showVisualisation(conshdlrdata->seeedpoolunpresolved, TRUE, decompfilename.str().c_str(), draft );
+      else
+         seeed->showVisualisation(conshdlrdata->seeedpool, TRUE, decompfilename.str().c_str(), draft );
    }
+
+   /* merge both roots in the first one*/
+
+   for( size_t s = 0; root2 != -1 && s < treeseeeds.size(); ++s )
+   {
+      int seeedid = treeseeeds[s]->getID();
+      if ( parents[seeedid] == root2 )
+      {
+         parents[seeedid] = root;
+      }
+   }
+
+   for( size_t s = 0; root2 != -1 && s < childs[root2].size(); ++s )
+   {
+      childs[root].push_back(childs[root2][s] );
+      childsfinished[root].push_back(FALSE );
+   }
+
+
 
    //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
 
@@ -4056,7 +4096,7 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    }
    preambel.precision(2);
 
-   preambel << "\\documentclass[a4paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
+   preambel << "\\documentclass[a3paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
    preambel << "\n\\usetikzlibrary{positioning}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
    preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
 
@@ -4105,6 +4145,8 @@ SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
    ofs << ";" << std::endl;
    for( size_t i = 0; i < treeseeeds.size(); ++i)
    {
+      if ( treeseeeds[i]->getID() == root2 )
+         continue;
       ofs << writeSeeedInfoLatex( treeseeeds[i] );
    }
 
@@ -4368,10 +4410,11 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
    for( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
    {
       DEC_DECOMP* decomp;
-      conshdlrdata->seeedpool->createDecompFromSeeed(conshdlrdata->seeedpool->getFinishedSeeed( i ), &decomp );
+      SCIP_CALL_ABORT(conshdlrdata->seeedpool->createDecompFromSeeed(conshdlrdata->seeedpool->getFinishedSeeed( i ), &decomp ) );
 
       decomps[i] = decomp;
    }
+
 
    for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
    {
@@ -4399,7 +4442,7 @@ int SCIPconshdlrDecompGetNFinishedDecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   return (int) conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() + conshdlrdata->seeedpool->getNFinishedSeeeds();
+   return (int) /*conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() +*/ conshdlrdata->seeedpool->getNFinishedSeeeds();
 
 }
 
@@ -4453,6 +4496,7 @@ SCIP_RETCODE setDetectionDefault(
 
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/scipconstype/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/miplibconstype/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamenonumbers/enabled", TRUE) );
 
    if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
@@ -4530,6 +4574,7 @@ SCIP_RETCODE setDetectionAggressive(
 
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/scipconstype/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/miplibconstype/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamenonumbers/enabled", TRUE) );
 
    if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
@@ -4629,6 +4674,7 @@ SCIP_RETCODE setDetectionFast(
 
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/scipconstype/enabled", TRUE) );
+   SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/miplibconstype/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamenonumbers/enabled", TRUE) );
 
    if( SCIPgetNVars(scip) + SCIPgetNConss(scip) < FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER )

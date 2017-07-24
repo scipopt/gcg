@@ -43,10 +43,12 @@
 #endif
 #endif
 
+//#define WRITE_ORIG_CONSTYPES
 //#define SCIP_DEBUG
 
 #include "gcg.h"
 #include "objscip/objscip.h"
+#include "scip/scip.h"
 #include "class_seeedpool.h"
 #include "struct_detector.h"
 #include "pub_decomp.h"
@@ -66,6 +68,8 @@
 #include <fstream>
 #include <exception>
 
+
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -84,20 +88,33 @@
 #define ENUM_TO_STRING( x ) # x
 #define DEFAULT_THREADS    0     /**< number of threads (0 is OpenMP default) */
 
-/* @todo use structs in c++ or would it be better to create a (local) conshdlrData class? */
-/** constraint handler data */
-//struct SCIP_ConshdlrData
-//{
-//   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
-//   DEC_DETECTOR**        detectors;          /**< array of structure detectors */
-//   int*                  priorities;         /**< priorities of the detectors */
-//   int                   ndetectors;         /**< number of detectors */
-//   SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
-//   SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
-//   int                   ndecomps;           /**< number of decomposition structures  */
-//   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
-//   int                   nthreads;
-//};
+
+//#ifdef WITH_PRINTORIGCONSTYPES
+/** constraint type */
+enum SCIP_Constype_orig
+{
+   SCIP_CONSTYPE_EMPTY         =  0,         /**<  */
+   SCIP_CONSTYPE_FREE          =  1,         /**<  */
+   SCIP_CONSTYPE_SINGLETON     =  2,         /**<  */
+   SCIP_CONSTYPE_AGGREGATION   =  3,         /**<  */
+   SCIP_CONSTYPE_VARBOUND      =  4,         /**<  */
+   SCIP_CONSTYPE_SETPARTITION  =  5,         /**<  */
+   SCIP_CONSTYPE_SETPACKING    =  6,         /**<  */
+   SCIP_CONSTYPE_SETCOVERING   =  7,         /**<  */
+   SCIP_CONSTYPE_CARDINALITY   =  8,         /**<  */
+   SCIP_CONSTYPE_INVKNAPSACK   =  9,         /**<  */
+   SCIP_CONSTYPE_EQKNAPSACK    = 10,         /**<  */
+   SCIP_CONSTYPE_BINPACKING    = 11,         /**<  */
+   SCIP_CONSTYPE_KNAPSACK      = 12,         /**<  */
+   SCIP_CONSTYPE_INTKNAPSACK   = 13,         /**<  */
+   SCIP_CONSTYPE_MIXEDBINARY   = 14,         /**<  */
+   SCIP_CONSTYPE_GENERAL       = 15          /**<  */
+};
+typedef enum SCIP_Constype_orig SCIP_CONSTYPE_ORIG;
+//#endif
+
+
+
 
 namespace gcg{
 
@@ -122,6 +139,36 @@ struct sort_pred
       return left.second < right.second;
    }
 };
+
+/** is constraint ranged row, i.e., -inf < lhs < rhs < inf? */
+static
+SCIP_Bool isRangedRow(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real             lhs,
+   SCIP_Real             rhs
+   )
+{
+   assert(scip != NULL);
+
+   return !(SCIPisEQ(scip, lhs, rhs)
+      || SCIPisInfinity(scip, -lhs) || SCIPisInfinity(scip, rhs) );
+}
+
+/** is constraint ranged row, i.e., -inf < lhs < rhs < inf? */
+static
+SCIP_Bool isFiniteNonnegativeIntegral(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real             x                   /**< value */
+   )
+{
+   assert(scip != NULL);
+
+   return (!SCIPisInfinity(scip, x) && !SCIPisNegative(scip, x) && SCIPisIntegral(scip, x));
+}
+
+
+
+
 
 /** returns a folder name for a seeed */
 std::string getSeeedFolderLatex(
@@ -730,6 +777,7 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
 {
    SCIP_Bool conssclassnnonzeros;
    SCIP_Bool conssclassscipconstypes;
+   SCIP_Bool conssclassmiplibconstypes;
    SCIP_Bool conssclassconsnamenonumbers;
    SCIP_Bool conssclassconsnamelevenshtein;
    SCIP_Bool varclassscipvartypes;
@@ -740,6 +788,7 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
    {
       SCIPgetBoolParam( scip, "detection/consclassifier/nnonzeros/enabled", & conssclassnnonzeros );
       SCIPgetBoolParam( scip, "detection/consclassifier/scipconstype/enabled", & conssclassscipconstypes );
+      SCIPgetBoolParam( scip, "detection/consclassifier/miplibconstype/enabled", & conssclassmiplibconstypes );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamenonumbers/enabled", & conssclassconsnamenonumbers );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamelevenshtein/enabled", & conssclassconsnamelevenshtein );
       SCIPgetBoolParam( scip, "detection/varclassifier/scipvartype/enabled", & varclassscipvartypes );
@@ -750,6 +799,7 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
    {
       SCIPgetBoolParam( scip, "detection/consclassifier/nnonzeros/origenabled", & conssclassnnonzeros );
       SCIPgetBoolParam( scip, "detection/consclassifier/scipconstype/origenabled", & conssclassscipconstypes );
+      SCIPgetBoolParam( scip, "detection/consclassifier/miplibconstype/origenabled", & conssclassmiplibconstypes );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamenonumbers/origenabled", & conssclassconsnamenonumbers );
       SCIPgetBoolParam( scip, "detection/consclassifier/consnamelevenshtein/origenabled", & conssclassconsnamelevenshtein );
       SCIPgetBoolParam( scip, "detection/varclassifier/scipvartype/origenabled", & varclassscipvartypes );
@@ -763,6 +813,9 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
       addConsClassifier( createConsClassifierForNNonzeros() );
    if( conssclassscipconstypes )
       addConsClassifier( createConsClassifierForSCIPConstypes() );
+   if( conssclassmiplibconstypes )
+      addConsClassifier( createConsClassifierForMiplibConstypes() );
+
    if( conssclassconsnamenonumbers )
       addConsClassifier( createConsClassifierForConsnamesDigitFreeIdentical() );
    if( conssclassconsnamelevenshtein )
@@ -964,7 +1017,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                         {
                            std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID()
                               << " is addded to finished seeeds!" << std::endl;
-                           seeedPropData->newSeeeds[seeed]->showScatterPlot( this );
+                           seeedPropData->newSeeeds[seeed]->showVisualisation( this );
                         }
                      }
 #pragma omp critical ( seeedptrstore )
@@ -981,7 +1034,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                         {
                            std::cout << "seeed " << seeedPropData->newSeeeds[seeed]->getID()
                               << " is addded to next round seeeds!" << std::endl;
-                           seeedPropData->newSeeeds[seeed]->showScatterPlot( this );
+                           seeedPropData->newSeeeds[seeed]->showVisualisation( this );
                         }
                      }
 #pragma omp critical ( seeedptrstore )
@@ -1137,7 +1190,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                if( verboseLevel > 2 )
                {
                   std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
-                  seeed->showScatterPlot( this );
+                  seeed->showVisualisation( this );
                }
 #pragma omp critical ( seeedptrstore )
                {
@@ -1301,7 +1354,7 @@ std::vector<SeeedPtr> Seeedpool::finishIncompleteSeeeds(
                if( verboseLevel > 2 )
                {
                   std::cout << "seeed " << seeed->getID() << " is finished from next round seeeds!" << std::endl;
-                  seeed->showScatterPlot( this );
+                  seeed->showVisualisation( this );
                }
 #pragma omp critical ( seeedptrstore )
                {
@@ -1680,7 +1733,11 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          }
       }
 
+
       newseeed->setDetectorchain( otherseeed->getDetectorchainVector() );
+      newseeed->setAncestorList( otherseeed->getAncestorList() );
+
+      newseeed->addAncestorID( otherseeed->getID() );
 
       for( int i = 0; i < otherseeed->getNDetectors(); ++i )
       {
@@ -2344,6 +2401,457 @@ ConsClassifier* Seeedpool::createConsClassifierForSCIPConstypes()
 
    return classifier;
 }
+
+
+/** returns a new constraint classifier
+ *  where all constraints with identical SCIP constype are assigned to the same class */
+ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
+{
+   std::vector<int> nfoundconstypesrangedsinglecount( (int) SCIP_CONSTYPE_GENERAL + 1, 0 );
+   std::vector<int> nfoundconstypesrangeddoublecount( (int) SCIP_CONSTYPE_GENERAL + 1, 0 );
+
+//   std::vector<int> constypesIndices( 0 );
+   std::vector<int> classforcons = std::vector<int>( getNConss(), -1 );
+   ConsClassifier* classifier;
+
+   /** firstly, assign all constraints to classindices */
+   for( int c = 0; c < getNConss(); ++ c )
+   {
+      SCIP_CONS* cons;
+      SCIP_Real lhs;
+      SCIP_Real rhs;
+      SCIP_Real* vals;
+      SCIP_VAR** vars;
+      int nvars;
+      int i;
+
+      SCIP_Bool success;
+
+      cons = getConsForIndex( c );
+
+      nvars =  GCGconsGetNVars(scip, cons );
+
+      consType cT = GCGconsGetType( cons );
+
+      lhs = GCGconsGetLhs(scip, cons);
+      rhs = GCGconsGetRhs(scip, cons);
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars));
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars));
+      SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, vals, nvars ) );
+      SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, vars, nvars ) );
+
+      for( i = 0; i < nvars; i++ )
+      {
+         assert(!SCIPisZero(scip, vals[i]) );
+      }
+
+
+      /* is constraint of type SCIP_CONSTYPE_EMPTY? */
+      if( nvars == 0 )
+      {
+         SCIPdebugMsg(scip, "classified as EMPTY: ");
+         SCIPdebugPrintCons(scip, cons, NULL);
+         nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_EMPTY]++;
+         nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_EMPTY]++;
+         classforcons[c] = SCIP_CONSTYPE_EMPTY;
+         SCIPfreeBufferArray(scip, &vals) ;
+         SCIPfreeBufferArray(scip, &vars) ;
+         continue;
+      }
+
+      /* is constraint of type SCIP_CONSTYPE_FREE? */
+      if( SCIPisInfinity(scip, rhs) && SCIPisInfinity(scip, -lhs) )
+      {
+         SCIPdebugMsg(scip, "classified as FREE: ");
+         SCIPdebugPrintCons(scip, cons, NULL);
+         nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_FREE]++;
+         nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_FREE]++;
+         classforcons[c] = SCIP_CONSTYPE_FREE;
+         SCIPfreeBufferArray(scip, &vals);
+         SCIPfreeBufferArray(scip, &vars);
+         continue;
+      }
+
+      /* is constraint of type SCIP_CONSTYPE_SINGLETON? */
+      if( nvars == 1 )
+      {
+         SCIPdebugMsg(scip, "classified as SINGLETON: ");
+         SCIPdebugPrintCons(scip, cons, NULL);
+         nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_SINGLETON] += 2 ;
+         nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_SINGLETON]++;
+         classforcons[c] = SCIP_CONSTYPE_SINGLETON;
+         SCIPfreeBufferArray(scip, &vals) ;
+         SCIPfreeBufferArray(scip, &vars) ;
+         continue;
+      }
+
+      /* is constraint of type SCIP_CONSTYPE_AGGREGATION? */
+      if( nvars == 2 && SCIPisEQ(scip, lhs, rhs) )
+      {
+         SCIPdebugMsg(scip, "classified as AGGREGATION: ");
+         SCIPdebugPrintCons(scip, cons, NULL);
+         nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_AGGREGATION]++;
+         nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_AGGREGATION]++;
+         classforcons[c] = SCIP_CONSTYPE_AGGREGATION;
+         SCIPfreeBufferArray(scip, &vals) ;
+         SCIPfreeBufferArray(scip, &vars) ;
+         continue;
+      }
+
+      /* is constraint of type SCIP_CONSTYPE_{VARBOUND}? */
+      if( nvars == 2 )
+      {
+         SCIPdebugMsg(scip, "classified as VARBOUND: ");
+         SCIPdebugPrintCons(scip, cons, NULL);
+         nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_VARBOUND] += 2 ;
+         nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_VARBOUND]++;
+         classforcons[c] = SCIP_CONSTYPE_VARBOUND;
+         SCIPfreeBufferArray(scip, &vals) ;
+         SCIPfreeBufferArray(scip, &vars) ;
+         continue;
+      }
+
+      /* is constraint of type SCIP_CONSTYPE_{SETPARTITION, SETPACKING, SETCOVERING, CARDINALITY, INVKNAPSACK}? */
+      {
+         SCIP_Real scale;
+         SCIP_Real b;
+         SCIP_Bool unmatched;
+         int nnegbinvars;
+
+         unmatched = FALSE;
+         nnegbinvars = 0;
+
+         scale = REALABS(vals[0]);
+         for( i = 0; i < nvars && !unmatched; i++ )
+         {
+            unmatched = unmatched || SCIPvarGetType(vars[i]) == SCIP_VARTYPE_CONTINUOUS;
+            unmatched = unmatched || SCIPisLE(scip, SCIPvarGetLbGlobal(vars[i]), -1.0);
+            unmatched = unmatched || SCIPisGE(scip, SCIPvarGetUbGlobal(vars[i]), 2.0);
+            unmatched = unmatched || !SCIPisEQ(scip, REALABS(vals[i]), scale);
+
+            if( vals[i] < 0.0 )
+               nnegbinvars++;
+         }
+
+         if( !unmatched )
+         {
+            if( SCIPisEQ(scip, lhs, rhs) )
+            {
+               b = rhs/scale + nnegbinvars;
+               if( SCIPisEQ(scip, 1.0, b) )
+               {
+                  SCIPdebugMsg(scip, "classified as SETPARTITION: ");
+                  SCIPdebugPrintCons(scip, cons, NULL);
+                  nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_SETPARTITION] += 1 ;
+                  nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_SETPARTITION]++;
+                  classforcons[c] = SCIP_CONSTYPE_SETPARTITION;
+                  SCIPfreeBufferArray(scip, &vals) ;
+                  SCIPfreeBufferArray(scip, &vars) ;
+                  continue;
+               }
+               else if( SCIPisIntegral(scip, b) && !SCIPisNegative(scip, b) )
+               {
+                  SCIPdebugMsg(scip, "classified as CARDINALITY: ");
+                  SCIPdebugPrintCons(scip, cons, NULL);
+                  nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_CARDINALITY] += 1 ;
+                  nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_CARDINALITY]++;
+                  classforcons[c] = SCIP_CONSTYPE_CARDINALITY;
+                  SCIPfreeBufferArray(scip, &vals);
+                  SCIPfreeBufferArray(scip, &vars);
+                  continue;
+               }
+            }
+
+            b = rhs/scale + nnegbinvars;
+            if( SCIPisEQ(scip, 1.0, b) )
+            {
+               SCIPdebugMsg(scip, "classified as SETPACKING: ");
+               SCIPdebugPrintCons(scip, cons, NULL);
+               nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_SETPACKING] += 1 ;
+               nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_SETPACKING]++;
+               classforcons[c] = SCIP_CONSTYPE_SETPACKING;
+               rhs = SCIPinfinity(scip);
+            }
+            else if( SCIPisIntegral(scip, b) && !SCIPisNegative(scip, b) )
+            {
+               SCIPdebugMsg(scip, "classified as INVKNAPSACK: ");
+               SCIPdebugPrintCons(scip, cons, NULL);
+               nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_INVKNAPSACK] += 1 ;
+                nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_INVKNAPSACK]++;
+                classforcons[c] = SCIP_CONSTYPE_INVKNAPSACK;
+               rhs = SCIPinfinity(scip);
+            }
+
+            b = lhs/scale + nnegbinvars;
+            if( SCIPisEQ(scip, 1.0, b) )
+            {
+               SCIPdebugMsg(scip, "classified as SETCOVERING: ");
+               SCIPdebugPrintCons(scip, cons, NULL);
+               nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_SETCOVERING] += 1 ;
+               nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_SETCOVERING]++;
+               classforcons[c] = SCIP_CONSTYPE_SETCOVERING;
+               lhs = -SCIPinfinity(scip);
+            }
+
+            if( SCIPisInfinity(scip, -lhs) && SCIPisInfinity(scip, rhs) )
+            {
+               SCIPfreeBufferArray(scip, &vals);
+               SCIPfreeBufferArray(scip, &vars);
+               continue;
+            }
+         }
+      }
+
+      /* is constraint of type SCIP_CONSTYPE_{EQKNAPSACK, BINPACKING, KNAPSACK}? */
+      /* @todo If coefficients or rhs are not integral, we currently do not check
+       * if the constraint could be scaled (finitely), such that they are.
+       */
+      {
+         SCIP_Real b;
+         SCIP_Bool unmatched;
+
+         b = rhs;
+         unmatched = FALSE;
+         for( i = 0; i < nvars && !unmatched; i++ )
+         {
+            unmatched = unmatched || SCIPvarGetType(vars[i]) == SCIP_VARTYPE_CONTINUOUS;
+            unmatched = unmatched || SCIPisLE(scip, SCIPvarGetLbGlobal(vars[i]), -1.0);
+            unmatched = unmatched || SCIPisGE(scip, SCIPvarGetUbGlobal(vars[i]), 2.0);
+            unmatched = unmatched || !SCIPisIntegral(scip, vals[i]);
+
+            if( SCIPisNegative(scip, vals[i]) )
+               b -= vals[i];
+         }
+         unmatched = unmatched || !isFiniteNonnegativeIntegral(scip, b);
+
+         if( !unmatched )
+         {
+            if( SCIPisEQ(scip, lhs, rhs) )
+            {
+               SCIPdebugMsg(scip, "classified as EQKNAPSACK: ");
+               SCIPdebugPrintCons(scip, cons, NULL);
+               nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_EQKNAPSACK] += 1 ;
+               nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_EQKNAPSACK]++;
+               classforcons[c] = SCIP_CONSTYPE_EQKNAPSACK;
+               SCIPfreeBufferArray(scip, &vals);
+               SCIPfreeBufferArray(scip, &vars);
+               continue;
+            }
+            else
+            {
+               SCIP_Bool matched;
+
+               matched = FALSE;
+               for( i = 0; i < nvars && !matched; i++ )
+               {
+                  matched = matched || SCIPisEQ(scip, b, REALABS(vals[i]));
+               }
+
+               SCIPdebugMsg(scip, "classified as %s: ", matched ? "BINPACKING" : "KNAPSACK");
+               SCIPdebugPrintCons(scip, cons, NULL);
+               nfoundconstypesrangeddoublecount[matched ? SCIP_CONSTYPE_BINPACKING : SCIP_CONSTYPE_KNAPSACK] += 1 ;
+               nfoundconstypesrangedsinglecount[matched ? SCIP_CONSTYPE_BINPACKING : SCIP_CONSTYPE_KNAPSACK]++;
+               classforcons[c] = matched ? SCIP_CONSTYPE_BINPACKING : SCIP_CONSTYPE_KNAPSACK;
+
+            }
+
+            if( SCIPisInfinity(scip, -lhs) )
+            {
+               SCIPfreeBufferArray(scip, &vals);
+               SCIPfreeBufferArray(scip, &vars);
+               continue;
+            }
+            else
+               rhs = SCIPinfinity(scip);
+         }
+      }
+
+      /* is constraint of type SCIP_CONSTYPE_{INTKNAPSACK}? */
+      {
+         SCIP_Real b;
+         SCIP_Bool unmatched;
+
+         unmatched = FALSE;
+
+         b = rhs;
+         unmatched = unmatched || !isFiniteNonnegativeIntegral(scip, b);
+
+         for( i = 0; i < nvars && !unmatched; i++ )
+         {
+            unmatched = unmatched || SCIPvarGetType(vars[i]) == SCIP_VARTYPE_CONTINUOUS;
+            unmatched = unmatched || SCIPisNegative(scip, SCIPvarGetLbGlobal(vars[i]));
+            unmatched = unmatched || !SCIPisIntegral(scip, vals[i]);
+            unmatched = unmatched || SCIPisNegative(scip, vals[i]);
+         }
+
+         if( !unmatched )
+         {
+            SCIPdebugMsg(scip, "classified as INTKNAPSACK: ");
+            SCIPdebugPrintCons(scip, cons, NULL);
+            nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_INTKNAPSACK] += 1 ;
+            nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_INTKNAPSACK]++;
+            classforcons[c] = SCIP_CONSTYPE_INTKNAPSACK;
+
+            if( SCIPisInfinity(scip, -lhs) )
+            {
+               SCIPfreeBufferArray(scip, &vals);
+               SCIPfreeBufferArray(scip, &vars);
+               continue;
+            }
+            else
+               rhs = SCIPinfinity(scip);
+         }
+      }
+
+      /* is constraint of type SCIP_CONSTYPE_{MIXEDBINARY}? */
+      {
+         SCIP_Bool unmatched;
+
+         unmatched = FALSE;
+         for( i = 0; i < nvars && !unmatched; i++ )
+         {
+            if( SCIPvarGetType(vars[i]) != SCIP_VARTYPE_CONTINUOUS
+               && (SCIPisLE(scip, SCIPvarGetLbGlobal(vars[i]), -1.0)
+                  || SCIPisGE(scip, SCIPvarGetUbGlobal(vars[i]), 2.0)) )
+               unmatched = TRUE;
+         }
+
+         if( !unmatched )
+         {
+            SCIPdebugMsg(scip, "classified as MIXEDBINARY (%d): ", isRangedRow(scip, lhs, rhs) ? 2 : 1);
+            SCIPdebugPrintCons(scip, cons, NULL);
+            nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_MIXEDBINARY] += 1 ;
+            nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_MIXEDBINARY]++;
+            classforcons[c] = SCIP_CONSTYPE_MIXEDBINARY;
+            SCIPfreeBufferArray(scip, &vals) ;
+            SCIPfreeBufferArray(scip, &vars) ;
+            continue;
+
+         }
+      }
+
+      /* no special structure detected */
+      SCIPdebugMsg(scip, "classified as GENERAL: ");
+      SCIPdebugPrintCons(scip, cons, NULL);
+      nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_GENERAL] += 1 ;
+      nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_GENERAL]++;
+      classforcons[c] = SCIP_CONSTYPE_GENERAL;
+      SCIPfreeBufferArray(scip, &vals);
+      SCIPfreeBufferArray(scip, &vars);
+   }
+
+
+
+
+   classifier = new ConsClassifier( scip, "constypes according to miplip", (int) SCIP_CONSTYPE_GENERAL + 1, getNConss() );
+
+#ifdef WRITE_ORIG_CONSTYPES
+   std::ofstream myfile;
+   myfile.open ("origconstypes.csv", std::ios::app );
+   myfile << SCIPgetProbName(scip) << ", ";
+#endif
+
+
+
+   /** set class names and descriptions of every class */
+   for( int c = 0; c < classifier->getNClasses(); ++ c )
+   {
+      std::string name;
+      std::stringstream text;
+      switch( c )
+      {
+         case (int) SCIP_CONSTYPE_EMPTY:
+            name = "empty";
+            break;
+         case SCIP_CONSTYPE_FREE:
+            name = "free";
+            break;
+         case SCIP_CONSTYPE_SINGLETON:
+            name = "singleton";
+            break;
+         case SCIP_CONSTYPE_AGGREGATION:
+            name = "aggregation";
+            break;
+         case SCIP_CONSTYPE_VARBOUND:
+            name = "varbound";
+            break;
+         case SCIP_CONSTYPE_SETPARTITION:
+            name = "setpartition";
+            break;
+         case SCIP_CONSTYPE_SETPACKING:
+            name = "setpacking";
+            break;
+         case SCIP_CONSTYPE_SETCOVERING:
+            name = "setcovering";
+            break;
+         case SCIP_CONSTYPE_CARDINALITY:
+            name = "cardinality";
+            break;
+         case SCIP_CONSTYPE_INVKNAPSACK:
+            name = "invknapsack";
+            break;
+         case SCIP_CONSTYPE_EQKNAPSACK:
+            name = "eqknapsack";
+            break;
+         case SCIP_CONSTYPE_BINPACKING:
+            name = "binpacking";
+            break;
+         case SCIP_CONSTYPE_KNAPSACK:
+            name = "knapsack";
+            break;
+         case SCIP_CONSTYPE_INTKNAPSACK:
+            name = "intknapsack";
+            break;
+         case SCIP_CONSTYPE_MIXEDBINARY:
+            name = "mixed binary";
+            break;
+         case SCIP_CONSTYPE_GENERAL:
+            name = "general";
+            break;
+         default:
+            name = "unknown";
+            break;
+
+
+      }
+
+
+#ifdef WRITE_ORIG_CONSTYPES
+         myfile << " " <<  nfoundconstypesrangeddoublecount[c] << ",";
+#endif
+
+      classifier->setClassName( c, name.c_str() );
+      text << "This class contains all constraints that are of (miplib) constype \"" << name << "\".";
+      classifier->setClassDescription( c, text.str().c_str() );
+   }
+
+#ifdef WRITE_ORIG_CONSTYPES
+      myfile << std::endl;
+      myfile.close();
+#endif
+
+
+
+   for( int i = 0; i < classifier->getNConss(); ++ i )
+   {
+      classifier->assignConsToClass( i, classforcons[i] );
+   }
+
+
+
+   classifier->removeEmptyClasses();
+
+   std::cout << " consclassifier miplib constypes:" << " yields a classification with " << classifier->getNClasses()
+      << " different constraint classes" << std::endl;
+
+   return classifier;
+}
+
+
+
+
+
+
 
 /** returns a new constraint classifier
  *  where all constraints with identical consname (ignoring digits) are assigned to the same class */
