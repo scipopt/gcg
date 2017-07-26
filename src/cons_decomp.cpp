@@ -3176,9 +3176,11 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    DEC_DETECTOR* detector;
    DEC_DECOMP** decdecomps;
    int ndecdecomps;
+   SCIP_CLOCK* detectorclock;
    SCIP_RESULT result;
 
    /* decompositions and seeeds */
+   gcg::SeeedPtr dummyAncestor;
    int dec;
    gcg::SeeedPtr seeed;
    int dupcount;
@@ -3206,6 +3208,9 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
 
    seeedpool = conshdlrdata->seeedpool;
 
+   dummyAncestor = new gcg::Seeed( scip, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars() );
+   seeedpool->addSeeedToAncestor( dummyAncestor );
+
    SCIPdebugMessagePrint(scip, "Checking %d detectors for legacy mode.\n", conshdlrdata->ndetectors);
 
    /* for each detector: check whether legacymode is enabled */
@@ -3228,17 +3233,21 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
             SCIPverbMessage( scip, SCIP_VERBLEVEL_NORMAL , NULL,
                "Start legacy mode detection for detector <%s>.\n", detector->name );
 
+            /* measure time detector needs for detecting decompositions */
+            SCIPcreateClock( scip, & detectorclock );
+            SCIP_CALL_ABORT( SCIPstartClock( scip, detectorclock ) );
+
             /* call old detectStructure callback method */
             SCIP_CALL( (*detector->detectStructure)( scip, detector->decdata, &decdecomps, &ndecdecomps, &result ) );
+
+            SCIP_CALL_ABORT( SCIPstopClock( scip, detectorclock ) );
 
             if( result == SCIP_SUCCESS )
             {
                /* check for duplicates and redundant information */
-               /* @todo should duplicate check be executed on this level */
                for( dec = 0; dec < ndecdecomps; ++dec )
                {
-                  assert(decdecomps != NULL);
-                  DECdecompSetDetector(decdecomps[dec], detector);
+                  assert( decdecomps != NULL );
                }
                if( ndecdecomps > 2 )
                {
@@ -3268,6 +3277,14 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
                   if ( !seeedpool->hasDuplicate( seeed ) )
                   {
                      seeed->setDetectorChainString( detectorchaininfo );
+
+                     /* set statistical data */
+                     seeed->setDetectorPropagated(detector);
+                     /* @todo this is actually the whole detector time! in propagate seeeds methods, time of each seeed
+                      * is set after detecting this seeed */
+                     seeed->addClockTime( SCIPgetClockTime( scip, detectorclock ) );
+                     seeed->addDecChangesFromAncestor( dummyAncestor );
+
                      seeedpool->addSeeedToFinished( seeed );
                   }
                   else
@@ -3280,13 +3297,14 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
                {
                   SCIPdebugMessagePrint( scip, "%d of the resulting seeeds are already contained in the seeedpool.\n", dupcount );
                }
-               /* @todo set statistical data of seeed? */
+
+               SCIPfreeClock( scip, & detectorclock );
             }
             else
             {
-               SCIPdebugPrintf("Failure!\n");
+               SCIPdebugPrintf( "Failure!\n" );
             }
-            SCIPfreeMemoryArrayNull(scip, &decdecomps); // @todo necessary/correct?
+            SCIPfreeMemoryArrayNull( scip, &decdecomps ); // @todo necessary/correct?
          }
       }
    }
@@ -3509,41 +3527,40 @@ SCIP_RETCODE DECdetectStructure(
 
    conshdlrdata->seeedpool = NULL;
 
-   /* only legacy mode */
+   /* check whether only legacy mode should be executed */
    SCIP_Bool onlylegacymode;
    SCIPgetBoolParam(scip, "detection/onlylegacymode", &onlylegacymode);
+
    if( !onlylegacymode )
    {
 
-   /** get data of the seeedpool with original vars and conss */
-   if ( conshdlrdata->seeedpoolunpresolved == NULL )
-      conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
+      /** get data of the seeedpool with original vars and conss */
+      if( conshdlrdata->seeedpoolunpresolved == NULL )
+         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE); /**< seeedpool with original variables and constraints */
 
-   std::vector<int> candidatesNBlocks(0);                            /**< candidates for number of blocks */
-   std::vector<gcg::ConsClassifier*> consClassDistributions;         /**< collection of different constraint class distributions */
-   std::vector<gcg::VarClassifier*> varClassDistributions;           /**< collection of different variable class distributions */
-   std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
+      std::vector<int> candidatesNBlocks(0); /**< candidates for number of blocks */
+      std::vector<gcg::ConsClassifier*> consClassDistributions; /**< collection of different constraint class distributions */
+      std::vector<gcg::VarClassifier*> varClassDistributions; /**< collection of different variable class distributions */
+      std::vector<SCIP_CONS*> indexToCons; /**< stores the corresponding scip constraints pointer */
 
-   std::vector<gcg::SeeedPtr> seeedsunpresolved(0);                    /**< seeeds that were found for the unpresolved problem */
+      std::vector<gcg::SeeedPtr> seeedsunpresolved(0); /**< seeeds that were found for the unpresolved problem */
 
-   SCIP_Real* scores;
-   int i;
+      SCIP_Real* scores;
+      int i;
 
-   SCIP_Bool presolveOrigProblem;
-   SCIP_Bool calculateOrigDecomps;
-   SCIP_Bool classifyOrig;
+      SCIP_Bool presolveOrigProblem;
+      SCIP_Bool calculateOrigDecomps;
+      SCIP_Bool classifyOrig;
 
-   assert(scip != NULL);
+      assert(scip != NULL);
 
-   presolveOrigProblem = TRUE;
+      presolveOrigProblem = TRUE;
 
-   SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
-   SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
+      SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
+      SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
 
-
-
-   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
-      SCIP_CALL( SCIPtransformProb(scip) );
+      if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+         SCIP_CALL(SCIPtransformProb(scip));
 
 //<<<<<<< HEAD
 //   if( conshdlrdata->ndecomps == 0)
@@ -3553,114 +3570,114 @@ SCIP_RETCODE DECdetectStructure(
 //   }
 //=======
 
-   /** get block number candidates and conslcassifier for original problem*/
-   if( classifyOrig )
-   {
-      conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
-      candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
-   }
+      /** get block number candidates and conslcassifier for original problem*/
+      if( classifyOrig )
+      {
+         conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
+         candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
+      }
 
-   /** detection for original problem */
-   if( calculateOrigDecomps )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "start finding decompositions for original problem!\n");
-      seeedsunpresolved = conshdlrdata->seeedpoolunpresolved->findSeeeds();
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished finding decompositions for original problem!\n");
+      /** detection for original problem */
+      if( calculateOrigDecomps )
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "start finding decompositions for original problem!\n");
+         seeedsunpresolved = conshdlrdata->seeedpoolunpresolved->findSeeeds();
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "finished finding decompositions for original problem!\n");
 
-   }
+      }
 
-   /** get the cons and var classifier for translating them later*/
-   for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNConsClassifiers(); ++i )
-   {
-      gcg::ConsClassifier* classifier = new gcg::ConsClassifier( conshdlrdata->seeedpoolunpresolved->getConsClassifier(i) );
-      consClassDistributions.push_back( classifier );
-   }
-   for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNVarClassifiers(); ++i )
-   {
-      gcg::VarClassifier* classifier = new gcg::VarClassifier( conshdlrdata->seeedpoolunpresolved->getVarClassifier(i) );
-      varClassDistributions.push_back( classifier );
-   }
+      /** get the cons and var classifier for translating them later*/
+      for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNConsClassifiers(); ++i )
+      {
+         gcg::ConsClassifier* classifier = new gcg::ConsClassifier(
+            conshdlrdata->seeedpoolunpresolved->getConsClassifier(i));
+         consClassDistributions.push_back(classifier);
+      }
+      for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNVarClassifiers(); ++i )
+      {
+         gcg::VarClassifier* classifier = new gcg::VarClassifier(conshdlrdata->seeedpoolunpresolved->getVarClassifier(i));
+         varClassDistributions.push_back(classifier);
+      }
 
-   //Presolving
-   if(presolveOrigProblem)
-      SCIP_CALL( SCIPpresolve(scip) );
+      //Presolving
+      if( presolveOrigProblem )
+         SCIP_CALL(SCIPpresolve(scip));
 
+      /** detection for presolved problem */
 
-   /** detection for presolved problem */
+      if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, cannot detect structure!\n");
 
-   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, cannot detect structure!\n");
+         /** presolving removed all constraints or variables */
+         if( SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+            conshdlrdata->hasrun = TRUE;
 
-      /** presolving removed all constraints or variables */
-      if( SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
-         conshdlrdata->hasrun = TRUE;
+         *result = SCIP_DIDNOTRUN;
+         return SCIP_OKAY;
+      }
 
-      *result = SCIP_DIDNOTRUN;
-      return SCIP_OKAY;
-   }
+      /** start detection clocks */
+      SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
+      SCIP_CALL(SCIPstartClock(scip, conshdlrdata->detectorclock));
 
-   /** start detection clocks */
-   SCIP_CALL( SCIPresetClock(scip, conshdlrdata->detectorclock) );
-   SCIP_CALL( SCIPstartClock(scip, conshdlrdata->detectorclock) );
+      if( conshdlrdata->seeedpool == NULL )
+      {
+         SCIPdebugMessagePrint(scip, "create seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
 
-   if( conshdlrdata->seeedpool == NULL )
-   {
-      SCIPdebugMessagePrint(scip, "create seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
+         conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+         SCIPdebugMessagePrint(scip, "created seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
+      }
+      else
+         SCIPdebugMessagePrint(scip, "seeedpool is not NULL \n");
 
-      conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
-      SCIPdebugMessagePrint(scip, "created seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
-   }
-   else
-      SCIPdebugMessagePrint(scip, "seeedpool is not NULL \n");
+      conshdlrdata->seeedpool->calcClassifierAndNBlockCandidates(scip);
 
-     conshdlrdata->seeedpool->calcClassifierAndNBlockCandidates(scip);
+      /** get block number candidates and translate orig classification and found seeeds (if any) to presolved problem */
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "started translate seeed method!\n");
+         std::vector<gcg::Seeed*> translatedSeeeds(0);
+         std::vector<gcg::ConsClassifier*> translatedConsDistributions(0);
+         std::vector<gcg::VarClassifier*> translatedVarDistributions(0);
 
-   /** get block number candidates and translate orig classification and found seeeds (if any) to presolved problem */
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");
-      std::vector<gcg::Seeed*> translatedSeeeds(0);
-      std::vector<gcg::ConsClassifier*> translatedConsDistributions(0);
-      std::vector<gcg::VarClassifier*> translatedVarDistributions(0);
+         conshdlrdata->seeedpool->translateSeeedData(conshdlrdata->seeedpoolunpresolved, seeedsunpresolved,
+            translatedSeeeds, consClassDistributions, translatedConsDistributions, varClassDistributions,
+            translatedVarDistributions);
 
-      conshdlrdata->seeedpool->translateSeeedData( conshdlrdata->seeedpoolunpresolved, seeedsunpresolved, translatedSeeeds,
-         consClassDistributions, translatedConsDistributions, varClassDistributions, translatedVarDistributions );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "number of translated original seeeds: %d \n ",
+            translatedSeeeds.size());
 
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
+         conshdlrdata->seeedpool->populate(translatedSeeeds);
 
-      conshdlrdata->seeedpool->populate(translatedSeeeds);
+         for( size_t d = 0; d < translatedConsDistributions.size(); ++d )
+            conshdlrdata->seeedpool->addConsClassifier(translatedConsDistributions[d]);
 
-      for ( size_t d = 0; d < translatedConsDistributions.size(); ++d )
-         conshdlrdata->seeedpool->addConsClassifier( translatedConsDistributions[d] );
+         for( size_t d = 0; d < translatedVarDistributions.size(); ++d )
+            conshdlrdata->seeedpool->addVarClassifier(translatedVarDistributions[d]);
 
-      for ( size_t d = 0; d < translatedVarDistributions.size(); ++d )
-         conshdlrdata->seeedpool->addVarClassifier( translatedVarDistributions[d] );
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "finished translate seeed method!\n");
 
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished translate seeed method!\n");
+         for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
+            conshdlrdata->seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
+      }
 
-      for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
-         conshdlrdata->seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
-   }
-
-   conshdlrdata->seeedpool->findDecompositions();
+      conshdlrdata->seeedpool->findDecompositions();
 
 //   SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
 //   SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
 
+      //	  seeedpool.freeCurrSeeeds();
 
-   //	  seeedpool.freeCurrSeeeds();
+      SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
 
-   /* @todo measure legacy mode too */
-   SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );
+      SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
 
-   SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
+   } /* end of if( !onlylegacy ) */
 
-   /* start of legacy mode stuff */
-   } /* end of ugly only legacy mode if */
-
-   SCIPdebugMessagePrint(scip, "Start legacy mode.\n");
+   /* @todo clocks for legacy mode */
+   SCIPdebugMessagePrint(scip, "Start legacy mode detection.\n");
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip );
-   SCIPdebugMessagePrint(scip, "Finished legacy mode.\n");
+   SCIPdebugMessagePrint(scip, "Finished legacy mode detection.\n");
 
 //   if( conshdlrdata->ndecomps > 0 )
 //   {
