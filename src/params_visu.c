@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,53 +25,32 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_tex.h
- * @brief  tex file reader for writing decomposition details to LaTeX files
- * @author Hanna Franzen
- * @ingroup FILEREADERS
-
- * This reader can write reports of decompositions to a tex file.
- * The gp reader is required for visualizations.
-
+/**@file    params_visu.c
+ * @brief   parameter-related stuff for visualization
+ * @author  Hanna Franzen
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_READER_TEX_H__
-#define GCG_READER_TEX_H__
+#include "params_visu.h"
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+/* global visualization parameters */
 
-/** includes the tex file reader into SCIP */
-extern SCIP_RETCODE SCIPincludeReaderTex(
-   SCIP* scip /**< SCIP data structure */
-   );
+SCIP_Bool visudraftmode;
+VISU_COLORSCHEME visucolorscheme;
 
-/** writes a visualization for the given seeed */
-extern SCIP_RETCODE GCGwriteTexVisualization(
-   char* filename,   /**< filename including path */
-   int seeedid       /**< id of seeed to visualize */
-   );
 
-/** writes a visualization of the family tree of the current seeedpool */
-extern SCIP_RETCODE GCGwriteTexFamilyTree(
-   char* filename   /**< filename including path */
-   //@todo how to get/give the seeedpool?
-   );
+/* getter */
 
-/*@todo more params? statistics, titlepage, toc, etc? */
-/*@todo is a int* of seeedids the best option? */
-/** writes a report for the given seeeds */
-extern SCIP_RETCODE GCGwriteTexReport(
-   char* filename,   /**< filename including path */
-   int* seeedids     /**< ids of seeeds to visualize */
-   );
+/** gets if draftmode is on
+ * draftmode lets visualizations omit nonzeros */
+SCIP_Bool getDraftmode()
+{
+   return visudraftmode;
+}
 
-/** makes a new makefile and readme for the given .tex file */
-extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(SCIP* scip, /**< SCIP data structure */
-   FILE* file /**< File for which the makefile & readme are generated */
-);
-
-#endif /* GCG_READER_TEX_H__ */
-
+/** gets the colorscheme for visualizations */
+VISU_COLORSCHEME getColorscheme()
+{
+   return visucolorscheme;
+}

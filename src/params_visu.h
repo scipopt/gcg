@@ -38,6 +38,12 @@
 #ifndef GCG_PARAMS_VISU_H__
 #define GCG_PARAMS_VISU_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "scip/scip.h"
+
 #define COLOR_WHITE     "#FFFFFF"
 #define COLOR_BLUE      "#00549F"
 #define COLOR_LBLUE     "#8EBAE5"
@@ -63,11 +69,21 @@
 #define DEFAULT_COLOR_NONZERO      COLOR_BLACK
 #define DEFAULT_COLOR_LINE         COLOR_BLACK   /* for outlines of blocks */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+enum Colorscheme
+{
+   COLORSCHEME_DEFAULT  = 0,     /**< default colors (supposedly eye-friendly) */
+   COLORSCHEME_GREY     = 1,     /**< on a range from black to white */
+   COLORSCHEME_MANUAL   = 2      /**< take user-defined input */
+};
 
-/* function headers here */
+typedef enum Colorscheme VISU_COLORSCHEME; /**< visualization colorscheme type */
+
+/** gets if draftmode is on
+ * draftmode lets visualizations omit nonzeros */
+SCIP_Bool getDraftmode();
+
+/** gets the colorscheme for visualizations */
+VISU_COLORSCHEME getColorscheme();
 
 #ifdef __cplusplus
 }

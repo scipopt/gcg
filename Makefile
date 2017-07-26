@@ -221,6 +221,7 @@ LIBOBJ		=	reader_tex.o \
 			class_seeed.o \
 			class_seeedpool.o \
 			class_miscvisualization.o \
+			params_visu.o \
 			dec_compgreedily.o \
 			dec_mastersetcover.o \
 			dec_mastersetpack.o \

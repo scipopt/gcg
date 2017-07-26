@@ -67,7 +67,6 @@ struct SCIP_ReaderData
 {
    SCIP_Bool       usegp;           /** if true uses gp files as intermediate step */
    SCIP_Bool       picturesonly;    /** if true only tex code for the pictures is generated (no statistics included) */
-   SCIP_Bool       draftmode;       /** if true shows no non-zeroes, recommended if too slow or too memory-intensive */
 };
 
 /** Getter of parameter usegp */
@@ -90,16 +89,6 @@ SCIP_Bool GCGtexGetPicturesonly(
    return readerdata->picturesonly;
 }
 
-/** Getter of parameter draftmode */
-SCIP_Bool GCGtexGetDraftmode(
-   SCIP*                scip               /**< SCIP data structure */
-   )
-{
-   SCIP_READERDATA* readerdata;
-   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
-   return readerdata->draftmode;
-}
-
 /** destructor of reader to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_READERFREE(readerFreeTex)
@@ -119,12 +108,6 @@ SCIP_DECL_READERFREE(readerFreeTex)
 static
 SCIP_DECL_READERREAD(readerReadTex)
 {  /*lint --e{715}*/
-   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL,
-         "Please read in a problem before reading in the corresponding structure file!\n");
-      return SCIP_OKAY;
-   }
    return SCIP_READERROR;
 }
 

@@ -35,9 +35,6 @@
 
 #include "class_miscvisualization.h"
 
-
-
-
 namespace gcg {
 
 
