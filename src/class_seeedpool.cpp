@@ -1541,7 +1541,7 @@ bool Seeedpool::hasDuplicate(
 {
    assert( seeed != NULL );
 
-   return seeedIsNoDuplicate( seeed, currSeeeds, finishedSeeeds, true );
+   return !seeedIsNoDuplicate( seeed, currSeeeds, finishedSeeeds, true );
 }
 
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */

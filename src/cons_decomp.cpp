@@ -3247,7 +3247,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
                /* check for duplicates and redundant information */
                for( dec = 0; dec < ndecdecomps; ++dec )
                {
-                  assert( decdecomps != NULL );
+                  assert( decdecomps[dec] != NULL );
                }
                if( ndecdecomps > 2 )
                {
