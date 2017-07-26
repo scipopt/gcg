@@ -42,7 +42,6 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "reader_tex.h"
 #include "scip_misc.h"
@@ -51,6 +50,7 @@
 #include "cons_decomp.h"
 #include "pub_decomp.h"
 #include "struct_decomp.h"
+#include "class_miscvisualization.h"
 
 
 #define READER_NAME             "texreader"
@@ -59,8 +59,6 @@
 
 #define DEFAULT_USEGP            FALSE
 #define DEFAULT_PICTURESONLY     FALSE
-#define DEFAULT_DRAFTMODE        FALSE
-
 
 /** data for dec reader */
 struct SCIP_ReaderData
@@ -124,31 +122,6 @@ SCIP_DECL_READERWRITE(readerWriteTex)
    SCIP_CALL( GCGtexWriteEndCode(scip,file) );
 
    *result = SCIP_SUCCESS;
-   return SCIP_OKAY;
-}
-
-/** gets the path of the file */
-SCIP_RETCODE GCGgetFilePath(
-   SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file,               /**< file */
-   char*                pfile               /**< return path of file */
-   )
-{
-   char sympath[SCIP_MAXSTRLEN];
-   int filedesc;
-   int success;
-
-   filedesc = fileno(file); /* get link to file descriptor */
-   if( filedesc < 0 )
-   {
-      return SCIP_FILECREATEERROR;
-   }
-   snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
-   success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
-   if( success < 0 )
-   {
-      return SCIP_NOFILE;
-   }
    return SCIP_OKAY;
 }
 
@@ -678,7 +651,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
       /* --- create a gnuplot file for the decomposition --- */
 
       /* get path to write to and put it into gpfilename */
-      GCGgetFilePath(scip, file, pfile);
+      GCGgetFilePath(file, pfile);
       strcpy(pfilecpy, pfile);
       SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
       strcpy(gpfilename, filepath);
@@ -847,7 +820,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    /* --- create a Makefile --- */
 
    /* get path to write to and put it into makefilename */
-   GCGgetFilePath(scip, file, pfile);
+   GCGgetFilePath(file, pfile);
    strcpy(pfilecpy, pfile);
    SCIPsplitFilename(pfilecpy, &filepath, &filename, NULL, NULL);
    strcpy(makefilename, filepath);
@@ -962,11 +935,6 @@ SCIPincludeReaderTex(
          "reading/texreader/picturesonly",
          "if true only tex code for the pictures is generated (no statistics, no report file)",
          &readerdata->picturesonly, FALSE, DEFAULT_PICTURESONLY, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip,
-         "reading/texreader/draftmode",
-         "if true shows no non-zeroes, recommended if too slow or too memory-intensive",
-         &readerdata->draftmode, FALSE, DEFAULT_DRAFTMODE, NULL, NULL) );
 
    return SCIP_OKAY;
 }

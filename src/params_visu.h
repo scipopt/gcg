@@ -80,10 +80,12 @@ typedef enum Colorscheme VISU_COLORSCHEME; /**< visualization colorscheme type *
 
 /** gets if draftmode is on
  * draftmode lets visualizations omit nonzeros */
-SCIP_Bool getDraftmode();
+extern
+SCIP_Bool getDraftmode(void);
 
 /** gets the colorscheme for visualizations */
-VISU_COLORSCHEME getColorscheme();
+extern
+VISU_COLORSCHEME getColorscheme(void);
 
 #ifdef __cplusplus
 }

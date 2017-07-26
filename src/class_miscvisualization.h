@@ -66,14 +66,12 @@ public:
       std::string extension   /**< file extension */
       );
 
-   /*@todo still work with FILEs? probably just ofstreams */
-   /** gives the path of a file
+   /** gives the path of the file
     *
     * @return path of file
     * */
    std::string GCGgetFilePath(
-      FILE* file,          /**< file */
-      std::string pfile    /**< return path of file */
+      FILE* file          /**< file */
       );
 
    /*@todo still necessary with ofstreams? probably not? */

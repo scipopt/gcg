@@ -50,8 +50,9 @@ extern SCIP_RETCODE SCIPincludeReaderTex(
 
 /** writes a visualization for the given seeed */
 extern SCIP_RETCODE GCGwriteTexVisualization(
-   char* filename,   /**< filename including path */
-   int seeedid       /**< id of seeed to visualize */
+   char* filename,         /**< filename including path */
+   int seeedid,            /**< id of seeed to visualize */
+   SCIP_Bool statistics    /**< additionally to picture show statistics */
    );
 
 /** writes a visualization of the family tree of the current seeedpool */

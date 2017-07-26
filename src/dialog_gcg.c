@@ -303,7 +303,6 @@ SCIP_RETCODE reportAllDecompositions(
    SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
    )
 {
-   FILE* file;
    DEC_DECOMP** decomps;
    char* pname;
    char* dirname;
@@ -318,8 +317,6 @@ SCIP_RETCODE reportAllDecompositions(
    int ndecompsoftype;
    int type;
    int i;
-   int writtendecomps;
-
 
    /** get temporary decomp files */
    ndecomps = SCIPconshdlrDecompGetNFinishedDecomps(scip);
@@ -388,42 +385,12 @@ SCIP_RETCODE reportAllDecompositions(
       }
    }
 
-   /* open the new file */
-   file = fopen(outname, "w");
-   if( file == NULL )
-   {
-      SCIPdialogMessage(scip, NULL, "error creating file\n");
-      SCIPdialoghdlrClearBuffer(dialoghdlr);
-   }
-
-   /* write tex code for all decompositions (of right type) into file */
-   GCGtexWriteHeaderCode(scip, file);
-   GCGtexWriteTitlepage(scip, file, &ndecompsoftype);
-   if(!GCGtexGetPicturesonly(scip))
-   {
-      GCGtexWriteTableOfContents(scip, file);
-   }
-   writtendecomps = 0;
-   for( i = 0; i < ndecomps; i++ ){
-      if(type == 0 || DECdecompGetType(decomps[i]) == (DEC_DECTYPE) type){
-         GCGtexWriteDecompCode(scip, file, decomps[i]);
-         ++writtendecomps;
-         /* stop if max number is reached */
-         if(writtendecomps >= nmaxdecs)
-         {
-            break;
-         }
-      }
-   }
-   GCGtexWriteEndCode(scip, file);
-   GCGtexWriteMakefileAndReadme(scip, file);
-
-   /* close the file */
-   fclose(file);
+   /* ---------------------------------------------------------------------*/
+   /*@todo write tex code for all decompositions (of right type) into file */
+   /* ---------------------------------------------------------------------*/
 
    /* print result message if writing was successful */
    SCIPdialogMessage(scip, NULL, "report is written to file %s%s.%s in directory %s\n", nameinfix, pname, extension, dirname);
-
 
    /* free the decomp files */
    for( i = 0; i < ndecomps; ++i )
