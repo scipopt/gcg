@@ -71,7 +71,7 @@ def parse_arguments(args):
     parser.add_argument('-bdl', '--boundslinestyle', type=str,
                         default="line",
                         choices=['line','scatter','both'],
-                        help='Linestyle of the bounds-plot (can be "line" or "scatter" or "both"; default "line"')
+                        help='Linestyle of the bounds-plot (can be "line" or "scatter" or "both"; default "line")')
 
     parser.add_argument('-nolp', '--nolpvars', action='store_true',
                         default=False,
@@ -80,7 +80,7 @@ def parse_arguments(args):
     parser.add_argument('-lpl', '--lplinestyle', type=str,
                         default='line',
                         choices=['line','scatter'],
-                        help='Linestyle of the lpvars-plot (can be "line" or "scatter"; default "line"')
+                        help='Linestyle of the lpvars-plot (can be "line" or "scatter"; default "line")')
 
     parser.add_argument('-noip', '--noipvars', action='store_true',
                         default=False,
@@ -89,7 +89,7 @@ def parse_arguments(args):
     parser.add_argument('-ipl', '--iplinestyle', type=str,
                         default="line",
                         choices=['line','scatter'],
-                        help='Linestyle of the ipvars-plot (can be "line" or "scatter"; default "line"')
+                        help='Linestyle of the ipvars-plot (can be "line" or "scatter"; default "line")')
 
     parser.add_argument('filename', nargs='+',
                         help='Names of the files to be used for creating the bound plots')
@@ -135,6 +135,7 @@ def generate_files(files):
             dfvar=pd.DataFrame()
             orig = False
             name = None
+            problemFileName = None
             rootbounds = False
             vardetails = False
             settings = 'default'
@@ -148,6 +149,8 @@ def generate_files(files):
                     settings=line.split()[-1]
                     settings=settings.split("/")[-1]
                     settings = os.path.splitext(settings)[0]
+                elif not problemFileName and line.startswith("read problem "):
+                    problemFileName = line.split("<")[-1].replace(">","")
                 elif not orig and line.startswith("Original Program statistics:"):
                     orig = True
                 elif orig and line.startswith("Master Program statistics:"):
@@ -162,6 +165,8 @@ def generate_files(files):
                     if tmp_name[-1] == "gz" or tmp_name[-1] == "z" or tmp_name[-1] == "GZ" or tmp_name[-1] == "Z":
                         name = os.path.splitext(name)[0]
                     name = os.path.splitext(name)[0]
+                    if name == 'BLANK':
+                        name = problemFileName
                     print name
                 elif not rootbounds and line.startswith("Root bounds"):
                     # prepare storage of root bounds
@@ -362,12 +367,13 @@ def generate_files(files):
                         if params['dualoptdiff']:
                            axes['db_diff'].plot(df[xaxis], df['dualoptdiff'], '-', color = 'orange', label='dualoptdiff', alpha = .25, linewidth=1)
 
-                        # create the legend
+                        # create the legend and set the primary y-label
                         lines, labels = axes['db'].get_legend_handles_labels()
                         if params['dualdiff'] or params['dualoptdiff']:
                             lines += axes['db_diff'].get_legend_handles_labels()[0]
                             labels += axes['db_diff'].get_legend_handles_labels()[1]
                         axes['db'].legend(lines, labels)
+                        axes['db'].set_ylabel('Bounds')
 
                     # set base for x labels
                     if( xmax > 0 ):
@@ -406,13 +412,20 @@ def generate_files(files):
 
                     # set y label of secondary y-axis if necessary
                     if params['dualdiff'] or params['dualoptdiff']:
-                        plt.ylabel('diff', fontsize=10, rotation=-90, labelpad=15)
+                        plt.ylabel('Differences', fontsize=10, rotation=-90, labelpad=15)
                     
                     # ensure, that there is enough space for labels
                     plt.tight_layout()
 
-                    # save figure
-                    plt.savefig(params['outdir']+"/"+name+"_"+settings+"_"+xaxis+".png")
+                    # save figure and ensure, that there are not two files with the same name
+                    fig_filename = params['outdir']+"/"+name+"_"+settings+"_"+xaxis
+                    i = ""
+                    while os.path.isfile(fig_filename + i + ".png"):
+                        if i == "":
+                            i = "1"
+                        else:
+                            i = str(int(i)+1)
+                    plt.savefig(fig_filename + i + ".png")
 
                     # reset python variables for next instance
                     df = None
