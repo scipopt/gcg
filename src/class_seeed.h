@@ -41,6 +41,9 @@
 #include "struct_detector.h"
 #include <string>
 #include "cons_decomp.h"
+#include "graph/graph_gcg.h"
+#include "graph/graph.h"
+
 namespace gcg {
 
 enum USERGIVEN
@@ -375,6 +378,31 @@ public:
     * blocks */
    SCIP_RETCODE findVarsLinkingToStairlinking(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
+      );
+
+   /** @todo experimental */
+   void calcStairlinkingVars(
+   	  Seeedpool* seeedpool
+   	  );
+
+   /** @todo experimental */
+   void changeBlockOrderStaircase(
+   	  GraphGCG* g
+   	  );
+
+   /** @todo atm dummy method */
+   void changeBlockOrderGreedily(
+   	  GraphGCG* g
+   	  );
+
+   /** @todo experimental */
+   void changeBlockOrder(
+   	  std::vector<int> oldToNewBlockIndex
+   	  );
+
+   /** @todo experimental */
+   std::vector< std::pair< int, std::vector< int > > > findLinkingVarsPotentiallyStairlinking(
+      Seeedpool* seeedpool
       );
 
    /** assigns all booked constraints and variables and deletes them from list of open cons and open vars */

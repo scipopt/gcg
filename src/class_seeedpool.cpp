@@ -3770,6 +3770,8 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    assert( DECdecompGetPresolved( decomp ) );
    assert( transformed );
 
+   std::cout << "Linkingvars decomp: " << DECdecompGetNLinkingvars( decomp ) << "\tStairlinkingvars decomp: " << DECdecompGetNTotalStairlinkingvars( decomp ) << "\n";
+
    /* create new seeed and initialize its data */
    SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nConss, nVars );
    seeed->setNBlocks( DECdecompGetNBlocks( decomp ) );
@@ -3802,7 +3804,8 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock(decomp);
    assert( vartoblock != NULL );
 
-   if( stairlinkingvars != NULL )
+   /* @todo test what happens if stairlinking vars are ignored */
+   if( false && stairlinkingvars != NULL )
    {
       int* nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
       int varindex;
@@ -3875,6 +3878,13 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 //   assert( DECgetMaxWhiteScore( scip, decomp ) == seeed->getMaxWhiteScore() );
 
    assert( seeed->checkConsistency( this ) );
+
+   /* @todo test stuff */
+   std::cout << "Linkingvars initially: " << seeed->getNLinkingvars() << "\tStairlinkingvars initially: " << seeed->getNTotalStairlinkingvars() << "\n";
+
+   seeed->calcStairlinkingVars( this );
+
+   std::cout << "Linkingvars after call: " << seeed->getNLinkingvars() << "\tStairlinkingvars after call: " << seeed->getNTotalStairlinkingvars() << "\n";
 
    *newseeed = seeed;
 
