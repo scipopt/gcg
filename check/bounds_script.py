@@ -150,7 +150,7 @@ def generate_files(files):
                     settings=settings.split("/")[-1]
                     settings = os.path.splitext(settings)[0]
                 elif not problemFileName and line.startswith("read problem "):
-                    problemFileName = line.split("<")[-1].replace(">","")
+                    problemFileName = os.path.splitext(os.path.basename(line.split("<")[-1].replace(">","").replace("\n","")))[0]
                 elif not orig and line.startswith("Original Program statistics:"):
                     orig = True
                 elif orig and line.startswith("Master Program statistics:"):
