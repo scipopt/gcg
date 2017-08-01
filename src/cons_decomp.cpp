@@ -1159,6 +1159,40 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
 }
 
 
+SCIP_RETCODE SCIPconshdlrDecompShowCurrUserSeeedInfo
+(
+   SCIP*                   scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   int ndetectedpresolved;
+   int ndetectedunpresolved;
+   int nuserpresolvedfull;
+   int nuserpresolvedpartial;
+   int nuserunpresolvedfull;
+   int nuserunpresolvedpartial;
+
+   char* scorename;
+
+   size_t i;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if ( conshdlrdata->curruserseeed->isFromUnpresolved() )
+      conshdlrdata->curruserseeed->displaySeeed(conshdlrdata->seeedpoolunpresolved);
+   else
+      conshdlrdata->curruserseeed->displaySeeed(conshdlrdata->seeedpool);
+
+
+   return SCIP_OKAY;
+}
+
 /** sets (and adds) the decomposition structure;
  * this method should only be called if there is no seeed for this decomposition
  *
@@ -1336,6 +1370,83 @@ SCIPfreeBlockMemoryArrayNull(scip, &scoredescr, SCIP_MAXSTRLEN);
 return SCIP_OKAY;
 }
 
+SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
+   SCIP* scip
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+   char * scorename;
+   char * scoredescr;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrdataGetScoretype(conshdlrdata) );
+   scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrdataGetScoretype(conshdlrdata) );
+
+
+   SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n" );
+
+   SCIPdialogMessage(scip, NULL, "\n%30s    %4s\n", "detector" , "char"  );
+   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "--------" , "----"  );
+
+   for( int det = 0; det < conshdlrdata->ndetectors; ++det )
+   {
+      DEC_DETECTOR* detector;
+
+      detector = conshdlrdata->detectors[det];
+
+      SCIPdialogMessage(scip, NULL, "%30s    %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector)  );
+   }
+   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "given by user" , "U"  );
+
+   SCIPdialogMessage(scip, NULL, "\n" );
+
+   SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
+
+//   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  maxwhi  history  pre  nopcon  nopvar"
+//      "  usr"
+//      "  sel \n");
+//   SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------"
+//      "  ---"
+//      "  --- \n");
+
+   SCIPdialogMessage(scip, NULL, "\n" );
+
+   SCIPdialogMessage(scip, NULL, "List of abbreviations of decomposition table \n" );
+   SCIPdialogMessage(scip, NULL, "\n" );
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "abbreviation", "description");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------------", "-----------");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "id", "id of the decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nbloc", "number of blocks");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmacon", "number of master constraints");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nlivar", "number of linking variables");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmavar", "number of master variables (do not occur in blocks)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", scorename, scoredescr);
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "history", "list of detector chars worked on this decomposition ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "pre", "is this decomposition for the presolved problem");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopcon", "number of open constraints");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopvar", "number of open variables");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "usr", "was this decomposition given by the user");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sel", "is this decomposition selected at the moment");
+
+   SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
+
+
+SCIPfreeBlockMemoryArrayNull(scip, &scorename, SCIP_MAXSTRLEN);
+SCIPfreeBlockMemoryArrayNull(scip, &scoredescr, SCIP_MAXSTRLEN);
+
+return SCIP_OKAY;
+}
+
+
+
 SCIP_RETCODE SCIPconshdlrDecompModifyNVisualized(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
@@ -1406,6 +1517,35 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    return SCIP_OKAY;
 }
 
+
+SCIP_RETCODE SCIPconshdlrDecompSelectVisualizeCurrentUserSeeed
+(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   char* ntovisualize;
+   SCIP_Bool endoffile;
+   int idtovisu;
+
+   int commandlen;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   gcg::Seeedpool* seeedpool = (conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+   conshdlrdata->curruserseeed->showVisualisation(seeedpool);
+
+   return SCIP_OKAY;
+}
 
 SCIP_RETCODE SCIPconshdlrDecompToolboxChoose(
    SCIP*                   scip,
@@ -1818,6 +1958,67 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       conshdlrdata->curruserseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool->getNConss(), seeedpool->getNVars() );
       conshdlrdata->curruserseeed->setIsFromUnpresolved(isfromunpresolved);
    }
+
+   /** curruserseeed is ready to modify */
+
+   finished = FALSE;
+   while ( !finished )
+   {
+      int commandlen2;
+
+      SCIP_CALL( SCIPconshdlrDecompShowCurrUserSeeedInfo(scip) );
+
+      SCIP_CALL( SCIPconshdlrDecompShowToolboxInfo(scip) );
+
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "How do you want to proceed the with the current decomposition? (or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+
+      commandlen2 = strlen(command);
+
+      /** case distinction: */
+      if( strncmp( command, "conss", commandlen2) == 0 )
+      {
+         conshdlrdata->startidvisu -= conshdlrdata->selectvisulength;
+         if(conshdlrdata->startidvisu < 0 )
+            conshdlrdata->startidvisu = 0;
+         continue;
+      }
+      if( strncmp( command, "vars", commandlen2) == 0 )
+      {
+         conshdlrdata->startidvisu += conshdlrdata->selectvisulength;
+         if( conshdlrdata->startidvisu > (int) conshdlrdata->listall->size() - conshdlrdata->selectvisulength )
+            conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
+         continue;
+      }
+      if( strncmp( command, "finish by detector", commandlen2) == 0 )
+      {
+         conshdlrdata->startidvisu = 0;
+         continue;
+      }
+      if( strncmp( command, "quit", commandlen2) == 0 )
+      {
+         conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
+         continue;
+      }
+
+      if( strncmp( command, "undo last modification", commandlen2) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog ) );
+         break;
+      }
+
+      if( strncmp( command, "help", commandlen2) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompShowHelp(scip) );
+         continue;
+      }
+
+      if( strncmp( command, "visualize", commandlen2) == 0 )
+      {
+         SCIP_CALL(SCIPconshdlrDecompSelectVisualizeCurrentUserSeeed(scip, dialoghdlr, dialog ) );
+         continue;
+      }
+   }
+
 
    return SCIP_OKAY;
 }
