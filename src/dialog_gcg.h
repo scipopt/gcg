@@ -83,6 +83,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect);
 
+/** dialog execution method for the decomposition toolbox command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox);
+
 
 /** dialog execution method for the optimize command */
 extern

@@ -1406,6 +1406,47 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    return SCIP_OKAY;
 }
 
+
+SCIP_RETCODE SCIPconshdlrDecompToolboxChoose(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   char* ntochoose;
+   SCIP_Bool endoffile;
+   int idtochoose;
+
+   int commandlen;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIPdialogMessage(scip, NULL, "Please specify the id of the (partial) decomposition to be chosen for modification:\n", conshdlrdata->selectvisulength );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntochoose, &endoffile) );
+   commandlen = strlen(ntochoose);
+
+   idtochoose = conshdlrdata->selectvisulength;
+   if( commandlen != 0)
+      idtochoose = atoi(ntochoose);
+
+   if( conshdlrdata->curruserseeed != NULL )
+      delete conshdlrdata->curruserseeed;
+
+   conshdlrdata->curruserseeed = new gcg::Seeed( conshdlrdata->listall->at(idtochoose) );
+
+   return SCIP_OKAY;
+}
+
+
+
+
 SCIP_RETCODE SCIPconshdlrDecompSelectSelect(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
@@ -1633,6 +1674,158 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
 
    return SCIP_OKAY;
 }
+
+
+
+SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Bool         finished;
+   char* command;
+   SCIP_Bool endoffile;
+   int commandlen;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+   finished = FALSE;
+
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   /** Do user want to modify existing or create a new partial decomposition ?*/
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to modify an existing (\"yes\") or create a new partial decomposition (\"no\")? : \nGCG/toolbox : ", &command, &endoffile) );
+
+   commandlen = strlen(command);
+
+   /** case distinction: */
+   if( strncmp( command, "yes", commandlen) == 0 )
+   {
+      /** 1) update list of interesting seeeds */
+
+         SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+
+
+         /** 2) while user has not aborted: show current list extract */
+
+         while ( !finished )
+         {
+            int commandlen2;
+
+            SCIP_CALL( SCIPconshdlrDecompShowListExtractHeader(scip) );
+
+            SCIP_CALL( SCIPconshdlrDecompShowListExtract(scip) );
+
+            SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+
+            commandlen2 = strlen(command);
+
+            /** case distinction: */
+            if( strncmp( command, "back", commandlen2) == 0 )
+            {
+               conshdlrdata->startidvisu -= conshdlrdata->selectvisulength;
+               if(conshdlrdata->startidvisu < 0 )
+                  conshdlrdata->startidvisu = 0;
+               continue;
+            }
+            if( strncmp( command, "next", commandlen2) == 0 )
+            {
+               conshdlrdata->startidvisu += conshdlrdata->selectvisulength;
+               if( conshdlrdata->startidvisu > (int) conshdlrdata->listall->size() - conshdlrdata->selectvisulength )
+                  conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
+               continue;
+            }
+            if( strncmp( command, "top", commandlen2) == 0 )
+            {
+               conshdlrdata->startidvisu = 0;
+               continue;
+            }
+            if( strncmp( command, "end", commandlen2) == 0 )
+            {
+               conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
+               continue;
+            }
+
+            if( strncmp( command, "choose", commandlen2) == 0 )
+            {
+               SCIP_CALL(SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog ) );
+               break;
+            }
+
+
+            if( strncmp( command, "abort", commandlen2) == 0 )
+            {
+               finished = TRUE;
+               continue;
+            }
+
+            if( strncmp( command, "change number displayed", commandlen2) == 0 )
+            {
+               SCIP_CALL(SCIPconshdlrDecompModifyNVisualized(scip, dialoghdlr, dialog) );
+               continue;
+            }
+
+            if( strncmp( command, "help", commandlen2) == 0 )
+            {
+               SCIP_CALL(SCIPconshdlrDecompShowHelp(scip) );
+               continue;
+            }
+
+            if( strncmp( command, "visualize", commandlen2) == 0 )
+            {
+               SCIP_CALL(SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
+               continue;
+            }
+         }
+   } /* finished yes == modify */
+   else
+   {
+      /* create new decomposition */
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Should the new partial decomposition be for the presolved or the unpresolved problem? (or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+      commandlen = strlen(command);
+
+      if( conshdlrdata->curruserseeed != NULL )
+         delete conshdlrdata->curruserseeed;
+
+      gcg::Seeedpool* seeedpool;
+      SCIP_Bool isfromunpresolved;
+
+      /** case distinction: */
+      if( strncmp( command, "presolved", commandlen) == 0 )
+      {
+         isfromunpresolved = FALSE;
+         if (conshdlrdata->seeedpool != NULL )
+            seeedpool = conshdlrdata->seeedpool;
+         else
+         {
+            SCIPdebugMessagePrint(scip, "create seeedpool for transformed problem, n detectors: %d \n", conshdlrdata->ndetectors);
+
+            conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+         }
+      }
+      else
+      {
+         isfromunpresolved = TRUE;
+         seeedpool = conshdlrdata->seeedpoolunpresolved;
+      }
+      conshdlrdata->curruserseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool->getNConss(), seeedpool->getNVars() );
+      conshdlrdata->curruserseeed->setIsFromUnpresolved(isfromunpresolved);
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
+
+
 
 
 
