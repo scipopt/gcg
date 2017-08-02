@@ -2430,8 +2430,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
    currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
    varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
 
-   SCIPdebugMessagePrint(scip, "varindex: %d\n", varindex);
-
    if( blockid >= conshdlrdata->curruserseeed->getNBlocks() )
       conshdlrdata->curruserseeed->setNBlocks(blockid+1);
    conshdlrdata->curruserseeed->bookAsBlockVar(varindex, blockid);
