@@ -52,7 +52,6 @@
 #include "pub_gcgheur.h"
 #include "stat.h"
 #include "reader_dec.h"
-#include "reader_tex.h"
 
 /* display the reader information */
 static

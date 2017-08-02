@@ -30,7 +30,7 @@
  * @author Hanna Franzen
  * @ingroup FILEREADERS
 
- * This reader can write reports of decompositions to a tex file.
+ * This reader can write visualizations and reports of decompositions to a tex file.
  * The gp reader might be required for visualizations.
 
  */
@@ -40,7 +40,6 @@
 #ifndef GCG_READER_TEX_H__
 #define GCG_READER_TEX_H__
 
-#include "objscip/objscip.h"
 #include "scip/scip.h"
 #include "type_decomp.h"
 
@@ -49,95 +48,8 @@ extern SCIP_RETCODE SCIPincludeReaderTex(
    SCIP* scip /**< SCIP data structure */
    );
 
-extern SCIP_RETCODE getRgbDecFromHex(
-   char*    hex,     /**< input hex rgb code of form "#000000" */
-   int*     red,     /**< output decimal r */
-   int*     green,   /**< output decimal g */
-   int*     blue     /**< output decimal b */
-   );
-
-/** write LaTeX code header & begin of document
- * The proper order in which a tex file is written goes as follows:
- *    -> GCGtexWriteHeaderCode         (required)
- *    GCGtexWriteTitlepage             (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-extern SCIP_RETCODE GCGtexWriteHeaderCode(
-   SCIP* scip, /**< SCIP data structure */
-   FILE* file /**< File pointer to write to */
-   );
-
-/** write LaTeX code title page that includes general statistics about the problem
- *  * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    -> GCGtexWriteTitlepage          (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-extern SCIP_RETCODE GCGtexWriteTitlepage(
-   SCIP* scip, /**< SCIP data structure */
-   FILE* file, /**< File pointer to write to */
-   int* npresenteddecomps /**< Number of decompositions to be shown in the file or NULL if unknown */
-   );
-
-/** write LaTeX code for table of contents
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
- *    -> GCGtexWriteTableOfContents    (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-extern SCIP_RETCODE GCGtexWriteTableOfContents(
-   SCIP* scip, /**< SCIP data structure */
-   FILE* file /**< File pointer to write to */
-   );
-
-/** writes the code for a Tikz visualization of the decomposition into the file
- * works analogously to the SCIPwriteGp function in reader_gp.c */
-extern SCIP_RETCODE writeTikz(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decomp              /**< Decomposition pointer */
-   );
-
-/** write LaTeX code for one decomposition
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    -> GCGtexWriteDecompCode         (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-extern SCIP_RETCODE GCGtexWriteDecompCode(
-   SCIP* scip, /**< SCIP data structure */
-   FILE* file, /**< File pointer to write to */
-   DEC_DECOMP* decomp /**< Decomposition pointer */
-   );
-
-/** write LaTeX code for end of document
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    -> GCGtexWriteEndCode            (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-extern SCIP_RETCODE GCGtexWriteEndCode(
-   SCIP* scip, /**< SCIP data structure */
-   FILE* file /**< File pointer to write to */
-   );
-
 /** destructor of file reader to free user data (called when SCIP is exiting) */
-extern SCIP_DECL_READERFREE(scip_free);
+extern SCIP_DECL_READERFREE(readerFreeTex);
 
 /** problem reading method of reader
   *
@@ -147,7 +59,7 @@ extern SCIP_DECL_READERFREE(scip_free);
   *
   *  If the reader detected an error in the input file, it should return with RETCODE SCIP_READERR or SCIP_NOFILE.
   */
-extern SCIP_DECL_READERREAD(scip_read);
+extern SCIP_DECL_READERREAD(readerReadTex);
 
 /** problem writing method of reader; NOTE: if the parameter "genericnames" is TRUE, then
   *  SCIP already set all variable and constraint names to generic names; therefore, this
@@ -160,7 +72,7 @@ extern SCIP_DECL_READERREAD(scip_read);
   *  If the reader detected an error in the writing to the file stream, it should return
   *  with RETCODE SCIP_WRITEERROR.
   */
-extern SCIP_DECL_READERWRITE(scip_write);
+extern SCIP_DECL_READERWRITE(readerWriteTex);
 
 /** writes a visualization for the given seeed */
 extern SCIP_RETCODE GCGwriteTexVisualization(

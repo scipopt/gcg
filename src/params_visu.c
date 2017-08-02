@@ -75,6 +75,15 @@ char* mancoloropen;
 char* mancolornonzero;
 char* mancolorline;
 
+char* greycolormastervars;
+char* greycolormastercons;
+char* greycolorlinking;
+char* greycolorstairlinking;
+char* greycolorblock;
+char* greycoloropen;
+char* greycolornonzero;
+char* greycolorline;
+
 /*@todo vars for black and white scheme */
 
 /** includes the visualization parameters into GCG */
@@ -85,16 +94,18 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    visudraftmode = FALSE;
    visucolorscheme = COLORSCHEME_DEFAULT;
 
-   mancolormastervars = DEFAULT_COLOR_MASTERVARS;
-   mancolormastercons = DEFAULT_COLOR_MASTERCONS;
-   mancolorlinking = DEFAULT_COLOR_LINKING;
-   mancolorstairlinking = DEFAULT_COLOR_STAIRLINKING;
-   mancolorblock = DEFAULT_COLOR_BLOCK;
-   mancoloropen = DEFAULT_COLOR_OPEN;
-   mancolornonzero = DEFAULT_COLOR_NONZERO;
-   mancolorline = DEFAULT_COLOR_LINE;
+   mancolormastervars =    (char*) DEFAULT_COLOR_MASTERVARS;
+   mancolormastercons =    (char*) DEFAULT_COLOR_MASTERCONS;
+   mancolorlinking =       (char*) DEFAULT_COLOR_LINKING;
+   mancolorstairlinking =  (char*) DEFAULT_COLOR_STAIRLINKING;
+   mancolorblock =         (char*) DEFAULT_COLOR_BLOCK;
+   mancoloropen =          (char*) DEFAULT_COLOR_OPEN;
+   mancolornonzero =       (char*) DEFAULT_COLOR_NONZERO;
+   mancolorline =          (char*) DEFAULT_COLOR_LINE;
 
    /*@todo initialize black and white scheme*/
+
+   return SCIP_OKAY;
 }
 
 /* getter & setter */
@@ -125,4 +136,126 @@ void SCIPvisuSetColorscheme(VISU_COLORSCHEME newscheme)
    visucolorscheme = newscheme;
 }
 
-/*@todo (getter &) setter for manual color scheme*/
+
+/*@todo setter for manual color scheme*/
+
+
+/** gets color for mastercon block in current color scheme */
+char* SCIPvisuGetColorMastercons()
+{
+   switch(SCIPvisuGetColorscheme())
+   {
+   case COLORSCHEME_GREY:
+      return greycolormastercons;
+      break;
+   case COLORSCHEME_MANUAL:
+      return mancolormastercons;
+   default:
+      return (char*) DEFAULT_COLOR_MASTERCONS;
+   }
+}
+
+/** gets color for mastervar block in current color scheme */
+char* SCIPvisuGetColorMastervars()
+{
+   switch(SCIPvisuGetColorscheme())
+   {
+   case COLORSCHEME_GREY:
+      return greycolormastervars;
+      break;
+   case COLORSCHEME_MANUAL:
+      return mancolormastervars;
+   default:
+      return (char*) DEFAULT_COLOR_MASTERVARS;
+   }
+}
+
+/** gets color for linking blocks in current color scheme */
+char* SCIPvisuGetColorLinking()
+{
+   switch(SCIPvisuGetColorscheme())
+   {
+   case COLORSCHEME_GREY:
+      return greycolorlinking;
+      break;
+   case COLORSCHEME_MANUAL:
+      return mancolorlinking;
+   default:
+      return (char*) DEFAULT_COLOR_LINKING;
+   }
+}
+
+/** gets color for stairlinking blocks in current color scheme */
+char* SCIPvisuGetColorStairlinking()
+{
+   switch(SCIPvisuGetColorscheme())
+   {
+   case COLORSCHEME_GREY:
+      return greycolorstairlinking;
+      break;
+   case COLORSCHEME_MANUAL:
+      return mancolorstairlinking;
+   default:
+      return (char*) DEFAULT_COLOR_STAIRLINKING;
+   }
+}
+
+/** gets color for normal decomp blocks in current color scheme */
+char* SCIPvisuGetColorBlock()
+{
+   switch(SCIPvisuGetColorscheme())
+   {
+   case COLORSCHEME_GREY:
+      return greycolorblock;
+      break;
+   case COLORSCHEME_MANUAL:
+      return mancolorblock;
+   default:
+      return (char*) DEFAULT_COLOR_BLOCK;
+   }
+}
+
+/** gets color for open blocks in current color scheme */
+char* SCIPvisuGetColorOpen()
+{
+   switch(SCIPvisuGetColorscheme())
+   {
+   case COLORSCHEME_GREY:
+      return greycoloropen;
+      break;
+   case COLORSCHEME_MANUAL:
+      return mancoloropen;
+   default:
+      return (char*) DEFAULT_COLOR_OPEN;
+   }
+}
+
+/** gets color for non-zero points in current color scheme */
+char* SCIPvisuGetColorNonzero()
+{
+   switch(SCIPvisuGetColorscheme())
+   {
+   case COLORSCHEME_GREY:
+      return greycolornonzero;
+      break;
+   case COLORSCHEME_MANUAL:
+      return mancolornonzero;
+   default:
+      return (char*) DEFAULT_COLOR_NONZERO;
+   }
+}
+
+/** gets color for lines in current color scheme */
+char* SCIPvisuGetColorLine()
+{
+   switch(SCIPvisuGetColorscheme())
+   {
+   case COLORSCHEME_GREY:
+      return greycolorline;
+      break;
+   case COLORSCHEME_MANUAL:
+      return mancolorline;
+   default:
+      return (char*) DEFAULT_COLOR_LINE;
+   }
+}

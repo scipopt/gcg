@@ -55,32 +55,51 @@ typedef enum Colorscheme VISU_COLORSCHEME; /**< visualization colorscheme type *
 
 
 /** includes the visualization parameters into GCG */
-extern
-SCIP_RETCODE SCIPincludeParamsVisu(
+extern SCIP_RETCODE SCIPincludeParamsVisu(
    SCIP* scip /**< SCIP data structure */
    );
 
 /** gets if draftmode is on
  * draftmode lets visualizations omit nonzeros */
-extern
-SCIP_Bool SCIPvisuGetDraftmode(void);
+extern SCIP_Bool SCIPvisuGetDraftmode(void);
 
 /** sets draftmode
  * draftmode lets visualizations omit nonzeros */
-extern
-void SCIPvisuSetDraftmode(
+extern void SCIPvisuSetDraftmode(
    SCIP_Bool setmode
    );
 
 /** gets the colorscheme for visualizations */
-extern
-VISU_COLORSCHEME SCIPvisuGetColorscheme(void);
+extern VISU_COLORSCHEME SCIPvisuGetColorscheme(void);
 
 /** sets colorscheme for visualizations */
-extern
-void SCIPvisuSetColorscheme(
+extern void SCIPvisuSetColorscheme(
    VISU_COLORSCHEME newscheme
    );
+
+/** gets color for mastercon block in current color scheme */
+extern char* SCIPvisuGetColorMastercons(void);
+
+/** gets color for mastervar block in current color scheme */
+extern char* SCIPvisuGetColorMastervars(void);
+
+/** gets color for linking blocks in current color scheme */
+extern char* SCIPvisuGetColorLinking(void);
+
+/** gets color for stairlinking blocks in current color scheme */
+extern char* SCIPvisuGetColorStairlinking(void);
+
+/** gets color for normal decomp blocks in current color scheme */
+extern char* SCIPvisuGetColorBlock(void);
+
+/** gets color for open blocks in current color scheme */
+extern char* SCIPvisuGetColorOpen(void);
+
+/** gets color for non-zero points in current color scheme */
+extern char* SCIPvisuGetColorNonzero(void);
+
+/** gets color for lines in current color scheme */
+extern char* SCIPvisuGetColorLine(void);
 
 #ifdef __cplusplus
 }
