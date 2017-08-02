@@ -508,14 +508,6 @@ def generate_files(files):
                         if params['dualdiff'] or params['dualoptdiff']:
                             axes['db_diff'] = axes['db'].twinx()
 
-                        # create the legend and set the primary y-label
-                        lines, labels = axes['db'].get_legend_handles_labels()
-                        if params['dualdiff'] or params['dualoptdiff']:
-                            lines += axes['db_diff'].get_legend_handles_labels()[0]
-                            labels += axes['db_diff'].get_legend_handles_labels()[1]
-                        axes['db'].legend(lines, labels)
-                        axes['db'].set_ylabel('Bounds')
-
                     # set base for x labels
                     if( xmax > 0 ):
                         base = 10.0 ** (math.floor(math.log10(xmax)))
@@ -555,7 +547,7 @@ def generate_files(files):
                     if params['dualdiff'] or params['dualoptdiff']:
                         plt.ylabel('Differences', fontsize=10, rotation=-90, labelpad=15)
 
-                    for df in runs:
+                    for iter_run, df in enumerate(runs):
                         # plot the lpvars
                         if params['lpvars']:
                             frmtStr = 'c'
@@ -590,6 +582,14 @@ def generate_files(files):
                                 axes['db_diff'].plot(df[xaxis], df['dualdiff'], 'g-', label='dualdiff', alpha = .25, linewidth=1)
                             if params['dualoptdiff']:
                                axes['db_diff'].plot(df[xaxis], df['dualoptdiff'], '-', color = 'orange', label='dualoptdiff', alpha = .25, linewidth=1)
+                            if iter_run == 0:
+                                # create the legend and set the primary y-label
+                                lines, labels = axes['db'].get_legend_handles_labels()
+                                if params['dualdiff'] or params['dualoptdiff']:
+                                    lines += axes['db_diff'].get_legend_handles_labels()[0]
+                                    labels += axes['db_diff'].get_legend_handles_labels()[1]
+                                axes['db'].legend(lines, labels)
+                                axes['db'].set_ylabel('Bounds')
 
                     # ensure, that there is enough space for labels
                     plt.tight_layout()
