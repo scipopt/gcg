@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_tex.cpp
+/**@file   ReaderTEX.cpp
  * @brief  tex file reader for writing seeeds to LaTeX files
  * @author Hanna Franzen
  */
@@ -50,8 +50,8 @@
 #include "cons_decomp.h"
 #include "pub_decomp.h"
 #include "struct_decomp.h"
+#include "params_visu.h"
 #include "class_miscvisualization.h"
-
 
 #define READER_NAME             "texreader"
 #define READER_DESC             "LaTeX file writer for seeed visualization"
@@ -60,6 +60,7 @@
 #define DEFAULT_USEGP            FALSE
 #define DEFAULT_PICTURESONLY     FALSE
 
+
 /** data for dec reader */
 struct SCIP_ReaderData
 {
@@ -67,66 +68,7 @@ struct SCIP_ReaderData
    SCIP_Bool       picturesonly;    /** if true only tex code for the pictures is generated (no statistics included) */
 };
 
-/** Getter of parameter usegp */
-SCIP_Bool GCGtexGetUseGp(
-   SCIP*                scip               /**< SCIP data structure */
-   )
-{
-   SCIP_READERDATA* readerdata;
-   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
-   return readerdata->usegp;
-}
-
-/** Getter of parameter picturesonly */
-SCIP_Bool GCGtexGetPicturesonly(
-   SCIP*                scip               /**< SCIP data structure */
-   )
-{
-   SCIP_READERDATA* readerdata;
-   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
-   return readerdata->picturesonly;
-}
-
-/** destructor of reader to free user data (called when SCIP is exiting) */
-static
-SCIP_DECL_READERFREE(readerFreeTex)
-{
-   SCIP_READERDATA* readerdata;
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   SCIPfreeMemory(scip, &readerdata);
-
-   return SCIP_OKAY;
-}
-
-/** Problem reading method of reader.
- *  Since the reader is not supposed to read files this returns a reading error. */
-static
-SCIP_DECL_READERREAD(readerReadTex)
-{  /*lint --e{715}*/
-   return SCIP_READERROR;
-}
-
-/** problem writing method of reader */
-static
-SCIP_DECL_READERWRITE(readerWriteTex)
-{  /*lint --e{715}*/
-
-   assert(scip != NULL);
-   assert(reader != NULL);
-
-   SCIP_CALL( GCGtexWriteHeaderCode(scip,file) );
-   SCIP_CALL( GCGtexWriteDecompCode(scip, file, DECgetBestDecomp(scip)) );
-   SCIP_CALL( GCGtexWriteEndCode(scip,file) );
-
-   *result = SCIP_SUCCESS;
-   return SCIP_OKAY;
-}
-
 /* outputs the r, g, b decimal values for the rgb hex input */
-static
 SCIP_RETCODE getRgbDecFromHex(
    char*    hex,     /**< input hex rgb code of form "#000000" */
    int*     red,     /**< output decimal r */
@@ -171,11 +113,8 @@ SCIP_RETCODE GCGtexWriteHeaderCode(
    FILE*                file                /**< File pointer to write to */
    )
 {
-   SCIP_READERDATA* readerdata;
    char* pname;
    char ppath[SCIP_MAXSTRLEN];
-
-   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
 
    strcpy(ppath, SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
@@ -216,7 +155,7 @@ SCIP_RETCODE GCGtexWriteHeaderCode(
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     \n");
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
    SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
-   if( readerdata->usegp )
+   if( usegp )
    {
       SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                \n");
    }
@@ -316,12 +255,10 @@ SCIP_RETCODE GCGtexWriteTableOfContents(
 
 /** writes the code for a Tikz visualization of the decomposition into the file
  * works analogously to the SCIPwriteGp function in reader_gp.c */
-static
 SCIP_RETCODE writeTikz(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decomp,             /**< Decomposition pointer */
-   SCIP_READERDATA*      readerdata          /**< reader specific arguments */
+   DEC_DECOMP*           decomp              /**< Decomposition pointer */
    )
 {
    SCIP_VAR*** subscipvars;
@@ -514,7 +451,7 @@ SCIP_RETCODE writeTikz(
    /* --- draw black dots for nonzeroes --- */
 
    /* draw the dots */
-   if(!readerdata->draftmode)
+   if(!getDraftmode())
    {
       for( i = 0; i < nconss; i++ )
       {
@@ -585,7 +522,7 @@ SCIP_RETCODE writeTikz(
 /** write LaTeX code for one decomposition
  * The proper order in which a tex file is written goes as follows:
  *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
+ *    GCGtexWriteTitlepage   ReaderTEX::          (optional)
  *    GCGtexWriteTableOfContents       (optional)
  *    -> GCGtexWriteDecompCode         (required as often as the number of decompositions you wish to visualize)
  *    GCGtexWriteEndCode               (required)
@@ -598,8 +535,6 @@ SCIP_RETCODE GCGtexWriteDecompCode(
    )
 {
    FILE* gpfile;
-   SCIP_READER* reader;
-   SCIP_READERDATA* readerdata;
    DEC_DETECTOR** detectorchain;
    DEC_SCORES scores;
    SCIP_Bool gpdraftwason = FALSE;
@@ -618,9 +553,6 @@ SCIP_RETCODE GCGtexWriteDecompCode(
    int i;
 
    assert(decomp != NULL);
-   reader = SCIPfindReader(scip, "texreader");
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
 
    /* get detector chain string & full-text string*/
    detectorchainstring = DECdecompGetDetectorChainString(scip, decomp);
@@ -646,12 +578,13 @@ SCIP_RETCODE GCGtexWriteDecompCode(
       }
    }
 
-   if( readerdata->usegp )
+   if( usegp )
    {
       /* --- create a gnuplot file for the decomposition --- */
 
       /* get path to write to and put it into gpfilename */
-      GCGgetFilePath(file, pfile);
+      gcg::MiscVisualization* miscvisu = new gcg::MiscVisualization();
+      pfile = miscvisu->GCGgetFilePath(file);
       strcpy(pfilecpy, pfile);
       SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
       strcpy(gpfilename, filepath);
@@ -686,7 +619,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 
       /* write gp in the tex draft mode and restore the original parameter afterwards */
       gpdraftwason = GCGgpGetDraftmode(scip);
-      GCGgpSetDraftmode(scip, readerdata->draftmode);
+      GCGgpSetDraftmode(scip, draftmode);
 
       SCIPwriteGp(scip, gpfile, decomp, TRUE, FALSE);
 
@@ -699,7 +632,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 
    DECevaluateDecomposition(scip, decomp, &scores);
 
-   if(!readerdata->picturesonly)
+   if(!picturesonly)
    {
       SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
       SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
@@ -707,19 +640,19 @@ SCIP_RETCODE GCGtexWriteDecompCode(
    }
    SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
    SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
-   if( readerdata->usegp )
+   if( usegp )
    {
       SCIPinfoMessage(scip, file, "    \\input{%s-%s-%d-%d}                                          \n",
          pname, detectorchainstring, DECdecompGetSeeedID(decomp), DECdecompGetNBlocks(decomp));
    }
    else
    {
-      writeTikz(scip, file, decomp, readerdata);
+      writeTikz(scip, file, decomp);
    }
 
    SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
    SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
-   if(!readerdata->picturesonly)
+   if(!picturesonly)
    {
       SCIPinfoMessage(scip, file, "                                                                \n");
       SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
@@ -805,7 +738,6 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
 {
    FILE* makefile;
    FILE* readme;
-   SCIP_READERDATA* readerdata;
    char* filepath;
    char* filename;
    char pfile[SCIP_MAXSTRLEN];
@@ -814,8 +746,6 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    char readmename[SCIP_MAXSTRLEN];
    char name[SCIP_MAXSTRLEN];
    const char makename[SCIP_MAXSTRLEN] = "makepdf";
-
-   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "texreader"));
 
    /* --- create a Makefile --- */
 
@@ -838,7 +768,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
       return SCIP_FILECREATEERROR;
    }
 
-   if( readerdata->usegp )
+   if( usegp )
    {
       SCIPinfoMessage(scip, makefile, "GPFILES := $(wildcard *.gp)\n");
    }
@@ -846,7 +776,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               \n");
    SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex\n",
       filename, filename);
-   if( readerdata->usegp )
+   if( usegp )
    {
       SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
       SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
@@ -871,7 +801,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIPinfoMessage(scip, makefile, "\t@latexmk -c                                                                \n");
    SCIPinfoMessage(scip, makefile, "\t@rm -f report_*figure*.*                                                   \n");
    SCIPinfoMessage(scip, makefile, "\t@rm -f *.auxlock                                                           \n");
-   if( readerdata->usegp )
+   if( usegp )
    {
       SCIPinfoMessage(scip, makefile, "\t@rm -f *.gp                                                             \n");
    }
@@ -908,6 +838,37 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
 
    /* close readme file */
    fclose(readme);
+   return SCIP_OKAY;
+}
+
+/** destructor of reader to free user data (called when SCIP is exiting) */
+
+SCIP_DECL_READERFREE(readerFreeTex)
+{
+   return SCIP_OKAY;
+}
+
+/** Problem reading method of reader.
+ *  Since the reader is not supposed to read files this returns a reading error. */
+
+SCIP_DECL_READERREAD(readerReadTex)
+{  /*lint --e{715}*/
+   return SCIP_READERROR;
+}
+
+/** problem writing method of reader */
+
+SCIP_DECL_READERWRITE(readerWriteTex)
+{  /*lint --e{715}*/
+
+   assert(scip != NULL);
+   assert(reader != NULL);
+
+   SCIP_CALL( GCGtexWriteHeaderCode(scip,file) );
+   SCIP_CALL( GCGtexWriteDecompCode(scip, file, DECgetBestDecomp(scip)) );
+   SCIP_CALL( GCGtexWriteEndCode(scip,file) );
+
+   *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
 

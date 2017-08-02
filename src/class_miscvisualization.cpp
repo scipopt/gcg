@@ -65,7 +65,7 @@ std::string MiscVisualization::GCGgetVisualizationFilename(
 }
 
 /** gives the path of the file */
-std::string MiscVisualization::GCGgetFilePath(
+char* MiscVisualization::GCGgetFilePath(
    FILE*    file               /**< file */
    )
 {
@@ -85,9 +85,7 @@ std::string MiscVisualization::GCGgetFilePath(
    {
       /*@todo error or similar*/
    }
-
-   std::string outputname(pfile);
-   return outputname;
+   return pfile;
 }
 
 

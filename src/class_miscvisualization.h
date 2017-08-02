@@ -70,7 +70,7 @@ public:
     *
     * @return path of file
     * */
-   std::string GCGgetFilePath(
+   char* GCGgetFilePath(
       FILE* file          /**< file */
       );
 

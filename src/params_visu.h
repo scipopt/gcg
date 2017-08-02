@@ -44,31 +44,6 @@ extern "C" {
 
 #include "scip/scip.h"
 
-#define COLOR_WHITE     "#FFFFFF"
-#define COLOR_BLUE      "#00549F"
-#define COLOR_LBLUE     "#8EBAE5"
-#define COLOR_PURPLE    "#7A6FAC"
-#define COLOR_VIOLET    "#612158"
-#define COLOR_CARMINE   "#A11035"
-#define COLOR_RED       "#CC071E"
-#define COLOR_MAGENTA   "#E30066"
-#define COLOR_ORANGE    "#F6A800"
-#define COLOR_YELLOW    "#FFED00"
-#define COLOR_GRASS     "#BDAB27"
-#define COLOR_GREEN     "#57AB27"
-#define COLOR_CYAN      "#0098A1"
-#define COLOR_TEAL      "#006165"
-#define COLOR_BLACK     "#000000"
-
-#define DEFAULT_COLOR_MASTERVARS   COLOR_WHITE   /* for mastervars (in block area) */
-#define DEFAULT_COLOR_MASTERCONS   COLOR_BLUE    /* for mastercons */
-#define DEFAULT_COLOR_LINKING      COLOR_PURPLE
-#define DEFAULT_COLOR_STAIRLINKING COLOR_MAGENTA
-#define DEFAULT_COLOR_BLOCK        COLOR_TEAL
-#define DEFAULT_COLOR_OPEN         COLOR_GREEN   /* for open (not assigned) elements */
-#define DEFAULT_COLOR_NONZERO      COLOR_BLACK
-#define DEFAULT_COLOR_LINE         COLOR_BLACK   /* for outlines of blocks */
-
 enum Colorscheme
 {
    COLORSCHEME_DEFAULT  = 0,     /**< default colors (supposedly eye-friendly) */
@@ -78,14 +53,34 @@ enum Colorscheme
 
 typedef enum Colorscheme VISU_COLORSCHEME; /**< visualization colorscheme type */
 
+
+/** includes the visualization parameters into GCG */
+extern
+SCIP_RETCODE SCIPincludeParamsVisu(
+   SCIP* scip /**< SCIP data structure */
+   );
+
 /** gets if draftmode is on
  * draftmode lets visualizations omit nonzeros */
 extern
-SCIP_Bool getDraftmode(void);
+SCIP_Bool SCIPvisuGetDraftmode(void);
+
+/** sets draftmode
+ * draftmode lets visualizations omit nonzeros */
+extern
+void SCIPvisuSetDraftmode(
+   SCIP_Bool setmode
+   );
 
 /** gets the colorscheme for visualizations */
 extern
-VISU_COLORSCHEME getColorscheme(void);
+VISU_COLORSCHEME SCIPvisuGetColorscheme(void);
+
+/** sets colorscheme for visualizations */
+extern
+void SCIPvisuSetColorscheme(
+   VISU_COLORSCHEME newscheme
+   );
 
 #ifdef __cplusplus
 }

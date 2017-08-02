@@ -36,21 +36,93 @@
 
 /* global visualization parameters */
 
+#define COLOR_WHITE     "#FFFFFF"
+#define COLOR_BLUE      "#00549F"
+#define COLOR_LBLUE     "#8EBAE5"
+#define COLOR_PURPLE    "#7A6FAC"
+#define COLOR_VIOLET    "#612158"
+#define COLOR_CARMINE   "#A11035"
+#define COLOR_RED       "#CC071E"
+#define COLOR_MAGENTA   "#E30066"
+#define COLOR_ORANGE    "#F6A800"
+#define COLOR_YELLOW    "#FFED00"
+#define COLOR_GRASS     "#BDAB27"
+#define COLOR_GREEN     "#57AB27"
+#define COLOR_CYAN      "#0098A1"
+#define COLOR_TEAL      "#006165"
+#define COLOR_BLACK     "#000000"
+
+#define DEFAULT_COLOR_MASTERVARS   COLOR_WHITE   /* for mastervars (in block area) */
+#define DEFAULT_COLOR_MASTERCONS   COLOR_BLUE    /* for mastercons */
+#define DEFAULT_COLOR_LINKING      COLOR_PURPLE
+#define DEFAULT_COLOR_STAIRLINKING COLOR_MAGENTA
+#define DEFAULT_COLOR_BLOCK        COLOR_TEAL
+#define DEFAULT_COLOR_OPEN         COLOR_GREEN   /* for open (not assigned) elements */
+#define DEFAULT_COLOR_NONZERO      COLOR_BLACK
+#define DEFAULT_COLOR_LINE         COLOR_BLACK   /* for outlines of blocks */
+
+/*@todo defines for black and white color scheme */
+
 SCIP_Bool visudraftmode;
 VISU_COLORSCHEME visucolorscheme;
 
+char* mancolormastervars;
+char* mancolormastercons;
+char* mancolorlinking;
+char* mancolorstairlinking;
+char* mancolorblock;
+char* mancoloropen;
+char* mancolornonzero;
+char* mancolorline;
 
-/* getter */
+/*@todo vars for black and white scheme */
+
+/** includes the visualization parameters into GCG */
+SCIP_RETCODE SCIPincludeParamsVisu(
+   SCIP* scip /**< SCIP data structure */
+   )
+{
+   visudraftmode = FALSE;
+   visucolorscheme = COLORSCHEME_DEFAULT;
+
+   mancolormastervars = DEFAULT_COLOR_MASTERVARS;
+   mancolormastercons = DEFAULT_COLOR_MASTERCONS;
+   mancolorlinking = DEFAULT_COLOR_LINKING;
+   mancolorstairlinking = DEFAULT_COLOR_STAIRLINKING;
+   mancolorblock = DEFAULT_COLOR_BLOCK;
+   mancoloropen = DEFAULT_COLOR_OPEN;
+   mancolornonzero = DEFAULT_COLOR_NONZERO;
+   mancolorline = DEFAULT_COLOR_LINE;
+
+   /*@todo initialize black and white scheme*/
+}
+
+/* getter & setter */
 
 /** gets if draftmode is on
  * draftmode lets visualizations omit nonzeros */
-SCIP_Bool getDraftmode()
+SCIP_Bool SCIPvisuGetDraftmode()
 {
    return visudraftmode;
 }
 
+/** sets draftmode
+ * draftmode lets visualizations omit nonzeros */
+void SCIPvisuSetDraftmode(SCIP_Bool setmode)
+{
+   visudraftmode = setmode;
+}
+
 /** gets the colorscheme for visualizations */
-VISU_COLORSCHEME getColorscheme()
+VISU_COLORSCHEME SCIPvisuGetColorscheme()
 {
    return visucolorscheme;
 }
+
+/** sets colorscheme for visualizations */
+void SCIPvisuSetColorscheme(VISU_COLORSCHEME newscheme)
+{
+   visucolorscheme = newscheme;
+}
+
+/*@todo (getter &) setter for manual color scheme*/
