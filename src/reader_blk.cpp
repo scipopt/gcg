@@ -1004,7 +1004,8 @@ SCIP_RETCODE readBLKFile(
             SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
          }
 
-         SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
+
+
          break;
 
       case BLK_NBLOCKS:
@@ -1016,7 +1017,10 @@ SCIP_RETCODE readBLKFile(
             }
          if( !blkinput->haspresolvesection )
          {
-            SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
+            SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. It is assumed to belong to the unpresolved problem but the behaviour is undefined. See the FAQ for further information.\n");
+            blkinput->presolved = FALSE;
+            SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+            SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
          }
          break;
 
