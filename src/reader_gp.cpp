@@ -36,12 +36,17 @@
 #include <assert.h>
 #include <string.h>
 
+#include <fstream>
+
 #include "reader_gp.h"
 #include "scip_misc.h"
 #include "struct_decomp.h"
 #include "cons_decomp.h"
 #include "pub_decomp.h"
 #include "params_visu.h"
+
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 
 #define READER_NAME             "gpreader"
 #define READER_DESC             "gnuplot file writer for seeed visualization"
@@ -57,6 +62,8 @@
 
 #define DEFAULT_DRAFTMODE FALSE
 
+namespace gcg{
+
 /** data for dec reader */
 struct SCIP_ReaderData
 {
@@ -66,6 +73,118 @@ struct SCIP_ReaderData
 /*
  * Local methods
  */
+
+/** writes gp code to given file that contains all nonzero points */
+SCIP_RETCODE writeGpNonzeros(
+   Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
+   Seeedpool* seeedpool,   /**< current Seeedpool */
+   const char* filename    /**< filename to write to (including path & extension) */
+   )
+{
+   std::vector<int> orderToRows(seeed->getNConss(), -1);
+   std::vector<int> rowToOrder(seeed->getNConss(), -1);
+   std::vector<int> orderToCols(seeed->getNVars(), -1);
+   std::vector<int> colsToOrder(seeed->getNVars(), -1);
+   int counterrows = 0;
+   int countercols = 0;
+   std::ofstream ofs;
+
+   ofs.open (filename, std::ofstream::out );
+
+   /** order of constraints */
+   /* master constraints */
+   for ( int i = 0; i < seeed->getNMasterconss() ; ++i )
+   {
+      int rowidx = seeed->getMasterconss()[i];
+      orderToRows[counterrows] = rowidx;
+      rowToOrder[rowidx] = counterrows;
+      ++counterrows;
+   }
+
+   /* block constraints */
+   for ( int b = 0; b < seeed->getNBlocks() ; ++b )
+   {
+      for (int i = 0; i < seeed->getNConssForBlock(b) ; ++i )
+      {
+         int rowidx = seeed->getConssForBlock(b)[i];
+         orderToRows[counterrows] = rowidx;
+         rowToOrder[rowidx] = counterrows;
+         ++counterrows;
+      }
+   }
+
+   /** open constraints */
+   for ( int i = 0; i < seeed->getNOpenconss() ; ++i )
+   {
+      int rowidx = seeed->getOpenconss()[i];
+      orderToRows[counterrows] = rowidx;
+      rowToOrder[rowidx] = counterrows;
+      ++counterrows;
+   }
+
+   /** order of variables */
+
+   /* linking variables */
+   for ( int i = 0; i < seeed->getNLinkingvars() ; ++i )
+   {
+      int colidx = seeed->getLinkingvars()[i];
+      orderToCols[countercols] = colidx;
+      colsToOrder[colidx] = countercols;
+      ++countercols;
+   }
+
+   /* master variables */
+   for ( int i = 0; i < seeed->getNMastervars() ; ++i )
+   {
+      int colidx = seeed->getMastervars()[i];
+      orderToCols[countercols] = colidx;
+      colsToOrder[colidx] = countercols;
+      ++countercols;
+   }
+
+   /* block variables */
+   for ( int b = 0; b < seeed->getNBlocks() ; ++b )
+   {
+      for (int i = 0; i < seeed->getNVarsForBlock(b) ; ++i )
+      {
+         int colidx = seeed->getVarsForBlock(b)[i];
+         orderToCols[countercols] = colidx;
+         colsToOrder[colidx] = countercols;
+         ++countercols;
+      }
+      for (int i = 0; i < seeed->getNStairlinkingvars(b) ; ++i )
+      {
+         int colidx = seeed->getStairlinkingvars(b)[i];
+         orderToCols[countercols] = colidx;
+         colsToOrder[colidx] = countercols;
+         ++countercols;
+      }
+   }
+
+   /** open vars */
+   for ( int i = 0; i < seeed->getNOpenvars() ; ++i )
+   {
+      int colidx = seeed->getOpenvars()[i];
+      orderToCols[countercols] = colidx;
+      colsToOrder[colidx] = countercols;
+      ++countercols;
+   }
+
+   /* write scatter plot */
+   for( int row = 0; row < seeed->getNConss(); ++row )
+      for ( int col = 0; col < seeed->getNVars(); ++col )
+      {
+         assert( orderToRows[row] != -1);
+         assert( orderToCols[col] != -1);
+         if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
+            ofs << col+0.5 << " " << row+0.5 << std::endl;
+      }
+
+   ofs.close();
+
+   return SCIP_OKAY;
+}
+
 
 /** write file header with terminal etc. */
 static
@@ -470,26 +589,6 @@ SCIP_RETCODE SCIPwriteGp(
    return SCIP_OKAY;
 }
 
-/** Getter of parameter draftmode */
-SCIP_Bool GCGgpGetDraftmode(
-   SCIP*                scip               /**< SCIP data structure */
-   )
-{
-   SCIP_READERDATA* readerdata;
-   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "gpreader"));
-   return readerdata->draftmode;
-}
-
-/** Setter of parameter draftmode */
-void GCGgpSetDraftmode(
-   SCIP*                scip,              /**< SCIP data structure */
-   SCIP_Bool            usedraftmode       /**< new value for draftmode */
-   )
-{
-   SCIP_READERDATA* readerdata;
-   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "gpreader"));
-   readerdata->draftmode = usedraftmode;
-}
 
 /** includes the gp file reader into SCIP */
 SCIP_RETCODE SCIPincludeReaderGp(
@@ -512,3 +611,5 @@ SCIP_RETCODE SCIPincludeReaderGp(
 
    return SCIP_OKAY;
 }
+
+} /* namespace gcg */

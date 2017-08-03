@@ -43,7 +43,7 @@
 #include <string>
 #include <vector>
 
-namespace gcg {
+namespace gcg{
 
 enum USERGIVEN
 {

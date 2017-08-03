@@ -42,6 +42,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fstream>
 
 #include "reader_tex.h"
 #include "scip_misc.h"
@@ -51,7 +52,10 @@
 #include "pub_decomp.h"
 #include "struct_decomp.h"
 #include "params_visu.h"
+
 #include "class_miscvisualization.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 
 #define READER_NAME             "texreader"
 #define READER_DESC             "LaTeX file writer for seeed visualization"
@@ -60,6 +64,7 @@
 #define DEFAULT_USEGP            FALSE
 #define DEFAULT_PICTURESONLY     FALSE
 
+namespace gcg{
 
 /** data for dec reader */
 struct SCIP_ReaderData
@@ -67,6 +72,7 @@ struct SCIP_ReaderData
    SCIP_Bool       usegp;           /** if true uses gp files as intermediate step */
    SCIP_Bool       picturesonly;    /** if true only tex code for the pictures is generated (no statistics included) */
 };
+
 
 /* outputs the r, g, b decimal values for the rgb hex input */
 SCIP_RETCODE getRgbDecFromHex(
@@ -99,16 +105,9 @@ SCIP_RETCODE getRgbDecFromHex(
    return SCIP_OKAY;
 }
 
-/** write LaTeX code header & begin of document
- * The proper order in which a tex file is written goes as follows:
- *    -> GCGtexWriteHeaderCode         (required)
- *    GCGtexWriteTitlepage             (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-SCIP_RETCODE GCGtexWriteHeaderCode(
+
+/** write LaTeX code header & begin of document to given file */
+SCIP_RETCODE writeTexHeader(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file                /**< File pointer to write to */
    )
@@ -127,7 +126,7 @@ SCIP_RETCODE GCGtexWriteHeaderCode(
    SCIPinfoMessage(scip, file, "%% *                  of the branch-cut-and-price framework                    * \n");
    SCIPinfoMessage(scip, file, "%% *         SCIP --- Solving Constraint Integer Programs                      * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
-   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       * \n");
+   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       * \n");
    SCIPinfoMessage(scip, file, "%% *                         Zuse Institute Berlin (ZIB)                       * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
    SCIPinfoMessage(scip, file, "%% * This program is free software; you can redistribute it and/or             * \n");
@@ -170,16 +169,9 @@ SCIP_RETCODE GCGtexWriteHeaderCode(
    return SCIP_OKAY;
 }
 
-/** write LaTeX code title page that includes general statistics about the problem
- *  * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    -> GCGtexWriteTitlepage          (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-SCIP_RETCODE GCGtexWriteTitlepage(
+
+/** write LaTeX code title page that includes general statistics about the problem to given file */
+SCIP_RETCODE writeTexTitlepage(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file,               /**< File pointer to write to */
    int*                 npresenteddecomps   /**< Number of decompositions to be shown in the file or NULL if unknown */
@@ -231,16 +223,9 @@ SCIP_RETCODE GCGtexWriteTitlepage(
    return SCIP_OKAY;
 }
 
-/** write LaTeX code for table of contents
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
- *    -> GCGtexWriteTableOfContents    (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-SCIP_RETCODE GCGtexWriteTableOfContents(
+
+/** write LaTeX code for table of contents to given file */
+SCIP_RETCODE writeTexTableOfContents(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file                /**< File pointer to write to */
    )
@@ -252,6 +237,131 @@ SCIP_RETCODE GCGtexWriteTableOfContents(
 
    return SCIP_OKAY;
 }
+
+
+/** writes line to given file that contains the tikz code for a box with given dimensions
+ * and options with a linebreak at the end. */
+SCIP_RETCODE writeTikzBox(
+   FILE*                 file               /**< File pointer to write to */
+   )
+{
+   return SCIP_OKAY;
+}
+
+
+/*@todo adapt this for tikz, currently this gives gp code */
+/** writes line to given file that contains the tikz code for a point with given radius
+ * and options with a linebreak at the end. */
+SCIP_RETCODE writeTikzNonzeros(
+   Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
+   Seeedpool* seeedpool,   /**< current Seeedpool */
+   const char* filename    /**< filename to write to (including path & extension) */
+   )
+{
+   std::vector<int> orderToRows(seeed->getNConss(), -1);
+   std::vector<int> rowToOrder(seeed->getNConss(), -1);
+   std::vector<int> orderToCols(seeed->getNVars(), -1);
+   std::vector<int> colsToOrder(seeed->getNVars(), -1);
+   int counterrows = 0;
+   int countercols = 0;
+   std::ofstream ofs;
+
+   ofs.open (filename, std::ofstream::out );
+
+   /** order of constraints */
+   /* master constraints */
+   for ( int i = 0; i < seeed->getNMasterconss() ; ++i )
+   {
+      int rowidx = seeed->getMasterconss()[i];
+      orderToRows[counterrows] = rowidx;
+      rowToOrder[rowidx] = counterrows;
+      ++counterrows;
+   }
+
+   /* block constraints */
+   for ( int b = 0; b < seeed->getNBlocks() ; ++b )
+   {
+      for (int i = 0; i < seeed->getNConssForBlock(b) ; ++i )
+      {
+         int rowidx = seeed->getConssForBlock(b)[i];
+         orderToRows[counterrows] = rowidx;
+         rowToOrder[rowidx] = counterrows;
+         ++counterrows;
+      }
+   }
+
+   /** open constraints */
+   for ( int i = 0; i < seeed->getNOpenconss() ; ++i )
+   {
+      int rowidx = seeed->getOpenconss()[i];
+      orderToRows[counterrows] = rowidx;
+      rowToOrder[rowidx] = counterrows;
+      ++counterrows;
+   }
+
+   /** order of variables */
+
+   /* linking variables */
+   for ( int i = 0; i < seeed->getNLinkingvars() ; ++i )
+   {
+      int colidx = seeed->getLinkingvars()[i];
+      orderToCols[countercols] = colidx;
+      colsToOrder[colidx] = countercols;
+      ++countercols;
+   }
+
+   /* master variables */
+   for ( int i = 0; i < seeed->getNMastervars() ; ++i )
+   {
+      int colidx = seeed->getMastervars()[i];
+      orderToCols[countercols] = colidx;
+      colsToOrder[colidx] = countercols;
+      ++countercols;
+   }
+
+   /* block variables */
+   for ( int b = 0; b < seeed->getNBlocks() ; ++b )
+   {
+      for (int i = 0; i < seeed->getNVarsForBlock(b) ; ++i )
+      {
+         int colidx = seeed->getVarsForBlock(b)[i];
+         orderToCols[countercols] = colidx;
+         colsToOrder[colidx] = countercols;
+         ++countercols;
+      }
+      for (int i = 0; i < seeed->getNStairlinkingvars(b) ; ++i )
+      {
+         int colidx = seeed->getStairlinkingvars(b)[i];
+         orderToCols[countercols] = colidx;
+         colsToOrder[colidx] = countercols;
+         ++countercols;
+      }
+   }
+
+   /** open vars */
+   for ( int i = 0; i < seeed->getNOpenvars() ; ++i )
+   {
+      int colidx = seeed->getOpenvars()[i];
+      orderToCols[countercols] = colidx;
+      colsToOrder[colidx] = countercols;
+      ++countercols;
+   }
+
+   /* write scatter plot */
+   for( int row = 0; row < seeed->getNConss(); ++row )
+      for ( int col = 0; col < seeed->getNVars(); ++col )
+      {
+         assert( orderToRows[row] != -1);
+         assert( orderToCols[col] != -1);
+         if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
+            ofs << col+0.5 << " " << row+0.5 << std::endl;
+      }
+
+   ofs.close();
+
+   return SCIP_OKAY;
+}
+
 
 /** writes the code for a Tikz visualization of the decomposition into the file
  * works analogously to the SCIPwriteGp function in reader_gp.c */
@@ -702,15 +812,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
    return SCIP_OKAY;
 }
 
-/** write LaTeX code for end of document
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    -> GCGtexWriteEndCode            (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
+/** write LaTeX code for end of document to given file */
 SCIP_RETCODE GCGtexWriteEndCode(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< File pointer to write to */
@@ -722,18 +824,11 @@ SCIP_RETCODE GCGtexWriteEndCode(
    return SCIP_OKAY;
 }
 
-/** makes a new makefile and readme for the given .tex file
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    -> GCGtexWriteMakefileAndReadme  (optional but highly recommended)
- */
+/** makes a new makefile and readme for the given .tex file */
 SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file                /**< File for which the makefile & readme are generated */
+   FILE*                file,               /**< File for which the makefile & readme are generated */
+   SCIP_Bool            usegp               /**< true if there are gp files to be included in the makefile */
    )
 {
    FILE* makefile;
@@ -899,3 +994,5 @@ SCIPincludeReaderTex(
 
    return SCIP_OKAY;
 }
+
+} /* namespace gcg */
