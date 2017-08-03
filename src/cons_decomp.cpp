@@ -169,6 +169,7 @@ struct SCIP_ConshdlrData
 //   SCIP_HASHMAP*         decdecomptoseeed;                  /**< hashmap from decompositions to the corresponding seeed */
 
    SeeedPtr              curruserseeed;
+   SeeedPtr              lastuserseeed;
    SCIP_Bool             unpresolveduserseeedadded;         /**< stores whether or not an unpresolved user seeed was added */
 
    /** new data fields for selection management */
@@ -1011,6 +1012,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 //   conshdlrdata->nallrelevantseeeds = 0;
 //   conshdlrdata->nincompleteseeeds = 0;
    conshdlrdata->curruserseeed = NULL;
+   conshdlrdata->lastuserseeed = NULL;
    conshdlrdata->unpresolveduserseeedadded = FALSE;
    conshdlrdata->startidvisu = 0;
    conshdlrdata->selectvisulength = 10;
@@ -1967,21 +1969,53 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       }
       if( strncmp( command, "quit", commandlen2) == 0 )
       {
-         conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
+         gcg::Seeedpool* seeedpool;
+         if( !conshdlrdata->curruserseeed->isFromUnpresolved() && conshdlrdata->seeedpool == NULL )
+            SCIPconshdlrDecompCreateSeeedpool(scip);
+
+         seeedpool = ( conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool);
+         if( seeedpool == NULL )
+
+         conshdlrdata->curruserseeed->sort();
+         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         conshdlrdata->curruserseeed->calcHashvalue();
+         assert( conshdlrdata->curruserseeed->checkConsistency(seeedpool) );
+
+
+
+         if( conshdlrdata->curruserseeed->isComplete() )
+         {
+            seeedpool->addSeeedToFinished(conshdlrdata->curruserseeed, &success);
+            if( !success )
+            {
+               delete conshdlrdata->curruserseeed;
+            }
+         } else
+         {
+            seeedpool->addSeeedToIncomplete(conshdlrdata->curruserseeed, &success);
+            if( !success )
+            {
+               delete conshdlrdata->curruserseeed;
+            }
+         }
+         conshdlrdata->curruserseeed = NULL;
+         finished = TRUE;
+
          continue;
       }
 
       if( strncmp( command, "undo last modification", commandlen2) == 0 )
       {
-         SCIP_CALL(SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog ) );
+         if ( conshdlrdata->lastuserseeed == NULL )
+            SCIPdialogMessage(scip, NULL, " nothing to be undone \s");
+         else
+         {
+            delete conshdlrdata->curruserseeed;
+            conshdlrdata->curruserseeed = conshdlrdata->lastuserseeed;
+         }
          break;
       }
 
-      if( strncmp( command, "help", commandlen2) == 0 )
-      {
-         SCIP_CALL(SCIPconshdlrDecompShowHelp(scip) );
-         continue;
-      }
 
       if( strncmp( command, "visualize", commandlen2) == 0 )
       {
