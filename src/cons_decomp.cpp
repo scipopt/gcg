@@ -402,7 +402,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
 
       SCIP_CONSHDLR* conshdlr;
       SCIP_CONSHDLRDATA* conshdlrdata;
-
+      SCIP_Bool success;
       conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
       if( conshdlr == NULL )
@@ -417,7 +417,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
      assert( seeed->isComplete() );
      assert( seeed->isFromUnpresolved() );
 
-     conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed);
+     conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
 
 
       return SCIP_OKAY;
@@ -431,6 +431,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
 
       SCIP_CONSHDLR* conshdlr;
       SCIP_CONSHDLRDATA* conshdlrdata;
+      SCIP_Bool success;
 
       conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -446,7 +447,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
      assert( seeed->isComplete() );
      assert( !seeed->isFromUnpresolved() );
 
-     conshdlrdata->seeedpool->addSeeedToFinished(seeed);
+     conshdlrdata->seeedpool->addSeeedToFinished(seeed, &success);
 
 
       return SCIP_OKAY;
@@ -460,6 +461,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForUnpresolved(
 
       SCIP_CONSHDLR* conshdlr;
       SCIP_CONSHDLRDATA* conshdlrdata;
+      SCIP_Bool success;
 
       conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -475,7 +477,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForUnpresolved(
      assert( !seeed->isComplete() );
      assert( seeed->isFromUnpresolved() );
 
-     conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete(seeed);
+     conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete(seeed, &success);
 
       return SCIP_OKAY;
    }
@@ -489,6 +491,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForPresolved(
       SCIP_CONSHDLR* conshdlr;
       SCIP_CONSHDLRDATA* conshdlrdata;
 
+      SCIP_Bool success;
       conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
       if( conshdlr == NULL )
@@ -503,7 +506,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddPartialSeeedForPresolved(
      assert( !seeed->isComplete() );
      assert( !seeed->isFromUnpresolved() );
 
-     conshdlrdata->seeedpool->addSeeedToIncomplete(seeed);
+     conshdlrdata->seeedpool->addSeeedToIncomplete(seeed, &success);
 
       return SCIP_OKAY;
    }
@@ -1390,57 +1393,23 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrdataGetScoretype(conshdlrdata) );
 
 
-   SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n" );
+   SCIPdialogMessage(scip, NULL, "Options to proceed: \n" );
 
-   SCIPdialogMessage(scip, NULL, "\n%30s    %4s\n", "detector" , "char"  );
-   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "--------" , "----"  );
 
-   for( int det = 0; det < conshdlrdata->ndetectors; ++det )
-   {
-      DEC_DETECTOR* detector;
-
-      detector = conshdlrdata->detectors[det];
-
-      SCIPdialogMessage(scip, NULL, "%30s    %4c\n", DECdetectorGetName(detector), DECdetectorGetChar(detector)  );
-   }
-   SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "given by user" , "U"  );
 
    SCIPdialogMessage(scip, NULL, "\n" );
-
-   SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
-
-//   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  maxwhi  history  pre  nopcon  nopvar"
-//      "  usr"
-//      "  sel \n");
-//   SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------"
-//      "  ---"
-//      "  --- \n");
-
-   SCIPdialogMessage(scip, NULL, "\n" );
-
-   SCIPdialogMessage(scip, NULL, "List of abbreviations of decomposition table \n" );
-   SCIPdialogMessage(scip, NULL, "\n" );
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "abbreviation", "description");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------------", "-----------");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "id", "id of the decomposition");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nbloc", "number of blocks");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmacon", "number of master constraints");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nlivar", "number of linking variables");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nmavar", "number of master variables (do not occur in blocks)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nstlva", "number of stairlinking variables (disjoint from linking variables)");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", scorename, scoredescr);
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "history", "list of detector chars worked on this decomposition ");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "pre", "is this decomposition for the presolved problem");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopcon", "number of open constraints");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "nopvar", "number of open variables");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "usr", "was this decomposition given by the user");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "sel", "is this decomposition selected at the moment");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "option", "description");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------", "-----------");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "conss", "assign unassigned constraints to master/blocks");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "vars", "assign unassigned variables to master(only)/linking/blocks");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "finish by detector", "choose a finishing detector that completes the decomposition");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "quit the modification process and returns to main menu");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "shows a visualization of the current decomposition ");
 
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
-SCIPfreeBlockMemoryArrayNull(scip, &scorename, SCIP_MAXSTRLEN);
-SCIPfreeBlockMemoryArrayNull(scip, &scoredescr, SCIP_MAXSTRLEN);
 
 return SCIP_OKAY;
 }
@@ -1863,7 +1832,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 
             SCIP_CALL( SCIPconshdlrDecompShowListExtract(scip) );
 
-            SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+            SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please choose an existing partial decomposition for modification (type \"choose <id>\" or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
 
             commandlen2 = strlen(command);
 
@@ -1896,6 +1865,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
             if( strncmp( command, "choose", commandlen2) == 0 )
             {
                SCIP_CALL(SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog ) );
+               finished = TRUE;
                break;
             }
 
@@ -1965,6 +1935,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    while ( !finished )
    {
       int commandlen2;
+      SCIP_Bool success;
 
       SCIP_CALL( SCIPconshdlrDecompShowCurrUserSeeedInfo(scip) );
 
@@ -3105,7 +3076,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       /** stems from unpresolved problem */
       else
       {
-         conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed);
+         SCIP_Bool success;
+         conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
          conshdlrdata->unpresolveduserseeedadded = TRUE;
       }
 
@@ -3114,11 +3086,12 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    {
       assert( !seeed->shouldCompletedByConsToMaster() );
       conshdlrdata->curruserseeed->setUsergiven( gcg::USERGIVEN::PARTIAL );
+      SCIP_Bool success;
 
       if ( !conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
          SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, conshdlrdata->curruserseeed) );
       else
-         conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete( conshdlrdata->curruserseeed );
+         conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete( conshdlrdata->curruserseeed, &success );
 
    }
 
