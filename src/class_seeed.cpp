@@ -2955,6 +2955,156 @@ int Seeed::getID()
    return id;
 }
 
+/** displays the relevant information of the seeed */
+std::string Seeed::getInfo(
+   Seeedpool* seeedpool,
+   int detailLevel
+   )
+{
+   assert( seeedpool != NULL );
+   assert( 0 <= detailLevel );
+
+   std::stringstream output;
+
+   output << std::endl;
+
+   /* general information */
+   output << "-- General information --" << std::endl;
+   output << " ID: " << id << std::endl;
+   output << " Hashvalue: " << hashvalue << std::endl;
+   output << " Score: " << score << std::endl;
+   if( getNOpenconss() + getNOpenconss() > 0 )
+      output << " Maxwhitescore >= " << maxwhitescore << std::endl;
+   else
+      output << " Maxwhitescore: " << maxwhitescore << std::endl;
+   output << " Seeed is for the " << ( isfromunpresolved ? "unpresolved" : "presolved" ) << " problem and "
+      << ( usergiven ? "Usergiven" : "not usergiven" ) << "." << std::endl;
+
+   output << std::endl;
+
+   /* detection information */
+   output << "-- Detection and detectors --" << std::endl;
+   output << " Stems from unpresolved problem: " << ( stemsFromUnpresolved ? "yes" : "no" ) << std::endl;
+
+   /* ancestor seeeds' ids */
+   output << " IDs of ancestor seeeds: ";
+   if( listofancestorids.size() > 0 )
+      output << listofancestorids[0];
+   for( int i = 1; i < (int) listofancestorids.size(); ++i )
+      output << ", " << listofancestorids[i];
+   output << std::endl;
+
+   output << " " << getNDetectors() << " detector(s) worked on this seeed: ";
+   if( getNDetectors() != 0 )
+   {
+      std::string detectorrepres;
+
+      if( detectorChain[0] == NULL )
+         detectorrepres = "user";
+      else if( false )
+      {
+         /* @todo legacy */
+      }
+      else
+      {
+         detectorrepres = (
+            getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[0]) :
+               "(finish)" + std::string(DECdetectorGetName(detectorChain[0])));
+      }
+
+      output << ": " << detectorrepres;
+
+      for( int d = 1; d < getNDetectors(); ++d )
+      {
+         detectorrepres = (
+            getNDetectors() != d + 1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[d]) :
+               "(finish)" + std::string(DECdetectorGetName(detectorChain[d])));
+
+         output << ", " << detectorrepres;
+      }
+   }
+   output << std::endl;
+
+   output << std::endl;
+
+   /* variable information */
+   output << "-- Constraints and variables --" << std::endl;
+   output << " Linkingvariables: " << getNLinkingvars() << std::endl;
+   output << " Mastercontraints: " << getNMasterconss() << std::endl;
+   output << " Mastervariables: " << getNMastervars() << std::endl;
+   output << " Open constraints: " << getNOpenconss() << std::endl;
+   output << " Open variables: " << getNOpenvars() << std::endl;
+
+   output << std::endl;
+
+   /* block information */
+   output << "-- Blocks --" << std::endl;
+   output << " Number of blocks: " << nBlocks << std::endl;
+
+   if( detailLevel > 0 )
+   {
+      for( int b = 0; b < nBlocks; ++b )
+      {
+         output << " Block " << b << ":" << std::endl;
+
+         output << "  Constraints ";
+         if( detailLevel > 1 )
+         {
+            output << "(" << getNConssForBlock( b ) << ")";
+            if( getNConssForBlock( b ) > 0 )
+               output << ":  " << SCIPconsGetName( seeedpool->getConsForIndex( getConssForBlock( b )[0] ) );
+            for( int c = 1; c < getNConssForBlock( b ); ++c )
+            {
+               output << ", " << SCIPconsGetName( seeedpool->getConsForIndex( getConssForBlock( b )[c] ) );
+            }
+            output << std::endl;
+         }
+         else
+         {
+            output << ": " << getNConssForBlock( b ) << std::endl;
+         }
+
+         output << "  Variables ";
+         if( detailLevel > 1 )
+         {
+            output << "(" << getNVarsForBlock( b ) << ")";
+            if( getNVarsForBlock( b ) > 0 )
+               output << ":  " << SCIPvarGetName( seeedpool->getVarForIndex( getVarsForBlock( b )[0] ) );
+            for( int v = 1; v < getNVarsForBlock( b ); ++v )
+            {
+               output << ", " << SCIPvarGetName( seeedpool->getVarForIndex( getVarsForBlock( b )[v] ) );
+            }
+            output << std::endl;
+         }
+         else
+         {
+            output << ": " << getNVarsForBlock( b ) << std::endl;
+         }
+
+         output << "  Stairlinkingvariables ";
+         if( detailLevel > 1 )
+         {
+            output << "(" << getNStairlinkingvars( b ) << ")";
+            if( getNStairlinkingvars( b ) > 0 )
+               output << ":  " << SCIPvarGetName( seeedpool->getVarForIndex( getStairlinkingvars( b )[0] ) );
+            for( int v = 1; v < getNStairlinkingvars( b ); ++v )
+            {
+               output << ", " << SCIPvarGetName( seeedpool->getVarForIndex( getStairlinkingvars( b )[v] ) );
+            }
+            output << std::endl;
+         }
+         else
+         {
+            output << ": " << getNStairlinkingvars( b ) << std::endl;
+         }
+      }
+   }
+
+   output << std::endl;
+
+   return output.str();
+}
+
 /** returns array containing all linking vars */
 const int* Seeed::getLinkingvars()
 {

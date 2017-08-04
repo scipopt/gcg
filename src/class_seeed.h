@@ -470,6 +470,15 @@ public:
    /** returns the id of the seeed */
    int getID();
 
+   /** displays the relevant information of the seeed */
+   std::string getInfo(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      int detailLevel /**< @todo pass a value that indicates how detailed the output should be:
+                              0: overview
+                              1: some details
+                              2: every accessible information */
+      );
+
    /** returns array containing all linking vars */
    const int* getLinkingvars();
 

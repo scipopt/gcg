@@ -1426,6 +1426,60 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    return SCIP_OKAY;
 }
 
+/**
+ * Displays information about a seeed that is chosen by the user in a dialog.
+ */
+SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   char* ntoinspect;
+   SCIP_Bool endoffile;
+   int idtoinspect;
+
+   int commandlen;
+
+   assert( scip != NULL );
+   conshdlr = SCIPfindConshdlr( scip, CONSHDLR_NAME );
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData( conshdlr );
+   assert( conshdlrdata != NULL );
+
+   SCIPdialogMessage( scip, NULL, "Please specify the id of the decomposition to be inspected:\n" );
+   SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ntoinspect, &endoffile ) );
+   commandlen = strlen( ntoinspect );
+
+   idtoinspect = -1;
+   if( commandlen != 0 )
+   {
+      std::stringstream convert( ntoinspect );
+      convert >> idtoinspect;
+
+      if ( idtoinspect == 0 && ntoinspect[0] != '0' )
+      {
+         idtoinspect = -1;
+      }
+   }
+
+   if( 0 <= idtoinspect && idtoinspect < (int)conshdlrdata->listall->size() )
+   {
+      gcg::Seeedpool* seeedpool = ( conshdlrdata->listall->at( idtoinspect )->isFromUnpresolved() ?
+         conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+      SCIPdialogMessage( scip, NULL, conshdlrdata->listall->at( idtoinspect )->getInfo( seeedpool, 2 ).c_str() );
+   }
+   else
+   {
+      SCIPdialogMessage( scip, NULL, "\"%s\" is not an existing id.", ntoinspect );
+   }
+
+   return SCIP_OKAY;
+}
+
 SCIP_RETCODE SCIPconshdlrDecompSelectSelect(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
@@ -1516,6 +1570,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "modifies the number of displayed decompositions ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes selection and goes back to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "experimental feature: visualizes the specified decomposition ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition ");
 
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
@@ -1641,6 +1696,12 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
       if( strncmp( command, "visualize", commandlen) == 0 )
       {
          SCIP_CALL(SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
+         continue;
+      }
+
+      if( strncmp( command, "inspect", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompSelectInspect( scip, dialoghdlr, dialog ) );
          continue;
       }
 
