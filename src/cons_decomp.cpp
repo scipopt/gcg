@@ -66,7 +66,6 @@
 typedef gcg::Seeed* SeeedPtr;
 
 
-
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
 #define CONSHDLR_DESC          "constraint handler for structure detection"

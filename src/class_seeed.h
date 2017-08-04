@@ -616,12 +616,6 @@ public:
    /*@todo description of this function*/
    const char* getShortCaption();
 
-   /** displays the assignments of the vars */
-   SCIP_RETCODE writeScatterPlot(
-         Seeedpool* seeedpool,
-         const char* filename
-   );
-
    /** sets the detector chain short string */
    SCIP_RETCODE setDetectorChainString(
       char*                 detectorchainstring

@@ -30,7 +30,7 @@
  * @author Hanna Franzen
  * @ingroup FILEREADERS
 
- * This reader can write visualizations and reports of decompositions to a tex file.
+ * This reader can write visualizations and reports of seeeds to a .tex LaTeX file.
  * The gp reader might be required for visualizations.
 
  */
@@ -48,34 +48,9 @@ extern SCIP_RETCODE SCIPincludeReaderTex(
    SCIP* scip /**< SCIP data structure */
    );
 
-/** destructor of file reader to free user data (called when SCIP is exiting) */
-extern SCIP_DECL_READERFREE(readerFreeTex);
-
-/** problem reading method of reader
-  *
-  *  possible return values for *result:
-  *  - SCIP_SUCCESS    : the reader read the file correctly and created an appropritate problem
-  *  - SCIP_DIDNOTRUN  : the reader is not responsible for given input file
-  *
-  *  If the reader detected an error in the input file, it should return with RETCODE SCIP_READERR or SCIP_NOFILE.
-  */
-extern SCIP_DECL_READERREAD(readerReadTex);
-
-/** problem writing method of reader; NOTE: if the parameter "genericnames" is TRUE, then
-  *  SCIP already set all variable and constraint names to generic names; therefore, this
-  *  method should always use SCIPvarGetName() and SCIPconsGetName();
-  *
-  *  possible return values for *result:
-  *  - SCIP_SUCCESS    : the reader read the file correctly and created an appropritate problem
-  *  - SCIP_DIDNOTRUN  : the reader is not responsible for given input file
-  *
-  *  If the reader detected an error in the writing to the file stream, it should return
-  *  with RETCODE SCIP_WRITEERROR.
-  */
-extern SCIP_DECL_READERWRITE(readerWriteTex);
-
 /** writes a visualization for the given seeed */
 extern SCIP_RETCODE GCGwriteTexVisualization(
+   SCIP* scip, /**< SCIP data structure */
    char* filename,         /**< filename including path */
    int seeedid,            /**< id of seeed to visualize */
    SCIP_Bool statistics    /**< additionally to picture show statistics */
@@ -83,22 +58,30 @@ extern SCIP_RETCODE GCGwriteTexVisualization(
 
 /** writes a visualization of the family tree of the current seeedpool */
 extern SCIP_RETCODE GCGwriteTexFamilyTree(
-   char* filename   /**< filename including path */
-   //@todo how to get/give the seeedpool?
+   SCIP* scip,       /**< SCIP data structure */
+   char* filename,   /**< filename including path */
+   SCIP_Bool usegp   /**< true if the gp reader should be used to visualize the individual seeeds */
    );
 
 /*@todo more params? statistics, titlepage, toc, etc? */
 /*@todo is a int* of seeedids the best option? */
 /** writes a report for the given seeeds */
 extern SCIP_RETCODE GCGwriteTexReport(
-   char* filename,   /**< filename including path */
-   int* seeedids     /**< ids of seeeds to visualize */
+   SCIP* scip, /**< SCIP data structure */
+   char* filename,      /**< filename including path */
+   int* seeedids,       /**< ids of seeeds to visualize */
+   SCIP_Bool titlepage, /**< true if a title page should be included in the document */
+   SCIP_Bool toc,       /**< true if an interactive table of contents should be included */
+   SCIP_Bool statistics,/**< true if statistics for each seeed should be included */
+   SCIP_Bool usegp      /**< true if the gp reader should be used to visualize the individual seeeds */
    );
 
 /** makes a new makefile and readme for the given .tex file */
-extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(SCIP* scip, /**< SCIP data structure */
-   FILE* file /**< File for which the makefile & readme are generated */
-);
+extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(
+   SCIP* scip,       /**< SCIP data structure */
+   FILE* file,       /**< File for which the makefile & readme are generated */
+   SCIP_Bool usegp   /**< true if the gp reader was used for creation of file */
+   );
 
 
 #endif /* GCG_READER_TEX_H__ */

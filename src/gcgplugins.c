@@ -167,10 +167,12 @@
 #include "event_mastersol.h"
 
 /* Martin's detection stuff */
-#include "reader_gp.h"
 #include "cons_decomp.h"
 #include "dec_connected.h"
 
+/* visualization */
+#include "params_visu.h"
+#include "reader_gp.h"
 #include "reader_tex.h"
 
 #ifndef NBLISS

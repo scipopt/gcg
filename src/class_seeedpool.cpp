@@ -123,15 +123,6 @@ struct sort_pred {
    }
 };
 
-
-std::string getSeeedFolderLatex( SeeedPtr seeed )
-{
-   std::stringstream decompfilename;
-   decompfilename << "dec" << seeed->getID() << ".pdf";
-
-   return decompfilename.str();
-}
-
 SCIP_Bool unfinishedchildexists(std::vector<SCIP_Bool> const& childsfinished)
 {
    for( size_t s = 0; s < childsfinished.size(); ++s )
@@ -178,72 +169,6 @@ SCIP_Bool finishnextchild( std::vector<int>& childs, std::vector<SCIP_Bool>& chi
    }
    return FALSE;
 }
-
-std::string writeSeeedDetectorChainInfoLatex( SeeedPtr seeed, int currheight, int visucounter )
-{
-   std::stringstream line;
-   std::string relposition;
-   int position = visucounter % 3;
-   if( position == 0 )
-      relposition = "above";
-   else if ( position == 1)
-      relposition = "";
-   else if ( position == 2)
-      relposition = "below";
-   else
-      relposition = "below left";
-
-   if ( currheight != 1)
-      relposition = "";
-
-   if ( (size_t) currheight >  seeed->detectorchaininfo.size() )
-      line << "edge from parent node [" << relposition << "] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
-   else
-   {
-      std::string oldinfo = seeed->detectorchaininfo[ currheight - 1];
-      /** take latexified detctorchaininfo */
-      size_t index = 0;
-      while (true) {
-         /* Locate the substring to replace. */
-         index = oldinfo.find("_", index);
-         if (index == std::string::npos)
-            break;
-         if ( index > 0 &&   oldinfo.at(index-1) == '\\' )
-         {
-            ++index;
-            continue;
-         }
-
-         /* Make the replacement. */
-         oldinfo.replace(index, 1, "\\_");
-
-         /* Advance index forward so the next iteration doesn't pick it up as well. */
-         index += 2;
-      }
-      std::cout << "oldinfo: " << oldinfo << std::endl;
-
-      line << "edge from parent node [" << relposition << "] {" << oldinfo <<"} " ;
-   }
-
-   return line.str();
-}
-
-std::string writeSeeedInfoLatex( SeeedPtr seeed )
-{
-   std::stringstream line;
-   line << "\\node[below = \\belowcaptionskip of s" << seeed->getID() << "] (caps" << seeed->getID() << ") {\\scriptsize " << seeed->getShortCaption() << "}; " << std::endl;
-
-   return line.str();
-}
-
-std::string writeSeeedIncludeLatex( SeeedPtr seeed, std::string workfolder )
-{
-   std::stringstream line;
-   line << " (s" << seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{" << getSeeedFolderLatex(seeed) << "} }" << std::endl;
-
-   return line.str();
-}
-
 
 SCIP_RETCODE getDetectorCallRoundInfo(SCIP* scip, const char* detectorname, SCIP_Bool transformed, int* maxcallround, int* mincallround, int* freqcallround)
 {
