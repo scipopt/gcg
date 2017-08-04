@@ -2372,9 +2372,11 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
    }
 
    currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
-   cons = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? SCIPfindOrigCons(scip, consname ) : SCIPfindCons(scip, consname );
+   cons = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? (SCIPfindOrigCons(scip, consname ) == NULL ? SCIPfindCons(scip, consname ): SCIPfindOrigCons(scip, consname )) : SCIPfindCons(scip, consname );
    consindex = currseeedpool->getIndexForCons( cons ) ;
 
+   if( blockid >= conshdlrdata->curruserseeed->getNBlocks() )
+         conshdlrdata->curruserseeed->setNBlocks(blockid+1);
    conshdlrdata->curruserseeed->bookAsBlockCons(consindex, blockid);
 
    return SCIP_OKAY;
@@ -2454,6 +2456,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
    currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
    varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
 
+   if( blockid >= conshdlrdata->curruserseeed->getNBlocks() )
+      conshdlrdata->curruserseeed->setNBlocks(blockid+1);
    conshdlrdata->curruserseeed->bookAsBlockVar(varindex, blockid);
 
    return SCIP_OKAY;
