@@ -47,6 +47,7 @@
 #include <sstream>
 
 #include <iostream>
+#include <algorithm>
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "consclass"       /**< name of detector */
@@ -224,6 +225,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
        std::stringstream decdesc;
        decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
+       std::vector<int> curmasterclasses( consclassindices_master );
        for ( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
        {
           if ( consclassId > 0 )
@@ -231,6 +233,12 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
              decdesc << "-";
           }
           decdesc << classifier->getClassName( subsetsOfConsclasses[subset][consclassId] );
+
+          if( std::find( consclassindices_master.begin(), consclassindices_master.end(),
+             subsetsOfConsclasses[subset][consclassId] ) == consclassindices_master.end() )
+          {
+             curmasterclasses.push_back( subsetsOfConsclasses[subset][consclassId] );
+          }
        }
        for ( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
        {
@@ -245,7 +253,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
        seeed->addDetectorChainInfo(decinfo);
        seeed->setDetectorPropagated(detector);
-
+       seeed->setConsClassifierStatistics( seeed->getNDetectors() - 1, classifierIndex, curmasterclasses );
 
        foundseeeds.push_back(seeed);
     }

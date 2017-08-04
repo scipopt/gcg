@@ -85,7 +85,8 @@ Seeed::Seeed(
    openConss( 0 ) , hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
-   nNewBlocks( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), score( 1. ), maxwhitescore( 1. ),
+   nNewBlocks( 0 ), usedConsClassifier( 0 ), usedVarClassifier( 0 ), consClassesMaster( 0 ), varClassesLinking( 0 ),
+   varClassesMaster( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), score( 1. ), maxwhitescore( 1. ),
    borderareascore( 1. ), detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
    isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
 {
@@ -105,6 +106,8 @@ Seeed::Seeed(
    const Seeed *seeedtocopy
    )
 {
+   std::cout << "check\n";
+
    scip = ( seeedtocopy->scip );
    id = seeedtocopy->id;
    nBlocks = seeedtocopy->nBlocks;
@@ -116,8 +119,14 @@ Seeed::Seeed(
    varsForBlocks = seeedtocopy->varsForBlocks;
    linkingVars = seeedtocopy->linkingVars;
    stairlinkingVars = seeedtocopy->stairlinkingVars;
+
+   std::cout << "check\n";
+
    openVars = seeedtocopy->openVars;
    openConss = seeedtocopy->openConss;
+
+   std::cout << "check\n";
+
    detectorChain = seeedtocopy->detectorChain;
    detectorChainFinishingUsed = seeedtocopy->detectorChainFinishingUsed;
    detectorchaininfo = seeedtocopy->detectorchaininfo;
@@ -134,6 +143,29 @@ Seeed::Seeed(
    pctConssToBorder = seeedtocopy->pctConssToBorder;
    pctConssToBlock = seeedtocopy->pctConssToBlock;
    pctConssFromFree = seeedtocopy->pctConssFromFree;
+
+   std::cout << "check\n";
+
+   usedConsClassifier = seeedtocopy->usedConsClassifier;
+
+   std::cout << "check\n";
+
+   usedVarClassifier = seeedtocopy->usedVarClassifier;
+
+   std::cout << "check\n";
+
+   consClassesMaster = seeedtocopy->consClassesMaster;
+
+   std::cout << "check\n";
+
+   varClassesLinking = seeedtocopy->varClassesLinking;
+
+   std::cout << "check\n";
+
+   varClassesMaster = seeedtocopy->varClassesMaster;
+
+   std::cout << "check\n";
+
    isFinishedByFinisher = seeedtocopy->isFinishedByFinisher;
    changedHashvalue = seeedtocopy->changedHashvalue;
    nNewBlocks = seeedtocopy->nNewBlocks;
@@ -143,6 +175,8 @@ Seeed::Seeed(
    isselected = false;
    detectorchainstring = NULL;
    isfromunpresolved = FALSE;
+
+   std::cout << "check\n";
 }
 
 /** destructor */
@@ -217,6 +251,17 @@ void Seeed::addDetectorChainInfo(
    std::stringstream help;
    help << decinfo;
    detectorchaininfo.push_back( help.str() );
+}
+
+/** adds empty entries for all classifier statistics for a detector added to the detector chain */
+void Seeed::addEmptyClassifierStatistics()
+{
+   std::vector<int> emptyVector( 0 );
+   usedConsClassifier.push_back( -1 );
+   usedVarClassifier.push_back( -1 );
+   consClassesMaster.push_back( emptyVector );
+   varClassesLinking.push_back( emptyVector );
+   varClassesMaster.push_back( emptyVector );
 }
 
  /** adds number of new blocks created by a detector added to detector chain */
@@ -1584,6 +1629,16 @@ SCIP_RETCODE Seeed::completeGreedily(
    return SCIP_OKAY;
 }
 
+/** returns true if the given detector used a consclassifier */
+bool Seeed::consClassifierUsed(
+   int detectorchainindex
+   )
+{
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedConsClassifier.size() );
+
+   return usedConsClassifier[detectorchainindex] != -1;
+}
+
 /** assigns every open cons/var
  *  - to the respective block if it hits exactly one blockvar/blockcons and no open vars/conss
  *  - to master/linking if it hits blockvars/blockconss assigned to different blocks
@@ -2892,12 +2947,38 @@ std::vector<SCIP_Real> Seeed::getDetectorClockTimes()
    return detectorClockTimes;
 }
 
+/** returns the data of the consclassifier that the given detector made use of */
+SCIP_RETCODE Seeed::getConsClassifierData(
+   Seeedpool* seeedpool,
+   int detectorchainindex,
+   ConsClassifier** classifier,
+   std::vector<int>& consclassesmaster
+   )
+{
+   assert( seeedpool != NULL );
+   assert( consClassifierUsed( detectorchainindex ) );
+
+   *classifier = seeedpool->getConsClassifier( usedConsClassifier[detectorchainindex] );
+   consclassesmaster = consClassesMaster[detectorchainindex];
+
+   return SCIP_OKAY;
+}
 
 /** returns the time that the detectors needed for detecting */
 void Seeed::setDetectorClockTimes(
    std::vector<SCIP_Real> newvector)
 {
    detectorClockTimes = newvector;
+}
+
+/** returns true if the given detector used a varclassifier */
+bool Seeed::varClassifierUsed(
+   int detectorchainindex
+   )
+{
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedVarClassifier.size() );
+
+   return usedVarClassifier[detectorchainindex] != -1;
 }
 
 
@@ -2920,6 +3001,157 @@ DEC_DETECTOR** Seeed::getDetectorchain()
 std::vector<DEC_DETECTOR*> Seeed::getDetectorchainVector()
 {
    return detectorChain;
+}
+
+/** returns a string displaying detector-related information, i.e. clock times and assignment data */
+std::string Seeed::getDetectorStatistics(
+   int detectorchainindex
+   )
+{
+   std::stringstream output;
+
+   if( (int) getDetectorClockTimes().size() > detectorchainindex )
+      output << "  Detection time: " << getDetectorClockTime( detectorchainindex ) << std::endl;
+   if( (int) getPctConssFromFreeVector().size() > detectorchainindex )
+      output << "  % newly assigned constraints: " << getPctConssFromFree( detectorchainindex ) << std::endl;
+   if( (int) getPctConssToBorderVector().size() > detectorchainindex )
+      output << "  % constraints the detector assigned to border: " << getPctConssToBorder( detectorchainindex ) << std::endl;
+   if( (int) getPctConssToBlockVector().size() > detectorchainindex )
+      output << "  % constraints the detector assigned to blocks: " << getPctConssToBlock( detectorchainindex ) << std::endl;
+   if( (int) getPctVarsFromFreeVector().size() > detectorchainindex )
+      output << "  % newly assigned variables: " << getPctVarsFromFree( detectorchainindex ) << std::endl;
+   if( (int) getPctVarsToBorderVector().size() > detectorchainindex )
+      output << "  % variables the detector assigned to border: " << getPctVarsToBorder( detectorchainindex ) << std::endl;
+   if( (int) getPctVarsToBlockVector().size() > detectorchainindex )
+      output << "  % variables the detector assigned to blocks: " << getPctVarsToBlock( detectorchainindex ) << std::endl;
+   if( (int) getNNewBlocksVector().size() > detectorchainindex )
+         output << "  New blocks: " << getNNewBlocks( detectorchainindex ) << std::endl;
+
+   return output.str();
+}
+
+/** returns a string displaying classifier information if such a classifier was used */
+std::string Seeed::getDetectorClassifierInfo(
+   Seeedpool* seeedpool,
+   int detectorchainindex,
+   bool displayConssVars
+   )
+{
+   std::stringstream output;
+
+   if( consClassifierUsed( detectorchainindex ) )
+   {
+      ConsClassifier* classifier;
+      std::vector<int> constomaster;
+
+      getConsClassifierData( seeedpool, detectorchainindex, &classifier, constomaster );
+
+      output << "  Used consclassifier: " << classifier->getName() << std::endl;
+      output << "   Pushed to master:";
+
+      if( constomaster.size() > 0 )
+      {
+         if( displayConssVars )
+         {
+
+         }
+         else
+         {
+            output << " " << classifier->getClassName( constomaster[0] );
+         }
+      }
+
+      for( size_t i = 1; i < constomaster.size(); ++i )
+      {
+         if( displayConssVars )
+         {
+
+         }
+         else
+         {
+            output << ", " << classifier->getClassName( constomaster[i] );
+         }
+      }
+
+      if ( !displayConssVars )
+      {
+         output << std::endl;
+      }
+   }
+
+   if( consClassifierUsed( detectorchainindex ) )
+   {
+      VarClassifier* classifier;
+      std::vector<int> vartolinking;
+      std::vector<int> vartomaster;
+
+      getVarClassifierData( seeedpool, detectorchainindex, &classifier, vartolinking, vartomaster );
+
+      output << "  Used varclassifier: " << classifier->getName() << std::endl;
+      output << "   Pushed to linking:";
+
+      if( vartolinking.size() > 0 )
+      {
+         if( displayConssVars )
+         {
+
+         }
+         else
+         {
+            output << " " << classifier->getClassName( vartolinking[0] );
+         }
+      }
+
+      for( size_t i = 1; i < vartolinking.size(); ++i )
+      {
+         if( displayConssVars )
+         {
+
+         }
+         else
+         {
+            output << ", " << classifier->getClassName( vartolinking[i] );
+         }
+      }
+
+      if ( !displayConssVars )
+      {
+         output << std::endl;
+      }
+
+      output << "   Pushed to master:";
+
+      if( vartomaster.size() > 0 )
+      {
+         if( displayConssVars )
+         {
+
+         }
+         else
+         {
+            output << " " << classifier->getClassName( vartomaster[0] );
+         }
+      }
+
+      for( size_t i = 1; i < vartomaster.size(); ++i )
+      {
+         if( displayConssVars )
+         {
+
+         }
+         else
+         {
+            output << ", " << classifier->getClassName( vartomaster[i] );
+         }
+      }
+
+      if ( !displayConssVars )
+      {
+         output << std::endl;
+      }
+   }
+
+   return output.str();
 }
 
 /** returns true if this seeed was finished by finishSeeed() method of a detector */
@@ -2956,7 +3188,7 @@ int Seeed::getID()
 }
 
 /** displays the relevant information of the seeed */
-std::string Seeed::getInfo(
+SCIP_RETCODE Seeed::displayInfo(
    Seeedpool* seeedpool,
    int detailLevel
    )
@@ -2964,145 +3196,242 @@ std::string Seeed::getInfo(
    assert( seeedpool != NULL );
    assert( 0 <= detailLevel );
 
-   std::stringstream output;
 
-   output << std::endl;
+   std::cout << std::endl;
 
    /* general information */
-   output << "-- General information --" << std::endl;
-   output << " ID: " << id << std::endl;
-   output << " Hashvalue: " << hashvalue << std::endl;
-   output << " Score: " << score << std::endl;
+   std::cout << "-- General information --" << std::endl;
+   std::cout << " ID: " << id << std::endl;
+   std::cout << " Hashvalue: " << hashvalue << std::endl;
+   std::cout << " Score: " << score << std::endl;
    if( getNOpenconss() + getNOpenconss() > 0 )
-      output << " Maxwhitescore >= " << maxwhitescore << std::endl;
+      std::cout << " Maxwhitescore >= " << maxwhitescore << std::endl;
    else
-      output << " Maxwhitescore: " << maxwhitescore << std::endl;
-   output << " Seeed is for the " << ( isfromunpresolved ? "unpresolved" : "presolved" ) << " problem and "
-      << ( usergiven ? "Usergiven" : "not usergiven" ) << "." << std::endl;
+      std::cout << " Maxwhitescore: " << maxwhitescore << std::endl;
+   std::cout << " Seeed is for the " << ( isfromunpresolved ? "unpresolved" : "presolved" ) << " problem and "
+      << ( usergiven ? "usergiven" : "not usergiven" ) << "." << std::endl;
+   std::cout << " Number of constraints: " << getNConss() << std::endl;
+   std::cout << " Number of variables: " << getNVars() << std::endl;
 
-   output << std::endl;
+   std::cout << std::endl;
 
    /* detection information */
-   output << "-- Detection and detectors --" << std::endl;
-   output << " Stems from unpresolved problem: " << ( stemsFromUnpresolved ? "yes" : "no" ) << std::endl;
+   std::cout << "-- Detection and detectors --" << std::endl;
+   std::cout << " Seeed stems from the " << ( stemsFromUnpresolved ? "unpresolved" : "presolved" ) << " problem." << std::endl;
 
    /* ancestor seeeds' ids */
-   output << " IDs of ancestor seeeds: ";
+   std::cout << " IDs of ancestor seeeds: ";
    if( listofancestorids.size() > 0 )
-      output << listofancestorids[0];
+      std::cout << listofancestorids[0];
    for( int i = 1; i < (int) listofancestorids.size(); ++i )
-      output << ", " << listofancestorids[i];
-   output << std::endl;
+      std::cout << ", " << listofancestorids[i];
+   std::cout << std::endl;
 
-   output << " " << getNDetectors() << " detector(s) worked on this seeed: ";
+   std::cout << " " << getNDetectors() << " detector" << ( getNDetectors() > 1 ? "s" : "" ) << " worked on this seeed:";
    if( getNDetectors() != 0 )
    {
       std::string detectorrepres;
 
       if( detectorChain[0] == NULL )
          detectorrepres = "user";
-      else if( false )
+      else
       {
-         /* @todo legacy */
+         /* potentially add finisher label */
+         detectorrepres = (
+            getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[0]) :
+               "(finish) " + std::string(DECdetectorGetName(detectorChain[0])));
+      }
+
+      if( detailLevel > 0 )
+      {
+         std::cout << std::endl << " 1.: " << detectorrepres << std::endl;
+         std::cout << getDetectorStatistics( 0 );
+         std::cout << getDetectorClassifierInfo( seeedpool, 0, detailLevel > 1 );
       }
       else
       {
-         detectorrepres = (
-            getNDetectors() != 1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[0]) :
-               "(finish)" + std::string(DECdetectorGetName(detectorChain[0])));
+         std::cout << " " << detectorrepres;
       }
-
-      output << ": " << detectorrepres;
 
       for( int d = 1; d < getNDetectors(); ++d )
       {
+         /* potentially add finisher label */
          detectorrepres = (
             getNDetectors() != d + 1 || !isFinishedByFinisher ? DECdetectorGetName(detectorChain[d]) :
-               "(finish)" + std::string(DECdetectorGetName(detectorChain[d])));
+               "(finish) " + std::string(DECdetectorGetName(detectorChain[d])));
 
-         output << ", " << detectorrepres;
+
+         if( detailLevel > 0 )
+         {
+            std::cout << " " << ( d + 1 ) << ".: " << detectorrepres << std::endl;
+            std::cout << getDetectorStatistics( d );
+            std::cout << getDetectorClassifierInfo( seeedpool, d, detailLevel > 1 );
+         }
+         else
+         {
+            std::cout << ", " << detectorrepres;
+         }
+      }
+
+      if( detailLevel <= 0 )
+      {
+         std::cout << std::endl;
       }
    }
-   output << std::endl;
 
-   output << std::endl;
+   std::cout << std::endl;
 
    /* variable information */
-   output << "-- Constraints and variables --" << std::endl;
-   output << " Linkingvariables: " << getNLinkingvars() << std::endl;
-   output << " Mastercontraints: " << getNMasterconss() << std::endl;
-   output << " Mastervariables: " << getNMastervars() << std::endl;
-   output << " Open constraints: " << getNOpenconss() << std::endl;
-   output << " Open variables: " << getNOpenvars() << std::endl;
+   std::cout << "-- Border and unassigned --" << std::endl;
+   std::cout << " Linkingvariables";
+   if( detailLevel > 1 )
+   {
+      std::cout << " (" << getNLinkingvars() << ")";
+      if( getNLinkingvars() > 0 )
+         std::cout << ":  " << SCIPvarGetName( seeedpool->getVarForIndex( getLinkingvars()[0] ) );
+      for( int v = 1; v < getNLinkingvars(); ++v )
+      {
+         std::cout << ", " << SCIPvarGetName( seeedpool->getVarForIndex( getLinkingvars()[v] ) );
+      }
+      std::cout << std::endl;
+   }
+   else
+   {
+      std::cout << ": " << getNLinkingvars() << std::endl;
+   }
+   std::cout << " Masterconstraints";
+   if( detailLevel > 1 )
+   {
+      std::cout << " (" << getNMasterconss() << ")";
+      if( getNMasterconss() > 0 )
+         std::cout << ":  " << SCIPconsGetName( seeedpool->getConsForIndex( getMasterconss()[0] ) );
+      for( int c = 1; c < getNMasterconss(); ++c )
+      {
+         std::cout << ", " << SCIPconsGetName( seeedpool->getConsForIndex( getMasterconss()[c] ) );
+      }
+      std::cout << std::endl;
+   }
+   else
+   {
+      std::cout << ": " << getNMasterconss() << std::endl;
+   }
+   std::cout << " Mastervariables";
+   if( detailLevel > 1 )
+   {
+      std::cout << " (" << getNMastervars() << ")";
+      if( getNMastervars() > 0 )
+         std::cout << ":  " << SCIPvarGetName( seeedpool->getVarForIndex( getMastervars()[0] ) );
+      for( int v = 1; v < getNMastervars(); ++v )
+      {
+         std::cout << ", " << SCIPvarGetName( seeedpool->getVarForIndex( getMastervars()[v] ) );
+      }
+      std::cout << std::endl;
+   }
+   else
+   {
+      std::cout << ": " << getNMastervars() << std::endl;
+   }
+   std::cout << " Open constraints";
+   if( detailLevel > 1 )
+   {
+      std::cout << " (" << getNOpenconss() << ")";
+      if( getNOpenconss() > 0 )
+         std::cout << ":  " << SCIPconsGetName( seeedpool->getConsForIndex( getOpenconss()[0] ) );
+      for( int c = 1; c < getNOpenconss(); ++c )
+      {
+         std::cout << ", " << SCIPconsGetName( seeedpool->getConsForIndex( getOpenconss()[c] ) );
+      }
+      std::cout << std::endl;
+   }
+   else
+   {
+      std::cout << ": " << getNOpenconss() << std::endl;
+   }
+   std::cout << " Open variables";
+   if( detailLevel > 1 )
+   {
+      std::cout << " (" << getNOpenvars() << ")";
+      if( getNOpenvars() > 0 )
+         std::cout << ":  " << SCIPvarGetName( seeedpool->getVarForIndex( getOpenvars()[0] ) );
+      for( int v = 1; v < getNOpenvars(); ++v )
+      {
+         std::cout << ", " << SCIPvarGetName( seeedpool->getVarForIndex( getOpenvars()[v] ) );
+      }
+      std::cout << std::endl;
+   }
+   else
+   {
+      std::cout << ": " << getNOpenvars() << std::endl;
+   }
 
-   output << std::endl;
+   std::cout << std::endl;
 
    /* block information */
-   output << "-- Blocks --" << std::endl;
-   output << " Number of blocks: " << nBlocks << std::endl;
+   std::cout << "-- Blocks --" << std::endl;
+   std::cout << " Number of blocks: " << nBlocks << std::endl;
 
    if( detailLevel > 0 )
    {
       for( int b = 0; b < nBlocks; ++b )
       {
-         output << " Block " << b << ":" << std::endl;
+         std::cout << " Block " << b << ":" << std::endl;
 
-         output << "  Constraints ";
+         std::cout << "  Constraints";
          if( detailLevel > 1 )
          {
-            output << "(" << getNConssForBlock( b ) << ")";
+            std::cout << " (" << getNConssForBlock( b ) << ")";
             if( getNConssForBlock( b ) > 0 )
-               output << ":  " << SCIPconsGetName( seeedpool->getConsForIndex( getConssForBlock( b )[0] ) );
+               std::cout << ":  " << SCIPconsGetName( seeedpool->getConsForIndex( getConssForBlock( b )[0] ) );
             for( int c = 1; c < getNConssForBlock( b ); ++c )
             {
-               output << ", " << SCIPconsGetName( seeedpool->getConsForIndex( getConssForBlock( b )[c] ) );
+               std::cout << ", " << SCIPconsGetName( seeedpool->getConsForIndex( getConssForBlock( b )[c] ) );
             }
-            output << std::endl;
+            std::cout << std::endl;
          }
          else
          {
-            output << ": " << getNConssForBlock( b ) << std::endl;
+            std::cout << ": " << getNConssForBlock( b ) << std::endl;
          }
 
-         output << "  Variables ";
+         std::cout << "  Variables";
          if( detailLevel > 1 )
          {
-            output << "(" << getNVarsForBlock( b ) << ")";
+            std::cout << " (" << getNVarsForBlock( b ) << ")";
             if( getNVarsForBlock( b ) > 0 )
-               output << ":  " << SCIPvarGetName( seeedpool->getVarForIndex( getVarsForBlock( b )[0] ) );
+               std::cout << ":  " << SCIPvarGetName( seeedpool->getVarForIndex( getVarsForBlock( b )[0] ) );
             for( int v = 1; v < getNVarsForBlock( b ); ++v )
             {
-               output << ", " << SCIPvarGetName( seeedpool->getVarForIndex( getVarsForBlock( b )[v] ) );
+               std::cout << ", " << SCIPvarGetName( seeedpool->getVarForIndex( getVarsForBlock( b )[v] ) );
             }
-            output << std::endl;
+            std::cout << std::endl;
          }
          else
          {
-            output << ": " << getNVarsForBlock( b ) << std::endl;
+            std::cout << ": " << getNVarsForBlock( b ) << std::endl;
          }
 
-         output << "  Stairlinkingvariables ";
+         std::cout << "  Stairlinkingvariables";
          if( detailLevel > 1 )
          {
-            output << "(" << getNStairlinkingvars( b ) << ")";
+            std::cout << " (" << getNStairlinkingvars( b ) << ")";
             if( getNStairlinkingvars( b ) > 0 )
-               output << ":  " << SCIPvarGetName( seeedpool->getVarForIndex( getStairlinkingvars( b )[0] ) );
+               std::cout << ":  " << SCIPvarGetName( seeedpool->getVarForIndex( getStairlinkingvars( b )[0] ) );
             for( int v = 1; v < getNStairlinkingvars( b ); ++v )
             {
-               output << ", " << SCIPvarGetName( seeedpool->getVarForIndex( getStairlinkingvars( b )[v] ) );
+               std::cout << ", " << SCIPvarGetName( seeedpool->getVarForIndex( getStairlinkingvars( b )[v] ) );
             }
-            output << std::endl;
+            std::cout << std::endl;
          }
          else
          {
-            output << ": " << getNStairlinkingvars( b ) << std::endl;
+            std::cout << ": " << getNStairlinkingvars( b ) << std::endl;
          }
       }
    }
 
-   output << std::endl;
+   std::cout << std::endl;
 
-   return output.str();
+   return SCIP_OKAY;
 }
 
 /** returns array containing all linking vars */
@@ -3459,6 +3788,25 @@ bool Seeed::getStemsFromUnpresolved()
    return stemsFromUnpresolved;
 }
 
+/** returns the data of the varclassifier that the given detector made use of */
+SCIP_RETCODE Seeed::getVarClassifierData(
+   Seeedpool* seeedpool,
+   int detectorchainindex,
+   VarClassifier** classifier,
+   std::vector<int>& varclasseslinking,
+   std::vector<int>& varclassesmaster
+   )
+{
+   assert( seeedpool != NULL );
+   assert( varClassifierUsed( detectorchainindex ) );
+
+   *classifier = seeedpool->getVarClassifier( usedVarClassifier[detectorchainindex] );
+   varclassesmaster = varClassesLinking[detectorchainindex];
+   varclassesmaster = varClassesMaster[detectorchainindex];
+
+   return SCIP_OKAY;
+}
+
 /** returns array containing vars of a block */
 const int* Seeed::getVarsForBlock(
    int block
@@ -3780,6 +4128,19 @@ SCIP_RETCODE Seeed::refineToMaster(
    return SCIP_OKAY;
 }
 
+/** registers statistics for a used consclassifier */
+void Seeed::setConsClassifierStatistics(
+   int detectorchainindex,
+   int consclassifierindex,
+   std::vector<int> consclassesmaster
+   )
+{
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedConsClassifier.size() );
+
+   usedConsClassifier[detectorchainindex] = consclassifierindex;
+   consClassesMaster[detectorchainindex] = consclassesmaster;
+}
+
 /** directly adds a constraint to a block
  *  does not delete this cons from list of open conss */
 SCIP_RETCODE Seeed::setConsToBlock(
@@ -3827,6 +4188,7 @@ SCIP_RETCODE Seeed::setDetectorPropagated(
 {
    detectorChain.push_back( detectorID );
    detectorChainFinishingUsed.push_back( FALSE );
+   addEmptyClassifierStatistics();
 
    return SCIP_OKAY;
 }
@@ -3932,6 +4294,21 @@ void Seeed::setUsergiven(
    )
 {
    usergiven = givenusergiven;
+}
+
+/** registers statistics for a used varclassifier */
+void Seeed::setVarClassifierStatistics(
+   int detectorchainindex,
+   int varclassifierindex,
+   std::vector<int> varclasseslinking,
+   std::vector<int> varclassesmaster
+   )
+{
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedVarClassifier.size() );
+
+   usedVarClassifier[detectorchainindex] = varclassifierindex;
+   varClassesLinking[detectorchainindex] = varclasseslinking;
+   varClassesMaster[detectorchainindex] = varclassesmaster;
 }
 
 /** directly adds a variable to the linking variables

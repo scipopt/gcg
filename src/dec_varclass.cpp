@@ -47,6 +47,7 @@
 #include <sstream>
 
 #include <iostream>
+#include <algorithm>
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "varclass"       /**< name of detector */
@@ -249,6 +250,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        /** set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
        std::stringstream decdesc;
        decdesc << "varclass" << "\\_" << classifier->getName() << ": \\\\ ";
+       std::vector<int> curlinkingclasses( 0 );
        for ( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
        {
           if ( varclassId > 0 )
@@ -256,6 +258,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
              decdesc << "-";
           }
           decdesc << classifier->getClassName( subsetsOfVarclasses[subset][varclassId] );
+
+          curlinkingclasses.push_back( subsetsOfVarclasses[subset][varclassId] );
        }
        for ( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
        {
@@ -264,12 +268,20 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
              decdesc << "-";
           }
           decdesc << classifier->getClassName( varclassindices_linking[varclassId] );
+
+          if( std::find( curlinkingclasses.begin(), curlinkingclasses.end(),
+             varclassindices_linking[varclassId] ) == curlinkingclasses.end() )
+          {
+             curlinkingclasses.push_back( varclassindices_linking[varclassId] );
+          }
        }
 
        seeed->flushBooked();
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
        seeed->addDetectorChainInfo(decinfo);
        seeed->setDetectorPropagated(detector);
+       seeed->setVarClassifierStatistics( seeed->getNDetectors() - 1, classifierIndex, curlinkingclasses,
+          varclassindices_master );
 
        foundseeeds.push_back(seeed);
     }

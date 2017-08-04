@@ -1470,7 +1470,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
    {
       gcg::Seeedpool* seeedpool = ( conshdlrdata->listall->at( idtoinspect )->isFromUnpresolved() ?
          conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
-      SCIPdialogMessage( scip, NULL, conshdlrdata->listall->at( idtoinspect )->getInfo( seeedpool, 2 ).c_str() );
+      conshdlrdata->listall->at( idtoinspect )->displayInfo( seeedpool, 2 );
    }
    else
    {

@@ -41,6 +41,8 @@
 #include "struct_detector.h"
 #include <string>
 #include "cons_decomp.h"
+#include "class_consclassifier.h"
+#include "class_varclassifier.h"
 #include "graph/graph_gcg.h"
 #include "graph/graph.h"
 
@@ -121,6 +123,13 @@ private:
    std::vector<SCIP_Real> pctConssFromFree;           /**< vector containing the fraction of constraints that are not longer
                                                          *< open for each detector working on that seeed*/
    std::vector<int> nNewBlocks;                       /**< vector containing detector indices that worked on that seeed */
+
+   std::vector<int> usedConsClassifier;
+   std::vector<int> usedVarClassifier;
+   std::vector<std::vector<int>> consClassesMaster;
+   std::vector<std::vector<int>> varClassesLinking;
+   std::vector<std::vector<int>> varClassesMaster;
+
    std::vector<int> listofancestorids;                /**< vector containing detector indices that worked on that seeed */
    USERGIVEN usergiven;                               /**< is this seeed partially or completely given by user */
    SCIP_Real score;                                   /**< score to evaluate the seeeds */
@@ -304,6 +313,11 @@ public:
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
+   /** returns true if the given detector used a consclassifier */
+   bool consClassifierUsed(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
    /** assigns every open cons/var
     *  - to the respective block if it hits exactly one blockvar/blockcons and no open vars/conss
     *  - to master/linking if it hits blockvars/blockconss assigned to different blocks
@@ -444,6 +458,14 @@ public:
    /** returns the time that the detectors needed for detecting */
    std::vector<SCIP_Real> getDetectorClockTimes();
 
+   /** returns the data of the consclassifier that the given detector made use of */
+   SCIP_RETCODE getConsClassifierData(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      int detectorchainindex, /**< index of the detector in the detectorchain */
+      ConsClassifier** classifier, /**< a pointer to the used consclassifier */
+      std::vector<int>& consclassesmaster /**< a vector containing all indices of the consclasses assigned to master */
+      );
+
    /** returns array containing constraints assigned to a block */
    const int* getConssForBlock(
       int block
@@ -454,6 +476,18 @@ public:
 
    /** returns the detectorchain as a vector */
    std::vector<DEC_DETECTOR*> getDetectorchainVector();
+
+   /** returns a string displaying all detector-related information, i.e. clock times and assignment data */
+   std::string getDetectorStatistics(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
+   /** returns a string displaying classifier information if such a classifier was used */
+   std::string getDetectorClassifierInfo(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      int detectorchainindex, /**< index of the detector in the detectorchain */
+      bool displayConssVars /**< pass true if constraints and variables of the respective classes should be displayed */
+      );
 
    /** returns true if this seeed was finished by finishSeeed() method of a detector */
    bool getFinishedByFinisher();
@@ -471,7 +505,7 @@ public:
    int getID();
 
    /** displays the relevant information of the seeed */
-   std::string getInfo(
+   SCIP_RETCODE displayInfo(
       Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
       int detailLevel /**< @todo pass a value that indicates how detailed the output should be:
                               0: overview
@@ -620,6 +654,15 @@ public:
    /** returns true if this seeed stems from the unpresolved problem */
    bool getStemsFromUnpresolved();
 
+   /** returns the data of the varclassifier that the given detector made use of */
+   SCIP_RETCODE getVarClassifierData(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      int detectorchainindex, /**< index of the detector in the detectorchain */
+      VarClassifier** classifier, /**< a pointer to the used varclassifier */
+      std::vector<int>& varclasseslinking, /**< a vector containing all indices of the varclasses assigned to linking */
+      std::vector<int>& varclassesmaster /**< a vector containing all indices of the varclasses assigned to master */
+      );
+
    /** returns array containing vars of a block */
    const int* getVarsForBlock(
       int block
@@ -716,6 +759,13 @@ public:
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
+   /** registers statistics for a used consclassifier */
+   void setConsClassifierStatistics(
+      int detectorchainindex, /**< index of the detector in the detectorchain */
+      int consclassifierindex, /**< index of the consclassifier in the related seeedpool */
+      std::vector<int> consclassesmaster /**< vector of classindices that were assigned to master */
+      );
+
    /** directly adds a constraint to a block
     *  does not delete this cons from list of open conss */
    SCIP_RETCODE setConsToBlock(
@@ -787,6 +837,14 @@ public:
    /** sets whether this seeed is usergiven */
    void setUsergiven(
       USERGIVEN usergiven
+      );
+
+   /** registers statistics for a used varclassifier */
+   void setVarClassifierStatistics(
+      int detectorchainindex, /**< index of the detector in the detectorchain */
+      int varclassifierindex, /**< index of the consclassifier in the related seeedpool */
+      std::vector<int> varclasseslinking, /**< vector of classindices that were assigned to linking */
+      std::vector<int> varclassesmaster /**< vector of classindices that were assigned to master */
       );
 
    /** directly adds a variable to the linking variables
@@ -882,13 +940,19 @@ public:
       std::vector<SCIP_Real> newvector
       );
 
-
+   /** returns true if the given detector used a varclassifier */
+   bool varClassifierUsed(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
 
 
    /** creates and sets a detector chain short string for this seeed */
    SCIP_RETCODE buildDecChainString();
 
 private:
+
+   /** adds empty entries for all classifier statistics for a detector added to the detector chain */
+   void addEmptyClassifierStatistics();
 
    /** assigns every open cons
     *  - to master if it hits blockvars of different blocks
