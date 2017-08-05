@@ -1750,6 +1750,8 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
 
       newseeed->addAncestorID( otherseeed->getID() );
 
+      newseeed->copyClassifierStatistics( otherseeed );
+
       for( int i = 0; i < otherseeed->getNDetectors(); ++i )
       {
          newseeed->addClockTime( otherseeed->getDetectorClockTime( i ) );

@@ -1438,8 +1438,10 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    char* ntoinspect;
+   char* ndetaillevel;
    SCIP_Bool endoffile;
    int idtoinspect;
+   int detaillevel;
 
    int commandlen;
 
@@ -1466,11 +1468,27 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
       }
    }
 
+   SCIPdialogMessage( scip, NULL, "Please specify the detail level:\n  0 - brief overview\n  1 - block and detector info (default)\n  2 - cons and var assignments\n" );
+   SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ndetaillevel, &endoffile ) );
+   commandlen = strlen( ndetaillevel );
+
+   detaillevel = 1;
+   if( commandlen != 0 )
+   {
+      std::stringstream convert( ndetaillevel );
+      convert >> detaillevel;
+
+      if ( detaillevel < 0 || ( detaillevel == 0 && ndetaillevel[0] != '0' ) )
+      {
+         detaillevel = 1;
+      }
+   }
+
    if( 0 <= idtoinspect && idtoinspect < (int)conshdlrdata->listall->size() )
    {
       gcg::Seeedpool* seeedpool = ( conshdlrdata->listall->at( idtoinspect )->isFromUnpresolved() ?
          conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
-      conshdlrdata->listall->at( idtoinspect )->displayInfo( seeedpool, 2 );
+      conshdlrdata->listall->at( idtoinspect )->displayInfo( seeedpool, detaillevel );
    }
    else
    {

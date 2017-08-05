@@ -327,6 +327,11 @@ public:
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
+   /** copies the given seeed's classifier statistics */
+   SCIP_RETCODE copyClassifierStatistics(
+      const Seeed* otherseeed
+      );
+
    /** deletes empty blocks */
    SCIP_RETCODE deleteEmptyBlocks();
 

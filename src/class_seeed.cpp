@@ -106,8 +106,6 @@ Seeed::Seeed(
    const Seeed *seeedtocopy
    )
 {
-   std::cout << "check\n";
-
    scip = ( seeedtocopy->scip );
    id = seeedtocopy->id;
    nBlocks = seeedtocopy->nBlocks;
@@ -119,14 +117,8 @@ Seeed::Seeed(
    varsForBlocks = seeedtocopy->varsForBlocks;
    linkingVars = seeedtocopy->linkingVars;
    stairlinkingVars = seeedtocopy->stairlinkingVars;
-
-   std::cout << "check\n";
-
    openVars = seeedtocopy->openVars;
    openConss = seeedtocopy->openConss;
-
-   std::cout << "check\n";
-
    detectorChain = seeedtocopy->detectorChain;
    detectorChainFinishingUsed = seeedtocopy->detectorChainFinishingUsed;
    detectorchaininfo = seeedtocopy->detectorchaininfo;
@@ -143,29 +135,11 @@ Seeed::Seeed(
    pctConssToBorder = seeedtocopy->pctConssToBorder;
    pctConssToBlock = seeedtocopy->pctConssToBlock;
    pctConssFromFree = seeedtocopy->pctConssFromFree;
-
-   std::cout << "check\n";
-
    usedConsClassifier = seeedtocopy->usedConsClassifier;
-
-   std::cout << "check\n";
-
    usedVarClassifier = seeedtocopy->usedVarClassifier;
-
-   std::cout << "check\n";
-
    consClassesMaster = seeedtocopy->consClassesMaster;
-
-   std::cout << "check\n";
-
    varClassesLinking = seeedtocopy->varClassesLinking;
-
-   std::cout << "check\n";
-
    varClassesMaster = seeedtocopy->varClassesMaster;
-
-   std::cout << "check\n";
-
    isFinishedByFinisher = seeedtocopy->isFinishedByFinisher;
    changedHashvalue = seeedtocopy->changedHashvalue;
    nNewBlocks = seeedtocopy->nNewBlocks;
@@ -175,8 +149,6 @@ Seeed::Seeed(
    isselected = false;
    detectorchainstring = NULL;
    isfromunpresolved = FALSE;
-
-   std::cout << "check\n";
 }
 
 /** destructor */
@@ -1753,6 +1725,20 @@ SCIP_RETCODE Seeed::considerImplicits(
    return SCIP_OKAY;
 }
 
+/** copies the given seeed's classifier statistics */
+SCIP_RETCODE Seeed::copyClassifierStatistics(
+   const Seeed* otherseeed
+   )
+{
+   usedConsClassifier = otherseeed->usedConsClassifier;
+   usedVarClassifier = otherseeed->usedVarClassifier;
+   consClassesMaster = otherseeed->consClassesMaster;
+   varClassesLinking = otherseeed->varClassesLinking;
+   varClassesMaster = otherseeed->varClassesMaster;
+
+   return SCIP_OKAY;
+}
+
 /** deletes empty blocks */
 SCIP_RETCODE Seeed::deleteEmptyBlocks()
 {
@@ -3053,7 +3039,25 @@ std::string Seeed::getDetectorClassifierInfo(
       {
          if( displayConssVars )
          {
-
+            output << std::endl << "    " << classifier->getClassName( constomaster[0] ) << " ("
+               << classifier->getClassDescription( constomaster[0] ) << "): ";
+            bool first = true;
+            for( int c = 0; c < classifier->getNConss(); ++c )
+            {
+               if( classifier->getClassOfCons( c ) == constomaster[0] )
+               {
+                  if( first )
+                  {
+                     output << SCIPconsGetName( seeedpool->getConsForIndex( c ) );
+                     first = false;
+                  }
+                  else
+                  {
+                     output << ", " << SCIPconsGetName( seeedpool->getConsForIndex( c ) );
+                  }
+               }
+            }
+            output << std::endl;
          }
          else
          {
@@ -3065,7 +3069,25 @@ std::string Seeed::getDetectorClassifierInfo(
       {
          if( displayConssVars )
          {
-
+            output << "    " << classifier->getClassName( constomaster[i] ) << " ("
+               << classifier->getClassDescription( constomaster[i] ) << "): ";
+            bool first = true;
+            for( int c = 0; c < classifier->getNConss(); ++c )
+            {
+               if( classifier->getClassOfCons( c ) == constomaster[i] )
+               {
+                  if( first )
+                  {
+                     output << SCIPconsGetName( seeedpool->getConsForIndex( c ) );
+                     first = false;
+                  }
+                  else
+                  {
+                     output << ", " << SCIPconsGetName( seeedpool->getConsForIndex( c ) );
+                  }
+               }
+            }
+            output << std::endl;
          }
          else
          {
@@ -3073,13 +3095,13 @@ std::string Seeed::getDetectorClassifierInfo(
          }
       }
 
-      if ( !displayConssVars )
+      if ( !displayConssVars || constomaster.size() == 0 )
       {
          output << std::endl;
       }
    }
 
-   if( consClassifierUsed( detectorchainindex ) )
+   if( varClassifierUsed( detectorchainindex ) )
    {
       VarClassifier* classifier;
       std::vector<int> vartolinking;
@@ -3094,7 +3116,25 @@ std::string Seeed::getDetectorClassifierInfo(
       {
          if( displayConssVars )
          {
-
+            output << std::endl << "    " << classifier->getClassName( vartolinking[0] ) << " ("
+               << classifier->getClassDescription( vartolinking[0] ) << "): ";
+            bool first = true;
+            for( int v = 0; v < classifier->getNVars(); ++v )
+            {
+               if( classifier->getClassOfVar( v ) == vartolinking[0] )
+               {
+                  if( first )
+                  {
+                     output << SCIPvarGetName( seeedpool->getVarForIndex( v ) );
+                     first = false;
+                  }
+                  else
+                  {
+                     output << ", " << SCIPvarGetName( seeedpool->getVarForIndex( v ) );
+                  }
+               }
+            }
+            output << std::endl;
          }
          else
          {
@@ -3106,7 +3146,25 @@ std::string Seeed::getDetectorClassifierInfo(
       {
          if( displayConssVars )
          {
-
+            output << "    " << classifier->getClassName( vartolinking[i] ) << " ("
+               << classifier->getClassDescription( vartolinking[i] ) << "): ";
+            bool first = true;
+            for( int v = 0; v < classifier->getNVars(); ++v )
+            {
+               if( classifier->getClassOfVar( v ) == vartolinking[i] )
+               {
+                  if( first )
+                  {
+                     output << SCIPvarGetName( seeedpool->getVarForIndex( v ) );
+                     first = false;
+                  }
+                  else
+                  {
+                     output << ", " << SCIPvarGetName( seeedpool->getVarForIndex( v ) );
+                  }
+               }
+            }
+            output << std::endl;
          }
          else
          {
@@ -3114,7 +3172,7 @@ std::string Seeed::getDetectorClassifierInfo(
          }
       }
 
-      if ( !displayConssVars )
+      if ( !displayConssVars || vartolinking.size() == 0 )
       {
          output << std::endl;
       }
@@ -3125,7 +3183,25 @@ std::string Seeed::getDetectorClassifierInfo(
       {
          if( displayConssVars )
          {
-
+            output << std::endl << "    " << classifier->getClassName( vartomaster[0] ) << " ("
+               << classifier->getClassDescription( vartomaster[0] ) << "): ";
+            bool first = true;
+            for( int v = 0; v < classifier->getNVars(); ++v )
+            {
+               if( classifier->getClassOfVar( v ) == vartomaster[0] )
+               {
+                  if( first )
+                  {
+                     output << SCIPvarGetName( seeedpool->getVarForIndex( v ) );
+                     first = false;
+                  }
+                  else
+                  {
+                     output << ", " << SCIPvarGetName( seeedpool->getVarForIndex( v ) );
+                  }
+               }
+            }
+            output << std::endl;
          }
          else
          {
@@ -3137,7 +3213,25 @@ std::string Seeed::getDetectorClassifierInfo(
       {
          if( displayConssVars )
          {
-
+            output << "    " << classifier->getClassName( vartomaster[i] ) << " ("
+               << classifier->getClassDescription( vartomaster[i] ) << "): ";
+            bool first = true;
+            for( int v = 0; v < classifier->getNVars(); ++v )
+            {
+               if( classifier->getClassOfVar( v ) == vartolinking[i] )
+               {
+                  if( first )
+                  {
+                     output << SCIPvarGetName( seeedpool->getVarForIndex( v ) );
+                     first = false;
+                  }
+                  else
+                  {
+                     output << ", " << SCIPvarGetName( seeedpool->getVarForIndex( v ) );
+                  }
+               }
+            }
+            output << std::endl;
          }
          else
          {
@@ -3145,7 +3239,7 @@ std::string Seeed::getDetectorClassifierInfo(
          }
       }
 
-      if ( !displayConssVars )
+      if ( !displayConssVars || vartomaster.size() == 0 )
       {
          output << std::endl;
       }
@@ -3227,6 +3321,7 @@ SCIP_RETCODE Seeed::displayInfo(
       std::cout << ", " << listofancestorids[i];
    std::cout << std::endl;
 
+   /* detector chain information */
    std::cout << " " << getNDetectors() << " detector" << ( getNDetectors() > 1 ? "s" : "" ) << " worked on this seeed:";
    if( getNDetectors() != 0 )
    {
@@ -3801,7 +3896,7 @@ SCIP_RETCODE Seeed::getVarClassifierData(
    assert( varClassifierUsed( detectorchainindex ) );
 
    *classifier = seeedpool->getVarClassifier( usedVarClassifier[detectorchainindex] );
-   varclassesmaster = varClassesLinking[detectorchainindex];
+   varclasseslinking = varClassesLinking[detectorchainindex];
    varclassesmaster = varClassesMaster[detectorchainindex];
 
    return SCIP_OKAY;
@@ -4201,6 +4296,7 @@ SCIP_RETCODE Seeed::setFinishingDetectorPropagated(
    isFinishedByFinisher = true;
    detectorChain.push_back( detectorID );
    detectorChainFinishingUsed.push_back( TRUE );
+   addEmptyClassifierStatistics();
 
    return SCIP_OKAY;
 }
