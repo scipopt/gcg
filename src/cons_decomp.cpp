@@ -3279,6 +3279,21 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   /* check whether legacymode of at least one detector is enabled */
+   bool legacyenabled = false;
+   for( d = 0; d < conshdlrdata->ndetectors; ++d )
+   {
+      if( conshdlrdata->detectors[d]->legacymode )
+      {
+         legacyenabled = true;
+         break;
+      }
+   }
+   if( !legacyenabled )
+      return SCIP_OKAY;
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Start legacy mode detection.\n");
+
    /* do transformations and initializations if necessary */
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       SCIP_CALL( SCIPtransformProb( scip ) );
@@ -3367,6 +3382,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
                       * is set after detecting this seeed */
                      seeed->addClockTime( SCIPgetClockTime( scip, detectorclock ) );
                      seeed->addDecChangesFromAncestor( dummyAncestor );
+                     seeed->setLegacymode( true );
 
                      seeedpool->addSeeedToFinished( seeed );
                   }
@@ -3393,6 +3409,8 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    }
 
    seeedpool->sortFinishedForScore();
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Finished legacy mode detection.\n");
 
    return SCIP_OKAY;
 }
@@ -3758,9 +3776,7 @@ SCIP_RETCODE DECdetectStructure(
    } /* end of if( !onlylegacy ) */
 
    /* @todo clocks for legacy mode */
-   SCIPdebugMessagePrint(scip, "Start legacy mode detection.\n");
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip );
-   SCIPdebugMessagePrint(scip, "Finished legacy mode detection.\n");
 
 //   if( conshdlrdata->ndecomps > 0 )
 //   {

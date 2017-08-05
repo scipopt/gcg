@@ -86,9 +86,9 @@ Seeed::Seeed(
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), usedConsClassifier( 0 ), usedVarClassifier( 0 ), consClassesMaster( 0 ), varClassesLinking( 0 ),
-   varClassesMaster( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), score( 1. ), maxwhitescore( 1. ),
-   borderareascore( 1. ), detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
-   isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
+   varClassesMaster( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), isfromlegacymode( false ), score( 1. ),
+   maxwhitescore( 1. ), borderareascore( 1. ), detectorchainstring( NULL ), stemsFromUnpresolved( false ),
+   isfromunpresolved( FALSE ), isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
 {
    for( int i = 0; i < nConss; ++ i )
    {
@@ -124,6 +124,7 @@ Seeed::Seeed(
    detectorchaininfo = seeedtocopy->detectorchaininfo;
    hashvalue = seeedtocopy->hashvalue;
    usergiven = seeedtocopy->usergiven;
+   isfromlegacymode = seeedtocopy->isfromlegacymode;
    score = seeedtocopy->score;
    borderareascore = seeedtocopy->borderareascore;
    maxwhitescore = seeedtocopy->maxwhitescore;
@@ -3312,6 +3313,10 @@ SCIP_RETCODE Seeed::displayInfo(
    /* detection information */
    std::cout << "-- Detection and detectors --" << std::endl;
    std::cout << " Seeed stems from the " << ( stemsFromUnpresolved ? "unpresolved" : "presolved" ) << " problem." << std::endl;
+   if( isFromLegacymode() )
+   {
+      std::cout << " Seeed is from a detector operating in legacymode." << std::endl;
+   }
 
    /* ancestor seeeds' ids */
    std::cout << " IDs of ancestor seeeds: ";
@@ -3956,6 +3961,12 @@ bool Seeed::isConsOpencons(
       return false;
 }
 
+/** returns true if the seeed is from a detector operating in legacymode */
+bool Seeed::isFromLegacymode()
+{
+   return isfromlegacymode;
+}
+
 /** returns true if the seeed is from the unpresolved problem */
 bool Seeed::isFromUnpresolved()
 {
@@ -4323,6 +4334,14 @@ void Seeed::setFinishedUnpresolvedBy(
    )
 {
    finishedUnpresolvedBy = detector;
+}
+
+/** sets whether this seeed stems from a detector operating in legacymode */
+void Seeed::setLegacymode(
+   bool legacymode
+   )
+{
+   isfromlegacymode = legacymode;
 }
 
 /** sets number of blocks, only increasing number allowed */

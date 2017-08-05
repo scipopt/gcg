@@ -3772,7 +3772,7 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    assert( DECdecompGetPresolved( decomp ) );
    assert( transformed );
 
-   std::cout << "Linkingvars decomp: " << DECdecompGetNLinkingvars( decomp ) << "\tStairlinkingvars decomp: " << DECdecompGetNTotalStairlinkingvars( decomp ) << "\n";
+//   std::cout << "Linkingvars decomp: " << DECdecompGetNLinkingvars( decomp ) << "\tStairlinkingvars decomp: " << DECdecompGetNTotalStairlinkingvars( decomp ) << "\n";
 
    /* create new seeed and initialize its data */
    SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nConss, nVars );
@@ -3882,11 +3882,11 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    assert( seeed->checkConsistency( this ) );
 
    /* @todo test stuff */
-   std::cout << "Linkingvars initially: " << seeed->getNLinkingvars() << "\tStairlinkingvars initially: " << seeed->getNTotalStairlinkingvars() << "\n";
-
-   seeed->calcStairlinkingVars( this );
-
-   std::cout << "Linkingvars after call: " << seeed->getNLinkingvars() << "\tStairlinkingvars after call: " << seeed->getNTotalStairlinkingvars() << "\n";
+//   std::cout << "Linkingvars initially: " << seeed->getNLinkingvars() << "\tStairlinkingvars initially: " << seeed->getNTotalStairlinkingvars() << "\n";
+//
+//   seeed->calcStairlinkingVars( this );
+//
+//   std::cout << "Linkingvars after call: " << seeed->getNLinkingvars() << "\tStairlinkingvars after call: " << seeed->getNTotalStairlinkingvars() << "\n";
 
    *newseeed = seeed;
 

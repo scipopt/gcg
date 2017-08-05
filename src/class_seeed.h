@@ -132,6 +132,7 @@ private:
 
    std::vector<int> listofancestorids;                /**< vector containing detector indices that worked on that seeed */
    USERGIVEN usergiven;                               /**< is this seeed partially or completely given by user */
+   bool isfromlegacymode;                             /**< true if this seeed stems from a detector operating in legacy mode */
    SCIP_Real score;                                   /**< score to evaluate the seeeds */
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
 
@@ -693,6 +694,9 @@ public:
       int cons
       );
 
+   /** returns true if the seeed is from a detector operating in legacymode */
+   bool isFromLegacymode();
+
    /** returns true if the seeed is from the unpresolved problem */
    bool isFromUnpresolved();
 
@@ -812,6 +816,11 @@ public:
    /** sets the detector that finished the seeed in the unpresolved problem */
    void setFinishedUnpresolvedBy(
       DEC_DETECTOR* detector
+      );
+
+   /** sets whether this seeed stems from a detector operating in legacymode */
+   void setLegacymode(
+      bool legacymode
       );
 
    /** sets number of blocks, only increasing number allowed */
