@@ -426,7 +426,7 @@ def generate_files(files):
                     i = ""
                     while os.path.isfile(fig_filename + i + ".png"):
                         if i == "":
-                            i = "1"
+                            i = "2"
                         else:
                             i = str(int(i)+1)
                     plt.savefig(fig_filename + i + ".png")
@@ -451,158 +451,154 @@ def generate_files(files):
                     line_array = line.split()
                     varlines[line_array[1]] = line_array[1:]
 
-    # do something with df_dict
+    # compare different runs of one instance
     for name, runs in df_dict.iteritems():
         if len(runs) > 1:
-            # todo: Can we encapsulate this somehow?
+            print "Compare " + str(len(runs)) + " runs of " + name
             # set maximum and minimum of x values (time or iterations) to synchronize the plots
-                    xmax = runs[0][xaxis].max()
-                    xmin = runs[0][xaxis].min()
+            xmax = runs[0][xaxis].max()
+            xmin = runs[0][xaxis].min()
 
-                    # number of plots, the user wants
-                    nplots = params['bounds'] + params['lpvars'] + params['ipvars']
+            # number of plots, the user wants
+            nplots = params['bounds'] + params['lpvars'] + params['ipvars']
 
-                    # create grid of nplots plots
-                    if params['bounds']:
-                        height_ratios = [3]+[1]*(nplots-1)
-                    else:
-                        height_ratios = [1]*nplots
-                    gs = list(gridspec.GridSpec(nplots, 1, height_ratios=height_ratios))
-                    axes = {}
-                    if params['ipvars']:
-                        axes['ip'] = plt.subplot(gs.pop())
-                    if params['lpvars']:
-                        axes['lp'] = plt.subplot(gs.pop())
-                    if params['bounds']:
-                        axes['db'] = plt.subplot(gs.pop())
+            # create grid of nplots plots
+            if params['bounds']:
+                height_ratios = [3]+[1]*(nplots-1)
+            else:
+                height_ratios = [1]*nplots
+            gs = list(gridspec.GridSpec(nplots, 1, height_ratios=height_ratios))
+            axes = {}
+            if params['ipvars']:
+                axes['ip'] = plt.subplot(gs.pop())
+            if params['lpvars']:
+                axes['lp'] = plt.subplot(gs.pop())
+            if params['bounds']:
+                axes['db'] = plt.subplot(gs.pop())
 
-                    # lp vars plot
-                    if params['lpvars']:
-                        axes['lp'].set_ylim(bottom=0.0, top=1.1)
-                        axes['lp'].set_xlim(left=xmin, right=xmax)
-                        axes['lp'].set_ylabel('lpvars')
-                        axes['lp'].set_xticklabels([])
-                        x_axis = axes['lp'].axes.get_xaxis()
-                        x_axis.set_label_text('')
-                        x_axis.set_visible(False)
+            # lp vars plot
+            if params['lpvars']:
+                axes['lp'].set_ylim(bottom=0.0, top=1.1)
+                axes['lp'].set_xlim(left=xmin, right=xmax)
+                axes['lp'].set_ylabel('lpvars')
+                axes['lp'].set_xticklabels([])
+                x_axis = axes['lp'].axes.get_xaxis()
+                x_axis.set_label_text('')
+                x_axis.set_visible(False)
 
-                    # ip vars plot
-                    if params['ipvars']:
-                        axes['ip'].set_ylim(bottom=0.0, top=1.1)
-                        axes['ip'].set_xlim(left=xmin, right=xmax)
-                        axes['ip'].set_ylabel('ipvars')
-                        axes['ip'].set_xticklabels([])
-                        x_axis = axes['ip'].axes.get_xaxis()
-                        x_axis.set_label_text('')
-                        x_axis.set_visible(False)
+            # ip vars plot
+            if params['ipvars']:
+                axes['ip'].set_ylim(bottom=0.0, top=1.1)
+                axes['ip'].set_xlim(left=xmin, right=xmax)
+                axes['ip'].set_ylabel('ipvars')
+                axes['ip'].set_xticklabels([])
+                x_axis = axes['ip'].axes.get_xaxis()
+                x_axis.set_label_text('')
+                x_axis.set_visible(False)
 
-                    if params['bounds']:
-                        # set limits and lables for bounds/dualdiff  plot
-                        axes['db'].set_xticklabels([])
-                        x_axis = axes['db'].axes.get_xaxis()
-                        x_axis.set_label_text('')
-                        x_axis.set_visible(False)
-                        axes['db'].set_xlim(left=xmin, right=xmax)
+            # bounds plot
+            if params['bounds']:
+                # set limits and lables for bounds/dualdiff  plot
+                axes['db'].set_xticklabels([])
+                x_axis = axes['db'].axes.get_xaxis()
+                x_axis.set_label_text('')
+                x_axis.set_visible(False)
+                axes['db'].set_xlim(left=xmin, right=xmax)
+                axes['db'].set_ylabel('Bounds')
 
-                        # create a new axis for the difference-plots, since they need a different y-label
-                        if params['dualdiff'] or params['dualoptdiff']:
-                            axes['db_diff'] = axes['db'].twinx()
+            # set base for x labels
+            if( xmax > 0 ):
+                base = 10.0 ** (math.floor(math.log10(xmax)))
+            else:
+                base = 0.01
+            myLocator = mticker.MultipleLocator(base)
 
-                    # set base for x labels
-                    if( xmax > 0 ):
-                        base = 10.0 ** (math.floor(math.log10(xmax)))
-                    else:
-                        base = 0.01
-                    myLocator = mticker.MultipleLocator(base)
+            # specify labels etc. of plot
+            if params['ipvars']:
+                lowest_ax = axes['ip']
+            elif params['lpvars']:
+                lowest_ax = axes['lp']
+            elif params['bounds']:
+                lowest_ax = axes['db']
+            if(xaxis == 'iter' or base > 0.5):
+                majorFormatter = mticker.FormatStrFormatter('%d')
+            else:
+                majorFormatter = mticker.FormatStrFormatter('%0.2f')
+            lowest_ax.xaxis.set_major_locator(myLocator)
+            lowest_ax.xaxis.set_major_formatter(majorFormatter)
+            fixedFormatter = mticker.FormatStrFormatter('%g')
+            lowest_ax.xaxis.set_major_formatter(fixedFormatter)
+            lowest_ax.xaxis.set_minor_locator(plt.NullLocator())
+            lim = lowest_ax.get_xlim()
+            xmax_rounded = round(xmax, int(-math.log10(base)))
+            if (xmax_rounded in list(lowest_ax.get_xticks())):
+                xticks = list(lowest_ax.get_xticks())
+            else:
+                xticks = list(lowest_ax.get_xticks()) + [xmax_rounded]
+            lowest_ax.set_xticks(xticks)
+            lowest_ax.set_xlim(lim)
+            lowest_ax.xaxis.get_major_ticks()[-1].set_pad(15)
+            lowest_ax.set_xlabel(xaxis)
+            lowest_ax.xaxis.set_visible(True)
 
-                    # specify labels etc. of plot
-                    if params['ipvars']:
-                        lowest_ax = axes['ip']
-                    elif params['lpvars']:
-                        lowest_ax = axes['lp']
-                    elif params['bounds']:
-                        lowest_ax = axes['db']
-                    if(xaxis == 'iter' or base > 0.5):
-                        majorFormatter = mticker.FormatStrFormatter('%d')
-                    else:
-                        majorFormatter = mticker.FormatStrFormatter('%0.2f')
-                    lowest_ax.xaxis.set_major_locator(myLocator)
-                    lowest_ax.xaxis.set_major_formatter(majorFormatter)
-                    fixedFormatter = mticker.FormatStrFormatter('%g')
-                    lowest_ax.xaxis.set_major_formatter(fixedFormatter)
-                    lowest_ax.xaxis.set_minor_locator(plt.NullLocator())
-                    lim = lowest_ax.get_xlim()
-                    xmax_rounded = round(xmax, int(-math.log10(base)))
-                    if (xmax_rounded in list(lowest_ax.get_xticks())):
-                        xticks = list(lowest_ax.get_xticks())
-                    else:
-                        xticks = list(lowest_ax.get_xticks()) + [xmax_rounded]
-                    lowest_ax.set_xticks(xticks)
-                    lowest_ax.set_xlim(lim)
-                    lowest_ax.xaxis.get_major_ticks()[-1].set_pad(15)
-                    lowest_ax.set_xlabel(xaxis)
-                    lowest_ax.xaxis.set_visible(True)
+            # build colormaps for the diagrams
+            cmap = {}
+            for p in axes:
+                if p == 'db':
+                    cmap[p] = plt.cm.get_cmap('jet', max(len(runs), 5))
+                else:
+                    cmap[p] = plt.cm.get_cmap('gnuplot', max(len(runs), 5))
 
-                    # set y label of secondary y-axis if necessary
-                    if params['dualdiff'] or params['dualoptdiff']:
-                        plt.ylabel('Differences', fontsize=10, rotation=-90, labelpad=15)
+            # plot all the runs
+            for iter_run, df in enumerate(runs):
+                # plot the lpvars
+                if params['lpvars']:
+                    if params['lplinestyle'] == 'line':
+                        frmtStr = '-'
+                    elif params['lplinestyle'] == 'scatter':
+                        frmtStr = 'o'
+                    axes['lp'].plot(df[xaxis], df['lpvars'], frmtStr, color = cmap['lp'](iter_run), label ='lpvars ' + str(iter_run + 1), markersize=1.6, linewidth = 0.8)
 
-                    for iter_run, df in enumerate(runs):
-                        # plot the lpvars
-                        if params['lpvars']:
-                            frmtStr = 'c'
-                            if params['lplinestyle'] == 'line':
-                                frmtStr += '-'
-                            elif params['lplinestyle'] == 'scatter':
-                                frmtStr += 'o'
-                            axes['lp'].plot(df[xaxis], df['lpvars'], frmtStr, label ='lpvars', markersize=1.6, linewidth = 0.8)
+                # plot the ipvars
+                if params['ipvars']:
+                    if params['iplinestyle'] == 'line':
+                        frmtStr = '-'
+                    elif params['iplinestyle'] == 'scatter':
+                        frmtStr = 'o'
+                    axes['ip'].plot(df[xaxis], df['ipvars'], frmtStr, color = cmap['ip'](iter_run), label ='ipvars ' + str(iter_run + 1), markersize=1.6, linewidth = 0.8)
 
-                        # plot the ipvars
-                        if params['ipvars']:
-                            frmtStr = 'y'
-                            if params['iplinestyle'] == 'line':
-                                frmtStr += '-'
-                            elif params['iplinestyle'] == 'scatter':
-                                frmtStr += 'o'
-                            axes['ip'].plot(df[xaxis], df['ipvars'], frmtStr, label ='ipvars', markersize=1.6, linewidth = 0.8)
+                # bounds/dualdiff plot
+                if params['bounds']:
+                    if params['bdlinestyle'] == 'line':
+                        frmtStr = '-'
+                    elif params['bdlinestyle'] == 'scatter':
+                        frmtStr = 'o'
+                    elif params['bdlinestyle'] == 'both':
+                        frmtStr = '-o'
+                    axes['db'].plot(df[xaxis], df['pb'], frmtStr, color = cmap['db'](iter_run), label='pb ' + str(iter_run + 1), linewidth=0.8, markersize = 1.6)
+                    axes['db'].plot(df[xaxis], df['db'], frmtStr, color = cmap['db'](iter_run), label='db ' + str(iter_run + 1), linewidth=0.8, markersize = 1.6)
 
-                        # bounds/dualdiff plot
-                        if params['bounds']:
-                            if params['bdlinestyle'] == 'line':
-                                frmtStr = '-'
-                            elif params['bdlinestyle'] == 'scatter':
-                                frmtStr = 'o'
-                            elif params['bdlinestyle'] == 'both':
-                                frmtStr = '-o'
-                            axes['db'].plot(df[xaxis], df['pb'], frmtStr, color = 'red', label='pb', linewidth=0.8, markersize = 1.6)
-                            axes['db'].plot(df[xaxis], df['db'], frmtStr, color = 'blue', label='db', linewidth=0.8, markersize = 1.6)
-                            if params['average']:
-                                axes['db'].plot(df[xaxis], df['db_ma'], '-', color = 'purple', label='db (average)', linewidth=0.5)
-                            if params['dualdiff']:
-                                axes['db_diff'].plot(df[xaxis], df['dualdiff'], 'g-', label='dualdiff', alpha = .25, linewidth=1)
-                            if params['dualoptdiff']:
-                               axes['db_diff'].plot(df[xaxis], df['dualoptdiff'], '-', color = 'orange', label='dualoptdiff', alpha = .25, linewidth=1)
-                            if iter_run == 0:
-                                # create the legend and set the primary y-label
-                                lines, labels = axes['db'].get_legend_handles_labels()
-                                if params['dualdiff'] or params['dualoptdiff']:
-                                    lines += axes['db_diff'].get_legend_handles_labels()[0]
-                                    labels += axes['db_diff'].get_legend_handles_labels()[1]
-                                axes['db'].legend(lines, labels)
-                                axes['db'].set_ylabel('Bounds')
+            # create the legends
+            for p in axes:
+                axes[p].legend()
 
-                    # ensure, that there is enough space for labels
-                    plt.tight_layout()
+            # ensure, that there is enough space for labels
+            plt.tight_layout()
 
-                    # save figure and ensure, that there are not two files with the same name
-                    fig_filename = params['outdir']+"/"+ "compareRuns_" + name+"_"+settings+"_"+xaxis
-                    i = ""
-                    while os.path.isfile(fig_filename + i + ".png"):
-                        if i == "":
-                            i = "1"
-                        else:
-                            i = str(int(i)+1)
-                    plt.savefig(fig_filename + i + ".png")
+            # set the size of the figure (a too small size will lead to too large legends)
+            plt.gcf().set_size_inches(9.33,7)
+
+            # save figure and ensure, that there are not two files with the same name
+            fig_filename = params['outdir']+"/"+ "compareRuns_" + name+"_"+settings+"_"+xaxis
+            i = ""
+            while os.path.isfile(fig_filename + i + ".png"):
+                if i == "":
+                    i = "1"
+                else:
+                    i = str(int(i)+1)
+            plt.savefig(fig_filename + i + ".png", dpi = 300)
+
+            print "   -> success"
 
 
 def main():
