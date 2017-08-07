@@ -1920,6 +1920,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
             SCIPdebugMessagePrint(scip, "create seeedpool for transformed problem, n detectors: %d \n", conshdlrdata->ndetectors);
 
             conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+            seeedpool = conshdlrdata->seeedpool;
          }
       }
       else
@@ -1950,25 +1951,22 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       /** case distinction: */
       if( strncmp( command, "conss", commandlen2) == 0 )
       {
-         conshdlrdata->startidvisu -= conshdlrdata->selectvisulength;
-         if(conshdlrdata->startidvisu < 0 )
-            conshdlrdata->startidvisu = 0;
+         SCIPconshdlrDecompToolboxModifyConss(scip, dialoghdlr, dialog)
          continue;
       }
       if( strncmp( command, "vars", commandlen2) == 0 )
       {
-         conshdlrdata->startidvisu += conshdlrdata->selectvisulength;
-         if( conshdlrdata->startidvisu > (int) conshdlrdata->listall->size() - conshdlrdata->selectvisulength )
-            conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
+         SCIPconshdlrDecompToolboxModifyConss(scip, dialoghdlr, dialog);
          continue;
       }
       if( strncmp( command, "finish by detector", commandlen2) == 0 )
       {
-         conshdlrdata->startidvisu = 0;
+         SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
          continue;
       }
       if( strncmp( command, "quit", commandlen2) == 0 )
       {
+<<<<<<< HEAD
          gcg::Seeedpool* seeedpool;
          if( !conshdlrdata->curruserseeed->isFromUnpresolved() && conshdlrdata->seeedpool == NULL )
             SCIPconshdlrDecompCreateSeeedpool(scip);
@@ -2001,11 +1999,15 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          conshdlrdata->curruserseeed = NULL;
          finished = TRUE;
 
+=======
+         finished = TRUE;
+>>>>>>> aed07f06f3b35cbe7fe6bceaa8c078fa661e93b4
          continue;
       }
 
       if( strncmp( command, "undo last modification", commandlen2) == 0 )
       {
+<<<<<<< HEAD
          if ( conshdlrdata->lastuserseeed == NULL )
             SCIPdialogMessage(scip, NULL, " nothing to be undone \s");
          else
@@ -2013,6 +2015,9 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
             delete conshdlrdata->curruserseeed;
             conshdlrdata->curruserseeed = conshdlrdata->lastuserseeed;
          }
+=======
+         SCIP_CALL(SCIPconshdlrDecompToolboxUndo(scip ) );
+>>>>>>> aed07f06f3b35cbe7fe6bceaa8c078fa661e93b4
          break;
       }
 
