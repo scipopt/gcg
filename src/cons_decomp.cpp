@@ -1948,6 +1948,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
             SCIPdebugMessagePrint(scip, "create seeedpool for transformed problem, n detectors: %d \n", conshdlrdata->ndetectors);
 
             conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+            seeedpool = conshdlrdata->seeedpool;
          }
       }
       else
@@ -1977,32 +1978,28 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       /** case distinction: */
       if( strncmp( command, "conss", commandlen2) == 0 )
       {
-         conshdlrdata->startidvisu -= conshdlrdata->selectvisulength;
-         if(conshdlrdata->startidvisu < 0 )
-            conshdlrdata->startidvisu = 0;
+         SCIPconshdlrDecompToolboxModifyConss(scip, dialoghdlr, dialog)
          continue;
       }
       if( strncmp( command, "vars", commandlen2) == 0 )
       {
-         conshdlrdata->startidvisu += conshdlrdata->selectvisulength;
-         if( conshdlrdata->startidvisu > (int) conshdlrdata->listall->size() - conshdlrdata->selectvisulength )
-            conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
+         SCIPconshdlrDecompToolboxModifyConss(scip, dialoghdlr, dialog);
          continue;
       }
       if( strncmp( command, "finish by detector", commandlen2) == 0 )
       {
-         conshdlrdata->startidvisu = 0;
+         SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
          continue;
       }
       if( strncmp( command, "quit", commandlen2) == 0 )
       {
-         conshdlrdata->startidvisu = conshdlrdata->listall->size() - conshdlrdata->selectvisulength ;
+         finished = TRUE;
          continue;
       }
 
       if( strncmp( command, "undo last modification", commandlen2) == 0 )
       {
-         SCIP_CALL(SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog ) );
+         SCIP_CALL(SCIPconshdlrDecompToolboxUndo(scip ) );
          break;
       }
 
