@@ -1023,7 +1023,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 #pragma omp critical ( seeedptrstore )
                      {
                         assert( seeedPropData->newSeeeds[seeed]->getID() >= 0 );
-                        addSeeedToFinished( seeedPropData->newSeeeds[seeed] );
+                        addSeeedToFinished( seeedPropData->newSeeeds[seeed], &noduplicate );
                      }
                   }
                   else
@@ -1101,12 +1101,9 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                seeed->setFinishedByFinisher( true );
 #pragma omp critical ( seeedptrstore )
                {
-                  if( seeedIsNoDuplicateOfSeeeds( seeed, finishedSeeeds, false ) )
-                  {
-                     assert( seeed->getID() >= 0 );
-                     addSeeedToFinished( seeed );
-                  }
-                  else
+                  SCIP_Bool success;
+                  addSeeedToFinished( seeed, &success );
+                  if( !success )
                   {
                      bool isIdentical = false;
                      for( size_t h = 0; h < finishedSeeeds.size(); ++ h )
@@ -1194,8 +1191,9 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                }
 #pragma omp critical ( seeedptrstore )
                {
+                  SCIP_Bool success;
                   assert( seeed->getID() >= 0 );
-                  addSeeedToFinished( seeed );
+                  addSeeedToFinished( seeed, &success  );
                }
             }
 
@@ -1426,23 +1424,39 @@ void Seeedpool::addSeeedToCurr(
    SeeedPtr seeed
    )
 {
-   currSeeeds.push_back( seeed );
+   if( seeedIsNoDuplicateOfSeeeds(seeed, currSeeeds, false) )
+      currSeeeds.push_back( seeed );
 }
 
 /** adds a seeed to finished seeeds */
 void Seeedpool::addSeeedToFinished(
-   SeeedPtr seeed
+   SeeedPtr seeed,
+   SCIP_Bool* success
    )
 {
-   finishedSeeeds.push_back( seeed );
+   if( seeedIsNoDuplicateOfSeeeds(seeed, finishedSeeeds, false) )
+   {
+      finishedSeeeds.push_back( seeed );
+      *success = TRUE;
+   }
+   *success = FALSE;
+   return;
 }
 
 /** adds a seeed to incomplete seeeds */
 void Seeedpool::addSeeedToIncomplete(
-   SeeedPtr seeed
+   SeeedPtr seeed,
+   SCIP_Bool* success
    )
 {
-   incompleteSeeeds.push_back( seeed );
+   if( seeedIsNoDuplicateOfSeeeds(seeed, incompleteSeeeds, false) )
+   {
+      incompleteSeeeds.push_back( seeed );
+      *success = TRUE;
+   }
+   *success = FALSE;
+   return;
+
 }
 
 /** clears ancestor seeed data structure */

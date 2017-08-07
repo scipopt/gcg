@@ -180,12 +180,14 @@ public:
 
    /** adds a seeed to finished seeeds */
    void addSeeedToFinished(
-      SeeedPtr seeed
+      SeeedPtr seeed,
+      SCIP_Bool* success
       );
 
    /** adds a seeed to incomplete seeeds */
    void addSeeedToIncomplete(
-      SeeedPtr seeed
+      SeeedPtr seeed,
+      SCIP_Bool* success
       );
 
    /** clears ancestor seeed data structure */
