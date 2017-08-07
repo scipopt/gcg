@@ -1966,7 +1966,6 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       }
       if( strncmp( command, "quit", commandlen2) == 0 )
       {
-<<<<<<< HEAD
          gcg::Seeedpool* seeedpool;
          if( !conshdlrdata->curruserseeed->isFromUnpresolved() && conshdlrdata->seeedpool == NULL )
             SCIPconshdlrDecompCreateSeeedpool(scip);
@@ -1999,15 +1998,12 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          conshdlrdata->curruserseeed = NULL;
          finished = TRUE;
 
-=======
-         finished = TRUE;
->>>>>>> aed07f06f3b35cbe7fe6bceaa8c078fa661e93b4
+
          continue;
       }
 
       if( strncmp( command, "undo last modification", commandlen2) == 0 )
       {
-<<<<<<< HEAD
          if ( conshdlrdata->lastuserseeed == NULL )
             SCIPdialogMessage(scip, NULL, " nothing to be undone \s");
          else
@@ -2015,9 +2011,6 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
             delete conshdlrdata->curruserseeed;
             conshdlrdata->curruserseeed = conshdlrdata->lastuserseeed;
          }
-=======
-         SCIP_CALL(SCIPconshdlrDecompToolboxUndo(scip ) );
->>>>>>> aed07f06f3b35cbe7fe6bceaa8c078fa661e93b4
          break;
       }
 
@@ -3786,7 +3779,7 @@ SCIP_RETCODE DECdetectStructure(
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       SCIP_CALL( SCIPtransformProb(scip) );
 
-//<<<<<<< HEAD
+//<< HEAD
 //   if( conshdlrdata->ndecomps == 0)
 //   {
 //      candidatesNBlocks = seeedpoolunpresolved.getSortedCandidatesNBlocks();
