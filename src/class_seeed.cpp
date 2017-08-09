@@ -791,6 +791,8 @@ SCIP_RETCODE Seeed::bookAsBlockCons(
    )
 {
    assert( consToBlock >= 0 && consToBlock < nConss );
+   if( block >= nBlocks )
+      setNBlocks(block+1);
    assert( block >= 0 && block < nBlocks );
    std::pair<int, int> pair( consToBlock, block );
    bookedAsBlockConss.push_back( pair );

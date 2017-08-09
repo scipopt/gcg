@@ -45,6 +45,8 @@
 #include <iostream>
 #include <stdio.h>
 #include <sstream>
+#include <regex>
+
 #include "cons_decomp.h"
 #include "dec_connected.h"
 #include "gcg.h"
@@ -1404,6 +1406,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------", "-----------");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "conss", "assign unassigned constraints to master/blocks");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "vars", "assign unassigned variables to master(only)/linking/blocks");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "refine ", "refine implicit constraint and variables assignments");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "finish by detector", "choose a finishing detector that completes the decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "quit the modification process and returns to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
@@ -1786,6 +1789,351 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE SCIPconshdlrDecompToolboxModifyConss(
+SCIP*                   scip,
+SCIP_DIALOGHDLR*        dialoghdlr,
+SCIP_DIALOG*            dialog )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+    SCIP_CONSHDLRDATA* conshdlrdata;
+    SCIP_Bool         matching;
+    char* consregex;
+    char* command;
+    char* command2;
+    SCIP_Bool endoffile;
+    int consregexlen;
+    int commandlen;
+    SCIP_Bool finished;
+
+    assert(scip != NULL);
+    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+    assert( conshdlr != NULL );
+    matching = FALSE;
+
+
+    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+    assert(conshdlrdata != NULL);
+
+    SeeedPtr seeed  = conshdlrdata->curruserseeed;
+    gcg::Seeedpool* seeedpool;
+    std::vector<int> matchingconss  = std::vector<int>(0);
+
+    seeedpool = seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+    /** Do user want to modify existing or create a new partial decomposition ?*/
+    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned constraints you want to assign : \nGCG/toolbox : ", &consregex, &endoffile) );
+
+    consregexlen = strlen(consregex);
+
+    /** case distinction: */
+
+    std::regex expr;
+    try  {
+       expr = std::regex(consregex);//, std::regex_constants::extended);
+    }
+    catch (const std::regex_error& e) {
+       std::cout << "regex_error caught: " << e.what() << '\n';
+       if (e.code() == std::regex_constants::error_brack) {
+          std::cout << "The code was error_brack\n";
+       }
+    }
+
+    for( int oc = 0; oc < seeed->getNOpenconss(); ++oc )
+    {
+       const char* consname;
+
+       consname = SCIPconsGetName(  seeedpool->getConsForIndex(seeed->getOpenconss()[oc] ) );
+
+
+       if( std::regex_match(consname, expr) )
+       {
+          matching = TRUE;
+          matchingconss.push_back(seeed->getOpenconss()[oc]);
+          SCIPinfoMessage(scip, NULL, " consname %s matches regex %s \n", consname, regexstr.c_str() );
+       } else
+          SCIPinfoMessage(scip, NULL, " consname %s does not match regex %s \n", consname, regexstr.c_str());
+    }
+
+    if( !matching )
+    {
+       SCIPdialogMessage(scip, NULL, " There are no unassigned constraints with names matching given regular expression. Return to toolbox main menu.\n");
+       return SCIP_OKAY;
+    }
+
+    if( conshdlrdata->lastuserseeed != NULL)
+       delete conshdlrdata->lastuserseeed;
+    conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
+
+
+    if( matchingconss.size() > 10 )
+       SCIPdebugMessage(" There are %d unassigned constraints with names matching given regular expression. Showing the first 10:\n", matchingconss.size());
+    else
+       SCIPdebugMessage(" There are %d unassigned constraints with names matching given regular expression: \n", matchingconss.size());
+
+    for( size_t mc = 0 ; mc < 10, mc < matchingconss.size(); ++mc )
+       SCIPdialogMessage(scip, NULL, " %s \n", SCIPconsGetName( seeedpool->getConsForIndex( matchingconss[mc] ) ));
+
+    SCIPdialogMessage(scip, NULL, "\n Should these constraints be added to: \n");
+    SCIPdialogMessage(scip, NULL, " master \n");
+    SCIPdialogMessage(scip, NULL, " block (to be specified) \n");
+    SCIPdialogMessage(scip, NULL, " nothing (return to toolbox main menu)? \n");
+
+
+    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify how to proceed: \nGCG/toolbox> ", &command, &endoffile) );
+
+    commandlen = strlen(command);
+
+    /** case distinction: */
+    if( strncmp( command, "master", commandlen) == 0 )
+    {
+       for( size_t mc = 0 ;  mc < matchingconss.size(); ++mc )
+       {
+          seeed->bookAsMasterCons( matchingconss[mc] );
+       }
+    }
+    else if( strncmp( command, "block", commandlen) == 0 )
+    {
+       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify the block number these constraints should be assigned to: \nGCG/toolbox> ", &command2, &endoffile) );
+       char* tail;
+       int blockid = strtol(command2, &tail, 10);
+       for( size_t mc = 0 ;  mc < matchingconss.size(); ++mc )
+       {
+          seeed->bookAsBlockCons( matchingconss[mc], blockid );
+       }
+    }
+    else
+       return SCIP_OKAY;
+
+    seeed->flushBooked();
+
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE SCIPconshdlrDecompToolboxModifyFinish
+(
+SCIP*                   scip,
+SCIP_DIALOGHDLR*        dialoghdlr,
+SCIP_DIALOG*            dialog )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+    SCIP_CONSHDLRDATA* conshdlrdata;
+    SCIP_Bool         matching;
+    SCIP_Bool         choosenfinisher;
+
+   char* command;
+    char* command2;
+    SCIP_Bool endoffile;
+    int commandlen;
+    SCIP_Bool finished;
+    char* tail;
+    int finisherid;
+    SEEED_PROPAGATION_DATA* seeedPropData;
+    DEC_DETECTOR* finisher;
+    SCIP_Result result;
+
+    assert(scip != NULL);
+    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+    assert( conshdlr != NULL );
+    matching = FALSE;
+
+
+    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+    assert(conshdlrdata != NULL);
+
+    SeeedPtr seeed  = conshdlrdata->curruserseeed;
+    gcg::Seeedpool* seeedpool;
+    std::vector<int> matchingvars  = std::vector<int>(0);
+
+    seeedpool = seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+    choosenfinisher = FALSE;
+    while ( !choosenfinisher )
+    {
+       SCIPdialogMessage(scip, NULL, " Available finisher: \n");
+       /** 1) print out available finisher */
+       SCIPdialogMessage(scip, NULL, "%d :  %s \n", -1, "abort" );
+       for( int fi = 0; fi < seeedpool->getNFinishingDetectors(); ++fi )
+       {
+          SCIPdialogMessage(scip, NULL, "%d :  %s \n", fi, DECdetectorGetName(seeedpool->getFinishingDetectorForIndex(fi) ) );
+       }
+
+       /** Do user want to modify existing or create a new partial decomposition ?*/
+       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify the index of the finisher to use : \nGCG/toolbox : ", &command, &endoffile) );
+
+       commandlen = strlen(command);
+       finisherid = strtol(command, &tail, 10);
+
+       if( finisherid >= seeedpool->getNFinishingDetectors() || finisherid < -1 )
+       {
+          SCIPdialogMessage(scip, NULL, "The specified id is invalid \n"  );
+          continue;
+       }
+       choosenfinisher = TRUE;
+    }
+
+    seeedPropData = new SEEED_PROPAGATION_DATA();
+    seeedPropData->seeedpool = seeedpool;
+    seeedPropData->nNewSeeeds = 0;
+    seeedPropData->seeedToPropagate = new gcg::Seeed(conshdlrdata->curruserseeed);
+
+    if( conshdlrdata->lastuserseeed != NULL)
+           delete conshdlrdata->lastuserseeed;
+    conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
+
+    finisher = seeedpool->getFinishingDetectorForIndex(finisherid);
+    finisher->finishSeeed(scip, finisher, seeedPropData, &result);
+
+    delete conshdlrdata->curruserseeed;
+
+    conshdlrdata->curruserseeed = new gcg::Seeed( seeedPropData->newSeeeds[0] );
+    conshdlrdata->curruserseeed->setID( seeedpool->getNewIdForSeeed() );
+    conshdlrdata->curruserseeed->sort();
+    conshdlrdata->curruserseeed->calcHashvalue();
+    conshdlrdata->curruserseeed->setUsergiven(gcg::USERGIVEN::COMPLETE);
+    conshdlrdata->curruserseeed->setFinishedByFinisher( true );
+
+    for( int i = 0; i <  seeedPropData->nNewSeeeds; ++i)
+    {
+       delete seeedPropData->newSeeeds[i];
+    }
+
+    delete seeedPropData->seeedToPropagate;
+    delete seeedPropData;
+
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE SCIPconshdlrDecompToolboxModifyVars(
+SCIP*                   scip,
+SCIP_DIALOGHDLR*        dialoghdlr,
+SCIP_DIALOG*            dialog )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+    SCIP_CONSHDLRDATA* conshdlrdata;
+    SCIP_Bool         matching;
+    char* varregex;
+    char* command;
+    char* command2;
+    SCIP_Bool endoffile;
+    int consregexlen;
+    int commandlen;
+    SCIP_Bool finished;
+
+    assert(scip != NULL);
+    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+    assert( conshdlr != NULL );
+    matching = FALSE;
+
+
+    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+    assert(conshdlrdata != NULL);
+
+    SeeedPtr seeed  = conshdlrdata->curruserseeed;
+    gcg::Seeedpool* seeedpool;
+    std::vector<int> matchingvars  = std::vector<int>(0);
+
+    seeedpool = seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+    /** Do user want to modify existing or create a new partial decomposition ?*/
+    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned variables you want to assign : \nGCG/toolbox : ", &varregex, &endoffile) );
+
+    consregexlen = strlen(varregex);
+
+    /** case distinction: */
+
+    std::regex expr;
+    try  {
+       expr = std::regex(varregex);//, std::regex_constants::extended);
+    }
+    catch (const std::regex_error& e) {
+       std::cout << "regex_error caught: " << e.what() << '\n';
+       if (e.code() == std::regex_constants::error_brack) {
+          SCIPdebugMessage("The code was error_brack\n");
+       }
+    }
+
+    for( int oc = 0; oc < seeed->getNOpenvars(); ++oc )
+    {
+       const char* varname;
+
+       varname = SCIPvarGetName(  seeedpool->getVarForIndex(seeed->getOpenvars()[oc] ) );
+
+
+       if( std::regex_match(varname, expr) )
+       {
+          matching = TRUE;
+          matchingvars.push_back(seeed->getOpenconss()[oc]);
+          SCIPdebugMessage( " varname %s matches regex %s \n", varname, regexstr.c_str() );
+       } else
+          SCIPdebugMessage(" varname %s does not match regex %s \n", varname, regexstr.c_str());
+    }
+
+    if( !matching )
+    {
+       SCIPdialogMessage(scip, NULL, " There are no unassigned constraints with names matching given regular expression. Return to toolbox main menu.\n");
+       return SCIP_OKAY;
+    }
+
+    if( conshdlrdata->lastuserseeed != NULL)
+       delete conshdlrdata->lastuserseeed;
+    conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
+
+
+    if( matchingvars.size() > 10 )
+       SCIPdialogMessage(scip, NULL, " There are %d unassigned constraints with names matching given regular expression. Showing the first 10:\n", matchingvars.size());
+    else
+       SCIPdialogMessage(scip, NULL, " There are %d unassigned constraints with names matching given regular expression: \n", matchingvars.size());
+
+    for( size_t mc = 0 ; mc < 10, mc < matchingvars.size(); ++mc )
+       SCIPdialogMessage(scip, NULL, " %s \n", SCIPvarGetName( seeedpool->getVarForIndex( matchingvars[mc] ) ));
+
+    SCIPdialogMessage(scip, NULL, "\n Should these constraints be added to: \n");
+    SCIPdialogMessage(scip, NULL, " master \n");
+    SCIPdialogMessage(scip, NULL, " block (to be specified) \n");
+    SCIPdialogMessage(scip, NULL, " nothing (return to toolbox main menu)? \n");
+
+
+    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify how to proceed: \nGCG/toolbox> ", &command, &endoffile) );
+
+    commandlen = strlen(command);
+
+    /** case distinction: */
+    if( strncmp( command, "master", commandlen) == 0 )
+    {
+       for( size_t mc = 0 ;  mc < matchingvars.size(); ++mc )
+       {
+          seeed->bookAsMasterVar( matchingvars[mc] );
+       }
+    } else
+       if( strncmp( command, "linking", commandlen) == 0 )
+           {
+              for( size_t mc = 0 ;  mc < matchingvars.size(); ++mc )
+              {
+                 seeed->bookAsLinkingVar( matchingvars[mc] );
+              }
+           }
+    else if( strncmp( command, "block", commandlen) == 0 )
+    {
+       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify the block number these variables should be assigned to: \nGCG/toolbox> ", &command2, &endoffile) );
+       char* tail;
+       int blockid = strtol(command2, &tail, 10);
+       for( size_t mc = 0 ;  mc < matchingvars.size(); ++mc )
+       {
+          seeed->bookAsBlockVar( matchingvars[mc], blockid );
+       }
+    }
+    else
+       return SCIP_OKAY;
+
+    seeed->flushBooked();
+
+
+   return SCIP_OKAY;
+}
+
+
 
 
 SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
@@ -1951,12 +2299,12 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       /** case distinction: */
       if( strncmp( command, "conss", commandlen2) == 0 )
       {
-         SCIPconshdlrDecompToolboxModifyConss(scip, dialoghdlr, dialog)
+         SCIPconshdlrDecompToolboxModifyConss(scip, dialoghdlr, dialog);
          continue;
       }
       if( strncmp( command, "vars", commandlen2) == 0 )
       {
-         SCIPconshdlrDecompToolboxModifyConss(scip, dialoghdlr, dialog);
+         SCIPconshdlrDecompToolboxModifyVars(scip, dialoghdlr, dialog);
          continue;
       }
       if( strncmp( command, "finish by detector", commandlen2) == 0 )
@@ -1964,6 +2312,21 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
          continue;
       }
+      if( strncmp( command, "refine implicit constraint and variables assignments", commandlen2) == 0 )
+      {
+         gcg::Seeedpool* seeedpool;
+         if( conshdlrdata->curruserseeed->isFromUnpresolved() )
+            seeedpool = conshdlrdata->seeedpoolunpresolved;
+         else
+            seeedpool = conshdlrdata->seeedpool;
+         if( conshdlrdata->lastuserseeed != NULL)
+            delete conshdlrdata->lastuserseeed;
+         conshdlrdata->lastuserseeed = new gcg::Seeed( conshdlrdata->curruserseeed) ;
+         conshdlrdata->curruserseeed->considerImplicits(seeedpool);
+         //SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
+         continue;
+      }
+
       if( strncmp( command, "quit", commandlen2) == 0 )
       {
          gcg::Seeedpool* seeedpool;
@@ -2010,8 +2373,9 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
          {
             delete conshdlrdata->curruserseeed;
             conshdlrdata->curruserseeed = conshdlrdata->lastuserseeed;
+            conshdlrdata->lastuserseeed = NULL;
          }
-         break;
+         continue;
       }
 
 
