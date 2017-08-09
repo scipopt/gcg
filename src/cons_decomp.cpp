@@ -2482,8 +2482,6 @@ SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   int varindex;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -2514,8 +2512,6 @@ int SCIPconshdlrDecompGetNBlockNumberCandidates(
    ){
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   int varindex;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -2538,8 +2534,6 @@ int SCIPconshdlrDecompGetBlockNumberCandidate(
     ){
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   int varindex;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -2566,8 +2560,6 @@ SCIP_RETCODE SCIPconshdlrDecompBlockNumberCandidateToSeeedpool(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   int varindex;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 

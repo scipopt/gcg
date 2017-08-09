@@ -1379,25 +1379,13 @@ std::vector<SeeedPtr> Seeedpool::finishIncompleteSeeeds(
 void Seeedpool::findDecompositions()
 {
    std::vector<int> successDetectors;
-   SCIP_Bool usemaxwhitescore;
-   SCIP_Bool dothinout;
-
-   size_t nDecomps = 6;
-
-   SCIP_Bool addTrivialDecomp = false;
 
    successDetectors = std::vector<int>( nDetectors, 0 );
-   usemaxwhitescore = true;
-   dothinout = false;
 
    finishedSeeeds = findSeeeds();
 
    /* sort the seeeds according to maximum white measure */
    sortFinishedForScore();
-
-    /** hack to just use max white seeed */
-//    if( usemaxwhitescore && dothinout )
-//       finishedSeeeds = thinout( finishedSeeeds, nDecomps, addTrivialDecomp );
 
 }
 
@@ -2425,13 +2413,9 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
       int nvars;
       int i;
 
-      SCIP_Bool success;
-
       cons = getConsForIndex( c );
 
       nvars =  GCGconsGetNVars(scip, cons );
-
-      consType cT = GCGconsGetType( cons );
 
       lhs = GCGconsGetLhs(scip, cons);
       rhs = GCGconsGetRhs(scip, cons);
