@@ -63,8 +63,6 @@ extern SCIP_RETCODE GCGwriteTexFamilyTree(
    SCIP_Bool usegp   /**< true if the gp reader should be used to visualize the individual seeeds */
    );
 
-/*@todo more params? statistics, titlepage, toc, etc? */
-/*@todo is a int* of seeedids the best option? */
 /** writes a report for the given seeeds */
 extern SCIP_RETCODE GCGwriteTexReport(
    SCIP* scip, /**< SCIP data structure */

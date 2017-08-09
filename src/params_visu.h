@@ -78,7 +78,7 @@ extern void SCIPvisuSetColorscheme(
    );
 
 /** gets color for mastercon block in current color scheme */
-extern char* SCIPvisuGetColorMastercons(void);
+extern char* SCIPvisuGetColorMasterconss(void);
 
 /** gets color for mastervar block in current color scheme */
 extern char* SCIPvisuGetColorMastervars(void);

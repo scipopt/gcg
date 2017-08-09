@@ -84,14 +84,11 @@ SCIP_RETCODE writeGpHeader(
    ofs << "set terminal pdf" << std::endl;
    ofs << "set output \"" << outputname << ".pdf\"" << std::endl;
 
-   /* set coordinate range */ /*
-   ofs << "set xrange [-1:" << SCIPgetNVars(scip) << "]" << std::endl;
-   ofs << "set yrange[" << SCIPgetNConss(scip) << ":-1]" << std::endl; */
-
    ofs.close();
 
    return SCIP_OKAY;
 }
+
 
 static
 SCIP_RETCODE drawGpBox(
@@ -233,6 +230,63 @@ SCIP_RETCODE writeGpNonzeros(
    ofs.close();
 
    return SCIP_OKAY;
+}
+
+static
+SCIP_RETCODE writeGpSeeed(
+   char* filename,         /**< filename (including path) to write to */
+   Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
+   Seeedpool* seeedpool    /**< current Seeedpool */
+   )
+{
+   int rowboxcounter = 0;
+   int colboxcounter = 0;
+
+   std::ofstream ofs;
+   ofs.open( filename, std::ofstream::out );
+
+   /* set coordinate range */
+   ofs << "set xrange [-1:" << SCIPgetNVars(scip) << "]" << std::endl;
+   ofs << "set yrange[" << SCIPgetNConss(scip) << ":-1]" << std::endl;
+
+   /* --- draw boxes ---*/
+
+   /* linking vars */
+   drawGpBox( filename,1, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(), SCIPvisuGetColorLinking() );
+   colboxcounter+=seeed->getNLinkingvars();
+
+   /* mastervars */
+   drawGpBox( filename, 2, colboxcounter, 0, seeed->getNMastervars()+colboxcounter, seeed->getNConss(),
+      SCIPvisuGetColorMastervars() );
+   colboxcounter+=seeed->getNMastervars();
+
+   /* masterconss */
+   drawGpBox( filename, 3, 0, 0, seeed->getNVars(), seeed->getNMasterconss(), SCIPvisuGetColorMasterconss() );
+   rowboxcounter += seeed->getNMasterconss();
+
+   /* blocks */
+   for( int b = 0; b < seeed->getNBlocks() ; ++b )
+   {
+      drawGpBox( filename, 2 * b + 4, colboxcounter, rowboxcounter, colboxcounter + seeed->getNVarsForBlock(b),
+         rowboxcounter + seeed->getNConssForBlock(b), SCIPvisuGetColorBlock() );
+      colboxcounter += seeed->getNVarsForBlock(b);
+
+      if( seeed->getNStairlinkingvars(b) != 0 )
+      {
+         drawGpBox( filename, 2 * b + 5, colboxcounter, rowboxcounter, colboxcounter + seeed->getNStairlinkingvars(b),
+            rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), SCIPvisuGetColorStairlinking() );
+      }
+      colboxcounter += seeed->getNStairlinkingvars(b);
+      rowboxcounter+= seeed->getNConssForBlock(b);
+   }
+
+   /*@todo go on here, not all boxes are in here yet! */
+
+   /* --- draw nonzeros --- */
+   /*@todo get radius */
+   writeGpNonzeros( filename, seeed, seeedpool, radius );
+
+   ofs.close();
 }
 
 /** write decomposition header such as rectangles for blocks etc. */
@@ -514,8 +568,6 @@ SCIP_RETCODE writeFileTrailer(
  * Callback methods of reader
  */
 
-#define readerCopyGp NULL
-
 /** destructor of reader to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_READERFREE(readerFreeGp)
@@ -552,7 +604,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 
 
 /*
- * reader specific interface methodsfilename
+ * reader specific interface methods
  */
 
 /** writes the decomposition to the specific file */
@@ -632,7 +684,7 @@ SCIP_RETCODE SCIPincludeReaderGp(
 
    /* include gp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
-      readerCopyGp, readerFreeGp, readerReadGp, readerWriteGp, readerdata) );
+      NULL, readerFreeGp, readerReadGp, readerWriteGp, readerdata) );
 
    SCIP_CALL( SCIPaddBoolParam(scip,
       "reading/gpreader/draftmode",

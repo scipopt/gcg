@@ -141,7 +141,7 @@ void SCIPvisuSetColorscheme(VISU_COLORSCHEME newscheme)
 
 
 /** gets color for mastercon block in current color scheme */
-char* SCIPvisuGetColorMastercons()
+char* SCIPvisuGetColorMasterconss()
 {
    switch(SCIPvisuGetColorscheme())
    {
