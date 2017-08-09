@@ -248,7 +248,7 @@ def generate_files(files):
 
                     # add the number of all lp-variables, not created by reduced cost pricing (e.g. by Farkas-Pricing)
                     if params['farkas']:
-                        df.set_value(str(0),'nlpvars', df['nlpvars'][0] + len(dfvar[(dfvar['rootlpsolval'] > 0) & (dfvar['rootredcostcall'] == -1.)]))
+                        df.set_value(str(0),'nlpvars', df['nlpvars'][0] + len(dfvar[(dfvar['rootlpsolval'] <> 0) & (dfvar['rootredcostcall'] == -1.)]))
 
                     # create new column in data frame containing the number of lp vars generated until each iteration
                     df['nlpvars_cum'] = df[(df['iter'] < len(df))].cumsum(axis=0)['nlpvars']
@@ -463,8 +463,13 @@ def generate_files(files):
             if len(runs) > 1:
                 print "Compare " + str(len(runs)) + " runs of " + name
                 # set maximum and minimum of x values (time or iterations) to synchronize the plots
-                xmax = runs[0][xaxis].max()
-                xmin = runs[0][xaxis].min()
+                xmax = 0
+                xmin = 10000
+                for run in runs:
+                    if run[xaxis].max() > xmax:
+                        xmax = run[xaxis].max()
+                    if run[xaxis].min() < xmin:
+                        xmin = run[xaxis].min()
 
                 # number of plots, the user wants
                 nplots = params['bounds'] + params['lpvars'] + params['ipvars']
