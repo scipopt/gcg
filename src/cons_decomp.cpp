@@ -1108,17 +1108,6 @@ SCIP_RETCODE SCIPconshdlrDecompShowCurrUserSeeedInfo
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert( conshdlr != NULL );
 
-   int ndetectedpresolved;
-   int ndetectedunpresolved;
-   int nuserpresolvedfull;
-   int nuserpresolvedpartial;
-   int nuserunpresolvedfull;
-   int nuserunpresolvedpartial;
-
-   char* scorename;
-
-   size_t i;
-
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
@@ -1318,15 +1307,9 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert( conshdlr != NULL );
-   char * scorename;
-   char * scoredescr;
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
-
-   scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrdataGetScoretype(conshdlrdata) );
-   scoredescr = SCIPconshdlrDecompGetScoretypeDescription(scip, SCIPconshdlrdataGetScoretype(conshdlrdata) );
-
 
    SCIPdialogMessage(scip, NULL, "Options to proceed: \n" );
 
@@ -1432,11 +1415,6 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualizeCurrentUserSeeed
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   char* ntovisualize;
-   SCIP_Bool endoffile;
-   int idtovisu;
-
-   int commandlen;
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -1733,9 +1711,7 @@ SCIP_DIALOG*            dialog )
     char* command;
     char* command2;
     SCIP_Bool endoffile;
-    int consregexlen;
     int commandlen;
-    SCIP_Bool finished;
 
     assert(scip != NULL);
     conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -1753,8 +1729,6 @@ SCIP_DIALOG*            dialog )
     seeedpool = seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
     /** Do user want to modify existing or create a new partial decomposition ?*/
     SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned constraints you want to assign : \nGCG/toolbox : ", &consregex, &endoffile) );
-
-    consregexlen = strlen(consregex);
 
     /** case distinction: */
 
@@ -1799,9 +1773,9 @@ SCIP_DIALOG*            dialog )
     if( matchingconss.size() > 10 )
        SCIPdebugMessage(" There are %d unassigned constraints with names matching given regular expression. Showing the first 10:\n", (int) matchingconss.size());
     else
-       SCIPdebugMessage(" There are %d unassigned constraints with names matching given regular expression: \n", matchingconss.size());
+       SCIPdebugMessage(" There are %d unassigned constraints with names matching given regular expression: \n", (int) matchingconss.size());
 
-    for( size_t mc = 0 ; mc < 10, mc < matchingconss.size(); ++mc )
+    for( size_t mc = 0 ; mc < 10 && mc < matchingconss.size(); ++mc )
        SCIPdialogMessage(scip, NULL, " %s \n", SCIPconsGetName( seeedpool->getConsForIndex( matchingconss[mc] ) ));
 
     SCIPdialogMessage(scip, NULL, "\n Should these constraints be added to: \n");
@@ -1850,14 +1824,10 @@ SCIP_DIALOG*            dialog )
 
    SCIP_CONSHDLR* conshdlr;
     SCIP_CONSHDLRDATA* conshdlrdata;
-    SCIP_Bool         matching;
     SCIP_Bool         choosenfinisher;
 
    char* command;
-    char* command2;
     SCIP_Bool endoffile;
-    int commandlen;
-    SCIP_Bool finished;
     char* tail;
     int finisherid;
     SEEED_PROPAGATION_DATA* seeedPropData;
@@ -1867,8 +1837,6 @@ SCIP_DIALOG*            dialog )
     assert(scip != NULL);
     conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
     assert( conshdlr != NULL );
-    matching = FALSE;
-
 
     conshdlrdata = SCIPconshdlrGetData(conshdlr);
     assert(conshdlrdata != NULL);
@@ -1892,7 +1860,6 @@ SCIP_DIALOG*            dialog )
        /** Do user want to modify existing or create a new partial decomposition ?*/
        SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify the index of the finisher to use : \nGCG/toolbox : ", &command, &endoffile) );
 
-       commandlen = strlen(command);
        finisherid = strtol(command, &tail, 10);
 
        if( finisherid >= seeedpool->getNFinishingDetectors() || finisherid < -1 )
@@ -1949,9 +1916,7 @@ SCIP_DIALOG*            dialog )
     char* command;
     char* command2;
     SCIP_Bool endoffile;
-    int consregexlen;
     int commandlen;
-    SCIP_Bool finished;
 
     assert(scip != NULL);
     conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -1970,7 +1935,6 @@ SCIP_DIALOG*            dialog )
     /** Do user want to modify existing or create a new partial decomposition ?*/
     SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Please specify a regular expression (modified ECMAScript regular expression grammar) matching the names of unassigned variables you want to assign : \nGCG/toolbox : ", &varregex, &endoffile) );
 
-    consregexlen = strlen(varregex);
 
     /** case distinction: */
 
@@ -2017,7 +1981,7 @@ SCIP_DIALOG*            dialog )
     else
        SCIPdialogMessage(scip, NULL, " There are %d unassigned constraints with names matching given regular expression: \n", matchingvars.size());
 
-    for( size_t mc = 0 ; mc < 10, mc < matchingvars.size(); ++mc )
+    for( size_t mc = 0 ; mc < 10 && mc < matchingvars.size(); ++mc )
        SCIPdialogMessage(scip, NULL, " %s \n", SCIPvarGetName( seeedpool->getVarForIndex( matchingvars[mc] ) ));
 
     SCIPdialogMessage(scip, NULL, "\n Should these constraints be added to: \n");
@@ -2299,7 +2263,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       if( strncmp( command, "undo last modification", commandlen2) == 0 )
       {
          if ( conshdlrdata->lastuserseeed == NULL )
-            SCIPdialogMessage(scip, NULL, " nothing to be undone \s");
+            SCIPdialogMessage(scip, NULL, " nothing to be undone \n");
          else
          {
             delete conshdlrdata->curruserseeed;

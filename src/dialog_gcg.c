@@ -666,10 +666,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
 /** dialog execution method for the displaying and selecting decompositions command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox)
 {  /*lint --e{715}*/
-   SCIP_CONSHDLR** conshdlrs;
-   int nconshdlrs;
-   int i;
-
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
