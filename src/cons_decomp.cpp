@@ -855,7 +855,8 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 
 
    /* @todo: This is also done in consExitDecomp() and therefore probably makes no sense here. */
-   SCIP_CALL( DECdecompFree(scip, &conshdlrdata->useddecomp) );
+   if ( conshdlrdata->useddecomp != NULL )
+      SCIP_CALL( DECdecompFree(scip, &conshdlrdata->useddecomp) );
 
    if( conshdlrdata->seeedpool != NULL )
       delete conshdlrdata->seeedpool;
