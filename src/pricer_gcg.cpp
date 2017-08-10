@@ -1580,7 +1580,7 @@ void ObjPricerGcg::updateRedcosts(
    mastervars = SCIPgetOrigVars(scip_);
    nmastervars = GCGgetNTransvars(origprob) + GCGgetNLinkingvars(origprob);
 
-   assert(nmastervars <= SCIPgetNVars(scip_));
+   assert(nmastervars <= SCIPgetNOrigVars(scip_));
 
    /* no linking or directly transferred variables exist, set stabdualval pointer and exit */
    if( nmastervars == 0 )
@@ -1660,6 +1660,11 @@ void ObjPricerGcg::updateRedcosts(
             int blocknr;
 
             assert(GCGvarIsOriginal(consvars[j]));
+
+            if( GCGoriginalVarGetNMastervars(consvars[j]) == 0 )
+               continue;
+            assert( GCGoriginalVarGetNMastervars(consvars[j]) > 0 );
+
             mastervar = GCGoriginalVarGetMastervars(consvars[j])[0];
             blocknr = GCGvarGetBlock(mastervar);
 
@@ -1717,6 +1722,11 @@ void ObjPricerGcg::updateRedcosts(
             int blocknr;
 
             assert(GCGvarIsOriginal(consvars[j]));
+
+            if( GCGoriginalVarGetNMastervars(consvars[j]) == 0 )
+               continue;
+            assert( GCGoriginalVarGetNMastervars(consvars[j]) > 0 );
+
             mastervar = GCGoriginalVarGetMastervars(consvars[j])[0];
             blocknr = GCGvarGetBlock(mastervar);
 
@@ -1913,7 +1923,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && pricetype != NULL && pricetype->getType() == GCG_PRICETYPE_REDCOST )
       GCGsetRootRedcostCall(origprob, newvar, pricerdata->nrootbounds );
 #else
-   GCGsetRootRedcostCall(origprob, newvar, NAN);
+   GCGsetRootRedcostCall(origprob, newvar, -1);
 #endif
 
    SCIPdebugMessage("Added variable <%s>\n", varname);
@@ -2073,7 +2083,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && pricetype->getType() == GCG_PRICETYPE_REDCOST )
       GCGsetRootRedcostCall(origprob, newvar, pricerdata->nrootbounds );
 #else
-   GCGsetRootRedcostCall(origprob, newvar, NAN);
+   GCGsetRootRedcostCall(origprob, newvar, -1);
 #endif
 
    SCIPdebugMessage("    added variable <%s>\n", varname);
@@ -2748,7 +2758,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          SCIPdebugMessage("lowerboundcandidate: %.8g, stabdualval %.8g, beststabobj %.8g, beststabredcost %.8g)\n", lowerboundcandidate, stabdualval, beststabobj, beststabredcost);
 
-         assert(!*bestredcostvalid || stabilized || SCIPisDualfeasEQ(scip_, beststabredcost, bestredcost));
          assert(!*bestredcostvalid || stabilized || SCIPisDualfeasEQ(scip_, lowerboundcandidate, SCIPgetLPObjval(scip_) + bestredcost));
 
          if( *bestredcostvalid )
@@ -2761,7 +2770,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             pricingcontroller->getBestCols(pricingcols);
 
             /* update subgradient product before a potential change of the stability center */
-            stabilization->updateSubgradientProduct(pricingcols);
+            SCIP_CALL( stabilization->updateSubgradientProduct(pricingcols) );
 
             SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals, pricingcols) );
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);

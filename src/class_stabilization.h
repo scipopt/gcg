@@ -168,7 +168,7 @@ public:
    SCIP_RETCODE updateHybrid();
 
    /** update subgradient product */
-   void updateSubgradientProduct(
+   SCIP_RETCODE updateSubgradientProduct(
       GCG_COL**            pricingcols         /**< solutions of the pricing problems */
    );
 
