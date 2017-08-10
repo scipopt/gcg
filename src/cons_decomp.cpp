@@ -1780,9 +1780,9 @@ SCIP_DIALOG*            dialog )
        {
           matching = TRUE;
           matchingconss.push_back(seeed->getOpenconss()[oc]);
-          SCIPinfoMessage(scip, NULL, " consname %s matches regex %s \n", consname, regexstr.c_str() );
+          SCIPinfoMessage(scip, NULL, " consname %s matches regex %s \n", consname, consregex );
        } else
-          SCIPinfoMessage(scip, NULL, " consname %s does not match regex %s \n", consname, regexstr.c_str());
+          SCIPinfoMessage(scip, NULL, " consname %s does not match regex %s \n", consname, consregex);
     }
 
     if( !matching )
@@ -1797,7 +1797,7 @@ SCIP_DIALOG*            dialog )
 
 
     if( matchingconss.size() > 10 )
-       SCIPdebugMessage(" There are %d unassigned constraints with names matching given regular expression. Showing the first 10:\n", matchingconss.size());
+       SCIPdebugMessage(" There are %d unassigned constraints with names matching given regular expression. Showing the first 10:\n", (int) matchingconss.size());
     else
        SCIPdebugMessage(" There are %d unassigned constraints with names matching given regular expression: \n", matchingconss.size());
 
@@ -1996,9 +1996,9 @@ SCIP_DIALOG*            dialog )
        {
           matching = TRUE;
           matchingvars.push_back(seeed->getOpenconss()[oc]);
-          SCIPdebugMessage( " varname %s matches regex %s \n", varname, regexstr.c_str() );
+          SCIPdebugMessage( " varname %s matches regex %s \n", varname, varregex );
        } else
-          SCIPdebugMessage(" varname %s does not match regex %s \n", varname, regexstr.c_str());
+          SCIPdebugMessage(" varname %s does not match regex %s \n", varname, varregex);
     }
 
     if( !matching )
