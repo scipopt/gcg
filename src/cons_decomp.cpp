@@ -680,79 +680,7 @@ SeeedPtr  SCIPconshdlrDecompGetSeeed(
 
 
 
-/** local method to handle storage of finished decompositions and corresponding seeeds */
-static
-SCIP_RETCODE SCIPstoreSeeedAndDecomp(
-  SCIP*                 scip,
-  SeeedPtr              seeed,
-  DEC_DECOMP*           dec
-)
-{
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   SCIP_CONSHDLR*     conshdlr;
 
-   assert(scip != NULL);
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   assert(conshdlr != NULL);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   /** check if reallocation is needed */
-//   if ( conshdlrdata->ndecomps == conshdlrdata->sizedecomps )
-//   {
-//      conshdlrdata->sizedecomps  = SCIPcalcMemGrowSize(scip, conshdlrdata->sizedecomps + 1);
-//
-//      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, (size_t) conshdlrdata->sizedecomps ) );
-//
-//   }
-//
-//   conshdlrdata->allrelevantfinishedseeeds[conshdlrdata->ndecomps] = seeed;
-//   conshdlrdata->decdecomps[conshdlrdata->ndecomps] = dec;
-//   ++conshdlrdata->ndecomps;
-
-
-   return SCIP_OKAY;
-}
-
-/** local method to handle storage of finished decompositions and corresponding seeeds
- * DEPRECATED */
-static
-SCIP_RETCODE SCIPstoreIncompleteSeeed(
-  SCIP*                 scip,
-  SeeedPtr              seeed
-)
-{
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   SCIP_CONSHDLR*     conshdlr;
-
-   assert(scip != NULL);
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-   assert(conshdlr != NULL);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   assert(FALSE);
-
-   /** check if reallocation is needed */
-//   if ( conshdlrdata->nincompleteseeeds == conshdlrdata->sizeincompleteseeeds )
-//   {
-//      conshdlrdata->sizeincompleteseeeds  = SCIPcalcMemGrowSize(scip, conshdlrdata->sizeincompleteseeeds + 1);
-//
-//      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->incompleteseeeds, (size_t) conshdlrdata->sizeincompleteseeeds ) );
-//   }
-
- ///  conshdlrdata->incompleteseeeds[conshdlrdata->nincompleteseeeds] = seeed;
-
-//   ++conshdlrdata->nincompleteseeeds;
-
-   return SCIP_OKAY;
-}
 
 
 struct sort_pred {
@@ -762,6 +690,7 @@ struct sort_pred {
 };
 
 
+#ifdef ADDONEBLOCKDECOMP
 /**
  * create a 'decomposition' consisting of only one single block; used if no other decomposition was found
  */
@@ -797,6 +726,8 @@ SCIP_RETCODE createOneBlockDecomp(
 
    return SCIP_OKAY;
 }
+
+#endif
 
 /*
  * Callback methods of constraint handler
@@ -3243,8 +3174,6 @@ SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   int varindex;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -3275,8 +3204,6 @@ int SCIPconshdlrDecompGetNBlockNumberCandidates(
    ){
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   int varindex;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -3299,8 +3226,6 @@ int SCIPconshdlrDecompGetBlockNumberCandidate(
     ){
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   int varindex;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -3327,8 +3252,6 @@ SCIP_RETCODE SCIPconshdlrDecompBlockNumberCandidateToSeeedpool(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   int varindex;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -3551,11 +3474,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* currseeedpool;
-   SeeedPtr        seeed;
-
-   char const *            usergiveninfo;
-   char const *            presolvedinfo;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -3588,8 +3506,6 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP*                 scip,                 /**< SCIP data structure */
    SCIP_Bool*            success               /** at least one unpresolved seeed coud be tranlsate in a complete presolved one */
    ){
-
-   DEC_DECOMP* newdecomp;
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
@@ -3785,10 +3701,9 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   gcg::Seeedpool* seeedpool;
-   gcg::Seeedpool* seeedpoolunpresolved;
    std::vector<SeeedPtr>::iterator seeediter;
    std::vector<SeeedPtr>::iterator seeediterend;
+
 
    std::vector<SeeedPtr> tofinishpresolved(0);
    std::vector<SeeedPtr> tofinishunpresolved(0);
@@ -3814,11 +3729,6 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
   // std::vector<std::pair<SeeedPtr, SCIP_Real> > candidates(0);
    conshdlrdata->candidates->clear();
    conshdlrdata->resortcandidates = TRUE;
-
-
-
-   seeedpool = conshdlrdata->seeedpool;
-   seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
 
    if( updatelist )
       SCIP_CALL(SCIPconshdlrDecompUpdateSeeedlist(scip) );
@@ -3914,10 +3824,6 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-   int ncompleteseeeds;
-   int ncompleteseeedsunpresolved;
- //  int nincompleteseeedsunpresolved;
-
    int i;
    int selectedcounter;
 
@@ -3939,11 +3845,6 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
-
-   ncompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() );
-//   nincompleteseeedsunpresolved = (conshdlrdata->seeedpoolunpresolved == NULL ? 0 :  conshdlrdata->seeedpoolunpresolved->currSeeeds.size() ); /** @todo: check if is this wanted*/
-
-
 
    /** 1) the predecessors of all finished seeeds in both seeedpools can be found */
    if( conshdlrdata->seeedpool != NULL)
@@ -4061,7 +3962,6 @@ SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-   SCIP_Real* scores;
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
    if( conshdlr == NULL )
@@ -4121,12 +4021,8 @@ SCIP_RETCODE DECdetectStructure(
    std::vector<gcg::ConsClassifier*> consClassDistributions;         /**< collection of different constraint class distributions */
    std::vector<gcg::VarClassifier*> varClassDistributions;           /**< collection of different variable class distributions */
    std::vector<SCIP_CONS*> indexToCons;                           /**< stores the corresponding scip constraints pointer */
-
    std::vector<gcg::SeeedPtr> seeedsunpresolved(0);                    /**< seeeds that were found for the unpresolved problem */
-
-   SCIP_Real* scores;
    int i;
-
    SCIP_Bool presolveOrigProblem;
    SCIP_Bool calculateOrigDecomps;
    SCIP_Bool classifyOrig;
@@ -4143,13 +4039,6 @@ SCIP_RETCODE DECdetectStructure(
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       SCIP_CALL( SCIPtransformProb(scip) );
 
-//<< HEAD
-//   if( conshdlrdata->ndecomps == 0)
-//   {
-//      candidatesNBlocks = seeedpoolunpresolved.getSortedCandidatesNBlocks();
-//      seeedpoolunpresolved.calcClassifierAndNBlockCandidates(scip);
-//   }
-//=======
 
    /** get block number candidates and conslcassifier for original problem*/
    if( classifyOrig )
@@ -4337,8 +4226,6 @@ SCIP_RETCODE DECwriteAllDecomps(
    char *pname;
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   DEC_DETECTOR *detector;
-   DEC_DECOMP *decomp;
    DEC_DECOMP *tmp;
    int i;
 //   int j;
@@ -4367,10 +4254,10 @@ SCIP_RETCODE DECwriteAllDecomps(
    /** write orig decomps currently disabled*/
    if( FALSE )
    {
-      for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL && (size_t) i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i )
+      for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL &&  i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i )
       {
          SeeedPtr seeed;
-         DEC_DECOMP* decomp;
+         DEC_DECOMP* decomplocal;
 
          seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
 
@@ -4383,13 +4270,13 @@ SCIP_RETCODE DECwriteAllDecomps(
             (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_o%d.%s", pname, i, extension);
          }
 
-         conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &decomp) ;
+         conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &decomplocal) ;
 
-         conshdlrdata->useddecomp = decomp;
+         conshdlrdata->useddecomp = decomplocal;
 
          SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
-         DECdecompFree(scip, &decomp);
+         DECdecompFree(scip, &decomplocal);
       }
    }
 
@@ -4397,7 +4284,7 @@ SCIP_RETCODE DECwriteAllDecomps(
      for( i = 0; conshdlrdata->seeedpool!= NULL && i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
      {
         SeeedPtr seeed;
-        DEC_DECOMP* decomp;
+        DEC_DECOMP* decomplocal;
 
         seeed = conshdlrdata->seeedpool->getFinishedSeeed( i );
 
@@ -4410,13 +4297,13 @@ SCIP_RETCODE DECwriteAllDecomps(
            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_p%d.%s", pname, i, extension);
         }
 
-        conshdlrdata->seeedpool->createDecompFromSeeed(seeed, &decomp) ;
+        conshdlrdata->seeedpool->createDecompFromSeeed(seeed, &decomplocal) ;
 
-        conshdlrdata->useddecomp = decomp;
+        conshdlrdata->useddecomp = decomplocal;
 
         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
-        DECdecompFree(scip, &decomp);
+        DECdecompFree(scip, &decomplocal);
      }
 
 //   for( i = 0; i < conshdlrdata->ndetectors; ++i )
