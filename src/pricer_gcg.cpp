@@ -2473,6 +2473,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Real* olddualconv;
 
    int nprobvars;
+   int nstabrounds;
+   SCIP_Real pricingtime;
 #endif
 
    assert(pricerdata != NULL);
@@ -2548,6 +2550,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    }
 #endif
 
+#ifdef SCIP_STATISTIC
+   SCIPstatisticMessage("New pricing round at node %" SCIP_LONGINT_FORMAT "\n", SCIPgetNNodes(scip_));
+   nstabrounds = 0;
+#endif
+
    /* stabilization loop */
    do
    {
@@ -2592,6 +2599,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          colpoolupdated = TRUE;
       }
 
+#ifdef SCIP_STATISTIC
+      ++nstabrounds;
+      SCIPstatisticMessage("Stabilization round %d\n", nstabrounds);
+#endif
+
       pricingcontroller->setupPriorityQueue(pricerdata->dualsolconv, maxcols);
 
       /* perform all pricing jobs */
@@ -2624,8 +2636,18 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          /* @todo: update time limits after each solver call */
          SCIP_CALL( pricingcontroller->setPricingjobTimelimit(pricingjob) );
 
+#ifdef SCIP_STATISTIC
+         /* @todo: this can interfere with parallelization */
+         pricingtime = pricetype->getClockTime();
+#endif
+
          /* solve the pricing problem */
          private_retcode = generateColumnsFromPricingProblem(pricingjob, pricetype, maxcols);
+
+#ifdef SCIP_STATISTIC
+         pricingtime = pricetype->getClockTime() - pricingtime;
+#endif
+
          SCIPdebugMessage("  -> ncols: %d, pricinglowerbound: %.4g\n", GCGpricingjobGetNCols(pricingjob), GCGpricingjobGetLowerbound(pricingjob));
 
          /* handle result */
@@ -2657,6 +2679,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                #pragma omp atomic
                ++nsolvedprobs;
             }
+
+            SCIPstatisticMessage("Pricing prob %d : found %d improving columns, time = %g\n",
+               GCGpricingjobGetProbnr(pricingjob), GCGpricingjobGetNImpCols(pricingjob) - oldnimpcols, pricingtime);
          }
 
          pricingcontroller->evaluatePricingjob(pricingjob);
