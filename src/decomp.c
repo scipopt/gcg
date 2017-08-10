@@ -2090,7 +2090,8 @@ SCIP_RETCODE DECdecompRemoveDeletedConss(
          SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->linkingconss[c]) );
       }
    }
-   if( pos != decdecomp->nlinkingconss )
+
+   if( pos != decdecomp->nlinkingconss && decdecomp->linkingconss != NULL )
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss,
          SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss), SCIPcalcMemGrowSize(scip, pos)) );
    decdecomp->nlinkingconss = pos;

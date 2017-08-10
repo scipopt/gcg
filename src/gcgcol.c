@@ -179,8 +179,8 @@ SCIP_RETCODE GCGcreateGcgColFromSol(
 
    SCIP_CALL( GCGcreateGcgCol(pricingprob, gcgcol, prob, colvars, colvals, ncolvars, isray, redcost) );
 
-   SCIPfreeBufferArray(pricingprob, &colvars);
    SCIPfreeBufferArray(pricingprob, &colvals);
+   SCIPfreeBufferArray(pricingprob, &colvars);
 
    return SCIP_OKAY;
 }

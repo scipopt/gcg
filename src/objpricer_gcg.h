@@ -137,6 +137,15 @@ public:
       SCIP_VAR**            addedvar            /**< pointer to store the created variable */
    );
 
+   /* Compute difference of two dual solutions */
+   SCIP_RETCODE computeDualDiff(
+      SCIP_Real**          dualvals1,           /**< array of dual values for each pricing problem */
+      SCIP_Real*           dualconv1,           /**< array of dual solutions for the convexity constraints  */
+      SCIP_Real**          dualvals2,           /**< array of dual values for each pricing problem */
+      SCIP_Real*           dualconv2,           /**< array of dual solutions for the convexity constraints  */
+      SCIP_Real*           dualdiff             /**< pointer to store difference of duals solutions */
+   );
+
    /** performs optimal or farkas pricing */
    SCIP_RETCODE performPricing(
       PricingType*   pricetype,          /**< type of pricing */
@@ -181,7 +190,9 @@ public:
 
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
    SCIP_RETCODE getStabilizedDualObjectiveValue(
-      SCIP_Real*         stabdualval         /**< pointer to store stabilized dual objective value */
+      PricingType*       pricetype,          /**< type of pricing */
+      SCIP_Real*         stabdualval,        /**< pointer to store stabilized dual objective value */
+      SCIP_Bool          stabilize           /**< stabilize? */
    );
 private:
    ReducedCostPricing *reducedcostpricing;
@@ -239,6 +250,17 @@ private:
    /** adds new variable to the end of the priced variables array */
    SCIP_RETCODE addVariableToPricedvars(
       SCIP_VAR*             newvar              /**< variable to add */
+   );
+
+   /** ensures size of root bounds arrays */
+   SCIP_RETCODE ensureSizeRootBounds(
+      int                   size                /**< needed size */
+   );
+
+   /** adds new bounds to the bound arrays as well as some additional information on dual variables and root lp solution */
+   SCIP_RETCODE addRootBounds(
+      SCIP_Real             primalbound,        /**< new primal bound for the root master LP */
+      SCIP_Real             dualbound           /**< new dual bound for the root master LP */
    );
 
    /** add master variable to all constraints */
