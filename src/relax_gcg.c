@@ -47,6 +47,7 @@
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
+#include "scip/misc.h"
 
 #include "relax_gcg.h"
 
@@ -1962,7 +1963,7 @@ SCIP_RETCODE initRelaxator(
 
       SCIP_CALL( SCIPrandomCreate(&randnumgen, SCIPblkmem(scip), (unsigned int) permutationseed) );
       SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, randnumgen) );
-      SCIPrandomFree(&randnumgen);
+      SCIPrandomFree(&randnumgen, SCIPblkmem(scip) );
    }
 
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )

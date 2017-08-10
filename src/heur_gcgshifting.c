@@ -39,6 +39,7 @@
 #include "heur_gcgshifting.h"
 #include "gcg.h"
 #include "relax_gcg.h"
+#include "scip/misc.h"
 
 
 #define HEUR_NAME             "gcgshifting"
@@ -513,7 +514,7 @@ SCIP_DECL_HEUREXIT(heurExitGcgshifting) /*lint --e{715}*/
    SCIP_CALL( SCIPfreeSol(scip, &heurdata->sol) );
 
    /* free random number generator */
-   SCIPrandomFree(&heurdata->randnumgen);
+   SCIPrandomFree(&heurdata->randnumgen, SCIPblkmem(scip) );
 
    SCIPfreeMemory(scip, &heurdata);
    SCIPheurSetData(heur, NULL);

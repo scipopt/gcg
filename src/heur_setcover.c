@@ -41,6 +41,7 @@
 #include "pricer_gcg.h"
 #include "scip/clock.h"
 #include "scip/cons_linear.h"
+#include "scip/misc.h"
 #include "heur_setcover.h"
 
 
@@ -3066,7 +3067,7 @@ SCIP_DECL_HEUREXIT(heurExitSetcover)
    assert(heurdata != NULL);
 
    /* free random number generator */
-   SCIPrandomFree(&heurdata->randnumgen);
+   SCIPrandomFree(&heurdata->randnumgen, SCIPblkmem(scip) );
 
    return SCIP_OKAY;
 }

@@ -42,6 +42,7 @@
 #include "gcgplugins.h"
 
 #include "scip/scip.h"
+#include "scip/misc.h"
 #include "scip/scipdefplugins.h"
 
 
@@ -1278,7 +1279,7 @@ SCIP_DECL_HEUREXIT(heurExitXprins)
    assert(heurdata != NULL);
 
    /* free random number generator */
-   SCIPrandomFree(&heurdata->randnumgen);
+   SCIPrandomFree(&heurdata->randnumgen, SCIPblkmem(scip) );
 
    return SCIP_OKAY;
 }
