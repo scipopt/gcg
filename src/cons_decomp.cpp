@@ -1755,9 +1755,9 @@ SCIP_DIALOG*            dialog )
        {
           matching = TRUE;
           matchingconss.push_back(seeed->getOpenconss()[oc]);
-          SCIPinfoMessage(scip, NULL, " consname %s matches regex %s \n", consname, consregex );
+          SCIPdebugMessage(" consname %s matches regex %s \n", consname, consregex );
        } else
-          SCIPinfoMessage(scip, NULL, " consname %s does not match regex %s \n", consname, consregex);
+          SCIPdebugMessage(" consname %s does not match regex %s \n", consname, consregex);
     }
 
     if( !matching )
@@ -2024,6 +2024,7 @@ SCIP_DIALOG*            dialog )
        return SCIP_OKAY;
 
     seeed->flushBooked();
+    seeed->deleteEmptyBlocks(true);
 
 
    return SCIP_OKAY;

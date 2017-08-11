@@ -559,7 +559,6 @@ Seeedpool::Seeedpool(
    SCIP_CONS** conss;
    SCIP_VAR** vars;
    SCIP_CONSHDLR* conshdlr; /** cons_decomp to get detectors */
-   SCIP_CONSHDLRDATA* conshdlrdata;
 
    int ndetectors;
    DEC_Detector** detectors;
@@ -576,8 +575,6 @@ Seeedpool::Seeedpool(
    /** get conshdlrdata */
    conshdlr = SCIPfindConshdlr( scip, conshdlrName );
    assert( conshdlr != NULL );
-   conshdlrdata = SCIPconshdlrGetData( conshdlr );
-   assert( conshdlrdata != NULL );
 
    detectors = SCIPconshdlrDecompGetDetectors(scip);
    ndetectors = SCIPconshdlrDecompGetNDetectors(scip);

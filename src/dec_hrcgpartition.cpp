@@ -210,12 +210,7 @@ DEC_DECL_INITDETECTOR(initHrcgpartition)
 static
 DEC_DECL_EXITDETECTOR(exitHrcgpartition)
 {
-   DEC_DETECTORDATA* detectordata;
-
    assert(scip != NULL);
-
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 

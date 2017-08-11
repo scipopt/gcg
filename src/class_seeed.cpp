@@ -736,7 +736,7 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblock(
 
    flushBooked();
 
-   deleteEmptyBlocks();
+   deleteEmptyBlocks(false);
    sort();
    assert( checkConsistency( seeedpool ) );
    return SCIP_OKAY;
@@ -778,7 +778,7 @@ SCIP_RETCODE Seeed::assignSeeedFromConstoblockVector(
 
    flushBooked();
 
-   deleteEmptyBlocks();
+   deleteEmptyBlocks(false);
    sort();
    assert( checkConsistency( seeedpool ) );
    return SCIP_OKAY;
@@ -1701,7 +1701,9 @@ SCIP_RETCODE Seeed::considerImplicits(
 }
 
 /** deletes empty blocks */
-SCIP_RETCODE Seeed::deleteEmptyBlocks()
+SCIP_RETCODE Seeed::deleteEmptyBlocks(
+   bool variables
+   )
 {
    bool emptyBlocks = true;
    int block = - 1;
@@ -1718,7 +1720,7 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks()
       emptyBlocks = false;
       for( b = 0; b < nBlocks; ++ b )
       {
-         if( conssForBlocks[b].size() == 0 )
+         if( conssForBlocks[b].size() == 0 &&  ( variables ? varsForBlocks[b].size() == 0 : true) )
          {
             emptyBlocks = true;
             block = b;
@@ -2361,7 +2363,7 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock(
    openVars = std::vector<int>( 0 );
    openConss = std::vector<int>( 0 );
 
-   deleteEmptyBlocks();
+   deleteEmptyBlocks(false);
    sort();
    assert( checkConsistency( seeedpool ) );
 

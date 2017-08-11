@@ -311,7 +311,9 @@ public:
       );
 
    /** deletes empty blocks */
-   SCIP_RETCODE deleteEmptyBlocks();
+   SCIP_RETCODE deleteEmptyBlocks(
+      bool variables = false
+   );
 
    /** deletes a cons from list of open conss */
    SCIP_RETCODE deleteOpencons(
