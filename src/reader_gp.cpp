@@ -251,7 +251,7 @@ SCIP_RETCODE writeGpSeeed(
       SCIPvisuGetColorMastervars() );
    colboxcounter += seeed->getNMastervars();
 
-   /* specific interface methodsmasterconss */
+   /* masterconss */
    drawGpBox( filename, 3, 0, 0, seeed->getNVars(), seeed->getNMasterconss(), SCIPvisuGetColorMasterconss() );
    rowboxcounter += seeed->getNMasterconss();
 
