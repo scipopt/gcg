@@ -61,6 +61,8 @@
 #define DEFAULT_COLOR_NONZERO      COLOR_BLACK
 #define DEFAULT_COLOR_LINE         COLOR_BLACK   /* for outlines of blocks */
 
+#define DEFAULT_VISU_RADIUS 5
+
 /*@todo defines for black and white color scheme */
 
 SCIP_Bool visudraftmode;
@@ -84,6 +86,8 @@ char* greycoloropen;
 char* greycolornonzero;
 char* greycolorline;
 
+int visuradius;
+
 /*@todo vars for black and white scheme */
 
 /** includes the visualization parameters into GCG */
@@ -104,6 +108,8 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    mancolorline =          (char*) DEFAULT_COLOR_LINE;
 
    /*@todo initialize black and white scheme*/
+
+   visuradius = DEFAULT_VISU_RADIUS;
 
    return SCIP_OKAY;
 }
@@ -258,4 +264,25 @@ char* SCIPvisuGetColorLine()
    default:
       return (char*) DEFAULT_COLOR_LINE;
    }
+}
+
+/** gets appropriate radius for nonzeros
+ * needs highest indices of both axes */
+float SCIPvisuGetNonzeroRadius(
+   int maxindx,     /**< highest index x-axis */
+   int maxindy,    /**< highest index y-axis */
+   float scalingfactor /**< percentage to scale radius, 1 if no scaling */
+   )
+{
+   int maxind = 0;
+
+   /* the max indices must be at least one to be compatible with division */
+   maxindx = maxindx < 1 ? 1 : maxindx;
+   maxindy = maxindy < 1 ? 1 : maxindy;
+
+   /* determine the highest index */
+   maxind = maxindx>maxindy?maxindx:maxindy;
+
+   /* scale by coordinate system size and given factor */
+   return (visuradius / maxind) * scalingfactor;
 }

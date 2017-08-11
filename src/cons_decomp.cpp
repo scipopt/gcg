@@ -262,17 +262,6 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
 }
 
 
-
-
-std::string getSeeedFolderLatex( SeeedPtr seeed )
-{
-   std::stringstream decompfilename;
-   decompfilename << "dec" << seeed->getID() << ".pdf";
-
-   return decompfilename.str();
-}
-
-
 SCIP_Bool unfinishedchildexists(std::vector<SCIP_Bool> const& childsfinished)
 {
    for( size_t s = 0; s < childsfinished.size(); ++s )
@@ -321,73 +310,6 @@ SCIP_Bool finishnextchild( std::vector<int>& childs, std::vector<SCIP_Bool>& chi
    return FALSE;
 }
 
-std::string writeSeeedDetectorChainInfoLatex( SeeedPtr seeed, int currheight, int visucounter )
-{
-   std::stringstream line;
-   std::string relposition;
-   int position = visucounter % 3;
-   if( position == 0 )
-      relposition = "above";
-   else if ( position == 1)
-      relposition = "";
-   else if ( position == 2)
-      relposition = "below";
-   else
-      relposition = "below left";
-
-   if ( currheight != 1)
-      relposition = "";
-
-   if ( (size_t) currheight >  seeed->detectorchaininfo.size() )
-      line << "edge from parent node [" << relposition << "] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
-   else
-   {
-      std::string oldinfo = seeed->detectorchaininfo[ currheight - 1];
-      /** take latexified detctorchaininfo */
-      size_t index = 0;
-      while (true) {
-         /* Locate the substring to replace. */
-         index = oldinfo.find("_", index);
-         if (index == std::string::npos)
-            break;
-         if ( index > 0 &&   oldinfo.at(index-1) == '\\' )
-         {
-            ++index;
-            continue;
-         }
-
-         /* Make the replacement. */
-         oldinfo.replace(index, 1, "\\_");
-
-         /* Advance index forward so the next iteration doesn't pick it up as well. */
-         index += 2;
-      }
-      std::cout << "oldinfo: " << oldinfo << std::endl;
-
-      line << "edge from parent node [" << relposition << "] {" << oldinfo <<"} " ;
-   }
-
-
-   return line.str();
-}
-
-
-std::string writeSeeedInfoLatex( SeeedPtr seeed )
-{
-   std::stringstream line;
-   line << "\\node[below = \\belowcaptionskip of s" << seeed->getID() << "] (caps" << seeed->getID() << ") {\\scriptsize " << seeed->getShortCaption() << "}; " << std::endl;
-
-   return line.str();
-}
-
-
-std::string writeSeeedIncludeLatex( SeeedPtr seeed, std::string workfolder )
-{
-   std::stringstream line;
-   line << " (s" << seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{" << getSeeedFolderLatex(seeed) << "} }" << std::endl;
-
-   return line.str();
-}
 
 /** local method to handle store a seeed in the correct seeedpool */
 SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForUnpresolved(
@@ -555,7 +477,7 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromPresolved(
 
       if( conshdlr == NULL )
       {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeed!\n");
          return NULL;
       }
 
@@ -570,7 +492,6 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromPresolved(
          if( conshdlrdata->seeedpool->ancestorseeeds[i]!= NULL && conshdlrdata->seeedpool->ancestorseeeds[i]->getID() == seeedid )
             return conshdlrdata->seeedpool->ancestorseeeds[i];
       }
-
 
       for( size_t i = 0; i < conshdlrdata->seeedpool->incompleteSeeeds.size(); ++i)
       {
@@ -601,7 +522,7 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromUnpresolved(
 
       if( conshdlr == NULL )
       {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeed!\n");
          return NULL;
       }
 
@@ -620,8 +541,6 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromUnpresolved(
                 return conshdlrdata->seeedpoolunpresolved->ancestorseeeds[i];
           }
 
-
-
       for( size_t i = 0; i < conshdlrdata->seeedpoolunpresolved->finishedSeeeds.size(); ++i)
       {
          if( conshdlrdata->seeedpoolunpresolved->finishedSeeeds[i]->getID() == seeedid )
@@ -629,10 +548,7 @@ SeeedPtr  SCIPconshdlrDecompGetSeeedFromUnpresolved(
       }
 
       return NULL;
-
-
 }
-
 
 
 /** local method to find a seeed for a given id or NULL if no seeed with such id is found */
@@ -650,7 +566,7 @@ SeeedPtr  SCIPconshdlrDecompGetSeeed(
 
       if( conshdlr == NULL )
       {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+         SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeed!\n");
          return NULL;
       }
 
@@ -664,9 +580,6 @@ SeeedPtr  SCIPconshdlrDecompGetSeeed(
       else
          return seeed;
 }
-
-
-
 
 
 /** local method to handle storage of finished decompositions and corresponding seeeds */
@@ -742,10 +655,6 @@ SCIP_RETCODE SCIPstoreIncompleteSeeed(
 
    return SCIP_OKAY;
 }
-
-
-
-
 
 /**
  * create a 'decomposition' consisting of only one single block; used if no other decomposition was found

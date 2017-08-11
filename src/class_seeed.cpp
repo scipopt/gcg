@@ -3392,7 +3392,7 @@ void Seeed::showVisualisation(
 SCIP_Bool Seeed::shouldCompletedByConsToMaster(){
 
    return usergiven == USERGIVEN::COMPLETED_CONSTOMASTER;
-}
+}/**< SCIP data structure */
 
 /** sorts the vars and conss according their numbers */
 void Seeed::sort()
@@ -3422,7 +3422,7 @@ const char* Seeed::getShortCaption(){
    return shortcaption;
 
 }
-
+/**< SCIP data structure */
 /** sets the detector chain short string */
 SCIP_RETCODE Seeed::setDetectorChainString(
    char*                 detectorchainstring

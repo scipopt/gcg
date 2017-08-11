@@ -101,6 +101,14 @@ extern char* SCIPvisuGetColorNonzero(void);
 /** gets color for lines in current color scheme */
 extern char* SCIPvisuGetColorLine(void);
 
+/** gets appropriate radius for nonzeros
+ * needs highest indices of both axes */
+float SCIPvisuGetNonzeroRadius(
+   int maxindx,     /**< highest index x-axis */
+   int maxindy,    /**< highest index y-axis */
+   float scalingfactor /**< percentage to scale radius, 1 if no scaling */
+   );
+
 #ifdef __cplusplus
 }
 #endif

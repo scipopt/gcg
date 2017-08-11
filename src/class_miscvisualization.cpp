@@ -34,6 +34,9 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "class_miscvisualization.h"
+#include "class_seeedpool.h"
+#include "class_seeed.h"
+
 #include "scip/scip.h"
 
 #include <unistd.h>
@@ -54,19 +57,45 @@ MiscVisualization::~MiscVisualization(){
  *
  * @return filename including the extension
  * */
-std::string MiscVisualization::GCGgetVisualizationFilename(
-   SeeedPtr seeed,         /**< seeed that is to be visualized */
-   std::string extension   /**< file extension */
+char* MiscVisualization::GCGgetVisualizationFilename(
+   SCIP* scip,       /**< scip data structure */
+   SeeedPtr seeed,   /**< seeed that is to be visualized */
+   char* extension   /**< file extension */
    )
 {
-   std::string filename;
-   /*@todo implement*/
-   return filename;
+   char* name;
+   char* detectorchainstring;
+   char probname[SCIP_MAXSTRLEN];
+   char outname[SCIP_MAXSTRLEN];
+   char* filename;
+
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+   SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
+
+   /*@todo change this for seeeds! */
+//   /* get detector chain string*/
+//   detectorchainstring = DECdecompGetDetectorChainString(scip, decdecomp);
+//
+//   /* print header */
+//   if( decdecomp == NULL )
+//      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
+//   else
+//   {
+//      if(outputPDF)
+//         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%s_%d_%d", name, detectorchainstring, DECdecompGetSeeedID(decdecomp),
+//            decdecomp->nblocks);
+//      else
+//         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%s-%d-%d", name, detectorchainstring, DECdecompGetSeeedID(decdecomp),
+//            decdecomp->nblocks);
+//   }
+
+   return outname;
 }
 
 /** gives the path of the file */
 char* MiscVisualization::GCGgetFilePath(
-   FILE*    file               /**< file */
+   SCIP* scip,       /**< scip data structure */
+   FILE* file        /**< file */
    )
 {
    char* pfile;
@@ -88,6 +117,88 @@ char* MiscVisualization::GCGgetFilePath(
    return pfile;
 }
 
+/** gets a pointer to the Seeed with given ID
+ *
+ * @returns SeeedPtr to Seeed or NULL if there is no Seeed with the given ID
+ * @returns pool: Seeedpool* where the Seeed was found
+ */
+SeeedPtr MiscVisualization::GCGgetSeeed(
+   SCIP* scip,       /**< SCIP data structure */
+   int seeedid,      /**< ID of Seeed */
+   Seeedpool* pool   /**< outputs where the Seeed was found (if not needed input NULL) */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SeeedPtr seeed;
+   Seeedpool* seeedpool;
+
+   /* get Seeed from seeedid */
+   seeed = NULL;
+   conshdlr = SCIPfindConshdlr( scip, "decomp" );
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeed!\n");
+      return NULL;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeedpool = conshdlrdata->seeedpool;
+   pool = seeedpool;
+
+   if( seeedpool != NULL )
+   {
+      /* find in presolved */
+      for( size_t i = 0; i < seeedpool->ancestorseeeds.size(); ++i)
+      {
+         if( seeedpool->ancestorseeeds[i]!= NULL && seeedpool->ancestorseeeds[i]->getID() == seeedid )
+            return seeedpool->ancestorseeeds[i];
+      }
+
+      for( size_t i = 0; i < seeedpool->incompleteSeeeds.size(); ++i)
+      {
+         if( seeedpool->incompleteSeeeds[i]->getID() == seeedid )
+            return seeedpool->incompleteSeeeds[i];
+      }
+
+      for( size_t i = 0; i < seeedpool->finishedSeeeds.size(); ++i)
+      {
+         if( seeedpool->finishedSeeeds[i]->getID() == seeedid )
+            return seeedpool->finishedSeeeds[i];
+      }
+   }
+
+   /* find in unpresolved */
+   seeedpool = conshdlrdata->seeedpoolunpresolved;
+   pool = seeedpool;
+
+   if( !seeedpool == NULL )
+   {
+      for( size_t i = 0; i < seeedpool->incompleteSeeeds.size(); ++i)
+      {
+         if( seeedpool->incompleteSeeeds[i]->getID() == seeedid )
+            return seeedpool->incompleteSeeeds[i];
+      }
+
+      for( size_t i = 0; i < seeedpool->ancestorseeeds.size(); ++i)
+      {
+         if( seeedpool->ancestorseeeds[i]!= NULL &&  seeedpool->ancestorseeeds[i]->getID() == seeedid )
+            return seeedpool->ancestorseeeds[i];
+      }
+
+      for( size_t i = 0; i < seeedpool->finishedSeeeds.size(); ++i)
+      {
+         if( seeedpool->finishedSeeeds[i]->getID() == seeedid )
+            return seeedpool->finishedSeeeds[i];
+      }
+   }
+
+   pool = NULL;
+   return seeed;
+}
 
 } /* namespace gcg */
 

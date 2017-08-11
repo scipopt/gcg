@@ -38,6 +38,8 @@
 
 #include <fstream>
 
+#include "scip/scip.h"
+
 #include "reader_gp.h"
 #include "scip_misc.h"
 #include "struct_decomp.h"
@@ -47,28 +49,14 @@
 
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "class_miscvisualization.h"
 
 #define READER_NAME             "gpreader"
 #define READER_DESC             "gnuplot file writer for seeed visualization"
 #define READER_EXTENSION        "gp"
 
-#define READERGP_GNUPLOT_BOXTEMPLATE(i, x1, y1, x2, y2) "set object %d rect from %.1f,%.1f to %.1f,%.1f fc rgb \"grey\"\n", (i), (x1), (y1), (x2), (y2)
-#define READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, x1, y1, x2, y2, color) "set object %d rect from %.1f,%.1f to %.1f,%.1f fc rgb \"%s\"\n", (i), (x1), (y1), (x2), (y2), (color)
-#define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\n", (outputname)
-#define READERGP_GNUPLOT_RANGES(xmax, ymax) "set xrange [-1:%d]\nset yrange[%d:-1]\n", (xmax), (ymax)
-#define READERGP_GNUPLOT_PLOTCMD "plot \"-\" using 1:2:3 notitle with circles fc rgb \"%s\" fill solid\n", DEFAULT_COLOR_NONZERO
-
-#define READERGP_GNUPLOT_HEADER_TEX(outputname) "set terminal tikz\nset output \"%s.tex\"\nunset xtics\nunset ytics\nunset border\nunset key\nset style fill solid 1.0 noborder\nset size ratio -1\n", (outputname)
-
-#define DEFAULT_DRAFTMODE FALSE
 
 namespace gcg{
-
-/** data for dec reader */
-struct SCIP_ReaderData
-{
-   SCIP_Bool       draftmode;       /** if true shows no non-zeroes, recommended if too slow or too memory-intensive */
-};
 
 /** write file header with terminal etc. */
 static
@@ -90,6 +78,7 @@ SCIP_RETCODE writeGpHeader(
 }
 
 
+/* writes gp code to given file that contains a box with given coordinates and color */
 static
 SCIP_RETCODE drawGpBox(
    char* filename,   /**< filename (including path) to write to */
@@ -98,14 +87,14 @@ SCIP_RETCODE drawGpBox(
    int y1,           /**< y value of lower left vertex coordinate */
    int x2,           /**< x value of upper right vertex coordinate */
    int y2,           /**< y value of upper right vertex coordinate */
-   char* color       /**< color of box filling */
+   char* color       /**< color hex code (e.g. #000000) for box filling */
    )
 {
    std::ofstream ofs;
    ofs.open( filename, std::ofstream::out );
 
    ofs << "set object " << objectid << " rect from " << x1 << "," << y1 << " to " << x2 << "," << y2 << " fc rgb \""
-      << color << "\"" << std::endl;
+      << color << "\"" << " lc rgb \"" << SCIPvisuGetColorLine() << "\"" << std::endl;
 
    ofs.close();
    return SCIP_OKAY;
@@ -113,6 +102,7 @@ SCIP_RETCODE drawGpBox(
 
 
 /** writes gp code to given file that contains all nonzero points */
+static
 SCIP_RETCODE writeGpNonzeros(
    const char* filename,   /**< filename to write to (including path & extension) */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
@@ -232,6 +222,7 @@ SCIP_RETCODE writeGpNonzeros(
    return SCIP_OKAY;
 }
 
+
 static
 SCIP_RETCODE writeGpSeeed(
    char* filename,         /**< filename (including path) to write to */
@@ -246,21 +237,21 @@ SCIP_RETCODE writeGpSeeed(
    ofs.open( filename, std::ofstream::out );
 
    /* set coordinate range */
-   ofs << "set xrange [-1:" << SCIPgetNVars(scip) << "]" << std::endl;
-   ofs << "set yrange[" << SCIPgetNConss(scip) << ":-1]" << std::endl;
+   ofs << "set xrange [-1:" << seeed->getNVars() << "]" << std::endl;
+   ofs << "set yrange[" << seeed->getNConss() << ":-1]" << std::endl;
 
    /* --- draw boxes ---*/
 
    /* linking vars */
    drawGpBox( filename,1, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(), SCIPvisuGetColorLinking() );
-   colboxcounter+=seeed->getNLinkingvars();
+   colboxcounter += seeed->getNLinkingvars();
 
    /* mastervars */
    drawGpBox( filename, 2, colboxcounter, 0, seeed->getNMastervars()+colboxcounter, seeed->getNConss(),
       SCIPvisuGetColorMastervars() );
-   colboxcounter+=seeed->getNMastervars();
+   colboxcounter += seeed->getNMastervars();
 
-   /* masterconss */
+   /* specific interface methodsmasterconss */
    drawGpBox( filename, 3, 0, 0, seeed->getNVars(), seeed->getNMasterconss(), SCIPvisuGetColorMasterconss() );
    rowboxcounter += seeed->getNMasterconss();
 
@@ -277,289 +268,59 @@ SCIP_RETCODE writeGpSeeed(
             rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), SCIPvisuGetColorStairlinking() );
       }
       colboxcounter += seeed->getNStairlinkingvars(b);
-      rowboxcounter+= seeed->getNConssForBlock(b);
+      rowboxcounter += seeed->getNConssForBlock(b);
    }
 
-   /*@todo go on here, not all boxes are in here yet! */
+   /* open */
+   drawGpBox( filename, 2 * seeed->getNBlocks() + 4, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
+      rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
+   colboxcounter += seeed->getNOpenvars();
+   rowboxcounter += seeed->getNOpenconss();
 
    /* --- draw nonzeros --- */
    /*@todo get radius */
-   writeGpNonzeros( filename, seeed, seeedpool, radius );
+   writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius( seeed->getNVars(), seeed->getNConss(), 1 ) );
 
    ofs.close();
-}
-
-/** write decomposition header such as rectangles for blocks etc. */
-static
-SCIP_RETCODE writeDecompositionHeader(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
-   )
-{
-//   int i;
-//   int b;
-//   int startx;
-//   int starty;
-//   int endx;
-//   int endy;
-//   int nstairlinkingvars;
-//   int nmastervars;
-//   int nvars;
-//   int nconss;
-//   assert(scip != NULL);
-//   assert(file != NULL);
-//   assert(decdecomp != NULL);
-//   if( decdecomp->type == DEC_DECTYPE_UNKNOWN || decdecomp->nblocks == 0 )
-//   {
-//      return SCIP_OKAY;
-//   }
-//
-//   nvars = SCIPgetNVars(scip);
-//   nconss = SCIPgetNConss(scip);
-//
-//   nstairlinkingvars = 0;
-//   if (decdecomp->nstairlinkingvars != NULL)
-//   {
-//      for( b = 0; b < decdecomp->nblocks - 1; ++b )
-//      {
-//         nstairlinkingvars += decdecomp->nstairlinkingvars[b];
-//      }
-//   }
-//   nmastervars = 0;
-//   for( i = 0; i < decdecomp->nlinkingvars; ++i )
-//   {
-//      if( (int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[i]) == decdecomp->nblocks + 1)
-//         nmastervars++;
-//   }
-//   startx = 0;
-//   starty = 0;
-//   i = 1;
-//   /** write linking var box */
-//   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, decdecomp->nlinkingvars - nstairlinkingvars - nmastervars + 0.5, nconss + 0.5, DEFAULT_COLOR_LINKING));
-//   i++;
-//   startx += decdecomp->nlinkingvars - nstairlinkingvars - nmastervars;
-//   /** write master var box */
-//   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, startx + nmastervars + 0.5, nconss + 0.5, DEFAULT_COLOR_MASTERVARS));
-//   i++;
-//  startx += nmastervars;
-//  /** write linking cons box */
-//  SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, 0 + 0.5, 0 + 0.5, nvars + 0.5, decdecomp->nlinkingconss + 0.5, DEFAULT_COLOR_MASTERCONS));
-//  i++;
-//  starty += decdecomp->nlinkingconss;
-//
-//  endx = startx;
-//  endy = starty;
-//  for( b = 0; b < decdecomp->nblocks; ++b )
-//  {
-//     endx += decdecomp->nsubscipvars[b];
-//     endy += decdecomp->nsubscipconss[b];
-//     SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, endx + 0.5, endy + 0.5, DEFAULT_COLOR_BLOCK));
-//     i++;
-//     if(decdecomp->nstairlinkingvars != NULL )
-//     {
-//        if(decdecomp->nstairlinkingvars[b] != 0)
-//        {
-//        startx = endx;
-//        endx += decdecomp->nstairlinkingvars[b];
-//        SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATECOLORED(i, startx + 0.5, starty + 0.5, endx + 0.5, starty + decdecomp->nsubscipconss[b] + decdecomp->nsubscipconss[b+1] + 0.5, DEFAULT_COLOR_STAIRLINKING));
-//        i++;
-//        }
-//     }
-//     startx = endx;
-//     starty = endy;
-//  }
-
-   return SCIP_OKAY;
-}
-
-/** write the plot commands */
-static
-SCIP_RETCODE writePlotCommands(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< File pointer to write to */
-   )
-{
-//   assert(scip != NULL);
-//   assert(file != NULL);
-//
-//   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_PLOTCMD);
-   return SCIP_OKAY;
-}
-
-/** write the data optionally using the decomposition data */
-static
-SCIP_RETCODE writeData(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
-   )
-{
-//   SCIP_CONS** conss;
-//   SCIP_HASHMAP* varindexmap;
-//   SCIP_HASHMAP* consindexmap;
-//   int* stairlinkingvars;
-//   int nconss;
-//
-//   int i;
-//   int j;
-//
-//   assert(scip != NULL);
-//   assert(file != NULL);
-//
-//   conss = SCIPgetConss(scip);
-//   nconss = SCIPgetNConss(scip);
-//
-//   varindexmap = NULL;
-//   consindexmap = NULL;
-//
-//   if( decdecomp != NULL )
-//   {
-//      size_t varindex = 1;
-//      size_t consindex = 1;
-//      SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-//      SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
-//
-//      /** fillout the array stairlinkingvars */
-//      SCIP_CALL( SCIPallocBufferArray(scip, &stairlinkingvars, SCIPgetNVars(scip)) );
-//      for( j = 0; j < SCIPgetNVars(scip); ++j)
-//         stairlinkingvars[j] = 0;
-//      for( i = 0; i < decdecomp->nblocks - 1; ++i)
-//      {
-//         if(decdecomp->nstairlinkingvars != NULL)
-//         {
-//            for( j = 0; j < decdecomp->nstairlinkingvars[i]; ++j)
-//            {
-//               assert(SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j]) != NULL);
-//               assert(stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j])] == 0);
-//               stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->stairlinkingvars[i][j])] = 1;
-//            }
-//         }
-//      }
-//
-//      /** fillout the hashmaps */
-//      for( j = 0; j < decdecomp->nlinkingconss; ++j )
-//      {
-//         assert(decdecomp->linkingconss[j] != NULL);
-//         SCIP_CALL( SCIPhashmapInsert(consindexmap, decdecomp->linkingconss[j], (void*)consindex) );
-//         consindex++;
-//      }
-//      /** linkingvars */
-//      for( j = 0; j < decdecomp->nlinkingvars; ++j )
-//      {
-//         assert(decdecomp->linkingvars[j] != NULL);
-//         assert((int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[j]) == decdecomp->nblocks + 2 || (int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[j]) == decdecomp->nblocks + 1);
-//         if( (int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[j]) == decdecomp->nblocks + 2 && stairlinkingvars[(int)(size_t)SCIPhashmapGetImage(decdecomp->varindex, decdecomp->linkingvars[j])] == 0)
-//         {
-//            SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
-//            varindex++;
-//         }
-//      }
-//      /** mastervars */
-//      for( j = 0; j < decdecomp->nlinkingvars; ++j )
-//      {
-//         assert(decdecomp->linkingvars[j] != NULL);
-//         if( (int)(size_t)SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[j]) == decdecomp->nblocks + 1 )
-//         {
-//            SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
-//            varindex++;
-//         }
-//      }
-//      SCIPdebugMessage("Block information:\n");
-//
-//      for( i = 0; i < decdecomp->nblocks; ++i )
-//      {
-//         SCIPdebugPrintf("Block %d:\n", i+1);
-//         SCIPdebugPrintf("\tVars: %d", decdecomp->nsubscipvars[i]);
-//         SCIPdebugPrintf("\tConss: %d\n", decdecomp->nsubscipconss[i]);
-//         for( j = 0; j < decdecomp->nsubscipvars[i]; ++j )
-//         {
-//            assert(decdecomp->subscipvars[i][j] != NULL);
-//            SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->subscipvars[i][j], (void*)varindex) );
-//            varindex++;
-//         }
-//         if( decdecomp->nstairlinkingvars != 0)
-//         {
-//            for( j = 0; j < decdecomp->nstairlinkingvars[i]; ++j )
-//            {
-//               assert(decdecomp->stairlinkingvars[i][j] != NULL);
-//               SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->stairlinkingvars[i][j], (void*)varindex) );
-//               varindex++;
-//            }
-//         }
-//         for( j = 0; j < decdecomp->nsubscipconss[i]; ++j )
-//         {
-//            assert(decdecomp->subscipconss[i][j] != NULL);
-//            SCIP_CALL( SCIPhashmapInsert(consindexmap, decdecomp->subscipconss[i][j], (void*)consindex) );
-//            consindex++;
-//         }
-//      }
-//      SCIPfreeBufferArray(scip, &stairlinkingvars);
-//   }
-//
-//   for( i = 0; i < nconss; i++ )
-//   {
-//      int ncurvars = GCGconsGetNVars(scip, conss[i]);
-//      SCIP_VAR** curvars = NULL;
-//
-//      if( ncurvars > 0 )
-//      {
-//         SCIP_CALL( SCIPallocBufferArray( scip, &curvars, ncurvars) );
-//         SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
-//      }
-//
-//      for( j = 0; j < ncurvars; j++ )
-//      {
-//         assert(curvars != NULL);
-//
-//         /* if the problem has been created, output the whole model */
-//         if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
-//         {
-//            SCIPinfoMessage(scip, file, "%d %d 0.25\n", SCIPvarGetIndex(curvars[j]), i);
-//            continue;
-//         }
-//
-//         /* if there is no decomposition, output the presolved model! */
-//         if( decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN )
-//         {
-//            SCIPinfoMessage(scip, file, "%d %d 0.25\n", SCIPvarGetIndex(curvars[j]), i);
-//         }
-//         /* if there is a decomposition, output the indices derived from the decomposition above*/
-//         else
-//         {
-//            assert(varindexmap != NULL);
-//            assert(consindexmap != NULL);
-//            assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL);
-//            assert(SCIPhashmapGetImage(consindexmap, conss[i]) != NULL);
-//
-//            SCIPinfoMessage(scip, file, "%d %d 0.25\n",
-//               SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])),
-//               SCIPhashmapGetImage(consindexmap, conss[i])
-//               );
-//         }
-//      }
-//
-//      SCIPfreeBufferArrayNull(scip, &curvars);
-//   }
-//
-//   if( decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE )
-//   {
-//      SCIPhashmapFree(&varindexmap);
-//      SCIPhashmapFree(&consindexmap);
-//   }
 
    return SCIP_OKAY;
 }
 
 
-/** write trailer of the file */
-static
-SCIP_RETCODE writeFileTrailer(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< File pointer to write to */
+/*
+ * public methods
+ */
+
+
+/** writes a visualization for the given seeed */
+SCIP_RETCODE GCGwriteGpVisualization(
+   SCIP* scip,             /**< SCIP data structure */
+   char* filename,         /**< filename (including path) to write to */
+   char* outputname,       /**< filename for compiled output file */
+   int seeedid             /**< id of seeed to visualize */
    )
 {
-//   SCIPinfoMessage(scip, file, "e\n");
+   SeeedPtr seeed;
+   Seeedpool* seeedpool;
+   MiscVisualization* misc = new MiscVisualization();
+
+   /* get seeed and seeedpool */
+   seeed = misc->GCGgetSeeed(scip, seeedid, seeedpool);
+   if( seeed == NULL )
+   {
+      SCIPerrorMessage("Could not find Seeed!\n");
+      return SCIP_ERROR;
+   }
+   if( seeedpool == NULL )
+   {
+      SCIPerrorMessage("Could not find Seeedpool!\n");
+      return SCIP_ERROR;
+   }
+
+   /* write file */
+   writeGpHeader( filename, outputname );
+   writeGpSeeed( filename, seeed, seeedpool );
+
    return SCIP_OKAY;
 }
 
@@ -567,6 +328,7 @@ SCIP_RETCODE writeFileTrailer(
 /*
  * Callback methods of reader
  */
+
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
 static
@@ -584,19 +346,26 @@ SCIP_DECL_READERFREE(readerFreeGp)
 }
 
 
-/** problem reading method of reader */
-#define readerReadGp NULL
-
-
-
 /** problem writing method of reader */
 static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
-   /*lint --e{715}*/
-   assert(scip != NULL);
+   MiscVisualization misc = new MiscVisualization();
+   SeeedPtr seeed;
+   char* filename;
+   char* outputname;
 
-   SCIP_CALL( SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE, TRUE) );
+   assert(scip != NULL);
+   assert(file != NULL);
+
+   /*@todo get seeed */
+
+   filename = misc.GCGgetFilePath( scip, file );
+
+   /* get filename for compiled file */
+   outputname = misc.GCGgetVisualizationFilename( scip, seeed, "pdf" );
+
+   GCGwriteGpVisualization( scip, filename, outputname, seeed->getID() );
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -604,72 +373,8 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 
 
 /*
- * reader specific interface methods
+ * reader include
  */
-
-/** writes the decomposition to the specific file */
-SCIP_RETCODE SCIPwriteGp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition, /**< whether to write decomposed problem */
-   SCIP_Bool             outputPDF           /**< if true give pdf file, if false give tex file instead */
-   )
-{
-   char* name;
-   char* detectorchainstring;
-   char probname[SCIP_MAXSTRLEN];
-   char outname[SCIP_MAXSTRLEN];
-
-   SCIP_READERDATA* readerdata;
-   readerdata = SCIPreaderGetData(SCIPfindReader(scip, "gpreader"));
-
-   assert(scip != NULL);
-   assert(file != NULL);
-
-   if( writeDecomposition && decdecomp == NULL )
-   {
-      SCIPwarningMessage(scip, "Cannot write decomposed problem if decomposition structure empty!");
-      writeDecomposition = FALSE;
-   }
-   /* sanitize filename */
-   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
-   SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
-
-   /* get detector chain string*/
-   detectorchainstring = DECdecompGetDetectorChainString(scip, decdecomp);
-
-   /* print header */
-   if( decdecomp == NULL )
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
-   else
-   {
-      if(outputPDF)
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%s_%d_%d", name, detectorchainstring, DECdecompGetSeeedID(decdecomp),
-            decdecomp->nblocks);
-      else
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%s-%d-%d", name, detectorchainstring, DECdecompGetSeeedID(decdecomp),
-            decdecomp->nblocks);
-   }
-
-   SCIP_CALL( writeFileHeader(scip, file, outname, outputPDF) );
-
-   /* write decomp information such as rectangles */
-   if( writeDecomposition )
-      SCIP_CALL( writeDecompositionHeader(scip, file, decdecomp) );
-
-   /* write the plot header*/
-   SCIP_CALL( writePlotCommands(scip, file) );
-
-   /* write data (if draftmode is not on) */
-   if(!readerdata->draftmode){
-      SCIP_CALL( writeData(scip, file, decdecomp) );
-   }
-
-   /* write file end */
-   SCIP_CALL( writeFileTrailer(scip, file) );
-   return SCIP_OKAY;
-}
 
 
 /** includes the gp file reader into SCIP */
@@ -677,19 +382,9 @@ SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
-
-   /* create gp reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-
    /* include gp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
-      NULL, readerFreeGp, readerReadGp, readerWriteGp, readerdata) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip,
-      "reading/gpreader/draftmode",
-      "if true shows no non-zeroes, recommended if too slow or too memory-intensive",
-      &readerdata->draftmode, FALSE, DEFAULT_DRAFTMODE, NULL, NULL) );
+      NULL, readerFreeGp, NULL, readerWriteGp, NULL) );
 
    return SCIP_OKAY;
 }

@@ -54,45 +54,53 @@ public:
    /** constructor */
    MiscVisualization();
 
+
    /** destructor */
    ~MiscVisualization();
+
 
    /** gives a consistent filename for a (single) seeed visualization that includes the probname and seeedID
     *
     * @return filename including the extension
     * */
-   std::string GCGgetVisualizationFilename(
-      SeeedPtr seeed,         /**< seeed that is to be visualized */
-      std::string extension   /**< file extension */
+   char* GCGgetVisualizationFilename(
+      SCIP* scip,       /**< scip data structure */
+      SeeedPtr seeed,   /**< seeed that is to be visualized */
+      char* extension   /**< file extension */
       );
+
 
    /** gives the path of the file
     *
     * @return path of file
     * */
    char* GCGgetFilePath(
-      FILE* file          /**< file */
+      SCIP* scip,       /**< scip data structure */
+      FILE* file        /**< file */
       );
 
-   /*@todo still necessary with ofstreams? probably not? */
-   /** gives the path of a file
-    *
-    * @return path of file
-    * */
-   std::string GCGmakeNewFile(
-      std::string filename,   /**< filename */
-      std::string filepath,   /**< filepath */
-      FILE* file              /**< file */
-      );
 
    /** compiles visualization files in gp or tex format and
     * opens the resulting pdf file with the
     *
     * @return path of file
     * */
-   std::string GCGshowVisualization(
-      std::string filename    /**< filename (including path) */
+   void GCGshowVisualization(
+      SCIP* scip,       /**< scip data structure */
+      char* filename    /**< filename (including path) */
       );
+
+   /** gets a pointer to the Seeed with given ID
+    *
+    * @returns SeeedPtr to Seeed or NULL if there is no Seeed with the given ID
+    * @returns pool: Seeedpool* where the Seeed was found
+    */
+   SeeedPtr GCGgetSeeed(
+      SCIP* scip,       /**< SCIP data structure */
+      int seeedid,      /**< ID of Seeed */
+      Seeedpool* pool   /**< outputs where the Seeed was found (if not needed input NULL) */
+      );
+
 };
 
 
