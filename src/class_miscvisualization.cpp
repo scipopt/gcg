@@ -175,7 +175,7 @@ SeeedPtr MiscVisualization::GCGgetSeeed(
    seeedpool = conshdlrdata->seeedpoolunpresolved;
    pool = seeedpool;
 
-   if( !seeedpool == NULL )
+   if( seeedpool != NULL )
    {
       for( size_t i = 0; i < seeedpool->incompleteSeeeds.size(); ++i)
       {
