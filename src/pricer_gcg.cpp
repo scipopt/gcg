@@ -782,10 +782,10 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
       SCIP_CALL( solversolve(pricingscip, solver, probnr, pricerdata->dualsolconv[probnr],
             &lowerbound, cols, maxcols, &ncols, &status) );      
 
-      assert(*status == SCIP_STATUS_OPTIMAL
-         || *status == SCIP_STATUS_INFEASIBLE
-         || *status == SCIP_STATUS_UNBOUNDED
-         || *status == SCIP_STATUS_UNKNOWN);
+      assert(status == SCIP_STATUS_OPTIMAL
+         || status == SCIP_STATUS_INFEASIBLE
+         || status == SCIP_STATUS_UNBOUNDED
+         || status == SCIP_STATUS_UNKNOWN);
 
       if( !GCGpricingjobIsHeuristic(pricingjob) )
       {
