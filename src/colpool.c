@@ -1,15 +1,27 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program and library             */
+/*                  This file is part of the program                         */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/*    Copyright (C) 2002-2017 Konrad-Zuse-Zentrum                            */
-/*                            fuer Informationstechnik Berlin                */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/*  SCIP is distributed under the terms of the ZIB Academic License.         */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
 /*                                                                           */
-/*  You should have received a copy of the ZIB Academic License              */
-/*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -19,20 +31,10 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
 
 #include <assert.h>
 
-#include "scip/def.h"
-#include "scip/set.h"
-#include "scip/stat.h"
 #include "scip/clock.h"
-#include "scip/lp.h"
-#include "scip/cons.h"
-#include "scip/sepa.h"
-#include "scip/sepastore.h"
-#include "scip/pub_message.h"
-#include "scip/pub_misc.h"
 
 #include "pub_gcgcol.h"
 #include "colpool.h"
@@ -200,7 +202,7 @@ SCIP_RETCODE GCGcolpoolFree(
    assert(*colpool != NULL);
 
    /* remove all cols from the pool */
-   SCIP_CALL( GCGcolpoolClear(*colpool) );
+   GCGcolpoolClear(*colpool);
 
    SCIPinfoMessage(scip, NULL, "Pricing time in colpool = %f sec\n", GCGcolpoolGetTime(*colpool));
 
@@ -257,7 +259,7 @@ SCIP_RETCODE colpoolDelCol(
 
 
 /** removes all rows from the col pool */
-SCIP_RETCODE GCGcolpoolClear(
+void GCGcolpoolClear(
    GCG_COLPOOL*          colpool             /**< col pool */
    )
 {
@@ -271,8 +273,6 @@ SCIP_RETCODE GCGcolpoolClear(
       colpoolDelCol(colpool, colpool->cols[i], TRUE);
    }
    colpool->ncols = 0;
-
-   return SCIP_OKAY;
 }
 
 /** if not already existing, adds col to col pool and captures it */
@@ -437,7 +437,7 @@ SCIP_RETCODE GCGcolpoolUpdateNode(
    }
    else if( colpool->nodenr != SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip)) )
    {
-      SCIP_CALL( GCGcolpoolClear(colpool) );
+      GCGcolpoolClear(colpool);
 
       colpool->nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip));
    }

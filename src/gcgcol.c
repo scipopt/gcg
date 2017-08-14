@@ -417,7 +417,7 @@ SCIP_RETCODE GCGcolSetMastercoefs(
    if( nmastercoefs == 0 )
       return SCIP_OKAY;
 
-   SCIPallocMemoryArray(gcgcol->pricingprob, &(gcgcol->mastercoefs), nmastercoefs);
+   SCIP_CALL( SCIPallocMemoryArray(gcgcol->pricingprob, &(gcgcol->mastercoefs), nmastercoefs) );
 
    for( i = 0; i < nmastercoefs; ++i )
    {

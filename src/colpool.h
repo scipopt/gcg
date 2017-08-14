@@ -1,15 +1,27 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program and library             */
+/*                  This file is part of the program                         */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/*    Copyright (C) 2002-2017 Konrad-Zuse-Zentrum                            */
-/*                            fuer Informationstechnik Berlin                */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/*  SCIP is distributed under the terms of the ZIB Academic License.         */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
 /*                                                                           */
-/*  You should have received a copy of the ZIB Academic License              */
-/*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -23,15 +35,6 @@
 #ifndef __GCG_COLPOOL_H__
 #define __GCG_COLPOOL_H__
 
-
-#include "scip/def.h"
-#include "blockmemshell/memory.h"
-#include "scip/type_retcode.h"
-#include "scip/type_result.h"
-#include "scip/type_set.h"
-#include "scip/type_stat.h"
-#include "scip/type_lp.h"
-#include "scip/type_sepastore.h"
 #include "type_colpool.h"
 #include "pub_colpool.h"
 #include "type_pricestore_gcg.h"

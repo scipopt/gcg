@@ -3701,7 +3701,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
     int                priority,           /**< priority of the variable pricer */
     SCIP_Bool          delay,
     SCIP_PRICERDATA*   p_pricerdata
-    ) : ObjPricer(scip, name, desc, priority, delay), colpoolold(NULL), colpool(NULL), pricestore(NULL), reducedcostpricing(NULL), farkaspricing(NULL), stabilization(NULL)
+    ) : ObjPricer(scip, name, desc, priority, delay), colpool(NULL), pricestore(NULL), reducedcostpricing(NULL), farkaspricing(NULL), stabilization(NULL)
  {
 
     assert(origscip!= NULL);

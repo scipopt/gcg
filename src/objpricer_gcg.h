@@ -55,7 +55,6 @@ public:
 
    SCIP*              origprob;           /**< the original program */
    SCIP_PRICERDATA *pricerdata;           /**< pricerdata data structure */
-   Colpool *colpoolold;                   /**< column pool */
    GCG_COLPOOL* colpool;
    GCG_PRICESTORE* pricestore;            /**< price storage */
 

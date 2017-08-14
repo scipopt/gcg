@@ -93,7 +93,7 @@ SCIP_RETCODE GCGcolpoolFree(
 
 /** removes all cols from the col pool */
 EXTERN
-SCIP_RETCODE GCGcolpoolClear(
+void GCGcolpoolClear(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 
