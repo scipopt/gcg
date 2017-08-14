@@ -95,7 +95,8 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -149,7 +150,9 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h src/cons_decomp.h \
- src/type_detector.h src/type_decomp.h src/gcggithash.h src/relax_gcg.h \
- src/type_branchgcg.h src/gcg.h src/type_solver.h src/pub_gcgcol.h \
- src/type_gcgcol.h src/struct_gcgcol.h src/pub_gcgvar.h src/pub_decomp.h
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h src/cons_decomp.h src/type_detector.h src/type_decomp.h \
+ src/gcggithash.h src/relax_gcg.h src/type_branchgcg.h src/gcg.h \
+ src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
+ src/pub_gcgvar.h src/pub_decomp.h
