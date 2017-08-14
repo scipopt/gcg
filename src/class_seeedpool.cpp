@@ -558,7 +558,6 @@ Seeedpool::Seeedpool(
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
-   SCIP_CONSHDLR* conshdlr; /** cons_decomp to get detectors */
 
    int ndetectors;
    DEC_Detector** detectors;
@@ -572,9 +571,6 @@ Seeedpool::Seeedpool(
    int relevantVarCounter = 0;
    int relevantConsCounter = 0;
 
-   /** get conshdlrdata */
-   conshdlr = SCIPfindConshdlr( scip, conshdlrName );
-   assert( conshdlr != NULL );
 
    detectors = SCIPconshdlrDecompGetDetectors(scip);
    ndetectors = SCIPconshdlrDecompGetNDetectors(scip);
@@ -1760,7 +1756,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->setFinishedByFinisher( otherseeed->getFinishedByFinisher() );
       newseeed->sort();
       newseeed->considerImplicits( this );
-      newseeed->deleteEmptyBlocks();
+      newseeed->deleteEmptyBlocks(false);
       newseeed->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
 
       if( newseeed->checkConsistency( this ) )
