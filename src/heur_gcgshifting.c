@@ -492,8 +492,8 @@ SCIP_DECL_HEURINIT(heurInitGcgshifting) /*lint --e{715}*/
    heurdata->lastlp = -1;
 
    /* create random number generator */
-   SCIP_CALL( SCIPrandomCreate(&heurdata->randnumgen, SCIPblkmem(scip),
-         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+   SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
+         DEFAULT_RANDSEED) );
 
    SCIPheurSetData(heur, heurdata);
 
@@ -514,7 +514,7 @@ SCIP_DECL_HEUREXIT(heurExitGcgshifting) /*lint --e{715}*/
    SCIP_CALL( SCIPfreeSol(scip, &heurdata->sol) );
 
    /* free random number generator */
-   SCIPrandomFree(&heurdata->randnumgen, SCIPblkmem(scip) );
+   SCIPfreeRandom(scip, &heurdata->randnumgen );
 
    SCIPfreeMemory(scip, &heurdata);
    SCIPheurSetData(heur, NULL);
