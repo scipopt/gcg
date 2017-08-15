@@ -2467,7 +2467,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Real dualconvsum;
    SCIP_RETCODE retcode;
    SCIP_Bool infeasible;
-   SCIP_Bool unknown;
    SCIP_Bool stabilized;
    SCIP_Bool colpoolupdated;
    SCIP_Bool enableppcuts;
@@ -2501,7 +2500,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    *pnfoundvars = 0;
    nfoundvars = 0;
    infeasible = FALSE;
-   unknown = FALSE;
    dualconvsum = 0.0;
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip_);
@@ -2669,9 +2667,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
             #pragma omp atomic
             infeasible |= (GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_INFEASIBLE); /*lint !e514*/
-
-            #pragma omp atomic
-            unknown |= (GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_UNKNOWN); /*lint !e514*/
 
             if( !infeasible )
             {
@@ -2912,7 +2907,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       *result = SCIP_SUCCESS;
    else if( *pnfoundvars > 0 )
       *result = SCIP_SUCCESS;
-   else if( unknown )
+   else
       *result = SCIP_DIDNOTRUN;
 
 #ifdef SCIP_STATISTIC
