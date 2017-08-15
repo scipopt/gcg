@@ -932,7 +932,8 @@ $(LIBOBJDIR)/heur_gcgfeaspump.o: src/heur_gcgfeaspump.c src/heur_gcgfeaspump.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
  lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
- lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ lib/scip/src/scip/misc.h
 $(LIBOBJDIR)/heur_gcgfracdiving.o: src/heur_gcgfracdiving.c src/heur_gcgfracdiving.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -1527,7 +1528,8 @@ $(LIBOBJDIR)/heur_gcgshifting.o: src/heur_gcgshifting.c src/heur_gcgshifting.h \
  lib/scip/src/scip/cuts.h lib/scip/src/scip/heuristics.h src/gcg.h \
  src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
  src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
- src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h
+ src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h \
+ lib/scip/src/scip/misc.h
 $(LIBOBJDIR)/heur_gcgveclendiving.o: src/heur_gcgveclendiving.c \
  src/heur_gcgveclendiving.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
@@ -2151,7 +2153,8 @@ $(LIBOBJDIR)/heur_setcover.o: src/heur_setcover.c src/gcg.h lib/scip/src/scip/sc
  src/type_detector.h src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h \
  src/struct_gcgcol.h src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h \
  src/pricer_gcg.h lib/scip/src/scip/clock.h \
- lib/scip/src/scip/cons_linear.h src/heur_setcover.h
+ lib/scip/src/scip/cons_linear.h lib/scip/src/scip/misc.h \
+ src/heur_setcover.h
 $(LIBOBJDIR)/heur_xpcrossover.o: src/heur_xpcrossover.c src/heur_xpcrossover.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -2196,7 +2199,7 @@ $(LIBOBJDIR)/heur_xpcrossover.o: src/heur_xpcrossover.c src/heur_xpcrossover.h \
  src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
  src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
  src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h src/gcgplugins.h \
- lib/scip/src/scip/scipdefplugins.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \
@@ -2337,7 +2340,7 @@ $(LIBOBJDIR)/heur_xprins.o: src/heur_xprins.c src/heur_xprins.h \
  src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
  src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
  src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h src/gcgplugins.h \
- lib/scip/src/scip/scipdefplugins.h \
+ lib/scip/src/scip/misc.h lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
  lib/scip/src/scip/branch_fullstrong.h \

@@ -372,16 +372,24 @@ bool connected(
 {
    std::vector<int> queue;
    std::vector<int> visited;
+   std::vector<bool> inqueue(seeedpool->getNConss(), false);
+   std::vector<bool> isvisited(seeedpool->getNConss(), false);
+   int start = -1;
 
    if(seeed->getNOpenconss() < 2)
       return false;
 
-   queue.push_back(seeed->getOpenconss()[0]);
+   start = seeed->getOpenconss()[0];
+
+   queue.push_back(start);
+   inqueue[start] = true;
    do
    {
       int node = queue[0];
       queue.erase(queue.begin());
+      inqueue[node] = false;
       visited.push_back(node);
+      isvisited[node] = true;
       for(int v = 0; v < seeedpool->getNVarsForCons(node); ++v)
       {
          int var = seeedpool->getVarsForCons(node)[v];
@@ -392,11 +400,12 @@ bool connected(
             int cons = seeedpool->getConssForVar(var)[c];
             if(!seeed->isConsOpencons(cons))
                continue;
-            if(find(visited.begin(), visited.end(), cons) != visited.end())
+            if( isvisited[cons] )
                continue;
-            if(find(queue.begin(), queue.end(), cons) != queue.end())
+            if( inqueue[cons] )
                continue;
             queue.push_back(cons);
+            inqueue[cons] = true;
          }
       }
    } while(!queue.empty());
@@ -667,8 +676,15 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
    gcg::Seeed* seeed;
    seeed = seeedPropagationData->seeedToPropagate;
 
+  //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
+
    seeed->considerImplicits(seeedPropagationData->seeedpool);
+  //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
+
    seeed->refineToMaster(seeedPropagationData->seeedpool);
+
+   seeed->sort();
+   //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
 
    if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {

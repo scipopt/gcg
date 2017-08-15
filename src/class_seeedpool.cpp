@@ -1043,9 +1043,8 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                }
             }
             /** cleanup propagation data structure */
-
-            SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
             delete seeedPropData->seeedToPropagate;
+            SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
             seeedPropData->newSeeeds = NULL;
             seeedPropData->nNewSeeeds = 0;
             delete seeedPropData;
