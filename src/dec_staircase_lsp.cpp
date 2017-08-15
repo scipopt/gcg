@@ -768,6 +768,8 @@ SCIP_RETCODE detection(
    currseeed->considerImplicits(seeedpool);
    currseeed->refineToMaster(seeedpool);
 
+   currseeed->sort();
+
    //currseeed->showScatterPlot(seeedpool);
 
    //SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");

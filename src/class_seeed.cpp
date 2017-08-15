@@ -420,7 +420,8 @@ bool Seeed::assignHittingOpenconss(
       {
          for( int v = 0; v < seeedpool->getNVarsForCons( cons ); ++ v )
          {
-            if( find( stairlinkingVars[b].begin(), stairlinkingVars[b].end(), var ) != stairlinkingVars[b].end() )
+            std::vector<int>::iterator lb = lower_bound( stairlinkingVars[b].begin(), stairlinkingVars[b].end(), var );
+            if( lb != stairlinkingVars[b].end() &&  *lb == var )
             {
                stairlinking = true;
                blocksOfStairlinkingvars.push_back( b );
@@ -1265,6 +1266,7 @@ SCIP_RETCODE Seeed::completeByConnected(
    SCIP_CALL( considerImplicits( seeedpool ) );
    SCIP_CALL( refineToMaster( seeedpool ) );
 
+
    if( nBlocks < 0 )
       nBlocks = 0;
 
@@ -1781,8 +1783,8 @@ SCIP_RETCODE Seeed::deleteOpencons(
 {
    assert( opencons >= 0 && opencons < nConss );
    std::vector<int>::iterator it;
-   it = find( openConss.begin(), openConss.end(), opencons );
-   assert( it != openConss.end() );
+   it = lower_bound( openConss.begin(), openConss.end(), opencons );
+   assert( it != openConss.end() && *it == opencons );
    openConss.erase( it );
    changedHashvalue = true;
 
@@ -1796,8 +1798,8 @@ SCIP_RETCODE Seeed::deleteOpenvar(
 {
    assert( openvar >= 0 && openvar < nVars );
    std::vector<int>::iterator it;
-   it = find( openVars.begin(), openVars.end(), openvar );
-   assert( it != openVars.end() );
+   it = lower_bound( openVars.begin(), openVars.end(), openvar );
+   assert( it != openVars.end() && *it == openvar );
    openVars.erase( it );
    changedHashvalue = true;
    return SCIP_OKAY;
@@ -2564,6 +2566,8 @@ SCIP_RETCODE Seeed::flushBooked()
    }
    bookedAsStairlinkingVars.clear();
 
+   sort();
+
    return SCIP_OKAY;
 }
 
@@ -3082,7 +3086,8 @@ bool Seeed::isConsBlockconsOfBlock(
 {
    assert( cons >= 0 && cons < nConss );
    assert( block >= 0 && block < nBlocks );
-   if( find( conssForBlocks[block].begin(), conssForBlocks[block].end(), cons ) != conssForBlocks[block].end() )
+   std::vector<int>::iterator lb = lower_bound( conssForBlocks[block].begin(), conssForBlocks[block].end(), cons );
+   if( lb != conssForBlocks[block].end() &&  *lb == cons )
       return true;
    else
       return false;
@@ -3094,7 +3099,8 @@ bool Seeed::isConsMastercons(
    )
 {
    assert( cons >= 0 && cons < nConss );
-   if( find( masterConss.begin(), masterConss.end(), cons ) != masterConss.end() )
+   std::vector<int>::iterator lb = lower_bound( masterConss.begin(), masterConss.end(), cons );
+   if( lb != masterConss.end() &&  *lb == cons )
       return true;
    else
       return false;
@@ -3106,7 +3112,8 @@ bool Seeed::isConsOpencons(
    )
 {
    assert( cons >= 0 && cons < nConss );
-   if( find( openConss.begin(), openConss.end(), cons ) != openConss.end() )
+   std::vector<int>::iterator lb = lower_bound( openConss.begin(), openConss.end(), cons );
+   if( lb != openConss.end() &&  *lb == cons )
       return true;
    else
       return false;
@@ -3274,7 +3281,9 @@ bool Seeed::isVarBlockvarOfBlock(
 {
    assert( var >= 0 && var < nVars );
    assert( block >= 0 && block < nConss );
-   if( find( varsForBlocks[block].begin(), varsForBlocks[block].end(), var ) != varsForBlocks[block].end() )
+
+   std::vector<int>::iterator lb = lower_bound( varsForBlocks[block].begin(), varsForBlocks[block].end(), var );
+   if( lb != varsForBlocks[block].end() &&  *lb == var )
       return true;
    else
       return false;
@@ -3286,7 +3295,8 @@ bool Seeed::isVarMastervar(
    )
 {
    assert( var >= 0 && var < nVars );
-   if( find( masterVars.begin(), masterVars.end(), var ) != masterVars.end() )
+   std::vector<int>::iterator lb = lower_bound( masterVars.begin(), masterVars.end(), var );
+   if( lb != masterVars.end() &&  *lb == var )
       return true;
    else
       return false;
@@ -3298,7 +3308,8 @@ bool Seeed::isVarLinkingvar(
    )
 {
    assert( var >= 0 && var < nVars );
-   if( find( linkingVars.begin(), linkingVars.end(), var ) != linkingVars.end() )
+   std::vector<int>::iterator lb = lower_bound( linkingVars.begin(), linkingVars.end(), var );
+   if( lb != linkingVars.end() &&  *lb == var )
       return true;
    else
       return false;
@@ -3310,7 +3321,8 @@ bool Seeed::isVarOpenvar(
    )
 {
    assert( var >= 0 && var < nVars );
-   if( find( openVars.begin(), openVars.end(), var ) != openVars.end() )
+   std::vector<int>::iterator lb = lower_bound( openVars.begin(), openVars.end(), var );
+   if( lb != openVars.end() &&  *lb == var )
       return true;
    else
       return false;
@@ -3323,7 +3335,8 @@ bool Seeed::isVarStairlinkingvar(
 {
    for( int b = 0; b < nBlocks; ++ b )
    {
-      if( find( stairlinkingVars[b].begin(), stairlinkingVars[b].end(), var ) != stairlinkingVars[b].end() )
+      std::vector<int>::iterator lb = lower_bound( stairlinkingVars[b].begin(), stairlinkingVars[b].end(), var );
+      if( lb != stairlinkingVars[b].end() &&  *lb == var )
          return true;
    }
    return false;
@@ -3337,15 +3350,18 @@ bool Seeed::isVarStairlinkingvarOfBlock(
 {
    assert( var >= 0 && var < nVars );
    assert( block >= 0 && block < nBlocks );
-   if( find( stairlinkingVars[block].begin(), stairlinkingVars[block].end(), var ) != stairlinkingVars[block].end() )
+   std::vector<int>::iterator lb = lower_bound( stairlinkingVars[block].begin(), stairlinkingVars[block].end(), var );
+   if( lb != stairlinkingVars[block].end() &&  *lb == var )
       return true;
    else
    {
       if( block == 0 )
          return false;
       else
-         return ( find( stairlinkingVars[block - 1].begin(), stairlinkingVars[block - 1].end(), var )
-            != stairlinkingVars[block - 1].end() );
+      {
+         lb = lower_bound( stairlinkingVars[block - 1].begin(), stairlinkingVars[block - 1].end(), var );
+         return ( lb != stairlinkingVars[block-1].end() &&  *lb == var );
+      }
    }
 }
 

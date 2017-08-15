@@ -1009,6 +1009,10 @@ SCIP_RETCODE readBLKFile(
          break;
 
       case BLK_NBLOCKS:
+         if( blkinput->haspresolvesection )
+         {
+                     SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
+         }
          SCIP_CALL( readNBlocks(scip, blkinput) );
          if( blkinput->haspresolvesection && !blkinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
          {
@@ -1022,6 +1026,7 @@ SCIP_RETCODE readBLKFile(
             SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
             SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
          }
+
          break;
 
       case BLK_BLOCK:
