@@ -83,6 +83,13 @@ void GCGpricingjobUpdate(
    int                   ncols               /**< number of columns found */
    );
 
+/** increase the solution limit of a pricing job */
+EXTERN
+SCIP_RETCODE GCGpricingjobIncreaseSollimit(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   maxcolsprob         /**< maximum number of columns that the problem should be looking for */
+   );
+
 /** set the pricing job to be performed heuristically */
 EXTERN
 void GCGpricingjobSetHeuristic(

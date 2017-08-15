@@ -274,12 +274,32 @@ void Pricingcontroller::evaluatePricingjob(
    GCG_PRICINGJOB*       pricingjob         /**< pricing job */
    )
 {
-   if( GCGpricingjobIsHeuristic(pricingjob) && GCGpricingjobGetNImpCols(pricingjob) == 0 )
+   SCIPdebugMessage("Problem %d, status = %d\n", GCGpricingjobGetProbnr(pricingjob), SCIPgetStatus(GCGpricingjobGetPricingscip(pricingjob)));
+
+   /* If the pricing job has not yielded any improving column, possibly solve it again;
+    * increase at least one of its limits, or solve it exactly if it was solved heuristically before
+    */
+   // @todo: update score of pricing job
+   if( GCGpricingjobGetNImpCols(pricingjob) == 0 )
    {
-      SCIPdebugMessage("Problem %d has not yielded neg. recost column, now solving exactly\n", GCGpricingjobGetProbnr(pricingjob));
-      GCGpricingjobSetExact(pricingjob);
-      // @todo: update score of pricing job
-      SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+      // @todo: do not access pricingscip status directly
+      SCIP_STATUS status = SCIPgetStatus(GCGpricingjobGetPricingscip(pricingjob));
+
+      SCIPdebugMessage("Problem %d has not yielded improving columns\n", GCGpricingjobGetProbnr(pricingjob));
+
+      if( GCGpricingjobIsHeuristic(pricingjob) )
+      {
+         SCIPdebugMessage("  -> solve exactly\n");
+         GCGpricingjobSetExact(pricingjob);
+         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+      }
+      else if( status == SCIP_STATUS_SOLLIMIT )
+      {
+         SCIPdebugMessage("  -> increase solution limit\n");
+         SCIP_CALL_EXC( GCGpricingjobIncreaseSollimit(pricingjob,
+            pricingtype_->getType() == GCG_PRICETYPE_REDCOST && GCGisRootNode(scip_) ? pricingtype_->getMaxcolsprobroot() : pricingtype_->getMaxcolsprob()) );
+         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+      }
    }
 }
 

@@ -145,6 +145,18 @@ void GCGpricingjobUpdate(
    pricingjob->ncols += ncols;
 }
 
+/** increase the solution limit of a pricing job */
+SCIP_RETCODE GCGpricingjobIncreaseSollimit(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   maxcolsprob         /**< maximum number of columns that the problem should be looking for */
+   )
+{
+   /* set the solution limit on the pricing problem */
+   SCIP_CALL( SCIPsetIntParam(pricingjob->pricingscip, "limits/solutions", SCIPgetNLimSolsFound(pricingjob->pricingscip) + maxcolsprob) );
+
+   return SCIP_OKAY;
+}
+
 /** free all columns of a pricing job */
 void GCGpricingjobFreeCols(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
