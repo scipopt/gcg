@@ -2635,6 +2635,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          #pragma omp flush(infeasible, nfoundvars, nsuccessfulprobs)
          if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsolvedprobs, nsuccessfulprobs, !GCGpricingjobIsHeuristic(pricingjob)) || infeasible) && !stabilized )
          {
+            SCIPdebugMessage("*** Abort pricing loop\n");
             goto done;
          }
 
@@ -2686,8 +2687,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                ++nsolvedprobs;
             }
 
+#ifdef SCIP_STATISTIC
             SCIPstatisticMessage("Pricing prob %d : found %d improving columns, time = %g\n",
                GCGpricingjobGetProbnr(pricingjob), GCGpricingjobGetNImpCols(pricingjob) - oldnimpcols, pricingtime);
+#endif
          }
 
          pricingcontroller->evaluatePricingjob(pricingjob);
