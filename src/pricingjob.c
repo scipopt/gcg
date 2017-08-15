@@ -133,15 +133,32 @@ void GCGpricingjobUpdate(
    int                   ncols               /**< number of columns found */
    )
 {
+   int i;
+   int j;
+   int k;
+
    ++pricingjob->nsolves;
    pricingjob->pricingstatus = status;
    pricingjob->lowerbound = lowerbound;
-   for( int i = 0; i < ncols; ++i )
+
+   /* add new columns; ensure that the column array remains sorted by reduced costs */
+   for( i = pricingjob->ncols + ncols - 1, j = pricingjob->ncols-1, k = ncols-1; k >= 0; --i )
    {
-      pricingjob->cols[pricingjob->ncols + i] = cols[i];
-      if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(cols[i])) )
-         ++pricingjob->nimpcols;
+      if( j >= 0 && SCIPisDualfeasGT(scip, GCGcolGetRedcost(pricingjob->cols[j]), GCGcolGetRedcost(cols[k])) )
+      {
+         pricingjob->cols[i] = pricingjob->cols[j];
+         --j;
+      }
+      else
+      {
+         if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(cols[k])) )
+            ++pricingjob->nimpcols;
+
+         pricingjob->cols[i] = cols[k];
+         --k;
+      }
    }
+
    pricingjob->ncols += ncols;
 }
 

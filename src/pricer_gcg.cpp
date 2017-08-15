@@ -831,6 +831,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
    }
 
    updateRedcosts(pricetype, cols, ncols);
+   SCIPsortPtr((void**) cols, GCGcolCompRedcost, ncols); /* If pricing was aborted due to a limit, columns may not be sorted */
    pricingcontroller->updatePricingjob(pricingjob, status, lowerbound, cols, ncols);
 
    SCIPfreeMemoryArray(scip, &cols);
