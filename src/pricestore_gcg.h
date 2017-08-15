@@ -74,7 +74,7 @@ SCIP_RETCODE GCGpricestoreCreate(
 
 /** frees price storage */
 extern
-SCIP_RETCODE GCGpricestoreFree(
+void GCGpricestoreFree(
    SCIP*                 scip,                /**< SCIP data structure */
    GCG_PRICESTORE**      pricestore           /**< pointer to store price storage */
    );
@@ -123,13 +123,13 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 
 /** clears the price storage without adding the cols to priced vars */
 extern
-SCIP_RETCODE GCGpricestoreClearCols(
+void GCGpricestoreClearCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
 /** removes cols that are inefficacious w.r.t. the current LP solution from price storage without adding the cols to the LP */
 extern
-SCIP_RETCODE GCGpricestoreRemoveInefficaciousCols(
+void GCGpricestoreRemoveInefficaciousCols(
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    SCIP_Bool             root                /**< are we at the root node? */
    );

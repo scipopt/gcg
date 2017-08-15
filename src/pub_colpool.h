@@ -86,7 +86,7 @@ SCIP_RETCODE GCGcolpoolCreate(
 
 /** frees col pool */
 EXTERN
-SCIP_RETCODE GCGcolpoolFree(
+void GCGcolpoolFree(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    );
@@ -122,7 +122,7 @@ SCIP_RETCODE GCGcolpoolDelCol(
 
 /** gets array of cols in the col pool */
 EXTERN
-SCIP_RETCODE GCGcolpoolUpdateNode(
+void GCGcolpoolUpdateNode(
    GCG_COLPOOL*         colpool             /**< col pool */
    );
 

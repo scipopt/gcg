@@ -103,7 +103,7 @@ using namespace scip;
                                                      *   if pricing problems cannot be aggregation */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
 #define DEFAULT_USECOLPOOL               TRUE       /**< should the colpool be checked for negative redcost cols before solving the pricing problems? */
-
+#define DEFAULT_COLPOOL_AGELIMIT         100        /**< default age limit for columns in column pool */
 
 #define DEFAULT_PRICE_ORTHOFAC 0.0
 #define DEFAULT_PRICE_OBJPARALFAC 0.0
@@ -3024,7 +3024,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    /* todo: We avoid checking for feasibility of the columns using this hack */
    if( pricerdata->usecolpool )
-      SCIP_CALL( GCGcolpoolUpdateNode(colpool) );
+      GCGcolpoolUpdateNode(colpool);
 
    colpoolupdated = FALSE;
 
@@ -4268,6 +4268,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/eagerfreq",
             "frequency at which all pricingproblems should be solved (0 to disable)",
             &pricerdata->eagerfreq, FALSE, DEFAULT_EAGERFREQ, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpool/agelimit",
+         "age limit for columns in column pool? (-1 for no limit)",
+         &pricerdata->colpoolagelimit, FALSE, DEFAULT_COLPOOL_AGELIMIT, -1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/pricestore/redcostfac",
          "factor of -redcost/norm in score function",

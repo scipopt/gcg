@@ -159,7 +159,7 @@ SCIP_RETCODE colpoolEnsureColsMem(
 SCIP_RETCODE GCGcolpoolCreate(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_COLPOOL**         colpool,            /**< pointer to store col pool */
-   int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool */
+   int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool (-1 fpr no limit) */
    )
 {
    assert(colpool != NULL);
@@ -192,7 +192,7 @@ SCIP_RETCODE GCGcolpoolCreate(
 }
 
 /** frees col pool */
-SCIP_RETCODE GCGcolpoolFree(
+void GCGcolpoolFree(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    )
@@ -214,8 +214,6 @@ SCIP_RETCODE GCGcolpoolFree(
 
    SCIPfreeMemoryArrayNull(scip, &(*colpool)->cols);
    SCIPfreeMemory(scip, colpool);
-
-   return SCIP_OKAY;
 }
 
 /** removes the col from the col pool */
@@ -425,7 +423,7 @@ SCIP_RETCODE GCGcolpoolPrice(
 }
 
 /** gets array of cols in the col pool */
-SCIP_RETCODE GCGcolpoolUpdateNode(
+void GCGcolpoolUpdateNode(
    GCG_COLPOOL*         colpool             /**< col pool */
    )
 {
@@ -441,8 +439,6 @@ SCIP_RETCODE GCGcolpoolUpdateNode(
 
       colpool->nodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(colpool->scip));
    }
-
-   return SCIP_OKAY;
 }
 
 /** update reduced cost and compute master coefs of columns in column pool */

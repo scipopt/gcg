@@ -2849,6 +2849,5 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/struct_var.h src/gcg.h src/type_branchgcg.h \
  src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgcol.h \
  src/pub_gcgvar.h src/pub_decomp.h src/gcgpqueue.h src/struct_gcgpqueue.h \
- src/type_gcgpqueue.h src/pub_gcgpqueue.h src/class_colpool.h \
- src/class_pricingtype.h src/pricer_gcg.h src/gcgpqueue.h \
- src/pub_gcgpqueue.h
+ src/type_gcgpqueue.h src/pub_gcgpqueue.h src/pub_colpool.h \
+ src/type_colpool.h src/type_pricestore_gcg.h

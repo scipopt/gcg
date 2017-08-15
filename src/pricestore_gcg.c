@@ -127,7 +127,7 @@ SCIP_RETCODE GCGpricestoreCreate(
 }
 
 /** frees price storage */
-SCIP_RETCODE GCGpricestoreFree(
+void GCGpricestoreFree(
    SCIP*                 scip,                /**< SCIP data structure */
    GCG_PRICESTORE**      pricestore           /**< pointer to store price storage */
    )
@@ -147,8 +147,6 @@ SCIP_RETCODE GCGpricestoreFree(
    SCIPfreeMemoryArrayNull(scip, &(*pricestore)->orthogonalities);
    SCIPfreeMemoryArrayNull(scip, &(*pricestore)->scores);
    SCIPfreeMemory(scip, pricestore);
-
-   return SCIP_OKAY;
 }
 
 /** informs price storage, that Farkas pricing starts now */
@@ -197,7 +195,7 @@ void GCGpricestoreEndForceCols(
 
 /** removes a non-forced col from the price storage */
 static
-SCIP_RETCODE pricestoreDelCol(
+void pricestoreDelCol(
    GCG_PRICESTORE*       pricestore,          /**< price storage */
    int                   pos,                 /**< position of col to delete */
    SCIP_Bool             free                 /**< should col be freed */
@@ -217,8 +215,6 @@ SCIP_RETCODE pricestoreDelCol(
    pricestore->orthogonalities[pos] = pricestore->orthogonalities[pricestore->ncols-1];
    pricestore->scores[pos] = pricestore->scores[pricestore->ncols-1];
    pricestore->ncols--;
-
-   return SCIP_OKAY;
 }
 
 /** adds col to price storage;
@@ -332,7 +328,7 @@ SCIP_RETCODE pricestoreUpdateOrthogonalities(
             /* col is too parallel: delete the col */
             SCIPdebugMessage("    -> deleting parallel col %p after adding %p (pos=%d, orthogonality=%g, score=%g)\n",
                (void*) pricestore->cols[pos], (void*) col, pos, thisortho, pricestore->scores[pos]);
-            SCIP_CALL( pricestoreDelCol(pricestore, pos, TRUE) );
+            pricestoreDelCol(pricestore, pos, TRUE);
             continue;
          }
          else
@@ -370,7 +366,6 @@ SCIP_RETCODE pricestoreUpdateOrthogonalities(
       }
       pos++;
    }
-
    return SCIP_OKAY;
 }
 
@@ -565,7 +560,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
          pricestore->orthogonalities[bestpos], pricestore->scores[bestpos]);
 
       /* release the row and delete the col (also issuing ROWDELETEDPRICE event) */
-      SCIP_CALL( pricestoreDelCol(pricestore, bestpos, FALSE) );
+      pricestoreDelCol(pricestore, bestpos, FALSE);
 
       /* Do not add (non-forced) non-violated cols.
        * Note: do not take SCIPsetIsEfficacious(), because constraint handlers often add cols w.r.t. SCIPsetIsFeasPositive().
@@ -583,7 +578,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    *nfoundvars = ncolsapplied;
 
    /* clear the price storage and reset statistics for price round */
-   SCIP_CALL( GCGpricestoreClearCols(pricestore) );
+   GCGpricestoreClearCols(pricestore);
 
    /* stop timing */
    SCIPstopClock(pricestore->scip, pricestore->priceclock);
@@ -592,7 +587,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 }
 
 /** clears the price storage without adding the cols to the LP */
-SCIP_RETCODE GCGpricestoreClearCols(
+void GCGpricestoreClearCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    )
 {
@@ -619,12 +614,10 @@ SCIP_RETCODE GCGpricestoreClearCols(
       SCIPfreeMemoryArrayNull(pricestore->scip, &pricestore->cols);
       pricestore->colssize = 0;
    }
-
-   return SCIP_OKAY;
 }
 
 /** removes cols that are inefficacious w.r.t. the current dual solution from price storage without adding the cols to the LP */
-SCIP_RETCODE GCGpricestoreRemoveInefficaciousCols(
+void GCGpricestoreRemoveInefficaciousCols(
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    SCIP_Bool             root                /**< are we at the root node? */
    )
@@ -641,15 +634,13 @@ SCIP_RETCODE GCGpricestoreRemoveInefficaciousCols(
    {
       if( !SCIPisDualfeasNegative(pricestore->scip, GCGcolGetRedcost(pricestore->cols[c])) )
       {
-         SCIP_CALL( pricestoreDelCol(pricestore, c, TRUE) );
+         pricestoreDelCol(pricestore, c, TRUE);
          ++cnt;
       }
       else
          ++c;
    }
    SCIPdebugMessage("removed %d non-efficacious cols\n", cnt);
-
-   return SCIP_OKAY;
 }
 
 /** get cols in the price storage */

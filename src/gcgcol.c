@@ -134,10 +134,10 @@ void GCGfreeGcgCol(
    assert(*gcgcol != NULL);
 
    /* todo: release vars? */
-   assert((*gcgcol)->vars != NULL);
-   SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vars);
-   assert((*gcgcol)->vals != NULL);
-   SCIPfreeMemoryArray((*gcgcol)->pricingprob, &(*gcgcol)->vals);
+   assert((*gcgcol)->nvars == 0 || (*gcgcol)->vars != NULL);
+   SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vars);
+   assert((*gcgcol)->nvars == 0 || (*gcgcol)->vals != NULL);
+   SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals);
    SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs);
    SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars);
    SCIPfreeMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercuts);

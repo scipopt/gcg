@@ -40,13 +40,11 @@
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
 #include "class_stabilization.h"
-#include "class_colpool.h"
 #include "pub_gcgcol.h"
 #include "pub_colpool.h"
 #include "pricestore_gcg.h"
 
 using gcg::Stabilization;
-using gcg::Colpool;
 
 class ObjPricerGcg : public scip::ObjPricer
 {
