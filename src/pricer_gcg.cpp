@@ -2576,9 +2576,12 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       dualconvsum = 0.0;
       *bestredcostvalid = isMasterLPOptimal() && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
-      BMSclearMemoryArray(bestobjvals, pricerdata->npricingprobs);
-      BMSclearMemoryArray(convduals, pricerdata->npricingprobs);
-      BMSclearMemoryArray(bestredcosts, pricerdata->npricingprobs);
+      for( i = 0; i < pricerdata->npricingprobs; ++i )
+      {
+         bestobjvals[i] = -SCIPinfinity(scip_);
+         convduals[i] = 0.0;
+         bestredcosts[i] = SCIPinfinity(scip_);
+      }
 
       /* check preliminary conditions for stabilization */
       enablestab = pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
@@ -2705,7 +2708,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             SCIP_Real convdual = GCGgetNIdenticalBlocks(origprob, probnr) * pricetype->consGetDual(scip_, convcons);
             SCIP_Real redcost = GCGgetNIdenticalBlocks(origprob, probnr) * GCGcolGetRedcost(bestcol);
 
-            if( SCIPisDualfeasLT(scip_, objval, bestobjvals[probnr]) )
+            if( SCIPisDualfeasGT(scip_, objval, bestobjvals[probnr]) )
             {
                #pragma omp atomic write
                bestobjvals[probnr] = objval;
