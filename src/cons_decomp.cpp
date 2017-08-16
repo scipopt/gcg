@@ -2043,6 +2043,14 @@ SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
 }
 
 
+/*@todo implement */
+SCIP_RETCODE SCIPconshdlrDecompgetNSeeeds(
+   SCIP           scip,
+   int*           nseeeds
+   )
+{
+
+}
 
 
 SCIP_RETCODE SCIPconshdlrDecompUpdateSeeedlist(

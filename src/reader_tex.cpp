@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   ReaderTEX.cpp
+/**@file   reader_tex.cpp
  * @brief  tex file reader for writing seeeds to LaTeX files
  * @author Hanna Franzen
  */
@@ -75,6 +75,7 @@ struct SCIP_ReaderData
 
 
 /* outputs the r, g, b decimal values for the rgb hex input */
+static
 SCIP_RETCODE getRgbDecFromHex(
    char*    hex,     /**< input hex rgb code of form "#000000" */
    int*     red,     /**< output decimal r */
@@ -106,7 +107,34 @@ SCIP_RETCODE getRgbDecFromHex(
 }
 
 
+static
+SCIP_RETCODE getTexColorFromHex(
+   char* hex,        /* hex code for color */
+   char* colorname,  /* name of color */
+   char* texcode     /* output tex code for color define with given name */
+   )
+{
+   int r;
+   int g;
+   int b;
+
+   getRgbDecFromHex( hex, &r, &g, &b );
+   texcode = '\0';
+
+   strcat( texcode, "\\definecolor{" );
+   strcpy( texcode, colorname );
+   strcpy( texcode, "}{RGB}{" );
+   strcpy( texcode, (char*) r );
+   strcpy( texcode, "," );
+   strcpy( texcode, (char*) g );
+   strcpy( texcode, "," );
+   strcpy( texcode, (char*) b );
+   strcpy( texcode, "}" );
+}
+
+
 /** write LaTeX code header & begin of document to given file */
+static
 SCIP_RETCODE writeTexHeader(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file                /**< File pointer to write to */
@@ -171,6 +199,7 @@ SCIP_RETCODE writeTexHeader(
 
 
 /** write LaTeX code title page that includes general statistics about the problem to given file */
+static
 SCIP_RETCODE writeTexTitlepage(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file,               /**< File pointer to write to */
@@ -225,6 +254,7 @@ SCIP_RETCODE writeTexTitlepage(
 
 
 /** write LaTeX code for table of contents to given file */
+static
 SCIP_RETCODE writeTexTableOfContents(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file                /**< File pointer to write to */
@@ -241,6 +271,7 @@ SCIP_RETCODE writeTexTableOfContents(
 
 /** writes line to given file that contains the tikz code for a box with given dimensions
  * and options with a linebreak at the end. */
+static
 SCIP_RETCODE writeTikzBox(
    FILE*                 file               /**< File pointer to write to */
    )
@@ -252,6 +283,7 @@ SCIP_RETCODE writeTikzBox(
 /*@todo adapt this for tikz, currently this gives gp code */
 /** writes line to given file that contains the tikz code for a point with given radius
  * and options with a linebreak at the end. */
+static
 SCIP_RETCODE writeTikzNonzeros(
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
    Seeedpool* seeedpool,   /**< current Seeedpool */
@@ -365,6 +397,7 @@ SCIP_RETCODE writeTikzNonzeros(
 
 /** writes the code for a Tikz visualization of the decomposition into the file
  * works analogously to the SCIPwriteGp function in reader_gp.c */
+static
 SCIP_RETCODE writeTikz(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
@@ -813,6 +846,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 }
 
 /** write LaTeX code for end of document to given file */
+static
 SCIP_RETCODE GCGtexWriteEndCode(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< File pointer to write to */
