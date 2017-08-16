@@ -2733,9 +2733,12 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       for( i = 0; i < pricerdata->npricingprobs; ++i )
       {
-         beststabobj += bestobjvals[i];
-         dualconvsum += convduals[i];
-         bestredcost += bestredcosts[i];
+         if( GCGisPricingprobRelevant(origprob, i) )
+         {
+            beststabobj += bestobjvals[i];
+            dualconvsum += convduals[i];
+            bestredcost += bestredcosts[i];
+         }
       }
 
       SCIP_CALL( retcode );
