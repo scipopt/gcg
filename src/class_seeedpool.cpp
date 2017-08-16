@@ -693,6 +693,9 @@ Seeedpool::Seeedpool(
 
       nCurrVars = GCGconsGetNVars( scip, cons );
 
+      if( nCurrVars == 0 )
+         continue;
+
       SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVars, nCurrVars ) );
       SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVals, nCurrVars ) );
       SCIP_CALL_ABORT( GCGconsGetVars( scip, cons, currVars, nCurrVars ) );
@@ -2425,10 +2428,13 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
       lhs = GCGconsGetLhs(scip, cons);
       rhs = GCGconsGetRhs(scip, cons);
-      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars));
-      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars));
-      SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, vals, nvars ) );
-      SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, vars, nvars ) );
+      if( nvars != 0 )
+      {
+         SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars));
+         SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars));
+         SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, vals, nvars ) );
+         SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, vars, nvars ) );
+      }
 
       for( i = 0; i < nvars; i++ )
       {
@@ -2444,8 +2450,6 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
          nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_EMPTY]++;
          nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_EMPTY]++;
          classforcons[c] = SCIP_CONSTYPE_EMPTY;
-         SCIPfreeBufferArray(scip, &vals) ;
-         SCIPfreeBufferArray(scip, &vars) ;
          continue;
       }
 

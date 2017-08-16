@@ -2220,6 +2220,8 @@ SCIP_RETCODE DECdecompCheckConsistency(
          assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
          assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) - 1 == b); /*lint !e507*/
          ncurvars = GCGconsGetNVars(scip, cons);
+         if ( ncurvars == 0 )
+            continue;
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
 
@@ -3241,6 +3243,8 @@ SCIP_RETCODE DECevaluateDecomposition(
          SCIP_VAR* var;
          int ncurvars;
          ncurvars = GCGconsGetNVars(scip, curconss[j]);
+         if ( ncurvars == 0 )
+            continue;
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, curconss[j], curvars, ncurvars) );
 
