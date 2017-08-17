@@ -939,8 +939,8 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             if( verboseLevel >= 1 )
             {
 #pragma omp critical ( scipinfo )
-               SCIPinfoMessage( scip, NULL, "detector %s started to propagate the %d-th seeed (ID %d ) in round %d \n",
-                  DECdetectorGetName( detectorToScipDetector[d] ), s + 1, seeedPtr->getID(), round );
+               SCIPinfoMessage( scip, NULL, "detector %s started to propagate the %d-th seeed of total %d seeeds (ID %d ) in round %d \n",
+                  DECdetectorGetName( detectorToScipDetector[d] ), s + 1, (int) currSeeeds.size(), seeedPtr->getID(), round );
             }
 
             SCIP_CALL_ABORT(

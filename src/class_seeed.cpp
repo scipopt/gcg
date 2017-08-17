@@ -143,6 +143,7 @@ Seeed::Seeed(
    isselected = false;
    detectorchainstring = NULL;
    isfromunpresolved = FALSE;
+   listofancestorids = seeedtocopy->listofancestorids;
 }
 
 /** destructor */
