@@ -4682,6 +4682,12 @@ SCIP_RETCODE DECwriteFamilyTree(
 	   }
 	}
 
+	SCIPdebugMessage("Checking list of seeeds to visualize: \n");
+	for ( size_t i = 0; i <  tovisualize.size(); ++i )
+	{
+	   SCIPdebugMessage( "%d th seeed: id: %d ahs ancestors from unpresolved: %d \n", (int) i, tovisualize[i]->getID(), tovisualize[i]->getStemsFromUnpresolved() );
+	}
+
 	SCIPconshdlrDecompWriteFamilyTreeLatexFile(scip, filename, workfolder, tovisualize, draft);
 
 	return SCIP_OKAY;
