@@ -176,14 +176,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
     }
 
     seeedOrig = seeedPropagationData->seeedToPropagate;
-    seeedOrig->setDetectorPropagated(detector);
-
-    if( !seeedOrig->areOpenVarsAndConssCalculated() )
-    {
-       seeedOrig->calcOpenconss();
-       seeedOrig->calcOpenvars();
-       seeedOrig->setOpenVarsAndConssCalculated(true);
-    }
 
     for( int i = 0; i < classifier->getNClasses(); ++ i )
     {
@@ -209,7 +201,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        if( subsetsOfVarclasses[subset].size() == 0 && varclassindices_master.size() == 0 && varclassindices_linking.size() == 0 )
           continue;
 
-       seeed = new gcg::Seeed(seeedOrig, seeedPropagationData->seeedpool);
+       seeed = new gcg::Seeed(seeedOrig);
 
        /** book open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
        for( int i = 0; i < seeed->getNOpenvars(); ++i )
@@ -274,6 +266,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        seeed->flushBooked();
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
        seeed->addDetectorChainInfo(decinfo);
+       seeed->setDetectorPropagated(detector);
 
        foundseeeds.push_back(seeed);
     }

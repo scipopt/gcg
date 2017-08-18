@@ -140,18 +140,9 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
 
    gcg::Seeed* seeed;
 
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate, seeedPropagationData->seeedpool);
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
    seeed->setDetectorPropagated(detector);
-
-
-   if(!seeed->areOpenVarsAndConssCalculated())
-   {
-      seeed->calcOpenconss();
-      seeed->calcOpenvars();
-      seeed->setOpenVarsAndConssCalculated(true);
-   }
-
 
 
    /** set open setcovering constraints to Master */

@@ -996,7 +996,7 @@ SCIP_RETCODE readBLKFile(
          {
             SCIPconshdlrDecompCreateSeeedpool(scip);
             //             seeedpool = SCIPconshdlrDecompGetSeeedpool(scip);
-            //               decinput->seeed = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars() );
+            //               decinput->seeed = new gcg::Seeed(scip, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars() );
 
          }
          else
@@ -1004,10 +1004,15 @@ SCIP_RETCODE readBLKFile(
             SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
          }
 
-         SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
+
+
          break;
 
       case BLK_NBLOCKS:
+         if( blkinput->haspresolvesection )
+         {
+                     SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
+         }
          SCIP_CALL( readNBlocks(scip, blkinput) );
          if( blkinput->haspresolvesection && !blkinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
          {
@@ -1016,8 +1021,12 @@ SCIP_RETCODE readBLKFile(
             }
          if( !blkinput->haspresolvesection )
          {
-            SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
+            SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. It is assumed to belong to the unpresolved problem but the behaviour is undefined. See the FAQ for further information.\n");
+            blkinput->presolved = FALSE;
+            SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+            SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
          }
+
          break;
 
       case BLK_BLOCK:

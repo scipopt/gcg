@@ -166,6 +166,13 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
    SCIP_DIALOG*            dialog
    );
 
+SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   );
+
+
 SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    SCIP*                 scip                /**< SCIP data structure */
    );

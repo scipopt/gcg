@@ -1,0 +1,36 @@
+presolving/maxrounds = 0
+presolving/maxrestarts = 0
+
+
+
+detectors/hrcgpartition/enabled = FALSE
+detectors/hcgpartition/enabled = FALSE
+detectors/hrgpartition/enabled = FALSE
+detectors/stairheur/enabled = FALSE
+detectors/isomorph/enabled = FALSE
+detectors/compgreedily/enabled = FALSE
+detectors/compgreedily/finishingenabled = FALSE
+detectors/connectedbase/enabled = FALSE
+detectors/connectedbase/finishingenabled = TRUE
+detectors/generalmastersetpack/enabled = FALSE
+detectors/generalmastersetpart/enabled = FALSE
+detectors/generalmastersetcover/enabled = FALSE
+detectors/mastersetpart/enabled = FALSE
+detectors/mastersetcover/enabled = FALSE
+detectors/mastersetpack/enabled = FALSE
+detectors/staircase/enabled = FALSE
+detectors/constype/enabled = FALSE
+detectors/staircase_lsp/enabled = FALSE
+
+detection/maxrounds = 1
+detection/origprob/enabled = FALSE
+detection/origprob/classificationenabled = FALSE
+
+detection/consclassifier/consnamelevenshtein/enabled = FALSE
+detection/consclassifier/consnamelevenshtein/origenabled = FALSE
+detection/consclassifier/consnamenonumbers/enabled = FALSE
+detection/consclassifier/consnamenonumbers/origenabled = FALSE
+
+
+timing/clocktype = 2
+limits/time = 46800

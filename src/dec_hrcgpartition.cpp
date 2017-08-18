@@ -210,12 +210,7 @@ DEC_DECL_INITDETECTOR(initHrcgpartition)
 static
 DEC_DECL_EXITDETECTOR(exitHrcgpartition)
 {
-   DEC_DETECTORDATA* detectordata;
-
    assert(scip != NULL);
-
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
@@ -371,16 +366,24 @@ bool connected(
 {
    std::vector<int> queue;
    std::vector<int> visited;
+   std::vector<bool> inqueue (seeedpool->getNVars(), false);
+   std::vector<bool> isvisited(seeedpool->getNVars(), false);
+   int start = -1;
 
    if(seeed->getNOpenvars() < 2)
       return false;
 
-   queue.push_back(seeed->getOpenvars()[0]);
+   start = seeed->getOpenvars()[0];
+
+   queue.push_back(start);
+   inqueue[start] = true;
    do
    {
       int node = queue[0];
       queue.erase(queue.begin());
+      inqueue[node] = false;
       visited.push_back(node);
+      isvisited[node] = true;
       for(int c = 0; c < seeedpool->getNConssForVar(node); ++c)
       {
          int cons = seeedpool->getConssForVar(node)[c];
@@ -391,11 +394,12 @@ bool connected(
             int var = seeedpool->getVarsForCons(cons)[v];
             if(!seeed->isVarOpenvar(var))
                continue;
-            if(find(visited.begin(), visited.end(), var) != visited.end())
+            if( isvisited[var] )
                continue;
-            if(find(queue.begin(), queue.end(), var) != queue.end())
+            if( inqueue[var] )
                continue;
             queue.push_back(var);
+            inqueue[var] = true;
          }
       }
    } while(!queue.empty());
@@ -405,16 +409,21 @@ bool connected(
 
    queue.clear();
    visited.clear();
+   inqueue = std::vector<bool>(seeedpool->getNConss(), false);
+   isvisited = std::vector<bool>(seeedpool->getNConss(), false);
 
    if(seeed->getNOpenconss() < 2)
       return false;
 
    queue.push_back(seeed->getOpenconss()[0]);
+   inqueue[seeed->getOpenconss()[0]] = true;
    do
    {
       int node = queue[0];
       queue.erase(queue.begin());
+      inqueue[node] = false;
       visited.push_back(node);
+      isvisited[node] = true;
       for(int v = 0; v < seeedpool->getNVarsForCons(node); ++v)
       {
          int var = seeedpool->getVarsForCons(node)[v];
@@ -425,16 +434,17 @@ bool connected(
             int cons = seeedpool->getConssForVar(var)[c];
             if(!seeed->isConsOpencons(cons))
                continue;
-            if(find(visited.begin(), visited.end(), cons) != visited.end())
+            if( isvisited[cons] )
                continue;
-            if(find(queue.begin(), queue.end(), cons) != queue.end())
+            if( inqueue[cons] )
                continue;
             queue.push_back(cons);
+            inqueue[cons] = true;
          }
       }
-   } while(!queue.empty());
+   } while( !queue.empty() );
 
-   if((int)visited.size() != seeed->getNOpenconss())
+   if( (int)visited.size() != seeed->getNOpenconss() )
       return false;
    else
       return true;
@@ -728,7 +738,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
    gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
 
    seeed->considerImplicits(seeedPropagationData->seeedpool);
-   seeed->assignAllDependent(seeedPropagationData->seeedpool);
+   seeed->refineToBlocks(seeedPropagationData->seeedpool);
 
    if(!connected(seeedPropagationData->seeedpool, seeed))
    {
@@ -742,7 +752,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
    for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
    {
       seeedPropagationData->newSeeeds[s]->considerImplicits(seeedPropagationData->seeedpool);
-      seeedPropagationData->newSeeeds[s]->assignAllDependent(seeedPropagationData->seeedpool);
+      seeedPropagationData->newSeeeds[s]->refineToBlocks(seeedPropagationData->seeedpool);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenconss() == 0);
       assert(seeedPropagationData->newSeeeds[s]->getNOpenvars() == 0);
    }

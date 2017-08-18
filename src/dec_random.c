@@ -45,6 +45,7 @@
 #include "cons_decomp.h"
 #include "pub_decomp.h"
 #include "scip/clock.h"
+#include "scip/misc.h"
 #include <string.h>
 
 /* constraint handler properties */
@@ -191,8 +192,7 @@ DEC_DECL_INITDETECTOR(detectorInitRandom)
    detectordata->nblocks = 0;
 
    /* create random number generator */
-   SCIP_CALL( SCIPrandomCreate(&detectordata->randnumgen, SCIPblkmem(scip),
-         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+   SCIP_CALL( SCIPcreateRandom(scip, &detectordata->randnumgen, DEFAULT_RANDSEED) );
 
    return SCIP_OKAY;
 }
@@ -212,7 +212,7 @@ DEC_DECL_EXITDETECTOR(detectorExitRandom)
    assert(detectordata != NULL);
 
    /* free random number generator */
-   SCIPrandomFree(&detectordata->randnumgen);
+   SCIPfreeRandom(scip, &detectordata->randnumgen );
 
    return SCIP_OKAY;
 }

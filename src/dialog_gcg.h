@@ -55,6 +55,11 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics);
 
+//** dialog execution method for the display statistics command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr);
+
+
 /** dialog execution method for the display detectors command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors);
@@ -82,6 +87,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);
 /** dialog execution method for the select command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect);
+
+/** dialog execution method for the decomposition toolbox command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox);
 
 
 /** dialog execution method for the optimize command */

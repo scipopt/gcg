@@ -264,9 +264,9 @@ SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
 
    if( !emptyblocks )
    {
-      (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
+      (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars());
       SCIP_CALL( (*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
-      (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNDetectors(), seeedpool->getNConss(), seeedpool->getNVars());
+      (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars());
       SCIP_CALL( (*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool) );
       SCIPhashmapFree(&constoblock);
    }
@@ -380,9 +380,9 @@ SCIP_RETCODE HyperrowGraph<T>::createSeeedFromPartition(
 
    if( !emptyblocks )
    {
-      (*firstSeeed) = new Seeed(oldSeeed, seeedpool);
+      (*firstSeeed) = new Seeed(oldSeeed);
       SCIP_CALL( (*firstSeeed)->assignSeeedFromConstoblock(constoblock, nblocks, seeedpool) );
-      (*secondSeeed) = new Seeed(oldSeeed, seeedpool);
+      (*secondSeeed) = new Seeed(oldSeeed);
       SCIP_CALL( (*secondSeeed)->assignBorderFromConstoblock(constoblock, nblocks, seeedpool) );
       SCIPhashmapFree(&constoblock);
    }

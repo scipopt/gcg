@@ -114,7 +114,8 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -168,7 +169,9 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h lib/gtest/gtest/gtest.h \
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
  lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
  lib/gtest/gtest/internal/gtest-string.h \
@@ -296,7 +299,8 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -350,7 +354,9 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h lib/gtest/gtest/gtest.h \
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
  lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
  lib/gtest/gtest/internal/gtest-string.h \
@@ -479,7 +485,8 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -533,7 +540,9 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h lib/gtest/gtest/gtest.h \
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
  lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
  lib/gtest/gtest/internal/gtest-string.h \
@@ -660,7 +669,8 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -714,7 +724,9 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h lib/gtest/gtest/gtest.h \
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
  lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
  lib/gtest/gtest/internal/gtest-string.h \
@@ -845,7 +857,8 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -899,7 +912,9 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h lib/gtest/gtest/gtest.h \
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
  lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
  lib/gtest/gtest/internal/gtest-string.h \
@@ -1027,7 +1042,8 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -1081,7 +1097,9 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h lib/gtest/gtest/gtest.h \
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
  lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
  lib/gtest/gtest/internal/gtest-string.h \
@@ -1210,7 +1228,8 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -1264,7 +1283,9 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h lib/gtest/gtest/gtest.h \
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
  lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
  lib/gtest/gtest/internal/gtest-string.h \
@@ -1393,7 +1414,8 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -1447,7 +1469,9 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h lib/gtest/gtest/gtest.h \
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
  lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
  lib/gtest/gtest/internal/gtest-string.h \
@@ -1578,7 +1602,8 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -1632,7 +1657,9 @@ $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h lib/gtest/gtest/gtest.h \
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
  lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
  lib/gtest/gtest/internal/gtest-string.h \
@@ -1764,7 +1791,8 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h lib/scip/src/scip/heur_locks.h \
  lib/scip/src/scip/heur_lpface.h lib/scip/src/scip/heur_multistart.h \
- lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_mpec.h \
+ lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_ofins.h lib/scip/src/scip/heur_oneopt.h \
  lib/scip/src/scip/heur_pscostdiving.h lib/scip/src/scip/heur_proximity.h \
@@ -1818,7 +1846,9 @@ $(TESTOBJDIR)/colpool_test.o: src/tests/colpool_test.cpp src/type_gcgcol.h \
  lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/scip/concsolver_scip.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h lib/gtest/gtest/gtest.h \
+ lib/scip/src/nlpi/nlpi_ipopt.h lib/scip/src/nlpi/nlpi_filtersqp.h \
+ lib/scip/src/nlpi/nlpi_worhp.h lib/scip/src/nlpi/nlpi_all.h \
+ src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
  lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
  lib/gtest/gtest/internal/gtest-string.h \

@@ -1857,7 +1857,8 @@ void DECdecompSetDetectorPctConssFromOpen(
    return;
 }
 
-/** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
+/** gets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain)
+ *  on this decomposition */
 SCIP_Real* DECdecompGetDetectorPctConssFromOpen(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
@@ -2089,7 +2090,8 @@ SCIP_RETCODE DECdecompRemoveDeletedConss(
          SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->linkingconss[c]) );
       }
    }
-   if( pos != decdecomp->nlinkingconss )
+
+   if( pos != decdecomp->nlinkingconss && decdecomp->linkingconss != NULL )
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss,
          SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss), SCIPcalcMemGrowSize(scip, pos)) );
    decdecomp->nlinkingconss = pos;
@@ -2218,6 +2220,8 @@ SCIP_RETCODE DECdecompCheckConsistency(
          assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
          assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) - 1 == b); /*lint !e507*/
          ncurvars = GCGconsGetNVars(scip, cons);
+         if ( ncurvars == 0 )
+            continue;
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
 
@@ -3239,6 +3243,8 @@ SCIP_RETCODE DECevaluateDecomposition(
          SCIP_VAR* var;
          int ncurvars;
          ncurvars = GCGconsGetNVars(scip, curconss[j]);
+         if ( ncurvars == 0 )
+            continue;
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, curconss[j], curvars, ncurvars) );
 
