@@ -2616,7 +2616,7 @@ char* Seeed::getDetectorChainString()
    return detectorchainstring;
 }
 
-/** returns detectorchain info of detetctor related to given detectorchain index */
+/** returns detectorchain info of detector related to given detectorchain index */
 std::string Seeed::getDetectorchainInfo(
    int detectorchainindex
    )

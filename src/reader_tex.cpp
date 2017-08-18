@@ -431,8 +431,25 @@ SCIP_RETCODE writeTexSeeed(
    Seeedpool* seeedpool    /**< current Seeedpool */
    )
 {
+//   char* detectorchainstring;
+//   DEC_DETECTOR** detectorchain;
+//   int sizedetectorchain;
+//
+//   detectorchainstring = seeed->getDetectorChainString();
+//   detectorchain = seeed->getDetectorchain();
+//   sizedetectorchain = seeed->getNDetectors();
+
+   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
+   SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
+
+   /*@todo insert what originally was in write tikz */
+
+   SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
+   SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+
    return SCIP_OKAY;
 }
+
 
 /** writes the code for a Tikz visualization of the decomposition into the file
  * works analogously to the SCIPwriteGp function in reader_gp.c */
