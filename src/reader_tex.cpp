@@ -189,6 +189,17 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      \n");
    SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               \n");
    SCIPinfoMessage(scip, file, "                                                                                 \n");
+
+  /* introduce colors of current color scheme */
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorMasterconss()));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorMastervars()));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorLinking()));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorStairlinking()));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorBlock()));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorOpen()));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorNonzero()));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorLine()));
+   SCIPinfoMessage(scip, file, "                                                                                 \n");
    SCIPinfoMessage(scip, file, "\\begin{document}                                                                \n");
    SCIPinfoMessage(scip, file, "                                                                                 \n");
 
@@ -203,7 +214,7 @@ static
 SCIP_RETCODE writeTexTitlepage(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file,               /**< File pointer to write to */
-   int*                 npresenteddecomps   /**< Number of decompositions to be shown in the file or NULL if unknown */
+   int*                 npresentedseeeds    /**< Number of decompositions to be shown in the file or NULL if unknown */
    )
 {
    char* pname;
@@ -231,13 +242,15 @@ SCIP_RETCODE writeTexTitlepage(
    SCIPinfoMessage(scip, file, "  \\vspace{0.5cm}                                                             \n");
    SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\                       \n",
       SCIPgetNOrigConss(scip));
-   SCIPinfoMessage(scip, file, "  Number of found decompositions: & %i  \\\\                                  \n",
+   SCIPinfoMessage(scip, file, "  Number of found finished decompositions: & %i  \\\\                         \n",
       SCIPconshdlrDecompGetNFinishedDecomps(scip));
-   if(npresenteddecomps != NULL){
-      if( ndecomps > *npresenteddecomps )
+   SCIPinfoMessage(scip, file, "  Number of found incomplete decompositions: & %i  \\\\                       \n",
+      SCIPconshdlrDecompGetNSeeeds(scip) - SCIPconshdlrDecompGetNFinishedDecomps(scip));
+   if(npresentedseeeds != NULL){
+      if( ndecomps > *npresentedseeeds )
       {
          SCIPinfoMessage(scip, file, "  Number of decompositions presented in this document: & %i \\\\ \n",
-            *npresenteddecomps);
+            *npresentedseeeds);
       }
       else
       {
@@ -273,9 +286,22 @@ SCIP_RETCODE writeTexTableOfContents(
  * and options with a linebreak at the end. */
 static
 SCIP_RETCODE writeTikzBox(
-   FILE*                 file               /**< File pointer to write to */
+   SCIP* scip,       /**< SCIP data structure */
+   FILE* file,       /**< File pointer to write to */
+   int x1,           /**< x value of lower left vertex coordinate */
+   int y1,           /**< y value of lower left vertex coordinate */
+   int x2,           /**< x value of upper right vertex coordinate */
+   int y2,           /**< y value of upper right vertex coordinate */
+   char* color       /**< color hex code (e.g. #000000) for box filling */
    )
 {
+   char colorcode;
+
+   /*@todo get colorcode */
+
+   SCIPinfoMessage(scip, file,
+      "    \\draw [fill=%s] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
+      colorcode, x1, y1, x2, y2);
    return SCIP_OKAY;
 }
 
@@ -285,9 +311,11 @@ SCIP_RETCODE writeTikzBox(
  * and options with a linebreak at the end. */
 static
 SCIP_RETCODE writeTikzNonzeros(
+   SCIP* scip,             /**< SCIP data structure */
+   FILE* file,             /**< filename to write to (including path & extension) */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
    Seeedpool* seeedpool,   /**< current Seeedpool */
-   const char* filename    /**< filename to write to (including path & extension) */
+   float radius            /**< radius of the dots */
    )
 {
    std::vector<int> orderToRows(seeed->getNConss(), -1);
@@ -296,13 +324,10 @@ SCIP_RETCODE writeTikzNonzeros(
    std::vector<int> colsToOrder(seeed->getNVars(), -1);
    int counterrows = 0;
    int countercols = 0;
-   std::ofstream ofs;
-
-   ofs.open (filename, std::ofstream::out );
 
    /** order of constraints */
    /* master constraints */
-   for ( int i = 0; i < seeed->getNMasterconss() ; ++i )
+   for( int i = 0; i < seeed->getNMasterconss() ; ++i )
    {
       int rowidx = seeed->getMasterconss()[i];
       orderToRows[counterrows] = rowidx;
@@ -311,9 +336,9 @@ SCIP_RETCODE writeTikzNonzeros(
    }
 
    /* block constraints */
-   for ( int b = 0; b < seeed->getNBlocks() ; ++b )
+   for( int b = 0; b < seeed->getNBlocks() ; ++b )
    {
-      for (int i = 0; i < seeed->getNConssForBlock(b) ; ++i )
+      for(int i = 0; i < seeed->getNConssForBlock(b) ; ++i )
       {
          int rowidx = seeed->getConssForBlock(b)[i];
          orderToRows[counterrows] = rowidx;
@@ -323,7 +348,7 @@ SCIP_RETCODE writeTikzNonzeros(
    }
 
    /** open constraints */
-   for ( int i = 0; i < seeed->getNOpenconss() ; ++i )
+   for( int i = 0; i < seeed->getNOpenconss() ; ++i )
    {
       int rowidx = seeed->getOpenconss()[i];
       orderToRows[counterrows] = rowidx;
@@ -334,7 +359,7 @@ SCIP_RETCODE writeTikzNonzeros(
    /** order of variables */
 
    /* linking variables */
-   for ( int i = 0; i < seeed->getNLinkingvars() ; ++i )
+   for( int i = 0; i < seeed->getNLinkingvars() ; ++i )
    {
       int colidx = seeed->getLinkingvars()[i];
       orderToCols[countercols] = colidx;
@@ -343,7 +368,7 @@ SCIP_RETCODE writeTikzNonzeros(
    }
 
    /* master variables */
-   for ( int i = 0; i < seeed->getNMastervars() ; ++i )
+   for( int i = 0; i < seeed->getNMastervars() ; ++i )
    {
       int colidx = seeed->getMastervars()[i];
       orderToCols[countercols] = colidx;
@@ -352,16 +377,16 @@ SCIP_RETCODE writeTikzNonzeros(
    }
 
    /* block variables */
-   for ( int b = 0; b < seeed->getNBlocks() ; ++b )
+   for( int b = 0; b < seeed->getNBlocks() ; ++b )
    {
-      for (int i = 0; i < seeed->getNVarsForBlock(b) ; ++i )
+      for(int i = 0; i < seeed->getNVarsForBlock(b) ; ++i )
       {
          int colidx = seeed->getVarsForBlock(b)[i];
          orderToCols[countercols] = colidx;
          colsToOrder[colidx] = countercols;
          ++countercols;
       }
-      for (int i = 0; i < seeed->getNStairlinkingvars(b) ; ++i )
+      for(int i = 0; i < seeed->getNStairlinkingvars(b) ; ++i )
       {
          int colidx = seeed->getStairlinkingvars(b)[i];
          orderToCols[countercols] = colidx;
@@ -370,8 +395,8 @@ SCIP_RETCODE writeTikzNonzeros(
       }
    }
 
-   /** open vars */
-   for ( int i = 0; i < seeed->getNOpenvars() ; ++i )
+   /* open vars */
+   for( int i = 0; i < seeed->getNOpenvars() ; ++i )
    {
       int colidx = seeed->getOpenvars()[i];
       orderToCols[countercols] = colidx;
@@ -381,19 +406,33 @@ SCIP_RETCODE writeTikzNonzeros(
 
    /* write scatter plot */
    for( int row = 0; row < seeed->getNConss(); ++row )
+   {
       for ( int col = 0; col < seeed->getNVars(); ++col )
       {
-         assert( orderToRows[row] != -1);
-         assert( orderToCols[col] != -1);
+         assert( orderToRows[row] != -1 );
+         assert( orderToCols[col] != -1 );
          if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
-            ofs << col+0.5 << " " << row+0.5 << std::endl;
+         {
+            SCIPinfoMessage(scip, file,
+               "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
+               col + 0.5, row + 0.5, radius);
+         }
       }
-
-   ofs.close();
+   }
 
    return SCIP_OKAY;
 }
 
+
+static
+SCIP_RETCODE writeTexSeeed(
+   FILE* file,             /**< filename (including path) to write to */
+   Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
+   Seeedpool* seeedpool    /**< current Seeedpool */
+   )
+{
+
+}
 
 /** writes the code for a Tikz visualization of the decomposition into the file
  * works analogously to the SCIPwriteGp function in reader_gp.c */

@@ -121,7 +121,7 @@ SCIP_RETCODE writeGpNonzeros(
    /* --- order of constraints --- */
 
    /* master constraints */
-   for ( int i = 0; i < seeed->getNMasterconss() ; ++i )
+   for( int i = 0; i < seeed->getNMasterconss() ; ++i )
    {
       int rowidx = seeed->getMasterconss()[i];
       orderToRows[counterrows] = rowidx;
@@ -130,9 +130,9 @@ SCIP_RETCODE writeGpNonzeros(
    }
 
    /* block constraints */
-   for ( int b = 0; b < seeed->getNBlocks() ; ++b )
+   for( int b = 0; b < seeed->getNBlocks() ; ++b )
    {
-      for (int i = 0; i < seeed->getNConssForBlock(b) ; ++i )
+      for( int i = 0; i < seeed->getNConssForBlock(b) ; ++i )
       {
          int rowidx = seeed->getConssForBlock(b)[i];
          orderToRows[counterrows] = rowidx;
@@ -142,7 +142,7 @@ SCIP_RETCODE writeGpNonzeros(
    }
 
    /** open constraints */
-   for ( int i = 0; i < seeed->getNOpenconss() ; ++i )
+   for( int i = 0; i < seeed->getNOpenconss() ; ++i )
    {
       int rowidx = seeed->getOpenconss()[i];
       orderToRows[counterrows] = rowidx;
@@ -153,7 +153,7 @@ SCIP_RETCODE writeGpNonzeros(
    /* --- order of variables --- */
 
    /* linking variables */
-   for ( int i = 0; i < seeed->getNLinkingvars() ; ++i )
+   for( int i = 0; i < seeed->getNLinkingvars() ; ++i )
    {
       int colidx = seeed->getLinkingvars()[i];
       orderToCols[countercols] = colidx;
@@ -162,7 +162,7 @@ SCIP_RETCODE writeGpNonzeros(
    }
 
    /* master variables */
-   for ( int i = 0; i < seeed->getNMastervars() ; ++i )
+   for( int i = 0; i < seeed->getNMastervars() ; ++i )
    {
       int colidx = seeed->getMastervars()[i];
       orderToCols[countercols] = colidx;
@@ -171,16 +171,16 @@ SCIP_RETCODE writeGpNonzeros(
    }
 
    /* block variables */
-   for ( int b = 0; b < seeed->getNBlocks() ; ++b )
+   for( int b = 0; b < seeed->getNBlocks() ; ++b )
    {
-      for (int i = 0; i < seeed->getNVarsForBlock(b) ; ++i )
+      for( int i = 0; i < seeed->getNVarsForBlock(b) ; ++i )
       {
          int colidx = seeed->getVarsForBlock(b)[i];
          orderToCols[countercols] = colidx;
          colsToOrder[colidx] = countercols;
          ++countercols;
       }
-      for (int i = 0; i < seeed->getNStairlinkingvars(b) ; ++i )
+      for( int i = 0; i < seeed->getNStairlinkingvars(b) ; ++i )
       {
          int colidx = seeed->getStairlinkingvars(b)[i];
          orderToCols[countercols] = colidx;
@@ -190,7 +190,7 @@ SCIP_RETCODE writeGpNonzeros(
    }
 
    /** open vars */
-   for ( int i = 0; i < seeed->getNOpenvars() ; ++i )
+   for( int i = 0; i < seeed->getNOpenvars() ; ++i )
    {
       int colidx = seeed->getOpenvars()[i];
       orderToCols[countercols] = colidx;
@@ -208,10 +208,10 @@ SCIP_RETCODE writeGpNonzeros(
    for( int row = 0; row < seeed->getNConss(); ++row )
       for ( int col = 0; col < seeed->getNVars(); ++col )
       {
-         assert( orderToRows[row] != -1);
-         assert( orderToCols[col] != -1);
+         assert( orderToRows[row] != -1 );
+         assert( orderToCols[col] != -1 );
          if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
-            ofs << col+0.5 << " " << row+0.5 << std::endl;
+            ofs << col + 0.5 << " " << row + 0.5 << std::endl;
       }
 
    /* end writing dots */

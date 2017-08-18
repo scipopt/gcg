@@ -951,7 +951,6 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-
    scorename = SCIPconshdlrDecompGetScoretypeShortName(scip, SCIPconshdlrdataGetScoretype(conshdlrdata) );
 
    ndetectedpresolved = 0;
@@ -960,8 +959,6 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
    nuserpresolvedpartial = 0;
    nuserunpresolvedfull = 0;
    nuserunpresolvedpartial = 0;
-
-
 
    /** count corresponding seeeds */
    for ( i = 0; i < conshdlrdata->listall->size(); ++i )
@@ -982,7 +979,6 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtractHeader(
          ++nuserunpresolvedpartial;
 
    }
-
 
    SCIPdialogMessage(scip, NULL, "\n");
    SCIPdialogMessage(scip, NULL, "============================================================================================= ");
@@ -4823,8 +4819,8 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
 /* returns number of finished Seeeds */
 int SCIPconshdlrDecompGetNFinishedDecomps(
    SCIP*       scip
-   ){
-
+   )
+{
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
@@ -4837,9 +4833,31 @@ int SCIPconshdlrDecompGetNFinishedDecomps(
    assert(conshdlrdata != NULL);
 
    return (int) /*conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() +*/ conshdlrdata->seeedpool->getNFinishedSeeeds();
-
 }
 
+/* returns number of all Seeeds */
+int SCIPconshdlrDecompGetNSeeeds(
+   SCIP*       scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return (int) conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds() +
+      conshdlrdata->seeedpoolunpresolved->getNCurrentSeeeds() +
+      conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() +
+      conshdlrdata->seeedpool->getNAncestorSeeeds() +
+      conshdlrdata->seeedpool->getNCurrentSeeeds() +
+      conshdlrdata->seeedpool->getNFinishedSeeeds();
+}
 
 /** display statistics about detectors */
 SCIP_RETCODE GCGprintDetectorStatistics(

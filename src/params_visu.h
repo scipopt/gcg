@@ -56,7 +56,7 @@ typedef enum Colorscheme VISU_COLORSCHEME; /**< visualization colorscheme type *
 
 /** includes the visualization parameters into GCG */
 extern SCIP_RETCODE SCIPincludeParamsVisu(
-   SCIP* scip /**< SCIP data structure */
+   SCIP* scip     /**< SCIP data structure */
    );
 
 /** gets if draftmode is on
@@ -66,7 +66,7 @@ extern SCIP_Bool SCIPvisuGetDraftmode(void);
 /** sets draftmode
  * draftmode lets visualizations omit nonzeros */
 extern void SCIPvisuSetDraftmode(
-   SCIP_Bool setmode
+   SCIP_Bool setmode /**< true iff draftmode should be on */
    );
 
 /** gets the colorscheme for visualizations */
@@ -74,7 +74,7 @@ extern VISU_COLORSCHEME SCIPvisuGetColorscheme(void);
 
 /** sets colorscheme for visualizations */
 extern void SCIPvisuSetColorscheme(
-   VISU_COLORSCHEME newscheme
+   VISU_COLORSCHEME newscheme    /**< new colorscheme */
    );
 
 /** gets color for mastercon block in current color scheme */
@@ -104,9 +104,9 @@ extern char* SCIPvisuGetColorLine(void);
 /** gets appropriate radius for nonzeros
  * needs highest indices of both axes */
 float SCIPvisuGetNonzeroRadius(
-   int maxindx,     /**< highest index x-axis */
-   int maxindy,    /**< highest index y-axis */
-   float scalingfactor /**< percentage to scale radius, 1 if no scaling */
+   int maxindx,         /**< highest index x-axis */
+   int maxindy,         /**< highest index y-axis */
+   float scalingfactor  /**< percentage to scale radius, 1 if no scaling */
    );
 
 #ifdef __cplusplus

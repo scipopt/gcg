@@ -361,6 +361,11 @@ int SCIPconshdlrDecompGetNFinishedDecomps(
    SCIP*       scip
    );
 
+/* returns number of all Seeeds */
+int SCIPconshdlrDecompGetNSeeeds(
+   SCIP*       scip
+   );
+
 int SCIPconshdlrDecompGetNDetectors(
    SCIP* scip
    );
