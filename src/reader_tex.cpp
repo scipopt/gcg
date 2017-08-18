@@ -426,6 +426,7 @@ SCIP_RETCODE writeTikzNonzeros(
 
 static
 SCIP_RETCODE writeTexSeeed(
+   SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< filename (including path) to write to */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
    Seeedpool* seeedpool    /**< current Seeedpool */
@@ -753,79 +754,79 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 
    assert(decomp != NULL);
 
-   /* get detector chain string & full-text string*/
-   detectorchainstring = DECdecompGetDetectorChainString(scip, decomp);
-
-   detectorchain = DECdecompGetDetectorChain(decomp);
-   sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
-   if( detectorchain[0] != NULL)
-      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
-   else
-      sprintf(fulldetectorstring, "%s", "user");
-   for( i=1; i < sizedetectorchain; ++i )
-   {
-      sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
-   }
-
-   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d-%d", detectorchainstring, DECdecompGetSeeedID(decomp),
-      DECdecompGetNBlocks(decomp));
-   /* tex will have problems with the character '_' */
-   for(i = 0; i < SCIP_MAXSTRLEN; i++)
-   {
-      if(decompname[i] == '_'){
-         decompname[i] = '-';
-      }
-   }
-
-   if( usegp )
-   {
-      /* --- create a gnuplot file for the decomposition --- */
-
-      /* get path to write to and put it into gpfilename */
-      gcg::MiscVisualization* miscvisu = new gcg::MiscVisualization();
-      pfile = miscvisu->GCGgetFilePath(scip, file);
-      strcpy(pfilecpy, pfile);
-      SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
-      strcpy(gpfilename, filepath);
-      strcat(gpfilename, "/");
-
-      /* get name of file and attach it to gpfilename */
-      strcpy(ppath, SCIPgetProbName(scip));
-      SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
-      if( pname != NULL &&  pname[0] != '\0' )
-      {
-         strcpy(gpname, pname);
-         strcat(gpname, "-");
-      }
-
-      if( decompname != NULL &&  decompname[0] != '\0' )
-      {
-         strcat(gpname, decompname);
-      }
-      else
-      {
-         return SCIP_FILECREATEERROR;
-      }
-      strcat(gpfilename, gpname);
-      strcat(gpfilename, ".gp");
-
-      /* write gp file for decomp using the gp reader (using the tex output option) */
-      gpfile = fopen(gpfilename, "w");
-      if( gpfile == NULL )
-      {
-         return SCIP_FILECREATEERROR;
-      }
-
-      /* write gp in the tex draft mode and restore the original parameter afterwards */
-      gpdraftwason = GCGgpGetDraftmode(scip);
-      GCGgpSetDraftmode(scip, draftmode);
-
-      SCIPwriteGp(scip, gpfile, decomp, TRUE, FALSE);
-
-      GCGgpSetDraftmode(scip, gpdraftwason);
-
-      fclose(gpfile);
-   }
+//   /* get detector chain string & full-text string*/
+//   detectorchainstring = DECdecompGetDetectorChainString(scip, decomp);
+//
+//   detectorchain = DECdecompGetDetectorChain(decomp);
+//   sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
+//   if( detectorchain[0] != NULL)
+//      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
+//   else
+//      sprintf(fulldetectorstring, "%s", "user");
+//   for( i=1; i < sizedetectorchain; ++i )
+//   {
+//      sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
+//   }
+//
+//   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d-%d", detectorchainstring, DECdecompGetSeeedID(decomp),
+//      DECdecompGetNBlocks(decomp));
+//   /* tex will have problems with the character '_' */
+//   for(i = 0; i < SCIP_MAXSTRLEN; i++)
+//   {
+//      if(decompname[i] == '_'){
+//         decompname[i] = '-';
+//      }
+//   }
+//
+//   if( usegp )
+//   {
+//      /* --- create a gnuplot file for the decomposition --- */
+//
+//      /* get path to write to and put it into gpfilename */
+//      gcg::MiscVisualization* miscvisu = new gcg::MiscVisualization();
+//      pfile = miscvisu->GCGgetFilePath(scip, file);
+//      strcpy(pfilecpy, pfile);
+//      SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
+//      strcpy(gpfilename, filepath);
+//      strcat(gpfilename, "/");
+//
+//      /* get name of file and attach it to gpfilename */
+//      strcpy(ppath, SCIPgetProbName(scip));
+//      SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
+//      if( pname != NULL &&  pname[0] != '\0' )
+//      {
+//         strcpy(gpname, pname);
+//         strcat(gpname, "-");
+//      }
+//
+//      if( decompname != NULL &&  decompname[0] != '\0' )
+//      {
+//         strcat(gpname, decompname);
+//      }
+//      else
+//      {
+//         return SCIP_FILECREATEERROR;
+//      }
+//      strcat(gpfilename, gpname);
+//      strcat(gpfilename, ".gp");
+//
+//      /* write gp file for decomp using the gp reader (using the tex output option) */
+//      gpfile = fopen(gpfilename, "w");
+//      if( gpfile == NULL )
+//      {
+//         return SCIP_FILECREATEERROR;
+//      }
+//
+//      /* write gp in the tex draft mode and restore the original parameter afterwards */
+//      gpdraftwason = GCGgpGetDraftmode(scip);
+//      GCGgpSetDraftmode(scip, draftmode);
+//
+//      SCIPwriteGp(scip, gpfile, decomp, TRUE, FALSE);
+//
+//      GCGgpSetDraftmode(scip, gpdraftwason);
+//
+//      fclose(gpfile);
+//   }
 
    /* --- gather information & output them into .tex file --- */
 
@@ -837,20 +838,20 @@ SCIP_RETCODE GCGtexWriteDecompCode(
       SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
       SCIPinfoMessage(scip, file, "                                                                \n");
    }
-   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
-   SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
-   if( usegp )
-   {
-      SCIPinfoMessage(scip, file, "    \\input{%s-%s-%d-%d}                                          \n",
-         pname, detectorchainstring, DECdecompGetSeeedID(decomp), DECdecompGetNBlocks(decomp));
-   }
-   else
-   {
-      writeTikz(scip, file, decomp);
-   }
-
-   SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
-   SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+//   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
+//   SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
+//   if( usegp )
+//   {
+//      SCIPinfoMessage(scip, file, "    \\input{%s-%s-%d-%d}                                          \n",
+//         pname, detectorchainstring, DECdecompGetSeeedID(decomp), DECdecompGetNBlocks(decomp));
+//   }
+//   else
+//   {
+//      writeTikz(scip, file, decomp);
+//   }
+//
+//   SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
+//   SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
    if(!picturesonly)
    {
       SCIPinfoMessage(scip, file, "                                                                \n");

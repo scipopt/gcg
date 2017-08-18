@@ -152,25 +152,25 @@ SeeedPtr MiscVisualization::GCGgetSeeed(
    if( seeedpool != NULL )
    {
       /* find in presolved */
-      for( size_t i = 0; i < seeedpool->getNAncestorSeeeds(); ++i)
+      for( int i = 0; i < seeedpool->getNAncestorSeeeds(); ++i)
       {
          if( seeedpool->getAncestorSeeed(i)!= NULL && seeedpool->getAncestorSeeed(i)->getID() == seeedid )
             return seeedpool->getAncestorSeeed(i);
       }
 
-      for( size_t i = 0; i < seeedpool->getNIncompleteSeeeds(); ++i)
+      for( int i = 0; i < seeedpool->getNIncompleteSeeeds(); ++i)
       {
          if( seeedpool->getIncompleteSeeed(i)->getID() == seeedid )
             return seeedpool->getIncompleteSeeed(i);
       }
 
-      for( size_t i = 0; i < seeedpool->getNFinishedSeeeds(); ++i)
+      for( int i = 0; i < seeedpool->getNFinishedSeeeds(); ++i)
       {
          if( seeedpool->getFinishedSeeed(i)->getID() == seeedid )
             return seeedpool->getFinishedSeeed(i);
       }
 
-      for( size_t i = 0; i < seeedpool->getNCurrentSeeeds(); ++i)
+      for( int i = 0; i < seeedpool->getNCurrentSeeeds(); ++i)
       {
          if( seeedpool->getCurrentSeeed(i)->getID() == seeedid )
             return seeedpool->getCurrentSeeed(i);
@@ -183,25 +183,25 @@ SeeedPtr MiscVisualization::GCGgetSeeed(
 
    if( seeedpool != NULL )
    {
-      for( size_t i = 0; i < seeedpool->getNAncestorSeeeds(); ++i)
+      for( int i = 0; i < seeedpool->getNAncestorSeeeds(); ++i)
       {
          if( seeedpool->getAncestorSeeed(i)!= NULL && seeedpool->getAncestorSeeed(i)->getID() == seeedid )
             return seeedpool->getAncestorSeeed(i);
       }
 
-      for( size_t i = 0; i < seeedpool->getNIncompleteSeeeds(); ++i)
+      for( int i = 0; i < seeedpool->getNIncompleteSeeeds(); ++i)
       {
          if( seeedpool->getIncompleteSeeed(i)->getID() == seeedid )
             return seeedpool->getIncompleteSeeed(i);
       }
 
-      for( size_t i = 0; i < seeedpool->getNFinishedSeeeds(); ++i)
+      for( int i = 0; i < seeedpool->getNFinishedSeeeds(); ++i)
       {
          if( seeedpool->getFinishedSeeed(i)->getID() == seeedid )
             return seeedpool->getFinishedSeeed(i);
       }
 
-      for( size_t i = 0; i < seeedpool->getNCurrentSeeeds(); ++i)
+      for( int i = 0; i < seeedpool->getNCurrentSeeeds(); ++i)
       {
          if( seeedpool->getCurrentSeeed(i)->getID() == seeedid )
             return seeedpool->getCurrentSeeed(i);
