@@ -64,9 +64,9 @@ public:
     * @return filename including the extension
     * */
    char* GCGgetVisualizationFilename(
-      SCIP* scip,       /**< scip data structure */
-      SeeedPtr seeed,   /**< seeed that is to be visualized */
-      char* extension   /**< file extension */
+      SCIP* scip,             /**< scip data structure */
+      SeeedPtr seeed,         /**< seeed that is to be visualized */
+      const char* extension   /**< file extension */
       );
 
 

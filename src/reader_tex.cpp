@@ -66,13 +66,6 @@
 
 namespace gcg{
 
-/** data for dec reader */
-struct SCIP_ReaderData
-{
-   SCIP_Bool       usegp;           /** if true uses gp files as intermediate step */
-   SCIP_Bool       picturesonly;    /** if true only tex code for the pictures is generated (no statistics included) */
-};
-
 
 /* outputs the r, g, b decimal values for the rgb hex input */
 static
@@ -107,13 +100,14 @@ SCIP_RETCODE getRgbFromHex(
 }
 
 
+/** converts a hex color code into a tex-conform line of code that defines the color as \colorname */
 static
-SCIP_RETCODE getTexColorFromHex(
-   char* hex,        /* hex code for color */
-   char* colorname,  /* name of color */
-   char* texcode     /* output tex code for color define with given name */
+char* getTexColorFromHex(
+   char* hex,              /* hex code for color */
+   const char* colorname   /* name of color */
    )
 {
+   char* texcode;
    int r;
    int g;
    int b;
@@ -124,12 +118,14 @@ SCIP_RETCODE getTexColorFromHex(
    strcat( texcode, "\\definecolor{" );
    strcpy( texcode, colorname );
    strcpy( texcode, "}{RGB}{" );
-   strcpy( texcode, r );
+   snprintf(texcode, SCIP_MAXSTRLEN, "%d", r);
    strcpy( texcode, "," );
-   strcpy( texcode, g );
+   snprintf(texcode, SCIP_MAXSTRLEN, "%d", g);
    strcpy( texcode, "," );
-   strcpy( texcode, b );
+   snprintf(texcode, SCIP_MAXSTRLEN, "%d", b);
    strcpy( texcode, "}" );
+
+   return texcode;
 }
 
 
@@ -182,23 +178,27 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     \n");
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
    SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
-   if( usegp )
-   {
-      SCIPinfoMessage(scip, file, "\\usepackage{gnuplot-lua-tikz}                                                \n");
-   }
    SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      \n");
    SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               \n");
    SCIPinfoMessage(scip, file, "                                                                                 \n");
 
   /* introduce colors of current color scheme */
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorMasterconss()));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorMastervars()));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorLinking()));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorStairlinking()));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorBlock()));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorOpen()));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorNonzero()));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorLine()));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorMasterconss(),
+      "colormasterconss"));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorMastervars(),
+      "colormastervars"));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorLinking(),
+      "colorlinking"));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorStairlinking(),
+      "colorstairlinking"));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorBlock(),
+      "colorblock"));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorOpen(),
+      "coloropen"));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorNonzero(),
+      "colornonzero"));
+   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorLine(),
+      "colorline"));
    SCIPinfoMessage(scip, file, "                                                                                 \n");
    SCIPinfoMessage(scip, file, "\\begin{document}                                                                \n");
    SCIPinfoMessage(scip, file, "                                                                                 \n");
@@ -431,7 +431,7 @@ SCIP_RETCODE writeTexSeeed(
    Seeedpool* seeedpool    /**< current Seeedpool */
    )
 {
-
+   return SCIP_OKAY;
 }
 
 /** writes the code for a Tikz visualization of the decomposition into the file
@@ -766,7 +766,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 
       /* get path to write to and put it into gpfilename */
       gcg::MiscVisualization* miscvisu = new gcg::MiscVisualization();
-      pfile = miscvisu->GCGgetFilePath(file);
+      pfile = miscvisu->GCGgetFilePath(scip, file);
       strcpy(pfilecpy, pfile);
       SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
       strcpy(gpfilename, filepath);
@@ -886,7 +886,7 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 
 /** write LaTeX code for end of document to given file */
 static
-SCIP_RETCODE GCGtexWriteEndCode(
+SCIP_RETCODE writeTexEnding(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< File pointer to write to */
    )
@@ -908,7 +908,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    FILE* readme;
    char* filepath;
    char* filename;
-   char pfile[SCIP_MAXSTRLEN];
+   char* pfile;
    char pfilecpy[SCIP_MAXSTRLEN];
    char makefilename[SCIP_MAXSTRLEN];
    char readmename[SCIP_MAXSTRLEN];
@@ -918,7 +918,8 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    /* --- create a Makefile --- */
 
    /* get path to write to and put it into makefilename */
-   GCGgetFilePath(file, pfile);
+   gcg::MiscVisualization* miscvisu = new gcg::MiscVisualization();
+   pfile = miscvisu->GCGgetFilePath(scip, file);
    strcpy(pfilecpy, pfile);
    SCIPsplitFilename(pfilecpy, &filepath, &filename, NULL, NULL);
    strcpy(makefilename, filepath);
@@ -1046,14 +1047,9 @@ SCIPincludeReaderTex(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
-
-   /* create tex reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-
    /* include tex reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
-           readerFreeTex, readerReadTex, readerWriteTex, readerdata));
+           readerFreeTex, readerReadTex, readerWriteTex, NULL));
 
    /* include possible parameters */
    SCIP_CALL( SCIPaddBoolParam(scip,

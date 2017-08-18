@@ -40,6 +40,9 @@
 #include "struct_detector.h"
 #include "cons_decomp.h"
 
+#include <vector>
+#include <string>
+
 namespace gcg {
 
 

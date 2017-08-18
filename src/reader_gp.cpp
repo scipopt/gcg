@@ -350,7 +350,7 @@ SCIP_DECL_READERFREE(readerFreeGp)
 static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
-   MiscVisualization misc = new MiscVisualization();
+   MiscVisualization misc();
    SeeedPtr seeed;
    char* filename;
    char* outputname;
@@ -363,7 +363,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    filename = misc.GCGgetFilePath( scip, file );
 
    /* get filename for compiled file */
-   outputname = misc.GCGgetVisualizationFilename( scip, seeed, (char*) "pdf" );
+   outputname = misc.GCGgetVisualizationFilename( scip, seeed, "pdf" );
 
    GCGwriteGpVisualization( scip, filename, outputname, seeed->getID() );
 
