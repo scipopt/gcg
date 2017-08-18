@@ -76,7 +76,7 @@ struct SCIP_ReaderData
 
 /* outputs the r, g, b decimal values for the rgb hex input */
 static
-SCIP_RETCODE getRgbDecFromHex(
+SCIP_RETCODE getRgbFromHex(
    char*    hex,     /**< input hex rgb code of form "#000000" */
    int*     red,     /**< output decimal r */
    int*     green,   /**< output decimal g */
@@ -118,17 +118,17 @@ SCIP_RETCODE getTexColorFromHex(
    int g;
    int b;
 
-   getRgbDecFromHex( hex, &r, &g, &b );
+   getRgbFromHex( hex, &r, &g, &b );
    texcode = '\0';
 
    strcat( texcode, "\\definecolor{" );
    strcpy( texcode, colorname );
    strcpy( texcode, "}{RGB}{" );
-   strcpy( texcode, (char*) r );
+   strcpy( texcode, r );
    strcpy( texcode, "," );
-   strcpy( texcode, (char*) g );
+   strcpy( texcode, g );
    strcpy( texcode, "," );
-   strcpy( texcode, (char*) b );
+   strcpy( texcode, b );
    strcpy( texcode, "}" );
 }
 

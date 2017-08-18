@@ -66,7 +66,7 @@ char* MiscVisualization::GCGgetVisualizationFilename(
    char* name;
    char* detectorchainstring;
    char probname[SCIP_MAXSTRLEN];
-   char outname[SCIP_MAXSTRLEN];
+   char* outname;
    char* filename;
 
    (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));

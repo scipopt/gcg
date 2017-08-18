@@ -349,6 +349,7 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
    SCIP*     scip
    );
 
+/* returns number of finished Seeeds */
 int SCIPconshdlrDecompGetNFinishedDecomps(
    SCIP*       scip
    );

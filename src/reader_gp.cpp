@@ -363,7 +363,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    filename = misc.GCGgetFilePath( scip, file );
 
    /* get filename for compiled file */
-   outputname = misc.GCGgetVisualizationFilename( scip, seeed, "pdf" );
+   outputname = misc.GCGgetVisualizationFilename( scip, seeed, (char*) "pdf" );
 
    GCGwriteGpVisualization( scip, filename, outputname, seeed->getID() );
 
