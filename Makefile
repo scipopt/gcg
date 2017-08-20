@@ -60,6 +60,7 @@ PROJECT		=	none
 GTEST		=	true
 PARASCIP	= 	true
 BLISS      	=   true
+CLIQUER     =   true
 OPENMP      =   false
 GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
@@ -99,6 +100,26 @@ SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
 LINKMSG		+=	"bliss graph isomorphism framework (disable by compiling with \"make BLISS=false\"):\n"
 LINKMSG		+=	" -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
 LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"blissinc/libbliss.$(STATICLIBEXT)\"\n"
+endif
+
+#-----------------------------------------------------------------------------
+# Cliquer
+#-----------------------------------------------------------------------------
+
+ifeq ($(CLIQUER),false)
+FLAGS		+=	-DNCLIQUER
+else
+LDFLAGS		+= 	-lcliquer
+ifeq ($(COMP),gnu)
+FLAGS		+=	-isystem$(LIBDIR)/cliquerinc
+else
+FLAGS		+=	-I$(LIBDIR)/cliquerinc
+endif
+SOFTLINKS	+=	$(LIBDIR)/cliquerinc
+SOFTLINKS	+=	$(LIBDIR)/libcliquer.$(STATICLIBEXT)
+LINKMSG		+=	"cliquer library (disable by compiling with \"make CLIQUER=false\"):\n"
+LINKMSG		+=	" -> cliquerinc is the path to the cliquer include files, e.g., \"cliquer-1.21\"\n"
+LINKMSG		+=	" -> \"libcliquer.$(STATICLIBEXT)\" is the path to the cliquer library, e.g., \"cliquerinc/libcliquer.$(STATICLIBEXT)\"\n"
 endif
 
 #-----------------------------------------------------------------------------
@@ -188,6 +209,7 @@ LIBOBJ		=	reader_blk.o \
 			event_display.o \
 			solver_mip.o \
 			solver_knapsack.o \
+			solver_independentset.o \
 			cons_decomp.o \
 			decomp.o \
 			dec_arrowheur.o \
@@ -221,6 +243,17 @@ ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
 			dec_isomorph.o \
 			bliss.o
+endif
+
+
+ifeq ($(CLIQUER),true)
+LIBOBJ		+=	cliquer.o \
+			graph.o \
+			reorder.o
+endif
+
+ifeq ($(CLIQUER),true)
+LIBOBJ		+=	graph.o 
 endif
 
 ifeq ($(CPLEXSOLVER),true)
