@@ -145,8 +145,10 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   SCIP_CLOCK* temporaryClock;
 
-  if (seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() ||  seeedPropagationData->seeedToPropagate->getNOpenvars() != seeedPropagationData->seeedpool->getNVars() )
+  if ( seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() )
   {
+     SCIPinfoMessage(scip, NULL, " abort dec_consclass cause there are %d many open vars of %d total vars and %d many open conss of %d  total conss \n ", seeedPropagationData->seeedToPropagate->getNOpenvars(), seeedPropagationData->seeedpool->getNVars(), seeedPropagationData->seeedToPropagate->getNOpenconss() ,seeedPropagationData->seeedpool->getNConss() );
+     seeedPropagationData->seeedToPropagate->displaySeeed(seeedPropagationData->seeedpool);
     *result = SCIP_SUCCESS;
      return SCIP_OKAY;
   }
@@ -251,7 +253,9 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 
   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
-  seeedPropagationData->nNewSeeeds = foundseeeds.size();
+  seeedPropagationData->nNewSeeeds  = foundseeeds.size();
+
+  SCIPinfoMessage(scip, NULL, "dec_consclass found %d new seeeds \n", seeedPropagationData->nNewSeeeds  );
 
   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
   {

@@ -4077,7 +4077,8 @@ SCIP_RETCODE DECdetectStructure(
      conshdlrdata->seeedpool->calcClassifierAndNBlockCandidates(scip);
 
    /** get block number candidates and translate orig classification and found seeeds (if any) to presolved problem */
-   {
+     if( calculateOrigDecomps ||  classifyOrig )
+     {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "started translate seeed method!\n");
       std::vector<gcg::Seeed*> translatedSeeeds(0);
       std::vector<gcg::ConsClassifier*> translatedConsDistributions(0);
