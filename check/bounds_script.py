@@ -565,6 +565,8 @@ def generate_files(files):
                         cmap[p] = plt.cm.get_cmap('jet', max(len(runs), 5))
 
                 # plot all the runs
+                # first, create a list, to store the plot-handles, that have to be inlcuded in the legend
+                handles = []
                 for iter_run, df in enumerate(runs):
                     # plot the lpvars
                     if params['lpvars']:
@@ -590,21 +592,28 @@ def generate_files(files):
                             frmtStr = 'o'
                         elif params['bdlinestyle'] == 'both':
                             frmtStr = '-o'
-                        axes['db'].plot(df[xaxis], df['pb'], frmtStr, color = cmap['db'](iter_run), label='pb ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6)
-                        axes['db'].plot(df[xaxis], df['db'], frmtStr, color = cmap['db'](iter_run), label='db ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6)
+                        tmp, = axes['db'].plot(df[xaxis], df['pb'], frmtStr, color = cmap['db'](iter_run), label=set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6)
+                        handles.append(tmp)
+                        axes['db'].plot(df[xaxis], df['db'], frmtStr, color = cmap['db'](iter_run), linewidth=0.8, markersize = 1.6)
                         if params['dualdiff'] or params['dualoptdiff']:
                             axes['db_diff'] = axes['db'].twinx()
                             if params['dualdiff']:
-                                axes['db_diff'].plot(df[xaxis], df['dualdiff'], frmtStr, color = cmap['db'](iter_run), label='dualdiff ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6, alpha = 0.7)
+                                axes['db_diff'].plot(df[xaxis], df['dualdiff'], '--', color = cmap['db'](iter_run), label='dualdiff ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6, alpha = 0.6)
                             if params['dualoptdiff']:
-                                axes['db_diff'].plot(df[xaxis], df['dualoptdiff'], frmtStr, color = cmap['db'](iter_run), label='dualdiff ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6, alpha = 0.7)
+                                axes['db_diff'].plot(df[xaxis], df['dualoptdiff'], '--', color = cmap['db'](iter_run), label='dualdiff ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6, alpha = 0.6)
 
-                # create the legends
-                for p in axes:
-                    axes[p].legend()
+                # set y label of secondary y-axis if necessary
+                if params['dualdiff'] or params['dualoptdiff']:
+                    plt.ylabel('Differences', fontsize=10, rotation=-90, labelpad=15)
 
                 # ensure, that there is enough space for labels
                 plt.tight_layout()
+
+                # create the legend
+                axes['db'].legend(handles = handles, loc='lower left', bbox_to_anchor = (0,1.02,1,0.2), ncol=3, mode='expand')
+
+                # make room for the legend
+                plt.subplots_adjust(top=0.9)
 
                 # set the size of the figure (a too small size will lead to too large legends)
                 plt.gcf().set_size_inches(9.33,7)
