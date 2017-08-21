@@ -421,8 +421,9 @@ bool Seeed::assignHittingOpenconss(
       {
          for( int v = 0; v < seeedpool->getNVarsForCons( cons ); ++ v )
          {
-            std::vector<int>::iterator lb = lower_bound( stairlinkingVars[b].begin(), stairlinkingVars[b].end(), var );
-            if( lb != stairlinkingVars[b].end() &&  *lb == var )
+            int var2 = seeedpool->getVarsForCons(cons)[v];
+            std::vector<int>::iterator lb = lower_bound( stairlinkingVars[b].begin(), stairlinkingVars[b].end(), var2 );
+            if( lb != stairlinkingVars[b].end() &&  *lb == var2 )
             {
                stairlinking = true;
                blocksOfStairlinkingvars.push_back( b );
@@ -1608,6 +1609,8 @@ SCIP_RETCODE Seeed::considerImplicits(
 
    changedHashvalue = true;
 
+   sort();
+
    /** set openConss with more than two blockvars to master */
    for( size_t c = 0; c < openConss.size(); ++ c )
    {
@@ -1620,11 +1623,6 @@ SCIP_RETCODE Seeed::considerImplicits(
       {
          var = seeedpool->getVarsForCons( cons )[v];
 
-         if( isVarOpenvar( var ) )
-         {
-            hitsOpenVar = true;
-            continue;
-         }
 
          if( isVarMastervar( var ) )
          {
@@ -1632,6 +1630,13 @@ SCIP_RETCODE Seeed::considerImplicits(
             bookAsMasterCons( cons );
             continue;
          }
+
+         if( isVarOpenvar( var ) )
+         {
+            hitsOpenVar = true;
+            continue;
+         }
+
 
          for( int b = 0; b < nBlocks && ! master; ++ b )
          {
@@ -1807,16 +1812,16 @@ SCIP_RETCODE Seeed::deleteOpenvar(
 }
 
 /** displays the assignments of the conss */
-SCIP_RETCODE Seeed::displayConss()
+SCIP_RETCODE Seeed::displayConss(Seeedpool* seeedpool)
 {
    for( int b = 0; b < nBlocks; ++ b )
    {
       if( getNConssForBlock( b ) != 0 )
       {
          std::cout << "constraint(s) in block " << b << ": ";
-         std::cout << getConssForBlock( b )[0];
+         std::cout << getConssForBlock( b )[0] << "|" << SCIPconsGetName(seeedpool->getConsForIndex(getConssForBlock( b )[0]) ) ;
          for( int c = 1; c < getNConssForBlock( b ); ++ c )
-            std::cout << ", " << getConssForBlock( b )[c];
+            std::cout << ", " << getConssForBlock( b )[c] << "|" << SCIPconsGetName(seeedpool->getConsForIndex(getConssForBlock( b )[c]) ) ;
          std::cout << "\n";
       }
       else
@@ -2016,26 +2021,29 @@ SCIP_Real Seeed::evaluate(
    SCIP_Real alphalinking;
    SCIP_Real alphadensity;
 
-   SCIP_Real blackarea;
+   unsigned long blackarea;
 
    maxwhitescore = 1.;
    alphaborderarea = 0.6;
    alphalinking = 0.2;
    alphadensity = 0.2;
-   blackarea = 0.;
+   blackarea = 0;
+
+   if ( !checkConsistency(seeedpool) )
+      std::cout << "!!!!!!!!!!!!!!! inconsistencies !!!!! " << std::endl;
 
    /* calculate bound on max white score */
    if( getNOpenconss() != 0 || getNOpenvars() != 0 )
    {
       blackarea += ( getNLinkingvars() + getNTotalStairlinkingvars() ) * getNConss();
-      blackarea += getNMasterconss() * getNVars();
-      blackarea -= getNMastervars() * getNLinkingvars();
+      blackarea += (unsigned long) getNMasterconss() * (unsigned long) getNVars();
+      blackarea -= (unsigned long) getNMastervars() * (unsigned long) getNMasterconss();
       for( i = 0; i < nBlocks; ++ i )
       {
-         blackarea += getNConssForBlock( i ) * getNVarsForBlock( i );
+         blackarea += (unsigned long) getNConssForBlock( i ) * (unsigned long) getNVarsForBlock( i );
       }
 
-      maxwhitescore = blackarea / ( getNConss() * getNVars() );
+      maxwhitescore = (SCIP_Real) blackarea / (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() );
 
       return maxwhitescore;
 
@@ -2060,11 +2068,11 @@ SCIP_Real Seeed::evaluate(
    /* calculate matrix area */
    matrixarea = nVars * nConss;
 
-   blackarea += ( getNLinkingvars() + getNTotalStairlinkingvars() ) * getNConss();
-   blackarea += getNMasterconss() * getNVars();
+   blackarea += (unsigned long) ( getNLinkingvars() + getNTotalStairlinkingvars() ) * (unsigned long) getNConss();
+   blackarea += (unsigned long) getNMasterconss() * ( (unsigned long) getNVars() - ( getNLinkingvars() + getNTotalStairlinkingvars() ) ) ;
 
-   blackarea -= getNMasterconss() * ( getNLinkingvars() + getNTotalStairlinkingvars() );
-
+   //std::cout << " black area without blocks is " <<  "(" << getNLinkingvars() << " + " << getNTotalStairlinkingvars() << " )  * " << getNConss() <<  " + " <<  getNMasterconss() << "  * ( " << getNVars() << "  -  ( " << getNLinkingvars() << " + " <<  getNTotalStairlinkingvars() << " ) ) "
+   //   <<     " = " <<   blackarea << std::endl;
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++ i )
@@ -2077,7 +2085,12 @@ SCIP_Real Seeed::evaluate(
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
-      blackarea += getNConssForBlock( i ) * ( getNVarsForBlock( i ) );
+
+  //    std::cout << "blackarea =  " << blackarea << " +  " << getNConssForBlock( i ) << " * " << getNVarsForBlock( i ) << " = " << getNConssForBlock( i ) * ( getNVarsForBlock( i ) );
+
+      blackarea += (unsigned long) getNConssForBlock( i ) * ( (unsigned long) getNVarsForBlock( i ) );
+    //  std::cout << " =  " << blackarea  << std::endl;
+
       for( j = 0; j < nVars; ++ j )
       {
          ishandled[j] = FALSE;
@@ -2092,7 +2105,7 @@ SCIP_Real Seeed::evaluate(
          for( k = 0; k < ncurvars; ++ k )
          {
             int var = seeedpool->getVarsForCons( cons )[k];
-            int block;
+            int block = -3;
             if( isVarBlockvarOfBlock( var, i ) )
                block = i + 1;
             else if( isVarLinkingvar( var ) || isVarStairlinkingvar( var ) )
@@ -2135,7 +2148,11 @@ SCIP_Real Seeed::evaluate(
 
    borderarea = getNMasterconss() * nVars
       + ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) * ( nConss - getNMasterconss() );
-   maxwhitescore = blackarea / ( getNConss() * getNVars() );
+
+   maxwhitescore = (SCIP_Real) blackarea /  (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() );
+//   std::cout << "black area ration =  " << blackarea << "/ ( " << getNConss() << " * " << getNVars() << " =  " << ( (unsigned long) getNConss() * (unsigned long) getNVars() ) << ")  = " << maxwhitescore << std::endl;
+
+   std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    this seeed has a black area ratio of " << maxwhitescore << std::endl;
 
    density = 1E20;
    varratio = 1.0;

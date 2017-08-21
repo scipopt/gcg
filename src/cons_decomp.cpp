@@ -1400,7 +1400,14 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    if( commandlen != 0)
       idtovisu = atoi(ntovisualize);
 
+
+
    gcg::Seeedpool* seeedpool = (conshdlrdata->listall->at(idtovisu)->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+
+//   conshdlrdata->listall->at(idtovisu)->displaySeeed(seeedpool);
+//   conshdlrdata->listall->at(idtovisu)->displayConss(seeedpool);
+//   conshdlrdata->listall->at(idtovisu)->displayVars(seeedpool);
+
    conshdlrdata->listall->at(idtovisu)->showVisualisation(seeedpool);
 
    return SCIP_OKAY;
