@@ -136,6 +136,7 @@ def generate_files(files):
 
     # Create a dictionary, where all the dataframes, that are generated in the following, are 'globally' stored for comparison
     df_dict = {}
+    set_dict = {}
 
     for file in files:
         # file = os.path.join(DIR, filename)
@@ -440,7 +441,9 @@ def generate_files(files):
                     if params['compare']:
                         if not (name in df_dict):
                             df_dict[name] = []
+                            set_dict[name] = []
                         df_dict[name].append(df.copy())
+                        set_dict[name].append(settings)
 
                     # reset python variables for next instance
                     df = None
@@ -559,7 +562,7 @@ def generate_files(files):
                     if p == 'db':
                         cmap[p] = plt.cm.get_cmap('jet', max(len(runs), 5))
                     else:
-                        cmap[p] = plt.cm.get_cmap('gnuplot', max(len(runs), 5))
+                        cmap[p] = plt.cm.get_cmap('jet', max(len(runs), 5))
 
                 # plot all the runs
                 for iter_run, df in enumerate(runs):
@@ -569,7 +572,7 @@ def generate_files(files):
                             frmtStr = '-'
                         elif params['lplinestyle'] == 'scatter':
                             frmtStr = 'o'
-                        axes['lp'].plot(df[xaxis], df['lpvars'], frmtStr, color = cmap['lp'](iter_run), label ='lpvars ' + str(iter_run + 1), markersize=1.6, linewidth = 0.8)
+                        axes['lp'].plot(df[xaxis], df['lpvars'], frmtStr, color = cmap['lp'](iter_run), label ='lpvars ' + set_dict[name][iter_run]+ ' ' + str(iter_run + 1), markersize=1.6, linewidth = 0.8)
 
                     # plot the ipvars
                     if params['ipvars']:
@@ -577,7 +580,7 @@ def generate_files(files):
                             frmtStr = '-'
                         elif params['iplinestyle'] == 'scatter':
                             frmtStr = 'o'
-                        axes['ip'].plot(df[xaxis], df['ipvars'], frmtStr, color = cmap['ip'](iter_run), label ='ipvars ' + str(iter_run + 1), markersize=1.6, linewidth = 0.8)
+                        axes['ip'].plot(df[xaxis], df['ipvars'], frmtStr, color = cmap['ip'](iter_run), label ='ipvars '+ set_dict[name][iter_run] + ' ' + str(iter_run + 1), markersize=1.6, linewidth = 0.8)
 
                     # bounds/dualdiff plot
                     if params['bounds']:
@@ -587,8 +590,14 @@ def generate_files(files):
                             frmtStr = 'o'
                         elif params['bdlinestyle'] == 'both':
                             frmtStr = '-o'
-                        axes['db'].plot(df[xaxis], df['pb'], frmtStr, color = cmap['db'](iter_run), label='pb ' + str(iter_run + 1), linewidth=0.8, markersize = 1.6)
-                        axes['db'].plot(df[xaxis], df['db'], frmtStr, color = cmap['db'](iter_run), label='db ' + str(iter_run + 1), linewidth=0.8, markersize = 1.6)
+                        axes['db'].plot(df[xaxis], df['pb'], frmtStr, color = cmap['db'](iter_run), label='pb ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6)
+                        axes['db'].plot(df[xaxis], df['db'], frmtStr, color = cmap['db'](iter_run), label='db ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6)
+                        if params['dualdiff'] or params['dualoptdiff']:
+                            axes['db_diff'] = axes['db'].twinx()
+                            if params['dualdiff']:
+                                axes['db_diff'].plot(df[xaxis], df['dualdiff'], frmtStr, color = cmap['db'](iter_run), label='dualdiff ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6, alpha = 0.7)
+                            if params['dualoptdiff']:
+                                axes['db_diff'].plot(df[xaxis], df['dualoptdiff'], frmtStr, color = cmap['db'](iter_run), label='dualdiff ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6, alpha = 0.7)
 
                 # create the legends
                 for p in axes:
