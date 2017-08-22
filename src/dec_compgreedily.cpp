@@ -178,7 +178,7 @@ DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   gcg::Seeed* seeed;
+   gcg::Seeed* seeed = NULL;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
    //assign open conss and vars greedily

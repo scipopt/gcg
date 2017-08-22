@@ -724,8 +724,9 @@ Seeedpool::Seeedpool(
          valsMap[std::pair<int, int>( i, varIndex )] = currVals[currVar];
          ++ nnonzeros;
       }
-      SCIPfreeBufferArrayNull( scip, & currVars );
       SCIPfreeBufferArrayNull( scip, & currVals );
+      SCIPfreeBufferArrayNull( scip, & currVars );
+
    }
 
    /*  init  seeedpool with empty seeed */
@@ -2461,8 +2462,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
          nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_FREE]++;
          nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_FREE]++;
          classforcons[c] = SCIP_CONSTYPE_FREE;
-         SCIPfreeBufferArray(scip, &vals);
          SCIPfreeBufferArray(scip, &vars);
+         SCIPfreeBufferArray(scip, &vals);
          continue;
       }
 
@@ -2474,8 +2475,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
          nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_SINGLETON] += 2 ;
          nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_SINGLETON]++;
          classforcons[c] = SCIP_CONSTYPE_SINGLETON;
-         SCIPfreeBufferArray(scip, &vals) ;
          SCIPfreeBufferArray(scip, &vars) ;
+         SCIPfreeBufferArray(scip, &vals) ;
          continue;
       }
 
@@ -2487,8 +2488,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
          nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_AGGREGATION]++;
          nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_AGGREGATION]++;
          classforcons[c] = SCIP_CONSTYPE_AGGREGATION;
-         SCIPfreeBufferArray(scip, &vals) ;
          SCIPfreeBufferArray(scip, &vars) ;
+         SCIPfreeBufferArray(scip, &vals) ;
          continue;
       }
 
@@ -2500,8 +2501,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
          nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_VARBOUND] += 2 ;
          nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_VARBOUND]++;
          classforcons[c] = SCIP_CONSTYPE_VARBOUND;
-         SCIPfreeBufferArray(scip, &vals) ;
          SCIPfreeBufferArray(scip, &vars) ;
+         SCIPfreeBufferArray(scip, &vals) ;
          continue;
       }
 
@@ -2539,8 +2540,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
                   nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_SETPARTITION] += 1 ;
                   nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_SETPARTITION]++;
                   classforcons[c] = SCIP_CONSTYPE_SETPARTITION;
-                  SCIPfreeBufferArray(scip, &vals) ;
                   SCIPfreeBufferArray(scip, &vars) ;
+                  SCIPfreeBufferArray(scip, &vals) ;
                   continue;
                }
                else if( SCIPisIntegral(scip, b) && !SCIPisNegative(scip, b) )
@@ -2550,8 +2551,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
                   nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_CARDINALITY] += 1 ;
                   nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_CARDINALITY]++;
                   classforcons[c] = SCIP_CONSTYPE_CARDINALITY;
-                  SCIPfreeBufferArray(scip, &vals);
                   SCIPfreeBufferArray(scip, &vars);
+                  SCIPfreeBufferArray(scip, &vals);
                   continue;
                }
             }
@@ -2589,8 +2590,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
             if( SCIPisInfinity(scip, -lhs) && SCIPisInfinity(scip, rhs) )
             {
-               SCIPfreeBufferArray(scip, &vals);
                SCIPfreeBufferArray(scip, &vars);
+               SCIPfreeBufferArray(scip, &vals);
                continue;
             }
          }
@@ -2627,8 +2628,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
                nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_EQKNAPSACK] += 1 ;
                nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_EQKNAPSACK]++;
                classforcons[c] = SCIP_CONSTYPE_EQKNAPSACK;
-               SCIPfreeBufferArray(scip, &vals);
                SCIPfreeBufferArray(scip, &vars);
+               SCIPfreeBufferArray(scip, &vals);
                continue;
             }
             else
@@ -2651,8 +2652,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
             if( SCIPisInfinity(scip, -lhs) )
             {
-               SCIPfreeBufferArray(scip, &vals);
                SCIPfreeBufferArray(scip, &vars);
+               SCIPfreeBufferArray(scip, &vals);
                continue;
             }
             else
@@ -2688,8 +2689,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
 
             if( SCIPisInfinity(scip, -lhs) )
             {
-               SCIPfreeBufferArray(scip, &vals);
                SCIPfreeBufferArray(scip, &vars);
+               SCIPfreeBufferArray(scip, &vals);
                continue;
             }
             else
@@ -2717,8 +2718,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
             nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_MIXEDBINARY] += 1 ;
             nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_MIXEDBINARY]++;
             classforcons[c] = SCIP_CONSTYPE_MIXEDBINARY;
-            SCIPfreeBufferArray(scip, &vals) ;
             SCIPfreeBufferArray(scip, &vars) ;
+            SCIPfreeBufferArray(scip, &vals) ;
             continue;
 
          }
@@ -2730,8 +2731,8 @@ ConsClassifier* Seeedpool::createConsClassifierForMiplibConstypes()
       nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_GENERAL] += 1 ;
       nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_GENERAL]++;
       classforcons[c] = SCIP_CONSTYPE_GENERAL;
-      SCIPfreeBufferArray(scip, &vals);
       SCIPfreeBufferArray(scip, &vars);
+      SCIPfreeBufferArray(scip, &vals);
    }
 
 

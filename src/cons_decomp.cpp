@@ -865,17 +865,14 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       delete conshdlrdata->seeedpoolunpresolved;
 
    if( conshdlrdata->candidates != NULL )
-         delete &conshdlrdata->candidates;
+         delete conshdlrdata->candidates;
 
-//   SCIPfreeMemoryArrayNull(scip, &conshdlrdata->incompleteseeeds );
-//   SCIPfreeMemoryArrayNull( scip, &conshdlrdata->allrelevantfinishedseeeds) ;
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
-//   SCIPfreeMemoryArrayNull(scip, &conshdlrdata->decdecomps);
 
-   delete &conshdlrdata->selected;
-   delete &conshdlrdata->listall;
-   delete &conshdlrdata->userblocknrcandidates;
+   delete conshdlrdata->selected;
+   delete conshdlrdata->listall;
+   delete conshdlrdata->userblocknrcandidates;
 
    SCIPfreeMemory(scip, &conshdlrdata);
 
