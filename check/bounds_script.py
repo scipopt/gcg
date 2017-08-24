@@ -476,9 +476,9 @@ def generate_files(files):
             if len(runs) > 1:
                 print "Compare " + str(len(runs)) + " runs of " + name
                 # set maximum and minimum of x values (time or iterations) to synchronize the plots
-                xmax = runs[0].max()
-                xmin = runs[0].min()
-                for run in runs[1:]:
+                xmax = 10000
+                xmin = 0
+                for run in runs:
                     if run[xaxis].max() > xmax:
                         xmax = run[xaxis].max()
                     if run[xaxis].min() < xmin:
