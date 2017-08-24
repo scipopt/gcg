@@ -490,6 +490,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
       SCIP_CALL( GCGwriteDecomp(scip, NULL, decomp) );
    }
 
+   SCIP_CALL(DECdecompFree(scip, &decomp) );
+
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    return SCIP_OKAY;
@@ -499,6 +501,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
 /** dialog execution method for the display additionalstatistics command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
 {  /*lint --e{715}*/
+
+   DEC_DECOMP* bestdecomp;
+
+
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
    if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING || SCIPgetStage(scip) == SCIP_STAGE_SOLVED )
    {
@@ -510,7 +516,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
       }
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "\nAdditional statistics:\n");
-      if( DECdecompGetType(DECgetBestDecomp(scip)) == DEC_DECTYPE_DIAGONAL )
+      bestdecomp = DECgetBestDecomp(scip);
+      if( DECdecompGetType(bestdecomp) == DEC_DECTYPE_DIAGONAL )
       {
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), NULL, "\n");
          SCIP_CALL( GCGwriteDecompositionData(scip) );
@@ -523,6 +530,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
          SCIP_CALL( GCGwriteDecompositionData(scip) );
          SCIP_CALL( GCGwriteVarCreationDetails(GCGgetMasterprob(scip)) );
       }
+      DECdecompFree(scip, &bestdecomp);
    }
    else
    {
@@ -752,7 +760,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIP_CALL( DECdetectStructure(scip, &result) );
          if( result == SCIP_DIDNOTFIND )
          {
-            assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
+            DEC_DECOMP* bestdecomp;
+            bestdecomp = DECgetBestDecomp(scip);
+            assert(bestdecomp == NULL && DEChasDetectionRun(scip));
+            DECdecompFree(scip, &bestdecomp);
             SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
             break;
          }

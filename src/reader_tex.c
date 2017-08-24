@@ -132,12 +132,18 @@ static
 SCIP_DECL_READERWRITE(readerWriteTex)
 {  /*lint --e{715}*/
 
+   DEC_DECOMP* bestdecomp;
+
    assert(scip != NULL);
    assert(reader != NULL);
 
+   bestdecomp = DECgetBestDecomp(scip);
+
    SCIP_CALL( GCGtexWriteHeaderCode(scip,file) );
-   SCIP_CALL( GCGtexWriteDecompCode(scip, file, DECgetBestDecomp(scip)) );
+   SCIP_CALL( GCGtexWriteDecompCode(scip, file, bestdecomp) );
    SCIP_CALL( GCGtexWriteEndCode(scip,file) );
+
+   DECdecompFree(scip, &bestdecomp);
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;

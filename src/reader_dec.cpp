@@ -1230,8 +1230,14 @@ SCIP_DECL_READERWRITE(readerWriteDec)
    assert(scip != NULL);
    assert(reader != NULL);
 
-   SCIP_CALL( GCGwriteDecomp(scip, file, DECgetBestDecomp(scip)) );
+   DEC_DECOMP* bestdecomp;
+
+   bestdecomp = DECgetBestDecomp(scip);
+
+   SCIP_CALL( GCGwriteDecomp(scip, file, bestdecomp ) );
    *result = SCIP_SUCCESS;
+
+   DECdecompFree(scip, &bestdecomp);
 
    return SCIP_OKAY;
 }

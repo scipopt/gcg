@@ -393,9 +393,15 @@ static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
    /*lint --e{715}*/
+   DEC_DECOMP* bestdecomp;
    assert(scip != NULL);
 
-   SCIP_CALL( SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE, TRUE) );
+
+   bestdecomp = DECgetBestDecomp(scip);
+
+   SCIP_CALL( SCIPwriteGp(scip, file, bestdecomp, TRUE, TRUE) );
+
+   DECdecompFree(scip, &bestdecomp);
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;

@@ -2119,6 +2119,12 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
    }
 
+   /* free used decomposition */
+   if( relaxdata->decdecomp != NULL )
+   {
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+   }
+
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;

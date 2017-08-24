@@ -724,6 +724,10 @@ SCIP_RETCODE createOneBlockDecomp(
 
    SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, newdecomp) );
 
+   SCIP_CALL( SCIPhashmapFree(&newconstoblock ) );
+
+   SCIP_CALL( DECdecompFree(scip, &newdecomp ));
+
    return SCIP_OKAY;
 }
 
@@ -3354,13 +3358,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       /** stems from presolved problem? */
       if( !conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
       {
-         DEC_DECOMP* newdecomp;
-
-         SCIP_CALL( conshdlrdata->seeedpool->createDecompFromSeeed(seeed, &newdecomp) );
-
          SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, conshdlrdata->curruserseeed));
-
-
       }
       /** stems from unpresolved problem */
       else
@@ -3533,7 +3531,6 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
       if( (*seeediter)->isComplete() )
       {
          SCIP_CALL(SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, *seeediter ) );
-
          *success = TRUE;
          SCIPdebugMessagePrint(scip, " SUCCESS: unpresolved complete seeed did translate to complete presolved one \n");
       }
@@ -3735,7 +3732,6 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    finished = conshdlrdata->seeedpool->finishIncompleteSeeeds(tofinishpresolved);
    finishedunpresolved = conshdlrdata->seeedpoolunpresolved->finishIncompleteSeeeds(tofinishunpresolved);
 
-
    seeediter = selectedseeeds.begin();
    seeediterend = selectedseeeds.end();
 
@@ -3752,8 +3748,6 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
          conshdlrdata->candidates->push_back( std::pair<SeeedPtr, SCIP_Real>(seeed, SCIPconshdlrDecompAdaptScore(scip, seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) ) ) );
       }
    }
-
-
 
    seeediter = finished.begin();
    seeediterend = finished.end();
@@ -3773,9 +3767,6 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    /* sort decomp candidates according score */
    std::sort( conshdlrdata->candidates->begin(), conshdlrdata->candidates->end(), sort_pred() );
-
-
-
 
    return SCIP_OKAY;
 }
@@ -4698,7 +4689,7 @@ SCIP_RETCODE DECwriteFamilyTree(
 	return SCIP_OKAY;
 }
 
-/** returns the best known decomposition, if available and NULL otherwise */
+/** returns the best known decomposition, if available and NULL otherwise, caller has to free returned DEC_DECOMP */
 DEC_DECOMP* DECgetBestDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -4906,7 +4897,7 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
       decomps[i] = decomp;
    }
 
-
+/**  atm only presolved decomposition are allowed
    for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
    {
       DEC_DECOMP* decomp;
@@ -4914,7 +4905,7 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
 
       decomps[i + conshdlrdata->seeedpool->getNFinishedSeeeds()] = decomp;
    }
-
+**/
    return decomps;
 }
 

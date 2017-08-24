@@ -752,6 +752,22 @@ Seeedpool::~Seeedpool()
          delete ancestorseeeds[help];
    }
 
+
+   for( size_t i = 0; i < finishedSeeeds.size(); ++i )
+   {
+      size_t help = finishedSeeeds.size() - i - 1;
+      if( finishedSeeeds[help] != NULL && finishedSeeeds[help]->getID() >= 0 )
+         delete finishedSeeeds[help];
+   }
+
+   for( size_t i = 0; i < incompleteSeeeds.size(); ++i )
+   {
+      size_t help = incompleteSeeeds.size() - i - 1;
+      if( incompleteSeeeds[help] != NULL && incompleteSeeeds[help]->getID() >= 0 )
+         delete incompleteSeeeds[help];
+   }
+
+
    for( size_t i = 0; i < consclassescollection.size(); ++ i )
    {
       size_t help = consclassescollection.size() - i - 1;
@@ -1201,6 +1217,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          delete seeedPropData->seeedToPropagate;
          delete seeedPropData;
       }
+#pragma omp critical ( seeedptrstore )
        addSeeedToAncestor(seeedPtr);
    } // end for finishing curr seeeds
 
@@ -1276,6 +1293,9 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    }
 
    sortAllRelevantSeeeds();
+
+
+
 
    return finishedSeeeds;
  }
@@ -3547,8 +3567,8 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    /** now: set variables */
    SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & nsubscipvars, seeed->getNBlocks() ) );
    SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & subscipvars, seeed->getNBlocks() ) );
-   SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & stairlinkingvars, seeed->getNBlocks() ) );
    SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & nstairlinkingvars, seeed->getNBlocks() ) );
+   SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & stairlinkingvars, seeed->getNBlocks() ) );
 
    SCIP_CALL_ABORT( SCIPhashmapCreate( & vartoblock, SCIPblkmem( scip ), seeed->getNVars() ) );
    SCIP_CALL_ABORT( SCIPhashmapCreate( & varindex, SCIPblkmem( scip ), seeed->getNVars() ) );
@@ -3634,17 +3654,21 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    /** free stuff */
 
-   /** free constraints */
-   SCIPfreeBufferArrayNull( scip, & linkingconss );
-   SCIPfreeBufferArrayNull( scip, & nsubscipconss );
-   for( int b = seeed->getNBlocks() - 1; b >= 0; -- b )
-   {
-      SCIPfreeBufferArrayNull( scip, & ( subscipconss[b] ) );
-   }
-   SCIPfreeBufferArrayNull( scip, & ( subscipconss ) );
 
    /** free vars stuff */
    SCIPfreeBufferArrayNull( scip, & ( linkingvars ) );
+   for( int b = seeed->getNBlocks() - 1; b >= 0; -- b )
+   {
+      if( nstairlinkingvars[b] != 0 )
+      {
+         SCIPfreeBufferArrayNull( scip, & ( stairlinkingvars[b] ) );
+      }
+   }
+
+
+   SCIPfreeBufferArrayNull( scip, & ( stairlinkingvars ) );
+   SCIPfreeBufferArrayNull( scip, & ( nstairlinkingvars ) );
+
    for( int b = seeed->getNBlocks() - 1; b >= 0; -- b )
    {
       if( nsubscipvars[b] != 0 )
@@ -3656,15 +3680,18 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIPfreeBufferArrayNull( scip, & ( subscipvars ) );
    SCIPfreeBufferArrayNull( scip, & ( nsubscipvars ) );
 
+
+   /** free constraints */
    for( int b = seeed->getNBlocks() - 1; b >= 0; -- b )
    {
-      if( nstairlinkingvars[b] != 0 )
-      {
-         SCIPfreeBufferArrayNull( scip, & ( stairlinkingvars[b] ) );
-      }
+      SCIPfreeBufferArrayNull( scip, & ( subscipconss[b] ) );
    }
-   SCIPfreeBufferArrayNull( scip, & ( stairlinkingvars ) );
-   SCIPfreeBufferArrayNull( scip, & ( nstairlinkingvars ) );
+   SCIPfreeBufferArrayNull( scip, & ( subscipconss ) );
+
+
+   SCIPfreeBufferArrayNull( scip, & nsubscipconss );
+   SCIPfreeBufferArrayNull( scip, & linkingconss );
+
 
    /** set detectorchain */
    int ndetectors = seeed->getNDetectors();

@@ -3803,6 +3803,8 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPfreeBlockMemoryArray(scip, &nimplvars, nblocks);
    SCIPfreeBlockMemoryArray(scip, &ncontvars, nblocks);
 
+   DECdecompFree(scip, &decomp);
+
    return SCIP_OKAY;
 }
 
