@@ -124,11 +124,18 @@ private:
                                                          *< open for each detector working on that seeed*/
    std::vector<int> nNewBlocks;                       /**< vector containing detector indices that worked on that seeed */
 
-   std::vector<int> usedConsClassifier;
-   std::vector<int> usedVarClassifier;
-   std::vector<std::vector<int>> consClassesMaster;
-   std::vector<std::vector<int>> varClassesLinking;
-   std::vector<std::vector<int>> varClassesMaster;
+   std::vector<int> usedConsClassifier;               /**< vector containing the (seeedpool) index of the consclassifier
+                                                         *< a detector made use of for each detector working on that seeed
+                                                         *< (-1 if no consclassifier was used) */
+   std::vector<int> usedVarClassifier;                /**< vector containing the (seeedpool) index of the varclassifier
+                                                         *< a detector made use of for each detector working on that seeed
+                                                         *< (-1 if no varclassifier was used) */
+   std::vector<std::vector<int>> consClassesMaster;   /**< vector containing the vector of consclassindices that were assigned
+                                                         *< to master by the consclassifier used by a detector */
+   std::vector<std::vector<int>> varClassesLinking;   /**< vector containing the vector of varclassindices that were assigned
+                                                         *< to linking by the varclassifier used by a detector */
+   std::vector<std::vector<int>> varClassesMaster;    /**< vector containing the vector of varclassindices that were assigned
+                                                         *< to master by the varclassifier used by a detector */
 
    std::vector<int> listofancestorids;                /**< vector containing detector indices that worked on that seeed */
    USERGIVEN usergiven;                               /**< is this seeed partially or completely given by user */
@@ -513,10 +520,10 @@ public:
    /** displays the relevant information of the seeed */
    SCIP_RETCODE displayInfo(
       Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
-      int detailLevel /**< @todo pass a value that indicates how detailed the output should be:
-                              0: overview
-                              1: some details
-                              2: every accessible information */
+      int detailLevel /**< pass a value that indicates how detailed the output should be:
+                              0: brief overview
+                              1: block and detector info
+                              2: cons and var assignments */
       );
 
    /** returns array containing all linking vars */

@@ -1452,6 +1452,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
    conshdlrdata = SCIPconshdlrGetData( conshdlr );
    assert( conshdlrdata != NULL );
 
+   /* read the id of the decomposition to be inspected */
    SCIPdialogMessage( scip, NULL, "Please specify the id of the decomposition to be inspected:\n" );
    SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ntoinspect, &endoffile ) );
    commandlen = strlen( ntoinspect );
@@ -1468,6 +1469,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
       }
    }
 
+   /* read the desired detail level; for wrong input, it is set to 1 by default */
    SCIPdialogMessage( scip, NULL, "Please specify the detail level:\n  0 - brief overview\n  1 - block and detector info (default)\n  2 - cons and var assignments\n" );
    SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ndetaillevel, &endoffile ) );
    commandlen = strlen( ndetaillevel );
@@ -1484,6 +1486,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
       }
    }
 
+   /* call displayInfo method accoridng to chosen parameters */
    if( 0 <= idtoinspect && idtoinspect < (int)conshdlrdata->listall->size() )
    {
       gcg::Seeedpool* seeedpool = ( conshdlrdata->listall->at( idtoinspect )->isFromUnpresolved() ?
@@ -1492,7 +1495,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
    }
    else
    {
-      SCIPdialogMessage( scip, NULL, "\"%s\" is not an existing id.", ntoinspect );
+      SCIPdialogMessage( scip, NULL, "This is not an existing id." );
    }
 
    return SCIP_OKAY;
