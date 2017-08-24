@@ -296,6 +296,13 @@ def generate_files(files):
                     # set maximum and minimum of x values (time or iterations) to synchronize the plots
                     xmax = df[xaxis].max()
                     xmin = df[xaxis].min()
+                    # workaround for identical limits (will produce UserWarnings otherwise)
+                    if xmax == xmin:
+                        if xmax == 0:
+                            xmax = 0.01
+                        else:
+                            xmin = 0.95*xmin
+                            xmax = 1.05*xmax
 
                     # set index to time or iterations (depending on which is used)
                     df = df.set_index(keys=xaxis, drop=False)
@@ -427,6 +434,9 @@ def generate_files(files):
                     # ensure, that there is enough space for labels
                     plt.tight_layout()
 
+                    # set the size of the figure (a too small size will lead to too large legends)
+                    plt.gcf().set_size_inches(9.33,7)
+
                     # save figure and ensure, that there are not two files with the same name
                     fig_filename = params['outdir']+"/"+name+"_"+settings+"_"+xaxis
                     i = ""
@@ -435,7 +445,7 @@ def generate_files(files):
                             i = "2"
                         else:
                             i = str(int(i)+1)
-                    plt.savefig(fig_filename + i + ".png")
+                    plt.savefig(fig_filename + i + ".png", dpi=300)
 
                     # store the current dataframe globally
                     if params['compare']:
@@ -466,13 +476,20 @@ def generate_files(files):
             if len(runs) > 1:
                 print "Compare " + str(len(runs)) + " runs of " + name
                 # set maximum and minimum of x values (time or iterations) to synchronize the plots
-                xmax = 0
-                xmin = 10000
-                for run in runs:
+                xmax = runs[0].max()
+                xmin = runs[0].min()
+                for run in runs[1:]:
                     if run[xaxis].max() > xmax:
                         xmax = run[xaxis].max()
                     if run[xaxis].min() < xmin:
                         xmin = run[xaxis].min()
+                # workaround for identical limits
+                if xmin == xmax:
+                    if xmax == 0:
+                        xmax = 0.01
+                    else:
+                        xmin = 0.95*xmin
+                        xmax = 1.05*xmax
 
                 # number of plots, the user wants
                 nplots = params['bounds'] + params['lpvars'] + params['ipvars']
