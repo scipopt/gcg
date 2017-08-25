@@ -1072,7 +1072,7 @@ SCIP_RETCODE readDECFile(
             if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
             {
 
-               SCIPinfoMessage(scip, NULL, "read presolved decomposition but problem is not presolved yet -> presolve()");
+               SCIPinfoMessage(scip, NULL, "read presolved decomposition but problem is not presolved yet -> presolve()\n");
                SCIPpresolve(scip);
 
 

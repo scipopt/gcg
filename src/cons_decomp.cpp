@@ -3424,7 +3424,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
 
 
-   SCIPinfoMessage(scip, NULL, " added %s decomp for %s problem with %d blocks and %d masterconss, %d linkingvars, "
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " added %s decomp for %s problem with %d blocks and %d masterconss, %d linkingvars, "
       "%d mastervars, and max white score of %s %f \n", usergiveninfo, presolvedinfo,
       conshdlrdata->curruserseeed->getNBlocks(), conshdlrdata->curruserseeed->getNMasterconss(),
       conshdlrdata->curruserseeed->getNLinkingvars(), conshdlrdata->curruserseeed->getNMastervars(), (conshdlrdata->curruserseeed->isComplete() ? " " : " at best "),
@@ -3689,7 +3689,7 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIPinfoMessage(scip, NULL, "Starting decomposition candidate choosing \n");
+   SCIPdebugMessage("Starting decomposition candidate choosing \n");
 
    assert(conshdlrdata->candidates != NULL);
 
@@ -3707,9 +3707,9 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 
    if ( selectedseeeds.size() == 0 )
    {
-      SCIPinfoMessage(scip, NULL, "nothing selected, choose everything as selected: \n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH,  NULL, "currently no decomposition is selected, hence every known decomposition is considered: \n");
       selectedseeeds = *conshdlrdata->listall;
-      SCIPinfoMessage(scip, NULL, "number that is examined: %d \n", selectedseeeds.size() );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH,  NULL,  "number that is examined: %d \n", selectedseeeds.size() );
    }
 
    /** if there are selected decomps, check if some of them needs to be finished and do so */
