@@ -141,8 +141,8 @@ def generate_files(files):
     for file in files:
         # file = os.path.join(DIR, filename)
         with open(file) as _file:
-            df=pd.DataFrame()
-            dfvar=pd.DataFrame()
+            df = None
+            dfvar = None
             orig = False
             name = None
             problemFileName = None
@@ -154,13 +154,28 @@ def generate_files(files):
             boundlines = {}
             boundheader = None
             for line in _file:
+                if line.startswith("@01"):
+                    # reset python variables for next instance
+                    problemFileName = None
+                    df = None
+                    dfvar = None
+                    boundheader = None
+                    varheader = None
+                    varlines = {}
+                    boundlines = {}
                 if line.startswith("loaded parameter file"):
                     # store current settings
                     settings=line.split()[-1]
                     settings=settings.split("/")[-1]
                     settings = os.path.splitext(settings)[0]
                 elif not problemFileName and line.startswith("read problem "):
-                    problemFileName = os.path.splitext(os.path.basename(line.split("<")[-1].replace(">","").replace("\n","")))[0]
+                    # get the problem name from the file name as in "check.awk", in case it is "BLANK" in the actual "Problem name"-line
+                    tmparray = line.split("<")[-1].replace(">","").replace("\n","").split("/")[-1].split(".")
+                    problemFileName = tmparray[0]
+                    if tmparray[-1] == "gz" or tmparray[-1] == "z" or tmparray[-1] == "GZ" or tmparray[-1] == "Z":
+                        tmparray.pop()
+                    for i in range(1,len(tmparray)-1):
+                        problemFileName += "." + tmparray[i]
                 elif not orig and line.startswith("Original Program statistics:"):
                     orig = True
                 elif orig and line.startswith("Master Program statistics:"):
@@ -456,6 +471,7 @@ def generate_files(files):
                         set_dict[name].append(settings)
 
                     # reset python variables for next instance
+                    problemFileName = None
                     df = None
                     dfvar = None
                     boundheader = None
