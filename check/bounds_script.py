@@ -153,6 +153,7 @@ def generate_files(files):
             varheader = None
             boundlines = {}
             boundheader = None
+            scip_status = ""
             for line in _file:
                 if line.startswith("@01"):
                     # reset python variables for next instance
@@ -182,6 +183,8 @@ def generate_files(files):
                     orig = False
                 elif orig and line.startswith("Presolved Problem  :"):
                     orig = False
+                elif orig and line.startswith("SCIP Status        :"):
+                    scip_status = line.split(":")[-1].strip()
                 elif orig and line.startswith("  Problem name     :"):
                     # store problem name
                     name = line.split()[3]
@@ -192,7 +195,6 @@ def generate_files(files):
                     name = os.path.splitext(name)[0]
                     if name == 'BLANK':
                         name = problemFileName
-                    print name
                 elif not rootbounds and line.startswith("Root bounds"):
                     # prepare storage of root bounds
                     rootbounds = True
@@ -231,7 +233,9 @@ def generate_files(files):
 
                     # if no root bounds are present, ignore instance
                     if len(df) == 0:
+                        print name
                         print "   -> ignored"
+                        print "   -> SCIP Status : " + scip_status
                         continue
 
                     # use root bounds header to rename columns of data frame
@@ -479,8 +483,6 @@ def generate_files(files):
                     varlines = {}
                     boundlines = {}
 
-                    print "   -> success"
-
                 elif vardetails:
                     # store details of variable
                     line_array = line.split()
@@ -490,10 +492,9 @@ def generate_files(files):
     if params['compare']:
         for name, runs in df_dict.iteritems():
             if len(runs) > 1:
-                print "Compare " + str(len(runs)) + " runs of " + name
                 # set maximum and minimum of x values (time or iterations) to synchronize the plots
-                xmax = 10000
-                xmin = 0
+                xmax = 0
+                xmin = 10000
                 for run in runs:
                     if run[xaxis].max() > xmax:
                         xmax = run[xaxis].max()
@@ -660,8 +661,6 @@ def generate_files(files):
                     else:
                         i = str(int(i)+1)
                 plt.savefig(fig_filename + i + ".png", dpi = 300)
-
-                print "   -> success"
 
 
 def main():
