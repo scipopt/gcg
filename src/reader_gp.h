@@ -53,6 +53,7 @@ SCIP_RETCODE SCIPincludeReaderGp(
 
 /** writes a visualization for the given seeed */
 extern SCIP_RETCODE GCGwriteGpVisualization(
+   SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename (including path) to write to */
    char* outputname,       /**< filename for compiled output file */
    int seeedid             /**< id of seeed to visualize */

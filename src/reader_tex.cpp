@@ -745,23 +745,42 @@ SCIP_RETCODE GCGwriteTexVisualization(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< filename including path */
    int seeedid,            /**< id of seeed to visualize */
-   SCIP_Bool statistics    /**< additionally to picture show statistics */
+   SCIP_Bool statistics,   /**< additionally to picture show statistics */
+   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
    )
 {
    MiscVisualization* misc = new MiscVisualization();
    Seeed* seeed;
    Seeedpool* seeedpool;
+   char* gpname;
+   char* pdfname;
 
    /* get seeed */
    seeed = misc->GCGgetSeeed(scip, seeedid, seeedpool);
 
    /* write tex code into file */
    writeTexHeader(scip, file);
-   writeTexSeeed(scip, file, seeed, seeedpool);
-   if(statistics)
+
+   if(!usegp)
    {
-      writeTexSeeedStatistics(scip, file, seeed);
+      writeTexSeeed(scip, file, seeed, seeedpool);
    }
+   else
+   {
+      /* in case a gp file should be generated include it */
+      gpname = misc->GCGgetVisualizationFilename(scip, seeed, "gp");
+      pdfname = misc->GCGgetVisualizationFilename(scip, seeed, "pdf");
+
+      GCGwriteGpVisualization(scip, gpname, pdfname, seeedid);
+
+      SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
+      SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
+      SCIPinfoMessage(scip, file, "    \\input{%s}                                           \n", pdfname);
+      SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
+      SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+   }
+   if(statistics)
+      writeTexSeeedStatistics(scip, file, seeed);
    writeTexEnding(scip, file);
 
    return SCIP_OKAY;
@@ -773,27 +792,26 @@ SCIP_RETCODE GCGwriteTexReport(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< filename including path */
    int* seeedids,          /**< ids of seeeds to visualize */
-   int nseeeds,            /**< number of seeeds to visualize */
+   int* nseeeds,            /**< number of seeeds to visualize */
    SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
    SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
-   SCIP_Bool statistics    /**< true if statistics for each seeed should be included */
+   SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
+   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
    )
 {
    MiscVisualization* misc = new MiscVisualization();
    Seeed* seeed;
    Seeedpool* seeedpool;
+   char* gpname;
+   char* pdfname;
 
    /* write tex code into file */
    writeTexHeader(scip, file);
    if(titlepage)
-   {
       writeTexTitlepage(scip, file, nseeeds);
-   }
    if(toc)
-   {
       writeTexTableOfContents(scip, file);
-   }
-   for(int i = 0; i < nseeeds; i++)
+   for(int i = 0; i < *nseeeds; i++)
    {
       if(toc)
       {
@@ -805,11 +823,26 @@ SCIP_RETCODE GCGwriteTexReport(
       }
       /* get and write each seeed */
       seeed = misc->GCGgetSeeed(scip, seeedids[i], seeedpool);
-      writeTexSeeed(scip, file, seeed, seeedpool);
-      if(statistics)
+      if(!usegp)
       {
-         writeTexSeeedStatistics(scip, file, seeed);
+         writeTexSeeed(scip, file, seeed, seeedpool);
       }
+      else
+      {
+         /* in case a gp file should be generated include it */
+         gpname = misc->GCGgetVisualizationFilename(scip, seeed, "gp");
+         pdfname = misc->GCGgetVisualizationFilename(scip, seeed, "pdf");
+
+         GCGwriteGpVisualization(scip, gpname, pdfname, seeedids[i]);
+
+         SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
+         SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
+         SCIPinfoMessage(scip, file, "    \\input{%s}                                           \n", pdfname);
+         SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
+         SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+      }
+      if(statistics)
+         writeTexSeeedStatistics(scip, file, seeed);
    }
    writeTexEnding(scip, file);
 
@@ -967,7 +1000,8 @@ SCIP_DECL_READERREAD(readerReadTex)
 
 SCIP_DECL_READERWRITE(readerWriteTex)
 {
-   MiscVisualization* misc = new MiscVisualization()
+   MiscVisualization* misc = new MiscVisualization();
+   Seeed* seeed;
    int seeedid;
 
    assert(scip != NULL);
@@ -984,7 +1018,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
    else
    {
       seeed = misc->GCGgetSeeed(scip, seeedid, NULL);
-      GCGwriteTexVisualization(scip, file, seeedid, TRUE);
+      GCGwriteTexVisualization(scip, file, seeedid, (SCIP_Bool) TRUE, (SCIP_Bool) FALSE);
       *result = SCIP_SUCCESS;
    }
 

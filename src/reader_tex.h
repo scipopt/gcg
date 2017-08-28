@@ -53,7 +53,8 @@ extern SCIP_RETCODE GCGwriteTexVisualization(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< filename including path */
    int seeedid,            /**< id of seeed to visualize */
-   SCIP_Bool statistics    /**< additionally to picture show statistics */
+   SCIP_Bool statistics,   /**< additionally to picture show statistics */
+   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
    );
 
 /** writes a visualization of the family tree of the current seeedpool */
@@ -70,7 +71,8 @@ extern SCIP_RETCODE GCGwriteTexReport(
    int* seeedids,          /**< ids of seeeds to visualize */
    SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
    SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
-   SCIP_Bool statistics    /**< true if statistics for each seeed should be included */
+   SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
+   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
    );
 
 /** makes a new makefile and readme for the given .tex file */

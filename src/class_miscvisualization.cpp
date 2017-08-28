@@ -67,27 +67,21 @@ char* MiscVisualization::GCGgetVisualizationFilename(
    char* detectorchainstring;
    char probname[SCIP_MAXSTRLEN];
    char* outname;
-   char* filename;
 
    (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
 
-   /*@todo change this for seeeds! */
-//   /* get detector chain string*/
-//   detectorchainstring = DECdecompGetDetectorChainString(scip, decdecomp);
-//
-//   /* print header */
-//   if( decdecomp == NULL )
-//      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
-//   else
-//   {
-//      if(outputPDF)
-//         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%s_%d_%d", name, detectorchainstring, DECdecompGetSeeedID(decdecomp),
-//            decdecomp->nblocks);
-//      else
-//         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%s-%d-%d", name, detectorchainstring, DECdecompGetSeeedID(decdecomp),
-//            decdecomp->nblocks);
-//   }
+   /* get detector chain string*/
+   detectorchainstring = seeed->getDetectorChainString();
+
+   /* print header */
+   if( seeed == NULL )
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
+   else
+   {
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%s-%d-%d-%s", name, detectorchainstring, seeed->getID(),
+         seeed->getNBlocks(), extension);
+   }
 
    return outname;
 }
