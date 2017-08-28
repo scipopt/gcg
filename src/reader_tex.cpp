@@ -203,8 +203,6 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\\begin{document}                                                                \n");
    SCIPinfoMessage(scip, file, "                                                                                 \n");
 
-   /*@todo add defines of the current default colors here (use getRgbDecFromHex) */
-
    return SCIP_OKAY;
 }
 
@@ -294,16 +292,12 @@ SCIP_RETCODE writeTikzBox(
    int y1,           /**< y value of lower left vertex coordinate */
    int x2,           /**< x value of upper right vertex coordinate */
    int y2,           /**< y value of upper right vertex coordinate */
-   char* color       /**< color hex code (e.g. #000000) for box filling */
+   char* color       /**< color name */
    )
 {
-   char colorcode;
-
-   /*@todo get colorcode */
-
    SCIPinfoMessage(scip, file,
       "    \\draw [fill=%s] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
-      colorcode, x1 / xmax, y1 / ymax, x2 / xmax, y2 / ymax);
+      color, x1 / xmax, y1 / ymax, x2 / xmax, y2 / ymax);
    return SCIP_OKAY;
 }
 
@@ -449,30 +443,29 @@ SCIP_RETCODE writeTexSeeed(
    /* --- draw boxes ---*/
 
    /* linking vars */
-   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(), SCIPvisuGetColorLinking());
+   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(), "colorlinking");
    colboxcounter += seeed->getNLinkingvars();
 
    /* mastervars */
    writeTikzBox(scip, file, nvars, nconss, colboxcounter, 0, seeed->getNMastervars()+colboxcounter, seeed->getNConss(),
-      SCIPvisuGetColorMastervars());
+      "colormastervars");
    colboxcounter += seeed->getNMastervars();
 
    /* masterconss */
-   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
-      SCIPvisuGetColorMasterconss());
+   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNVars(), seeed->getNMasterconss(), "colormasterconss");
    rowboxcounter += seeed->getNMasterconss();
 
    /* blocks */
    for( int b = 0; b < seeed->getNBlocks() ; ++b )
    {
       writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter,
-         colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b), SCIPvisuGetColorBlock());
+         colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b), "colorblock");
       colboxcounter += seeed->getNVarsForBlock(b);
 
       if( seeed->getNStairlinkingvars(b) != 0 )
       {
          writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + seeed->getNStairlinkingvars(b),
-            rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), SCIPvisuGetColorStairlinking());
+            rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), "colorstairlinking");
       }
       colboxcounter += seeed->getNStairlinkingvars(b);
       rowboxcounter += seeed->getNConssForBlock(b);
@@ -480,7 +473,7 @@ SCIP_RETCODE writeTexSeeed(
 
    /* open */
    writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
-      rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
+      rowboxcounter+seeed->getNOpenconss(), "coloropen" );
    colboxcounter += seeed->getNOpenvars();
    rowboxcounter += seeed->getNOpenconss();
 
@@ -544,188 +537,6 @@ SCIP_RETCODE writeTexSeeedStatistics(
    return SCIP_OKAY;
 }
 
-/** write LaTeX code for one decomposition
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage   ReaderTEX::          (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    -> GCGtexWriteDecompCode         (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-SCIP_RETCODE GCGtexWriteDecompCode(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decomp              /**< Decomposition pointer */
-   )
-{
-   FILE* gpfile;
-   DEC_DETECTOR** detectorchain;
-   DEC_SCORES scores;
-   SCIP_Bool gpdraftwason = FALSE;
-   char* filepath;
-   char* pname;
-   char* detectorchainstring;
-   char ppath[SCIP_MAXSTRLEN];
-   char decompname[SCIP_MAXSTRLEN];
-   char gpfilename[SCIP_MAXSTRLEN];
-   char gpname[SCIP_MAXSTRLEN];
-   char pfile[SCIP_MAXSTRLEN];
-   char pfilecpy[SCIP_MAXSTRLEN];
-   char dectype[SCIP_MAXSTRLEN];
-   char fulldetectorstring[SCIP_MAXSTRLEN];
-   int sizedetectorchain;
-   int i;
-
-   assert(decomp != NULL);
-
-//   /* get detector chain string & full-text string*/
-//   detectorchainstring = DECdecompGetDetectorChainString(scip, decomp);
-//
-//   detectorchain = DECdecompGetDetectorChain(decomp);
-//   sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
-//   if( detectorchain[0] != NULL)
-//      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
-//   else
-//      sprintf(fulldetectorstring, "%s", "user");
-//   for( i=1; i < sizedetectorchain; ++i )
-//   {
-//      sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
-//   }
-
-   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d-%d", detectorchainstring, DECdecompGetSeeedID(decomp),
-      DECdecompGetNBlocks(decomp));
-   /* tex will have problems with the character '_' */
-   for(i = 0; i < SCIP_MAXSTRLEN; i++)
-   {
-      if(decompname[i] == '_'){
-         decompname[i] = '-';
-      }
-   }
-
-   if( usegp )
-   {
-      /* --- create a gnuplot file for the decomposition --- */
-
-      /* get path to write to and put it into gpfilename */
-      gcg::MiscVisualization* miscvisu = new gcg::MiscVisualization();
-      pfile = miscvisu->GCGgetFilePath(scip, file);
-      strcpy(pfilecpy, pfile);
-      SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
-      strcpy(gpfilename, filepath);
-      strcat(gpfilename, "/");
-
-      /* get name of file and attach it to gpfilename */
-      strcpy(ppath, SCIPgetProbName(scip));
-      SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
-      if( pname != NULL &&  pname[0] != '\0' )
-      {
-         strcpy(gpname, pname);
-         strcat(gpname, "-");
-      }
-
-      if( decompname != NULL &&  decompname[0] != '\0' )
-      {
-         strcat(gpname, decompname);
-      }
-      else
-      {
-         return SCIP_FILECREATEERROR;
-      }
-      strcat(gpfilename, gpname);
-      strcat(gpfilename, ".gp");
-
-      /* write gp file for decomp using the gp reader (using the tex output option) */
-      gpfile = fopen(gpfilename, "w");
-      if( gpfile == NULL )
-      {
-         return SCIP_FILECREATEERROR;
-      }
-
-      /* write gp in the tex draft mode and restore the original parameter afterwards */
-      gpdraftwason = GCGgpGetDraftmode(scip);
-      GCGgpSetDraftmode(scip, draftmode);
-
-      SCIPwriteGp(scip, gpfile, decomp, TRUE, FALSE);
-
-      GCGgpSetDraftmode(scip, gpdraftwason);
-
-      fclose(gpfile);
-   }
-
-   /* --- gather information & output them into .tex file --- */
-//
-//   DECevaluateDecomposition(scip, decomp, &scores);
-//
-//   if(!picturesonly)
-//   {
-//      SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
-//      SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
-//      SCIPinfoMessage(scip, file, "                                                                \n");
-//   }
-//   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
-//   SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
-//   if( usegp )
-//   {
-//      SCIPinfoMessage(scip, file, "    \\input{%s-%s-%d-%d}                                          \n",
-//         pname, detectorchainstring, DECdecompGetSeeedID(decomp), DECdecompGetNBlocks(decomp));
-//   }
-//   else
-//   {
-//      writeTikz(scip, file, decomp);
-//   }
-//
-//   SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
-//   SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
-//   if(!picturesonly)
-//   {
-//      SCIPinfoMessage(scip, file, "                                                                \n");
-//      SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
-//      SCIPinfoMessage(scip, file, "\\begin{tabular}{lp{10cm}}                                      \n");
-//      SCIPinfoMessage(scip, file,
-//         "  Found by detector(s): & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\ \n",
-//         fulldetectorstring);
-//      switch(DECdecompGetType(decomp))
-//      {
-//         case DEC_DECTYPE_ARROWHEAD:
-//            strcpy(dectype,"arrowhead");
-//            break;
-//         case DEC_DECTYPE_STAIRCASE:
-//            strcpy(dectype,"staircase");
-//            break;
-//         case DEC_DECTYPE_DIAGONAL:
-//            strcpy(dectype,"diagonal");
-//            break;
-//         case DEC_DECTYPE_BORDERED:
-//            strcpy(dectype,"bordered");
-//            break;
-//         default:
-//            strcpy(dectype,"unknown");
-//            break;
-//      }
-//      SCIPinfoMessage(scip, file, "  Type of decomposition: & %s \\\\                                              \n",
-//         dectype);
-//      SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   \n",
-//         DECdecompGetNBlocks(decomp));
-//      SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        \n",
-//         DECdecompGetNLinkingvars(decomp));
-//      SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i \\\\                                      \n",
-//         DECdecompGetNLinkingconss(decomp));
-//      SCIPinfoMessage(scip, file, "  Block density score: & %f \\\\                                                \n",
-//         scores.densityscore);
-//      SCIPinfoMessage(scip, file, "  Interlinking blocks score: & %f \\\\                                          \n",
-//         scores.linkingscore);
-//      SCIPinfoMessage(scip, file, "  Border score: & %f \\\\                                                       \n",
-//         scores.borderscore);
-//      SCIPinfoMessage(scip, file, "  \\textbf{Total score:} & \\textbf{%f} \\\\                                    \n",
-//         scores.totalscore);
-//      SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  \n");
-//   }
-//   SCIPinfoMessage(scip, file, "\\clearpage                                                                     \n");
-//   SCIPinfoMessage(scip, file, "                                                                                \n");
-
-   return SCIP_OKAY;
-}
 
 /** write LaTeX code for end of document to given file */
 static
@@ -1002,23 +813,23 @@ SCIP_DECL_READERWRITE(readerWriteTex)
 {
    MiscVisualization* misc = new MiscVisualization();
    Seeed* seeed;
-   int seeedid;
+   int* seeedid;
 
    assert(scip != NULL);
    assert(reader != NULL);
 
    /* get seeed to write */
-   seeedid = DECgetBestSeeed(scip);
+   *seeedid = DECgetBestSeeed(scip);
 
-   if(seeedid == -1)
+   if(*seeedid == -1)
    {
       SCIPerrorMessage("Could not find best Seeed!\n");
       *result = SCIP_DIDNOTRUN;
    }
    else
    {
-      seeed = misc->GCGgetSeeed(scip, seeedid, NULL);
-      GCGwriteTexVisualization(scip, file, seeedid, (SCIP_Bool) TRUE, (SCIP_Bool) FALSE);
+      seeed = misc->GCGgetSeeed(scip, *seeedid, NULL);
+      GCGwriteTexVisualization(scip, file, *seeedid, (SCIP_Bool) TRUE, (SCIP_Bool) FALSE);
       *result = SCIP_SUCCESS;
    }
 
@@ -1034,16 +845,6 @@ SCIPincludeReaderTex(
    /* include tex reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
            readerFreeTex, readerReadTex, readerWriteTex, NULL));
-
-   /* include possible parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip,
-      "reading/texreader/usegp", "if true uses gp files as intermediate step",
-      &readerdata->usegp, FALSE, DEFAULT_USEGP, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip,
-         "reading/texreader/picturesonly",
-         "if true only tex code for the pictures is generated (no statistics, no report file)",
-         &readerdata->picturesonly, FALSE, DEFAULT_PICTURESONLY, NULL, NULL) );
 
    return SCIP_OKAY;
 }
