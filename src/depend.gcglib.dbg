@@ -145,18 +145,18 @@ $(LIBOBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/s
  src/event_bestsol.h src/event_mastersol.h src/reader_gp.h \
  src/cons_decomp.h src/type_detector.h src/dec_connected.h \
  src/reader_tex.h src/dec_isomorph.h src/dec_constype.h \
- src/dec_consclass.h src/dec_stairheur.h src/dec_staircase.h \
- src/dec_random.h src/dec_colors.h src/dec_compgreedily.h \
- src/dec_staircase_lsp.h src/dec_consname.h src/dec_mastersetpack.h \
- src/dec_mastersetpart.h src/dec_mastersetcover.h src/dec_hrcgpartition.h \
- src/dec_hrgpartition.h src/dec_hcgpartition.h src/dec_connectedbase.h \
- src/dec_connected_noNewLinkingVars.h src/dec_generalmastersetcover.h \
- src/dec_generalmastersetpack.h src/dec_generalmastersetpart.h \
- src/dec_varclass.h src/heur_gcgcoefdiving.h src/heur_gcgdins.h \
- src/heur_gcgfeaspump.h src/heur_gcgfracdiving.h \
- src/heur_gcgguideddiving.h src/heur_gcglinesdiving.h \
- src/heur_gcgpscostdiving.h src/heur_gcgrens.h src/heur_gcgrins.h \
- src/heur_gcgrounding.h src/heur_gcgshifting.h \
+ src/dec_consclass.h src/dec_densemasterconss.h src/dec_stairheur.h \
+ src/dec_staircase.h src/dec_random.h src/dec_colors.h \
+ src/dec_compgreedily.h src/dec_staircase_lsp.h src/dec_consname.h \
+ src/dec_mastersetpack.h src/dec_mastersetpart.h src/dec_mastersetcover.h \
+ src/dec_hrcgpartition.h src/dec_hrgpartition.h src/dec_hcgpartition.h \
+ src/dec_connectedbase.h src/dec_connected_noNewLinkingVars.h \
+ src/dec_generalmastersetcover.h src/dec_generalmastersetpack.h \
+ src/dec_generalmastersetpart.h src/dec_varclass.h \
+ src/heur_gcgcoefdiving.h src/heur_gcgdins.h src/heur_gcgfeaspump.h \
+ src/heur_gcgfracdiving.h src/heur_gcgguideddiving.h \
+ src/heur_gcglinesdiving.h src/heur_gcgpscostdiving.h src/heur_gcgrens.h \
+ src/heur_gcgrins.h src/heur_gcgrounding.h src/heur_gcgshifting.h \
  src/heur_gcgsimplerounding.h src/heur_gcgveclendiving.h \
  src/heur_gcgzirounding.h src/heur_origdiving.h src/type_origdiving.h \
  src/heur_xpcrossover.h src/heur_xprins.h src/dec_cutpacking.h \
