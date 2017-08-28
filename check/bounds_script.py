@@ -492,14 +492,17 @@ def generate_files(files):
     if params['compare']:
         for name, runs in df_dict.iteritems():
             if len(runs) > 1:
+
                 # set maximum and minimum of x values (time or iterations) to synchronize the plots
-                xmax = 0
-                xmin = 10000
+                infty = 10.0 ** 20
+                xmax = -infty
+                xmin = infty
                 for run in runs:
                     if run[xaxis].max() > xmax:
                         xmax = run[xaxis].max()
                     if run[xaxis].min() < xmin:
                         xmin = run[xaxis].min()
+
                 # workaround for identical limits
                 if xmin == xmax:
                     if xmax == 0:
@@ -608,7 +611,7 @@ def generate_files(files):
                             frmtStr = '-'
                         elif params['lplinestyle'] == 'scatter':
                             frmtStr = 'o'
-                        axes['lp'].plot(df[xaxis], df['lpvars'], frmtStr, color = cmap['lp'](iter_run), label ='lpvars ' + set_dict[name][iter_run]+ ' ' + str(iter_run + 1), markersize=1.6, linewidth = 0.8)
+                        axes['lp'].plot(df[xaxis], df['lpvars'], frmtStr, color = cmap['lp'](iter_run), label ='lpvars ' + set_dict[name][iter_run], markersize=1.6, linewidth = 0.8)
 
                     # plot the ipvars
                     if params['ipvars']:
@@ -616,7 +619,7 @@ def generate_files(files):
                             frmtStr = '-'
                         elif params['iplinestyle'] == 'scatter':
                             frmtStr = 'o'
-                        axes['ip'].plot(df[xaxis], df['ipvars'], frmtStr, color = cmap['ip'](iter_run), label ='ipvars '+ set_dict[name][iter_run] + ' ' + str(iter_run + 1), markersize=1.6, linewidth = 0.8)
+                        axes['ip'].plot(df[xaxis], df['ipvars'], frmtStr, color = cmap['ip'](iter_run), label ='ipvars '+ set_dict[name][iter_run], markersize=1.6, linewidth = 0.8)
 
                     # bounds/dualdiff plot
                     if params['bounds']:
@@ -626,18 +629,19 @@ def generate_files(files):
                             frmtStr = 'o'
                         elif params['bdlinestyle'] == 'both':
                             frmtStr = '-o'
-                        tmp, = axes['db'].plot(df[xaxis], df['pb'], frmtStr, color = cmap['db'](iter_run), label=set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6)
+                        tmp, = axes['db'].plot(df[xaxis], df['pb'], frmtStr, color = cmap['db'](iter_run), label=set_dict[name][iter_run], linewidth=0.8, markersize = 1.6)
                         handles.append(tmp)
                         axes['db'].plot(df[xaxis], df['db'], frmtStr, color = cmap['db'](iter_run), linewidth=0.8, markersize = 1.6)
-                        if params['dualdiff'] or params['dualoptdiff']:
-                            axes['db_diff'] = axes['db'].twinx()
-                            if params['dualdiff']:
-                                axes['db_diff'].plot(df[xaxis], df['dualdiff'], '--', color = cmap['db'](iter_run), label='dualdiff ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6, alpha = 0.6)
-                            if params['dualoptdiff']:
-                                axes['db_diff'].plot(df[xaxis], df['dualoptdiff'], '--', color = cmap['db'](iter_run), label='dualdiff ' + set_dict[name][iter_run] + ' ' +  str(iter_run + 1), linewidth=0.8, markersize = 1.6, alpha = 0.6)
 
-                # set y label of secondary y-axis if necessary
                 if params['dualdiff'] or params['dualoptdiff']:
+                    # plot the differences
+                    axes['db_diff'] = axes['db'].twinx()
+                    for iter_run, df in enumerate(runs):
+                        if params['dualdiff']:
+                            axes['db_diff'].plot(df[xaxis], df['dualdiff'], '--', color = cmap['db'](iter_run), label='dualdiff ' + set_dict[name][iter_run], linewidth=0.8, markersize = 1.6, alpha = 0.6)
+                        if params['dualoptdiff']:
+                            axes['db_diff'].plot(df[xaxis], df['dualoptdiff'], '--', color = cmap['db'](iter_run), label='dualoptdiff ' + set_dict[name][iter_run], linewidth=0.8, markersize = 1.6, alpha = 0.6)
+                    # set y label of secondary y-axis
                     plt.ylabel('Differences', fontsize=10, rotation=-90, labelpad=15)
 
                 # ensure, that there is enough space for labels
@@ -653,7 +657,7 @@ def generate_files(files):
                 plt.gcf().set_size_inches(9.33,7)
 
                 # save figure and ensure, that there are not two files with the same name
-                fig_filename = params['outdir']+"/"+ "compareRuns_" + name+"_"+settings+"_"+xaxis
+                fig_filename = params['outdir']+"/"+ "compareRuns_" + name+"_"+xaxis
                 i = ""
                 while os.path.isfile(fig_filename + i + ".png"):
                     if i == "":
