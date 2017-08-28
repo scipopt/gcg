@@ -243,7 +243,7 @@ SCIP_RETCODE writeGpSeeed(
    /* --- draw boxes ---*/
 
    /* linking vars */
-   drawGpBox( filename,1, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(), SCIPvisuGetColorLinking() );
+   drawGpBox( filename, 1, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(), SCIPvisuGetColorLinking() );
    colboxcounter += seeed->getNLinkingvars();
 
    /* mastervars */
@@ -278,7 +278,6 @@ SCIP_RETCODE writeGpSeeed(
    rowboxcounter += seeed->getNOpenconss();
 
    /* --- draw nonzeros --- */
-   /*@todo get radius */
    writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius( seeed->getNVars(), seeed->getNConss(), 1 ) );
 
    ofs.close();
@@ -360,7 +359,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    assert(file != NULL);
 
    /* get seeed to write */
-   seeedid = DECgetBestSeeed();
+   seeedid = DECgetBestSeeed(scip);
 
    if(seeedid == -1)
    {

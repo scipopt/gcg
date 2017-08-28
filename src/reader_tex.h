@@ -45,12 +45,12 @@
 
 /** includes the tex file reader into SCIP */
 extern SCIP_RETCODE SCIPincludeReaderTex(
-   SCIP* scip /**< SCIP data structure */
+   SCIP* scip     /**< SCIP data structure */
    );
 
 /** writes a visualization for the given seeed */
 extern SCIP_RETCODE GCGwriteTexVisualization(
-   SCIP* scip, /**< SCIP data structure */
+   SCIP* scip,             /**< SCIP data structure */
    char* filename,         /**< filename including path */
    int seeedid,            /**< id of seeed to visualize */
    SCIP_Bool statistics    /**< additionally to picture show statistics */
@@ -65,13 +65,13 @@ extern SCIP_RETCODE GCGwriteTexFamilyTree(
 
 /** writes a report for the given seeeds */
 extern SCIP_RETCODE GCGwriteTexReport(
-   SCIP* scip, /**< SCIP data structure */
-   char* filename,      /**< filename including path */
-   int* seeedids,       /**< ids of seeeds to visualize */
-   SCIP_Bool titlepage, /**< true if a title page should be included in the document */
-   SCIP_Bool toc,       /**< true if an interactive table of contents should be included */
-   SCIP_Bool statistics,/**< true if statistics for each seeed should be included */
-   SCIP_Bool usegp      /**< true if the gp reader should be used to visualize the individual seeeds */
+   SCIP* scip,             /**< SCIP data structure */
+   char* filename,         /**< filename including path */
+   int* seeedids,          /**< ids of seeeds to visualize */
+   SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
+   SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
+   SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
+   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
    );
 
 /** makes a new makefile and readme for the given .tex file */

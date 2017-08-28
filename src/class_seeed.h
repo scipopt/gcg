@@ -398,17 +398,15 @@ public:
       std::vector<int> newlist
       );
 
-
    /** adds ancestor id of given ancestor */
    void addAncestorID(
       int ancestor
       );
 
-
    /** returns detectorchainstring */
    char* getDetectorChainString();
 
-   /** returns detectorchain info of detetctor related to given detectorchain index */
+   /** returns detectorchain info of detector related to given detectorchain index */
    std::string getDetectorchainInfo(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );

@@ -288,6 +288,8 @@ static
 SCIP_RETCODE writeTikzBox(
    SCIP* scip,       /**< SCIP data structure */
    FILE* file,       /**< File pointer to write to */
+   int xmax,         /**< maximum x axis value */
+   int ymax,         /**< maximum y axis value */
    int x1,           /**< x value of lower left vertex coordinate */
    int y1,           /**< y value of lower left vertex coordinate */
    int x2,           /**< x value of upper right vertex coordinate */
@@ -301,7 +303,7 @@ SCIP_RETCODE writeTikzBox(
 
    SCIPinfoMessage(scip, file,
       "    \\draw [fill=%s] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
-      colorcode, x1, y1, x2, y2);
+      colorcode, x1 / xmax, y1 / ymax, x2 / xmax, y2 / ymax);
    return SCIP_OKAY;
 }
 
@@ -432,19 +434,58 @@ SCIP_RETCODE writeTexSeeed(
    Seeedpool* seeedpool    /**< current Seeedpool */
    )
 {
-//   char* detectorchainstring;
-//   DEC_DETECTOR** detectorchain;
-//   int sizedetectorchain;
-//
-//   detectorchainstring = seeed->getDetectorChainString();
-//   detectorchain = seeed->getDetectorchain();
-//   sizedetectorchain = seeed->getNDetectors();
+   int rowboxcounter = 0;
+   int colboxcounter = 0;
+   int nvars;
+   int nconss;
+
+   nvars = seeed->getNVars();
+   nconss = seeed->getNConss();
 
    SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
    SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
    SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                             \n");
 
+   /* --- draw boxes ---*/
 
+   /* linking vars */
+   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(), SCIPvisuGetColorLinking());
+   colboxcounter += seeed->getNLinkingvars();
+
+   /* mastervars */
+   writeTikzBox(scip, file, nvars, nconss, colboxcounter, 0, seeed->getNMastervars()+colboxcounter, seeed->getNConss(),
+      SCIPvisuGetColorMastervars());
+   colboxcounter += seeed->getNMastervars();
+
+   /* masterconss */
+   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
+      SCIPvisuGetColorMasterconss());
+   rowboxcounter += seeed->getNMasterconss();
+
+   /* blocks */
+   for( int b = 0; b < seeed->getNBlocks() ; ++b )
+   {
+      writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter,
+         colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b), SCIPvisuGetColorBlock());
+      colboxcounter += seeed->getNVarsForBlock(b);
+
+      if( seeed->getNStairlinkingvars(b) != 0 )
+      {
+         writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + seeed->getNStairlinkingvars(b),
+            rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), SCIPvisuGetColorStairlinking());
+      }
+      colboxcounter += seeed->getNStairlinkingvars(b);
+      rowboxcounter += seeed->getNConssForBlock(b);
+   }
+
+   /* open */
+   writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
+      rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
+   colboxcounter += seeed->getNOpenvars();
+   rowboxcounter += seeed->getNOpenconss();
+
+   /* --- draw nonzeros --- */
+   writeTikzNonzeros( scip, file, seeed, seeedpool, SCIPvisuGetNonzeroRadius( seeed->getNVars(), seeed->getNConss(), 1 ) );
 
    SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                               \n");
    SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
@@ -453,270 +494,52 @@ SCIP_RETCODE writeTexSeeed(
    return SCIP_OKAY;
 }
 
-
-/** writes the code for a Tikz visualization of the decomposition into the file
- * works analogously to the SCIPwriteGp function in reader_gp.c */
 static
-SCIP_RETCODE writeTikz(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decomp              /**< Decomposition pointer */
+SCIP_RETCODE writeTexSeeedStatistics(
+   SCIP* scip,             /**< SCIP data structure */
+   FILE* file,             /**< filename (including path) to write to */
+   Seeed* seeed            /**< Seeed for which the nonzeros should be visualized */
    )
 {
-   SCIP_VAR*** subscipvars;
-   SCIP_CONS*** subscipconss;
-   SCIP_VAR** linkingvars;
-   SCIP_CONS** linkingconss;
-   SCIP_VAR** vars;
-   SCIP_CONS** conss;
-   SCIP_HASHMAP* varindexmap;
-   SCIP_HASHMAP* consindexmap;
-   int* nsubscipvars;
-   int* nsubscipconss;
-   int* nstairlinkingvars;
-   size_t varindex = 1;
-   size_t consindex = 1;
-   int startx = 0;
-   int starty = 0;
-   int endx = 0;
-   int endy = 0;
-   int nlinkingvars;
-   int nlinkingconss;
+   DEC_DETECTOR** detectorchain;
+   char fulldetectorstring[SCIP_MAXSTRLEN];
+   int sizedetectorchain;
    int i;
-   int j;
-   int nvars;
-   int nconss;
-   int maxindvars = 0;
-   int maxindcons = 0;
-   int maxind = 0;
-   double radius = 5;
-   float xpoint;
-   float ypoint;
 
-   assert(scip != NULL);
-
-   subscipvars = DECdecompGetSubscipvars(decomp);
-   nsubscipvars = DECdecompGetNSubscipvars(decomp);
-   subscipconss = DECdecompGetSubscipconss(decomp);
-   nsubscipconss = DECdecompGetNSubscipconss(decomp);
-   linkingvars = DECdecompGetLinkingvars(decomp);
-   nlinkingvars = DECdecompGetNLinkingvars(decomp);
-   linkingconss = DECdecompGetLinkingconss(decomp);
-   nlinkingconss = DECdecompGetNLinkingconss(decomp);
-   conss = SCIPgetConss(scip);
-   nconss = SCIPgetNConss(scip);
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
-
-   /* --- compute indices for variables & constraints --- */
-
-   varindexmap = NULL;
-   consindexmap = NULL;
-
-   if( decomp != NULL )
-   {
-      /* go through the blocks and create the indices */
-      if( DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN && DECdecompGetType(decomp) != DEC_DECTYPE_STAIRCASE )
-      {
-         SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-            SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
-         for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
-         {
-            for( j = 0; j < nsubscipvars[i]; ++j )
-            {
-               assert(subscipvars[i][j] != NULL);
-               SCIP_CALL( SCIPhashmapInsert(varindexmap, subscipvars[i][j], (void*)varindex) );
-               if( (int)varindex > maxindvars )
-                  maxindvars = (int) varindex;
-               varindex++;
-            }
-
-            for( j = 0; j < nsubscipconss[i]; ++j )
-            {
-               assert(subscipconss[i][j] != NULL);
-               SCIP_CALL( SCIPhashmapInsert(consindexmap, subscipconss[i][j], (void*)consindex) );
-               if( (int)consindex > maxindcons )
-                  maxindcons = (int) consindex;
-               consindex++;
-            }
-         }
-
-         for( j = 0; j < nlinkingvars; ++j )
-         {
-            assert(linkingvars[j] != NULL);
-            SCIP_CALL( SCIPhashmapInsert(varindexmap, linkingvars[j], (void*)varindex) );
-            if( (int)varindex > maxindvars )
-               maxindvars = (int) varindex;
-            varindex++;
-         }
-         for( j = 0; j < nlinkingconss; ++j )
-         {
-            assert(linkingconss[j] != NULL);
-            SCIP_CALL( SCIPhashmapInsert(consindexmap, linkingconss[j], (void*)consindex) );
-            if( (int)consindex > maxindcons )
-               maxindcons = (int) consindex;
-            consindex++;
-         }
-      }
-      else if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
-      {
-         /* get the computed index maps instead of computing them here */
-         varindexmap = DECdecompGetVarindex(decomp);
-         consindexmap = DECdecompGetConsindex(decomp);
-
-         /* determine max indices */
-         for(i = 0; i < nvars; i++)
-         {
-            if(SCIPhashmapExists(varindexmap, vars[i]) &&
-               (int)(size_t)(SCIPhashmapGetImage(varindexmap, vars[i]))>maxindvars)
-            {
-               maxindvars = (int)(size_t)(SCIPhashmapGetImage(varindexmap, vars[i]));
-            }
-         }
-         for(i = 0; i < nconss; i++)
-         {
-            if(SCIPhashmapExists(consindexmap, conss[i]) &&
-               (int)(size_t)(SCIPhashmapGetImage(consindexmap, conss[i]))>maxindcons)
-            {
-               maxindcons = (int)(size_t)(SCIPhashmapGetImage(consindexmap, conss[i]));
-            }
-         }
-
-         assert(varindexmap != NULL);
-         assert(consindexmap != NULL);
-      }
-   }
-
-   /* the max indices must be at least one to be compatible with division */
-   maxindvars = maxindvars<1?1:maxindvars;
-   maxindcons = maxindcons<1?1:maxindcons;
-   /* determine the highest index */
-   maxind = maxindvars>maxindcons?maxindvars:maxindcons;
-
-   /* --- write header --- */
-
-   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                                           \n");
-
-   /* --- draw grey rectangles with standard outline (black) for the blocks --- */
-   /* note: the picture is scaled to the page's textwidth in order to scale down large pictures.
-    * Instead of var-/consindex the value of (index/maxindex)*textwidth/height is used
-    */
-
-   if( DECdecompGetType(decomp) == DEC_DECTYPE_ARROWHEAD || DECdecompGetType(decomp) == DEC_DECTYPE_BORDERED
-       || DECdecompGetType(decomp) == DEC_DECTYPE_DIAGONAL )
-   {
-      for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
-      {
-         endx += nsubscipvars[i];
-         endy += nsubscipconss[i];
-         SCIPinfoMessage(scip, file,
-            "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
-            (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
-         startx = endx;
-         starty = endy;
-      }
-      endx += nlinkingvars;
-      endy += nlinkingconss;
-      SCIPinfoMessage(scip, file,
-         "    \\draw [fill=orange] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
-         (0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
-      SCIPinfoMessage(scip, file,
-         "    \\draw [fill=yellow] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
-         (startx+0.5)/maxindvars, (+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
-      SCIPinfoMessage(scip, file,
-         "    \\draw [fill=purple] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
-         (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
-   }
+   /* get detector chain full-text string*/
+   detectorchain = seeed->getDetectorchain();
+   sizedetectorchain = seeed->getNDetectors();
+   if( detectorchain[0] != NULL)
+      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
    else
+      sprintf(fulldetectorstring, "%s", "user");
+   for( i=1; i < sizedetectorchain; ++i )
    {
-      if( DECdecompGetType(decomp) == DEC_DECTYPE_STAIRCASE )
-      {
-         nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
-         for( i = 0; i < DECdecompGetNBlocks(decomp)-1; ++i )
-         {
-            endx += nsubscipvars[i]+nstairlinkingvars[i];
-            endy += nsubscipconss[i];
-            SCIPinfoMessage(scip, file,
-               "    \\draw [fill=pink] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
-               (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
-            startx = endx-nstairlinkingvars[i];
-            starty = endy;
-         }
-         endx += nsubscipvars[i];
-         endy += nsubscipconss[i];
-         SCIPinfoMessage(scip, file,
-            "    \\draw [fill=gray] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
-            (startx+0.5)/maxindvars, (starty+0.5)/maxindcons, (endx+0.5)/maxindvars, (endy+0.5)/maxindcons);
-      }
+      sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
    }
 
-   /* --- draw black dots for nonzeroes --- */
+   SCIPinfoMessage(scip, file, "                                                                \n");
+   SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
+   SCIPinfoMessage(scip, file, "\\begin{tabular}{lp{10cm}}                                      \n");
+   SCIPinfoMessage(scip, file,
+      "  Found by detector(s): & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\ \n",
+      fulldetectorstring);
+   SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   \n",
+      seeed->getNBlocks());
+   SCIPinfoMessage(scip, file, "  Number of master variables: & %i \\\\                                         \n",
+      seeed->getNMastervars());
+   SCIPinfoMessage(scip, file, "  Number of master constraints: & %i \\\\                                       \n",
+      seeed->getNMasterconss());
+   SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        \n",
+      seeed->getNLinkingvars());
+   SCIPinfoMessage(scip, file, "  Number of stairlinking variables: & %i \\\\                                   \n",
+      seeed->getNTotalStairlinkingvars());
+   SCIPinfoMessage(scip, file, "  Max white score: & %f \\\\                                                    \n",
+      seeed->getMaxWhiteScore());
+   SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  \n");
 
-   /* draw the dots */
-   if(!getDraftmode())
-   {
-      for( i = 0; i < nconss; i++ )
-      {
-         int ncurvars = GCGconsGetNVars(scip, conss[i]);
-         SCIP_VAR** curvars = NULL;
-
-         if( ncurvars > 0 )
-         {
-            SCIP_CALL( SCIPallocBufferArray( scip, &curvars, ncurvars) );
-            SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
-         }
-
-         for( j = 0; j < ncurvars; j++ )
-         {
-            /* if the problem has been created but has not been processed yet, output the whole model */
-            if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
-            {
-               SCIPinfoMessage(scip, file,
-                  "                                                                                \n");
-               SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
-                  (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind);
-            }
-            else
-            {
-               /* if there is no decomposition, output the presolved model! */
-               if( decomp == NULL || DECdecompGetType(decomp) == DEC_DECTYPE_UNKNOWN )
-               {
-                  SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
-                     (SCIPvarGetIndex(curvars[j]))/maxindvars, (i)/maxindcons, radius/maxind);
-               }
-               /* if there is a decomposition, output the indices derived from the decomposition above*/
-               else
-               {
-                  assert(varindexmap != NULL);
-                  assert(consindexmap != NULL);
-                  if( SCIPhashmapExists(varindexmap, SCIPvarGetProbvar(curvars[j]))
-                     && SCIPhashmapExists(consindexmap, conss[i]))
-                  {
-                     xpoint =
-                        ( (float)(size_t)SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) )/(float)maxindvars;
-                     ypoint = ( (float)(size_t)SCIPhashmapGetImage(consindexmap, conss[i]) )/ (float)maxindcons;
-                     SCIPinfoMessage(scip, file, "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
-                        xpoint, ypoint, radius/maxind);
-                  }
-               }
-            }
-         }
-
-         SCIPfreeBufferArrayNull(scip, &curvars);
-      }
-   }
-
+   SCIPinfoMessage(scip, file, "\\clearpage                                                                     \n");
    SCIPinfoMessage(scip, file, "                                                                                \n");
-
-   /* --- write closing --- */
-
-   SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                                            \n");
-
-   if( DECdecompGetType(decomp) != DEC_DECTYPE_STAIRCASE )
-   {
-      SCIPhashmapFree(&varindexmap);
-      SCIPhashmapFree(&consindexmap);
-   }
 
    return SCIP_OKAY;
 }
@@ -756,20 +579,20 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 
    assert(decomp != NULL);
 
-//   /* get detector chain string & full-text string*/
-//   detectorchainstring = DECdecompGetDetectorChainString(scip, decomp);
-//
-//   detectorchain = DECdecompGetDetectorChain(decomp);
-//   sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
-//   if( detectorchain[0] != NULL)
-//      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
-//   else
-//      sprintf(fulldetectorstring, "%s", "user");
-//   for( i=1; i < sizedetectorchain; ++i )
-//   {
-//      sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
-//   }
-//
+   /* get detector chain string & full-text string*/
+   detectorchainstring = DECdecompGetDetectorChainString(scip, decomp);
+
+   detectorchain = DECdecompGetDetectorChain(decomp);
+   sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
+   if( detectorchain[0] != NULL)
+      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
+   else
+      sprintf(fulldetectorstring, "%s", "user");
+   for( i=1; i < sizedetectorchain; ++i )
+   {
+      sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
+   }
+
 //   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d-%d", detectorchainstring, DECdecompGetSeeedID(decomp),
 //      DECdecompGetNBlocks(decomp));
 //   /* tex will have problems with the character '_' */
@@ -914,6 +737,65 @@ SCIP_RETCODE writeTexEnding(
 
    SCIPinfoMessage(scip, file, "\\end{document}                                                                  \n");
 
+   return SCIP_OKAY;
+}
+
+/** writes a visualization for the given seeed */
+SCIP_RETCODE GCGwriteTexVisualization(
+   SCIP* scip,             /**< SCIP data structure */
+   char* filename,         /**< filename including path */
+   int seeedid,            /**< id of seeed to visualize */
+   SCIP_Bool statistics    /**< additionally to picture show statistics */
+   )
+{
+   MiscVisualization misc();
+   Seeed* seeed;
+   Seeedpool* seeedpool;
+
+   /* get seeed */
+   seeed = misc.getSeeed(scip, seeedid, seeedpool);
+
+   /* write tex code into file */
+   writeTexHeader(scip, file);
+   writeTexSeeed(scip, file, seeed, seeedpool);
+   if(statistics)
+   {
+      writeTexSeeedStatistics(scip, file, seeed);
+   }
+   writeTexEnding(scip, file);
+
+   return SCIP_OKAY;
+}
+
+/** writes a visualization of the family tree of the current seeedpool */
+SCIP_RETCODE GCGwriteTexFamilyTree(
+   SCIP* scip,       /**< SCIP data structure */
+   char* filename,   /**< filename including path */
+   SCIP_Bool usegp   /**< true if the gp reader should be used to visualize the individual seeeds */
+   )
+{
+   //   char* detectorchainstring;
+   //   DEC_DETECTOR** detectorchain;
+   //   int sizedetectorchain;
+   //
+   //   detectorchainstring = seeed->getDetectorChainString();
+   //   detectorchain = seeed->getDetectorchain();
+   //   sizedetectorchain = seeed->getNDetectors();
+
+   return SCIP_OKAY;
+}
+
+/** writes a report for the given seeeds */
+SCIP_RETCODE GCGwriteTexReport(
+   SCIP* scip,             /**< SCIP data structure */
+   char* filename,         /**< filename including path */
+   int* seeedids,          /**< ids of seeeds to visualize */
+   SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
+   SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
+   SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
+   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
+   )
+{
    return SCIP_OKAY;
 }
 

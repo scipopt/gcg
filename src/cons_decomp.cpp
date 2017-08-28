@@ -4714,7 +4714,7 @@ int DECgetBestSeeed(
    seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
 
    if( conshdlrdata->candidates->size() == 0 )
-      return NULL;
+      return -1;
 
    seeed = conshdlrdata->candidates->at( 0 ).first;
 
