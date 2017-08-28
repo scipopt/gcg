@@ -28,6 +28,7 @@
 /**@file   reader_gp.h
  * @brief  GP file reader writing gnuplot files
  * @author Martin Bergner
+ * @author Hanna Franzen
  * @ingroup FILEREADERS
  *
  * This reader can write visualizations of seeeds to a .gp file.

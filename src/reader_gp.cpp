@@ -58,6 +58,75 @@
 
 namespace gcg{
 
+
+/*
+ * Callback methods of reader
+ */
+
+
+/** destructor of reader to free user data (called when SCIP is exiting) */
+static
+SCIP_DECL_READERFREE(readerFreeGp)
+{
+   SCIP_READERDATA* readerdata;
+
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   SCIPfreeMemory(scip, &readerdata);
+
+   assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
+   return SCIP_OKAY;
+}
+
+
+/** problem writing method of reader */
+static
+SCIP_DECL_READERWRITE(readerWriteGp)
+{
+   MiscVisualization* misc = new MiscVisualization();
+   SeeedPtr seeed;
+   char* filename;
+   char* outputname;
+   int seeedid;
+
+   assert(scip != NULL);
+   assert(file != NULL);
+
+   /* get seeed to write */
+   seeedid = DECgetBestSeeed(scip);
+
+   if(seeedid == -1)
+   {
+      SCIPerrorMessage("Could not find best Seeed!\n");
+      *result = SCIP_DIDNOTRUN;
+   }
+   else
+   {
+      seeed = misc->GCGgetSeeed(scip, seeedid, NULL);
+
+      /* reader internally works with the filename instead of the C FILE type */
+      filename = misc->GCGgetFilePath(scip, file);
+
+      /* get filename for compiled file */
+      outputname = misc->GCGgetVisualizationFilename(scip, seeed, "pdf");
+
+      /* actual writing */
+      GCGwriteGpVisualization(scip, filename, outputname, seeedid);
+
+      *result = SCIP_SUCCESS;
+   }
+
+
+   return SCIP_OKAY;
+}
+
+
+/*
+ * Implementations
+ */
+
+
 /** write file header with terminal etc. */
 static
 SCIP_RETCODE writeGpHeader(
@@ -319,69 +388,6 @@ SCIP_RETCODE GCGwriteGpVisualization(
    /* write file */
    writeGpHeader( filename, outputname );
    writeGpSeeed( filename, seeed, seeedpool );
-
-   return SCIP_OKAY;
-}
-
-
-/*
- * Callback methods of reader
- */
-
-
-/** destructor of reader to free user data (called when SCIP is exiting) */
-static
-SCIP_DECL_READERFREE(readerFreeGp)
-{
-   SCIP_READERDATA* readerdata;
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   SCIPfreeMemory(scip, &readerdata);
-
-   assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
-   return SCIP_OKAY;
-}
-
-
-/** problem writing method of reader */
-static
-SCIP_DECL_READERWRITE(readerWriteGp)
-{
-   MiscVisualization* misc = new MiscVisualization();
-   SeeedPtr seeed;
-   char* filename;
-   char* outputname;
-   int seeedid;
-
-   assert(scip != NULL);
-   assert(file != NULL);
-
-   /* get seeed to write */
-   seeedid = DECgetBestSeeed(scip);
-
-   if(seeedid == -1)
-   {
-      SCIPerrorMessage("Could not find best Seeed!\n");
-      *result = SCIP_DIDNOTRUN;
-   }
-   else
-   {
-      seeed = misc->GCGgetSeeed(scip, seeedid, NULL);
-
-      /* reader internally works with the filename instead of the C FILE type */
-      filename = misc->GCGgetFilePath(scip, file);
-
-      /* get filename for compiled file */
-      outputname = misc->GCGgetVisualizationFilename(scip, seeed, "pdf");
-
-      /* actual writing */
-      GCGwriteGpVisualization(scip, filename, outputname, seeedid);
-
-      *result = SCIP_SUCCESS;
-   }
-
 
    return SCIP_OKAY;
 }

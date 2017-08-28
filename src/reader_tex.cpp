@@ -67,6 +67,51 @@
 namespace gcg{
 
 
+/** destructor of reader to free user data (called when SCIP is exiting) */
+
+SCIP_DECL_READERFREE(readerFreeTex)
+{
+   return SCIP_OKAY;
+}
+
+/** Problem reading method of reader.
+ *  Since the reader is not supposed to read files this returns a reading error. */
+
+SCIP_DECL_READERREAD(readerReadTex)
+{  /*lint --e{715}*/
+   return SCIP_READERROR;
+}
+
+/** problem writing method of reader */
+
+SCIP_DECL_READERWRITE(readerWriteTex)
+{
+   MiscVisualization* misc = new MiscVisualization();
+   Seeed* seeed;
+   int* seeedid;
+
+   assert(scip != NULL);
+   assert(reader != NULL);
+
+   /* get seeed to write */
+   *seeedid = DECgetBestSeeed(scip);
+
+   if(*seeedid == -1)
+   {
+      SCIPerrorMessage("Could not find best Seeed!\n");
+      *result = SCIP_DIDNOTRUN;
+   }
+   else
+   {
+      seeed = misc->GCGgetSeeed(scip, *seeedid, NULL);
+      GCGwriteTexVisualization(scip, file, *seeedid, (SCIP_Bool) TRUE, (SCIP_Bool) FALSE);
+      *result = SCIP_SUCCESS;
+   }
+
+   return SCIP_OKAY;
+}
+
+
 /* outputs the r, g, b decimal values for the rgb hex input */
 static
 SCIP_RETCODE getRgbFromHex(
@@ -292,7 +337,7 @@ SCIP_RETCODE writeTikzBox(
    int y1,           /**< y value of lower left vertex coordinate */
    int x2,           /**< x value of upper right vertex coordinate */
    int y2,           /**< y value of upper right vertex coordinate */
-   char* color       /**< color name */
+   const char* color /**< color name */
    )
 {
    SCIPinfoMessage(scip, file,
@@ -443,29 +488,34 @@ SCIP_RETCODE writeTexSeeed(
    /* --- draw boxes ---*/
 
    /* linking vars */
-   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(), "colorlinking");
+   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
+      (const char*) "colorlinking");
    colboxcounter += seeed->getNLinkingvars();
 
    /* mastervars */
    writeTikzBox(scip, file, nvars, nconss, colboxcounter, 0, seeed->getNMastervars()+colboxcounter, seeed->getNConss(),
-      "colormastervars");
+      (const char*) "colormastervars");
    colboxcounter += seeed->getNMastervars();
 
    /* masterconss */
-   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNVars(), seeed->getNMasterconss(), "colormasterconss");
+   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
+      (const char*) "colormasterconss");
    rowboxcounter += seeed->getNMasterconss();
 
    /* blocks */
    for( int b = 0; b < seeed->getNBlocks() ; ++b )
    {
       writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter,
-         colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b), "colorblock");
+         colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b),
+         (const char*) "colorblock");
       colboxcounter += seeed->getNVarsForBlock(b);
 
       if( seeed->getNStairlinkingvars(b) != 0 )
       {
-         writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + seeed->getNStairlinkingvars(b),
-            rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), "colorstairlinking");
+         writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter,
+            colboxcounter + seeed->getNStairlinkingvars(b),
+            rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1),
+            (const char*) "colorstairlinking");
       }
       colboxcounter += seeed->getNStairlinkingvars(b);
       rowboxcounter += seeed->getNConssForBlock(b);
@@ -473,7 +523,7 @@ SCIP_RETCODE writeTexSeeed(
 
    /* open */
    writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
-      rowboxcounter+seeed->getNOpenconss(), "coloropen" );
+      rowboxcounter+seeed->getNOpenconss(), (const char*) "coloropen" );
    colboxcounter += seeed->getNOpenvars();
    rowboxcounter += seeed->getNOpenconss();
 
@@ -792,49 +842,6 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    return SCIP_OKAY;
 }
 
-/** destructor of reader to free user data (called when SCIP is exiting) */
-
-SCIP_DECL_READERFREE(readerFreeTex)
-{
-   return SCIP_OKAY;
-}
-
-/** Problem reading method of reader.
- *  Since the reader is not supposed to read files this returns a reading error. */
-
-SCIP_DECL_READERREAD(readerReadTex)
-{  /*lint --e{715}*/
-   return SCIP_READERROR;
-}
-
-/** problem writing method of reader */
-
-SCIP_DECL_READERWRITE(readerWriteTex)
-{
-   MiscVisualization* misc = new MiscVisualization();
-   Seeed* seeed;
-   int* seeedid;
-
-   assert(scip != NULL);
-   assert(reader != NULL);
-
-   /* get seeed to write */
-   *seeedid = DECgetBestSeeed(scip);
-
-   if(*seeedid == -1)
-   {
-      SCIPerrorMessage("Could not find best Seeed!\n");
-      *result = SCIP_DIDNOTRUN;
-   }
-   else
-   {
-      seeed = misc->GCGgetSeeed(scip, *seeedid, NULL);
-      GCGwriteTexVisualization(scip, file, *seeedid, (SCIP_Bool) TRUE, (SCIP_Bool) FALSE);
-      *result = SCIP_SUCCESS;
-   }
-
-   return SCIP_OKAY;
-}
 
 /** includes the tex file reader in SCIP */
 SCIP_RETCODE
