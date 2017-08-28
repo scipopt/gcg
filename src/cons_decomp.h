@@ -347,6 +347,11 @@ DEC_DECOMP* DECgetBestDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** returns the Seeed ID of the best Seeed if available and -1 otherwise */
+int DECgetBestSeeed(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** writes out a list of all detectors */
 void DECprintListOfDetectors(
    SCIP*                 scip                /**< SCIP data structure */

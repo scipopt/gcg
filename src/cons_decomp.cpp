@@ -4624,7 +4624,7 @@ DEC_DECOMP* DECgetBestDecomp(
       conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
 
    seeedpool = conshdlrdata->seeedpool;
-   seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved ;
+   seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
 
  //  DECconshdlrDecompSortDecompositionsByScore(scip);
 
@@ -4646,7 +4646,7 @@ DEC_DECOMP* DECgetBestDecomp(
    }
 
 
-   seeedpool->createDecompFromSeeed(seeed, &decomp) ;
+   seeedpool->createDecompFromSeeed(seeed, &decomp);
 
    return decomp;
 
@@ -4685,6 +4685,55 @@ DEC_DECOMP* DECgetBestDecomp(
 //   SCIPdebugMessagePrint(scip, "no decomps out there \n");
 //
 //   return NULL;
+}
+
+/** returns the Seeed ID of the best Seeed if available and -1 otherwise */
+int DECgetBestSeeed(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+
+   gcg::Seeedpool* seeedpool;
+   gcg::Seeedpool* seeedpoolunpresolved;
+   SeeedPtr seeed;
+   int seeedid = -1;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->seeedpool == NULL )
+      conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+
+   seeedpool = conshdlrdata->seeedpool;
+   seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
+
+   if( conshdlrdata->candidates->size() == 0 )
+      return NULL;
+
+   seeed = conshdlrdata->candidates->at( 0 ).first;
+
+   if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
+   {
+      std::vector<SeeedPtr> seeedtotranslate(0);
+      std::vector<SeeedPtr> translatedseeeds(0);
+
+      seeedtotranslate.push_back(seeed);
+      seeedpool->translateSeeeds(seeedpoolunpresolved, seeedtotranslate, translatedseeeds);
+      seeed = translatedseeeds[0];
+   }
+
+   if(seeed != NULL)
+   {
+      seeedid = seeed->getID();
+   }
+
+   return seeedid;
 }
 
 /** writes out a list of all detectors */

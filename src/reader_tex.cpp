@@ -442,9 +442,11 @@ SCIP_RETCODE writeTexSeeed(
 
    SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
    SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
+   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                             \n");
 
-   /*@todo insert what originally was in write tikz */
 
+
+   SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                               \n");
    SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
    SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
 

@@ -354,20 +354,36 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    SeeedPtr seeed;
    char* filename;
    char* outputname;
+   int seeedid;
 
    assert(scip != NULL);
    assert(file != NULL);
 
-   /*@todo get seeed */
+   /* get seeed to write */
+   seeedid = DECgetBestSeeed();
 
-   filename = misc.GCGgetFilePath( scip, file );
+   if(seeedid == -1)
+   {
+      SCIPerrorMessage("Could not find best Seeed!\n");
+      *result = SCIP_DIDNOTRUN;
+   }
+   else
+   {
+      seeed = misc.getSeeed(scip, seeedid, NULL);
 
-   /* get filename for compiled file */
-   outputname = misc.GCGgetVisualizationFilename( scip, seeed, "pdf" );
+      /* reader internally works with the filename instead of the C FILE type */
+      filename = misc.GCGgetFilePath(scip, file);
 
-   GCGwriteGpVisualization( scip, filename, outputname, seeed->getID() );
+      /* get filename for compiled file */
+      outputname = misc.GCGgetVisualizationFilename(scip, seeed, "pdf");
 
-   *result = SCIP_SUCCESS;
+      /* actual writing */
+      GCGwriteGpVisualization(scip, filename, outputname, seeedid);
+
+      *result = SCIP_SUCCESS;
+   }
+
+
    return SCIP_OKAY;
 }
 
