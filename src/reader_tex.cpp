@@ -579,90 +579,90 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 
    assert(decomp != NULL);
 
-   /* get detector chain string & full-text string*/
-   detectorchainstring = DECdecompGetDetectorChainString(scip, decomp);
+//   /* get detector chain string & full-text string*/
+//   detectorchainstring = DECdecompGetDetectorChainString(scip, decomp);
+//
+//   detectorchain = DECdecompGetDetectorChain(decomp);
+//   sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
+//   if( detectorchain[0] != NULL)
+//      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
+//   else
+//      sprintf(fulldetectorstring, "%s", "user");
+//   for( i=1; i < sizedetectorchain; ++i )
+//   {
+//      sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
+//   }
 
-   detectorchain = DECdecompGetDetectorChain(decomp);
-   sizedetectorchain = DECdecompGetDetectorChainSize(decomp);
-   if( detectorchain[0] != NULL)
-      sprintf(fulldetectorstring, "%s", DECdetectorGetName(detectorchain[0]));
-   else
-      sprintf(fulldetectorstring, "%s", "user");
-   for( i=1; i < sizedetectorchain; ++i )
+   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d-%d", detectorchainstring, DECdecompGetSeeedID(decomp),
+      DECdecompGetNBlocks(decomp));
+   /* tex will have problems with the character '_' */
+   for(i = 0; i < SCIP_MAXSTRLEN; i++)
    {
-      sprintf(fulldetectorstring, "%s, %s",fulldetectorstring, DECdetectorGetName(detectorchain[i]) );
+      if(decompname[i] == '_'){
+         decompname[i] = '-';
+      }
    }
 
-//   (void) SCIPsnprintf(decompname, SCIP_MAXSTRLEN, "%s-%d-%d", detectorchainstring, DECdecompGetSeeedID(decomp),
-//      DECdecompGetNBlocks(decomp));
-//   /* tex will have problems with the character '_' */
-//   for(i = 0; i < SCIP_MAXSTRLEN; i++)
-//   {
-//      if(decompname[i] == '_'){
-//         decompname[i] = '-';
-//      }
-//   }
-//
-//   if( usegp )
-//   {
-//      /* --- create a gnuplot file for the decomposition --- */
-//
-//      /* get path to write to and put it into gpfilename */
-//      gcg::MiscVisualization* miscvisu = new gcg::MiscVisualization();
-//      pfile = miscvisu->GCGgetFilePath(scip, file);
-//      strcpy(pfilecpy, pfile);
-//      SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
-//      strcpy(gpfilename, filepath);
-//      strcat(gpfilename, "/");
-//
-//      /* get name of file and attach it to gpfilename */
-//      strcpy(ppath, SCIPgetProbName(scip));
-//      SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
-//      if( pname != NULL &&  pname[0] != '\0' )
-//      {
-//         strcpy(gpname, pname);
-//         strcat(gpname, "-");
-//      }
-//
-//      if( decompname != NULL &&  decompname[0] != '\0' )
-//      {
-//         strcat(gpname, decompname);
-//      }
-//      else
-//      {
-//         return SCIP_FILECREATEERROR;
-//      }
-//      strcat(gpfilename, gpname);
-//      strcat(gpfilename, ".gp");
-//
-//      /* write gp file for decomp using the gp reader (using the tex output option) */
-//      gpfile = fopen(gpfilename, "w");
-//      if( gpfile == NULL )
-//      {
-//         return SCIP_FILECREATEERROR;
-//      }
-//
-//      /* write gp in the tex draft mode and restore the original parameter afterwards */
-//      gpdraftwason = GCGgpGetDraftmode(scip);
-//      GCGgpSetDraftmode(scip, draftmode);
-//
-//      SCIPwriteGp(scip, gpfile, decomp, TRUE, FALSE);
-//
-//      GCGgpSetDraftmode(scip, gpdraftwason);
-//
-//      fclose(gpfile);
-//   }
+   if( usegp )
+   {
+      /* --- create a gnuplot file for the decomposition --- */
+
+      /* get path to write to and put it into gpfilename */
+      gcg::MiscVisualization* miscvisu = new gcg::MiscVisualization();
+      pfile = miscvisu->GCGgetFilePath(scip, file);
+      strcpy(pfilecpy, pfile);
+      SCIPsplitFilename(pfilecpy, &filepath, NULL, NULL, NULL);
+      strcpy(gpfilename, filepath);
+      strcat(gpfilename, "/");
+
+      /* get name of file and attach it to gpfilename */
+      strcpy(ppath, SCIPgetProbName(scip));
+      SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
+      if( pname != NULL &&  pname[0] != '\0' )
+      {
+         strcpy(gpname, pname);
+         strcat(gpname, "-");
+      }
+
+      if( decompname != NULL &&  decompname[0] != '\0' )
+      {
+         strcat(gpname, decompname);
+      }
+      else
+      {
+         return SCIP_FILECREATEERROR;
+      }
+      strcat(gpfilename, gpname);
+      strcat(gpfilename, ".gp");
+
+      /* write gp file for decomp using the gp reader (using the tex output option) */
+      gpfile = fopen(gpfilename, "w");
+      if( gpfile == NULL )
+      {
+         return SCIP_FILECREATEERROR;
+      }
+
+      /* write gp in the tex draft mode and restore the original parameter afterwards */
+      gpdraftwason = GCGgpGetDraftmode(scip);
+      GCGgpSetDraftmode(scip, draftmode);
+
+      SCIPwriteGp(scip, gpfile, decomp, TRUE, FALSE);
+
+      GCGgpSetDraftmode(scip, gpdraftwason);
+
+      fclose(gpfile);
+   }
 
    /* --- gather information & output them into .tex file --- */
-
-   DECevaluateDecomposition(scip, decomp, &scores);
-
-   if(!picturesonly)
-   {
-      SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
-      SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
-      SCIPinfoMessage(scip, file, "                                                                \n");
-   }
+//
+//   DECevaluateDecomposition(scip, decomp, &scores);
+//
+//   if(!picturesonly)
+//   {
+//      SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
+//      SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
+//      SCIPinfoMessage(scip, file, "                                                                \n");
+//   }
 //   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
 //   SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
 //   if( usegp )
@@ -677,52 +677,52 @@ SCIP_RETCODE GCGtexWriteDecompCode(
 //
 //   SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
 //   SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
-   if(!picturesonly)
-   {
-      SCIPinfoMessage(scip, file, "                                                                \n");
-      SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
-      SCIPinfoMessage(scip, file, "\\begin{tabular}{lp{10cm}}                                      \n");
-      SCIPinfoMessage(scip, file,
-         "  Found by detector(s): & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\ \n",
-         fulldetectorstring);
-      switch(DECdecompGetType(decomp))
-      {
-         case DEC_DECTYPE_ARROWHEAD:
-            strcpy(dectype,"arrowhead");
-            break;
-         case DEC_DECTYPE_STAIRCASE:
-            strcpy(dectype,"staircase");
-            break;
-         case DEC_DECTYPE_DIAGONAL:
-            strcpy(dectype,"diagonal");
-            break;
-         case DEC_DECTYPE_BORDERED:
-            strcpy(dectype,"bordered");
-            break;
-         default:
-            strcpy(dectype,"unknown");
-            break;
-      }
-      SCIPinfoMessage(scip, file, "  Type of decomposition: & %s \\\\                                              \n",
-         dectype);
-      SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   \n",
-         DECdecompGetNBlocks(decomp));
-      SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        \n",
-         DECdecompGetNLinkingvars(decomp));
-      SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i \\\\                                      \n",
-         DECdecompGetNLinkingconss(decomp));
-      SCIPinfoMessage(scip, file, "  Block density score: & %f \\\\                                                \n",
-         scores.densityscore);
-      SCIPinfoMessage(scip, file, "  Interlinking blocks score: & %f \\\\                                          \n",
-         scores.linkingscore);
-      SCIPinfoMessage(scip, file, "  Border score: & %f \\\\                                                       \n",
-         scores.borderscore);
-      SCIPinfoMessage(scip, file, "  \\textbf{Total score:} & \\textbf{%f} \\\\                                    \n",
-         scores.totalscore);
-      SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  \n");
-   }
-   SCIPinfoMessage(scip, file, "\\clearpage                                                                     \n");
-   SCIPinfoMessage(scip, file, "                                                                                \n");
+//   if(!picturesonly)
+//   {
+//      SCIPinfoMessage(scip, file, "                                                                \n");
+//      SCIPinfoMessage(scip, file, "\\vspace{0.3cm}                                                 \n");
+//      SCIPinfoMessage(scip, file, "\\begin{tabular}{lp{10cm}}                                      \n");
+//      SCIPinfoMessage(scip, file,
+//         "  Found by detector(s): & \\begin{minipage}{10cm}\\begin{verbatim}%s\\end{verbatim}\\end{minipage} \\\\ \n",
+//         fulldetectorstring);
+//      switch(DECdecompGetType(decomp))
+//      {
+//         case DEC_DECTYPE_ARROWHEAD:
+//            strcpy(dectype,"arrowhead");
+//            break;
+//         case DEC_DECTYPE_STAIRCASE:
+//            strcpy(dectype,"staircase");
+//            break;
+//         case DEC_DECTYPE_DIAGONAL:
+//            strcpy(dectype,"diagonal");
+//            break;
+//         case DEC_DECTYPE_BORDERED:
+//            strcpy(dectype,"bordered");
+//            break;
+//         default:
+//            strcpy(dectype,"unknown");
+//            break;
+//      }
+//      SCIPinfoMessage(scip, file, "  Type of decomposition: & %s \\\\                                              \n",
+//         dectype);
+//      SCIPinfoMessage(scip, file, "  Number of blocks: & %i \\\\                                                   \n",
+//         DECdecompGetNBlocks(decomp));
+//      SCIPinfoMessage(scip, file, "  Number of linking variables: & %i \\\\                                        \n",
+//         DECdecompGetNLinkingvars(decomp));
+//      SCIPinfoMessage(scip, file, "  Number of linking constraints: & %i \\\\                                      \n",
+//         DECdecompGetNLinkingconss(decomp));
+//      SCIPinfoMessage(scip, file, "  Block density score: & %f \\\\                                                \n",
+//         scores.densityscore);
+//      SCIPinfoMessage(scip, file, "  Interlinking blocks score: & %f \\\\                                          \n",
+//         scores.linkingscore);
+//      SCIPinfoMessage(scip, file, "  Border score: & %f \\\\                                                       \n",
+//         scores.borderscore);
+//      SCIPinfoMessage(scip, file, "  \\textbf{Total score:} & \\textbf{%f} \\\\                                    \n",
+//         scores.totalscore);
+//      SCIPinfoMessage(scip, file, "\\end{tabular}                                                                  \n");
+//   }
+//   SCIPinfoMessage(scip, file, "\\clearpage                                                                     \n");
+//   SCIPinfoMessage(scip, file, "                                                                                \n");
 
    return SCIP_OKAY;
 }
@@ -743,17 +743,17 @@ SCIP_RETCODE writeTexEnding(
 /** writes a visualization for the given seeed */
 SCIP_RETCODE GCGwriteTexVisualization(
    SCIP* scip,             /**< SCIP data structure */
-   char* filename,         /**< filename including path */
+   FILE* file,             /**< filename including path */
    int seeedid,            /**< id of seeed to visualize */
    SCIP_Bool statistics    /**< additionally to picture show statistics */
    )
 {
-   MiscVisualization misc();
+   MiscVisualization* misc = new MiscVisualization();
    Seeed* seeed;
    Seeedpool* seeedpool;
 
    /* get seeed */
-   seeed = misc.getSeeed(scip, seeedid, seeedpool);
+   seeed = misc->GCGgetSeeed(scip, seeedid, seeedpool);
 
    /* write tex code into file */
    writeTexHeader(scip, file);
@@ -767,10 +767,60 @@ SCIP_RETCODE GCGwriteTexVisualization(
    return SCIP_OKAY;
 }
 
+
+/** writes a report for the given seeeds */
+SCIP_RETCODE GCGwriteTexReport(
+   SCIP* scip,             /**< SCIP data structure */
+   FILE* file,             /**< filename including path */
+   int* seeedids,          /**< ids of seeeds to visualize */
+   int nseeeds,            /**< number of seeeds to visualize */
+   SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
+   SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
+   SCIP_Bool statistics    /**< true if statistics for each seeed should be included */
+   )
+{
+   MiscVisualization* misc = new MiscVisualization();
+   Seeed* seeed;
+   Seeedpool* seeedpool;
+
+   /* write tex code into file */
+   writeTexHeader(scip, file);
+   if(titlepage)
+   {
+      writeTexTitlepage(scip, file, nseeeds);
+   }
+   if(toc)
+   {
+      writeTexTableOfContents(scip, file);
+   }
+   for(int i = 0; i < nseeeds; i++)
+   {
+      if(toc)
+      {
+         char decompname[SCIP_MAXSTRLEN];
+
+         SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
+         SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
+         SCIPinfoMessage(scip, file, "                                                                \n");
+      }
+      /* get and write each seeed */
+      seeed = misc->GCGgetSeeed(scip, seeedids[i], seeedpool);
+      writeTexSeeed(scip, file, seeed, seeedpool);
+      if(statistics)
+      {
+         writeTexSeeedStatistics(scip, file, seeed);
+      }
+   }
+   writeTexEnding(scip, file);
+
+   return SCIP_OKAY;
+}
+
+
 /** writes a visualization of the family tree of the current seeedpool */
 SCIP_RETCODE GCGwriteTexFamilyTree(
    SCIP* scip,       /**< SCIP data structure */
-   char* filename,   /**< filename including path */
+   FILE* file,       /**< filename including path */
    SCIP_Bool usegp   /**< true if the gp reader should be used to visualize the individual seeeds */
    )
 {
@@ -782,20 +832,6 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    //   detectorchain = seeed->getDetectorchain();
    //   sizedetectorchain = seeed->getNDetectors();
 
-   return SCIP_OKAY;
-}
-
-/** writes a report for the given seeeds */
-SCIP_RETCODE GCGwriteTexReport(
-   SCIP* scip,             /**< SCIP data structure */
-   char* filename,         /**< filename including path */
-   int* seeedids,          /**< ids of seeeds to visualize */
-   SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
-   SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
-   SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
-   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
-   )
-{
    return SCIP_OKAY;
 }
 
@@ -930,16 +966,28 @@ SCIP_DECL_READERREAD(readerReadTex)
 /** problem writing method of reader */
 
 SCIP_DECL_READERWRITE(readerWriteTex)
-{  /*lint --e{715}*/
+{
+   MiscVisualization* misc = new MiscVisualization()
+   int seeedid;
 
    assert(scip != NULL);
    assert(reader != NULL);
 
-   SCIP_CALL( GCGtexWriteHeaderCode(scip,file) );
-   SCIP_CALL( GCGtexWriteDecompCode(scip, file, DECgetBestDecomp(scip)) );
-   SCIP_CALL( GCGtexWriteEndCode(scip,file) );
+   /* get seeed to write */
+   seeedid = DECgetBestSeeed(scip);
 
-   *result = SCIP_SUCCESS;
+   if(seeedid == -1)
+   {
+      SCIPerrorMessage("Could not find best Seeed!\n");
+      *result = SCIP_DIDNOTRUN;
+   }
+   else
+   {
+      seeed = misc->GCGgetSeeed(scip, seeedid, NULL);
+      GCGwriteTexVisualization(scip, file, seeedid, TRUE);
+      *result = SCIP_SUCCESS;
+   }
+
    return SCIP_OKAY;
 }
 
