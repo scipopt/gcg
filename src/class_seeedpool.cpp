@@ -871,6 +871,10 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
    verboseLevel = 1;
 
+   /** set detection data */
+   SCIP_CALL_ABORT( SCIPgetIntParam( scip, "detection/maxrounds", & maxndetectionrounds ) );
+
+
     /** @TODO this does not look well streamlined: currseeeds should be empty here, and seeedstopopulate should be the only seeeds to poopulate */
    for( size_t i = 0; i < currSeeeds.size(); ++ i )
    {
@@ -1205,6 +1209,8 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                   addSeeedToFinished( seeed, &success  );
                }
             }
+            else
+               delete seeed;
 
             SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
             seeedPropData->newSeeeds = NULL;
@@ -2304,7 +2310,10 @@ void Seeedpool::addConsClassifier(
       if( equiv == NULL )
          consclassescollection.push_back( givenClassifier );
       else
+      {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " consclassifier %s is not considered since it offers the same structure as  %s  consclassifier\n ", givenClassifier->getName(), equiv->getName() );
+         delete givenClassifier;
+      }
    }
 }
 
@@ -2947,7 +2956,7 @@ ConsClassifier* Seeedpool::createConsClassifierForConsnamesLevenshteinDistanceCo
    {
 
       SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " skipped levenshtein distance based constraint classes calculating since number of constraints  %d  exceeds limit %d \n", getNConss(), nmaxconss );
-
+      delete classifier;
       return NULL;
    }
 
@@ -3163,7 +3172,11 @@ void Seeedpool::addVarClassifier(
       if( equiv == NULL )
          varclassescollection.push_back( givenClassifier );
       else
+      {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier %s not considered since it offers the same structure as  %s.\n", givenClassifier->getName(), equiv->getName() );
+         delete givenClassifier;
+      }
+
    }
 }
 

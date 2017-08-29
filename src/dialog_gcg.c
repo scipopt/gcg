@@ -633,15 +633,19 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
+   SCIP_Bool emphfast;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
+
+   SCIPgetBoolParam(scip, "detection/emphfast/enabled", &emphfast);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL," start of detectstructure, test for emph fast: %d\n", emphfast);
+   if( emphfast )
+      SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_FAST, FALSE) );
+
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
-
-
-
       SCIP_CALL( DECdetectStructure(scip, &result) );
       if( result == SCIP_SUCCESS )
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was successful.\n");
@@ -694,6 +698,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    SCIP_RESULT result;
    int presolrounds;
    presolrounds = -1;
+   SCIP_Bool emphfast;
 
    //SCIPdialogMessage(scip, NULL, "In optimize \n");
 
@@ -702,6 +707,13 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    //SCIPdialogMessage(scip, NULL, "In optimize2 \n");
 
    assert(SCIPconshdlrDecompCheckConsistency(scip) );
+
+   SCIPgetBoolParam(scip, "detection/emphfast/enabled", &emphfast);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL," start of detectstructure, test for emph fast: %d\n", emphfast);
+   if( emphfast )
+      SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_FAST, FALSE) );
+
+
  //  SCIPdialogMessage(scip, NULL, "In optimize3 \n");
    SCIPdialogMessage(scip, NULL, "\n");
    switch( SCIPgetStage(scip) )

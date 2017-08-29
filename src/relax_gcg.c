@@ -2143,6 +2143,8 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )
    {
@@ -3791,6 +3793,9 @@ void GCGsetStructDecdecomp(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   if( relaxdata->decdecomp != NULL )
+      DECdecompFree(scip, &relaxdata->decdecomp );
 
    relaxdata->decdecomp = decdecomp;
 }

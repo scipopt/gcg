@@ -1799,7 +1799,7 @@ DEC_DECL_SETPARAMFAST(setParamFastIsomorph)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
