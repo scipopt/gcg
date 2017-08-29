@@ -1571,7 +1571,7 @@ void Seeedpool::translateSeeedData(
    std::vector<int> colthistoother;
    std::vector<int> missingrowinthis;
 
-   SCIPdebugMessagePrint( this->scip, " started translate seeed method \n" );
+   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL, " started translate seeed method \n" );
 
    calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
@@ -1599,7 +1599,7 @@ void Seeedpool::translateSeeeds(
    std::vector<int> colthistoother( 0 );
    std::vector<int> missingrowinthis( 0 );
 
-   SCIPdebugMessagePrint( this->scip, " started translate seeed method \n" );
+   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL, "started translate seeed method \n" );
 
    calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
@@ -1695,7 +1695,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       if( otherseeed->getNBlocks() == 1 || otherseeed->getNBlocks() == 0 )
          continue;
 
-      SCIPdebugMessagePrint( this->scip, " transform seeed %d \n", otherseeed->getID() );
+      SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform seeed %d \n", otherseeed->getID() );
 
       newseeed = new Seeed( scip, this->getNewIdForSeeed(), this->getNConss(), this->getNVars() );
 

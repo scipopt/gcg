@@ -512,10 +512,7 @@ SCIP_RETCODE DECdecompCreate(
 
    ncalls = SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(scip);
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "ncalls of createdecompfromseeed: %d \n", ncalls);
-
-
-
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfromseeed: %d \n", ncalls);
 
    return SCIP_OKAY;
 }
@@ -632,10 +629,7 @@ SCIP_RETCODE DECdecompFree(
 
    ncalls = SCIPconshdlrDecompDecreaseAndGetNCallsCreateDecomp(scip);
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "ncalls of createdecompfromseeed: %d \n", ncalls);
-
-
-
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfromseeed: %d \n", ncalls);
 
    return SCIP_OKAY;
 }

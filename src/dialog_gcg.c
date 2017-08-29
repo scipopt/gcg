@@ -1250,6 +1250,23 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       return SCIP_PLUGINNOTFOUND;
    }
 
+   /* set detectors */
+      if( !SCIPdialogHasEntry(setmenu, "detection") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+               NULL,
+               SCIPdialogExecMenu, NULL, NULL,
+               "detection", "change parameters for detection in general", TRUE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+      }
+      if( SCIPdialogFindEntry(setmenu, "detection", &submenu) != 1 )
+      {
+         SCIPerrorMessage("detection sub menu not found\n");
+         return SCIP_PLUGINNOTFOUND;
+      }
+
+
    /* create set detectors emphasis */
    SCIP_CALL( createEmphasisSubmenu(scip, submenu, &emphasismenu) );
    assert(emphasismenu != NULL);
@@ -1259,7 +1276,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
             NULL, SCIPdialogExecSetDetectorsAggressive, NULL, NULL,
-            "aggressive", "sets detectors <aggressive>", FALSE, NULL) );
+            "aggressive", "sets detection <aggressive>", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
@@ -1269,7 +1286,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
          NULL, SCIPdialogExecSetDetectorsDefault, NULL, NULL,
-         "default", "sets detectors <default>", FALSE, NULL) );
+         "default", "sets detection <default>", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
@@ -1279,7 +1296,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
             NULL, SCIPdialogExecSetDetectorsFast, NULL, NULL,
-            "fast", "sets detectors <fast>", FALSE, NULL) );
+            "fast", "sets detection <fast>", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
