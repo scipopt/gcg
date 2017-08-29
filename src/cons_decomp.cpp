@@ -4044,7 +4044,6 @@ SCIP_RETCODE DECdetectStructure(
    SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
 
 
-
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       SCIP_CALL( SCIPtransformProb(scip) );
 
@@ -5207,6 +5206,8 @@ SCIP_RETCODE setDetectionFast(
    assert(conshdlrdata != NULL);
 
    SCIP_CALL (SCIPsetIntParam(scip, "detection/maxrounds", 1) );
+
+
    SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob/enabled", FALSE) );
 
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", TRUE) );
@@ -5287,6 +5288,7 @@ SCIP_RETCODE GCGsetDetection(
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+
 
    switch( paramsetting )
    {

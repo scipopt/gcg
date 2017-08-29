@@ -3494,8 +3494,12 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    int conscounter = 1; /* in consindex counting starts with 1 */
    int counterstairlinkingvars = 0;
    int size;
+   int ncalls;
 
    assert( seeed->checkConsistency( this ) );
+
+
+
 
    /* create decomp data structure */
    SCIP_CALL_ABORT( DECdecompCreate( scip, newdecomp ) );
