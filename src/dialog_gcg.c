@@ -700,16 +700,12 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    presolrounds = -1;
    SCIP_Bool emphfast;
 
-   //SCIPdialogMessage(scip, NULL, "In optimize \n");
-
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
-
-   //SCIPdialogMessage(scip, NULL, "In optimize2 \n");
 
    assert(SCIPconshdlrDecompCheckConsistency(scip) );
 
    SCIPgetBoolParam(scip, "detection/emphfast/enabled", &emphfast);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL," start of detectstructure, test for emph fast: %d\n", emphfast);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL," start of detectstructure, test for emph fast: %d\n", emphfast);
    if( emphfast )
       SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_FAST, FALSE) );
 

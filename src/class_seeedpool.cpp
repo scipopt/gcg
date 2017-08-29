@@ -672,7 +672,7 @@ Seeedpool::Seeedpool(
    /** from here on nVars and nConss represents the relevant numbers */
    nVars = relevantVarCounter;
    nConss = relevantConsCounter;
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " nvars: %d / nconss: %d \n", nVars, nConss  );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " nvars: %d / nconss: %d \n", nVars, nConss  );
    varsForConss = std::vector<std::vector<int>>( nConss );
    valsForConss = std::vector < std::vector < SCIP_Real >> ( nConss );
    conssForVars = std::vector<std::vector<int>>( nVars );
@@ -1575,7 +1575,7 @@ void Seeedpool::translateSeeedData(
 
    calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
-   SCIPdebugMessagePrint( this->scip,
+   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL,
       " calculated translation; number of missing constraints: %d; number of other seeeds: %d \n", missingrowinthis.size(),
       origseeeds.size() );
 
@@ -1603,7 +1603,7 @@ void Seeedpool::translateSeeeds(
 
    calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
-   SCIPdebugMessagePrint( this->scip,
+   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL,
       " calculated translation; number of missing constraints: %d; number of other seeeds: %d \n", missingrowinthis.size(),
       origseeeds.size() );
 

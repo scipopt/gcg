@@ -4097,8 +4097,6 @@ SCIP_RETCODE DECdetectStructure(
 
    if( conshdlrdata->seeedpool == NULL )
    {
-      SCIPdebugMessagePrint(scip, "create seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
-
       conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
       SCIPdebugMessagePrint(scip, "created seeedpool for current problem, n detectors: %d \n", conshdlrdata->ndetectors);
    }
@@ -4118,7 +4116,7 @@ SCIP_RETCODE DECdetectStructure(
       conshdlrdata->seeedpool->translateSeeedData( conshdlrdata->seeedpoolunpresolved, seeedsunpresolved, translatedSeeeds,
          consClassDistributions, translatedConsDistributions, varClassDistributions, translatedVarDistributions );
 
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL , NULL, "number of translated original seeeds: %d \n " , translatedSeeeds.size() );
 
       conshdlrdata->seeedpool->populate(translatedSeeeds);
 
@@ -4128,7 +4126,7 @@ SCIP_RETCODE DECdetectStructure(
       for ( size_t d = 0; d < translatedVarDistributions.size(); ++d )
          conshdlrdata->seeedpool->addVarClassifier( translatedVarDistributions[d] );
 
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL , NULL, "finished translate seeed method!\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL , NULL, "finished translate seeed method!\n");
 
       for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
          conshdlrdata->seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
