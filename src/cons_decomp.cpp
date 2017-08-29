@@ -827,11 +827,7 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       }
    }
 
-   if( conshdlrdata->seeedpoolunpresolved != NULL )
-        delete conshdlrdata->seeedpoolunpresolved;
-   conshdlrdata->seeedpoolunpresolved = NULL;
-
-   delete conshdlrdata->seeedpool;
+    delete conshdlrdata->seeedpool;
 
    conshdlrdata->seeedpool = NULL;
    return SCIP_OKAY;

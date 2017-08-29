@@ -2143,7 +2143,8 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+   if( relaxdata->decdecomp != NULL )
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
 
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )

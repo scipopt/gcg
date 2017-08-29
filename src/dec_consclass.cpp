@@ -147,8 +147,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   if ( seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() )
   {
-     SCIPinfoMessage(scip, NULL, " abort dec_consclass cause there are %d many open vars of %d total vars and %d many open conss of %d  total conss \n ", seeedPropagationData->seeedToPropagate->getNOpenvars(), seeedPropagationData->seeedpool->getNVars(), seeedPropagationData->seeedToPropagate->getNOpenconss() ,seeedPropagationData->seeedpool->getNConss() );
-     seeedPropagationData->seeedToPropagate->displaySeeed(seeedPropagationData->seeedpool);
+     SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " abort dec_consclass cause there are %d many open vars of %d total vars and %d many open conss of %d  total conss \n ", seeedPropagationData->seeedToPropagate->getNOpenvars(), seeedPropagationData->seeedpool->getNVars(), seeedPropagationData->seeedToPropagate->getNOpenconss() ,seeedPropagationData->seeedpool->getNConss() );
     *result = SCIP_SUCCESS;
      return SCIP_OKAY;
   }
