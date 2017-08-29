@@ -77,8 +77,8 @@
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
 
-#define DEFAULT_MAXDECOMPSEXACT  7           /**< default maximum number of decompositions */
-#define DEFAULT_MAXDECOMPSEXTEND 5           /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXACT  6           /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXTEND 4           /**< default maximum number of decompositions */
 
 #define SET_MULTIPLEFORSIZETRANSF 12500
 

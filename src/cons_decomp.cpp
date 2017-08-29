@@ -83,7 +83,7 @@ typedef gcg::Seeed* SeeedPtr;
 
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 #define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
-#define DEFAULT_ENABLEORIGDETECTION TRUE /**< indicates whether to start detection for the original problem */
+#define DEFAULT_ENABLEORIGDETECTION FALSE /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
 #define DEFAULT_ENABLEORIGCLASSIFICATION TRUE /**< indicates whether to start detection for the original problem */
 
@@ -827,7 +827,7 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       }
    }
 
-    delete conshdlrdata->seeedpool;
+   delete conshdlrdata->seeedpool;
 
    conshdlrdata->seeedpool = NULL;
    return SCIP_OKAY;

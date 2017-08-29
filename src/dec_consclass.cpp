@@ -65,9 +65,9 @@
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
-#define DEFAULT_MAXIMUMNCLASSES     8
+#define DEFAULT_MAXIMUMNCLASSES     7
 #define AGGRESSIVE_MAXIMUMNCLASSES  10
-#define FAST_MAXIMUMNCLASSES        6
+#define FAST_MAXIMUMNCLASSES        5
 
 #define SET_MULTIPLEFORSIZETRANSF   12500
 
