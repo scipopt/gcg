@@ -224,9 +224,11 @@ SCIP_RETCODE solveIndependentSet(
          {
             indSetVars[indexCount] = consVars[0];
             nodeIndex0 = indexCount;
+            /*
             SCIPdebugMessage("Node Index: %d\n",indexCount);
             SCIPdebugMessage("Index: %d \n",SCIPvarGetProbindex(indSetVars[indexCount]));
             SCIPdebugMessage("Weight: %d \n", 1+abs((int) (scalingFactor * SCIPvarGetObj(indSetVars[indexCount]))));
+            */
             g->weights[nodeIndex0]=1+abs((int) (scalingFactor * SCIPvarGetObj(indSetVars[indexCount])));
             ++indexCount;
          }
@@ -234,9 +236,11 @@ SCIP_RETCODE solveIndependentSet(
          {
             indSetVars[indexCount] = consVars[1];
             nodeIndex1 = indexCount;
+            /*
             SCIPdebugMessage("Node Index: %d\n",indexCount);
             SCIPdebugMessage("Index: %d\n",SCIPvarGetProbindex(indSetVars[indexCount]));
             SCIPdebugMessage("Weight: %d \n", 1+abs((int) (scalingFactor * SCIPvarGetObj(indSetVars[indexCount]))));
+            */
             g->weights[nodeIndex1]=1+abs((int) (scalingFactor * SCIPvarGetObj(indSetVars[indexCount])));
             ++indexCount;
          }
@@ -269,7 +273,7 @@ SCIP_RETCODE solveIndependentSet(
             if(consVals[k] != 1 && (coefIndex == -1))
             {
                //indSetBound = abs((int) consVals[k]);
-               SCIPdebugMessage("\n\nCoefficient: %d \n\n", abs(consVals[k]));
+               //SCIPdebugMessage("\n\nCoefficient: %d \n\n", abs(consVals[k]));
                coefIndex = k;
             }
             else if(consVals[k] != 1 && coefIndex != -1)
@@ -346,7 +350,7 @@ SCIP_RETCODE solveIndependentSet(
             if(abs(consVals[coefIndex]) +1 == nvars )
             {
                solvals[SCIPvarGetProbindex(consVars[coefIndex])] = 1.0;
-               SCIPdebugMessage("\n\nCoupling constraint redundant.\n\n");
+               //SCIPdebugMessage("\n\nCoupling constraint redundant.\n\n");
             }
             /* Special case: The coefficient is -1, we set the coupling variable to 1 and treat the case like 
                a clique constraint. */
@@ -427,15 +431,15 @@ SCIP_RETCODE solveIndependentSet(
    
    /* indexCount now holds the actual number of unique IS variables, thus we truncate */
    assert(indexCount == npricingprobvars-1);
-   SCIPdebugMessage("graphweighted before resize = %u\n", graph_weighted(g));
+   //SCIPdebugMessage("graphweighted before resize = %u\n", graph_weighted(g));
    graph_resize(g,indexCount);
-   SCIPdebugMessage("resized graph, indexCount = %d\n", indexCount);
-   SCIPdebugMessage("graphweighted after resize = %u\n", graph_weighted(g));
+   //SCIPdebugMessage("resized graph, indexCount = %d\n", indexCount);
+   //SCIPdebugMessage("graphweighted after resize = %u\n", graph_weighted(g));
 
    /* Set clique options */
-   cl_opts.reorder_function=reorder_by_default;
+   cl_opts.reorder_function=reorder_by_degree;
    cl_opts.reorder_map=NULL;
-   cl_opts.time_function=clique_print_time;
+   cl_opts.time_function=NULL;
    cl_opts.output=NULL;
    cl_opts.user_function=NULL;
    cl_opts.user_data=NULL;
@@ -451,15 +455,15 @@ SCIP_RETCODE solveIndependentSet(
    {
       clique = clique_find_single(g,0,0,FALSE,&cl_opts);
    }
-   SCIPdebugMessage("found clique of size %d\n", set_size(clique));
+   //SCIPdebugMessage("found clique of size %d\n", set_size(clique));
    for ( int i = 0; i < indexCount; ++i )
    {
       if(SET_CONTAINS(clique,i))
       {
-         SCIPdebugMessage("Node Index: %d\n",i);
+         //SCIPdebugMessage("Node Index: %d\n",i);
          solvals[SCIPvarGetProbindex(indSetVars[i])] = 1.0;
-         SCIPdebugMessage("Objective value: %g \n",SCIPvarGetObj(indSetVars[i]));
-         SCIPdebugMessage("Var with index %d is in the max IS\n", SCIPvarGetProbindex(indSetVars[i]));
+         //SCIPdebugMessage("Objective value: %g \n",SCIPvarGetObj(indSetVars[i]));
+         //SCIPdebugMessage("Var with index %d is in the max IS\n", SCIPvarGetProbindex(indSetVars[i]));
          ++debugCounter;         
       }
       else
@@ -484,7 +488,7 @@ SCIP_RETCODE solveIndependentSet(
    SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[0], probnr, pricingprobvars, solvals, nsolvars, FALSE, SCIPinfinity(pricingprob)) );
    *ncols = 1;
    *result = SCIP_STATUS_OPTIMAL;
-   
+   /*
    SCIPdebugMessage("Biggest objective value: %g \n", biggestObj);
    SCIPdebugMessage("Total number of vars in the max IS: %d \n", debugCounter);
    SCIPdebugMessage("Total number of unique variables: %d \n", npricingprobvars);
@@ -493,7 +497,7 @@ SCIP_RETCODE solveIndependentSet(
    SCIPdebugMessage("Total number of constraints: %d \n", nconss);
    SCIPdebugMessage("Total number of IS constraints: %d \n", indSetConstraintCount);
    SCIPdebugMessage("%g%% of the contraints are IS contraints \n\n", (((double)indSetConstraintCount)/nconss)*100);
-
+   */
    SCIPfreeBufferArray(pricingprob,&indSetVars);
    SCIPfreeBufferArray(pricingprob,&solvals);
    SCIPfreeBufferArray(pricingprob,&consVars);
