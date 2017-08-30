@@ -1252,7 +1252,6 @@ SCIP_RETCODE Seeed::completeByConnected(
    assert( (int) varsForBlocks.size() == nBlocks );
    assert( (int) stairlinkingVars.size() == nBlocks );
 
-   SCIP_CALL( considerImplicits( seeedpool ) );
    SCIP_CALL( refineToMaster( seeedpool ) );
 
 
