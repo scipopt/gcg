@@ -81,8 +81,9 @@ Seeed::Seeed(
    int givennvars
    ) :
    scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
-   masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givennconss, true ),
-   isconsopen( givennconss, true ) , hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
+   masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givennvars, true ),
+   isconsopen( givennconss, true ) ,isvarmaster( givennvars, false ),
+   isconsmaster( givennconss, false ), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), score( 1. ), maxwhitescore( 1. ),
@@ -119,6 +120,9 @@ Seeed::Seeed(
 
    isvaropen = seeedtocopy->isvaropen;
    isconsopen = seeedtocopy->isconsopen;
+
+   isvarmaster = seeedtocopy->isvarmaster;
+   isconsmaster = seeedtocopy->isconsmaster;
 
    detectorChain = seeedtocopy->detectorChain;
    detectorChainFinishingUsed = seeedtocopy->detectorChainFinishingUsed;
@@ -1396,6 +1400,7 @@ SCIP_RETCODE Seeed::completeGreedily(
       {
          setConsToBlock( masterConss[0], 0 );
          masterConss.erase( masterConss.begin() );
+         isconsmaster[masterConss[0]] = false;
       }
       else
          assert( ! ( openConss.size() == 0 && masterConss.size() == 0 ) );
@@ -1470,18 +1475,28 @@ SCIP_RETCODE Seeed::completeGreedily(
       }
 
       /** test if the variable can be found in a master constraint yet */
-      for( size_t j = 0; j < masterConss.size() && checkVar; ++ j )
-      {
-         for( int k = 0; k < seeedpool->getNVarsForCons( masterConss[j] ); ++ k )
-         {
-            if( openVars[i] == seeedpool->getVarsForCons( masterConss[j] )[k] )
-            {
-               bookAsMasterVar( openVars[i] );
-               checkVar = false; /** the variable does'nt need to be checked any more */
-               break;
-            }
-         }
-      }
+        for( int k = 0; k < seeedpool->getNConssForVar( openVars[i] ) && checkVar; ++ k )
+        {
+           if( isconsmaster[seeedpool->getConssForVar(openVars[i])[k]] )
+           {
+              bookAsMasterVar( openVars[i] );
+              checkVar = false; /** the variable does'nt need to be checked any more */
+              break;
+           }
+        }
+
+//      for( size_t j = 0; j < masterConss.size() && checkVar; ++ j )
+//      {
+//         for( int k = 0; k < seeedpool->getNVarsForCons( masterConss[j] ); ++ k )
+//         {
+//            if( openVars[i] == seeedpool->getVarsForCons( masterConss[j] )[k] )
+//            {
+//               bookAsMasterVar( openVars[i] );
+//               checkVar = false; /** the variable does'nt need to be checked any more */
+//               break;
+//            }
+//         }
+//      }
    }
 
    flushBooked();
@@ -2417,7 +2432,7 @@ SCIP_RETCODE Seeed::findVarsLinkingToMaster(
       varcons = seeedpool->getConssForVar( lvars[i] );
       for( j = 0; j < seeedpool->getNConssForVar( lvars[i] ); ++ j )
       {
-         if( ! std::binary_search( masterConss.begin(), masterConss.end(), varcons[j] ) )
+         if( ! isconsmaster[varcons[j]]  )
          {
             isMasterVar = false;
             break;
@@ -2433,6 +2448,7 @@ SCIP_RETCODE Seeed::findVarsLinkingToMaster(
    for( std::vector<int>::reverse_iterator it = foundMasterVarIndices.rbegin(); it != foundMasterVarIndices.rend(); ++ it )
    {
       masterVars.push_back( lvars[ * it] );
+      isvarmaster[lvars[ * it]] = true;
       linkingVars.erase( linkingVars.begin() + * it );
    }
 
@@ -3134,11 +3150,7 @@ bool Seeed::isConsMastercons(
    )
 {
    assert( cons >= 0 && cons < nConss );
-   std::vector<int>::iterator lb = lower_bound( masterConss.begin(), masterConss.end(), cons );
-   if( lb != masterConss.end() &&  *lb == cons )
-      return true;
-   else
-      return false;
+  return isconsmaster[cons];
 }
 
 /** returns true if the cons is an open cons */
@@ -3326,11 +3338,7 @@ bool Seeed::isVarMastervar(
    )
 {
    assert( var >= 0 && var < nVars );
-   std::vector<int>::iterator lb = lower_bound( masterVars.begin(), masterVars.end(), var );
-   if( lb != masterVars.end() &&  *lb == var )
-      return true;
-   else
-      return false;
+  return isvarmaster[var];
 }
 
 /** returns true if the var is a linking var */
@@ -3448,7 +3456,7 @@ SCIP_RETCODE Seeed::setConsToMaster(
 {
    assert( consToMaster >= 0 && consToMaster < nConss );
    masterConss.push_back( consToMaster );
-
+   isconsmaster[consToMaster] = true;
    changedHashvalue = true;
 
    return SCIP_OKAY;
@@ -3614,6 +3622,7 @@ SCIP_RETCODE Seeed::setVarToMaster(
 {
    assert( varToMaster >= 0 && varToMaster < nVars );
    masterVars.push_back( varToMaster );
+   isvarmaster[varToMaster] = true;
    changedHashvalue = true;
 
    return SCIP_OKAY;

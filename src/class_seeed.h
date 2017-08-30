@@ -77,6 +77,9 @@ private:
                                                                  *< assigned yet*/
    std::vector<bool> isvaropen;
    std::vector<bool> isconsopen;
+   std::vector<bool> isvarmaster;
+   std::vector<bool> isconsmaster;
+
    std::vector<int> bookedAsMasterConss;                       /**< vector containing indices of constraints that are not
                                                                  *< assigned yet but booked as master conss */
    std::vector<std::pair<int, int>> bookedAsBlockConss;        /**< vector containing indices of constraints that are not

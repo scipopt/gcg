@@ -1943,7 +1943,6 @@ SCIP_RETCODE Seeedpool::prepareSeeed(
    )
 {
    seeed->considerImplicits( this );
-   seeed->sort();
    seeed->calcHashvalue();
    seeed->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
 
