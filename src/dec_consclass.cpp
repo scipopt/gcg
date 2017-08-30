@@ -253,7 +253,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
        seeed->addDetectorChainInfo(decinfo);
        seeed->setDetectorPropagated(detector);
-       seeed->setConsClassifierStatistics( seeed->getNDetectors() - 1, classifierIndex, curmasterclasses );
+       seeed->setConsClassifierStatistics( seeed->getNDetectors() - 1, classifier, curmasterclasses );
 
        foundseeeds.push_back(seeed);
     }

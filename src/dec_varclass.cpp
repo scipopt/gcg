@@ -278,7 +278,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
        seeed->addDetectorChainInfo(decinfo);
        seeed->setDetectorPropagated(detector);
-       seeed->setVarClassifierStatistics( seeed->getNDetectors() - 1, classifierIndex, curlinkingclasses,
+       seeed->setVarClassifierStatistics( seeed->getNDetectors() - 1, classifier, curlinkingclasses,
           varclassindices_master );
 
        foundseeeds.push_back(seeed);

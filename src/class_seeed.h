@@ -124,18 +124,15 @@ private:
                                                          *< open for each detector working on that seeed*/
    std::vector<int> nNewBlocks;                       /**< vector containing detector indices that worked on that seeed */
 
-   std::vector<int> usedConsClassifier;               /**< vector containing the (seeedpool) index of the consclassifier
+   std::vector<IndexClassifier*> usedClassifier;      /**< vector containing pointer to the cons- or varclassifier
                                                          *< a detector made use of for each detector working on that seeed
-                                                         *< (-1 if no consclassifier was used) */
-   std::vector<int> usedVarClassifier;                /**< vector containing the (seeedpool) index of the varclassifier
-                                                         *< a detector made use of for each detector working on that seeed
-                                                         *< (-1 if no varclassifier was used) */
-   std::vector<std::vector<int>> consClassesMaster;   /**< vector containing the vector of consclassindices that were assigned
-                                                         *< to master by the consclassifier used by a detector */
-   std::vector<std::vector<int>> varClassesLinking;   /**< vector containing the vector of varclassindices that were assigned
-                                                         *< to linking by the varclassifier used by a detector */
-   std::vector<std::vector<int>> varClassesMaster;    /**< vector containing the vector of varclassindices that were assigned
-                                                         *< to master by the varclassifier used by a detector */
+                                                         *< (NULL if no classifier was used) */
+   std::vector<std::vector<int>> classesToMaster;     /**< vector containing the vector of classindices that were assigned
+                                                         *< to master by the classifier used by a detector
+                                                         *< (empty vector if no classifier was used) */
+   std::vector<std::vector<int>> classesToLinking;    /**< vector containing the vector of classindices that were assigned
+                                                         *< to linking by the classifier used by a detector
+                                                         *< (empty vector if no classifier was used) */
 
    std::vector<int> listofancestorids;                /**< vector containing detector indices that worked on that seeed */
    USERGIVEN usergiven;                               /**< is this seeed partially or completely given by user */
@@ -484,7 +481,6 @@ public:
 
    /** returns the data of the consclassifier that the given detector made use of */
    SCIP_RETCODE getConsClassifierData(
-      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
       int detectorchainindex, /**< index of the detector in the detectorchain */
       ConsClassifier** classifier, /**< a pointer to the used consclassifier */
       std::vector<int>& consclassesmaster /**< a vector containing all indices of the consclasses assigned to master */
@@ -680,7 +676,6 @@ public:
 
    /** returns the data of the varclassifier that the given detector made use of */
    SCIP_RETCODE getVarClassifierData(
-      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
       int detectorchainindex, /**< index of the detector in the detectorchain */
       VarClassifier** classifier, /**< a pointer to the used varclassifier */
       std::vector<int>& varclasseslinking, /**< a vector containing all indices of the varclasses assigned to linking */
@@ -789,7 +784,7 @@ public:
    /** registers statistics for a used consclassifier */
    void setConsClassifierStatistics(
       int detectorchainindex, /**< index of the detector in the detectorchain */
-      int consclassifierindex, /**< index of the consclassifier in the related seeedpool */
+      ConsClassifier* classifier, /**< the used consclassifier */
       std::vector<int> consclassesmaster /**< vector of classindices that were assigned to master */
       );
 
@@ -874,7 +869,7 @@ public:
    /** registers statistics for a used varclassifier */
    void setVarClassifierStatistics(
       int detectorchainindex, /**< index of the detector in the detectorchain */
-      int varclassifierindex, /**< index of the consclassifier in the related seeedpool */
+      VarClassifier* classifier, /**< the used varclassifier */
       std::vector<int> varclasseslinking, /**< vector of classindices that were assigned to linking */
       std::vector<int> varclassesmaster /**< vector of classindices that were assigned to master */
       );

@@ -85,10 +85,10 @@ Seeed::Seeed(
    openConss( 0 ) , hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
-   nNewBlocks( 0 ), usedConsClassifier( 0 ), usedVarClassifier( 0 ), consClassesMaster( 0 ), varClassesLinking( 0 ),
-   varClassesMaster( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), isfromlegacymode( false ), score( 1. ),
-   maxwhitescore( 1. ), borderareascore( 1. ), detectorchainstring( NULL ), stemsFromUnpresolved( false ),
-   isfromunpresolved( FALSE ), isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
+   nNewBlocks( 0 ), usedClassifier( 0 ), classesToMaster( 0 ), classesToLinking( 0 ), listofancestorids( 0 ),
+   usergiven( USERGIVEN::NOT ), isfromlegacymode( false ), score( 1. ), maxwhitescore( 1. ), borderareascore( 1. ),
+   detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
+   isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
 {
    for( int i = 0; i < nConss; ++ i )
    {
@@ -136,11 +136,9 @@ Seeed::Seeed(
    pctConssToBorder = seeedtocopy->pctConssToBorder;
    pctConssToBlock = seeedtocopy->pctConssToBlock;
    pctConssFromFree = seeedtocopy->pctConssFromFree;
-   usedConsClassifier = seeedtocopy->usedConsClassifier;
-   usedVarClassifier = seeedtocopy->usedVarClassifier;
-   consClassesMaster = seeedtocopy->consClassesMaster;
-   varClassesLinking = seeedtocopy->varClassesLinking;
-   varClassesMaster = seeedtocopy->varClassesMaster;
+   usedClassifier = seeedtocopy->usedClassifier;
+   classesToMaster = seeedtocopy->classesToMaster;
+   classesToLinking = seeedtocopy->classesToLinking;
    isFinishedByFinisher = seeedtocopy->isFinishedByFinisher;
    changedHashvalue = seeedtocopy->changedHashvalue;
    nNewBlocks = seeedtocopy->nNewBlocks;
@@ -230,11 +228,9 @@ void Seeed::addDetectorChainInfo(
 void Seeed::addEmptyClassifierStatistics()
 {
    std::vector<int> emptyVector( 0 );
-   usedConsClassifier.push_back( -1 );
-   usedVarClassifier.push_back( -1 );
-   consClassesMaster.push_back( emptyVector );
-   varClassesLinking.push_back( emptyVector );
-   varClassesMaster.push_back( emptyVector );
+   usedClassifier.push_back( NULL );
+   classesToMaster.push_back( emptyVector );
+   classesToLinking.push_back( emptyVector );
 }
 
  /** adds number of new blocks created by a detector added to detector chain */
@@ -1866,9 +1862,10 @@ bool Seeed::consClassifierUsed(
    int detectorchainindex
    )
 {
-   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedConsClassifier.size() );
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedClassifier.size() );
 
-   return usedConsClassifier[detectorchainindex] != -1;
+   return ( usedClassifier[detectorchainindex] != NULL )
+      && ( dynamic_cast<ConsClassifier*>( usedClassifier[detectorchainindex] ) != NULL );
 }
 
 /** assigns every open cons/var
@@ -1990,11 +1987,9 @@ SCIP_RETCODE Seeed::copyClassifierStatistics(
    const Seeed* otherseeed
    )
 {
-   usedConsClassifier = otherseeed->usedConsClassifier;
-   usedVarClassifier = otherseeed->usedVarClassifier;
-   consClassesMaster = otherseeed->consClassesMaster;
-   varClassesLinking = otherseeed->varClassesLinking;
-   varClassesMaster = otherseeed->varClassesMaster;
+   usedClassifier = otherseeed->usedClassifier;
+   classesToMaster = otherseeed->classesToMaster;
+   classesToLinking = otherseeed->classesToLinking;
 
    return SCIP_OKAY;
 }
@@ -2993,17 +2988,15 @@ std::vector<SCIP_Real> Seeed::getDetectorClockTimes()
 
 /** returns the data of the consclassifier that the given detector made use of */
 SCIP_RETCODE Seeed::getConsClassifierData(
-   Seeedpool* seeedpool,
    int detectorchainindex,
    ConsClassifier** classifier,
    std::vector<int>& consclassesmaster
    )
 {
-   assert( seeedpool != NULL );
    assert( consClassifierUsed( detectorchainindex ) );
 
-   *classifier = seeedpool->getConsClassifier( usedConsClassifier[detectorchainindex] );
-   consclassesmaster = consClassesMaster[detectorchainindex];
+   *classifier = dynamic_cast<ConsClassifier*>( usedClassifier[detectorchainindex] );
+   consclassesmaster = classesToMaster[detectorchainindex];
 
    return SCIP_OKAY;
 }
@@ -3020,9 +3013,10 @@ bool Seeed::varClassifierUsed(
    int detectorchainindex
    )
 {
-   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedVarClassifier.size() );
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedClassifier.size() );
 
-   return usedVarClassifier[detectorchainindex] != -1;
+   return ( usedClassifier[detectorchainindex] != NULL )
+      && ( dynamic_cast<VarClassifier*>( usedClassifier[detectorchainindex] ) != NULL );
 }
 
 
@@ -3088,7 +3082,7 @@ std::string Seeed::getDetectorClassifierInfo(
       ConsClassifier* classifier;
       std::vector<int> constomaster;
 
-      getConsClassifierData( seeedpool, detectorchainindex, &classifier, constomaster );
+      getConsClassifierData( detectorchainindex, &classifier, constomaster );
 
       output << "  Used consclassifier: " << classifier->getName() << std::endl;
       output << "   Pushed to master:";
@@ -3165,7 +3159,7 @@ std::string Seeed::getDetectorClassifierInfo(
       std::vector<int> vartolinking;
       std::vector<int> vartomaster;
 
-      getVarClassifierData( seeedpool, detectorchainindex, &classifier, vartolinking, vartomaster );
+      getVarClassifierData( detectorchainindex, &classifier, vartolinking, vartomaster );
 
       output << "  Used varclassifier: " << classifier->getName() << std::endl;
       output << "   Pushed to linking:";
@@ -3403,7 +3397,7 @@ SCIP_RETCODE Seeed::displayInfo(
       {
          std::cout << std::endl << " 1.: " << detectorrepres << std::endl;
          std::cout << getDetectorStatistics( 0 );
-         std::cout << getDetectorClassifierInfo( seeedpool, 0, detailLevel > 1 );
+         std::cout << getDetectorClassifierInfo( seeedpool, 0, detailLevel > 1 && ( !stemsFromUnpresolved || isfromunpresolved ) );
       }
       else
       {
@@ -3422,7 +3416,7 @@ SCIP_RETCODE Seeed::displayInfo(
          {
             std::cout << " " << ( d + 1 ) << ".: " << detectorrepres << std::endl;
             std::cout << getDetectorStatistics( d );
-            std::cout << getDetectorClassifierInfo( seeedpool, d, detailLevel > 1 );
+            std::cout << getDetectorClassifierInfo( seeedpool, d, detailLevel > 1 && ( !stemsFromUnpresolved || isfromunpresolved ) );
          }
          else
          {
@@ -3947,19 +3941,17 @@ bool Seeed::getStemsFromUnpresolved()
 
 /** returns the data of the varclassifier that the given detector made use of */
 SCIP_RETCODE Seeed::getVarClassifierData(
-   Seeedpool* seeedpool,
    int detectorchainindex,
    VarClassifier** classifier,
    std::vector<int>& varclasseslinking,
    std::vector<int>& varclassesmaster
    )
 {
-   assert( seeedpool != NULL );
    assert( varClassifierUsed( detectorchainindex ) );
 
-   *classifier = seeedpool->getVarClassifier( usedVarClassifier[detectorchainindex] );
-   varclasseslinking = varClassesLinking[detectorchainindex];
-   varclassesmaster = varClassesMaster[detectorchainindex];
+   *classifier = dynamic_cast<VarClassifier*>( usedClassifier[detectorchainindex] );
+   varclasseslinking = classesToLinking[detectorchainindex];
+   varclassesmaster = classesToMaster[detectorchainindex];
 
    return SCIP_OKAY;
 }
@@ -4294,14 +4286,14 @@ SCIP_RETCODE Seeed::refineToMaster(
 /** registers statistics for a used consclassifier */
 void Seeed::setConsClassifierStatistics(
    int detectorchainindex,
-   int consclassifierindex,
+   ConsClassifier* classifier,
    std::vector<int> consclassesmaster
    )
 {
-   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedConsClassifier.size() );
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedClassifier.size() );
 
-   usedConsClassifier[detectorchainindex] = consclassifierindex;
-   consClassesMaster[detectorchainindex] = consclassesmaster;
+   usedClassifier[detectorchainindex] = classifier;
+   classesToMaster[detectorchainindex] = consclassesmaster;
 }
 
 /** directly adds a constraint to a block
@@ -4471,16 +4463,16 @@ void Seeed::setUsergiven(
 /** registers statistics for a used varclassifier */
 void Seeed::setVarClassifierStatistics(
    int detectorchainindex,
-   int varclassifierindex,
+   VarClassifier* classifier,
    std::vector<int> varclasseslinking,
    std::vector<int> varclassesmaster
    )
 {
-   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedVarClassifier.size() );
+   assert( 0 <= detectorchainindex && detectorchainindex < (int) usedClassifier.size() );
 
-   usedVarClassifier[detectorchainindex] = varclassifierindex;
-   varClassesLinking[detectorchainindex] = varclasseslinking;
-   varClassesMaster[detectorchainindex] = varclassesmaster;
+   usedClassifier[detectorchainindex] = classifier;
+   classesToLinking[detectorchainindex] = varclasseslinking;
+   classesToMaster[detectorchainindex] = varclassesmaster;
 }
 
 /** directly adds a variable to the linking variables

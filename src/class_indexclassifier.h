@@ -76,7 +76,7 @@ protected:
 
 
    /** destructor */
-   ~IndexClassifier();
+   virtual ~IndexClassifier();
 
    /** creates a new class, returns index of the class */
    int addClass(
