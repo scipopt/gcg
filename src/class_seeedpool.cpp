@@ -1625,6 +1625,26 @@ void Seeedpool::calcTranslationMapping(
    int ncolsother = origpool->nVars;
    int ncolsthis = nVars;
 
+   std::vector<SCIP_CONS*> origscipconss = origpool->consToScipCons;
+   std::vector<SCIP_CONS*> thisscipconss = consToScipCons;
+   std::vector<SCIP_VAR*> origscipvars = origpool->varToScipVar;
+   std::vector<SCIP_VAR*> thisscipvars = varToScipVar;
+
+
+
+   std::vector<SCIP_CONS*>::const_iterator origiter = origscipconss.begin();
+   std::vector<SCIP_CONS*>::const_iterator origiterend = origscipconss.end();
+
+   std::vector<SCIP_CONS*>::const_iterator thisiter = thisscipconss.begin();
+   std::vector<SCIP_CONS*>::const_iterator thisiterend = thisscipconss.end();
+
+   std::vector<SCIP_VAR*>::const_iterator origitervars = origscipvars.begin();
+   std::vector<SCIP_VAR*>::const_iterator origiterendvars = origscipvars.end();
+
+   std::vector<SCIP_VAR*>::const_iterator thisitervars = thisscipvars.begin();
+   std::vector<SCIP_VAR*>::const_iterator thisiterendvars = thisscipvars.end();
+
+
    rowothertothis.assign( nrowsother, - 1 );
    rowthistoother.assign( nrowsthis, - 1 );
    colothertothis.assign( ncolsother, - 1 );
@@ -1633,14 +1653,14 @@ void Seeedpool::calcTranslationMapping(
    missingrowinthis.clear();
 
    /* identify new and deleted rows and cols; and identify bijection between maintained variables */
-   for( int i = 0; i < nrowsother; ++ i )
+   for( int i = 0; origiter != origiterend; ++i, ++origiter )
    {
-      SCIP_CONS* otherrow = origpool->getConsForIndex( i );
+      SCIP_CONS* otherrow = *origiter;
       assert( otherrow != NULL );
       SCIP_Bool foundmaintained = false;
-      for( int j = 0; j < nrowsthis; ++ j )
+      for( int j = 0; thisiter != thisiterend; ++j, ++thisiter )
       {
-         SCIP_CONS* thisrow = this->getConsForIndex( j );
+         SCIP_CONS* thisrow = *thisiter;
          assert( SCIPconsIsTransformed( thisrow ) );
          char buffer[SCIP_MAXSTRLEN];
          assert( this->scip != NULL );
@@ -1658,12 +1678,12 @@ void Seeedpool::calcTranslationMapping(
          missingrowinthis.push_back( i );
    }
 
-   for( int i = 0; i < ncolsother; ++ i )
+   for( int i = 0; origitervars != origiterendvars; ++i, ++origitervars )
    {
-      SCIP_VAR* othervar = origpool->getVarForIndex( i );
-      for( int j = 0; j < ncolsthis; ++ j )
+      SCIP_VAR* othervar = *origitervars;
+      for( int j = 0; thisitervars != thisiterendvars; ++j, ++thisitervars )
       {
-         if( othervar == this->getVarForIndex( j ) )
+         if( othervar == *thisitervars )
          {
             colothertothis[i] = j;
             colthistoother[j] = i;

@@ -81,23 +81,21 @@ Seeed::Seeed(
    int givennvars
    ) :
    scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
-   masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), openVars( 0 ),
-   openConss( 0 ) , hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
+   masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givennconss, true ),
+   isconsopen( givennconss, true ) , hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), listofancestorids( 0 ), usergiven( USERGIVEN::NOT ), score( 1. ), maxwhitescore( 1. ),
    borderareascore( 1. ), detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
    isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
 {
-   for( int i = 0; i < nConss; ++ i )
-   {
-      openConss.push_back( i );
-   }
 
-   for( int i = 0; i < nVars; ++ i )
-   {
-      openVars.push_back( i );
-   }
+   for( int i = 0; i < nConss; ++i )
+      openConss.push_back(i);
+
+   for( int i = 0; i < nVars; ++i )
+      openVars.push_back(i);
+
 }
 
 /** copy constructor */
@@ -118,6 +116,10 @@ Seeed::Seeed(
    stairlinkingVars = seeedtocopy->stairlinkingVars;
    openVars = seeedtocopy->openVars;
    openConss = seeedtocopy->openConss;
+
+   isvaropen = seeedtocopy->isvaropen;
+   isconsopen = seeedtocopy->isconsopen;
+
    detectorChain = seeedtocopy->detectorChain;
    detectorChainFinishingUsed = seeedtocopy->detectorChainFinishingUsed;
    detectorchaininfo = seeedtocopy->detectorchaininfo;
@@ -935,6 +937,7 @@ bool Seeed::checkAllConssAssigned()
       }
    }
    openConss.clear();
+   isconsopen = std::vector<bool>(nConss, false);
    return true;
 }
 
@@ -1570,7 +1573,6 @@ SCIP_RETCODE Seeed::completeGreedily(
       assert( false );
    }
 
-   sort();
    assert( checkConsistency( seeedpool ) );
 
    return SCIP_OKAY;
@@ -1740,7 +1742,10 @@ SCIP_RETCODE Seeed::deleteEmptyBlocks(
          for( b = 0; b < block; ++ b )
             it ++;
          for( size_t j = 0; j < varsForBlocks[block].size(); ++ j )
+         {
             openVars.push_back( varsForBlocks[block][j] );
+            isvaropen[varsForBlocks[block][j]] = true;
+         }
          varsForBlocks.erase( it );
 
          //set stairlinkingvars of the previous block to block vars
@@ -1778,6 +1783,7 @@ SCIP_RETCODE Seeed::deleteOpencons(
    it = lower_bound( openConss.begin(), openConss.end(), opencons );
    assert( it != openConss.end() && *it == opencons );
    openConss.erase( it );
+   isconsopen[opencons] = false;
    changedHashvalue = true;
 
    return SCIP_OKAY;
@@ -1793,6 +1799,7 @@ SCIP_RETCODE Seeed::deleteOpenvar(
    it = lower_bound( openVars.begin(), openVars.end(), openvar );
    assert( it != openVars.end() && *it == openvar );
    openVars.erase( it );
+   isvaropen[openvar] = false;
    changedHashvalue = true;
    return SCIP_OKAY;
 }
@@ -2368,6 +2375,8 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock(
    sort();
    openVars = std::vector<int>( 0 );
    openConss = std::vector<int>( 0 );
+   isvaropen = std::vector<bool>(nVars, false);
+   isconsopen = std::vector<bool>(nConss, false);
 
    deleteEmptyBlocks(false);
    sort();
@@ -2893,10 +2902,23 @@ const int* Seeed::getOpenconss()
    return & openConss[0];
 }
 
+/** returns array containing constraints not assigned yet*/
+std::vector<int> Seeed::getOpenconssVec()
+{
+   return openConss;
+}
+
+
 /** returns array containing variables not assigned yet*/
 const int* Seeed::getOpenvars()
 {
    return & openVars[0];
+}
+
+/** returns array containing variables not assigned yet*/
+std::vector<int> Seeed::getOpenvarsVec()
+{
+   return openVars;
 }
 
 /** returns fraction of variables assigned to the border for a detector */
@@ -3116,11 +3138,7 @@ bool Seeed::isConsOpencons(
    )
 {
    assert( cons >= 0 && cons < nConss );
-   std::vector<int>::iterator lb = lower_bound( openConss.begin(), openConss.end(), cons );
-   if( lb != openConss.end() &&  *lb == cons )
-      return true;
-   else
-      return false;
+   return isconsopen[cons];
 }
 
 /** returns true if the seeed is from the unpresolved problem */
@@ -3325,11 +3343,7 @@ bool Seeed::isVarOpenvar(
    )
 {
    assert( var >= 0 && var < nVars );
-   std::vector<int>::iterator lb = lower_bound( openVars.begin(), openVars.end(), var );
-   if( lb != openVars.end() &&  *lb == var )
-      return true;
-   else
-      return false;
+   return isvaropen[var];
 }
 
 /** returns true if the var is a stairlinking var */

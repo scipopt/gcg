@@ -75,6 +75,8 @@ private:
                                                                  *< assigned yet*/
    std::vector<int> openConss;                                 /**< vector containing indices of constraints that are not
                                                                  *< assigned yet*/
+   std::vector<bool> isvaropen;
+   std::vector<bool> isconsopen;
    std::vector<int> bookedAsMasterConss;                       /**< vector containing indices of constraints that are not
                                                                  *< assigned yet but booked as master conss */
    std::vector<std::pair<int, int>> bookedAsBlockConss;        /**< vector containing indices of constraints that are not
@@ -526,8 +528,14 @@ public:
    /** returns array containing constraints not assigned yet */
    const int* getOpenconss();
 
+   /** returns array containing constraints not assigned yet  as vector*/
+   std::vector<int> getOpenconssVec();
+
    /** returns array containing variables not assigned yet */
    const int* getOpenvars();
+
+   /** returns array containing variables not assigned yet as vector*/
+   std::vector<int> getOpenvarsVec();
 
    /** returns fraction of variables assigned to the border for a detector */
    SCIP_Real getPctVarsToBorder(
