@@ -5203,6 +5203,8 @@ SCIP_RETCODE setDetectionFast(
 
 
    SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob/enabled", FALSE) );
+   SCIP_CALL (SCIPsetBoolParam(scip, "detection/origprob/classificationenabled", FALSE) );
+
 
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", TRUE) );
    SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/scipconstype/enabled", TRUE) );

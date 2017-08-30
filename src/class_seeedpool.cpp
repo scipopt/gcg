@@ -1637,17 +1637,17 @@ void Seeedpool::calcTranslationMapping(
    assert(ncolsthis == (int) thisscipvars.size() );
 
 
-   std::vector<SCIP_CONS*>::const_iterator origiter = origscipconss.begin();
-   std::vector<SCIP_CONS*>::const_iterator origiterend = origscipconss.end();
-
-   std::vector<SCIP_CONS*>::const_iterator thisiter = thisscipconss.begin();
-   std::vector<SCIP_CONS*>::const_iterator thisiterend = thisscipconss.end();
-
-   std::vector<SCIP_VAR*>::const_iterator origitervars = origscipvars.begin();
-   std::vector<SCIP_VAR*>::const_iterator origiterendvars = origscipvars.end();
-
-   std::vector<SCIP_VAR*>::const_iterator thisitervars = thisscipvars.begin();
-   std::vector<SCIP_VAR*>::const_iterator thisiterendvars = thisscipvars.end();
+//   std::vector<SCIP_CONS*>::const_iterator origiter = origscipconss.begin();
+//   std::vector<SCIP_CONS*>::const_iterator origiterend = origscipconss.end();
+//
+//   std::vector<SCIP_CONS*>::const_iterator thisiter = thisscipconss.begin();
+//   std::vector<SCIP_CONS*>::const_iterator thisiterend = thisscipconss.end();
+//
+//   std::vector<SCIP_VAR*>::const_iterator origitervars = origscipvars.begin();
+//   std::vector<SCIP_VAR*>::const_iterator origiterendvars = origscipvars.end();
+//
+//   std::vector<SCIP_VAR*>::const_iterator thisitervars = thisscipvars.begin();
+//   std::vector<SCIP_VAR*>::const_iterator thisiterendvars = thisscipvars.end();
 
 
    rowothertothis.assign( nrowsother, - 1 );
@@ -1658,14 +1658,15 @@ void Seeedpool::calcTranslationMapping(
    missingrowinthis.clear();
 
    /* identify new and deleted rows and cols; and identify bijection between maintained variables */
-   for( int i = 0; origiter != origiterend; ++origiter )
+   for( int i = 0; i < nrowsother ; ++i )
    {
-      SCIP_CONS* otherrow = *origiter;
+      SCIP_CONS* otherrow = origscipconss[i];
       assert( otherrow != NULL );
       SCIP_Bool foundmaintained = false;
-      for( int j = 0; thisiter != thisiterend; ++thisiter )
+ //     thisiter = thisscipconss.begin();
+      for( int j = 0; j < nrowsthis; ++j )
       {
-         SCIP_CONS* thisrow = *thisiter;
+         SCIP_CONS* thisrow = thisscipconss[j];
          assert( SCIPconsIsTransformed( thisrow ) );
          char buffer[SCIP_MAXSTRLEN];
          assert( this->scip != NULL );
@@ -1678,37 +1679,24 @@ void Seeedpool::calcTranslationMapping(
             foundmaintained = true;
             break;
          }
-      ++j;
       }
       if( ! foundmaintained )
          missingrowinthis.push_back( i );
-      ++i;
    }
 
-   for( int i = 0; origitervars != origiterendvars; ++origitervars )
+   for( int i = 0; i < ncolsother; ++i )
    {
-      SCIP_VAR* othervar = *origitervars;
-      for( int j = 0; thisitervars != thisiterendvars; ++thisitervars )
+      SCIP_VAR* othervar = origscipvars[i];
+      for( int j = 0; j < ncolsthis; ++j )
       {
-         if( othervar == *thisitervars )
+         if( othervar == thisscipvars[j] )
          {
             colothertothis[i] = j;
             colthistoother[j] = i;
             break;
          }
-         ++j;
       }
-      ++i;
    }
-
-//   for ( int i  = 0; i < rowothertothis.size(); ++i )
-//      std::cout << (rowothertothis[i] == i) << " " ;
-//
-//   std::cout << std::endl;
-//
-//   for ( int i  = 0; i < colothertothis.size(); ++i )
-//      std::cout << ( colothertothis[i] == i ) << " " ;
-//   std::cout << std::endl;
 }
 
 /** returns translated seeeds derived from given mapping data */

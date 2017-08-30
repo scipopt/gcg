@@ -2022,8 +2022,7 @@ SCIP_Real Seeed::evaluate(
    alphadensity = 0.2;
    blackarea = 0;
 
-   if ( !checkConsistency(seeedpool) )
-      SCIPwarningMessage(scip, "There are inconsistencies in the partial decomposition the score should be calculated for. \n" );
+   assert( checkConsistency(seeedpool) );
 
    /* calculate bound on max white score */
    if( getNOpenconss() != 0 || getNOpenvars() != 0 )
@@ -2067,76 +2066,79 @@ SCIP_Real Seeed::evaluate(
    //std::cout << " black area without blocks is " <<  "(" << getNLinkingvars() << " + " << getNTotalStairlinkingvars() << " )  * " << getNConss() <<  " + " <<  getNMasterconss() << "  * ( " << getNVars() << "  -  ( " << getNLinkingvars() << " + " <<  getNTotalStairlinkingvars() << " ) ) "
    //   <<     " = " <<   blackarea << std::endl;
 
-   /* calculate slave sizes, nonzeros and linkingvars */
-   for( i = 0; i < nBlocks; ++ i )
+   if( sctype != SCORETYPE::MAX_WHITE)
    {
-      int ncurconss;
-      int nvarsblock;
-      SCIP_Bool *ishandled;
-
-      SCIP_CALL( SCIPallocBufferArray( scip, & ishandled, nVars ) );
-      nvarsblock = 0;
-      nzblocks[i] = 0;
-      nlinkvarsblocks[i] = 0;
-
-  //    std::cout << "blackarea =  " << blackarea << " +  " << getNConssForBlock( i ) << " * " << getNVarsForBlock( i ) << " = " << getNConssForBlock( i ) * ( getNVarsForBlock( i ) );
-
-      blackarea += (unsigned long) getNConssForBlock( i ) * ( (unsigned long) getNVarsForBlock( i ) );
-    //  std::cout << " =  " << blackarea  << std::endl;
-
-      for( j = 0; j < nVars; ++ j )
+      /* calculate slave sizes, nonzeros and linkingvars */
+      for( i = 0; i < nBlocks; ++ i )
       {
-         ishandled[j] = FALSE;
-      }
-      ncurconss = getNConssForBlock( i );
+         int ncurconss;
+         int nvarsblock;
+         SCIP_Bool *ishandled;
 
-      for( j = 0; j < ncurconss; ++ j )
-      {
-         int cons = getConssForBlock( i )[j];
-         int ncurvars;
-         ncurvars = seeedpool->getNVarsForCons( cons );
-         for( k = 0; k < ncurvars; ++ k )
+         SCIP_CALL( SCIPallocBufferArray( scip, & ishandled, nVars ) );
+         nvarsblock = 0;
+         nzblocks[i] = 0;
+         nlinkvarsblocks[i] = 0;
+
+         //    std::cout << "blackarea =  " << blackarea << " +  " << getNConssForBlock( i ) << " * " << getNVarsForBlock( i ) << " = " << getNConssForBlock( i ) * ( getNVarsForBlock( i ) );
+
+         blackarea += (unsigned long) getNConssForBlock( i ) * ( (unsigned long) getNVarsForBlock( i ) );
+         //  std::cout << " =  " << blackarea  << std::endl;
+
+         for( j = 0; j < nVars; ++ j )
          {
-            int var = seeedpool->getVarsForCons( cons )[k];
-            int block = -3;
-            if( isVarBlockvarOfBlock( var, i ) )
-               block = i + 1;
-            else if( isVarLinkingvar( var ) || isVarStairlinkingvar( var ) )
-               block = nBlocks + 2;
-            else if( isVarMastervar( var ) )
-               block = nBlocks + 1;
+            ishandled[j] = FALSE;
+         }
+         ncurconss = getNConssForBlock( i );
 
-            ++ ( nzblocks[i] );
-
-            if( block == nBlocks + 1 && ishandled[var] == FALSE )
+         for( j = 0; j < ncurconss; ++ j )
+         {
+            int cons = getConssForBlock( i )[j];
+            int ncurvars;
+            ncurvars = seeedpool->getNVarsForCons( cons );
+            for( k = 0; k < ncurvars; ++ k )
             {
-               ++ ( nlinkvarsblocks[i] );
+               int var = seeedpool->getVarsForCons( cons )[k];
+               int block = -3;
+               if( isVarBlockvarOfBlock( var, i ) )
+                  block = i + 1;
+               else if( isVarLinkingvar( var ) || isVarStairlinkingvar( var ) )
+                  block = nBlocks + 2;
+               else if( isVarMastervar( var ) )
+                  block = nBlocks + 1;
+
+               ++ ( nzblocks[i] );
+
+               if( block == nBlocks + 1 && ishandled[var] == FALSE )
+               {
+                  ++ ( nlinkvarsblocks[i] );
+               }
+               ishandled[var] = TRUE;
             }
-            ishandled[var] = TRUE;
          }
-      }
 
-      for( j = 0; j < nVars; ++ j )
-      {
-         if( ishandled[j] )
+         for( j = 0; j < nVars; ++ j )
          {
-            ++ nvarsblock;
+            if( ishandled[j] )
+            {
+               ++ nvarsblock;
+            }
          }
-      }
 
-      blocksizes[i] = nvarsblock * ncurconss;
-      nvarsblocks[i] = nvarsblock;
-      if( blocksizes[i] > 0 )
-      {
-         blockdensities[i] = 1.0 * nzblocks[i] / blocksizes[i];
-      }
-      else
-      {
-         blockdensities[i] = 0.0;
-      }
+         blocksizes[i] = nvarsblock * ncurconss;
+         nvarsblocks[i] = nvarsblock;
+         if( blocksizes[i] > 0 )
+         {
+            blockdensities[i] = 1.0 * nzblocks[i] / blocksizes[i];
+         }
+         else
+         {
+            blockdensities[i] = 0.0;
+         }
 
-      assert( blockdensities[i] >= 0 && blockdensities[i] <= 1.0 );
-      SCIPfreeBufferArray( scip, & ishandled );
+         assert( blockdensities[i] >= 0 && blockdensities[i] <= 1.0 );
+         SCIPfreeBufferArray( scip, & ishandled );
+      }
    }
 
    borderarea = getNMasterconss() * nVars
@@ -2149,25 +2151,32 @@ SCIP_Real Seeed::evaluate(
 
    density = 1E20;
    varratio = 1.0;
-   for( i = 0; i < nBlocks; ++ i )
-   {
-      density = MIN( density, blockdensities[i] );
+   linkingscore = 1.;
+   borderscore =  1.;
+   densityscore = 1.;
 
-      if( ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) > 0 )
+   if( sctype != SCORETYPE::MAX_WHITE )
+   {
+      for( i = 0; i < nBlocks; ++ i )
       {
-         varratio *= 1.0 * nlinkvarsblocks[i] / ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() );
+         density = MIN( density, blockdensities[i] );
+
+         if( ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) > 0 )
+         {
+            varratio *= 1.0 * nlinkvarsblocks[i] / ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() );
+         }
+         else
+         {
+            varratio = 0;
+         }
       }
-      else
-      {
-         varratio = 0;
-      }
+      linkingscore = ( 0.5 + 0.5 * varratio );
+      borderscore = ( 1.0 * ( borderarea ) / matrixarea );
+      densityscore = ( 1 - density );
+      borderareascore = borderscore;
    }
 
-   linkingscore = ( 0.5 + 0.5 * varratio );
-   borderscore = ( 1.0 * ( borderarea ) / matrixarea );
-   densityscore = ( 1 - density );
 
-   borderareascore = borderscore;
    DEC_DECTYPE type;
    if( getNLinkingvars() == getNTotalStairlinkingvars() && getNMasterconss() == 0 && getNLinkingvars() > 0 )
    {
