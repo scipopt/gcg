@@ -1571,11 +1571,11 @@ void Seeedpool::translateSeeedData(
    std::vector<int> colthistoother;
    std::vector<int> missingrowinthis;
 
-   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL, " started translate seeed method \n" );
+   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL, " started translate seeed method \n" );
 
    calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
-   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL,
+   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
       " calculated translation; number of missing constraints: %d; number of other seeeds: %d \n", missingrowinthis.size(),
       origseeeds.size() );
 
@@ -1599,11 +1599,11 @@ void Seeedpool::translateSeeeds(
    std::vector<int> colthistoother( 0 );
    std::vector<int> missingrowinthis( 0 );
 
-   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL, "started translate seeed method \n" );
+   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL, "started translate seeed method \n" );
 
    calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
-   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_FULL, NULL,
+   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
       " calculated translation; number of missing constraints: %d; number of other seeeds: %d \n", missingrowinthis.size(),
       origseeeds.size() );
 
@@ -1630,6 +1630,11 @@ void Seeedpool::calcTranslationMapping(
    std::vector<SCIP_VAR*> origscipvars = origpool->varToScipVar;
    std::vector<SCIP_VAR*> thisscipvars = varToScipVar;
 
+   assert(nrowsother == (int) origscipconss.size() );
+   assert(nrowsthis == (int) thisscipconss.size() );
+
+   assert(ncolsother == (int) origscipvars.size() );
+   assert(ncolsthis == (int) thisscipvars.size() );
 
 
    std::vector<SCIP_CONS*>::const_iterator origiter = origscipconss.begin();
@@ -1653,12 +1658,12 @@ void Seeedpool::calcTranslationMapping(
    missingrowinthis.clear();
 
    /* identify new and deleted rows and cols; and identify bijection between maintained variables */
-   for( int i = 0; origiter != origiterend; ++i, ++origiter )
+   for( int i = 0; origiter != origiterend; ++origiter )
    {
       SCIP_CONS* otherrow = *origiter;
       assert( otherrow != NULL );
       SCIP_Bool foundmaintained = false;
-      for( int j = 0; thisiter != thisiterend; ++j, ++thisiter )
+      for( int j = 0; thisiter != thisiterend; ++thisiter )
       {
          SCIP_CONS* thisrow = *thisiter;
          assert( SCIPconsIsTransformed( thisrow ) );
@@ -1673,15 +1678,17 @@ void Seeedpool::calcTranslationMapping(
             foundmaintained = true;
             break;
          }
+      ++j;
       }
       if( ! foundmaintained )
          missingrowinthis.push_back( i );
+      ++i;
    }
 
-   for( int i = 0; origitervars != origiterendvars; ++i, ++origitervars )
+   for( int i = 0; origitervars != origiterendvars; ++origitervars )
    {
       SCIP_VAR* othervar = *origitervars;
-      for( int j = 0; thisitervars != thisiterendvars; ++j, ++thisitervars )
+      for( int j = 0; thisitervars != thisiterendvars; ++thisitervars )
       {
          if( othervar == *thisitervars )
          {
@@ -1689,8 +1696,19 @@ void Seeedpool::calcTranslationMapping(
             colthistoother[j] = i;
             break;
          }
+         ++j;
       }
+      ++i;
    }
+
+//   for ( int i  = 0; i < rowothertothis.size(); ++i )
+//      std::cout << (rowothertothis[i] == i) << " " ;
+//
+//   std::cout << std::endl;
+//
+//   for ( int i  = 0; i < colothertothis.size(); ++i )
+//      std::cout << ( colothertothis[i] == i ) << " " ;
+//   std::cout << std::endl;
 }
 
 /** returns translated seeeds derived from given mapping data */
