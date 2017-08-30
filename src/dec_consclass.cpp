@@ -164,6 +164,9 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   SCIPgetIntParam(scip, "detectors/consclass/maxnclasses", &maximumnclasses); /* if  distribution of classes exceed this number its skipped */
 
+  SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " in dec_consclass: there are %d many different constraintclasses   \n ", seeedPropagationData->seeedpool->getNConsClassifiers() );
+
+
   for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifiers(); ++classifierIndex )
   {
     gcg::ConsClassifier* classifier = seeedPropagationData->seeedpool->getConsClassifier( classifierIndex );
@@ -174,6 +177,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        std::cout << " the current consclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
        continue;
     }
+
+    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " the current constraint classifier %s consists %d many different classes   \n ", classifier->getName(), classifier->getNClasses() );
 
     seeedOrig = seeedPropagationData->seeedToPropagate;
 
