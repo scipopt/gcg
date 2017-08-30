@@ -599,13 +599,6 @@ SeeedPtr  SCIPconshdlrDecompGetSeeed(
 }
 
 
-struct sort_pred {
-    bool operator()(const std::pair<SeeedPtr, SCIP_Real> &left, const std::pair<SeeedPtr, SCIP_Real> &right) {
-        return left.second < right.second;
-    }
-};
-
-
 #ifdef ADDONEBLOCKDECOMP
 /**
  * create a 'decomposition' consisting of only one single block; used if no other decomposition was found
@@ -2755,11 +2748,11 @@ SCIP_RETCODE   SCIPconshdlrDecompPopulateSelected(
 
 /*@todo implement */
 SCIP_RETCODE SCIPconshdlrDecompgetNSeeeds(
-   SCIP           scip,
+   SCIP*          scip,
    int*           nseeeds
    )
 {
-
+   return SCIP_OKAY;
 }
 
 

@@ -54,7 +54,7 @@
 #define COLOR_BLACK     "#000000"
 
 #define DEFAULT_COLOR_MASTERVARS   COLOR_WHITE   /* for mastervars (in block area) */
-#define DEFAULT_COLOR_MASTERCONS   COLOR_BLUE    /* for mastercons */
+#define DEFAULT_COLOR_MASTERCONSS  COLOR_BLUE    /* for masterconss */
 #define DEFAULT_COLOR_LINKING      COLOR_PURPLE
 #define DEFAULT_COLOR_STAIRLINKING COLOR_MAGENTA
 #define DEFAULT_COLOR_BLOCK        COLOR_TEAL
@@ -71,14 +71,14 @@
 #define GREY_COLOR_NONZERO      COLOR_BLACK
 #define GREY_COLOR_LINE         COLOR_BLACK
 
-#define DEFAULT_VISU_RADIUS 5
+#define DEFAULT_VISU_RADIUS 5    /* possible scale: 1-10 */
 
 
 SCIP_Bool visudraftmode;
 VISU_COLORSCHEME visucolorscheme;
 
 char* mancolormastervars;
-char* mancolormastercons;
+char* mancolormasterconss;
 char* mancolorlinking;
 char* mancolorstairlinking;
 char* mancolorblock;
@@ -87,7 +87,7 @@ char* mancolornonzero;
 char* mancolorline;
 
 char* greycolormastervars;
-char* greycolormastercons;
+char* greycolormasterconss;
 char* greycolorlinking;
 char* greycolorstairlinking;
 char* greycolorblock;
@@ -103,11 +103,12 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    SCIP* scip /**< SCIP data structure */
    )
 {
+   /* set defaults */
    visudraftmode = FALSE;
    visucolorscheme = COLORSCHEME_DEFAULT;
 
    mancolormastervars =    (char*) DEFAULT_COLOR_MASTERVARS;
-   mancolormastercons =    (char*) DEFAULT_COLOR_MASTERCONS;
+   mancolormasterconss =   (char*) DEFAULT_COLOR_MASTERCONSS;
    mancolorlinking =       (char*) DEFAULT_COLOR_LINKING;
    mancolorstairlinking =  (char*) DEFAULT_COLOR_STAIRLINKING;
    mancolorblock =         (char*) DEFAULT_COLOR_BLOCK;
@@ -116,7 +117,7 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    mancolorline =          (char*) DEFAULT_COLOR_LINE;
 
    greycolormastervars =   (char*) GREY_COLOR_MASTERVARS;
-   greycolormastercons =   (char*) GREY_COLOR_MASTERCONS;
+   greycolormasterconss =  (char*) GREY_COLOR_MASTERCONS;
    greycolorlinking =      (char*) GREY_COLOR_LINKING;
    greycolorstairlinking = (char*) GREY_COLOR_STAIRLINKING;
    greycolorblock =        (char*) GREY_COLOR_BLOCK;
@@ -125,6 +126,54 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    greycolorline =         (char*) GREY_COLOR_LINE;
 
    visuradius = DEFAULT_VISU_RADIUS;
+
+   /* add general parameters */
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visualization/draftmode", "if true no nonzeros are shown (may improve performance)",
+      &visudraftmode, FALSE, FALSE, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visualization/colorscheme", "type number: 0=default, 1=black and white, 2=manual",
+      (int*) &visucolorscheme, FALSE, 0, 0, 2, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visualization/nonzeroradius", "integer value to scale dots from 1-10, default: 5",
+      &visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
+
+   /* add parameters for manual colors */
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visualization/colors/colormastervars", "color for master variables in hex code (e.g. #000000)",
+      &mancolormastervars, FALSE, DEFAULT_COLOR_MASTERVARS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visualization/colors/colormasterconss", "color for master constraints in hex code (e.g. #000000)",
+      &mancolormasterconss, FALSE, DEFAULT_COLOR_MASTERCONSS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visualization/colors/colorlinking", "color for linking variables in hex code (e.g. #000000)",
+      &mancolorlinking, FALSE, DEFAULT_COLOR_LINKING, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visualization/colors/colorstairlinking", "color for stairlinking variables in hex code (e.g. #000000)",
+      &mancolorstairlinking, FALSE, DEFAULT_COLOR_STAIRLINKING, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visualization/colors/colorblock", "color for found blocks in hex code (e.g. #000000)",
+      &mancolorblock, FALSE, DEFAULT_COLOR_BLOCK, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visualization/colors/coloropen", "color for open areas in hex code (e.g. #000000)",
+      &mancoloropen, FALSE, DEFAULT_COLOR_OPEN, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visualization/colors/colornonzeros", "color for nonzeros in hex code (e.g. #000000)",
+      &mancolornonzero, FALSE, DEFAULT_COLOR_NONZERO, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visualization/colors/colorlines", "color for lines in hex code (e.g. #000000)",
+      &mancolorline, FALSE, DEFAULT_COLOR_LINE, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -167,12 +216,12 @@ char* SCIPvisuGetColorMasterconss()
    switch(SCIPvisuGetColorscheme())
    {
    case COLORSCHEME_GREY:
-      return greycolormastercons;
+      return greycolormasterconss;
       break;
    case COLORSCHEME_MANUAL:
-      return mancolormastercons;
+      return mancolormasterconss;
    default:
-      return (char*) DEFAULT_COLOR_MASTERCONS;
+      return (char*) DEFAULT_COLOR_MASTERCONSS;
    }
 }
 
