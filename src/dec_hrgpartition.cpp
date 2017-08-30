@@ -211,12 +211,8 @@ DEC_DECL_INITDETECTOR(initHrgpartition)
 static
 DEC_DECL_EXITDETECTOR(exitHrgpartition)
 {
-   DEC_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
-
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
@@ -373,31 +369,39 @@ bool connected(
 {
    std::vector<int> queue;
    std::vector<int> visited;
+   std::vector<bool> inqueue(seeedpool->getNVars(), false);
+   std::vector<bool> isvisited(seeedpool->getNVars(), false);
+   int start = -1;
 
    if(seeed->getNOpenvars() < 2)
       return false;
 
-   queue.push_back(seeed->getOpenvars()[0]);
+   start = seeed->getOpenvars()[0];
+   queue.push_back(start);
+   inqueue[start] = true;
    do
    {
       int node = queue[0];
       queue.erase(queue.begin());
+      inqueue[node] = false;
       visited.push_back(node);
-      for(int c = 0; c < seeedpool->getNConssForVar(node); ++c)
+      isvisited[node] = true;
+      for( int c = 0; c < seeedpool->getNConssForVar(node); ++c )
       {
          int cons = seeedpool->getConssForVar(node)[c];
          if(!seeed->isConsOpencons(cons))
             continue;
-         for(int v = 0; v < seeedpool->getNVarsForCons(cons); ++v)
+         for( int v = 0; v < seeedpool->getNVarsForCons(cons); ++v )
          {
             int var = seeedpool->getVarsForCons(cons)[v];
-            if(!seeed->isVarOpenvar(var))
+            if( !seeed->isVarOpenvar(var) )
                continue;
-            if(find(visited.begin(), visited.end(), var) != visited.end())
+            if( isvisited[var] )
                continue;
-            if(find(queue.begin(), queue.end(), var) != queue.end())
+            if( inqueue[var] )
                continue;
             queue.push_back(var);
+            inqueue[var] = true;
          }
       }
    } while( !queue.empty() );
@@ -815,7 +819,9 @@ DEC_DECL_SETPARAMFAST(setParamFastHrgpartition)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   if ( SCIPgetNConss(scip) + SCIPgetNVars(scip) > 6000 )
+      SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   else SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );

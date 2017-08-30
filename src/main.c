@@ -48,6 +48,7 @@
 #include "relax_gcg.h"
 #include "gcg.h"
 
+
 #if SCIP_VERSION < 310
 #error GCG 2.0 can only be compiled with SCIP version 3.1.0 or higher
 #endif

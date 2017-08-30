@@ -368,7 +368,9 @@ public:
       );
 
    /** deletes empty blocks */
-   SCIP_RETCODE deleteEmptyBlocks();
+   SCIP_RETCODE deleteEmptyBlocks(
+      bool variables
+   );
 
    /** deletes a cons from list of open conss */
    SCIP_RETCODE deleteOpencons(
@@ -381,7 +383,7 @@ public:
       );
 
    /** displays the assignments of the conss */
-   SCIP_RETCODE displayConss();
+   SCIP_RETCODE displayConss(Seeedpool* seeedpool);
 
    /*@todo is initialization in declaration necessary? */
    /** displays the relevant information of the seeed */

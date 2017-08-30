@@ -258,7 +258,7 @@ DEC_DECL_SETPARAMFAST(setParamFastConnectedbase)
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );

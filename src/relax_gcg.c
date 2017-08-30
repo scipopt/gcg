@@ -47,6 +47,7 @@
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
+#include "scip/misc.h"
 
 #include "relax_gcg.h"
 
@@ -59,6 +60,7 @@
 #include "nodesel_master.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
+
 
 #include "gcg.h"
 
@@ -178,15 +180,11 @@ SCIP_RETCODE setOriginalVarBlockNr(
    /* var belongs to no block so far, just set the new block number */
    if( blocknr == -1 )
    {
-      relaxdata->ntransvars++;
       GCGvarSetBlock(var, newblock);
    }
    /* if var already belongs to another block, it is a linking variable */
    else if( blocknr != newblock )
    {
-      if( !GCGoriginalVarIsLinking(var) )
-         relaxdata->nlinkingvars++;
-
       SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock, relaxdata->npricingprobs) );
       assert(GCGisLinkingVarInBlock(var, newblock));
       assert(GCGoriginalVarIsLinking(var));
@@ -348,7 +346,6 @@ SCIP_RETCODE convertStructToGCG(
    SCIPdebugMessage("\tProcessing linking variables.\n");
    for( i = 0; i < nlinkingvars; ++i )
    {
-
       if( GCGoriginalVarIsLinking(linkingvars[i]) )
          continue;
 
@@ -1219,7 +1216,7 @@ SCIP_RETCODE createPricingVariables(
       {
          SCIP_VAR** pricingvars;
          SCIPdebugPrintf("linking.\n");
-
+         relaxdata->nlinkingvars++;
          SCIP_CALL( createLinkingPricingVars(scip, relaxdata, probvar) );
          assert(GCGlinkingVarGetPricingVars(probvar) != NULL);
 
@@ -1244,6 +1241,7 @@ SCIP_RETCODE createPricingVariables(
          assert(GCGvarGetBlock(probvar) == -1);
          assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
          SCIPdebugPrintf("master!\n");
+         relaxdata->ntransvars++;
       }
       assert(SCIPhashmapExists(relaxdata->hashorig2origvar, probvar));
    }
@@ -1968,9 +1966,9 @@ SCIP_RETCODE initRelaxator(
    {
       SCIP_RANDNUMGEN* randnumgen;
 
-      SCIP_CALL( SCIPrandomCreate(&randnumgen, SCIPblkmem(scip), (unsigned int) permutationseed) );
+      SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, (unsigned int) permutationseed) );
       SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, randnumgen) );
-      SCIPrandomFree(&randnumgen);
+      SCIPfreeRandom(scip, &randnumgen );
    }
 
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
@@ -2047,6 +2045,12 @@ SCIP_RETCODE initRelaxator(
       relaxdata->varlinkconss[i] = transcons;
    }
 
+   /* set objective limit in master problem if objective limit in original problem is finite */
+   if( !SCIPisInfinity(scip, SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) )
+   {
+      SCIP_CALL( SCIPsetObjlimit(masterprob, SCIPgetObjsense(scip) * SCIPgetObjlimit(scip)) );
+   }
+
    return SCIP_OKAY;
 }
 
@@ -2115,6 +2119,12 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
    }
 
+   /* free used decomposition */
+   if( relaxdata->decdecomp != NULL )
+   {
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+   }
+
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;
@@ -2132,6 +2142,9 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   if( relaxdata->decdecomp != NULL )
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
 
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )
@@ -2358,7 +2371,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
       /* set the lower bound pointer */
       if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
+      {
          *lowerbound = SCIPgetLocalDualbound(masterprob);
+
+      }
       else
       {
          SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
@@ -3778,6 +3794,9 @@ void GCGsetStructDecdecomp(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   if( relaxdata->decdecomp != NULL )
+      DECdecompFree(scip, &relaxdata->decdecomp );
 
    relaxdata->decdecomp = decdecomp;
 }

@@ -78,8 +78,8 @@
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 
-#define DEFAULT_MAXDECOMPSEXACT  7           /**< default maximum number of decompositions */
-#define DEFAULT_MAXDECOMPSEXTEND 5           /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXACT  6           /**< default maximum number of decompositions */
+#define DEFAULT_MAXDECOMPSEXTEND 4           /**< default maximum number of decompositions */
 
 #define SET_MULTIPLEFORSIZETRANSF 12500
 
@@ -1800,7 +1800,7 @@ DEC_DECL_SETPARAMFAST(setParamFastIsomorph)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );

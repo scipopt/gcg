@@ -167,6 +167,13 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
    SCIP_DIALOG*            dialog
    );
 
+SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   );
+
+
 SCIP_Bool SCIPconshdlrDecompUnpresolvedUserSeeedAdded(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -270,6 +277,16 @@ SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
 
 SCIP_Bool SCIPconshdlrDecompExistsSelected(
    SCIP* scip
+   );
+
+
+
+int SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(
+  SCIP*                 scip                /**< SCIP data structure **/
+   );
+
+int SCIPconshdlrDecompDecreaseAndGetNCallsCreateDecomp(
+  SCIP*                 scip                /**< SCIP data structure **/
    );
 
 

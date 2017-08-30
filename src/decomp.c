@@ -470,6 +470,8 @@ SCIP_RETCODE DECdecompCreate(
 {
    DEC_DECOMP* decomp;
 
+   int ncalls;
+
    assert(scip != NULL);
    assert(decdecomp != NULL);
 
@@ -510,6 +512,9 @@ SCIP_RETCODE DECdecompCreate(
    decomp->nnewblocks= NULL;
    decomp->maxwhitescore = -1.;
 
+   ncalls = SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(scip);
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfromseeed: %d \n", ncalls);
 
    return SCIP_OKAY;
 }
@@ -523,6 +528,7 @@ SCIP_RETCODE DECdecompFree(
    DEC_DECOMP* decomp;
    int i;
    int j;
+   int ncalls;
 
    assert( scip!= NULL );
    assert( decdecomp != NULL);
@@ -622,6 +628,10 @@ SCIP_RETCODE DECdecompFree(
    }
 
    SCIPfreeMemoryNull(scip, decdecomp);
+
+   ncalls = SCIPconshdlrDecompDecreaseAndGetNCallsCreateDecomp(scip);
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfromseeed: %d \n", ncalls);
 
    return SCIP_OKAY;
 }
@@ -2092,7 +2102,8 @@ SCIP_RETCODE DECdecompRemoveDeletedConss(
          SCIP_CALL( SCIPreleaseCons(scip, &decdecomp->linkingconss[c]) );
       }
    }
-   if( pos != decdecomp->nlinkingconss )
+
+   if( pos != decdecomp->nlinkingconss && decdecomp->linkingconss != NULL )
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss,
          SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss), SCIPcalcMemGrowSize(scip, pos)) );
    decdecomp->nlinkingconss = pos;
@@ -2221,6 +2232,8 @@ SCIP_RETCODE DECdecompCheckConsistency(
          assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
          assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) - 1 == b); /*lint !e507*/
          ncurvars = GCGconsGetNVars(scip, cons);
+         if ( ncurvars == 0 )
+            continue;
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
 
@@ -3242,6 +3255,8 @@ SCIP_RETCODE DECevaluateDecomposition(
          SCIP_VAR* var;
          int ncurvars;
          ncurvars = GCGconsGetNVars(scip, curconss[j]);
+         if ( ncurvars == 0 )
+            continue;
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( GCGconsGetVars(scip, curconss[j], curvars, ncurvars) );
 
@@ -3799,6 +3814,8 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPfreeBlockMemoryArray(scip, &nintvars, nblocks);
    SCIPfreeBlockMemoryArray(scip, &nimplvars, nblocks);
    SCIPfreeBlockMemoryArray(scip, &ncontvars, nblocks);
+
+   DECdecompFree(scip, &decomp);
 
    return SCIP_OKAY;
 }

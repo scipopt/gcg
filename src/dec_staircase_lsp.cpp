@@ -769,6 +769,8 @@ SCIP_RETCODE detection(
    currseeed->considerImplicits(seeedpool);
    currseeed->refineToMaster(seeedpool);
 
+   currseeed->sort();
+
    //currseeed->showScatterPlot(seeedpool);
 
    //SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");
@@ -940,8 +942,25 @@ DEC_DECL_FINISHSEEED(detectorFinishSeeedStaircaseLsp)
 
 #define setParamAggressiveStaircaseLsp NULL
 #define setParamDefaultStaircaseLsp NULL
-#define setParamFastStaircaseLsp NULL
 
+static
+DEC_DECL_SETPARAMFAST(setParamFastStaircaseLsp)
+{
+   char setstr[SCIP_MAXSTRLEN];
+   const char* name = DECdetectorGetName(detector);
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+   return SCIP_OKAY;
+
+}
 
 
 /*

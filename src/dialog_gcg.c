@@ -454,7 +454,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
    int blocknr;
    char tempstr[SCIP_MAXSTRLEN];
    SCIP_Bool endoffile;
-   SCIP_RETCODE retcode;
 
    tempstr[0] = '\0';
 
@@ -491,6 +490,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
       SCIP_CALL( GCGwriteDecomp(scip, NULL, decomp) );
    }
 
+   SCIP_CALL(DECdecompFree(scip, &decomp) );
+
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    return SCIP_OKAY;
@@ -500,6 +501,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
 /** dialog execution method for the display additionalstatistics command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
 {  /*lint --e{715}*/
+
+   DEC_DECOMP* bestdecomp;
+
+
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
    if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING || SCIPgetStage(scip) == SCIP_STAGE_SOLVED )
    {
@@ -511,7 +516,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
       }
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "\nAdditional statistics:\n");
-      if( DECdecompGetType(DECgetBestDecomp(scip)) == DEC_DECTYPE_DIAGONAL )
+      bestdecomp = DECgetBestDecomp(scip);
+      if( DECdecompGetType(bestdecomp) == DEC_DECTYPE_DIAGONAL )
       {
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), NULL, "\n");
          SCIP_CALL( GCGwriteDecompositionData(scip) );
@@ -524,6 +530,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
          SCIP_CALL( GCGwriteDecompositionData(scip) );
          SCIP_CALL( GCGwriteVarCreationDetails(GCGgetMasterprob(scip)) );
       }
+      DECdecompFree(scip, &bestdecomp);
    }
    else
    {
@@ -626,15 +633,19 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
+   SCIP_Bool emphfast;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
+
+   SCIPgetBoolParam(scip, "detection/emphfast/enabled", &emphfast);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL," start of detectstructure, test for emph fast: %d\n", emphfast);
+   if( emphfast )
+      SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_FAST, FALSE) );
+
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
-
-
-
       SCIP_CALL( DECdetectStructure(scip, &result) );
       if( result == SCIP_SUCCESS )
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was successful.\n");
@@ -652,14 +663,25 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 /** dialog execution method for the displaying and selecting decompositions command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSelect)
 {  /*lint --e{715}*/
-   SCIP_CONSHDLR** conshdlrs;
-   int nconshdlrs;
-   int i;
-
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIP_CALL( SCIPconshdlrDecompExecSelect(scip, dialoghdlr, dialog ) );
+
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the displaying and selecting decompositions command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox)
+{  /*lint --e{715}*/
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   SCIP_CALL( SCIPconshdlrDecompExecToolbox(scip, dialoghdlr, dialog ) );
 
    SCIPdialogMessage(scip, NULL, "\n");
 
@@ -676,14 +698,18 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    SCIP_RESULT result;
    int presolrounds;
    presolrounds = -1;
-
-   //SCIPdialogMessage(scip, NULL, "In optimize \n");
+   SCIP_Bool emphfast;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   //SCIPdialogMessage(scip, NULL, "In optimize2 \n");
-
    assert(SCIPconshdlrDecompCheckConsistency(scip) );
+
+   SCIPgetBoolParam(scip, "detection/emphfast/enabled", &emphfast);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL," start of detectstructure, test for emph fast: %d\n", emphfast);
+   if( emphfast )
+      SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_FAST, FALSE) );
+
+
  //  SCIPdialogMessage(scip, NULL, "In optimize3 \n");
    SCIPdialogMessage(scip, NULL, "\n");
    switch( SCIPgetStage(scip) )
@@ -742,7 +768,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIP_CALL( DECdetectStructure(scip, &result) );
          if( result == SCIP_DIDNOTFIND )
          {
-            assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
+            DEC_DECOMP* bestdecomp;
+            bestdecomp = DECgetBestDecomp(scip);
+            assert(bestdecomp == NULL && DEChasDetectionRun(scip));
+            DECdecompFree(scip, &bestdecomp);
             SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
             break;
          }
@@ -1143,6 +1172,17 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
    }
 
+   /* select */
+   if( !SCIPdialogHasEntry(root, "decomposition toolbox") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+         NULL,
+         GCGdialogExecToolbox, NULL, NULL,
+         "decomposition toolbox", "create/modify (partial) decompositions", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+   }
+
 
    /* detect */
    if( !SCIPdialogHasEntry(root, "detect") )
@@ -1206,6 +1246,23 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       return SCIP_PLUGINNOTFOUND;
    }
 
+   /* set detectors */
+      if( !SCIPdialogHasEntry(setmenu, "detection") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+               NULL,
+               SCIPdialogExecMenu, NULL, NULL,
+               "detection", "change parameters for detection in general", TRUE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+      }
+      if( SCIPdialogFindEntry(setmenu, "detection", &submenu) != 1 )
+      {
+         SCIPerrorMessage("detection sub menu not found\n");
+         return SCIP_PLUGINNOTFOUND;
+      }
+
+
    /* create set detectors emphasis */
    SCIP_CALL( createEmphasisSubmenu(scip, submenu, &emphasismenu) );
    assert(emphasismenu != NULL);
@@ -1215,7 +1272,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
             NULL, SCIPdialogExecSetDetectorsAggressive, NULL, NULL,
-            "aggressive", "sets detectors <aggressive>", FALSE, NULL) );
+            "aggressive", "sets detection <aggressive>", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
@@ -1225,7 +1282,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
          NULL, SCIPdialogExecSetDetectorsDefault, NULL, NULL,
-         "default", "sets detectors <default>", FALSE, NULL) );
+         "default", "sets detection <default>", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
@@ -1235,7 +1292,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
             NULL, SCIPdialogExecSetDetectorsFast, NULL, NULL,
-            "fast", "sets detectors <fast>", FALSE, NULL) );
+            "fast", "sets detection <fast>", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }

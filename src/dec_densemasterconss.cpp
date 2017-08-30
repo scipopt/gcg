@@ -25,44 +25,47 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_compgreedily.cpp
+/**@file   dec_densemasterconss.cpp
  * @ingroup DETECTORS
- * @brief  detector compgreedily (assigns the open cons and open vars of the seeed greedily)
+ * @brief  detector densemasterconss (put your description here)
  * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_compgreedily.h"
+#include "dec_densemasterconss.h"
 #include "cons_decomp.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "gcg.h"
+#include "scip/cons_setppc.h"
+#include "scip/scip.h"
+#include "scip_misc.h"
 #include "scip/clock.h"
+
+#include <sstream>
+
 #include <iostream>
+#include <algorithm>
+
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "compgreedily"       /**< name of detector */
-#define DEC_DESC                  "detector compgreedily" /**< description of detector*/
+#define DEC_DETECTORNAME          "densemasterconss"       /**< name of detector */
+#define DEC_DESC                  "detector densemasterconss" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
-#define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
+#define DEC_MAXCALLROUND          0           /** last round the detector gets called                              */
 #define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
 #define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
 #define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
-#define DEC_DECCHAR               'g'         /**< display character of detector */
-#define DEC_ENABLED               FALSE       /**< should the detection be enabled */
+#define DEC_DECCHAR               'd'         /**< display character of detector */
+#define DEC_ENABLED               TRUE        /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
-#define DEC_ENABLEDFINISHING      TRUE        /**< should the finishing be enabled */
+#define DEC_ENABLEDFINISHING      FALSE        /**< should the detection be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
-
-/** parameter limits for emphasis default */
-
-#define DEFAULT_LIMITHALFPERIMETERENABLEDFINISHING    20000   /** limit in terms of nrows + ncols for enabling finishing */
-#define DEFAULT_LIMITHALFPERIMETERENABLEDORIGINAL     10000   /** limit in terms of nrows + ncols for enabling in detecting for unpresolved problem */
-
 
 /*
  * Data structures
@@ -75,27 +78,30 @@ struct DEC_DetectorData
 {
 };
 
-
 /*
  * Local methods
  */
 
-/* put your local methods here, and declare them static */
+struct sort_pred {
+    bool operator()(const std::pair<int,int> &left, const std::pair<int,int> &right) {
+        return left.first > right.first;
+    }
+};
 
+/* put your local methods here, and declare them static */
 
 /*
  * detector callback methods
  */
 
 /** destructor of detector to free user data (called when GCG is exiting) */
-
-#define freeCompgreedily NULL
+#define freeDensemasterconss NULL
 
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0
 static
-DEC_DECL_EXITDETECTOR(exitCompgreedily)
-{  /*lint --e{715}*/
+DEC_DECL_EXITDETECTOR(exitDensemasterconss)
+{ /*lint --e{715}*/
 
    SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
    SCIPABORT();
@@ -103,14 +109,14 @@ DEC_DECL_EXITDETECTOR(exitCompgreedily)
    return SCIP_OKAY;
 }
 #else
-#define exitCompgreedily NULL
+#define exitDensemasterconss NULL
 #endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
 #if 0
 static
-DEC_DECL_INITDETECTOR(initCompgreedily)
-{  /*lint --e{715}*/
+DEC_DECL_INITDETECTOR(initDensemasterconss)
+{ /*lint --e{715}*/
 
    SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
    SCIPABORT();
@@ -118,106 +124,128 @@ DEC_DECL_INITDETECTOR(initCompgreedily)
    return SCIP_OKAY;
 }
 #else
-#define initCompgreedily NULL
+#define initDensemasterconss NULL
 #endif
 
 /** detection function of detector */
-//static
-//DEC_DECL_DETECTSTRUCTURE(detectCompgreedily)
-//{ /*lint --e{715}*/
-//   *result = SCIP_DIDNOTFIND;
-//
-//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
-//   SCIPABORT();  /*lint --e{527}*/
-//
-//   return SCIP_OKAY;
-//}
-
-#define detectCompgreedily NULL
-
-static
-DEC_DECL_PROPAGATESEEED(propagateSeeedCompgreedily)
-{
+static DEC_DECL_DETECTSTRUCTURE(detectDensemasterconss)
+{ /*lint --e{715}*/
    *result = SCIP_DIDNOTFIND;
 
-   char decinfo[SCIP_MAXSTRLEN];
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
+;   SCIPABORT(); /*lint --e{527}*/
 
-   gcg::Seeed* seeed = seeedPropagationData->seeedToPropagate;
-   //seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
+   return SCIP_OKAY;
+}
 
-   //assign open conss and vars greedily
-   seeed->completeGreedily(seeedPropagationData->seeedpool);
+#define finishSeeedDensemasterconss NULL
+
+static DEC_DECL_PROPAGATESEEED(propagateSeeedDensemasterconss)
+{
+  *result = SCIP_DIDNOTFIND;
+  char decinfo[SCIP_MAXSTRLEN];
+
+  SCIP_CLOCK* temporaryClock;
+
+  gcg::Seeedpool* seeedpool;
+  std::vector<gcg::Seeed*> foundseeeds(0);
+
+  gcg::Seeed* seeedOrig;
+  gcg::Seeed* seeed;
+
+  seeedOrig = seeedPropagationData->seeedToPropagate;
+  std::stringstream decdesc;
+
+  SCIP_Real maxratio = 0.2;
+  int maxdiff = -1;
+  int maxdiffindex = -1;
+  int lastindex = -1;
+
+  seeedpool = seeedPropagationData->seeedpool;
+  std::vector<std::pair<int,int>> nnonzeros = std::vector<std::pair<int,int>>(seeedpool->getNConss(), std::pair<int, int>(0,-1)  );
+
+  SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
+  SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
 
-   seeed->setDetectorPropagated(detector);
+  seeed = new gcg::Seeed(seeedOrig);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = seeed;
-   seeedPropagationData->nNewSeeeds = 1;
+  lastindex =  maxratio * seeedpool->getNConss();
+  /** book open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
+  for( int i = 0; i < seeed->getNOpenconss(); ++i )
+  {
+     int cons = seeed->getOpenconss()[i];
+     int nnonzeroscons = seeedpool->getNVarsForCons(cons);
 
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "compgreed");
-   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
+     nnonzeros[cons] = std::pair<int,int>(nnonzeroscons, i);
+  }
 
-   *result = SCIP_SUCCESS;
+  std::sort(nnonzeros.begin(), nnonzeros.end(), sort_pred() );
+
+  for( int i = 0; i < lastindex && i < nnonzeros.size() - 1; ++i )
+  {
+     if( maxdiff < nnonzeros[i].first - nnonzeros[i+1].first )
+     {
+        maxdiff = nnonzeros[i].first - nnonzeros[i+1].first;
+        maxdiffindex = i;
+     }
+  }
+
+
+  assert(seeed->getNOpenconss() < 2 || maxdiff >= 0);
+
+  assert(seeed->getNOpenconss() < 2 || maxdiff == 0 || maxdiffindex != -1 );
+
+  for( int i = 0; i < maxdiffindex; ++i )
+  {
+     seeed->bookAsMasterCons(seeed->getOpenconss()[nnonzeros[i].second]);
+  }
+
+  decdesc << "densemasterconss" << "\\_" << maxdiffindex ;
+
+  seeed->flushBooked();
+  (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
+  seeed->addDetectorChainInfo(decinfo);
+  seeed->setDetectorPropagated(detector);
+
+
+  foundseeeds.push_back(seeed);
+
+
+  SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+
+  SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
+  seeedPropagationData->nNewSeeeds  = foundseeeds.size();
+
+  SCIPinfoMessage(scip, NULL, "dec_densemasterconss found %d new seeed \n", seeedPropagationData->nNewSeeeds  );
+
+  for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
+  {
+     seeedPropagationData->newSeeeds[s] = foundseeeds[s];
+     seeedPropagationData->newSeeeds[s]->addClockTime(SCIPclockGetTime(temporaryClock )  );
+  }
+
+  SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+
+  *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 }
 
 static
-DEC_DECL_FINISHSEEED(finishSeeedCompgreedily)
-{
-   *result = SCIP_DIDNOTFIND;
-   char decinfo[SCIP_MAXSTRLEN];
-
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-
-   gcg::Seeed* seeed = NULL;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
-
-   //assign open conss and vars greedily
-   seeed->completeGreedily(seeedPropagationData->seeedpool);
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = seeed;
-   seeedPropagationData->nNewSeeeds = 1;
-   seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated(detector);
-   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "compgreed");
-   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
-   *result = SCIP_SUCCESS;
-
-   return SCIP_OKAY;
-}
-
-
-static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveCompgreedily)
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveDensemasterconss)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
 
    return SCIP_OKAY;
@@ -226,26 +254,19 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveCompgreedily)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultCompgreedily)
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultDensemasterconss)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
-   if( SCIPgetNOrigConss(scip) + SCIPgetNOrigVars(scip) < DEFAULT_LIMITHALFPERIMETERENABLEDORIGINAL )
-      SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-   else
-      SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
-   if( SCIPgetNConss(scip) + SCIPgetNVars(scip) < DEFAULT_LIMITHALFPERIMETERENABLEDFINISHING )
-      SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
-   else
-      SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
 
    return SCIP_OKAY;
@@ -253,14 +274,13 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultCompgreedily)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastCompgreedily)
+DEC_DECL_SETPARAMFAST(setParamFastDensemasterconss)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -268,11 +288,10 @@ DEC_DECL_SETPARAMFAST(setParamFastCompgreedily)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
+
    return SCIP_OKAY;
 
 }
-
-
 
 
 
@@ -280,19 +299,21 @@ DEC_DECL_SETPARAMFAST(setParamFastCompgreedily)
  * detector specific interface methods
  */
 
-/** creates the handler for compgreedily detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorCompgreedily(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
+/** creates the handler for densemasterconss detector and includes it in SCIP */
+SCIP_RETCODE SCIPincludeDetectorDensemasterconss(SCIP* scip /**< SCIP data structure */
+)
 {
    DEC_DETECTORDATA* detectordata;
 
-   /**@todo create compgreedily detector data here*/
+   /**@todo create densemasterconss detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectCompgreedily, freeCompgreedily,initCompgreedily, exitCompgreedily, propagateSeeedCompgreedily, finishSeeedCompgreedily, setParamAggressiveCompgreedily, setParamDefaultCompgreedily, setParamFastCompgreedily) );
+   SCIP_CALL(
+      DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata,
+         detectDensemasterconss, freeDensemasterconss, initDensemasterconss, exitDensemasterconss, propagateSeeedDensemasterconss, finishSeeedDensemasterconss, setParamAggressiveDensemasterconss, setParamDefaultDensemasterconss, setParamFastDensemasterconss));
 
-   /**@todo add compgreedily detector parameters */
+   /**@todo add densemasterconss detector parameters */
 
    return SCIP_OKAY;
 }
