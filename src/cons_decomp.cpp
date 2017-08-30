@@ -4990,7 +4990,7 @@ SCIP_RETCODE setDetectionDefault(
 
    if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", TRUE) );
-   else      return NULL;
+   else
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", FALSE) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )

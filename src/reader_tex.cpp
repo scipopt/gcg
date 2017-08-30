@@ -87,17 +87,17 @@ SCIP_DECL_READERREAD(readerReadTex)
 
 SCIP_DECL_READERWRITE(readerWriteTex)
 {
-   int* seeedid;
+   int seeedid;
 
    assert(scip != NULL);
    assert(reader != NULL);
 
-   *seeedid = 0;
+   seeedid = 0;
 
    /* get seeed to write */
-   seeedid = DECgetBestSeeed(scip);
+   seeedid = *(DECgetBestSeeed(scip));
 
-   if(*seeedid == -1)
+   if(seeedid == -1)
    {
       SCIPerrorMessage("Could not find best Seeed!\n");
       *result = SCIP_DIDNOTRUN;
@@ -105,7 +105,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
    else
    {
 
-      GCGwriteTexVisualization(scip, file, *seeedid, TRUE, FALSE);
+      GCGwriteTexVisualization(scip, file, seeedid, TRUE, FALSE);
       *result = SCIP_SUCCESS;
    }
 
