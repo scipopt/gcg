@@ -3881,12 +3881,10 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
 
    assert( seeed->checkConsistency( this ) );
 
-   /* @todo test stuff */
-   std::cout << "Linkingvars initially: " << seeed->getNLinkingvars() << "\tStairlinkingvars initially: " << seeed->getNTotalStairlinkingvars() << "\n";
-
    seeed->calcStairlinkingVars( this );
 
-   std::cout << "Linkingvars after call: " << seeed->getNLinkingvars() << "\tStairlinkingvars after call: " << seeed->getNTotalStairlinkingvars() << "\n";
+   SCIPdebugMessagePrint( scip, "Reassigned %d of %d linking vars to stairlinking.\n",
+      seeed->getNTotalStairlinkingvars(), seeed->getNTotalStairlinkingvars() + seeed->getNLinkingvars() );
 
    *newseeed = seeed;
 

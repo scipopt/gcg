@@ -299,6 +299,36 @@ public:
    /** calculates the hash value of the seeed for comparing */
    void calcHashvalue();
 
+   /** reassigns linking vars stairlinkingvars if possible
+    *  potentially reorders blocks for making a maximum number of linking vars stairlinking
+    *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
+    *  otherwise, the stairlinking assignment is done greedily
+    *  precondition: seeed does not have any stairlinking vars */
+   void calcStairlinkingVars(
+      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
+      );
+
+   /** changes the block order in a way such that all linking vars that are potentially stairlinking
+    *  may be reassigned to stairlinking
+    *  precondition: all potentially stairlinking vars have a staircase structure */
+   void changeBlockOrderStaircase(
+        GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
+                         potentially stairlinkingvars connecting two blocks */
+        );
+
+   /** changes the block order in a way such that some linking vars that are potentially stairlinking
+    *  may be reassigned to stairlinking using a greedy method */
+   void changeBlockOrderGreedily(
+      GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
+                       potentially stairlinkingvars connecting two blocks */
+        );
+
+   /** changes the order of the blocks according to the given mapping
+    *  precondition: given mapping needs to be an adequately sized permutation */
+   void changeBlockOrder(
+        std::vector<int> oldToNewBlockIndex /**< the mapping from old to new block indices */
+        );
+
    /** returns true if all constraints are assigned and deletes the vector open conss if so */
    bool checkAllConssAssigned();
 
@@ -406,36 +436,6 @@ public:
    SCIP_RETCODE findVarsLinkingToStairlinking(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
-
-   /** reassigns linking vars stairlinkingvars if possible
-    *  potentially reorders blocks for making a maximum number of linking vars stairlinking
-    *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
-    *  otherwise, the stairlinking assignment is done greedily
-    *  precondition: seeed does not have any stairlinking vars */
-   void calcStairlinkingVars(
-      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
-      );
-
-   /** changes the block order in a way such that all linking vars that are potentially stairlinking
-    *  may be reassigned to stairlinking
-    *  precondition: all potentially stairlinking vars have a staircase structure */
-   void changeBlockOrderStaircase(
-   	  GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
-   	                   potentially stairlinkingvars connecting two blocks */
-   	  );
-
-   /** changes the block order in a way such that some linking vars that are potentially stairlinking
-    *  may be reassigned to stairlinking using a greedy method */
-   void changeBlockOrderGreedily(
-      GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
-                       potentially stairlinkingvars connecting two blocks */
-   	  );
-
-   /** changes the order of the blocks according to the given mapping
-    *  precondition: given mapping needs to be an adequately sized permutation */
-   void changeBlockOrder(
-   	  std::vector<int> oldToNewBlockIndex /**< the mapping from old to new block indices */
-   	  );
 
    /** returns a vector of pairs of var indices and vectors of (two) block indices
     *  the related linking variable hits exactly the two blocks given in the related vector */

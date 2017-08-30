@@ -917,6 +917,265 @@ void Seeed::calcHashvalue()
    this->hashvalue = hashval;
 }
 
+/** reassigns linking vars stairlinkingvars if possible
+ *  potentially reorders blocks for making a maximum number of linking vars stairlinking
+ *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
+ *  otherwise, the stairlinking assignment is done greedily
+ *  precondition: seeed does not have any stairlinking vars */
+void Seeed::calcStairlinkingVars(
+   Seeedpool* seeedpool
+   )
+{
+   assert( getNTotalStairlinkingvars() == 0 );
+
+   /* data structure containing pairs of varindices and blocknumbers */
+   std::vector< std::pair< int, std::vector< int > > > blocksOfVars = findLinkingVarsPotentiallyStairlinking( seeedpool );
+
+   /* if there are no vars that are potentially stairlinking, return without further calculations */
+   if( blocksOfVars.size() == 0 )
+      return;
+
+   GraphGCG* g = new GraphGCG( getNBlocks(), true );
+
+   /* create block graph: every block is represented by a node and two nodes are adjacent if there exists a
+    * var that potentially links these blocks, the edge weight is the number of such variables */
+   for( int i = 0; i < (int) blocksOfVars.size(); ++i )
+   {
+      assert( blocksOfVars[i].second.size() == 2 );
+      int v = blocksOfVars[i].second[0];
+      int w = blocksOfVars[i].second[1];
+
+      if ( g->isEdge( v, w ) )
+      {
+         g->setEdge( v, w, g->getEdgeWeight( v, w ) + 1 );
+      }
+      else
+      {
+         g->setEdge( v, w, 1 );
+      }
+   }
+
+
+   bool isstaircase = true; /* maintains information whether staircase structure is still possible */
+   std::vector< int > sources( 0 ); /* all nodes with degree one */
+   std::vector< bool > marks( getNBlocks() ); /* a node is marked if its degree is zero or it is reachable from a source  */
+
+   /* firstly, check whether every node has an degree of at most 2 */
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      if( g->getNNeighbors( b ) > 2 )
+      {
+         isstaircase = false;
+         break;
+      }
+      else if( g->getNNeighbors( b ) == 1 )
+      {
+         sources.push_back( b );
+      }
+      else if ( g->getNNeighbors( b ) == 0 )
+      {
+         marks[b] = true;
+      }
+   }
+
+   /* secondly, check whether there exists a circle in the graph by moving along all paths starting from a source */
+   for( int s = 0; s < (int) sources.size() && isstaircase; ++s )
+   {
+      int curBlock = sources[s];
+      if( marks[curBlock] )
+         continue;
+
+      marks[curBlock] = true;
+
+      /* check whether there is an unmarked neighbor
+       * if there is none, a circle is detected */
+      do
+      {
+         std::vector< int > neighbors = g->getNeighbors( curBlock );
+         if( !marks[neighbors[0]] )
+         {
+            marks[neighbors[0]] = true;
+            curBlock = neighbors[0];
+         }
+         else if ( !marks[neighbors[1]] )
+         {
+            marks[neighbors[1]] = true;
+            curBlock = neighbors[1];
+         }
+         else
+         {
+            isstaircase = false;
+            break;
+         }
+      }
+      while( g->getNNeighbors( curBlock ) != 1 );
+   }
+
+   /* thirdly, check whether all nodes with neighbors are reachable from a source,
+    * since there is a circle if this is not the case */
+   for( int b = 0; b < getNBlocks() && isstaircase; ++b )
+   {
+      if( !marks[b] )
+      {
+         isstaircase = false;
+         break;
+      }
+   }
+
+   if( isstaircase )
+   {
+      changeBlockOrderStaircase( g );
+   }
+   else
+   {
+      changeBlockOrderGreedily( g );
+   }
+
+   findVarsLinkingToStairlinking( seeedpool );
+
+   assert( checkConsistency( seeedpool ) );
+}
+
+/** changes the block order in a way such that all linking vars that are potentially stairlinking
+ *  may be reassigned to stairlinking
+ *  precondition: all potentially stairlinking vars have a staircase structure */
+void Seeed::changeBlockOrderStaircase(
+   GraphGCG* g
+   )
+{
+   int blockcounter = 0; /* counts current new block to assign an old one to */
+   std::vector< int > blockmapping( getNBlocks() ); /* stores new block order */
+   for( int b = 0; b < getNBlocks(); ++b )
+      blockmapping[b] = -1;
+
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      if( g->getNNeighbors( b ) == 0 )
+      {
+         /* if block does not have a neighbor, just assign it to current blockindex */
+         assert( blockmapping[b] == -1 );
+         blockmapping[b] = blockcounter;
+         ++blockcounter;
+      }
+      else if( blockmapping[b] == -1 && g->getNNeighbors( b ) == 1 )
+      {
+         /* if the block is the source of an yet unconsidered path, assign whole path to ascending new block ids */
+         int curBlock = b;
+         blockmapping[b] = blockcounter;
+         ++blockcounter;
+
+         do
+         {
+            std::vector< int > neighbors = g->getNeighbors( curBlock );
+
+            if( blockmapping[neighbors[0]] == -1 )
+            {
+               blockmapping[neighbors[0]] = blockcounter;
+               curBlock = neighbors[0];
+            }
+            else if ( blockmapping[neighbors[1]] == -1 )
+            {
+               blockmapping[neighbors[1]] = blockcounter;
+               curBlock = neighbors[1];
+            }
+            else
+            {
+               assert( false );
+            }
+            ++blockcounter;
+         }
+         while( g->getNNeighbors( curBlock ) != 1 );
+      }
+   }
+
+   changeBlockOrder( blockmapping );
+}
+
+/** changes the block order in a way such that some linking vars that are potentially stairlinking
+ *  may be reassigned to stairlinking using a greedy method */
+void Seeed::changeBlockOrderGreedily(
+   GraphGCG* g
+   )
+{
+   int blockcounter = 0; /* counts current new block to assign an old one to */
+   std::vector< int > blockmapping( getNBlocks() ); /* stores new block order */
+   for( int b = 0; b < getNBlocks(); ++b )
+      blockmapping[b] = -1;
+
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      if( g->getNNeighbors( b ) == 0 )
+      {
+         /* if block does not have a neighbor, just assign it to current blockindex */
+         assert( blockmapping[b] == -1 );
+         blockmapping[b] = blockcounter;
+         ++blockcounter;
+      }
+      else if( blockmapping[b] == -1 )
+      {
+         /* if the block is part of an yet unconsidered path, walk along this path greedily
+          * and assign whole path to ascending new block ids */
+         int curBlock = b;
+         blockmapping[b] = blockcounter;
+         int maxNeighbor;
+         int maxNeighborVal;
+
+         do
+         {
+            ++blockcounter;
+            std::vector< int > neighbors = g->getNeighbors( curBlock );
+
+            maxNeighbor = -1;
+            maxNeighborVal = -1;
+
+            /* find yet unassigned neighbor block with maximum number of stairlinking vars connecting it to current block */
+            for( int i = 0; i < (int) neighbors.size(); ++i )
+            {
+               if( blockmapping[neighbors[i]] == -1 && g->getEdgeWeight( curBlock, neighbors[i] ) > maxNeighborVal )
+               {
+                  maxNeighbor = neighbors[i];
+                  maxNeighborVal = g->getEdgeWeight( curBlock, neighbors[i] );
+               }
+            }
+
+            if( maxNeighbor != -1 )
+            {
+               assert( blockmapping[maxNeighbor] == -1 );
+               blockmapping[maxNeighbor] = blockcounter;
+               curBlock = maxNeighbor;
+            }
+         }
+         while( maxNeighbor != -1 );
+      }
+   }
+
+   changeBlockOrder( blockmapping );
+}
+
+/** changes the order of the blocks according to the given mapping
+ *  precondition: given mapping needs to be an adequately sized permutation */
+void Seeed::changeBlockOrder(
+   std::vector<int> oldToNewBlockIndex
+   )
+{
+   assert((int ) oldToNewBlockIndex.size() == getNBlocks() );
+   assert( getNTotalStairlinkingvars() == 0 );
+
+   std::vector< std::vector< int > > newconssforblocks( getNBlocks() );
+   std::vector< std::vector< int > > newvarsforblocks( getNBlocks() );
+
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      assert( 0 <= oldToNewBlockIndex[b] && oldToNewBlockIndex[b] < getNBlocks() );
+
+      newconssforblocks[oldToNewBlockIndex[b]] = conssForBlocks[b];
+      newvarsforblocks[oldToNewBlockIndex[b]] = varsForBlocks[b];
+   }
+
+   conssForBlocks = newconssforblocks;
+   varsForBlocks = newvarsforblocks;
+}
+
 /** returns whether all cons are assigned and deletes the vector open cons if all are assigned */
 bool Seeed::checkAllConssAssigned()
 {
@@ -2520,7 +2779,7 @@ SCIP_RETCODE Seeed::findVarsLinkingToStairlinking(
 
       if( block1 != - 1 && block2 != - 1 && ( block1 == block2 + 1 || block1 + 1 == block2 ) )
       {
-    	 std::cout << "Var " << lvars[i] << " hits block " << block1 << " and " << block2 << "\n";
+//    	 std::cout << "Var " << lvars[i] << " hits block " << block1 << " and " << block2 << "\n";
 
          setVarToStairlinking( lvars[i], block1, block2 );
          foundMasterVarIndices.push_back( i );
@@ -2535,279 +2794,6 @@ SCIP_RETCODE Seeed::findVarsLinkingToStairlinking(
    return SCIP_OKAY;
 }
 
-/** reassigns linking vars stairlinkingvars if possible
- *  potentially reorders blocks for making a maximum number of linking vars stairlinking
- *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
- *  otherwise, the stairlinking assignment is done greedily
- *  precondition: seeed does not have any stairlinking vars */
-void Seeed::calcStairlinkingVars(
-	Seeedpool* seeedpool
-	)
-{
-	assert( getNTotalStairlinkingvars() == 0 );
-
-	/* data structure containing pairs of varindices and blocknumbers */
-	std::vector< std::pair< int, std::vector< int > > > blocksOfVars = findLinkingVarsPotentiallyStairlinking( seeedpool );
-
-	/* if there are no vars that are potentially stairlinking, return without further calculations */
-	if( blocksOfVars.size() == 0 )
-	   return;
-
-	GraphGCG* g = new GraphGCG( getNBlocks(), true );
-
-	/* create block graph: every block is represented by a node and two nodes are adjacent if there exists a
-	 * var that potentially links these blocks, the edge weight is the number of such variables */
-	for( int i = 0; i < (int) blocksOfVars.size(); ++i )
-	{
-		assert( blocksOfVars[i].second.size() == 2 );
-		int v = blocksOfVars[i].second[0];
-		int w = blocksOfVars[i].second[1];
-
-		if ( g->isEdge( v, w ) )
-		{
-			g->setEdge( v, w, g->getEdgeWeight( v, w ) + 1 );
-		}
-		else
-		{
-			g->setEdge( v, w, 1 );
-		}
-	}
-
-
-	bool isstaircase = true; /* maintains information whether staircase structure is still possible */
-	std::vector< int > sources( 0 ); /* all nodes with degree one */
-	std::vector< bool > marks( getNBlocks() ); /* a node is marked if its degree is zero or it is reachable from a source  */
-
-	/* firstly, check whether every node has an degree of at most 2 */
-	for( int b = 0; b < getNBlocks(); ++b )
-	{
-		if( g->getNNeighbors( b ) > 2 )
-		{
-			isstaircase = false;
-			break;
-		}
-		else if( g->getNNeighbors( b ) == 1 )
-		{
-			sources.push_back( b );
-		}
-		else if ( g->getNNeighbors( b ) == 0 )
-		{
-			marks[b] = true;
-		}
-	}
-
-	/* secondly, check whether there exists a circle in the graph by moving along all paths starting from a source */
-	for( int s = 0; s < (int) sources.size() && isstaircase; ++s )
-	{
-		int curBlock = sources[s];
-		if( marks[curBlock] )
-			continue;
-
-		marks[curBlock] = true;
-
-		/* check whether there is an unmarked neighbor
-		 * if there is none, a circle is detected */
-		do
-		{
-			std::vector< int > neighbors = g->getNeighbors( curBlock );
-			if( !marks[neighbors[0]] )
-			{
-				marks[neighbors[0]] = true;
-				curBlock = neighbors[0];
-			}
-			else if ( !marks[neighbors[1]] )
-			{
-				marks[neighbors[1]] = true;
-				curBlock = neighbors[1];
-			}
-			else
-			{
-				isstaircase = false;
-				break;
-			}
-		}
-		while( g->getNNeighbors( curBlock ) != 1 );
-	}
-
-	/* thirdly, check whether all nodes with neighbors are reachable from a source,
-	 * since there is a circle if this is not the case */
-	for( int b = 0; b < getNBlocks() && isstaircase; ++b )
-	{
-		if( !marks[b] )
-		{
-			isstaircase = false;
-			break;
-		}
-	}
-
-	if( isstaircase )
-	{
-	   std::cout << "Seeed has a staircase structure! Assign all linking vars.\n";
-		changeBlockOrderStaircase( g );
-	}
-	else
-	{
-      std::cout << "Seeed does not have a staircase structure! Assign greedily.\n";
-		changeBlockOrderGreedily( g );
-	}
-
-	findVarsLinkingToStairlinking( seeedpool );
-
-	assert( checkConsistency( seeedpool ) );
-}
-
-/** changes the block order in a way such that all linking vars that are potentially stairlinking
- *  may be reassigned to stairlinking
- *  precondition: all potentially stairlinking vars have a staircase structure */
-void Seeed::changeBlockOrderStaircase(
-	GraphGCG* g
-	)
-{
-	int blockcounter = 0; /* counts current new block to assign an old one to */
-	std::vector< int > blockmapping( getNBlocks() ); /* stores new block order */
-	for( int b = 0; b < getNBlocks(); ++b )
-		blockmapping[b] = -1;
-
-	for( int b = 0; b < getNBlocks(); ++b )
-	{
-		if( g->getNNeighbors( b ) == 0 )
-		{
-			/* if block does not have a neighbor, just assign it to current blockindex */
-			assert( blockmapping[b] == -1 );
-			blockmapping[b] = blockcounter;
-			++blockcounter;
-		}
-		else if( blockmapping[b] == -1 && g->getNNeighbors( b ) == 1 )
-		{
-			/* if the block is the source of an yet unconsidered path, assign whole path to ascending new block ids */
-			int curBlock = b;
-			blockmapping[b] = blockcounter;
-			++blockcounter;
-
-			do
-			{
-				std::vector< int > neighbors = g->getNeighbors( curBlock );
-
-				if( blockmapping[neighbors[0]] == -1 )
-				{
-					blockmapping[neighbors[0]] = blockcounter;
-					curBlock = neighbors[0];
-				}
-			   else if ( blockmapping[neighbors[1]] == -1 )
-				{
-			    	blockmapping[neighbors[1]] = blockcounter;
-		    		curBlock = neighbors[1];
-				}
-            else
-            {
-               assert( false );
-            }
-            ++blockcounter;
-			}
-			while( g->getNNeighbors( curBlock ) != 1 );
-		}
-	}
-
-	/* debugging */
-	for( int b = 0; b < getNBlocks(); ++b )
-	{
-	   std::cout << "Block " << b << " becomes block " << blockmapping[b] << "\n";
-	}
-
-	changeBlockOrder( blockmapping );
-}
-
-/** changes the block order in a way such that some linking vars that are potentially stairlinking
- *  may be reassigned to stairlinking using a greedy method */
-void Seeed::changeBlockOrderGreedily(
-	GraphGCG* g
-	)
-{
-   int blockcounter = 0; /* counts current new block to assign an old one to */
-   std::vector< int > blockmapping( getNBlocks() ); /* stores new block order */
-   for( int b = 0; b < getNBlocks(); ++b )
-      blockmapping[b] = -1;
-
-   for( int b = 0; b < getNBlocks(); ++b )
-   {
-      if( g->getNNeighbors( b ) == 0 )
-      {
-         /* if block does not have a neighbor, just assign it to current blockindex */
-         assert( blockmapping[b] == -1 );
-         blockmapping[b] = blockcounter;
-         ++blockcounter;
-      }
-      else if( blockmapping[b] == -1 )
-      {
-         /* if the block is part of an yet unconsidered path, walk along this path greedily
-          * and assign whole path to ascending new block ids */
-         int curBlock = b;
-         blockmapping[b] = blockcounter;
-         int maxNeighbor;
-         int maxNeighborVal;
-
-         do
-         {
-            ++blockcounter;
-            std::vector< int > neighbors = g->getNeighbors( curBlock );
-
-            maxNeighbor = -1;
-            maxNeighborVal = -1;
-
-            /* find yet unassigned neighbor block with maximum number of stairlinking vars connecting it to current block */
-            for( int i = 0; i < (int) neighbors.size(); ++i )
-            {
-               if( blockmapping[neighbors[i]] == -1 && g->getEdgeWeight( curBlock, neighbors[i] ) > maxNeighborVal )
-               {
-                  maxNeighbor = neighbors[i];
-                  maxNeighborVal = g->getEdgeWeight( curBlock, neighbors[i] );
-               }
-            }
-
-            if( maxNeighbor != -1 )
-            {
-               assert( blockmapping[maxNeighbor] == -1 );
-               blockmapping[maxNeighbor] = blockcounter;
-               curBlock = maxNeighbor;
-            }
-         }
-         while( maxNeighbor != -1 );
-      }
-   }
-
-   /* debugging */
-   for( int b = 0; b < getNBlocks(); ++b )
-   {
-      std::cout << "Block " << b << " becomes block " << blockmapping[b] << "\n";
-   }
-
-   changeBlockOrder( blockmapping );
-}
-
-/** changes the order of the blocks according to the given mapping
- *  precondition: given mapping needs to be an adequately sized permutation */
-void Seeed::changeBlockOrder(
-   std::vector<int> oldToNewBlockIndex
-   )
-{
-	assert((int ) oldToNewBlockIndex.size() == getNBlocks());
-	assert(getNTotalStairlinkingvars() == 0);
-
-	std::vector< std::vector< int > > newconssforblocks( getNBlocks() );
-	std::vector< std::vector< int > > newvarsforblocks( getNBlocks() );
-
-	for( int b = 0; b < getNBlocks(); ++b )
-	{
-		assert( 0 <= oldToNewBlockIndex[b] && oldToNewBlockIndex[b] < getNBlocks() );
-
-		newconssforblocks[oldToNewBlockIndex[b]] = conssForBlocks[b];
-		newvarsforblocks[oldToNewBlockIndex[b]] = varsForBlocks[b];
-	}
-
-	conssForBlocks = newconssforblocks;
-	varsForBlocks = newvarsforblocks;
-}
-
 /** returns a vector of pairs of var indices and vectors of (two) block indices
  *  the related linking variable hits exactly the two blocks given in the related vector */
 std::vector< std::pair< int, std::vector< int > > > Seeed::findLinkingVarsPotentiallyStairlinking(
@@ -2818,9 +2804,6 @@ std::vector< std::pair< int, std::vector< int > > > Seeed::findLinkingVarsPotent
 	const int* varcons;
 	const int* lvars = getLinkingvars();
 	int blockcounter;
-
-	/* debugging */
-	std::vector<int> blocknumbers( 4, 0 );
 
 	sort();
 
@@ -2857,15 +2840,6 @@ std::vector< std::pair< int, std::vector< int > > > Seeed::findLinkingVarsPotent
 			std::pair< int, std::vector< int > > pair( v, blocksOfVar );
 			blocksOfVars.push_back( pair );
 		}
-
-		/* debugging */
-		++blocknumbers[blockcounter];
-	}
-
-	/* debugging */
-	for( int i = 0; i < 4; ++i )
-	{
-		std::cout << blocknumbers[i] << " vars with " << i << " blocks\n";
 	}
 
 	return blocksOfVars;
