@@ -1671,6 +1671,16 @@ void Seeedpool::calcTranslationMapping(
          }
       }
    }
+
+      for ( int i  = 0; i < rowothertothis.size(); ++i )
+         std::cout << (rowothertothis[i] == i) << " " ;
+
+      std::cout << std::endl;
+
+      for ( int i  = 0; i < colothertothis.size(); ++i )
+         std::cout << ( colothertothis[i] == i ) << " " ;
+      std::cout << std::endl;
+
 }
 
 /** returns translated seeeds derived from given mapping data */
