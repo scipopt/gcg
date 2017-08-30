@@ -25,84 +25,18 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   class_miscvisualization.h
- * @brief  miscellaneous methods for visualizations
+/**@file   wrapper_seeed.h
+ * @brief  Provides wrapping to have Seeeds and Seeedpools as parameters in C-conform function headers with C++
+ *         implementations.
  * @author Hanna Franzen
- *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_CLASS_MISCVISUALIZATION_H__
-#define GCG_CLASS_MISCVISUALIZATION_H__
+#include "cons_decomp.h"
 
-#include <iostream>
-#include <string>
-#include <fstream>
-
-#include "class_seeedpool.h"
-
-namespace gcg
+struct Seeed_Wrapper
 {
-
-class MiscVisualization
-{
-
-private:
-
-public:
-   /** constructor */
-   MiscVisualization();
-
-
-   /** destructor */
-   ~MiscVisualization();
-
-
-   /** gives a consistent filename for a (single) seeed visualization that includes the probname and seeedID
-    *
-    * @return filename including the extension
-    * */
-   char* GCGgetVisualizationFilename(
-      SCIP* scip,             /**< scip data structure */
-      SeeedPtr seeed,         /**< seeed that is to be visualized */
-      const char* extension   /**< file extension */
-      );
-
-
-   /** gives the path of the file
-    *
-    * @return path of file
-    * */
-   char* GCGgetFilePath(
-      SCIP* scip,       /**< scip data structure */
-      FILE* file        /**< file */
-      );
-
-
-   /** compiles visualization files in gp or tex format and
-    * opens the resulting pdf file with the
-    *
-    * @return path of file
-    * */
-   void GCGshowVisualization(
-      SCIP* scip,       /**< scip data structure */
-      char* filename    /**< filename (including path) */
-      );
-
-   /** gets a pointer to the Seeed with given ID
-    *
-    * @returns SeeedPtr to Seeed or NULL if there is no Seeed with the given ID
-    * @returns pool: Seeedpool* where the Seeed was found
-    */
-   SeeedPtr GCGgetSeeedWithPool(
-      SCIP* scip,       /**< SCIP data structure */
-      int seeedid,      /**< ID of Seeed */
-      Seeedpool* pool   /**< outputs where the Seeed was found */
-      );
-
+   gcg::Seeed* seeed;
+   gcg::Seeedpool* seeedpool;
 };
-
-
-} /* namespace gcg */
-#endif /* SRC_CLASS_MISCVISUALIZATION_H_ */

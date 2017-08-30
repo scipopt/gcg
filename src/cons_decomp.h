@@ -43,7 +43,6 @@
 #include "type_detector.h"
 
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -59,6 +58,9 @@ typedef enum scoretype SCORETYPE;
 SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP*          scip
 );
+
+struct Seeed_Wrapper;
+typedef struct Seeed_Wrapper SEEED_WRAPPER;
 
 /** creates the handler for decomp constraints and includes it in SCIP */
 extern
@@ -348,7 +350,7 @@ DEC_DECOMP* DECgetBestDecomp(
    );
 
 /** returns the Seeed ID of the best Seeed if available and -1 otherwise */
-int DECgetBestSeeed(
+int* DECgetBestSeeed(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
@@ -412,6 +414,20 @@ SCIP_RETCODE GCGsetDetection(
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
    );
 
+
+/** returns wrapped Seeed with given id */
+SCIP_RETCODE GCGgetSeeedFromID(
+   SCIP*          scip,       /**< SCIP data structure */
+   int*           seeedid,    /**< id of Seeed */
+   SEEED_WRAPPER* seeedwr     /**< wrapper for output Seeed */
+   );
+
+/** returns wrapped Seeedpools */
+SCIP_RETCODE GCGgetCurrentSeeedpools(
+   SCIP*          scip,                   /**< SCIP data structure */
+   SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool */
+   SEEED_WRAPPER* seeedpoolunpresolvedwr  /**< wrapper for unpresolved output Seeedpool */
+   );
 
 #ifdef __cplusplus
 }

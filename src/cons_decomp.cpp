@@ -56,6 +56,7 @@
 #include "scip/clock.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "wrapper_seeed.h"
 
 #include <vector>
 #include <iomanip>
@@ -1377,8 +1378,6 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxChoose(
 }
 
 
-
-
 SCIP_RETCODE SCIPconshdlrDecompSelectSelect(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
@@ -1939,8 +1938,6 @@ SCIP_DIALOG*            dialog )
 }
 
 
-
-
 SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    SCIP*                   scip,
    SCIP_DIALOGHDLR*        dialoghdlr,
@@ -2194,12 +2191,6 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 
    return SCIP_OKAY;
 }
-
-
-
-
-
-
 
 
 /** returns the decomposition structure **/
@@ -3125,8 +3116,6 @@ int SCIPconshdlrDecompGetBlockNumberCandidate(
 }
 
 
-
-
 SCIP_RETCODE SCIPconshdlrDecompBlockNumberCandidateToSeeedpool(
    SCIP*                 scip,                /**< SCIP data structure */
    SCIP_Bool             transformed
@@ -3157,9 +3146,6 @@ SCIP_RETCODE SCIPconshdlrDecompBlockNumberCandidateToSeeedpool(
 
    return SCIP_OKAY;
 }
-
-
-
 
 
 /** sets a variable by name to the linking variables in the current user seeed */
@@ -4273,7 +4259,6 @@ std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
    SCIP* scip
    )
 {
-
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
@@ -4313,9 +4298,6 @@ std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
          if( conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ) != NULL &&  conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID() > maxid )
             maxid = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID();
       }
-
-
-
 
    tmpAllRelevantSeeeds = std::vector<SeeedPtr>(maxid+1, NULL );
 
@@ -4688,7 +4670,7 @@ DEC_DECOMP* DECgetBestDecomp(
 }
 
 /** returns the Seeed ID of the best Seeed if available and -1 otherwise */
-int DECgetBestSeeed(
+int* DECgetBestSeeed(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -4699,7 +4681,9 @@ int DECgetBestSeeed(
    gcg::Seeedpool* seeedpool;
    gcg::Seeedpool* seeedpoolunpresolved;
    SeeedPtr seeed;
-   int seeedid = -1;
+   int* seeedid;
+
+   *seeedid = -1;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
@@ -4714,7 +4698,7 @@ int DECgetBestSeeed(
    seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
 
    if( conshdlrdata->candidates->size() == 0 )
-      return -1;
+      return seeedid;
 
    seeed = conshdlrdata->candidates->at( 0 ).first;
 
@@ -4730,7 +4714,7 @@ int DECgetBestSeeed(
 
    if(seeed != NULL)
    {
-      seeedid = seeed->getID();
+      *seeedid = seeed->getID();
    }
 
    return seeedid;
@@ -4962,7 +4946,7 @@ SCIP_RETCODE setDetectionDefault(
 
    if(SCIPgetNVars(scip) + SCIPgetNConss(scip) < DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER)
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", TRUE) );
-   else
+   else      return NULL;
       SCIP_CALL(SCIPsetBoolParam(scip, "detection/consclassifier/consnamelevenshtein/enabled", FALSE) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
@@ -5230,6 +5214,49 @@ SCIP_RETCODE GCGsetDetection(
       SCIPerrorMessage("The given paramsetting is invalid!\n");
       break;
    }
+
+   return SCIP_OKAY;
+}
+
+
+/** returns wrapped Seeed with given id */
+SCIP_RETCODE GCGgetSeeedFromID(
+   SCIP*          scip,       /**< SCIP data structure */
+   int*           seeedid,    /**< id of Seeed */
+   SEEED_WRAPPER* seeedwr     /**< wrapper for output Seeed */
+   )
+{
+   SeeedPtr s;
+
+   s = SCIPconshdlrDecompGetSeeed(scip, *seeedid);
+   seeedwr->seeed = s;
+
+   return SCIP_OKAY;
+}
+
+
+/** returns wrapped Seeedpools */
+SCIP_RETCODE GCGgetCurrentSeeedpools(
+   SCIP*          scip,                   /**< SCIP data structure */
+   SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool */
+   SEEED_WRAPPER* seeedpoolunpresolvedwr  /**< wrapper for unpresolved output Seeedpool */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   conshdlr = SCIPfindConshdlr( scip, "decomp" );
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeedpool!\n");
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeedpoolwr->seeedpool = conshdlrdata->seeedpool;
+   seeedpoolunpresolvedwr->seeedpool = conshdlrdata->seeedpoolunpresolved;
 
    return SCIP_OKAY;
 }

@@ -94,7 +94,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    assert(file != NULL);
 
    /* get seeed to write */
-   seeedid = DECgetBestSeeed(scip);
+   seeedid = *(DECgetBestSeeed(scip));
 
    if(seeedid == -1)
    {
@@ -103,7 +103,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    }
    else
    {
-      seeed = misc->GCGgetSeeed(scip, seeedid, NULL);
+      seeed = misc->GCGgetSeeedWithPool(scip, seeedid, NULL);
 
       /* reader internally works with the filename instead of the C FILE type */
       filename = misc->GCGgetFilePath(scip, file);
@@ -369,11 +369,11 @@ SCIP_RETCODE GCGwriteGpVisualization(
    )
 {
    SeeedPtr seeed;
-   Seeedpool* seeedpool;
+   Seeedpool* seeedpool = NULL;
    MiscVisualization* misc = new MiscVisualization();
 
    /* get seeed and seeedpool */
-   seeed = misc->GCGgetSeeed(scip, seeedid, seeedpool);
+   seeed = misc->GCGgetSeeedWithPool(scip, seeedid, seeedpool);
    if( seeed == NULL )
    {
       SCIPerrorMessage("Could not find Seeed!\n");

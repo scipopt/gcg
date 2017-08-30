@@ -56,6 +56,7 @@
 #include "class_miscvisualization.h"
 #include "class_seeed.h"
 #include "class_seeedpool.h"
+#include "wrapper_seeed.h"
 
 #define READER_NAME             "texreader"
 #define READER_DESC             "LaTeX file writer for seeed visualization"
@@ -86,15 +87,15 @@ SCIP_DECL_READERREAD(readerReadTex)
 
 SCIP_DECL_READERWRITE(readerWriteTex)
 {
-   MiscVisualization* misc = new MiscVisualization();
-   Seeed* seeed;
    int* seeedid;
 
    assert(scip != NULL);
    assert(reader != NULL);
 
+   *seeedid = 0;
+
    /* get seeed to write */
-   *seeedid = DECgetBestSeeed(scip);
+   seeedid = DECgetBestSeeed(scip);
 
    if(*seeedid == -1)
    {
@@ -103,8 +104,8 @@ SCIP_DECL_READERWRITE(readerWriteTex)
    }
    else
    {
-      seeed = misc->GCGgetSeeed(scip, *seeedid, NULL);
-      GCGwriteTexVisualization(scip, file, *seeedid, (SCIP_Bool) TRUE, (SCIP_Bool) FALSE);
+
+      GCGwriteTexVisualization(scip, file, *seeedid, TRUE, FALSE);
       *result = SCIP_SUCCESS;
    }
 
@@ -612,12 +613,12 @@ SCIP_RETCODE GCGwriteTexVisualization(
 {
    MiscVisualization* misc = new MiscVisualization();
    Seeed* seeed;
-   Seeedpool* seeedpool;
+   Seeedpool* seeedpool = NULL;
    char* gpname;
    char* pdfname;
 
    /* get seeed */
-   seeed = misc->GCGgetSeeed(scip, seeedid, seeedpool);
+   seeed = misc->GCGgetSeeedWithPool(scip, seeedid, seeedpool);
 
    /* write tex code into file */
    writeTexHeader(scip, file);
@@ -662,7 +663,7 @@ SCIP_RETCODE GCGwriteTexReport(
 {
    MiscVisualization* misc = new MiscVisualization();
    Seeed* seeed;
-   Seeedpool* seeedpool;
+   Seeedpool* seeedpool = NULL;
    char* gpname;
    char* pdfname;
 
@@ -683,7 +684,7 @@ SCIP_RETCODE GCGwriteTexReport(
          SCIPinfoMessage(scip, file, "                                                                \n");
       }
       /* get and write each seeed */
-      seeed = misc->GCGgetSeeed(scip, seeedids[i], seeedpool);
+      seeed = misc->GCGgetSeeedWithPool(scip, seeedids[i], seeedpool);
       if(!usegp)
       {
          writeTexSeeed(scip, file, seeed, seeedpool);
