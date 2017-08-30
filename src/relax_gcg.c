@@ -2119,6 +2119,12 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
    }
 
+   /* free used decomposition */
+   if( relaxdata->decdecomp != NULL )
+   {
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
+   }
+
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;
@@ -2136,6 +2142,9 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   if( relaxdata->decdecomp != NULL )
+      SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
 
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )
@@ -3785,6 +3794,9 @@ void GCGsetStructDecdecomp(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   if( relaxdata->decdecomp != NULL )
+      DECdecompFree(scip, &relaxdata->decdecomp );
 
    relaxdata->decdecomp = decdecomp;
 }

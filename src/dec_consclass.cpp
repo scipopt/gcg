@@ -65,9 +65,9 @@
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 
-#define DEFAULT_MAXIMUMNCLASSES     8
+#define DEFAULT_MAXIMUMNCLASSES     7
 #define AGGRESSIVE_MAXIMUMNCLASSES  10
-#define FAST_MAXIMUMNCLASSES        6
+#define FAST_MAXIMUMNCLASSES        5
 
 #define SET_MULTIPLEFORSIZETRANSF   12500
 
@@ -145,8 +145,9 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   SCIP_CLOCK* temporaryClock;
 
-  if (seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() ||  seeedPropagationData->seeedToPropagate->getNOpenvars() != seeedPropagationData->seeedpool->getNVars() )
+  if ( seeedPropagationData->seeedToPropagate->getNOpenconss() != seeedPropagationData->seeedpool->getNConss() )
   {
+     SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " abort dec_consclass cause there are %d many open vars of %d total vars and %d many open conss of %d  total conss \n ", seeedPropagationData->seeedToPropagate->getNOpenvars(), seeedPropagationData->seeedpool->getNVars(), seeedPropagationData->seeedToPropagate->getNOpenconss() ,seeedPropagationData->seeedpool->getNConss() );
     *result = SCIP_SUCCESS;
      return SCIP_OKAY;
   }
@@ -251,7 +252,9 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 
   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), foundseeeds.size() ) );
-  seeedPropagationData->nNewSeeeds = foundseeeds.size();
+  seeedPropagationData->nNewSeeeds  = foundseeeds.size();
+
+  SCIPinfoMessage(scip, NULL, "dec_consclass found %d new seeeds \n", seeedPropagationData->nNewSeeeds  );
 
   for( int s = 0; s < seeedPropagationData->nNewSeeeds; ++s )
   {
@@ -293,7 +296,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
 
    modifier = SCIPfloor(scip, modifier);
 
-   newval = MAX( 2, AGGRESSIVE_MAXIMUMNCLASSES - modifier );
+   newval = MAX( 3, AGGRESSIVE_MAXIMUMNCLASSES - modifier );
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
@@ -331,7 +334,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConsclass)
 
    modifier = SCIPfloor(scip, modifier);
 
-   newval = MAX( 2, DEFAULT_MAXIMUMNCLASSES - modifier );
+   newval = MAX( 3, DEFAULT_MAXIMUMNCLASSES - modifier );
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
@@ -370,7 +373,7 @@ DEC_DECL_SETPARAMFAST(setParamFastConsclass)
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
 
-   newval = MAX( 2, FAST_MAXIMUMNCLASSES - modifier );
+   newval = MAX( 3, FAST_MAXIMUMNCLASSES - modifier );
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "\n%s = %d\n", setstr, newval);

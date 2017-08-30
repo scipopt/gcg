@@ -818,7 +818,9 @@ DEC_DECL_SETPARAMFAST(setParamFastHrgpartition)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   if ( SCIPgetNConss(scip) + SCIPgetNVars(scip) > 6000 )
+      SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   else SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );

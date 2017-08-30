@@ -182,6 +182,7 @@
 /* new detection stuff */
 #include "dec_constype.h"
 #include "dec_consclass.h"
+#include "dec_densemasterconss.h"
 #include "dec_stairheur.h"
 #include "dec_staircase.h"
 #include "dec_random.h"
@@ -367,6 +368,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorConnected(scip) );
    SCIP_CALL( SCIPincludeDetectorConstype(scip) );
    SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
+   SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectorRandom(scip) );

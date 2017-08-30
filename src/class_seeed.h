@@ -329,7 +329,7 @@ public:
       );
 
    /** displays the assignments of the conss */
-   SCIP_RETCODE displayConss();
+   SCIP_RETCODE displayConss(Seeedpool* seeedpool);
 
    /*@todo is initialization in declaration necessary? */
    /** displays the relevant information of the seeed */

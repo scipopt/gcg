@@ -421,8 +421,9 @@ bool Seeed::assignHittingOpenconss(
       {
          for( int v = 0; v < seeedpool->getNVarsForCons( cons ); ++ v )
          {
-            std::vector<int>::iterator lb = lower_bound( stairlinkingVars[b].begin(), stairlinkingVars[b].end(), var );
-            if( lb != stairlinkingVars[b].end() &&  *lb == var )
+            int var2 = seeedpool->getVarsForCons(cons)[v];
+            std::vector<int>::iterator lb = lower_bound( stairlinkingVars[b].begin(), stairlinkingVars[b].end(), var2 );
+            if( lb != stairlinkingVars[b].end() &&  *lb == var2 )
             {
                stairlinking = true;
                blocksOfStairlinkingvars.push_back( b );
@@ -952,16 +953,14 @@ bool Seeed::checkConsistency(
    /** check if nblocks is set appropriately */
    if( nBlocks != (int) conssForBlocks.size() )
    {
-      std::cout << "Warning! In (seeed " << id << ") nBlocks " << nBlocks << " and size of conssForBlocks "
-         << conssForBlocks.size() << " are not identical" << std::endl;
+      SCIPwarningMessage(scip, "In (seeed %d) nBlocks %d and size of conssForBlocks %d are not identical! \n" , id, nBlocks, conssForBlocks.size() );
       assert( false );
       return false;
    }
 
    if( nBlocks != (int) varsForBlocks.size() )
    {
-      std::cout << "Warning! In (seeed " << id << ") nBlocks " << nBlocks << " and size of varsForBlocks"
-         << varsForBlocks.size() << " are not identical" << std::endl;
+      SCIPwarningMessage(scip, "In (seeed %d) nBlocks %d and size of varsForBlocks %d are not identical! \n" , id, nBlocks, varsForBlocks.size() );
       assert( false );
       return false;
    }
@@ -972,7 +971,7 @@ bool Seeed::checkConsistency(
    {
       if( conssForBlocks[b].size() == 0 && varsForBlocks[b].size() == 0 )
       {
-         std::cout << "Warning! In (seeed " << id << ") block " << b << " is empty!" << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) block %d is empty! \n" , id, b );
          this->displaySeeed();
          assert( false );
          return false;
@@ -984,8 +983,8 @@ bool Seeed::checkConsistency(
    {
       if( ! openVarsBool[ * varIter] )
       {
-         std::cout << "Warning! (seeed " << id << ") Variable with index " << * varIter << " is already assigned."
-            << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) linking variable with index %d is already assigned! \n" , id, * varIter );
+
          assert( false );
          return false;
       }
@@ -999,8 +998,7 @@ bool Seeed::checkConsistency(
       {
          if( ! openVarsBool[ * varIter] )
          {
-            std::cout << "Warning! (seeed " << id << ") Variable with index " << * varIter << " is already assigned."
-               << std::endl;
+            SCIPwarningMessage(scip, "In (seeed %d) variable with index %d is already assigned but also assigned to block %d! \n" , id, * varIter, b );
             assert( false );
             return false;
          }
@@ -1013,8 +1011,7 @@ bool Seeed::checkConsistency(
    {
       if( ! openVarsBool[ * varIter] )
       {
-         std::cout << "Warning! (seeed " << id << ") Variable with index " << * varIter << " is already assigned."
-            << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) variable with index %d is already assigned but also assigned to master! \n" , id, * varIter);
          assert( false );
          return false;
       }
@@ -1029,8 +1026,7 @@ bool Seeed::checkConsistency(
       {
          if( ! openVarsBool[ * varIter] )
          {
-            std::cout << "Warning! (seeed " << id << ") Variable with index " << * varIter << " is already assigned."
-               << std::endl;
+            SCIPwarningMessage(scip, "In (seeed %d) variable with index %d is already assigned but also assigned to stairlinking block %d! \n" , id, * varIter, b );
             assert( false );
             return false;
          }
@@ -1038,8 +1034,7 @@ bool Seeed::checkConsistency(
       }
       if( ( b == nBlocks - 1 ) && ( (int) stairlinkingVars[b].size() != 0 ) )
       {
-         std::cout << "Warning! (seeed " << id << ") Variable with index " << * varIter
-            << " is a stairlinkingvar of the last block." << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) variable with index %d is is as assigned as stairlinking var of last block! \n" , id, * varIter );
          assert( false );
          return false;
       }
@@ -1050,8 +1045,7 @@ bool Seeed::checkConsistency(
    {
       if( openVarsBool[v] == true && isVarOpenvar( v ) == false )
       {
-         std::cout << "Warning! (seeed " << id << ") Variable with index " << v << " is not assigned and not an open var."
-            << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) variable with index %d is not assigned and not an open var! \n" , id, v );
          assert( false );
          return false;
       }
@@ -1062,8 +1056,7 @@ bool Seeed::checkConsistency(
    {
       if( openVarsBool[openVars[i]] == false )
       {
-         std::cout << "Warning! (seeed " << id << ") Variable with index " << openVars[i] << " is an open var but assigned."
-            << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) variable with index %d is an open var but assigned! \n" , id, openVars[i]  );
          assert( false );
          return false;
       }
@@ -1079,8 +1072,7 @@ bool Seeed::checkConsistency(
    {
       if( ! openConssBool[ * consIter] )
       {
-         std::cout << "Warning! (seeed " << id << ") Constraint with index " << * consIter << "is already assigned "
-            << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) constraint with index %d is at least two times assigned as a master constraint! \n" , id, * consIter  );
          assert( false );
          return false;
       }
@@ -1094,8 +1086,7 @@ bool Seeed::checkConsistency(
       {
          if( ! openConssBool[ * consIter] )
          {
-            std::cout << "Warning! (seeed " << id << ") Constraint with index " << * consIter << " is already assigned "
-               << std::endl;
+            SCIPwarningMessage(scip, "In (seeed %d) constraint with index %d is already assigned but also assigned to block %d! \n" , id, * consIter, b  );
             assert( false );
             return false;
          }
@@ -1108,8 +1099,7 @@ bool Seeed::checkConsistency(
    {
       if( openConssBool[v] == true && isConsOpencons( v ) == false )
       {
-         std::cout << "Warning! (seeed " << id << ") Constraint with index " << v << " is not assigned and not an open cons."
-            << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) constraint with index %d is not assigned and not an open cons! \n" , id, v  );
          assert( false );
          return false;
       }
@@ -1120,8 +1110,7 @@ bool Seeed::checkConsistency(
    {
       if( openConssBool[openConss[i]] == false )
       {
-         std::cout << "Warning! (seeed " << id << ") Constraint with index " << openConss[i]
-            << " is an open cons but assigned." << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) constraint with index %d is an open cons but assigned! \n" , id,  openConss[i] );
          assert( false );
          return false;
       }
@@ -1135,7 +1124,7 @@ bool Seeed::checkConsistency(
       {
          if( ! ( value < getVarsForBlock( b )[v] ) )
          {
-            std::cout << "Warning! (seeed " << id << ") Variables of block " << b << " are not sorted." << std::endl;
+            SCIPwarningMessage(scip, "In (seeed %d) variables of block %d are not sorted! \n" , id,  b );
             assert( false );
             return false;
          }
@@ -1149,8 +1138,7 @@ bool Seeed::checkConsistency(
       {
          if( ! ( value < getStairlinkingvars( b )[v] ) )
          {
-            std::cout << "Warning! (seeed " << id << ") Stairlinkingvariables of block " << b << " are not sorted."
-               << std::endl;
+            SCIPwarningMessage(scip, "In (seeed %d) stairlinking variables of block %d are not sorted! \n" , id,  b );
             assert( false );
             return false;
          }
@@ -1162,7 +1150,7 @@ bool Seeed::checkConsistency(
    {
       if( ! ( value < getLinkingvars()[v] ) )
       {
-         std::cout << "Warning! (seeed " << id << ") Linkingvariables are not sorted." << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) linking variables are not sorted! \n" , id );
          assert( false );
          return false;
       }
@@ -1173,7 +1161,7 @@ bool Seeed::checkConsistency(
    {
       if( ! ( value < getMastervars()[v] ) )
       {
-         std::cout << "Warning! (seeed " << id << ") Mastervariables are not sorted." << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) master variables are not sorted! \n" , id );
          assert( false );
          return false;
       }
@@ -1186,7 +1174,7 @@ bool Seeed::checkConsistency(
       {
          if( ! ( value < getConssForBlock( b )[v] ) )
          {
-            std::cout << "Warning! (seeed " << id << ") Constraints of block " << b << " are not sorted." << std::endl;
+            SCIPwarningMessage(scip, "In (seeed %d) constraints of block %d are not sorted! \n" , id,  b );
             assert( false );
             return false;
          }
@@ -1198,7 +1186,7 @@ bool Seeed::checkConsistency(
    {
       if( ! ( value < getMasterconss()[v] ) )
       {
-         std::cout << "Warning! (seeed " << id << ") Masterconstraints are not sorted." << std::endl;
+         SCIPwarningMessage(scip, "In (seeed %d) master constraints are not sorted! \n" , id);
          assert( false );
          return false;
       }
@@ -1264,7 +1252,6 @@ SCIP_RETCODE Seeed::completeByConnected(
    assert( (int) varsForBlocks.size() == nBlocks );
    assert( (int) stairlinkingVars.size() == nBlocks );
 
-   SCIP_CALL( considerImplicits( seeedpool ) );
    SCIP_CALL( refineToMaster( seeedpool ) );
 
 
@@ -1570,7 +1557,7 @@ SCIP_RETCODE Seeed::completeGreedily(
    /** check if the open conss are all assigned */
    if( ! checkAllConssAssigned() )
    {
-      std::cout << "ERROR: Something went wrong, there are still open cons, although all should have been assigned ";
+      SCIPwarningMessage(scip,"ERROR: Something went wrong, there are still open cons, although all should have been assigned\n" );
       assert( false ); /** assigns all open constraints and open variables
        *  strategy: assign all conss and vars to the same block if they are indirectly connected
        *  a cons and a var are directly connected if the var appears in the cons */
@@ -1579,7 +1566,7 @@ SCIP_RETCODE Seeed::completeGreedily(
    /** check if the open vars are all assigned */
    if( ! openVars.empty() )
    {
-      std::cout << "ERROR: Something went wrong, there are still open vars, although all should have been assigned ";
+      SCIPwarningMessage(scip,"ERROR: Something went wrong, there are still open vars, although all should have been assigned\n" );
       assert( false );
    }
 
@@ -1608,6 +1595,8 @@ SCIP_RETCODE Seeed::considerImplicits(
 
    changedHashvalue = true;
 
+   sort();
+
    /** set openConss with more than two blockvars to master */
    for( size_t c = 0; c < openConss.size(); ++ c )
    {
@@ -1620,11 +1609,6 @@ SCIP_RETCODE Seeed::considerImplicits(
       {
          var = seeedpool->getVarsForCons( cons )[v];
 
-         if( isVarOpenvar( var ) )
-         {
-            hitsOpenVar = true;
-            continue;
-         }
 
          if( isVarMastervar( var ) )
          {
@@ -1632,6 +1616,13 @@ SCIP_RETCODE Seeed::considerImplicits(
             bookAsMasterCons( cons );
             continue;
          }
+
+         if( isVarOpenvar( var ) )
+         {
+            hitsOpenVar = true;
+            continue;
+         }
+
 
          for( int b = 0; b < nBlocks && ! master; ++ b )
          {
@@ -1807,16 +1798,16 @@ SCIP_RETCODE Seeed::deleteOpenvar(
 }
 
 /** displays the assignments of the conss */
-SCIP_RETCODE Seeed::displayConss()
+SCIP_RETCODE Seeed::displayConss(Seeedpool* seeedpool)
 {
    for( int b = 0; b < nBlocks; ++ b )
    {
       if( getNConssForBlock( b ) != 0 )
       {
          std::cout << "constraint(s) in block " << b << ": ";
-         std::cout << getConssForBlock( b )[0];
+         std::cout << getConssForBlock( b )[0] << "|" << SCIPconsGetName(seeedpool->getConsForIndex(getConssForBlock( b )[0]) ) ;
          for( int c = 1; c < getNConssForBlock( b ); ++ c )
-            std::cout << ", " << getConssForBlock( b )[c];
+            std::cout << ", " << getConssForBlock( b )[c] << "|" << SCIPconsGetName(seeedpool->getConsForIndex(getConssForBlock( b )[c]) ) ;
          std::cout << "\n";
       }
       else
@@ -2016,26 +2007,29 @@ SCIP_Real Seeed::evaluate(
    SCIP_Real alphalinking;
    SCIP_Real alphadensity;
 
-   SCIP_Real blackarea;
+   unsigned long blackarea;
 
    maxwhitescore = 1.;
    alphaborderarea = 0.6;
    alphalinking = 0.2;
    alphadensity = 0.2;
-   blackarea = 0.;
+   blackarea = 0;
+
+   if ( !checkConsistency(seeedpool) )
+      SCIPwarningMessage(scip, "There are inconsistencies in the partial decomposition the score should be calculated for. \n" );
 
    /* calculate bound on max white score */
    if( getNOpenconss() != 0 || getNOpenvars() != 0 )
    {
       blackarea += ( getNLinkingvars() + getNTotalStairlinkingvars() ) * getNConss();
-      blackarea += getNMasterconss() * getNVars();
-      blackarea -= getNMastervars() * getNLinkingvars();
+      blackarea += (unsigned long) getNMasterconss() * (unsigned long) getNVars();
+      blackarea -= (unsigned long) getNMastervars() * (unsigned long) getNMasterconss();
       for( i = 0; i < nBlocks; ++ i )
       {
-         blackarea += getNConssForBlock( i ) * getNVarsForBlock( i );
+         blackarea += (unsigned long) getNConssForBlock( i ) * (unsigned long) getNVarsForBlock( i );
       }
 
-      maxwhitescore = blackarea / ( getNConss() * getNVars() );
+      maxwhitescore = (SCIP_Real) blackarea / (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() );
 
       return maxwhitescore;
 
@@ -2060,11 +2054,11 @@ SCIP_Real Seeed::evaluate(
    /* calculate matrix area */
    matrixarea = nVars * nConss;
 
-   blackarea += ( getNLinkingvars() + getNTotalStairlinkingvars() ) * getNConss();
-   blackarea += getNMasterconss() * getNVars();
+   blackarea += (unsigned long) ( getNLinkingvars() + getNTotalStairlinkingvars() ) * (unsigned long) getNConss();
+   blackarea += (unsigned long) getNMasterconss() * ( (unsigned long) getNVars() - ( getNLinkingvars() + getNTotalStairlinkingvars() ) ) ;
 
-   blackarea -= getNMasterconss() * ( getNLinkingvars() + getNTotalStairlinkingvars() );
-
+   //std::cout << " black area without blocks is " <<  "(" << getNLinkingvars() << " + " << getNTotalStairlinkingvars() << " )  * " << getNConss() <<  " + " <<  getNMasterconss() << "  * ( " << getNVars() << "  -  ( " << getNLinkingvars() << " + " <<  getNTotalStairlinkingvars() << " ) ) "
+   //   <<     " = " <<   blackarea << std::endl;
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for( i = 0; i < nBlocks; ++ i )
@@ -2077,7 +2071,12 @@ SCIP_Real Seeed::evaluate(
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
-      blackarea += getNConssForBlock( i ) * ( getNVarsForBlock( i ) );
+
+  //    std::cout << "blackarea =  " << blackarea << " +  " << getNConssForBlock( i ) << " * " << getNVarsForBlock( i ) << " = " << getNConssForBlock( i ) * ( getNVarsForBlock( i ) );
+
+      blackarea += (unsigned long) getNConssForBlock( i ) * ( (unsigned long) getNVarsForBlock( i ) );
+    //  std::cout << " =  " << blackarea  << std::endl;
+
       for( j = 0; j < nVars; ++ j )
       {
          ishandled[j] = FALSE;
@@ -2092,7 +2091,7 @@ SCIP_Real Seeed::evaluate(
          for( k = 0; k < ncurvars; ++ k )
          {
             int var = seeedpool->getVarsForCons( cons )[k];
-            int block;
+            int block = -3;
             if( isVarBlockvarOfBlock( var, i ) )
                block = i + 1;
             else if( isVarLinkingvar( var ) || isVarStairlinkingvar( var ) )
@@ -2135,7 +2134,11 @@ SCIP_Real Seeed::evaluate(
 
    borderarea = getNMasterconss() * nVars
       + ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) * ( nConss - getNMasterconss() );
-   maxwhitescore = blackarea / ( getNConss() * getNVars() );
+
+   maxwhitescore = (SCIP_Real) blackarea /  (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() );
+//   std::cout << "black area ration =  " << blackarea << "/ ( " << getNConss() << " * " << getNVars() << " =  " << ( (unsigned long) getNConss() * (unsigned long) getNVars() ) << ")  = " << maxwhitescore << std::endl;
+
+   //std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    this seeed has a black area ratio of " << maxwhitescore << std::endl;
 
    density = 1E20;
    varratio = 1.0;
@@ -2300,7 +2303,7 @@ SCIP_RETCODE Seeed::filloutSeeedFromConstoblock(
 
    for( int c = 0; c < nConss; ++ c )
    {
-      std::cout << c << std::endl;
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "%d\n", c);
       assert( SCIPhashmapExists( constoblock, (void*) (size_t) c ) );
       assert( (int) (size_t) SCIPhashmapGetImage( constoblock, (void*) (size_t) c ) - 1 <= nBlocks );
       assert( (int) (size_t) SCIPhashmapGetImage( constoblock, (void*) (size_t) c ) - 1 >= 0 );

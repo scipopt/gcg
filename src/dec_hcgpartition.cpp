@@ -108,7 +108,7 @@ using gcg::Weights;
                                                   constraints */
 #define DEFAULT_MINBLOCKS         2          /**< value for the minimum number of blocks to be considered */
 #define DEFAULT_MAXBLOCKS         20         /**< value for the maximum number of blocks to be considered */
-#define DEFAULT_MAXNBLOCKCANDIDATES 2          /**< number of block number candidates to be considered */
+#define DEFAULT_MAXNBLOCKCANDIDATES 1          /**< number of block number candidates to be considered */
 #define DEFAULT_ALPHA             0.0        /**< factor for standard deviation of constraint weights */
 #define DEFAULT_BETA              0.5        /**< factor of how the weight for equality and inequality constraints is
                                                   distributed (keep 1/2 for the same on both) */
@@ -829,7 +829,7 @@ DEC_DECL_SETPARAMFAST(setParamFastHcgpartition)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );

@@ -470,6 +470,8 @@ SCIP_RETCODE DECdecompCreate(
 {
    DEC_DECOMP* decomp;
 
+   int ncalls;
+
    assert(scip != NULL);
    assert(decdecomp != NULL);
 
@@ -508,6 +510,9 @@ SCIP_RETCODE DECdecompCreate(
    decomp->nnewblocks= NULL;
    decomp->maxwhitescore = -1.;
 
+   ncalls = SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(scip);
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfromseeed: %d \n", ncalls);
 
    return SCIP_OKAY;
 }
@@ -521,6 +526,7 @@ SCIP_RETCODE DECdecompFree(
    DEC_DECOMP* decomp;
    int i;
    int j;
+   int ncalls;
 
    assert( scip!= NULL );
    assert( decdecomp != NULL);
@@ -620,6 +626,10 @@ SCIP_RETCODE DECdecompFree(
    }
 
    SCIPfreeMemoryNull(scip, decdecomp);
+
+   ncalls = SCIPconshdlrDecompDecreaseAndGetNCallsCreateDecomp(scip);
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfromseeed: %d \n", ncalls);
 
    return SCIP_OKAY;
 }
@@ -3802,6 +3812,8 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPfreeBlockMemoryArray(scip, &nintvars, nblocks);
    SCIPfreeBlockMemoryArray(scip, &nimplvars, nblocks);
    SCIPfreeBlockMemoryArray(scip, &ncontvars, nblocks);
+
+   DECdecompFree(scip, &decomp);
 
    return SCIP_OKAY;
 }

@@ -281,6 +281,16 @@ SCIP_Bool SCIPconshdlrDecompExistsSelected(
    );
 
 
+
+int SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(
+  SCIP*                 scip                /**< SCIP data structure **/
+   );
+
+int SCIPconshdlrDecompDecreaseAndGetNCallsCreateDecomp(
+  SCIP*                 scip                /**< SCIP data structure **/
+   );
+
+
 SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    SCIP* scip,
    SCIP_Bool updatelist

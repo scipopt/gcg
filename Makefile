@@ -196,6 +196,7 @@ LIBOBJ		=	reader_tex.o \
 			dec_connected.o \
 			dec_consname.o \
 			dec_cutpacking.o \
+			dec_densemasterconss.o \
 			dec_staircase.o \
 			dec_staircase_lsp.o \
 			dec_random.o \
