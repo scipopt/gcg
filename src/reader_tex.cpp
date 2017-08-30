@@ -348,7 +348,6 @@ SCIP_RETCODE writeTikzBox(
 }
 
 
-/*@todo adapt this for tikz, currently this gives gp code */
 /** writes line to given file that contains the tikz code for a point with given radius
  * and options with a linebreak at the end. */
 static

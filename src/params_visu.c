@@ -34,6 +34,7 @@
 
 #include "params_visu.h"
 
+
 /* global visualization parameters */
 
 #define COLOR_WHITE     "#FFFFFF"
@@ -61,9 +62,17 @@
 #define DEFAULT_COLOR_NONZERO      COLOR_BLACK
 #define DEFAULT_COLOR_LINE         COLOR_BLACK   /* for outlines of blocks */
 
+#define GREY_COLOR_MASTERVARS   "#323232"
+#define GREY_COLOR_MASTERCONS   "#999999"
+#define GREY_COLOR_LINKING      "#666666"
+#define GREY_COLOR_STAIRLINKING "#191919"
+#define GREY_COLOR_BLOCK        "#4C4C4C"
+#define GREY_COLOR_OPEN         "#7F7F7F"
+#define GREY_COLOR_NONZERO      COLOR_BLACK
+#define GREY_COLOR_LINE         COLOR_BLACK
+
 #define DEFAULT_VISU_RADIUS 5
 
-/*@todo defines for black and white color scheme */
 
 SCIP_Bool visudraftmode;
 VISU_COLORSCHEME visucolorscheme;
@@ -88,7 +97,6 @@ char* greycolorline;
 
 int visuradius;
 
-/*@todo vars for black and white scheme */
 
 /** includes the visualization parameters into GCG */
 SCIP_RETCODE SCIPincludeParamsVisu(
@@ -107,7 +115,14 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    mancolornonzero =       (char*) DEFAULT_COLOR_NONZERO;
    mancolorline =          (char*) DEFAULT_COLOR_LINE;
 
-   /*@todo initialize black and white scheme*/
+   greycolormastervars =   (char*) GREY_COLOR_MASTERVARS;
+   greycolormastercons =   (char*) GREY_COLOR_MASTERCONS;
+   greycolorlinking =      (char*) GREY_COLOR_LINKING;
+   greycolorstairlinking = (char*) GREY_COLOR_STAIRLINKING;
+   greycolorblock =        (char*) GREY_COLOR_BLOCK;
+   greycoloropen =         (char*) GREY_COLOR_OPEN;
+   greycolornonzero =      (char*) GREY_COLOR_NONZERO;
+   greycolorline =         (char*) GREY_COLOR_LINE;
 
    visuradius = DEFAULT_VISU_RADIUS;
 
