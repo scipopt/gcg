@@ -407,27 +407,38 @@ public:
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
-   /** @todo experimental */
+   /** reassigns linking vars stairlinkingvars if possible
+    *  potentially reorders blocks for making a maximum number of linking vars stairlinking
+    *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
+    *  otherwise, the stairlinking assignment is done greedily
+    *  precondition: seeed does not have any stairlinking vars */
    void calcStairlinkingVars(
-   	  Seeedpool* seeedpool
-   	  );
+      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
+      );
 
-   /** @todo experimental */
+   /** changes the block order in a way such that all linking vars that are potentially stairlinking
+    *  may be reassigned to stairlinking
+    *  precondition: all potentially stairlinking vars have a staircase structure */
    void changeBlockOrderStaircase(
-   	  GraphGCG* g
+   	  GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
+   	                   potentially stairlinkingvars connecting two blocks */
    	  );
 
-   /** @todo atm dummy method */
+   /** changes the block order in a way such that some linking vars that are potentially stairlinking
+    *  may be reassigned to stairlinking using a greedy method */
    void changeBlockOrderGreedily(
-   	  GraphGCG* g
+      GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
+                       potentially stairlinkingvars connecting two blocks */
    	  );
 
-   /** @todo experimental */
+   /** changes the order of the blocks according to the given mapping
+    *  precondition: given mapping needs to be an adequately sized permutation */
    void changeBlockOrder(
-   	  std::vector<int> oldToNewBlockIndex
+   	  std::vector<int> oldToNewBlockIndex /**< the mapping from old to new block indices */
    	  );
 
-   /** @todo experimental */
+   /** returns a vector of pairs of var indices and vectors of (two) block indices
+    *  the related linking variable hits exactly the two blocks given in the related vector */
    std::vector< std::pair< int, std::vector< int > > > findLinkingVarsPotentiallyStairlinking(
       Seeedpool* seeedpool
       );
