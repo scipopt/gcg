@@ -305,10 +305,11 @@ EOF
                     fi
                 fi
                 GP_BASE=`basename $DECFILE .dec`
-#               echo write problem $HOME\/Desktop\/results\/gps\/$GP_BASE.gp >> $TMPFILE
+                echo write problem $HOME\/results\/gps\/$GP_BASE.gp >> $TMPFILE
+                echo write problem $HOME\/results\/decs\/$GP_BASE.dec >> $TMPFILE
                 echo optimize                      >> $TMPFILE
                 echo display statistics            >> $TMPFILE
-                echo display additionalstatistics  >> $TMPFILE
+#               echo display additionalstatistics  >> $TMPFILE
 #               echo display additionalstatistics  >> $TMPFILE
 #               echo display solution              >> $TMPFILE
                 echo checksol                      >> $TMPFILE
