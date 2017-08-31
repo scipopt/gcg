@@ -3861,7 +3861,8 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock(decomp);
    assert( vartoblock != NULL );
 
-   /* @todo test what happens if stairlinking vars are ignored */
+   /* currently, stairlinkingvars of the decomposition are ignored
+    * alternatively, a stairlinkingvar detection is done with the newly created seeed */
    if( false && stairlinkingvars != NULL )
    {
       int* nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
