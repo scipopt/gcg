@@ -385,6 +385,15 @@ public:
    /** displays the assignments of the conss */
    SCIP_RETCODE displayConss(Seeedpool* seeedpool);
 
+   /** displays the relevant information of the seeed */
+   SCIP_RETCODE displayInfo(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      int detailLevel /**< pass a value that indicates how detailed the output should be:
+                              0: brief overview
+                              1: block and detector info
+                              2: cons and var assignments */
+      );
+
    /*@todo is initialization in declaration necessary? */
    /** displays the relevant information of the seeed */
    SCIP_RETCODE displaySeeed(
@@ -525,15 +534,6 @@ public:
 
    /** returns the id of the seeed */
    int getID();
-
-   /** displays the relevant information of the seeed */
-   SCIP_RETCODE displayInfo(
-      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
-      int detailLevel /**< pass a value that indicates how detailed the output should be:
-                              0: brief overview
-                              1: block and detector info
-                              2: cons and var assignments */
-      );
 
    /** returns array containing all linking vars */
    const int* getLinkingvars();
