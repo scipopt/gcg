@@ -168,6 +168,9 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   SCIPgetIntParam(scip, "detectors/consclass/maxnclasses", &maximumnclasses); /* if  distribution of classes exceed this number its skipped */
 
+  SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " in dec_consclass: there are %d many different constraintclasses   \n ", seeedPropagationData->seeedpool->getNConsClassifiers() );
+
+
   for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNConsClassifiers(); ++classifierIndex )
   {
     gcg::ConsClassifier* classifier = seeedPropagationData->seeedpool->getConsClassifier( classifierIndex );
@@ -178,6 +181,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        std::cout << " the current consclass distribution includes " <<  classifier->getNClasses() << " classes but only " << maximumnclasses << " are allowed for propagateSeeed() of cons class detector" << std::endl;
        continue;
     }
+
+    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " the current constraint classifier %s consists %d many different classes   \n ", classifier->getName(), classifier->getNClasses() );
 
     seeedOrig = seeedPropagationData->seeedToPropagate;
 
@@ -307,7 +312,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsclass)
 
    modifier = SCIPfloor(scip, modifier);
 
-   newval = MAX( 3, AGGRESSIVE_MAXIMUMNCLASSES - modifier );
+   newval = MAX( 6, AGGRESSIVE_MAXIMUMNCLASSES - modifier );
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
@@ -345,7 +350,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConsclass)
 
    modifier = SCIPfloor(scip, modifier);
 
-   newval = MAX( 3, DEFAULT_MAXIMUMNCLASSES - modifier );
+   newval = MAX( 6, DEFAULT_MAXIMUMNCLASSES - modifier );
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
@@ -384,7 +389,7 @@ DEC_DECL_SETPARAMFAST(setParamFastConsclass)
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnclasses", name);
 
-   newval = MAX( 3, FAST_MAXIMUMNCLASSES - modifier );
+   newval = MAX( 6, FAST_MAXIMUMNCLASSES - modifier );
 
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "\n%s = %d\n", setstr, newval);
