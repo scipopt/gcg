@@ -58,12 +58,13 @@
 #define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
 #define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
-#define DEC_DECCHAR               'r'         /**< display character of detector */
+#define DEC_DECCHAR               'R'         /**< display character of detector */
 #define DEC_ENABLED               FALSE       /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       FALSE       /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 #define DEFAULT_MAXBLOCKS        -1          /**< the maximal number of blocks, -1 defaults to average number of constraints */
 #define DEFAULT_AVGCONSPERBLOCK  100         /**< average constraints per block to limit the maximal block number */
@@ -239,19 +240,22 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectRandom)
       SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
 
       SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[0], detectordata->constoblock, detectordata->nblocks, FALSE) );
+
+      /* delete, debugging */
+      SCIP_CALL( DECdecompCheckConsistency( scip, (*decdecomps)[0] ) );
+
       *ndecdecomps = 1;
 
-      detectordata->constoblock = NULL;
       *result = SCIP_SUCCESS;
    }
    else
    {
-      SCIPhashmapFree(&detectordata->constoblock);
-      detectordata->constoblock = NULL;
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
    }
 
-   SCIPhashmapFree(&detectordata->constoblock);
+   /* do not free hashmap since this would also delete assignments in decdecomps */
+   // SCIPhashmapFree(&detectordata->constoblock);
+   detectordata->constoblock = NULL;
 
    return SCIP_OKAY;
 }
@@ -279,7 +283,7 @@ SCIP_RETCODE SCIPincludeDetectorRandom(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
       detectordata, detectorDetectRandom, detectorFreeRandom, detectorInitRandom, detectorExitRandom, detectorPropagateSeeedRandom, detectorFinishSeeedRandom, setParamAggressiveRandom, setParamDefaultRandom, setParamFastRandom) );
 
 

@@ -1442,7 +1442,10 @@ void Seeedpool::addSeeedToFinished(
       finishedSeeeds.push_back( seeed );
       *success = TRUE;
    }
-   *success = FALSE;
+   else
+   {
+      *success = FALSE;
+   }
    return;
 }
 
@@ -1548,6 +1551,17 @@ int Seeedpool::getNFinishedSeeeds()
 int Seeedpool::getNIncompleteSeeeds()
 {
    return incompleteSeeeds.size();
+}
+
+/** returns true if the given seeed is a duplicate of a seeed that is already contained in
+ *  finished seeeds or current seeeds data structure */
+bool Seeedpool::hasDuplicate(
+   SeeedPtr seeed
+   )
+{
+   assert( seeed != NULL );
+
+   return !seeedIsNoDuplicate( seeed, currSeeeds, finishedSeeeds, true );
 }
 
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
@@ -1791,6 +1805,8 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->setAncestorList( otherseeed->getAncestorList() );
 
       newseeed->addAncestorID( otherseeed->getID() );
+
+      newseeed->copyClassifierStatistics( otherseeed );
 
       for( int i = 0; i < otherseeed->getNDetectors(); ++i )
       {
@@ -3811,6 +3827,8 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    assert( DECdecompGetPresolved( decomp ) );
    assert( transformed );
 
+//   std::cout << "Linkingvars decomp: " << DECdecompGetNLinkingvars( decomp ) << "\tStairlinkingvars decomp: " << DECdecompGetNTotalStairlinkingvars( decomp ) << "\n";
+
    /* create new seeed and initialize its data */
    SeeedPtr seeed = new Seeed( scip, getNewIdForSeeed(), nConss, nVars );
    seeed->setNBlocks( DECdecompGetNBlocks( decomp ) );
@@ -3840,19 +3858,25 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    }
 
    SCIP_VAR*** stairlinkingvars = DECdecompGetStairlinkingvars( decomp );
-   int* nstairlinkingvars = DECdecompGetNStairlinkingvars( decomp );
-   int varindex;
-   SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock( decomp );
+   SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock(decomp);
+   assert( vartoblock != NULL );
 
-   /* set stairlinkingvars */
-   for( int b = 0; b < seeed->getNBlocks(); ++b )
+   /* @todo test what happens if stairlinking vars are ignored */
+   if( false && stairlinkingvars != NULL )
    {
-      for( int v = 0; v < nstairlinkingvars[b]; ++v )
+      int* nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);
+      int varindex;
+
+      /* set stairlinkingvars */
+      for( int b = 0; b < seeed->getNBlocks(); ++b )
       {
-         if( stairlinkingvars[b][v] != NULL )
+         for( int v = 0; v < nstairlinkingvars[b]; ++v )
          {
-            varindex = getIndexForVar( stairlinkingvars[b][v] );
-            seeed->bookAsStairlinkingVar( varindex, b );
+            if( stairlinkingvars[b][v] != NULL )
+            {
+               varindex = getIndexForVar(stairlinkingvars[b][v]);
+               seeed->bookAsStairlinkingVar(varindex, b);
+            }
          }
       }
    }
@@ -3896,15 +3920,26 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
       seeed->addNNewBlocks( *(DECdecompGetNNewBlocks( decomp )) );
    }
 
-   seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
+   if ( DECdecompGetDetectorChainString( scip, decomp ) != NULL )
+      seeed->setDetectorChainString( DECdecompGetDetectorChainString( scip, decomp ) );
 
    /* detectorchaininfo cannot be set in the seeed as the detectors do not store the corresponding strings */
 
    /* calc maxwhitescore and hashvalue */
    prepareSeeed( seeed );
 
-   assert( DECgetMaxWhiteScore( scip, decomp ) == seeed->getMaxWhiteScore() );
+   seeed->setIsFromUnpresolved( false );
+
+//   SCIPdebugMessagePrint(scip, "Check. DEC: %f, seeed: %f\n", DECgetMaxWhiteScore( scip, decomp ), seeed->getMaxWhiteScore() );
+
+//   assert( DECgetMaxWhiteScore( scip, decomp ) == seeed->getMaxWhiteScore() );
+
    assert( seeed->checkConsistency( this ) );
+
+   seeed->calcStairlinkingVars( this );
+
+//   SCIPdebugMessagePrint( scip, "Reassigned %d of %d linking vars to stairlinking.\n",
+//      seeed->getNTotalStairlinkingvars(), seeed->getNTotalStairlinkingvars() + seeed->getNLinkingvars() );
 
    *newseeed = seeed;
 

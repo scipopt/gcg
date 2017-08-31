@@ -47,6 +47,7 @@
 #include <sstream>
 
 #include <iostream>
+#include <algorithm>
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "consclass"       /**< name of detector */
@@ -64,6 +65,7 @@
 #define DEC_ENABLEDFINISHING      FALSE        /**< should the detection be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 #define DEFAULT_MAXIMUMNCLASSES     7
 #define AGGRESSIVE_MAXIMUMNCLASSES  10
@@ -126,15 +128,17 @@ DEC_DECL_INITDETECTOR(initConsclass)
 #endif
 
 /** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectConsclass)
-{ /*lint --e{715}*/
-   *result = SCIP_DIDNOTFIND;
+//static DEC_DECL_DETECTSTRUCTURE(detectConsclass)
+//{ /*lint --e{715}*/
+//   *result = SCIP_DIDNOTFIND;
+//
+//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
+//;   SCIPABORT(); /*lint --e{527}*/
+//
+//   return SCIP_OKAY;
+//}
 
-   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
-;   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
+#define detectConsclass NULL
 
 #define finishSeeedConsclass NULL
 
@@ -227,6 +231,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        /** set decinfo to: consclass_<classfier_name>:<master_class_name#1>-...-<master_class_name#n> */
        std::stringstream decdesc;
        decdesc << "consclass" << "\\_" << classifier->getName() << ": \\\\ ";
+       std::vector<int> curmasterclasses( consclassindices_master );
        for ( size_t consclassId = 0; consclassId < subsetsOfConsclasses[subset].size(); ++consclassId )
        {
           if ( consclassId > 0 )
@@ -234,6 +239,12 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
              decdesc << "-";
           }
           decdesc << classifier->getClassName( subsetsOfConsclasses[subset][consclassId] );
+
+          if( std::find( consclassindices_master.begin(), consclassindices_master.end(),
+             subsetsOfConsclasses[subset][consclassId] ) == consclassindices_master.end() )
+          {
+             curmasterclasses.push_back( subsetsOfConsclasses[subset][consclassId] );
+          }
        }
        for ( size_t consclassId = 0; consclassId < consclassindices_master.size(); ++consclassId )
        {
@@ -248,7 +259,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
        seeed->addDetectorChainInfo(decinfo);
        seeed->setDetectorPropagated(detector);
-
+       seeed->setConsClassifierStatistics( seeed->getNDetectors() - 1, classifier, curmasterclasses );
 
        foundseeeds.push_back(seeed);
     }
@@ -405,7 +416,7 @@ SCIP_RETCODE SCIPincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectConsclass,
+         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectConsclass,
          freeConsclass, initConsclass, exitConsclass, propagateSeeedConsclass, finishSeeedConsclass, setParamAggressiveConsclass, setParamDefaultConsclass, setParamFastConsclass));
 
    /**@todo add consclass detector parameters */

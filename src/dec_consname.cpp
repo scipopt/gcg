@@ -69,6 +69,7 @@
 #define DEFAULT_REGEX            "(consname)(.*)" /**< default regular expression that is used to decide mastercons */
 #define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_LEGACYMODE           FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 
 /*
@@ -356,7 +357,7 @@ SCIP_RETCODE SCIPincludeDetectorConsname(
    detectordata->regex = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-      DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectorDetectConsname,
+      DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectorDetectConsname,
       detectorFreeConsname, detectorInitConsname, detectorExitConsname, detectorPropagateSeeedConsname, detectorFinishSeeedConsname, setParamAggressiveConsname, setParamDefaultConsname, setParamFastConsname) );
 
    /* add consname detector parameters */

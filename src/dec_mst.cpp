@@ -62,6 +62,7 @@ using gcg::GraphGCG;
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 /* Default parameter settings*/
 #define DEFAULT_N_ITERATIONS              51
@@ -667,7 +668,7 @@ SCIP_RETCODE SCIPincludeDetectorMST(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
       detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST, finishSeeedMST, setParamAggressiveMST, setParamDefaultMST, setParamFastMST) );
 
    /* add arrowheur presolver parameters */

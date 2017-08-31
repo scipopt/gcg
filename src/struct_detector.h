@@ -59,6 +59,7 @@ struct DEC_Detector {
    SCIP_Bool             enabledFinishing;   /**< flag to indicate whether finishing is enabled */
    SCIP_Bool             skip;               /**< should detector be skipped if other detectors found decompositions */
    SCIP_Bool             usefulRecall;       /** is it useful to call this detector on a descendant of the propagated seeed */
+   SCIP_Bool             legacymode;         /**< flag to indicate whether (old) DETECTSTRUCTURE method should also be used for detection */
    DEC_DECOMP**          decomps;            /**< decompositions this detector has found */
    int                   ndecomps;           /**< number of decompositions the detector has found */
    SCIP_Real             dectime;            /**< time the detector took to find decompositions */

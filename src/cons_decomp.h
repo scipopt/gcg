@@ -116,6 +116,7 @@ SCIP_RETCODE DECincludeDetector(
    SCIP_Bool             enabledFinishing,   /**< whether the finishing should be enabled */
    SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure   */
    SCIP_Bool             usefulRecall,       /** is it useful to call this detector on a descendant of the propagated seeed */
+   SCIP_Bool             legacymode,         /**< whether (old) DETECTSTRUCTURE method should also be used for detection */
    DEC_DETECTORDATA      *detectordata,      /**< the associated detector data (or NULL)                             */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)), /**< the method that will detect the structure (must not be NULL)   */
    DEC_DECL_FREEDETECTOR((*freeDetector)),   /**< destructor of detector (or NULL) */
@@ -294,6 +295,12 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
    SCIP_Bool updatelist
    );
 
+/** calls old detectStructure methods of chosen detectors, translates the resulting decompositions
+ *  into seeeds and adds these seeeds to (presolved) seeedpool */
+SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
+   SCIP* scip,
+   SCIP_RESULT result
+   );
 
 
 SCIP_Bool SCIPconshdlrDecompIsBestCandidateUnpresolved(

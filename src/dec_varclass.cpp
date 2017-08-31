@@ -47,6 +47,7 @@
 #include <sstream>
 
 #include <iostream>
+#include <algorithm>
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME          "varclass"       /**< name of detector */
@@ -64,6 +65,7 @@
 #define DEC_ENABLEDFINISHING      FALSE        /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 #define DEFAULT_MAXIMUMNCLASSES     8
 #define AGGRESSIVE_MAXIMUMNCLASSES  10
@@ -126,15 +128,17 @@ DEC_DECL_INITDETECTOR(initConsclass)
 #endif
 
 /** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectVarclass)
-{ /*lint --e{715}*/
-   *result = SCIP_DIDNOTFIND;
+//static DEC_DECL_DETECTSTRUCTURE(detectVarclass)
+//{ /*lint --e{715}*/
+//   *result = SCIP_DIDNOTFIND;
+//
+//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
+//;   SCIPABORT(); /*lint --e{527}*/
+//
+//   return SCIP_OKAY;
+//}
 
-   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
-;   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
+#define detectVarclass NULL
 
 #define finishSeeedVarclass NULL
 
@@ -246,6 +250,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        /** set decinfo to: varclass_<classfier_name>:<linking_class_name#1>-...-<linking_class_name#n> */
        std::stringstream decdesc;
        decdesc << "varclass" << "\\_" << classifier->getName() << ": \\\\ ";
+       std::vector<int> curlinkingclasses( varclassindices_linking );
        for ( size_t varclassId = 0; varclassId < subsetsOfVarclasses[subset].size(); ++varclassId )
        {
           if ( varclassId > 0 )
@@ -253,6 +258,12 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
              decdesc << "-";
           }
           decdesc << classifier->getClassName( subsetsOfVarclasses[subset][varclassId] );
+
+          if( std::find( varclassindices_linking.begin(), varclassindices_linking.end(),
+             subsetsOfVarclasses[subset][varclassId] ) == varclassindices_linking.end() )
+          {
+             curlinkingclasses.push_back( subsetsOfVarclasses[subset][varclassId] );
+          }
        }
        for ( size_t varclassId = 0; varclassId < varclassindices_linking.size(); ++varclassId )
        {
@@ -267,6 +278,8 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
        (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
        seeed->addDetectorChainInfo(decinfo);
        seeed->setDetectorPropagated(detector);
+       seeed->setVarClassifierStatistics( seeed->getNDetectors() - 1, classifier, curlinkingclasses,
+          varclassindices_master );
 
        foundseeeds.push_back(seeed);
     }
@@ -421,7 +434,7 @@ SCIP_RETCODE SCIPincludeDetectorVarclass(SCIP* scip /**< SCIP data structure */
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectVarclass,
+         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectVarclass,
          freeVarclass, initVarclass, exitVarclass, propagateSeeedVarclass, finishSeeedVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
 
    /**@todo add varclass detector parameters */
