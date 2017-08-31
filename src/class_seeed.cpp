@@ -1044,6 +1044,12 @@ void Seeed::calcStairlinkingVars(
    }
    else
    {
+      /* check if stairlinkingheuristic is activated */
+      SCIP_Bool stairlinkingheur;
+      SCIPgetBoolParam(scip, "detection/legacymode/stairlinkingheur", &stairlinkingheur);
+      if( !stairlinkingheur )
+         return;
+
       changeBlockOrderGreedily( g );
    }
 
