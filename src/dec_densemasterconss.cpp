@@ -127,16 +127,7 @@ DEC_DECL_INITDETECTOR(initDensemasterconss)
 #define initDensemasterconss NULL
 #endif
 
-/** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectDensemasterconss)
-{ /*lint --e{715}*/
-   *result = SCIP_DIDNOTFIND;
-
-   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
-;   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
+#define detectDensemasterconss NULL
 
 #define finishSeeedDensemasterconss NULL
 

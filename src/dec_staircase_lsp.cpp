@@ -666,7 +666,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircaseLsp)
    if( tcliqueGetNNodes(detectordata->graph) > 0 )
    {
       nnodes = tcliqueGetNNodes(detectordata->graph);
-
+      tcliqueAddEdge
       /* find connected components of the graph. the result will be stored in 'detectordata->components' */
       SCIP_CALL( findConnectedComponents(scip, detectordata) );
 
@@ -766,7 +766,6 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   currseeed->considerImplicits(seeedpool);
    currseeed->refineToMaster(seeedpool);
 
    currseeed->sort();
