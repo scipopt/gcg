@@ -666,7 +666,6 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircaseLsp)
    if( tcliqueGetNNodes(detectordata->graph) > 0 )
    {
       nnodes = tcliqueGetNNodes(detectordata->graph);
-      tcliqueAddEdge
       /* find connected components of the graph. the result will be stored in 'detectordata->components' */
       SCIP_CALL( findConnectedComponents(scip, detectordata) );
 
