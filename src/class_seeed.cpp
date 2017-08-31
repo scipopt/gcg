@@ -82,7 +82,8 @@ Seeed::Seeed(
    ) :
    scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
    masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givennvars, true ),
-   isconsopen( givennconss, true ) ,isvarmaster( givennvars, false ),
+   isconsopen( givennconss, true ) ,isvarmaster( givennvars, false ), varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
+   conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true), masterconsssorted(true),
    isconsmaster( givennconss, false ), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
@@ -150,6 +151,14 @@ Seeed::Seeed(
    detectorchainstring = NULL;
    isfromunpresolved = FALSE;
    listofancestorids = seeedtocopy->listofancestorids;
+
+   varsforblocksorted = seeedtocopy->varsforblocksorted;
+   stairlinkingvarsforblocksorted = seeedtocopy->stairlinkingvarsforblocksorted;
+   conssforblocksorted = seeedtocopy->conssforblocksorted;
+   linkingvarssorted = seeedtocopy->linkingvarssorted;
+   mastervarssorted = seeedtocopy->mastervarssorted;
+   masterconsssorted = seeedtocopy->masterconsssorted;
+
 }
 
 /** destructor */
@@ -2081,6 +2090,14 @@ SCIP_Real Seeed::evaluate(
    //std::cout << " black area without blocks is " <<  "(" << getNLinkingvars() << " + " << getNTotalStairlinkingvars() << " )  * " << getNConss() <<  " + " <<  getNMasterconss() << "  * ( " << getNVars() << "  -  ( " << getNLinkingvars() << " + " <<  getNTotalStairlinkingvars() << " ) ) "
    //   <<     " = " <<   blackarea << std::endl;
 
+   if( sctype == SCORETYPE::MAX_WHITE)
+   {
+      for( i = 0; i < nBlocks; ++ i )
+      {
+         blackarea += (unsigned long) getNConssForBlock( i ) * ( (unsigned long) getNVarsForBlock( i ) );
+      }
+   }
+
    if( sctype != SCORETYPE::MAX_WHITE)
    {
       /* calculate slave sizes, nonzeros and linkingvars */
@@ -2186,11 +2203,12 @@ SCIP_Real Seeed::evaluate(
          }
       }
       linkingscore = ( 0.5 + 0.5 * varratio );
-      borderscore = ( 1.0 * ( borderarea ) / matrixarea );
+
       densityscore = ( 1 - density );
-      borderareascore = borderscore;
    }
 
+   borderscore = ( 1.0 * ( borderarea ) / matrixarea );
+   borderareascore = borderscore;
 
    DEC_DECTYPE type;
    if( getNLinkingvars() == getNTotalStairlinkingvars() && getNMasterconss() == 0 && getNLinkingvars() > 0 )
@@ -2448,6 +2466,7 @@ SCIP_RETCODE Seeed::findVarsLinkingToMaster(
    for( std::vector<int>::reverse_iterator it = foundMasterVarIndices.rbegin(); it != foundMasterVarIndices.rend(); ++ it )
    {
       masterVars.push_back( lvars[ * it] );
+      mastervarssorted = false;
       isvarmaster[lvars[ * it]] = true;
       linkingVars.erase( linkingVars.begin() + * it );
    }
@@ -3444,6 +3463,7 @@ SCIP_RETCODE Seeed::setConsToBlock(
    changedHashvalue = true;
 
    conssForBlocks[block].push_back( consToBlock );
+   conssforblocksorted = false;
 
    return SCIP_OKAY;
 }
@@ -3457,6 +3477,7 @@ SCIP_RETCODE Seeed::setConsToMaster(
    assert( consToMaster >= 0 && consToMaster < nConss );
    masterConss.push_back( consToMaster );
    isconsmaster[consToMaster] = true;
+   masterconsssorted = false;
    changedHashvalue = true;
 
    return SCIP_OKAY;
@@ -3598,6 +3619,8 @@ SCIP_RETCODE Seeed::setVarToBlock(
    changedHashvalue = true;
 
    varsForBlocks[block].push_back( varToBlock );
+   varsforblocksorted = false;
+
    return SCIP_OKAY;
 }
 
@@ -3610,6 +3633,7 @@ SCIP_RETCODE Seeed::setVarToLinking(
    assert( varToLinking >= 0 && varToLinking < nVars );
    linkingVars.push_back( varToLinking );
    changedHashvalue = true;
+   linkingvarssorted = false;
 
    return SCIP_OKAY;
 }
@@ -3623,6 +3647,7 @@ SCIP_RETCODE Seeed::setVarToMaster(
    assert( varToMaster >= 0 && varToMaster < nVars );
    masterVars.push_back( varToMaster );
    isvarmaster[varToMaster] = true;
+   mastervarssorted = false;
    changedHashvalue = true;
 
    return SCIP_OKAY;
@@ -3647,6 +3672,8 @@ SCIP_RETCODE Seeed::setVarToStairlinking(
       stairlinkingVars[block2].push_back( varToStairlinking );
    else
       stairlinkingVars[block1].push_back( varToStairlinking );
+
+   stairlinkingvarsforblocksorted = false;
 
    return SCIP_OKAY;
 }
@@ -3795,13 +3822,27 @@ void Seeed::sort()
 {
    for( int b = 0; b < nBlocks; ++ b )
    {
-      std::sort( varsForBlocks[b].begin(), varsForBlocks[b].end() );
-      std::sort( stairlinkingVars[b].begin(), stairlinkingVars[b].end() );
-      std::sort( conssForBlocks[b].begin(), conssForBlocks[b].end() );
+      if( ! varsforblocksorted )
+         std::sort( varsForBlocks[b].begin(), varsForBlocks[b].end() );
+      if( ! stairlinkingvarsforblocksorted )
+         std::sort( stairlinkingVars[b].begin(), stairlinkingVars[b].end() );
+      if( ! conssforblocksorted )
+         std::sort( conssForBlocks[b].begin(), conssForBlocks[b].end() );
    }
-   std::sort( linkingVars.begin(), linkingVars.end() );
-   std::sort( masterVars.begin(), masterVars.end() );
-   std::sort( masterConss.begin(), masterConss.end() );
+   if( ! linkingvarssorted )
+      std::sort( linkingVars.begin(), linkingVars.end() );
+   if( !mastervarssorted )
+      std::sort( masterVars.begin(), masterVars.end() );
+   if( !masterconsssorted )
+      std::sort( masterConss.begin(), masterConss.end() );
+
+   varsforblocksorted = true;
+   stairlinkingvarsforblocksorted = true;
+   conssforblocksorted = true;
+   linkingvarssorted = true;
+   mastervarssorted = true;
+   masterconsssorted = true;
+
 }
 
 /** displays the assignments of the vars */

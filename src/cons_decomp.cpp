@@ -4017,9 +4017,6 @@ SCIP_RETCODE DECdetectStructure(
 
    conshdlrdata->seeedpool = NULL;
 
-   /** get data of the seeedpool with original vars and conss */
-   if ( conshdlrdata->seeedpoolunpresolved == NULL )
-      conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
    std::vector<int> candidatesNBlocks(0);                            /**< candidates for number of blocks */
    std::vector<gcg::ConsClassifier*> consClassDistributions;         /**< collection of different constraint class distributions */
@@ -4038,6 +4035,11 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
    SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
+
+   /** get data of the seeedpool with original vars and conss */
+      if ( conshdlrdata->seeedpoolunpresolved == NULL )
+         conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
+
 
 
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
