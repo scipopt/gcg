@@ -3921,7 +3921,8 @@ SCIP_RETCODE SCIPconshdlrDecompChooseCandidatesFromSelected(
 /** calls old detectStructure methods of chosen detectors, translates the resulting decompositions
  *  into seeeds and adds these seeeds to (presolved) seeedpool */
 SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
-   SCIP* scip
+   SCIP* scip,
+   SCIP_RESULT* result
    )
 {
    /* access to relevant data structures of the conshdlr */
@@ -3936,7 +3937,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    DEC_DECOMP** decdecomps;
    int ndecdecomps;
    SCIP_CLOCK* detectorclock;
-   SCIP_RESULT result;
+   SCIP_RESULT decResult;
 
    /* decompositions and seeeds */
    gcg::SeeedPtr dummyAncestor;
@@ -3977,6 +3978,14 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    if ( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
       SCIP_CALL( SCIPpresolve( scip ) );
 
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, cannot detect structure!\n");
+
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    if ( conshdlrdata->seeedpool == NULL )
       conshdlrdata->seeedpool = new gcg::Seeedpool( scip, CONSHDLR_NAME, TRUE );
 
@@ -4012,11 +4021,11 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
             SCIP_CALL_ABORT( SCIPstartClock( scip, detectorclock ) );
 
             /* call old detectStructure callback method */
-            SCIP_CALL( (*detector->detectStructure)( scip, detector->decdata, &decdecomps, &ndecdecomps, &result ) );
+            SCIP_CALL( (*detector->detectStructure)( scip, detector->decdata, &decdecomps, &ndecdecomps, &decResult ) );
 
             SCIP_CALL_ABORT( SCIPstopClock( scip, detectorclock ) );
 
-            if( result == SCIP_SUCCESS )
+            if( decResult == SCIP_SUCCESS )
             {
                /* check for duplicates and redundant information */
                for( dec = 0; dec < ndecdecomps; ++dec )
@@ -4087,6 +4096,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Finished legacy mode detection.\n");
 
+   *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
 
@@ -4313,7 +4323,7 @@ SCIP_RETCODE DECdetectStructure(
       SCIP_Bool presolveOrigProblem;
       SCIP_Bool calculateOrigDecomps;
       SCIP_Bool classifyOrig;
-   SCIP_Bool emphfast;
+      SCIP_Bool emphfast;
 
       assert(scip != NULL);
 
@@ -4435,7 +4445,12 @@ SCIP_RETCODE DECdetectStructure(
 
    } /* end of if( !onlylegacy ) */
 
-   SCIPconshdlrDecompAddLegacymodeDecompositions( scip );
+   SCIPconshdlrDecompAddLegacymodeDecompositions( scip, result );
+
+   if( *result == SCIP_DIDNOTRUN )
+   {
+      return SCIP_OKAY;
+   }
 
 //   if( conshdlrdata->ndecomps > 0 )
 //   {
