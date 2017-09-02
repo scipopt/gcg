@@ -690,6 +690,17 @@ DEC_DECTYPE DECdecompGetType(
    return decomp->type;
 }
 
+
+SCIP_Real DECdecompGetMaxwhiteScore(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   )
+{
+   assert(decomp != NULL);
+
+   return decomp->maxwhitescore;
+}
+
+
 /** sets the presolved flag for decomposition */
 void DECdecompSetPresolved(
    DEC_DECOMP*           decomp,             /**< decomposition data structure */
@@ -3143,6 +3154,24 @@ SCIP_RETCODE DECgetVarLockData(
    return SCIP_OKAY;
 }
 
+
+/** sets the score of the given decomposition based on the border, the average density score and the ratio of
+ * linking variables
+ */
+void DECsetMaxWhiteScore(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
+   SCIP_Real             maxwhitescore
+   )
+{
+   assert(maxwhitescore >= 0);
+
+   decdecomp->maxwhitescore = maxwhitescore;
+
+   return;
+}
+
+
 /** computes the score of the given decomposition based on the border, the average density score and the ratio of
  * linking variables
  */
@@ -3338,9 +3367,9 @@ SCIP_RETCODE DECevaluateDecomposition(
    score->linkingscore = (0.5+0.5*varratio);
    score->borderscore = (1.0*(borderarea)/matrixarea);
    score->densityscore = (1-density);
-   score->maxwhitescore = blackarea/( nconss * nvars );
+   //score->maxwhitescore = blackarea/( nconss * nvars );
 
-   decdecomp->maxwhitescore = score->maxwhitescore;
+   //decdecomp->maxwhitescore = score->maxwhitescore;
 
 
    switch( DECdecompGetType(decdecomp) )

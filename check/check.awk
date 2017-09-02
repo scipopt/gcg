@@ -222,6 +222,7 @@ BEGIN {
    bestsolfeas = 1;
    blocks = 0
    rel = 0
+   maxw = 0.0
    detector = "--"
    linkvars = 0
    linkconss = 0
@@ -396,6 +397,11 @@ BEGIN {
    blocks = $4;
    rel = $4;
 }
+
+/^This decomposition has/ {
+    maxw = $8
+}
+
 
 /^Matrix has / {
    blocks = $3;
@@ -601,7 +607,7 @@ BEGIN {
       tablehead3 = hyphenstr;
 
       tablehead1 = tablehead1"+----+--- Original --+-- Presolved --+----------+------- Decomposition -------+--------------+--------------+------+-------- Pricing ------+---- Master ----+-------+-------+";
-      tablehead2 = tablehead2"|Type| Conss |  Vars | Conss |  Vars | Detector |Blocks| Rel. | MConss| MVars |  Dual Bound  | Primal Bound | Gap%% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
+      tablehead2 = tablehead2"|Type| Conss |  Vars | Conss |  Vars | Detector |Blocks| MaxW | MConss| MVars |  Dual Bound  | Primal Bound | Gap%% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
       tablehead3 = tablehead3"+----+-------+-------+-------+-------+----------+------+------+-------+-------+--------------+--------------+------+-------+-------+-------+-------+--------+-------+-------+";
 
       if( printsoltimes == 1 ) {
@@ -1003,8 +1009,8 @@ BEGIN {
                printf(" & %7.1f & %7.1f", timetofirst, timetobest) > TEXFILE;
             printf("\\\\\n") > TEXFILE;
          }
-         printf("%-*s %-4s %7d %7d %7d %7d %-10s %6d %6d %7d %7d %14.9g %14.9g %6s %7d %7d %7.1f %7.1f %8d %7d %7.1f ",
-                namelength, shortprob, probtype, origcons, origvars, cons, vars, detector, blocks, rel, linkconss, linkvars, db, pb, gapstr,
+         printf("%-*s %-4s %7d %7d %7d %7d %-10s %6d %6.3g %7d %7d %14.9g %14.9g %6s %7d %7d %7.1f %7.1f %8d %7d %7.1f ",
+                namelength, shortprob, probtype, origcons, origvars, cons, vars, detector, blocks, maxw, linkconss, linkvars, db, pb, gapstr,
                 pricecall, pricevars, pricetime, lptime, simpiters, bbnodes, tottime);
          if( printsoltimes )
             printf("%9.1f %9.1f ", timetofirst, timetobest);

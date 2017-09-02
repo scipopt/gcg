@@ -572,7 +572,6 @@ Seeedpool::Seeedpool(
    int relevantVarCounter = 0;
    int relevantConsCounter = 0;
 
-
    detectors = SCIPconshdlrDecompGetDetectors(scip);
    ndetectors = SCIPconshdlrDecompGetNDetectors(scip);
 
@@ -640,11 +639,22 @@ Seeedpool::Seeedpool(
 
       relevantCons = transformed ? consGetRelevantRepr( scip, conss[i] ) : conss[i];
 
+      if( SCIPconsIsDeleted( relevantCons ) || SCIPconsIsObsolete(relevantCons) )
+         continue;
+
       if( relevantCons != NULL )
       {
          scipConsToIndex[relevantCons] = relevantConsCounter;
          consToScipCons.push_back( relevantCons );
-         ++ relevantConsCounter;
+
+        //SCIPcaptureCons(scip, relevantCons);
+
+//         if( relevantConsCounter == 7712 && transformed )
+//         {
+//            ++ relevantConsCounter;
+//            -- relevantConsCounter;
+//         }
+         ++relevantConsCounter;
       }
       else
       {
@@ -696,6 +706,8 @@ Seeedpool::Seeedpool(
 
       if( nCurrVars == 0 )
          continue;
+
+      assert(SCIPconsGetName( cons) != NULL);
 
       SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVars, nCurrVars ) );
       SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVals, nCurrVars ) );
@@ -3546,7 +3558,8 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    int counterstairlinkingvars = 0;
    int size;
    int ncalls;
-
+   int modifier;
+   int nlinkingconss;
    assert( seeed->checkConsistency( this ) );
 
 
@@ -3572,23 +3585,34 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIP_CALL_ABORT( SCIPhashmapCreate( & consindex, SCIPblkmem( scip ), seeed->getNConss() ) );
 
    /* set linking constraints */
+   modifier = 0;
+   nlinkingconss = seeed->getNMasterconss();
    for( int c = 0; c < seeed->getNMasterconss(); ++ c )
    {
       int consid = seeed->getMasterconss()[c];
       SCIP_CONS* scipcons = consToScipCons[consid];
-      linkingconss[c] = scipcons;
-      SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( seeed->getNBlocks() + 1 ) ) );
-      SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
-      conscounter ++;
+      if( SCIPconsIsDeleted( scipcons) || scipcons == NULL )
+      {
+         --nlinkingconss;
+         ++modifier;
+      }
+      else
+      {
+         linkingconss[c-modifier] = scipcons;
+         SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( seeed->getNBlocks() + 1 ) ) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
+         conscounter ++;
+      }
    }
 
    if( seeed->getNMasterconss() != 0 )
-      DECdecompSetLinkingconss( scip, * newdecomp, linkingconss, seeed->getNMasterconss() );
+      DECdecompSetLinkingconss( scip, * newdecomp, linkingconss, nlinkingconss );
    else
       linkingconss = NULL;
    /* set block constraints */
    for( int b = 0; b < seeed->getNBlocks(); ++ b )
    {
+      modifier = 0;
       SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & subscipconss[b], seeed->getNConssForBlock( b ) ) );
       nsubscipconss[b] = seeed->getNConssForBlock( b );
       for( int c = 0; c < seeed->getNConssForBlock( b ); ++ c )
@@ -3596,11 +3620,19 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
          int consid = seeed->getConssForBlock( b )[c];
          SCIP_CONS* scipcons = consToScipCons[consid];
 
-         assert( scipcons != NULL );
-         subscipconss[b][c] = scipcons;
-         SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( b + 1 ) ) );
-         SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
-         conscounter ++;
+         if( SCIPconsIsDeleted( scipcons) || scipcons == NULL )
+            {
+               --nsubscipconss[b];
+               ++modifier;
+            }
+         else
+         {
+            assert( scipcons != NULL );
+            subscipconss[b][c-modifier] = scipcons;
+            SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( b + 1 ) ) );
+            SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
+            conscounter ++;
+         }
       }
    }
 
@@ -3802,7 +3834,14 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    }
 
 
-   SCIP_CALL( DECevaluateDecomposition( scip, * newdecomp, & scores ) );
+   //SCIP_CALL( DECevaluateDecomposition( scip, * newdecomp, & scores ) );
+
+   std::cout <<" seeed maxwhitescore: " << seeed->getMaxWhiteScore() << std::endl;
+
+   scores.maxwhitescore = seeed->getMaxWhiteScore();
+
+   DECsetMaxWhiteScore(scip, *newdecomp, seeed->getMaxWhiteScore() );
+
 
    assert( scores.maxwhitescore == seeed->getMaxWhiteScore() );
    assert( DECdecompCheckConsistency( scip, ( * newdecomp ) ) );
