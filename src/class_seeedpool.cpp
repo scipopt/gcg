@@ -513,6 +513,10 @@ SCIP_VAR* varGetRelevantRepr(
    return SCIPvarGetProbvar( var );
 }
 
+
+
+
+
 /** returns FALSE if there exists a seeed in seeeds that is a duplicate of compseeed */
 SCIP_Bool seeedIsNoDuplicateOfSeeeds(
    SeeedPtr compseeed,
@@ -533,6 +537,7 @@ SCIP_Bool seeedIsNoDuplicateOfSeeeds(
    }
    return true;
 }
+
 
 /** returns FALSE if there exists a seed in currSeeeds or finishedSeeeds that is a duplicate of seeed */
 SCIP_Bool seeedIsNoDuplicate(
@@ -1986,6 +1991,73 @@ SCIP_RETCODE Seeedpool::prepareSeeed(
 
    return SCIP_OKAY;
 }
+
+bool Seeedpool::isConsCardinalityCons(
+      int  consindexd
+      )
+{
+   SCIP_CONS* cons;
+
+   cons = consToScipCons[consindexd];
+
+   assert(cons != NULL);
+
+   return GCGgetConsIsCardinalityCons(scip, cons);
+
+
+}
+
+
+bool Seeedpool::isConsSetppc(
+      int  consindexd
+      )
+{
+   SCIP_CONS* cons;
+
+   cons = consToScipCons[consindexd];
+
+   assert(cons != NULL);
+
+   if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "setppc") == 0 )
+         {
+            switch( SCIPgetTypeSetppc(scip, cons) )
+            {
+            case SCIP_SETPPCTYPE_COVERING:
+               return true;
+               break;
+            case SCIP_SETPPCTYPE_PARTITIONING:
+               return true;
+
+            case SCIP_SETPPCTYPE_PACKING:
+               return true;
+            }
+         }
+         else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "logicor") == 0 )
+         {
+            return true;
+         }
+         else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0 )
+         {
+            SCIP_SETPPCTYPE type;
+
+            if( GCGgetConsIsSetppc(scip, cons, &type) )
+            {
+               switch( type )
+               {
+               case SCIP_SETPPCTYPE_COVERING:
+                  return true;
+               case SCIP_SETPPCTYPE_PARTITIONING:
+               return true;
+               case SCIP_SETPPCTYPE_PACKING:
+               return true;
+               }
+            }
+
+         }
+
+   return false;
+}
+
 
 /** sorts seeeds in allrelevantseeeds data structure by ascending id */
 void Seeedpool::sortAllRelevantSeeeds()
@@ -3900,7 +3972,8 @@ SCIP_RETCODE Seeedpool::createSeeedFromDecomp(
    SCIP_HASHMAP* vartoblock = DECdecompGetVartoblock(decomp);
    assert( vartoblock != NULL );
 
-   /* @todo test what happens if stairlinking vars are ignored */
+   /* currently, stairlinkingvars of the decomposition are ignored
+    * alternatively, a stairlinkingvar detection is done with the newly created seeed */
    if( false && stairlinkingvars != NULL )
    {
       int* nstairlinkingvars = DECdecompGetNStairlinkingvars(decomp);

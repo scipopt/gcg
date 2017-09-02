@@ -777,6 +777,78 @@ SCIP_Bool GCGgetConsIsSetppc(
    return relevant;
 }
 
+/** returns true if the constraint should be a master constraint and false otherwise */
+SCIP_Bool GCGgetConsIsCardinalityCons(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons               /**< constraint to check */
+)
+{
+   SCIP_VAR** vars;
+   SCIP_Real* vals;
+   int i;
+
+   int nvars;
+   SCIP_Bool relevant = TRUE;
+   assert(scip != NULL);
+   assert(cons != NULL);
+
+   SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
+
+   if(  GCGconsGetType(cons) == setpartitioning  )
+   {
+      return TRUE;
+   }
+   nvars = GCGconsGetNVars(scip, cons);
+   vars = NULL;
+   vals = NULL;
+   if( nvars > 0 )
+   {
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars) );
+      SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, vars, nvars) );
+      SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, vals, nvars) );
+   }
+
+   /* check vars and vals for integrality */
+   for( i = 0; i < nvars && relevant; ++i )
+   {
+      assert(vars != NULL);
+      assert(vals != NULL);
+
+      if( !SCIPvarIsBinary(vars[i]) )
+      {
+         SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[i]) );
+         relevant = FALSE;
+      }
+      if( !SCIPisEQ(scip, vals[i], 1.0) )
+      {
+         SCIPdebugPrintf("(coeff for var %s is %.2f != 1.0) ", SCIPvarGetName(vars[i]), vals[i] );
+         relevant = FALSE;
+      }
+   }
+
+   if( relevant )
+   {
+      SCIP_Real rhs = GCGconsGetRhs(scip, cons);
+      SCIP_Real lhs = GCGconsGetLhs(scip, cons);
+      SCIPdebugPrintf("(lhs %.2f, rhs %.2f)", lhs, rhs);
+
+      if(! SCIPisFeasEQ(scip, lhs, rhs) )
+      {
+         relevant = FALSE;
+      }
+   }
+
+   /* free temporary data  */
+   SCIPfreeBufferArrayNull(scip, &vals);
+   SCIPfreeBufferArrayNull(scip, &vars);
+
+   SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
+   return relevant;
+}
+
+
+
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
 SCIP_Bool GCGisRootNode(
    SCIP*                 scip                /**< SCIP data structure */
