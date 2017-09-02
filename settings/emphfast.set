@@ -2,3 +2,4 @@
 
 detection/emphfast/enabled = TRUE
 limits/nodes = 1
+detection/smartscore/enabled = TRUE
