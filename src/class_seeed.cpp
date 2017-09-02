@@ -2579,6 +2579,7 @@ SCIP_Real Seeed::evaluate(
    int i;
    int j;
    int k;
+   bool masterissetppc;
    /*   int blockarea; */
    SCIP_Real varratio;
    int* nzblocks;
@@ -2591,6 +2592,9 @@ SCIP_Real Seeed::evaluate(
    SCIP_Real alphaborderarea;
    SCIP_Real alphalinking;
    SCIP_Real alphadensity;
+
+   SCIP_Bool smartscore;
+
 
    unsigned long blackarea;
 
@@ -2821,6 +2825,31 @@ SCIP_Real Seeed::evaluate(
       totalscore *= 4;
    if( totalscore > 1 )
       totalscore = 1;
+
+   SCIPgetBoolParam(scip, "detection/smartscore/enabled", &smartscore);
+
+   masterissetppc = false;
+
+   std::cout << "smartscore is set to " << smartscore << std::endl;
+
+   if( smartscore && maxwhitescore <= 0.8 && getNLinkingvars() == 0 )
+   {
+      masterissetppc = true;
+      for( int i = 0; i < getNMasterconss(); ++i )
+      {
+         int consid = getMasterconss()[i];
+         if( ! seeedpool->isConsSetppc(consid) && ! seeedpool->isConsCardinalityCons(consid) )
+         {
+            masterissetppc = false;
+            std::cout << "masterconstraint: " << SCIPconsGetName(seeedpool->getConsForIndex(consid) ) << " is no setppc and no cardinality conss" << std::endl;
+            break;
+         }
+      }
+      if ( masterissetppc )
+         maxwhitescore -= 1.;
+   }
+
+
 
    SCIPfreeBufferArray( scip, & nvarsblocks );
    SCIPfreeBufferArray( scip, & blocksizes );

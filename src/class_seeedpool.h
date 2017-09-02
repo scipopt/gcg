@@ -271,6 +271,16 @@ public:
    /** @todo revise comment and probably rename! sorts seeeds in allrelevantseeeds data structure by ascending id */
    void sortAllRelevantSeeeds();
 
+
+   bool isConsCardinalityCons(
+         int  consindexd
+         );
+
+
+   bool isConsSetppc(
+      int  consindexd
+      );
+
    /** returns the variable indices of the coefficient matrix for a constraint */
    const int* getVarsForCons(
       int consIndex /**< index of the constraint to be considered */
