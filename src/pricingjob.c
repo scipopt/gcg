@@ -59,6 +59,7 @@ SCIP_RETCODE GCGpricingjobCreate(
    (*pricingjob)->score = 0.0;
    (*pricingjob)->heuristic = FALSE;
    (*pricingjob)->cols = NULL;
+   (*pricingjob)->colssize = 0;
    (*pricingjob)->ncols = 0;
    (*pricingjob)->nimpcols = 0;
 
@@ -117,6 +118,7 @@ SCIP_RETCODE GCGpricingjobSetup(
       SCIP_CALL( SCIPallocMemoryArray(scip, &pricingjob->cols, maxcols) ); /*lint !e866*/
    }
    BMSclearMemoryArray(pricingjob->cols, maxcols);
+   pricingjob->colssize = maxcols;
    pricingjob->ncols = 0;
    pricingjob->nimpcols = 0;
 
@@ -124,7 +126,7 @@ SCIP_RETCODE GCGpricingjobSetup(
 }
 
 /** update a pricing job after the pricing problem has been solved */
-void GCGpricingjobUpdate(
+SCIP_RETCODE GCGpricingjobUpdate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_STATUS           status,             /**< status after solving the pricing problem */
@@ -140,6 +142,14 @@ void GCGpricingjobUpdate(
    ++pricingjob->nsolves;
    pricingjob->pricingstatus = status;
    pricingjob->lowerbound = lowerbound;
+
+   if( pricingjob->colssize < pricingjob->ncols + ncols )
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &pricingjob->cols, pricingjob->ncols + ncols) );
+      pricingjob->colssize = pricingjob->ncols + ncols;
+      for( i = pricingjob->ncols; i < pricingjob->colssize; ++i )
+         pricingjob->cols[i] = NULL;
+   }
 
    /* add new columns; ensure that the column array remains sorted by reduced costs */
    for( i = pricingjob->ncols + ncols - 1, j = pricingjob->ncols-1, k = ncols-1; k >= 0; --i )
@@ -160,6 +170,8 @@ void GCGpricingjobUpdate(
    }
 
    pricingjob->ncols += ncols;
+
+   return SCIP_OKAY;
 }
 
 /** increase the solution limit of a pricing job */

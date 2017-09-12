@@ -74,7 +74,7 @@ SCIP_RETCODE GCGpricingjobSetup(
 
 /** update a pricing job after the pricing problem has been solved */
 EXTERN
-void GCGpricingjobUpdate(
+SCIP_RETCODE GCGpricingjobUpdate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_STATUS           status,             /**< status after solving the pricing problem */

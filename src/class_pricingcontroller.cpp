@@ -251,14 +251,14 @@ SCIP_RETCODE Pricingcontroller::setPricingjobTimelimit(
     */
    timelimit = MAX(0, MIN(SCIPgetSolvingTime(pricingscip) + jobtimelimit, mastertimelimit - SCIPgetSolvingTime(scip_)));
 
-   SCIPdebugMessage("(Pricing prob %d) timelimit = %f\n", GCGpricingjobGetProbnr(pricingjob), timelimit);
+//   SCIPdebugMessage("(Pricing prob %d) timelimit = %f\n", GCGpricingjobGetProbnr(pricingjob), timelimit);
    SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/time", timelimit) );
 
    return SCIP_OKAY;
 }
 
 /** update result variables of a pricing job */
-void Pricingcontroller::updatePricingjob(
+SCIP_RETCODE Pricingcontroller::updatePricingjob(
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_STATUS           status,             /**< status after solving the pricing problem */
    SCIP_Real             lowerbound,         /**< lower bound returned by the pricing problem */
@@ -266,7 +266,9 @@ void Pricingcontroller::updatePricingjob(
    int                   ncols               /**< number of columns found */
    )
 {
-   GCGpricingjobUpdate(scip_, pricingjob, status, lowerbound, cols, ncols);
+   SCIP_CALL( GCGpricingjobUpdate(scip_, pricingjob, status, lowerbound, cols, ncols) );
+
+   return SCIP_OKAY;
 }
 
 /** decide whether a pricing job must be treated again */

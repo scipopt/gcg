@@ -103,7 +103,7 @@ public:
       );
 
    /** update statistics of a pricing job, and possibly add it again to the queue with different settings */
-   void updatePricingjob(
+   SCIP_RETCODE updatePricingjob(
       GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
       SCIP_STATUS           status,             /**< status after solving the pricing problem */
       SCIP_Real             lowerbound,         /**< lower bound returned by the pricing problem */
