@@ -57,6 +57,7 @@
 #include "class_seeed.h"
 #include "class_seeedpool.h"
 #include "wrapper_seeed.h"
+#include "reader_tex.h"
 
 #include <vector>
 #include <iomanip>
@@ -135,14 +136,14 @@ struct SCIP_ConshdlrData
    int                   maxndetectionrounds;               /**< maximum number of detection loop rounds  */
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
-   SCIP_Bool                enableemphfast;               /**< indicates whether emphasis settings are set to fast */
+   SCIP_Bool             enableemphfast;                    /**< indicates whether emphasis settings are set to fast */
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
-   SCIP_Bool             enableorigclassification;               /**< indicates whether to start constraint classification for the original problem */
-      SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
+   SCIP_Bool             enableorigclassification;          /**< indicates whether to start constraint classification for the original problem */
+   SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
    SCIP_Bool             conssclassnnonzenabledorig;        /**< indicates whether constraint classifier for nonzero entries is enabled for the original problem */
    SCIP_Bool             conssclassnconstypeenabled;        /**< indicates whether constraint classifier for scipconstype is enabled */
    SCIP_Bool             conssclassnconstypeenabledorig;    /**< indicates whether constraint classifier for scipconstype is enabled for the original problem */
-   SCIP_Bool             conssclassnmiplibconstypeenabled;        /**< indicates whether constraint classifier for miplib constype is enabled */
+   SCIP_Bool             conssclassnmiplibconstypeenabled;  /**< indicates whether constraint classifier for miplib constype is enabled */
    SCIP_Bool             conssclassnmiplibconstypeenabledorig;    /**< indicates whether constraint classifier for miplib constype is enabled for the original problem */
    SCIP_Bool             consnamenonumbersenabled;          /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
    SCIP_Bool             consnamenonumbersenabledorig;      /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
@@ -184,7 +185,6 @@ struct SCIP_ConshdlrData
    SCIP_Bool              selectedexists;                    /** are there some selected decompositions */
 
    int                    seeedcounter;                      /** counts the number of seeeds, used for seeed ids */
-   int                    helpvisucounter;                   /** help counter for family tree visualization to iterate the heights */
 
    std::vector<std::pair<SeeedPtr, SCIP_Real> >* candidates;
 
@@ -218,7 +218,6 @@ SCORETYPE SCIPconshdlrdataGetScoretype(
 {
    return  static_cast<scoretype>(conshdlrdata->currscoretype);
 }
-
 
 
 char*  SCIPconshdlrDecompGetScoretypeShortName(
@@ -4370,197 +4369,6 @@ std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
    return tmpAllRelevantSeeeds;
 }
 
-SCIP_RETCODE SCIPconshdlrDecompWriteFamilyTreeLatexFile(
-   SCIP*       scip,
-   const char* filename,                                 /* filename the output should be written to (including directory) */
-   const char* workfolder,                               /* directory in which should be worked */
-   std::vector<SeeedPtr> seeeds,                         /* vector of seeed pointers the  family tree should be constructed for */
-   SCIP_Bool draft
-){
-
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   assert(scip != NULL);
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-
-   std::ofstream ofs;
-   int curr = -1;
-   int currheight = 0;
-   SCIP_Real firstsibldist = -1.;
-
-   std::stringstream preambel;
-   std::string closing = "\\end{tikzpicture}\n\\end{document}";
-
-   /* collectiotn of treeseeds */
-   std::vector<SeeedPtr> treeseeeds(0);
-   std::vector<int> treeseeedids(0);
-   std::vector<SeeedPtr> allrelevantseeeds = SCIPconshdlrDecompGetAllRelevantSeeeds(scip);
-
-   std::vector<SCIP_Bool> isseeedintree(allrelevantseeeds.size(), FALSE );
-
-   int root = -1;
-   int root2 = -1;
-   std::vector<int> parents(allrelevantseeeds.size(), -1);
-   std::vector<std::vector<int> > childs (allrelevantseeeds.size(), std::vector<int>(0));
-   std::vector<std::vector<SCIP_Bool> > childsfinished(allrelevantseeeds.size(), std::vector<SCIP_Bool>(0));
-   std::vector<SCIP_Bool> visited(allrelevantseeeds.size(), FALSE);
-
-   conshdlrdata->helpvisucounter = 0;
-
-   /** check allrelevant seeeds **/
-   for( size_t s = 0; s < allrelevantseeeds.size(); ++s )
-   {
-      assert(allrelevantseeeds[s] == NULL || (int) s == allrelevantseeeds[s]->getID() );
-   }
-
-   /** 1) find relevant seeeds in tree and build tree */
-   for( size_t s = 0; s < seeeds.size(); ++s )
-   {
-      int currid;
-      if ( seeeds[s] == NULL )
-         continue;
-      currid = seeeds[s]->getID();
-      if( !isseeedintree[seeeds[s]->getID()] )
-      {
-         isseeedintree[seeeds[s]->getID()] = TRUE;
-         treeseeeds.push_back( seeeds[s]);
-         treeseeedids.push_back(seeeds[s]->getID());
-      }
-      else
-         break;
-
-      for( int i = 0; i < seeeds[s]->getNAncestors(); ++i )
-      {
-         int ancestorid;
-         ancestorid = seeeds[s]->getAncestorID( seeeds[s]->getNAncestors() - i - 1 );
-         parents[currid] = ancestorid;
-         childs[ancestorid].push_back(currid);
-         childsfinished[ancestorid].push_back(FALSE);
-
-         if( !isseeedintree[ancestorid] )
-         {
-            isseeedintree[ancestorid] = TRUE;
-            assert(allrelevantseeeds[ancestorid] != NULL);
-            treeseeeds.push_back( allrelevantseeeds[ancestorid] );
-            treeseeedids.push_back(ancestorid);
-            if( i == seeeds[s]->getNAncestors() -1 )
-            {
-               if( root == -1 )
-                  root = ancestorid;
-               else if( ancestorid != root )
-                  root2 = ancestorid;
-            }
-            currid = ancestorid;
-         }
-         else
-            break;
-      }
-   }
-
-   for( size_t i = 0; i < treeseeeds.size(); ++i )
-   {
-      SeeedPtr seeed;
-      std::stringstream decompfilename;
-
-      seeed = treeseeeds[i];
-
-      decompfilename << workfolder << "/" << getSeeedFolderLatex(seeed);
-      if( seeed->isFromUnpresolved() )
-         seeed->showVisualisation(conshdlrdata->seeedpoolunpresolved, TRUE, decompfilename.str().c_str(), draft );
-      else
-         seeed->showVisualisation(conshdlrdata->seeedpool, TRUE, decompfilename.str().c_str(), draft );
-   }
-
-   /* merge both roots in the first one*/
-
-   for( size_t s = 0; root2 != -1 && s < treeseeeds.size(); ++s )
-   {
-      int seeedid = treeseeeds[s]->getID();
-      if ( parents[seeedid] == root2 )
-      {
-         parents[seeedid] = root;
-      }
-   }
-
-   for( size_t s = 0; root2 != -1 && s < childs[root2].size(); ++s )
-   {
-      childs[root].push_back(childs[root2][s] );
-      childsfinished[root].push_back(FALSE );
-   }
-
-   //  finishedSeeeds[0]->showScatterPlot(this, TRUE, "./testdecomp/001.pdf") ;
-
-   firstsibldist = 1. / (childs[root].size() - 1 );
-   if( childs[root].size() == 1 ){
-      firstsibldist = 1;
-   }
-   preambel.precision(2);
-
-   preambel << "\\documentclass[a3paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
-   preambel << "\n\\usetikzlibrary{positioning}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
-   preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
-
-   /** start writing file */
-   ofs.open (filename, std::ofstream::out );
-   ofs << preambel.str();
-
-   /** iterate tree and write file */
-   curr = root;
-   while ( curr != -1 )
-   {
-      if( !visited[curr] )
-      {
-         /** write node */
-         ofs << writeSeeedIncludeLatex( allrelevantseeeds[curr], workfolder );
-         /* set node visited */
-         visited[curr] = TRUE;
-         if( parents[curr] != -1 )
-            finishnextchild(childs[parents[curr]], childsfinished[parents[curr]], curr);
-
-      }
-      if ( unfinishedchildexists(childsfinished[curr] ) )
-      {
-         int unfinishedchild = getfirstunfinishedchild(childsfinished[curr], childs[curr] );
-         /* is first child unfinihsed? */
-         //         if( unfinishedchild == childs[curr][0] )
-         ofs << " child { node " ;
-         curr = unfinishedchild;
-         ++currheight;
-      }
-      else
-      {
-         if ( parents[curr] != -1 ){
-            ofs << writeSeeedDetectorChainInfoLatex( allrelevantseeeds[curr], currheight, conshdlrdata->helpvisucounter);
-            ++conshdlrdata->helpvisucounter;
-         }
-         --currheight;
-         curr = parents[curr];
-         if( curr != -1)
-            ofs << " } " ;
-      }
-   }
-
-   ofs << ";" << std::endl;
-   for( size_t i = 0; i < treeseeeds.size(); ++i)
-   {
-      if ( treeseeeds[i]->getID() == root2 )
-         continue;
-      ofs << writeSeeedInfoLatex( treeseeeds[i] );
-   }
-
-   ofs << closing << std::endl;
-
-   ofs.close();
-
-   return SCIP_OKAY;
-}
 
 /** write
  *  out all detected or provided decompositions */
@@ -4597,7 +4405,7 @@ SCIP_RETCODE DECwriteFamilyTree(
 	else
 	{
 	   SCIPconshdlrDecompUpdateSeeedlist(scip);
-	   for ( size_t i = 0; tovisualize.size() <= (size_t) ndecompositions &&  i < conshdlrdata->listall->size(); ++i )
+	   for( size_t i = 0; tovisualize.size() <= (size_t) ndecompositions &&  i < conshdlrdata->listall->size(); ++i )
 	   {
 	      if( conshdlrdata->listall->at(i)->isComplete() )
 	         tovisualize.push_back( conshdlrdata->listall->at(i) );
@@ -4605,12 +4413,22 @@ SCIP_RETCODE DECwriteFamilyTree(
 	}
 
 	SCIPdebugMessage("Checking list of seeeds to visualize: \n");
-	for ( size_t i = 0; i <  tovisualize.size(); ++i )
+	for( size_t i = 0; i <  tovisualize.size(); ++i )
 	{
 	   SCIPdebugMessage( "%d th seeed: id: %d ahs ancestors from unpresolved: %d \n", (int) i, tovisualize[i]->getID(), tovisualize[i]->getStemsFromUnpresolved() );
 	}
 
-	SCIPconshdlrDecompWriteFamilyTreeLatexFile(scip, filename, workfolder, tovisualize, draft);
+	/* let tex reader handle the visualization of the family tree */
+	int ntovisualize = tovisualize.size();
+	SEEED_WRAPPER** tovisualizewr;
+	for( size_t i = 0; i <  tovisualize.size(); ++i )
+	{
+	   tovisualizewr[i]->seeed = tovisualize[i];
+	}
+
+	FILE* helpfile = fopen(filename, "w");
+	GCGwriteTexFamilyTree(scip, helpfile, workfolder, tovisualizewr, &ntovisualize, TRUE);
+	fclose(helpfile);
 
 	return SCIP_OKAY;
 }
@@ -5299,4 +5117,38 @@ SCIP_RETCODE GCGgetCurrentSeeedpools(
    seeedpoolunpresolvedwr->seeedpool = conshdlrdata->seeedpoolunpresolved;
 
    return SCIP_OKAY;
+}
+
+
+/** gets the ids of all selected seeeds */
+int** SCIPconshdlrDecompGetSelectedSeeeds(
+   SCIP* scip,
+   int* outputsize
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   std::vector<int>* selectedseeeds;
+   int** output;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   selectedseeeds = conshdlrdata->selected;
+
+   for( size_t i = 0; i < selectedseeeds->size(); i++ )
+   {
+      int newint = (*selectedseeeds)[i];
+      *(output[i]) = newint;
+   }
+   *outputsize = selectedseeeds->size();
+
+   return output;
 }

@@ -259,7 +259,6 @@ SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
      );
 
 
-
 /** rejects and deletes the current user seeed */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
    SCIP*                 scip                 /**< SCIP data structure */
@@ -271,15 +270,16 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    SCIP*                 scip                 /**< SCIP data structure */
    );
 
+
 SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP*                 scip,                 /**< SCIP data structure */
    SCIP_Bool*            success
    );
 
+
 SCIP_Bool SCIPconshdlrDecompExistsSelected(
    SCIP* scip
    );
-
 
 
 int SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(
@@ -393,8 +393,6 @@ DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
    );
 
 
-
-
 /** returns whether the detection has been performed */
 SCIP_Bool DEChasDetectionRun(
    SCIP*                 scip                /**< SCIP data structure */
@@ -432,12 +430,21 @@ SCIP_RETCODE GCGgetSeeedFromID(
    SEEED_WRAPPER* seeedwr     /**< wrapper for output Seeed */
    );
 
+
 /** returns wrapped Seeedpools */
 SCIP_RETCODE GCGgetCurrentSeeedpools(
    SCIP*          scip,                   /**< SCIP data structure */
    SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool */
    SEEED_WRAPPER* seeedpoolunpresolvedwr  /**< wrapper for unpresolved output Seeedpool */
    );
+
+
+/** gets the ids of all selected seeeds */
+int** SCIPconshdlrDecompGetSelectedSeeeds(
+   SCIP* scip,       /**< SCIP data structure */
+   int* outputsize   /**< size of output */
+   );
+
 
 #ifdef __cplusplus
 }

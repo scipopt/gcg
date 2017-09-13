@@ -43,6 +43,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fstream>
+#include <vector>
+#include <sstream>
 
 #include "reader_tex.h"
 #include "scip_misc.h"
@@ -601,50 +603,97 @@ SCIP_RETCODE writeTexEnding(
    return SCIP_OKAY;
 }
 
-/** writes a visualization for the given seeed */
-SCIP_RETCODE GCGwriteTexVisualization(
-   SCIP* scip,             /**< SCIP data structure */
-   FILE* file,             /**< filename including path */
-   int seeedid,            /**< id of seeed to visualize */
-   SCIP_Bool statistics,   /**< additionally to picture show statistics */
-   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
+std::string writeSeeedDetectorChainInfoLatex(
+   SeeedPtr seeed,
+   int currheight,
+   int visucounter
    )
 {
-   MiscVisualization* misc = new MiscVisualization();
-   Seeed* seeed;
-   Seeedpool* seeedpool = NULL;
-   char* gpname;
-   char* pdfname;
+   std::stringstream line;
+   std::string relposition;
+   int position = visucounter % 3;
+   if( position == 0 )
+      relposition = "above";
+   else if ( position == 1)
+      relposition = "";
+   else if ( position == 2)
+      relposition = "below";
+   else
+      relposition = "below left";
 
-   /* get seeed */
-   seeed = misc->GCGgetSeeedWithPool(scip, seeedid, seeedpool);
+   if ( currheight != 1)
+      relposition = "";
 
-   /* write tex code into file */
-   writeTexHeader(scip, file);
-
-   if(!usegp)
-   {
-      writeTexSeeed(scip, file, seeed, seeedpool);
-   }
+   if ( currheight >  seeed->getNDetectorchainInfo() )
+      line << "edge from parent node [" << relposition << "] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
    else
    {
-      /* in case a gp file should be generated include it */
-      gpname = misc->GCGgetVisualizationFilename(scip, seeed, "gp");
-      pdfname = misc->GCGgetVisualizationFilename(scip, seeed, "pdf");
+      std::string oldinfo = seeed->getDetectorchainInfo( currheight - 1 );
+      /** take latexified detctorchaininfo */
+      size_t index = 0;
+      while (true) {
+         /* Locate the substring to replace. */
+         index = oldinfo.find("_", index);
+         if (index == std::string::npos)
+            break;
+         if ( index > 0 &&   oldinfo.at(index-1) == '\\' )
+         {
+            ++index;
+            continue;
+         }
 
-      GCGwriteGpVisualization(scip, gpname, pdfname, seeedid);
+         /* Make the replacement. */
+         oldinfo.replace(index, 1, "\\_");
 
-      SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
-      SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
-      SCIPinfoMessage(scip, file, "    \\input{%s}                                           \n", pdfname);
-      SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
-      SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+         /* Advance index forward so the next iteration doesn't pick it up as well. */
+         index += 2;
+      }
+      std::cout << "oldinfo: " << oldinfo << std::endl;
+
+      line << "edge from parent node [" << relposition << "] {" << oldinfo <<"} " ;
    }
-   if(statistics)
-      writeTexSeeedStatistics(scip, file, seeed);
-   writeTexEnding(scip, file);
 
-   return SCIP_OKAY;
+
+   return line.str();
+}
+
+/**
+ * @return is nextchild the last unfinished child
+ */
+SCIP_Bool finishNextChild( std::vector<int>& childs, std::vector<SCIP_Bool>& childsfinished, int child )
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+      {
+         assert(childs[s] == child);
+         childsfinished[s] = TRUE;
+         return s == childsfinished.size() - 1;
+      }
+   }
+   return FALSE;
+}
+
+
+SCIP_Bool unfinishedChildExists(std::vector<SCIP_Bool> const& childsfinished)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return true;
+   }
+   return false;
+}
+
+
+int getFirstUnfinishedChild(std::vector<SCIP_Bool> const& childsfinished, std::vector<int> const& childs)
+{
+   for( size_t s = 0; s < childsfinished.size(); ++s )
+   {
+      if( !childsfinished[s] )
+         return childs[s];
+   }
+   return -1;
 }
 
 
@@ -713,21 +762,269 @@ SCIP_RETCODE GCGwriteTexReport(
 
 /** writes a visualization of the family tree of the current seeedpool */
 SCIP_RETCODE GCGwriteTexFamilyTree(
-   SCIP* scip,       /**< SCIP data structure */
-   FILE* file,       /**< filename including path */
-   SCIP_Bool usegp   /**< true if the gp reader should be used to visualize the individual seeeds */
+   SCIP* scip,                /**< SCIP data structure */
+   FILE* file,                /**< filename including path */
+   const char* workfolder,    /**< directory in which should be worked, includes generation of intermediate files */
+   SEEED_WRAPPER** seeedswr,  /**< seeed wrapper for the seeeds the family tree should be constructed for */
+   int* nseeeds,              /**< number of seeeds the family tree should be constructed for */
+   SCIP_Bool usegp            /**< true if the gp reader should be used to visualize the individual seeeds */
    )
 {
-   //   char* detectorchainstring;
-   //   DEC_DETECTOR** detectorchain;
-   //   int sizedetectorchain;
-   //
-   //   detectorchainstring = seeed->getDetectorChainString();
-   //   detectorchain = seeed->getDetectorchain();
-   //   sizedetectorchain = seeed->getNDetectors();
+   MiscVisualization* miscvisu = new MiscVisualization();
+   SCIP_Real firstsibldist = -1.;
+   int curr = -1;
+   int currheight = 0;
+   int helpvisucounter;    /* help counter for family tree visualization to iterate the heights */
+
+   std::ofstream ofs;
+
+   std::vector<SeeedPtr> seeeds;
+   for( int i = 0; i < *(nseeeds); i++ )
+   {
+      seeeds[i] = seeedswr[i]->seeed;
+   }
+
+   /* directly initialize the filename */
+   const char* filename = miscvisu->GCGgetFilePath(scip, file);
+
+   std::stringstream preambel;
+   std::string closing = "\\end{tikzpicture}\n\\end{document}";
+
+   /* collection of treeseeds */
+   std::vector<SeeedPtr> treeseeeds(0);
+   std::vector<int> treeseeedids(0);
+   std::vector<SeeedPtr> allrelevantseeeds = miscvisu->GCGGetAllRelevantSeeeds(scip);
+
+   std::vector<SCIP_Bool> isseeedintree(allrelevantseeeds.size(), FALSE );
+
+   int root = -1;
+   int root2 = -1;
+   std::vector<int> parents(allrelevantseeeds.size(), -1);
+   std::vector< std::vector<int> > childs (allrelevantseeeds.size(), std::vector<int>(0));
+   std::vector< std::vector<SCIP_Bool> > childsfinished(allrelevantseeeds.size(), std::vector<SCIP_Bool>(0));
+   std::vector<SCIP_Bool> visited(allrelevantseeeds.size(), FALSE);
+
+   helpvisucounter = 0;
+
+   /** check allrelevant seeeds **/
+   for( size_t s = 0; s < allrelevantseeeds.size(); ++s )
+   {
+      assert(allrelevantseeeds[s] == NULL || (int) s == allrelevantseeeds[s]->getID() );
+   }
+
+   /** 1) find relevant seeeds in tree and build tree */
+   for( size_t s = 0; s < seeeds.size(); ++s )
+   {
+      int currid;
+      if ( seeeds[s] == NULL )
+         continue;
+      currid = seeeds[s]->getID();
+      if( !isseeedintree[seeeds[s]->getID()] )
+      {
+         isseeedintree[seeeds[s]->getID()] = TRUE;
+         treeseeeds.push_back(seeeds[s]);
+         treeseeedids.push_back(seeeds[s]->getID());
+      }
+      else
+         break;
+
+      for( int i = 0; i < seeeds[s]->getNAncestors(); ++i )
+      {
+         int ancestorid;
+         ancestorid = seeeds[s]->getAncestorID( seeeds[s]->getNAncestors() - i - 1 );
+         parents[currid] = ancestorid;
+         childs[ancestorid].push_back(currid);
+         childsfinished[ancestorid].push_back(FALSE);
+
+         if( !isseeedintree[ancestorid] )
+         {
+            isseeedintree[ancestorid] = TRUE;
+            assert(allrelevantseeeds[ancestorid] != NULL);
+            treeseeeds.push_back( allrelevantseeeds[ancestorid] );
+            treeseeedids.push_back(ancestorid);
+            if( i == seeeds[s]->getNAncestors() -1 )
+            {
+               if( root == -1 )
+                  root = ancestorid;
+               else if( ancestorid != root )
+                  root2 = ancestorid;
+            }
+            currid = ancestorid;
+         }
+         else
+            break;
+      }
+   }
+
+   for( size_t i = 0; i < treeseeeds.size(); ++i )
+   {
+      SeeedPtr seeed;
+      char* helpfilename = '\0';
+      char* decompfilename = '\0';
+
+      seeed = treeseeeds[i];
+      strcpy( helpfilename, workfolder );
+      strcat( helpfilename, "/" );
+
+      if(usegp)
+      {
+         strcat( helpfilename, miscvisu->GCGgetVisualizationFilename(scip, seeed, ".gp") );
+         strcpy( decompfilename, miscvisu->GCGgetVisualizationFilename(scip, seeed, ".pdf") );
+
+         GCGwriteGpVisualization(scip, helpfilename, decompfilename, seeed->getID());
+         char* command = '\0';
+         strcpy(command, "gnuplot ");
+         strcat(command, helpfilename);
+         system(command);
+      }
+      else
+      {
+         strcat( helpfilename, miscvisu->GCGgetVisualizationFilename(scip, seeed, ".tex") );
+
+         FILE* helpfile = fopen(helpfilename, "w");
+         GCGwriteTexVisualization(scip, helpfile, seeed->getID(), FALSE, FALSE);
+         fclose(helpfile);
+
+         char* command = '\0';
+         strcpy(command, "pdflatex ");
+         strcat(command, helpfilename);
+         system(command);
+      }
+   }
+
+   /* merge both roots in the first one*/
+
+   for( size_t s = 0; root2 != -1 && s < treeseeeds.size(); ++s )
+   {
+      int seeedid = treeseeeds[s]->getID();
+      if ( parents[seeedid] == root2 )
+      {
+         parents[seeedid] = root;
+      }
+   }
+
+   for( size_t s = 0; root2 != -1 && s < childs[root2].size(); ++s )
+   {
+      childs[root].push_back(childs[root2][s] );
+      childsfinished[root].push_back(FALSE );
+   }
+
+   firstsibldist = 1. / (childs[root].size() - 1 );
+   if( childs[root].size() == 1 ){
+      firstsibldist = 1;
+   }
+   preambel.precision(2);
+
+   preambel << "\\documentclass[a3paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
+   preambel << "\n\\usetikzlibrary{positioning}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
+   preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist
+      << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
+
+   /** start writing file */
+   ofs.open(filename, std::ofstream::out );
+   ofs << preambel.str();
+
+   /** iterate tree and write file */
+   curr = root;
+   while ( curr != -1 )
+   {
+      if( !visited[curr] )
+      {
+         /** write node */
+         ofs << " (s" << allrelevantseeeds[curr]->getID() << ") { \\includegraphics[width=0.15\\textwidth]{"
+            << miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeeds[curr], ".pdf") << "} }" << std::endl;
+
+         /* set node visited */
+         visited[curr] = TRUE;
+         if( parents[curr] != -1 )
+            finishNextChild(childs[parents[curr]], childsfinished[parents[curr]], curr);
+
+      }
+      if ( unfinishedChildExists(childsfinished[curr] ) )
+      {
+         int unfinishedchild = getFirstUnfinishedChild(childsfinished[curr], childs[curr] );
+         /* is first child unfinihsed? */
+         //         if( unfinishedchild == childs[curr][0] )
+         ofs << " child { node " ;
+         curr = unfinishedchild;
+         ++currheight;
+      }
+      else
+      {
+         if ( parents[curr] != -1 ){
+            ofs << writeSeeedDetectorChainInfoLatex( allrelevantseeeds[curr], currheight, helpvisucounter);
+            ++helpvisucounter;
+         }
+         --currheight;
+         curr = parents[curr];
+         if( curr != -1)
+            ofs << " } " ;
+      }
+   }
+
+   ofs << ";" << std::endl;
+   for( size_t i = 0; i < treeseeeds.size(); ++i)
+   {
+      if ( treeseeeds[i]->getID() == root2 )
+         continue;
+      ofs << "\\node[below = \\belowcaptionskip of s" << treeseeeds[i]->getID() << "] (caps" << treeseeeds[i]->getID()
+         << ") {\\scriptsize " << treeseeeds[i]->getShortCaption() << "}; " << std::endl;
+   }
+
+   ofs << closing << std::endl;
+
+   ofs.close();
 
    return SCIP_OKAY;
 }
+
+
+/** writes a visualization for the given seeed */
+SCIP_RETCODE GCGwriteTexVisualization(
+   SCIP* scip,             /**< SCIP data structure */
+   FILE* file,             /**< filename including path */
+   int seeedid,            /**< id of seeed to visualize */
+   SCIP_Bool statistics,   /**< additionally to picture show statistics */
+   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
+   )
+{
+   MiscVisualization* misc = new MiscVisualization();
+   Seeed* seeed;
+   Seeedpool* seeedpool = NULL;
+   char* gpname;
+   char* pdfname;
+
+   /* get seeed */
+   seeed = misc->GCGgetSeeedWithPool(scip, seeedid, seeedpool);
+
+   /* write tex code into file */
+   writeTexHeader(scip, file);
+
+   if(!usegp)
+   {
+      writeTexSeeed(scip, file, seeed, seeedpool);
+   }
+   else
+   {
+      /* in case a gp file should be generated include it */
+      gpname = misc->GCGgetVisualizationFilename(scip, seeed, "gp");
+      pdfname = misc->GCGgetVisualizationFilename(scip, seeed, "pdf");
+
+      GCGwriteGpVisualization(scip, gpname, pdfname, seeedid);
+
+      SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
+      SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
+      SCIPinfoMessage(scip, file, "    \\input{%s}                                           \n", pdfname);
+      SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
+      SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+   }
+   if(statistics)
+      writeTexSeeedStatistics(scip, file, seeed);
+   writeTexEnding(scip, file);
+
+   return SCIP_OKAY;
+}
+
 
 /** makes a new makefile and readme for the given .tex file */
 SCIP_RETCODE GCGtexWriteMakefileAndReadme(
