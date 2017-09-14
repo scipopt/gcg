@@ -91,6 +91,19 @@ DEC_DECTYPE DECdecompGetType(
    DEC_DECOMP*           decomp              /**< decomposition data structure */
    );
 
+extern
+SCIP_Real DECdecompGetMaxwhiteScore(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
+   );
+
+extern
+void DECsetMaxWhiteScore(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
+   SCIP_Real             maxwhitescore
+   );
+
+
 /** sets the presolved flag for decomposition */
 extern
 void DECdecompSetPresolved(

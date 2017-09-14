@@ -101,6 +101,7 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
 #define DEFAULT_ENABLEORIGDETECTION FALSE /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
+#define DEFAULT_SMARTSCORE                            FALSE
 #define DEFAULT_ENABLEORIGCLASSIFICATION TRUE /**< indicates whether to start detection for the original problem */
 
 #define DEFAULT_CONSSCLASSNNONZENABLED                TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled */
@@ -156,6 +157,7 @@ struct SCIP_ConshdlrData
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool                enableemphfast;               /**< indicates whether emphasis settings are set to fast */
+   SCIP_Bool                smartscore;               /**< indicates whether smart score is enabled */
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
    SCIP_Bool             enableorigclassification;               /**< indicates whether to start constraint classification for the original problem */
       SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
@@ -1006,6 +1008,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/emphfast/enabled", "indicates whether emphasis setting are set to fast", &conshdlrdata->enableemphfast, TRUE, DEFAULT_ENABLEEMPHFAST, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/smartscore/enabled", "indicates whether smart score should be activated", &conshdlrdata->smartscore, FALSE, DEFAULT_SMARTSCORE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/enabled", "indicates whether to start detection for the original problem", &conshdlrdata->enableorigdetection, FALSE, DEFAULT_ENABLEORIGDETECTION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/classificationenabled", "indicates whether to classify constraints and variables for the original problem", &conshdlrdata->enableorigclassification, FALSE, DEFAULT_ENABLEORIGCLASSIFICATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", "indicates whether constraint classifier for nonzero entries is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSNNONZENABLED, NULL, NULL) );

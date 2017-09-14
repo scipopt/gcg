@@ -122,6 +122,12 @@ SCIP_Bool GCGgetConsIsSetppc(
    SCIP_SETPPCTYPE*      setppctype          /**< returns the type of the constraints */
    );
 
+SCIP_Bool GCGgetConsIsCardinalityCons(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons               /**< constraint to check */
+);
+
+
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
 extern
 SCIP_Bool GCGisRootNode(
