@@ -1728,7 +1728,7 @@ SCIP_Real ObjPricerGcg::computeQuasiRedCostGcgCol(
    mastervars = SCIPgetOrigVars(scip_);
    nmastervars = GCGgetNTransvars(origprob) + GCGgetNLinkingvars(origprob);
 
-   assert(nmastervars <= SCIPgetNVars(scip_));
+   assert(nmastervars <= SCIPgetNOrigVars(scip_));
 
    /* no linking or directly transferred variables exist, set stabdualval pointer and exit */
    if( nmastervars == 0 )
