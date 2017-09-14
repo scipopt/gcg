@@ -250,6 +250,9 @@ do
 	        then
 	            echo set limits objective $OBJECTIVEVAL >> $TMPFILE
 	            echo set heur emph off                  >> $TMPFILE
+	            echo master                             >> $TMPFILE
+	            echo set heur emph off                  >> $TMPFILE
+	            echo quit                               >> $TMPFILE
 	        fi
 	    fi
 
