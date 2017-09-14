@@ -102,8 +102,8 @@ private:
    std::vector<SCIP_CONS*> consToScipCons;                     /**< stores the corresponding scip constraints pointer */
    std::vector<SCIP_VAR*> varToScipVar;                        /**< stores the corresponding scip variable pointer */
    std::vector<DEC_DETECTOR*> detectorToScipDetector;          /**< stores the corresponding SCIP detector pinter */
-   std::vector<DEC_DETECTOR*> detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pointer
-                                                                 */
+   std::vector<DEC_DETECTOR*> detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pointer*/
+   std::vector<std::vector<int>> conssadjacencies;
    std::tr1::unordered_map<SCIP_CONS*, int> scipConsToIndex;   /**< maps SCIP_CONS* to the corresponding index */
    std::tr1::unordered_map<SCIP_VAR*, int> scipVarToIndex;     /**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int> scipDetectorToIndex;        /**< maps SCIP_VAR* to the corresponding index */
@@ -294,6 +294,15 @@ public:
    /** returns the number of constraints for a given variable */
    int getNConssForVar(
       int varIndex /**< index of the variable to be considered */
+      );
+
+   const int* getConssForCons(
+      int consIndex /**< index of the constraint to be considered */
+      );
+
+   /** returns the number of constraints for a given constraint */
+   int getNConssForCons(
+      int consIndex /**< index of the constraint to be considered */
       );
 
    /** returns the SCIP variable related to a variable index */

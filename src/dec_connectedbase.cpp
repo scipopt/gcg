@@ -150,7 +150,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
    //complete the seeed by bfs
-   seeed->completeByConnected(seeedPropagationData->seeedpool );
+   seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
 
 
   // seeed->showScatterPlot(seeedPropagationData->seeedpool);

@@ -60,6 +60,7 @@
 #include "scip/cons.h"
 #include "scip/scip.h"
 #include <algorithm>
+#include <list>
 #include <iostream>
 #include <stdio.h>
 #include <sstream>
@@ -729,7 +730,40 @@ Seeedpool::Seeedpool(
       SCIPfreeBufferArrayNull( scip, & currVars );
 
    }
+   std::vector<std::list<int>> conssadjacenciestemp;
 
+   /** find constraint <-> constraint relationships and store them in both directions */
+     for( size_t i = 0; i < consToScipCons.size(); ++ i )
+     {
+        conssadjacenciestemp.push_back(std::list<int>(0));
+        for( size_t varid = 0; varid < varsForConss[i].size(); ++varid )
+        {
+           int var = varsForConss[i][varid];
+
+           for( size_t otherconsid = 0; otherconsid < conssForVars[var].size(); ++otherconsid )
+           {
+              int othercons = conssForVars[var][otherconsid];
+              if( othercons == (int) i )
+                 continue;
+
+              std::list<int>::iterator consiter = std::lower_bound( conssadjacenciestemp[i].begin(),conssadjacenciestemp[i].end(), othercons);
+
+              if( *consiter != othercons )
+                 conssadjacenciestemp[i].insert(consiter, othercons);
+           }
+        }
+     }
+
+     for( size_t i = 0; i < consToScipCons.size(); ++ i )
+     {
+        conssadjacencies.push_back(std::vector<int>(0));
+        std::list<int>::iterator consiter = conssadjacenciestemp[i].begin();
+        std::list<int>::iterator consiterend = conssadjacenciestemp[i].end();
+        for( ; consiter != consiterend; ++consiter )
+        {
+           conssadjacencies[i].push_back(*consiter);
+        }
+     }
    /*  init  seeedpool with empty seeed */
    SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), nConss, nVars );
 
@@ -1712,12 +1746,12 @@ void Seeedpool::calcTranslationMapping(
       }
    }
 
-      for ( int i  = 0; i < rowothertothis.size(); ++i )
+      for ( size_t i  = 0; i < rowothertothis.size(); ++i )
          std::cout << (rowothertothis[i] == i) << " " ;
 
       std::cout << std::endl;
 
-      for ( int i  = 0; i < colothertothis.size(); ++i )
+      for ( size_t i  = 0; i < colothertothis.size(); ++i )
          std::cout << ( colothertothis[i] == i ) << " " ;
       std::cout << std::endl;
 
@@ -2023,6 +2057,16 @@ const int* Seeedpool::getConssForVar(
    return & conssForVars[var][0];
 }
 
+/** returns the constraint indices of the coefficient matrix for a constraint */
+const int* Seeedpool::getConssForCons(
+   int cons
+   )
+{
+   return & conssadjacencies[cons][0];
+}
+
+
+
 /** returns the number of variables for a given constraint */
 int Seeedpool::getNVarsForCons(
    int cons
@@ -2038,6 +2082,15 @@ int Seeedpool::getNConssForVar(
 {
    return conssForVars[var].size();
 }
+
+/** returns the number of constraints for a given variable */
+int Seeedpool::getNConssForCons(
+   int cons
+   )
+{
+   return conssadjacencies[cons].size();
+}
+
 
 /** returns the SCIP variable related to a variable index */
 SCIP_VAR* Seeedpool::getVarForIndex(

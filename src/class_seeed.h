@@ -348,11 +348,22 @@ public:
       );
 
    /** assigns all open constraints and open variables
-    *  strategy: assigns all conss and vars to the same block if they are indirectly connected
-    *  a cons and a var are directly connected if the var appears in the cons */
+     *  strategy: assigns all conss and vars to the same block if they are connected
+     *  a cons and a var are adjacent if the var appears in the cons */
    SCIP_RETCODE completeByConnected(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
+
+   /** assigns all open constraints and open variables
+     *  strategy: assigns all conss same block if they are connected
+     *  two constraints are adjacent if there is a common variable
+     *  this relies on the consadjacency structure of the seeedpool
+     *  hence it cannot be applied in presence of linking variables */
+    SCIP_RETCODE completeByConnectedConssAdjacency(
+       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
+       );
+
+
 
    /** assigns all open constraints and open variables
     *  strategy: assigns a cons (and related vars) to any block if possible by means of prior var assignments
