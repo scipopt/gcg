@@ -108,7 +108,7 @@ using namespace scip;
 #define DEFAULT_COLPOOL_AGELIMIT         10         /**< maximum age of columns in column pool */
 #define DEFAULT_COLPOOL_COLPOOLSIZE      10         /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
 
-#define DEFAULT_USEARTIFICIALVARS        TRUE       /**< add artificial vars to master (instead of using Farkas pricing) */
+#define DEFAULT_USEARTIFICIALVARS        FALSE      /**< add artificial vars to master (instead of using Farkas pricing) */
 
 #define EVENTHDLR_NAME         "probdatavardeleted"
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
@@ -3710,7 +3710,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    if( pricerdata->farkasmaxobj )
    {
-
       pricerdata->maxobj = 0.0;
       for( i = 0; i < SCIPgetNVars(origprob); ++i )
       {
@@ -3930,6 +3929,7 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
    int nconvconss;
    char varname[SCIP_MAXSTRLEN];
    int i;
+   SCIP_Real bigm;
 
    assert(pricerdata != NULL);
    assert(pricerdata->pricedvars != NULL);
@@ -3938,6 +3938,10 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
    nmasterconss = GCGgetNMasterConss(origprob);
 
    nconvconss = GCGgetNPricingprobs(origprob);
+   if( pricerdata->farkasmaxobj )
+      bigm = pricerdata->maxobj;
+   else
+      bigm = 1.0/pricerdata->farkasalpha;
 
    for( i = 0; i < nmasterconss; ++i )
    {
@@ -4203,7 +4207,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
          "should hybridization of smoothing with an ascent method be enabled if pricing problems cannot be aggregation?",
          &pricerdata->hybridascentnoagg, FALSE, DEFAULT_HYBRIDASCENT_NOAGG, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/useartificialvars",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/farkas/useartificialvars",
          "should artificial variables be used to make the RMP feasible (instead of applying Farkas pricing)?",
          &pricerdata->useartificialvars, FALSE, DEFAULT_USEARTIFICIALVARS, NULL, NULL) );
 

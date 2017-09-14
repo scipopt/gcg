@@ -2,6 +2,10 @@
 
 pricing/masterpricer/farkas/stabilization = FALSE
 
+pricing/masterpricer/farkas/alpha = 0.001
+
+pricing/masterpricer/farkas/maxobjbound = FALSE
+
 pricing/masterpricer/farkas/useartificialvars = TRUE
 
 sepa/basis/enable = FALSE
