@@ -136,12 +136,13 @@ def generate_files(files):
 
     # Create a dictionary, where all the dataframes, that are generated in the following, are 'globally' stored for comparison
     df_dict = {}
+    set_dict = {}
 
     for file in files:
         # file = os.path.join(DIR, filename)
         with open(file) as _file:
-            df=pd.DataFrame()
-            dfvar=pd.DataFrame()
+            df = None
+            dfvar = None
             orig = False
             name = None
             problemFileName = None
@@ -152,20 +153,38 @@ def generate_files(files):
             varheader = None
             boundlines = {}
             boundheader = None
+            scip_status = ""
             for line in _file:
+                if line.startswith("@01"):
+                    # reset python variables for next instance
+                    problemFileName = None
+                    df = None
+                    dfvar = None
+                    boundheader = None
+                    varheader = None
+                    varlines = {}
+                    boundlines = {}
                 if line.startswith("loaded parameter file"):
                     # store current settings
                     settings=line.split()[-1]
                     settings=settings.split("/")[-1]
                     settings = os.path.splitext(settings)[0]
                 elif not problemFileName and line.startswith("read problem "):
-                    problemFileName = os.path.splitext(os.path.basename(line.split("<")[-1].replace(">","").replace("\n","")))[0]
+                    # get the problem name from the file name as in "check.awk", in case it is "BLANK" in the actual "Problem name"-line
+                    tmparray = line.split("<")[-1].replace(">","").replace("\n","").split("/")[-1].split(".")
+                    problemFileName = tmparray[0]
+                    if tmparray[-1] == "gz" or tmparray[-1] == "z" or tmparray[-1] == "GZ" or tmparray[-1] == "Z":
+                        tmparray.pop()
+                    for i in range(1,len(tmparray)-1):
+                        problemFileName += "." + tmparray[i]
                 elif not orig and line.startswith("Original Program statistics:"):
                     orig = True
                 elif orig and line.startswith("Master Program statistics:"):
                     orig = False
                 elif orig and line.startswith("Presolved Problem  :"):
                     orig = False
+                elif orig and line.startswith("SCIP Status        :"):
+                    scip_status = line.split(":")[-1].strip()
                 elif orig and line.startswith("  Problem name     :"):
                     # store problem name
                     name = line.split()[3]
@@ -176,7 +195,6 @@ def generate_files(files):
                     name = os.path.splitext(name)[0]
                     if name == 'BLANK':
                         name = problemFileName
-                    print name
                 elif not rootbounds and line.startswith("Root bounds"):
                     # prepare storage of root bounds
                     rootbounds = True
@@ -215,7 +233,9 @@ def generate_files(files):
 
                     # if no root bounds are present, ignore instance
                     if len(df) == 0:
+                        print name
                         print "   -> ignored"
+                        print "   -> SCIP Status : " + scip_status
                         continue
 
                     # use root bounds header to rename columns of data frame
@@ -295,6 +315,13 @@ def generate_files(files):
                     # set maximum and minimum of x values (time or iterations) to synchronize the plots
                     xmax = df[xaxis].max()
                     xmin = df[xaxis].min()
+                    # workaround for identical limits (will produce UserWarnings otherwise)
+                    if xmax == xmin:
+                        if xmax == 0:
+                            xmax = 0.01
+                        else:
+                            xmin = 0.95*xmin
+                            xmax = 1.05*xmax
 
                     # set index to time or iterations (depending on which is used)
                     df = df.set_index(keys=xaxis, drop=False)
@@ -426,6 +453,9 @@ def generate_files(files):
                     # ensure, that there is enough space for labels
                     plt.tight_layout()
 
+                    # set the size of the figure (a too small size will lead to too large legends)
+                    plt.gcf().set_size_inches(9.33,7)
+
                     # save figure and ensure, that there are not two files with the same name
                     fig_filename = params['outdir']+"/"+name+"_"+settings+"_"+xaxis
                     i = ""
@@ -434,23 +464,24 @@ def generate_files(files):
                             i = "2"
                         else:
                             i = str(int(i)+1)
-                    plt.savefig(fig_filename + i + ".png")
+                    plt.savefig(fig_filename + i + ".png", dpi=300)
 
                     # store the current dataframe globally
                     if params['compare']:
                         if not (name in df_dict):
                             df_dict[name] = []
+                            set_dict[name] = []
                         df_dict[name].append(df.copy())
+                        set_dict[name].append(settings)
 
                     # reset python variables for next instance
+                    problemFileName = None
                     df = None
                     dfvar = None
                     boundheader = None
                     varheader = None
                     varlines = {}
                     boundlines = {}
-
-                    print "   -> success"
 
                 elif vardetails:
                     # store details of variable
@@ -461,15 +492,24 @@ def generate_files(files):
     if params['compare']:
         for name, runs in df_dict.iteritems():
             if len(runs) > 1:
-                print "Compare " + str(len(runs)) + " runs of " + name
+
                 # set maximum and minimum of x values (time or iterations) to synchronize the plots
-                xmax = 0
-                xmin = 10000
+                infty = 10.0 ** 20
+                xmax = -infty
+                xmin = infty
                 for run in runs:
                     if run[xaxis].max() > xmax:
                         xmax = run[xaxis].max()
                     if run[xaxis].min() < xmin:
                         xmin = run[xaxis].min()
+
+                # workaround for identical limits
+                if xmin == xmax:
+                    if xmax == 0:
+                        xmax = 0.01
+                    else:
+                        xmin = 0.95*xmin
+                        xmax = 1.05*xmax
 
                 # number of plots, the user wants
                 nplots = params['bounds'] + params['lpvars'] + params['ipvars']
@@ -559,9 +599,11 @@ def generate_files(files):
                     if p == 'db':
                         cmap[p] = plt.cm.get_cmap('jet', max(len(runs), 5))
                     else:
-                        cmap[p] = plt.cm.get_cmap('gnuplot', max(len(runs), 5))
+                        cmap[p] = plt.cm.get_cmap('jet', max(len(runs), 5))
 
                 # plot all the runs
+                # first, create a list, to store the plot-handles, that have to be inlcuded in the legend
+                handles = []
                 for iter_run, df in enumerate(runs):
                     # plot the lpvars
                     if params['lpvars']:
@@ -569,7 +611,7 @@ def generate_files(files):
                             frmtStr = '-'
                         elif params['lplinestyle'] == 'scatter':
                             frmtStr = 'o'
-                        axes['lp'].plot(df[xaxis], df['lpvars'], frmtStr, color = cmap['lp'](iter_run), label ='lpvars ' + str(iter_run + 1), markersize=1.6, linewidth = 0.8)
+                        axes['lp'].plot(df[xaxis], df['lpvars'], frmtStr, color = cmap['lp'](iter_run), label ='lpvars ' + set_dict[name][iter_run], markersize=1.6, linewidth = 0.8)
 
                     # plot the ipvars
                     if params['ipvars']:
@@ -577,7 +619,7 @@ def generate_files(files):
                             frmtStr = '-'
                         elif params['iplinestyle'] == 'scatter':
                             frmtStr = 'o'
-                        axes['ip'].plot(df[xaxis], df['ipvars'], frmtStr, color = cmap['ip'](iter_run), label ='ipvars ' + str(iter_run + 1), markersize=1.6, linewidth = 0.8)
+                        axes['ip'].plot(df[xaxis], df['ipvars'], frmtStr, color = cmap['ip'](iter_run), label ='ipvars '+ set_dict[name][iter_run], markersize=1.6, linewidth = 0.8)
 
                     # bounds/dualdiff plot
                     if params['bounds']:
@@ -587,21 +629,35 @@ def generate_files(files):
                             frmtStr = 'o'
                         elif params['bdlinestyle'] == 'both':
                             frmtStr = '-o'
-                        axes['db'].plot(df[xaxis], df['pb'], frmtStr, color = cmap['db'](iter_run), label='pb ' + str(iter_run + 1), linewidth=0.8, markersize = 1.6)
-                        axes['db'].plot(df[xaxis], df['db'], frmtStr, color = cmap['db'](iter_run), label='db ' + str(iter_run + 1), linewidth=0.8, markersize = 1.6)
+                        tmp, = axes['db'].plot(df[xaxis], df['pb'], frmtStr, color = cmap['db'](iter_run), label=set_dict[name][iter_run], linewidth=0.8, markersize = 1.6)
+                        handles.append(tmp)
+                        axes['db'].plot(df[xaxis], df['db'], frmtStr, color = cmap['db'](iter_run), linewidth=0.8, markersize = 1.6)
 
-                # create the legends
-                for p in axes:
-                    axes[p].legend()
+                if params['dualdiff'] or params['dualoptdiff']:
+                    # plot the differences
+                    axes['db_diff'] = axes['db'].twinx()
+                    for iter_run, df in enumerate(runs):
+                        if params['dualdiff']:
+                            axes['db_diff'].plot(df[xaxis], df['dualdiff'], '--', color = cmap['db'](iter_run), label='dualdiff ' + set_dict[name][iter_run], linewidth=0.8, markersize = 1.6, alpha = 0.6)
+                        if params['dualoptdiff']:
+                            axes['db_diff'].plot(df[xaxis], df['dualoptdiff'], '--', color = cmap['db'](iter_run), label='dualoptdiff ' + set_dict[name][iter_run], linewidth=0.8, markersize = 1.6, alpha = 0.6)
+                    # set y label of secondary y-axis
+                    plt.ylabel('Differences', fontsize=10, rotation=-90, labelpad=15)
 
                 # ensure, that there is enough space for labels
                 plt.tight_layout()
+
+                # create the legend
+                axes['db'].legend(handles = handles, loc='lower left', bbox_to_anchor = (0,1.02,1,0.2), ncol=3, mode='expand')
+
+                # make room for the legend
+                plt.subplots_adjust(top=0.9)
 
                 # set the size of the figure (a too small size will lead to too large legends)
                 plt.gcf().set_size_inches(9.33,7)
 
                 # save figure and ensure, that there are not two files with the same name
-                fig_filename = params['outdir']+"/"+ "compareRuns_" + name+"_"+settings+"_"+xaxis
+                fig_filename = params['outdir']+"/"+ "compareRuns_" + name+"_"+xaxis
                 i = ""
                 while os.path.isfile(fig_filename + i + ".png"):
                     if i == "":
@@ -609,8 +665,6 @@ def generate_files(files):
                     else:
                         i = str(int(i)+1)
                 plt.savefig(fig_filename + i + ".png", dpi = 300)
-
-                print "   -> success"
 
 
 def main():

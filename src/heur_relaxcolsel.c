@@ -152,6 +152,9 @@ SCIP_RETCODE initializeStartsol(
       origvals = GCGmasterVarGetOrigvals(mastervar);
       norigvars = GCGmasterVarGetNOrigvars(mastervar);
 
+      if( GCGmasterVarIsArtificial(mastervar) )
+         continue;
+
       /* update master solution and original solution */
 
       /* treat variables representing rays separately */
