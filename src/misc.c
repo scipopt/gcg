@@ -73,6 +73,9 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
 
    SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
 
+   if( !GCGmasterIsSolValid(masterprob, mastersol) )
+      return SCIP_OKAY;
+
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
 
@@ -99,6 +102,9 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       SCIP_Real* origvals;
       SCIP_Bool isray;
       int blocknr;
+
+      if( !SCIPisPositive(masterprob, mastervals[i]) )
+         continue;
 
       origvars = GCGmasterVarGetOrigvars(mastervars[i]);
       norigvars = GCGmasterVarGetNOrigvars(mastervars[i]);

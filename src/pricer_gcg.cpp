@@ -182,6 +182,7 @@ struct SCIP_PricerData
    SCIP_Bool             hybridascent;       /**< should hybridization of smoothing with an ascent method be enabled */
    SCIP_Bool             hybridascentnoagg;  /**< should hybridization of smoothing with an ascent method be enabled
                                               *   if pricing problems cannot be aggregation */
+   SCIP_Bool             useartificialvars;  /**< use artificial variables to make RMP feasible (instead of applying Farkas pricing) */
    int                   colpoolsize;        /**< actual size of colpool is maxvarsround * npricingprobsnotnull * colpoolsize */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
@@ -3722,7 +3723,7 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
    SCIP_CONS** masterconss;
    int nmasterconss;
    int nconvconss;
-
+   char varname[SCIP_MAXSTRLEN];
    int i;
 
    assert(pricerdata != NULL);
@@ -3737,8 +3738,9 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
    {
       if( !SCIPisInfinity(scip_, -1.0*GCGconsGetLhs(scip_, masterconss[i]) ))
       {
+         (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "artificial_lhs_mcons_%d", i);
          SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->artificialvars), pricerdata->nartificialvars + 1 ) );
-         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]) ) );
+         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname) );
          SCIP_CALL( SCIPaddCoefLinear(scip_, masterconss[i], pricerdata->artificialvars[pricerdata->nartificialvars], 1.0) );
          SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
          ++(pricerdata->nartificialvars);
@@ -3746,8 +3748,9 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
 
       if( !SCIPisInfinity(scip_, GCGconsGetRhs(scip_, masterconss[i]) ))
       {
+         (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "artificial_rhs_mcons_%d", i);
          SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->artificialvars), pricerdata->nartificialvars + 1 ) );
-         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]) ) );
+         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname ) );
          SCIP_CALL( SCIPaddCoefLinear(scip_, masterconss[i], pricerdata->artificialvars[pricerdata->nartificialvars], -.0) );
          SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
          ++(pricerdata->nartificialvars);
@@ -3765,8 +3768,9 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
 
       if( !SCIPisInfinity(scip_, -1.0*GCGconsGetLhs(scip_, convcons) ))
       {
+         (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "artificial_lhs_convcons_%d", i);
          SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->artificialvars), pricerdata->nartificialvars + 1 ) );
-         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]) ) );
+         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname ) );
          SCIP_CALL( SCIPaddCoefLinear(scip_, convcons, pricerdata->artificialvars[pricerdata->nartificialvars], 1.0) );
          SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
          ++(pricerdata->nartificialvars);
@@ -3774,8 +3778,9 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
 
       if( !SCIPisInfinity(scip_, GCGconsGetRhs(scip_, convcons) ))
       {
+         (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "artificial_rhs_convcons_%d", i);
          SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->artificialvars), pricerdata->nartificialvars + 1 ) );
-         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]) ) );
+         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname ) );
          SCIP_CALL( SCIPaddCoefLinear(scip_, convcons, pricerdata->artificialvars[pricerdata->nartificialvars], -.0) );
          SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
          ++(pricerdata->nartificialvars);
@@ -3838,8 +3843,9 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       }
    }
 
-   if( DEFAULT_USEARTIFICIALVARS )
+   if( pricerdata->useartificialvars && farkaspricing->getCalls() == 0)
    {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Add artificial variables.\n");
       SCIP_CALL( addArtificialVars() );
       farkaspricing->incCalls();
       return SCIP_OKAY;
@@ -3975,6 +3981,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/stabilization/hybridascentnoagg",
          "should hybridization of smoothing with an ascent method be enabled if pricing problems cannot be aggregation?",
          &pricerdata->hybridascentnoagg, FALSE, DEFAULT_HYBRIDASCENT_NOAGG, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/useartificialvars",
+         "should artificial variables be used to make the RMP feasible (instead of applying Farkas pricing)?",
+         &pricerdata->useartificialvars, FALSE, DEFAULT_USEARTIFICIALVARS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/colpoolsize", "actual size is"
       "maxvarsround * npricingprobsnotnull * colpoolsize", &pricerdata->colpoolsize, FALSE,
@@ -4713,7 +4723,7 @@ SCIP_Real GCGmasterGetDegeneracy(
       return SCIPinfinity(scip);
 }
 
-/** get root node degeneracy */
+/** check if current sol is valid */
 extern "C"
 SCIP_Bool GCGmasterIsCurrentSolValid(
    SCIP*                 scip                /**< SCIP data structure */
@@ -4739,6 +4749,8 @@ SCIP_Bool GCGmasterIsCurrentSolValid(
       sol = NULL;
    else if( SCIPgetStatus(scip) == SCIP_STATUS_OPTIMAL )
       SCIPgetBestSol(scip);
+   else
+      return TRUE;
 
    for( i = 0; i < pricerdata->nartificialvars; ++i )
    {
@@ -4746,11 +4758,78 @@ SCIP_Bool GCGmasterIsCurrentSolValid(
       solval = SCIPgetSolVal(scip, sol, pricerdata->artificialvars[i]);
 
       if( SCIPisPositive(scip, solval) )
-         return TRUE;
+         return FALSE;
    }
 
-   return FALSE;
+   return TRUE;
 }
+
+extern "C"
+SCIP_Bool GCGmasterIsBestsolValid(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   SCIP_SOL* sol;
+   int i;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   sol = SCIPgetBestSol(scip);
+
+   if( sol == NULL )
+      return TRUE;
+
+   for( i = 0; i < pricerdata->nartificialvars; ++i )
+   {
+      SCIP_Real solval;
+      solval = SCIPgetSolVal(scip, sol, pricerdata->artificialvars[i]);
+
+      if( SCIPisPositive(scip, solval) )
+         return FALSE;
+   }
+
+   return TRUE;
+}
+
+extern "C"
+SCIP_Bool GCGmasterIsSolValid(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             mastersol           /**< solution of the master problem, or NULL for current LP solution */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   SCIP_SOL* sol;
+   int i;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   for( i = 0; i < pricerdata->nartificialvars; ++i )
+   {
+      SCIP_Real solval;
+      solval = SCIPgetSolVal(scip, mastersol, pricerdata->artificialvars[i]);
+
+      if( SCIPisPositive(scip, solval) )
+         return FALSE;
+   }
+
+   return TRUE;
+}
+
 
 /* get number of iterations in pricing problems */
 extern "C"

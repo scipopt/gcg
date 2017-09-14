@@ -3719,7 +3719,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          return SCIP_OKAY;
       }
 
-      if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) )
+      if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) && GCGmasterIsSolValid(relaxdata->masterprob, mastersol) )
       {
          int i;
 
