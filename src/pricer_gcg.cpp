@@ -2338,28 +2338,14 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_Bool found = FALSE; /* whether a feasible solution has been found */
    int i;
 
-   SCIP_CONS** branchconss = NULL; /* stack of branching constraints */
-   int nbranchconss = 0; /* number of branching constraints */
-   SCIP_Real* branchduals = NULL; /* dual values of branching constraints in the master (sigma) */
+   SCIP_CONS** branchconss = NULL;   /* stack of generic branching constraints */
+   int nbranchconss = 0;             /* number of generic branching constraints */
+   SCIP_Real* branchduals = NULL;    /* dual values of generic branching constraints in the master (sigma) */
 
    assert(pricerdata != NULL);
 
    /* Compute path to last generic branching node */
    SCIP_CALL( computeGenericBranchingconssStack(pricetype, GCGpricingjobGetProbnr(pricingjob), &branchconss, &nbranchconss, &branchduals) );
-   if( nbranchconss == 0 )
-   {
-      SCIP_CALL( solvePricingProblem(pricingjob, pricetype, maxcols) );
-
-      /* we can leave the method from here because no array has been allocated!
-       * We have not created generic branching decisions here, so compute as usual
-       */
-      return SCIP_OKAY;
-   }
-
-
-   /* revert all bound changes up to the branching point
-    * Not needed because they are not added to the pricing problem
-    */
 
    SCIP_CALL( solvePricingProblem(pricingjob, pricetype, maxcols) );
    bestcol = GCGpricingjobGetCol(pricingjob, 0);
@@ -2368,7 +2354,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    if( SCIPisDualfeasNegative(scip_, redcost) )
       found = TRUE;
 
-   /* If no reduced cost column has been found yet, traverse the branching tree in reverse order
+   /* If no reduced cost column has been found yet, traverse the generic branching path in reverse order
     * until such a column is found
     */
    for( i = nbranchconss-1; i >= 0 && !found; --i )
@@ -2407,8 +2393,6 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 
    SCIPfreeMemoryArrayNull(scip_, &branchconss);
    SCIPfreeMemoryArrayNull(scip_, &branchduals);
-
-   pricingcontroller->resetPricingjobLowerbound(pricingjob);
 
    return SCIP_OKAY;
 }
