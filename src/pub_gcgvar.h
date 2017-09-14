@@ -68,6 +68,12 @@ SCIP_Bool GCGoriginalVarIsLinking(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    );
 
+/** returns TRUE or FALSE whether variable is a directly transferred variable or not */
+extern
+SCIP_Bool GCGoriginalVarIsTransVar(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   );
+
 /** returns the original var of a pricing variable */
 extern
 SCIP_VAR* GCGpricingVarGetOriginalVar(

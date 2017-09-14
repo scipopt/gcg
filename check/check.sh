@@ -47,6 +47,7 @@ VERSION=${14}
 LPS=${15}
 VALGRIND=${16}
 MODE=${17}
+SETCUTOFF=${18}
 
 SETDIR=../settings
 
@@ -148,6 +149,26 @@ then
    VALGRINDCMD="valgrind --log-fd=1 --leak-check=full"
 fi
 
+SOLUFILE=""
+for SOLU in testset/$TSTNAME.solu testset/all.solu
+do
+    if test -e $SOLU
+    then
+        SOLUFILE=$SOLU
+        break
+    fi
+done
+
+# if cutoff should be passed, solu file must exist
+if test $SETCUTOFF = "true"
+then
+    if test $SOLUFILE = ""
+    then
+        echo "Skipping test: SETCUTOFF=true set, but no .solu file (testset/$TSTNAME.solu or testset/all.solu) available"
+        exit
+    fi
+fi
+
 for i in `cat testset/$TSTNAME.test` DONE
 do
     if test "$i" = "DONE"
@@ -194,6 +215,14 @@ do
             then
                 echo set numerics feastol $FEASTOL >> $TMPFILE
             fi
+
+            if test -e "$SOLUFILE"
+            then
+                OBJECTIVEVAL=`grep "$NAME" $SOLUFILE | grep -v =feas= | grep -v =inf= | tail -n 1 | awk '{print $3}'`
+            else
+                OBJECTIVEVAL=""
+            fi
+
             echo set limits time $TIMELIMIT        >> $TMPFILE
             echo set limits nodes $NODELIMIT       >> $TMPFILE
             echo set limits memory $MEMLIMIT       >> $TMPFILE
@@ -208,6 +237,22 @@ do
             fi
             echo set save $SETFILE                 >> $TMPFILE
             echo read $PROB                        >> $TMPFILE
+
+	    # set objective limit: optimal solution value from solu file, if existent
+	    if test $SETCUTOFF = "true"
+	    then
+	        if test $SOLUFILE == ""
+	        then
+	            echo Exiting test because no solu file can be found for this test
+	            exit
+	        fi
+	        if test ""$OBJECTIVEVAL != ""
+	        then
+	            echo set limits objective $OBJECTIVEVAL >> $TMPFILE
+	            echo set heur emph off                  >> $TMPFILE
+	        fi
+	    fi
+
 
             if test $MODE = "detect"
             then

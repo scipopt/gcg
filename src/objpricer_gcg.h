@@ -193,7 +193,9 @@ public:
 
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
    SCIP_RETCODE getStabilizedDualObjectiveValue(
-      SCIP_Real*         stabdualval         /**< pointer to store stabilized dual objective value */
+      PricingType*       pricetype,          /**< type of pricing */
+      SCIP_Real*         stabdualval,        /**< pointer to store stabilized dual objective value */
+      SCIP_Bool          stabilize           /**< stabilize? */
    );
 private:
    ReducedCostPricing *reducedcostpricing;

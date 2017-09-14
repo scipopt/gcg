@@ -182,6 +182,21 @@ SCIP_Bool GCGoriginalVarIsLinking(
    return vardata->blocknr == -2;
 }
 
+/** returns TRUE or FALSE whether variable is a directly transferred variable or not */
+SCIP_Bool GCGoriginalVarIsTransVar(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsOriginal(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   return vardata->blocknr == -1;
+}
+
 /** returns the pricing var of an original variable */
 SCIP_VAR* GCGoriginalVarGetPricingVar(
    SCIP_VAR*             var                 /**< SCIP variable structure */
