@@ -305,9 +305,9 @@ EOF
                     fi
                 fi
                 GP_BASE=`basename $DECFILE .dec`
-                echo detect                        >> $TMPFILE
-                echo write problem $HOME\/results\/gpsBench\/$GP_BASE.gp >> $TMPFILE
-                echo write problem $HOME\/results\/decsBench\/$GP_BASE.dec >> $TMPFILE
+#                echo detect                        >> $TMPFILE
+#                echo write problem $HOME\/results\/gpsBench\/$GP_BASE.gp >> $TMPFILE
+#                echo write problem $HOME\/results\/decsBench\/$GP_BASE.dec >> $TMPFILE
                 echo optimize                      >> $TMPFILE
                 echo display statistics            >> $TMPFILE
 #               echo display additionalstatistics  >> $TMPFILE
