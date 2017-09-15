@@ -61,6 +61,7 @@
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 
 /*
@@ -118,15 +119,17 @@ DEC_DECL_INITDETECTOR(initMastersetcover)
 #endif
 
 /** detection function of detector */
-static DEC_DECL_DETECTSTRUCTURE(detectMastersetcover)
-{ /*lint --e{715}*/
-   *result = SCIP_DIDNOTFIND;
+//static DEC_DECL_DETECTSTRUCTURE(detectMastersetcover)
+//{ /*lint --e{715}*/
+//   *result = SCIP_DIDNOTFIND;
+//
+//   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
+//;   SCIPABORT(); /*lint --e{527}*/
+//
+//   return SCIP_OKAY;
+//}
 
-   SCIPerrorMessage("Detection function of detector <%s> not implemented!\n", DEC_DETECTORNAME)
-;   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
+#define detectMastersetcover NULL
 
 static DEC_DECL_PROPAGATESEEED(propagateSeeedMastersetcover)
 {
@@ -195,7 +198,7 @@ SCIP_RETCODE SCIPincludeDetectorMastersetcover(SCIP* scip /**< SCIP data structu
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
          DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP,
-         DEC_USEFULRECALL, detectordata, detectMastersetcover, freeMastersetcover,
+         DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectMastersetcover, freeMastersetcover,
          initMastersetcover, exitMastersetcover, propagateSeeedMastersetcover, finishSeeedMastersetcover, setParamAggressiveMastersetcover, setParamDefaultMastersetcover, setParamFastMastersetcover));
 
    /**@todo add mastersetcover detector parameters */

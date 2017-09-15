@@ -70,6 +70,7 @@
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
+#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 #define TCLIQUE_CALL(x) do                                                                                    \
                        {                                                                                      \
@@ -127,9 +128,12 @@ SCIP_RETCODE createGraph(
    int i;
    int j;
    int v;
+   int v1;
+   int v2;
    int nconss;
    SCIP_CONS** conss;
    SCIP_Bool useprobvars = FALSE;
+   bool foundEdge;
 
    assert(scip != NULL);
    assert(graph != NULL);
@@ -188,14 +192,24 @@ SCIP_RETCODE createGraph(
 
          SCIP_CALL( GCGconsGetVars(scip, conss[j], curvars2, ncurvars2) );
 
-         for( v = 0; v < ncurvars2; ++v )
+         foundEdge = false;
+
+         for( v2 = 0; v2 < ncurvars2 && !foundEdge; ++v2 )
          {
             if( useprobvars )
             {
-               curvars2[v] = SCIPvarGetProbvar(curvars2[v]);
-               assert( SCIPvarIsActive(curvars2[v]) );
+               curvars2[v2] = SCIPvarGetProbvar(curvars2[v2]);
+               assert( SCIPvarIsActive(curvars2[v2]) );
             }
 
+            for( v1 = 0; v1 < ncurvars1 && !foundEdge; ++v1 )
+            {
+               if( curvars2[v2] == curvars1[v1] )
+               {
+                  tcliqueAddEdge( *graph, i, j );
+                  foundEdge = true;
+               }
+            }
          }
          SCIPfreeMemoryArray(scip, &curvars2);
       }
@@ -665,7 +679,6 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectStaircaseLsp)
    if( tcliqueGetNNodes(detectordata->graph) > 0 )
    {
       nnodes = tcliqueGetNNodes(detectordata->graph);
-
       /* find connected components of the graph. the result will be stored in 'detectordata->components' */
       SCIP_CALL( findConnectedComponents(scip, detectordata) );
 
@@ -765,7 +778,6 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   currseeed->considerImplicits(seeedpool);
    currseeed->refineToMaster(seeedpool);
 
    currseeed->sort();
@@ -988,7 +1000,7 @@ SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
 
    SCIP_CALL( DECincludeDetector( scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
          DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP,
-         DEC_USEFULRECALL, detectordata, detectorDetectStaircaseLsp, detectorFreeStaircaseLsp,
+         DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectorDetectStaircaseLsp, detectorFreeStaircaseLsp,
          detectorInitStaircaseLsp, detectorExitStaircaseLsp, detectorPropagateSeeedStaircaseLsp, detectorFinishSeeedStaircaseLsp, setParamAggressiveStaircaseLsp, setParamDefaultStaircaseLsp, setParamFastStaircaseLsp) );
 
 

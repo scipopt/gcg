@@ -43,6 +43,11 @@
 #include <vector>
 #include <string>
 
+#include "class_consclassifier.h"
+#include "class_varclassifier.h"
+#include "graph/graph_gcg.h"
+#include "graph/graph.h"
+
 namespace gcg {
 
 
@@ -78,6 +83,19 @@ private:
                                                                  *< assigned yet*/
    std::vector<int> openConss;                                 /**< vector containing indices of constraints that are not
                                                                  *< assigned yet*/
+   std::vector<bool> isvaropen;
+   std::vector<bool> isconsopen;
+   std::vector<bool> isvarmaster;
+   std::vector<bool> isconsmaster;
+
+   bool varsforblocksorted;
+   bool stairlinkingvarsforblocksorted;
+   bool conssforblocksorted;
+   bool linkingvarssorted;
+   bool mastervarssorted;
+   bool masterconsssorted;
+
+
    std::vector<int> bookedAsMasterConss;                       /**< vector containing indices of constraints that are not
                                                                  *< assigned yet but booked as master conss */
    std::vector<std::pair<int, int>> bookedAsBlockConss;        /**< vector containing indices of constraints that are not
@@ -121,8 +139,20 @@ private:
    std::vector<SCIP_Real> pctConssFromFree;           /**< vector containing the fraction of constraints that are not longer
                                                          *< open for each detector working on that seeed*/
    std::vector<int> nNewBlocks;                       /**< vector containing detector indices that worked on that seeed */
+
+   std::vector<IndexClassifier*> usedClassifier;      /**< vector containing pointer to the cons- or varclassifier
+                                                         *< a detector made use of for each detector working on that seeed
+                                                         *< (NULL if no classifier was used) */
+   std::vector<std::vector<int>> classesToMaster;     /**< vector containing the vector of classindices that were assigned
+                                                         *< to master by the classifier used by a detector
+                                                         *< (empty vector if no classifier was used) */
+   std::vector<std::vector<int>> classesToLinking;    /**< vector containing the vector of classindices that were assigned
+                                                         *< to linking by the classifier used by a detector
+                                                         *< (empty vector if no classifier was used) */
+
    std::vector<int> listofancestorids;                /**< vector containing detector indices that worked on that seeed */
    USERGIVEN usergiven;                               /**< is this seeed partially or completely given by user */
+   bool isfromlegacymode;                             /**< true if this seeed stems from a detector operating in legacy mode */
    SCIP_Real score;                                   /**< score to evaluate the seeeds */
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
 
@@ -282,6 +312,36 @@ public:
    /** calculates the hash value of the seeed for comparing */
    void calcHashvalue();
 
+   /** reassigns linking vars stairlinkingvars if possible
+    *  potentially reorders blocks for making a maximum number of linking vars stairlinking
+    *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
+    *  otherwise, the stairlinking assignment is done greedily
+    *  precondition: seeed does not have any stairlinking vars */
+   void calcStairlinkingVars(
+      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
+      );
+
+   /** changes the block order in a way such that all linking vars that are potentially stairlinking
+    *  may be reassigned to stairlinking
+    *  precondition: all potentially stairlinking vars have a staircase structure */
+   void changeBlockOrderStaircase(
+        GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
+                         potentially stairlinkingvars connecting two blocks */
+        );
+
+   /** changes the block order in a way such that some linking vars that are potentially stairlinking
+    *  may be reassigned to stairlinking using a greedy method */
+   void changeBlockOrderGreedily(
+      GraphGCG* g /**< graph with blocks as nodes and weighted edges for the number of
+                       potentially stairlinkingvars connecting two blocks */
+        );
+
+   /** changes the order of the blocks according to the given mapping
+    *  precondition: given mapping needs to be an adequately sized permutation */
+   void changeBlockOrder(
+        std::vector<int> oldToNewBlockIndex /**< the mapping from old to new block indices */
+        );
+
    /** returns true if all constraints are assigned and deletes the vector open conss if so */
    bool checkAllConssAssigned();
 
@@ -304,6 +364,11 @@ public:
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
+   /** returns true if the given detector used a consclassifier */
+   bool consClassifierUsed(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
    /** assigns every open cons/var
     *  - to the respective block if it hits exactly one blockvar/blockcons and no open vars/conss
     *  - to master/linking if it hits blockvars/blockconss assigned to different blocks
@@ -311,6 +376,11 @@ public:
     *  - and every var to master if it does not hit any blockcons and has no open cons */
    SCIP_RETCODE considerImplicits(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
+      );
+
+   /** copies the given seeed's classifier statistics */
+   SCIP_RETCODE copyClassifierStatistics(
+      const Seeed* otherseeed
       );
 
    /** deletes empty blocks */
@@ -330,6 +400,15 @@ public:
 
    /** displays the assignments of the conss */
    SCIP_RETCODE displayConss(Seeedpool* seeedpool);
+
+   /** displays the relevant information of the seeed */
+   SCIP_RETCODE displayInfo(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      int detailLevel /**< pass a value that indicates how detailed the output should be:
+                              0: brief overview
+                              1: block and detector info
+                              2: cons and var assignments */
+      );
 
    /*@todo is initialization in declaration necessary? */
    /** displays the relevant information of the seeed */
@@ -382,6 +461,12 @@ public:
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
+   /** returns a vector of pairs of var indices and vectors of (two) block indices
+    *  the related linking variable hits exactly the two blocks given in the related vector */
+   std::vector< std::pair< int, std::vector< int > > > findLinkingVarsPotentiallyStairlinking(
+      Seeedpool* seeedpool
+      );
+
    /** assigns all booked constraints and variables and deletes them from list of open cons and open vars */
    SCIP_RETCODE flushBooked();
 
@@ -419,6 +504,13 @@ public:
    /** returns the time that the detectors needed for detecting */
    std::vector<SCIP_Real> getDetectorClockTimes();
 
+   /** returns the data of the consclassifier that the given detector made use of */
+   SCIP_RETCODE getConsClassifierData(
+      int detectorchainindex, /**< index of the detector in the detectorchain */
+      ConsClassifier** classifier, /**< a pointer to the used consclassifier */
+      std::vector<int>& consclassesmaster /**< a vector containing all indices of the consclasses assigned to master */
+      );
+
    /** returns array containing constraints assigned to a block */
    const int* getConssForBlock(
       int block
@@ -429,6 +521,18 @@ public:
 
    /** returns the detectorchain as a vector */
    std::vector<DEC_DETECTOR*> getDetectorchainVector();
+
+   /** returns a string displaying all detector-related information, i.e. clock times and assignment data */
+   std::string getDetectorStatistics(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
+
+   /** returns a string displaying classifier information if such a classifier was used */
+   std::string getDetectorClassifierInfo(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      int detectorchainindex, /**< index of the detector in the detectorchain */
+      bool displayConssVars /**< pass true if constraints and variables of the respective classes should be displayed */
+      );
 
    /** returns true if this seeed was finished by finishSeeed() method of a detector */
    bool getFinishedByFinisher();
@@ -527,8 +631,14 @@ public:
    /** returns array containing constraints not assigned yet */
    const int* getOpenconss();
 
+   /** returns array containing constraints not assigned yet  as vector*/
+   std::vector<int> getOpenconssVec();
+
    /** returns array containing variables not assigned yet */
    const int* getOpenvars();
+
+   /** returns array containing variables not assigned yet as vector*/
+   std::vector<int> getOpenvarsVec();
 
    /** returns fraction of variables assigned to the border for a detector */
    SCIP_Real getPctVarsToBorder(
@@ -586,6 +696,14 @@ public:
    /** returns true if this seeed stems from the unpresolved problem */
    bool getStemsFromUnpresolved();
 
+   /** returns the data of the varclassifier that the given detector made use of */
+   SCIP_RETCODE getVarClassifierData(
+      int detectorchainindex, /**< index of the detector in the detectorchain */
+      VarClassifier** classifier, /**< a pointer to the used varclassifier */
+      std::vector<int>& varclasseslinking, /**< a vector containing all indices of the varclasses assigned to linking */
+      std::vector<int>& varclassesmaster /**< a vector containing all indices of the varclasses assigned to master */
+      );
+
    /** returns array containing vars of a block */
    const int* getVarsForBlock(
       int block
@@ -610,6 +728,9 @@ public:
    bool isConsOpencons(
       int cons
       );
+
+   /** returns true if the seeed is from a detector operating in legacymode */
+   bool isFromLegacymode();
 
    /** returns true if the seeed is from the unpresolved problem */
    bool isFromUnpresolved();
@@ -682,6 +803,13 @@ public:
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
+   /** registers statistics for a used consclassifier */
+   void setConsClassifierStatistics(
+      int detectorchainindex, /**< index of the detector in the detectorchain */
+      ConsClassifier* classifier, /**< the used consclassifier */
+      std::vector<int> consclassesmaster /**< vector of classindices that were assigned to master */
+      );
+
    /** directly adds a constraint to a block
     *  does not delete this cons from list of open conss */
    SCIP_RETCODE setConsToBlock(
@@ -725,6 +853,11 @@ public:
       DEC_DETECTOR* detector
       );
 
+   /** sets whether this seeed stems from a detector operating in legacymode */
+   void setLegacymode(
+      bool legacymode
+      );
+
    /** sets number of blocks, only increasing number allowed */
    SCIP_RETCODE setNBlocks(
       int nBlocks
@@ -753,6 +886,14 @@ public:
    /** sets whether this seeed is usergiven */
    void setUsergiven(
       USERGIVEN usergiven
+      );
+
+   /** registers statistics for a used varclassifier */
+   void setVarClassifierStatistics(
+      int detectorchainindex, /**< index of the detector in the detectorchain */
+      VarClassifier* classifier, /**< the used varclassifier */
+      std::vector<int> varclasseslinking, /**< vector of classindices that were assigned to linking */
+      std::vector<int> varclassesmaster /**< vector of classindices that were assigned to master */
       );
 
    /** directly adds a variable to the linking variables
@@ -848,13 +989,19 @@ public:
       std::vector<SCIP_Real> newvector
       );
 
-
+   /** returns true if the given detector used a varclassifier */
+   bool varClassifierUsed(
+      int detectorchainindex /**< index of the detector in the detectorchain */
+      );
 
 
    /** creates and sets a detector chain short string for this seeed */
    SCIP_RETCODE buildDecChainString();
 
 private:
+
+   /** adds empty entries for all classifier statistics for a detector added to the detector chain */
+   void addEmptyClassifierStatistics();
 
    /** assigns every open cons
     *  - to master if it hits blockvars of different blocks
