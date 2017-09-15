@@ -399,10 +399,12 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 
    bestdecomp = DECgetBestDecomp(scip);
 
-   SCIP_CALL( SCIPwriteGp(scip, file, bestdecomp, TRUE, TRUE) );
+   if( bestdecomp != NULL )
+   {
+      SCIP_CALL( SCIPwriteGp(scip, file, bestdecomp, TRUE, TRUE) );
 
-   DECdecompFree(scip, &bestdecomp);
-
+      DECdecompFree(scip, &bestdecomp);
+   }
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }

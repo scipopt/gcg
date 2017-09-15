@@ -63,7 +63,7 @@
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
-
+#define DEFAULT_USECONSSADJ       TRUE
 /*
  * Data structures
  */
@@ -73,6 +73,7 @@
 /** detector handler data */
 struct DEC_DetectorData
 {
+   SCIP_Bool useconssadj;
 };
 
 
@@ -141,6 +142,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
+   SCIP_Bool byconssadj;
 
    SCIP_CLOCK* temporaryClock;
    SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
@@ -149,9 +151,13 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
+   SCIPgetBoolParam(scip, "detectors/connectedbase/useconssadj", &byconssadj);
    //complete the seeed by bfs
-   seeed->completeByConnected(seeedPropagationData->seeedpool );
 
+   if( byconssadj )
+      seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
+   else
+      seeed->completeByConnected(seeedPropagationData->seeedpool );
 
   // seeed->showScatterPlot(seeedPropagationData->seeedpool);
 
@@ -282,10 +288,17 @@ SCIP_RETCODE SCIPincludeDetectorConnectedbase(
 
    /**@todo create connectedbase detector data here*/
    detectordata = NULL;
+   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   assert(detectordata != NULL);
+
+   detectordata->useconssadj = TRUE;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectConnectedbase, freeConnectedbase, initConnectedbase, exitConnectedbase, propagateSeeedConnectedbase, finishSeeedConnectedbase, setParamAggressiveConnectedbase, setParamDefaultConnectedbase, setParamFastConnectedbase) );
 
-   /**@todo add connectedbase detector parameters */
+   /* add consname detector parameters */
+      /**@todo add connectedbase detector parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/connectedbase/useconssadj", "should the constraint adjacency be used", &detectordata->useconssadj, FALSE, DEFAULT_USECONSSADJ, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }

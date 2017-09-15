@@ -1657,6 +1657,143 @@ SCIP_RETCODE Seeed::completeByConnected(
 }
 
 /** assigns all open constraints and open variables
+  *  strategy: assigns all conss same block if they are connected
+  *  two constraints are adjacent if there is a common variable
+  *  this relies on the consadjacency structure of the seeedpool
+  *  hence it cannot be applied in presence of linking variables */
+ SCIP_RETCODE Seeed::completeByConnectedConssAdjacency(
+    Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
+    ){
+
+    int cons;
+    int var;
+
+    changedHashvalue = true;
+
+    /** tools to check if the openVars can still be found in a constraint yet */
+    std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
+
+    /** tools to update openVars */
+    std::vector<int> oldOpenconss;
+    std::vector<int> openvarsToDelete;
+
+    if( getNLinkingvars() != 0 )
+       return completeByConnected(seeedpool);
+
+
+    std::vector<bool> isConsOpen( nConss, false );
+    std::vector<bool> isConsVisited( nConss, false );
+
+
+    std::queue<int> helpqueue = std::queue<int>();
+    std::vector<int> neighborConss( 0 );
+
+    assert( (int) conssForBlocks.size() == nBlocks );
+    assert( (int) varsForBlocks.size() == nBlocks );
+    assert( (int) stairlinkingVars.size() == nBlocks );
+
+    SCIP_CALL( refineToMaster( seeedpool ) );
+
+
+    if( nBlocks < 0 )
+       nBlocks = 0;
+
+    /** initialize data structures */
+    for( size_t c = 0; c < openConss.size(); ++ c )
+    {
+       cons = openConss[c];
+       isConsOpen[cons] = true;
+    }
+
+    /** do breadth first search to find connected conss */
+    while( ! openConss.empty() )
+    {
+       int newBlockNr;
+
+       assert( helpqueue.empty() );
+       helpqueue.push( openConss[0] );
+       neighborConss.clear();
+       neighborConss.push_back( openConss[0] );
+       isConsVisited[openConss[0]] = true;
+
+       while( ! helpqueue.empty() )
+       {
+          int nodeCons = helpqueue.front();
+          assert( isConsOpencons( nodeCons ) );
+          helpqueue.pop();
+          for( int c = 0; c < seeedpool->getNConssForCons( nodeCons ); ++ c )
+          {
+             int othercons = seeedpool->getConssForCons( nodeCons )[c];
+
+             if( isConsVisited[othercons] || isConsMastercons( othercons ) || ! isConsOpen[othercons] )
+                continue;
+
+             assert( isConsOpencons( othercons ) );
+             isConsVisited[othercons] = true;
+             neighborConss.push_back( othercons );
+             helpqueue.push( othercons );
+          }
+       }
+
+       /** assign found conss and vars to a new block */
+       newBlockNr = getNBlocks() + 1;
+       setNBlocks( newBlockNr );
+       for( size_t i = 0; i < neighborConss.size(); ++ i )
+       {
+          cons = neighborConss[i];
+
+          assert( isConsOpencons( cons ) );
+          setConsToBlock( cons, newBlockNr - 1 );
+          deleteOpencons( cons );
+
+          for( size_t i = 0; i < seeedpool->getNVarsForCons(cons); ++ i )
+          {
+             int var = seeedpool->getVarsForCons(cons)[i];
+
+             if( isVarLinkingvar(var) )
+                continue;
+
+             assert(! isVarMastervar(var) );
+             setVarToBlock( var, newBlockNr - 1 );
+             assert( isVarOpenvar( var ) );
+             deleteOpenvar( var );
+          }
+
+       }
+
+    }
+
+    /** assign left open vars to block 0, if it exists, and to master, otherwise */
+    for( size_t i = 0; i < openVars.size(); ++ i )
+    {
+       var = openVars[i];
+       if( getNBlocks() != 0 )
+          setVarToBlock( var, 0 );
+       else
+          setVarToMaster( var );
+       openvarsToDelete.push_back( var );
+    }
+
+    for( size_t i = 0; i < openvarsToDelete.size(); ++ i )
+    {
+       var = openvarsToDelete[i];
+       deleteOpenvar( var );
+    }
+
+    assert( openConss.empty() );
+    assert( openVars.empty() );
+
+    sort();
+
+    assert( checkConsistency( seeedpool ) );
+
+    return SCIP_OKAY;
+ }
+
+
+
+
+/** assigns all open constraints and open variables
  *  strategy: assigns a cons (and related vars) to any block if possible by means of prior var assignments
  *  and to master, if there does not exist such a block */
 SCIP_RETCODE Seeed::completeGreedily(
@@ -2579,6 +2716,7 @@ SCIP_Real Seeed::evaluate(
    int i;
    int j;
    int k;
+   bool masterissetppc;
    /*   int blockarea; */
    SCIP_Real varratio;
    int* nzblocks;
@@ -2591,6 +2729,9 @@ SCIP_Real Seeed::evaluate(
    SCIP_Real alphaborderarea;
    SCIP_Real alphalinking;
    SCIP_Real alphadensity;
+
+   SCIP_Bool smartscore;
+
 
    unsigned long blackarea;
 
@@ -2821,6 +2962,31 @@ SCIP_Real Seeed::evaluate(
       totalscore *= 4;
    if( totalscore > 1 )
       totalscore = 1;
+
+   SCIPgetBoolParam(scip, "detection/smartscore/enabled", &smartscore);
+
+   masterissetppc = false;
+
+   std::cout << "smartscore is set to " << smartscore << std::endl;
+
+   if( smartscore && maxwhitescore <= 0.8 && getNLinkingvars() == 0 )
+   {
+      masterissetppc = true;
+      for( int i = 0; i < getNMasterconss(); ++i )
+      {
+         int consid = getMasterconss()[i];
+         if( ! seeedpool->isConsSetppc(consid) && ! seeedpool->isConsCardinalityCons(consid) )
+         {
+            masterissetppc = false;
+            std::cout << "masterconstraint: " << SCIPconsGetName(seeedpool->getConsForIndex(consid) ) << " is no setppc and no cardinality conss" << std::endl;
+            break;
+         }
+      }
+      if ( masterissetppc )
+         maxwhitescore -= 1.;
+   }
+
+
 
    SCIPfreeBufferArray( scip, & nvarsblocks );
    SCIPfreeBufferArray( scip, & blocksizes );
