@@ -923,25 +923,14 @@ public:
       int block2
       );
 
-   /*@todo description of this function*/
-   void showVisualisation( Seeedpool* seeedpool,
-      SCIP_Bool writeonly = FALSE,
-      const char* filename = NULL,
-      SCIP_Bool draft = false,
-      SCIP_Bool colored = true
-      );
+   /** generates and opens a gp visualization of the seeed */
+   void showVisualisation();
 
    /** returns true if this seeed is a userseeed that should be completed by setting unspecified constraints to master */
    SCIP_Bool shouldCompletedByConsToMaster();
 
    /** sorts the vars and conss by their indices */
    void sort();
-
-   /** displays the assignments of the vars */
-   SCIP_RETCODE writeScatterPlot(
-      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
-      const char* filename
-      );
 
    /** returns a short caption for this seeed */
    const char* getShortCaption();

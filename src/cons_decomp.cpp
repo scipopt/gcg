@@ -1322,7 +1322,8 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIPdialogMessage(scip, NULL, "Please specify the id of the decomposition to be visualized:\n", conshdlrdata->selectvisulength );
+   SCIPdialogMessage(scip, NULL, "Please specify the id of the decomposition to be visualized:\n",
+      conshdlrdata->selectvisulength );
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
    commandlen = strlen(ntovisualize);
 
@@ -1330,15 +1331,11 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    if( commandlen != 0)
       idtovisu = atoi(ntovisualize);
 
-
-
-   gcg::Seeedpool* seeedpool = (conshdlrdata->listall->at(idtovisu)->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
-
 //   conshdlrdata->listall->at(idtovisu)->displaySeeed(seeedpool);
 //   conshdlrdata->listall->at(idtovisu)->displayConss(seeedpool);
 //   conshdlrdata->listall->at(idtovisu)->displayVars(seeedpool);
 
-   conshdlrdata->listall->at(idtovisu)->showVisualisation(seeedpool);
+   conshdlrdata->listall->at(idtovisu)->showVisualisation();
 
    return SCIP_OKAY;
 }
@@ -1435,9 +1432,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualizeCurrentUserSeeed
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-
-   gcg::Seeedpool* seeedpool = (conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
-   conshdlrdata->curruserseeed->showVisualisation(seeedpool);
+   conshdlrdata->curruserseeed->showVisualisation();
 
    return SCIP_OKAY;
 }

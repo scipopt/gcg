@@ -44,6 +44,8 @@
 #include "struct_decomp.h"
 #include "cons_decomp.h"
 #include "params_visu.h"
+#include "class_miscvisualization.h"
+#include "reader_gp.h"
 
 #include <sstream>
 #include <iostream>
@@ -4635,40 +4637,30 @@ SCIP_RETCODE Seeed::setVarToStairlinking(
    return SCIP_OKAY;
 }
 
-/*@todo describtion of this function */
-void Seeed::showVisualisation(
-   Seeedpool* seeedpool,
-   SCIP_Bool writeonly,
-   const char* filename,
-   SCIP_Bool draft,
-   SCIP_Bool colored
-)
+/** generates and opens a gp visualization of the seeed */
+void Seeed::showVisualisation()
 {
-//   char help[SCIP_MAXSTRLEN] =  "helpScatter.txt";
-//   int rowboxcounter = 0;
-//   int colboxcounter = 0;
-//   std::stringstream command;
-//   char buffer[SCIP_MAXSTRLEN];
+   MiscVisualization* miscvisu = new MiscVisualization();
 
-//   if( writeonly )
-//   {
-//      if( ! draft )
-//         system( "gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg " );
-//      else
-//         system( "gnuplot helper.plg " );
-//   }
-//   else
-//   {
-//      if( ! draft )
-//         system( "gnuplot -e \"filename=\'helpScatter.txt\'\" helper.plg " );
-//      else
-//         system( "gnuplot helper.plg" );
-//   }
-//
-//   command << "evince " << filename << " &";
+   /* get names for gp file and output file */
+   char* filename = miscvisu->GCGgetVisualizationFilename(scip, this, ".gp");
+   char* outname = miscvisu->GCGgetVisualizationFilename(scip, this, ".pdf");
 
-//   if( !writeonly )
-//      system( command.str().c_str() );
+   /* generate gp file */
+   GCGwriteGpVisualization( scip, filename, outname, getID() );
+
+   /* compile gp file */
+   char* command = '\0';
+   strcpy(command, "gnuplot ");
+   strcat(command, filename);
+   system(command);
+
+   /* open outputfile */
+   strcpy(command, GCGVisuGetPdfReader());
+   strcat(command, " ");
+   strcat(command, outname);
+   strcat(command, " &");
+   system(command);
 
    return;
 }

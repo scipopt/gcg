@@ -73,6 +73,8 @@
 
 #define DEFAULT_VISU_RADIUS 5    /* possible scale: 1-10 */
 
+#define DEFAULT_PDFREADER "evince"
+
 
 SCIP_Bool visudraftmode;
 VISU_COLORSCHEME visucolorscheme;
@@ -96,6 +98,8 @@ char* greycolornonzero;
 char* greycolorline;
 
 int visuradius;
+
+char* pdfreader;
 
 
 /** includes the visualization parameters into GCG */
@@ -127,6 +131,8 @@ SCIP_RETCODE SCIPincludeParamsVisu(
 
    visuradius = DEFAULT_VISU_RADIUS;
 
+   pdfreader = (char*) DEFAULT_PDFREADER;
+
    /* add general parameters */
 
    SCIP_CALL( SCIPaddBoolParam(scip,
@@ -140,6 +146,10 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    SCIP_CALL( SCIPaddIntParam(scip,
       "visualization/nonzeroradius", "integer value to scale dots from 1-10, default: 5",
       &visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(scip,
+      "visualization/pdfreader", "pdf reader that open visualizations in select menu, default: evince",
+      &pdfreader, FALSE, DEFAULT_PDFREADER, NULL, NULL) );
 
    /* add parameters for manual colors */
 
@@ -349,4 +359,10 @@ float SCIPvisuGetNonzeroRadius(
 
    /* scale by coordinate system size and given factor */
    return (visuradius / maxind) * scalingfactor;
+}
+
+/** gets the name of the pdf reader that should be used */
+char* GCGVisuGetPdfReader()
+{
+   return pdfreader;
 }

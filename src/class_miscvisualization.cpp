@@ -65,7 +65,7 @@ MiscVisualization::~MiscVisualization(){
 char* MiscVisualization::GCGgetVisualizationFilename(
    SCIP* scip,             /**< scip data structure */
    SeeedPtr seeed,         /**< seeed that is to be visualized */
-   const char* extension   /**< file extension */
+   const char* extension   /**< .file extension */
    )
 {
    char* name;

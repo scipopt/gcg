@@ -109,6 +109,9 @@ float SCIPvisuGetNonzeroRadius(
    float scalingfactor  /**< percentage to scale radius, 1 if no scaling */
    );
 
+/** gets the name of the pdf reader that should be used */
+char* GCGVisuGetPdfReader(void);
+
 #ifdef __cplusplus
 }
 #endif
