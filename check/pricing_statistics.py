@@ -85,7 +85,9 @@ def make_plots(data, name):
 
     # formatting
     ax = plt.gca()
-    ax.set_ylim([ymin,max(y) - ymin])
+    ymax = max(y)
+    ax.set_xlim([0,x[-1]+widths[-1]])
+    ax.set_ylim([ymin,ymax])
     old_yticks = ax.get_yticks()
     new_yticks = []
     for i,n in enumerate(old_yticks):
@@ -94,6 +96,33 @@ def make_plots(data, name):
     ax.set_yticks(new_yticks)
     ax.set_xlabel('time')
     ax.set_ylabel('nVars')
+    plt.gcf().subplots_adjust(top=0.835)
+
+    # add information about the pricing rounds
+    prev_rnd = 1
+    prev_x = 0
+    texts = []
+    for i in range(len(x)):
+        rnd = flat_data['pricing round'][i]
+        if rnd > prev_rnd:
+            ax.plot([x[i],x[i]],[ymin,ymax],'r--',linewidth=0.8)
+            texts.append(ax.text((x[i] + prev_x)/2. + 0.0033, ymax*1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center'))
+            prev_rnd = rnd
+            prev_x = x[i]
+    texts.append(ax.text((x[-1] + widths[-1] + prev_x)/2. + 0.0033, ymax*1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center'))
+
+    # check for overlapping texts
+    rend = plt.gcf().canvas.get_renderer()
+    for i,txt in enumerate(texts):
+        if not txt.get_visible():
+            continue
+        bb = txt.get_window_extent(renderer=rend)
+        for nxt_txt in texts[(i+1):]:
+            nxt_bb = nxt_txt.get_window_extent(renderer=rend)
+            if bb.overlaps(nxt_bb):
+                nxt_txt.set_visible(False)
+            else:
+                break
 
     # save the figure
     plt.savefig(params['outdir'] + '/' + name + '.png')
