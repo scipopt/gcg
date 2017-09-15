@@ -89,7 +89,25 @@ struct DEC_DetectorData
  */
 
 /** destructor of detector to free user data (called when GCG is exiting) */
-#define freeConnectedbase NULL
+/** destructor of detector to free detector data (called when SCIP is exiting) */
+static
+DEC_DECL_FREEDETECTOR(freeConnectedbase)
+{  /*lint --e{715}*/
+   DEC_DETECTORDATA *detectordata;
+
+   assert(scip != NULL);
+   assert(detector != NULL);
+
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+
+   SCIPfreeMemory(scip, &detectordata);
+
+   return SCIP_OKAY;
+}
+
 
 
 

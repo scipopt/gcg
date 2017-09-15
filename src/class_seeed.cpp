@@ -5090,6 +5090,8 @@ SCIP_RETCODE Seeed::setDetectorChainString(
    char* givenDetectorchainstring
    )
 {
+   if ( this->detectorchainstring != NULL )
+      SCIPfreeBlockMemoryArray(scip, & detectorchainstring, SCIP_MAXSTRLEN);
    SCIP_CALL( SCIPduplicateBlockMemoryArray( scip, & this->detectorchainstring, givenDetectorchainstring, SCIP_MAXSTRLEN ) );
    return SCIP_OKAY;
 }
