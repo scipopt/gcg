@@ -33,6 +33,9 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#ifndef GCG_WRAPPER_SEEED_H__
+#define GCG_WRAPPER_SEEED_H__
+
 #include "cons_decomp.h"
 
 struct Seeed_Wrapper
@@ -40,3 +43,5 @@ struct Seeed_Wrapper
    gcg::Seeed* seeed;
    gcg::Seeedpool* seeedpool;
 };
+
+#endif   /* GCG_WRAPPER_SEEED_H__ */

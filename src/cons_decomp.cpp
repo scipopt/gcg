@@ -80,6 +80,8 @@
 #include "class_varclassifier.h"
 #include "pub_decomp.h"
 #include "type_decomp.h"
+#include "wrapper_seeed.h"
+#include "reader_tex.h"
 
 typedef gcg::Seeed* SeeedPtr;
 
@@ -4215,7 +4217,6 @@ SCIP_RETCODE DECdetectStructure(
       SCIP_Bool presolveOrigProblem;
       SCIP_Bool calculateOrigDecomps;
       SCIP_Bool classifyOrig;
-      SCIP_Bool emphfast;
 
       assert(scip != NULL);
 
@@ -4727,7 +4728,7 @@ SCIP_RETCODE DECwriteFamilyTree(
 	/* let tex reader handle the visualization of the family tree */
 	int ntovisualize = tovisualize.size();
 	SEEED_WRAPPER** tovisualizewr;
-	SCIPallocBufferArray(scip, tovisualizewr, tovisualize.size());
+	SCIP_CALL( SCIPallocBufferArray(scip, &tovisualizewr, ntovisualize) );
 
 	for( size_t i = 0; i < tovisualize.size(); ++i )
 	{
@@ -4738,7 +4739,7 @@ SCIP_RETCODE DECwriteFamilyTree(
 	GCGwriteTexFamilyTree(scip, helpfile, workfolder, tovisualizewr, &ntovisualize, TRUE);
 	fclose(helpfile);
 
-	SCIPfreeBufferArray(scip, tovisualizewr);
+	SCIPfreeBufferArray(scip, &tovisualizewr);
 
 	return SCIP_OKAY;
 }
