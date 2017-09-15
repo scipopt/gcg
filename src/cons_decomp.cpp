@@ -3923,7 +3923,6 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_Bool presolveOrigProblem;
    SCIP_Bool calculateOrigDecomps;
    SCIP_Bool classifyOrig;
-   SCIP_Bool emphfast;
 
    assert(scip != NULL);
 
@@ -4025,11 +4024,11 @@ SCIP_RETCODE DECdetectStructure(
          conshdlrdata->seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
    }
 
-     for( int i = 0; i < (int) consClassDistributions.size(); ++i )
-        delete consClassDistributions[i];
+     for( int j = 0; j < (int) consClassDistributions.size(); ++j )
+        delete consClassDistributions[j];
 
-     for( int i = 0; i < (int) varClassDistributions.size(); ++i )
-        delete varClassDistributions[i];
+     for( int j = 0; j < (int) varClassDistributions.size(); ++j )
+        delete varClassDistributions[j];
 
 
    conshdlrdata->seeedpool->findDecompositions();
@@ -4421,7 +4420,9 @@ SCIP_RETCODE DECwriteFamilyTree(
 	/* let tex reader handle the visualization of the family tree */
 	int ntovisualize = tovisualize.size();
 	SEEED_WRAPPER** tovisualizewr;
-	for( size_t i = 0; i <  tovisualize.size(); ++i )
+	SCIPallocBufferArray(scip, tovisualizewr, tovisualize.size());
+
+	for( size_t i = 0; i < tovisualize.size(); ++i )
 	{
 	   tovisualizewr[i]->seeed = tovisualize[i];
 	}
@@ -4429,6 +4430,8 @@ SCIP_RETCODE DECwriteFamilyTree(
 	FILE* helpfile = fopen(filename, "w");
 	GCGwriteTexFamilyTree(scip, helpfile, workfolder, tovisualizewr, &ntovisualize, TRUE);
 	fclose(helpfile);
+
+	SCIPfreeBufferArray(scip, tovisualizewr);
 
 	return SCIP_OKAY;
 }
@@ -4525,8 +4528,9 @@ DEC_DECOMP* DECgetBestDecomp(
 }
 
 /** returns the Seeed ID of the best Seeed if available and -1 otherwise */
-int* DECgetBestSeeed(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE DECgetBestSeeed(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int*                  seeedid             /**< output seeed id */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -4536,7 +4540,6 @@ int* DECgetBestSeeed(
    gcg::Seeedpool* seeedpool;
    gcg::Seeedpool* seeedpoolunpresolved;
    SeeedPtr seeed;
-   int* seeedid;
 
    *seeedid = -1;
 
@@ -4553,7 +4556,10 @@ int* DECgetBestSeeed(
    seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
 
    if( conshdlrdata->candidates->size() == 0 )
-      return seeedid;
+   {
+      *seeedid = -1;
+      return SCIP_OKAY;
+   }
 
    seeed = conshdlrdata->candidates->at( 0 ).first;
 
@@ -4572,7 +4578,7 @@ int* DECgetBestSeeed(
       *seeedid = seeed->getID();
    }
 
-   return seeedid;
+   return SCIP_OKAY;
 }
 
 /** writes out a list of all detectors */
@@ -5121,23 +5127,21 @@ SCIP_RETCODE GCGgetCurrentSeeedpools(
 
 
 /** gets the ids of all selected seeeds */
-int** SCIPconshdlrDecompGetSelectedSeeeds(
+SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
    SCIP* scip,
+   int** output,
    int* outputsize
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    std::vector<int>* selectedseeeds;
-   int** output;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
    if( conshdlr == NULL )
    {
       SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
    }
-
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
@@ -5150,5 +5154,5 @@ int** SCIPconshdlrDecompGetSelectedSeeeds(
    }
    *outputsize = selectedseeeds->size();
 
-   return output;
+   return SCIP_OKAY;
 }

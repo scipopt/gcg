@@ -360,8 +360,9 @@ DEC_DECOMP* DECgetBestDecomp(
    );
 
 /** returns the Seeed ID of the best Seeed if available and -1 otherwise */
-int* DECgetBestSeeed(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE DECgetBestSeeed(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int*                  seeedid             /**< output seeed id */
    );
 
 /** writes out a list of all detectors */
@@ -440,8 +441,9 @@ SCIP_RETCODE GCGgetCurrentSeeedpools(
 
 
 /** gets the ids of all selected seeeds */
-int** SCIPconshdlrDecompGetSelectedSeeeds(
+SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
    SCIP* scip,       /**< SCIP data structure */
+   int** output,     /**< array to put ids into */
    int* outputsize   /**< size of output */
    );
 

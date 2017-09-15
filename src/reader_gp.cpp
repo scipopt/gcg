@@ -94,7 +94,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    assert(file != NULL);
 
    /* get seeed to write */
-   seeedid = *(DECgetBestSeeed(scip));
+   DECgetBestSeeed(scip, &seeedid);
 
    if(seeedid == -1)
    {
