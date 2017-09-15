@@ -1302,11 +1302,11 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
 SCIP_RETCODE GCGcreateArtificialVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            newvar,             /**< pointer to store new variable */
-   const char*           name                /**< name of variable, or NULL for automatic name creation */
+   const char*           name,               /**< name of variable, or NULL for automatic name creation */
+   SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
    )
 {
    SCIP_VARDATA* newvardata;
-   int blocknr;
 
    /* create vardata */
    SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
@@ -1321,7 +1321,7 @@ SCIP_RETCODE GCGcreateArtificialVar(
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(scip, newvar, name,
-         0.0, SCIPinfinity(scip), 100000.0, SCIP_VARTYPE_IMPLINT,
+         0.0, SCIPinfinity(scip), objcoef, SCIP_VARTYPE_IMPLINT,
          TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
 
    return SCIP_OKAY;

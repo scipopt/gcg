@@ -364,7 +364,8 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
 SCIP_RETCODE GCGcreateArtificialVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            newvar,              /**< pointer to store new variable */
-   const char*           name                /**< name of variable, or NULL for automatic name creation */
+   const char*           name,               /**< name of variable, or NULL for automatic name creation */
+   SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
    );
 
 /** sets the creation node of this var */

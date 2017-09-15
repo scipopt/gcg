@@ -182,6 +182,9 @@ public:
    /** add artificial vars */
    SCIP_RETCODE addArtificialVars();
 
+   /** add trivial sols */
+   SCIP_RETCODE addTrivialsols();
+
    /** create the pointers for the pricing types */
    SCIP_RETCODE createPricingTypes();
 
