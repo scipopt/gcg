@@ -42,6 +42,7 @@
 
 #include "scip/scip.h"
 #include "type_decomp.h"
+#include "cons_decomp.h"
 
 /** includes the tex file reader into SCIP */
 extern SCIP_RETCODE SCIPincludeReaderTex(

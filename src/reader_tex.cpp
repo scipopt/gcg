@@ -97,7 +97,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
    seeedid = 0;
 
    /* get seeed to write */
-   seeedid = *(DECgetBestSeeed(scip));
+   DECgetBestSeeed(scip, &seeedid);
 
    if(seeedid == -1)
    {
@@ -1141,8 +1141,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
 
 
 /** includes the tex file reader in SCIP */
-SCIP_RETCODE
-SCIPincludeReaderTex(
+SCIP_RETCODE SCIPincludeReaderTex(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

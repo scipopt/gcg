@@ -4237,7 +4237,11 @@ $(LIBOBJDIR)/reader_dec.o: src/reader_dec.cpp src/reader_dec.h \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- src/struct_detector.h
+ src/struct_detector.h src/class_consclassifier.h \
+ src/class_indexclassifier.h src/class_varclassifier.h \
+ src/graph/graph_gcg.h src/graph/bridge.h src/graph/graph.h \
+ lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
+ src/graph/graph_interface.h
 $(LIBOBJDIR)/pricer_gcg.o: src/pricer_gcg.cpp lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \

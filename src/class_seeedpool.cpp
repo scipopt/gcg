@@ -956,7 +956,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 #pragma omp critical ( ostream )
                         {
                            SCIPverbMessage( scip, SCIP_VERBLEVEL_FULL, NULL, "Seeed %d is added to finished seeeds.\n", seeedPropData->newSeeeds[seeed]->getID() );
-                           seeedPropData->newSeeeds[seeed]->showVisualisation( this );
+                           seeedPropData->newSeeeds[seeed]->showVisualisation();
                         }
                      }
 #pragma omp critical ( seeedptrstore )
@@ -972,7 +972,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 #pragma omp critical ( ostream )
                         {
                            SCIPverbMessage( scip, SCIP_VERBLEVEL_FULL, NULL, "Seeed %d is addded to next round seeeds!\n", seeedPropData->newSeeeds[seeed]->getID() );
-                           seeedPropData->newSeeeds[seeed]->showVisualisation( this );
+                           seeedPropData->newSeeeds[seeed]->showVisualisation();
                         }
                      }
 #pragma omp critical ( seeedptrstore )
@@ -1124,7 +1124,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                if( verboseLevel > 2 )
                {
                   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " Seeed %d is finished from next round seeeds!\n", seeed->getID() );
-                  seeed->showVisualisation( this );
+                  seeed->showVisualisation();
                }
 #pragma omp critical ( seeedptrstore )
                {
@@ -1293,7 +1293,7 @@ std::vector<SeeedPtr> Seeedpool::finishIncompleteSeeeds(
                if( verboseLevel > 2 )
                {
                   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "seeed %d is finished from next round seeeds! \n", seeed->getID() );
-                  seeed->showVisualisation( this );
+                  seeed->showVisualisation();
                }
 #pragma omp critical ( seeedptrstore )
                {
@@ -1644,12 +1644,12 @@ void Seeedpool::calcTranslationMapping(
       }
    }
 
-      for ( int i  = 0; i < rowothertothis.size(); ++i )
+      for( int i  = 0; i < (int) rowothertothis.size(); ++i )
          std::cout << (rowothertothis[i] == i) << " " ;
 
       std::cout << std::endl;
 
-      for ( int i  = 0; i < colothertothis.size(); ++i )
+      for( int i  = 0; i < (int) colothertothis.size(); ++i )
          std::cout << ( colothertothis[i] == i ) << " " ;
       std::cout << std::endl;
 
@@ -3477,12 +3477,8 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    int conscounter = 1; /* in consindex counting starts with 1 */
    int counterstairlinkingvars = 0;
    int size;
-   int ncalls;
 
    assert( seeed->checkConsistency( this ) );
-
-
-
 
    /* create decomp data structure */
    SCIP_CALL_ABORT( DECdecompCreate( scip, newdecomp ) );
