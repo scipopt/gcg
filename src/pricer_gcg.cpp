@@ -3997,7 +3997,8 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
    nmasterconss = GCGgetNMasterConss(origprob);
 
    nconvconss = GCGgetNPricingprobs(origprob);
-   if( pricerdata->farkasmaxobj )
+
+   if( pricerdata->farkasmaxobj && SCIPisPositive(origprob, pricerdata->maxobj) )
       bigm = pricerdata->maxobj;
    else
       bigm = 1.0/pricerdata->farkasalpha;
