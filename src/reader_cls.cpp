@@ -27,6 +27,7 @@
 
 /**@file   reader_cls.cpp
  * @brief  CLS reader for writing files containing classifier data
+ * @author Michael Bastubbe
  * @author Julius Hense
  */
 
@@ -43,11 +44,22 @@
 #include "reader_cls.h"
 #include "cons_decomp.h"
 #include "class_seeedpool.h"
+#include "class_consclassifier.h"
+#include "class_varclassifier.h"
+
 
 
 #define READER_NAME             "clsreader"
 #define READER_DESC             "reader for writing classifier data"
 #define READER_EXTENSION        "cls"
+
+
+struct SCIP_ConshdlrData
+{
+   gcg::Seeedpool* seeedpoolunpresolved;
+   gcg::Seeedpool* seeedpool;
+};
+
 
 
 /** data for dec reader */
@@ -69,6 +81,18 @@ SCIP_RETCODE GCGwriteCls(
    assert(scip != NULL);
 
    /* TODO
+    * format description:
+    * a) <number of classifiers>
+    * for each classifier:
+    *    b1) VAR or CONS
+    *    b2) <name of classifier>>
+    *    b3) <number of classes>
+    *    b4) for each class:
+    *       c1) <name of class>: <description of class>
+    *       c2) <number of class elements>
+    *       c3) for each element of class:
+    *          d1) <name of element> (e.g. variable or constraint name, concerning transformed [default] or original problem)
+    *
     *
     * 1. Write cons_decomp method(s) to get all relevant data, i.e.
     *    - for all cons and var classifier in both presolved and unpresolved seeedpool:
@@ -79,6 +103,98 @@ SCIP_RETCODE GCGwriteCls(
     * 2. Write an output method to write these information into a file
     *
     */
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Bool transformed;
+   gcg::Seeedpool* seeedpool;
+
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, "decomp");
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   transformed = TRUE;
+
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      transformed = FALSE;
+
+   if( !transformed && SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(scip) == NULL )
+      SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+
+   if( transformed && SCIPconshdlrDecompGetSeeedpoolExtern(scip) == NULL )
+      SCIPconshdlrDecompCreateSeeedpool(scip);
+
+   seeedpool = (gcg::Seeedpool*)(transformed ? SCIPconshdlrDecompGetSeeedpoolExtern(scip) : SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(scip));
+
+
+   SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
+
+   if( seeedpool->consclassescollection.size() == 0 )
+      seeedpool->calcClassifierAndNBlockCandidates(scip);
+
+   /** a */
+   SCIPinfoMessage(scip, file, "%d\n", (int) seeedpool->consclassescollection.size() + (int) seeedpool->varclassescollection.size() );
+
+   for( size_t c = 0; c < seeedpool->consclassescollection.size() ; ++c )
+   {
+      gcg::ConsClassifier* classifier = seeedpool->consclassescollection[c];
+
+      std::vector<std::vector<int> > conssofclasses = std::vector<std::vector<int> >(classifier->getNClasses()) ;
+      for( int cons = 0; cons < seeedpool->getNConss(); ++cons )
+         conssofclasses[classifier->getClassOfCons(cons)].push_back(cons);
+
+      /** b1 */
+      SCIPinfoMessage(scip, file, "CONS\n" );
+      /** b2 */
+      SCIPinfoMessage(scip, file, "%s \n", classifier->getName());
+      /** b3 */
+      SCIPinfoMessage(scip, file, "%d\n", classifier->getNClasses() );
+      for( int cl = 0; cl < classifier->getNClasses(); ++cl )
+      {
+         /** c1 */
+         SCIPinfoMessage(scip, file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
+         /** c2 */
+         SCIPinfoMessage(scip, file, "%d\n",  conssofclasses[cl].size() );
+         /** c3 */
+         for( size_t clm = 0; clm < conssofclasses[cl].size(); ++clm )
+         {
+            SCIPinfoMessage(scip, file, "%s\n",  SCIPconsGetName( seeedpool->getConsForIndex( conssofclasses[cl][clm])) );
+         }
+      }
+   }
+
+
+   for( size_t c = 0; c < seeedpool->varclassescollection.size() ; ++c )
+   {
+      gcg::VarClassifier* classifier = seeedpool->varclassescollection[c];
+
+      std::vector<std::vector<int> > varsofclasses = std::vector<std::vector<int> >(classifier->getNClasses()) ;
+      for( int var = 0; var < seeedpool->getNVars(); ++var )
+         varsofclasses[classifier->getClassOfVar(var)].push_back(var);
+
+      /** b1 */
+      SCIPinfoMessage(scip, file, "VAR\n" );
+      /** b2 */
+      SCIPinfoMessage(scip, file, "%s \n", classifier->getName());
+      /** b3 */
+      SCIPinfoMessage(scip, file, "%d\n", classifier->getNClasses() );
+      for( int cl = 0; cl < classifier->getNClasses(); ++cl )
+      {
+         /** c1 */
+         SCIPinfoMessage(scip, file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
+         /** c2 */
+         SCIPinfoMessage(scip, file, "%d\n",  classifier->getNVarsOfClasses()[cl] );
+         /** c3 */
+         for( size_t clm = 0; clm <varsofclasses[cl].size(); ++clm )
+         {
+            SCIPinfoMessage(scip, file, "%s\n",  SCIPvarGetName( seeedpool->getVarForIndex( varsofclasses[cl][clm])) );
+         }
+      }
+   }
+
 
    return SCIP_OKAY;
 }
