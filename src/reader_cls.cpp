@@ -52,7 +52,7 @@
 #define READER_NAME             "clsreader"
 #define READER_DESC             "reader for writing classifier data"
 #define READER_EXTENSION        "cls"
-
+#define DEFAULT_USETRANSFORM    TRUE
 
 struct SCIP_ConshdlrData
 {
@@ -65,6 +65,7 @@ struct SCIP_ConshdlrData
 /** data for dec reader */
 struct SCIP_ReaderData
 {
+   SCIP_Bool usetransform;
 };
 
 /*
@@ -116,7 +117,9 @@ SCIP_RETCODE GCGwriteCls(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   transformed = TRUE;
+   SCIP_CALL( SCIPgetBoolParam(scip,
+         "reading/clsreader/usetransform", &transformed));
+
 
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       transformed = FALSE;
@@ -134,6 +137,19 @@ SCIP_RETCODE GCGwriteCls(
 
    if( seeedpool->consclassescollection.size() == 0 )
       seeedpool->calcClassifierAndNBlockCandidates(scip);
+
+   SCIPinfoMessage(scip, file, "# a1) <number of classifiers>\n" );
+   SCIPinfoMessage(scip, file, "# a2) for each classifier:\n" );
+   SCIPinfoMessage(scip, file, "# b1)    VAR or CONS\n" );
+   SCIPinfoMessage(scip, file, "# b2)    <name of classifier>\n" );
+   SCIPinfoMessage(scip, file, "# b3)    <number of classes>\n" );
+   SCIPinfoMessage(scip, file, "# b4)    for each class:\n" );
+   SCIPinfoMessage(scip, file, "# c1)       <name of class>: <description of class>\n" );
+   SCIPinfoMessage(scip, file, "# c2)       <number of class elements>\n" );
+   SCIPinfoMessage(scip, file, "# c3)       for each element of class:\n" );
+   SCIPinfoMessage(scip, file, "# d1)          <name of element> (e.g. variable or constraint name, concerning transformed [default] or original problem)\n" );
+   SCIPinfoMessage(scip, file, "###########################################\n" );
+
 
    /** a */
    SCIPinfoMessage(scip, file, "%d\n", (int) seeedpool->consclassescollection.size() + (int) seeedpool->varclassescollection.size() );
@@ -249,6 +265,12 @@ SCIP_RETCODE SCIPincludeReaderCls(
    /* include cls reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
       readerCopyCls, readerFreeCls, readerReadCls, readerWriteCls, readerdata) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "reading/clsreader/usetransform",
+      "should the transformed (and possibly presolved problem) be use or original one",
+      &readerdata->usetransform, FALSE, DEFAULT_USETRANSFORM, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }
