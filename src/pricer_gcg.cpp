@@ -2654,8 +2654,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             retcode = private_retcode;
 
             #pragma omp atomic
-            infeasible |= (GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_INFEASIBLE
-               || (pricetype->getType() == GCG_PRICETYPE_FARKAS && GCGpricingjobGetNImpCols(pricingjob) == 0)); /*lint !e514*/
+            infeasible |= (GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_INFEASIBLE); /*lint !e514*/
 
             if( !infeasible )
             {
@@ -2727,6 +2726,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       }
 
       SCIP_CALL( retcode );
+
+      // @todo: improve infeasibility check
+      if( pricetype->getType() == GCG_PRICETYPE_FARKAS && nfoundvars == 0 )
+         infeasible = TRUE;
 
       if( infeasible )
          break;
