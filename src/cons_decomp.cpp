@@ -4643,6 +4643,7 @@ SCIP_RETCODE DECwriteAllDecomps(
          SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
          DECdecompFree(scip, &decomplocal);
+         conshdlrdata->useddecomp = NULL;
       }
    }
 
@@ -4670,6 +4671,7 @@ SCIP_RETCODE DECwriteAllDecomps(
         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
         DECdecompFree(scip, &decomplocal);
+        conshdlrdata->useddecomp = NULL;
      }
 
 //   for( i = 0; i < conshdlrdata->ndetectors; ++i )
@@ -5122,8 +5124,11 @@ DEC_DECOMP* DECgetBestDecomp(
 
  //  DECconshdlrDecompSortDecompositionsByScore(scip);
 
-   if( conshdlrdata->candidates->size() == 0 )
+   if( conshdlrdata->candidates->size() == 0 && conshdlrdata->useddecomp == NULL)
       return NULL;
+
+   if( conshdlrdata->useddecomp != NULL )
+      return conshdlrdata->useddecomp;
 
    seeed = conshdlrdata->candidates->at( 0 ).first;
 
