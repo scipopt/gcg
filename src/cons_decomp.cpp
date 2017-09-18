@@ -4642,8 +4642,8 @@ SCIP_RETCODE DECwriteAllDecomps(
 
          SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
-         DECdecompFree(scip, &decomplocal);
-         conshdlrdata->useddecomp = NULL;
+  //       DECdecompFree(scip, &decomplocal);
+ //        conshdlrdata->useddecomp = NULL;
       }
    }
 
@@ -4670,8 +4670,8 @@ SCIP_RETCODE DECwriteAllDecomps(
 
         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
-        DECdecompFree(scip, &decomplocal);
-        conshdlrdata->useddecomp = NULL;
+   //     DECdecompFree(scip, &decomplocal);
+    //    conshdlrdata->useddecomp = NULL;
      }
 
 //   for( i = 0; i < conshdlrdata->ndetectors; ++i )

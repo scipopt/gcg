@@ -3734,7 +3734,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    {
       int consid = seeed->getMasterconss()[c];
       SCIP_CONS* scipcons = consToScipCons[consid];
-      if( SCIPconsIsDeleted( scipcons) || scipcons == NULL )
+      if( SCIPconsIsDeleted( scipcons) || scipcons == NULL || SCIPconsIsObsolete(scipcons))
       {
          --nlinkingconss;
          ++modifier;
@@ -3748,7 +3748,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       }
    }
 
-   if( seeed->getNMasterconss() != 0 )
+   if( nlinkingconss != 0 )
       DECdecompSetLinkingconss( scip, * newdecomp, linkingconss, nlinkingconss );
    else
       linkingconss = NULL;
