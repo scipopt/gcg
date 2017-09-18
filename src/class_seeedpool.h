@@ -125,8 +125,6 @@ private:
    std::vector<int> usercandidatesnblocks;               /**< candidate for the number of blocks that were given by the user and thus will be handled priorized */
    std::vector<std::pair<int, int>> candidatesNBlocks;   /**< candidate for the number of blocks  */
 
-   std::vector<ConsClassifier*> consclassescollection;   /**< collection of different constraint class distributions  */
-   std::vector<VarClassifier*> varclassescollection;     /**< collection of different variabale class distributions   */
 
    SCIP_Bool transformed;                                /**< corresponds the matrix datastructure to the transformed
                                                            *< problem */
@@ -136,6 +134,10 @@ private:
 
 
 public:
+
+   std::vector<ConsClassifier*> consclassescollection;   /**< collection of different constraint class distributions  */
+   std::vector<VarClassifier*> varclassescollection;     /**< collection of different variabale class distributions   */
+
 
    /** constructor */
    Seeedpool(

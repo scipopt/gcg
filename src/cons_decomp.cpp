@@ -2531,6 +2531,49 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
    return SCIP_OKAY;
 }
 
+/** @TODO: IMPORTANT this method will be deleted if the corresponidng wrapper classes are introduced **/
+SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(
+   SCIP*                 scip                /**< SCIP data structure */
+   ){
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SEEEDPOOL_WRAPPER* help;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   help = (SEEEDPOOL_WRAPPER*) conshdlrdata->seeedpoolunpresolved;
+
+   return (SEEEDPOOL_WRAPPER*) help;
+}
+
+/** @TODO: IMPORTANT this method will be deleted if the corresponidng wrapper classes are introduced **/
+SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolExtern(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SEEEDPOOL_WRAPPER* help;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   help = (SEEEDPOOL_WRAPPER*) conshdlrdata->seeedpool;
+
+   return (SEEEDPOOL_WRAPPER*) help;
+
+}
+
+
 /** debug method **/
 int SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(
    SCIP*                 scip                /**< SCIP data structure */

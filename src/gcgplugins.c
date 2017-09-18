@@ -172,6 +172,7 @@
 #include "dec_connected.h"
 
 #include "reader_tex.h"
+#include "reader_cls.h"
 
 #ifndef NBLISS
 #include "dec_isomorph.h"
@@ -359,6 +360,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    /* Detectors and decompositions */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeReaderTex(scip) );
+   SCIP_CALL( SCIPincludeReaderCls(scip) );
 
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectorConnected(scip) );
