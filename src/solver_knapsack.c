@@ -232,6 +232,7 @@ SCIP_RETCODE solveKnapsack(
 
       consvars = SCIPgetVarsKnapsack(pricingprob, cons);
       nconsvars = SCIPgetNVarsKnapsack(pricingprob, cons);
+      capacity = SCIPgetCapacityKnapsack(pricingprob, cons);
 
       SCIP_CALL( SCIPallocBufferArray(pricingprob, &consvals, nconsvars) );
       SCIP_CALL( SCIPallocMemoryArray(pricingprob, &ubs, nconsvars) );
