@@ -63,10 +63,12 @@ struct GCG_SolverData
  * Local methods
  */
 
+
 /* Cliquer function to preemptively stop execution, currently unused */
+/*
 static boolean custom_time_function(int level, int i, int n, int max, double cputime, double realtime, clique_options *opts)
 {
-   /* cputime is time in seconds as a double */
+   // cputime is time in seconds as a double 
    if( cputime > 10.0 )
    {
       return FALSE;
@@ -77,7 +79,7 @@ static boolean custom_time_function(int level, int i, int n, int max, double cpu
       return TRUE;
    }
 }
-
+*/
 /** solve the pricing problem as an independent set problem, in an approximate way */
 static
 SCIP_RETCODE solveIndependentSet(
@@ -104,10 +106,10 @@ SCIP_RETCODE solveIndependentSet(
    SCIP_Real biggestobj;
    SCIP_Bool retcode;
    set_t clique;
+   clique_options cl_opts;
    int nsolvars;
    int npricingprobvars;
    int nconss;
-   int indsetconstraintcount;
    int indexcount;
    int unique0;
    int unique1;
@@ -116,15 +118,10 @@ SCIP_RETCODE solveIndependentSet(
    int coefindex;
    int scalingfactor;
    int nvars;
-   int debugcounter;
    int nedges;
-   clique_options cl_opts;
+   int debugcounter;
+   int indsetconstraintcount;
 
-/*
-   *result = SCIP_STATUS_UNKNOWN;
-   return SCIP_OKAY;
-*/
-   /* check preconditions */
    assert(pricingprob != NULL);
    assert(solver != NULL);
    assert(lowerbound != NULL);
@@ -153,7 +150,7 @@ SCIP_RETCODE solveIndependentSet(
    /* For pricer */
    nsolvars = npricingprobvars;
 
-   /* Used to keep track of node indizes while building the graph */
+   /* Used to keep track of node indizes for bijection while building the graph */
    indexcount = 0;
 
    /* Used to keep track of whether a variable of an IS constraint was seen before or not */
@@ -305,13 +302,13 @@ SCIP_RETCODE solveIndependentSet(
             {
                /* More than one variable has a coefficient unequal to 1 */
 
-               /*
+               
                SCIPdebugMessage("Unknown constraint in problem.");
                outputfile = fopen("output.txt", "a+");
                SCIPprintCons(pricingprob, constraints[i], outputfile);
                fputs("\n\n",outputfile);
                fclose(outputfile);
-               */
+               
 
                SCIPfreeBufferArray(pricingprob,&indsetvars);
                SCIPfreeBufferArray(pricingprob,&solvals);
@@ -382,7 +379,7 @@ SCIP_RETCODE solveIndependentSet(
          /* Check if we have a coupling constraint (rhs 0) */
          else if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real)0) )
          {
-            /* Special case: The coupling constraint is purely decorative (coefficient >= # vars)*/
+            /* Special case: The coupling constraint is purely decorative (coefficient >= #vars)*/
             if( abs(consvals[coefindex]) + 1 >= nvars )
             {
                solvals[SCIPvarGetProbindex(consvars[coefindex])] = 1.0;
@@ -451,13 +448,13 @@ SCIP_RETCODE solveIndependentSet(
             {
                /* Coupling coefficient is between 1 and npricingprobvars. */
 
-               /*
+               
                SCIPdebugMessage("Unknown constraint in problem.");
                outputfile = fopen("output.txt", "a+");
                SCIPprintCons(pricingprob, constraints[i], outputfile);
                fputs("\n\n",outputfile);
                fclose(outputfile);
-               */
+               
                
                SCIPfreeBufferArray(pricingprob,&indsetvars);
                SCIPfreeBufferArray(pricingprob,&solvals);
@@ -471,6 +468,14 @@ SCIP_RETCODE solveIndependentSet(
          }
          else{
             /* Constraint is neither a coupling nor a clique constraint */
+
+            SCIPdebugMessage("Unknown constraint in problem.");
+            outputfile = fopen("output.txt", "a+");
+            SCIPprintCons(pricingprob, constraints[i], outputfile);
+            fputs("\n\n",outputfile);
+            fclose(outputfile);
+
+               
             SCIPfreeBufferArray(pricingprob,&indsetvars);
             SCIPfreeBufferArray(pricingprob,&solvals);
             SCIPfreeBufferArray(pricingprob,&consvars);
@@ -503,7 +508,8 @@ SCIP_RETCODE solveIndependentSet(
    nedges /= 2;
 
    /* Test if the density criteria is met */
-   if( SCIPisLT(pricingprob, (float)nedges/((float)(g->n - 1)*(g->n)/2), solver->density) )
+   SCIPdebugMessage("Graph density in current round: %g%% \n", (float)nedges/((float)(g->n - 1)*(g->n)/2));
+   if( SCIPisLT(pricingprob, (float)nedges/((float)(g->n - 1) * (g->n) / 2), solver->density) )
    {
       SCIPdebugMessage("Density below %g%% (%g%%) \n", solver->density, (float)nedges/((float)(g->n - 1)*(g->n)/2));
       SCIPfreeBufferArray(pricingprob,&indsetvars);
@@ -528,7 +534,7 @@ SCIP_RETCODE solveIndependentSet(
    /* Set cliquer options */
    cl_opts.reorder_function=reorder_by_default; //default: reorder_by_default
    cl_opts.reorder_map=NULL;
-   cl_opts.time_function=clique_print_time; //default: clique_print_time
+   cl_opts.time_function=NULL; //default: clique_print_time
    cl_opts.output=NULL;
    cl_opts.user_function=NULL;
    cl_opts.user_data=NULL;
@@ -563,7 +569,7 @@ SCIP_RETCODE solveIndependentSet(
    }
 
    /* There may be variables left which are unconstrained. We set these to 1 manually if they have an objective value != 0*/
-   for( int i = 0; i<npricingprobvars; ++i )
+   for( int i = 0; i < npricingprobvars; ++i )
    {
       if( solvals[i] < 0 )
       {
@@ -630,7 +636,7 @@ GCG_DECL_SOLVERFREE(solverFreeIndependentSet)
 #define solverExitsolIndependentSet NULL
 #define solverInitIndependentSet NULL
 #define solverExitIndependentSet NULL
-
+//#define solverSolveIndependentSet NULL
 
 /** exact solving method for independent set solver */
 static
