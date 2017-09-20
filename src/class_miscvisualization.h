@@ -42,8 +42,7 @@
 
 #include "class_seeedpool.h"
 
-namespace gcg
-{
+using namespace gcg;
 
 class MiscVisualization
 {
@@ -103,15 +102,6 @@ public:
       Seeedpool* pool   /**< outputs where the Seeed was found */
       );
 
+}; /* class MiscVisualization */
 
-   /** gets a vector of all seeeds that are currently considered relevant
-    *
-    * @returns vector of all seeds that are currently considered relevant
-    */
-   std::vector<SeeedPtr> GCGGetAllRelevantSeeeds(
-      SCIP* scip     /**< SCIP data structure */
-      );
-};
-
-} /* namespace gcg */
 #endif /* SRC_CLASS_MISCVISUALIZATION_H_ */

@@ -315,13 +315,13 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    );
 
 /** returns the next seeed id managed by cons_decomp */
-   int SCIPconshdlrDecompGetNextSeeedID(
+int SCIPconshdlrDecompGetNextSeeedID(
    SCIP*   scip
    );
 
 
-   SCORETYPE SCIPconshdlrDecompGetCurrScoretype(
-         SCIP* scip
+SCORETYPE SCIPconshdlrDecompGetCurrScoretype(
+   SCIP* scip
    );
 
 //    char*  SCIPconshdlrDecompGetScoretypeShortName(
@@ -343,12 +343,25 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_RESULT*          result             /**< Result pointer to indicate whether some structure was found */
    );
 
+
 /** write out all known decompositions **/
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 directory,          /**< directory for decompositions */
    char*                 extension           /**< the file extension for the export */
    );
+
+
+/** gets an array of all seeeds that are currently considered relevant
+ * @params seeedswr  output of the relevant seeeds
+ * @params nseeeds   amount of seeeds that are put in the array
+ */
+SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
+   SCIP* scip,                /**< SCIP data structure */
+   SEEED_WRAPPER** seeedswr,  /**< seeed wrapper array for output */
+   int* nseeeds               /**< number of seeeds in output */
+   );
+
 
 /** write family tree **/
 SCIP_RETCODE DECwriteFamilyTree(

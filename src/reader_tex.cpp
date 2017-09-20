@@ -792,23 +792,27 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    /* collection of treeseeds */
    std::vector<SeeedPtr> treeseeeds(0);
    std::vector<int> treeseeedids(0);
-   std::vector<SeeedPtr> allrelevantseeeds = miscvisu->GCGGetAllRelevantSeeeds(scip);
+//   std::vector<SeeedPtr> allrelevantseeeds = miscvisu->GCGGetAllRelevantSeeeds(scip);
+   SEEED_WRAPPER** allrelevantseeedswr;
+   int nallrelevantseeeds = 0;
+   SCIP_CALL( SCIPallocBufferArray(scip, &allrelevantseeedswr, *nseeeds) );
+   SCIPconshdlrDecompGetAllRelevantSeeeds(scip, allrelevantseeedswr, &nallrelevantseeeds);
 
-   std::vector<SCIP_Bool> isseeedintree(allrelevantseeeds.size(), FALSE );
+   std::vector<SCIP_Bool> isseeedintree(nallrelevantseeeds, FALSE);
 
    int root = -1;
    int root2 = -1;
-   std::vector<int> parents(allrelevantseeeds.size(), -1);
-   std::vector< std::vector<int> > childs (allrelevantseeeds.size(), std::vector<int>(0));
-   std::vector< std::vector<SCIP_Bool> > childsfinished(allrelevantseeeds.size(), std::vector<SCIP_Bool>(0));
-   std::vector<SCIP_Bool> visited(allrelevantseeeds.size(), FALSE);
+   std::vector<int> parents(nallrelevantseeeds, -1);
+   std::vector< std::vector<int> > childs (nallrelevantseeeds, std::vector<int>(0));
+   std::vector< std::vector<SCIP_Bool> > childsfinished(nallrelevantseeeds, std::vector<SCIP_Bool>(0));
+   std::vector<SCIP_Bool> visited(nallrelevantseeeds, FALSE);
 
    helpvisucounter = 0;
 
    /** check allrelevant seeeds **/
-   for( size_t s = 0; s < allrelevantseeeds.size(); ++s )
+   for( int s = 0; s < nallrelevantseeeds; ++s )
    {
-      assert(allrelevantseeeds[s] == NULL || (int) s == allrelevantseeeds[s]->getID() );
+      assert(allrelevantseeedswr[s]->seeed == NULL || (int) s == allrelevantseeedswr[s]->seeed->getID() );
    }
 
    /** 1) find relevant seeeds in tree and build tree */
@@ -838,8 +842,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
          if( !isseeedintree[ancestorid] )
          {
             isseeedintree[ancestorid] = TRUE;
-            assert(allrelevantseeeds[ancestorid] != NULL);
-            treeseeeds.push_back( allrelevantseeeds[ancestorid] );
+            assert(allrelevantseeedswr[ancestorid]->seeed != NULL);
+            treeseeeds.push_back( allrelevantseeedswr[ancestorid]->seeed );
             treeseeedids.push_back(ancestorid);
             if( i == seeeds[s]->getNAncestors() -1 )
             {
@@ -930,8 +934,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       if( !visited[curr] )
       {
          /** write node */
-         ofs << " (s" << allrelevantseeeds[curr]->getID() << ") { \\includegraphics[width=0.15\\textwidth]{"
-            << miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeeds[curr], ".pdf") << "} }" << std::endl;
+         ofs << " (s" << allrelevantseeedswr[curr]->seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{"
+            << miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, ".pdf") << "} }" << std::endl;
 
          /* set node visited */
          visited[curr] = TRUE;
@@ -951,7 +955,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       else
       {
          if ( parents[curr] != -1 ){
-            ofs << writeSeeedDetectorChainInfoLatex( allrelevantseeeds[curr], currheight, helpvisucounter);
+            ofs << writeSeeedDetectorChainInfoLatex( allrelevantseeedswr[curr]->seeed, currheight, helpvisucounter);
             ++helpvisucounter;
          }
          --currheight;
@@ -973,6 +977,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    ofs << closing << std::endl;
 
    ofs.close();
+
+   SCIPfreeBufferArray(scip, &allrelevantseeedswr);
 
    return SCIP_OKAY;
 }
@@ -1046,7 +1052,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    /* --- create a Makefile --- */
 
    /* get path to write to and put it into makefilename */
-   gcg::MiscVisualization* miscvisu = new gcg::MiscVisualization();
+   MiscVisualization* miscvisu = new MiscVisualization();
    pfile = miscvisu->GCGgetFilePath(scip, file);
    strcpy(pfilecpy, pfile);
    SCIPsplitFilename(pfilecpy, &filepath, &filename, NULL, NULL);

@@ -4443,20 +4443,16 @@ SCIP_RETCODE DECwriteAllDecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-
-
    if( conshdlrdata->seeedpool->getNFinishedSeeeds() == 0 )
    {
       SCIPwarningMessage(scip, "No decomposition available.\n");
       return SCIP_OKAY;
    }
 
-
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    SCIPsplitFilename(name, NULL, &pname, NULL, NULL);
 
    tmp = conshdlrdata->useddecomp;
-
 
    /** write orig decomps currently disabled*/
    if( FALSE )
@@ -4574,6 +4570,7 @@ int SCIPconshdlrDecompGetNDetectors(
     return conshdlrdata->ndetectors;
 }
 
+
 DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
    SCIP* scip
    )
@@ -4593,8 +4590,14 @@ DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
 }
 
 
-std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
-   SCIP* scip
+/** gets an array of all seeeds that are currently considered relevant
+ * @params seeedswr  output of the relevant seeeds
+ * @params nseeeds   amount of seeeds that are put in the array
+ */
+SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
+   SCIP* scip,                /**< SCIP data structure */
+   SEEED_WRAPPER** seeedswr,  /**< seeed wrapper array for output */
+   int* nseeeds               /**< number of seeeds in output */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -4608,72 +4611,85 @@ std::vector<SeeedPtr> SCIPconshdlrDecompGetAllRelevantSeeeds(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
- //  std::vector<SeeedPtr> relevantseeeds(0);
-
+   /* get the current max id */
    int maxid  = 0;
-   std::vector<SeeedPtr> tmpAllRelevantSeeeds(0);
 
-   for ( int i = 0; i < conshdlrdata->seeedpool->getNAncestorSeeeds(); ++i )
+   for( int i = 0; i < conshdlrdata->seeedpool->getNAncestorSeeeds(); ++i )
    {
-      if( conshdlrdata->seeedpool->getAncestorSeeed( i ) != NULL && conshdlrdata->seeedpool->getAncestorSeeed( i )->getID() > maxid )
+      if( conshdlrdata->seeedpool->getAncestorSeeed( i ) != NULL &&
+         conshdlrdata->seeedpool->getAncestorSeeed( i )->getID() > maxid )
          maxid = conshdlrdata->seeedpool->getAncestorSeeed( i )->getID();
    }
 
-   for ( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
+   for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
    {
-      if( conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i ) != NULL &&  conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID() > maxid )
+      if( conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i ) != NULL &&
+         conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID() > maxid )
          maxid = conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID();
    }
 
-   for ( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+   for( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
       {
-         if( conshdlrdata->seeedpool->getFinishedSeeed( i ) != NULL && conshdlrdata->seeedpool->getFinishedSeeed( i )->getID() > maxid )
+         if( conshdlrdata->seeedpool->getFinishedSeeed( i ) != NULL &&
+            conshdlrdata->seeedpool->getFinishedSeeed( i )->getID() > maxid )
             maxid = conshdlrdata->seeedpool->getFinishedSeeed( i )->getID();
       }
 
-      for ( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+      for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
       {
-         if( conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ) != NULL &&  conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID() > maxid )
+         if( conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ) != NULL &&
+            conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID() > maxid )
             maxid = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID();
       }
 
-   tmpAllRelevantSeeeds = std::vector<SeeedPtr>(maxid+1, NULL );
+   /* initialize the output array with NULL */
+   *nseeeds = maxid+1;
+   for( int i = 0; i < *nseeeds; i++ )
+   {
+      seeedswr[i]->seeed = NULL;
+   }
 
-   for ( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
+   /* fill the output array with relevant seeeds */
+   for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
       {
-         if ( conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i ) == NULL || conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID() < 0  )
+         if( conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i ) == NULL ||
+            conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID() < 0  )
             continue;
-         tmpAllRelevantSeeeds[conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID()] = conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i );
+         seeedswr[conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID()]->seeed =
+            conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i );
       }
 
-   for ( int i = 0; i < conshdlrdata->seeedpool->getNAncestorSeeeds(); ++i )
+   for( int i = 0; i < conshdlrdata->seeedpool->getNAncestorSeeeds(); ++i )
       {
-         if ( conshdlrdata->seeedpool->getAncestorSeeed( i ) == NULL || conshdlrdata->seeedpool->getAncestorSeeed( i )->getID() < 0  )
+         if( conshdlrdata->seeedpool->getAncestorSeeed( i ) == NULL ||
+            conshdlrdata->seeedpool->getAncestorSeeed( i )->getID() < 0  )
             continue;
-         tmpAllRelevantSeeeds[conshdlrdata->seeedpool->getAncestorSeeed( i )->getID()] = conshdlrdata->seeedpool->getAncestorSeeed( i );
+         seeedswr[conshdlrdata->seeedpool->getAncestorSeeed( i )->getID()]->seeed =
+            conshdlrdata->seeedpool->getAncestorSeeed( i );
       }
 
-   for ( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+   for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
       {
-         if ( conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ) == NULL || conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID() < 0  )
+         if( conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ) == NULL ||
+            conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID() < 0  )
             continue;
-         tmpAllRelevantSeeeds[conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID()] = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
+         seeedswr[conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID()]->seeed =
+            conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
       }
 
-   for ( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+   for( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
       {
-         if ( conshdlrdata->seeedpool->getFinishedSeeed( i ) == NULL || conshdlrdata->seeedpool->getFinishedSeeed( i )->getID() < 0  )
+         if( conshdlrdata->seeedpool->getFinishedSeeed( i ) == NULL ||
+            conshdlrdata->seeedpool->getFinishedSeeed( i )->getID() < 0  )
             continue;
-         tmpAllRelevantSeeeds[conshdlrdata->seeedpool->getFinishedSeeed( i )->getID()] = conshdlrdata->seeedpool->getFinishedSeeed( i );
+         seeedswr[conshdlrdata->seeedpool->getFinishedSeeed( i )->getID()]->seeed =
+            conshdlrdata->seeedpool->getFinishedSeeed( i );
       }
 
-
-   return tmpAllRelevantSeeeds;
+   return SCIP_OKAY;
 }
 
 
-/** write
- *  out all detected or provided decompositions */
 /** write family tree **/
 SCIP_RETCODE DECwriteFamilyTree(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -4738,6 +4754,7 @@ SCIP_RETCODE DECwriteFamilyTree(
 
 	return SCIP_OKAY;
 }
+
 
 /** returns the best known decomposition, if available and NULL otherwise, caller has to free returned DEC_DECOMP */
 DEC_DECOMP* DECgetBestDecomp(

@@ -49,7 +49,6 @@ extern "C" {
 #endif
 
 
-
 /** includes the tex file reader into SCIP */
 extern SCIP_RETCODE SCIPincludeReaderTex(
    SCIP* scip     /**< SCIP data structure */

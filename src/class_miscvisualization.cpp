@@ -34,7 +34,6 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "cons_decomp.h"
-
 #include "class_miscvisualization.h"
 #include "class_seeedpool.h"
 #include "class_seeed.h"
@@ -43,20 +42,16 @@
 #include "scip/scip.h"
 
 #include <unistd.h>
-
 #include <sstream>
 
-namespace gcg {
+using namespace gcg;
+
 
 /** constructor */
-MiscVisualization::MiscVisualization(){
-
-}
+MiscVisualization::MiscVisualization(){}
 
 /** destructor */
-MiscVisualization::~MiscVisualization(){
-
-}
+MiscVisualization::~MiscVisualization(){}
 
 /** gives a consistent filename for a (single) seeed visualization that includes the probname and seeedID
  *
@@ -198,84 +193,6 @@ SeeedPtr MiscVisualization::GCGgetSeeedWithPool(
    }
 
    pool = NULL;
+   SCIPerrorMessage("Found no Seeed with given ID, Seeedpool is %d!\n", pool);
    return seeed;
 }
-
-/** gets a vector of all seeeds that are currently considered relevant */
-std::vector<SeeedPtr> GCGGetAllRelevantSeeeds(
-   SCIP* scip     /**< SCIP data structure */
-   )
-{
-   SEEED_WRAPPER seeedwr;
-   SEEED_WRAPPER seeedwrunpresolved;
-   Seeedpool* seeedpool;
-   Seeedpool* seeedpoolunpresolved;
-
-   assert(scip != NULL);
-
-   GCGgetCurrentSeeedpools(scip, &seeedwr, &seeedwrunpresolved);
-   seeedpool = seeedwr.seeedpool;
-   seeedpoolunpresolved = seeedwrunpresolved.seeedpool;
-
-   int maxid  = 0;
-   std::vector<SeeedPtr> tmpAllRelevantSeeeds(0);
-
-   for( int i = 0; i < seeedpool->getNAncestorSeeeds(); ++i )
-   {
-      if( seeedpool->getAncestorSeeed( i ) != NULL && seeedpool->getAncestorSeeed( i )->getID() > maxid )
-         maxid = seeedpool->getAncestorSeeed( i )->getID();
-   }
-
-   for( int i = 0; i < seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
-   {
-      if( seeedpoolunpresolved->getAncestorSeeed(i) != NULL && seeedpoolunpresolved->getAncestorSeeed(i)->getID() > maxid )
-         maxid = seeedpoolunpresolved->getAncestorSeeed( i )->getID();
-   }
-
-   for( int i = 0; i < seeedpool->getNFinishedSeeeds(); ++i )
-   {
-      if( seeedpool->getFinishedSeeed( i ) != NULL && seeedpool->getFinishedSeeed( i )->getID() > maxid )
-         maxid = seeedpool->getFinishedSeeed( i )->getID();
-   }
-
-   for( int i = 0; i < seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
-   {
-      if( seeedpoolunpresolved->getFinishedSeeed(i) != NULL && seeedpoolunpresolved->getFinishedSeeed(i)->getID() > maxid )
-         maxid = seeedpoolunpresolved->getFinishedSeeed( i )->getID();
-   }
-
-   tmpAllRelevantSeeeds = std::vector<SeeedPtr>( maxid + 1, NULL );
-
-   for( int i = 0; i < seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
-   {
-      if( seeedpoolunpresolved->getAncestorSeeed(i) == NULL || seeedpoolunpresolved->getAncestorSeeed(i)->getID() < 0  )
-         continue;
-      tmpAllRelevantSeeeds[seeedpoolunpresolved->getAncestorSeeed(i)->getID()] = seeedpoolunpresolved->getAncestorSeeed(i);
-   }
-
-   for( int i = 0; i < seeedpool->getNAncestorSeeeds(); ++i )
-   {
-      if( seeedpool->getAncestorSeeed( i ) == NULL || seeedpool->getAncestorSeeed( i )->getID() < 0 )
-         continue;
-      tmpAllRelevantSeeeds[seeedpool->getAncestorSeeed( i )->getID()] = seeedpool->getAncestorSeeed( i );
-   }
-
-   for( int i = 0; i < seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
-   {
-      if( seeedpoolunpresolved->getFinishedSeeed(i) == NULL || seeedpoolunpresolved->getFinishedSeeed(i)->getID() < 0  )
-         continue;
-      tmpAllRelevantSeeeds[seeedpoolunpresolved->getFinishedSeeed(i)->getID()] = seeedpoolunpresolved->getFinishedSeeed(i);
-   }
-
-   for( int i = 0; i < seeedpool->getNFinishedSeeeds(); ++i )
-   {
-      if( seeedpool->getFinishedSeeed( i ) == NULL || seeedpool->getFinishedSeeed( i )->getID() < 0  )
-         continue;
-      tmpAllRelevantSeeeds[seeedpool->getFinishedSeeed( i )->getID()] = seeedpool->getFinishedSeeed( i );
-   }
-
-   return tmpAllRelevantSeeeds;
-}
-
-} /* namespace gcg */
-
