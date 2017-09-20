@@ -151,7 +151,6 @@
 #endif
 
 
-
 #include "scip/scipshell.h"
 #include "reader_blk.h"
 #include "reader_dec.h"

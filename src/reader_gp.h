@@ -42,9 +42,6 @@
 #include "scip/scip.h"
 #include "type_decomp.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /** includes the gp file reader into SCIP */
 extern
@@ -65,9 +62,5 @@ extern SCIP_RETCODE GCGgpWriteMakefileAndReadme(
    SCIP* scip,       /**< SCIP data structure */
    FILE* file        /**< File for which the makefile & readme are generated */
    );
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
