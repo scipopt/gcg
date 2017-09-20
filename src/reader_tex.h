@@ -44,6 +44,12 @@
 #include "type_decomp.h"
 #include "cons_decomp.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
 /** includes the tex file reader into SCIP */
 extern SCIP_RETCODE SCIPincludeReaderTex(
    SCIP* scip     /**< SCIP data structure */
@@ -85,6 +91,10 @@ extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    FILE* file,       /**< File for which the makefile & readme are generated */
    SCIP_Bool usegp   /**< true if the gp reader was used for creation of file */
    );
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* GCG_READER_TEX_H__ */

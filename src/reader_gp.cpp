@@ -56,8 +56,7 @@
 #define READER_EXTENSION        "gp"
 
 
-namespace gcg{
-
+using namespace gcg;
 
 /*
  * Callback methods of reader
@@ -410,4 +409,3 @@ SCIP_RETCODE SCIPincludeReaderGp(
    return SCIP_OKAY;
 }
 
-} /* namespace gcg */

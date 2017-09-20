@@ -67,8 +67,7 @@
 #define DEFAULT_USEGP            FALSE
 #define DEFAULT_PICTURESONLY     FALSE
 
-namespace gcg{
-
+using namespace gcg;
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
 
@@ -1152,4 +1151,3 @@ SCIP_RETCODE SCIPincludeReaderTex(
    return SCIP_OKAY;
 }
 
-} /* namespace gcg */
