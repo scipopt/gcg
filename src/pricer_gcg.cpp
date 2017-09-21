@@ -812,7 +812,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
 
       if( status == SCIP_STATUS_OPTIMAL || status == SCIP_STATUS_UNBOUNDED )
       {
-         if( !!GCGpricingjobIsHeuristic(pricingjob) )
+         if( !GCGpricingjobIsHeuristic(pricingjob) )
          {
 
 #ifdef SCIP_STATISTIC
