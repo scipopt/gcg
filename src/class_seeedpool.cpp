@@ -75,6 +75,8 @@
 #include <omp.h>
 #endif
 
+#define DEFAULT_RANDSEED         23          /**< initial random seed */
+
 #define SCIP_CALL_EXC( x ) do                                                                                 \
                        {                                                                                      \
                           SCIP_RETCODE _restat_;                                                              \
@@ -179,7 +181,8 @@ SCIP_RETCODE setTestpricingProblemParameters(
    SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
    SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
    SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
-   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_basis */
+   SCIP_Bool             enableppcuts,       /**< should ppcuts be stored for sepa_basis */
+   int                   timelimit            /**< limit of time */
    )
 {
    assert(scip != NULL);
@@ -213,6 +216,7 @@ SCIP_RETCODE setTestpricingProblemParameters(
 
    /* disable solution storage ! */
    SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
+   SCIP_CALL( SCIPsetIntParam(scip, "limits/time", timelimit ) );
 
    /* disable multiaggregation because of infinite values */
    SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
@@ -1638,10 +1642,12 @@ void Seeedpool::addSeeedToIncomplete(
 SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    SeeedPtr seeed,
    SCIP_Real* score
-   ){
+   )
+{
 
-      SCIP_Bool hittimelimit;
-
+   SCIP_Bool hittimelimit;
+   std::vector<SCIP_Real> randomdualvals;
+   SCIP_RANDNUMGEN* randnumgen;
 
    /** @TODO introduce scip parameters */
    int timelimit;
@@ -1670,6 +1676,8 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
    *score = 0.;
    hittimelimit = FALSE;
+
+   randomdualvals = std::vector<SCIP_Real>(getNConss(),0. );
 
    timelimit = 60;
    timelimitfast  = (int) 0.2 * timelimit;
@@ -1700,6 +1708,43 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
 
+   /* create random number generator */
+     SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDSEED) );
+
+
+   /** shuffle dual multipliers of master constraints*/
+   for( int mc = 0; mc < seeed->getNMasterconss(); )
+   {
+      SCIP_Real dualval;
+      SCIP_CONS* mastercons;
+
+      mastercons = getConsForIndex( seeed->getMasterconss()[mc]);
+      if( SCIPisInfinity( scip, -GCGconsGetLhs(scip, mastercons) ))
+      {
+         SCIP_Real modifier;
+         modifier = 0.;
+         if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MAXIMIZE )
+            modifier = -1.;
+
+         dualval = SCIPrandomGetReal(randnumgen, 0.+modifier, 1.+modifier  );
+      }
+      else if( SCIPisInfinity( scip, GCGconsGetRhs(scip, mastercons) ) )
+      {
+         SCIP_Real modifier;
+         modifier = 0.;
+         if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MINIMIZE )
+            modifier = -1.;
+
+         dualval = SCIPrandomGetReal(randnumgen, 0.+modifier, 1.+modifier  );
+
+      }
+      else
+      {
+         dualval = SCIPrandomGetReal(randnumgen, -1., 1. );
+      }
+
+      randomdualvals[ seeed->getMasterconss()[mc]] = dualval;
+   }
 
    /* for every pricing problem calculate a corresponding score coeff and break if a pricing problem cannot be solved in the timelimit */
    for ( int block = 0; 0 < seeed->getNBlocks(); ++block )
@@ -1718,24 +1763,50 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
       /** build subscip */
       SCIP_CALL( SCIPcreate(&subscip) );
       SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
-      SCIP_CALL( setTestpricingProblemParameters(subscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts) );
+      SCIP_CALL( setTestpricingProblemParameters(subscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts, timelimit) );
       SCIP_CALL( SCIPcreateProb(subscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
       /** copy variables */
       for( int var = 0; var < seeed->getNVarsForBlock(block); ++var )
       {
-         int varid = seeed->getVarsForBlock(block)[var];
-         SCIP_VAR* probvar;
-         if ( transformed )
-            probvar = getVarForIndex(varid);
-         else
-            probvar = SCIPvarGetProbvar(getVarForIndex(varid));
+         int varid;
+         SCIP_VAR* origprobvar;
+         SCIP_VAR* pricingprobvar;
+         SCIP_Real obj;
 
+         varid = seeed->getVarsForBlock(block)[var];
+
+         if ( transformed )
+            origprobvar = getVarForIndex(varid);
+         else
+            origprobvar = SCIPvarGetProbvar(getVarForIndex(varid));
+
+         /** calculate obj val from shuffled */
+         obj = SCIPvarGetObj(origprobvar);
+         for( int c = 0; c < getNConssForVar(varid); ++c )
+         {
+            int consid;
+
+            consid = getConssForVar(varid)[c];
+            if ( seeed->isConsMastercons(consid) )
+               obj -= randomdualvals[consid] * getVal(consid, varid);
+         }
+
+         /** round variable objective coeffs to decrease numerical troubles */
+         obj = SCIPfloor(scip, obj * 100 + 0.5 )/100.;
+
+         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", block, SCIPvarGetName(origprobvar));
+         SCIP_CALL( SCIPcreateVar(subscip, &pricingprobvar, name, SCIPvarGetLbGlobal(origprobvar),
+                  SCIPvarGetUbGlobal(origprobvar), obj, SCIPvarGetType(origprobvar),
+                  TRUE, FALSE, NULL, NULL, NULL, NULL, NULL) );
+
+         SCIPhashmapSetImage(hashpricingvartoindex, pricingprobvar, (void*) varid);
+         indextopricingvar[varid] = hashpricingvartoindex;
+         SCIP_CALL( SCIPaddVar(subscip, pricingprobvar) );
       }
 
-      /** shuffle variable objective coefficients */
 
-      /** round variable objective coeffs to decrease numerical troubles */
+
 
       /** copy constraints */
 
@@ -1746,7 +1817,19 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
       /** get coefficient */
 
 
+      /** free stuff */
+
+      for( int var = 0; var < seeed->getNVarsForBlock(block); ++var )
+      {
+         int varid = seeed->getVarsForBlock(block)[var];
+         SCIPreleaseVar(scip, &indextopricingvar[varid]);
+      }
+
+      SCIPfreeRandom(scip, &randnumgen );
+
       SCIPhashmapFree(&hashpricingvartoindex);
+
+      SCIPfree(&subscip);
    }
 
    return SCIP_OKAY;
