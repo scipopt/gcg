@@ -40,11 +40,11 @@
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
 #include "class_stabilization.h"
-#include "class_colpool.h"
 #include "pub_gcgcol.h"
+#include "pub_colpool.h"
+#include "pricestore_gcg.h"
 
 using gcg::Stabilization;
-using gcg::Colpool;
 
 class ObjPricerGcg : public scip::ObjPricer
 {
@@ -53,7 +53,9 @@ public:
 
    SCIP*              origprob;           /**< the original program */
    SCIP_PRICERDATA *pricerdata;           /**< pricerdata data structure */
-   Colpool *colpool;                      /**< column pool */
+   GCG_COLPOOL* colpool;
+   GCG_PRICESTORE* pricestore;            /**< price storage */
+
    static int threads;
 
    /** default constructor */
@@ -100,7 +102,7 @@ public:
       PricingType*          pricetype           /**< type of pricing: reduced cost or Farkas */
       );
    /** method to price new columns from Column Pool */
-   SCIP_RETCODE priceColumnPool(
+   SCIP_RETCODE priceColumnPoolOld(
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
       int*                  pnfoundvars         /**< pointer to store number of priced variables */
       );
@@ -134,7 +136,8 @@ public:
       GCG_COL*              gcgcol,             /**< GCG column data structure */
       SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */
       SCIP_Bool*            added,              /**< pointer to store whether the variable was successfully added */
-      SCIP_VAR**            addedvar            /**< pointer to store the created variable */
+      SCIP_VAR**            addedvar,           /**< pointer to store the created variable */
+      SCIP_Real             score               /**< score of column (or -1.0 if not specified) */
    );
 
    /* Compute difference of two dual solutions */
@@ -157,6 +160,11 @@ public:
    );
 
    const FarkasPricing *getFarkasPricing() const
+   {
+      return farkaspricing;
+   }
+
+   FarkasPricing *getFarkasPricingNonConst()
    {
       return farkaspricing;
    }
@@ -186,7 +194,10 @@ public:
    void createStabilization();
 
    /** create the pointers for the colpool */
-   void createColpool();
+   SCIP_RETCODE createColpool();
+
+   /** create the pointers for the pricestore */
+   SCIP_RETCODE createPricestore();
 
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
    SCIP_RETCODE getStabilizedDualObjectiveValue(
@@ -194,6 +205,23 @@ public:
       SCIP_Real*         stabdualval,        /**< pointer to store stabilized dual objective value */
       SCIP_Bool          stabilize           /**< stabilize? */
    );
+
+   SCIP_Real computeRedCostGcgCol(
+      PricingType*          pricetype,          /**< type of pricing */
+      GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
+      SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
+      ) const;
+
+   /** compute master coefficients of column */
+   SCIP_RETCODE computeColMastercoefs(
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   /** compute master cut coefficients of column */
+   SCIP_RETCODE computeColMastercuts(
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
 private:
    ReducedCostPricing *reducedcostpricing;
    FarkasPricing *farkaspricing;
@@ -217,12 +245,6 @@ private:
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    ) const;
-
-   SCIP_Real computeRedCostGcgCol(
-      PricingType*          pricetype,          /**< type of pricing */
-      GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
-      SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
-      ) const;
 
    /** counts the number of variables with negative reduced cost */
    int countPricedVariables(
@@ -271,6 +293,27 @@ private:
       SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
       int                   nsolvars            /**< number of variables in array solvars */
    );
+
+   /** add master variable to all constraints */
+   SCIP_RETCODE addVariableToMasterconstraintsFromGCGCol(
+      SCIP_VAR*             newvar,             /**< The new variable to add */
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   /** add variable with computed coefficients to the master cuts */
+   SCIP_RETCODE addVariableToMastercuts(
+      SCIP_VAR*             newvar,             /**< The new variable to add */
+      int                   prob,               /**< number of the pricing problem the solution belongs to */
+      SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
+      SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
+      int                   nsolvars            /**< number of variables in array solvars */
+      );
+
+   /** add variable with computed coefficients to the master cuts */
+   SCIP_RETCODE addVariableToMastercutsFromGCGCol(
+      SCIP_VAR*             newvar,             /**< The new variable to add */
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
 
    /**
     * check whether pricing can be aborted:

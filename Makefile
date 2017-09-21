@@ -214,7 +214,8 @@ LIBOBJ		=	reader_blk.o \
 			dialog_graph.o \
 			gcgpqueue.o \
 			gcgcol.o \
-			class_colpool.o
+			colpool.o \
+			pricestore_gcg.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
