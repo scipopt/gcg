@@ -192,6 +192,12 @@ public:
       SCIP_Bool* success
       );
 
+   /** calculates the strong decomposition score of a seeed */
+   SCIP_RETCODE calcStrongDecompositionScore(
+      SeeedPtr seeed,
+      SCIP_Real* score
+      );
+
    /** clears ancestor seeed data structure */
    void clearAncestorSeeeds();
 

@@ -168,6 +168,103 @@ SCIP_Bool isFiniteNonnegativeIntegral(
 }
 
 
+/** sets the pricing problem parameters */
+static
+SCIP_RETCODE setTestpricingProblemParameters(
+   SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
+   int                   clocktype,          /**< clocktype to use in the pricing problem */
+   SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
+   SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the pricing problem */
+   SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the pricing problem */
+   SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
+   SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
+   SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
+   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_basis */
+   )
+{
+   assert(scip != NULL);
+
+   /* disable conflict analysis */
+   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
+   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useinflp", 'o') );
+   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useboundlp", 'o') );
+   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usesb", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usepseudo", FALSE) );
+
+   /* reduce the effort spent for hash tables */
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/usevartable", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/useconstable", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/usesmalltables", TRUE) );
+
+   /* disable expensive presolving */
+   /* @todo test whether this really helps, perhaps set presolving emphasis to fast? */
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolpairwise", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolpairwise", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolpairwise", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolusehashing", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolusehashing", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolusehashing", FALSE) );
+
+   /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
+   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/freq", -1) );
+   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
+   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
+   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
+
+   /* disable solution storage ! */
+   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
+
+   /* disable multiaggregation because of infinite values */
+   SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
+
+   /* @todo enable presolving and propagation of xor constraints if bug is fixed */
+
+   /* disable presolving and propagation of xor constraints as work-around for a SCIP bug */
+   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/maxprerounds", 0) );
+   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/propfreq", -1) );
+
+   /* disable output to console */
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+#if SCIP_VERSION > 210
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
+#endif
+   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
+   SCIP_CALL( SCIPfixParam(scip, "limits/maxorigsol") );
+
+   /* do not abort subproblem on CTRL-C */
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/catchctrlc", FALSE) );
+
+   /* set clock type */
+   SCIP_CALL( SCIPsetIntParam(scip, "timing/clocktype", clocktype) );
+
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/finitesolutionstore", TRUE) );
+
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/infinity", infinity) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/epsilon", epsilon) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/sumepsilon", sumepsilon) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/feastol", feastol) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/lpfeastol", lpfeastol) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
+
+   /* jonas' stuff */
+   if( enableppcuts )
+   {
+      int pscost;
+      int prop;
+
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/pscost/priority", &pscost) );
+      SCIP_CALL( SCIPgetIntParam(scip, "propagating/maxroundsroot", &prop) );
+      SCIP_CALL( SCIPsetIntParam(scip, "branching/pscost/priority", 11000) );
+      SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
+      SCIP_CALL( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+   }
+   return SCIP_OKAY;
+}
+
+
+
+
 
 
 
@@ -1533,6 +1630,128 @@ void Seeedpool::addSeeedToIncomplete(
    return;
 
 }
+
+/** calculates the strong decomposition score of a seeed */
+/*
+ *  strong decompositon score is defined as follows:
+ */
+SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
+   SeeedPtr seeed,
+   SCIP_Real* score
+   ){
+
+      SCIP_Bool hittimelimit;
+
+
+   /** @TODO introduce scip parameters */
+   int timelimit;
+   int timelimitfast;
+   /** limit (for a pricing problem to be considered fractional solvable) of difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
+   SCIP_Real gaplimitsolved;
+   /** weighted limit (for a pricing problem to be considered fractional solvable) difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
+   SCIP_Real gaplimitbeneficial;
+   SCIP_Real scorecoef_fastbenefical;
+   SCIP_Real scorecoef_mediumbenefical;
+   SCIP_Real scorecoef_fastlittlebenefical;
+   SCIP_Real scorecoef_mediumlittlebenefical;
+   SCIP_Real scorecoef_fastnobenefical;
+   SCIP_Real scorecoef_mediumnobenefical;
+
+
+   SCIP_Real infinity;
+   SCIP_Real epsilon;
+   SCIP_Real sumepsilon;
+   SCIP_Real feastol;
+   SCIP_Real lpfeastol;
+   SCIP_Real dualfeastol;
+   SCIP_Bool enableppcuts;
+
+   int clocktype;
+
+   *score = 0.;
+   hittimelimit = FALSE;
+
+   timelimit = 60;
+   timelimitfast  = (int) 0.2 * timelimit;
+   gaplimitsolved = 0.;
+   gaplimitbeneficial = 0.3;
+
+   scorecoef_fastbenefical = 1.;
+   scorecoef_mediumbenefical = 0.75;
+
+   scorecoef_fastlittlebenefical = 0.75;
+   scorecoef_mediumlittlebenefical = 0.5;
+
+   scorecoef_fastnobenefical = 0.5;
+   scorecoef_mediumnobenefical = 0.25;
+
+   /* get numerical tolerances of the original SCIP instance in order to use the same numerical tolerances in master and pricing problems */
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/infinity", &infinity) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/epsilon", &epsilon) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/sumepsilon", &sumepsilon) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/feastol", &feastol) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/lpfeastol", &lpfeastol) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/dualfeastol", &dualfeastol) );
+
+   /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
+   SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype) );
+
+
+   enableppcuts = FALSE;
+   SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
+
+
+   /* for every pricing problem calculate a corresponding score coeff and break if a pricing problem cannot be solved in the timelimit */
+   for ( int block = 0; 0 < seeed->getNBlocks(); ++block )
+   {
+      SCIP* subscip;
+      char name[SCIP_MAXSTRLEN];
+      SCIP_HASHMAP* hashpricingvartoindex;
+      std::vector<SCIP_VAR*> indextopricingvar;
+
+      indextopricingvar = std::vector<SCIP_VAR*>(getNVars, NULL);
+
+      SCIP_CALL( SCIPhashmapCreate(&hashpricingvartoindex, SCIPblkmem(scip), getNVars()) ); /*lint !e613*/
+
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "testpricing_block_%d", block);
+
+      /** build subscip */
+      SCIP_CALL( SCIPcreate(&subscip) );
+      SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
+      SCIP_CALL( setTestpricingProblemParameters(subscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts) );
+      SCIP_CALL( SCIPcreateProb(subscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
+
+      /** copy variables */
+      for( int var = 0; var < seeed->getNVarsForBlock(block); ++var )
+      {
+         int varid = seeed->getVarsForBlock(block)[var];
+         SCIP_VAR* probvar;
+         if ( transformed )
+            probvar = getVarForIndex(varid);
+         else
+            probvar = SCIPvarGetProbvar(getVarForIndex(varid));
+
+      }
+
+      /** shuffle variable objective coefficients */
+
+      /** round variable objective coeffs to decrease numerical troubles */
+
+      /** copy constraints */
+
+      /** set parameter for subscip */
+
+      /** solve subscip */
+
+      /** get coefficient */
+
+
+      SCIPhashmapFree(&hashpricingvartoindex);
+   }
+
+   return SCIP_OKAY;
+}
+
 
 /** clears ancestor seeed data structure */
 void Seeedpool::clearAncestorSeeeds()
