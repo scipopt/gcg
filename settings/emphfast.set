@@ -1,0 +1,5 @@
+# SCIP version 3.0.2.1
+
+detectors/emphasis = "fast"
+
+limits/time = 10
