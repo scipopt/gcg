@@ -2333,7 +2333,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    int                   maxcols             /**< size of the cols array to indicate maximum columns */
    )
 {
-   GCG_COL* bestcol; /* the column corresponding to the current best solution from the sequence of solves */
+   GCG_COL* bestcol = NULL; /* the column corresponding to the current best solution from the sequence of solves */
    SCIP_Real redcost;
    SCIP_Bool found = FALSE; /* whether a feasible solution has been found */
    int i;
@@ -2348,19 +2348,20 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_CALL( computeGenericBranchingconssStack(pricetype, GCGpricingjobGetProbnr(pricingjob), &branchconss, &nbranchconss, &branchduals) );
 
    SCIP_CALL( solvePricingProblem(pricingjob, pricetype, maxcols) );
-   bestcol = GCGpricingjobGetCol(pricingjob, 0);
-   redcost = GCGcolGetRedcost(bestcol);
+   if( GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_OPTIMAL )
+   {
+      bestcol = GCGpricingjobGetCol(pricingjob, 0);
+      redcost = GCGcolGetRedcost(bestcol);
 
-   if( SCIPisDualfeasNegative(scip_, redcost) )
-      found = TRUE;
+      if( SCIPisDualfeasNegative(scip_, redcost) )
+         found = TRUE;
+   }
 
    /* If no reduced cost column has been found yet, traverse the generic branching path in reverse order
     * until such a column is found
     */
    for( i = nbranchconss-1; i >= 0 && !found; --i )
    {
-      SCIP_STATUS status;
-
       if( bestcol != NULL )
       {
          /* todo: add columns to column pool */
@@ -2372,23 +2373,14 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       SCIP_CALL( addBranchingBoundChangesToPricing(GCGpricingjobGetProbnr(pricingjob), branchconss[i]) );
 
       SCIP_CALL( solvePricingProblem(pricingjob, pricetype, 1) );
-      status = GCGpricingjobGetStatus(pricingjob);
-
-      if( status == SCIP_STATUS_INFEASIBLE ) /** @todo handle remaining statuses */
+      if( GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_OPTIMAL )
       {
-         SCIPdebugMessage("The problem is infeasible\n");
-         break;
+         bestcol = GCGpricingjobGetCol(pricingjob, 0);
+         redcost = GCGcolGetRedcost(bestcol);
+
+         if( SCIPisDualfeasNegative(scip_, redcost) )
+            found = TRUE;
       }
-      /* can happen, e.g., due to time limit in pricing solver */
-      if( status != SCIP_STATUS_OPTIMAL )
-         break;
-
-      /* update objective value for new solution */
-      bestcol = GCGpricingjobGetCol(pricingjob, 0);
-      redcost = GCGcolGetRedcost(bestcol);
-
-      if( SCIPisDualfeasNegative(scip_, redcost) )
-         found = TRUE;
    }
 
    SCIPfreeMemoryArrayNull(scip_, &branchconss);
@@ -2687,8 +2679,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             int probnr = GCGpricingjobGetProbnr(pricingjob);
             SCIP_CONS* convcons = GCGgetConvCons(origprob, probnr);
             GCG_COL* bestcol = GCGpricingjobGetCol(pricingjob, 0);
+            SCIP_Real pricinglowerbound = GCGpricingjobGetLowerbound(pricingjob);
 
-            SCIP_Real objval = GCGgetNIdenticalBlocks(origprob, probnr) * GCGpricingjobGetLowerbound(pricingjob);
+            SCIP_Real objval = SCIPisInfinity(scip_, ABS(pricinglowerbound)) ? pricinglowerbound : GCGgetNIdenticalBlocks(origprob, probnr) * pricinglowerbound;
             SCIP_Real convdual = GCGgetNIdenticalBlocks(origprob, probnr) * pricetype->consGetDual(scip_, convcons);
             SCIP_Real redcost = GCGgetNIdenticalBlocks(origprob, probnr) * GCGcolGetRedcost(bestcol);
 
