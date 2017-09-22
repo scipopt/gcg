@@ -77,6 +77,46 @@ extern void SCIPvisuSetColorscheme(
    VISU_COLORSCHEME newscheme    /**< new colorscheme */
    );
 
+/** sets color for mastercon block in current color scheme */
+extern void SCIPvisuSetColorManMasterconss(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for mastervar block in current color scheme */
+extern void SCIPvisuSetColorManMastervars(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for linking blocks in current color scheme */
+extern void SCIPvisuSetColorManLinking(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for stairlinking blocks in current color scheme */
+extern void SCIPvisuSetColorManStairlinking(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for normal decomp blocks in current color scheme */
+extern void SCIPvisuSetColorManBlock(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for open blocks in current color scheme */
+extern void SCIPvisuSetColorManOpen(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for non-zero points in current color scheme */
+extern void SCIPvisuSetColorManNonzero(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for lines in current color scheme */
+extern void SCIPvisuSetColorManLine(
+   char* newcolor       /**< new color */
+   );
+
 /** gets color for mastercon block in current color scheme */
 extern char* SCIPvisuGetColorMasterconss(void);
 
@@ -103,14 +143,20 @@ extern char* SCIPvisuGetColorLine(void);
 
 /** gets appropriate radius for nonzeros
  * needs highest indices of both axes for scaling*/
-float SCIPvisuGetNonzeroRadius(
+extern float SCIPvisuGetNonzeroRadius(
    int maxindx,         /**< highest index x-axis */
    int maxindy,         /**< highest index y-axis */
    float scalingfactor  /**< percentage to scale radius, 1 if no scaling */
    );
 
 /** gets the name of the pdf reader that should be used */
-char* GCGVisuGetPdfReader(void);
+extern char* GCGVisuGetPdfReader(void);
+
+/*@todo include this somewhere where it is automatically called at quitting GCG */
+/** frees all visualization parameters */
+extern void GCGVisuFreeParams(
+   SCIP* scip     /**< SCIP data structure */
+   );
 
 #ifdef __cplusplus
 }

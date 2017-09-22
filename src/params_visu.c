@@ -75,31 +75,36 @@
 
 #define DEFAULT_PDFREADER "evince"
 
+struct GCG_VisualizationData
+{
+   SCIP_Bool visudraftmode;            /**< true if no nonzeros should be shown */
+   VISU_COLORSCHEME visucolorscheme;   /**< stores the current color scheme */
 
-SCIP_Bool visudraftmode;
-VISU_COLORSCHEME visucolorscheme;
+   char* mancolormastervars;           /**< manual color for master variables */
+   char* mancolormasterconss;          /**< manual color for master constraints */
+   char* mancolorlinking;              /**< manual color for linking */
+   char* mancolorstairlinking;         /**< manual color for stairlinking */
+   char* mancolorblock;                /**< manual color for blocks */
+   char* mancoloropen;                 /**< manual color for nonassigned areas */
+   char* mancolornonzero;              /**< manual color for nonzeros */
+   char* mancolorline;                 /**< manual color for lines */
 
-char* mancolormastervars;
-char* mancolormasterconss;
-char* mancolorlinking;
-char* mancolorstairlinking;
-char* mancolorblock;
-char* mancoloropen;
-char* mancolornonzero;
-char* mancolorline;
+   char* greycolormastervars;          /**< black and white color for master variables */
+   char* greycolormasterconss;         /**< black and white color for master constraints */
+   char* greycolorlinking;             /**< black and white color for linking */
+   char* greycolorstairlinking;        /**< black and white color for stairlinking */
+   char* greycolorblock;               /**< black and white color for blocks */
+   char* greycoloropen;                /**< black and white color for nonassigned areas */
+   char* greycolornonzero;             /**< black and white color for nonzeros */
+   char* greycolorline;                /**< black and white color for lines */
 
-char* greycolormastervars;
-char* greycolormasterconss;
-char* greycolorlinking;
-char* greycolorstairlinking;
-char* greycolorblock;
-char* greycoloropen;
-char* greycolornonzero;
-char* greycolorline;
+   int visuradius;                     /**< radius for nonzeros */
 
-int visuradius;
+   char* pdfreader;                    /**< name of pdfreader to open files with */
+};
 
-char* pdfreader;
+/* visualization parameter data */
+struct GCG_VisualizationData* visudata;
 
 
 /** includes the visualization parameters into GCG */
@@ -107,83 +112,60 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    SCIP* scip /**< SCIP data structure */
    )
 {
-   /* set defaults */
-   visudraftmode = FALSE;
-   visucolorscheme = COLORSCHEME_DEFAULT;
-
-   mancolormastervars =    (char*) DEFAULT_COLOR_MASTERVARS;
-   mancolormasterconss =   (char*) DEFAULT_COLOR_MASTERCONSS;
-   mancolorlinking =       (char*) DEFAULT_COLOR_LINKING;
-   mancolorstairlinking =  (char*) DEFAULT_COLOR_STAIRLINKING;
-   mancolorblock =         (char*) DEFAULT_COLOR_BLOCK;
-   mancoloropen =          (char*) DEFAULT_COLOR_OPEN;
-   mancolornonzero =       (char*) DEFAULT_COLOR_NONZERO;
-   mancolorline =          (char*) DEFAULT_COLOR_LINE;
-
-   greycolormastervars =   (char*) GREY_COLOR_MASTERVARS;
-   greycolormasterconss =  (char*) GREY_COLOR_MASTERCONS;
-   greycolorlinking =      (char*) GREY_COLOR_LINKING;
-   greycolorstairlinking = (char*) GREY_COLOR_STAIRLINKING;
-   greycolorblock =        (char*) GREY_COLOR_BLOCK;
-   greycoloropen =         (char*) GREY_COLOR_OPEN;
-   greycolornonzero =      (char*) GREY_COLOR_NONZERO;
-   greycolorline =         (char*) GREY_COLOR_LINE;
-
-   visuradius = DEFAULT_VISU_RADIUS;
-
-   pdfreader = (char*) DEFAULT_PDFREADER;
+   visudata = NULL;
+   SCIP_CALL( SCIPallocMemory(scip, &visudata) );
 
    /* add general parameters */
 
    SCIP_CALL( SCIPaddBoolParam(scip,
-      "visualization/draftmode", "if true no nonzeros are shown (may improve performance)",
-      &visudraftmode, FALSE, FALSE, NULL, NULL) );
+      "visual/draftmode", "if true no nonzeros are shown (may improve performance)",
+      &visudata->visudraftmode, FALSE, FALSE, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-      "visualization/colorscheme", "type number: 0=default, 1=black and white, 2=manual",
-      (int*) &visucolorscheme, FALSE, 0, 0, 2, NULL, NULL) );
+      "visual/colorscheme", "type number: 0=default, 1=black and white, 2=manual",
+      (int*) &visudata->visucolorscheme, FALSE, 0, 0, 2, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-      "visualization/nonzeroradius", "integer value to scale dots from 1-10, default: 5",
-      &visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
+      "visual/nonzeroradius", "integer value to scale dots from 1-10",
+      &visudata->visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
-      "visualization/pdfreader", "pdf reader that open visualizations in select menu, default: evince",
-      &pdfreader, FALSE, DEFAULT_PDFREADER, NULL, NULL) );
+      "visual/pdfreader", "pdf reader that open visualizations in select menu",
+      &visudata->pdfreader, FALSE, (char*) DEFAULT_PDFREADER, NULL, NULL) );
 
    /* add parameters for manual colors */
 
    SCIP_CALL( SCIPaddStringParam(scip,
-      "visualization/colors/colormastervars", "color for master variables in hex code (e.g. #000000)",
-      &mancolormastervars, FALSE, DEFAULT_COLOR_MASTERVARS, NULL, NULL) );
+      "visual/colors/colormastervars", "color for master variables in hex code",
+      &visudata->mancolormastervars, FALSE, DEFAULT_COLOR_MASTERVARS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
-      "visualization/colors/colormasterconss", "color for master constraints in hex code (e.g. #000000)",
-      &mancolormasterconss, FALSE, DEFAULT_COLOR_MASTERCONSS, NULL, NULL) );
+      "visual/colors/colormasterconss", "color for master constraints in hex code",
+      &visudata->mancolormasterconss, FALSE, DEFAULT_COLOR_MASTERCONSS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
-      "visualization/colors/colorlinking", "color for linking variables in hex code (e.g. #000000)",
-      &mancolorlinking, FALSE, DEFAULT_COLOR_LINKING, NULL, NULL) );
+      "visual/colors/colorlinking", "color for linking variables in hex code",
+      &visudata->mancolorlinking, FALSE, DEFAULT_COLOR_LINKING, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
-      "visualization/colors/colorstairlinking", "color for stairlinking variables in hex code (e.g. #000000)",
-      &mancolorstairlinking, FALSE, DEFAULT_COLOR_STAIRLINKING, NULL, NULL) );
+      "visual/colors/colorstairlinking", "color for stairlinking variables in hex code",
+      &visudata->mancolorstairlinking, FALSE, DEFAULT_COLOR_STAIRLINKING, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
-      "visualization/colors/colorblock", "color for found blocks in hex code (e.g. #000000)",
-      &mancolorblock, FALSE, DEFAULT_COLOR_BLOCK, NULL, NULL) );
+      "visual/colors/colorblock", "color for found blocks in hex code",
+      &visudata->mancolorblock, FALSE, DEFAULT_COLOR_BLOCK, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
-      "visualization/colors/coloropen", "color for open areas in hex code (e.g. #000000)",
-      &mancoloropen, FALSE, DEFAULT_COLOR_OPEN, NULL, NULL) );
+      "visual/colors/coloropen", "color for open areas in hex code",
+      &visudata->mancoloropen, FALSE, DEFAULT_COLOR_OPEN, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
-      "visualization/colors/colornonzeros", "color for nonzeros in hex code (e.g. #000000)",
-      &mancolornonzero, FALSE, DEFAULT_COLOR_NONZERO, NULL, NULL) );
+      "visual/colors/colornonzeros", "color for nonzeros in hex code",
+      &visudata->mancolornonzero, FALSE, DEFAULT_COLOR_NONZERO, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
-      "visualization/colors/colorlines", "color for lines in hex code (e.g. #000000)",
-      &mancolorline, FALSE, DEFAULT_COLOR_LINE, NULL, NULL) );
+      "visual/colors/colorlines", "color for lines in hex code",
+      &visudata->mancolorline, FALSE, DEFAULT_COLOR_LINE, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -194,30 +176,31 @@ SCIP_RETCODE SCIPincludeParamsVisu(
  * draftmode lets visualizations omit nonzeros */
 SCIP_Bool SCIPvisuGetDraftmode()
 {
-   return visudraftmode;
+   return visudata->visudraftmode;
 }
 
 /** sets draftmode
  * draftmode lets visualizations omit nonzeros */
-void SCIPvisuSetDraftmode(SCIP_Bool setmode)
+void SCIPvisuSetDraftmode(
+   SCIP_Bool setmode
+   )
 {
-   visudraftmode = setmode;
+   visudata->visudraftmode = setmode;
 }
 
 /** gets the colorscheme for visualizations */
 VISU_COLORSCHEME SCIPvisuGetColorscheme()
 {
-   return visucolorscheme;
+   return visudata->visucolorscheme;
 }
 
 /** sets colorscheme for visualizations */
-void SCIPvisuSetColorscheme(VISU_COLORSCHEME newscheme)
+void SCIPvisuSetColorscheme(
+   VISU_COLORSCHEME newscheme
+   )
 {
-   visucolorscheme = newscheme;
+   visudata->visucolorscheme = newscheme;
 }
-
-
-/*@todo setter for manual color scheme*/
 
 
 /** gets color for mastercon block in current color scheme */
@@ -226,10 +209,10 @@ char* SCIPvisuGetColorMasterconss()
    switch(SCIPvisuGetColorscheme())
    {
    case COLORSCHEME_GREY:
-      return greycolormasterconss;
+      return visudata->greycolormasterconss;
       break;
    case COLORSCHEME_MANUAL:
-      return mancolormasterconss;
+      return visudata->mancolormasterconss;
    default:
       return (char*) DEFAULT_COLOR_MASTERCONSS;
    }
@@ -241,10 +224,10 @@ char* SCIPvisuGetColorMastervars()
    switch(SCIPvisuGetColorscheme())
    {
    case COLORSCHEME_GREY:
-      return greycolormastervars;
+      return visudata->greycolormastervars;
       break;
    case COLORSCHEME_MANUAL:
-      return mancolormastervars;
+      return visudata->mancolormastervars;
    default:
       return (char*) DEFAULT_COLOR_MASTERVARS;
    }
@@ -256,10 +239,10 @@ char* SCIPvisuGetColorLinking()
    switch(SCIPvisuGetColorscheme())
    {
    case COLORSCHEME_GREY:
-      return greycolorlinking;
+      return visudata->greycolorlinking;
       break;
    case COLORSCHEME_MANUAL:
-      return mancolorlinking;
+      return visudata->mancolorlinking;
    default:
       return (char*) DEFAULT_COLOR_LINKING;
    }
@@ -271,10 +254,10 @@ char* SCIPvisuGetColorStairlinking()
    switch(SCIPvisuGetColorscheme())
    {
    case COLORSCHEME_GREY:
-      return greycolorstairlinking;
+      return visudata->greycolorstairlinking;
       break;
    case COLORSCHEME_MANUAL:
-      return mancolorstairlinking;
+      return visudata->mancolorstairlinking;
    default:
       return (char*) DEFAULT_COLOR_STAIRLINKING;
    }
@@ -286,10 +269,10 @@ char* SCIPvisuGetColorBlock()
    switch(SCIPvisuGetColorscheme())
    {
    case COLORSCHEME_GREY:
-      return greycolorblock;
+      return visudata->greycolorblock;
       break;
    case COLORSCHEME_MANUAL:
-      return mancolorblock;
+      return visudata->mancolorblock;
    default:
       return (char*) DEFAULT_COLOR_BLOCK;
    }
@@ -301,10 +284,10 @@ char* SCIPvisuGetColorOpen()
    switch(SCIPvisuGetColorscheme())
    {
    case COLORSCHEME_GREY:
-      return greycoloropen;
+      return visudata->greycoloropen;
       break;
    case COLORSCHEME_MANUAL:
-      return mancoloropen;
+      return visudata->mancoloropen;
    default:
       return (char*) DEFAULT_COLOR_OPEN;
    }
@@ -316,10 +299,10 @@ char* SCIPvisuGetColorNonzero()
    switch(SCIPvisuGetColorscheme())
    {
    case COLORSCHEME_GREY:
-      return greycolornonzero;
+      return visudata->greycolornonzero;
       break;
    case COLORSCHEME_MANUAL:
-      return mancolornonzero;
+      return visudata->mancolornonzero;
    default:
       return (char*) DEFAULT_COLOR_NONZERO;
    }
@@ -331,13 +314,77 @@ char* SCIPvisuGetColorLine()
    switch(SCIPvisuGetColorscheme())
    {
    case COLORSCHEME_GREY:
-      return greycolorline;
+      return visudata->greycolorline;
       break;
    case COLORSCHEME_MANUAL:
-      return mancolorline;
+      return visudata->mancolorline;
    default:
       return (char*) DEFAULT_COLOR_LINE;
    }
+}
+
+/** sets color for mastercon block in current color scheme */
+void SCIPvisuSetColorManMasterconss(
+   char* newcolor       /**< new color */
+   )
+{
+   visudata->mancolormasterconss = newcolor;
+}
+
+/** sets manual color for mastervar block in current color scheme */
+void SCIPvisuSetColorManMastervars(
+   char* newcolor       /**< new color */
+   )
+{
+   visudata->mancolormastervars = newcolor;
+}
+
+/** sets manual color for linking blocks in current color scheme */
+void SCIPvisuSetColorManLinking(
+   char* newcolor       /**< new color */
+   )
+{
+   visudata->mancolorlinking = newcolor;
+}
+
+/** sets manual color for stairlinking blocks in current color scheme */
+void SCIPvisuSetColorManStairlinking(
+   char* newcolor       /**< new color */
+   )
+{
+   visudata->mancolorstairlinking = newcolor;
+}
+
+/** sets manual color for normal decomp blocks in current color scheme */
+void SCIPvisuSetColorManBlock(
+   char* newcolor       /**< new color */
+   )
+{
+   visudata->mancolorblock = newcolor;
+}
+
+/** sets manual color for open blocks in current color scheme */
+void SCIPvisuSetColorManOpen(
+   char* newcolor       /**< new color */
+   )
+{
+   visudata->mancoloropen = newcolor;
+}
+
+/** sets manual color for non-zero points in current color scheme */
+void SCIPvisuSetColorManNonzero(
+   char* newcolor       /**< new color */
+   )
+{
+   visudata->mancolornonzero = newcolor;
+}
+
+/** sets manual color for lines in current color scheme */
+void SCIPvisuSetColorManLine(
+   char* newcolor       /**< new color */
+   )
+{
+   visudata->mancolorline = newcolor;
 }
 
 /** gets appropriate radius for nonzeros
@@ -358,11 +405,20 @@ float SCIPvisuGetNonzeroRadius(
    maxind = maxindx>maxindy?maxindx:maxindy;
 
    /* scale by coordinate system size and given factor */
-   return (visuradius / maxind) * scalingfactor;
+   return (visudata->visuradius / maxind) * scalingfactor;
 }
 
 /** gets the name of the pdf reader that should be used */
 char* GCGVisuGetPdfReader()
 {
-   return pdfreader;
+   return visudata->pdfreader;
 }
+
+/** frees all visualization parameters */
+void GCGVisuFreeParams(
+   SCIP* scip     /**< SCIP data structure */
+   )
+{
+   SCIPfreeMemory(scip, &visudata);
+}
+

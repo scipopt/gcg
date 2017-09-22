@@ -67,13 +67,6 @@ using namespace gcg;
 static
 SCIP_DECL_READERFREE(readerFreeGp)
 {
-   SCIP_READERDATA* readerdata;
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   SCIPfreeMemory(scip, &readerdata);
-
    assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
    return SCIP_OKAY;
 }

@@ -73,6 +73,8 @@ using namespace gcg;
 
 SCIP_DECL_READERFREE(readerFreeTex)
 {
+   /*@todo this is a workaround */
+   GCGVisuFreeParams(scip);
    return SCIP_OKAY;
 }
 
@@ -792,7 +794,6 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    /* collection of treeseeds */
    std::vector<SeeedPtr> treeseeeds(0);
    std::vector<int> treeseeedids(0);
-//   std::vector<SeeedPtr> allrelevantseeeds = miscvisu->GCGGetAllRelevantSeeeds(scip);
    SEEED_WRAPPER** allrelevantseeedswr;
    int nallrelevantseeeds = 0;
    SCIP_CALL( SCIPallocBufferArray(scip, &allrelevantseeedswr, *nseeeds) );
