@@ -46,6 +46,7 @@
 //#define WRITE_ORIG_CONSTYPES
 //#define SCIP_DEBUG
 
+#include "scip/scipdefplugins.h"
 #include "gcg.h"
 #include "objscip/objscip.h"
 #include "scip/scip.h"
@@ -168,6 +169,91 @@ SCIP_Bool isFiniteNonnegativeIntegral(
 
    return (!SCIPisInfinity(scip, x) && !SCIPisNegative(scip, x) && SCIPisIntegral(scip, x));
 }
+
+/** creates the pricing problem constraints */
+static
+SCIP_RETCODE createTestPricingprobConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 subscip,            /**< the relaxator data data structure */
+   Seeedpool*            seeedpool,
+   SeeedPtr              seeed,              /**< seeed corresponding to the decomposition to test */
+   int                   block,
+   SCIP_HASHMAP*         hashorig2pricingvar /**< hashmap mapping original to corresponding pricing variables */
+   )
+{
+   SCIP_CONS*** subscipconss;
+   int* nsubscipconss;
+   SCIP_CONS* newcons;
+   SCIP_HASHMAP* hashorig2pricingconstmp;
+   int nblocks;
+   int c;
+   char name[SCIP_MAXSTRLEN];
+   SCIP_Bool success;
+
+   assert(scip != NULL);
+
+//   subscipconss = DECdecompGetSubscipconss(relaxdata->decdecomp);
+//   nsubscipconss = DECdecompGetNSubscipconss(relaxdata->decdecomp);
+
+   SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), seeedpool->getNConss() ) ); /*lint !e613*/
+
+   assert(hashorig2pricingvar != NULL);
+   for( c = 0; c < seeed->getNConssForBlock(block); ++c )
+   {
+      SCIP_CONS* cons;
+
+      cons = seeedpool->getConsForIndex( seeed->getConssForBlock(block)[c] );
+
+      SCIPdebugMessage("copying %s to pricing problem %d\n", SCIPconsGetName(cons), block);
+      if( !SCIPconsIsActive(cons) )
+      {
+         SCIPdebugMessage("skipping, cons <%s> inactive\n", SCIPconsGetName(cons) );
+         continue;
+      }
+      SCIP_CALL( SCIPgetTransformedCons(scip, cons, &cons) );
+      assert(cons != NULL);
+
+      /* copy the constraint */
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", block, SCIPconsGetName(cons));
+      SCIP_CALL( SCIPgetConsCopy(scip, subscip, cons, &newcons, SCIPconsGetHdlr(cons),
+         hashorig2pricingvar, hashorig2pricingconstmp, name,
+         TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, &success) );
+
+      /* constraint was successfully copied */
+      assert(success);
+
+      SCIP_CALL( SCIPaddCons(subscip, newcons) );
+#ifndef NDEBUG
+      {
+         SCIP_VAR** curvars;
+         int ncurvars;
+
+         ncurvars = GCGconsGetNVars(subscip, newcons);
+         curvars = NULL;
+         if( ncurvars > 0 )
+         {
+            int i;
+
+            SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+            SCIP_CALL( GCGconsGetVars(subscip, newcons, curvars, ncurvars) );
+
+            for( i = 0; i < ncurvars; ++i )
+            {
+               assert(GCGvarIsPricing(curvars[i]));
+            }
+
+            SCIPfreeBufferArrayNull(scip, &curvars);
+         }
+      }
+#endif
+SCIP_CALL( SCIPreleaseCons(subscip, &newcons) );
+   }
+
+   SCIPhashmapFree(&hashorig2pricingconstmp);
+
+   return SCIP_OKAY;
+}
+
 
 
 /** sets the pricing problem parameters */
@@ -1752,11 +1838,14 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
       SCIP* subscip;
       char name[SCIP_MAXSTRLEN];
       SCIP_HASHMAP* hashpricingvartoindex;
+      SCIP_HASHMAP* hashorig2pricingvar;
+
       std::vector<SCIP_VAR*> indextopricingvar;
 
-      indextopricingvar = std::vector<SCIP_VAR*>(getNVars, NULL);
+      indextopricingvar = std::vector<SCIP_VAR*>(getNVars(), NULL);
 
       SCIP_CALL( SCIPhashmapCreate(&hashpricingvartoindex, SCIPblkmem(scip), getNVars()) ); /*lint !e613*/
+      SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingvar, SCIPblkmem(scip), getNVars()) ); /*lint !e613*/
 
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "testpricing_block_%d", block);
 
@@ -1799,16 +1888,14 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
          SCIP_CALL( SCIPcreateVar(subscip, &pricingprobvar, name, SCIPvarGetLbGlobal(origprobvar),
                   SCIPvarGetUbGlobal(origprobvar), obj, SCIPvarGetType(origprobvar),
                   TRUE, FALSE, NULL, NULL, NULL, NULL, NULL) );
-
+         SCIPhashmapSetImage(hashorig2pricingvar, origprobvar, pricingprobvar);
          SCIPhashmapSetImage(hashpricingvartoindex, pricingprobvar, (void*) varid);
-         indextopricingvar[varid] = hashpricingvartoindex;
+         indextopricingvar[varid] = pricingprobvar;
          SCIP_CALL( SCIPaddVar(subscip, pricingprobvar) );
       }
 
-
-
-
       /** copy constraints */
+      SCIP_CALL( createTestPricingprobConss(scip, subscip, this, seeed, block, hashorig2pricingvar) );
 
       /** set parameter for subscip */
 
