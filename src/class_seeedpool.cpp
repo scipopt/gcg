@@ -1732,6 +1732,7 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 {
 
    SCIP_Bool hittimelimit;
+   SCIP_Bool errorpricing;
    std::vector<SCIP_Real> randomdualvals;
    SCIP_RANDNUMGEN* randnumgen;
 
@@ -1863,6 +1864,7 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
          SCIP_VAR* pricingprobvar;
          SCIP_Real obj;
 
+
          varid = seeed->getVarsForBlock(block)[var];
 
          if ( transformed )
@@ -1901,9 +1903,19 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
       /** solve subscip */
 
+      SCIPsolve(subscip);
       /** get coefficient */
+      if( SCIPgetStatus(subscip) != SCIP_STATUS_OPTIMAL )
+      {
+         if( SCIPgetStatus(subscip) == SCIP_STATUS_TIMELIMIT )
+            hittimelimit = TRUE;
+         else
+            errorpricing = TRUE;
+      }
+      else
+      {
 
-
+      }
       /** free stuff */
 
       for( int var = 0; var < seeed->getNVarsForBlock(block); ++var )
