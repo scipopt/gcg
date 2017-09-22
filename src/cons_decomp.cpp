@@ -5448,8 +5448,8 @@ SCIP_RETCODE GCGgetSeeedFromID(
 /** returns wrapped Seeedpools */
 SCIP_RETCODE GCGgetCurrentSeeedpools(
    SCIP*          scip,                   /**< SCIP data structure */
-   SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool */
-   SEEED_WRAPPER* seeedpoolunpresolvedwr  /**< wrapper for unpresolved output Seeedpool */
+   SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool (or NULL) */
+   SEEED_WRAPPER* seeedpoolunpresolvedwr  /**< wrapper for unpresolved output Seeedpool (or NULL) */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -5465,8 +5465,11 @@ SCIP_RETCODE GCGgetCurrentSeeedpools(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   seeedpoolwr->seeedpool = conshdlrdata->seeedpool;
-   seeedpoolunpresolvedwr->seeedpool = conshdlrdata->seeedpoolunpresolved;
+   if(seeedpoolwr != NULL)
+      seeedpoolwr->seeedpool = conshdlrdata->seeedpool;
+
+   if(seeedpoolunpresolvedwr != NULL)
+      seeedpoolunpresolvedwr->seeedpool = conshdlrdata->seeedpoolunpresolved;
 
    return SCIP_OKAY;
 }

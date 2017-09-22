@@ -455,8 +455,8 @@ SCIP_RETCODE GCGgetSeeedFromID(
 /** returns wrapped Seeedpools */
 SCIP_RETCODE GCGgetCurrentSeeedpools(
    SCIP*          scip,                   /**< SCIP data structure */
-   SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool */
-   SEEED_WRAPPER* seeedpoolunpresolvedwr  /**< wrapper for unpresolved output Seeedpool */
+   SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool (or NULL) */
+   SEEED_WRAPPER* seeedpoolunpresolvedwr  /**< wrapper for unpresolved output Seeedpool (or NULL) */
    );
 
 
