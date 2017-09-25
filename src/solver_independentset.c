@@ -62,24 +62,6 @@ struct GCG_SolverData
 /*
  * Local methods
  */
-
-
-/* Cliquer function to preemptively stop execution, currently unused */
-/*
-static boolean custom_time_function(int level, int i, int n, int max, double cputime, double realtime, clique_options *opts)
-{
-   // cputime is time in seconds as a double 
-   if( cputime > 10.0 )
-   {
-      return FALSE;
-   }
-   else
-   {
-      SCIPdebugMessage("Current runtime/weight: %g/%d\n",cputime,max);
-      return TRUE;
-   }
-}
-*/
 /** solve the pricing problem as an independent set problem, in an approximate way */
 static
 SCIP_RETCODE solveIndependentSet(
@@ -119,8 +101,6 @@ SCIP_RETCODE solveIndependentSet(
    int scalingfactor;
    int nvars;
    int nedges;
-   int debugcounter;
-   int indsetconstraintcount;
 
    assert(pricingprob != NULL);
    assert(solver != NULL);
@@ -134,6 +114,43 @@ SCIP_RETCODE solveIndependentSet(
 
    constraints = SCIPgetConss(pricingprob);
    nconss = SCIPgetNConss(pricingprob);
+
+   /* All variables of the problem are expected to be binary */
+   if( SCIPgetNBinVars(pricingprob) < npricingprobvars ){
+      *result = SCIP_STATUS_UNKNOWN;
+      return SCIP_OKAY;
+   }
+
+   /* Cliquer library explicitly asks for the node weights to be positive integers.
+    * Additionally, the sum of node weights needs to be smaller than INT_MAX.
+    * We restrict our scaling factor to always honor this constraint
+    */
+   scalingfactor = ((int) INT_MAX / npricingprobvars) - npricingprobvars;
+
+   /* All objective values have to be negative or 0 - library restriction */
+   /* During the test we also check for the biggest objective value */
+   biggestobj = 0.0;
+   for( int i = 0; i < npricingprobvars; ++i )
+   {
+      signhelper = SCIPvarGetObj(pricingprobvars[i]);
+      if( SCIPisLT(pricingprob,0,signhelper) )
+      {
+         *result = SCIP_STATUS_UNKNOWN;
+         return SCIP_OKAY;
+      }
+      if( SCIPisLT(pricingprob,signhelper,biggestobj) )
+      {
+         biggestobj = signhelper;
+         //SCIPprintVar(pricingprob, pricingprobvars[i], NULL);
+      }
+      //SCIPdebugMessage("Objective value %g \n", signhelper);
+   }
+   if( SCIPisLT(pricingprob,biggestobj,-1.0) )
+   {
+      /* Ensure that INT_MAX is never reached by the sum of all scaled weights */
+      scalingfactor = abs((int) scalingfactor / biggestobj);
+   }
+
 
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &indsetvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &solvals, npricingprobvars) );
@@ -164,46 +181,6 @@ SCIP_RETCODE solveIndependentSet(
    /* Used to determine the kind of non-IS constraints */ 
    coefindex = -1;
 
-   /* Counters for debugging purposes */
-   indsetconstraintcount = 0;
-   debugcounter = 0;
-
-   /* All variables of the problem are expected to be binary */
-   if( SCIPgetNBinVars(pricingprob) < npricingprobvars ){
-      *result = SCIP_STATUS_UNKNOWN;
-      return SCIP_OKAY;
-   }
-
-   /* Cliquer library explicitly asks for the node weights to be positive integers.
-    * Additionally, the sum of node weights to be smaller than INT_MAX.
-    * We restrict our scaling factor to always honor this constraint
-    */
-   scalingfactor = ((int) INT_MAX / npricingprobvars) - npricingprobvars;
-
-   /* All objective values have to be negative or 0 - library restriction */
-   /* During the test we also check for the biggest objective value */
-   biggestobj = 0.0;
-   for( int i = 0; i < npricingprobvars; ++i )
-   {
-      signhelper = SCIPvarGetObj(pricingprobvars[i]);
-      if( SCIPisLT(pricingprob,0,signhelper) )
-      {
-         *result = SCIP_STATUS_UNKNOWN;
-         return SCIP_OKAY;
-      }
-      if( SCIPisLT(pricingprob,signhelper,biggestobj) )
-      {
-         biggestobj = signhelper;
-         //SCIPprintVar(pricingprob, pricingprobvars[i], NULL);
-      }
-      //SCIPdebugMessage("Objective value %g \n", signhelper);
-   }
-   if( SCIPisLT(pricingprob,biggestobj,-1.0) )
-   {
-      /* Ensure that INT_MAX is never reached by the sum of all scaled weights */
-      scalingfactor = abs((int) scalingfactor / biggestobj);
-   }
-
    /* Build complementary graph by first creating a complete graph and then deleting edges of IS constraints */
    /* Size is first chosen to be maximal and then later cropped down to the actual number of nodes */
    g = graph_new(npricingprobvars);
@@ -227,9 +204,8 @@ SCIP_RETCODE solveIndependentSet(
 
       /* Check if we have an IS constraint */
       if( SCIPgetNVarsLinear(pricingprob, constraints[i]) == 2 &&
-          SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real)1) ) 
+          SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real) 1) ) 
       {
-         indsetconstraintcount++;
          /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
          if( SCIPvarGetObj(consvars[0]) != 0 || SCIPvarGetObj(consvars[1]) != 0 )
          {
@@ -252,11 +228,6 @@ SCIP_RETCODE solveIndependentSet(
             {
                indsetvars[indexcount] = consvars[0];
                nodeindex0 = indexcount;
-               /*
-               SCIPdebugMessage("Node Index: %d\n",indexcount);
-               SCIPdebugMessage("Index: %d \n",SCIPvarGetProbindex(indsetvars[indexcount]));
-               SCIPdebugMessage("Weight: %d \n", 1+abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount]))));
-               */
                g->weights[nodeindex0] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
                ++indexcount;
             }
@@ -264,11 +235,6 @@ SCIP_RETCODE solveIndependentSet(
             {
                indsetvars[indexcount] = consvars[1];
                nodeindex1 = indexcount;
-               /*
-               SCIPdebugMessage("Node Index: %d\n",indexcount);
-               SCIPdebugMessage("Index: %d\n",SCIPvarGetProbindex(indsetvars[indexcount]));
-               SCIPdebugMessage("Weight: %d \n", 1+abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount]))));
-               */
                g->weights[nodeindex1] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
                ++indexcount;
             }
@@ -291,25 +257,13 @@ SCIP_RETCODE solveIndependentSet(
          /* Check the coefficients of the variables in the constraint */
          for( int k = 0; k < nvars; ++k )
          {
-            //SCIPdebugMessage("Index: %d \n", SCIPvarGetIndex(consvars[k]));
             if( consvals[k] != 1 && (coefindex == -1) )
             {
-               //indSetBound = abs((int) consvals[k]);
-               //SCIPdebugMessage("\n\nCoefficient: %d \n\n", abs(consvals[k]));
                coefindex = k;
             }
             else if( consvals[k] != 1 && coefindex != -1 )
             {
                /* More than one variable has a coefficient unequal to 1 */
-
-               
-               SCIPdebugMessage("Unknown constraint in problem.");
-               outputfile = fopen("output.txt", "a+");
-               SCIPprintCons(pricingprob, constraints[i], outputfile);
-               fputs("\n\n",outputfile);
-               fclose(outputfile);
-               
-
                SCIPfreeBufferArray(pricingprob,&indsetvars);
                SCIPfreeBufferArray(pricingprob,&solvals);
                SCIPfreeBufferArray(pricingprob,&consvars);
@@ -383,7 +337,6 @@ SCIP_RETCODE solveIndependentSet(
             if( abs(consvals[coefindex]) + 1 >= nvars )
             {
                solvals[SCIPvarGetProbindex(consvars[coefindex])] = 1.0;
-               //SCIPdebugMessage("\n\nCoupling constraint redundant.\n\n");
             }
             /* Special case: The coefficient is -1, we set the coupling variable to 1 and treat the case like 
                a clique constraint. */
@@ -447,40 +400,21 @@ SCIP_RETCODE solveIndependentSet(
             else
             {
                /* Coupling coefficient is between 1 and npricingprobvars. */
-
-               
-               SCIPdebugMessage("Unknown constraint in problem.");
-               outputfile = fopen("output.txt", "a+");
-               SCIPprintCons(pricingprob, constraints[i], outputfile);
-               fputs("\n\n",outputfile);
-               fclose(outputfile);
-               
-               
                SCIPfreeBufferArray(pricingprob,&indsetvars);
                SCIPfreeBufferArray(pricingprob,&solvals);
                SCIPfreeBufferArray(pricingprob,&consvars);
                graph_free(g);
-               set_free(clique);
 
                *result = SCIP_STATUS_UNKNOWN;
                return SCIP_OKAY;
             }
          }
          else{
-            /* Constraint is neither a coupling nor a clique constraint */
-
-            SCIPdebugMessage("Unknown constraint in problem.");
-            outputfile = fopen("output.txt", "a+");
-            SCIPprintCons(pricingprob, constraints[i], outputfile);
-            fputs("\n\n",outputfile);
-            fclose(outputfile);
-
-               
+            /* Constraint is neither a coupling nor a clique constraint */ 
             SCIPfreeBufferArray(pricingprob,&indsetvars);
             SCIPfreeBufferArray(pricingprob,&solvals);
             SCIPfreeBufferArray(pricingprob,&consvars);
             graph_free(g);
-            set_free(clique);
 
             *result = SCIP_STATUS_UNKNOWN;
             return SCIP_OKAY;
@@ -491,6 +425,8 @@ SCIP_RETCODE solveIndependentSet(
 
    /* Assert that the graph was built in a proper way */ 
    ASSERT(graph_test(g,NULL));
+
+   SCIPdebugMessage("Current pricing problem is an IndependentSet problem.\n");
 
    /* Determine number of edges for graph density calculation */
    nedges = 0;
@@ -508,10 +444,8 @@ SCIP_RETCODE solveIndependentSet(
    nedges /= 2;
 
    /* Test if the density criteria is met */
-   SCIPdebugMessage("Graph density in current round: %g%% \n", (float)nedges/((float)(g->n - 1)*(g->n)/2));
    if( SCIPisLT(pricingprob, (float)nedges/((float)(g->n - 1) * (g->n) / 2), solver->density) )
    {
-      SCIPdebugMessage("Density below %g%% (%g%%) \n", solver->density, (float)nedges/((float)(g->n - 1)*(g->n)/2));
       SCIPfreeBufferArray(pricingprob,&indsetvars);
       SCIPfreeBufferArray(pricingprob,&solvals);
       SCIPfreeBufferArray(pricingprob,&consvars);
@@ -521,46 +455,38 @@ SCIP_RETCODE solveIndependentSet(
       return SCIP_OKAY;      
    }
    
-   /* indexcount now holds the actual number of unique IS variables, thus we truncate */
    assert(indexcount == npricingprobvars-1);
 
-   //SCIPdebugMessage("graphweighted before resize = %u\n", graph_weighted(g));
+   /* indexcount now holds the actual number of unique IS variables, thus we truncate */
    if( indexcount > 0 ){
       graph_resize(g,indexcount);
    }
-   //SCIPdebugMessage("resized graph, indexcount = %d\n", indexcount);
-   //SCIPdebugMessage("graphweighted after resize = %u\n", graph_weighted(g));
 
    /* Set cliquer options */
-   cl_opts.reorder_function=reorder_by_default; //default: reorder_by_default
-   cl_opts.reorder_map=NULL;
-   cl_opts.time_function=NULL; //default: clique_print_time
-   cl_opts.output=NULL;
-   cl_opts.user_function=NULL;
-   cl_opts.user_data=NULL;
-   cl_opts.clique_list=NULL;
-   cl_opts.clique_list_length=0;
+   cl_opts.reorder_function = reorder_by_default; //default: reorder_by_default
+   cl_opts.reorder_map = NULL;
+   cl_opts.time_function = NULL; //default: clique_print_time
+   cl_opts.output = NULL;
+   cl_opts.user_function = NULL;
+   cl_opts.user_data = NULL;
+   cl_opts.clique_list = NULL;
+   cl_opts.clique_list_length = 0;
 
-   //graph_print(g);
    if( biggestobj == 0 )
    {
-      /* TODO: This call is of no real value atm since all objectives are 0 */
       clique = clique_unweighted_find_single(g,0,0,FALSE,&cl_opts);
    }
    else
    {
       clique = clique_find_single(g,0,0,FALSE,&cl_opts);
    }
-   //SCIPdebugMessage("found clique of size %d\n", set_size(clique));
+
+   /* Set all members of the maximum clique with objective coefficient != 0 to 1 */
    for( int i = 0; i < indexcount; ++i )
    {
       if( SET_CONTAINS(clique,i) && SCIPvarGetObj(indsetvars[i]) != 0 )
       {
-         //SCIPdebugMessage("Objective value: %g \n",SCIPvarGetObj(indsetvars[i]));
-         //SCIPdebugMessage("Var with index %d is in the max IS\n", SCIPvarGetProbindex(indsetvars[i]));
-         //SCIPdebugMessage("Node Index: %d\n",i);
          solvals[SCIPvarGetProbindex(indsetvars[i])] = 1.0;
-         ++debugcounter;         
       }
       else
       {
@@ -585,28 +511,16 @@ SCIP_RETCODE solveIndependentSet(
       }
    }
 
-   //SCIPdebugMessage("Clique Weight: %d \n",clique_max_weight(g,&cl_opts));
    SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[0], probnr, pricingprobvars, solvals, nsolvars, FALSE, SCIPinfinity(pricingprob)) );
    *ncols = 1;
    *result = SCIP_STATUS_OPTIMAL;
 
-   /*
-   SCIPdebugMessage("Biggest objective value: %g \n", biggestobj);
-   SCIPdebugMessage("Total number of vars in the max IS: %d \n", debugcounter);
-   SCIPdebugMessage("Total number of unique variables: %d \n", npricingprobvars);
-   SCIPdebugMessage("Total number of unique IS variables: %d \n", indexcount);
-   SCIPdebugMessage("%g%% of the variables are IS variables \n", (((double)indexcount)/npricingprobvars)*100);
-   SCIPdebugMessage("Total number of constraints: %d \n", nconss);
-   SCIPdebugMessage("Total number of IS constraints: %d \n", indsetconstraintcount);
-   SCIPdebugMessage("%g%% of the contraints are IS contraints \n\n", (((double)indsetconstraintcount)/nconss)*100);
-   */
    SCIPfreeBufferArray(pricingprob,&indsetvars);
    SCIPfreeBufferArray(pricingprob,&solvals);
    SCIPfreeBufferArray(pricingprob,&consvars);
    graph_free(g);
    set_free(clique);
    return SCIP_OKAY;
-
 }
 
 /*
@@ -636,23 +550,7 @@ GCG_DECL_SOLVERFREE(solverFreeIndependentSet)
 #define solverExitsolIndependentSet NULL
 #define solverInitIndependentSet NULL
 #define solverExitIndependentSet NULL
-//#define solverSolveIndependentSet NULL
-
-/** exact solving method for independent set solver */
-static
-GCG_DECL_SOLVERSOLVE(solverSolveIndependentSet)
-{  /*lint --e{715}*/
-
-   GCG_SOLVERDATA* solverdata;
-
-   solverdata = GCGsolverGetSolverdata(solver);
-   assert(solverdata != NULL);
-   /* solve the independent set problem exactly */
-   SCIP_CALL( solveIndependentSet(TRUE, pricingprob, solverdata, probnr, lowerbound, cols, maxcols, ncols, result) );
-
-   return SCIP_OKAY;
-}
-
+#define solverSolveIndependentSet NULL
 
 /** heuristic solving method of independent set solver */
 static
@@ -667,7 +565,6 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurIndependentSet)
 
    return SCIP_OKAY;
 }
-
 
 /** creates the independent set solver for pricing problems and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverIndependentSet(
