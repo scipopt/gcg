@@ -61,12 +61,12 @@ public:
 
    /** gives a consistent filename for a (single) seeed visualization that includes the probname and seeedID
     *
-    * @return filename including the extension
+    * @return standardized filename
     * */
    SCIP_RETCODE GCGgetVisualizationFilename(
       SCIP* scip,             /**< scip data structure */
       SeeedPtr seeed,         /**< seeed that is to be visualized */
-      const char* extension,  /**< .file extension */
+      const char* extension,  /**< file extension (to be included in the name) */
       char* filename          /**< filename output */
       );
 

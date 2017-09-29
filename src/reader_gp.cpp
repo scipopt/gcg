@@ -36,6 +36,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include <cstring>
 #include <fstream>
 
 #include "scip/scip.h"
@@ -72,14 +73,39 @@ SCIP_DECL_READERFREE(readerFreeGp)
    return SCIP_OKAY;
 }
 
+/** gets a filename for the output that is similar to the gp file's name
+ *  if the gp filename is a standardized one from MiscVisualization the output is a standardized filename, too
+ *  else the function detects "gp" in the name and replaces it with the output extension */
+static
+char* getOutputFilename(
+   SCIP*    scip,             /**< SCIP data structure */
+   FILE*    gpfile,           /**< gp file */
+   char*    extension,        /**< extension for the output file */
+   size_t   lengthextension   /**< number of characters in extension (e.g. pdf: 3) */
+   )
+{
+   MiscVisualization* misc = new MiscVisualization();
+   char* gppath;
+   char* name;
+   char* index;
+
+   /* get the path of the gp file and crop everything but the  */
+   gppath = misc->GCGgetFilePath(scip, gpfile);
+   SCIPsplitFilename(gppath, NULL, &name, NULL, NULL);
+
+   /* replace occurences of "gp" by extension */
+   index = strstr(name, "gp");
+   strncpy(index, extension, lengthextension);
+   puts(name);
+
+   return name;
+}
 
 /** problem writing method of reader */
 static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
    MiscVisualization* misc = new MiscVisualization();
-   SEEED_WRAPPER seeedwr;
-   SeeedPtr seeed;
    char* filename;
    char outputname[SCIP_MAXSTRLEN];
    int seeedid;
@@ -97,14 +123,11 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    }
    else
    {
-      GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
-      seeed = seeedwr.seeed;
-
       /* reader internally works with the filename instead of the C FILE type */
       filename = misc->GCGgetFilePath(scip, file);
 
       /* get filename for compiled file */
-      misc->GCGgetVisualizationFilename(scip, seeed, "pdf", outputname);
+      outputname = getOutputFilename( scip, file, "pdf", strlen("pdf") );
       strcat(outputname, ".pdf");
 
       /* actual writing */
@@ -115,11 +138,6 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 
    return SCIP_OKAY;
 }
-
-
-/*
- * Implementations
- */
 
 
 /** write file header with terminal etc. */
@@ -348,11 +366,6 @@ SCIP_RETCODE writeGpSeeed(
 
    return SCIP_OKAY;
 }
-
-
-/*
- * public methods
- */
 
 
 /** writes a visualization for the given seeed */
