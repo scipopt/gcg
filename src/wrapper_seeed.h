@@ -37,6 +37,8 @@
 #define GCG_WRAPPER_SEEED_H__
 
 #include "cons_decomp.h"
+#include "class_seeed.h"
+#include "class_seeedpool.h"
 
 struct Seeed_Wrapper
 {

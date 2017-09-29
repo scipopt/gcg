@@ -78,6 +78,7 @@
 #include "class_seeed.h"
 #include "class_seeedpool.h"
 #include "class_varclassifier.h"
+#include "class_miscvisualization.h"
 #include "pub_decomp.h"
 #include "type_decomp.h"
 #include "wrapper_seeed.h"
@@ -4426,12 +4427,12 @@ SCIP_RETCODE DECwriteAllDecomps(
    char*                 extension           /**< extension for decompositions */
    )
 {
-   char name[SCIP_MAXSTRLEN];
-   char outname[SCIP_MAXSTRLEN];
-   char *pname;
+   MiscVisualization* misc = new MiscVisualization();
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    DEC_DECOMP *tmp;
+   char outname[SCIP_MAXSTRLEN];
+   char tempstring[SCIP_MAXSTRLEN];
    int i;
 
    assert(scip != NULL);
@@ -4449,9 +4450,6 @@ SCIP_RETCODE DECwriteAllDecomps(
       return SCIP_OKAY;
    }
 
-   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
-   SCIPsplitFilename(name, NULL, &pname, NULL, NULL);
-
    tmp = conshdlrdata->useddecomp;
 
    /** write orig decomps currently disabled*/
@@ -4464,13 +4462,14 @@ SCIP_RETCODE DECwriteAllDecomps(
 
          seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
 
+         misc->GCGgetVisualizationFilename(scip, seeed, extension, tempstring);
          if( directory != NULL )
          {
-            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_o%d.%s", directory, pname, i, extension);
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", directory, tempstring, extension);
          }
          else
          {
-            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_o%d.%s", pname, i, extension);
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s.%s", tempstring, extension);
          }
 
          conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &decomplocal) ;
@@ -4491,13 +4490,14 @@ SCIP_RETCODE DECwriteAllDecomps(
 
         seeed = conshdlrdata->seeedpool->getFinishedSeeed( i );
 
+        misc->GCGgetVisualizationFilename(scip, seeed, extension, tempstring);
         if( directory != NULL )
         {
-           (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_p%d.%s", directory, pname, i, extension);
+           (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", directory, tempstring, extension);
         }
         else
         {
-           (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_p%d.%s", pname, i, extension);
+           (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s.%s", tempstring, extension);
         }
 
         conshdlrdata->seeedpool->createDecompFromSeeed(seeed, &decomplocal) ;

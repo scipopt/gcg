@@ -42,6 +42,7 @@
 #include "scip/scip.h"
 
 #include <unistd.h>
+#include <stdlib.h>
 #include <sstream>
 
 using namespace gcg;
@@ -57,16 +58,16 @@ MiscVisualization::~MiscVisualization(){}
  *
  * @return filename including the extension
  * */
-char* MiscVisualization::GCGgetVisualizationFilename(
+SCIP_RETCODE MiscVisualization::GCGgetVisualizationFilename(
    SCIP* scip,             /**< scip data structure */
    SeeedPtr seeed,         /**< seeed that is to be visualized */
-   const char* extension   /**< .file extension */
+   const char* extension,  /**< file extension */
+   char* filename          /**< filename output */
    )
 {
    char* name;
    char* detectorchainstring;
    char probname[SCIP_MAXSTRLEN];
-   char* outname = '\0';
 
    (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
@@ -76,14 +77,14 @@ char* MiscVisualization::GCGgetVisualizationFilename(
 
    /* print header */
    if( seeed == NULL )
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s", name);
    else
    {
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s-%s-%d-%d-%s", name, detectorchainstring, seeed->getID(),
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%s-%d-%d-%s", name, detectorchainstring, seeed->getID(),
          seeed->getNBlocks(), extension);
    }
 
-   return outname;
+   return SCIP_OKAY;
 }
 
 
@@ -101,98 +102,89 @@ char* MiscVisualization::GCGgetFilePath(
    filedesc = fileno(file); /* get link to file descriptor */
    if( filedesc < 0 )
    {
-      SCIPerrorMessage("File reading error!\n");
+      SCIPerrorMessage("File reading error, no fileno!\n");
    }
    snprintf(sympath, SCIP_MAXSTRLEN, "/proc/self/fd/%d", filedesc); /* set symbolic link to file */
-   success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
-   if( success < 0 )
-   {
-      SCIPerrorMessage("File reading error!\n");
-   }
+   pfile = realpath(sympath, NULL);
+   //success = readlink(sympath, pfile, SCIP_MAXSTRLEN); /* get actual path including extension */
+//   if( success < 0 )
+//   {
+//      SCIPerrorMessage("File reading error!\n");
+//   }
    return pfile;
 }
 
 
-/** gets a pointer to the Seeed with given ID
+/** checks in which seeedpool the seeed with given ID is stored and returns that seeedpool
  *
- * @returns SeeedPtr to Seeed or NULL if there is no Seeed with the given ID
  * @returns pool: Seeedpool* where the Seeed was found
  */
-SeeedPtr MiscVisualization::GCGgetSeeedWithPool(
+Seeedpool* MiscVisualization::GCGgetSeeedpoolForSeeed(
    SCIP* scip,       /**< SCIP data structure */
-   int seeedid,      /**< ID of Seeed */
-   Seeedpool* pool   /**< outputs where the Seeed was found */
+   int seeedid       /**< ID of Seeed */
    )
 {
    SEEED_WRAPPER seeedwr;
-   SeeedPtr seeed;
    Seeedpool* seeedpool;
-
-   /* get Seeed from seeedid */
-   seeed = NULL;
 
    GCGgetCurrentSeeedpools(scip, &seeedwr, NULL);
    seeedpool = seeedwr.seeedpool;
-   pool = seeedpool;
 
    /* find in presolved */
    for( int i = 0; i < seeedpool->getNAncestorSeeeds(); ++i)
    {
       if( seeedpool->getAncestorSeeed(i)!= NULL && seeedpool->getAncestorSeeed(i)->getID() == seeedid )
-         return seeedpool->getAncestorSeeed(i);
+         return seeedpool;
    }
 
    for( int i = 0; i < seeedpool->getNIncompleteSeeeds(); ++i)
    {
       if( seeedpool->getIncompleteSeeed(i)->getID() == seeedid )
-         return seeedpool->getIncompleteSeeed(i);
+         return seeedpool;
    }
 
    for( int i = 0; i < seeedpool->getNFinishedSeeeds(); ++i)
    {
       if( seeedpool->getFinishedSeeed(i)->getID() == seeedid )
-         return seeedpool->getFinishedSeeed(i);
+         return seeedpool;
    }
 
    for( int i = 0; i < seeedpool->getNCurrentSeeeds(); ++i)
    {
       if( seeedpool->getCurrentSeeed(i)->getID() == seeedid )
-         return seeedpool->getCurrentSeeed(i);
+         return seeedpool;
    }
 
    /* find in unpresolved */
    GCGgetCurrentSeeedpools(scip, NULL, &seeedwr);
    seeedpool = seeedwr.seeedpool;
-   pool = seeedpool;
 
    if( seeedpool != NULL )
    {
       for( int i = 0; i < seeedpool->getNAncestorSeeeds(); ++i)
       {
          if( seeedpool->getAncestorSeeed(i)!= NULL && seeedpool->getAncestorSeeed(i)->getID() == seeedid )
-            return seeedpool->getAncestorSeeed(i);
+            return seeedpool;
       }
 
       for( int i = 0; i < seeedpool->getNIncompleteSeeeds(); ++i)
       {
          if( seeedpool->getIncompleteSeeed(i)->getID() == seeedid )
-            return seeedpool->getIncompleteSeeed(i);
+            return seeedpool;
       }
 
       for( int i = 0; i < seeedpool->getNFinishedSeeeds(); ++i)
       {
          if( seeedpool->getFinishedSeeed(i)->getID() == seeedid )
-            return seeedpool->getFinishedSeeed(i);
+            return seeedpool;
       }
 
       for( int i = 0; i < seeedpool->getNCurrentSeeeds(); ++i)
       {
          if( seeedpool->getCurrentSeeed(i)->getID() == seeedid )
-            return seeedpool->getCurrentSeeed(i);
+            return seeedpool;
       }
    }
 
-   pool = NULL;
-   SCIPerrorMessage("Found no Seeed with given ID, Seeedpool is %d!\n", pool);
-   return seeed;
+   return NULL;
 }

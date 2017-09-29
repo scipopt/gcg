@@ -4643,8 +4643,10 @@ void Seeed::showVisualisation()
    MiscVisualization* miscvisu = new MiscVisualization();
 
    /* get names for gp file and output file */
-   char* filename = miscvisu->GCGgetVisualizationFilename(scip, this, ".gp");
-   char* outname = miscvisu->GCGgetVisualizationFilename(scip, this, ".pdf");
+   char* filename;
+   char* outname;
+   miscvisu->GCGgetVisualizationFilename(scip, this, ".gp", filename);
+   miscvisu->GCGgetVisualizationFilename(scip, this, ".pdf", outname);
 
    /* generate gp file */
    GCGwriteGpVisualization( scip, filename, outname, getID() );

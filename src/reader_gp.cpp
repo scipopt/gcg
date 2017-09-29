@@ -46,6 +46,7 @@
 #include "cons_decomp.h"
 #include "pub_decomp.h"
 #include "params_visu.h"
+#include "wrapper_seeed.h"
 
 #include "class_seeed.h"
 #include "class_seeedpool.h"
@@ -77,9 +78,10 @@ static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
    MiscVisualization* misc = new MiscVisualization();
+   SEEED_WRAPPER seeedwr;
    SeeedPtr seeed;
    char* filename;
-   char* outputname;
+   char outputname[SCIP_MAXSTRLEN];
    int seeedid;
 
    assert(scip != NULL);
@@ -95,20 +97,21 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    }
    else
    {
-      seeed = misc->GCGgetSeeedWithPool(scip, seeedid, NULL);
+      GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
+      seeed = seeedwr.seeed;
 
       /* reader internally works with the filename instead of the C FILE type */
       filename = misc->GCGgetFilePath(scip, file);
 
       /* get filename for compiled file */
-      outputname = misc->GCGgetVisualizationFilename(scip, seeed, "pdf");
+      misc->GCGgetVisualizationFilename(scip, seeed, "pdf", outputname);
+      strcat(outputname, ".pdf");
 
       /* actual writing */
       GCGwriteGpVisualization(scip, filename, outputname, seeedid);
 
       *result = SCIP_SUCCESS;
    }
-
 
    return SCIP_OKAY;
 }
@@ -131,7 +134,7 @@ SCIP_RETCODE writeGpHeader(
 
    /* set output format and file */
    ofs << "set terminal pdf" << std::endl;
-   ofs << "set output \"" << outputname << ".pdf\"" << std::endl;
+   ofs << "set output \"" << outputname << "\"" << std::endl;
 
    ofs.close();
 
@@ -152,7 +155,7 @@ SCIP_RETCODE drawGpBox(
    )
 {
    std::ofstream ofs;
-   ofs.open( filename, std::ofstream::out );
+   ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
    ofs << "set object " << objectid << " rect from " << x1 << "," << y1 << " to " << x2 << "," << y2 << " fc rgb \""
       << color << "\"" << " lc rgb \"" << SCIPvisuGetColorLine() << "\"" << std::endl;
@@ -259,7 +262,7 @@ SCIP_RETCODE writeGpNonzeros(
       ++countercols;
    }
 
-   ofs.open (filename, std::ofstream::out );
+   ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
    /* start writing dots */
    ofs << "plot \"-\" using 1:2:(" << radius << ") notitle with circles fc rgb \"" << SCIPvisuGetColorNonzero()
@@ -295,7 +298,7 @@ SCIP_RETCODE writeGpSeeed(
    int colboxcounter = 0;
 
    std::ofstream ofs;
-   ofs.open( filename, std::ofstream::out );
+   ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
    /* set coordinate range */
    ofs << "set xrange [-1:" << seeed->getNVars() << "]" << std::endl;
@@ -360,12 +363,17 @@ SCIP_RETCODE GCGwriteGpVisualization(
    int seeedid             /**< id of seeed to visualize */
    )
 {
-   SeeedPtr seeed;
-   Seeedpool* seeedpool = NULL;
    MiscVisualization* misc = new MiscVisualization();
+   SEEED_WRAPPER seeedwr;
+   Seeedpool* seeedpool;
+   SeeedPtr seeed;
+
 
    /* get seeed and seeedpool */
-   seeed = misc->GCGgetSeeedWithPool(scip, seeedid, seeedpool);
+   GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
+   seeed = seeedwr.seeed;
+   seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, seeedid);
+
    if( seeed == NULL )
    {
       SCIPerrorMessage("Could not find Seeed!\n");

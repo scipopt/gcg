@@ -711,10 +711,11 @@ SCIP_RETCODE GCGwriteTexReport(
    )
 {
    MiscVisualization* misc = new MiscVisualization();
+   SEEED_WRAPPER seeedwr;
    Seeed* seeed;
    Seeedpool* seeedpool = NULL;
-   char* gpname;
-   char* pdfname;
+   char* gpname = '\0';
+   char* pdfname = '\0';
 
    /* write tex code into file */
    writeTexHeader(scip, file);
@@ -733,7 +734,10 @@ SCIP_RETCODE GCGwriteTexReport(
          SCIPinfoMessage(scip, file, "                                                                \n");
       }
       /* get and write each seeed */
-      seeed = misc->GCGgetSeeedWithPool(scip, seeedids[i], seeedpool);
+      int tempindex = seeedids[i];
+      GCGgetSeeedFromID(scip, &tempindex, &seeedwr);
+      seeed = seeedwr.seeed;
+      seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, tempindex);
       if(!usegp)
       {
          writeTexSeeed(scip, file, seeed, seeedpool);
@@ -741,8 +745,8 @@ SCIP_RETCODE GCGwriteTexReport(
       else
       {
          /* in case a gp file should be generated include it */
-         gpname = misc->GCGgetVisualizationFilename(scip, seeed, "gp");
-         pdfname = misc->GCGgetVisualizationFilename(scip, seeed, "pdf");
+         misc->GCGgetVisualizationFilename(scip, seeed, "gp", gpname);
+         misc->GCGgetVisualizationFilename(scip, seeed, "pdf", pdfname);
 
          GCGwriteGpVisualization(scip, gpname, pdfname, seeedids[i]);
 
@@ -865,6 +869,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       SeeedPtr seeed;
       char* helpfilename = '\0';
       char* decompfilename = '\0';
+      char* temp = '\0';
 
       seeed = treeseeeds[i];
       strcpy( helpfilename, workfolder );
@@ -872,8 +877,10 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
 
       if(usegp)
       {
-         strcat( helpfilename, miscvisu->GCGgetVisualizationFilename(scip, seeed, ".gp") );
-         strcpy( decompfilename, miscvisu->GCGgetVisualizationFilename(scip, seeed, ".pdf") );
+         miscvisu->GCGgetVisualizationFilename(scip, seeed, ".gp", temp);
+         strcat( helpfilename, temp );
+         miscvisu->GCGgetVisualizationFilename(scip, seeed, ".pdf", temp);
+         strcpy( decompfilename, temp );
 
          GCGwriteGpVisualization(scip, helpfilename, decompfilename, seeed->getID());
          char* command = '\0';
@@ -883,7 +890,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       }
       else
       {
-         strcat( helpfilename, miscvisu->GCGgetVisualizationFilename(scip, seeed, ".tex") );
+         miscvisu->GCGgetVisualizationFilename(scip, seeed, ".tex", temp);
+         strcat( helpfilename, temp );
 
          FILE* helpfile = fopen(helpfilename, "w");
          GCGwriteTexVisualization(scip, helpfile, seeed->getID(), FALSE, FALSE);
@@ -935,8 +943,10 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       if( !visited[curr] )
       {
          /** write node */
+         char* temp = '\0';
+         miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, ".pdf", temp);
          ofs << " (s" << allrelevantseeedswr[curr]->seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{"
-            << miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, ".pdf") << "} }" << std::endl;
+            << temp << "} }" << std::endl;
 
          /* set node visited */
          visited[curr] = TRUE;
@@ -995,13 +1005,16 @@ SCIP_RETCODE GCGwriteTexVisualization(
    )
 {
    MiscVisualization* misc = new MiscVisualization();
+   SEEED_WRAPPER seeedwr;
    Seeed* seeed;
    Seeedpool* seeedpool = NULL;
-   char* gpname;
-   char* pdfname;
+   char* gpname = '\0';
+   char* pdfname = '\0';
 
    /* get seeed */
-   seeed = misc->GCGgetSeeedWithPool(scip, seeedid, seeedpool);
+   GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
+   seeed = seeedwr.seeed;
+   seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, seeedid);
 
    /* write tex code into file */
    writeTexHeader(scip, file);
@@ -1013,8 +1026,8 @@ SCIP_RETCODE GCGwriteTexVisualization(
    else
    {
       /* in case a gp file should be generated include it */
-      gpname = misc->GCGgetVisualizationFilename(scip, seeed, "gp");
-      pdfname = misc->GCGgetVisualizationFilename(scip, seeed, "pdf");
+       misc->GCGgetVisualizationFilename(scip, seeed, "gp", gpname);
+       misc->GCGgetVisualizationFilename(scip, seeed, "pdf", pdfname);
 
       GCGwriteGpVisualization(scip, gpname, pdfname, seeedid);
 

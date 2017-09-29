@@ -63,10 +63,11 @@ public:
     *
     * @return filename including the extension
     * */
-   char* GCGgetVisualizationFilename(
+   SCIP_RETCODE GCGgetVisualizationFilename(
       SCIP* scip,             /**< scip data structure */
       SeeedPtr seeed,         /**< seeed that is to be visualized */
-      const char* extension   /**< file extension */
+      const char* extension,  /**< .file extension */
+      char* filename          /**< filename output */
       );
 
 
@@ -91,15 +92,13 @@ public:
       );
 
 
-   /** gets a pointer to the Seeed with given ID
+   /** checks in which seeedpool the seeed with given ID is stored and returns that seeedpool
     *
-    * @returns SeeedPtr to Seeed or NULL if there is no Seeed with the given ID
     * @returns pool: Seeedpool* where the Seeed was found
     */
-   SeeedPtr GCGgetSeeedWithPool(
+   Seeedpool* GCGgetSeeedpoolForSeeed(
       SCIP* scip,       /**< SCIP data structure */
-      int seeedid,      /**< ID of Seeed */
-      Seeedpool* pool   /**< outputs where the Seeed was found */
+      int seeedid       /**< ID of Seeed */
       );
 
 }; /* class MiscVisualization */
