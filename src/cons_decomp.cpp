@@ -4856,46 +4856,9 @@ DEC_DECOMP* DECgetBestDecomp(
       seeed = translatedseeeds[0];
    }
 
-
    seeedpool->createDecompFromSeeed(seeed, &decomp);
 
    return decomp;
-
-
-   /** OLD HACK! */
-//   if( conshdlrdata->selectedexists )
-//   {
-//
-//      seeedpool->createDecompFromSeeed(conshdlrdata->listall->at( conshdlrdata->selected->at(0) ), &decomp) ;
-//      return decomp;
-//   }
-//
-//   if( conshdlrdata->ndecomps > 0 )
-//      return conshdlrdata->decdecomps[0];
-//
-//   else if ( conshdlrdata->createbasicdecomp)
-//   {
-//      SCIP_RETCODE retcode;
-//      DEC_DECOMP* decomp = NULL;
-//      retcode = DECcreateBasicDecomp(scip, &decomp);
-//      assert(retcode == SCIP_OKAY);
-//      assert(decomp != NULL );
-//
-//      retcode = SCIPconshdlrDecompAddDecdecomp(scip, decomp);
-//      if( retcode != SCIP_OKAY )
-//      {
-//         SCIPerrorMessage("Could not add decomp to cons_decomp!\n");
-//         return NULL;
-//      }
-//
-//      assert(conshdlrdata->ndecomps > 0);
-//      assert(conshdlrdata->decdecomps[0] != NULL);
-//      return conshdlrdata->decdecomps[0];
-//   }
-//
-//   SCIPdebugMessagePrint(scip, "no decomps out there \n");
-//
-//   return NULL;
 }
 
 /** returns the Seeed ID of the best Seeed if available and -1 otherwise */
@@ -4904,50 +4867,13 @@ SCIP_RETCODE DECgetBestSeeed(
    int*                  seeedid             /**< output seeed id */
    )
 {
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   assert(scip != NULL);
-
-   gcg::Seeedpool* seeedpool;
-   gcg::Seeedpool* seeedpoolunpresolved;
-   SeeedPtr seeed;
+   DEC_DECOMP* decomp;
 
    *seeedid = -1;
+   decomp = DECgetBestDecomp(scip);
 
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   if( conshdlrdata->seeedpool == NULL )
-      conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
-
-   seeedpool = conshdlrdata->seeedpool;
-   seeedpoolunpresolved = conshdlrdata->seeedpoolunpresolved;
-
-   if( conshdlrdata->candidates->size() == 0 )
-   {
-      *seeedid = -1;
-      return SCIP_OKAY;
-   }
-
-   seeed = conshdlrdata->candidates->at( 0 ).first;
-
-   if( SCIPconshdlrDecompIsBestCandidateUnpresolved(scip) )
-   {
-      std::vector<SeeedPtr> seeedtotranslate(0);
-      std::vector<SeeedPtr> translatedseeeds(0);
-
-      seeedtotranslate.push_back(seeed);
-      seeedpool->translateSeeeds(seeedpoolunpresolved, seeedtotranslate, translatedseeeds);
-      seeed = translatedseeeds[0];
-   }
-
-   if(seeed != NULL)
-   {
-      *seeedid = seeed->getID();
-   }
+   if(decomp != NULL)
+      *seeedid = DECdecompGetSeeedID(decomp);
 
    return SCIP_OKAY;
 }
