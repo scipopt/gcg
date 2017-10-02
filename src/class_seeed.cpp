@@ -1748,17 +1748,17 @@ SCIP_RETCODE Seeed::completeByConnected(
           setConsToBlock( cons, newBlockNr - 1 );
           deleteOpencons( cons );
 
-          for( size_t i = 0; i < seeedpool->getNVarsForCons(cons); ++ i )
+          for( int j = 0; j < seeedpool->getNVarsForCons(cons); ++ j )
           {
-             int var = seeedpool->getVarsForCons(cons)[i];
+             int newvar = seeedpool->getVarsForCons(cons)[j];
 
-             if( isVarLinkingvar(var) )
+             if( isVarLinkingvar(newvar) )
                 continue;
 
-             assert(! isVarMastervar(var) );
-             setVarToBlock( var, newBlockNr - 1 );
-             assert( isVarOpenvar( var ) );
-             deleteOpenvar( var );
+             assert(! isVarMastervar(newvar) );
+             setVarToBlock( newvar, newBlockNr - 1 );
+             assert( isVarOpenvar( newvar ) );
+             deleteOpenvar( newvar );
           }
 
        }
@@ -2974,9 +2974,9 @@ SCIP_Real Seeed::evaluate(
    if( smartscore && maxwhitescore <= 0.8 && getNLinkingvars() == 0 )
    {
       masterissetppc = true;
-      for( int i = 0; i < getNMasterconss(); ++i )
+      for( int l = 0; l < getNMasterconss(); ++l )
       {
-         int consid = getMasterconss()[i];
+         int consid = getMasterconss()[l];
          if( ! seeedpool->isConsSetppc(consid) && ! seeedpool->isConsCardinalityCons(consid) )
          {
             masterissetppc = false;
@@ -4809,8 +4809,8 @@ void Seeed::showVisualisation()
    MiscVisualization* miscvisu = new MiscVisualization();
 
    /* get names for gp file and output file */
-   char* filename;
-   char* outname;
+   char filename[SCIP_MAXSTRLEN];
+   char outname[SCIP_MAXSTRLEN];
    miscvisu->GCGgetVisualizationFilename(scip, this, ".gp", filename);
    miscvisu->GCGgetVisualizationFilename(scip, this, ".pdf", outname);
 

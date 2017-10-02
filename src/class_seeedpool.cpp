@@ -1709,7 +1709,7 @@ void Seeedpool::calcTranslationMapping(
    }
 
    for ( size_t i  = 0; i < rowothertothis.size(); ++i )
-      std::cout << (rowothertothis[i] == i) << " " ;
+      std::cout << ( rowothertothis[i] == i ) << " " ;
 
    std::cout << std::endl;
 

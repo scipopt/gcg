@@ -97,7 +97,6 @@ char* MiscVisualization::GCGgetFilePath(
    char* pfile = '\0';
    char sympath[SCIP_MAXSTRLEN];
    int filedesc;
-   int success;
 
    filedesc = fileno(file); /* get link to file descriptor */
    if( filedesc < 0 )
