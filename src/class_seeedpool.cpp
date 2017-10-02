@@ -60,6 +60,7 @@
 #include "scip/cons.h"
 #include "scip/scip.h"
 #include <algorithm>
+#include <list>
 #include <iostream>
 #include <stdio.h>
 #include <sstream>
@@ -483,6 +484,20 @@ Seeedpool::Seeedpool(
 
    int ndetectors;
    DEC_Detector** detectors;
+   SCIP_Bool createconssadj;
+   SCIP_Bool useconnected;
+   SCIP_Bool useconssadj;
+
+   createconssadj = TRUE;
+
+   if( transformed )
+      SCIPgetBoolParam(scip, "detectors/connectedbase/enabled", &useconnected);
+   else
+      SCIPgetBoolParam(scip, "detectors/connectedbase/origenabled", &useconnected);
+
+   SCIPgetBoolParam(scip, "detectors/connectedbase/useconssadj", &useconssadj);
+
+   createconssadj = useconnected && useconssadj;
 
    if( ! transformed )
    {
@@ -492,7 +507,6 @@ Seeedpool::Seeedpool(
 
    int relevantVarCounter = 0;
    int relevantConsCounter = 0;
-
 
    detectors = SCIPconshdlrDecompGetDetectors(scip);
    ndetectors = SCIPconshdlrDecompGetNDetectors(scip);
@@ -561,11 +575,22 @@ Seeedpool::Seeedpool(
 
       relevantCons = transformed ? consGetRelevantRepr( scip, conss[i] ) : conss[i];
 
+      if( SCIPconsIsDeleted( relevantCons ) || SCIPconsIsObsolete(relevantCons) )
+         continue;
+
       if( relevantCons != NULL )
       {
          scipConsToIndex[relevantCons] = relevantConsCounter;
          consToScipCons.push_back( relevantCons );
-         ++ relevantConsCounter;
+
+        //SCIPcaptureCons(scip, relevantCons);
+
+//         if( relevantConsCounter == 7712 && transformed )
+//         {
+//            ++ relevantConsCounter;
+//            -- relevantConsCounter;
+//         }
+         ++relevantConsCounter;
       }
       else
       {
@@ -618,6 +643,8 @@ Seeedpool::Seeedpool(
       if( nCurrVars == 0 )
          continue;
 
+      assert(SCIPconsGetName( cons) != NULL);
+
       SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVars, nCurrVars ) );
       SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & currVals, nCurrVars ) );
       SCIP_CALL_ABORT( GCGconsGetVars( scip, cons, currVars, nCurrVars ) );
@@ -651,6 +678,43 @@ Seeedpool::Seeedpool(
 
    }
 
+   if( createconssadj )
+   {
+      std::vector<std::list<int>> conssadjacenciestemp;
+
+      /** find constraint <-> constraint relationships and store them in both directions */
+      for( size_t i = 0; i < consToScipCons.size(); ++ i )
+      {
+         conssadjacenciestemp.push_back(std::list<int>(0));
+         for( size_t varid = 0; varid < varsForConss[i].size(); ++varid )
+         {
+            int var = varsForConss[i][varid];
+
+            for( size_t otherconsid = 0; otherconsid < conssForVars[var].size(); ++otherconsid )
+            {
+               int othercons = conssForVars[var][otherconsid];
+               if( othercons == (int) i )
+                  continue;
+
+               std::list<int>::iterator consiter = std::lower_bound( conssadjacenciestemp[i].begin(),conssadjacenciestemp[i].end(), othercons);
+
+               if( *consiter != othercons )
+                  conssadjacenciestemp[i].insert(consiter, othercons);
+            }
+         }
+      }
+
+      for( size_t i = 0; i < consToScipCons.size(); ++ i )
+      {
+         conssadjacencies.push_back(std::vector<int>(0));
+         std::list<int>::iterator consiter = conssadjacenciestemp[i].begin();
+         std::list<int>::iterator consiterend = conssadjacenciestemp[i].end();
+         for( ; consiter != consiterend; ++consiter )
+         {
+            conssadjacencies[i].push_back(*consiter);
+         }
+      }
+   }
    /*  init  seeedpool with empty seeed */
    SeeedPtr emptyseeed = new Seeed( scip, SCIPconshdlrDecompGetNextSeeedID( scip ), nConss, nVars );
 
@@ -1644,14 +1708,14 @@ void Seeedpool::calcTranslationMapping(
       }
    }
 
-      for( int i  = 0; i < (int) rowothertothis.size(); ++i )
-         std::cout << (rowothertothis[i] == i) << " " ;
+   for ( size_t i  = 0; i < rowothertothis.size(); ++i )
+      std::cout << (rowothertothis[i] == i) << " " ;
 
-      std::cout << std::endl;
+   std::cout << std::endl;
 
-      for( int i  = 0; i < (int) colothertothis.size(); ++i )
-         std::cout << ( colothertothis[i] == i ) << " " ;
-      std::cout << std::endl;
+   for ( size_t i  = 0; i < colothertothis.size(); ++i )
+      std::cout << ( colothertothis[i] == i ) << " " ;
+   std::cout << std::endl;
 
 }
 
@@ -1907,6 +1971,73 @@ SCIP_RETCODE Seeedpool::prepareSeeed(
    return SCIP_OKAY;
 }
 
+bool Seeedpool::isConsCardinalityCons(
+      int  consindexd
+      )
+{
+   SCIP_CONS* cons;
+
+   cons = consToScipCons[consindexd];
+
+   assert(cons != NULL);
+
+   return GCGgetConsIsCardinalityCons(scip, cons);
+
+
+}
+
+
+bool Seeedpool::isConsSetppc(
+      int  consindexd
+      )
+{
+   SCIP_CONS* cons;
+
+   cons = consToScipCons[consindexd];
+
+   assert(cons != NULL);
+
+   if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "setppc") == 0 )
+         {
+            switch( SCIPgetTypeSetppc(scip, cons) )
+            {
+            case SCIP_SETPPCTYPE_COVERING:
+               return true;
+               break;
+            case SCIP_SETPPCTYPE_PARTITIONING:
+               return true;
+
+            case SCIP_SETPPCTYPE_PACKING:
+               return true;
+            }
+         }
+         else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "logicor") == 0 )
+         {
+            return true;
+         }
+         else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0 )
+         {
+            SCIP_SETPPCTYPE type;
+
+            if( GCGgetConsIsSetppc(scip, cons, &type) )
+            {
+               switch( type )
+               {
+               case SCIP_SETPPCTYPE_COVERING:
+                  return true;
+               case SCIP_SETPPCTYPE_PARTITIONING:
+               return true;
+               case SCIP_SETPPCTYPE_PACKING:
+               return true;
+               }
+            }
+
+         }
+
+   return false;
+}
+
+
 /** sorts seeeds in allrelevantseeeds data structure by ascending id */
 void Seeedpool::sortAllRelevantSeeeds()
 {
@@ -1955,6 +2086,16 @@ const int* Seeedpool::getConssForVar(
    return & conssForVars[var][0];
 }
 
+/** returns the constraint indices of the coefficient matrix for a constraint */
+const int* Seeedpool::getConssForCons(
+   int cons
+   )
+{
+   return & conssadjacencies[cons][0];
+}
+
+
+
 /** returns the number of variables for a given constraint */
 int Seeedpool::getNVarsForCons(
    int cons
@@ -1970,6 +2111,15 @@ int Seeedpool::getNConssForVar(
 {
    return conssForVars[var].size();
 }
+
+/** returns the number of constraints for a given variable */
+int Seeedpool::getNConssForCons(
+   int cons
+   )
+{
+   return conssadjacencies[cons].size();
+}
+
 
 /** returns the SCIP variable related to a variable index */
 SCIP_VAR* Seeedpool::getVarForIndex(
@@ -3477,6 +3627,9 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    int conscounter = 1; /* in consindex counting starts with 1 */
    int counterstairlinkingvars = 0;
    int size;
+   int ncalls;
+   int modifier;
+   int nlinkingconss;
 
    assert( seeed->checkConsistency( this ) );
 
@@ -3500,23 +3653,34 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIP_CALL_ABORT( SCIPhashmapCreate( & consindex, SCIPblkmem( scip ), seeed->getNConss() ) );
 
    /* set linking constraints */
+   modifier = 0;
+   nlinkingconss = seeed->getNMasterconss();
    for( int c = 0; c < seeed->getNMasterconss(); ++ c )
    {
       int consid = seeed->getMasterconss()[c];
       SCIP_CONS* scipcons = consToScipCons[consid];
-      linkingconss[c] = scipcons;
-      SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( seeed->getNBlocks() + 1 ) ) );
-      SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
-      conscounter ++;
+      if( SCIPconsIsDeleted( scipcons) || scipcons == NULL || SCIPconsIsObsolete(scipcons))
+      {
+         --nlinkingconss;
+         ++modifier;
+      }
+      else
+      {
+         linkingconss[c-modifier] = scipcons;
+         SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( seeed->getNBlocks() + 1 ) ) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
+         conscounter ++;
+      }
    }
 
-   if( seeed->getNMasterconss() != 0 )
-      DECdecompSetLinkingconss( scip, * newdecomp, linkingconss, seeed->getNMasterconss() );
+   if( nlinkingconss != 0 )
+      DECdecompSetLinkingconss( scip, * newdecomp, linkingconss, nlinkingconss );
    else
       linkingconss = NULL;
    /* set block constraints */
    for( int b = 0; b < seeed->getNBlocks(); ++ b )
    {
+      modifier = 0;
       SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & subscipconss[b], seeed->getNConssForBlock( b ) ) );
       nsubscipconss[b] = seeed->getNConssForBlock( b );
       for( int c = 0; c < seeed->getNConssForBlock( b ); ++ c )
@@ -3524,11 +3688,19 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
          int consid = seeed->getConssForBlock( b )[c];
          SCIP_CONS* scipcons = consToScipCons[consid];
 
-         assert( scipcons != NULL );
-         subscipconss[b][c] = scipcons;
-         SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( b + 1 ) ) );
-         SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
-         conscounter ++;
+         if( SCIPconsIsDeleted( scipcons) || scipcons == NULL )
+            {
+               --nsubscipconss[b];
+               ++modifier;
+            }
+         else
+         {
+            assert( scipcons != NULL );
+            subscipconss[b][c-modifier] = scipcons;
+            SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( b + 1 ) ) );
+            SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
+            conscounter ++;
+         }
       }
    }
 
@@ -3730,7 +3902,14 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    }
 
 
-   SCIP_CALL( DECevaluateDecomposition( scip, * newdecomp, & scores ) );
+   //SCIP_CALL( DECevaluateDecomposition( scip, * newdecomp, & scores ) );
+
+   std::cout <<" seeed maxwhitescore: " << seeed->getMaxWhiteScore() << std::endl;
+
+   scores.maxwhitescore = seeed->getMaxWhiteScore();
+
+   DECsetMaxWhiteScore(scip, *newdecomp, seeed->getMaxWhiteScore() );
+
 
    assert( scores.maxwhitescore == seeed->getMaxWhiteScore() );
    assert( DECdecompCheckConsistency( scip, ( * newdecomp ) ) );

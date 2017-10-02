@@ -55,6 +55,10 @@ enum scoretype {
 
 typedef enum scoretype SCORETYPE;
 
+struct seeedpool_wrapper;
+
+typedef struct seeedpool_wrapper SEEEDPOOL_WRAPPER ;
+
 SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP*          scip
 );
@@ -153,6 +157,16 @@ SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpool(
 
 /** creates the seeedpool for the unpresolved problem **/
 SCIP_RETCODE SCIPconshdlrDecompCreateSeeedpoolUnpresolved(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** @TODO: IMPORTANT this method will be deleted if the corresponidng wrapper classes are introduced **/
+SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** @TODO: IMPORTANT this method will be deleted if the corresponidng wrapper classes are introduced **/
+SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolExtern(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

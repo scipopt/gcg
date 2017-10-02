@@ -173,6 +173,7 @@
 #include "params_visu.h"
 #include "reader_gp.h"
 #include "reader_tex.h"
+#include "reader_cls.h"
 
 #ifndef NBLISS
 #include "dec_isomorph.h"
@@ -361,6 +362,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeParamsVisu(scip) );
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeReaderTex(scip) );
+   SCIP_CALL( SCIPincludeReaderCls(scip) );
 
    /* Detectors and decompositions */
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );

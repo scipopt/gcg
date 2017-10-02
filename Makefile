@@ -211,6 +211,8 @@ LIBOBJ		=	reader_tex.o \
 			dec_varclass.o \
 			gcggithash.o \
 			reader_gp.o \
+			reader_tex.o \
+			reader_cls.o \
 			scip_misc.o \
 			misc.o \
 			gcgheur.o \

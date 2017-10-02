@@ -1237,7 +1237,8 @@ SCIP_DECL_READERWRITE(readerWriteDec)
    SCIP_CALL( GCGwriteDecomp(scip, file, bestdecomp ) );
    *result = SCIP_SUCCESS;
 
-   DECdecompFree(scip, &bestdecomp);
+   if ( bestdecomp != NULL )
+      DECdecompFree(scip, &bestdecomp);
 
    return SCIP_OKAY;
 }

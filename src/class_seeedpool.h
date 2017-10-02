@@ -100,8 +100,8 @@ private:
    std::vector<SCIP_CONS*> consToScipCons;                     /**< stores the corresponding scip constraints pointer */
    std::vector<SCIP_VAR*> varToScipVar;                        /**< stores the corresponding scip variable pointer */
    std::vector<DEC_DETECTOR*> detectorToScipDetector;          /**< stores the corresponding SCIP detector pinter */
-   std::vector<DEC_DETECTOR*> detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pointer
-                                                                 */
+   std::vector<DEC_DETECTOR*> detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pointer*/
+   std::vector<std::vector<int>> conssadjacencies;
    std::tr1::unordered_map<SCIP_CONS*, int> scipConsToIndex;   /**< maps SCIP_CONS* to the corresponding index */
    std::tr1::unordered_map<SCIP_VAR*, int> scipVarToIndex;     /**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int> scipDetectorToIndex;        /**< maps SCIP_VAR* to the corresponding index */
@@ -123,8 +123,6 @@ private:
    std::vector<int> usercandidatesnblocks;               /**< candidate for the number of blocks that were given by the user and thus will be handled priorized */
    std::vector<std::pair<int, int>> candidatesNBlocks;   /**< candidate for the number of blocks  */
 
-   std::vector<ConsClassifier*> consclassescollection;   /**< collection of different constraint class distributions  */
-   std::vector<VarClassifier*> varclassescollection;     /**< collection of different variabale class distributions   */
 
    SCIP_Bool transformed;                                /**< corresponds the matrix datastructure to the transformed
                                                            *< problem */
@@ -134,6 +132,10 @@ private:
 
 
 public:
+
+   std::vector<ConsClassifier*> consclassescollection;   /**< collection of different constraint class distributions  */
+   std::vector<VarClassifier*> varclassescollection;     /**< collection of different variabale class distributions   */
+
 
    /** constructor */
    Seeedpool(
@@ -269,6 +271,16 @@ public:
    /** @todo revise comment and probably rename! sorts seeeds in allrelevantseeeds data structure by ascending id */
    void sortAllRelevantSeeeds();
 
+
+   bool isConsCardinalityCons(
+         int  consindexd
+         );
+
+
+   bool isConsSetppc(
+      int  consindexd
+      );
+
    /** returns the variable indices of the coefficient matrix for a constraint */
    const int* getVarsForCons(
       int consIndex /**< index of the constraint to be considered */
@@ -292,6 +304,15 @@ public:
    /** returns the number of constraints for a given variable */
    int getNConssForVar(
       int varIndex /**< index of the variable to be considered */
+      );
+
+   const int* getConssForCons(
+      int consIndex /**< index of the constraint to be considered */
+      );
+
+   /** returns the number of constraints for a given constraint */
+   int getNConssForCons(
+      int consIndex /**< index of the constraint to be considered */
       );
 
    /** returns the SCIP variable related to a variable index */
