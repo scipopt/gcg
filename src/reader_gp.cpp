@@ -78,10 +78,10 @@ SCIP_DECL_READERFREE(readerFreeGp)
  *  else the function detects "gp" in the name and replaces it with the output extension */
 static
 char* getOutputFilename(
-   SCIP*    scip,             /**< SCIP data structure */
-   FILE*    gpfile,           /**< gp file */
-   char*    extension,        /**< extension for the output file */
-   size_t   lengthextension   /**< number of characters in extension (e.g. pdf: 3) */
+   SCIP*       scip,             /**< SCIP data structure */
+   FILE*       gpfile,           /**< gp file */
+   const char* extension,        /**< extension for the output file */
+   size_t      lengthextension   /**< number of characters in extension (e.g. pdf: 3) */
    )
 {
    MiscVisualization* misc = new MiscVisualization();
@@ -107,7 +107,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 {
    MiscVisualization* misc = new MiscVisualization();
    char* filename;
-   char outputname[SCIP_MAXSTRLEN];
+   char* outputname;
    int seeedid;
 
    assert(scip != NULL);
