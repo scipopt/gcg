@@ -125,7 +125,7 @@ SCIP_RETCODE getRgbFromHex(
    int*     blue     /**< output decimal b */
    )
 {
-   char* temp = '\0';
+   char temp[SCIP_MAXSTRLEN];
    int check = 0;
    unsigned int r = 0;
    unsigned int g = 0;
@@ -133,7 +133,7 @@ SCIP_RETCODE getRgbFromHex(
 
    assert( hex[0] == '#' );
 
-   /* remove the # at the beginning */
+   /* remove the '#' at the beginning */
    strcpy( temp, hex );
    memmove( temp, temp+1, strlen( temp ) );
 
@@ -151,30 +151,39 @@ SCIP_RETCODE getRgbFromHex(
 
 /** converts a hex color code into a tex-conform line of code that defines the color as \colorname */
 static
-char* getTexColorFromHex(
-   char* hex,              /* hex code for color */
-   const char* colorname   /* name of color */
+SCIP_RETCODE getTexColorFromHex(
+   char* hex,              /**< hex code for color */
+   const char* colorname,  /**< name of color */
+   char* code              /**< resulting code line */
    )
 {
-   char* texcode;
+   char texcode[SCIP_MAXSTRLEN];
+   char colorcode[SCIP_MAXSTRLEN];
    int r;
    int g;
    int b;
 
+   /* convert hex color code to rgb color */
    getRgbFromHex( hex, &r, &g, &b );
-   texcode = '\0';
 
-   strcat( texcode, "\\definecolor{" );
-   strcpy( texcode, colorname );
-   strcpy( texcode, "}{RGB}{" );
-   snprintf(texcode, SCIP_MAXSTRLEN, "%d", r);
-   strcpy( texcode, "," );
-   snprintf(texcode, SCIP_MAXSTRLEN, "%d", g);
-   strcpy( texcode, "," );
-   snprintf(texcode, SCIP_MAXSTRLEN, "%d", b);
-   strcpy( texcode, "}" );
+   /* make tex code line that defines a rgb color with the computed values */
+   strcpy( texcode, "\\definecolor{" );
+   strcat( texcode, colorname );
+   strcat( texcode, "}{RGB}{" );
+   snprintf(colorcode, SCIP_MAXSTRLEN, "%d", r);
+   strcat( texcode, colorcode );
+   strcat( texcode, "," );
+   snprintf(colorcode, SCIP_MAXSTRLEN, "%d", g);
+   strcat( texcode, colorcode );
+   strcat( texcode, "," );
+   snprintf(colorcode, SCIP_MAXSTRLEN, "%d", b);
+   strcat( texcode, colorcode );
+   strcat( texcode, "}" );
 
-   return texcode;
+   /* copy the code line into the output variable */
+   strcpy( code, texcode );
+
+   return SCIP_OKAY;
 }
 
 
@@ -185,12 +194,9 @@ SCIP_RETCODE writeTexHeader(
    FILE*                file                /**< File pointer to write to */
    )
 {
-   char* pname;
-   char ppath[SCIP_MAXSTRLEN];
+   char temp[SCIP_MAXSTRLEN];
 
-   strcpy(ppath, SCIPgetProbName(scip));
-   SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
-
+   /* write header */
    SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
    SCIPinfoMessage(scip, file, "%% *                  This file is part of the program                         * \n");
@@ -232,22 +238,31 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "                                                                                 \n");
 
   /* introduce colors of current color scheme */
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorMasterconss(),
-      "colormasterconss"));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorMastervars(),
-      "colormastervars"));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorLinking(),
-      "colorlinking"));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorStairlinking(),
-      "colorstairlinking"));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorBlock(),
-      "colorblock"));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorOpen(),
-      "coloropen"));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorNonzero(),
-      "colornonzero"));
-   SCIPinfoMessage(scip, file, "%s                            \n", getTexColorFromHex(SCIPvisuGetColorLine(),
-      "colorline"));
+   getTexColorFromHex(SCIPvisuGetColorMasterconss(), "colormasterconss", temp);
+   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+
+   getTexColorFromHex(SCIPvisuGetColorMastervars(), "colormastervars", temp);
+   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+
+   getTexColorFromHex(SCIPvisuGetColorLinking(), "colorlinking", temp);
+   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+
+   getTexColorFromHex(SCIPvisuGetColorStairlinking(), "colorstairlinking", temp);
+   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+
+   getTexColorFromHex(SCIPvisuGetColorBlock(), "colorblock", temp);
+   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+
+   getTexColorFromHex(SCIPvisuGetColorOpen(), "coloropen", temp);
+   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+
+   getTexColorFromHex(SCIPvisuGetColorNonzero(), "colornonzero", temp);
+   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+
+   getTexColorFromHex(SCIPvisuGetColorLine(), "colorline", temp);
+   SCIPinfoMessage(scip, file, "%s                            \n", temp);
+
+   /* start writing the document */
    SCIPinfoMessage(scip, file, "                                                                                 \n");
    SCIPinfoMessage(scip, file, "\\begin{document}                                                                \n");
    SCIPinfoMessage(scip, file, "                                                                                 \n");
