@@ -52,6 +52,8 @@
 #include "pub_gcgheur.h"
 #include "stat.h"
 #include "reader_dec.h"
+#include "reader_tex.h"
+#include "params_visu.h"
 
 /* display the reader information */
 static
@@ -303,18 +305,18 @@ SCIP_RETCODE reportAllDecompositions(
    )
 {
    DEC_DECOMP** decomps;
+   FILE* file;
+   DEC_DECTYPE type;
+   SCIP_Bool endoffile;
    char* pname;
    char* dirname;
-   char* tempstring;
    const char* nameinfix = "report_";
    const char* extension = "tex";
    char ppath[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
-   SCIP_Bool endoffile;
-   SCIP_Longint nmaxdecs;
+   int* seeedids;
+   int nseeeds;
    int ndecomps;
-   int ndecompsoftype;
-   int type;
    int i;
 
    /** get temporary decomp files */
@@ -336,7 +338,6 @@ SCIP_RETCODE reportAllDecompositions(
       *nextdialog = NULL;
       return SCIP_OKAY;
    }
-
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
    /* create a name for the new file */
@@ -345,51 +346,44 @@ SCIP_RETCODE reportAllDecompositions(
 
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s%s.%s", dirname, nameinfix, pname, extension);
 
-   /* get a maximum number of decomps to output */
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
-      "Enter a maximum number of decompositions to visualize (ones with best score are preferred): ",
-      &tempstring, &endoffile) );
-
-   nmaxdecs = atoi( tempstring );
-   if ( nmaxdecs == 0 || nmaxdecs < 0)
+   SCIPallocBlockMemoryArray(scip, &seeedids, ndecomps);
+   nseeeds = 0;
+   type = GCGreportGetDecompTypeToShow();
+   if( (int) type == 0 )
    {
-      SCIPdialogMessage(scip, NULL,
-         "This is not a compatible number, all decompositions will be included. \n");
-      nmaxdecs = SCIP_LONGINT_MAX;
-   }
-
-   /* check if only a certain dectype should be included */
-   SCIPdialogMessage(scip, NULL, "Only decompositions of a certain type? \n");
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
-      "Type number (0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered): ", &tempstring, &endoffile) );
-
-   type = atoi( tempstring );
-   /* there are decomp types 0-4 (see type_decomp.h for further infos) */
-   if(type < 0 || type > 4){
-      type = 0;
-      SCIPdialogMessage(scip, NULL,
-               "This is not a compatible number, all decompositions will be included. \n");
-   }
-   ndecompsoftype = 0;
-   if(type == 0)
-   {
-      ndecompsoftype = ndecomps;
+      nseeeds = ndecomps;
+      for( i = 0; i < ndecomps; i++ )
+      {
+         seeedids[i] = DECdecompGetSeeedID(decomps[i]);
+      }
    }
    else
    {
       for( i = 0; i < ndecomps; i++ )
       {
-         if( DECdecompGetType(decomps[i]) == (DEC_DECTYPE) type )
-            ndecompsoftype = ndecompsoftype+1;
+         if( DECdecompGetType(decomps[i]) == type && nseeeds <= GCGreportGetMaxNDecomps() )
+         {
+            nseeeds++;
+            seeedids[i] = DECdecompGetSeeedID(decomps[i]);
+         }
       }
    }
 
-   /* ---------------------------------------------------------------------*/
-   /*@todo write tex code for all decompositions (of right type) into file */
-   /* ---------------------------------------------------------------------*/
+   /* create output file and write report */
+   file = fopen(outname, "w");
+   if( file == NULL )
+   {
+      SCIPdialogMessage(scip, NULL, "error creating report file\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+   }
+   GCGwriteTexReport( scip, file, &seeedids, &nseeeds, GCGreportGetShowTitlepage(), GCGreportGetShowToc(),
+      GCGreportGetShowStatistics(), GCGreportGetUseGp() );
+   fclose(file);
+
+   SCIPfreeBlockMemoryArray(scip, &seeedids, ndecomps);
 
    /* print result message if writing was successful */
-   SCIPdialogMessage(scip, NULL, "report is written to file %s%s.%s in directory %s\n", nameinfix, pname, extension, dirname);
+   SCIPdialogMessage(scip, NULL, "report is written to file %s\n", outname);
 
    /* free the decomp files */
    for( i = 0; i < ndecomps; ++i )

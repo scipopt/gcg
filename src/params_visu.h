@@ -42,6 +42,8 @@
 extern "C" {
 #endif
 
+#include "type_decomp.h"
+
 #include "scip/scip.h"
 
 enum Colorscheme
@@ -151,6 +153,24 @@ extern float SCIPvisuGetNonzeroRadius(
 
 /** gets the name of the pdf reader that should be used */
 extern char* GCGVisuGetPdfReader(void);
+
+/** gets the max number of decomps to be included in reports */
+extern int GCGreportGetMaxNDecomps(void);
+
+/** gets what type of decomps to show in reports (where 0 corresponds to 'show all') */
+extern DEC_DECTYPE GCGreportGetDecompTypeToShow(void);
+
+/** gets whether a titlepage should be included in reports */
+extern SCIP_Bool GCGreportGetShowTitlepage(void);
+
+/** gets whether a table of contents should be included in reports */
+extern SCIP_Bool GCGreportGetShowToc(void);
+
+/** gets whether statistics should be included for each decomp in reports */
+extern SCIP_Bool GCGreportGetShowStatistics(void);
+
+/** if true gp reader should be used for report visualizations, otherwise tex reader */
+extern SCIP_Bool GCGreportGetUseGp(void);
 
 /*@todo include this somewhere where it is automatically called at quitting GCG */
 /** frees all visualization parameters */

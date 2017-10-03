@@ -266,6 +266,7 @@ SCIP_RETCODE writeGpNonzeros(
 
    /* write scatter plot */
    for( int row = 0; row < seeed->getNConss(); ++row )
+   {
       for ( int col = 0; col < seeed->getNVars(); ++col )
       {
          assert( orderToRows[row] != -1 );
@@ -273,6 +274,7 @@ SCIP_RETCODE writeGpNonzeros(
          if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
             ofs << col + 0.5 << " " << row + 0.5 << std::endl;
       }
+   }
 
    /* end writing dots */
    ofs << "e" << std::endl;
@@ -338,7 +340,10 @@ SCIP_RETCODE writeGpSeeed(
    rowboxcounter += seeed->getNOpenconss();
 
    /* --- draw nonzeros --- */
-   writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius( seeed->getNVars(), seeed->getNConss(), 1 ) );
+   if(SCIPvisuGetDraftmode() == FALSE)
+   {
+      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius( seeed->getNVars(), seeed->getNConss(), 1 ) );
+   }
 
    ofs.close();
 

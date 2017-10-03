@@ -546,7 +546,10 @@ SCIP_RETCODE writeTexSeeed(
    rowboxcounter += seeed->getNOpenconss();
 
    /* --- draw nonzeros --- */
-   writeTikzNonzeros( scip, file, seeed, seeedpool, SCIPvisuGetNonzeroRadius( seeed->getNVars(), seeed->getNConss(), 1 ) );
+   if(SCIPvisuGetDraftmode() == FALSE)
+   {
+      writeTikzNonzeros(scip, file, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), 1));
+   }
 
    SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                               \n");
    SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
@@ -717,8 +720,8 @@ int getFirstUnfinishedChild(std::vector<SCIP_Bool> const& childsfinished, std::v
 SCIP_RETCODE GCGwriteTexReport(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< filename including path */
-   int* seeedids,          /**< ids of seeeds to visualize */
-   int* nseeeds,            /**< number of seeeds to visualize */
+   int** seeedids,         /**< ids of seeeds to visualize */
+   int* nseeeds,           /**< number of seeeds to visualize */
    SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
    SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
    SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
@@ -729,8 +732,8 @@ SCIP_RETCODE GCGwriteTexReport(
    SEEED_WRAPPER seeedwr;
    Seeed* seeed;
    Seeedpool* seeedpool = NULL;
-   char* gpname = '\0';
-   char* pdfname = '\0';
+   char gpname[SCIP_MAXSTRLEN];
+   char pdfname[SCIP_MAXSTRLEN];
 
    /* write tex code into file */
    writeTexHeader(scip, file);
@@ -745,11 +748,12 @@ SCIP_RETCODE GCGwriteTexReport(
          char decompname[SCIP_MAXSTRLEN];
 
          SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
-         SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
+         if(toc)
+            SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
          SCIPinfoMessage(scip, file, "                                                                \n");
       }
       /* get and write each seeed */
-      int tempindex = seeedids[i];
+      int tempindex = *(seeedids[i]);
       GCGgetSeeedFromID(scip, &tempindex, &seeedwr);
       seeed = seeedwr.seeed;
       seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, tempindex);
@@ -763,7 +767,7 @@ SCIP_RETCODE GCGwriteTexReport(
          misc->GCGgetVisualizationFilename(scip, seeed, "gp", gpname);
          misc->GCGgetVisualizationFilename(scip, seeed, "pdf", pdfname);
 
-         GCGwriteGpVisualization(scip, gpname, pdfname, seeedids[i]);
+         GCGwriteGpVisualization( scip, gpname, pdfname, *(seeedids[i]) );
 
          SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
          SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
@@ -1054,6 +1058,7 @@ SCIP_RETCODE GCGwriteTexVisualization(
    }
    if(statistics)
       writeTexSeeedStatistics(scip, file, seeed);
+
    writeTexEnding(scip, file);
 
    return SCIP_OKAY;

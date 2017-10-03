@@ -33,10 +33,12 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "params_visu.h"
+#include "type_decomp.h"
+
+#include <limits.h>
 
 
-/* global visualization parameters */
-
+/* color defaults */
 #define COLOR_WHITE     "#FFFFFF"
 #define COLOR_BLUE      "#00549F"
 #define COLOR_LBLUE     "#8EBAE5"
@@ -71,14 +73,29 @@
 #define GREY_COLOR_NONZERO      COLOR_BLACK
 #define GREY_COLOR_LINE         COLOR_BLACK
 
-#define DEFAULT_VISU_RADIUS 5    /* possible scale: 1-10 */
+/* visualization defaults */
+#define DEFAULT_VISU_DRAFTMODE   FALSE                /**< if true no nonzeros are shown in visualizations */
+#define DEFAULT_VISU_COLORSCHEME COLORSCHEME_DEFAULT  /**< is of type VISU_COLORSCHEME */
+#define DEFAULT_VISU_RADIUS      5                    /**< possible scale: 1-10 */
 
-#define DEFAULT_PDFREADER "evince"
+/* pdf reader default */
+#define DEFAULT_PDFREADER        "evince"             /**< name of pdf reader, must be callable by system */
+
+/* report parameter defaults */
+#define DEFAULT_REPORT_MAXNDECOMPS     20       /**< maximum number of decomps to be shown in report */
+#define DEFAULT_REPORT_SHOWTYPE        0        /**< what type of decomps to show
+                                                 * (DEC_DECTYPE, but 0 corresponds to 'show all') */
+#define DEFAULT_REPORT_SHOWTITLEPAGE   TRUE     /**< if true a titlepage is included */
+#define DEFAULT_REPORT_SHOWTOC         TRUE     /**< if true a table of contents is included */
+#define DEFAULT_REPORT_SHOWSTATISTICS  TRUE     /**< if true statistics are included for each decomp */
+#define DEFAULT_REPORT_USEGP           TRUE     /**< if true gnuplot is used for visualizations, otherwise LaTeX/Tikz */
+
 
 struct GCG_VisualizationData
 {
-   SCIP_Bool visudraftmode;            /**< true if no nonzeros should be shown */
-   VISU_COLORSCHEME visucolorscheme;   /**< stores the current color scheme */
+   SCIP_Bool         visudraftmode;    /**< true if no nonzeros should be shown */
+   VISU_COLORSCHEME  visucolorscheme;  /**< stores the current color scheme */
+   int               visuradius;       /**< radius for nonzeros */
 
    char* mancolormastervars;           /**< manual color for master variables */
    char* mancolormasterconss;          /**< manual color for master constraints */
@@ -98,9 +115,14 @@ struct GCG_VisualizationData
    char* greycolornonzero;             /**< black and white color for nonzeros */
    char* greycolorline;                /**< black and white color for lines */
 
-   int visuradius;                     /**< radius for nonzeros */
-
    char* pdfreader;                    /**< name of pdfreader to open files with */
+
+   int         rep_maxndecomps;        /**< maximum number of decomps to be shown in report */
+   DEC_DECTYPE rep_showtype;           /**< what type of decomps to show (where 0 corresponds to 'show all') */
+   SCIP_Bool   rep_showtitle;          /**< if true a titlepage is included */
+   SCIP_Bool   rep_showtoc;            /**< if true a table of contents is included */
+   SCIP_Bool   rep_statistics;         /**< if true statistics are included for each decomp */
+   SCIP_Bool   rep_usegp;              /**< if true gnuplot is used for visualizations, otherwise LaTeX/Tikz */
 };
 
 /* visualization parameter data */
@@ -119,11 +141,11 @@ SCIP_RETCODE SCIPincludeParamsVisu(
 
    SCIP_CALL( SCIPaddBoolParam(scip,
       "visual/draftmode", "if true no nonzeros are shown (may improve performance)",
-      &visudata->visudraftmode, FALSE, FALSE, NULL, NULL) );
+      &visudata->visudraftmode, FALSE, DEFAULT_VISU_DRAFTMODE, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
       "visual/colorscheme", "type number: 0=default, 1=black and white, 2=manual",
-      (int*) &visudata->visucolorscheme, FALSE, 0, 0, 2, NULL, NULL) );
+      (int*) &visudata->visucolorscheme, FALSE, DEFAULT_VISU_COLORSCHEME, 0, 2, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
       "visual/nonzeroradius", "integer value to scale dots from 1-10",
@@ -167,10 +189,38 @@ SCIP_RETCODE SCIPincludeParamsVisu(
       "visual/colors/colorlines", "color for lines in hex code",
       &visudata->mancolorline, FALSE, DEFAULT_COLOR_LINE, NULL, NULL) );
 
+   /* add parameters for report */
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visual/report/maxndecomps", "maximum number of decompositions shown in report (best scores first)",
+      &visudata->rep_maxndecomps, FALSE, DEFAULT_REPORT_MAXNDECOMPS, 1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visual/report/showtype",
+      "only decompositions of type: 0=all types, 1=arrowhead, 2=staircase, 3=diagonal, 4=bordered",
+      (int*) &visudata->rep_showtype, FALSE, DEFAULT_REPORT_SHOWTYPE, 0, 4, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/report/showtitle", "if true a title page is included",
+      &visudata->rep_showtitle, FALSE, DEFAULT_REPORT_SHOWTITLEPAGE, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/report/showtoc", "if true a table of contents is included",
+      &visudata->rep_showtoc, FALSE, DEFAULT_REPORT_SHOWTOC, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/report/showstatistics", "if true statistics are included for each decomp",
+      &visudata->rep_statistics, FALSE, DEFAULT_REPORT_SHOWSTATISTICS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/report/usegp", "if true gnuplot is used for visualizations, otherwise LaTeX/Tikz",
+      &visudata->rep_usegp, FALSE, DEFAULT_REPORT_USEGP, NULL, NULL) );
+
    return SCIP_OKAY;
 }
 
 /* getter & setter */
+
 
 /** gets if draftmode is on
  * draftmode lets visualizations omit nonzeros */
@@ -178,6 +228,7 @@ SCIP_Bool SCIPvisuGetDraftmode()
 {
    return visudata->visudraftmode;
 }
+
 
 /** sets draftmode
  * draftmode lets visualizations omit nonzeros */
@@ -188,11 +239,13 @@ void SCIPvisuSetDraftmode(
    visudata->visudraftmode = setmode;
 }
 
+
 /** gets the colorscheme for visualizations */
 VISU_COLORSCHEME SCIPvisuGetColorscheme()
 {
    return visudata->visucolorscheme;
 }
+
 
 /** sets colorscheme for visualizations */
 void SCIPvisuSetColorscheme(
@@ -218,6 +271,7 @@ char* SCIPvisuGetColorMasterconss()
    }
 }
 
+
 /** gets color for mastervar block in current color scheme */
 char* SCIPvisuGetColorMastervars()
 {
@@ -232,6 +286,7 @@ char* SCIPvisuGetColorMastervars()
       return (char*) DEFAULT_COLOR_MASTERVARS;
    }
 }
+
 
 /** gets color for linking blocks in current color scheme */
 char* SCIPvisuGetColorLinking()
@@ -248,6 +303,7 @@ char* SCIPvisuGetColorLinking()
    }
 }
 
+
 /** gets color for stairlinking blocks in current color scheme */
 char* SCIPvisuGetColorStairlinking()
 {
@@ -262,6 +318,7 @@ char* SCIPvisuGetColorStairlinking()
       return (char*) DEFAULT_COLOR_STAIRLINKING;
    }
 }
+
 
 /** gets color for normal decomp blocks in current color scheme */
 char* SCIPvisuGetColorBlock()
@@ -278,6 +335,7 @@ char* SCIPvisuGetColorBlock()
    }
 }
 
+
 /** gets color for open blocks in current color scheme */
 char* SCIPvisuGetColorOpen()
 {
@@ -292,6 +350,7 @@ char* SCIPvisuGetColorOpen()
       return (char*) DEFAULT_COLOR_OPEN;
    }
 }
+
 
 /** gets color for non-zero points in current color scheme */
 char* SCIPvisuGetColorNonzero()
@@ -308,6 +367,7 @@ char* SCIPvisuGetColorNonzero()
    }
 }
 
+
 /** gets color for lines in current color scheme */
 char* SCIPvisuGetColorLine()
 {
@@ -323,6 +383,7 @@ char* SCIPvisuGetColorLine()
    }
 }
 
+
 /** sets color for mastercon block in current color scheme */
 void SCIPvisuSetColorManMasterconss(
    char* newcolor       /**< new color */
@@ -330,6 +391,7 @@ void SCIPvisuSetColorManMasterconss(
 {
    visudata->mancolormasterconss = newcolor;
 }
+
 
 /** sets manual color for mastervar block in current color scheme */
 void SCIPvisuSetColorManMastervars(
@@ -339,6 +401,7 @@ void SCIPvisuSetColorManMastervars(
    visudata->mancolormastervars = newcolor;
 }
 
+
 /** sets manual color for linking blocks in current color scheme */
 void SCIPvisuSetColorManLinking(
    char* newcolor       /**< new color */
@@ -346,6 +409,7 @@ void SCIPvisuSetColorManLinking(
 {
    visudata->mancolorlinking = newcolor;
 }
+
 
 /** sets manual color for stairlinking blocks in current color scheme */
 void SCIPvisuSetColorManStairlinking(
@@ -355,6 +419,7 @@ void SCIPvisuSetColorManStairlinking(
    visudata->mancolorstairlinking = newcolor;
 }
 
+
 /** sets manual color for normal decomp blocks in current color scheme */
 void SCIPvisuSetColorManBlock(
    char* newcolor       /**< new color */
@@ -362,6 +427,7 @@ void SCIPvisuSetColorManBlock(
 {
    visudata->mancolorblock = newcolor;
 }
+
 
 /** sets manual color for open blocks in current color scheme */
 void SCIPvisuSetColorManOpen(
@@ -371,6 +437,7 @@ void SCIPvisuSetColorManOpen(
    visudata->mancoloropen = newcolor;
 }
 
+
 /** sets manual color for non-zero points in current color scheme */
 void SCIPvisuSetColorManNonzero(
    char* newcolor       /**< new color */
@@ -378,6 +445,7 @@ void SCIPvisuSetColorManNonzero(
 {
    visudata->mancolornonzero = newcolor;
 }
+
 
 /** sets manual color for lines in current color scheme */
 void SCIPvisuSetColorManLine(
@@ -387,12 +455,13 @@ void SCIPvisuSetColorManLine(
    visudata->mancolorline = newcolor;
 }
 
+
 /** gets appropriate radius for nonzeros
  * needs highest indices of both axes */
 float SCIPvisuGetNonzeroRadius(
-   int maxindx,     /**< highest index x-axis */
-   int maxindy,    /**< highest index y-axis */
-   float scalingfactor /**< percentage to scale radius, 1 if no scaling */
+   int maxindx,         /**< highest index x-axis */
+   int maxindy,         /**< highest index y-axis */
+   float scalingfactor  /**< percentage to scale radius, 1 if no scaling */
    )
 {
    int maxind = 0;
@@ -408,11 +477,55 @@ float SCIPvisuGetNonzeroRadius(
    return (visudata->visuradius / maxind) * scalingfactor;
 }
 
+
 /** gets the name of the pdf reader that should be used */
 char* GCGVisuGetPdfReader()
 {
    return visudata->pdfreader;
 }
+
+
+/** gets the max number of decomps to be included in reports */
+int GCGreportGetMaxNDecomps()
+{
+   return visudata->rep_maxndecomps;
+}
+
+
+/** gets what type of decomps to show in reports (where 0 corresponds to 'show all') */
+DEC_DECTYPE GCGreportGetDecompTypeToShow()
+{
+   return visudata->rep_showtype;
+}
+
+
+/** gets whether a titlepage should be included in reports */
+SCIP_Bool GCGreportGetShowTitlepage()
+{
+   return visudata->rep_showtitle;
+}
+
+
+/** gets whether a table of contents should be included in reports */
+SCIP_Bool GCGreportGetShowToc()
+{
+   return visudata->rep_showtoc;
+}
+
+
+/** gets whether statistics should be included for each decomp in reports */
+SCIP_Bool GCGreportGetShowStatistics()
+{
+   return visudata->rep_statistics;
+}
+
+
+/** if true gp reader should be used for report visualizations, otherwise tex reader */
+SCIP_Bool GCGreportGetUseGp()
+{
+   return visudata->rep_usegp;
+}
+
 
 /** frees all visualization parameters */
 void GCGVisuFreeParams(
@@ -421,4 +534,3 @@ void GCGVisuFreeParams(
 {
    SCIPfreeMemory(scip, &visudata);
 }
-
