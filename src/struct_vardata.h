@@ -49,6 +49,15 @@ enum GCG_Vartype
 };
 typedef enum GCG_Vartype GCG_VARTYPE;
 
+/** origin of the variable */
+enum GCG_VarOrigin
+{
+   GCG_VARORIGIN_REDCOST = 0,                /**< variable was created in reduced cost pricing */
+   GCG_VARORIGIN_FARKAS = 1,                 /**< variable was created in farkas pricing */
+   GCG_VARORIGIN_HEURISTIC = 2               /**< variable was created in a heuristic */
+};
+typedef enum GCG_VarOrigin GCG_VARORIGIN;
+
 /** additional data for linking variables */
 struct GCG_LinkingVarData
 {
@@ -93,7 +102,7 @@ struct GCG_MasterVarData
    SCIP_Real*            origvals;           /**< this variable represents vals[i] times the variable origvars[i] in the
                                               *   original program */
    SCIP_Bool             isray;              /**< does this variable represent a ray or an extreme point? */
-
+   GCG_VARORIGIN         origin;
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 

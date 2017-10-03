@@ -794,6 +794,37 @@ SCIP_Real* GCGmasterVarGetOrigvals(
    return vardata->data.mastervardata.origvals;
 }
 
+void GCGmasterVarSetOrigin(
+   SCIP_VAR*             var,
+   GCG_VARORIGIN         origin
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(origin != NULL);
+   vardata->data.mastervardata.origin = origin;
+}
+
+GCG_VARORIGIN GCGmasterVarGetOrigin(
+   SCIP_VAR*             var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.mastervardata.origin != NULL);
+   return vardata->data.mastervardata.origin;
+}
+
 /** returns the number of original variables the pricing variable is contained in */
 int GCGpricingVarGetNOrigvars(
    SCIP_VAR*             var                 /**< SCIP variable structure */
