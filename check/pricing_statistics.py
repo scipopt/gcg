@@ -7,6 +7,7 @@ import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 
 # Define global variables
 params = {}
@@ -23,8 +24,15 @@ def parse_arguments(args):
                         default="plots",
                         help='output directory (default: "plots")')
 
+    parser.add_argument('-n', '--allnodes', action='store_true',
+                        help='set this flag, to plot the pricing-statistics for all nodes, not just the root')
+
+    parser.add_argument('-s', '--splitrounds', type=int,
+                        default=0,
+                        help='the plot can be split into pieces containing a maximum of SPLITROUNDS rounds each (default is no splitting)')
+
     parser.add_argument('filename', nargs='+',
-                        help='Name of the files to be used for the creating the bound plots')
+                        help='Name of the files to be used for the bound plots')
 
     parsed_args = parser.parse_args(args)
     return parsed_args
@@ -36,6 +44,8 @@ def set_params(args):
     :return:
     """
     params['outdir'] = args.outdir
+    params['root_only'] = not args.allnodes
+    params['nSplit'] = args.splitrounds
 
 def get_colmap(pricers):
     """
@@ -68,7 +78,7 @@ def make_plots(data, name):
     :return:
     """
     # set parameters for the plot
-    ymin = -0.1
+    ymin = -0.15
 
     # flat out the data again (maybe in the final version, there should be no dataframe to begin with)
     flat_data = data.reset_index()
@@ -78,10 +88,10 @@ def make_plots(data, name):
     x = (flat_data.time.cumsum()-flat_data.time).values
     y = (flat_data.nVars - ymin).values
     widths = flat_data.time.values
-    colors = get_colmap(flat_data['pricing prob'].values)
+    colors = get_colmap(flat_data['pricing_prob'].values)
 
     # make the bar plot
-    plt.bar(x, y, widths, bottom = ymin, align = 'edge', edgecolor = 'k', color = colors)
+    plt.bar(x, y, widths, bottom = ymin, align = 'edge', edgecolor = 'k', color = colors, label='pricing problems')
 
     # formatting
     ax = plt.gca()
@@ -99,11 +109,11 @@ def make_plots(data, name):
     plt.gcf().subplots_adjust(top=0.835)
 
     # add information about the pricing rounds
-    prev_rnd = 1
+    prev_rnd = min(flat_data['pricing_round'])
     prev_x = 0
     texts = []
     for i in range(len(x)):
-        rnd = flat_data['pricing round'][i]
+        rnd = flat_data['pricing_round'][i]
         if rnd > prev_rnd:
             ax.plot([x[i],x[i]],[ymin,ymax],'r--',linewidth=0.8)
             texts.append(ax.text((x[i] + prev_x)/2. + 0.0033, ymax*1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center'))
@@ -126,6 +136,7 @@ def make_plots(data, name):
 
     # save the figure
     plt.savefig(params['outdir'] + '/' + name + '.png')
+    plt.close()
 
     print '    saved figure'
 
@@ -206,11 +217,24 @@ def generate_files(files):
                         continue
 
                     index = pd.MultiIndex.from_arrays([ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob],
-                                                      names=["node", "pricing round", "stab round", "pricing prob"])
+                                                      names=["node", "pricing_round", "stab_round", "pricing_prob"])
                     data = {'time': val_time, 'nVars': val_nVars}
                     df = pd.DataFrame(data=data, index = index)
 
-                    make_plots(df, problemFileName)
+                    # split the data into pieces of params['nSplit'] rounds
+                    # do nothing if the paramter nSplit is not set (equals zero)
+                    if params['nSplit'] <= 0:
+                        make_plots(df, problemFileName)
+                    else:
+                        maxRnd  = max(df.index.get_level_values('pricing_round').unique().values)
+                        fromRnd = 0
+                        for i in range(1,maxRnd+1):
+                            if i % params['nSplit'] <> 0 and i <> maxRnd:
+                                continue
+                            toRnd = i
+                            make_plots(df.query('@fromRnd < pricing_round <= @toRnd'), problemFileName + '_rounds' + str(fromRnd + 1) + 'to' + str(toRnd))
+                            fromRnd = toRnd
+
                     done = True
 
                     print '    leaving', problemFileName
@@ -236,6 +260,10 @@ def generate_files(files):
 
                 elif message.startswith("Pricing prob "):
                     pricing_prob = int(message.split()[2])
+
+                    # check if the pricing prob should be included in the plot
+                    if params['root_only'] and node > 1:
+                        continue
 
                     # store all indices
                     ind_node.append(node)
