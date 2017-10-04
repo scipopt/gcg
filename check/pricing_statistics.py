@@ -6,6 +6,7 @@ import argparse
 
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import lines
 import numpy as np
 import math
 
@@ -70,6 +71,19 @@ def get_colmap(pricers):
     colors = [cmap(pricer_to_color[p]) for p in pricers]
     return colors
 
+def remove_overlapping_texts(figure, texts):
+    rend = figure.canvas.get_renderer()
+    for i,txt in enumerate(texts):
+        if not txt.get_visible():
+            continue
+        bb = txt.get_window_extent(renderer=rend)
+        for nxt_txt in texts[(i+1):]:
+            nxt_bb = nxt_txt.get_window_extent(renderer=rend)
+            if bb.overlaps(nxt_bb):
+                nxt_txt.set_visible(False)
+            else:
+                break
+
 def make_plots(data, name):
     """
     Make the plots from the structured data
@@ -104,38 +118,57 @@ def make_plots(data, name):
         if abs(n - int(n)) < 0.01 and n >= 0:
             new_yticks.append(n)
     ax.set_yticks(new_yticks)
-    ax.set_xlabel('time')
-    ax.set_ylabel('nVars')
+    ax.set_xlabel('Time', size = 'large')
+    ax.set_ylabel('# of variables', size = 'large')
     plt.gcf().subplots_adjust(top=0.835)
 
-    # add information about the pricing rounds
-    prev_rnd = min(flat_data['pricing_round'])
+    # add information about the stabilization & pricing rounds
+    prev_rnd = flat_data['pricing_round'][0]
+    prev_stab = flat_data['stab_round'][0]
     prev_x = 0
     texts = []
     for i in range(len(x)):
         rnd = flat_data['pricing_round'][i]
-        if rnd > prev_rnd:
-            ax.plot([x[i],x[i]],[ymin,ymax],'r--',linewidth=0.8)
-            texts.append(ax.text((x[i] + prev_x)/2. + 0.0033, ymax*1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center'))
-            prev_rnd = rnd
-            prev_x = x[i]
+        stab = flat_data['stab_round'][i]
+        if stab > prev_stab or rnd > prev_rnd:
+            if rnd > prev_rnd:
+                # bold line for a new pricing round
+                ax.plot([x[i],x[i]],[ymin,ymax],'r-',linewidth=1.0)
+                texts.append(ax.text((x[i] + prev_x)/2. + 0.0033, ymax*1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center'))
+                prev_rnd = rnd
+                prev_stab = 1
+                prev_x = x[i]
+            else:
+                # dashed line for a new stabilization round
+                ax.plot([x[i],x[i]],[ymin,ymax],'r--',linewidth=0.8)
+                prev_stab = stab
     texts.append(ax.text((x[-1] + widths[-1] + prev_x)/2. + 0.0033, ymax*1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center'))
 
     # check for overlapping texts
-    rend = plt.gcf().canvas.get_renderer()
-    for i,txt in enumerate(texts):
-        if not txt.get_visible():
-            continue
-        bb = txt.get_window_extent(renderer=rend)
-        for nxt_txt in texts[(i+1):]:
-            nxt_bb = nxt_txt.get_window_extent(renderer=rend)
-            if bb.overlaps(nxt_bb):
-                nxt_txt.set_visible(False)
-            else:
-                break
+    remove_overlapping_texts(plt.gcf(),texts)
+
+    # add information about the nodes, if not just the root node is plotted
+    if not params['root_only']:
+        prev_node = flat_data['node'][0]
+        prev_x = 0
+        texts = []
+        for i in range(len(x)):
+            node = flat_data['node'][i]
+            if node > prev_node:
+                line = lines.Line2D([x[i],x[i]],[ymax,ymax*1.16],color='r',linewidth=1.0)
+                line.set_clip_on(False)
+                ax.add_line(line)
+                texts.append(ax.text(prev_x, ymax*1.17, 'Node '+str(prev_node), ha='left', size=11, style='italic'))
+                prev_node = node
+                prev_x = x[i]
+        texts.append(ax.text(prev_x, ymax*1.17, 'Node '+str(prev_node), ha='left', size=11, style='italic'))
+
+        # check for overlapping texts
+        remove_overlapping_texts(plt.gcf(),texts)
 
     # save the figure
-    plt.savefig(params['outdir'] + '/' + name + '.png')
+    plt.gcf().set_size_inches(11.7,8.3)
+    plt.savefig(params['outdir'] + '/' + name + '.pdf')
     plt.close()
 
     print '    saved figure'
