@@ -376,7 +376,7 @@ SCIP_RETCODE reportAllDecompositions(
       SCIPdialogMessage(scip, NULL, "error creating report file\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
    }
-   GCGwriteTexReport( scip, file, &seeedids, &nseeeds, GCGreportGetShowTitlepage(), GCGreportGetShowToc(),
+   GCGwriteTexReport( scip, file, seeedids, &nseeeds, GCGreportGetShowTitlepage(), GCGreportGetShowToc(),
       GCGreportGetShowStatistics(), GCGreportGetUseGp() );
    fclose(file);
 

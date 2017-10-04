@@ -77,7 +77,7 @@ extern SCIP_RETCODE GCGwriteTexFamilyTree(
 extern SCIP_RETCODE GCGwriteTexReport(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< filename including path */
-   int** seeedids,         /**< ids of seeeds to visualize */
+   int* seeedids,          /**< ids of seeeds to visualize */
    int* nseeeds,           /**< number of seeeds to visualize */
    SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
    SCIP_Bool toc,          /**< true if an interactive table of contents should be included */

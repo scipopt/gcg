@@ -720,7 +720,7 @@ int getFirstUnfinishedChild(std::vector<SCIP_Bool> const& childsfinished, std::v
 SCIP_RETCODE GCGwriteTexReport(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< filename including path */
-   int** seeedids,         /**< ids of seeeds to visualize */
+   int* seeedids,         /**< ids of seeeds to visualize */
    int* nseeeds,           /**< number of seeeds to visualize */
    SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
    SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
@@ -733,6 +733,7 @@ SCIP_RETCODE GCGwriteTexReport(
    Seeed* seeed;
    Seeedpool* seeedpool = NULL;
    char gpname[SCIP_MAXSTRLEN];
+   char gppath[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
 
    /* write tex code into file */
@@ -753,7 +754,7 @@ SCIP_RETCODE GCGwriteTexReport(
          SCIPinfoMessage(scip, file, "                                                                \n");
       }
       /* get and write each seeed */
-      int tempindex = *(seeedids[i]);
+      int tempindex = seeedids[i];
       GCGgetSeeedFromID(scip, &tempindex, &seeedwr);
       seeed = seeedwr.seeed;
       seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, tempindex);
@@ -767,11 +768,16 @@ SCIP_RETCODE GCGwriteTexReport(
          misc->GCGgetVisualizationFilename(scip, seeed, "gp", gpname);
          misc->GCGgetVisualizationFilename(scip, seeed, "pdf", pdfname);
 
-         GCGwriteGpVisualization( scip, gpname, pdfname, *(seeedids[i]) );
+         strcpy(gppath, misc->GCGgetFilePath(scip, file));
+         strcat(gppath, "/");
+         strcat(gppath, gpname);
+         strcat(gppath, ".gp");
+
+         GCGwriteGpVisualization( scip, gppath, pdfname, seeedids[i] );
 
          SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
          SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
-         SCIPinfoMessage(scip, file, "    \\input{%s}                                           \n", pdfname);
+         SCIPinfoMessage(scip, file, "    \\input{%s.pdf}                                                \n", pdfname);
          SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
          SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
       }
