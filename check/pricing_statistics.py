@@ -72,6 +72,12 @@ def get_colmap(pricers):
     return colors
 
 def remove_overlapping_texts(figure, texts):
+    """
+    Removes all texts in figure from the list, that overlap, by setting their visibility to False
+    :param figure: the figure to which the texts belong
+    :param texts: list of texts, that are to be checked
+    :return:
+    """
     rend = figure.canvas.get_renderer()
     for i,txt in enumerate(texts):
         if not txt.get_visible():

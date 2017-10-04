@@ -235,6 +235,21 @@ SCIP_Real* GCGmasterVarGetOrigvals(
    SCIP_VAR*             var                 /**< variable data structure */
    );
 
+extern
+void GCGmasterVarSetOriginRedCost(
+   SCIP_VAR*             var
+   );
+
+extern
+void GCGmasterVarSetOriginFarkas(
+   SCIP_VAR*             var
+   );
+
+extern
+void GCGmasterVarSetOriginHeuristic(
+   SCIP_VAR*             var
+   );
+
 /** returns the number of original variables the pricing variable is contained in */
 extern
 int GCGpricingVarGetNOrigvars(

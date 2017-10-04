@@ -794,9 +794,8 @@ SCIP_Real* GCGmasterVarGetOrigvals(
    return vardata->data.mastervardata.origvals;
 }
 
-void GCGmasterVarSetOrigin(
-   SCIP_VAR*             var,
-   GCG_VARORIGIN         origin
+void GCGmasterVarSetOriginRedCost(
+   SCIP_VAR*             var
    )
 {
    SCIP_VARDATA* vardata;
@@ -806,8 +805,35 @@ void GCGmasterVarSetOrigin(
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
 
-   assert(origin != NULL);
-   vardata->data.mastervardata.origin = origin;
+   vardata->data.mastervardata.origin = GCG_VARORIGIN_REDCOST;
+}
+
+void GCGmasterVarSetOriginFarkas(
+   SCIP_VAR*             var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   vardata->data.mastervardata.origin = GCG_VARORIGIN_FARKAS;
+}
+
+void GCGmasterVarSetOriginHeuristic(
+   SCIP_VAR*             var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   vardata->data.mastervardata.origin = GCG_VARORIGIN_HEURISTIC;
 }
 
 GCG_VARORIGIN GCGmasterVarGetOrigin(
