@@ -124,9 +124,10 @@ def make_plots(data, name):
         if abs(n - int(n)) < 0.01 and n >= 0:
             new_yticks.append(n)
     ax.set_yticks(new_yticks)
-    ax.set_xlabel('Time', size = 'large')
+    ax.set_xlabel('Time / s', size = 'large')
     ax.set_ylabel('# of variables', size = 'large')
     plt.gcf().subplots_adjust(top=0.835)
+    ymax = ax.get_ylim()[1]
 
     # add information about the stabilization & pricing rounds
     prev_rnd = flat_data['pricing_round'][0]
@@ -174,7 +175,7 @@ def make_plots(data, name):
 
     # save the figure
     plt.gcf().set_size_inches(11.7,8.3)
-    plt.savefig(params['outdir'] + '/' + name + '.pdf')
+    plt.savefig(params['outdir'] + '/' + name + '.png')
     plt.close()
 
     print '    saved figure'
