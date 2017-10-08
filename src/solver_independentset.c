@@ -81,7 +81,6 @@ SCIP_RETCODE solveIndependentSet(
    SCIP_VAR** indsetvars;
    SCIP_VAR** pricingprobvars;
    graph_t* g;
-   FILE* outputfile;
    SCIP_Real* solvals;
    SCIP_Real* consvals;
    SCIP_Real signhelper;
@@ -101,6 +100,8 @@ SCIP_RETCODE solveIndependentSet(
    int scalingfactor;
    int nvars;
    int nedges;
+
+   SCIP_CONSHDLR* conshdlr;
 
    assert(pricingprob != NULL);
    assert(solver != NULL);
@@ -200,152 +201,89 @@ SCIP_RETCODE solveIndependentSet(
    for( int i = 0; i < nconss; ++i )
    {
       assert(constraints[i] != NULL);
-      consvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
+      conshdlr = SCIPconsGetHdlr(constraints[i]);
+      assert(conshdlr != NULL);
 
-      /* Check if we have an IS constraint */
-      if( SCIPgetNVarsLinear(pricingprob, constraints[i]) == 2 &&
-          SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real) 1) ) 
+      /* The constraint may not be of type 'linear' */
+      if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
       {
-         /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
-         if( SCIPvarGetObj(consvars[0]) != 0 || SCIPvarGetObj(consvars[1]) != 0 )
-         {
-            /* Check if the Vars are already in our array of unique vars */
-            for( int j = 0; j < npricingprobvars; ++j )
-            {
-               if( consvars[0] == indsetvars[j] )
-               {
-                  unique0 = 0;
-                  nodeindex0 = j;
-               }
-               if( consvars[1] == indsetvars[j] ) 
-               {
-                  unique1 = 0;
-                  nodeindex1 = j;
-               }
-            }
-            /* Add Vars to our array of unique vars if not yet included */
-            if( unique0 )
-            {
-               indsetvars[indexcount] = consvars[0];
-               nodeindex0 = indexcount;
-               g->weights[nodeindex0] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
-               ++indexcount;
-            }
-            if( unique1 )
-            {
-               indsetvars[indexcount] = consvars[1];
-               nodeindex1 = indexcount;
-               g->weights[nodeindex1] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
-               ++indexcount;
-            }
-            unique0 = 1;
-            unique1 = 1;
-            
-            if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
-            {
-               GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
-            }
-         }
-      }
-      else
-      {
-         /* The current constraint is no IS constraint */
-         SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
-         consvals = SCIPgetValsLinear(pricingprob, constraints[i]);
          consvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
-
-         /* Check the coefficients of the variables in the constraint */
-         for( int k = 0; k < nvars; ++k )
+         /* Check if we have an IS constraint */
+         if( SCIPgetNVarsLinear(pricingprob, constraints[i]) == 2 &&
+             SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real)1) ) 
          {
-            if( consvals[k] != 1 && (coefindex == -1) )
+            /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
+            if( SCIPvarGetObj(consvars[0]) != 0 || SCIPvarGetObj(consvars[1]) != 0 )
             {
-               coefindex = k;
-            }
-            else if( consvals[k] != 1 && coefindex != -1 )
-            {
-               /* More than one variable has a coefficient unequal to 1 */
-               SCIPfreeBufferArray(pricingprob,&indsetvars);
-               SCIPfreeBufferArray(pricingprob,&solvals);
-               SCIPfreeBufferArray(pricingprob,&consvars);
-               graph_free(g);
-               *result = SCIP_STATUS_UNKNOWN;
-               return SCIP_OKAY;
-            }
-         }
-         /* Check if we have a clique constraint (rhs 1 and coefficients 1) */
-         if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real)1) )
-         {
-            /* Delete the edges between all the variables of the constraint. 
-               This way, at most one can be part of the maximum clique */
-            for( int j = 0; j < nvars; ++j )
-            {
-               /* We are only interested in vars potentially relevant for pricing (!= 0) */
-               if( SCIPvarGetObj(consvars[j]) != 0 )
+               /* Check if the Vars are already in our array of unique vars */
+               for( int j = 0; j < npricingprobvars; ++j )
                {
-                  /* Determine nodeindex0 */
-                  for( int k = 0; k < npricingprobvars; ++k )
+                  if( consvars[0] == indsetvars[j] )
                   {
-                     if( consvars[j] == indsetvars[k] )
-                     {
-                        nodeindex0 = k;
-                        unique0 = 0;
-                     }
+                     unique0 = 0;
+                     nodeindex0 = j;
                   }
-                  if( unique0 )
+                  if( consvars[1] == indsetvars[j] ) 
                   {
-                     indsetvars[indexcount] = consvars[j];
-                     nodeindex0 = indexcount;
-                     g->weights[nodeindex0] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
-                     ++indexcount;
+                     unique1 = 0;
+                     nodeindex1 = j;
                   }
-                  /* Determine nodeindex1 */
-                  for( int l = 0; l < nvars; ++l )
-                  {
-                     for( int k = 0; k < npricingprobvars; ++k )
-                     {
-                        if( consvars[l] == indsetvars[k] )
-                        {
-                           nodeindex1 = k;
-                           unique1 = 0;
-                        }
-                     }
-                     if( unique1 )
-                     {
-                        indsetvars[indexcount] = consvars[j];
-                        nodeindex1 = indexcount;
-                        g->weights[nodeindex1] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
-                        ++indexcount;
-                     }
-                     /* Delete the edge between nodeindex0 and nodeindex1 */
-                     if( nodeindex0 != nodeindex1 )
-                     {
-                        if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
-                        {
-                           GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
-                        }
-                     }
-                     unique1 = 1;
-                  }
+               }
+               /* Add Vars to our array of unique vars if not yet included */
+               if( unique0 )
+               {
+                  indsetvars[indexcount] = consvars[0];
+                  nodeindex0 = indexcount;
+                  g->weights[nodeindex0] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
+                  ++indexcount;
+               }
+               if( unique1 )
+               {
+                  indsetvars[indexcount] = consvars[1];
+                  nodeindex1 = indexcount;
+                  g->weights[nodeindex1] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
+                  ++indexcount;
                }
                unique0 = 1;
+               unique1 = 1;
+               
+               if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
+               {
+                  GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
+               }
             }
          }
-         /* Check if we have a coupling constraint (rhs 0) */
-         else if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real)0) )
+         else
          {
-            /* Special case: The coupling constraint is purely decorative (coefficient >= #vars)*/
-            if( abs(consvals[coefindex]) + 1 >= nvars )
+            /* The current constraint is no IS constraint */
+            SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
+            consvals = SCIPgetValsLinear(pricingprob, constraints[i]);
+            consvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
+
+            /* Check the coefficients of the variables in the constraint */
+            for( int k = 0; k < nvars; ++k )
             {
-               solvals[SCIPvarGetProbindex(consvars[coefindex])] = 1.0;
+               if( consvals[k] != 1 && (coefindex == -1) )
+               {
+                  coefindex = k;
+               }
+               else if( consvals[k] != 1 && coefindex != -1 )
+               {
+                  /* More than one variable has a coefficient unequal to 1 */
+                  SCIPfreeBufferArray(pricingprob,&indsetvars);
+                  SCIPfreeBufferArray(pricingprob,&solvals);
+                  SCIPfreeBufferArray(pricingprob,&consvars);
+                  graph_free(g);
+                  *result = SCIP_STATUS_UNKNOWN;
+                  return SCIP_OKAY;
+               }
             }
-            /* Special case: The coefficient is -1, we set the coupling variable to 1 and treat the case like 
-               a clique constraint. */
-            else if( abs(consvals[coefindex]) == 1 )
+            /* Check if we have a clique constraint (rhs 1 and coefficients 1) */
+            if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real)1) )
             {
-               solvals[SCIPvarGetProbindex(consvars[coefindex])] = 1.0;
-               /* Delete the edges between all the variables of the constraint that are not the coupling variable.
-               This way, at most one can be part of the maximum clique*/
-               for(int j = 0; j < nvars; ++j)
+               /* Delete the edges between all the variables of the constraint. 
+                  This way, at most one can be part of the maximum clique */
+               for( int j = 0; j < nvars; ++j )
                {
                   /* We are only interested in vars potentially relevant for pricing (!= 0) */
                   if( SCIPvarGetObj(consvars[j]) != 0 )
@@ -353,7 +291,7 @@ SCIP_RETCODE solveIndependentSet(
                      /* Determine nodeindex0 */
                      for( int k = 0; k < npricingprobvars; ++k )
                      {
-                        if( consvars[j] == indsetvars[k] || coefindex == k )
+                        if( consvars[j] == indsetvars[k] )
                         {
                            nodeindex0 = k;
                            unique0 = 0;
@@ -367,11 +305,11 @@ SCIP_RETCODE solveIndependentSet(
                         ++indexcount;
                      }
                      /* Determine nodeindex1 */
-                     for( int l = 0; l < nvars; ++l )
+                     for( int l = j + 1; l < nvars; ++l )
                      {
                         for( int k = 0; k < npricingprobvars; ++k )
                         {
-                           if( consvars[l] == indsetvars[k] || coefindex == k )
+                           if( consvars[l] == indsetvars[k] )
                            {
                               nodeindex1 = k;
                               unique1 = 0;
@@ -379,12 +317,13 @@ SCIP_RETCODE solveIndependentSet(
                         }
                         if( unique1 )
                         {
-                           indsetvars[indexcount] = consvars[j];
+                           indsetvars[indexcount] = consvars[l];
                            nodeindex1 = indexcount;
                            g->weights[nodeindex1] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
                            ++indexcount;
                         }
-                        if( nodeindex0 != nodeindex1 && nodeindex0 != coefindex && nodeindex1 != coefindex )
+                        /* Delete the edge between nodeindex0 and nodeindex1 */
+                        if( nodeindex0 != nodeindex1 )
                         {
                            if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                            {
@@ -397,9 +336,94 @@ SCIP_RETCODE solveIndependentSet(
                   }
                }
             }
-            else
+            /* Check if we have a coupling constraint (rhs 0) */
+            else if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real)0) )
             {
-               /* Coupling coefficient is between 1 and npricingprobvars. */
+               /* Special case: The coupling constraint is purely decorative (coefficient >= #vars)*/
+               if( abs(consvals[coefindex]) + 1 >= nvars )
+               {
+                  solvals[SCIPvarGetProbindex(consvars[coefindex])] = 1.0;
+               }
+               /* Special case: The coefficient is -1, we treat the case like a clique constraint. */
+               else if( abs(consvals[coefindex]) == 1 )
+               {
+                  /* See if the objective coefficient of the coupling variable is != 0 */
+                  if( SCIPvarGetObj(consvars[coefindex]) != 0 )
+                  {
+                     /* The coupling variable can always be set to 1 */
+                     solvals[SCIPvarGetProbindex(consvars[coefindex])] = 1.0;
+                  }
+                  /* Delete the edges between all the variables of the constraint that are not the coupling variable.
+                  This way, at most one can be part of the maximum clique */
+                  for( int j = 0; j < nvars; ++j )
+                  {
+                     /* We are only interested in vars potentially relevant for pricing (!= 0) */
+                     if( j != coefindex && SCIPvarGetObj(consvars[j]) != 0)
+                     {
+                        /* Determine nodeindex0 */
+                        for( int k = 0; k < npricingprobvars; ++k )
+                        {
+                           if( consvars[j] == indsetvars[k] )
+                           {
+                              nodeindex0 = k;
+                              unique0 = 0;
+                           }
+                        }
+                        if( unique0 )
+                        {
+                           indsetvars[indexcount] = consvars[j];
+                           nodeindex0 = indexcount;
+                           g->weights[nodeindex0] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
+                           ++indexcount;
+                        }
+                        /* Determine nodeindex1 */
+                        for( int l = j + 1; l < nvars; ++l )
+                        {
+                           if( l != coefindex )
+                           {
+                              for( int k = 0; k < npricingprobvars; ++k )
+                              {
+                                 if( consvars[l] == indsetvars[k] )
+                                 {
+                                    nodeindex1 = k;
+                                    unique1 = 0;
+                                 }
+                              }
+                              if( unique1 )
+                              {
+                                 indsetvars[indexcount] = consvars[l];
+                                 nodeindex1 = indexcount;
+                                 g->weights[nodeindex1] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[indexcount])));
+                                 ++indexcount;
+                              }
+                              if( nodeindex0 != nodeindex1 )
+                              {
+                                 if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
+                                 {
+                                    GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
+                                 }
+                              }
+                              unique1 = 1;
+                           }
+                        }
+                        unique0 = 1;
+                     }
+                  }
+               }
+               else
+               {
+                  /* Coupling coefficient is between 1 and npricingprobvars. */
+                  SCIPfreeBufferArray(pricingprob,&indsetvars);
+                  SCIPfreeBufferArray(pricingprob,&solvals);
+                  SCIPfreeBufferArray(pricingprob,&consvars);
+                  graph_free(g);
+
+                  *result = SCIP_STATUS_UNKNOWN;
+                  return SCIP_OKAY;
+               }
+            }
+            else{
+               /* Constraint is neither a coupling nor a clique constraint */ 
                SCIPfreeBufferArray(pricingprob,&indsetvars);
                SCIPfreeBufferArray(pricingprob,&solvals);
                SCIPfreeBufferArray(pricingprob,&consvars);
@@ -408,25 +432,25 @@ SCIP_RETCODE solveIndependentSet(
                *result = SCIP_STATUS_UNKNOWN;
                return SCIP_OKAY;
             }
+            coefindex = -1;
          }
-         else{
-            /* Constraint is neither a coupling nor a clique constraint */ 
-            SCIPfreeBufferArray(pricingprob,&indsetvars);
-            SCIPfreeBufferArray(pricingprob,&solvals);
-            SCIPfreeBufferArray(pricingprob,&consvars);
-            graph_free(g);
+      }
+      else
+      {
+         SCIPdebugMessage("Current pricing problem is NOT an independent set problem.\n");
+         SCIPfreeBufferArray(pricingprob,&indsetvars);
+         SCIPfreeBufferArray(pricingprob,&solvals);
+         SCIPfreeBufferArray(pricingprob,&consvars);
+         graph_free(g);
 
-            *result = SCIP_STATUS_UNKNOWN;
-            return SCIP_OKAY;
-         }
-         coefindex = -1;
+         *result = SCIP_STATUS_UNKNOWN;
+         return SCIP_OKAY;         
       }
    }
-
    /* Assert that the graph was built in a proper way */ 
    ASSERT(graph_test(g,NULL));
 
-   SCIPdebugMessage("Current pricing problem is an IndependentSet problem.\n");
+   SCIPdebugMessage("Current pricing problem is an independent set problem.\n");
 
    /* Determine number of edges for graph density calculation */
    nedges = 0;
@@ -452,11 +476,10 @@ SCIP_RETCODE solveIndependentSet(
       graph_free(g);
 
       *result = SCIP_STATUS_UNKNOWN;
-      return SCIP_OKAY;      
+      return SCIP_OKAY;
    }
-   
-   assert(indexcount == npricingprobvars-1);
 
+   ASSERT( indexcount < npricingprobvars );
    /* indexcount now holds the actual number of unique IS variables, thus we truncate */
    if( indexcount > 0 ){
       graph_resize(g,indexcount);
@@ -471,7 +494,6 @@ SCIP_RETCODE solveIndependentSet(
    cl_opts.user_data = NULL;
    cl_opts.clique_list = NULL;
    cl_opts.clique_list_length = 0;
-
    if( biggestobj == 0 )
    {
       clique = clique_unweighted_find_single(g,0,0,FALSE,&cl_opts);
