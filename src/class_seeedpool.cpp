@@ -237,11 +237,6 @@ SCIP_RETCODE createTestPricingprobConss(
             SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
             SCIP_CALL( GCGconsGetVars(subscip, newcons, curvars, ncurvars) );
 
-            for( i = 0; i < ncurvars; ++i )
-            {
-               assert(GCGvarIsPricing(curvars[i]));
-            }
-
             SCIPfreeBufferArrayNull(scip, &curvars);
          }
       }
@@ -268,7 +263,7 @@ SCIP_RETCODE setTestpricingProblemParameters(
    SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
    SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
    SCIP_Bool             enableppcuts,       /**< should ppcuts be stored for sepa_basis */
-   int                   timelimit            /**< limit of time */
+   SCIP_Real             timelimit            /**< limit of time */
    )
 {
    assert(scip != NULL);
@@ -302,7 +297,7 @@ SCIP_RETCODE setTestpricingProblemParameters(
 
    /* disable solution storage ! */
    SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
-   SCIP_CALL( SCIPsetIntParam(scip, "limits/time", timelimit ) );
+   SCIP_CALL( SCIPsetRealParam(scip, "limits/time", timelimit ) );
 
    /* disable multiaggregation because of infinite values */
    SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
@@ -314,7 +309,7 @@ SCIP_RETCODE setTestpricingProblemParameters(
    SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/propfreq", -1) );
 
    /* disable output to console */
-   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
 #if SCIP_VERSION > 210
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
 #endif
@@ -1736,8 +1731,8 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    SCIP_RANDNUMGEN* randnumgen;
 
    /** @TODO introduce scip parameters */
-   int timelimit;
-   int timelimitfast;
+   SCIP_Real timelimit;
+   SCIP_Real timelimitfast;
    /** limit (for a pricing problem to be considered fractional solvable) of difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
    SCIP_Real gaplimitsolved;
    /** weighted limit (for a pricing problem to be considered fractional solvable) difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
@@ -1758,6 +1753,9 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    SCIP_Real dualfeastol;
    SCIP_Bool enableppcuts;
 
+   SCIP_Bool benefical;
+   SCIP_Bool fast;
+
    int clocktype;
 
    *score = 0.;
@@ -1765,8 +1763,8 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
    randomdualvals = std::vector<SCIP_Real>(getNConss(),0. );
 
-   timelimit = 60;
-   timelimitfast  = (int) 0.2 * timelimit;
+   timelimit = 30.;
+   timelimitfast  =  0.1 * timelimit;
    gaplimitsolved = 0.;
    gaplimitbeneficial = 0.3;
 
@@ -1795,11 +1793,12 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
 
    /* create random number generator */
-     SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDSEED) );
+   SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDSEED) );
 
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started calculate strong decomposition, timelimit: %f  timelimitfast: %f \n",  timelimit, timelimitfast );
 
    /** shuffle dual multipliers of master constraints*/
-   for( int mc = 0; mc < seeed->getNMasterconss(); )
+   for( int mc = 0; mc < seeed->getNMasterconss(); ++mc )
    {
       SCIP_Real dualval;
       SCIP_CONS* mastercons;
@@ -1832,15 +1831,21 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
       randomdualvals[ seeed->getMasterconss()[mc]] = dualval;
    }
 
+
+
    /* for every pricing problem calculate a corresponding score coeff and break if a pricing problem cannot be solved in the timelimit */
-   for ( int block = 0; 0 < seeed->getNBlocks(); ++block )
+   for ( int block = 0; block < seeed->getNBlocks(); ++block )
    {
       SCIP* subscip;
       char name[SCIP_MAXSTRLEN];
       SCIP_HASHMAP* hashpricingvartoindex;
       SCIP_HASHMAP* hashorig2pricingvar;
+      SCIP_Real score_coef;
+      SCIP_Real weight_subproblem;
 
       std::vector<SCIP_VAR*> indextopricingvar;
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started calculate strong decomposition subproblem for block %d \n", block );
 
       indextopricingvar = std::vector<SCIP_VAR*>(getNVars(), NULL);
 
@@ -1848,6 +1853,11 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
       SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingvar, SCIPblkmem(scip), getNVars()) ); /*lint !e613*/
 
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "testpricing_block_%d", block);
+
+      benefical = FALSE;
+      fast = FALSE;
+      score_coef = 0.0;
+      weight_subproblem = (SCIP_Real) seeed->getNConssForBlock(block) / getNConss();
 
       /** build subscip */
       SCIP_CALL( SCIPcreate(&subscip) );
@@ -1899,25 +1909,51 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
       /** set parameter for subscip */
 
+
       /** solve subscip */
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started solving subproblem for block %d \n", block );
+      SCIP_CALL( SCIPsolve(subscip) );
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "finished solving subproblem in %f seconds \n", SCIPgetSolvingTime(subscip) );
 
       /** get coefficient */
+      if ( !SCIPisEQ( scip,  SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetLowerbound(subscip) ) )
+         benefical = TRUE;
 
+      if( SCIPisFeasLE( scip, SCIPgetSolvingTime(subscip), timelimitfast ) )
+         fast = TRUE;
+
+      if ( fast && benefical )
+         score_coef = scorecoef_fastbenefical;
+
+      if ( !fast && benefical )
+         score_coef = scorecoef_mediumbenefical;
+
+      if ( fast && !benefical )
+         score_coef = scorecoef_fastnobenefical;
+
+      if ( !fast && !benefical )
+         score_coef = scorecoef_mediumnobenefical;
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "scorecoef for subproblem %d is %f with weighting factor %f\n", block, score_coef, weight_subproblem );
+
+      *score += score_coef * weight_subproblem;
 
       /** free stuff */
-
       for( int var = 0; var < seeed->getNVarsForBlock(block); ++var )
       {
          int varid = seeed->getVarsForBlock(block)[var];
-         SCIPreleaseVar(scip, &indextopricingvar[varid]);
+         SCIPreleaseVar(subscip, &indextopricingvar[varid]);
       }
-
-      SCIPfreeRandom(scip, &randnumgen );
 
       SCIPhashmapFree(&hashpricingvartoindex);
 
       SCIPfree(&subscip);
-   }
+   }// end for blocks
+
+
+   SCIPfreeRandom(scip, &randnumgen );
+   /** consider coefficients   */
 
    return SCIP_OKAY;
 }

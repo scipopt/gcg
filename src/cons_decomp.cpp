@@ -1445,6 +1445,69 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    return SCIP_OKAY;
 }
 
+
+/**
+ * Calculates and displays the strong decomposition score for this decomposition in a dialog.
+ */
+SCIP_RETCODE SCIPconshdlrDecompSelectCalcStrongDecompositionScore
+(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   char* ntocalcstrong;
+   SCIP_Bool endoffile;
+   int idtocalcstrong;
+   int detaillevel;
+
+   int commandlen;
+
+   assert( scip != NULL );
+   conshdlr = SCIPfindConshdlr( scip, CONSHDLR_NAME );
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData( conshdlr );
+   assert( conshdlrdata != NULL );
+
+   /* read the id of the decomposition to be calculate strong decomp score */
+   SCIPdialogMessage( scip, NULL, "Please specify the id of the decomposition that shpould be evaluated by strong decomposition score:\n" );
+   SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ntocalcstrong, &endoffile ) );
+   commandlen = strlen( ntocalcstrong );
+
+   idtocalcstrong = -1;
+   if( commandlen != 0 )
+   {
+      std::stringstream convert( ntocalcstrong );
+      convert >> idtocalcstrong;
+
+      if ( idtocalcstrong == 0 && ntocalcstrong[0] != '0' )
+      {
+         idtocalcstrong = -1;
+      }
+   }
+
+   /* call calculation strong decomp score method according to chosen parameters */
+   if( 0 <= idtocalcstrong && idtocalcstrong < (int)conshdlrdata->listall->size() )
+   {
+      SCIP_Real score;
+      gcg::Seeedpool* seeedpool = ( conshdlrdata->listall->at( idtocalcstrong )->isFromUnpresolved() ?
+         conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+      seeedpool->calcStrongDecompositionScore(conshdlrdata->listall->at( idtocalcstrong ), &score);
+      SCIPdialogMessage( scip, NULL, "Strong decomposition score of this decomposition is %f.", score) ;
+   }
+   else
+   {
+      SCIPdialogMessage( scip, NULL, "This is not an existing id." );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
 /**
  * Displays information about a seeed that is chosen by the user in a dialog.
  */
@@ -1505,7 +1568,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
       }
    }
 
-   /* call displayInfo method accoridng to chosen parameters */
+   /* call displayInfo method according to chosen parameters */
    if( 0 <= idtoinspect && idtoinspect < (int)conshdlrdata->listall->size() )
    {
       gcg::Seeedpool* seeedpool = ( conshdlrdata->listall->at( idtoinspect )->isFromUnpresolved() ?
@@ -1672,6 +1735,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes selection and goes back to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "experimental feature: visualizes the specified decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "calc_strong", "calculates and displays the strong decomposition score for this decomposition");
 
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
@@ -1805,6 +1869,13 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
          SCIP_CALL( SCIPconshdlrDecompSelectInspect( scip, dialoghdlr, dialog ) );
          continue;
       }
+
+      if( strncmp( command, "calc_strong", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompSelectCalcStrongDecompositionScore( scip, dialoghdlr, dialog ) );
+         continue;
+      }
+
 
       if( strncmp( command, "select", commandlen) == 0 )
       {

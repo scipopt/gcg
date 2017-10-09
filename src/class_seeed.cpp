@@ -88,8 +88,8 @@ Seeed::Seeed(
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), usedClassifier( 0 ), classesToMaster( 0 ), classesToLinking( 0 ), listofancestorids( 0 ),
-   usergiven( USERGIVEN::NOT ), isfromlegacymode( false ), score( 1. ), maxwhitescore( 1. ), borderareascore( 1. ),
-   detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
+   usergiven( USERGIVEN::NOT ), isfromlegacymode( false ), score( 1. ), maxwhitescore( 1. ), strongdecompositionscore(-1.),
+   borderareascore( 1. ), detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
    isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
 {
 
@@ -2966,8 +2966,6 @@ SCIP_Real Seeed::evaluate(
    SCIPgetBoolParam(scip, "detection/smartscore/enabled", &smartscore);
 
    masterissetppc = false;
-
-   std::cout << "smartscore is set to " << smartscore << std::endl;
 
    if( smartscore && maxwhitescore <= 0.8 && getNLinkingvars() == 0 )
    {

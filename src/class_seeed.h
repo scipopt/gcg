@@ -152,6 +152,7 @@ private:
    bool isfromlegacymode;                             /**< true if this seeed stems from a detector operating in legacy mode */
    SCIP_Real score;                                   /**< score to evaluate the seeeds */
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
+   SCIP_Real strongdecompositionscore;                /**< strong decomposition score  */
 
    SCIP_Real borderareascore;                         /**< @todo comment */
 
