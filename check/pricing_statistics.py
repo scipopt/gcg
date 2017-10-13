@@ -7,6 +7,7 @@ import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import lines
+from matplotlib import transforms
 import numpy as np
 import math
 
@@ -25,8 +26,11 @@ def parse_arguments(args):
                         default="plots",
                         help='output directory (default: "plots")')
 
-    parser.add_argument('-n', '--allnodes', action='store_true',
+    parser.add_argument('-a', '--allnodes', action='store_true',
                         help='set this flag, to plot the pricing-statistics for all nodes, not just the root')
+
+    parser.add_argument('-d', '--details', action='store_true',
+                        help='set this flag for detailed vector-graphic plots, with no lines between the bars')
 
     parser.add_argument('-s', '--splitrounds', type=int,
                         default=0,
@@ -46,6 +50,7 @@ def set_params(args):
     """
     params['outdir'] = args.outdir
     params['root_only'] = not args.allnodes
+    params['details'] = args.details
     params['nSplit'] = args.splitrounds
 
 def get_colmap(pricers):
@@ -97,7 +102,7 @@ def make_plots(data, name):
     :param name: the problemname
     :return:
     """
-    # set parameters for the plot
+    # set the heights of zero
     ymin = -0.15
 
     # flat out the data again (maybe in the final version, there should be no dataframe to begin with)
@@ -111,23 +116,33 @@ def make_plots(data, name):
     colors = get_colmap(flat_data['pricing_prob'].values)
 
     # make the bar plot
-    plt.bar(x, y, widths, bottom = ymin, align = 'edge', edgecolor = 'k', color = colors, label='pricing problems')
+    plt.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = 1.2, edgecolor = 'k', color = colors, label='pricing problems')
+    fig = plt.gcf()
+    ax = plt.gca()
+
+    # set parameters
+    if params['details']:
+        fig.set_size_inches(8*11.7,8*8.3)
+        textsize = ax.get_window_extent().height * 0.01
+    else:
+        fig.set_size_inches(11.7,8.3)
+        textsize = 11
+    ymax = max(y)
+    ax.set_ylim([ymin,ymax])
 
     # formatting
-    ax = plt.gca()
-    ymax = max(y)
     ax.set_xlim([0,x[-1]+widths[-1]])
-    ax.set_ylim([ymin,ymax])
     old_yticks = ax.get_yticks()
     new_yticks = []
     for i,n in enumerate(old_yticks):
         if abs(n - int(n)) < 0.01 and n >= 0:
             new_yticks.append(n)
     ax.set_yticks(new_yticks)
-    ax.set_xlabel('Time / s', size = 'large')
-    ax.set_ylabel('# of variables', size = 'large')
-    plt.gcf().subplots_adjust(top=0.835)
-    ymax = ax.get_ylim()[1]
+    for tick in ax.xaxis.get_major_ticks() + ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(textsize)
+    ax.set_xlabel('Time / s', size = 1.05*textsize)
+    ax.set_ylabel('# of variables', size = 1.05*textsize)
+    trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
 
     # add information about the stabilization & pricing rounds
     prev_rnd = flat_data['pricing_round'][0]
@@ -141,18 +156,19 @@ def make_plots(data, name):
             if rnd > prev_rnd:
                 # bold line for a new pricing round
                 ax.plot([x[i],x[i]],[ymin,ymax],'r-',linewidth=1.0)
-                texts.append(ax.text((x[i] + prev_x)/2. + 0.0033, ymax*1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center'))
+                texts.append(ax.text((x[i] + prev_x)/2. + 0.0033, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center', size = textsize, transform = trans))
                 prev_rnd = rnd
                 prev_stab = 1
                 prev_x = x[i]
             else:
                 # dashed line for a new stabilization round
-                ax.plot([x[i],x[i]],[ymin,ymax],'r--',linewidth=0.8)
+                ax.plot([x[i],x[i]],[ymin,ymax],'--', color = 'orange', linewidth=0.8)
                 prev_stab = stab
-    texts.append(ax.text((x[-1] + widths[-1] + prev_x)/2. + 0.0033, ymax*1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center'))
+    texts.append(ax.text((x[-1] + widths[-1] + prev_x)/2. + 0.0033, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center', size = textsize, transform = trans))
+    text_height = [t for t in texts if t.get_visible()][-1].get_window_extent(renderer = fig.canvas.get_renderer()).transformed(ax.transAxes.inverted()).y1
 
     # check for overlapping texts
-    remove_overlapping_texts(plt.gcf(),texts)
+    remove_overlapping_texts(fig,texts)
 
     # add information about the nodes, if not just the root node is plotted
     if not params['root_only']:
@@ -162,20 +178,23 @@ def make_plots(data, name):
         for i in range(len(x)):
             node = flat_data['node'][i]
             if node > prev_node:
-                line = lines.Line2D([x[i],x[i]],[ymax,ymax*1.16],color='r',linewidth=1.0)
+                line = lines.Line2D([x[i],x[i]],[1,text_height+0.05],color='r',linewidth=1.0, transform = trans)
                 line.set_clip_on(False)
                 ax.add_line(line)
-                texts.append(ax.text(prev_x, ymax*1.17, 'Node '+str(prev_node), ha='left', size=11, style='italic'))
+                texts.append(ax.text(prev_x, text_height+0.1, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
                 prev_node = node
                 prev_x = x[i]
-        texts.append(ax.text(prev_x, ymax*1.17, 'Node '+str(prev_node), ha='left', size=11, style='italic'))
+        texts.append(ax.text(prev_x, text_height+0.1, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
 
         # check for overlapping texts
-        remove_overlapping_texts(plt.gcf(),texts)
+        remove_overlapping_texts(fig,texts)
 
     # save the figure
-    plt.gcf().set_size_inches(11.7,8.3)
-    plt.savefig(params['outdir'] + '/' + name + '.png')
+    fig.subplots_adjust(top=0.8)
+    if params['details']:
+        plt.savefig(params['outdir'] + '/' + name + '.pdf')
+    else:
+        plt.savefig(params['outdir'] + '/' + name + '.png')
     plt.close()
 
     print '    saved figure'
