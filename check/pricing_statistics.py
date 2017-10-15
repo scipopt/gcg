@@ -10,6 +10,7 @@ from matplotlib import lines
 from matplotlib import transforms
 import numpy as np
 import math
+import time
 
 # Define global variables
 params = {}
@@ -102,6 +103,8 @@ def make_plots(data, name):
     :param name: the problemname
     :return:
     """
+    start_time = time.time()
+
     # set the heights of zero
     ymin = -0.15
 
@@ -115,18 +118,28 @@ def make_plots(data, name):
     widths = flat_data.time.values
     colors = get_colmap(flat_data['pricing_prob'].values)
 
+    print '    data restructured:', time.time() - start_time
+    start_time = time.time()
+
     # make the bar plot
-    plt.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = 1.2, edgecolor = 'k', color = colors, label='pricing problems')
+    if params['details']:
+        lw = 0.1
+    else:
+        lw = 1.0
+    plt.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = lw, edgecolor = 'k', color = colors, label='pricing problems')
     fig = plt.gcf()
     ax = plt.gca()
+
+    print '    data plotted:', time.time() - start_time
+    start_time = time.time()
 
     # set parameters
     if params['details']:
         fig.set_size_inches(8*11.7,8*8.3)
-        textsize = ax.get_window_extent().height * 0.01
+        textsize = ax.get_window_extent().height * 0.013
     else:
         fig.set_size_inches(11.7,8.3)
-        textsize = 11
+        textsize = 12
     ymax = max(y)
     ax.set_ylim([ymin,ymax])
 
@@ -138,11 +151,13 @@ def make_plots(data, name):
         if abs(n - int(n)) < 0.01 and n >= 0:
             new_yticks.append(n)
     ax.set_yticks(new_yticks)
-    for tick in ax.xaxis.get_major_ticks() + ax.yaxis.get_major_ticks():
-        tick.label.set_fontsize(textsize)
-    ax.set_xlabel('Time / s', size = 1.05*textsize)
-    ax.set_ylabel('# of variables', size = 1.05*textsize)
+    ax.tick_params(axis = 'both', length = textsize/2, width = textsize/40, labelsize = textsize*0.9)
+    ax.set_xlabel('Time / s', size = 1.15*textsize)
+    ax.set_ylabel('# of variables', size = 1.15*textsize)
     trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+
+    print '    data formatted:', time.time() - start_time
+    start_time = time.time()
 
     # add information about the stabilization & pricing rounds
     prev_rnd = flat_data['pricing_round'][0]
@@ -155,20 +170,25 @@ def make_plots(data, name):
         if stab > prev_stab or rnd > prev_rnd:
             if rnd > prev_rnd:
                 # bold line for a new pricing round
-                ax.plot([x[i],x[i]],[ymin,ymax],'r-',linewidth=1.0)
+                line = lines.Line2D([x[i],x[i]],[0,1],color='r',linewidth=1.0, transform = trans)
+                ax.add_line(line)
                 texts.append(ax.text((x[i] + prev_x)/2. + 0.0033, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center', size = textsize, transform = trans))
                 prev_rnd = rnd
                 prev_stab = 1
                 prev_x = x[i]
             else:
                 # dashed line for a new stabilization round
-                ax.plot([x[i],x[i]],[ymin,ymax],'--', color = 'orange', linewidth=0.8)
+                line = lines.Line2D([x[i],x[i]],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
+                ax.add_line(line)
                 prev_stab = stab
     texts.append(ax.text((x[-1] + widths[-1] + prev_x)/2. + 0.0033, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center', size = textsize, transform = trans))
     text_height = [t for t in texts if t.get_visible()][-1].get_window_extent(renderer = fig.canvas.get_renderer()).transformed(ax.transAxes.inverted()).y1
 
     # check for overlapping texts
     remove_overlapping_texts(fig,texts)
+
+    print '    stab- and pricing-round information:', time.time() - start_time
+    start_time = time.time()
 
     # add information about the nodes, if not just the root node is plotted
     if not params['root_only']:
@@ -178,25 +198,31 @@ def make_plots(data, name):
         for i in range(len(x)):
             node = flat_data['node'][i]
             if node > prev_node:
-                line = lines.Line2D([x[i],x[i]],[1,text_height+0.05],color='r',linewidth=1.0, transform = trans)
+                line = lines.Line2D([x[i],x[i]],[1,text_height+0.01],color='r',linewidth=1.0, transform = trans)
                 line.set_clip_on(False)
                 ax.add_line(line)
-                texts.append(ax.text(prev_x, text_height+0.1, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
+                texts.append(ax.text(prev_x, text_height+0.02, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
                 prev_node = node
                 prev_x = x[i]
-        texts.append(ax.text(prev_x, text_height+0.1, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
+        texts.append(ax.text(prev_x, text_height+0.02, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
 
         # check for overlapping texts
         remove_overlapping_texts(fig,texts)
 
+        text_height = [t for t in texts if t.get_visible()][-1].get_window_extent(renderer = fig.canvas.get_renderer()).transformed(ax.transAxes.inverted()).y1
+
+    print '    node information:', time.time() - start_time
+    start_time = time.time()
+
     # save the figure
-    fig.subplots_adjust(top=0.8)
+    fig.subplots_adjust(top=0.98/text_height)
     if params['details']:
         plt.savefig(params['outdir'] + '/' + name + '.pdf')
     else:
         plt.savefig(params['outdir'] + '/' + name + '.png')
     plt.close()
 
+    print '    save:', time.time() - start_time
     print '    saved figure'
 
 def generate_files(files):
@@ -266,6 +292,7 @@ def generate_files(files):
                     for i in range(1,len(tmparray)-1):
                         problemFileName += "." + tmparray[i]
                     print 'entering', problemFileName
+                    start_time = time.time()
 
                 # pricer statistics end
                 elif line.startswith("SCIP Status        :"):
@@ -281,7 +308,9 @@ def generate_files(files):
                     df = pd.DataFrame(data=data, index = index)
 
                     # split the data into pieces of params['nSplit'] rounds
+                    print '    collected the data:', time.time() - start_time
                     # do nothing if the paramter nSplit is not set (equals zero)
+                    start_time = time.time()
                     if params['nSplit'] <= 0:
                         make_plots(df, problemFileName)
                     else:
@@ -293,6 +322,7 @@ def generate_files(files):
                             toRnd = i
                             make_plots(df.query('@fromRnd < pricing_round <= @toRnd'), problemFileName + '_rounds' + str(fromRnd + 1) + 'to' + str(toRnd))
                             fromRnd = toRnd
+                    print '    total plotting:', time.time() - start_time
 
                     done = True
 
