@@ -736,6 +736,9 @@ SCIP_RETCODE GCGwriteTexReport(
    char gpname[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
 
+   if(*nseeeds > GCGreportGetMaxNDecomps())
+      *nseeeds = GCGreportGetMaxNDecomps();
+
    /* write tex code into file */
    writeTexHeader(scip, file);
    if(titlepage)
