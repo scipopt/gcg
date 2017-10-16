@@ -148,7 +148,7 @@ SCIP_RETCODE SCIPincludeParamsVisu(
       (int*) &visudata->visucolorscheme, FALSE, DEFAULT_VISU_COLORSCHEME, 0, 2, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip,
-      "visual/nonzeroradius", "integer value to scale dots from 1-10",
+      "visual/nonzeroradius", "integer value to scale dots on range 1-10",
       &visudata->visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
@@ -480,11 +480,13 @@ float SCIPvisuGetNonzeroRadius(
    else
       maxind = maxindy;
 
-   /* scale by coordinate system size (in percent) and given factor */
-   radius = ( (float) visudata->visuradius / (float) maxind) * 10 * scalingfactor;
+   /* scale by coordinate system size and given factor */
+   radius = ( (float) visudata->visuradius / (float) maxind) * scalingfactor;
+
    /* if the number is too small assume a large system */
    if(radius == 0)
       radius = 1;
+
    return radius;
 }
 

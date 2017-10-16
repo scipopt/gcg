@@ -360,8 +360,9 @@ SCIP_RETCODE writeTikzBox(
    )
 {
    SCIPinfoMessage(scip, file,
-      "    \\draw [fill=%s] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
-      color, x1 / xmax, y1 / ymax, x2 / xmax, y2 / ymax);
+      "    \\filldraw [fill=%s, draw=colorline] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) rectangle (%f*\\textwidth*0.75,%f*\\textwidth*0.75);\n",
+      color, ( (float) x1 / (float) xmax ), ( (float) y1 / (float) ymax ), ( (float) x2 / (float) xmax ),
+      ( (float) y2 / (float) ymax ));
    return SCIP_OKAY;
 }
 
@@ -374,7 +375,9 @@ SCIP_RETCODE writeTikzNonzeros(
    FILE* file,             /**< filename to write to (including path & extension) */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
    Seeedpool* seeedpool,   /**< current Seeedpool */
-   float radius            /**< radius of the dots */
+   float radius,           /**< radius of the dots */
+   int xmax,               /**< maximum x axis value */
+   int ymax                /**< maximum y axis value */
    )
 {
    std::vector<int> orderToRows(seeed->getNConss(), -1);
@@ -473,8 +476,8 @@ SCIP_RETCODE writeTikzNonzeros(
          if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
          {
             SCIPinfoMessage(scip, file,
-               "    \\draw [fill] (%f/\\textwidth*0.75,%f/\\textwidth*0.75) circle [radius=%f*0.75];\n",
-               col + 0.5, row + 0.5, radius);
+               "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
+               ( (float) col + 0.5 ) / (float) xmax, ( (float) row + 0.5 ) / (float) ymax, radius);
          }
       }
    }
@@ -548,7 +551,8 @@ SCIP_RETCODE writeTexSeeed(
    /* --- draw nonzeros --- */
    if(SCIPvisuGetDraftmode() == FALSE)
    {
-      writeTikzNonzeros(scip, file, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), 1));
+      writeTikzNonzeros(scip, file, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), 1),
+         nvars, nconss);
    }
 
    SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                               \n");
