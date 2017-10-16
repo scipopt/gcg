@@ -391,6 +391,9 @@ SCIP_RETCODE reportAllDecompositions(
       DECdecompFree(scip, &decomps[ndecomps - i - 1]);
    }
 
+   /* free the decomps array (it is allocated in SCIPconshdlrDecompGetFinishedDecomps) */
+   SCIPfreeMemoryArray(scip, &decomps);
+
    return SCIP_OKAY;
 }
 

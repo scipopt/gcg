@@ -233,8 +233,8 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     \n");
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
    SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
-   SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      \n");
-   SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               \n");
+//   SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      \n");
+//   SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               \n");
    SCIPinfoMessage(scip, file, "                                                                                 \n");
 
   /* introduce colors of current color scheme */
@@ -473,7 +473,7 @@ SCIP_RETCODE writeTikzNonzeros(
          if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
          {
             SCIPinfoMessage(scip, file,
-               "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
+               "    \\draw [fill] (%f/\\textwidth*0.75,%f/\\textwidth*0.75) circle [radius=%f*0.75];\n",
                col + 0.5, row + 0.5, radius);
          }
       }
@@ -732,8 +732,8 @@ SCIP_RETCODE GCGwriteTexReport(
    SEEED_WRAPPER seeedwr;
    Seeed* seeed;
    Seeedpool* seeedpool = NULL;
+   char* gppath;
    char gpname[SCIP_MAXSTRLEN];
-   char gppath[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
 
    /* write tex code into file */
@@ -765,8 +765,11 @@ SCIP_RETCODE GCGwriteTexReport(
       else
       {
          /* in case a gp file should be generated include it */
+
          misc->GCGgetVisualizationFilename(scip, seeed, "gp", gpname);
          misc->GCGgetVisualizationFilename(scip, seeed, "pdf", pdfname);
+
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &gppath, SCIP_MAXSTRLEN) );
 
          strcpy(gppath, misc->GCGgetFilePath(scip, file));
          strcat(gppath, "/");
@@ -774,6 +777,8 @@ SCIP_RETCODE GCGwriteTexReport(
          strcat(gppath, ".gp");
 
          GCGwriteGpVisualization( scip, gppath, pdfname, seeedids[i] );
+
+         SCIPfreeBlockMemoryArray(scip, &gppath, SCIP_MAXSTRLEN);
 
          SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
          SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");

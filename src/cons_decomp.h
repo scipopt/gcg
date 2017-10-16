@@ -404,6 +404,9 @@ void DECprintListOfDetectors(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** gets all currently finished decomps
+ * Note: the array is allocated and needs to be freed after use!
+ * */
 DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
    SCIP*     scip
    );

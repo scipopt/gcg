@@ -4963,7 +4963,9 @@ char DECdetectorGetChar(
       return detector->decchar;
 }
 
-
+/** gets all currently finished decomps
+ * Note: the array is allocated and needs to be freed after use!
+ * */
 DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
    SCIP*     scip
 ){
@@ -4985,7 +4987,7 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
 
    ndecomps = SCIPconshdlrDecompGetNFinishedDecomps(scip);
 
-   SCIP_CALL_ABORT(SCIPallocMemoryArray(scip, &decomps, ndecomps ) );
+   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &decomps, ndecomps) );
 
    for( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
    {
