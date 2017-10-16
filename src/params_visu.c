@@ -465,7 +465,6 @@ float SCIPvisuGetNonzeroRadius(
    )
 {
    int maxind = 0;
-   int radius = 1;
 
    /* the max indices must be at least one to be compatible with division */
    if(maxindx <= 0)
@@ -481,13 +480,7 @@ float SCIPvisuGetNonzeroRadius(
       maxind = maxindy;
 
    /* scale by coordinate system size and given factor */
-   radius = ( (float) visudata->visuradius / (float) maxind) * scalingfactor;
-
-   /* if the number is too small assume a large system */
-   if(radius == 0)
-      radius = 1;
-
-   return radius;
+   return ( (float) visudata->visuradius / (float) maxind) * scalingfactor;
 }
 
 
