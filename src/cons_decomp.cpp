@@ -4639,7 +4639,7 @@ DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
 
 
 /** gets an array of all seeeds that are currently considered relevant
- * @params seeedswr  output of the relevant seeeds
+ * @params seeedswr  output of the relevant seeeds (don't forget to free the individual wrappers after use)
  * @params nseeeds   amount of seeeds that are put in the array
  */
 SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
@@ -4694,6 +4694,7 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
    *nseeeds = maxid+1;
    for( int i = 0; i < *nseeeds; i++ )
    {
+      SCIP_CALL( SCIPallocBlockMemory( scip, &(seeedswr[i]) ) );
       seeedswr[i]->seeed = NULL;
    }
 
@@ -4791,6 +4792,7 @@ SCIP_RETCODE DECwriteFamilyTree(
 
 	for( size_t i = 0; i < tovisualize.size(); ++i )
 	{
+	   SCIP_CALL( SCIPallocBlockMemory( scip, &(tovisualizewr[i]) ) );
 	   tovisualizewr[i]->seeed = tovisualize[i];
 	}
 
@@ -4798,6 +4800,10 @@ SCIP_RETCODE DECwriteFamilyTree(
 	GCGwriteTexFamilyTree(scip, helpfile, workfolder, tovisualizewr, &ntovisualize, TRUE);
 	fclose(helpfile);
 
+	for( size_t i = 0; i < tovisualize.size(); ++i )
+   {
+      SCIPfreeBlockMemory( scip, &(tovisualizewr[i]) );
+   }
 	SCIPfreeBufferArray(scip, &tovisualizewr);
 
 	return SCIP_OKAY;

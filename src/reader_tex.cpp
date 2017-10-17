@@ -820,12 +820,6 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
 
    std::ofstream ofs;
 
-   std::vector<SeeedPtr> seeeds;
-   for( int i = 0; i < *(nseeeds); i++ )
-   {
-      seeeds[i] = seeedswr[i]->seeed;
-   }
-
    /* directly initialize the filename */
    const char* filename = miscvisu->GCGgetFilePath(scip, file);
 
@@ -858,25 +852,25 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    }
 
    /** 1) find relevant seeeds in tree and build tree */
-   for( size_t s = 0; s < seeeds.size(); ++s )
+   for( int s = 0; s < *nseeeds; ++s )
    {
       int currid;
-      if ( seeeds[s] == NULL )
+      if ( seeedswr[s]->seeed == NULL )
          continue;
-      currid = seeeds[s]->getID();
-      if( !isseeedintree[seeeds[s]->getID()] )
+      currid = seeedswr[s]->seeed->getID();
+      if( !isseeedintree[seeedswr[s]->seeed->getID()] )
       {
-         isseeedintree[seeeds[s]->getID()] = TRUE;
-         treeseeeds.push_back(seeeds[s]);
-         treeseeedids.push_back(seeeds[s]->getID());
+         isseeedintree[seeedswr[s]->seeed->getID()] = TRUE;
+         treeseeeds.push_back(seeedswr[s]->seeed);
+         treeseeedids.push_back(seeedswr[s]->seeed->getID());
       }
       else
          break;
 
-      for( int i = 0; i < seeeds[s]->getNAncestors(); ++i )
+      for( int i = 0; i < seeedswr[s]->seeed->getNAncestors(); ++i )
       {
          int ancestorid;
-         ancestorid = seeeds[s]->getAncestorID( seeeds[s]->getNAncestors() - i - 1 );
+         ancestorid = seeedswr[s]->seeed->getAncestorID( seeedswr[s]->seeed->getNAncestors() - i - 1 );
          parents[currid] = ancestorid;
          childs[ancestorid].push_back(currid);
          childsfinished[ancestorid].push_back(FALSE);
@@ -887,7 +881,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
             assert(allrelevantseeedswr[ancestorid]->seeed != NULL);
             treeseeeds.push_back( allrelevantseeedswr[ancestorid]->seeed );
             treeseeedids.push_back(ancestorid);
-            if( i == seeeds[s]->getNAncestors() -1 )
+            if( i == seeedswr[s]->seeed->getNAncestors() -1 )
             {
                if( root == -1 )
                   root = ancestorid;
@@ -904,9 +898,9 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    for( size_t i = 0; i < treeseeeds.size(); ++i )
    {
       SeeedPtr seeed;
-      char* helpfilename = '\0';
-      char* decompfilename = '\0';
-      char* temp = '\0';
+      char helpfilename[SCIP_MAXSTRLEN];
+      char decompfilename[SCIP_MAXSTRLEN];
+      char temp[SCIP_MAXSTRLEN];
 
       seeed = treeseeeds[i];
       strcpy( helpfilename, workfolder );
@@ -920,7 +914,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
          strcpy( decompfilename, temp );
 
          GCGwriteGpVisualization(scip, helpfilename, decompfilename, seeed->getID());
-         char* command = '\0';
+         char command[SCIP_MAXSTRLEN];
          strcpy(command, "gnuplot ");
          strcat(command, helpfilename);
          system(command);
@@ -980,7 +974,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       if( !visited[curr] )
       {
          /** write node */
-         char* temp = '\0';
+         char temp[SCIP_MAXSTRLEN];
          miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, ".pdf", temp);
          ofs << " (s" << allrelevantseeedswr[curr]->seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{"
             << temp << "} }" << std::endl;
@@ -1026,6 +1020,10 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
 
    ofs.close();
 
+   for( int i = 0; i < nallrelevantseeeds; ++i )
+   {
+      SCIPfreeBlockMemory( scip, &(allrelevantseeedswr[i]) );
+   }
    SCIPfreeBufferArray(scip, &allrelevantseeedswr);
 
    return SCIP_OKAY;
