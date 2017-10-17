@@ -737,6 +737,8 @@ SCIP_RETCODE GCGwriteTexReport(
    Seeed* seeed;
    Seeedpool* seeedpool = NULL;
    char* gppath;
+   char* filepath;
+   char* path;
    char gpname[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
 
@@ -771,14 +773,17 @@ SCIP_RETCODE GCGwriteTexReport(
       }
       else
       {
-         /* in case a gp file should be generated include it */
-
+         /* in case a gp file should be generated include it in the tex code */
          misc->GCGgetVisualizationFilename(scip, seeed, "gp", gpname);
          misc->GCGgetVisualizationFilename(scip, seeed, "pdf", pdfname);
+         strcat(pdfname, ".pdf");
+
+         filepath = misc->GCGgetFilePath(scip, file);
+         SCIPsplitFilename(filepath, &path, NULL, NULL, NULL);
 
          SCIP_CALL( SCIPallocBlockMemoryArray(scip, &gppath, SCIP_MAXSTRLEN) );
 
-         strcpy(gppath, misc->GCGgetFilePath(scip, file));
+         strcpy(gppath, path);
          strcat(gppath, "/");
          strcat(gppath, gpname);
          strcat(gppath, ".gp");
@@ -789,7 +794,7 @@ SCIP_RETCODE GCGwriteTexReport(
 
          SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
          SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
-         SCIPinfoMessage(scip, file, "    \\input{%s.pdf}                                                \n", pdfname);
+         SCIPinfoMessage(scip, file, "    \\input{%s}                                                    \n", pdfname);
          SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
          SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
       }
