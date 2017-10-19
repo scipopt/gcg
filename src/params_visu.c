@@ -38,42 +38,44 @@
 #include <limits.h>
 
 
-/* color defaults */
-#define COLOR_WHITE     "#FFFFFF"
-#define COLOR_BLUE      "#00549F"
-#define COLOR_LBLUE     "#8EBAE5"
-#define COLOR_PURPLE    "#7A6FAC"
-#define COLOR_VIOLET    "#612158"
-#define COLOR_CARMINE   "#A11035"
-#define COLOR_RED       "#CC071E"
-#define COLOR_MAGENTA   "#E30066"
-#define COLOR_ORANGE    "#F6A800"
-#define COLOR_YELLOW    "#FFED00"
-#define COLOR_GRASS     "#BDAB27"
-#define COLOR_GREEN     "#57AB27"
-#define COLOR_CYAN      "#0098A1"
-#define COLOR_TEAL      "#006165"
-#define COLOR_BLACK     "#000000"
+/* color defaults to build default color layout with */
+#define COLOR_WHITE     "#FFFFFF"   /**< standard white */
+#define COLOR_BLUE      "#00549F"   /**< darker blue */
+#define COLOR_LBLUE     "#8EBAE5"   /**< lighter blue */
+#define COLOR_PURPLE    "#7A6FAC"   /**< purple */
+#define COLOR_VIOLET    "#612158"   /**< violet */
+#define COLOR_CARMINE   "#A11035"   /**< darker red */
+#define COLOR_RED       "#CC071E"   /**< lighter red */
+#define COLOR_MAGENTA   "#E30066"   /**< pink */
+#define COLOR_ORANGE    "#F6A800"   /**< orange */
+#define COLOR_YELLOW    "#FFED00"   /**< yellow */
+#define COLOR_GRASS     "#BDAB27"   /**< lighter green */
+#define COLOR_GREEN     "#57AB27"   /**< darker green */
+#define COLOR_CYAN      "#0098A1"   /**< lighter cyan */
+#define COLOR_TEAL      "#006165"   /**< darker, muddy cyan */
+#define COLOR_BLACK     "#000000"   /**< standard black */
 
-#define DEFAULT_COLOR_MASTERVARS   COLOR_WHITE   /* for mastervars (in block area) */
-#define DEFAULT_COLOR_MASTERCONSS  COLOR_BLUE    /* for masterconss */
-#define DEFAULT_COLOR_LINKING      COLOR_PURPLE
-#define DEFAULT_COLOR_STAIRLINKING COLOR_MAGENTA
-#define DEFAULT_COLOR_BLOCK        COLOR_TEAL
-#define DEFAULT_COLOR_OPEN         COLOR_GREEN   /* for open (not assigned) elements */
-#define DEFAULT_COLOR_NONZERO      COLOR_BLACK
-#define DEFAULT_COLOR_LINE         COLOR_BLACK   /* for outlines of blocks */
+/* default colors (use defines above for changes) */
+#define DEFAULT_COLOR_MASTERVARS   COLOR_WHITE     /**< for mastervars (in block area) */
+#define DEFAULT_COLOR_MASTERCONSS  COLOR_BLUE      /**< for masterconss */
+#define DEFAULT_COLOR_LINKING      COLOR_PURPLE    /**< for linking areas */
+#define DEFAULT_COLOR_STAIRLINKING COLOR_MAGENTA   /**< for stairlinking areas */
+#define DEFAULT_COLOR_BLOCK        COLOR_TEAL      /**< for finished blocks */
+#define DEFAULT_COLOR_OPEN         COLOR_GREEN     /**< for open (not assigned) elements */
+#define DEFAULT_COLOR_NONZERO      COLOR_BLACK     /**< for nonzero dots */
+#define DEFAULT_COLOR_LINE         COLOR_BLACK     /**< for outlines of blocks */
 
-#define GREY_COLOR_MASTERVARS   "#323232"
-#define GREY_COLOR_MASTERCONS   "#999999"
-#define GREY_COLOR_LINKING      "#666666"
-#define GREY_COLOR_STAIRLINKING "#191919"
-#define GREY_COLOR_BLOCK        "#4C4C4C"
-#define GREY_COLOR_OPEN         "#7F7F7F"
-#define GREY_COLOR_NONZERO      COLOR_BLACK
-#define GREY_COLOR_LINE         COLOR_BLACK
+/* 8 shades of grey */
+#define GREY_COLOR_MASTERVARS   "#323232"    /**< for mastervars (in block area) */
+#define GREY_COLOR_MASTERCONS   "#999999"    /**< for masterconss */
+#define GREY_COLOR_LINKING      "#666666"    /**< for linking areas */
+#define GREY_COLOR_STAIRLINKING "#191919"    /**< for stairlinking areas */
+#define GREY_COLOR_BLOCK        "#4C4C4C"    /**< for finished blocks */
+#define GREY_COLOR_OPEN         "#7F7F7F"    /**< for open (not assigned) elements */
+#define GREY_COLOR_NONZERO      COLOR_BLACK  /**< for nonzero dots */
+#define GREY_COLOR_LINE         COLOR_BLACK  /**< for outlines of blocks */
 
-/* visualization defaults */
+/* visualization imaging defaults */
 #define DEFAULT_VISU_DRAFTMODE   FALSE                /**< if true no nonzeros are shown in visualizations */
 #define DEFAULT_VISU_COLORSCHEME COLORSCHEME_DEFAULT  /**< is of type VISU_COLORSCHEME */
 #define DEFAULT_VISU_RADIUS      5                    /**< possible scale: 1-10 */
@@ -125,7 +127,7 @@ struct GCG_VisualizationData
    SCIP_Bool   rep_usegp;              /**< if true gnuplot is used for visualizations, otherwise LaTeX/Tikz */
 };
 
-/* visualization parameter data */
+/** visualization parameter data */
 struct GCG_VisualizationData* visudata;
 
 
