@@ -79,6 +79,8 @@
 #define DEFAULT_VISU_DRAFTMODE   FALSE                /**< if true no nonzeros are shown in visualizations */
 #define DEFAULT_VISU_COLORSCHEME COLORSCHEME_DEFAULT  /**< is of type VISU_COLORSCHEME */
 #define DEFAULT_VISU_RADIUS      5                    /**< possible scale: 1-10 */
+#define DEFAULT_VISU_USEGP       FALSE                /**< if true gnuplot is used for visualizations,
+                                                       * otherwise LaTeX/Tikz */
 
 /* pdf reader default */
 #define DEFAULT_PDFREADER        "evince"             /**< name of pdf reader, must be callable by system */
@@ -90,7 +92,6 @@
 #define DEFAULT_REPORT_SHOWTITLEPAGE   TRUE     /**< if true a titlepage is included */
 #define DEFAULT_REPORT_SHOWTOC         TRUE     /**< if true a table of contents is included */
 #define DEFAULT_REPORT_SHOWSTATISTICS  TRUE     /**< if true statistics are included for each decomp */
-#define DEFAULT_REPORT_USEGP           FALSE    /**< if true gnuplot is used for visualizations, otherwise LaTeX/Tikz */
 
 /* familytree parameter defaults */
 #define DEFAULT_FAMTREE_MAXNDECOMPS    5        /**< maximum number of finished decompositions in family tree */
@@ -101,6 +102,7 @@ struct GCG_VisualizationData
    SCIP_Bool         visudraftmode;    /**< true if no nonzeros should be shown */
    VISU_COLORSCHEME  visucolorscheme;  /**< stores the current color scheme */
    int               visuradius;       /**< radius for nonzeros */
+   SCIP_Bool         visuusegp;        /**< if true gnuplot is used for visualizations, otherwise LaTeX/Tikz */
 
    char* mancolormastervars;           /**< manual color for master variables */
    char* mancolormasterconss;          /**< manual color for master constraints */
@@ -127,7 +129,6 @@ struct GCG_VisualizationData
    SCIP_Bool   rep_showtitle;          /**< if true a titlepage is included */
    SCIP_Bool   rep_showtoc;            /**< if true a table of contents is included */
    SCIP_Bool   rep_statistics;         /**< if true statistics are included for each decomp */
-   SCIP_Bool   rep_usegp;              /**< if true gnuplot is used for visualizations, otherwise LaTeX/Tikz */
 
    int         fam_maxndecomps;        /**< maximum number of finished decompositions in family tree */
 };
@@ -157,6 +158,10 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    SCIP_CALL( SCIPaddIntParam(scip,
       "visual/nonzeroradius", "integer value to scale dots on range 1-10",
       &visudata->visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/usegp", "if true gnuplot is used for sub-visualizations, otherwise LaTeX/Tikz",
+      &visudata->visuusegp, FALSE, DEFAULT_VISU_USEGP, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
       "visual/pdfreader", "pdf reader that opens visualizations in select menu",
@@ -218,10 +223,6 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    SCIP_CALL( SCIPaddBoolParam(scip,
       "visual/report/showstatistics", "if true statistics are included for each decomp",
       &visudata->rep_statistics, FALSE, DEFAULT_REPORT_SHOWSTATISTICS, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip,
-      "visual/report/usegp", "if true gnuplot is used for visualizations, otherwise LaTeX/Tikz",
-      &visudata->rep_usegp, FALSE, DEFAULT_REPORT_USEGP, NULL, NULL) );
 
    /* add parameters for family tree */
 
@@ -497,6 +498,13 @@ float SCIPvisuGetNonzeroRadius(
 }
 
 
+/** if true gp reader should be used for report visualizations, otherwise tex reader */
+SCIP_Bool GCGgetUseGp()
+{
+   return visudata->visuusegp;
+}
+
+
 /** gets the name of the pdf reader that should be used */
 char* GCGVisuGetPdfReader()
 {
@@ -536,13 +544,6 @@ SCIP_Bool GCGreportGetShowToc()
 SCIP_Bool GCGreportGetShowStatistics()
 {
    return visudata->rep_statistics;
-}
-
-
-/** if true gp reader should be used for report visualizations, otherwise tex reader */
-SCIP_Bool GCGreportGetUseGp()
-{
-   return visudata->rep_usegp;
 }
 
 

@@ -151,6 +151,9 @@ extern float SCIPvisuGetNonzeroRadius(
    float scalingfactor  /**< percentage to scale radius, 1 if no scaling */
    );
 
+/** if true gp reader should be used for report visualizations, otherwise tex reader */
+extern SCIP_Bool GCGgetUseGp(void);
+
 /** gets the name of the pdf reader that should be used */
 extern char* GCGVisuGetPdfReader(void);
 
@@ -168,9 +171,6 @@ extern SCIP_Bool GCGreportGetShowToc(void);
 
 /** gets whether statistics should be included for each decomp in reports */
 extern SCIP_Bool GCGreportGetShowStatistics(void);
-
-/** if true gp reader should be used for report visualizations, otherwise tex reader */
-extern SCIP_Bool GCGreportGetUseGp(void);
 
 /** gets the max number of finished decomps to be included in family tree */
 extern int GCGfamtreeGetMaxNDecomps(void);

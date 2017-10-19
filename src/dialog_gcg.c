@@ -344,7 +344,7 @@ SCIP_RETCODE reportAllDecompositions(
       SCIPdialoghdlrClearBuffer(dialoghdlr);
    }
    GCGwriteTexReport( scip, file, seeedids, &nseeeds, GCGreportGetShowTitlepage(), GCGreportGetShowToc(),
-      GCGreportGetShowStatistics(), GCGreportGetUseGp() );
+      GCGreportGetShowStatistics(), GCGgetUseGp() );
    fclose(file);
 
    SCIPfreeBlockMemoryArray(scip, &seeedids, ndecomps);
