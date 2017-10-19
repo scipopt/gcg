@@ -172,6 +172,9 @@ extern SCIP_Bool GCGreportGetShowStatistics(void);
 /** if true gp reader should be used for report visualizations, otherwise tex reader */
 extern SCIP_Bool GCGreportGetUseGp(void);
 
+/** gets the max number of finished decomps to be included in family tree */
+extern int GCGfamtreeGetMaxNDecomps(void);
+
 /*@todo include this somewhere where it is automatically called at quitting GCG */
 /** frees all visualization parameters */
 extern void GCGVisuFreeParams(

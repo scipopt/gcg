@@ -198,23 +198,15 @@ SCIP_RETCODE writeFamilyTree(
    SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
    )
 {
-   char  dirname[SCIP_MAXSTRLEN];
-   char* draftstring;
-   char* ndecstring;
-   char filename[SCIP_MAXSTRLEN];
-   char* tmpstring;
-   char tempstr[SCIP_MAXSTRLEN];
-   char outname[SCIP_MAXSTRLEN];
-   const char* extension = "tex";
    SCIP_Bool endoffile;
-   SCIP_Bool draft;
-   int ndecs;
-   const int defaultndecs = 5;
    SCIP_RETCODE retcode;
-
-   draft = FALSE;
-   ndecs = 5;
-   tempstr[0] = '\0';
+   char* probname;
+   char* tmpstring;
+   const char* extension = "tex";
+   char  dirname[SCIP_MAXSTRLEN];
+   char probnamepath[SCIP_MAXSTRLEN];
+   char filename[SCIP_MAXSTRLEN];
+   char outname[SCIP_MAXSTRLEN];
 
    if( SCIPconshdlrDecompGetNFinishedDecomps(scip) == 0 )
    {
@@ -224,7 +216,7 @@ SCIP_RETCODE writeFamilyTree(
       return SCIP_OKAY;
    }
 
-   /*@todo path & filename.tex where path must exist*/
+   /* create the file path */
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,"Enter existing directory for output (e.g. ../path/to/directory):\n",
       &tmpstring, &endoffile) );
    if( endoffile )
@@ -237,40 +229,15 @@ SCIP_RETCODE writeFamilyTree(
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,"Enter file name for output (e.g. myfile):\n", &tmpstring,
-      &endoffile) );
-   if( endoffile )
-   {
-      *nextdialog = NULL;
-      return SCIP_OKAY;
-   }
+   (void) SCIPsnprintf(probnamepath, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+      SCIPsplitFilename(probnamepath, NULL, &probname, NULL, NULL);
+   (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "familytree-%s", probname);
 
-   strncpy(filename, tmpstring, SCIP_MAXSTRLEN);
 
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", dirname, filename, extension);
 
-   SCIPdialogMessage(scip, NULL, "Draft mode will not visualize non-zero values but is faster and takes less memory.\n");
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
-      "To activate draft mode type 'yes', otherwise type anything different or just press Enter:",
-      &draftstring, &endoffile) );
-   if( strcmp( draftstring, "y") == 0 || strcmp( draftstring, "yes") == 0 ||
-      strcmp( draftstring, "Y") == 0 || strcmp( draftstring, "Yes") == 0 || strcmp( draftstring, "YES") == 0)
-   {
-	   draft = TRUE;
-   }
-
-   (void) SCIPsnprintf(tempstr, SCIP_MAXSTRLEN, "Maximum number of finished decompositions (default: %d): ", defaultndecs);
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, (char*)tempstr, &ndecstring, &endoffile) );
-
-   ndecs = atoi( ndecstring );
-   if ( ndecs == 0 )
-   {
-	   SCIPdialogMessage(scip, NULL,
-	      "This is not a compatible number, set number of finished decompositions to %d \n", defaultndecs);
-	   ndecs = defaultndecs;
-   }
-
-   retcode = DECwriteFamilyTree(scip, outname, dirname, ndecs, draft);
+   /* call the creation of the family tree */
+   retcode = DECwriteFamilyTree( scip, outname, dirname, GCGfamtreeGetMaxNDecomps(), SCIPvisuGetDraftmode() );
 
    if( retcode == SCIP_FILECREATEERROR )
    {

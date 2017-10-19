@@ -92,6 +92,9 @@
 #define DEFAULT_REPORT_SHOWSTATISTICS  TRUE     /**< if true statistics are included for each decomp */
 #define DEFAULT_REPORT_USEGP           FALSE    /**< if true gnuplot is used for visualizations, otherwise LaTeX/Tikz */
 
+/* familytree parameter defaults */
+#define DEFAULT_FAMTREE_MAXNDECOMPS    5        /**< maximum number of finished decompositions in family tree */
+
 
 struct GCG_VisualizationData
 {
@@ -125,6 +128,8 @@ struct GCG_VisualizationData
    SCIP_Bool   rep_showtoc;            /**< if true a table of contents is included */
    SCIP_Bool   rep_statistics;         /**< if true statistics are included for each decomp */
    SCIP_Bool   rep_usegp;              /**< if true gnuplot is used for visualizations, otherwise LaTeX/Tikz */
+
+   int         fam_maxndecomps;        /**< maximum number of finished decompositions in family tree */
 };
 
 /** visualization parameter data */
@@ -217,6 +222,12 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    SCIP_CALL( SCIPaddBoolParam(scip,
       "visual/report/usegp", "if true gnuplot is used for visualizations, otherwise LaTeX/Tikz",
       &visudata->rep_usegp, FALSE, DEFAULT_REPORT_USEGP, NULL, NULL) );
+
+   /* add parameters for family tree */
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visual/famtree/maxndecomps", "maximum number of finished decompositions in family tree",
+      &visudata->fam_maxndecomps, FALSE, DEFAULT_FAMTREE_MAXNDECOMPS, 1, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -532,6 +543,13 @@ SCIP_Bool GCGreportGetShowStatistics()
 SCIP_Bool GCGreportGetUseGp()
 {
    return visudata->rep_usegp;
+}
+
+
+/** gets the max number of finished decomps to be included in family tree */
+int GCGfamtreeGetMaxNDecomps()
+{
+   return visudata->fam_maxndecomps;
 }
 
 
