@@ -90,7 +90,7 @@
 #define DEFAULT_REPORT_SHOWTITLEPAGE   TRUE     /**< if true a titlepage is included */
 #define DEFAULT_REPORT_SHOWTOC         TRUE     /**< if true a table of contents is included */
 #define DEFAULT_REPORT_SHOWSTATISTICS  TRUE     /**< if true statistics are included for each decomp */
-#define DEFAULT_REPORT_USEGP           TRUE     /**< if true gnuplot is used for visualizations, otherwise LaTeX/Tikz */
+#define DEFAULT_REPORT_USEGP           FALSE    /**< if true gnuplot is used for visualizations, otherwise LaTeX/Tikz */
 
 
 struct GCG_VisualizationData

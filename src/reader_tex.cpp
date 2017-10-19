@@ -753,19 +753,22 @@ SCIP_RETCODE GCGwriteTexReport(
       writeTexTableOfContents(scip, file);
    for(int i = 0; i < *nseeeds; i++)
    {
+      /* get and write each seeed */
+      int tempindex = seeedids[i];
+      GCGgetSeeedFromID(scip, &tempindex, &seeedwr);
+      seeed = seeedwr.seeed;
+
       if(toc)
       {
          char decompname[SCIP_MAXSTRLEN];
+         SCIPsnprintf( decompname, SCIP_MAXSTRLEN, "%s-%d", seeed->getDetectorChainString(), seeed->getID() );
 
          SCIPinfoMessage(scip, file, "\\section*{Decomposition: %s}                                   \n", decompname);
          if(toc)
             SCIPinfoMessage(scip, file, "\\addcontentsline{toc}{section}{Decomposition: %s}              \n", decompname);
          SCIPinfoMessage(scip, file, "                                                                \n");
       }
-      /* get and write each seeed */
-      int tempindex = seeedids[i];
-      GCGgetSeeedFromID(scip, &tempindex, &seeedwr);
-      seeed = seeedwr.seeed;
+
       seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, tempindex);
       if(!usegp)
       {
