@@ -125,13 +125,20 @@ private:
    std::vector<int> usercandidatesnblocks;               /**< candidate for the number of blocks that were given by the user and thus will be handled priorized */
    std::vector<std::pair<int, int>> candidatesNBlocks;   /**< candidate for the number of blocks  */
 
+   std::vector<SCIP_Real>        dualvalsrandom;
+   std::vector<SCIP_Real>        dualvalsoptimaloriglp;
+   SCIP_Bool                     dualvalsrandomset;
+   SCIP_Bool                     dualvalsoptimaloriglpcalculated;
 
    SCIP_Bool transformed;                                /**< corresponds the matrix datastructure to the transformed
-                                                           *< problem */
+                                                         *< problem */
 
    std::vector<SeeedPtr> seeedstopopulate;               /**< seeeds that are translated seeeds from found ones for the
-                                                          *< original problem */
+                                                         *< original problem */
 
+   SCIP_RETCODE calculateDualvalsOptimalOrigLP();
+
+   SCIP_RETCODE shuffleDualvalsRandom();
 
 public:
 
@@ -198,6 +205,7 @@ public:
       SCIP_Real* score
       );
 
+
    /** clears ancestor seeed data structure */
    void clearAncestorSeeeds();
 
@@ -247,6 +255,8 @@ public:
    bool hasDuplicate(
       SeeedPtr seeed
       );
+
+
 
    /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
    void translateSeeedData(
@@ -303,6 +313,18 @@ public:
    const int* getConssForVar(
       int varIndex /**< index of the variable to be considered */
       );
+
+   /** returns the value of the optimal lp relaxation dual value of the given constrainr rid correspondoning problem of the seeedpool; if it is not calculated yet it will be calculated */
+   SCIP_Real  getDualvalOptimalLP(
+      int  consindex
+      );
+
+   /** return the a random value of the dual variable of the corresponding ; if it is not calculated yet it will be calculated */
+   SCIP_Real  getDualvalRandom(
+      int  consindex
+   );
+
+
 
    /** returns the number of variables for a given constraint */
    int getNVarsForCons(

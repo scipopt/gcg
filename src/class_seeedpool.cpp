@@ -60,6 +60,7 @@
 #include "scip/clock.h"
 #include "scip/cons.h"
 #include "scip/scip.h"
+#include "scip/var.h"
 #include <algorithm>
 #include <list>
 #include <iostream>
@@ -69,6 +70,8 @@
 #include <queue>
 #include <fstream>
 #include <exception>
+/** needed for exponential distributed random dual variables */
+#include <random>
 
 
 
@@ -115,6 +118,14 @@ enum SCIP_Constype_orig
    SCIP_CONSTYPE_GENERAL       = 15          /**<  */
 };
 typedef enum SCIP_Constype_orig SCIP_CONSTYPE_ORIG;
+
+enum GCG_Random_dual_methods
+{
+   GCG_RANDOM_DUAL_NAIVE                  =  0,         /**<  */
+   GCG_RANDOM_DUAL_EXPECTED_EQUAL         =  1,         /**<  */
+   GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE  =  2         /**<  */
+};
+typedef enum GCG_Random_dual_methods GCG_RANDOM_DUAL_METHOD;
 //#endif
 
 
@@ -143,6 +154,118 @@ struct sort_pred
       return left.second < right.second;
    }
 };
+
+SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
+{
+
+   SCIP* scipcopy;
+   SCIP_HASHMAP* origtocopiedconss;
+   SCIP_Bool valid;
+   int nvars;
+   SCIP_VAR** copiedvars;
+
+   SCIP_Bool lperror;
+   SCIP_Bool cutoff;
+
+   int nconss;
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "startetd calculating optimal dual values for original lp\n");
+
+   SCIPhashmapCreate(&origtocopiedconss, SCIPblkmem(scip), SCIPgetNConss(scip) );
+
+   SCIPcreate(&scipcopy);
+  // SCIPincludeDefaultPlugins(scipcopy);
+
+
+   SCIPcopy(scip, scipcopy, NULL, origtocopiedconss, "", FALSE, FALSE, FALSE, &valid );
+
+   nconss = getNConss();
+
+   assert(SCIPgetNConss(scip) == getNConss() );
+
+   nvars = SCIPgetNVars(scipcopy);
+   copiedvars = SCIPgetVars(scipcopy);
+
+   dualvalsoptimaloriglp = std::vector<SCIP_Real>(getNConss(), 0.);
+
+   for( int var = 0; var < nvars ; ++var )
+   {
+      SCIP_VAR* copyvar = copiedvars[var];
+      SCIP_Bool infeasible;
+
+      if( SCIPvarGetType(copyvar) == SCIP_VARTYPE_BINARY )
+         SCIPchgVarUbGlobal(scipcopy, copyvar, 1. );
+
+      SCIPchgVarType(scipcopy, copyvar, SCIP_VARTYPE_CONTINUOUS, &infeasible);
+   }
+
+   copiedvars = SCIPgetVars(scipcopy);
+
+   /** deactivate presolving */
+   SCIPsetIntParam(scipcopy, "presolving/maxrounds", 0);
+
+   /** deactivate separating */
+   SCIPsetIntParam(scipcopy, "separating/maxrounds", 0);
+   SCIPsetIntParam(scipcopy, "separating/maxroundsroot", 0);
+
+   /** deactivate propagating */
+   SCIPsetIntParam(scipcopy, "propagating/maxrounds", 0);
+   SCIPsetIntParam(scipcopy, "propagating/maxroundsroot", 0);
+
+   /** solve lp */
+   SCIPsetIntParam(scipcopy, "lp/solvefreq", 1);
+
+   /** only root node */
+   SCIPsetLongintParam(scipcopy, "limits/nodes", 1);
+
+   SCIPsetIntParam(scipcopy, "display/verblevel", SCIP_VERBLEVEL_FULL);
+
+   SCIPtransformProb(scipcopy);
+
+//   SCIPstartDive(scipcopy);
+//   SCIPconstructLP(scipcopy, FALSE);
+//   SCIPsolveDiveLP(scipcopy, -1, &lperror, &cutoff );
+
+
+
+   SCIPwriteTransProblem(scipcopy, "lporig.lp", "lp", FALSE);
+
+   //SCIPwriteParams(scipcopy, "lporig.set", TRUE, TRUE);
+
+   SCIPsolve(scipcopy);
+
+  // SCIPprintStatistics( scipcopy, NULL );
+
+  // assert(FALSE);
+
+   for( int c = 0; c < nconss; ++c )
+   {
+      SCIP_CONS* cons;
+      SCIP_CONS* copiedcons;
+
+      cons = getConsForIndex(c);
+      copiedcons = (SCIP_CONS*) SCIPhashmapGetImage(origtocopiedconss, (void*) cons);
+
+      assert(copiedcons != NULL);
+      assert( !SCIPconsIsTransformed(copiedcons) );
+
+      if( SCIPconsGetTransformed(copiedcons) != NULL )
+         copiedcons = SCIPconsGetTransformed(copiedcons);
+
+      dualvalsoptimaloriglp[c] = GCGconsGetDualsol(scipcopy, copiedcons);
+      if( !SCIPisFeasEQ(scip, 0., dualvalsoptimaloriglp[c]) )
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "optimal dual sol of constraint %s is %f \n", SCIPconsGetName(cons), dualvalsoptimaloriglp[c]);
+   }
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "finished calculating optimal dual values for original lp, start freeing\n");
+
+   SCIPhashmapFree(&origtocopiedconss);
+   SCIPfree(&scipcopy);
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "finished freeing\n");
+
+  return SCIP_OKAY;
+}
 
 /** is constraint ranged row, i.e., -inf < lhs < rhs < inf? */
 static
@@ -181,8 +304,6 @@ SCIP_RETCODE createTestPricingprobConss(
    SCIP_HASHMAP*         hashorig2pricingvar /**< hashmap mapping original to corresponding pricing variables */
    )
 {
-   SCIP_CONS*** subscipconss;
-   int* nsubscipconss;
    SCIP_CONS* newcons;
    SCIP_HASHMAP* hashorig2pricingconstmp;
    int nblocks;
@@ -232,8 +353,6 @@ SCIP_RETCODE createTestPricingprobConss(
          curvars = NULL;
          if( ncurvars > 0 )
          {
-            int i;
-
             SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
             SCIP_CALL( GCGconsGetVars(subscip, newcons, curvars, ncurvars) );
 
@@ -743,7 +862,8 @@ Seeedpool::Seeedpool(
    ) :
    scip( givenScip ), incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 ),
    nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
-   nFinishingDetectors( 0 ), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed )
+   nFinishingDetectors( 0 ), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed ), dualvalsrandom(std::vector<SCIP_Real>(0)),
+dualvalsoptimaloriglp(std::vector<SCIP_Real>(0)) , dualvalsrandomset(FALSE), dualvalsoptimaloriglpcalculated(FALSE)
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
@@ -1745,6 +1865,7 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    SCIP_Real scorecoef_fastnobenefical;
    SCIP_Real scorecoef_mediumnobenefical;
 
+   int npricingconss;
 
    SCIP_Real infinity;
    SCIP_Real epsilon;
@@ -1761,6 +1882,7 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
    *score = 0.;
    hittimelimit = FALSE;
+   npricingconss = 0;
 
    randomdualvals = std::vector<SCIP_Real>(getNConss(),0. );
 
@@ -1793,46 +1915,12 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
 
-   /* create random number generator */
-   SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDSEED) );
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started calculate strong decomposition, timelimit: %f  timelimitfast: %f \n",  timelimit, timelimitfast );
 
-   /** shuffle dual multipliers of master constraints*/
-   for( int mc = 0; mc < seeed->getNMasterconss(); ++mc )
+   for ( int block = 0; block < seeed->getNBlocks(); ++block )
    {
-      SCIP_Real dualval;
-      SCIP_CONS* mastercons;
-
-      mastercons = getConsForIndex( seeed->getMasterconss()[mc]);
-      if( SCIPisInfinity( scip, -GCGconsGetLhs(scip, mastercons) ))
-      {
-         SCIP_Real modifier;
-         modifier = 0.;
-         if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MAXIMIZE )
-            modifier = -1.;
-
-         dualval = SCIPrandomGetReal(randnumgen, 0.+modifier, 1.+modifier  );
-      }
-      else if( SCIPisInfinity( scip, GCGconsGetRhs(scip, mastercons) ) )
-      {
-         SCIP_Real modifier;
-         modifier = 0.;
-         if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MINIMIZE )
-            modifier = -1.;
-
-         dualval = SCIPrandomGetReal(randnumgen, 0.+modifier, 1.+modifier  );
-
-      }
-      else
-      {
-         dualval = SCIPrandomGetReal(randnumgen, -1., 1. );
-      }
-
-      randomdualvals[ seeed->getMasterconss()[mc]] = dualval;
+      npricingconss += seeed->getNConssForBlock(block);
    }
-
-
 
    /* for every pricing problem calculate a corresponding score coeff and break if a pricing problem cannot be solved in the timelimit */
    for ( int block = 0; block < seeed->getNBlocks(); ++block )
@@ -1843,7 +1931,9 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
       SCIP_HASHMAP* hashorig2pricingvar;
       SCIP_Real score_coef;
       SCIP_Real weight_subproblem;
+      std::stringstream subname;
 
+      subname << "temp_pp_" << block << ".lp";
       std::vector<SCIP_VAR*> indextopricingvar;
 
       SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started calculate strong decomposition subproblem for block %d \n", block );
@@ -1858,13 +1948,18 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
       benefical = FALSE;
       fast = FALSE;
       score_coef = 0.0;
-      weight_subproblem = (SCIP_Real) seeed->getNConssForBlock(block) / getNConss();
+      weight_subproblem = (SCIP_Real) seeed->getNConssForBlock(block) / npricingconss;
 
       /** build subscip */
       SCIP_CALL( SCIPcreate(&subscip) );
       SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
       SCIP_CALL( setTestpricingProblemParameters(subscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts, timelimit) );
+      SCIP_CALL( SCIPsetIntParam(subscip, "presolving/maxrounds", 0) );
+      SCIP_CALL( SCIPsetIntParam(subscip, "lp/solvefreq", 1) );
       SCIP_CALL( SCIPcreateProb(subscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started calculate strong decomposition, timelimit: %f  timelimitfast: %f \n",  timelimit, timelimitfast );
+
 
       /** copy variables */
       for( int var = 0; var < seeed->getNVarsForBlock(block); ++var )
@@ -1890,11 +1985,11 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
             consid = getConssForVar(varid)[c];
             if ( seeed->isConsMastercons(consid) )
-               obj -= randomdualvals[consid] * getVal(consid, varid);
+               obj -= getDualvalOptimalLP(consid) * getVal(consid, varid);
          }
 
          /** round variable objective coeffs to decrease numerical troubles */
-         obj = SCIPfloor(scip, obj * 100 + 0.5 )/100.;
+  //       obj = SCIPfloor(scip, obj * 100 + 0.5 )/100.;
 
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", block, SCIPvarGetName(origprobvar));
          SCIP_CALL( SCIPcreateVar(subscip, &pricingprobvar, name, SCIPvarGetLbGlobal(origprobvar),
@@ -1909,8 +2004,9 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
       /** copy constraints */
       SCIP_CALL( createTestPricingprobConss(scip, subscip, this, seeed, block, hashorig2pricingvar) );
 
+      SCIP_CALL(SCIPtransformProb(subscip) );
       /** set parameter for subscip */
-
+      SCIPwriteTransProblem(subscip, subname.str().c_str(), "lp", FALSE);
 
       /** solve subscip */
       SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started solving subproblem for block %d \n", block );
@@ -1953,6 +2049,9 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
       SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "scorecoef for subproblem %d is %f with weighting factor %f\n", block, score_coef, weight_subproblem );
 
       *score += score_coef * weight_subproblem;
+
+    //  SCIPprintStatistics(subscip, NULL);
+
 
       /** free stuff */
       for( int var = 0; var < seeed->getNVarsForBlock(block); ++var )
@@ -2598,6 +2697,34 @@ const int* Seeedpool::getConssForVar(
 {
    return & conssForVars[var][0];
 }
+
+/** returns the value of the optimal lp relaxation dual value of the given constrainr rid correspondoning problem of the seeedpool; if it is not calculated yet it will be calculated */
+SCIP_Real  Seeedpool::getDualvalOptimalLP(
+   int  consindex
+   )
+{
+   if( !dualvalsoptimaloriglpcalculated )
+      calculateDualvalsOptimalOrigLP();
+   dualvalsoptimaloriglpcalculated = TRUE;
+
+   return dualvalsoptimaloriglp[consindex];
+}
+
+/** return the a random value of the dual variable of the corresponding ; if it is not calculated yet it will be calculated */
+SCIP_Real  Seeedpool::getDualvalRandom(
+   int  consindex
+){
+
+   if( !dualvalsrandomset )
+      shuffleDualvalsRandom();
+   dualvalsrandomset = TRUE;
+
+   return dualvalsoptimaloriglp[consindex];
+
+}
+
+
+
 
 /** returns the constraint indices of the coefficient matrix for a constraint */
 const int* Seeedpool::getConssForCons(
@@ -4113,6 +4240,142 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
    }
 
    return remainingSeeeds;
+}
+
+
+SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
+{
+
+   GCG_RANDOM_DUAL_METHOD usedmethod;
+   SCIP_RANDNUMGEN* randnumgen;
+
+   usedmethod = GCG_RANDOM_DUAL_NAIVE;
+   /** other possibilities
+   usedmethod = GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE;
+   usedmethod = GCG_RANDOM_DUAL_EXPECTED_EQUAL;
+   */
+
+   /* create random number generator */
+   SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDSEED) );
+
+
+   /** shuffle dual multipliers of constraints*/
+
+   /** 1) naive approach */
+   if( usedmethod == GCG_RANDOM_DUAL_NAIVE )
+   {
+      for( int c = 0; c < getNConss(); ++c )
+      {
+         SCIP_Real dualval;
+         SCIP_Real factor;
+         SCIP_CONS* cons;
+
+         cons = getConsForIndex(c);
+         if( SCIPisInfinity( scip, -GCGconsGetLhs(scip, cons) ))
+         {
+            SCIP_Real modifier;
+            modifier = 0.;
+            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MAXIMIZE )
+               modifier = -1.;
+
+            factor = MAX(1., ABS(GCGconsGetRhs(scip, cons)  ) );
+            dualval = SCIPrandomGetReal(randnumgen, 0.+modifier, 1.+modifier  ) * factor;
+         }
+         else if( SCIPisInfinity( scip, GCGconsGetRhs(scip, cons) ) )
+         {
+            SCIP_Real modifier;
+            modifier = 0.;
+            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MINIMIZE )
+               modifier = -1.;
+
+            factor = MAX(1., ABS(GCGconsGetLhs(scip, cons)  ) );
+            dualval = SCIPrandomGetReal(randnumgen, 0.+modifier, 1.+modifier  ) * factor;
+
+         }
+         else
+         {
+            factor = MAX(1., ABS(GCGconsGetLhs(scip, cons)  ) );
+            factor = MAX( factor, ABS(GCGconsGetRhs(scip, cons)   ) );
+            dualval = SCIPrandomGetReal(randnumgen, -1., 1. ) * factor;
+         }
+
+         dualvalsrandom[c] = dualval;
+      }
+
+   } /* end naive approach */
+
+   /** expected equal and expected overestimated approach */
+   if( usedmethod == GCG_RANDOM_DUAL_EXPECTED_EQUAL || usedmethod == GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE)
+   {
+      std::default_random_engine generator (DEFAULT_RANDSEED);
+
+
+      SCIP_Real largec  = 0.;
+               for( int c = 0; c < getNConss(); ++c )
+                  for( int v = 0; v < getNVars(); ++v )
+                     largec += ABS( getVal(c,v) * SCIPvarGetObj( getVarForIndex(v) ) );
+
+
+      for( int c = 0; c < getNConss(); ++c )
+      {
+         SCIP_Real dualval;
+         SCIP_Real factor;
+         SCIP_CONS* cons;
+         std::exponential_distribution<SCIP_Real> distribution (1.0);
+
+         SCIP_Real divisor = 0.;
+
+         SCIP_Real randomval;
+
+         for( int v = 0; v < getNVarsForCons(c); ++v )
+         {
+            int var = getVarsForCons(c)[v];
+            divisor += ABS( getVal(c, var) );
+         }
+         divisor *= getNConss();
+
+         distribution = std::exponential_distribution<SCIP_Real>( divisor/largec);
+
+         randomval = distribution(generator);
+
+         cons = getConsForIndex(c);
+         if( SCIPisInfinity( scip, -GCGconsGetLhs(scip, cons) ))
+         {
+            SCIP_Real modifier;
+            modifier = 1.;
+            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MAXIMIZE )
+               modifier = -1.;
+
+            dualval = modifier * randomval;
+         }
+         else if( SCIPisInfinity( scip, GCGconsGetRhs(scip, cons) ) )
+         {
+            SCIP_Real modifier;
+            modifier = 1.;
+            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MINIMIZE )
+               modifier = -1.;
+
+            dualval = modifier * randomval;
+
+         }
+         else
+         {
+            SCIP_Real helpval = SCIPrandomGetReal(randnumgen, -1., 1. );
+
+            if ( helpval < 0. )
+               dualval =  -1. * randomval ;
+            else dualval = randomval;
+         }
+
+         dualvalsrandom[c] = dualval;
+      }
+
+
+   }
+
+
+   return SCIP_OKAY;
+
 }
 
 /** creates a decomposition for a given seeed */
