@@ -164,9 +164,6 @@ SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
    int nvars;
    SCIP_VAR** copiedvars;
 
-   SCIP_Bool lperror;
-   SCIP_Bool cutoff;
-
    int nconss;
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "startetd calculating optimal dual values for original lp\n");
@@ -306,7 +303,6 @@ SCIP_RETCODE createTestPricingprobConss(
 {
    SCIP_CONS* newcons;
    SCIP_HASHMAP* hashorig2pricingconstmp;
-   int nblocks;
    int c;
    char name[SCIP_MAXSTRLEN];
    SCIP_Bool success;
@@ -862,8 +858,8 @@ Seeedpool::Seeedpool(
    ) :
    scip( givenScip ), incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 ),
    nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
-   nFinishingDetectors( 0 ), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed ), dualvalsrandom(std::vector<SCIP_Real>(0)),
-dualvalsoptimaloriglp(std::vector<SCIP_Real>(0)) , dualvalsrandomset(FALSE), dualvalsoptimaloriglpcalculated(FALSE)
+   nFinishingDetectors( 0 ), nnonzeros( 0 ), candidatesNBlocks( 0 ),  dualvalsrandom(std::vector<SCIP_Real>(0)),
+dualvalsoptimaloriglp(std::vector<SCIP_Real>(0)) , dualvalsrandomset(FALSE), dualvalsoptimaloriglpcalculated(FALSE), transformed( _transformed )
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
@@ -1996,7 +1992,7 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
                   SCIPvarGetUbGlobal(origprobvar), obj, SCIPvarGetType(origprobvar),
                   TRUE, FALSE, NULL, NULL, NULL, NULL, NULL) );
          SCIPhashmapSetImage(hashorig2pricingvar, origprobvar, pricingprobvar);
-         SCIPhashmapSetImage(hashpricingvartoindex, pricingprobvar, (void*) varid);
+         SCIPhashmapSetImage(hashpricingvartoindex, pricingprobvar, (void*) (size_t)varid);
          indextopricingvar[varid] = pricingprobvar;
          SCIP_CALL( SCIPaddVar(subscip, pricingprobvar) );
       }

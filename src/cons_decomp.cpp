@@ -1461,8 +1461,6 @@ SCIP_RETCODE SCIPconshdlrDecompSelectCalcStrongDecompositionScore
    char* ntocalcstrong;
    SCIP_Bool endoffile;
    int idtocalcstrong;
-   int detaillevel;
-
    int commandlen;
 
    assert( scip != NULL );
@@ -4440,7 +4438,6 @@ SCIP_RETCODE DECdetectStructure(
       SCIP_Bool presolveOrigProblem;
       SCIP_Bool calculateOrigDecomps;
       SCIP_Bool classifyOrig;
-      SCIP_Bool emphfast;
 
       assert(scip != NULL);
 
@@ -4547,10 +4544,10 @@ SCIP_RETCODE DECdetectStructure(
             conshdlrdata->seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
       }
 
-     for( int i = 0; i < (int) consClassDistributions.size(); ++i )
+     for( i = 0; i < (int) consClassDistributions.size(); ++i )
         delete consClassDistributions[i];
 
-     for( int i = 0; i < (int) varClassDistributions.size(); ++i )
+     for( i = 0; i < (int) varClassDistributions.size(); ++i )
         delete varClassDistributions[i];
 
 

@@ -80,17 +80,56 @@ Seeed::Seeed(
    int givennconss,
    int givennvars
    ) :
-   scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
-   masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givennvars, true ),
-   isconsopen( givennconss, true ) ,isvarmaster( givennvars, false ), varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
-   conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true), masterconsssorted(true),
-   isconsmaster( givennconss, false ), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
-   detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
-   pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
-   nNewBlocks( 0 ), usedClassifier( 0 ), classesToMaster( 0 ), classesToLinking( 0 ), listofancestorids( 0 ),
-   usergiven( USERGIVEN::NOT ), isfromlegacymode( false ), score( 1. ), maxwhitescore( 1. ), strongdecompositionscore(-1.),
-   borderareascore( 1. ), detectorchainstring( NULL ), stemsFromUnpresolved( false ), isfromunpresolved( FALSE ),
-   isFinishedByFinisherUnpresolved( false ), finishedUnpresolvedBy( NULL )
+   scip( _scip ),
+   id( givenid ),
+   nBlocks( 0 ),
+   nVars( givennvars ),
+   nConss( givennconss ),
+   masterConss( 0 ),
+   masterVars( 0 ),
+   conssForBlocks( 0 ),
+   varsForBlocks( 0 ),
+   linkingVars( 0 ),
+   stairlinkingVars( 0 ),
+   isvaropen( givennvars, true ),
+   isconsopen( givennconss, true ),
+   isvarmaster( givennvars, false ),
+   isconsmaster( givennconss, false ),
+   varsforblocksorted(true),
+   stairlinkingvarsforblocksorted(true),
+   conssforblocksorted(true),
+   linkingvarssorted(true),
+   mastervarssorted(true),
+   masterconsssorted(true),
+   hashvalue( 0 ),
+   changedHashvalue( false ),
+   isselected( false ),
+   isFinishedByFinisher( false ),
+   detectorChain( 0 ),
+   detectorChainFinishingUsed( 0 ),
+   detectorClockTimes( 0 ),
+   pctVarsToBorder( 0 ),
+   pctVarsToBlock( 0 ),
+   pctVarsFromFree( 0 ),
+   pctConssToBorder( 0 ),
+   pctConssToBlock( 0 ),
+   pctConssFromFree( 0 ),
+   nNewBlocks( 0 ),
+   usedClassifier( 0 ),
+   classesToMaster( 0 ),
+   classesToLinking( 0 ),
+   listofancestorids( 0 ),
+   usergiven( USERGIVEN::NOT ),
+   isfromlegacymode( false ),
+   score( 1. ),
+   maxwhitescore( 1. ),
+   strongdecompositionscore(-1.),
+   borderareascore( 1. ),
+   detectorchainstring( NULL ),
+   stemsFromUnpresolved( false ),
+   isfromunpresolved( FALSE ),
+   isFinishedByFinisherUnpresolved( false ),
+   finishedUnpresolvedBy( NULL )
 {
 
    for( int i = 0; i < nConss; ++i )
@@ -1746,17 +1785,17 @@ SCIP_RETCODE Seeed::completeByConnected(
           setConsToBlock( cons, newBlockNr - 1 );
           deleteOpencons( cons );
 
-          for( size_t i = 0; i < seeedpool->getNVarsForCons(cons); ++ i )
+          for( int j = 0; j < seeedpool->getNVarsForCons(cons); ++j )
           {
-             int var = seeedpool->getVarsForCons(cons)[i];
+             int var2 = seeedpool->getVarsForCons(cons)[j];
 
-             if( isVarLinkingvar(var) )
+             if( isVarLinkingvar(var2) )
                 continue;
 
-             assert(! isVarMastervar(var) );
-             setVarToBlock( var, newBlockNr - 1 );
-             assert( isVarOpenvar( var ) );
-             deleteOpenvar( var );
+             assert(! isVarMastervar(var2) );
+             setVarToBlock( var2, newBlockNr - 1 );
+             assert( isVarOpenvar( var2 ) );
+             deleteOpenvar( var2 );
           }
 
        }
@@ -2970,9 +3009,9 @@ SCIP_Real Seeed::evaluate(
    if( smartscore && maxwhitescore <= 0.8 && getNLinkingvars() == 0 )
    {
       masterissetppc = true;
-      for( int i = 0; i < getNMasterconss(); ++i )
+      for( int mc = 0; mc < getNMasterconss(); ++mc )
       {
-         int consid = getMasterconss()[i];
+         int consid = getMasterconss()[mc];
          if( ! seeedpool->isConsSetppc(consid) && ! seeedpool->isConsCardinalityCons(consid) )
          {
             masterissetppc = false;
