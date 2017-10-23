@@ -1841,7 +1841,6 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    SCIP_Real* score
    )
 {
-
    SCIP_Bool hittimelimit;
    SCIP_Bool errorpricing;
    std::vector<SCIP_Real> randomdualvals;
@@ -1850,14 +1849,17 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    /** @TODO introduce scip parameters */
    SCIP_Real timelimit;
    SCIP_Real timelimitfast;
-   /** limit (for a pricing problem to be considered fractional solvable) of difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
-   SCIP_Real gaplimitsolved;
-   /** weighted limit (for a pricing problem to be considered fractional solvable) difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
-   SCIP_Real gaplimitbeneficial;
+
+   /** @TODO use and introduce scip parameter limit (for a pricing problem to be considered fractional solvable) of difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
+   /** SCIP_Real gaplimitsolved; */
+
+   /** @TODO use and introduce scip parameter weighted limit (for a pricing problem to be considered fractional solvable) difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
+   /** SCIP_Real gaplimitbeneficial; */
+
    SCIP_Real scorecoef_fastbenefical;
    SCIP_Real scorecoef_mediumbenefical;
-   SCIP_Real scorecoef_fastlittlebenefical;
-   SCIP_Real scorecoef_mediumlittlebenefical;
+   /** SCIP_Real scorecoef_fastlittlebenefical; */
+   /** SCIP_Real scorecoef_mediumlittlebenefical; */
    SCIP_Real scorecoef_fastnobenefical;
    SCIP_Real scorecoef_mediumnobenefical;
 
@@ -1877,24 +1879,25 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    int clocktype;
 
    *score = 0.;
-   hittimelimit = FALSE;
    npricingconss = 0;
 
    randomdualvals = std::vector<SCIP_Real>(getNConss(),0. );
 
    timelimit = 30.;
    timelimitfast  =  0.1 * timelimit;
-   gaplimitsolved = 0.;
-   gaplimitbeneficial = 0.3;
+
+   /**gaplimitsolved = 0.;
+   gaplimitbeneficial = 0.3; */
 
    scorecoef_fastbenefical = 1.;
    scorecoef_mediumbenefical = 0.75;
 
-   scorecoef_fastlittlebenefical = 0.75;
-   scorecoef_mediumlittlebenefical = 0.5;
+   /** not used yes */
+/*   scorecoef_fastlittlebenefical = 0.75; */
+/*   scorecoef_mediumlittlebenefical = 0.5; */
 
-   scorecoef_fastnobenefical = 0.5;
-   scorecoef_mediumnobenefical = 0.25;
+   scorecoef_fastnobenefical = 0.3;
+   scorecoef_mediumnobenefical = 0.1;
 
    /* get numerical tolerances of the original SCIP instance in order to use the same numerical tolerances in master and pricing problems */
    SCIP_CALL( SCIPgetRealParam(scip, "numerics/infinity", &infinity) );
@@ -2020,10 +2023,23 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
             errorpricing = TRUE;
       }
 
+      if ( errorpricing || hittimelimit)
+      {
+         if( hittimelimit )
+            SCIPverbMessage(scip,  SCIP_VERBLEVEL_FULL, NULL, "Hit timelimit in pricing problem %d \n.", block);
+         else
+            SCIPverbMessage(scip,  SCIP_VERBLEVEL_FULL, NULL, "Error in pricing problem %d \n.", block);
+
+         *score = 0.;
+         SCIPhashmapFree(&hashpricingvartoindex);
+         SCIPfree(&subscip);
+         SCIPfreeRandom(scip, &randnumgen );
+
+         return SCIP_OKAY;
+      }
+
 
       /** get coefficient */
-
-
       if ( !SCIPisEQ( scip,  SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetLowerbound(subscip) ) )
          benefical = TRUE;
 
@@ -2317,12 +2333,12 @@ void Seeedpool::calcTranslationMapping(
    }
 
       for ( size_t i  = 0; i < rowothertothis.size(); ++i )
-         std::cout << (rowothertothis[i] == i) << " " ;
+         std::cout << ( ( (size_t) rowothertothis[i] ) == i) << " " ;
 
       std::cout << std::endl;
 
       for ( size_t i  = 0; i < colothertothis.size(); ++i )
-         std::cout << ( colothertothis[i] == i ) << " " ;
+         std::cout << ( ( (size_t) colothertothis[i] ) == i ) << " " ;
       std::cout << std::endl;
 
 }
@@ -4315,7 +4331,6 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
       for( int c = 0; c < getNConss(); ++c )
       {
          SCIP_Real dualval;
-         SCIP_Real factor;
          SCIP_CONS* cons;
          std::exponential_distribution<SCIP_Real> distribution (1.0);
 
@@ -4328,8 +4343,10 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
             int var = getVarsForCons(c)[v];
             divisor += ABS( getVal(c, var) );
          }
-         divisor *= getNConss();
+         if (usedmethod == GCG_RANDOM_DUAL_EXPECTED_EQUAL )
+            divisor *= getNConss();
 
+         /** 1/lambda is the expected value of the distribution */
          distribution = std::exponential_distribution<SCIP_Real>( divisor/largec);
 
          randomval = distribution(generator);
@@ -4399,7 +4416,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    int conscounter = 1; /* in consindex counting starts with 1 */
    int counterstairlinkingvars = 0;
    int size;
-   int ncalls;
    int modifier;
    int nlinkingconss;
    assert( seeed->checkConsistency( this ) );
