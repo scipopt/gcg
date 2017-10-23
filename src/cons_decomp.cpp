@@ -99,6 +99,8 @@ typedef gcg::Seeed* SeeedPtr;
 
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 #define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
+#define DEFAULT_DUALVALRANDOMMETHOD 1   /**< default value for method to dual initilization of dual values for strong decomposition: 1) naive, 2) expected equal, 3) expected overestimation */
+#define DEFAULT_COEFFACTORORIGVSRANDOM 0.5 /**< default value for convex coefficient for orig dual val (1-this coef is facor for random dual value)  */
 #define DEFAULT_ENABLEORIGDETECTION FALSE /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
 #define DEFAULT_SMARTSCORE                            FALSE
@@ -154,6 +156,8 @@ struct SCIP_ConshdlrData
    int                   sizedecomps;                       /**< size of the decomp and complete seeeds array */
    int                   sizeincompleteseeeds;              /**< size of the incomplete seeeds array */
    int                   maxndetectionrounds;               /**< maximum number of detection loop rounds  */
+   int                   strongdetectiondualvalrandommethod;/**< method to dual initilization of dual values for strong decomposition: 1) naive, 2) expected equal, 3) expected overestimation */
+   SCIP_Real             coeffactororigvsrandom;            /**< convex coefficient for orig dual val (1-this coef is facor for random dual value)  */
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool                enableemphfast;               /**< indicates whether emphasis settings are set to fast */
@@ -1029,6 +1033,14 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", "indicates whether variable classifier for objective function value signs is enabled for the original problem", &conshdlrdata->varclassobjvalsignsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/onlylegacymode", "indicates whether detection should only consist of legacy mode detection", &conshdlrdata->onlylegacymode, FALSE, DEFAULT_ONLYLEGACYMODE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/stairlinkingheur", "indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated", &conshdlrdata->stairlinkingheur, FALSE, DEFAULT_STAIRLINKINGHEUR, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/strong_detection/dualvalrandommethod",
+      "Method for random dual values use for strong decomposition: 1) naive, 2) expected equality exponential distributed, 3) expected overestimation exponential distributed ", &conshdlrdata->strongdetectiondualvalrandommethod, FALSE,
+      DEFAULT_DUALVALRANDOMMETHOD, 1, 3, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/strong_detection/coeffactororigvsrandom",
+      " convex coefficient for orig dual val (1-this coef is facor for random dual value) ", &conshdlrdata->coeffactororigvsrandom, FALSE,
+      DEFAULT_COEFFACTORORIGVSRANDOM, 0., 1., NULL, NULL) );
+
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );

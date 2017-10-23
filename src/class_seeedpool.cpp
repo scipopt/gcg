@@ -225,7 +225,7 @@ SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
 
 
 
-   SCIPwriteTransProblem(scipcopy, "lporig.lp", "lp", FALSE);
+  // SCIPwriteTransProblem(scipcopy, "lporig.lp", "lp", FALSE);
 
    //SCIPwriteParams(scipcopy, "lporig.set", TRUE, TRUE);
 
@@ -241,6 +241,13 @@ SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
       SCIP_CONS* copiedcons;
 
       cons = getConsForIndex(c);
+      if( !transformed && SCIPconsGetTransformed(cons) != NULL )
+         cons = SCIPconsGetTransformed(cons);
+      else if ( !transformed )
+      {
+         SCIPwarningMessage(scip, "Could not find constraint for random dual variable initilization when calculating strong decomposition score; skip cons: %s \n", SCIPconsGetName(cons));
+         continue;
+      }
       copiedcons = (SCIP_CONS*) SCIPhashmapGetImage(origtocopiedconss, (void*) cons);
 
       assert(copiedcons != NULL);
@@ -1843,7 +1850,7 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 {
    SCIP_Bool hittimelimit;
    SCIP_Bool errorpricing;
-   std::vector<SCIP_Real> randomdualvals;
+   //std::vector<SCIP_Real> randomdualvals;
    SCIP_RANDNUMGEN* randnumgen;
 
    /** @TODO introduce scip parameters */
@@ -1876,12 +1883,26 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    SCIP_Bool benefical;
    SCIP_Bool fast;
 
+   SCIP_Bool writesubproblem;
+
    int clocktype;
+
+   SCIP_Real dualvalmethodcoef;
+
+   if( !transformed )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, " \n Attention! Strong decomposition score is not implemented for decomps belonging to the original problem \n\n");
+      return SCIP_OKAY;
+   }
 
    *score = 0.;
    npricingconss = 0;
 
-   randomdualvals = std::vector<SCIP_Real>(getNConss(),0. );
+   writesubproblem = TRUE;
+
+ // randomdualvals = std::vector<SCIP_Real>(getNConss(),0. );
+
+   SCIPgetRealParam(scip, "detection/strong_detection/coeffactororigvsrandom", &dualvalmethodcoef);
 
    timelimit = 30.;
    timelimitfast  =  0.1 * timelimit;
@@ -1932,6 +1953,10 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
       SCIP_Real weight_subproblem;
       std::stringstream subname;
 
+      hittimelimit = FALSE;
+      errorpricing = FALSE;
+
+
       subname << "temp_pp_" << block << ".lp";
       std::vector<SCIP_VAR*> indextopricingvar;
 
@@ -1981,10 +2006,21 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
          for( int c = 0; c < getNConssForVar(varid); ++c )
          {
             int consid;
+            SCIP_Real dualval;
+
+            dualval = 0.;
 
             consid = getConssForVar(varid)[c];
             if ( seeed->isConsMastercons(consid) )
-               obj -= getDualvalOptimalLP(consid) * getVal(consid, varid);
+            {
+               if( SCIPisEQ( scip, dualvalmethodcoef, 0.0) )
+                  dualval = getDualvalRandom(consid);
+               else if( SCIPisEQ( scip, dualvalmethodcoef, 1.0) )
+                  dualval = getDualvalOptimalLP(consid);
+               else
+                  dualval = dualvalmethodcoef * getDualvalOptimalLP(consid) + (1.- dualvalmethodcoef) * getDualvalRandom(consid);
+               obj -= dualval * getVal(consid, varid);
+            }
          }
 
          /** round variable objective coeffs to decrease numerical troubles */
@@ -2005,7 +2041,9 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
 
       SCIP_CALL(SCIPtransformProb(subscip) );
       /** set parameter for subscip */
-      SCIPwriteTransProblem(subscip, subname.str().c_str(), "lp", FALSE);
+
+      if( writesubproblem )
+         SCIPwriteTransProblem(subscip, subname.str().c_str(), "lp", FALSE);
 
       /** solve subscip */
       SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started solving subproblem for block %d \n", block );
@@ -2033,15 +2071,18 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
          *score = 0.;
          SCIPhashmapFree(&hashpricingvartoindex);
          SCIPfree(&subscip);
-         SCIPfreeRandom(scip, &randnumgen );
+
+         /**SCIPfreeRandom(scip, &randnumgen ); */
 
          return SCIP_OKAY;
       }
 
 
       /** get coefficient */
-      if ( !SCIPisEQ( scip,  SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetLowerbound(subscip) ) )
+      if ( !SCIPisEQ( scip,  SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetDualbound(subscip) ) )
          benefical = TRUE;
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "first dual bound: %f ; dual bound end: %f \n",SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetDualbound(subscip)   );
 
       if( SCIPisFeasLE( scip, SCIPgetSolvingTime(subscip), timelimitfast ) )
          fast = TRUE;
@@ -2078,7 +2119,7 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    }// end for blocks
 
 
-   SCIPfreeRandom(scip, &randnumgen );
+   /**SCIPfreeRandom(scip, &randnumgen ); */
    /** consider coefficients   */
 
    return SCIP_OKAY;
@@ -2731,7 +2772,7 @@ SCIP_Real  Seeedpool::getDualvalRandom(
       shuffleDualvalsRandom();
    dualvalsrandomset = TRUE;
 
-   return dualvalsoptimaloriglp[consindex];
+   return dualvalsrandom[consindex];
 
 }
 
@@ -4261,11 +4302,24 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
    GCG_RANDOM_DUAL_METHOD usedmethod;
    SCIP_RANDNUMGEN* randnumgen;
 
-   usedmethod = GCG_RANDOM_DUAL_NAIVE;
+   int method;
+
+   SCIPgetIntParam(scip, "detection/strong_detection/dualvalrandommethod", &method);
+
+   if( method == 1)
+      usedmethod = GCG_RANDOM_DUAL_NAIVE;
+   else if ( method == 2 )
+      usedmethod = GCG_RANDOM_DUAL_EXPECTED_EQUAL;
+   else if ( method == 3 )
+      usedmethod = GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE;
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "set dual val random method to %d. \n", method );
    /** other possibilities
    usedmethod = GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE;
    usedmethod = GCG_RANDOM_DUAL_EXPECTED_EQUAL;
    */
+
+   dualvalsrandom = std::vector<SCIP_Real>(getNConss(), 0.);
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDSEED) );
