@@ -30,17 +30,41 @@ def parse_arguments(args):
     parser.add_argument('-a', '--allnodes', action='store_true',
                         help='set this flag, to plot the pricing-statistics for all nodes, not just the root')
 
-    parser.add_argument('-d', '--details', action='store_true',
-                        help='set this flag for detailed vector-graphic plots, with no lines between the bars')
+    parser.add_argument('-p', '--png', action='store_true',
+                        help='set this flag for a non-zoomable png-plot as output')
 
     parser.add_argument('-s', '--splitrounds', type=int,
                         default=0,
                         help='the plot can be split into pieces containing a maximum of SPLITROUNDS rounds each (default is no splitting)')
 
+    parser.add_argument('-m', '--minround', type=int,
+                        default=1,
+                        help='start the plot with pricing-round MINROUND (default is the first round)')
+
+    parser.add_argument('-M', '--maxround', type=int,
+                        default=0,
+                        help='start the plot with pricing-round MAXROUND (default is MAXROUND=0, which will be the last round)')
+
+    parser.add_argument('-c', '--colors', type=str,
+                        default="nipy_spectral",
+                        help='name of the color-map, that is used for the bars (see matplotlib documentation for maps, default is nipy_spectral)')
+
+    parser.add_argument('-l', '--lines', action='store_true',
+                        help='enforce lines between pricing-rounds on the plots (default is to not draw lines for rounds, that are too short)')
+
     parser.add_argument('filename', nargs='+',
                         help='Name of the files to be used for the bound plots')
 
     parsed_args = parser.parse_args(args)
+
+    # check if the provided arguments are consistent
+    if (0 < parsed_args.maxround and parsed_args.maxround < parsed_args.minround) or parsed_args.minround <= 0 or parsed_args.maxround < 0:
+        print 'please make sure that 1 <= MINROUND <= MAXROUND (or MAXROUND == 0 for the last possible round)'
+        exit()
+    if not parsed_args.colors in plt.cm.datad:
+        print 'please use a colormap that is supported by pyplot (' + parsed_args.colors + ' is not supported)'
+        exit()
+
     return parsed_args
 
 def set_params(args):
@@ -51,8 +75,12 @@ def set_params(args):
     """
     params['outdir'] = args.outdir
     params['root_only'] = not args.allnodes
-    params['details'] = args.details
+    params['details'] = not args.png
     params['nSplit'] = args.splitrounds
+    params['minRound'] = args.minround
+    params['maxRound'] = args.maxround
+    params['colors'] = args.colors
+    params['lines'] = args.lines
 
 def get_colmap(pricers):
     """
@@ -71,7 +99,7 @@ def get_colmap(pricers):
             col_ind += 1
 
     # get a color map of the right length, so that each color-id gets its own color
-    cmap = plt.get_cmap('nipy_spectral',len(pricer_to_color))
+    cmap = plt.get_cmap(params['colors'],len(pricer_to_color))
 
     # build a list of colors and return it
     colors = [cmap(pricer_to_color[p]) for p in pricers]
@@ -140,6 +168,7 @@ def make_plots(data, name):
     else:
         fig.set_size_inches(11.7,8.3)
         textsize = 12
+    totalTime = max(x)
     ymax = max(y)
     ax.set_ylim([ymin,ymax])
 
@@ -164,15 +193,21 @@ def make_plots(data, name):
     prev_stab = flat_data['stab_round'][0]
     prev_x = 0
     texts = []
+    enfLine = False
     for i in range(len(x)):
         rnd = flat_data['pricing_round'][i]
         stab = flat_data['stab_round'][i]
         if stab > prev_stab or rnd > prev_rnd:
             if rnd > prev_rnd:
                 # bold line for a new pricing round
-                line = lines.Line2D([x[i],x[i]],[0,1],color='r',linewidth=1.0, transform = trans)
-                ax.add_line(line)
-                texts.append(ax.text((x[i] + prev_x)/2. + 0.0033, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center', size = textsize, transform = trans))
+                if params['lines'] or (x[i] - prev_x)/totalTime > 0.005 or enfLine:
+                    line = lines.Line2D([x[i],x[i]],[0,1],color='r',linewidth=1.0, transform = trans)
+                    ax.add_line(line)
+                    if (x[i] - prev_x)/totalTime > 0.025:
+                        enfLine = True
+                    else:
+                        enfLine = False
+                texts.append(ax.text(prev_x, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
                 prev_rnd = rnd
                 prev_stab = 1
                 prev_x = x[i]
@@ -181,7 +216,7 @@ def make_plots(data, name):
                 line = lines.Line2D([x[i],x[i]],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
                 ax.add_line(line)
                 prev_stab = stab
-    texts.append(ax.text((x[-1] + widths[-1] + prev_x)/2. + 0.0033, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='center', size = textsize, transform = trans))
+    texts.append(ax.text(prev_x, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
     text_height = [t for t in texts if t.get_visible()][-1].get_window_extent(renderer = fig.canvas.get_renderer()).transformed(ax.transAxes.inverted()).y1
 
     # check for overlapping texts
@@ -312,14 +347,17 @@ def generate_files(files):
                     # do nothing if the paramter nSplit is not set (equals zero)
                     start_time = time.time()
                     if params['nSplit'] <= 0:
+                        if params['minRound'] > 1 or params['maxRound'] > 0:
+                            problemFileName += '_rounds' + str(params['minRound']) + 'to' + str(max(df.index.get_level_values('pricing_round').unique().values))
                         make_plots(df, problemFileName)
                     else:
                         maxRnd  = max(df.index.get_level_values('pricing_round').unique().values)
-                        fromRnd = 0
-                        for i in range(1,maxRnd+1):
-                            if i % params['nSplit'] <> 0 and i <> maxRnd:
+                        minRnd  = min(df.index.get_level_values('pricing_round').unique().values)
+                        fromRnd = minRnd - 1
+                        for i in range(1,(maxRnd-minRnd)+1):
+                            if i % params['nSplit'] <> 0 and i <> (maxRnd-minRnd):
                                 continue
-                            toRnd = i
+                            toRnd = i+minRnd
                             make_plots(df.query('@fromRnd < pricing_round <= @toRnd'), problemFileName + '_rounds' + str(fromRnd + 1) + 'to' + str(toRnd))
                             fromRnd = toRnd
                     print '    total plotting:', time.time() - start_time
@@ -351,7 +389,7 @@ def generate_files(files):
                     pricing_prob = int(message.split()[2])
 
                     # check if the pricing prob should be included in the plot
-                    if params['root_only'] and node > 1:
+                    if (params['root_only'] and node > 1) or pricing_round < params['minRound'] or (0 < params['maxRound'] < pricing_round):
                         continue
 
                     # store all indices
