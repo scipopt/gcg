@@ -4524,7 +4524,7 @@ SCIP_RETCODE DECwriteAllDecomps(
 
          SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
-  //       DECdecompFree(scip, &decomplocal);
+         DECdecompFree(scip, &decomplocal);
  //        conshdlrdata->useddecomp = NULL;
       }
    }
@@ -4553,47 +4553,9 @@ SCIP_RETCODE DECwriteAllDecomps(
 
         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
-   //     DECdecompFree(scip, &decomplocal);
+        DECdecompFree(scip, &decomplocal);
     //    conshdlrdata->useddecomp = NULL;
      }
-
-//   for( i = 0; i < conshdlrdata->ndetectors; ++i )
-//   {
-//      detector =  conshdlrdata->detectors[i];
-//      assert(detector != NULL);
-//
-//      for( j = 0; j < detector->ndecomps; ++j )
-//      {
-//         decomp = detector->decomps[j];
-//         assert(decomp != NULL);
-//         if( directory != NULL )
-//         {
-//            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_%c_%d_%d.%s", directory, pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
-//         }
-//         else
-//         {
-//            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d_%d.%s", pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
-//
-//         }
-//         conshdlrdata->decdecomps[0] = decomp;
-//         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
-//      }
-//   }
-
-//   /** further, get all read in decompositions */
-//   for( i = 0; i < conshdlrdata->ndecomps; ++i )
-//   {
-//      decomp = conshdlrdata->decdecomps[i];
-//      detector =  DECdecompGetDetector(decomp);
-//
-//      if( detector != NULL )
-//         continue;
-//
-//      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d.%s", pname, DECdecompGetNBlocks(decomp), extension);
-//
-//      conshdlrdata->decdecomps[0] = decomp;
-//      SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
-//   }
 
    conshdlrdata->useddecomp = tmp;
 

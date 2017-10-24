@@ -1665,8 +1665,8 @@ SCIP_RETCODE Seeed::completeByConnected(
   *  hence it cannot be applied in presence of linking variables */
  SCIP_RETCODE Seeed::completeByConnectedConssAdjacency(
     Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
-    ){
-
+    )
+ {
     int cons;
     int var;
 
@@ -1682,10 +1682,8 @@ SCIP_RETCODE Seeed::completeByConnected(
     if( getNLinkingvars() != 0 )
        return completeByConnected(seeedpool);
 
-
     std::vector<bool> isConsOpen( nConss, false );
     std::vector<bool> isConsVisited( nConss, false );
-
 
     std::queue<int> helpqueue = std::queue<int>();
     std::vector<int> neighborConss( 0 );
@@ -1695,7 +1693,6 @@ SCIP_RETCODE Seeed::completeByConnected(
     assert( (int) stairlinkingVars.size() == nBlocks );
 
     SCIP_CALL( refineToMaster( seeedpool ) );
-
 
     if( nBlocks < 0 )
        nBlocks = 0;
@@ -1791,8 +1788,6 @@ SCIP_RETCODE Seeed::completeByConnected(
 
     return SCIP_OKAY;
  }
-
-
 
 
 /** assigns all open constraints and open variables
@@ -2987,8 +2982,6 @@ SCIP_Real Seeed::evaluate(
       if ( masterissetppc )
          maxwhitescore -= 1.;
    }
-
-
 
    SCIPfreeBufferArray( scip, & nvarsblocks );
    SCIPfreeBufferArray( scip, & blocksizes );
