@@ -918,30 +918,24 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
 
       if(usegp)
       {
-         miscvisu->GCGgetVisualizationFilename(scip, seeed, ".gp", temp);
+         miscvisu->GCGgetVisualizationFilename(scip, seeed, "gp", temp);
          strcat( helpfilename, temp );
-         miscvisu->GCGgetVisualizationFilename(scip, seeed, ".pdf", temp);
+         strcat( helpfilename, ".gp" );
+         miscvisu->GCGgetVisualizationFilename(scip, seeed, "pdf", temp);
          strcpy( decompfilename, temp );
+         strcat( decompfilename, ".pdf" );
 
          GCGwriteGpVisualization(scip, helpfilename, decompfilename, seeed->getID());
-         char command[SCIP_MAXSTRLEN];
-         strcpy(command, "gnuplot ");
-         strcat(command, helpfilename);
-         system(command);
       }
       else
       {
-         miscvisu->GCGgetVisualizationFilename(scip, seeed, ".tex", temp);
+         miscvisu->GCGgetVisualizationFilename(scip, seeed, "tex", temp);
          strcat( helpfilename, temp );
+         strcat( helpfilename, ".tex" );
 
          FILE* helpfile = fopen(helpfilename, "w");
          GCGwriteTexVisualization(scip, helpfile, seeed->getID(), FALSE, FALSE);
          fclose(helpfile);
-
-         char* command = '\0';
-         strcpy(command, "pdflatex ");
-         strcat(command, helpfilename);
-         system(command);
       }
    }
 
@@ -985,9 +979,9 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       {
          /** write node */
          char temp[SCIP_MAXSTRLEN];
-         miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, ".pdf", temp);
+         miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, "pdf", temp);
          ofs << " (s" << allrelevantseeedswr[curr]->seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{"
-            << temp << "} }" << std::endl;
+            << temp << ".pdf} }" << std::endl;
 
          /* set node visited */
          visited[curr] = TRUE;

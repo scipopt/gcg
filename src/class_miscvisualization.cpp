@@ -77,10 +77,18 @@ SCIP_RETCODE MiscVisualization::GCGgetVisualizationFilename(
 
    /* print header */
    if( seeed == NULL )
+      /* if there is no Seeed, print the problem name only */
       (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s", name);
+   else if(detectorchainstring != NULL)
+   {
+      /* if there is a Seeed that was detected in GCG */
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%s-%d-%d-%s", name, detectorchainstring, seeed->getID(),
+         seeed->getNBlocks(), extension);
+   }
    else
    {
-      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%s-%d-%d-%s", name, detectorchainstring, seeed->getID(),
+      /* if there is a Seeed but it was not detected in GCG */
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%d-%d-%s", name, seeed->getID(),
          seeed->getNBlocks(), extension);
    }
 
