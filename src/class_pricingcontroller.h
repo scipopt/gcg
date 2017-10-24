@@ -119,6 +119,9 @@ public:
    /** return whether the reduced cost is valid */
    SCIP_Bool redcostIsValid();
 
+   /* return whether all pricing problems have been solved to optimality */
+   SCIP_Bool pricingIsOptimal();
+
    /** reset the lower bound of a pricing job */
    void resetPricingjobLowerbound(
       GCG_PRICINGJOB*       pricingjob          /**< pricing job */

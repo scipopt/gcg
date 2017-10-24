@@ -308,16 +308,32 @@ void Pricingcontroller::evaluatePricingjob(
 /** return whether the reduced cost is valid */
 SCIP_Bool Pricingcontroller::redcostIsValid()
 {
+   SCIP_Bool unknownexists = FALSE; /* Does there exist a pricing problem for which it is not known whether a negative reduced cost column exists? */
+
    for( int i = 0; i < npricingprobs; ++i )
    {
       if( pricingjobs[i] == NULL )
          continue;
 
-      if( GCGpricingjobIsHeuristic(pricingjobs[i]) || GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL )
-      {
-         SCIPdebugMessage("Pricing prob %d has not been solved to optimality, reduced cost invalid\n", i);
+      if( GCGpricingjobGetNImpCols(pricingjobs[i]) > 0 )
+         return TRUE;
+      else if( GCGpricingjobIsHeuristic(pricingjobs[i]) || SCIPgetStatus(GCGpricingjobGetPricingscip(pricingjobs[i])) != SCIP_STATUS_OPTIMAL )
+         unknownexists = TRUE;
+   }
+
+   return !unknownexists;
+}
+
+/* return whether all pricing problems have been solved to optimality */
+SCIP_Bool Pricingcontroller::pricingIsOptimal()
+{
+   for( int i = 0; i < npricingprobs; ++i )
+   {
+      if( pricingjobs[i] == NULL )
+         continue;
+
+      if( GCGpricingjobIsHeuristic(pricingjobs[i]) || SCIPgetStatus(GCGpricingjobGetPricingscip(pricingjobs[i])) != SCIP_STATUS_OPTIMAL )
          return FALSE;
-      }
    }
 
    return TRUE;
