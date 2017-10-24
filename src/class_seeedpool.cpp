@@ -1781,12 +1781,12 @@ void Seeedpool::calcTranslationMapping(
       }
    }
 
-      for ( size_t i  = 0; i < rowothertothis.size(); ++i )
+      for ( int i  = 0; i < (int) rowothertothis.size(); ++i )
          std::cout << (rowothertothis[i] == i) << " " ;
 
       std::cout << std::endl;
 
-      for ( size_t i  = 0; i < colothertothis.size(); ++i )
+      for ( int i  = 0; i < (int) colothertothis.size(); ++i )
          std::cout << ( colothertothis[i] == i ) << " " ;
       std::cout << std::endl;
 
@@ -3700,7 +3700,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    int conscounter = 1; /* in consindex counting starts with 1 */
    int counterstairlinkingvars = 0;
    int size;
-   int ncalls;
    int modifier;
    int nlinkingconss;
    assert( seeed->checkConsistency( this ) );

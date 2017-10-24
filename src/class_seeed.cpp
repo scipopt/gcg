@@ -1746,17 +1746,17 @@ SCIP_RETCODE Seeed::completeByConnected(
           setConsToBlock( cons, newBlockNr - 1 );
           deleteOpencons( cons );
 
-          for( size_t i = 0; i < seeedpool->getNVarsForCons(cons); ++ i )
+          for( int j = 0; j < seeedpool->getNVarsForCons(cons); ++ j )
           {
-             int var = seeedpool->getVarsForCons(cons)[i];
+             int newvar = seeedpool->getVarsForCons(cons)[j];
 
-             if( isVarLinkingvar(var) )
+             if( isVarLinkingvar(newvar) )
                 continue;
 
-             assert(! isVarMastervar(var) );
-             setVarToBlock( var, newBlockNr - 1 );
-             assert( isVarOpenvar( var ) );
-             deleteOpenvar( var );
+             assert(! isVarMastervar( newvar) );
+             setVarToBlock( newvar, newBlockNr - 1 );
+             assert( isVarOpenvar( newvar ) );
+             deleteOpenvar( newvar );
           }
 
        }
@@ -2972,13 +2972,14 @@ SCIP_Real Seeed::evaluate(
    if( smartscore && maxwhitescore <= 0.8 && getNLinkingvars() == 0 )
    {
       masterissetppc = true;
-      for( int i = 0; i < getNMasterconss(); ++i )
+      for( int l = 0; l < getNMasterconss(); ++l )
       {
-         int consid = getMasterconss()[i];
-         if( ! seeedpool->isConsSetppc(consid) && ! seeedpool->isConsCardinalityCons(consid) )
+         int consid = getMasterconss()[l];
+         if( !seeedpool->isConsSetppc(consid) && !seeedpool->isConsCardinalityCons(consid) )
          {
             masterissetppc = false;
-            std::cout << "masterconstraint: " << SCIPconsGetName(seeedpool->getConsForIndex(consid) ) << " is no setppc and no cardinality conss" << std::endl;
+            std::cout << "masterconstraint: " << SCIPconsGetName(seeedpool->getConsForIndex(consid) ) <<
+               " is no setppc and no cardinality conss" << std::endl;
             break;
          }
       }
