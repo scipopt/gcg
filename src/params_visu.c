@@ -498,7 +498,7 @@ float SCIPvisuGetNonzeroRadius(
 }
 
 
-/** if true gp reader should be used for report visualizations, otherwise tex reader */
+/** if true gp reader should be used for sub-visualizations, otherwise tex reader */
 SCIP_Bool GCGgetUseGp()
 {
    return visudata->visuusegp;

@@ -151,7 +151,7 @@ extern float SCIPvisuGetNonzeroRadius(
    float scalingfactor  /**< percentage to scale radius, 1 if no scaling */
    );
 
-/** if true gp reader should be used for report visualizations, otherwise tex reader */
+/** if true gp reader should be used for sub-visualizations, otherwise tex reader */
 extern SCIP_Bool GCGgetUseGp(void);
 
 /** gets the name of the pdf reader that should be used */

@@ -806,6 +806,8 @@ SCIP_RETCODE GCGwriteTexReport(
    }
    writeTexEnding(scip, file);
 
+   GCGtexWriteMakefileAndReadme(scip, file, usegp);
+
    return SCIP_OKAY;
 }
 
@@ -1191,7 +1193,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
 
    SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file     \n", name);
    SCIPinfoMessage(scip, readme, "                                                                             \n");
-   SCIPinfoMessage(scip, readme, "Instead of using 'make' use 'make -f %s' instead                             \n", name);
+   SCIPinfoMessage(scip, readme, "Instead of using the command 'make' use 'make -f %s'                         \n", name);
    SCIPinfoMessage(scip, readme, "                                                                             \n");
    SCIPinfoMessage(scip, readme, "Clean options:                                                               \n");
    SCIPinfoMessage(scip, readme, "\t'clean' clears all present intermediate files (if any exist)               \n");
