@@ -2756,6 +2756,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             SCIP_CALL( stabilization->updateSubgradientProduct(pricingcols) );
             SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals, pricingcols) );
 
+            SCIPfreeBufferArray(scip_, &pricingcols);
+
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
 
             /* add cuts based on the latest pricing problem objective to the original problem */
@@ -2792,10 +2794,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                stabilization->disablingMispricingSchedule();
             stabilization->updateAlpha();
          }
-
-         /* free memory */
-         if( *bestredcostvalid )
-            SCIPfreeBufferArray(scip_, &pricingcols);
       }
 
       /* in case stabilization has not been performed, update the lower bound */
