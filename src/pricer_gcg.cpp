@@ -2678,6 +2678,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          pricingcontroller->evaluatePricingjob(pricingjob);
 
+         /* update lower bound, dual value, best reduced cost */
          if( GCGpricingjobGetNCols(pricingjob) > 0 )
          {
             int probnr = GCGpricingjobGetProbnr(pricingjob);
@@ -2765,10 +2766,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
             /* update subgradient product before a potential change of the stability center */
             SCIP_CALL( stabilization->updateSubgradientProduct(pricingcols) );
-
             SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals, pricingcols) );
+
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
 
+            /* add cuts based on the latest pricing problem objective to the original problem */
             SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg) );
             if( enableppobjcg && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
             {
@@ -2784,6 +2786,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %u, nfoundvars = %d, *bestredcostvalid = %u\n", stabilized, nfoundvars, *bestredcostvalid);
 
+         /* activate or deactivate mispricing schedule, depending on whether improving columns have been found */
          if( nfoundvars == 0 )
          {
             if( stabilized )
@@ -2801,9 +2804,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                stabilization->disablingMispricingSchedule();
             stabilization->updateAlpha(pricingcols);
          }
+
+         /* free memory */
          if( *bestredcostvalid )
             SCIPfreeBufferArray(scip_, &pricingcols);
       }
+
+      /* in case stabilization has not been performed, update the lower bound */
       else if( *bestredcostvalid && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
       {
          SCIP_Bool enableppobjcg;
@@ -2826,8 +2833,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          if( stabilization->isInMispricingSchedule() )
             stabilization->disablingMispricingSchedule();
 
+         /* add cuts based on the latest pricing problem objective to the original problem */
          SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg) );
-
          if( enableppobjcg && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
          {
             for( i = 0; i < pricerdata->npricingprobs; ++i )
