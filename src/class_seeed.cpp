@@ -4811,7 +4811,7 @@ void Seeed::showVisualisation()
    GCGwriteGpVisualization( scip, filename, outname, getID() );
 
    /* compile gp file */
-   char* command = '\0';
+   char command[SCIP_MAXSTRLEN];
    strcpy(command, "gnuplot ");
    strcat(command, filename);
    system(command);
