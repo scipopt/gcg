@@ -137,6 +137,11 @@ public:
       GCG_COL**             cols                /**< column array to be filled */
       );
 
+   /** get the sum over the dual values of convexity constraints */
+   SCIP_Real getDualconvsum(
+      PricingType*          pricetype           /**< type of pricing (reduced cost or Farkas) */
+      );
+
    /** free all columns of the pricing jobs */
    void freeCols();
 

@@ -408,6 +408,23 @@ void Pricingcontroller::getBestCols(
    }
 }
 
+/** get the sum over the dual values of convexity constraints */
+SCIP_Real Pricingcontroller::getDualconvsum(
+   PricingType*          pricetype           /**< type of pricing (reduced cost or Farkas) */
+   )
+{
+   SCIP* origprob = GCGmasterGetOrigprob(scip_);
+   SCIP_Real dualconvsum = 0.0;
+
+   for( int i = 0; i < npricingprobs; ++i )
+   {
+      if( pricingjobs[i] != NULL && !(pricingjobs[i]->ncols > 0 && GCGcolIsRay(pricingjobs[i]->cols[0])))
+         dualconvsum += GCGgetNIdenticalBlocks(origprob, i) * pricetype->consGetDual(scip_, GCGgetConvCons(origprob, i));
+   }
+
+   return dualconvsum;
+}
+
 /** free all columns of the pricing jobs */
 void Pricingcontroller::freeCols()
 {

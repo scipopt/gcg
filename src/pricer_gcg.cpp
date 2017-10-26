@@ -2436,11 +2436,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 {
    GCG_PRICINGJOB* pricingjob;
    SCIP_Real* bestobjvals = NULL;
-   SCIP_Real* convduals = NULL;
    SCIP_Real* bestredcosts = NULL;
    SCIP_Real bestredcost;
    SCIP_Real beststabobj;
-   SCIP_Real dualconvsum;
    SCIP_RETCODE retcode;
    SCIP_Bool infeasible;
    SCIP_Bool stabilized;
@@ -2476,7 +2474,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    *pnfoundvars = 0;
    nfoundvars = 0;
    infeasible = FALSE;
-   dualconvsum = 0.0;
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip_);
 
@@ -2488,7 +2485,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    /* allocate memory */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &convduals, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestredcosts, pricerdata->npricingprobs) );
 
    enableppcuts = FALSE;
@@ -2555,15 +2551,16 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       nsuccessfulprobs = 0;
       bestredcost = 0.0;
       beststabobj = 0.0;
-      dualconvsum = 0.0;
       *bestredcostvalid = isMasterLPOptimal() && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
       optimal = FALSE;
 
       for( i = 0; i < pricerdata->npricingprobs; ++i )
       {
-         bestobjvals[i] = -SCIPinfinity(scip_);
-         convduals[i] = 0.0;
-         bestredcosts[i] = SCIPinfinity(scip_);
+         if( GCGisPricingprobRelevant(origprob, i) )
+         {
+            bestobjvals[i] = -SCIPinfinity(scip_);
+            bestredcosts[i] = 0.0;
+         }
       }
 
       /* initialize stabilization parameters if we are at a new node */
@@ -2678,28 +2675,20 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          pricingcontroller->evaluatePricingjob(pricingjob);
 
-         /* update lower bound, dual value, best reduced cost */
+         /* update lower bounds and best reduced costs */
          if( GCGpricingjobGetNCols(pricingjob) > 0 )
          {
             int probnr = GCGpricingjobGetProbnr(pricingjob);
-            SCIP_CONS* convcons = GCGgetConvCons(origprob, probnr);
             GCG_COL* bestcol = GCGpricingjobGetCol(pricingjob, 0);
             SCIP_Real pricinglowerbound = GCGpricingjobGetLowerbound(pricingjob);
 
             SCIP_Real objval = SCIPisInfinity(scip_, ABS(pricinglowerbound)) ? pricinglowerbound : GCGgetNIdenticalBlocks(origprob, probnr) * pricinglowerbound;
-            SCIP_Real convdual = GCGgetNIdenticalBlocks(origprob, probnr) * pricetype->consGetDual(scip_, convcons);
             SCIP_Real redcost = GCGgetNIdenticalBlocks(origprob, probnr) * GCGcolGetRedcost(bestcol);
 
             if( SCIPisDualfeasGT(scip_, objval, bestobjvals[probnr]) )
             {
                #pragma omp atomic write
                bestobjvals[probnr] = objval;
-            }
-
-            if( !SCIPisEQ(scip_, convdual, convduals[probnr]) && !GCGcolIsRay(bestcol) )
-            {
-               #pragma omp atomic write
-               convduals[probnr] = convdual;
             }
 
             if( SCIPisDualfeasLT(scip_, redcost, bestredcosts[probnr]) )
@@ -2718,7 +2707,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          if( GCGisPricingprobRelevant(origprob, i) )
          {
             beststabobj += bestobjvals[i];
-            dualconvsum += convduals[i];
             bestredcost += bestredcosts[i];
          }
       }
@@ -2747,7 +2735,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          SCIP_CALL( getStabilizedDualObjectiveValue(pricetype, &stabdualval, stabilized) );
          lowerboundcandidate = stabdualval + beststabobj;
-         beststabredcost = beststabobj - dualconvsum;
+         beststabredcost = beststabobj - pricingcontroller->getDualconvsum(pricetype);
 
          SCIPdebugMessage("optimal = %u, bestredcostvalid = %u, stabilized = %u\n", optimal, *bestredcostvalid, stabilized);
          SCIPdebugMessage("lowerboundcandidate = %.8g, stabdualval = %.8g, beststabobj = %.8g, beststabredcost = %.8g, lpobjval = %.8g, bestredcost = %.8g\n",
@@ -2869,7 +2857,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_CALL( colpool->deleteOldestColumns() );
 
    SCIPfreeBlockMemoryArray(scip_, &bestredcosts, pricerdata->npricingprobs);
-   SCIPfreeBlockMemoryArray(scip_, &convduals, pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs);
 
    enableppcuts = FALSE;
