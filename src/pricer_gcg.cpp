@@ -2482,6 +2482,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    maxcols = MAX(MAX(farkaspricing->getMaxcolsround(),reducedcostpricing->getMaxcolsround()),reducedcostpricing->getMaxcolsroundroot()); /*lint !e666*/
 
+   /* check preliminary conditions for stabilization */
+   enablestab = pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
+      && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
+
    /* allocate memory */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &convduals, pricerdata->npricingprobs) );
@@ -2561,10 +2565,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          convduals[i] = 0.0;
          bestredcosts[i] = SCIPinfinity(scip_);
       }
-
-      /* check preliminary conditions for stabilization */
-      enablestab = pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST
-         && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
       /* initialize stabilization parameters if we are at a new node */
       if( enablestab )
