@@ -230,6 +230,17 @@ SCIP_RETCODE SCIPincludeParamsVisu(
       "visual/famtree/maxndecomps", "maximum number of finished decompositions in family tree",
       &visudata->fam_maxndecomps, FALSE, DEFAULT_FAMTREE_MAXNDECOMPS, 1, INT_MAX, NULL, NULL) );
 
+   /* initialize black and white color scheme */
+
+   visudata->greycolormastervars = (char*) GREY_COLOR_MASTERVARS;
+   visudata->greycolormasterconss = (char*) GREY_COLOR_MASTERCONS;
+   visudata->greycolorlinking = (char*) GREY_COLOR_LINKING;
+   visudata->greycolorstairlinking = (char*) GREY_COLOR_STAIRLINKING;
+   visudata->greycolorblock = (char*) GREY_COLOR_BLOCK;
+   visudata->greycoloropen = (char*) GREY_COLOR_OPEN;
+   visudata->greycolornonzero = (char*) GREY_COLOR_NONZERO;
+   visudata->greycolorline = (char*) GREY_COLOR_LINE;
+
    return SCIP_OKAY;
 }
 
