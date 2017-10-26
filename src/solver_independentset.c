@@ -32,7 +32,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 #include <assert.h>
 
 #include "solver_independentset.h"
@@ -110,8 +110,8 @@ static int indset_getNodeIndex(SCIP_VAR* var, SCIP_VAR** indsetvars, int npricin
  * Since we want to add a column with the best reduced cost, we take the objective coefficient of variables into
  * account by giving their graph nodes corresponding weights and searching for a weight-maximal clique.
  *
- * This solver is heuristic since the scaling by weight is limited by the cliquer library. An optimal solution may
- * not be found because a clique that has more members may dominate a clique that has fewer nodes with bigger weights.
+ * This solver is heuristic since the scaling by weight is limited by the cliquer library. In most realistic
+ * scenarios, the result of this solver should be optimal.
  */
 
 /** solve the pricing problem as an independent set problem, in an approximate way */
@@ -298,9 +298,42 @@ SCIP_RETCODE solveIndependentSet(
                }
             }
          }
+         /* Handle other constraints that behave like IS constraints, i.e. cx+dy<=rhs with c+d>rhs, c>0, d>0 */
+         else if( SCIPgetNVarsLinear(pricingprob,constraints[i]) == 2 )
+         {
+            consvals = SCIPgetValsLinear(pricingprob, constraints[i]);
+            if( consvals[0] > 0 && consvals[1] > 0 && SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0] + consvals[1]) )
+            {
+               /* As before, the constraint is only regarded if it is relevant for pricing */
+               if( SCIPvarGetObj(consvars[0]) != 0 )
+               {
+                  nodeindex0 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[0]);
+                  if( nodeindex0 == indexcount )
+                  {
+                     ++indexcount;
+                  }
+               }
+
+               if( SCIPvarGetObj(consvars[1]) != 0 )
+               {
+                  nodeindex1 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[1]);
+                  if( nodeindex1 == indexcount )
+                  {
+                     ++indexcount;
+                  }
+               }
+               if( SCIPvarGetObj(consvars[0]) != 0 && SCIPvarGetObj(consvars[1]) != 0 )
+               {
+                  if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
+                  {
+                     GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
+                  }
+               }
+            }
+         }
          else
          {
-            /* The current constraint is no IS constraint */
+            /* The current constraint is no linear IS constraint */
             SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
             consvals = SCIPgetValsLinear(pricingprob, constraints[i]);
             consvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
@@ -539,6 +572,39 @@ SCIP_RETCODE solveIndependentSet(
                   }
                }
             }            
+         }
+         /* Lastly, the constraint may be of the form c + 1 > rhs and c < rhs, i.e. a non-standard IS-constraint */
+         else if( SCIPisLT(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) + 1) 
+               && SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i])) )
+         {
+            /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
+            if( SCIPvarGetObj(consvars[0]) != 0 || SCIPvarGetObj(consvars[1]) != 0 )
+            {
+               if( SCIPvarGetObj(consvars[0]) != 0 )
+               {
+                  nodeindex0 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[0]);
+                  if( nodeindex0 == indexcount )
+                  {
+                     ++indexcount;
+                  }
+               }
+
+               if( SCIPvarGetObj(consvars[1]) != 0 )
+               {
+                  nodeindex1 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[1]);
+                  if( nodeindex1 == indexcount )
+                  {
+                     ++indexcount;
+                  }
+               }
+               if( SCIPvarGetObj(consvars[0]) != 0 && SCIPvarGetObj(consvars[1]) != 0 )
+               {
+                  if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
+                  {
+                     GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
+                  }
+               }
+            }
          }
          else
          {
