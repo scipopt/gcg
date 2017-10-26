@@ -31,7 +31,7 @@ void reorder_set(set_t s,int *order) {
 
         tmp=set_new(SET_MAX_SIZE(s));
 
-        for (i=0; i<(SET_MAX_SIZE(s)/ELEMENTSIZE); i++) {
+        for (i=0; i<(int)(SET_MAX_SIZE(s)/ELEMENTSIZE); i++) {
                 e=s[i];
                 if (e==0)
                         continue;
@@ -44,7 +44,7 @@ void reorder_set(set_t s,int *order) {
         }
         if (SET_MAX_SIZE(s)%ELEMENTSIZE) {
                 e=s[i];
-                for (j=0; j<(SET_MAX_SIZE(s)%ELEMENTSIZE); j++) {
+                for (j=0; j<(int)(SET_MAX_SIZE(s)%ELEMENTSIZE); j++) {
                         if (e&1) {
                                 SET_ADD_ELEMENT(tmp,order[i*ELEMENTSIZE+j]);
                         }

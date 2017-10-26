@@ -236,7 +236,7 @@ boolean graph_write_dimacs_binary_file(graph_t *g, char *comment, char *file) {
  */
 
 #define STR_APPEND(s) \
-if (headerlength+strlen(s) >= headersize) {  \
+if ((int)(headerlength+strlen(s)) >= (int)headersize) {  \
 	headersize+=1024;                    \
 	header=realloc(header,headersize);   \
 }                                            \
@@ -363,11 +363,11 @@ static boolean parse_input(char *str,graph_t *g) {
 	int i,j,w;
 	char tmp[16];
 
-	for (i=0; i<strlen(str); i++) {
+	for (i=0; i<(int)strlen(str); i++) {
 		if (!isspace((int)str[i]))
 			break;
 	}
-	if (i>=strlen(str))  /* blank line */
+	if (i>=(int)strlen(str))  /* blank line */
 		return TRUE;
 	if (str[i+1]!=0 && !isspace(str[i+1]))  /* not 1-char field */
 		return FALSE;
@@ -450,7 +450,7 @@ static graph_t *graph_read_dimacs_binary(FILE *fp,char *firstline) {
 		return NULL;
 	}
 	buffer=malloc(length+2);
-	if (fread(buffer,1,length,fp)<length) {
+	if ((int)fread(buffer,1,length,fp)<length) {
 		fprintf(stderr,"Malformed preamble: unexpected "
 			"end of file.\n");
 		free(buffer);
@@ -484,7 +484,7 @@ static graph_t *graph_read_dimacs_binary(FILE *fp,char *firstline) {
 	buf=calloc(g->n,sizeof(char*));
 	for (i=0; i < g->n; i++) {
 		buf[i]=calloc(g->n,1);
-		if (fread(buf[i],1,i/8+1,fp) < (i/8+1)) {
+		if ((int)fread(buf[i],1,i/8+1,fp) < (i/8+1)) {
 			fprintf(stderr,"Unexpected end of file when "
 				"reading graph.\n");
 			return NULL;
@@ -608,7 +608,7 @@ void graph_print(graph_t *g) {
 				}
 			}
 		}
-		for (j=g->n; j < SET_ARRAY_LENGTH(g->edges[i])*ELEMENTSIZE;
+		for (j=g->n; j < (int)SET_ARRAY_LENGTH(g->edges[i])*ELEMENTSIZE;
 		     j++) {
 			if (SET_CONTAINS_FAST(g->edges[i],j)) {
 				printf(" %d*NON-EXISTENT*",j);
@@ -674,7 +674,7 @@ boolean graph_test(graph_t *g,FILE *output) {
 					"   (further warning suppressed)\n");
 			return FALSE;
 		}
-		if (SET_MAX_SIZE(g->edges[i]) < g->n) {
+		if ((int)SET_MAX_SIZE(g->edges[i]) < g->n) {
 			if (output)
 				fprintf(output,"   WARNING: Graph edge set "
 					"too small!\n"
@@ -692,7 +692,7 @@ boolean graph_test(graph_t *g,FILE *output) {
 				}
 			}
 		}
-		for (j=g->n; j < SET_ARRAY_LENGTH(g->edges[i])*ELEMENTSIZE;
+		for (j=g->n; j < (int)SET_ARRAY_LENGTH(g->edges[i])*ELEMENTSIZE;
 		     j++) {
 			if (SET_CONTAINS_FAST(g->edges[i],j))
 				extra++;
