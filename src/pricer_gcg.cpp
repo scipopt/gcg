@@ -2736,7 +2736,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       optimal = pricingcontroller->pricingIsOptimal();
 
-      if( enablestab && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
+      if( enablestab )
       {
          SCIP_Real beststabredcost;
          SCIP_Real lowerboundcandidate;
@@ -2819,6 +2819,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 #ifndef NDEBUG
          SCIP_Real stabdualval = 0.0;
 #endif
+         assert(!stabilized);
          assert(lowerbound != NULL );
          lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
          SCIPdebugMessage("*lowerbound = %.8g, lowerboundcandidate = %.8g, bestredcost = %.8g\n", *lowerbound, lowerboundcandidate, bestredcost);
@@ -2829,9 +2830,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          SCIPdebugMessage("stabdualval = %.8g, beststabobj = %.8g\n", stabdualval, beststabobj);
          assert(!optimal || SCIPisDualfeasEQ(scip_, lowerboundcandidate, stabdualval + beststabobj));
 #endif
-
-         if( stabilization->isInMispricingSchedule() )
-            stabilization->disablingMispricingSchedule();
 
          /* add cuts based on the latest pricing problem objective to the original problem */
          SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg) );
