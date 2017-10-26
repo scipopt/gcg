@@ -481,9 +481,7 @@ void Stabilization::updateAlphaMisprice()
    SCIPdebugMessage("alphabar updated to %g in mispricing iteration k=%d and node pricing iteration t=%d \n", alphabar, k, t);
 }
 
-void Stabilization::updateAlpha(
-   GCG_COL**            pricingcols         /**< solutions of the pricing problems */
-   )
+void Stabilization::updateAlpha()
 {
    SCIPdebugMessage("Alpha update after successful pricing\n");
    updateIterationCount();

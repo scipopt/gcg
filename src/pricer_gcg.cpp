@@ -2802,7 +2802,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             if( stabilization->isInMispricingSchedule() )
                stabilization->disablingMispricingSchedule();
-            stabilization->updateAlpha(pricingcols);
+            stabilization->updateAlpha();
          }
 
          /* free memory */
