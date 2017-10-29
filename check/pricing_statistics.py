@@ -8,8 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import lines
 from matplotlib import transforms
-import numpy as np
-import math
+from matplotlib import ticker
 import time
 
 # Define global variables
@@ -28,7 +27,7 @@ def parse_arguments(args):
                         help='output directory (default: "plots")')
 
     parser.add_argument('-a', '--allnodes', action='store_true',
-                        help='set this flag, to plot the pricing-statistics for all nodes, not just the root')
+                        help='set this flag, to collect data for all nodes, not just the root')
 
     parser.add_argument('-p', '--png', action='store_true',
                         help='set this flag for a non-zoomable png-plot as output')
@@ -39,11 +38,11 @@ def parse_arguments(args):
 
     parser.add_argument('-m', '--minround', type=int,
                         default=1,
-                        help='start the plot with pricing-round MINROUND (default is the first round)')
+                        help='start the data-collection with pricing-round MINROUND (default is the first round)')
 
     parser.add_argument('-M', '--maxround', type=int,
                         default=0,
-                        help='start the plot with pricing-round MAXROUND (default is MAXROUND=0, which will be the last round)')
+                        help='end the data-collection with pricing-round MAXROUND (default is MAXROUND=0, which will be the last round)')
 
     parser.add_argument('-c', '--colors', type=str,
                         default="nipy_spectral",
@@ -51,6 +50,12 @@ def parse_arguments(args):
 
     parser.add_argument('-l', '--lines', action='store_true',
                         help='enforce lines between pricing-rounds on the plots (default is to not draw lines for rounds, that are too short)')
+
+    parser.add_argument('-S', '--save', action='store_true',
+                        help='saves the collected data in a pickle-file, in the OUTDIR, instead of plotting it (see --load)')
+
+    parser.add_argument('-L', '--load', action='store_true',
+                        help='loads earlier collected data from a pickle-file instead of parsing a GCG-outfile (see --save)')
 
     parser.add_argument('filename', nargs='+',
                         help='Name of the files to be used for the bound plots')
@@ -81,6 +86,8 @@ def set_params(args):
     params['maxRound'] = args.maxround
     params['colors'] = args.colors
     params['lines'] = args.lines
+    params['save'] = args.save
+    params['load'] = args.load
 
 def get_colmap(pricers):
     """
@@ -124,7 +131,7 @@ def remove_overlapping_texts(figure, texts):
             else:
                 break
 
-def make_plots(data, name):
+def make_plot(data, name):
     """
     Make the plots from the structured data
     :param data: dataframe with the collected data
@@ -151,7 +158,7 @@ def make_plots(data, name):
 
     # make the bar plot
     if params['details']:
-        lw = 0.1
+        lw = 0.01
     else:
         lw = 1.0
     plt.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = lw, edgecolor = 'k', color = colors, label='pricing problems')
@@ -225,26 +232,25 @@ def make_plots(data, name):
     print '    stab- and pricing-round information:', time.time() - start_time
     start_time = time.time()
 
-    # add information about the nodes, if not just the root node is plotted
-    if not params['root_only']:
-        prev_node = flat_data['node'][0]
-        prev_x = 0
-        texts = []
-        for i in range(len(x)):
-            node = flat_data['node'][i]
-            if node > prev_node:
-                line = lines.Line2D([x[i],x[i]],[1,text_height+0.01],color='r',linewidth=1.0, transform = trans)
-                line.set_clip_on(False)
-                ax.add_line(line)
-                texts.append(ax.text(prev_x, text_height+0.02, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
-                prev_node = node
-                prev_x = x[i]
-        texts.append(ax.text(prev_x, text_height+0.02, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
+    # add information about the nodes
+    prev_node = flat_data['node'][0]
+    prev_x = 0
+    texts = []
+    for i in range(len(x)):
+        node = flat_data['node'][i]
+        if node > prev_node:
+            line = lines.Line2D([x[i],x[i]],[1,text_height+0.01],color='r',linewidth=1.0, transform = trans)
+            line.set_clip_on(False)
+            ax.add_line(line)
+            texts.append(ax.text(prev_x, text_height+0.02, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
+            prev_node = node
+            prev_x = x[i]
+    texts.append(ax.text(prev_x, text_height+0.02, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
 
-        # check for overlapping texts
-        remove_overlapping_texts(fig,texts)
+    # check for overlapping texts
+    remove_overlapping_texts(fig,texts)
 
-        text_height = [t for t in texts if t.get_visible()][-1].get_window_extent(renderer = fig.canvas.get_renderer()).transformed(ax.transAxes.inverted()).y1
+    text_height = [t for t in texts if t.get_visible()][-1].get_window_extent(renderer = fig.canvas.get_renderer()).transformed(ax.transAxes.inverted()).y1
 
     print '    node information:', time.time() - start_time
     start_time = time.time()
@@ -259,6 +265,110 @@ def make_plots(data, name):
 
     print '    save:', time.time() - start_time
     print '    saved figure'
+
+def make_summary_plot(data, name):
+    """
+    For each problem create one summary plot, which shows for each pricing round the
+    cumulated running time of the pricers in this round as well as the fraction of
+    pricers, that did not find a variable.
+    :param data: dataframe with the collected data
+    :param name: the problemname
+    :return:
+    """
+    summary = pd.DataFrame()
+    summary['time'] = data.groupby(level=['pricing_round','stab_round']).sum().time
+    summary['found_frac'] = data.astype(bool).groupby(level=['pricing_round','stab_round']).sum().nVars/data.groupby(level=['pricing_round','stab_round']).count().nVars*100
+    summary = summary.reset_index()
+
+    fig,ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+
+    x = summary.pricing_round.values
+#    x_stab = summary.stab_round.values
+    y_time = summary.time.values
+    y_found_frac = summary.found_frac.values
+
+    ax1.scatter(x,y_time, color='k', s=2)
+    ax2.scatter(x,y_found_frac, color='r', s=2)
+
+    ax1.set_xlabel('Pricing Round')
+    ax1.set_ylabel('Time / s', color='k')
+    ax2.set_ylabel('Fraction of successfull pricers / %', color='r')
+
+    ax1.get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
+    if max(y_time) > 0:
+        ax1.set_ylim([-max(y_time)*0.1,max(y_time)*1.1])
+    else:
+        ax1.set_ylim([-0.001,0.01])
+    ax2.set_ylim([-max(y_found_frac)*0.15,max(y_found_frac)*1.15])
+
+    plt.tight_layout()
+    if params['details']:
+        plt.savefig(params['outdir'] + '/' + name + '_summary.pdf')
+    else:
+        plt.savefig(params['outdir'] + '/' + name + '_summary.png')
+    plt.close()
+
+def plots(data, name):
+    """
+    Master-function for plotting. Splits the data, if necessary and calls make_plot()
+    :param data: collected data as dataframe
+    :param name: name of the problem
+    :return:
+    """
+    # always build the summary plot
+    make_summary_plot(data, name)
+
+    if params['maxRound'] <= 0:
+        maxRnd = max(data.index.get_level_values('pricing_round').unique().values)
+    else:
+        maxRnd = min(params['maxRound'],max(data.index.get_level_values('pricing_round').unique().values))
+    if params['minRound'] <= 1:
+        minRnd  = min(data.index.get_level_values('pricing_round').unique().values)
+    else:
+        minRnd  = max(params['minRound'],min(data.index.get_level_values('pricing_round').unique().values))
+    if params['root_only']:
+        maxNode = 1
+    else:
+        maxNode = max(data.index.get_level_values('node').unique().values)
+
+    if params['nSplit'] <= 0:
+        # do not split the plot, but still check if rounds were neglected
+        if params['minRound'] > 1 or params['maxRound'] > 0:
+            name += '_rounds' + str(params['minRound']) + 'to' + str(maxRnd)
+        make_plot(data.query('node <= @maxNode'), name)
+    else:
+        # split the plot by rounds
+        fromRnd = minRnd - 1
+        for i in range(1,(maxRnd-minRnd)+1):
+            if i % params['nSplit'] <> 0 and i <> (maxRnd-minRnd):
+                continue
+            toRnd = i+minRnd
+            make_plot(data.query('@fromRnd < pricing_round <= @toRnd & node <= @maxNode'), name + '_rounds' + str(fromRnd + 1) + 'to' + str(toRnd))
+            fromRnd = toRnd
+
+    # this line does not do anything, but removing code-analysis warnings, as the variable is not used where the parser could see it..
+    maxNode += 1
+
+def load_data(files):
+    """
+    Plots data, that was parsed and collected earlier from the generate_files() method and saved in a pickle-file
+    :param files: the pickle files, from which the dataframes are to load
+    :return:
+    """
+    for file in files:
+        if not os.path.exists(file):
+            print 'there is no file ' + file
+            continue
+        start_time = time.time()
+        name = os.path.splitext(os.path.basename(file))[0]
+        print 'entering', name
+        df = pd.read_pickle(file)
+        print '    loading data:', time.time() - start_time
+        start_time = time.time()
+        plots(df, name)
+        print '    total plotting:', time.time() - start_time
+        print '    leaving', name
 
 def generate_files(files):
     """
@@ -341,26 +451,17 @@ def generate_files(files):
                                                       names=["node", "pricing_round", "stab_round", "pricing_prob"])
                     data = {'time': val_time, 'nVars': val_nVars}
                     df = pd.DataFrame(data=data, index = index)
-
-                    # split the data into pieces of params['nSplit'] rounds
                     print '    collected the data:', time.time() - start_time
-                    # do nothing if the paramter nSplit is not set (equals zero)
-                    start_time = time.time()
-                    if params['nSplit'] <= 0:
-                        if params['minRound'] > 1 or params['maxRound'] > 0:
-                            problemFileName += '_rounds' + str(params['minRound']) + 'to' + str(max(df.index.get_level_values('pricing_round').unique().values))
-                        make_plots(df, problemFileName)
+
+                    if params['save']:
+                        start_time = time.time()
+                        df.to_pickle(params['outdir'] + '/' + problemFileName + '.pkl')
+                        print '    total saving:', time.time() - start_time
+
                     else:
-                        maxRnd  = max(df.index.get_level_values('pricing_round').unique().values)
-                        minRnd  = min(df.index.get_level_values('pricing_round').unique().values)
-                        fromRnd = minRnd - 1
-                        for i in range(1,(maxRnd-minRnd)+1):
-                            if i % params['nSplit'] <> 0 and i <> (maxRnd-minRnd):
-                                continue
-                            toRnd = i+minRnd
-                            make_plots(df.query('@fromRnd < pricing_round <= @toRnd'), problemFileName + '_rounds' + str(fromRnd + 1) + 'to' + str(toRnd))
-                            fromRnd = toRnd
-                    print '    total plotting:', time.time() - start_time
+                        start_time = time.time()
+                        plots(df, problemFileName)
+                        print '    total plotting:', time.time() - start_time
 
                     done = True
 
@@ -409,7 +510,10 @@ def main():
     set_params(parsed_args)
     if not os.path.exists(params['outdir']):
         os.makedirs(params['outdir'])
-    generate_files(parsed_args.filename)
+    if params['load']:
+        load_data(parsed_args.filename)
+    else:
+        generate_files(parsed_args.filename)
 
 # Calling main script
 if __name__ == '__main__':
