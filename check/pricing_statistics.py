@@ -51,14 +51,18 @@ def parse_arguments(args):
     parser.add_argument('-l', '--lines', action='store_true',
                         help='enforce lines between pricing-rounds on the plots (default is to not draw lines for rounds, that are too short)')
 
+    parser.add_argument('-i', '--instances', type=str, nargs = '*',
+                        default="",
+                        help='names of the instances to be included in the plot/data-collection (default is all instances in FILENAMES)')
+
     parser.add_argument('-S', '--save', action='store_true',
                         help='saves the collected data in a pickle-file, in the OUTDIR, instead of plotting it (see --load)')
 
     parser.add_argument('-L', '--load', action='store_true',
                         help='loads earlier collected data from a pickle-file instead of parsing a GCG-outfile (see --save)')
 
-    parser.add_argument('filename', nargs='+',
-                        help='Name of the files to be used for the bound plots')
+    parser.add_argument('filenames', nargs='+',
+                        help='Names of the files to be used for the bound plots')
 
     parsed_args = parser.parse_args(args)
 
@@ -86,6 +90,7 @@ def set_params(args):
     params['maxRound'] = args.maxround
     params['colors'] = args.colors
     params['lines'] = args.lines
+    params['instances'] = args.instances
     params['save'] = args.save
     params['load'] = args.load
 
@@ -320,17 +325,17 @@ def plots(data, name):
     make_summary_plot(data, name)
 
     if params['maxRound'] <= 0:
-        maxRnd = max(data.index.get_level_values('pricing_round').unique().values)
+        maxRnd = max(data.index.get_level_values('pricing_round').values)
     else:
-        maxRnd = min(params['maxRound'],max(data.index.get_level_values('pricing_round').unique().values))
+        maxRnd = min(params['maxRound'],max(data.index.get_level_values('pricing_round').values))
     if params['minRound'] <= 1:
-        minRnd  = min(data.index.get_level_values('pricing_round').unique().values)
+        minRnd  = min(data.index.get_level_values('pricing_round').values)
     else:
-        minRnd  = max(params['minRound'],min(data.index.get_level_values('pricing_round').unique().values))
+        minRnd  = max(params['minRound'],min(data.index.get_level_values('pricing_round').values))
     if params['root_only']:
         maxNode = 1
     else:
-        maxNode = max(data.index.get_level_values('node').unique().values)
+        maxNode = max(data.index.get_level_values('node').values)
 
     if params['nSplit'] <= 0:
         # do not split the plot, but still check if rounds were neglected
@@ -353,16 +358,19 @@ def plots(data, name):
 def load_data(files):
     """
     Plots data, that was parsed and collected earlier from the generate_files() method and saved in a pickle-file
-    :param files: the pickle files, from which the dataframes are to load
+    :param files: the pickle files, from which the dataframes are to load (one file per instance)
     :return:
     """
     for file in files:
         if not os.path.exists(file):
             print 'there is no file ' + file
             continue
-        start_time = time.time()
         name = os.path.splitext(os.path.basename(file))[0]
+        if params['instances'] <> '' and not (name in params['instances']):
+            print 'skipping', name
+            continue
         print 'entering', name
+        start_time = time.time()
         df = pd.read_pickle(file)
         print '    loading data:', time.time() - start_time
         start_time = time.time()
@@ -436,6 +444,10 @@ def generate_files(files):
                         tmparray.pop()
                     for i in range(1,len(tmparray)-1):
                         problemFileName += "." + tmparray[i]
+                    if params['instances'] <> '' and not (problemFileName in params['instances']):
+                        print 'skipping', problemFileName
+                        done = True
+                        continue
                     print 'entering', problemFileName
                     start_time = time.time()
 
@@ -511,9 +523,9 @@ def main():
     if not os.path.exists(params['outdir']):
         os.makedirs(params['outdir'])
     if params['load']:
-        load_data(parsed_args.filename)
+        load_data(parsed_args.filenames)
     else:
-        generate_files(parsed_args.filename)
+        generate_files(parsed_args.filenames)
 
 # Calling main script
 if __name__ == '__main__':
