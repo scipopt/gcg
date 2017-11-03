@@ -197,11 +197,13 @@ SCIP_RETCODE solveKnapsack(
              */
             if( SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])) )
             {
+               SCIPfreeBufferArray(pricingprob, &consvals);
                *result = SCIP_STATUS_UNKNOWN;
                return SCIP_OKAY;
             }
             else if( SCIPisNegative(pricingprob, SCIPvarGetObj(consvars[i])) )
             {
+               SCIPfreeBufferArray(pricingprob, &consvals);
                *result = SCIP_STATUS_UNKNOWN;
                return SCIP_OKAY;
             }
