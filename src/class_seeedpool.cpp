@@ -4377,9 +4377,8 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
 
 
       SCIP_Real largec  = 0.;
-               for( int c = 0; c < getNConss(); ++c )
-                  for( int v = 0; v < getNVars(); ++v )
-                     largec += ABS( getVal(c,v) * SCIPvarGetObj( getVarForIndex(v) ) );
+      for( int v = 0; v < getNVars(); ++v )
+         largec += ABS( SCIPvarGetObj( getVarForIndex(v) ) );
 
 
       for( int c = 0; c < getNConss(); ++c )
@@ -4436,7 +4435,6 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
 
          dualvalsrandom[c] = dualval;
       }
-
 
    }
 
