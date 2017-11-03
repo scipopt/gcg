@@ -69,6 +69,13 @@ SCIP_RETCODE GCGprintStatistics(
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
+/** print out complete detection statistics */
+SCIP_RETCODE GCGprintCompleteDetectionStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+);
+
+
 /** gets the total memory used after problem creation stage for all pricingproblems */
 extern
 SCIP_Real GCGgetPricingprobsMemUsed(
