@@ -4358,8 +4358,6 @@ SCIP_RETCODE DECdetectStructure(
 
    if( !onlylegacymode )
    {
-
-
       std::vector<int> candidatesNBlocks(0); /**< candidates for number of blocks */
       std::vector<gcg::ConsClassifier*> consClassDistributions; /**< collection of different constraint class distributions */
       std::vector<gcg::VarClassifier*> varClassDistributions; /**< collection of different variable class distributions */
@@ -4369,7 +4367,6 @@ SCIP_RETCODE DECdetectStructure(
       SCIP_Bool presolveOrigProblem;
       SCIP_Bool calculateOrigDecomps;
       SCIP_Bool classifyOrig;
-      SCIP_Bool emphfast;
 
       assert(scip != NULL);
 
@@ -4476,11 +4473,11 @@ SCIP_RETCODE DECdetectStructure(
             conshdlrdata->seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
       }
 
-     for( int i = 0; i < (int) consClassDistributions.size(); ++i )
-        delete consClassDistributions[i];
+     for( int j = 0; j < (int) consClassDistributions.size(); ++j )
+        delete consClassDistributions[j];
 
-     for( int i = 0; i < (int) varClassDistributions.size(); ++i )
-        delete varClassDistributions[i];
+     for( int j = 0; j < (int) varClassDistributions.size(); ++j )
+        delete varClassDistributions[j];
 
 
       conshdlrdata->seeedpool->findDecompositions();
