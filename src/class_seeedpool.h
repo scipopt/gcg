@@ -504,6 +504,17 @@ public:
    /** returns true if the matrix structure corresponds to the transformed problem */
    SCIP_Bool getTransformedInfo();
 
+   SCIP_RETCODE printBlockcandidateInformation(
+    SCIP*                 scip,               /**< SCIP data structure */
+    FILE*                 file                /**< output file or NULL for standard output */
+   );
+
+   SCIP_RETCODE printClassifierInformation(
+    SCIP*                 scip,               /**< SCIP data structure */
+    FILE*                 file                /**< output file or NULL for standard output */
+   );
+
+
 private:
 
    /** calculates necessary data for translating seeeds and classifiers */
@@ -539,8 +550,12 @@ private:
       std::vector<int>& colthistoother    /** variable index mapping from new to old seeedpool */
       );
 
+
+
 };
 /* class Seeedpool */
+
+
 
 } /* namespace gcg */
 #endif /* GCG_CLASS_SEEEDPOOL_H__ */

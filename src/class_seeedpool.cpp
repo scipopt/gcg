@@ -4134,4 +4134,60 @@ SCIP_Bool Seeedpool::getTransformedInfo()
    return transformed;
 }
 
+SCIP_RETCODE Seeedpool::printBlockcandidateInformation(
+ SCIP*                 givenscip,               /**< SCIP data structure */
+ FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+
+   std::sort( candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n", (int) candidatesNBlocks.size() );
+   for( size_t i  = 0; i  < candidatesNBlocks.size(); ++i )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d : %d  \n", candidatesNBlocks[i].first, candidatesNBlocks[i].second );
+   }
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE Seeedpool::printClassiferInformation(
+ SCIP*                 givenscip,               /**< SCIP data structure */
+ FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+
+   /** NCLASSIFIER */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n", (int) consclassescollection.size()  );
+
+   for( size_t c = 0; c < consclassescollection.size() ; ++c )
+   {
+      gcg::ConsClassifier* classifier = consclassescollection[c];
+
+      std::vector<std::vector<int> > conssofclasses = std::vector<std::vector<int> >(classifier->getNClasses()) ;
+      for( int cons = 0; cons < getNConss(); ++cons )
+         conssofclasses[classifier->getClassOfCons(cons)].push_back(cons);
+
+      /** CLASSIFIERNAME */
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s  \n",  classifier->getName() );
+
+
+      /** NCLASSES */
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s  \n",  classifier->getNClasses() );
+
+      for( int cl = 0; cl < classifier->getNClasses(); ++cl )
+      {
+         /** CLASSNAME */
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
+         /** NMEMBERS */
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d\n",  conssofclasses[cl].size() );
+
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
+
 } /* namespace gcg */

@@ -5686,3 +5686,106 @@ SCIP_RETCODE GCGsetDetection(
 
    return SCIP_OKAY;
 }
+
+
+/** prints blockcandiateinformation in following format:
+ * NCANDIDATES
+ * CANDIDATE : NVOTES for each candidate
+ */
+SCIP_RETCODE GCGprintBlockcandidateInformation(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* seeedpool;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeedpool = (conshdlrdata->seeedpool == NULL ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+
+   seeedpool->printBlockcandidateInformation(scip, file);
+
+
+
+   return SCIP_OKAY;
+}
+
+/** prints blockcandiateinformation in following format:
+ * NCLASSIFIER
+ * CLASSIFIERNAME  for each classifier
+ * NCLASSES
+ * CLASSNAME  for each class
+ * NMEMBERS
+ */
+SCIP_RETCODE GCGprintClassifierInformation(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* seeedpool;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeedpool = (conshdlrdata->seeedpool == NULL ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+
+   seeedpool->printClassifierInformation(scip, file);
+
+   return SCIP_OKAY;
+}
+
+/** prints blockcandiateinformation in following format:
+ * NDECOMPS
+ * NBLOCKS  for each decomp
+ * NCONSS for each block
+ * NVARS
+ * endfor each block
+ * NMASTERCONSS
+ * NLINKINGVARS
+ * NMASTERVARS
+ * NSTAIRLINKINGVARS
+ * MAXWHITESCORE
+ * (CLASSICALSCORE)
+ * HASSETPARTITIONINGMASTER
+ * NDETECTORS
+ * DETECTORNAME for each detector
+ * NCLASSIFIERS
+ * CLASSIFIERNAME for each classifier
+ * nCLASSESMASTER
+ * CLASSNAME for each class
+ */
+SCIP_RETCODE GCGprintDecompInformation(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* seeedpool;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   std::vector<gcg::Seeed*>::const_iterator seeediter;
+   std::vector<gcg::Seeed*>::const_iterator seeediterend;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+
+   seeediter = conshdlrdata->listall->begin();
+   seeediterend = conshdlrdata->listall->end();
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d\n",  (int) conshdlrdata->listall->size() );
+
+   return SCIP_OKAY;
+}
+
+
+
+

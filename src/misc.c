@@ -39,6 +39,8 @@
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
 
+
+
 #include <string.h>
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
@@ -460,6 +462,18 @@ SCIP_RETCODE GCGprintStatistics(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE GCGprintInstanceName(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nfilename: %s \n", GCGgetFilename(scip) );
+   return SCIP_OKAY;
+}
+
+
 
 /** print out complete detection statistics */
 SCIP_RETCODE GCGprintCompleteDetectionStatistics(
@@ -471,7 +485,7 @@ SCIP_RETCODE GCGprintCompleteDetectionStatistics(
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nStart writing complete detection information:\n");
 
-   GCGprintInstanceName(scip, file);
+   SCIP_CALL( GCGprintInstanceName(scip, file) );
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
 

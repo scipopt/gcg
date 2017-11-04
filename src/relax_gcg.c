@@ -145,6 +145,9 @@ struct SCIP_RelaxData
 
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
+
+   /* filename information */
+   const char*           filename;
 };
 
 /*
@@ -2099,6 +2102,8 @@ void initRelaxdata(
 
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
+
+   relaxdata->filename = NULL;
 }
 
 /*
@@ -3802,6 +3807,33 @@ void GCGsetStructDecdecomp(
    relaxdata->decdecomp = decdecomp;
 }
 
+/** sets the structure information */
+SCIP_RETCODE GCGsetFilename(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename           /**< input file name */
+ )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   assert(filename != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   if (relaxdata->filename != NULL)
+      SCIPfreeBlockMemoryArray(scip, &(relaxdata->filename), SCIP_MAXSTRLEN);
+
+   SCIP_CALL( SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, filename, SCIP_MAXSTRLEN ) );
+
+   return SCIP_OKAY;
+}
+
+
+
 /** gets the structure information */
 DEC_DECOMP* GCGgetStructDecdecomp(
    SCIP*                 scip                /**< SCIP data structure */
@@ -3819,6 +3851,26 @@ DEC_DECOMP* GCGgetStructDecdecomp(
    assert(relaxdata != NULL);
 
    return relaxdata->decdecomp;
+}
+
+/** sets the structure information */
+const char* GCGgetFilename(
+   SCIP*                 scip               /**< SCIP data structure */
+)
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->filename;
+
 }
 
 /** gets the total memory used after problem creation stage for all pricingproblems */
