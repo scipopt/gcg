@@ -281,32 +281,38 @@ def make_summary_plot(data, name):
     :return:
     """
     summary = pd.DataFrame()
-    summary['time'] = data.groupby(level=['pricing_round','stab_round']).sum().time
-    summary['found_frac'] = data.astype(bool).groupby(level=['pricing_round','stab_round']).sum().nVars/data.groupby(level=['pricing_round','stab_round']).count().nVars*100
+    summary['time'] = data.groupby(level=['node','pricing_round','stab_round']).sum().time
+    summary['found_frac'] = data.astype(bool).groupby(level=['node','pricing_round','stab_round']).sum().nVars/data.groupby(level=['node','pricing_round','stab_round']).count().nVars*100
     summary = summary.reset_index()
 
     fig,ax1 = plt.subplots()
     ax2 = ax1.twinx()
 
-    x = summary.pricing_round.values
-#    x_stab = summary.stab_round.values
+    x = [i+1 for i in summary.index.values]
     y_time = summary.time.values
     y_found_frac = summary.found_frac.values
 
     ax1.scatter(x,y_time, color='k', s=2)
     ax2.scatter(x,y_found_frac, color='r', s=2)
 
+    # add a line after the root-node
+    x_line = (summary[summary.node == 2].pricing_round.iloc[0] + summary[summary.node == 1].pricing_round.iloc[-1])/2.
+    line = lines.Line2D([x_line,x_line],[0,1],color='orange',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax1.transData, ax1.transAxes))
+    ax1.add_line(line)
+
     ax1.set_xlabel('Pricing Round')
     ax1.set_ylabel('Time / s', color='k')
     ax2.set_ylabel('Fraction of successfull pricers / %', color='r')
 
     ax1.get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
+    ax1.set_xlim([-0.01*max(x), 1.01*max(x)])
     if max(y_time) > 0:
         ax1.set_ylim([-max(y_time)*0.1,max(y_time)*1.1])
     else:
         ax1.set_ylim([-0.001,0.01])
     ax2.set_ylim([-max(y_found_frac)*0.15,max(y_found_frac)*1.15])
 
+    fig.set_size_inches(11.7,8.3)
     plt.tight_layout()
     if params['details']:
         plt.savefig(params['outdir'] + '/' + name + '_summary.pdf')
