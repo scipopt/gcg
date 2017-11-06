@@ -36,6 +36,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#include <sys/stat.h>
 #include <assert.h>
 #include <string.h>
 
@@ -101,7 +102,6 @@ SCIP_RETCODE writeAllDecompositions(
    SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
    )
 {
-
    char* filename;
    char* dirname;
    SCIP_Bool endoffile;
@@ -120,11 +120,12 @@ SCIP_RETCODE writeAllDecompositions(
       *nextdialog = NULL;
       return SCIP_OKAY;
    }
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
-   if( SCIPdialoghdlrIsBufferEmpty(dialoghdlr) )
+   /* make sure directory exists */
+   if( dirname != NULL )
    {
-      filename = dirname;
-      dirname = NULL;
+      mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
    }
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
@@ -217,7 +218,7 @@ SCIP_RETCODE writeFamilyTree(
    }
 
    /* create the file path */
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,"Enter existing directory for output (e.g. ../path/to/directory):\n",
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,"Enter directory for output (e.g. ../path/to/directory):\n",
       &tmpstring, &endoffile) );
    if( endoffile )
    {
@@ -227,12 +228,17 @@ SCIP_RETCODE writeFamilyTree(
 
    strncpy(dirname, tmpstring, SCIP_MAXSTRLEN);
 
+   /* make sure directory exists */
+   if( dirname != NULL )
+   {
+      mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
+   }
+
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
    (void) SCIPsnprintf(probnamepath, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
       SCIPsplitFilename(probnamepath, NULL, &probname, NULL, NULL);
    (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "familytree-%s", probname);
-
 
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", dirname, filename, extension);
 
@@ -299,13 +305,19 @@ SCIP_RETCODE reportAllDecompositions(
    }
 
    /* get a directory to write to */
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter an existing directory: ", &dirname, &endoffile) );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter a directory: ", &dirname, &endoffile) );
    if( endoffile )
    {
       *nextdialog = NULL;
       return SCIP_OKAY;
    }
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
+
+   /* make sure directory exists */
+   if( dirname != NULL )
+   {
+      mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
+   }
 
    /* create a name for the new file */
    strcpy(ppath, (char*) SCIPgetProbName(scip));
