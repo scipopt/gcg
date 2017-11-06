@@ -116,6 +116,7 @@ using gcg::Weights;
 #define DEFAULT_TYPE              'r'        /**< type of the decomposition 'c' column hypergraph (single bordered, no
                                                   linking constraints), 'r' row hypergraph (single bordered, no linking
                                                   variables) and 'a' column-row hypergraph (arrowhead) */
+#define DEFAULT_FALLBACK_NBLOCKS    8
 #define SET_MULTIPLEFORSIZETRANSF 12500
 
 /*
@@ -447,7 +448,7 @@ SCIP_RETCODE detection(
 
    std::vector<int> numberOfBlocks = seeedPropagationData->seeedpool->getSortedCandidatesNBlocks();
    if( numberOfBlocks.empty() )
-      numberOfBlocks.push_back(8);
+      numberOfBlocks.push_back(DEFAULT_FALLBACK_NBLOCKS);
 
    int nconss = seeedPropagationData->seeedpool->getNConss();
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);

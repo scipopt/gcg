@@ -1752,7 +1752,7 @@ SCIP_RETCODE Seeed::completeByConnected(
              if( isVarLinkingvar(newvar) )
                 continue;
 
-             assert(! isVarMastervar(newvar) );
+             assert(! isVarMastervar( newvar) );
              setVarToBlock( newvar, newBlockNr - 1 );
              assert( isVarOpenvar( newvar ) );
              deleteOpenvar( newvar );
@@ -2972,10 +2972,11 @@ SCIP_Real Seeed::evaluate(
       for( int l = 0; l < getNMasterconss(); ++l )
       {
          int consid = getMasterconss()[l];
-         if( ! seeedpool->isConsSetppc(consid) && ! seeedpool->isConsCardinalityCons(consid) )
+         if( !seeedpool->isConsSetppc(consid) && !seeedpool->isConsCardinalityCons(consid) )
          {
             masterissetppc = false;
-            std::cout << "masterconstraint: " << SCIPconsGetName(seeedpool->getConsForIndex(consid) ) << " is no setppc and no cardinality conss" << std::endl;
+            std::cout << "masterconstraint: " << SCIPconsGetName(seeedpool->getConsForIndex(consid) ) <<
+               " is no setppc and no cardinality conss" << std::endl;
             break;
          }
       }
