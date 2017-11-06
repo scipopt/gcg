@@ -32,7 +32,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 #include <assert.h>
 
 #include "solver_independentset.h"
@@ -191,9 +191,9 @@ SCIP_RETCODE solveIndependentSet(
       signhelper = SCIPvarGetObj(pricingprobvars[i]);
       if( SCIPisLT(pricingprob,0,signhelper) )
       {
-         SCIPdebugMessage("Exit: Wrong coefficient sign.\n");
-         *result = SCIP_STATUS_UNKNOWN;
-         return SCIP_OKAY;
+         SCIPdebugMessage("Ignoring positive coefficients.\n");
+         //*result = SCIP_STATUS_UNKNOWN;
+         //return SCIP_OKAY;
       }
       if( SCIPisLT(pricingprob,signhelper,biggestobj) )
       {
@@ -270,9 +270,9 @@ SCIP_RETCODE solveIndependentSet(
              SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real)1) ) 
          {
             /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
-            if( SCIPvarGetObj(consvars[0]) != 0 || SCIPvarGetObj(consvars[1]) != 0 )
+            if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) || SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
             {
-               if( SCIPvarGetObj(consvars[0]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) )
                {
                   nodeindex0 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[0]);
                   if( nodeindex0 == indexcount )
@@ -281,7 +281,7 @@ SCIP_RETCODE solveIndependentSet(
                   }
                }
 
-               if( SCIPvarGetObj(consvars[1]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                {
                   nodeindex1 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[1]);
                   if( nodeindex1 == indexcount )
@@ -289,7 +289,7 @@ SCIP_RETCODE solveIndependentSet(
                      ++indexcount;
                   }
                }
-               if( SCIPvarGetObj(consvars[0]) != 0 && SCIPvarGetObj(consvars[1]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                {
                   if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                   {
@@ -302,10 +302,12 @@ SCIP_RETCODE solveIndependentSet(
          else if( SCIPgetNVarsLinear(pricingprob,constraints[i]) == 2 )
          {
             consvals = SCIPgetValsLinear(pricingprob, constraints[i]);
-            if( consvals[0] > 0 && consvals[1] > 0 && SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0] + consvals[1]) )
+            if( consvals[0] > 0 && consvals[1] > 0 && SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0] + consvals[1]) 
+               && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0])
+               && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[1]))
             {
                /* As before, the constraint is only regarded if it is relevant for pricing */
-               if( SCIPvarGetObj(consvars[0]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) )
                {
                   nodeindex0 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[0]);
                   if( nodeindex0 == indexcount )
@@ -314,7 +316,7 @@ SCIP_RETCODE solveIndependentSet(
                   }
                }
 
-               if( SCIPvarGetObj(consvars[1]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                {
                   nodeindex1 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[1]);
                   if( nodeindex1 == indexcount )
@@ -322,7 +324,7 @@ SCIP_RETCODE solveIndependentSet(
                      ++indexcount;
                   }
                }
-               if( SCIPvarGetObj(consvars[0]) != 0 && SCIPvarGetObj(consvars[1]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                {
                   if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                   {
@@ -366,7 +368,7 @@ SCIP_RETCODE solveIndependentSet(
                for( int j = 0; j < nvars; ++j )
                {
                   /* We are only interested in vars potentially relevant for pricing (!= 0) */
-                  if( SCIPvarGetObj(consvars[j]) != 0 )
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[j]),0) )
                   {
                      /* Determine nodeindex0 */
                      nodeindex0 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[j]);
@@ -406,7 +408,7 @@ SCIP_RETCODE solveIndependentSet(
                else if( abs(consvals[coefindex]) == 1 )
                {
                   /* See if the objective coefficient of the coupling variable is != 0 */
-                  if( SCIPvarGetObj(consvars[coefindex]) != 0 )
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[coefindex]),0) )
                   {
                      /* The coupling variable can always be set to 1 */
                      solvals[SCIPvarGetProbindex(consvars[coefindex])] = 1.0;
@@ -416,7 +418,7 @@ SCIP_RETCODE solveIndependentSet(
                   for( int j = 0; j < nvars; ++j )
                   {
                      /* We are only interested in vars potentially relevant for pricing (!= 0) */
-                     if( j != coefindex && SCIPvarGetObj(consvars[j]) != 0 )
+                     if( j != coefindex && SCIPisLT(pricingprob,SCIPvarGetObj(consvars[j]),0) )
                      {
                         /* Determine nodeindex0 */
                         nodeindex0 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[j]);
@@ -486,9 +488,9 @@ SCIP_RETCODE solveIndependentSet(
             if( SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),-1) || SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),-1) ) 
             {
                /* if x may be relevant, add both x and y to graph */
-               if( SCIPvarGetObj(consvars[0]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) )
                {
-                  if( SCIPvarGetObj(consvars[0]) != 0 )
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) )
                   {
                      nodeindex0 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[0]);
                      if( nodeindex0 == indexcount )
@@ -497,7 +499,7 @@ SCIP_RETCODE solveIndependentSet(
                      }
                   }
 
-                  if( SCIPvarGetObj(consvars[1]) != 0 )
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                   {
                      nodeindex1 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[1]);
                      if( nodeindex1 == indexcount )
@@ -511,9 +513,9 @@ SCIP_RETCODE solveIndependentSet(
                   ++markedcount;
                }
                /* if only y may be relevant, add only y to the graph */
-               else if( SCIPvarGetObj(consvars[1]) != 0 )
+               else if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                {
-                  if( SCIPvarGetObj(consvars[1]) != 0 )
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                   {
                      nodeindex1 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[1]);
                      if( nodeindex1 == indexcount )
@@ -545,9 +547,9 @@ SCIP_RETCODE solveIndependentSet(
          else if( SCIPisEQ(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),1) && SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),1) )
          {
             /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
-            if( SCIPvarGetObj(consvars[0]) != 0 || SCIPvarGetObj(consvars[1]) != 0 )
+            if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) || SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
             {
-               if( SCIPvarGetObj(consvars[0]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) )
                {
                   nodeindex0 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[0]);
                   if( nodeindex0 == indexcount )
@@ -556,7 +558,7 @@ SCIP_RETCODE solveIndependentSet(
                   }
                }
 
-               if( SCIPvarGetObj(consvars[1]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                {
                   nodeindex1 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[1]);
                   if( nodeindex1 == indexcount )
@@ -564,7 +566,7 @@ SCIP_RETCODE solveIndependentSet(
                      ++indexcount;
                   }
                }
-               if( SCIPvarGetObj(consvars[0]) != 0 && SCIPvarGetObj(consvars[1]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                {
                   if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                   {
@@ -578,9 +580,9 @@ SCIP_RETCODE solveIndependentSet(
                && SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i])) )
          {
             /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
-            if( SCIPvarGetObj(consvars[0]) != 0 || SCIPvarGetObj(consvars[1]) != 0 )
+            if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) || SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
             {
-               if( SCIPvarGetObj(consvars[0]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) )
                {
                   nodeindex0 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[0]);
                   if( nodeindex0 == indexcount )
@@ -589,7 +591,7 @@ SCIP_RETCODE solveIndependentSet(
                   }
                }
 
-               if( SCIPvarGetObj(consvars[1]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                {
                   nodeindex1 = indset_addNodeToGraph(indexcount, npricingprobvars, scalingfactor, indsetvars, g, consvars[1]);
                   if( nodeindex1 == indexcount )
@@ -597,7 +599,7 @@ SCIP_RETCODE solveIndependentSet(
                      ++indexcount;
                   }
                }
-               if( SCIPvarGetObj(consvars[0]) != 0 && SCIPvarGetObj(consvars[1]) != 0 )
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(consvars[1]),0) )
                {
                   if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                   {
@@ -623,7 +625,7 @@ SCIP_RETCODE solveIndependentSet(
       else
       {
          /* Constraint handler neither linear nor varbound */
-         SCIPdebugMessage("Exit: Nonlinear constraint handler, Iteration: %d.\n",i);
+         SCIPdebugMessage("Exit: Unhandled constraint handler, Iteration: %d.\n",i);
          SCIPdebugMessage("Constraint handler: %s\n", SCIPconshdlrGetName(conshdlr));
          SCIPfreeBufferArray(pricingprob,&markedconstraints);
          SCIPfreeBufferArray(pricingprob,&indsetvars);
@@ -656,6 +658,7 @@ SCIP_RETCODE solveIndependentSet(
    /* Test if the density criteria is met */
    if( SCIPisLT(pricingprob, (float)nedges/((float)(g->n - 1) * (g->n) / 2), solver->density) )
    {
+      SCIPdebugMessage("Exit: Density criteria not met: %g.\n",(float)nedges/((float)(g->n - 1) * (g->n) / 2));
       SCIPfreeBufferArray(pricingprob,&markedconstraints);
       SCIPfreeBufferArray(pricingprob,&indsetvars);
       SCIPfreeBufferArray(pricingprob,&solvals);
@@ -698,7 +701,7 @@ SCIP_RETCODE solveIndependentSet(
    /* Set all members of the maximum clique with objective coefficient != 0 to 1 */
    for( int i = 0; i < indexcount; ++i )
    {
-      if( SET_CONTAINS(clique,i) && SCIPvarGetObj(indsetvars[i]) != 0 )
+      if( SET_CONTAINS(clique,i) && SCIPisLT(pricingprob,SCIPvarGetObj(indsetvars[i]),0) )
       {
          solvals[SCIPvarGetProbindex(indsetvars[i])] = 1.0;
       }
@@ -713,7 +716,7 @@ SCIP_RETCODE solveIndependentSet(
    {
       if( solvals[i] < 0 )
       {
-         if( SCIPvarGetObj(pricingprobvars[i]) != 0 )
+         if( SCIPisLT(pricingprob,SCIPvarGetObj(pricingprobvars[i]),0) )
          {
             solvals[i] = 1.0;
          }
