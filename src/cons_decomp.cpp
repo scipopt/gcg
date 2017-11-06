@@ -4993,6 +4993,11 @@ int SCIPconshdlrDecompGetNFinishedDecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   /* case if there is no seeedpool in data yet */
+   if(conshdlrdata->seeedpool == NULL)
+      return 0;
+
+   /* all other cases */
    return (int) /*conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() +*/ conshdlrdata->seeedpool->getNFinishedSeeeds();
 }
 
