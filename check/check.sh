@@ -259,6 +259,12 @@ do
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
  #               echo display statistics            >> $TMPFILE
+	    elif test $MODE = "detectionstatistics"
+	    then
+		echo change instancename $PROB     >> $TMPFILE
+		echo presolve                      >> $TMPFILE
+		echo detect                        >> $TMPFILE
+                echo display detectionst           >> $TMPFILE
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
