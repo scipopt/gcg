@@ -262,6 +262,7 @@ do
 	    elif test $MODE = "detectionstatistics"
 	    then
 		echo change instancename $PROB     >> $TMPFILE
+		echo set detection allowclassifier enabled TRUE >> $TMPFILE
 		echo presolve                      >> $TMPFILE
 		echo detect                        >> $TMPFILE
                 echo display detectionst           >> $TMPFILE
