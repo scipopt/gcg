@@ -4191,6 +4191,34 @@ SCIP_RETCODE Seeedpool::printClassifierInformation(
       }
    }
 
+   /** NCLASSIFIER */
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n", (int) varclassescollection.size()  );
+
+      for( size_t c = 0; c < varclassescollection.size() ; ++c )
+      {
+         gcg::VarClassifier* classifier = varclassescollection[c];
+
+         std::vector<std::vector<int> > varsofclasses = std::vector<std::vector<int> >(classifier->getNClasses()) ;
+         for( int var = 0; var < getNVars(); ++var )
+            varsofclasses[classifier->getClassOfVar(var)].push_back(var);
+
+         /** CLASSIFIERNAME */
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s  \n",  classifier->getName() );
+
+
+         /** NCLASSES */
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n",  classifier->getNClasses() );
+
+         for( int cl = 0; cl < classifier->getNClasses(); ++cl )
+         {
+            /** CLASSNAME */
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
+            /** NMEMBERS */
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d\n",  varsofclasses[cl].size() );
+         }
+      }
+
+
    return SCIP_OKAY;
 }
 
