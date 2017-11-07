@@ -467,8 +467,6 @@ SCIP_RETCODE GCGprintInstanceName(
    FILE*                 file                /**< output file or NULL for standard output */
 )
 {
-
-
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "filename: %s \n", GCGgetFilename(scip) );
    return SCIP_OKAY;
 }

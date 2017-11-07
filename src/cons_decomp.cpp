@@ -5810,9 +5810,9 @@ SCIP_RETCODE GCGprintDecompInformation(
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->getNTotalStairlinkingvars() );
 
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getMaxWhiteScore() );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  1.-seeed->getMaxWhiteScore() );
 
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getScore(scoretype::CLASSIC) );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  1.-seeed->getScore(scoretype::CLASSIC) );
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->hasSetpartitioningMaster(seeedpool) );
 
