@@ -51,7 +51,7 @@
 
 #define SOLVER_ENABLED       TRUE  /**< indicates whether the solver should be enabled */
 
-#define DEFAULT_DENSITY      0.90
+#define DEFAULT_DENSITY      0.85
 
 struct GCG_SolverData 
 {
@@ -183,15 +183,14 @@ SCIP_RETCODE solveIndependentSet(
     */
    scalingfactor = ((int) INT_MAX / npricingprobvars) - npricingprobvars;
 
-   /* All objective values have to be negative or 0 - library restriction */
-   /* During the test we also check for the biggest objective value */
+   /* Check for the biggest objective value to safely adjust the scalingfactor */
    biggestobj = 0.0;
    for( int i = 0; i < npricingprobvars; ++i )
    {
       signhelper = SCIPvarGetObj(pricingprobvars[i]);
       if( SCIPisLT(pricingprob,0,signhelper) )
       {
-         SCIPdebugMessage("Ignoring positive coefficients.\n");
+         //SCIPdebugMessage("Ignoring positive coefficients.\n");
          //*result = SCIP_STATUS_UNKNOWN;
          //return SCIP_OKAY;
       }
@@ -399,7 +398,7 @@ SCIP_RETCODE solveIndependentSet(
             /* Check if we have a coupling constraint (rhs 0) */
             else if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),(SCIP_Real)0) )
             {
-               /* Special case: The coupling constraint is purely decorative (coefficient >= #vars)*/
+               /* Special case: The coupling constraint is purely decorative (coefficient + 1 coupling var >= #vars)*/
                if( abs(consvals[coefindex]) + 1 >= nvars )
                {
                   solvals[SCIPvarGetProbindex(consvars[coefindex])] = 1.0;
@@ -407,12 +406,8 @@ SCIP_RETCODE solveIndependentSet(
                /* Special case: The coefficient is -1, we treat the case like a clique constraint. */
                else if( abs(consvals[coefindex]) == 1 )
                {
-                  /* See if the objective coefficient of the coupling variable is != 0 */
-                  if( SCIPisLT(pricingprob,SCIPvarGetObj(consvars[coefindex]),0) )
-                  {
-                     /* The coupling variable can always be set to 1 */
-                     solvals[SCIPvarGetProbindex(consvars[coefindex])] = 1.0;
-                  }
+                  solvals[SCIPvarGetProbindex(consvars[coefindex])] = 1.0;
+
                   /* Delete the edges between all the variables of the constraint that are not the coupling variable.
                      This way, at most one can be part of the maximum clique */
                   for( int j = 0; j < nvars; ++j )
@@ -707,7 +702,12 @@ SCIP_RETCODE solveIndependentSet(
       }
       else
       {
-         solvals[SCIPvarGetProbindex(indsetvars[i])] = 0.0;
+         /* We may have set some variables manually already, e.g. coupling variables */
+         if( solvals[SCIPvarGetProbindex(indsetvars[i])] != 1.0 )
+         {
+            solvals[SCIPvarGetProbindex(indsetvars[i])] = 0.0;
+         }
+         
       }
    }
 
