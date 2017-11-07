@@ -5752,12 +5752,16 @@ SCIP_RETCODE GCGprintClassifierInformation(
  * NMASTERVARS
  * NSTAIRLINKINGVARS
  * MAXWHITESCORE
- * (CLASSICALSCORE)
+ * CLASSICALSCORE
  * HASSETPARTITIONINGMASTER
  * NDETECTORS
  * DETECTORNAME for each detector
- * NCLASSIFIERS
- * CLASSIFIERNAME for each classifier
+ * NCONSCLASSIFIERS
+ * CONSCLASSIFIERNAME for each consclassifier
+ * nCLASSESMASTER
+ * CLASSNAME for each class
+ * NVARCLASSIFIERS
+ * VARCLASSIFIERNAME for each varclassifier
  * nCLASSESMASTER
  * CLASSNAME for each class
  */
@@ -5781,7 +5785,48 @@ SCIP_RETCODE GCGprintDecompInformation(
    seeediter = conshdlrdata->listall->begin();
    seeediterend = conshdlrdata->listall->end();
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d\n",  (int) conshdlrdata->listall->size() );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  (int) conshdlrdata->listall->size() );
+
+
+
+   for( ; seeediter != seeediterend; ++seeediter)
+   {
+      gcg::Seeed* seeed;
+      int nblocks = (*seeediter)->getNBlocks();
+
+      seeed = *seeediter;
+      seeedpool = ( seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool  );
+
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  (*seeediter)->getNBlocks() );
+      for( int block = 0; block < nblocks; ++block )
+      {
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->getNConssForBlock(block) );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->getNVarsForBlock(block) );
+      }
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->getNMasterconss() );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->getNLinkingvars() );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->getNMastervars() );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->getNTotalStairlinkingvars() );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getMaxWhiteScore() );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getScore(scoretype::CLASSIC) );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->hasSetpartitioningMaster(seeedpool) );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  (int) seeed->getDetectorchainVector( ).size() );
+
+      for( int detector = 0; detector <(int) seeed->getDetectorchainVector( ).size(); ++ detector )
+      {
+
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n",  DECdetectorGetName(seeed->getDetectorchainVector( )[detector]) );
+      }
+      seeed->printClassifierInformation(scip, seeedpool, file);
+
+   }
+
 
    return SCIP_OKAY;
 }

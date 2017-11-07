@@ -2131,6 +2131,7 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
    }
 
+   SCIPfreeBlockMemoryArray( scip, & relaxdata->filename, SCIP_MAXSTRLEN);
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;
@@ -3868,6 +3869,13 @@ const char* GCGgetFilename(
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   if( relaxdata->filename == NULL )
+   {
+      char help[SCIP_MAXSTRLEN];
+      (void) strncat( help, "unknown", 7 );
+      SCIP_CALL_ABORT(SCIPduplicateBlockMemoryArray( scip, & relaxdata->filename, help, SCIP_MAXSTRLEN ) );
+   }
 
    return relaxdata->filename;
 

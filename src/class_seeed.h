@@ -576,6 +576,11 @@ public:
       SCORETYPE type
       );
 
+   SCIP_Bool hasSetpartitioningMaster(
+      gcg::Seeedpool* seeedpool
+      );
+
+
    /** returns whether this seeed is usergiven */
    USERGIVEN getUsergiven();
 
@@ -598,6 +603,9 @@ public:
 
    /** returns the number of detectors the seeed is propagated by */
    int getNDetectors();
+
+   /** returns the number used classifiers */
+   int getNUsedClassifier();
 
    /** returns size of the vector containing linking vars */
    int getNLinkingvars();
@@ -800,6 +808,13 @@ public:
       int var,
       int block
       );
+
+   SCIP_RETCODE printClassifierInformation(
+      SCIP*                scip,
+      gcg::Seeedpool*      seeedpool,
+      FILE*                file);
+
+
 
    /** refine seeed with focus on blocks: assigns open conss and vars if they can be found
     *  in blocks without respect to open vars and conss (assignHittingOpenconss(), assignHittingOpenvars()) */

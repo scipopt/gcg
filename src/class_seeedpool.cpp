@@ -4150,7 +4150,7 @@ SCIP_RETCODE Seeedpool::printBlockcandidateInformation(
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE Seeedpool::printClassiferInformation(
+SCIP_RETCODE Seeedpool::printClassifierInformation(
  SCIP*                 givenscip,               /**< SCIP data structure */
  FILE*                 file                /**< output file or NULL for standard output */
 )
@@ -4172,7 +4172,7 @@ SCIP_RETCODE Seeedpool::printClassiferInformation(
 
 
       /** NCLASSES */
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s  \n",  classifier->getNClasses() );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n",  classifier->getNClasses() );
 
       for( int cl = 0; cl < classifier->getNClasses(); ++cl )
       {
@@ -4180,7 +4180,6 @@ SCIP_RETCODE Seeedpool::printClassiferInformation(
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
          /** NMEMBERS */
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d\n",  conssofclasses[cl].size() );
-
       }
    }
 

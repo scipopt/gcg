@@ -469,7 +469,7 @@ SCIP_RETCODE GCGprintInstanceName(
 {
 
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nfilename: %s \n", GCGgetFilename(scip) );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "filename: %s \n", GCGgetFilename(scip) );
    return SCIP_OKAY;
 }
 
@@ -487,15 +487,13 @@ SCIP_RETCODE GCGprintCompleteDetectionStatistics(
 
    SCIP_CALL( GCGprintInstanceName(scip, file) );
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
-
    GCGprintBlockcandidateInformation(scip, file);
 
    GCGprintClassifierInformation(scip, file);
 
    GCGprintDecompInformation(scip, file);
 
-   GCGprintMiplibStructureInformation(scip, file);
+//   GCGprintMiplibStructureInformation(scip, file);
 
    return SCIP_OKAY;
 }

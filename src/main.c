@@ -137,7 +137,7 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "============\n\n");
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
    SCIP_CALL( SCIPtransformProb(scip) );
-   GCGsetFileName(scip, filename);
+   GCGsetFilename(scip, filename);
 
    if( decname != NULL )
    {
