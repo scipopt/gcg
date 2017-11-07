@@ -98,6 +98,7 @@ typedef gcg::Seeed* SeeedPtr;
 #define MAXNDECOMPS 5000                /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+#define DEFAULT_ALLOWCLASSIFIERDUPLICATES FALSE
 #define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
 #define DEFAULT_ENABLEORIGDETECTION FALSE /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
@@ -156,11 +157,12 @@ struct SCIP_ConshdlrData
    int                   maxndetectionrounds;               /**< maximum number of detection loop rounds  */
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
-   SCIP_Bool                enableemphfast;               /**< indicates whether emphasis settings are set to fast */
-   SCIP_Bool                smartscore;               /**< indicates whether smart score is enabled */
+   SCIP_Bool             allowclassifierduplicates;         /**< indicates whether classifier duplicates are allowed (for statistical reasons) */
+   SCIP_Bool             enableemphfast;               /**< indicates whether emphasis settings are set to fast */
+   SCIP_Bool             smartscore;               /**< indicates whether smart score is enabled */
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
    SCIP_Bool             enableorigclassification;               /**< indicates whether to start constraint classification for the original problem */
-      SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
+   SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
    SCIP_Bool             conssclassnnonzenabledorig;        /**< indicates whether constraint classifier for nonzero entries is enabled for the original problem */
    SCIP_Bool             conssclassnconstypeenabled;        /**< indicates whether constraint classifier for scipconstype is enabled */
    SCIP_Bool             conssclassnconstypeenabledorig;    /**< indicates whether constraint classifier for scipconstype is enabled for the original problem */
@@ -1007,6 +1009,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/allowclassifierduplicates/enabled", "indicates whether classifier duplicates are allowed (for statistical reasons)", &conshdlrdata->allowclassifierduplicates, FALSE, DEFAULT_ALLOWCLASSIFIERDUPLICATES, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/emphfast/enabled", "indicates whether emphasis setting are set to fast", &conshdlrdata->enableemphfast, TRUE, DEFAULT_ENABLEEMPHFAST, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/smartscore/enabled", "indicates whether smart score should be activated", &conshdlrdata->smartscore, FALSE, DEFAULT_SMARTSCORE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/enabled", "indicates whether to start detection for the original problem", &conshdlrdata->enableorigdetection, FALSE, DEFAULT_ENABLEORIGDETECTION, NULL, NULL) );

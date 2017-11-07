@@ -2499,12 +2499,16 @@ void Seeedpool::addConsClassifier(
    ConsClassifier* givenClassifier
    )
 {
+   SCIP_Bool detectionstatistics;
+
+   SCIPgetBoolParam(scip, "detection/allowclassifierduplicates/enabled", &detectionstatistics);
+
    if( givenClassifier != NULL )
    {
       /** check whether there already exists an equivalent consclassifier */
       ConsClassifier* equiv = NULL;
 
-      for( size_t i = 0; i < consclassescollection.size(); ++ i )
+      for( size_t i = 0; !detectionstatistics && i < consclassescollection.size(); ++ i )
       {
          if( givenClassifier->classifierIsDuplicateOfClassifier( consclassescollection[i] ) )
          {
