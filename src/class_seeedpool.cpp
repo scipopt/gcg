@@ -3365,12 +3365,16 @@ void Seeedpool::addVarClassifier(
    VarClassifier* givenClassifier
    )
 {
+   SCIP_Bool detectionstatistics;
+
+   SCIPgetBoolParam(scip, "detection/allowclassifierduplicates/enabled", &detectionstatistics);
+
    if( givenClassifier != NULL )
    {
       /** check whether there already exists an equivalent varclassifier */
       VarClassifier* equiv = NULL;
 
-      for( size_t i = 0; i < varclassescollection.size(); ++ i )
+      for( size_t i = 0; !detectionstatistics && i < varclassescollection.size(); ++ i )
       {
          if( givenClassifier->classifierIsDuplicateOfClassifier( varclassescollection[i] ) )
          {
