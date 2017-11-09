@@ -12,26 +12,34 @@ class App:
 
         self.frame.winfo_toplevel().title("Plotter for detection statistics")
 
+
+        for x in range(60):
+            Grid.columnconfigure(self.frame, x, weight=1)
+
+        for y in range(30):
+            Grid.rowconfigure(self.frame, y, weight=1)
+
+
         self.bmaxwhite = Button(
             self.frame, text='Max white score', command=self.plotdetectionquality)
-        self.bmaxwhite.grid(row=1, column=4, sticky=E)
+        self.bmaxwhite.grid(row=1, column=4, sticky=N+S+W+E)
 
         self.bmaxwhitesetpart = Button(
             self.frame, text='Max white score with setpart master', command=self.plotdetectionqualitysetpartmaster)
-        self.bmaxwhitesetpart.grid(row=2, column=4, sticky=E)
+        self.bmaxwhitesetpart.grid(row=2, column=4, sticky=N+S+W+E)
 
 
         self.bnblocksbest = Button(
             self.frame, text='Number of blocks of whitest', command=self.plotdetectionnblocks)
-        self.bnblocksbest.grid(row=1, column=3, sticky=E)
+        self.bnblocksbest.grid(row=1, column=3, sticky=N+S+W+E)
 
         self.bndecomps = Button(
             self.frame, text='Number of decompositions', command=self.plotdetectionndecomps)
-        self.bndecomps.grid(row=2, column=3, sticky=E)
+        self.bndecomps.grid(row=2, column=3, sticky=N+S+W+E)
 
         self.bnclassesforclassifier = Button(
             self.frame, text='Number of classes for classifier', command=self.plotnclassesforclassifier)
-        self.bnclassesforclassifier.grid(row=3, column=3, sticky=E)
+        self.bnclassesforclassifier.grid(row=3, column=3, sticky=N+S+W+E)
 
 
 
@@ -49,7 +57,7 @@ class App:
         self.l2text = "Number of instances: "+str(self.plotter.getninstances()) 
         self.l3text = "found at least one nontrivial decomp for " + str(self.plotter.getNNonTrivialDecomp()) 
 
-        self.l4text = "found at least one nontrivial decomp with setpartitioning master for " + str(self.plotter.getNNonTrivialDecompSetpartmaster()) 
+        self.l4text = "found at least one nontrivial decomp with setpartitioning master for " + str(self.plotter.getNNonTrivialDecompSetpartmaster()) + "     " 
 
 
         Label(self.frame, text=self.l1text).grid(row=0, column=0, sticky=W)
