@@ -154,6 +154,51 @@ class Plotter:
 								linkingvarclassname = line[0]
 					continue
 
+	def getNNonTrivialDecomp( self):
+		counter = 0
+		for decompscore in self.decompscores:
+		#	print decompscores[decompscore]
+			if len(self.decompscores[decompscore]) == 0:
+				continue
+			if self.decompscores[decompscore][0] >= 0.:
+				counter = counter + 1
+		return counter
+
+	def getNNonTrivialDecompSetpartmaster( self):
+		counter = 0
+		for decompscore in self.decompscores:
+		#	print decompscores[decompscore]
+			if len(self.decompscores[decompscore]) == 0:
+				continue
+			decompid = 0
+			while self.decompssetpartmaster[decompscore][decompid] != 1:
+				decompid = decompid+1
+				if decompid == len(self.decompscores[decompscore]):
+					break
+			if decompid == len(self.decompscores[decompscore]):
+				continue
+			if self.decompscores[decompscore][decompid] >= 0.:
+				counter = counter + 1
+		return counter
+
+
+
+	def fractionofinstanceswithscoreatleastsetpartmaster( self, minscore):
+		counter = 0
+		for decompscore in self.decompscores:
+		#	print decompscores[decompscore]
+			if len(self.decompscores[decompscore]) == 0:
+				continue
+			decompid = 0
+			while self.decompssetpartmaster[decompscore][decompid] != 1:
+				decompid = decompid+1
+				if decompid == len(self.decompscores[decompscore]):
+					break
+			if decompid == len(self.decompscores[decompscore]):
+				continue
+			if self.decompscores[decompscore][decompid] >= minscore:
+				counter = counter + 1
+		return float(counter)/float(len(self.decompscores))
 
 
 	def fractionofinstanceswithscoreatleast( self, decompscores, minscore):
@@ -208,6 +253,22 @@ class Plotter:
 		plt.plot(tauvals, instancefractions)
 
 		plt.show()
+
+	def plotdetectionqualitysetpartmaster(self):
+		tauvals = np.arange(0., 1., 0.01)
+		instancefractions = []
+		for tau in tauvals:
+			instancefractions.append(self.fractionofinstanceswithscoreatleastsetpartmaster(tau) )
+		plt.ylabel('fraction of instances')
+		plt.xlabel('Whitest found decomp with setpartitioning master has at least this max white score')
+	#	print tauvals
+		#print instancefractions
+
+		plt.plot(tauvals, instancefractions)
+
+		plt.show()
+
+
 
 	def plotnblocksofbest(self):
 		maxnblocks = 0

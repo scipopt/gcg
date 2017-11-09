@@ -1,5 +1,5 @@
 from Tkinter import *
-from plotclassifier import *
+from detectionplotter import *
 from tkFileDialog import *
 from ttk import *
 
@@ -15,6 +15,11 @@ class App:
         self.bmaxwhite = Button(
             self.frame, text='Max white score', command=self.plotdetectionquality)
         self.bmaxwhite.grid(row=0, column=3, sticky=E)
+
+        self.bmaxwhite = Button(
+            self.frame, text='Max white score with setpart master', command=self.plotdetectionqualitysetpartmaster)
+        self.bmaxwhite.grid(row=0, column=4, sticky=E)
+
 
         self.bnblocksbest = Button(
             self.frame, text='Number of blocks of whitest', command=self.plotdetectionnblocks)
@@ -42,11 +47,23 @@ class App:
 
         self.l1text = "Filename: " + self.plotter.getfilename()
         self.l2text = "Number of instances: "+str(self.plotter.getninstances()) 
+        self.l3text = "we found at least one nontrivial decomp for " + str(self.plotter.getNNonTrivialDecomp()) 
+
+        self.l4text = "we found at least one nontrivial decomp with setpartitioning master for " + str(self.plotter.getNNonTrivialDecompSetpartmaster()) 
+
+
         Label(self.frame, text=self.l1text).grid(row=0, column=0, sticky=W)
         Label(self.frame, text=self.l2text).grid(row=1, column=0, sticky=W)
+        Label(self.frame, text=self.l3text).grid(row=2, column=0, sticky=W)
+        Label(self.frame, text=self.l4text).grid(row=3, column=0, sticky=W)
+
+
 
     def plotdetectionquality(self):
         self.plotter.plotdetectionquality()
+
+    def plotdetectionqualitysetpartmaster(self):
+        self.plotter.plotdetectionqualitysetpartmaster()
 
     def plotdetectionnblocks(self):
         self.plotter.plotnblocksofbest()
