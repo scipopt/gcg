@@ -14,11 +14,11 @@ class App:
 
         self.bmaxwhite = Button(
             self.frame, text='Max white score', command=self.plotdetectionquality)
-        self.bmaxwhite.grid(row=0, column=3, sticky=E)
+        self.bmaxwhite.grid(row=1, column=4, sticky=E)
 
-        self.bmaxwhite = Button(
+        self.bmaxwhitesetpart = Button(
             self.frame, text='Max white score with setpart master', command=self.plotdetectionqualitysetpartmaster)
-        self.bmaxwhite.grid(row=0, column=4, sticky=E)
+        self.bmaxwhitesetpart.grid(row=2, column=4, sticky=E)
 
 
         self.bnblocksbest = Button(
