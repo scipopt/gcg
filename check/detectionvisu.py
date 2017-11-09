@@ -47,9 +47,9 @@ class App:
 
         self.l1text = "Filename: " + self.plotter.getfilename()
         self.l2text = "Number of instances: "+str(self.plotter.getninstances()) 
-        self.l3text = "we found at least one nontrivial decomp for " + str(self.plotter.getNNonTrivialDecomp()) 
+        self.l3text = "found at least one nontrivial decomp for " + str(self.plotter.getNNonTrivialDecomp()) 
 
-        self.l4text = "we found at least one nontrivial decomp with setpartitioning master for " + str(self.plotter.getNNonTrivialDecompSetpartmaster()) 
+        self.l4text = "found at least one nontrivial decomp with setpartitioning master for " + str(self.plotter.getNNonTrivialDecompSetpartmaster()) 
 
 
         Label(self.frame, text=self.l1text).grid(row=0, column=0, sticky=W)
