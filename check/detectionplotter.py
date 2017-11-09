@@ -160,7 +160,7 @@ class Plotter:
 		#	print decompscores[decompscore]
 			if len(self.decompscores[decompscore]) == 0:
 				continue
-			if self.decompscores[decompscore][0] >= 0.:
+			if self.decompscores[decompscore][0] > 0.:
 				counter = counter + 1
 		return counter
 
@@ -177,7 +177,7 @@ class Plotter:
 					break
 			if decompid == len(self.decompscores[decompscore]):
 				continue
-			if self.decompscores[decompscore][decompid] >= 0.:
+			if self.decompscores[decompscore][decompid] > 0.:
 				counter = counter + 1
 		return counter
 
