@@ -2721,27 +2721,70 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          break;
 
       *bestredcostvalid &= pricingcontroller->redcostIsValid();
-
       optimal = pricingcontroller->pricingIsOptimal();
 
-      if( enablestab )
+      if( pricetype->getType() == GCG_PRICETYPE_REDCOST )
       {
-         SCIP_Real beststabredcost;
          SCIP_Real lowerboundcandidate;
          SCIP_Real stabdualval = 0.0;
 
-         assert(pricetype->getType() == GCG_PRICETYPE_REDCOST);
          assert(lowerbound != NULL);
 
          SCIP_CALL( getStabilizedDualObjectiveValue(pricetype, &stabdualval, stabilized) );
-         lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost;
-         beststabredcost = beststabobj - pricingcontroller->getDualconvsum(pricetype);
+
+         lowerboundcandidate = stabdualval + beststabobj;
 
          SCIPdebugMessage("optimal = %u, bestredcostvalid = %u, stabilized = %u\n", optimal, *bestredcostvalid, stabilized);
-         SCIPdebugMessage("lowerboundcandidate = %.8g, lpobjval = %.8g, bestredcost = %.8g, stabdualval = %.8g, beststabobj = %.8g, beststabredcost = %.8g\n",
-            lowerboundcandidate, SCIPgetLPObjval(scip_), bestredcost, stabdualval, beststabobj, beststabredcost);
+         SCIPdebugMessage("lpobjval = %.8g, bestredcost = %.8g, stabdualval = %.8g, beststabobj = %.8g\n",
+            SCIPgetLPObjval(scip_), bestredcost, stabdualval, beststabobj);
+         SCIPdebugMessage("lowerboundcandidate = %.8g\n", lowerboundcandidate);
 
-         assert(!optimal || stabilized || SCIPisDualfeasEQ(scip_, lowerboundcandidate, stabdualval + beststabobj));
+         assert(!optimal || stabilized || SCIPisDualfeasEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, lowerboundcandidate));
+
+         if( enablestab )
+         {
+            SCIP_Real beststabredcost = beststabobj - pricingcontroller->getDualconvsum(pricetype);
+
+            SCIPdebugMessage("beststabredcost = %.8g\n", beststabredcost);
+
+            /* If all pricing problems have been solved to optimality, update subgradient product and stability center */
+            if( optimal )
+            {
+               GCG_COL** pricingcols = NULL;
+
+               SCIP_CALL( SCIPallocBufferArray(scip_, &pricingcols, pricerdata->npricingprobs) );
+               BMSclearMemoryArray(pricingcols, pricerdata->npricingprobs);
+
+               pricingcontroller->getBestCols(pricingcols);
+
+               SCIPdebugMessage("update subgradient product and stability center\n");
+
+               /* update subgradient product before a potential change of the stability center */
+               SCIP_CALL( stabilization->updateSubgradientProduct(pricingcols) );
+               SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals, pricingcols) );
+
+               SCIPfreeBufferArray(scip_, &pricingcols);
+            }
+
+            /* activate or deactivate mispricing schedule, depending on whether improving columns have been found */
+            if( nfoundvars == 0 )
+            {
+               if( stabilized )
+               {
+                  SCIPdebugMessage("enabling mispricing schedule\n");
+                  stabilization->activateMispricingSchedule();
+                  stabilization->updateAlphaMisprice();
+               }
+               else
+                  stabilization->disablingMispricingSchedule();
+            }
+            else if( *bestredcostvalid && SCIPisDualfeasNegative(scip_, beststabredcost) )
+            {
+               if( stabilization->isInMispricingSchedule() )
+                  stabilization->disablingMispricingSchedule();
+               stabilization->updateAlpha();
+            }
+         }
 
          if( *bestredcostvalid )
          {
@@ -2760,79 +2803,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
                   SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i], TRUE) );
                }
-            }
-         }
-
-         /* If all pricing problems have been solved to optimality, update subgradient product and stability center */
-         if( optimal )
-         {
-            GCG_COL** pricingcols = NULL;
-
-            SCIP_CALL( SCIPallocBufferArray(scip_, &pricingcols, pricerdata->npricingprobs) );
-            BMSclearMemoryArray(pricingcols, pricerdata->npricingprobs);
-
-            pricingcontroller->getBestCols(pricingcols);
-
-            /* update subgradient product before a potential change of the stability center */
-            SCIP_CALL( stabilization->updateSubgradientProduct(pricingcols) );
-            SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals, pricingcols) );
-
-            SCIPfreeBufferArray(scip_, &pricingcols);
-         }
-
-         SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %u, nfoundvars = %d, *bestredcostvalid = %u\n", stabilized, nfoundvars, *bestredcostvalid);
-
-         /* activate or deactivate mispricing schedule, depending on whether improving columns have been found */
-         if( nfoundvars == 0 )
-         {
-            if( stabilized )
-            {
-               SCIPdebugMessage("enabling mispricing schedule\n");
-               stabilization->activateMispricingSchedule();
-               stabilization->updateAlphaMisprice();
-            }
-            else
-               stabilization->disablingMispricingSchedule();
-         }
-         else if( *bestredcostvalid && SCIPisDualfeasNegative(scip_, beststabredcost) )
-         {
-            if( stabilization->isInMispricingSchedule() )
-               stabilization->disablingMispricingSchedule();
-            stabilization->updateAlpha();
-         }
-      }
-
-      /* in case stabilization has not been performed, update the lower bound */
-      else if( *bestredcostvalid && (pricetype->getType() == GCG_PRICETYPE_REDCOST) )
-      {
-         SCIP_Bool enableppobjcg;
-         SCIP_Real lowerboundcandidate;
-
-#ifndef NDEBUG
-         SCIP_Real stabdualval = 0.0;
-#endif
-         assert(!stabilized);
-         assert(lowerbound != NULL );
-         lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost; /*lint !e666*/
-         SCIPdebugMessage("*lowerbound = %.8g, lowerboundcandidate = %.8g, bestredcost = %.8g\n", *lowerbound, lowerboundcandidate, bestredcost);
-         *lowerbound = MAX(*lowerbound, lowerboundcandidate);
-
-#ifndef NDEBUG
-         SCIP_CALL( getStabilizedDualObjectiveValue(pricetype, &stabdualval, stabilized) );
-         SCIPdebugMessage("stabdualval = %.8g, beststabobj = %.8g\n", stabdualval, beststabobj);
-         assert(!optimal || SCIPisDualfeasEQ(scip_, lowerboundcandidate, stabdualval + beststabobj));
-#endif
-
-         /* add cuts based on the latest pricing problem objective to the original problem */
-         SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg) );
-         if( enableppobjcg && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
-         {
-            for( i = 0; i < pricerdata->npricingprobs; ++i )
-            {
-               if( !GCGisPricingprobRelevant(GCGmasterGetOrigprob(scip_), i) )
-                  continue;
-
-               SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i], TRUE) );
             }
          }
       }
