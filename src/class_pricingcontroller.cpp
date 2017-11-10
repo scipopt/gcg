@@ -317,7 +317,7 @@ SCIP_Bool Pricingcontroller::redcostIsValid()
 
       if( GCGpricingjobGetNImpCols(pricingjobs[i]) > 0 )
          return TRUE;
-      else if( GCGpricingjobIsHeuristic(pricingjobs[i]) || SCIPgetStatus(GCGpricingjobGetPricingscip(pricingjobs[i])) != SCIP_STATUS_OPTIMAL )
+      else if( GCGpricingjobIsHeuristic(pricingjobs[i]) || GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL )
          unknownexists = TRUE;
    }
 
