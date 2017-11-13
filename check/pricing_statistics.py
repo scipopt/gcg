@@ -55,6 +55,12 @@ def parse_arguments(args):
                         default="",
                         help='names of the instances to be included in the plot/data-collection (default is all instances in FILENAMES)')
 
+    parser.add_argument('-z', '--summary-only', action='store_true',
+                        help='create only summary plots')
+
+    parser.add_argument('-t', '--no-text', action='store_true',
+                        help='do not write any text on the plots (such as node or round numbers)')
+
     parser.add_argument('-S', '--save', action='store_true',
                         help='saves the collected data in a pickle-file, in the OUTDIR, instead of plotting it (see --load)')
 
@@ -91,6 +97,8 @@ def set_params(args):
     params['colors'] = args.colors
     params['lines'] = args.lines
     params['instances'] = args.instances
+    params['summary_only'] = args.summary_only
+    params['no_text'] = args.no_text
     params['save'] = args.save
     params['load'] = args.load
 
@@ -200,76 +208,87 @@ def make_plot(data, name):
     print '    data formatted:', time.time() - start_time
     start_time = time.time()
 
-    # add information about the stabilization & pricing rounds
-    prev_rnd = flat_data['pricing_round'][0]
-    prev_stab = flat_data['stab_round'][0]
-    prev_x = 0
-    texts = []
-    enfLine = False
-    for i in range(len(x)):
-        rnd = flat_data['pricing_round'][i]
-        stab = flat_data['stab_round'][i]
-        if stab > prev_stab or rnd > prev_rnd:
-            if rnd > prev_rnd:
-                # bold line for a new pricing round
-                if params['lines'] or (x[i] - prev_x)/totalTime > 0.005 or enfLine:
-                    line = lines.Line2D([x[i],x[i]],[0,1],color='r',linewidth=1.0, transform = trans)
-                    ax.add_line(line)
-                    if (x[i] - prev_x)/totalTime > 0.025:
-                        enfLine = True
-                    else:
-                        enfLine = False
-                texts.append(ax.text(prev_x, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
-                prev_rnd = rnd
-                prev_stab = 1
-                prev_x = x[i]
-            else:
-                # dashed line for a new stabilization round
-                line = lines.Line2D([x[i],x[i]],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
-                ax.add_line(line)
-                prev_stab = stab
-    texts.append(ax.text(prev_x, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
-    text_height = [t for t in texts if t.get_visible()][-1].get_window_extent(renderer = fig.canvas.get_renderer()).transformed(ax.transAxes.inverted()).y1
+    if params['no_text']:
+        # save the figure
+        if params['details']:
+            plt.savefig(params['outdir'] + '/' + name + '.pdf')
+        else:
+            plt.savefig(params['outdir'] + '/' + name + '.png')
+        plt.close()
 
-    # check for overlapping texts
-    remove_overlapping_texts(fig,texts)
-
-    print '    stab- and pricing-round information:', time.time() - start_time
-    start_time = time.time()
-
-    # add information about the nodes
-    prev_node = flat_data['node'][0]
-    prev_x = 0
-    texts = []
-    for i in range(len(x)):
-        node = flat_data['node'][i]
-        if node > prev_node:
-            line = lines.Line2D([x[i],x[i]],[1,text_height+0.01],color='r',linewidth=1.0, transform = trans)
-            line.set_clip_on(False)
-            ax.add_line(line)
-            texts.append(ax.text(prev_x, text_height+0.02, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
-            prev_node = node
-            prev_x = x[i]
-    texts.append(ax.text(prev_x, text_height+0.02, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
-
-    # check for overlapping texts
-    remove_overlapping_texts(fig,texts)
-
-    text_height = [t for t in texts if t.get_visible()][-1].get_window_extent(renderer = fig.canvas.get_renderer()).transformed(ax.transAxes.inverted()).y1
-
-    print '    node information:', time.time() - start_time
-    start_time = time.time()
-
-    # save the figure
-    fig.subplots_adjust(top=0.98/text_height)
-    if params['details']:
-        plt.savefig(params['outdir'] + '/' + name + '.pdf')
+        print '    save:', time.time() - start_time
+        print '    saved figure'
     else:
-        plt.savefig(params['outdir'] + '/' + name + '.png')
-    plt.close()
+        # add information about the stabilization & pricing rounds
+        prev_rnd = flat_data['pricing_round'][0]
+        prev_stab = flat_data['stab_round'][0]
+        prev_x = 0
+        texts = []
+        enfLine = False
+        for i in range(len(x)):
+            rnd = flat_data['pricing_round'][i]
+            stab = flat_data['stab_round'][i]
+            if stab > prev_stab or rnd > prev_rnd:
+                if rnd > prev_rnd:
+                    # bold line for a new pricing round
+                    if params['lines'] or (x[i] - prev_x)/totalTime > 0.005 or enfLine:
+                        line = lines.Line2D([x[i],x[i]],[0,1],color='r',linewidth=1.0, transform = trans)
+                        ax.add_line(line)
+                        if (x[i] - prev_x)/totalTime > 0.025:
+                            enfLine = True
+                        else:
+                            enfLine = False
+                    texts.append(ax.text(prev_x, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
+                    prev_rnd = rnd
+                    prev_stab = 1
+                    prev_x = x[i]
+                else:
+                    # dashed line for a new stabilization round
+                    line = lines.Line2D([x[i],x[i]],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
+                    ax.add_line(line)
+                    prev_stab = stab
+        texts.append(ax.text(prev_x, 1.01, 'Round '+str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
+        text_height = [t for t in texts if t.get_visible()][-1].get_window_extent(renderer = fig.canvas.get_renderer()).transformed(ax.transAxes.inverted()).y1
 
-    print '    save:', time.time() - start_time
-    print '    saved figure'
+        # check for overlapping texts
+        remove_overlapping_texts(fig,texts)
+
+        print '    stab- and pricing-round information:', time.time() - start_time
+        start_time = time.time()
+
+        # add information about the nodes
+        prev_node = flat_data['node'][0]
+        prev_x = 0
+        texts = []
+        for i in range(len(x)):
+            node = flat_data['node'][i]
+            if node > prev_node:
+                line = lines.Line2D([x[i],x[i]],[1,text_height+0.01],color='r',linewidth=1.0, transform = trans)
+                line.set_clip_on(False)
+                ax.add_line(line)
+                texts.append(ax.text(prev_x, text_height+0.02, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
+                prev_node = node
+                prev_x = x[i]
+        texts.append(ax.text(prev_x, text_height+0.02, 'Node '+str(prev_node), ha='left', size = textsize, style='italic', transform = trans))
+
+        # check for overlapping texts
+        remove_overlapping_texts(fig,texts)
+
+        text_height = [t for t in texts if t.get_visible()][-1].get_window_extent(renderer = fig.canvas.get_renderer()).transformed(ax.transAxes.inverted()).y1
+
+        print '    node information:', time.time() - start_time
+        start_time = time.time()
+
+        # save the figure
+        fig.subplots_adjust(top=0.98/text_height)
+        if params['details']:
+            plt.savefig(params['outdir'] + '/' + name + '.pdf')
+        else:
+            plt.savefig(params['outdir'] + '/' + name + '.png')
+        plt.close()
+
+        print '    save:', time.time() - start_time
+        print '    saved figure'
 
 def make_summary_plot(data, name):
     """
@@ -302,7 +321,7 @@ def make_summary_plot(data, name):
 
     # add a line after the root-node
     if summary.node.max() > 1:
-        x_line = (summary[summary.node == 2].pricing_round.iloc[0] + summary[summary.node == 1].pricing_round.iloc[-1])/2.
+        x_line = (summary[summary.node > 1].pricing_round.iloc[0] + summary[summary.node == 1].pricing_round.iloc[-1])/2.
     else:
         x_line = max(x)
     line = lines.Line2D([x_line,x_line],[0,1],color='orange',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax1.transData, ax1.transAxes))
@@ -344,6 +363,9 @@ def plots(data, name):
 
     # always build the summary plot
     make_summary_plot(data, name)
+
+    if params['summary_only']:
+        return
 
     if params['maxRound'] <= 0:
         maxRnd = max(data.index.get_level_values('pricing_round').values)
@@ -394,10 +416,29 @@ def load_data(files):
         start_time = time.time()
         df = pd.read_pickle(file)
         print '    loading data:', time.time() - start_time
+        if df.empty:
+            print '    no data found'
+        else:
+            start_time = time.time()
+            plots(df, name)
+            print '    total plotting:', time.time() - start_time
+        print '    leaving', name
+
+def collect_data(name, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars):
+    index = pd.MultiIndex.from_arrays([ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob],
+                                      names=["node", "pricing_round", "stab_round", "pricing_prob"])
+    data = {'time': val_time, 'nVars': val_nVars}
+    df = pd.DataFrame(data=data, index = index)
+
+    if params['save']:
+        start_time = time.time()
+        df.to_pickle(params['outdir'] + '/' + name + '.pkl')
+        print '    total saving:', time.time() - start_time
+
+    else:
         start_time = time.time()
         plots(df, name)
         print '    total plotting:', time.time() - start_time
-        print '    leaving', name
 
 def generate_files(files):
     """
@@ -432,8 +473,11 @@ def generate_files(files):
                     # if the file is a out-file, generated by the check-script, reset the variables whenever a new instance starts
                     if line.startswith("@01"):
                         # print message, if the previous problem is not done yet
-                        if not done:
-                            print '    no pricing data found'
+                        if not done and problemFileName:
+                            print '    ended abruptly'
+                            collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
+                            print '    leaving', problemFileName
+                            done = True
 
                         # initialize all index-lists
                         ind_node = []
@@ -475,7 +519,6 @@ def generate_files(files):
                         done = True
                         continue
                     print 'entering', problemFileName
-                    start_time = time.time()
 
                 # pricer statistics end
                 elif line.startswith("SCIP Status        :"):
@@ -485,21 +528,7 @@ def generate_files(files):
                         done = True
                         continue
 
-                    index = pd.MultiIndex.from_arrays([ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob],
-                                                      names=["node", "pricing_round", "stab_round", "pricing_prob"])
-                    data = {'time': val_time, 'nVars': val_nVars}
-                    df = pd.DataFrame(data=data, index = index)
-                    print '    collected the data:', time.time() - start_time
-
-                    if params['save']:
-                        start_time = time.time()
-                        df.to_pickle(params['outdir'] + '/' + problemFileName + '.pkl')
-                        print '    total saving:', time.time() - start_time
-
-                    else:
-                        start_time = time.time()
-                        plots(df, problemFileName)
-                        print '    total plotting:', time.time() - start_time
+                    collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
 
                     done = True
 
@@ -518,14 +547,20 @@ def generate_files(files):
                         node = int(message.split()[-1])
                         pricing_round += 1
                     except ValueError:
-                        print '    data-output ends abrubtly'
+                        print '    ended abruptly'
+                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
+                        print '    leaving', problemFileName
+                        done = True
                         continue
 
                 elif message.startswith("Stabilization round "):
                     try:
                         stab_round = int(message.split()[-1])
                     except ValueError:
-                        print '    data-output ends abrubtly'
+                        print '    ended abruptly'
+                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
+                        print '    leaving', problemFileName
+                        done = True
                         continue
 
                 elif message.startswith("Pricing prob "):
@@ -546,7 +581,10 @@ def generate_files(files):
                         val_time.append(float(message.split()[-1]))
                         val_nVars.append(int(message.split()[5]))
                     except ValueError:
-                        print '    data-output ends abrubtly'
+                        print '    ended abruptly'
+                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
+                        print '    leaving', problemFileName
+                        done = True
                         continue
 
 def main():
