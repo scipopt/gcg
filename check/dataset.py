@@ -165,6 +165,17 @@ class Dataset:
 				maxdetectiontime = self.detectiontimes[instance]
 		return maxdetectiontime
 
+	def getmaxnblocks(self):
+		maxnblocks = 0.
+		for instance in self.decompnblocks:
+			if len(self.decompnblocks[instance]) == 0:
+				continue
+			if self.decompnblocks[instance][0] > maxnblocks:
+				maxnblocks = self.decompnblocks[instance][0]
+		return maxnblocks
+
+
+
 	def getNNonTrivialDecomp( self):
 		counter = 0
 		for decompscore in self.decompscores:

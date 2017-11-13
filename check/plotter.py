@@ -105,22 +105,35 @@ class Plotter:
 
 
 
-    def plotnblocksofbest(self):
+    def plotnblocksofbest(self, datasets):
         maxnblocks = 0
-        for decomp in self.decompnblocks:
-            if self.decompnblocks[decomp][0] > maxnblocks:
-                maxnblocks = self.decompnblocks[decomp][0]
+        for dataset in datasets:
+            currblock = dataset.getmaxnblocks()
+            if currblock > maxnblocks:
+                maxnblocks = currblock
         tauvals = np.arange(0., maxnblocks)
-        instancefractions = []
-        for tau in tauvals:
-            instancefractions.append(self.fractionofinstanceswithnblocksleast(self.decompnblocks, tau) )
+        instfractsfordataset = []
+        labels = []
+        for dataset in datasets:
+            instfracts = []
+            for tau in tauvals:
+                instfracts.append(dataset.fractionofinstanceswithnblocksleast(dataset.decompnblocks, tau) )
+            instfractsfordataset.append(instfracts)
+
         plt.ylabel('fraction of instances')
         plt.xlabel('whitest found decomposition has at least this number of blocks ')
         
     #   print tauvals
         #print instancefractions
+        for datasetid in range(len(datasets)):
+            plt.semilogx(tauvals, instfractsfordataset[datasetid])
+            labels.append(datasets[datasetid].getsettingsname())
 
-        plt.semilogx(tauvals, instancefractions)
+        plt.legend(labels, ncol=4, loc='upper center', 
+           bbox_to_anchor=[0.5, 1.1], 
+           columnspacing=1.0, labelspacing=0.0,
+           handletextpad=0.0, handlelength=1.5,
+           fancybox=True, shadow=True)
 
         plt.show()
 

@@ -81,7 +81,7 @@ class App:
         self.plotter.plotdetectionqualitysetpartmaster(self.datasets)
 
     def plotdetectionnblocks(self):
-        self.plotter.plotnblocksofbest()
+        self.plotter.plotnblocksofbest(self.datasets)
 
     def plotdetectionndecomps(self):
         self.plotter.plotndecomps()
