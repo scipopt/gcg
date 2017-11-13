@@ -100,6 +100,8 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 #define DEFAULT_ALLOWCLASSIFIERDUPLICATES FALSE
 #define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
+#define DEFAULT_MAXNCLASSESLARGEPROBS 5
+#define DEFAULT_MAXNCLASSES 9
 #define DEFAULT_ENABLEORIGDETECTION FALSE /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
 #define DEFAULT_SMARTSCORE                            FALSE
@@ -156,6 +158,8 @@ struct SCIP_ConshdlrData
    int                   sizedecomps;                       /**< size of the decomp and complete seeeds array */
    int                   sizeincompleteseeeds;              /**< size of the incomplete seeeds array */
    int                   maxndetectionrounds;               /**< maximum number of detection loop rounds  */
+   int                   maxnclassesperclassifier;              /**< maximum number of classes per classifier */
+   int                   maxnclassesperclassifierforlargeprobs; /** maximum number of classes per classifier for large problems (nvars + nconss >= 50000) */
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool             allowclassifierduplicates;         /**< indicates whether classifier duplicates are allowed (for statistical reasons) */
@@ -968,6 +972,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->detectors = NULL;
    conshdlrdata->hasrun = FALSE;
    conshdlrdata->maxndetectionrounds = 0;
+   conshdlrdata->maxnclassesperclassifier = 0;
+   conshdlrdata->maxnclassesperclassifierforlargeprobs = 0;
    conshdlrdata->enableorigdetection = FALSE;
    conshdlrdata->seeedpoolunpresolved = NULL;
    conshdlrdata->seeedpool = NULL;
@@ -1037,6 +1043,15 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/maxnclassesperclassifier",
+      "Maximum number of classes per classifier", &conshdlrdata->maxnclassesperclassifier, FALSE,
+      DEFAULT_MAXNCLASSES, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs",
+      "Maximum number of classes per classifier for large problems (nconss + nvars >= 50000)", &conshdlrdata->maxnclassesperclassifierforlargeprobs, FALSE,
+      DEFAULT_MAXNCLASSESLARGEPROBS, 0, INT_MAX, NULL, NULL) );
+
    SCIP_CALL( SCIPaddIntParam(scip, "detection/origprob/weightinggpresolvedoriginaldecomps",
       "Weighting method when comparing decompositions for presolved and unpresolved problem", &conshdlrdata->weightinggpresolvedoriginaldecomps, TRUE,
       NO_MODIF, 0, 3, NULL, NULL) );

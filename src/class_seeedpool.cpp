@@ -3343,10 +3343,12 @@ int Seeedpool::getNConsClassifiers()
 void Seeedpool::reduceConsclasses()
 {
    /** set the number of classes the classifiers should be reduced to */
-   int maxnclasses = 9;
+   int maxnclasses = 0;
 
-   if( getNConss() + getNVars() > 50000 )
-      maxnclasses = 3;
+   if( getNConss() + getNVars() >= 50000 )
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs", &maxnclasses);
+   else
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maxnclasses);
 
    for( size_t classifierid = 0; classifierid < consclassescollection.size(); ++ classifierid )
    {
@@ -3616,10 +3618,12 @@ int Seeedpool::getNVarClassifiers()
 void Seeedpool::reduceVarclasses()
 {
    /** set the number of classes the classifiers should be reduced to */
-   int maxnclasses = 9;
+   int maxnclasses = 0;
 
-   if( getNConss() + getNVars() > 50000 )
-      maxnclasses = 3;
+   if( getNConss() + getNVars() >= 50000 )
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs", &maxnclasses);
+   else
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maxnclasses);
 
    for( size_t classifierid = 0; classifierid < varclassescollection.size(); ++ classifierid )
    {

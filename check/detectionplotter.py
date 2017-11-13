@@ -256,7 +256,7 @@ class Plotter:
 		for instance in self.detectiontimes:
 			if self.detectiontimes[instance] > maxdetectiontime:
 				maxdetectiontime = self.detectiontimes[instance]
-		tauvals = np.arange(0., maxdetectiontime*1.1, 1.1*maxdetectiontime/100.)
+		tauvals = np.arange(0, maxdetectiontime*1.1, 1.1*maxdetectiontime/1000.)
 		instancefractions = []
 		for tau in tauvals:
 			instancefractions.append(self.fractionofmemberswithvalatmostwithscoreatleast(self.instancenames, self.detectiontimes, tau) )
@@ -268,6 +268,7 @@ class Plotter:
 		#print instancefractions
 		plt.plot(tauvals, instancefractions)
 
+		plt.xscale('symlog')
 		plt.show()
 
 
