@@ -150,6 +150,7 @@ struct SCIP_ConshdlrData
  //  std::vector<SCIP_HASHMAP*> initalpartialdecomps;                      /**< possible incomplete decompositions given by user */
    int                   ndetectors;                        /**< number of detectors */
    SCIP_CLOCK*           detectorclock;                     /**< clock to measure detection time */
+   SCIP_CLOCK*           completedetectionclock;            /**< clock to measure detection time */
    SCIP_Bool             hasrun;                            /**< flag to indicate whether we have already detected */
    int                   ndecomps;                          /**< number of decomposition structures  */
    int                   sizedecomps;                       /**< size of the decomp and complete seeeds array */
@@ -868,6 +869,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    assert(conshdlrdata != NULL);
 
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->detectorclock) );
+   SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->completedetectionclock) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
@@ -995,8 +997,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
  //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->allrelevantfinishedseeeds, conshdlrdata->sizedecomps) );
 //   SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->incompleteseeeds, conshdlrdata->sizeincompleteseeeds) );
 
-   SCIP_CALL( SCIPcreateWallClock(scip, &conshdlrdata->detectorclock) );
-
+   SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->detectorclock) );
+   SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->completedetectionclock) );
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,
@@ -4355,6 +4357,10 @@ SCIP_RETCODE DECdetectStructure(
 
    conshdlrdata->seeedpool = NULL;
 
+   SCIP_CALL(SCIPresetClock(scip, conshdlrdata->completedetectionclock));
+   SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
+
+
    /* check whether only legacy mode should be executed */
    SCIP_Bool onlylegacymode;
    SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacymode);
@@ -4383,9 +4389,12 @@ SCIP_RETCODE DECdetectStructure(
          conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
 
+      SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
+
       if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
          SCIP_CALL(SCIPtransformProb(scip));
 
+      SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
 
       /** get block number candidates and conslcassifier for original problem*/
       if( classifyOrig )
@@ -4416,6 +4425,7 @@ SCIP_RETCODE DECdetectStructure(
          varClassDistributions.push_back(classifier);
       }
 
+      SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
       //Presolving
       if( presolveOrigProblem )
          SCIP_CALL(SCIPpresolve(scip));
@@ -4434,10 +4444,12 @@ SCIP_RETCODE DECdetectStructure(
          return SCIP_OKAY;
       }
 
+
+
       /** start detection clocks */
       SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
       SCIP_CALL(SCIPstartClock(scip, conshdlrdata->detectorclock));
-
+      SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
       if( conshdlrdata->seeedpool == NULL )
       {
          conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
@@ -4495,6 +4507,8 @@ SCIP_RETCODE DECdetectStructure(
       SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
 
    } /* end of if( !onlylegacy ) */
+
+   SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock) );
 
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip, result );
 
@@ -5788,6 +5802,8 @@ SCIP_RETCODE GCGprintDecompInformation(
    seeediter = conshdlrdata->listall->begin();
    seeediterend = conshdlrdata->listall->end();
 
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  SCIPgetClockTime(scip, conshdlrdata->completedetectionclock ) );
+
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  (int) conshdlrdata->listall->size() );
 
 
@@ -5799,7 +5815,6 @@ SCIP_RETCODE GCGprintDecompInformation(
 
       seeed = *seeediter;
       seeedpool = ( seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool  );
-
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  (*seeediter)->getNBlocks() );
       for( int block = 0; block < nblocks; ++block )

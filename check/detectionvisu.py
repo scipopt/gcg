@@ -41,6 +41,10 @@ class App:
             self.frame, text='Number of classes for classifier', command=self.plotnclassesforclassifier)
         self.bnclassesforclassifier.grid(row=3, column=3, sticky=N+S+W+E)
 
+        self.bndetectiontimes = Button(
+            self.frame, text='detection times', command=self.plotdetectiontimes)
+        self.bndetectiontimes.grid(row=4, column=3, sticky=N+S+W+E)
+
 
 
 
@@ -78,6 +82,10 @@ class App:
 
     def plotdetectionndecomps(self):
         self.plotter.plotndecomps()
+
+    def plotdetectionndecomps(self):
+        self.plotter.plotdetectiontimes()
+
 
     def plotnclassesforclassifier(self):
         classifierid = self.listboxclassifier.curselection()[0]

@@ -2131,7 +2131,7 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( DECdecompFree(scip, &relaxdata->decdecomp) );
    }
 
-   SCIPfreeBlockMemoryArray( scip, & relaxdata->filename, SCIP_MAXSTRLEN);
+   SCIPfreeBlockMemoryArrayNull( scip, & relaxdata->filename, SCIP_MAXSTRLEN);
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;

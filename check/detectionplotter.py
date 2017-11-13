@@ -18,6 +18,7 @@ class Plotter:
 		self.decompssetpartmaster = {}
 		self.decompnblocks = {}
 		self.maxndecomps = 0
+		self.detectiontimes = {}
 
 		self.filename = filename
 
@@ -92,6 +93,9 @@ class Plotter:
 							nmembers = int(line)
 							self.classnames[instancename][classifiername].append(classname)
 							self.classnmembers[instancename][classifiername].append(nmembers)
+					line = f.readline()
+					detectiontime = float(line)
+					self.detectiontimes[instancename] = detectiontime
 					line = f.readline()
 					ndecomps = int(line)
 					for decomp in range(ndecomps):
@@ -231,6 +235,14 @@ class Plotter:
 				counter = counter + 1
 		return float(counter)/float(len(decompnblocks))
 
+	def fractionofmemberswithvalatmostwithscoreatleast( self, members, hashmapvalue, maxvalue):
+		counter = 0
+		for instance in members:
+			if hashmapvalue[instance] <= maxvalue:
+				counter = counter + 1
+		return float(counter)/float(len(members))
+
+
 	def fractionofinstanceswithatleasttauclasses( self, classnames, minclasses, classifier):
 		counter = 0
 		for instance in classnames:
@@ -238,6 +250,26 @@ class Plotter:
 			if len(classnames[instance][classifier]) >= minclasses:
 				counter = counter + 1
 		return float(counter)/float(len(classnames))
+
+	def plotdetectiontimes(self):
+		maxdetectiontime = 0.
+		for instance in self.detectiontimes:
+			if self.detectiontimes[instance] > maxdetectiontime:
+				maxdetectiontime = self.detectiontimes[instance]
+		tauvals = np.arange(0., maxdetectiontime, 1.)
+		instancefractions = []
+		for tau in tauvals:
+			instancefractions.append(self.fractionofmemberswithvalatmostwithscoreatleast(self.instancenames, self.decomptimes, tau) )
+		plt.ylabel('fraction of instances')
+		plt.xlabel('Detection time is at most')
+	#	print tauvals
+		#print instancefractions
+
+		plt.plot(tauvals, instancefractions)
+
+		plt.show()
+
+
 
 
 	def plotdetectionquality(self):
