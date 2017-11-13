@@ -83,7 +83,7 @@ class App:
     def plotdetectionndecomps(self):
         self.plotter.plotndecomps()
 
-    def plotdetectionndecomps(self):
+    def plotdetectiontimes(self):
         self.plotter.plotdetectiontimes()
 
 
