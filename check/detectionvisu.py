@@ -1,5 +1,6 @@
 from Tkinter import *
-from detectionplotter import *
+from dataset import *
+from plotter import *
 from tkFileDialog import *
 from ttk import *
 
@@ -12,6 +13,8 @@ class App:
 
         self.frame.winfo_toplevel().title("Plotter for detection statistics")
 
+        self.datasets = []
+        self.plotter = Plotter()
 
         for x in range(60):
             Grid.columnconfigure(self.frame, x, weight=1)
@@ -50,18 +53,18 @@ class App:
 
     def open_file(self):
         name = askopenfilename(initialdir="/local/bastubbe/gcg-dev/check/test")
-        self.plotter = Plotter(name)
+        self.datasets.append(Dataset(name) )
         self.listboxclassifier = Listbox(self.frame)
         self.listboxclassifier.grid(row=10, column=0)
 
-        for item in self.plotter.getclassifiernames():
+        for item in self.datasets[0].getclassifiernames():
             self.listboxclassifier.insert(END, item)
 
-        self.l1text = "Filename: " + self.plotter.getfilename()
-        self.l2text = "Number of instances: "+str(self.plotter.getninstances()) 
-        self.l3text = "found at least one nontrivial decomp for " + str(self.plotter.getNNonTrivialDecomp()) 
+        self.l1text = "Filename: " + self.datasets[0].getfilename()
+        self.l2text = "Number of instances: "+str(self.datasets[0].getninstances()) 
+        self.l3text = "found at least one nontrivial decomp for " + str(self.datasets[0].getNNonTrivialDecomp()) 
 
-        self.l4text = "found at least one nontrivial decomp with setpartitioning master for " + str(self.plotter.getNNonTrivialDecompSetpartmaster()) + "     " 
+        self.l4text = "found at least one nontrivial decomp with setpartitioning master for " + str(self.datasets[0].getNNonTrivialDecompSetpartmaster()) + "     " 
 
 
         Label(self.frame, text=self.l1text).grid(row=0, column=0, sticky=W)
@@ -72,10 +75,10 @@ class App:
 
 
     def plotdetectionquality(self):
-        self.plotter.plotdetectionquality()
+        self.plotter.plotdetectionquality(self.datasets)
 
     def plotdetectionqualitysetpartmaster(self):
-        self.plotter.plotdetectionqualitysetpartmaster()
+        self.plotter.plotdetectionqualitysetpartmaster(self.datasets)
 
     def plotdetectionnblocks(self):
         self.plotter.plotnblocksofbest()
@@ -84,7 +87,7 @@ class App:
         self.plotter.plotndecomps()
 
     def plotdetectiontimes(self):
-        self.plotter.plotdetectiontimes()
+        self.plotter.plotdetectiontimes(self.datasets)
 
 
     def plotnclassesforclassifier(self):

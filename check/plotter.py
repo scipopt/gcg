@@ -5,7 +5,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.rcsetup as rcsetup
-from detectionplotter import *
+from dataset import *
 
 class Plotter:
     def __init__(self):
@@ -33,7 +33,7 @@ class Plotter:
     #   print tauvals
         #print instancefractions
         for datasetid in range(len(datasets)):
-            plt.plot(tauvals, instancefractions[datasetid])
+            plt.plot(tauvals, instfractsfordataset[datasetid])
             labels.append(datasets[datasetid].getsettingsname())
 
         plt.legend(labels, ncol=4, loc='upper center', 
@@ -48,31 +48,58 @@ class Plotter:
 
 
 
-    def plotdetectionquality(self):
+    def plotdetectionquality(self, datasets):
         tauvals = np.arange(0., 1., 0.01)
-        instancefractions = []
-        for tau in tauvals:
-            instancefractions.append(self.fractionofinstanceswithscoreatleast(self.decompscores, tau) )
+        instfractsfordataset = []
+        labels = []
+        for dataset in datasets:
+            instfracts = []
+            for tau in tauvals:
+                instfracts.append(dataset.fractionofinstanceswithscoreatleast(dataset.decompscores, tau) )
+            instfractsfordataset.append(instfracts)
+
         plt.ylabel('fraction of instances')
         plt.xlabel('Whitest found decomp has at least this max white score')
     #   print tauvals
         #print instancefractions
 
-        plt.plot(tauvals, instancefractions)
+        for datasetid in range(len(datasets)):
+            plt.plot(tauvals, instfractsfordataset[datasetid])
+            labels.append(datasets[datasetid].getsettingsname())
+
+        plt.legend(labels, ncol=4, loc='upper center', 
+           bbox_to_anchor=[0.5, 1.1], 
+           columnspacing=1.0, labelspacing=0.0,
+           handletextpad=0.0, handlelength=1.5,
+           fancybox=True, shadow=True)
 
         plt.show()
 
-    def plotdetectionqualitysetpartmaster(self):
+    def plotdetectionqualitysetpartmaster(self, datasets):
         tauvals = np.arange(0., 1., 0.01)
-        instancefractions = []
-        for tau in tauvals:
-            instancefractions.append(self.fractionofinstanceswithscoreatleastsetpartmaster(tau) )
+        instfractsfordataset = []
+        labels = []
+        for dataset in datasets:
+            instfracts = []
+            for tau in tauvals:
+                instfracts.append(dataset.fractionofinstanceswithscoreatleastsetpartmaster(tau) )
+            instfractsfordataset.append(instfracts)
+
         plt.ylabel('fraction of instances')
         plt.xlabel('Whitest found decomp with setpartitioning master has at least this max white score')
     #   print tauvals
         #print instancefractions
 
-        plt.plot(tauvals, instancefractions)
+        for datasetid in range(len(datasets)):
+            plt.plot(tauvals, instfractsfordataset[datasetid])
+            labels.append(datasets[datasetid].getsettingsname())
+
+        plt.legend(labels, ncol=4, loc='upper center', 
+           bbox_to_anchor=[0.5, 1.1], 
+           columnspacing=1.0, labelspacing=0.0,
+           handletextpad=0.0, handlelength=1.5,
+           fancybox=True, shadow=True)
+
 
         plt.show()
 

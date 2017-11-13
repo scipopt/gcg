@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.rcsetup as rcsetup
 
-class Plotter:
+class Dataset:
 	def __init__(self, filename):
 		self.classnames = {}
 		self.classnmembers = {}
@@ -157,6 +157,13 @@ class Plotter:
 								line = line.split(':')
 								linkingvarclassname = line[0]
 					continue
+
+	def getmaxdetectiontime(self):
+		maxdetectiontime = 0.
+		for instance in self.detectiontimes:
+			if self.detectiontimes[instance] > maxdetectiontime:
+				maxdetectiontime = self.detectiontimes[instance]
+		return maxdetectiontime
 
 	def getNNonTrivialDecomp( self):
 		counter = 0
@@ -363,6 +370,10 @@ class Plotter:
 
 
 
+	def getsettingsname(self):
+		settingname = self.filename.split(".")
+		settingname = settingname[len(settingname)-3]
+		return settingname
 
 	def getclassifiernames(self):
 		return self.classifiernames
