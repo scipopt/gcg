@@ -166,7 +166,10 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConsclass)
 
   int maximumnclasses;
 
-  SCIPgetIntParam(scip, "detectors/consclass/maxnclasses", &maximumnclasses); /* if  distribution of classes exceed this number its skipped */
+  if( seeedPropagationData->seeedpool->getNConss() + seeedPropagationData->seeedpool->getNVars() >= 50000 )
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs", &maximumnclasses);
+   else
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maximumnclasses);
 
   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " in dec_consclass: there are %d many different constraintclasses   \n ", seeedPropagationData->seeedpool->getNConsClassifiers() );
 
