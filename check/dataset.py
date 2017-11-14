@@ -174,6 +174,23 @@ class Dataset:
 				maxnblocks = self.decompnblocks[instance][0]
 		return maxnblocks
 
+	def getmaxnnontrivialdecomps(self):
+		maxntrivialdecomps = 0
+		for instance in self.decompscores :
+			if len(self.decompscores[instance]) == 0:
+				continue
+			counter = self.getnnontrivialdecompsforinstance(instance)
+			if counter > maxntrivialdecomps:
+				maxntrivialdecomps = counter
+		return maxntrivialdecomps
+
+	def getnnontrivialdecompsforinstance(self, instance):
+		counter = 0
+		for score in self.decompscores[instance]:
+			if score > 0.:
+				counter = counter + 1
+		return counter
+
 
 
 	def getNNonTrivialDecomp( self):
@@ -233,11 +250,11 @@ class Dataset:
 				counter = counter + 1
 		return float(counter)/float(len(decompscores))
 
-	def fractionofinstanceswithatleasttaudecomps( self, decompscores, minscore):
+	def fractionofinstanceswithatleasttaunontrivialdecomps( self, decompscores, tau):
 		counter = 0
-		for decompscore in decompscores:
+		for instance in decompscores:
 		#	print decompscores[decompscore]
-			if len(decompscores[decompscore]) >= minscore:
+			if self.getnnontrivialdecompsforinstance(instance) >= tau:
 				counter = counter + 1
 		return float(counter)/float(len(decompscores))
 
@@ -349,7 +366,7 @@ class Dataset:
 		tauvals = np.arange(0., maxndecomps)
 		instancefractions = []
 		for tau in tauvals:
-			instancefractions.append(self.fractionofinstanceswithatleasttaudecomps(self.decompscores, tau) )
+			instancefractions.append(self.fractionofinstanceswithatleasttaunontrivialdecomps(self.decompscores, tau) )
 		plt.ylabel('fraction of instances')
 		plt.xlabel('at least this number of decompositions is found')
 

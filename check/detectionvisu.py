@@ -84,7 +84,7 @@ class App:
         self.plotter.plotnblocksofbest(self.datasets)
 
     def plotdetectionndecomps(self):
-        self.plotter.plotndecomps()
+        self.plotter.plotndecomps(self.datasets)
 
     def plotdetectiontimes(self):
         self.plotter.plotdetectiontimes(self.datasets)

@@ -137,22 +137,36 @@ class Plotter:
 
         plt.show()
 
-    def plotndecomps(self):
+    def plotndecomps(self, datasets):
         maxndecomps = 0
-        for decomp in self.decompscores:
-            if len(self.decompscores[decomp]) > maxndecomps:
-                maxndecomps = len(self.decompscores[decomp])
+        for dataset in datasets:
+            currndecomps = dataset.getmaxnnontrivialdecomps()
+            if currndecomps > maxndecomps:
+                maxndecomps = currndecomps
         tauvals = np.arange(0., maxndecomps)
-        instancefractions = []
-        for tau in tauvals:
-            instancefractions.append(self.fractionofinstanceswithatleasttaudecomps(self.decompscores, tau) )
+        instfractsfordataset = []
+        labels = []
+        for dataset in datasets:
+            instfracts = []
+            for tau in tauvals:
+                instfracts.append(dataset.fractionofinstanceswithatleasttaunontrivialdecomps(dataset.decompscores, tau) )
+            instfractsfordataset.append(instfracts)
+
         plt.ylabel('fraction of instances')
-        plt.xlabel('at least this number of decompositions is found')
+        plt.xlabel('at least this number of nontrivial decompositions is found')
 
     #   print tauvals
         #print instancefractions
 
-        plt.plot(tauvals, instancefractions)
+        for datasetid in range(len(datasets)):
+            plt.plot(tauvals, instfractsfordataset[datasetid])
+            labels.append(datasets[datasetid].getsettingsname())
+
+        plt.legend(labels, ncol=4, loc='upper center', 
+           bbox_to_anchor=[0.5, 1.1], 
+           columnspacing=1.0, labelspacing=0.0,
+           handletextpad=0.0, handlelength=1.5,
+           fancybox=True, shadow=True)
 
         plt.show()
 
