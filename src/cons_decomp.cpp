@@ -2768,6 +2768,7 @@ SCIP_RETCODE DECincludeDetector(
    detector->skip = skip;
    detector->usefulRecall = usefulRecall;
    detector->legacymode = legacymode;
+   detector->overruleemphasis = FALSE;
    detector->ndecomps = 0;
    detector->decomps = NULL;
    detector->dectime = 0.;
@@ -2796,6 +2797,10 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/legacymode", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether (old) DETECTSTRUCTURE method of detector <%s> should also be used for detection", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->legacymode), FALSE, legacymode, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/overruleemphasis", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether emphasis settings for detector <%s> should be overruled by normal settings", name);
+   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->overruleemphasis), FALSE, FALSE, NULL, NULL) );
 
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallround", name);
@@ -5632,6 +5637,9 @@ SCIP_RETCODE setDetectionFast(
       SCIP_Result result;
 
       result = SCIP_DIDNOTRUN;
+      if( conshdlrdata->detectors[i]->overruleemphasis )
+         continue;
+
       if( conshdlrdata->detectors[i]->setParamFast != NULL )
          conshdlrdata->detectors[i]->setParamFast(scip, conshdlrdata->detectors[i], &result);
       if( !quiet )
