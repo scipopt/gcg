@@ -55,12 +55,16 @@ private:
    SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
    int                   sorting;            /**< how should pricing problems be sorted */
    SCIP_Real             relmaxsuccessfulprobs; /**< maximal percentage of pricing problems that need to be solved successfully */
+   int                   chunksize;          /**< maximal number of pricing problems to be solved during one pricing loop */
    int                   eagerfreq;          /**< frequency at which all pricing problems should be solved */
    SCIP_Real             jobtimelimit;       /**< time limit per iteration of a pricing job */
 
    /* strategy */
    GCG_PQUEUE*           pqueue;             /**< priority queue containing the pricing jobs */
    SCIP_Real*            score;              /**< scores of the pricing problems */
+   int                   nchunks;            /**< number of pricing problem 'chunks' */
+   int                   curchunk;           /**< index of current chunk of pricing problems */
+   int                   startchunk;         /**< first chunk considered in a pricing call */
    PricingType*          pricingtype_;       /**< current pricing type */
 
    /* statistics */
@@ -91,7 +95,9 @@ public:
    /** setup the priority queue (done once per stabilization round): add all pricing jobs to be performed */
    SCIP_RETCODE setupPriorityQueue(
       SCIP_Real*            dualsolconv,        /**< dual solution values / Farkas coefficients of convexity constraints */
-      int                   maxcols             /**< maximum number of columns to be generated */
+      int                   maxcols,            /**< maximum number of columns to be generated */
+      SCIP_Real*            bestobjvals,
+      SCIP_Real*            bestredcosts
       );
 
    /** get the next pricing job to be performed */
@@ -122,6 +128,9 @@ public:
    /* return whether all pricing problems have been solved to optimality */
    SCIP_Bool pricingIsOptimal();
 
+   /* return whether the current node is infeasible */
+   SCIP_Bool pricingIsInfeasible();
+
    /** reset the lower bound of a pricing job */
    void resetPricingjobLowerbound(
       GCG_PRICINGJOB*       pricingjob          /**< pricing job */
@@ -131,6 +140,9 @@ public:
    SCIP_RETCODE moveColsToColpool(
       Colpool*           colpool             /**< column pool */
       );
+
+   /** check if the next chunk of pricing problems is to be used */
+   SCIP_Bool checkNextChunk();
 
    /** get best columns found by the pricing jobs */
    void getBestCols(

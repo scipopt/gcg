@@ -77,6 +77,12 @@ SCIP_Bool GCGpricingjobIsHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
+/** get the chunk of a pricing job */
+EXTERN
+SCIP_Real GCGpricingjobGetChunk(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
 /** get the score of a pricing job */
 EXTERN
 SCIP_Real GCGpricingjobGetScore(

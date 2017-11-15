@@ -49,13 +49,15 @@ SCIP_RETCODE GCGpricingjobCreate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB**      pricingjob,         /**< pricing job to be created */
    SCIP*                 pricingscip,        /**< SCIP data structure of the corresponding pricing problem */
-   int                   probnr              /**< index of the corresponding pricing problem */
+   int                   probnr,             /**< index of the corresponding pricing problem */
+   int                   chunk               /**< chunk that the pricing problem should belong to */
 )
 {
    SCIP_CALL( SCIPallocMemory(scip, pricingjob) );
 
    (*pricingjob)->pricingscip = pricingscip;
    (*pricingjob)->probnr = probnr;
+   (*pricingjob)->chunk = chunk;
    (*pricingjob)->score = 0.0;
    (*pricingjob)->heuristic = FALSE;
    (*pricingjob)->cols = NULL;
@@ -237,6 +239,14 @@ void GCGpricingjobSetExact(
    )
 {
    pricingjob->heuristic = FALSE;
+}
+
+/** get the chunk of a pricing job */
+SCIP_Real GCGpricingjobGetChunk(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->chunk;
 }
 
 /** get the score of a pricing job */

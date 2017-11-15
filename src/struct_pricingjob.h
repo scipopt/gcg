@@ -53,6 +53,7 @@ struct GCG_PricingJob
    int                  probnr;             /**< index of the corresponding pricing problem */
 
    /* strategic parameters */
+   int                  chunk;              /**< chunk the pricing job belongs to */
    SCIP_Real            score;              /**< current score of the pricing job */
    SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
 
