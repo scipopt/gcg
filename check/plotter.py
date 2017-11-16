@@ -19,7 +19,7 @@ class Plotter:
             currtime = dataset.getmaxdetectiontime()
             if currtime > maxdetectiontime:
                 maxdetectiontime = currtime
-        tauvals = np.arange(0, maxdetectiontime*1.1, 1.1*maxdetectiontime/1000.)
+        tauvals = np.arange(0, maxdetectiontime*1.1, 1.1*float(maxdetectiontime)/1000.)
         instfractsfordataset = []
         for dataset in datasets:
             instfract = []
@@ -28,6 +28,8 @@ class Plotter:
             instfractsfordataset.append(instfract)
         plt.ylabel('fraction of instances')
         plt.xlabel('Detection time is at most')
+
+        plt.gca().set_color_cycle(['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'black', 'brown', 'magenta', 'purple', 'cyan', 'darkgreen'])
 
         plt.axis([0., maxdetectiontime*1.1, 0., 1.])
     #   print tauvals
@@ -62,6 +64,7 @@ class Plotter:
         plt.xlabel('Whitest found decomp has at least this max white score')
     #   print tauvals
         #print instancefractions
+        plt.gca().set_color_cycle(['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'black', 'brown', 'magenta', 'purple', 'cyan', 'darkgreen'])
 
         for datasetid in range(len(datasets)):
             plt.plot(tauvals, instfractsfordataset[datasetid])
@@ -84,6 +87,7 @@ class Plotter:
             for tau in tauvals:
                 instfracts.append(dataset.fractionofinstanceswithscoreatleastsetpartmaster(tau) )
             instfractsfordataset.append(instfracts)
+        plt.gca().set_color_cycle(['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'black', 'brown', 'magenta', 'purple', 'cyan', 'darkgreen'])
 
         plt.ylabel('fraction of instances')
         plt.xlabel('Whitest found decomp with setpartitioning master has at least this max white score')
@@ -119,6 +123,7 @@ class Plotter:
             for tau in tauvals:
                 instfracts.append(dataset.fractionofinstanceswithnblocksleast(dataset.decompnblocks, tau) )
             instfractsfordataset.append(instfracts)
+        plt.gca().set_color_cycle(['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'black', 'brown', 'magenta', 'purple', 'cyan', 'darkgreen'])
 
         plt.ylabel('fraction of instances')
         plt.xlabel('whitest found decomposition has at least this number of blocks ')
@@ -151,6 +156,7 @@ class Plotter:
             for tau in tauvals:
                 instfracts.append(dataset.fractionofinstanceswithatleasttaunontrivialdecomps(dataset.decompscores, tau) )
             instfractsfordataset.append(instfracts)
+        plt.gca().set_color_cycle(['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'black', 'brown', 'magenta', 'purple', 'cyan', 'darkgreen'])
 
         plt.ylabel('fraction of instances')
         plt.xlabel('at least this number of nontrivial decompositions is found')
@@ -168,6 +174,8 @@ class Plotter:
            handletextpad=0.0, handlelength=1.5,
            fancybox=True, shadow=True)
 
+        plt.xscale('symlog')
+
         plt.show()
 
     def plotnclassesforclassifier(self, classifier):
@@ -181,6 +189,7 @@ class Plotter:
             instancefractions.append(self.fractionofinstanceswithatleasttauclasses(self.classnames, tau, classifier) )
         plt.ylabel('fraction of instances')
         plt.xlabel('at least this number of classes is found for classifier '+classifier)
+        plt.gca().set_color_cycle(['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'black', 'brown', 'magenta', 'purple', 'cyan', 'darkgreen'])
 
     #   print tauvals
         #print instancefractions
