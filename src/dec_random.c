@@ -203,7 +203,7 @@ DEC_DECL_EXITDETECTOR(detectorExitRandom)
    assert(detectordata != NULL);
 
    /* free random number generator */
-   SCIPrandomFree(&detectordata->randnumgen);
+   SCIPrandomFree(&detectordata->randnumgen, SCIPblkmem(scip));
 
    return SCIP_OKAY;
 }

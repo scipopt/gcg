@@ -1342,13 +1342,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       SCIPdebugMessage("separate current LP solution\n");
 
       /** separate current probing lp sol of origscip */
-      SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, FALSE, &delayed, &cutoff) );
+      SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, FALSE, TRUE, &delayed, &cutoff) );
 
       if( delayed && !cutoff )
       {
          SCIPdebugMessage("call delayed separators\n");
 
-         SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, TRUE, &delayed, &cutoff) );
+         SCIP_CALL( SCIPseparateSol(origscip, NULL, TRUE, TRUE, TRUE, &delayed, &cutoff) );
       }
 
       /* if cut off is detected set result pointer and return SCIP_OKAY */

@@ -619,7 +619,7 @@ SCIP_DECL_HEUREXIT(heurExitGcgfeaspump)
    assert(heurdata != NULL);
 
    /* free random number generator */
-   SCIPrandomFree(&heurdata->randnumgen);
+   SCIPrandomFree(&heurdata->randnumgen, SCIPblkmem(scip));
 
    /* free working solution */
    SCIP_CALL( SCIPfreeSol(scip, &heurdata->sol) );
