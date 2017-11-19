@@ -3,13 +3,14 @@
 import sys
 import os
 import argparse
+import time
 
 import pandas as pd
+
 import matplotlib.pyplot as plt
 from matplotlib import lines
 from matplotlib import transforms
 from matplotlib import ticker
-import time
 
 # Define global variables
 params = {}
@@ -58,6 +59,9 @@ def parse_arguments(args):
     parser.add_argument('-z', '--summary-only', action='store_true',
                         help='create only summary plots')
 
+    parser.add_argument('-Z', '--no-summary', action='store_true',
+                        help='create no summary plots')
+
     parser.add_argument('-t', '--no-text', action='store_true',
                         help='do not write any text on the plots (such as node or round numbers)')
 
@@ -98,6 +102,7 @@ def set_params(args):
     params['lines'] = args.lines
     params['instances'] = args.instances
     params['summary_only'] = args.summary_only
+    params['no_summary'] = args.no_summary
     params['no_text'] = args.no_text
     params['save'] = args.save
     params['load'] = args.load
@@ -312,43 +317,104 @@ def make_summary_plot(data, name):
     fig,ax1 = plt.subplots()
     ax2 = ax1.twinx()
 
+    # get the data for the plot
     x = [i+1 for i in summary.index.values]
     y_time = summary.time.values
     y_found_frac = summary.found_frac.values
 
-    ax1.scatter(x,y_time, color='k', s=2)
-    ax2.scatter(x,y_found_frac, color='r', s=2)
-
-    # add a line after the root-node
-    if summary.node.max() > 1:
-        x_line = (summary[summary.node > 1].pricing_round.iloc[0] + summary[summary.node == 1].pricing_round.iloc[-1])/2.
-    else:
-        x_line = max(x)
-    line = lines.Line2D([x_line,x_line],[0,1],color='orange',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax1.transData, ax1.transAxes))
-    ax1.add_line(line)
-
-    ax1.set_xlabel('Pricing Round')
-    ax1.set_ylabel('Time / s', color='k')
+    # format the plot
+    ax1.set_xlabel('Pricing Round', size='large')
+    ax1.set_ylabel('Time / s', color='k', size='large')
     ax2.set_ylabel('Fraction of successfull pricers / \%', color='r')
 
     ax1.get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
-    ax1.set_xlim([-0.01*max(x), 1.01*max(x)])
+    ax1.set_xlim([0, max(x) + 0.9])
     if max(y_time) > 0:
         ax1.set_ylim([-max(y_time)*0.1,max(y_time)*1.1])
     else:
         ax1.set_ylim([-0.001,0.01])
     ax2.set_ylim([-max(y_found_frac)*0.15,max(y_found_frac)*1.15])
 
-    fig.set_size_inches(11.7,8.3)
-    plt.tight_layout()
+    p1,p2 = ax1.transData.transform([(1,0),(2,0)])
+    perimeter = max([3.5,(p2[0] - p1[0])/5.])
+
+    # plot the data
+    ax1.scatter(x,y_time, color='k', s=perimeter**2)
+    ax2.scatter(x,y_found_frac, color='r', s=perimeter**2)
+
+    # add a line after the root-node
+    if summary.node.max() > 1:
+        x_line = (summary[summary.node > 1].index[0] + 1 + summary[summary.node == 1].index[-1] + 1)/2.
+        line = lines.Line2D([x_line,x_line],[0,1],color='orange',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax1.transData, ax1.transAxes))
+        ax1.add_line(line)
+        ax2.text(x_line, 50, "\it{End of Root}", va = 'center', ha = 'left', rotation = 90, size = 'smaller', color = 'orange', zorder = 1)
     print '    plotted summary:', time.time() - start_time
     start_time = time.time()
+
+    # save the plot
+    fig.set_size_inches(11.7,8.3)
+    plt.tight_layout()
     if params['details']:
         plt.savefig(params['outdir'] + '/' + name + '_summary.pdf')
     else:
         plt.savefig(params['outdir'] + '/' + name + '_summary.png')
     plt.close()
     print '    saved summary:', time.time() - start_time
+
+def make_bubble_plot(data, name):
+    data = data.reset_index()
+    # add a column 'round' to the dataframe, that counts each stab_round and pricing_round
+    rnd = []
+    prev_rnd = 1
+    for ind in data.index:
+        if ind == 0:
+            rnd.append(1)
+            continue
+        if data.loc[ind].pricing_round > data.loc[ind-1].pricing_round or data.loc[ind].stab_round > data.loc[ind-1].stab_round:
+            rnd.append(prev_rnd + 1)
+            prev_rnd = prev_rnd + 1
+        else:
+            rnd.append(prev_rnd)
+    data['round'] = rnd
+
+    pricers = data.pricing_prob.unique().tolist()
+
+    # add x and y data to plot for every pricer
+    x = {}
+    y = {}
+    for p in pricers:
+        x[p] = data[(data.pricing_prob == p) & (data.nVars >= 1)]['round'].values
+        y[p] = [p for i in x[p]]
+
+    colors = get_colmap(pricers)
+
+    fig = plt.gcf()
+    ax = plt.gca()
+
+    ax.set_xlabel('Round')
+    ax.set_ylabel('Pricer ID')
+    ax.set_xlim([0,data['round'].max()+0.9])
+    ax.set_ylim([min(pricers) - 0.5, max(pricers) + 0.5])
+    ax.get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
+    ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True))
+    p1,p2 = ax.transData.transform([(1,min(pricers)),(2,min(pricers))])
+    perimeter = max([3.5,(p2[0] - p1[0])/2.2])
+
+    for p in pricers:
+        ax.scatter(x[p],y[p], color = colors[pricers.index(p)], s=perimeter**2)
+
+    # add a line after the root-node
+    if data.node.max() > 1:
+        x_line = (data[data.node > 1]['round'].iloc[0] + data[data.node == 1]['round'].iloc[-1])/2.
+        line = lines.Line2D([x_line,x_line],[0,1],color='orange',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax.transData, ax.transAxes))
+        ax.add_line(line)
+        ax.text(x_line, (max(pricers) + min(pricers))/2., "\it{End of Root}", va = 'center', ha = 'left', rotation = 90, size = 'smaller', color = 'orange', zorder = 1)
+
+    # save the plot
+    fig.set_size_inches(11.7,8.3)
+    plt.tight_layout()
+    plt.savefig(params['outdir'] + '/' + name + '_bubble.pdf')
+    plt.close()
 
 def plots(data, name):
     """
@@ -361,11 +427,13 @@ def plots(data, name):
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
 
-    # always build the summary plot
-    make_summary_plot(data, name)
+    make_bubble_plot(data, name)
 
-    if params['summary_only']:
-        return
+    if not params['no_summary']:
+        # build the summary plot
+        make_summary_plot(data, name)
+        if params['summary_only']:
+            return
 
     if params['maxRound'] <= 0:
         maxRnd = max(data.index.get_level_values('pricing_round').values)
