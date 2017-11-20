@@ -4654,10 +4654,12 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
 
    /* initialize the output array with NULL */
    *nseeeds = maxid+1;
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &seeedswr, *nseeeds) );
    for( int i = 0; i < *nseeeds; i++ )
    {
       SCIP_CALL( SCIPallocBlockMemory( scip, &(seeedswr[i]) ) );
       seeedswr[i]->seeed = NULL;
+      seeedswr[i]->seeedpool = NULL; /* not needed, initialization just for safety reasons */
    }
 
    /* fill the output array with relevant seeeds */
