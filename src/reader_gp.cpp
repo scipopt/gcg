@@ -280,7 +280,6 @@ SCIP_RETCODE writeGpNonzeros(
 
    /* end writing dots */
    ofs << "e" << std::endl;
-//   ofs << "plot x" << std::endl;
 
    ofs.close();
 
@@ -297,6 +296,7 @@ SCIP_RETCODE writeGpSeeed(
 {
    int rowboxcounter = 0;
    int colboxcounter = 0;
+   int objcounter = 0;
 
    std::ofstream ofs;
    ofs.open( filename, std::ofstream::out | std::ofstream::app );
@@ -308,28 +308,33 @@ SCIP_RETCODE writeGpSeeed(
    /* --- draw boxes ---*/
 
    /* linking vars */
-   drawGpBox( filename, 1, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(), SCIPvisuGetColorLinking() );
+   ++objcounter; /* has to start at 1 for gnuplot */
+   drawGpBox( filename, objcounter, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(), SCIPvisuGetColorLinking() );
    colboxcounter += seeed->getNLinkingvars();
 
    /* mastervars */
-   drawGpBox( filename, 2, colboxcounter, 0, seeed->getNMastervars()+colboxcounter, seeed->getNConss(),
+   ++objcounter;
+   drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter, seeed->getNConss(),
       SCIPvisuGetColorMastervars() );
    colboxcounter += seeed->getNMastervars();
 
    /* masterconss */
-   drawGpBox( filename, 3, 0, 0, seeed->getNVars(), seeed->getNMasterconss(), SCIPvisuGetColorMasterconss() );
+   ++objcounter;
+   drawGpBox( filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(), SCIPvisuGetColorMasterconss() );
    rowboxcounter += seeed->getNMasterconss();
 
    /* blocks */
    for( int b = 0; b < seeed->getNBlocks() ; ++b )
    {
-      drawGpBox( filename, 2 * b + 4, colboxcounter, rowboxcounter, colboxcounter + seeed->getNVarsForBlock(b),
+      ++objcounter;
+      drawGpBox( filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNVarsForBlock(b),
          rowboxcounter + seeed->getNConssForBlock(b), SCIPvisuGetColorBlock() );
       colboxcounter += seeed->getNVarsForBlock(b);
 
       if( seeed->getNStairlinkingvars(b) != 0 )
       {
-         drawGpBox( filename, 2 * b + 5, colboxcounter, rowboxcounter, colboxcounter + seeed->getNStairlinkingvars(b),
+         ++objcounter;
+         drawGpBox( filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNStairlinkingvars(b),
             rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), SCIPvisuGetColorStairlinking() );
       }
       colboxcounter += seeed->getNStairlinkingvars(b);
@@ -337,7 +342,8 @@ SCIP_RETCODE writeGpSeeed(
    }
 
    /* open */
-   drawGpBox( filename, 2 * seeed->getNBlocks() + 4, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
+   ++objcounter;
+   drawGpBox( filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
       rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
    colboxcounter += seeed->getNOpenvars();
    rowboxcounter += seeed->getNOpenconss();

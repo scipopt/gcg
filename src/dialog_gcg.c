@@ -1326,7 +1326,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteFamilyTree, NULL, NULL,
             "familytree",
-            "write all (partial) decompositions that are part of the family tree to pdf files and creates a latex file displaying the family tree",
+            "write all (partial) decompositions contained in family tree to files (.gp/.tex) and creates family tree file (.tex)",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -1337,7 +1337,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       {
          SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecReportAllDecompositions, NULL, NULL,
                "reportdecompositions",
-               "write report of all known decompositions to LaTeX format",
+               "write report of all finished decompositions to LaTeX format",
                FALSE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -1381,8 +1381,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
       }
-
-
 
    return SCIP_OKAY;
 }
