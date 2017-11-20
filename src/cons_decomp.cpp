@@ -4614,6 +4614,7 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
    SCIP_CONSHDLRDATA* conshdlrdata;
 
    assert(scip != NULL);
+   assert(seeedswr != NULL);
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
@@ -4654,7 +4655,7 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
 
    /* initialize the output array with NULL */
    *nseeeds = maxid+1;
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &seeedswr, *nseeeds) );
+
    for( int i = 0; i < *nseeeds; i++ )
    {
       SCIP_CALL( SCIPallocBlockMemory( scip, &(seeedswr[i]) ) );

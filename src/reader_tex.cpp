@@ -841,7 +841,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    std::vector<int> treeseeedids(0);
    SEEED_WRAPPER** allrelevantseeedswr;
    int nallrelevantseeeds = 0;
-   SCIP_CALL( SCIPallocBufferArray(scip, &allrelevantseeedswr, *nseeeds) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &allrelevantseeedswr, SCIPconshdlrDecompGetNSeeeds(scip)) );
    SCIPconshdlrDecompGetAllRelevantSeeeds(scip, allrelevantseeedswr, &nallrelevantseeeds);
 
    std::vector<SCIP_Bool> isseeedintree(nallrelevantseeeds, FALSE);
@@ -1028,7 +1028,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    {
       SCIPfreeBlockMemory( scip, &(allrelevantseeedswr[i]) );
    }
-   SCIPfreeBufferArray(scip, &allrelevantseeedswr);
+   SCIPfreeBlockMemoryArray(scip, &allrelevantseeedswr, SCIPconshdlrDecompGetNSeeeds(scip));
 
    return SCIP_OKAY;
 }
