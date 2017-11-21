@@ -1112,8 +1112,7 @@ SCIP_RETCODE readDECFile(
             SCIP_CALL( readNBlocks(scip, decinput) );
             if( decinput->haspresolvesection && !decinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
             {
-               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
-               retcode = SCIP_READERROR;
+               SCIPwarningMessage(scip, "decomposition belongs to the unpresolved problem, but the problem is already presolved, please consider to re-read the problem and read the decomposition without presolving when transforming do not succeed.\n");
                break;
 
             }

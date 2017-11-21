@@ -485,6 +485,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
 
      conshdlrdata->seeedpool->addSeeedToFinished(seeed, &success);
 
+     SCIPinfoMessage(scip, NULL, " Added decomposition is already in!!!!!!!!!!!!!!!!!!!!!\n");
 
       return SCIP_OKAY;
    }
@@ -3549,7 +3550,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
    seeed->flushBooked();
 
-
+   seeed->considerImplicits(currseeedpool);
 
 
    if( seeed->shouldCompletedByConsToMaster() )
@@ -3570,6 +3571,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    }
 
 
+   conshdlrdata->curruserseeed->buildDecChainString();
 
 
    if( conshdlrdata->curruserseeed->isComplete() )
@@ -3580,6 +3582,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       if( !conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
       {
          SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, conshdlrdata->curruserseeed));
+
       }
       /** stems from unpresolved problem */
       else
@@ -3587,6 +3590,21 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
          SCIP_Bool success;
          conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
          conshdlrdata->unpresolveduserseeedadded = TRUE;
+
+         if ( conshdlrdata->seeedpool != NULL ) /* seeedpool for presolved problem already exist try to translate seeed */
+         {
+            std::vector<SeeedPtr> seeedtotranslate(0);
+            std::vector<SeeedPtr> newseeeds(0);
+            seeedtotranslate.push_back(seeed);
+            conshdlrdata->seeedpool->translateSeeeds(conshdlrdata->seeedpoolunpresolved, seeedtotranslate, newseeeds);
+            if( newseeeds.size() != 0 )
+            {
+               SCIP_Bool successfullyadded;
+               conshdlrdata->seeedpool->addSeeedToFinished(newseeeds[0], &successfullyadded);
+               if ( !successfullyadded )
+                  SCIPinfoMessage(scip, NULL, "Given decomposition is already known to gcg! \n");
+            }
+         }
       }
 
    }
@@ -3640,9 +3658,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    if( conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
          presolvedinfo = "unpresolved";
    else presolvedinfo = "presolved";
-
-   conshdlrdata->curruserseeed->buildDecChainString();
-
 
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " added %s decomp for %s problem with %d blocks and %d masterconss, %d linkingvars, "
