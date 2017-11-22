@@ -1960,9 +1960,9 @@ SCIP_RETCODE initRelaxator(
    {
       SCIP_RANDNUMGEN* randnumgen;
 
-      SCIP_CALL( SCIPrandomCreate(&randnumgen, SCIPblkmem(scip), (unsigned int) permutationseed) );
+      SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, (unsigned int) permutationseed) );
       SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, randnumgen) );
-      SCIPrandomFree(&randnumgen, SCIPblkmem(scip));
+      SCIPfreeRandom(scip, &randnumgen);
    }
 
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
