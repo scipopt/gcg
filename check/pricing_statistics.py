@@ -27,8 +27,8 @@ def parse_arguments(args):
                         default="plots",
                         help='output directory (default: "plots")')
 
-    parser.add_argument('-a', '--allnodes', action='store_true',
-                        help='set this flag, to collect data for all nodes, not just the root')
+    parser.add_argument('-r', '--root-only', action='store_true',
+                        help='set this flag, to collect data just for the root-node')
 
     parser.add_argument('-p', '--png', action='store_true',
                         help='set this flag for a non-zoomable png-plot as output')
@@ -62,6 +62,12 @@ def parse_arguments(args):
     parser.add_argument('-Z', '--no-summary', action='store_true',
                         help='create no summary plots')
 
+    parser.add_argument('-b', '--bubble-only', action='store_true',
+                        help='create only bubble plots')
+
+    parser.add_argument('-B', '--no-bubble', action='store_true',
+                        help='create no bubble plots')
+
     parser.add_argument('-t', '--no-text', action='store_true',
                         help='do not write any text on the plots (such as node or round numbers)')
 
@@ -93,7 +99,7 @@ def set_params(args):
     :return:
     """
     params['outdir'] = args.outdir
-    params['root_only'] = not args.allnodes
+    params['root_only'] = args.root_only
     params['details'] = not args.png
     params['nSplit'] = args.splitrounds
     params['minRound'] = args.minround
@@ -102,7 +108,10 @@ def set_params(args):
     params['lines'] = args.lines
     params['instances'] = args.instances
     params['summary_only'] = args.summary_only
-    params['no_summary'] = args.no_summary
+    params['no_summary'] = args.no_summary or args.bubble_only
+    params['bubble_only'] = args.bubble_only
+    params['no_bubble'] = args.no_bubble or args.summary_only
+    params['no_details'] = args.summary_only or args.bubble_only
     params['no_text'] = args.no_text
     params['save'] = args.save
     params['load'] = args.load
@@ -345,9 +354,9 @@ def make_summary_plot(data, name):
     # add a line after the root-node
     if summary.node.max() > 1:
         x_line = (summary[summary.node > 1].index[0] + 1 + summary[summary.node == 1].index[-1] + 1)/2.
-        line = lines.Line2D([x_line,x_line],[0,1],color='orange',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax1.transData, ax1.transAxes))
+        line = lines.Line2D([x_line,x_line],[0,1],color='red',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax1.transData, ax1.transAxes))
         ax1.add_line(line)
-        ax2.text(x_line, 50, "\it{End of Root}", va = 'center', ha = 'left', rotation = 90, size = 'smaller', color = 'orange', zorder = 1)
+        ax2.text(x_line, 50, "\it{End of Root}", va = 'center', ha = 'left', rotation = 90, size = 'smaller', color = 'red', zorder = 1)
     print '    plotted summary:', time.time() - start_time
     start_time = time.time()
 
@@ -391,14 +400,16 @@ def make_bubble_plot(data, name):
     fig = plt.gcf()
     ax = plt.gca()
 
+    # format the plot
     ax.set_xlabel('Round')
     ax.set_ylabel('Pricer ID')
     ax.set_xlim([0,data['round'].max()+0.9])
     ax.set_ylim([min(pricers) - 0.5, max(pricers) + 0.5])
     ax.get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
     ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True))
-    p1,p2 = ax.transData.transform([(1,min(pricers)),(2,min(pricers))])
-    perimeter = max([3.5,(p2[0] - p1[0])/2.2])
+    # set the size of the markers, such that they do not overlap
+    p1,p2,p3 = ax.transData.transform([(1,min(pricers)),(2,min(pricers)),(1,min(pricers)+1)])
+    perimeter = max(3.5,min((p2[0] - p1[0])/2.2 , (p3[1] - p1[1])/2.2))
 
     for p in pricers:
         ax.scatter(x[p],y[p], color = colors[pricers.index(p)], s=perimeter**2)
@@ -406,9 +417,9 @@ def make_bubble_plot(data, name):
     # add a line after the root-node
     if data.node.max() > 1:
         x_line = (data[data.node > 1]['round'].iloc[0] + data[data.node == 1]['round'].iloc[-1])/2.
-        line = lines.Line2D([x_line,x_line],[0,1],color='orange',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax.transData, ax.transAxes))
+        line = lines.Line2D([x_line,x_line],[0,1],color='red',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax.transData, ax.transAxes))
         ax.add_line(line)
-        ax.text(x_line, (max(pricers) + min(pricers))/2., "\it{End of Root}", va = 'center', ha = 'left', rotation = 90, size = 'smaller', color = 'orange', zorder = 1)
+        ax.text(x_line, (max(pricers) + min(pricers))/2., "\it{End of Root}", va = 'center', ha = 'left', rotation = 90, size = 'smaller', color = 'red', zorder = 1)
 
     # save the plot
     fig.set_size_inches(11.7,8.3)
@@ -427,13 +438,17 @@ def plots(data, name):
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
 
-    make_bubble_plot(data, name)
+    if not params['no_bubble']:
+        # build the bubble plot
+        make_bubble_plot(data, name)
 
     if not params['no_summary']:
         # build the summary plot
         make_summary_plot(data, name)
-        if params['summary_only']:
-            return
+
+    if params['no_details']:
+        # do not build the actual, detailed plot
+        return
 
     if params['maxRound'] <= 0:
         maxRnd = max(data.index.get_level_values('pricing_round').values)
@@ -610,7 +625,7 @@ def generate_files(files):
                 # extract the pricing-statistics message
                 message = line.split("] statistic: ")[-1]
 
-                if message.startswith("New pricing round at node"):
+                if message.startswith("New pricing round at node") or message.startswith("New pr, node"):
                     try:
                         node = int(message.split()[-1])
                         pricing_round += 1
@@ -621,7 +636,7 @@ def generate_files(files):
                         done = True
                         continue
 
-                elif message.startswith("Stabilization round "):
+                elif message.startswith("Stabilization round ") or message.startswith("Sr "):
                     try:
                         stab_round = int(message.split()[-1])
                     except ValueError:
@@ -631,7 +646,7 @@ def generate_files(files):
                         done = True
                         continue
 
-                elif message.startswith("Pricing prob "):
+                elif message.startswith("Pricing prob ") or message.startswith("P p "):
                     try:
                         pricing_prob = int(message.split()[2])
 
@@ -647,7 +662,10 @@ def generate_files(files):
 
                         # store the data
                         val_time.append(float(message.split()[-1]))
-                        val_nVars.append(int(message.split()[5]))
+                        if message.startswith("P p "):
+                            val_nVars.append(int(message.split()[-3]))
+                        else:
+                            val_nVars.append(int(message.split()[5]))
                     except ValueError:
                         print '    ended abruptly'
                         collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
