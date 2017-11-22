@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.1.2
+VERSION         :=	2.1.3
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -59,7 +59,7 @@ MODE		=	readdec
 PROJECT		=	none
 GTEST		=	true
 PARASCIP	= 	true
-BLISS      	=   true
+BLISS      	=   false
 OPENMP      =   false
 GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
