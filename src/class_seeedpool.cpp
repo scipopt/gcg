@@ -1747,8 +1747,9 @@ void Seeedpool::calcTranslationMapping(
       assert( otherrow != NULL );
       SCIP_Bool foundmaintained = false;
  //     thisiter = thisscipconss.begin();
-      for( int j = 0; j < nrowsthis; ++j )
+      for( int j2 = i; j2 < nrowsthis + i; ++j2 )
       {
+         int j = j2 % nrowsthis;
          SCIP_CONS* thisrow = thisscipconss[j];
          assert( SCIPconsIsTransformed( thisrow ) );
          char buffer[SCIP_MAXSTRLEN];
@@ -1770,8 +1771,9 @@ void Seeedpool::calcTranslationMapping(
    for( int i = 0; i < ncolsother; ++i )
    {
       SCIP_VAR* othervar = origscipvars[i];
-      for( int j = 0; j < ncolsthis; ++j )
+      for( int j2 = i; j2 < ncolsthis + i; ++j2 )
       {
+         int j = j2 % ncolsthis;
          if( othervar == thisscipvars[j] )
          {
             colothertothis[i] = j;
@@ -1781,6 +1783,8 @@ void Seeedpool::calcTranslationMapping(
       }
    }
 
+   if ( FALSE )
+   {
       for ( int i  = 0; i < (int) rowothertothis.size(); ++i )
          std::cout << (rowothertothis[i] == i) << " " ;
 
@@ -1789,7 +1793,7 @@ void Seeedpool::calcTranslationMapping(
       for ( int i  = 0; i < (int) colothertothis.size(); ++i )
          std::cout << ( colothertothis[i] == i ) << " " ;
       std::cout << std::endl;
-
+   }
 }
 
 /** returns translated seeeds derived from given mapping data */
@@ -1831,8 +1835,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
             int thiscons = rowothertothis[otherseeed->getConssForBlock( b )[i]];
             if( thiscons != - 1 )
             {
-               newseeed->setConsToBlock( thiscons, b );
-               newseeed->deleteOpencons( thiscons );
+               newseeed->bookAsBlockCons( thiscons, b );
             }
          }
       }
@@ -1842,8 +1845,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          int thiscons = rowothertothis[otherseeed->getMasterconss()[i]];
          if( thiscons != - 1 )
          {
-            newseeed->setConsToMaster( thiscons );
-            newseeed->deleteOpencons( thiscons );
+            newseeed->bookAsMasterCons( thiscons );
          }
       }
 
@@ -1854,8 +1856,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          int thisvar = colothertothis[otherseeed->getLinkingvars()[j]];
          if( thisvar != - 1 )
          {
-            newseeed->setVarToLinking( thisvar );
-            newseeed->deleteOpenvar( thisvar );
+            newseeed->bookAsLinkingVar(thisvar);
          }
       }
 
@@ -1864,11 +1865,11 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          int thisvar = colothertothis[otherseeed->getMastervars()[j]];
          if( thisvar != - 1 )
          {
-            newseeed->setVarToMaster( thisvar );
-            newseeed->deleteOpenvar( thisvar );
+            newseeed->bookAsMasterVar( thisvar );
          }
       }
 
+      newseeed->flushBooked();
 
       newseeed->setDetectorchain( otherseeed->getDetectorchainVector() );
       newseeed->setAncestorList( otherseeed->getAncestorList() );

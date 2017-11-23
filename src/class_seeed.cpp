@@ -2967,8 +2967,6 @@ SCIP_Real Seeed::evaluate(
 
    masterissetppc = false;
 
-   std::cout << "smartscore is set to " << smartscore << std::endl;
-
    if( smartscore && maxwhitescore <= 0.8 && getNLinkingvars() == 0 )
    {
       masterissetppc = true;
