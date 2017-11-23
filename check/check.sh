@@ -266,6 +266,29 @@ do
 		echo presolve                      >> $TMPFILE
 		echo detect                        >> $TMPFILE
                 echo display detectionst           >> $TMPFILE
+	    elif test $MODE = "checkexistence"
+	    then
+		echo change instancename $PROB     >> $TMPFILE
+		echo set presolving maxrounds 0    >> $TMPFILE
+		echo presolve                      >> $TMPFILE
+		echo detect                        >> $TMPFILE
+		if test -f $DECFILE
+                    then
+                        BLKFILE=$DECFILE
+                    fi
+                    if test -f $BLKFILE
+                    then
+                        EXT=${BLKFILE##*.}
+                        if test "$EXT" = "gz"
+                        then
+                            presol=`zgrep -A1 PRESOLVE $BLKFILE`
+                        else
+                            presol=`grep -A1 PRESOLVE $BLKFILE`
+                        fi
+                        echo $presol
+                        # If the decomposition contains presolving information ...
+                        echo read $BLKFILE         >> $TMPFILE
+                    fi
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
