@@ -157,6 +157,13 @@ class Dataset:
 								line = line.split(':')
 								linkingvarclassname = line[0]
 					continue
+		print self.instancenames
+		print self.blockcandidates
+		print self.blockcandidatesnvotes
+		print self.classnames
+		print self.classnmembers
+		print self.decompnblocks
+		print self.decompscores
 
 	def getmaxdetectiontime(self):
 		maxdetectiontime = 0.
