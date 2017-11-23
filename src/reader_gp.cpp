@@ -353,6 +353,11 @@ SCIP_RETCODE writeGpSeeed(
    {
       writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius( seeed->getNVars(), seeed->getNConss(), 1 ) );
    }
+   else
+   {
+      ofs << "plot \"-\" using 1:2:(0) notitle with circles fc rgb \"black\" fill solid"
+         << std::endl << "0 0" << std::endl << "e" << std::endl;
+   }
 
    ofs.close();
 
