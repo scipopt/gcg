@@ -68,6 +68,7 @@
 #define DEC_ENABLED               FALSE          /**< should detector be called by default */
 #define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE          /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -2048,6 +2049,8 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectCutpacking)
 #define detectorFinishSeeedCutpacking NULL
 #define detectorExitCutpacking NULL
 
+#define detectorPostprocessSeeedCutpacking NULL
+
 #define setParamAggressiveCutpacking NULL
 #define setParamDefaultCutpacking NULL
 #define setParamFastCutpacking NULL
@@ -2069,8 +2072,8 @@ SCIP_RETCODE SCIPincludeDetectorCutpacking(
 
    /* include structure detector */
    SCIP_CALL( DECincludeDetector(scip,
-      DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, detectorExitCutpacking, detectorPropagateSeeedCutpacking, detectorFinishSeeedCutpacking, setParamAggressiveCutpacking, setParamDefaultCutpacking, setParamFastCutpacking) );
+      DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
+      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, detectorExitCutpacking, detectorPropagateSeeedCutpacking, detectorFinishSeeedCutpacking, detectorPostprocessSeeedCutpacking, setParamAggressiveCutpacking, setParamDefaultCutpacking, setParamFastCutpacking) );
 
 
    /* add cutpacking detector parameters */

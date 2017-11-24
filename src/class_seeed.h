@@ -184,6 +184,12 @@ public:
    /** destructor */
    ~Seeed();
 
+   SCIP_Bool isconshittingblockca(
+      gcg::Seeedpool* seeedpool,
+      int masterconsid,
+      int b
+      );
+
    /** adds a block, returns the number of the new block */
    int addBlock();
 
@@ -353,6 +359,20 @@ public:
    SCIP_RETCODE completeByConnected(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
+
+   /** try to reassign each  mastercons to one block without inducing conflicts  */
+   SCIP_RETCODE postprocessMasterToBlocks(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      SCIP_Bool* success
+      );
+
+
+   /** try to reassign each  mastercons to one block without inducing conflicts  */
+   SCIP_RETCODE postprocessMasterToBlocksConssAdjacency(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      SCIP_Bool* success
+      );
+
 
    /** assigns all open constraints and open variables
      *  strategy: assigns all conss same block if they are connected

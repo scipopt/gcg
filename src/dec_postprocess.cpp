@@ -52,14 +52,15 @@
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
 #define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
-#define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
+#define DEC_PRIORITY              1000000     /**< priority of the constraint handler for separation */
 #define DEC_FREQCALLROUNDORIGINAL 1           /** frequency the detector gets called in detection loop while detecting the original problem   */
 #define DEC_MAXCALLROUNDORIGINAL  INT_MAX     /** last round the detector gets called while detecting the original problem                            */
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
-#define DEC_DECCHAR               'C'         /**< display character of detector */
+#define DEC_DECCHAR               'p'         /**< display character of detector */
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       TRUE  /**< should the detection of the original problem be enabled */
+#define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      TRUE        /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -120,7 +121,8 @@ DEC_DECL_EXITDETECTOR(exitPostprocess)
    SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
    SCIPABORT();
 
-   return SCIP_Postprocess
+   return SCIP_OKAY;
+#else
 #define exitPostprocess NULL
 #endif
 
@@ -152,68 +154,46 @@ DEC_DECL_INITDETECTOR(initPostprocess)
 //}
 
 #define detectPostprocess NULL
+#define propagateSeeedPostprocess NULL
+#define finishSeeedPostprocess NULL
 
 static
-DEC_DECL_PROPAGATESEEED(propagateSeeedPostprocess)
+DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
 {
    *result = SCIP_DIDNOTFIND;
+
+   SCIP_CLOCK* temporaryClock;
+   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
    char decinfo[SCIP_MAXSTRLEN];
+   SCIP_Bool success;
    SCIP_Bool byconssadj;
-
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-
-   gcg::Seeed* seeed;
-   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
-
-   SCIPgetBoolParam(scip, "detectors/postprocess/useconssadj", &byconssadj);
-   //complete the seeed by bfs
-
-   if( byconssadj )
-      seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
-   else
-      seeed->completeByConnected(seeedPropagationData->seeedpool );
-
-  // seeed->showScatterPlot(seeedPropagationData->seeedpool);
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
-   seeedPropagationData->newSeeeds[0] = seeed;
-   seeedPropagationData->nNewSeeeds = 1;
-   seeedPropagationData->newSeeeds[0]->setDetectorPropagated(detector);
-   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "connected");
-   seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
-
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-
-   *result = SCIP_SUCCESS;
-
-   return SCIP_OKAY;
-}
-
-static
-DEC_DECL_FINISHSEEED(finishSeeedPostprocess)
-{
-   *result = SCIP_DIDNOTFIND;
-
-   SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-   char decinfo[SCIP_MAXSTRLEN];
 
    gcg::Seeed* seeed;
    seeed  = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
+   SCIPgetBoolParam(scip, "detectors/postprocess/useconssadj", &byconssadj);
+
    //complete the seeed by bfs
-   seeed->completeByConnected(seeedPropagationData->seeedpool );
+   if ( byconssadj )
+      seeed->postprocessMasterToBlocksConssAdjacency(seeedPropagationData->seeedpool, &success );
+   else
+      seeed->postprocessMasterToBlocks(seeedPropagationData->seeedpool, &success );
+
+
+   if ( !success )
+   {
+     seeedPropagationData->nNewSeeeds = 0;
+     delete seeed;
+     *result = SCIP_DIDNOTFIND;
+     return SCIP_OKAY;
+   }
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
    seeedPropagationData->nNewSeeeds = 1;
    seeedPropagationData->newSeeeds[0]->setFinishingDetectorPropagated(detector);
-   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "connected");
+   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "postprocess");
    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
 
@@ -225,6 +205,8 @@ DEC_DECL_FINISHSEEED(finishSeeedPostprocess)
 
    return SCIP_OKAY;
 }
+
+#define detectorPostprocessSeeedPostprocess NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressivePostprocess)
@@ -309,7 +291,9 @@ SCIP_RETCODE SCIPincludeDetectorPostprocess(
 
    detectordata->useconssadj = TRUE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectPostprocess, freePostprocess, initPostprocess, exitPostprocess, propagateSeeedPostprocess, finishSeeedPostprocess, setParamAggressivePostprocess, setParamDefaultPostprocess, setParamFastPostprocess) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectPostprocess, freePostprocess,
+      initPostprocess, exitPostprocess, propagateSeeedPostprocess, finishSeeedPostprocess,
+      postprocessSeeedPostprocess, setParamAggressivePostprocess, setParamDefaultPostprocess, setParamFastPostprocess) );
 
    /* add consname detector parameters */
       /**@todo add postprocess detector parameters */

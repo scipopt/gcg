@@ -561,7 +561,7 @@ Seeedpool::Seeedpool(
    ) :
    scip( givenScip ), incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 ),
    nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
-   nFinishingDetectors( 0 ), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed )
+   nFinishingDetectors( 0 ), nPostprocessingDetectors(0), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed )
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
@@ -638,6 +638,22 @@ Seeedpool::Seeedpool(
       detectorToFinishingScipDetector.push_back( detector );
       ++ nFinishingDetectors;
    }
+
+   /** set up enabled postprocessing detectors */
+   for( int d = 0; d < ndetectors; ++d )
+   {
+      DEC_DETECTOR* detector;
+
+      detector = detectors[d];
+      assert( detector != NULL );
+      if( ! detector->enabledPostprocessing || detector->postprocessSeeed == NULL )
+         continue;
+
+      scipPostprocessingDetectorToIndex[detector] = nPostprocessingDetectors;
+      detectorToPostprocessingScipDetector.push_back( detector );
+      ++nPostprocessingDetectors;
+   }
+
 
    /** initilize matrix datastructures */
    if( transformed )
@@ -1242,7 +1258,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
          if( verboseLevel > 2 )
             SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "check if finisher of detector %s is enabled\n",
-               DECdetectorGetName( detectorToScipDetector[d] ) );
+               DECdetectorGetName( detectorToFinishingScipDetector[d] ) );
 
          /** if the finishing of the detector is not enabled go on with the next detector */
          if( ! detector->enabledFinishing )
@@ -1348,7 +1364,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    }
 
    /** delete the seeeds */
-   for( size_t c = 0; c < currSeeeds.size(); ++ c )
+   for( size_t c = 0; c < currSeeeds.size(); ++c )
    {
       duplicate = false;
       SCIP_CALL_ABORT( currSeeeds[c]->buildDecChainString() );
@@ -1365,6 +1381,84 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          delSeeeds.push_back( currSeeeds[c] );
       }
    }
+
+   /** postprocess the finished seeeds */
+   std::vector<SeeedPtr >postprocessed(0);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Started Postprocessing of decompositions...\n");
+#pragma omp parallel for schedule( static, 1 )
+   for( size_t c = 0 ; c < finishedSeeeds.size(); ++c )
+   {
+      SeeedPtr seeedPtr = finishedSeeeds[c];
+      for( int d = 0; d < getNPostprocessingDetectors(); ++d )
+      {
+         DEC_DETECTOR* detector = detectorToPostprocessingScipDetector[d];
+         SCIP_RESULT result = SCIP_DIDNOTFIND;
+         SEEED_PROPAGATION_DATA* seeedPropData;
+         seeedPropData = new SEEED_PROPAGATION_DATA();
+         seeedPropData->seeedpool = this;
+         seeedPropData->nNewSeeeds = 0;
+
+#pragma omp critical ( seeedcount )
+         seeedPropData->seeedToPropagate = new gcg::Seeed( seeedPtr );
+
+         if( verboseLevel > 2 )
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "check if postprocessor of detector %s is enabled\n",
+               DECdetectorGetName( detectorToPostprocessingScipDetector[d] ) );
+
+         /** if the postprocessing of the detector is not enabled go on with the next detector */
+         if( ! detector->enabledPostprocessing )
+            continue;
+
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "call finisher for detector %s \n ", DECdetectorGetName( detectorToPostprocessingScipDetector[d] ) );
+
+         SCIP_CALL_ABORT(
+            detectorToPostprocessingScipDetector[d]->postprocessSeeed( scip, detectorToPostprocessingScipDetector[d], seeedPropData,
+               & result ) );
+
+         for( int finished = 0; finished < seeedPropData->nNewSeeeds; ++ finished )
+         {
+            SeeedPtr seeed = seeedPropData->newSeeeds[finished];
+#pragma omp critical ( seeedcount )
+            seeed->setID( getNewIdForSeeed() );
+
+            seeed->calcHashvalue();
+            seeed->addDecChangesFromAncestor( seeedPtr );
+            seeed->setFinishedByFinisher( true );
+
+            if( seeedIsNoDuplicateOfSeeeds( seeed, finishedSeeeds, false ) && seeedIsNoDuplicateOfSeeeds( seeed, postprocessed, false )  )
+            {
+               if( verboseLevel > 2 )
+               {
+                  SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " Seeed %d is finished from next round seeeds!\n", seeed->getID() );
+                  seeed->showVisualisation( this );
+               }
+#pragma omp critical ( seeedptrstore )
+               {
+                  SCIP_Bool success;
+                  assert( seeed->getID() >= 0 );
+                  postprocessed.push_back( seeed);
+               }
+            }
+            else
+               delete seeed;
+
+            SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
+            seeedPropData->newSeeeds = NULL;
+            seeedPropData->nNewSeeeds = 0;
+         }
+
+         delete seeedPropData->seeedToPropagate;
+         delete seeedPropData;
+      }
+#pragma omp critical ( seeedptrstore )
+       addSeeedToAncestor(seeedPtr);
+
+   } // end for postprocessing finished seeeds
+   for( size_t c = 0; c < postprocessed.size(); ++c)
+      addSeeedToFinishedUnchecked(postprocessed[c]);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Finished postprocessing of decompositions...\n");
+
+
    sortAllRelevantSeeeds();
    return finishedSeeeds;
  }
@@ -1517,6 +1611,18 @@ void Seeedpool::addSeeedToFinished(
    }
    return;
 }
+
+/** adds a seeed to finished seeeds withou checking for duplicates, dev has to check this on his own*/
+void Seeedpool::addSeeedToFinishedUnchecked(
+   SeeedPtr seeed
+   )
+{
+   finishedSeeeds.push_back( seeed );
+
+   return;
+}
+
+
 
 /** adds a seeed to incomplete seeeds */
 void Seeedpool::addSeeedToIncomplete(
@@ -2227,6 +2333,16 @@ DEC_DETECTOR* Seeedpool::getFinishingDetectorForIndex(
    return detectorToFinishingScipDetector[detectorIndex];
 }
 
+
+/** returns the SCIP detector related to a postprocessing detector index */
+DEC_DETECTOR* Seeedpool::getPostprocessingDetectorForIndex(
+   int detectorIndex
+   )
+{
+   return detectorToPostprocessingScipDetector[detectorIndex];
+}
+
+
 /** returns a coefficient from the coefficient matrix */
 SCIP_Real Seeedpool::getVal(
    int row,
@@ -2274,6 +2390,16 @@ int Seeedpool::getIndexForFinishingDetector(
    return scipFinishingDetectorToIndex[detector];
 }
 
+/** returns the postprocessing detector index related to a detector */
+int Seeedpool::getIndexForPostprocessingDetector(
+   DEC_DETECTOR* detector
+   )
+{
+   return scipPostprocessingDetectorToIndex[detector];
+}
+
+
+
 /** returns a new unique id for a seeed */
 int Seeedpool::getNewIdForSeeed()
 {
@@ -2297,6 +2423,13 @@ int Seeedpool::getNFinishingDetectors()
 {
    return nFinishingDetectors;
 }
+
+/** returns the number of postprocessing detectors used in the seeedpool */
+int Seeedpool::getNPostprocessingDetectors()
+{
+   return nPostprocessingDetectors;
+}
+
 
 /** returns the number of variables considered in the seeedpool */
 int Seeedpool::getNVars()

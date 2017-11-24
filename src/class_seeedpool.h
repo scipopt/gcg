@@ -103,12 +103,16 @@ private:
    std::vector<SCIP_VAR*> varToScipVar;                        /**< stores the corresponding scip variable pointer */
    std::vector<DEC_DETECTOR*> detectorToScipDetector;          /**< stores the corresponding SCIP detector pinter */
    std::vector<DEC_DETECTOR*> detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pointer*/
+   std::vector<DEC_DETECTOR*> detectorToPostprocessingScipDetector; /**< stores the corresponding postprocessing SCIP detector pointer*/
    std::vector<std::vector<int>> conssadjacencies;
    std::tr1::unordered_map<SCIP_CONS*, int> scipConsToIndex;   /**< maps SCIP_CONS* to the corresponding index */
    std::tr1::unordered_map<SCIP_VAR*, int> scipVarToIndex;     /**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int> scipDetectorToIndex;        /**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int> scipFinishingDetectorToIndex;     /**< maps SCIP_VAR* to the corresponding
                                                                                    *< index */
+   std::tr1::unordered_map<DEC_DETECTOR*, int> scipPostprocessingDetectorToIndex;     /**< maps SCIP_VAR* to the corresponding
+                                                                                   *< index */
+
    std::tr1::unordered_map<std::pair<int, int>, SCIP_Real, pair_hash> valsMap;   /**< maps an entry of the matrix to its
                                                                                    *< value, zeros are omitted */
 
@@ -116,6 +120,7 @@ private:
    int nConss;                   /**< number of constraints */
    int nDetectors;               /**< number of detectors */
    int nFinishingDetectors;      /**< number of finishing detectors */
+   int nPostprocessingDetectors; /**< number of postprocessing detectors */
    int nnonzeros;                /**< number of nonzero entries in the coefficient matrix */
 
 //   DEC_DECOMP** decompositions;  /**< decompositions found by the detectors */
@@ -184,6 +189,11 @@ public:
    void addSeeedToFinished(
       SeeedPtr seeed,
       SCIP_Bool* success
+      );
+
+   /** adds a seeed to finished seeeds without checking for duplicates, dev has to check this on his own*/
+   void addSeeedToFinishedUnchecked(
+      SeeedPtr seeed
       );
 
    /** adds a seeed to incomplete seeeds */
@@ -337,6 +347,12 @@ public:
       int detectorIndex /**< index of the finishing detector to be considered */
       );
 
+   /** returns the detector related to a finishing detector index */
+   DEC_DETECTOR* getPostprocessingDetectorForIndex(
+      int detectorIndex /**< index of the postprocessing detector to be considered */
+      );
+
+
    /** returns a coefficient from the coefficient matrix */
    SCIP_Real getVal(
       int row, /**< index of the constraint to be considered */
@@ -363,6 +379,12 @@ public:
       DEC_DETECTOR* detector
       );
 
+   /** returns the postprocessing detector index related to a detector */
+   int getIndexForPostprocessingDetector(
+      DEC_DETECTOR* detector
+      );
+
+
    /** returns a new unique id for a seeed */
    int getNewIdForSeeed();
 
@@ -374,6 +396,9 @@ public:
 
    /** returns the number of finishing detectors used in the seeedpool */
    int getNFinishingDetectors();
+
+   /** returns the number of postprocessing detectors used in the seeedpool */
+   int getNPostprocessingDetectors();
 
    /** returns the number of variables considered in the seeedpool */
    int getNVars();

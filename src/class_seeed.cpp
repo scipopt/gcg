@@ -172,6 +172,31 @@ Seeed::~Seeed()
    SCIPfreeBlockMemoryArrayNull( scip, & detectorchainstring, SCIP_MAXSTRLEN );
 }
 
+SCIP_Bool Seeed::isconshittingblockca(
+   gcg::Seeedpool* seeedpool,
+   int masterconsid,
+   int b
+   )
+{
+   int neighborc = 0;
+   int blockc = 0;
+   while ( blockc < getNConssForBlock(b) && neighborc < seeedpool->getNConssForCons(b) )
+   {
+      int diff = getConssForBlock(b)[blockc] - seeedpool->getConssForCons(b)[neighborc];
+      if ( diff < 0 )
+         ++blockc;
+      else if( diff > 0 )
+         ++neighborc;
+      else
+      {
+         assert(diff == 0);
+         return TRUE;
+      }
+   }
+   return FALSE;
+}
+
+
 /** returns true iff the second value of a is lower than the second value of b */
 bool compare_blocks(
    std::pair<int, int> const & a,
@@ -1655,6 +1680,54 @@ SCIP_RETCODE Seeed::completeByConnected(
 
    return SCIP_OKAY;
 }
+
+
+/** try to reassign each  mastercons to one block without inducing conflicts  */
+ SCIP_RETCODE Seeed::postprocessMasterToBlocks(
+    Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+    SCIP_Bool* success
+    )
+ {
+    *success = FALSE;
+    return SCIP_OKAY;
+ }
+
+
+ /** try to reassign each  mastercons to one block without inducing conflicts  */
+ SCIP_RETCODE Seeed::postprocessMasterToBlocksConssAdjacency(
+    Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+    SCIP_Bool* success
+    )
+ {
+    *success = FALSE;
+    std::vector<int> constoreassign(0);
+    std::vector<int> blockforconstoreassign(0);
+    sort();
+
+    for( int mc = 0; mc < getNMasterconss(); ++mc )
+    {
+       int masterconsid = getMasterconss()[mc];
+       std::vector<int> blockids(0);
+       for( int b = 0; b < getNBlocks(); ++b )
+       {
+          if ( isconshittingblockca(seeedpool, masterconsid, b) )
+             blockids.push_back(b);
+
+          if( blockids.size() > 1 )
+             break;
+       }
+       if ( blockids.size() == 1 )
+       {
+          constoreassign.push_back(mastercons);
+          blockforconstoreassign.push_back(blockids[0]);
+       }
+
+    }
+
+
+    return SCIP_OKAY;
+ }
+
 
 /** assigns all open constraints and open variables
   *  strategy: assigns all conss same block if they are connected
