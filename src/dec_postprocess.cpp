@@ -25,15 +25,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_connectedbase.c
+/**@file   dec_postprocess.c
  * @ingroup DETECTORS
- * @brief  detector connectedbase (completes the seeed by bfs)
- * @author Martin Bergner
+ * @brief  checks if there are master constraints that can be assigned to one block (without any other changes)
+ * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_connectedbase.h"
+#include "dec_postprocess.h"
 #include "cons_decomp.h"
 #include "gcg.h"
 #include "class_seeed.h"
@@ -47,8 +47,8 @@
 #include <queue>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME          "connectedbase"       /**< name of detector */
-#define DEC_DESC                  "detector connectedbase" /**< description of detector*/
+#define DEC_DETECTORNAME          "postprocess"       /**< name of detector */
+#define DEC_DESC                  "detector postprocess" /**< description of detector*/
 #define DEC_FREQCALLROUND         1           /** frequency the detector gets called in detection loop ,ie it is called in round r if and only if minCallRound <= r <= maxCallRound AND  (r - minCallRound) mod freqCallRound == 0 */
 #define DEC_MAXCALLROUND          INT_MAX     /** last round the detector gets called                              */
 #define DEC_MINCALLROUND          0           /** first round the detector gets called                              */
@@ -91,7 +91,7 @@ struct DEC_DetectorData
 /** destructor of detector to free user data (called when GCG is exiting) */
 /** destructor of detector to free detector data (called when SCIP is exiting) */
 static
-DEC_DECL_FREEDETECTOR(freeConnectedbase)
+DEC_DECL_FREEDETECTOR(freePostprocess)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -114,22 +114,20 @@ DEC_DECL_FREEDETECTOR(freeConnectedbase)
 /** destructor of detector to free detector data (called before the solving process begins) */
 #if 0
 static
-DEC_DECL_EXITDETECTOR(exitConnectedbase)
+DEC_DECL_EXITDETECTOR(exitPostprocess)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Exit function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
    SCIPABORT();
 
-   return SCIP_OKAY;
-}
-#else
-#define exitConnectedbase NULL
+   return SCIP_Postprocess
+#define exitPostprocess NULL
 #endif
 
 /** detection initialization function of detector (called before solving is about to begin) */
 #if 0
 static
-DEC_DECL_INITDETECTOR(initConnectedbase)
+DEC_DECL_INITDETECTOR(initPostprocess)
 {  /*lint --e{715}*/
 
    SCIPerrorMessage("Init function of detector <%s> not implemented!\n", DEC_DETECTORNAME);
@@ -138,12 +136,12 @@ DEC_DECL_INITDETECTOR(initConnectedbase)
    return SCIP_OKAY;
 }
 #else
-#define initConnectedbase NULL
+#define initPostprocess NULL
 #endif
 
 /** detection function of detector */
 //static
-//DEC_DECL_DETECTSTRUCTURE(detectConnectedbase)
+//DEC_DECL_DETECTSTRUCTURE(detectPostprocess)
 //{ /*lint --e{715}*/
 //   *result = SCIP_DIDNOTFIND;
 //
@@ -153,10 +151,10 @@ DEC_DECL_INITDETECTOR(initConnectedbase)
 //   return SCIP_OKAY;
 //}
 
-#define detectConnectedbase NULL
+#define detectPostprocess NULL
 
 static
-DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
+DEC_DECL_PROPAGATESEEED(propagateSeeedPostprocess)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
@@ -169,7 +167,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
    gcg::Seeed* seeed;
    seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
 
-   SCIPgetBoolParam(scip, "detectors/connectedbase/useconssadj", &byconssadj);
+   SCIPgetBoolParam(scip, "detectors/postprocess/useconssadj", &byconssadj);
    //complete the seeed by bfs
 
    if( byconssadj )
@@ -196,7 +194,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedConnectedbase)
 }
 
 static
-DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
+DEC_DECL_FINISHSEEED(finishSeeedPostprocess)
 {
    *result = SCIP_DIDNOTFIND;
 
@@ -229,7 +227,7 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
 }
 
 static
-DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConnectedbase)
+DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressivePostprocess)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -251,7 +249,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConnectedbase)
 
 
 static
-DEC_DECL_SETPARAMDEFAULT(setParamDefaultConnectedbase)
+DEC_DECL_SETPARAMDEFAULT(setParamDefaultPostprocess)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -272,7 +270,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConnectedbase)
 }
 
 static
-DEC_DECL_SETPARAMFAST(setParamFastConnectedbase)
+DEC_DECL_SETPARAMFAST(setParamFastPostprocess)
 {
    char setstr[SCIP_MAXSTRLEN];
 
@@ -297,25 +295,25 @@ DEC_DECL_SETPARAMFAST(setParamFastConnectedbase)
  * detector specific interface methods
  */
 
-/** creates the handler for connectedbase detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorConnectedbase(
+/** creates the handler for postprocess detector and includes it in SCIP */
+SCIP_RETCODE SCIPincludeDetectorPostprocess(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    DEC_DETECTORDATA* detectordata;
 
-   /**@todo create connectedbase detector data here*/
+   /**@todo create postprocess detector data here*/
    detectordata = NULL;
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
    detectordata->useconssadj = TRUE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectConnectedbase, freeConnectedbase, initConnectedbase, exitConnectedbase, propagateSeeedConnectedbase, finishSeeedConnectedbase, setParamAggressiveConnectedbase, setParamDefaultConnectedbase, setParamFastConnectedbase) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectPostprocess, freePostprocess, initPostprocess, exitPostprocess, propagateSeeedPostprocess, finishSeeedPostprocess, setParamAggressivePostprocess, setParamDefaultPostprocess, setParamFastPostprocess) );
 
    /* add consname detector parameters */
-      /**@todo add connectedbase detector parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/connectedbase/useconssadj", "should the constraint adjacency be used", &detectordata->useconssadj, FALSE, DEFAULT_USECONSSADJ, NULL, NULL) );
+      /**@todo add postprocess detector parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/postprocess/useconssadj", "should the constraint adjacency be used", &detectordata->useconssadj, FALSE, DEFAULT_USECONSSADJ, NULL, NULL) );
 
 
    return SCIP_OKAY;
