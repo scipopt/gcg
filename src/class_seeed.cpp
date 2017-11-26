@@ -1718,7 +1718,7 @@ SCIP_RETCODE Seeed::completeByConnected(
        }
        if ( blockids.size() == 1 )
        {
-          constoreassign.push_back(mastercons);
+          constoreassign.push_back(masterconsid);
           blockforconstoreassign.push_back(blockids[0]);
        }
 
@@ -1828,8 +1828,9 @@ SCIP_RETCODE Seeed::completeByConnected(
 
              assert(! isVarMastervar( newvar) );
              setVarToBlock( newvar, newBlockNr - 1 );
-             assert( isVarOpenvar( newvar ) );
-             deleteOpenvar( newvar );
+             assert( isVarOpenvar( newvar ) || isVarBlockvarOfBlock(newvar, newBlockNr - 1) );
+             if( isVarOpenvar(newvar) )
+                deleteOpenvar( newvar );
           }
 
        }

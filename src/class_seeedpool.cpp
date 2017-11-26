@@ -581,7 +581,7 @@ Seeedpool::Seeedpool(
 
    SCIPgetBoolParam(scip, "detectors/connectedbase/useconssadj", &useconssadj);
 
-   createconssadj = useconnected && useconssadj;
+  // createconssadj = useconnected && useconssadj;
 
    if( ! transformed )
    {
