@@ -388,6 +388,20 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    return SCIP_OKAY;
 }
 
+
+/** dialog execution method for the display statistics command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecPrintDetectionInformation)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   SCIP_CALL( GCGprintCompleteDetectionStatistics(scip, NULL) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
 /** dialog execution method for the display statistics command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
 {  /*lint --e{715}*/
@@ -418,6 +432,29 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the display statistics command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddInstancename
+)
+{  /*lint --e{715}*/
+
+   char* instancename;
+   int blocknr;
+   char tempstr[SCIP_MAXSTRLEN];
+   SCIP_Bool endoffile;
+
+   tempstr[0] = '\0';
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   (void) SCIPsnprintf(tempstr, SCIP_MAXSTRLEN, "Please type the instancename information (used in complete detection statistics): ");
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, (char*)tempstr, &instancename, &endoffile) );
+
+   GCGsetFilename(scip, instancename);
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
 
 
 /** dialog execution method for the display decomposition command */
@@ -1044,6 +1081,15 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+   /* display statistics */
+      if( !SCIPdialogHasEntry(submenu, "detectionstatistics") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecPrintDetectionInformation, NULL, NULL,
+               "detectionstatistics", "display complete detection information", FALSE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      }
+
    /* display decomposition */
    if( !SCIPdialogHasEntry(submenu, "decomposition") )
    {
@@ -1371,13 +1417,23 @@ SCIP_RETCODE SCIPincludeDialogGcg(
          return SCIP_PLUGINNOTFOUND;
       }
 
-      /* change add */
+      /*  add  blocknr candidate*/
       if( !SCIPdialogHasEntry(submenu, "blocknr") )
       {
          SCIP_CALL( SCIPincludeDialog(scip, &dialog,
                NULL,
                GCGdialogExecChangeAddBlocknr, NULL, NULL,
                "blocknr", "add block number candidate", FALSE, NULL) );
+         SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+         SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      }
+
+      /*  add  blocknr candidate*/
+      if( !SCIPdialogHasEntry(submenu, "instancename") )
+      {
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL,
+               GCGdialogExecChangeAddInstancename, NULL, NULL,
+               "instancename", "add instancename information", FALSE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
       }

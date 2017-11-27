@@ -165,7 +165,10 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedVarclass)
 
   int maximumnclasses;
 
-  SCIPgetIntParam(scip, "detectors/varclass/maxnclasses", &maximumnclasses); /* if  distribution of classes exceed this number its skipped */
+  if( seeedPropagationData->seeedpool->getNConss() + seeedPropagationData->seeedpool->getNVars() >= 50000 )
+        SCIPgetIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs", &maximumnclasses);
+     else
+        SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maximumnclasses);
 
   for( int classifierIndex = 0; classifierIndex < seeedPropagationData->seeedpool->getNVarClassifiers(); ++classifierIndex )
   {

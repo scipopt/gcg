@@ -1674,8 +1674,9 @@ void Seeedpool::calcTranslationMapping(
       assert( otherrow != NULL );
       SCIP_Bool foundmaintained = false;
  //     thisiter = thisscipconss.begin();
-      for( int j = 0; j < nrowsthis; ++j )
+      for( int j2 = i; j2 < nrowsthis + i; ++j2 )
       {
+         int j = j2 % nrowsthis;
          SCIP_CONS* thisrow = thisscipconss[j];
          assert( SCIPconsIsTransformed( thisrow ) );
          char buffer[SCIP_MAXSTRLEN];
@@ -1697,8 +1698,9 @@ void Seeedpool::calcTranslationMapping(
    for( int i = 0; i < ncolsother; ++i )
    {
       SCIP_VAR* othervar = origscipvars[i];
-      for( int j = 0; j < ncolsthis; ++j )
+      for( int j2 = i; j2 < ncolsthis + i; ++j2 )
       {
+         int j = j2 % ncolsthis;
          if( othervar == thisscipvars[j] )
          {
             colothertothis[i] = j;
@@ -1708,6 +1710,8 @@ void Seeedpool::calcTranslationMapping(
       }
    }
 
+   if ( FALSE )
+   {
       for ( int i  = 0; i < (int) rowothertothis.size(); ++i )
          std::cout << (rowothertothis[i] == i) << " " ;
 
@@ -1716,6 +1720,7 @@ void Seeedpool::calcTranslationMapping(
       for ( int i  = 0; i < (int) colothertothis.size(); ++i )
          std::cout << ( colothertothis[i] == i ) << " " ;
       std::cout << std::endl;
+   }
 }
 
 /** returns translated seeeds derived from given mapping data */
@@ -1757,8 +1762,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
             int thiscons = rowothertothis[otherseeed->getConssForBlock( b )[i]];
             if( thiscons != - 1 )
             {
-               newseeed->setConsToBlock( thiscons, b );
-               newseeed->deleteOpencons( thiscons );
+               newseeed->bookAsBlockCons( thiscons, b );
             }
          }
       }
@@ -1768,8 +1772,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          int thiscons = rowothertothis[otherseeed->getMasterconss()[i]];
          if( thiscons != - 1 )
          {
-            newseeed->setConsToMaster( thiscons );
-            newseeed->deleteOpencons( thiscons );
+            newseeed->bookAsMasterCons( thiscons );
          }
       }
 
@@ -1780,8 +1783,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          int thisvar = colothertothis[otherseeed->getLinkingvars()[j]];
          if( thisvar != - 1 )
          {
-            newseeed->setVarToLinking( thisvar );
-            newseeed->deleteOpenvar( thisvar );
+            newseeed->bookAsLinkingVar(thisvar);
          }
       }
 
@@ -1790,11 +1792,11 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
          int thisvar = colothertothis[otherseeed->getMastervars()[j]];
          if( thisvar != - 1 )
          {
-            newseeed->setVarToMaster( thisvar );
-            newseeed->deleteOpenvar( thisvar );
+            newseeed->bookAsMasterVar( thisvar );
          }
       }
 
+      newseeed->flushBooked();
 
       newseeed->setDetectorchain( otherseeed->getDetectorchainVector() );
       newseeed->setAncestorList( otherseeed->getAncestorList() );
@@ -2425,12 +2427,16 @@ void Seeedpool::addConsClassifier(
    ConsClassifier* givenClassifier
    )
 {
+   SCIP_Bool detectionstatistics;
+
+   SCIPgetBoolParam(scip, "detection/allowclassifierduplicates/enabled", &detectionstatistics);
+
    if( givenClassifier != NULL )
    {
       /** check whether there already exists an equivalent consclassifier */
       ConsClassifier* equiv = NULL;
 
-      for( size_t i = 0; i < consclassescollection.size(); ++ i )
+      for( size_t i = 0; !detectionstatistics && i < consclassescollection.size(); ++ i )
       {
          if( givenClassifier->classifierIsDuplicateOfClassifier( consclassescollection[i] ) )
          {
@@ -3265,10 +3271,12 @@ int Seeedpool::getNConsClassifiers()
 void Seeedpool::reduceConsclasses()
 {
    /** set the number of classes the classifiers should be reduced to */
-   int maxnclasses = 9;
+   int maxnclasses = 0;
 
-   if( getNConss() + getNVars() > 50000 )
-      maxnclasses = 3;
+   if( getNConss() + getNVars() >= 50000 )
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs", &maxnclasses);
+   else
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maxnclasses);
 
    for( size_t classifierid = 0; classifierid < consclassescollection.size(); ++ classifierid )
    {
@@ -3287,12 +3295,16 @@ void Seeedpool::addVarClassifier(
    VarClassifier* givenClassifier
    )
 {
+   SCIP_Bool detectionstatistics;
+
+   SCIPgetBoolParam(scip, "detection/allowclassifierduplicates/enabled", &detectionstatistics);
+
    if( givenClassifier != NULL )
    {
       /** check whether there already exists an equivalent varclassifier */
       VarClassifier* equiv = NULL;
 
-      for( size_t i = 0; i < varclassescollection.size(); ++ i )
+      for( size_t i = 0; !detectionstatistics && i < varclassescollection.size(); ++ i )
       {
          if( givenClassifier->classifierIsDuplicateOfClassifier( varclassescollection[i] ) )
          {
@@ -3534,10 +3546,12 @@ int Seeedpool::getNVarClassifiers()
 void Seeedpool::reduceVarclasses()
 {
    /** set the number of classes the classifiers should be reduced to */
-   int maxnclasses = 9;
+   int maxnclasses = 0;
 
-   if( getNConss() + getNVars() > 50000 )
-      maxnclasses = 3;
+   if( getNConss() + getNVars() >= 50000 )
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs", &maxnclasses);
+   else
+      SCIPgetIntParam(scip, "detection/maxnclassesperclassifier", &maxnclasses);
 
    for( size_t classifierid = 0; classifierid < varclassescollection.size(); ++ classifierid )
    {
@@ -4057,5 +4071,88 @@ SCIP_Bool Seeedpool::getTransformedInfo()
 {
    return transformed;
 }
+
+SCIP_RETCODE Seeedpool::printBlockcandidateInformation(
+ SCIP*                 givenscip,               /**< SCIP data structure */
+ FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+
+   std::sort( candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n", (int) candidatesNBlocks.size() );
+   for( size_t i  = 0; i  < candidatesNBlocks.size(); ++i )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d : %d  \n", candidatesNBlocks[i].first, candidatesNBlocks[i].second );
+   }
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE Seeedpool::printClassifierInformation(
+ SCIP*                 givenscip,               /**< SCIP data structure */
+ FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+
+   /** NCLASSIFIER */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n", (int) consclassescollection.size()  );
+
+   for( size_t c = 0; c < consclassescollection.size() ; ++c )
+   {
+      gcg::ConsClassifier* classifier = consclassescollection[c];
+
+      std::vector<std::vector<int> > conssofclasses = std::vector<std::vector<int> >(classifier->getNClasses()) ;
+      for( int cons = 0; cons < getNConss(); ++cons )
+         conssofclasses[classifier->getClassOfCons(cons)].push_back(cons);
+
+      /** CLASSIFIERNAME */
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s  \n",  classifier->getName() );
+
+
+      /** NCLASSES */
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n",  classifier->getNClasses() );
+
+      for( int cl = 0; cl < classifier->getNClasses(); ++cl )
+      {
+         /** CLASSNAME */
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
+         /** NMEMBERS */
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d\n",  conssofclasses[cl].size() );
+      }
+   }
+
+   /** NCLASSIFIER */
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n", (int) varclassescollection.size()  );
+
+      for( size_t c = 0; c < varclassescollection.size() ; ++c )
+      {
+         gcg::VarClassifier* classifier = varclassescollection[c];
+
+         std::vector<std::vector<int> > varsofclasses = std::vector<std::vector<int> >(classifier->getNClasses()) ;
+         for( int var = 0; var < getNVars(); ++var )
+            varsofclasses[classifier->getClassOfVar(var)].push_back(var);
+
+         /** CLASSIFIERNAME */
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s  \n",  classifier->getName() );
+
+
+         /** NCLASSES */
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n",  classifier->getNClasses() );
+
+         for( int cl = 0; cl < classifier->getNClasses(); ++cl )
+         {
+            /** CLASSNAME */
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%s: %s\n", classifier->getClassName(cl), classifier->getClassDescription(cl) );
+            /** NMEMBERS */
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d\n",  varsofclasses[cl].size() );
+         }
+      }
+
+
+   return SCIP_OKAY;
+}
+
+
+
 
 } /* namespace gcg */

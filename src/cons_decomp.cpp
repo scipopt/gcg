@@ -99,7 +99,10 @@ typedef gcg::Seeed* SeeedPtr;
 #define MAXNDECOMPS 5000                /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+#define DEFAULT_ALLOWCLASSIFIERDUPLICATES FALSE
 #define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
+#define DEFAULT_MAXNCLASSESLARGEPROBS 5
+#define DEFAULT_MAXNCLASSES 9
 #define DEFAULT_ENABLEORIGDETECTION FALSE /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
 #define DEFAULT_SMARTSCORE                            FALSE
@@ -150,17 +153,28 @@ struct SCIP_ConshdlrData
  //  std::vector<SCIP_HASHMAP*> initalpartialdecomps;                      /**< possible incomplete decompositions given by user */
    int                   ndetectors;                        /**< number of detectors */
    SCIP_CLOCK*           detectorclock;                     /**< clock to measure detection time */
+   SCIP_CLOCK*           completedetectionclock;            /**< clock to measure detection time */
    SCIP_Bool             hasrun;                            /**< flag to indicate whether we have already detected */
    int                   ndecomps;                          /**< number of decomposition structures  */
    int                   sizedecomps;                       /**< size of the decomp and complete seeeds array */
    int                   sizeincompleteseeeds;              /**< size of the incomplete seeeds array */
    int                   maxndetectionrounds;               /**< maximum number of detection loop rounds  */
+   int                   maxnclassesperclassifier;              /**< maximum number of classes per classifier */
+   int                   maxnclassesperclassifierforlargeprobs; /** maximum number of classes per classifier for large problems (nvars + nconss >= 50000) */
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+<<<<<<< HEAD
    SCIP_Bool             enableemphfast;                    /**< indicates whether emphasis settings are set to fast */
    SCIP_Bool             smartscore;                        /**< indicates whether smart score is enabled */
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
    SCIP_Bool             enableorigclassification;          /**< indicates whether to start constraint classification for the original problem */
+=======
+   SCIP_Bool             allowclassifierduplicates;         /**< indicates whether classifier duplicates are allowed (for statistical reasons) */
+   SCIP_Bool             enableemphfast;               /**< indicates whether emphasis settings are set to fast */
+   SCIP_Bool             smartscore;               /**< indicates whether smart score is enabled */
+   SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
+   SCIP_Bool             enableorigclassification;               /**< indicates whether to start constraint classification for the original problem */
+>>>>>>> feature/reform_detection
    SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
    SCIP_Bool             conssclassnnonzenabledorig;        /**< indicates whether constraint classifier for nonzero entries is enabled for the original problem */
    SCIP_Bool             conssclassnconstypeenabled;        /**< indicates whether constraint classifier for scipconstype is enabled */
@@ -403,6 +417,7 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
 
      conshdlrdata->seeedpool->addSeeedToFinished(seeed, &success);
 
+     SCIPinfoMessage(scip, NULL, " Added decomposition is already in!!!!!!!!!!!!!!!!!!!!!\n");
 
       return SCIP_OKAY;
    }
@@ -772,6 +787,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    assert(conshdlrdata != NULL);
 
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->detectorclock) );
+   SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->completedetectionclock) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
@@ -870,6 +886,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->detectors = NULL;
    conshdlrdata->hasrun = FALSE;
    conshdlrdata->maxndetectionrounds = 0;
+   conshdlrdata->maxnclassesperclassifier = 0;
+   conshdlrdata->maxnclassesperclassifierforlargeprobs = 0;
    conshdlrdata->enableorigdetection = FALSE;
    conshdlrdata->seeedpoolunpresolved = NULL;
    conshdlrdata->seeedpool = NULL;
@@ -899,8 +917,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
  //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->allrelevantfinishedseeeds, conshdlrdata->sizedecomps) );
 //   SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->incompleteseeeds, conshdlrdata->sizeincompleteseeeds) );
 
-   SCIP_CALL( SCIPcreateWallClock(scip, &conshdlrdata->detectorclock) );
-
+   SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->detectorclock) );
+   SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->completedetectionclock) );
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,
@@ -913,6 +931,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/allowclassifierduplicates/enabled", "indicates whether classifier duplicates are allowed (for statistical reasons)", &conshdlrdata->allowclassifierduplicates, FALSE, DEFAULT_ALLOWCLASSIFIERDUPLICATES, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/emphfast/enabled", "indicates whether emphasis setting are set to fast", &conshdlrdata->enableemphfast, TRUE, DEFAULT_ENABLEEMPHFAST, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/smartscore/enabled", "indicates whether smart score should be activated", &conshdlrdata->smartscore, FALSE, DEFAULT_SMARTSCORE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/enabled", "indicates whether to start detection for the original problem", &conshdlrdata->enableorigdetection, FALSE, DEFAULT_ENABLEORIGDETECTION, NULL, NULL) );
@@ -938,6 +957,15 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/maxnclassesperclassifier",
+      "Maximum number of classes per classifier", &conshdlrdata->maxnclassesperclassifier, FALSE,
+      DEFAULT_MAXNCLASSES, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/maxnclassesperclassifierforlargeprobs",
+      "Maximum number of classes per classifier for large problems (nconss + nvars >= 50000)", &conshdlrdata->maxnclassesperclassifierforlargeprobs, FALSE,
+      DEFAULT_MAXNCLASSESLARGEPROBS, 0, INT_MAX, NULL, NULL) );
+
    SCIP_CALL( SCIPaddIntParam(scip, "detection/origprob/weightinggpresolvedoriginaldecomps",
       "Weighting method when comparing decompositions for presolved and unpresolved problem", &conshdlrdata->weightinggpresolvedoriginaldecomps, TRUE,
       NO_MODIF, 0, 3, NULL, NULL) );
@@ -2638,6 +2666,7 @@ SCIP_RETCODE DECincludeDetector(
    detector->skip = skip;
    detector->usefulRecall = usefulRecall;
    detector->legacymode = legacymode;
+   detector->overruleemphasis = FALSE;
    detector->ndecomps = 0;
    detector->decomps = NULL;
    detector->dectime = 0.;
@@ -2666,6 +2695,10 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/legacymode", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether (old) DETECTSTRUCTURE method of detector <%s> should also be used for detection", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->legacymode), FALSE, legacymode, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/overruleemphasis", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether emphasis settings for detector <%s> should be overruled by normal settings", name);
+   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->overruleemphasis), FALSE, FALSE, NULL, NULL) );
 
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallround", name);
@@ -3417,7 +3450,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
    seeed->flushBooked();
 
-
+   seeed->considerImplicits(currseeedpool);
 
 
    if( seeed->shouldCompletedByConsToMaster() )
@@ -3438,6 +3471,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    }
 
 
+   conshdlrdata->curruserseeed->buildDecChainString();
 
 
    if( conshdlrdata->curruserseeed->isComplete() )
@@ -3448,6 +3482,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       if( !conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
       {
          SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, conshdlrdata->curruserseeed));
+
       }
       /** stems from unpresolved problem */
       else
@@ -3455,6 +3490,21 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
          SCIP_Bool success;
          conshdlrdata->seeedpoolunpresolved->addSeeedToFinished(seeed, &success);
          conshdlrdata->unpresolveduserseeedadded = TRUE;
+
+         if ( conshdlrdata->seeedpool != NULL ) /* seeedpool for presolved problem already exist try to translate seeed */
+         {
+            std::vector<SeeedPtr> seeedtotranslate(0);
+            std::vector<SeeedPtr> newseeeds(0);
+            seeedtotranslate.push_back(seeed);
+            conshdlrdata->seeedpool->translateSeeeds(conshdlrdata->seeedpoolunpresolved, seeedtotranslate, newseeeds);
+            if( newseeeds.size() != 0 )
+            {
+               SCIP_Bool successfullyadded;
+               conshdlrdata->seeedpool->addSeeedToFinished(newseeeds[0], &successfullyadded);
+               if ( !successfullyadded )
+                  SCIPinfoMessage(scip, NULL, "Given decomposition is already known to gcg! \n");
+            }
+         }
       }
 
    }
@@ -3508,9 +3558,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    if( conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
          presolvedinfo = "unpresolved";
    else presolvedinfo = "presolved";
-
-   conshdlrdata->curruserseeed->buildDecChainString();
-
 
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " added %s decomp for %s problem with %d blocks and %d masterconss, %d linkingvars, "
@@ -4244,6 +4291,10 @@ SCIP_RETCODE DECdetectStructure(
 
    conshdlrdata->seeedpool = NULL;
 
+   SCIP_CALL(SCIPresetClock(scip, conshdlrdata->completedetectionclock));
+   SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
+
+
    /* check whether only legacy mode should be executed */
    SCIP_Bool onlylegacymode;
    SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacymode);
@@ -4272,9 +4323,12 @@ SCIP_RETCODE DECdetectStructure(
          conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
 
+      SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
+
       if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
          SCIP_CALL(SCIPtransformProb(scip));
 
+      SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
 
       /** get block number candidates and conslcassifier for original problem*/
       if( classifyOrig )
@@ -4305,6 +4359,7 @@ SCIP_RETCODE DECdetectStructure(
          varClassDistributions.push_back(classifier);
       }
 
+      SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
       //Presolving
       if( presolveOrigProblem )
          SCIP_CALL(SCIPpresolve(scip));
@@ -4323,10 +4378,12 @@ SCIP_RETCODE DECdetectStructure(
          return SCIP_OKAY;
       }
 
+
+
       /** start detection clocks */
       SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
       SCIP_CALL(SCIPstartClock(scip, conshdlrdata->detectorclock));
-
+      SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
       if( conshdlrdata->seeedpool == NULL )
       {
          conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
@@ -4384,6 +4441,8 @@ SCIP_RETCODE DECdetectStructure(
       SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
 
    } /* end of if( !onlylegacy ) */
+
+   SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock) );
 
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip, result );
 
@@ -5296,6 +5355,9 @@ SCIP_RETCODE setDetectionFast(
       SCIP_Result result;
 
       result = SCIP_DIDNOTRUN;
+      if( conshdlrdata->detectors[i]->overruleemphasis )
+         continue;
+
       if( conshdlrdata->detectors[i]->setParamFast != NULL )
          conshdlrdata->detectors[i]->setParamFast(scip, conshdlrdata->detectors[i], &result);
       if( !quiet )
@@ -5417,14 +5479,64 @@ SCIP_RETCODE GCGgetCurrentSeeedpools(
       SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeedpool!\n");
    }
 
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
    if(seeedpoolwr != NULL)
       seeedpoolwr->seeedpool = conshdlrdata->seeedpool;
 
    if(seeedpoolunpresolvedwr != NULL)
       seeedpoolunpresolvedwr->seeedpool = conshdlrdata->seeedpoolunpresolved;
+
+   return SCIP_OKAY;
+}
+
+
+/** prints blockcandiateinformation in following format:
+ * NCANDIDATES
+ * CANDIDATE : NVOTES for each candidate
+ */
+SCIP_RETCODE GCGprintBlockcandidateInformation(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* seeedpool;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeedpool = (conshdlrdata->seeedpool == NULL ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+
+   seeedpool->printBlockcandidateInformation(scip, file);
+
+   return SCIP_OKAY;
+}
+
+
+/** prints blockcandiateinformation in following format:
+ * NCLASSIFIER
+ * CLASSIFIERNAME  for each classifier
+ * NCLASSES
+ * CLASSNAME  for each class
+ * NMEMBERS
+ */
+SCIP_RETCODE GCGprintClassifierInformation(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* seeedpool;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeedpool = (conshdlrdata->seeedpool == NULL ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+
+   seeedpool->printClassifierInformation(scip, file);
 
    return SCIP_OKAY;
 }
@@ -5457,6 +5569,95 @@ SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
       *(output[i]) = newint;
    }
    *outputsize = selectedseeeds->size();
+
+   return SCIP_OKAY;
+}
+
+
+/** prints blockcandiateinformation in following format:
+ * NDECOMPS
+ * NBLOCKS  for each decomp
+ * NCONSS for each block
+ * NVARS
+ * endfor each block
+ * NMASTERCONSS
+ * NLINKINGVARS
+ * NMASTERVARS
+ * NSTAIRLINKINGVARS
+ * MAXWHITESCORE
+ * CLASSICALSCORE
+ * HASSETPARTITIONINGMASTER
+ * NDETECTORS
+ * DETECTORNAME for each detector
+ * NCONSCLASSIFIERS
+ * CONSCLASSIFIERNAME for each consclassifier
+ * nCLASSESMASTER
+ * CLASSNAME for each class
+ * NVARCLASSIFIERS
+ * VARCLASSIFIERNAME for each varclassifier
+ * nCLASSESMASTER
+ * CLASSNAME for each class
+ */
+SCIP_RETCODE GCGprintDecompInformation(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* seeedpool;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   std::vector<gcg::Seeed*>::const_iterator seeediter;
+   std::vector<gcg::Seeed*>::const_iterator seeediterend;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIP_CALL( SCIPconshdlrDecompUpdateSeeedlist(scip) );
+
+   seeediter = conshdlrdata->listall->begin();
+   seeediterend = conshdlrdata->listall->end();
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",
+      SCIPgetClockTime(scip, conshdlrdata->completedetectionclock ) );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (int) conshdlrdata->listall->size() );
+
+   for( ; seeediter != seeediterend; ++seeediter)
+   {
+      gcg::Seeed* seeed;
+      int nblocks = (*seeediter)->getNBlocks();
+
+      seeed = *seeediter;
+      seeedpool = ( seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool  );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (*seeediter)->getNBlocks() );
+      for( int block = 0; block < nblocks; ++block )
+      {
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->getNConssForBlock(block) );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->getNVarsForBlock(block) );
+      }
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->getNMasterconss() );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->getNLinkingvars() );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->getNMastervars() );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->getNTotalStairlinkingvars() );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n", 1.-seeed->getMaxWhiteScore() );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n", 1.-seeed->getScore(scoretype::CLASSIC) );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->hasSetpartitioningMaster(seeedpool) );
+
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (int) seeed->getDetectorchainVector( ).size() );
+
+      for( int detector = 0; detector <(int) seeed->getDetectorchainVector( ).size(); ++ detector )
+      {
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n",
+            DECdetectorGetName(seeed->getDetectorchainVector( )[detector]) );
+      }
+      seeed->printClassifierInformation(scip, seeedpool, file);
+   }
 
    return SCIP_OKAY;
 }

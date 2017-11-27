@@ -2964,8 +2964,6 @@ SCIP_Real Seeed::evaluate(
 
    masterissetppc = false;
 
-   std::cout << "smartscore is set to " << smartscore << std::endl;
-
    if( smartscore && maxwhitescore <= 0.8 && getNLinkingvars() == 0 )
    {
       masterissetppc = true;
@@ -2994,6 +2992,31 @@ SCIP_Real Seeed::evaluate(
    return   getScore(sctype);
 
 }
+
+
+/**
+ * returns true if the master consists only setpartitioning or cardinality constraints
+ */
+SCIP_Bool Seeed::hasSetpartitioningMaster(
+   gcg::Seeedpool* seeedpool
+)
+{
+   SCIP_Bool hassetpartmaster;
+   hassetpartmaster = TRUE;
+
+   for( int l = 0; l < getNMasterconss(); ++l )
+   {
+      int consid = getMasterconss()[l];
+      if( !seeedpool->isConsSetppc(consid) && !seeedpool->isConsCardinalityCons(consid) )
+      {
+         hassetpartmaster = FALSE;
+         break;
+      }
+   }
+   return hassetpartmaster;
+}
+
+
 
 /** assigns all conss to master or declares them to be open (and declares all vars to be open)
  *  according to the cons assignment information given in constoblock hashmap
@@ -3900,6 +3923,13 @@ int Seeed::getNDetectors()
    return (int) detectorChain.size();
 }
 
+/** returns the number used classifiers */
+int Seeed::getNUsedClassifier()
+{
+   return (int) usedClassifier.size();
+}
+
+
 /** returns size of the vector containing linking vars */
 int Seeed::getNLinkingvars()
 {
@@ -4496,6 +4526,87 @@ bool Seeed::isVarStairlinkingvarOfBlock(
       }
    }
 }
+
+
+SCIP_RETCODE Seeed::printClassifierInformation(
+   SCIP*                givenscip,
+   gcg::Seeedpool*      seeedpool,
+   FILE*                file
+   )
+{
+
+   int nusedclassifier = (int) getNUsedClassifier();
+   int nconsclassifier = 0;
+   int nvarclassifier = 0;
+
+   //SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  nusedclassifier );
+
+   for( int classif = 0; classif < nusedclassifier; ++classif)
+   {
+      if( usedClassifier[classif] == NULL )
+         continue;
+
+      if( dynamic_cast<ConsClassifier*>( usedClassifier[classif] ) != NULL )
+      {
+         /** classifier is cons classifier */
+         ++nconsclassifier;
+      }
+      else
+      {
+         /** classifier is var classifier */
+         ++nvarclassifier;
+      }
+   }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  nconsclassifier );
+
+   for( int classif = 0; classif < nusedclassifier; ++classif)
+   {
+      if( dynamic_cast<ConsClassifier*>( usedClassifier[classif] ) != NULL )
+      {
+         /** classifier is cons classifier */
+         int nmasterclasses = (int) classesToMaster[classif].size();
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedClassifier[classif]->getName() );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nmasterclasses  );
+         for ( int mclass = 0; mclass < (int) classesToMaster[classif].size(); ++mclass )
+         {
+            int classid = classesToMaster[classif][mclass];
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedClassifier[classif]->getClassName(classid), usedClassifier[classif]->getClassDescription(classid)  );
+         }
+      }
+   }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  nvarclassifier );
+
+   for( int classif = 0; classif < nusedclassifier; ++classif)
+   {
+      if( dynamic_cast<VarClassifier*>( usedClassifier[classif] ) != NULL )
+      {
+         /** classifier is var classifier */
+         int nmasterclasses = (int) classesToMaster[classif].size();
+         int nlinkingclasses = (int) classesToLinking[classif].size();
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedClassifier[classif]->getName() );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nmasterclasses  );
+         for ( int mclass = 0; mclass < (int) classesToMaster[classif].size();   ++mclass )
+         {
+            int classid = classesToMaster[classif][mclass];
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s : %s\n", usedClassifier[classif]->getClassName(classid), usedClassifier[classif]->getClassDescription(classid)  );
+         }
+
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nlinkingclasses  );
+         for ( int linkingclass = 0; linkingclass < nlinkingclasses;   ++linkingclass )
+         {
+            int classid = classesToLinking[classif][linkingclass];
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s : %s\n", usedClassifier[classif]->getClassName(classid),  usedClassifier[classif]->getClassDescription(classid) );
+         }
+
+      }
+   }
+
+
+   return SCIP_OKAY;
+}
+
 
 /** refine seeed with focus on blocks: assigns open conss and vars if they can be
  *  found in blocks (assignHittingOpenconss(), assignHittingOpenvars()) */
