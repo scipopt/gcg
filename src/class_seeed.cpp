@@ -1382,6 +1382,17 @@ bool Seeed::checkConsistency(
       }
    }
 
+   for( size_t i = 0; i < openVarsBool.size(); ++ i )
+   {
+      if( openVarsBool[i] != isvaropen[i] )
+      {
+         SCIPwarningMessage(scip, "In (seeed %d) variable with index %d is causes asynchronity with isvaropen array ! \n" , id, openVars[i]  );
+         assert( false );
+         return false;
+
+      }
+   }
+
    /** check constraints (every constraint is assigned at most once) */
    std::vector<bool> openConssBool( nConss, true );
    std::vector<int> openConssVec( 0 );
@@ -1702,6 +1713,7 @@ SCIP_RETCODE Seeed::completeByConnected(
     *success = FALSE;
     std::vector<int> constoreassign(0);
     std::vector<int> blockforconstoreassign(0);
+
     sort();
 
     for( int mc = 0; mc < getNMasterconss(); ++mc )
@@ -1743,6 +1755,7 @@ SCIP_RETCODE Seeed::completeByConnected(
 
     changedHashvalue = true;
 
+
     /** tools to check if the openVars can still be found in a constraint yet */
     std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
 
@@ -1757,6 +1770,7 @@ SCIP_RETCODE Seeed::completeByConnected(
     std::vector<bool> isConsOpen( nConss, false );
     std::vector<bool> isConsVisited( nConss, false );
 
+    varInBlocks = std::vector<int>(nVars, -1);
 
     std::queue<int> helpqueue = std::queue<int>();
     std::vector<int> neighborConss( 0 );
@@ -1767,6 +1781,7 @@ SCIP_RETCODE Seeed::completeByConnected(
 
     SCIP_CALL( refineToMaster( seeedpool ) );
 
+    assert(checkConsistency(seeedpool) );
 
     if( nBlocks < 0 )
        nBlocks = 0;
@@ -1823,12 +1838,12 @@ SCIP_RETCODE Seeed::completeByConnected(
           {
              int newvar = seeedpool->getVarsForCons(cons)[j];
 
-             if( isVarLinkingvar(newvar) )
+             if( isVarLinkingvar(newvar) || varInBlocks[newvar] != -1 )
                 continue;
 
              assert(! isVarMastervar( newvar) );
              setVarToBlock( newvar, newBlockNr - 1 );
-             assert( isVarOpenvar( newvar ) || isVarBlockvarOfBlock(newvar, newBlockNr - 1) );
+             varInBlocks[newvar] = newBlockNr - 1;
              if( isVarOpenvar(newvar) )
                 deleteOpenvar( newvar );
           }

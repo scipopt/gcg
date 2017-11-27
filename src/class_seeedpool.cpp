@@ -1456,7 +1456,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    } // end for postprocessing finished seeeds
    for( size_t c = 0; c < postprocessed.size(); ++c)
       addSeeedToFinishedUnchecked(postprocessed[c]);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Finished postprocessing of decompositions...\n");
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "...finished postprocessing of decompositions. Added %d new decomps. \n", postprocessed.size());
 
 
    sortAllRelevantSeeeds();

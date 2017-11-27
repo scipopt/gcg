@@ -2791,6 +2791,9 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled for finishing of incomplete decompositions", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabledFinishing), FALSE, enabledFinishing, NULL, NULL) );
 
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/postprocessingenabled", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled for postprocessing of finished decompositions", name);
+   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabledPostprocessing), FALSE, enabledPostprocessing, NULL, NULL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/skip", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> should be skipped if others found decompositions", name);
@@ -4541,6 +4544,9 @@ SCIP_RETCODE DECdetectStructure(
 //   SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
 
       //	  seeedpool.freeCurrSeeeds();
+
+      if( conshdlrdata->seeedpool->getNFinishedSeeeds() > 0 )
+         *result = SCIP_SUCCESS;
 
       SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
 
