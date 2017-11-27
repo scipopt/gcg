@@ -3541,9 +3541,9 @@ SCIP_RETCODE GCGcreateNewMasterVarFromGcgCol(
   assert(pricer != NULL);
 
   if( infarkas )
-     pricer->getFarkasPricing();
+     pricetype = pricer->getFarkasPricingNonConst();
   else
-     pricer->getReducedCostPricingNonConst();
+     pricetype = pricer->getReducedCostPricingNonConst();
 
 
   SCIP_CALL( pricer->createNewMasterVarFromGcgCol(scip, pricetype, gcgcol, force, added, addedvar, score) );
