@@ -129,6 +129,7 @@ SCIP_RETCODE writeGpHeader(
    ofs.open( filename, std::ofstream::out );
 
    /* set output format and file */
+   ofs << "set encoding utf8" << std::endl;
    ofs << "set terminal pdf" << std::endl;
    ofs << "set output \"" << outputname << "\"" << std::endl;
 

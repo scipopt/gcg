@@ -163,18 +163,11 @@ struct SCIP_ConshdlrData
    int                   maxnclassesperclassifierforlargeprobs; /** maximum number of classes per classifier for large problems (nvars + nconss >= 50000) */
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
-<<<<<<< HEAD
-   SCIP_Bool             enableemphfast;                    /**< indicates whether emphasis settings are set to fast */
-   SCIP_Bool             smartscore;                        /**< indicates whether smart score is enabled */
-   SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
-   SCIP_Bool             enableorigclassification;          /**< indicates whether to start constraint classification for the original problem */
-=======
    SCIP_Bool             allowclassifierduplicates;         /**< indicates whether classifier duplicates are allowed (for statistical reasons) */
    SCIP_Bool             enableemphfast;               /**< indicates whether emphasis settings are set to fast */
    SCIP_Bool             smartscore;               /**< indicates whether smart score is enabled */
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
    SCIP_Bool             enableorigclassification;               /**< indicates whether to start constraint classification for the original problem */
->>>>>>> feature/reform_detection
    SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
    SCIP_Bool             conssclassnnonzenabledorig;        /**< indicates whether constraint classifier for nonzero entries is enabled for the original problem */
    SCIP_Bool             conssclassnconstypeenabled;        /**< indicates whether constraint classifier for scipconstype is enabled */
@@ -4613,7 +4606,7 @@ SCIP_RETCODE DECwriteAllDecomps(
         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
         DECdecompFree(scip, &decomplocal);
-    //    conshdlrdata->useddecomp = NULL;
+        conshdlrdata->useddecomp = NULL;
      }
 
    conshdlrdata->useddecomp = tmp;
@@ -5478,6 +5471,9 @@ SCIP_RETCODE GCGgetCurrentSeeedpools(
    {
       SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeedpool!\n");
    }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
 
    if(seeedpoolwr != NULL)
       seeedpoolwr->seeedpool = conshdlrdata->seeedpool;

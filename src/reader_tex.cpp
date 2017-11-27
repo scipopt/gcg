@@ -107,7 +107,6 @@ SCIP_DECL_READERWRITE(readerWriteTex)
    }
    else
    {
-
       GCGwriteTexVisualization(scip, file, seeedid, TRUE, FALSE);
       *result = SCIP_SUCCESS;
    }
@@ -232,6 +231,7 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "%% packages                                                                      \n");
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     \n");
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
+   SCIPinfoMessage(scip, file, "\\usepackage{pdfpages}                                                           \n");
    SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
 //   SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      \n");
 //   SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               \n");
@@ -797,7 +797,7 @@ SCIP_RETCODE GCGwriteTexReport(
 
          SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
          SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
-         SCIPinfoMessage(scip, file, "    \\input{%s}                                                    \n", pdfname);
+         SCIPinfoMessage(scip, file, "    \\includegraphics{%s}                                          \n", pdfname);
          SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
          SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
       }
