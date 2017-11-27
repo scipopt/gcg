@@ -806,7 +806,7 @@ SCIP_RETCODE GCGwriteTexReport(
    }
    writeTexEnding(scip, file);
 
-   GCGtexWriteMakefileAndReadme(scip, file, usegp);
+   GCGtexWriteMakefileAndReadme(scip, file, usegp, FALSE);
 
    return SCIP_OKAY;
 }
@@ -979,7 +979,12 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       {
          /** write node */
          char temp[SCIP_MAXSTRLEN];
-         miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, "pdf", temp);
+
+         if(usegp)
+            miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, "pdf", temp);
+         else
+            miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, "tex", temp);
+
          ofs << " (s" << allrelevantseeedswr[curr]->seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{"
             << temp << ".pdf} }" << std::endl;
 
@@ -1030,7 +1035,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    }
    SCIPfreeBlockMemoryArray(scip, &allrelevantseeedswr, SCIPconshdlrDecompGetNSeeeds(scip));
 
-   GCGtexWriteMakefileAndReadme(scip, file, usegp);
+   GCGtexWriteMakefileAndReadme(scip, file, usegp, !usegp);
 
    return SCIP_OKAY;
 }
@@ -1091,7 +1096,9 @@ SCIP_RETCODE GCGwriteTexVisualization(
 SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIP*                scip,               /**< SCIP data structure */
    FILE*                file,               /**< File for which the makefile & readme are generated */
-   SCIP_Bool            usegp               /**< true if there are gp files to be included in the makefile */
+   SCIP_Bool            usegp,              /**< true if there are gp files to be included in the makefile */
+   SCIP_Bool            compiletex          /**< true if there are tex files to be compiled before main document */
+
    )
 {
    FILE* makefile;
@@ -1152,6 +1159,13 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIPinfoMessage(scip, makefile, "\t@echo Compiling tex code. This may take a while.                           \n");
    SCIPinfoMessage(scip, makefile, "\t@echo                                                                      \n");
    SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
+   if( compiletex )
+   {
+      /* will only be applied if the filename ends with "-tex.tex" due to the standard naming scheme */
+      SCIPinfoMessage(scip, makefile,
+      "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode -shell-escape\" -use-make *-tex.tex \n");
+
+   }
    SCIPinfoMessage(scip, makefile,
       "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode -shell-escape\" -use-make %s.tex \n", filename);
    SCIPinfoMessage(scip, makefile, "\t@make -f %s clean                                                          \n", name);

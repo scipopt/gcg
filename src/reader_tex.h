@@ -86,9 +86,10 @@ extern SCIP_RETCODE GCGwriteTexReport(
 
 /** makes a new makefile and readme for the given .tex file */
 extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(
-   SCIP* scip,       /**< SCIP data structure */
-   FILE* file,       /**< File for which the makefile & readme are generated */
-   SCIP_Bool usegp   /**< true if the gp reader was used for creation of file */
+   SCIP* scip,          /**< SCIP data structure */
+   FILE* file,          /**< File for which the makefile & readme are generated */
+   SCIP_Bool usegp,     /**< true if the gp reader was used for creation of file */
+   SCIP_Bool compiletex /**< true if there are tex files to be compiled before main document */
    );
 
 #ifdef __cplusplus
