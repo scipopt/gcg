@@ -818,8 +818,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    FILE* file,                /**< filename including path */
    const char* workfolder,    /**< directory in which should be worked, includes generation of intermediate files */
    SEEED_WRAPPER** seeedswr,  /**< seeed wrapper for the seeeds the family tree should be constructed for */
-   int* nseeeds,              /**< number of seeeds the family tree should be constructed for */
-   SCIP_Bool usegp            /**< true if the gp reader should be used to visualize the individual seeeds */
+   int* nseeeds               /**< number of seeeds the family tree should be constructed for */
    )
 {
    MiscVisualization* miscvisu = new MiscVisualization();
@@ -827,6 +826,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    int curr = -1;
    int currheight = 0;
    int helpvisucounter;    /* help counter for family tree visualization to iterate the heights */
+   SCIP_Bool usegp = GCGgetUseGp();
 
    std::ofstream ofs;
 
@@ -1029,6 +1029,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       SCIPfreeBlockMemory( scip, &(allrelevantseeedswr[i]) );
    }
    SCIPfreeBlockMemoryArray(scip, &allrelevantseeedswr, SCIPconshdlrDecompGetNSeeeds(scip));
+
+   GCGtexWriteMakefileAndReadme(scip, file, usegp);
 
    return SCIP_OKAY;
 }

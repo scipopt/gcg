@@ -4814,7 +4814,7 @@ SCIP_RETCODE DECwriteFamilyTree(
 	}
 
 	FILE* helpfile = fopen(filename, "w");
-	GCGwriteTexFamilyTree(scip, helpfile, workfolder, tovisualizewr, &ntovisualize, TRUE);
+	GCGwriteTexFamilyTree(scip, helpfile, workfolder, tovisualizewr, &ntovisualize);
 	fclose(helpfile);
 
 	for( size_t i = 0; i < tovisualize.size(); ++i )

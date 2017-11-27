@@ -69,8 +69,7 @@ extern SCIP_RETCODE GCGwriteTexFamilyTree(
    FILE* file,                /**< filename including path */
    const char* workfolder,    /**< directory in which should be worked, includes generation of intermediate files */
    SEEED_WRAPPER** seeedswr,  /**< seeed wrapper for the seeeds the family tree should be constructed for */
-   int* nseeeds,              /**< number of seeeds the family tree should be constructed for */
-   SCIP_Bool usegp            /**< true if the gp reader should be used to visualize the individual seeeds */
+   int* nseeeds               /**< number of seeeds the family tree should be constructed for */
    );
 
 /** writes a report for the given seeeds */
