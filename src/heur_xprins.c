@@ -1258,7 +1258,7 @@ SCIP_DECL_HEURINIT(heurInitXprins)
    heurdata->nextnodenumber = 0;
 
    /* create random number generator */
-   SCIP_CALL( SCIPrandomCreate(&heurdata->randnumgen, SCIPblkmem(scip),
+   SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
          SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
 
    return SCIP_OKAY;
@@ -1278,7 +1278,7 @@ SCIP_DECL_HEUREXIT(heurExitXprins)
    assert(heurdata != NULL);
 
    /* free random number generator */
-   SCIPrandomFree(&heurdata->randnumgen);
+   SCIPfreeRandom(scip, &heurdata->randnumgen);
 
    return SCIP_OKAY;
 }
