@@ -408,7 +408,7 @@ SCIP_RETCODE Pricingcontroller::moveColsToColpool(
          int ncols = GCGpricingjobGetNCols(pricingjobs[i]);
          SCIP_Bool added;
 
-         assert(cols != NULL);
+         assert(cols != NULL || ncols == 0);
 
          for( int j = 0; j < ncols; ++j )
          {
