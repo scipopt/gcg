@@ -180,9 +180,14 @@ SCIP_Bool Seeed::isconshittingblockca(
 {
    int neighborc = 0;
    int blockc = 0;
-   while ( blockc < getNConssForBlock(b) && neighborc < seeedpool->getNConssForCons(b) )
+   const int* conssforblock = getConssForBlock(b);
+   const int* conssforcons = seeedpool->getConssForCons(masterconsid);
+
+   int nconssforblock = getNConssForBlock(b);
+   int nconssforcons = seeedpool->getNConssForCons(masterconsid);
+   while ( blockc < nconssforblock && neighborc < nconssforcons )
    {
-      int diff = getConssForBlock(b)[blockc] - seeedpool->getConssForCons(b)[neighborc];
+      int diff = conssforblock[blockc] - conssforcons[neighborc];
       if ( diff < 0 )
          ++blockc;
       else if( diff > 0 )
@@ -1536,10 +1541,34 @@ bool Seeed::checkConsistency(
             if( ! ( isVarBlockvarOfBlock( varid, b ) || isVarLinkingvar( varid ) || isVarStairlinkingvarOfBlock( varid, b )
                || isVarOpenvar( varid ) ) )
             {
+               SCIP_Bool partofblock;
+
+               partofblock = FALSE;
+
                SCIPwarningMessage( scip,
                   "WARNING! Variable %d is not part of block %d or linking or open as constraint %d suggests! \n ", varid, b,
                   getConssForBlock( b )[c] );
 
+               for( int b2 = 0; b2 < getNBlocks(); ++b2 )
+               {
+                  if ( isVarBlockvarOfBlock(varid, b2 ) )
+                  {
+                     partofblock = TRUE;
+                     SCIPwarningMessage( scip,
+                        "instead Variable %d is part of block %d  \n ", varid, b2 );
+                     break;
+                  }
+               }
+
+               if( !partofblock )
+               {
+                  if( isvarmaster[varid] )
+                     SCIPwarningMessage( scip,
+                                             "instead Variable %d is part of master  \n ", varid );
+                  else
+                     SCIPwarningMessage( scip,
+                                                               "in fact Variable %d is completely unassigned  \n ", varid );
+               }
                return false;
             }
          }
@@ -1716,26 +1745,79 @@ SCIP_RETCODE Seeed::completeByConnected(
 
     sort();
 
+    std::vector<std::vector<bool> > blockadj(getNBlocks(), std::vector<bool>(0) );
+
+    /**  */
+    for( int b = 0; b < getNBlocks(); ++b )
+    {
+       blockadj[b] = std::vector<bool>(getNConss(), false);
+       for( size_t i  = 0; i < (size_t) getNConssForBlock(b); ++i )
+       {
+          for( size_t j = 0; j < (size_t) seeedpool->getNConssForCons(getConssForBlock(b)[i]); ++j )
+          {
+             blockadj[b][seeedpool->getConssForCons((getConssForBlock(b)[i]))[j] ] = true;
+          }
+       }
+    }
+
+
+    std::cout << "start postprocessing " << std::endl;
+
     for( int mc = 0; mc < getNMasterconss(); ++mc )
     {
        int masterconsid = getMasterconss()[mc];
        std::vector<int> blockids(0);
+       SCIP_Bool hitsmastervar = FALSE;
+
+       for( int var = 0; var < seeedpool->getNVarsForCons(masterconsid); ++var )
+       {
+          if( isvarmaster[seeedpool->getVarsForCons(masterconsid)[var]] )
+          {
+             hitsmastervar = TRUE;
+             break;
+          }
+       }
+
+       if( hitsmastervar )
+          break;
+
        for( int b = 0; b < getNBlocks(); ++b )
        {
-          if ( isconshittingblockca(seeedpool, masterconsid, b) )
+          if(  blockadj[b][masterconsid] )
+          {
              blockids.push_back(b);
+          }
 
           if( blockids.size() > 1 )
              break;
        }
+
+
        if ( blockids.size() == 1 )
        {
           constoreassign.push_back(masterconsid);
           blockforconstoreassign.push_back(blockids[0]);
        }
+    }
+
+
+    for( size_t i = 0; i < constoreassign.size() ; ++i )
+    {
+          std::vector<int>::iterator todelete = lower_bound( masterConss.begin(), masterConss.end(), constoreassign[i] );
+          masterConss.erase(todelete);
+
+          conssForBlocks[blockforconstoreassign[i]].push_back( constoreassign[i] );
+          conssforblocksorted = false;
 
     }
 
+    if( constoreassign.size() > 0 )
+       *success = SCIP_SUCCESS;
+
+    sort();
+
+    evaluate( seeedpool, SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
+    calcHashvalue();
 
     return SCIP_OKAY;
  }

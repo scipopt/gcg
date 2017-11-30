@@ -3,7 +3,11 @@ GCG Version tba
 
 features
 - new detection scheme:
-	- detection is roundwise (new parameter detection/maxrounds, default: 2)
+	- detection is roundwise (new parameter detection/maxrounds)
+	- detectors can implement three optional methods:
+		- propagateSeeed : given a partial decomposition d the detector returns a set of decompositions that are a refinement of d
+		- finsishSeeed: given a partial decomposition d the detector returns a set of decompositions that are a refinement of d and complete
+	        - postprocessSeeed: given a complete decomposition d the detector returns a set of complete decompositions 
 	- further new paramters for each detector: detector/*/{usefullrecall, freqcallround, maxcallround, mincallround}:
 		-  it useful to call this detector on a descendant of the propagated seeed
 		- frequency the detector gets called (is active) in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqcallround == 0
