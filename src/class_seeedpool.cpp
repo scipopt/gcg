@@ -1409,6 +1409,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          if( ! detector->enabledPostprocessing )
             continue;
 
+
          SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "call finisher for detector %s \n ", DECdetectorGetName( detectorToPostprocessingScipDetector[d] ) );
 
          SCIP_CALL_ABORT(

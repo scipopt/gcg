@@ -59,8 +59,8 @@
 #define DEC_DECCHAR               'p'         /**< display character of detector */
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
-#define DEC_ENABLEDFINISHING      TRUE        /**< should the finishing be enabled */
-#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
+#define DEC_ENABLEDFINISHING      FALSE        /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING TRUE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -196,6 +196,7 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "postprocess");
    seeedPropagationData->newSeeeds[0]->addDetectorChainInfo(decinfo);
 
+   seeedPropagationData->newSeeeds[0]->buildDecChainString();
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
    seeedPropagationData->newSeeeds[0]->addClockTime( SCIPclockGetTime(temporaryClock )  );

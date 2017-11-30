@@ -203,6 +203,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_dbscan.o \
 			dec_mst.o \
 			dec_mcl.o \
+			dec_postprocess.o \
 			dec_compgreedily.o \
 			dec_mastersetcover.o \
 			dec_mastersetpack.o \
