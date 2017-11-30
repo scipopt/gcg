@@ -2722,6 +2722,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       *bestredcostvalid &= pricingcontroller->redcostIsValid();
       optimal = pricingcontroller->pricingIsOptimal();
 
+      SCIPdebugMessage("optimal = %u, bestredcostvalid = %u, stabilized = %u\n", optimal, *bestredcostvalid, stabilized);
+
       if( pricetype->getType() == GCG_PRICETYPE_REDCOST )
       {
          SCIP_Real lowerboundcandidate;
@@ -2733,7 +2735,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          lowerboundcandidate = stabdualval + beststabobj;
 
-         SCIPdebugMessage("optimal = %u, bestredcostvalid = %u, stabilized = %u\n", optimal, *bestredcostvalid, stabilized);
          SCIPdebugMessage("lpobjval = %.8g, bestredcost = %.8g, stabdualval = %.8g, beststabobj = %.8g\n",
             SCIPgetLPObjval(scip_), bestredcost, stabdualval, beststabobj);
          SCIPdebugMessage("lowerboundcandidate = %.8g\n", lowerboundcandidate);

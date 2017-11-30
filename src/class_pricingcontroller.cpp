@@ -237,7 +237,7 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
    else
       maxcolsprob = pricingtype_->getMaxcolsprob();
 
-   SCIPdebugMessage("setup pricing queue, chunk = %d\n", curchunk);
+   SCIPdebugMessage("setup pricing queue, chunk = %d/%d\n", curchunk+1, nchunks);
 
    for( int i = 0; i < npricingprobs; ++i )
    {
@@ -378,7 +378,7 @@ SCIP_Bool Pricingcontroller::pricingIsInfeasible()
       if( GCGpricingjobGetStatus(pricingjobs[i]) == SCIP_STATUS_INFEASIBLE )
          return TRUE;
 
-      if( pricingtype_->getType() == GCG_PRICETYPE_FARKAS && GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_UNKNOWN && GCGpricingjobGetNImpCols(pricingjobs[i]) > 0 )
+      if( pricingtype_->getType() == GCG_PRICETYPE_FARKAS && (GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL || GCGpricingjobGetNImpCols(pricingjobs[i]) > 0) )
          infeasible = FALSE;
    }
 
