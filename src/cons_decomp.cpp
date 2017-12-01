@@ -3558,9 +3558,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
    seeed->flushBooked();
 
-   seeed->considerImplicits(currseeedpool);
-
-
    if( seeed->shouldCompletedByConsToMaster() )
    {
       for( int opencons = 0; opencons < seeed->getNOpenconss(); ++opencons)
@@ -3568,6 +3565,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       seeed->flushBooked();
    }
 
+   seeed->considerImplicits(currseeedpool);
    currseeedpool->prepareSeeed(conshdlrdata->curruserseeed);
 
 
