@@ -2904,7 +2904,7 @@ SCIP_Real Seeed::evaluate(
 
    unsigned long blackarea;
 
-   maxwhitescore = 1.;
+   maxwhitescore = 0.;
    alphaborderarea = 0.6;
    alphalinking = 0.2;
    alphadensity = 0.2;
@@ -2923,7 +2923,7 @@ SCIP_Real Seeed::evaluate(
          blackarea += (unsigned long) getNConssForBlock( i ) * (unsigned long) getNVarsForBlock( i );
       }
 
-      maxwhitescore = (SCIP_Real) blackarea / (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() );
+      maxwhitescore = 1. - ( (SCIP_Real) blackarea / (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() ) );
 
       return maxwhitescore;
 
@@ -3040,7 +3040,7 @@ SCIP_Real Seeed::evaluate(
    borderarea = getNMasterconss() * nVars
       + ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) * ( nConss - getNMasterconss() );
 
-   maxwhitescore = (SCIP_Real) blackarea /  (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() );
+   maxwhitescore = 1. - ( (SCIP_Real) blackarea /  (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() ) );
 //   std::cout << "black area ration =  " << blackarea << "/ ( " << getNConss() << " * " << getNVars() << " =  " << ( (unsigned long) getNConss() * (unsigned long) getNVars() ) << ")  = " << maxwhitescore << std::endl;
 
    //std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    this seeed has a black area ratio of " << maxwhitescore << std::endl;
@@ -3072,7 +3072,7 @@ SCIP_Real Seeed::evaluate(
    }
 
    borderscore = ( 1.0 * ( borderarea ) / matrixarea );
-   borderareascore = borderscore;
+   borderareascore = 1. - borderscore;
 
    DEC_DECTYPE type;
    if( getNLinkingvars() == getNTotalStairlinkingvars() && getNMasterconss() == 0 && getNLinkingvars() > 0 )
@@ -3099,36 +3099,36 @@ SCIP_Real Seeed::evaluate(
    switch( type )
    {
       case DEC_DECTYPE_ARROWHEAD:
-         totalscore = alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore );
+         totalscore = 1. - (alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore ) );
 //      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
          break;
       case DEC_DECTYPE_BORDERED:
-         totalscore = alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore );
+         totalscore = 1. - ( alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore ) );
 //      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
          break;
       case DEC_DECTYPE_DIAGONAL:
          if( nBlocks == 1 || nBlocks == 0 )
-            totalscore = 1.0;
-         else
             totalscore = 0.0;
+         else
+            totalscore = 1.0;
          break;
       case DEC_DECTYPE_STAIRCASE:
-         totalscore = alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + 0.2 * ( densityscore );
+         totalscore = 1. - ( alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + 0.2 * ( densityscore ) );
          break;
       case DEC_DECTYPE_UNKNOWN:
          assert (FALSE);
-         totalscore = 1.0;
+         totalscore = 0.0;
          break;
       default:
          SCIPerrorMessage( "No rule for this decomposition type, cannot compute score\n" );
          assert( FALSE );
-         totalscore = 1.0;
+         totalscore = 0.0;
          break;
    }
    if( nBlocks == 0 )
-      totalscore = 1.0;
+      totalscore = 0.0;
    if( nBlocks == 1 )
-      totalscore *= 4;
+      totalscore *= 0.25;
    if( totalscore > 1 )
       totalscore = 1;
 
@@ -3136,7 +3136,7 @@ SCIP_Real Seeed::evaluate(
 
    masterissetppc = false;
 
-   if( smartscore && maxwhitescore <= 0.8 && getNLinkingvars() == 0 )
+   if( smartscore && maxwhitescore >= 0.2 && getNLinkingvars() == 0 )
    {
       masterissetppc = true;
       for( int l = 0; l < getNMasterconss(); ++l )
@@ -3151,7 +3151,7 @@ SCIP_Real Seeed::evaluate(
          }
       }
       if ( masterissetppc )
-         maxwhitescore -= 1.;
+         maxwhitescore += 1.;
    }
 
 
@@ -4033,7 +4033,7 @@ const int* Seeed::getMastervars()
    return & masterVars[0];
 }
 
-/** returns the "maximum white score" (the smaller the better) */
+/** returns the "maximum white score" */
 SCIP_Real Seeed::getMaxWhiteScore()
 {
    return maxwhitescore;
