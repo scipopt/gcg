@@ -304,7 +304,7 @@ SCIP_RETCODE writeGpSeeed(
 
    /* set coordinate range */
    ofs << "set xrange [-1:" << seeed->getNVars() << "]" << std::endl;
-   ofs << "set yrange[" << seeed->getNConss() << ":-1]" << std::endl;
+   ofs << "set yrange[-1:" << seeed->getNConss() << "]" << std::endl;
 
    /* --- draw boxes ---*/
 
