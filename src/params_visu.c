@@ -160,7 +160,7 @@ SCIP_RETCODE SCIPincludeParamsVisu(
       &visudata->visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(scip,
-      "visual/usegp", "if true gnuplot is used for sub-visualizations, otherwise LaTeX/Tikz",
+      "visual/usegp", "if true gnuplot is used for sub-visualizations in report, otherwise LaTeX/Tikz",
       &visudata->visuusegp, FALSE, DEFAULT_VISU_USEGP, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,

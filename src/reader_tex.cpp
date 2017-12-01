@@ -840,7 +840,6 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    int curr = -1;
    int currheight = 0;
    int helpvisucounter;    /* help counter for family tree visualization to iterate the heights */
-   SCIP_Bool usegp = GCGgetUseGp();
 
    /* collection of treeseeds */
    std::vector<SeeedPtr> treeseeeds(0);
@@ -923,28 +922,14 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       strcat( imagefilename, "/" );
 
       /* gp files have to be generated and included later in the figure */
-      if(usegp)
-      {
-         miscvisu->GCGgetVisualizationFilename(scip, seeed, "gp", temp);
-         strcat( imagefilename, temp );
-         strcat( imagefilename, ".gp" );
-         miscvisu->GCGgetVisualizationFilename(scip, seeed, "pdf", temp);
-         strcpy( decompfilename, temp );
-         strcat( decompfilename, ".pdf" );
+      miscvisu->GCGgetVisualizationFilename(scip, seeed, "gp", temp);
+      strcat( imagefilename, temp );
+      strcat( imagefilename, ".gp" );
+      miscvisu->GCGgetVisualizationFilename(scip, seeed, "pdf", temp);
+      strcpy( decompfilename, temp );
+      strcat( decompfilename, ".pdf" );
 
-         GCGwriteGpVisualization(scip, imagefilename, decompfilename, seeed->getID());
-      }
-      else
-      {
-         /* generate the name with pdf extension such that includegraphics will find it */
-         miscvisu->GCGgetVisualizationFilename(scip, seeed, "pdf", temp);
-         strcat( imagefilename, temp );
-         strcat( imagefilename, ".tex" );
-
-         FILE* imagefile = fopen(imagefilename, "w");
-         GCGwriteTexVisualization(scip, imagefile, seeed->getID(), FALSE, FALSE);
-         fclose(imagefile);
-      }
+      GCGwriteGpVisualization(scip, imagefilename, decompfilename, seeed->getID());
    }
 
    /* merge both roots in the first one*/
@@ -970,6 +955,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
 
    /* start document with header */
    writeTexHeader(scip, file);
+//   SCIPinfoMessage(scip, file, "\\begin{center}\n");
 
    /* beginning of tree */
    SCIPinfoMessage(scip, file,
@@ -1028,6 +1014,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    }
 
    SCIPinfoMessage(scip, file, "\\end{tikzpicture}\n");
+//   SCIPinfoMessage(scip, file, "\\end{center}\n");
    writeTexEnding(scip, file);
 
    for( int i = 0; i < nallrelevantseeeds; ++i )
@@ -1036,7 +1023,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    }
    SCIPfreeBlockMemoryArray(scip, &allrelevantseeedswr, SCIPconshdlrDecompGetNSeeeds(scip));
 
-   GCGtexWriteMakefileAndReadme(scip, file, usegp, !usegp);
+   GCGtexWriteMakefileAndReadme(scip, file, TRUE, FALSE);
 
    return SCIP_OKAY;
 }
