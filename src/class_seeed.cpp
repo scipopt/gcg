@@ -1746,6 +1746,8 @@ SCIP_RETCODE Seeed::completeByConnected(
     sort();
 
     std::vector<std::vector<bool> > blockadj(getNBlocks(), std::vector<bool>(0) );
+    std::vector<std::vector<bool> > blockvaradj(getNBlocks(), std::vector<bool>(0) );
+
 
     /**  */
     for( int b = 0; b < getNBlocks(); ++b )
@@ -1758,6 +1760,13 @@ SCIP_RETCODE Seeed::completeByConnected(
              blockadj[b][seeedpool->getConssForCons((getConssForBlock(b)[i]))[j] ] = true;
           }
        }
+
+       for( size_t j  = 0; j < (size_t) getNVarsForBlock(b); ++j )
+       {
+          blockvaradj[b][getVarsForBlock(b)[j] ] = true;
+       }
+
+
     }
 
 
@@ -1768,17 +1777,24 @@ SCIP_RETCODE Seeed::completeByConnected(
        int masterconsid = getMasterconss()[mc];
        std::vector<int> blockids(0);
        SCIP_Bool hitsmastervar = FALSE;
+       SCIP_Bool varhitsotherblock = FALSE;
 
        for( int var = 0; var < seeedpool->getNVarsForCons(masterconsid); ++var )
        {
-          if( isvarmaster[seeedpool->getVarsForCons(masterconsid)[var]] )
+          int varid = seeedpool->getVarsForCons(masterconsid)[var];
+          if( isvarmaster[varid] )
           {
              hitsmastervar = TRUE;
              break;
           }
+          if( !( isVarBlockvarOfBlock(varid, b) || isVarLinkingvar(varid) ) )
+          {
+             varhitsotherblock = TRUE;
+             break;
+          }
        }
 
-       if( hitsmastervar )
+       if( hitsmastervar || varhitsotherblock )
           break;
 
        for( int b = 0; b < getNBlocks(); ++b )
