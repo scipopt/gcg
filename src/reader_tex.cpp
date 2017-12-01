@@ -914,25 +914,36 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    for( size_t i = 0; i < treeseeeds.size(); ++i )
    {
       SeeedPtr seeed;
-      char helpfilename[SCIP_MAXSTRLEN];
+      char imagefilename[SCIP_MAXSTRLEN];
       char decompfilename[SCIP_MAXSTRLEN];
       char temp[SCIP_MAXSTRLEN];
 
       seeed = treeseeeds[i];
-      strcpy( helpfilename, workfolder );
-      strcat( helpfilename, "/" );
+      strcpy( imagefilename, workfolder );
+      strcat( imagefilename, "/" );
 
       /* gp files have to be generated and included later in the figure */
       if(usegp)
       {
          miscvisu->GCGgetVisualizationFilename(scip, seeed, "gp", temp);
-         strcat( helpfilename, temp );
-         strcat( helpfilename, ".gp" );
+         strcat( imagefilename, temp );
+         strcat( imagefilename, ".gp" );
          miscvisu->GCGgetVisualizationFilename(scip, seeed, "pdf", temp);
          strcpy( decompfilename, temp );
          strcat( decompfilename, ".pdf" );
 
-         GCGwriteGpVisualization(scip, helpfilename, decompfilename, seeed->getID());
+         GCGwriteGpVisualization(scip, imagefilename, decompfilename, seeed->getID());
+      }
+      else
+      {
+         /* generate the name with pdf extension such that includegraphics will find it */
+         miscvisu->GCGgetVisualizationFilename(scip, seeed, "pdf", temp);
+         strcat( imagefilename, temp );
+         strcat( imagefilename, ".tex" );
+
+         FILE* imagefile = fopen(imagefilename, "w");
+         GCGwriteTexVisualization(scip, imagefile, seeed->getID(), FALSE, FALSE);
+         fclose(imagefile);
       }
    }
 
@@ -974,19 +985,10 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       {
          /** write node */
          SCIPinfoMessage(scip, file, "(s%d) ", allrelevantseeedswr[curr]->seeed->getID());
-         if(usegp)
-         {
-            char temp[SCIP_MAXSTRLEN];
-            miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, "pdf", temp);
-            SCIPinfoMessage(scip, file, "{ \\includegraphics[width=0.15\\textwidth]{%s.pdf} }", temp);
-         }
-         else
-         {
-            SCIPinfoMessage(scip, file, "{");
-            writeTexSeeed(scip, file, allrelevantseeedswr[curr]->seeed,
-               miscvisu->GCGgetSeeedpoolForSeeed(scip, allrelevantseeedswr[curr]->seeed->getID()), TRUE);
-            SCIPinfoMessage(scip, file, "}");
-         }
+
+         char temp[SCIP_MAXSTRLEN];
+         miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, "pdf", temp);
+         SCIPinfoMessage(scip, file, "{ \\includegraphics[width=0.15\\textwidth]{%s.pdf} }", temp);
 
          /* set node visited */
          visited[curr] = TRUE;
@@ -1034,7 +1036,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    }
    SCIPfreeBlockMemoryArray(scip, &allrelevantseeedswr, SCIPconshdlrDecompGetNSeeeds(scip));
 
-   GCGtexWriteMakefileAndReadme(scip, file, usegp, FALSE);
+   GCGtexWriteMakefileAndReadme(scip, file, usegp, !usegp);
 
    return SCIP_OKAY;
 }
@@ -1053,8 +1055,8 @@ SCIP_RETCODE GCGwriteTexVisualization(
    SEEED_WRAPPER seeedwr;
    Seeed* seeed;
    Seeedpool* seeedpool = NULL;
-   char* gpname = '\0';
-   char* pdfname = '\0';
+   char gpname[SCIP_MAXSTRLEN];
+   char pdfname[SCIP_MAXSTRLEN];
 
    /* get seeed */
    GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
@@ -1140,7 +1142,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    if( compiletex )
    {
       /* will only be applied if the filename ends with "-tex.tex" due to the standard naming scheme */
-      SCIPinfoMessage(scip, makefile, "TEXFILES := $(wildcard *-tex.tex)\n");
+      SCIPinfoMessage(scip, makefile, "TEXFILES := $(wildcard *-pdf.tex)\n");
    }
    SCIPinfoMessage(scip, makefile, "                                                                             \n");
    SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               \n");
