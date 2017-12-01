@@ -516,8 +516,8 @@ SCIP_RETCODE checkSetppcStructure(
          {
             relaxdata->masterissetcover = FALSE;
             relaxdata->masterissetpart = FALSE;
+            break;
          }
-         break;
       }
       else
       {
