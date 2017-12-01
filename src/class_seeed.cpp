@@ -1746,7 +1746,7 @@ SCIP_RETCODE Seeed::completeByConnected(
     sort();
 
     std::vector<std::vector<bool> > blockadj(getNBlocks(), std::vector<bool>(0) );
-    std::vector<std::vector<bool> > blockvaradj(getNBlocks(), std::vector<bool>(0) );
+    std::vector<int> blockforvar(getNVars(), -1 );
 
 
     /**  */
@@ -1763,7 +1763,7 @@ SCIP_RETCODE Seeed::completeByConnected(
 
        for( size_t j  = 0; j < (size_t) getNVarsForBlock(b); ++j )
        {
-          blockvaradj[b][getVarsForBlock(b)[j] ] = true;
+          blockforvar[getVarsForBlock(b)[j] ] = b;
        }
 
 
@@ -1774,6 +1774,9 @@ SCIP_RETCODE Seeed::completeByConnected(
     {
        int masterconsid = getMasterconss()[mc];
        std::vector<int> blockids(0);
+       std::vector<bool> conshitblock(getNBlocks(), false);
+       SCIP_Bool hitoneblock = FALSE;
+
        SCIP_Bool hitsmastervar = FALSE;
        SCIP_Bool varhitsotherblock = FALSE;
 
@@ -1785,10 +1788,17 @@ SCIP_RETCODE Seeed::completeByConnected(
              hitsmastervar = TRUE;
              break;
           }
-          if( !( isVarBlockvarOfBlock(varid, b) || isVarLinkingvar(varid) ) )
+
+          if ( blockforvar[varid] != -1 && !conshitblock[blockforvar[varid]] )
           {
-             varhitsotherblock = TRUE;
-             break;
+             conshitblock[blockforvar[varid]] = true;
+             if( hitoneblock )
+             {
+                varhitsotherblock = TRUE;
+                break;
+             }
+             else
+                hitoneblock = TRUE;
           }
        }
 
