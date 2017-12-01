@@ -232,6 +232,7 @@ LIBOBJ		=	reader_blk.o \
 			class_seeed.o \
 			class_seeedpool.o \
 			dec_compgreedily.o \
+			dec_postprocess.o \
 			dec_mastersetcover.o \
 			dec_mastersetpack.o \
 			dec_mastersetpart.o \

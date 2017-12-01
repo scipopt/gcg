@@ -1770,8 +1770,6 @@ SCIP_RETCODE Seeed::completeByConnected(
     }
 
 
-    std::cout << "start postprocessing " << std::endl;
-
     for( int mc = 0; mc < getNMasterconss(); ++mc )
     {
        int masterconsid = getMasterconss()[mc];
@@ -2284,7 +2282,7 @@ SCIP_RETCODE Seeed::considerImplicits(
 
    flushBooked();
 
-   /** set open var to linking, if it can be found in more than one block or set it to a block if it has only constraints in that block and no open constraints */
+   /** set open var to linking, if it can be found in more than one block or set it to a block if it has only constraints in that block and no open constraints or set it to master if it only hits master constraints */
    for( size_t i = 0; i < openVars.size(); ++ i )
    {
       blocksOfOpenvar.clear();

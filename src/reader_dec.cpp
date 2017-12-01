@@ -478,7 +478,7 @@ SCIP_Bool isNewSection(
 
    }
 
-   if( strcasecmp(decinput->token, "MASTERCONSS") == 0 )
+   if( strcasecmp(decinput->token, "MASTERCONSS") == 0 || strcasecmp(decinput->token, "MASTERCONS") == 0 )
    {
       decinput->section = DEC_MASTERCONSS;
 
@@ -1118,7 +1118,7 @@ SCIP_RETCODE readDECFile(
             }
             if( !decinput->haspresolvesection )
             {
-               SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
+               SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. Please add a presolve section. File reading is aborted. \n");
             }
             break;
 
