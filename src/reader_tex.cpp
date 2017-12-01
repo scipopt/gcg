@@ -232,7 +232,9 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\\usepackage[utf8]{inputenc}                                                     \n");
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
    SCIPinfoMessage(scip, file, "\\usepackage{pdfpages}                                                           \n");
+   SCIPinfoMessage(scip, file, "\\usepackage{fancybox}                                                           \n");
    SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
+   SCIPinfoMessage(scip, file, "\\usetikzlibrary{positioning}                                                    \n");
 //   SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      \n");
 //   SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               \n");
    SCIPinfoMessage(scip, file, "                                                                                 \n");
@@ -491,7 +493,8 @@ SCIP_RETCODE writeTexSeeed(
    SCIP* scip,             /**< SCIP data structure */
    FILE* file,             /**< filename (including path) to write to */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
-   Seeedpool* seeedpool    /**< current Seeedpool */
+   Seeedpool* seeedpool,   /**< current Seeedpool */
+   SCIP_Bool nofigure      /**< if true there will be no figure environments around tikz code*/
    )
 {
    int rowboxcounter = 0;
@@ -502,8 +505,11 @@ SCIP_RETCODE writeTexSeeed(
    nvars = seeed->getNVars();
    nconss = seeed->getNConss();
 
-   SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
-   SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
+   if(!nofigure)
+   {
+      SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
+      SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
+   }
    SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                             \n");
 
    /* --- draw boxes ---*/
@@ -556,8 +562,11 @@ SCIP_RETCODE writeTexSeeed(
    }
 
    SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                               \n");
-   SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
-   SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+   if(!nofigure)
+   {
+      SCIPinfoMessage(scip, file, "  \\end{center}                                                    \n");
+      SCIPinfoMessage(scip, file, "\\end {figure}                                                     \n");
+   }
 
    return SCIP_OKAY;
 }
@@ -626,40 +635,47 @@ SCIP_RETCODE writeTexEnding(
    return SCIP_OKAY;
 }
 
-std::string writeSeeedDetectorChainInfoLatex(
-   SeeedPtr seeed,
+/** help function for GCGwriteTexFamilyTree:
+ * writes edges between nodes that are labeled corresponding to involved detectors */
+SCIP_RETCODE writeSeeedDetectorChainInfoLatex(
+   SCIP* scip,
+   FILE* file,       /**< file to write to */
+   SeeedPtr seeed,   /**< seeed to write about */
    int currheight,
    int visucounter
    )
 {
-   std::stringstream line;
-   std::string relposition;
+   char relposition[SCIP_MAXSTRLEN];
    int position = visucounter % 3;
    if( position == 0 )
-      relposition = "above";
+      strcpy(relposition, "above");
    else if ( position == 1)
-      relposition = "";
+      strcpy(relposition, " ");
    else if ( position == 2)
-      relposition = "below";
+      strcpy(relposition, "below");
    else
-      relposition = "below left";
+      strcpy(relposition, "below left");
 
-   if ( currheight != 1)
-      relposition = "";
+   if( currheight != 1)
+      strcpy(relposition, " ");
 
-   if ( currheight >  seeed->getNDetectorchainInfo() )
-      line << "edge from parent node [" << relposition << "] {no info" << seeed->getID() << "-" << currheight -1 << " } " ;
+   if( currheight > seeed->getNDetectorchainInfo() )
+   {
+      SCIPinfoMessage(scip, file, "edge from parent node [%s] {no info%d-%d } ", relposition, seeed->getID(),
+         currheight - 1);
+   }
    else
    {
       std::string oldinfo = seeed->getDetectorchainInfo( currheight - 1 );
-      /** take latexified detctorchaininfo */
+      /** take latexified detectorchaininfo */
       size_t index = 0;
-      while (true) {
+      while(true)
+      {
          /* Locate the substring to replace. */
          index = oldinfo.find("_", index);
-         if (index == std::string::npos)
+         if(index == std::string::npos)
             break;
-         if ( index > 0 &&   oldinfo.at(index-1) == '\\' )
+         if( index > 0 && oldinfo.at(index-1) == '\\' )
          {
             ++index;
             continue;
@@ -671,13 +687,11 @@ std::string writeSeeedDetectorChainInfoLatex(
          /* Advance index forward so the next iteration doesn't pick it up as well. */
          index += 2;
       }
-      std::cout << "oldinfo: " << oldinfo << std::endl;
 
-      line << "edge from parent node [" << relposition << "] {" << oldinfo <<"} " ;
+      SCIPinfoMessage(scip, file, "edge from parent node [%s] {%s} ", relposition, oldinfo.c_str());
    }
 
-
-   return line.str();
+   return SCIP_OKAY;
 }
 
 /**
@@ -772,7 +786,7 @@ SCIP_RETCODE GCGwriteTexReport(
       seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, tempindex);
       if(!usegp)
       {
-         writeTexSeeed(scip, file, seeed, seeedpool);
+         writeTexSeeed(scip, file, seeed, seeedpool, FALSE);
       }
       else
       {
@@ -827,14 +841,6 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    int currheight = 0;
    int helpvisucounter;    /* help counter for family tree visualization to iterate the heights */
    SCIP_Bool usegp = GCGgetUseGp();
-
-   std::ofstream ofs;
-
-   /* directly initialize the filename */
-   const char* filename = miscvisu->GCGgetFilePath(scip, file);
-
-   std::stringstream preambel;
-   std::string closing = "\\end{tikzpicture}\n\\end{document}";
 
    /* collection of treeseeds */
    std::vector<SeeedPtr> treeseeeds(0);
@@ -916,6 +922,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       strcpy( helpfilename, workfolder );
       strcat( helpfilename, "/" );
 
+      /* gp files have to be generated and included later in the figure */
       if(usegp)
       {
          miscvisu->GCGgetVisualizationFilename(scip, seeed, "gp", temp);
@@ -927,20 +934,9 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
 
          GCGwriteGpVisualization(scip, helpfilename, decompfilename, seeed->getID());
       }
-      else
-      {
-         miscvisu->GCGgetVisualizationFilename(scip, seeed, "tex", temp);
-         strcat( helpfilename, temp );
-         strcat( helpfilename, ".tex" );
-
-         FILE* helpfile = fopen(helpfilename, "w");
-         GCGwriteTexVisualization(scip, helpfile, seeed->getID(), FALSE, FALSE);
-         fclose(helpfile);
-      }
    }
 
    /* merge both roots in the first one*/
-
    for( size_t s = 0; root2 != -1 && s < treeseeeds.size(); ++s )
    {
       int seeedid = treeseeeds[s]->getID();
@@ -960,16 +956,15 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    if( childs[root].size() == 1 ){
       firstsibldist = 1;
    }
-   preambel.precision(2);
 
-   preambel << "\\documentclass[a3paper,landscape]{scrartcl}\n\\usepackage{fancybox}\n\\usepackage{tikz}";
-   preambel << "\n\\usetikzlibrary{positioning}\n\\title{Detection Tree}\n\\date{}\n\\begin{document}\n\n";
-   preambel << "\\begin{tikzpicture}[level/.style={sibling distance=" << firstsibldist
-      << "\\textwidth/#1}, level distance=12em, ->, dashed]\n\\node";
+   /* start document with header */
+   writeTexHeader(scip, file);
 
-   /** start writing file */
-   ofs.open(filename, std::ofstream::out );
-   ofs << preambel.str();
+   /* beginning of tree */
+   SCIPinfoMessage(scip, file,
+      "\\begin{tikzpicture}[level/.style={sibling distance=%f\\textwidth/#1}, level distance=12em, ->, dashed]\n",
+      firstsibldist);
+   SCIPinfoMessage(scip, file, "\\node ");
 
    /** iterate tree and write file */
    curr = root;
@@ -978,15 +973,20 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       if( !visited[curr] )
       {
          /** write node */
-         char temp[SCIP_MAXSTRLEN];
-
+         SCIPinfoMessage(scip, file, "(s%d) ", allrelevantseeedswr[curr]->seeed->getID());
          if(usegp)
+         {
+            char temp[SCIP_MAXSTRLEN];
             miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, "pdf", temp);
+            SCIPinfoMessage(scip, file, "{ \\includegraphics[width=0.15\\textwidth]{%s.pdf} }", temp);
+         }
          else
-            miscvisu->GCGgetVisualizationFilename(scip, allrelevantseeedswr[curr]->seeed, "tex", temp);
-
-         ofs << " (s" << allrelevantseeedswr[curr]->seeed->getID() << ") { \\includegraphics[width=0.15\\textwidth]{"
-            << temp << ".pdf} }" << std::endl;
+         {
+            SCIPinfoMessage(scip, file, "{");
+            writeTexSeeed(scip, file, allrelevantseeedswr[curr]->seeed,
+               miscvisu->GCGgetSeeedpoolForSeeed(scip, allrelevantseeedswr[curr]->seeed->getID()), TRUE);
+            SCIPinfoMessage(scip, file, "}");
+         }
 
          /* set node visited */
          visited[curr] = TRUE;
@@ -999,35 +999,34 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
          int unfinishedchild = getFirstUnfinishedChild(childsfinished[curr], childs[curr] );
          /* is first child unfinihsed? */
          //         if( unfinishedchild == childs[curr][0] )
-         ofs << " child { node " ;
+         SCIPinfoMessage(scip, file, "\n child { node ");
          curr = unfinishedchild;
          ++currheight;
       }
       else
       {
          if ( parents[curr] != -1 ){
-            ofs << writeSeeedDetectorChainInfoLatex( allrelevantseeedswr[curr]->seeed, currheight, helpvisucounter);
+            writeSeeedDetectorChainInfoLatex(scip, file, allrelevantseeedswr[curr]->seeed, currheight, helpvisucounter);
             ++helpvisucounter;
          }
          --currheight;
          curr = parents[curr];
          if( curr != -1)
-            ofs << " } " ;
+            SCIPinfoMessage(scip, file, " } ");
       }
    }
 
-   ofs << ";" << std::endl;
+   SCIPinfoMessage(scip, file, ";\n");
    for( size_t i = 0; i < treeseeeds.size(); ++i)
    {
       if ( treeseeeds[i]->getID() == root2 )
          continue;
-      ofs << "\\node[below = \\belowcaptionskip of s" << treeseeeds[i]->getID() << "] (caps" << treeseeeds[i]->getID()
-         << ") {\\scriptsize " << treeseeeds[i]->getShortCaption() << "}; " << std::endl;
+      SCIPinfoMessage(scip, file, "\\node[below = \\belowcaptionskip of s%d] (caps%d) {\\scriptsize %s}; \n",
+         treeseeeds[i]->getID(), treeseeeds[i]->getID(), treeseeeds[i]->getShortCaption());
    }
 
-   ofs << closing << std::endl;
-
-   ofs.close();
+   SCIPinfoMessage(scip, file, "\\end{tikzpicture}\n");
+   writeTexEnding(scip, file);
 
    for( int i = 0; i < nallrelevantseeeds; ++i )
    {
@@ -1035,7 +1034,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    }
    SCIPfreeBlockMemoryArray(scip, &allrelevantseeedswr, SCIPconshdlrDecompGetNSeeeds(scip));
 
-   GCGtexWriteMakefileAndReadme(scip, file, usegp, !usegp);
+   GCGtexWriteMakefileAndReadme(scip, file, usegp, FALSE);
 
    return SCIP_OKAY;
 }
@@ -1067,7 +1066,7 @@ SCIP_RETCODE GCGwriteTexVisualization(
 
    if(!usegp)
    {
-      writeTexSeeed(scip, file, seeed, seeedpool);
+      writeTexSeeed(scip, file, seeed, seeedpool, FALSE);
    }
    else
    {
@@ -1138,6 +1137,11 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    {
       SCIPinfoMessage(scip, makefile, "GPFILES := $(wildcard *.gp)\n");
    }
+   if( compiletex )
+   {
+      /* will only be applied if the filename ends with "-tex.tex" due to the standard naming scheme */
+      SCIPinfoMessage(scip, makefile, "TEXFILES := $(wildcard *-tex.tex)\n");
+   }
    SCIPinfoMessage(scip, makefile, "                                                                             \n");
    SCIPinfoMessage(scip, makefile, "# latexmk automatically manages the .tex files                               \n");
    SCIPinfoMessage(scip, makefile, "%s.pdf: %s.tex\n",
@@ -1161,10 +1165,10 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIPinfoMessage(scip, makefile, "\t@echo ------------                                                         \n");
    if( compiletex )
    {
-      /* will only be applied if the filename ends with "-tex.tex" due to the standard naming scheme */
-      SCIPinfoMessage(scip, makefile,
-      "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode -shell-escape\" -use-make *-tex.tex \n");
-
+      SCIPinfoMessage(scip, makefile, "\t$(SHELL) -ec  'for j in $(TEXFILES); \\\n");
+      SCIPinfoMessage(scip, makefile, "\t\tdo \\\n");
+      SCIPinfoMessage(scip, makefile, "\t\tpdflatex $$j; \\\n");
+      SCIPinfoMessage(scip, makefile, "\t\tdone'\n");
    }
    SCIPinfoMessage(scip, makefile,
       "\t@latexmk -pdf -pdflatex=\"pdflatex -interaction=batchmode -shell-escape\" -use-make %s.tex \n", filename);
