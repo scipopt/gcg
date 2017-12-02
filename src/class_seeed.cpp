@@ -1745,37 +1745,22 @@ SCIP_RETCODE Seeed::completeByConnected(
 
     sort();
 
-    std::vector<std::vector<bool> > blockadj(getNBlocks(), std::vector<bool>(0) );
     std::vector<int> blockforvar(getNVars(), -1 );
 
 
     /**  */
     for( int b = 0; b < getNBlocks(); ++b )
     {
-       blockadj[b] = std::vector<bool>(getNConss(), false);
-       for( size_t i  = 0; i < (size_t) getNConssForBlock(b); ++i )
-       {
-          for( size_t j = 0; j < (size_t) seeedpool->getNConssForCons(getConssForBlock(b)[i]); ++j )
-          {
-             blockadj[b][seeedpool->getConssForCons((getConssForBlock(b)[i]))[j] ] = true;
-          }
-       }
-
        for( size_t j  = 0; j < (size_t) getNVarsForBlock(b); ++j )
        {
           blockforvar[getVarsForBlock(b)[j] ] = b;
        }
-
-
     }
 
 
     for( int mc = 0; mc < getNMasterconss(); ++mc )
     {
        int masterconsid = getMasterconss()[mc];
-       std::vector<int> blockids(0);
-       std::vector<bool> conshitblock(getNBlocks(), false);
-       SCIP_Bool hitoneblock = FALSE;
        int hittenblock  = -1;
 
        SCIP_Bool hitsmastervar = FALSE;
@@ -1800,35 +1785,11 @@ SCIP_RETCODE Seeed::completeByConnected(
                 break;
              }
           }
-
-
-//          {
-//             conshitblock[blockforvar[varid]] = true;
-//             if( hitoneblock )
-//             {
-//                varhitsotherblock = TRUE;
-//                break;
-//             }
-//             else
-//                hitoneblock = TRUE;
-//          }
        }
 
        if( hitsmastervar || varhitsotherblock )
-          break;
+          continue;
 
-//       for( int b = 0; b < getNBlocks(); ++b )
-//       {
-//          if(  blockadj[b][masterconsid] )
-//          {
-//             blockids.push_back(b);
-//          }
-//
-//          if( blockids.size() > 1 )
-//             break;
-//       }
-//
-//
        if ( hittenblock != -1 )
        {
           constoreassign.push_back(masterconsid);
