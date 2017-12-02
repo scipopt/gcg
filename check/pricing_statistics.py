@@ -170,7 +170,7 @@ def make_plot(data, name):
     # set the heights of zero
     ymin = -0.15
 
-    # flat out the data again (maybe in the final version, there should be no dataframe to begin with)
+    # flat out the data again
     flat_data = data.reset_index()
     flat_data.time = flat_data.time + 0.01 # workaround for most times being zero (0,01s is SCIPs smallest time-interval)
 
@@ -238,6 +238,7 @@ def make_plot(data, name):
         prev_stab = flat_data['stab_round'][0]
         prev_x = 0
         texts = []
+        farkasLine = False
         enfLine = False
         for i in range(len(x)):
             rnd = flat_data['pricing_round'][i]
@@ -247,6 +248,11 @@ def make_plot(data, name):
                     # bold line for a new pricing round
                     if params['lines'] or (x[i] - prev_x)/totalTime > 0.005 or enfLine:
                         line = lines.Line2D([x[i],x[i]],[0,1],color='r',linewidth=1.0, transform = trans)
+                        # add a blue line at the end of farkas pricing
+                        if not farkasLine and not flat_data['farkas'][i]:
+                            line.set_color('blue')
+                            ax.text(x[i], .5, "\it{End of initial Farkas Pricing}", va = 'center', ha = 'left', rotation = 90, color = 'blue', zorder = 1, transform = trans)
+                            farkasLine = True
                         ax.add_line(line)
                         if (x[i] - prev_x)/totalTime > 0.025:
                             enfLine = True
@@ -316,9 +322,12 @@ def make_summary_plot(data, name):
     start_time = time.time()
 
     summary = pd.DataFrame()
-    summary['time'] = data.groupby(level=['node','pricing_round','stab_round']).sum().time
-    summary['found_frac'] = data.astype(bool).groupby(level=['node','pricing_round','stab_round']).sum().nVars/data.groupby(level=['node','pricing_round','stab_round']).count().nVars*100
+    summary['time'] = data.groupby(level=['node','pricing_round','stab_round', 'round']).sum().time
+    summary['found_frac'] = data.astype(bool).groupby(level=['node','pricing_round','stab_round', 'round']).sum().nVars/data.groupby(level=['node','pricing_round','stab_round', 'round']).count().nVars*100
     summary = summary.reset_index()
+
+    if not data.farkas.all() and data.farkas.any():
+        farkas_end = (data[data.farkas == False].reset_index()['round'].values[0] + data[data.farkas == True].reset_index()['round'].values[-1])/2.
 
     print '    extracted summary data:', time.time() - start_time
     start_time = time.time()
@@ -327,14 +336,20 @@ def make_summary_plot(data, name):
     ax2 = ax1.twinx()
 
     # get the data for the plot
-    x = [i+1 for i in summary.index.values]
-    y_time = summary.time.values
-    y_found_frac = summary.found_frac.values
+    x = summary[summary.stab_round <= 1]['round'].values
+    y_time = summary[summary.stab_round <= 1].time.values
+    y_found_frac = summary[summary.stab_round <= 1].found_frac.values
+    x_stab = summary[summary.stab_round > 1]['round'].values
+    y_stab_time = summary[summary.stab_round > 1].time.values
+    y_stab_found_frac = summary[summary.stab_round > 1].found_frac.values
 
     # format the plot
     ax1.set_xlabel('Pricing Round', size='large')
     ax1.set_ylabel('Time / s', color='k', size='large')
-    ax2.set_ylabel('Fraction of successfull pricers / \%', color='r')
+    ax2.set_ylabel('Fraction of successfull pricers / \%', color='r', size='large')
+
+    ax1.tick_params(axis='both', labelsize='large')
+    ax2.tick_params(axis='both', labelsize='large')
 
     ax1.get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
     ax1.set_xlim([0, max(x) + 0.9])
@@ -344,25 +359,38 @@ def make_summary_plot(data, name):
         ax1.set_ylim([-0.001,0.01])
     ax2.set_ylim([-max(y_found_frac)*0.15,max(y_found_frac)*1.15])
 
+    trans = transforms.blended_transform_factory(ax1.transData, ax1.transAxes)
+
     p1,p2 = ax1.transData.transform([(1,0),(2,0)])
     perimeter = max([3.5,(p2[0] - p1[0])/5.])
 
     # plot the data
     ax1.scatter(x,y_time, color='k', s=perimeter**2)
     ax2.scatter(x,y_found_frac, color='r', s=perimeter**2)
+    ax1.scatter(x_stab,y_stab_time, color='k', s=perimeter**2, marker='x', alpha=.5)
+    ax2.scatter(x_stab,y_stab_found_frac, color='r', s=perimeter**2, marker='x', alpha=.5)
 
     # add a line after the root-node
     if summary.node.max() > 1:
         x_line = (summary[summary.node > 1].index[0] + 1 + summary[summary.node == 1].index[-1] + 1)/2.
-        line = lines.Line2D([x_line,x_line],[0,1],color='red',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax1.transData, ax1.transAxes))
+        line = lines.Line2D([x_line,x_line],[0,1.02],color='red',linewidth=.5,linestyle='--', transform = trans)
+        line.set_clip_on(False)
         ax1.add_line(line)
-        ax2.text(x_line, 50, "\it{End of Root}", va = 'center', ha = 'left', rotation = 90, size = 'smaller', color = 'red', zorder = 1)
+        ax1.text(x_line, 1.025, "\it{End of Root}", ha = 'center', size = 'smaller', color = 'red', zorder = 1, transform = trans)
+
+    # add a line after the initial farkas pricing
+    if not data.farkas.all() and data.farkas.any():
+        x_line = farkas_end
+        line = lines.Line2D([x_line,x_line],[0,1],color='blue',linewidth=.5,linestyle='--', transform = trans)
+        ax1.add_line(line)
+        ax1.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = 'center', color = 'blue', zorder = 1, transform = trans)
     print '    plotted summary:', time.time() - start_time
     start_time = time.time()
 
     # save the plot
     fig.set_size_inches(11.7,8.3)
     plt.tight_layout()
+    fig.subplots_adjust(top = 0.96)
     if params['details']:
         plt.savefig(params['outdir'] + '/' + name + '_summary.pdf')
     else:
@@ -372,28 +400,21 @@ def make_summary_plot(data, name):
 
 def make_bubble_plot(data, name):
     data = data.reset_index()
-    # add a column 'round' to the dataframe, that counts each stab_round and pricing_round
-    rnd = []
-    prev_rnd = 1
-    for ind in data.index:
-        if ind == 0:
-            rnd.append(1)
-            continue
-        if data.loc[ind].pricing_round > data.loc[ind-1].pricing_round or data.loc[ind].stab_round > data.loc[ind-1].stab_round:
-            rnd.append(prev_rnd + 1)
-            prev_rnd = prev_rnd + 1
-        else:
-            rnd.append(prev_rnd)
-    data['round'] = rnd
 
     pricers = data.pricing_prob.unique().tolist()
+    if not data.farkas.all() and data.farkas.any():
+        farkas_end = (data[data.farkas == False]['round'].values[0] + data[data.farkas == True]['round'].values[-1])/2.
 
     # add x and y data to plot for every pricer
     x = {}
     y = {}
+    x_stab = {}
+    y_stab = {}
     for p in pricers:
-        x[p] = data[(data.pricing_prob == p) & (data.nVars >= 1)]['round'].values
+        x[p] = data[(data.pricing_prob == p) & (data.nVars >= 1) & (data.stab_round <= 1)]['round'].values
         y[p] = [p for i in x[p]]
+        x_stab[p] = data[(data.pricing_prob == p) & (data.nVars >= 1) & (data.stab_round > 1)]['round'].values
+        y_stab[p] = [p for i in x_stab[p]]
 
     colors = get_colmap(pricers)
 
@@ -401,30 +422,45 @@ def make_bubble_plot(data, name):
     ax = plt.gca()
 
     # format the plot
-    ax.set_xlabel('Round')
-    ax.set_ylabel('Pricer ID')
+    ax.set_xlabel('Round', size='large')
+    ax.set_ylabel('Pricer ID', size='large')
     ax.set_xlim([0,data['round'].max()+0.9])
     ax.set_ylim([min(pricers) - 0.5, max(pricers) + 0.5])
     ax.get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
     ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True))
+    trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+    ax.tick_params(axis='both', labelsize='large')
     # set the size of the markers, such that they do not overlap
     p1,p2,p3 = ax.transData.transform([(1,min(pricers)),(2,min(pricers)),(1,min(pricers)+1)])
     perimeter = max(3.5,min((p2[0] - p1[0])/2.2 , (p3[1] - p1[1])/2.2))
 
     for p in pricers:
         ax.scatter(x[p],y[p], color = colors[pricers.index(p)], s=perimeter**2)
+        ax.scatter(x_stab[p],y_stab[p], color = colors[pricers.index(p)], s=perimeter**2, marker = 'x', alpha = .5)
 
     # add a line after the root-node
     if data.node.max() > 1:
         x_line = (data[data.node > 1]['round'].iloc[0] + data[data.node == 1]['round'].iloc[-1])/2.
-        line = lines.Line2D([x_line,x_line],[0,1],color='red',linewidth=.5,linestyle='--', transform = transforms.blended_transform_factory(ax.transData, ax.transAxes))
+        line = lines.Line2D([x_line,x_line],[0,1.02],color='red',linewidth=.5,linestyle='--', transform = trans)
+        line.set_clip_on(False)
         ax.add_line(line)
-        ax.text(x_line, (max(pricers) + min(pricers))/2., "\it{End of Root}", va = 'center', ha = 'left', rotation = 90, size = 'smaller', color = 'red', zorder = 1)
+        ax.text(x_line, 1.025, "\it{End of Root}", ha = 'center', size = 'smaller', color = 'red', zorder = 1, transform = trans)
+
+    # add a line after the initial farkas pricing
+    if not data.farkas.all() and data.farkas.any():
+        x_line = farkas_end
+        line = lines.Line2D([x_line,x_line],[0,1],color='blue',linewidth=.5,linestyle='--', transform = trans)
+        ax.add_line(line)
+        ax.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = 'center', color = 'blue', zorder = 1, transform = trans)
 
     # save the plot
     fig.set_size_inches(11.7,8.3)
     plt.tight_layout()
-    plt.savefig(params['outdir'] + '/' + name + '_bubble.pdf')
+    fig.subplots_adjust(top = 0.96)
+    if params['details']:
+        plt.savefig(params['outdir'] + '/' + name + '_bubble.pdf')
+    else:
+        plt.savefig(params['outdir'] + '/' + name + '_bubble.png')
     plt.close()
 
 def plots(data, name):
@@ -507,10 +543,23 @@ def load_data(files):
             print '    total plotting:', time.time() - start_time
         print '    leaving', name
 
-def collect_data(name, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars):
-    index = pd.MultiIndex.from_arrays([ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob],
-                                      names=["node", "pricing_round", "stab_round", "pricing_prob"])
-    data = {'time': val_time, 'nVars': val_nVars}
+def collect_data(name, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas):
+    """
+    Take lists containing the parsed data and structure them in a multiindex dataframe; then save or plot the data.
+    All lists have to be of equal length (representing columns in a table)
+    :param name: name of the instance
+    :param ind_node: node, used as index
+    :param ind_pricing_round: pricing round, used as index
+    :param ind_stab_round: stabilization round, used as index
+    :param ind_pricing_prob: pricing problem, used as index
+    :param val_time: running time of the pricing problem, will be a column in the dataframe
+    :param val_nVars: number of found variables, will be a column in the dataframe
+    :param val_farkas: is the pricing problem part of the initial farkas pricing? Will be a column in the dataframe
+    :return:
+    """
+    index = pd.MultiIndex.from_arrays([ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob],
+                                      names=["node", "pricing_round", "stab_round", "round", "pricing_prob"])
+    data = {'time': val_time, 'nVars': val_nVars, 'farkas': val_farkas}
     df = pd.DataFrame(data=data, index = index)
 
     if params['save']:
@@ -523,7 +572,7 @@ def collect_data(name, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_
         plots(df, name)
         print '    total plotting:', time.time() - start_time
 
-def generate_files(files):
+def parse_files(files):
     """
     Parse the files and structure the pricing-data in a dataframe then make the plots
     :param files: List of files to be parsed
@@ -535,20 +584,24 @@ def generate_files(files):
             ind_node = []
             ind_pricing_round = []
             ind_stab_round = []
+            ind_round = []
             ind_pricing_prob = []
 
             # initialize the value-lists
             val_time = []
             val_nVars = []
+            val_farkas = []
 
             # initialize all counters
             node = 0
             pricing_round = 0
             stab_round = 0
             pricing_prob = 0
+            round_counter = 0
 
             # initialize all other variables
             problemFileName = None
+            farkasDone = False
             done = False
 
             for line in _file:
@@ -558,7 +611,7 @@ def generate_files(files):
                         # print message, if the previous problem is not done yet
                         if not done and problemFileName:
                             print '    ended abruptly'
-                            collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
+                            collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                             print '    leaving', problemFileName
                             done = True
 
@@ -566,20 +619,24 @@ def generate_files(files):
                         ind_node = []
                         ind_pricing_round = []
                         ind_stab_round = []
+                        ind_round = []
                         ind_pricing_prob = []
 
                         # initialize the value-lists
                         val_time = []
                         val_nVars = []
+                        val_farkas = []
 
                         # initialize all counters
                         node = 0
                         pricing_round = 0
                         stab_round = 0
                         pricing_prob = 0
+                        round_counter = 0
 
                         # initialize all other variables
                         problemFileName = None
+                        farkasDone = False
                         done = False
                     else:
                         # ignore lines, where the output ends abrubtly (e.g. when the hard limit of the check-script is reached)
@@ -603,6 +660,10 @@ def generate_files(files):
                         continue
                     print 'entering', problemFileName
 
+                # end of initial farkas pricing
+                elif line.startswith("Starting reduced cost pricing..."):
+                    farkasDone = True
+
                 # pricer statistics end
                 elif line.startswith("SCIP Status        :"):
                     # continue if no data is found
@@ -611,7 +672,7 @@ def generate_files(files):
                         done = True
                         continue
 
-                    collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
+                    collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
 
                     done = True
 
@@ -629,9 +690,10 @@ def generate_files(files):
                     try:
                         node = int(message.split()[-1])
                         pricing_round += 1
+                        round_counter += 1
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
+                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -639,9 +701,11 @@ def generate_files(files):
                 elif message.startswith("Stabilization round ") or message.startswith("Sr "):
                     try:
                         stab_round = int(message.split()[-1])
+                        if stab_round > 1:
+                            round_counter += 1
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
+                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -658,6 +722,7 @@ def generate_files(files):
                         ind_node.append(node)
                         ind_pricing_round.append(pricing_round)
                         ind_stab_round.append(stab_round)
+                        ind_round.append(round_counter)
                         ind_pricing_prob.append(pricing_prob)
 
                         # store the data
@@ -666,9 +731,10 @@ def generate_files(files):
                             val_nVars.append(int(message.split()[-3]))
                         else:
                             val_nVars.append(int(message.split()[5]))
+                        val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_pricing_prob, val_time, val_nVars)
+                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -683,7 +749,7 @@ def main():
     if params['load']:
         load_data(parsed_args.filenames)
     else:
-        generate_files(parsed_args.filenames)
+        parse_files(parsed_args.filenames)
 
 # Calling main script
 if __name__ == '__main__':
