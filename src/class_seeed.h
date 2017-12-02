@@ -588,7 +588,7 @@ public:
    /** returns array containing all master vars (hitting only constraints in the master) */
    const int* getMastervars();
 
-   /** returns the "maximum white score" (the smaller the better) */
+   /** returns the "maximum white score" */
    SCIP_Real getMaxWhiteScore();
 
    /** returns the score of the seeed (depending on used scoretype) */

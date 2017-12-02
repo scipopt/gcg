@@ -355,31 +355,31 @@ SCIP_RETCODE getDetectorCallRoundInfo(
    return SCIP_OKAY;
 }
 
-/** returns TRUE if seeed i has a lower MaxWhiteScore than seeed j */
+/** returns TRUE if seeed i has a greater MaxWhiteScore than seeed j */
 SCIP_Bool cmpSeeedsMaxWhite(
    SeeedPtr i,
    SeeedPtr j
    )
 {
-   return ( i->getMaxWhiteScore() < j->getMaxWhiteScore() );
+   return ( i->getMaxWhiteScore() > j->getMaxWhiteScore() );
 }
 
-/** returns TRUE if seeed i has a lower border area score than seeed j */
+/** returns TRUE if seeed i has a greater border area score than seeed j */
 SCIP_Bool cmpSeeedsBorderArea(
    SeeedPtr i,
    SeeedPtr j
    )
 {
-   return ( i->getScore( BORDER_AREA ) < j->getScore( BORDER_AREA ) );
+   return ( i->getScore( BORDER_AREA ) > j->getScore( BORDER_AREA ) );
 }
 
-/** returns TRUE if seeed i has a lower score than seeed j */
+/** returns TRUE if seeed i has a greater score than seeed j */
 SCIP_Bool cmpSeeedsClassic(
    SeeedPtr i,
    SeeedPtr j
    )
 {
-   return ( i->getScore( CLASSIC )  < j->getScore( CLASSIC ) );
+   return ( i->getScore( CLASSIC )  > j->getScore( CLASSIC ) );
 }
 
 /* method to thin out the vector of given seeeds */
@@ -1351,14 +1351,14 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
    if( (int) finishedSeeeds.size() != 0 )
    {
-       SCIP_Real minscore = finishedSeeeds[0]->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
+       SCIP_Real maxscore = finishedSeeeds[0]->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
       //            SeeedPtr bestSeeed = finishedSeeeds[0];
       for( size_t i = 1; i < finishedSeeeds.size(); ++ i )
       {
           SCIP_Real score = finishedSeeeds[i]->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
-         if( score < minscore )
+         if( score > maxscore )
          {
-            minscore = score;
+            maxscore = score;
          }
       }
    }
