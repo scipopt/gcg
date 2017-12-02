@@ -1776,6 +1776,7 @@ SCIP_RETCODE Seeed::completeByConnected(
        std::vector<int> blockids(0);
        std::vector<bool> conshitblock(getNBlocks(), false);
        SCIP_Bool hitoneblock = FALSE;
+       int hittenblock  = -1;
 
        SCIP_Bool hitsmastervar = FALSE;
        SCIP_Bool varhitsotherblock = FALSE;
@@ -1789,38 +1790,49 @@ SCIP_RETCODE Seeed::completeByConnected(
              break;
           }
 
-          if ( blockforvar[varid] != -1 && !conshitblock[blockforvar[varid]] )
+          if ( blockforvar[varid] != -1 )
           {
-             conshitblock[blockforvar[varid]] = true;
-             if( hitoneblock )
+             if( hittenblock == -1 )
+                hittenblock = blockforvar[varid];
+             else if( hittenblock != blockforvar[varid] )
              {
                 varhitsotherblock = TRUE;
                 break;
              }
-             else
-                hitoneblock = TRUE;
           }
+
+
+//          {
+//             conshitblock[blockforvar[varid]] = true;
+//             if( hitoneblock )
+//             {
+//                varhitsotherblock = TRUE;
+//                break;
+//             }
+//             else
+//                hitoneblock = TRUE;
+//          }
        }
 
        if( hitsmastervar || varhitsotherblock )
           break;
 
-       for( int b = 0; b < getNBlocks(); ++b )
-       {
-          if(  blockadj[b][masterconsid] )
-          {
-             blockids.push_back(b);
-          }
-
-          if( blockids.size() > 1 )
-             break;
-       }
-
-
-       if ( blockids.size() == 1 )
+//       for( int b = 0; b < getNBlocks(); ++b )
+//       {
+//          if(  blockadj[b][masterconsid] )
+//          {
+//             blockids.push_back(b);
+//          }
+//
+//          if( blockids.size() > 1 )
+//             break;
+//       }
+//
+//
+       if ( hittenblock != -1 )
        {
           constoreassign.push_back(masterconsid);
-          blockforconstoreassign.push_back(blockids[0]);
+          blockforconstoreassign.push_back(hittenblock);
        }
     }
 
