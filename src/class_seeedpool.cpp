@@ -1434,7 +1434,6 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                }
 #pragma omp critical ( seeedptrstore )
                {
-                  SCIP_Bool success;
                   assert( seeed->getID() >= 0 );
                   postprocessed.push_back( seeed);
                }

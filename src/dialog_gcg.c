@@ -447,7 +447,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
 }
 
 
-/** dialog execution method for the display statistics command */
+/** dialog execution method print complete detection information */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecPrintDetectionInformation)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
@@ -490,13 +490,12 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr)
    return SCIP_OKAY;
 }
 
-/** dialog execution method for the display statistics command */
+/** dialog execution method add an instance name, used for make test with statistic reading */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddInstancename
 )
 {  /*lint --e{715}*/
 
    char* instancename;
-   int blocknr;
    char tempstr[SCIP_MAXSTRLEN];
    SCIP_Bool endoffile;
 
@@ -734,8 +733,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
    int presolrounds;
-   presolrounds = -1;
    SCIP_Bool emphfast;
+
+   presolrounds = -1;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 

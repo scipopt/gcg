@@ -82,9 +82,9 @@ Seeed::Seeed(
    ) :
    scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
    masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givennvars, true ),
-   isconsopen( givennconss, true ) ,isvarmaster( givennvars, false ), varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
-   conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true), masterconsssorted(true),
-   isconsmaster( givennconss, false ), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
+   isconsopen( givennconss, true ), isvarmaster( givennvars, false ),   isconsmaster( givennconss, false ), varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
+   conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
+   masterconsssorted(true), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), usedClassifier( 0 ), classesToMaster( 0 ), classesToLinking( 0 ), listofancestorids( 0 ),
@@ -121,6 +121,8 @@ Seeed::Seeed(
    openConss = seeedtocopy->openConss;
 
    isvaropen = seeedtocopy->isvaropen;
+   masterconsssorted = seeedtocopy->masterconsssorted;
+
    isconsopen = seeedtocopy->isconsopen;
 
    isvarmaster = seeedtocopy->isvarmaster;
@@ -162,7 +164,6 @@ Seeed::Seeed(
    conssforblocksorted = seeedtocopy->conssforblocksorted;
    linkingvarssorted = seeedtocopy->linkingvarssorted;
    mastervarssorted = seeedtocopy->mastervarssorted;
-   masterconsssorted = seeedtocopy->masterconsssorted;
 
 }
 

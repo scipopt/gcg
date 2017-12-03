@@ -174,7 +174,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedDensemasterconss)
 
   std::sort(nnonzeros.begin(), nnonzeros.end(), sort_pred() );
 
-  for( int i = 0; i < lastindex && i < nnonzeros.size() - 1; ++i )
+  for( int i = 0; i < lastindex && i < (int) nnonzeros.size() - 1; ++i )
   {
      if( maxdiff < nnonzeros[i].first - nnonzeros[i+1].first )
      {
