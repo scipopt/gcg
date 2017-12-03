@@ -2352,7 +2352,7 @@ SCIP_Real Seeedpool::getVal(
       std::pair<int, int>( row, col ) );
 
    if( iter == valsMap.end() )
-      return 0;
+      return 0.;
 
    return iter->second;
 }

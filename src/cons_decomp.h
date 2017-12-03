@@ -51,7 +51,9 @@ extern "C" {
 enum scoretype {
    MAX_WHITE = 0,
    BORDER_AREA,
-   CLASSIC
+   CLASSIC,
+   MAX_FORESSEEING_WHITE,
+   SETPART_FWHITE
 };
 
 typedef enum scoretype SCORETYPE;

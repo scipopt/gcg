@@ -268,6 +268,12 @@ char*  SCIPconshdlrDecompGetScoretypeShortName(
    if( sctype == scoretype::BORDER_AREA)
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border") ;
 
+   if( sctype == scoretype::MAX_FORESSEEING_WHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh") ;
+
+   if( sctype == scoretype::SETPART_FWHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh") ;
+
 
    SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
 
@@ -294,6 +300,12 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
 
       if( sctype == scoretype::BORDER_AREA)
             SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score; )")  ;
+
+      if( sctype == scoretype::MAX_FORESSEEING_WHITE)
+            SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
+
+      if( sctype == scoretype::SETPART_FWHITE)
+                  SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
 
 
       SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );

@@ -2932,6 +2932,28 @@ SCIP_Real Seeed::evaluate(
    if( getNOpenconss() != 0 || getNOpenvars() != 0 )
       SCIPwarningMessage( scip, "Evaluation for seeeds is not implemented for seeeds with open conss or open vars.\n" );
 
+   if ( sctype == scoretype::MAX_FORESSEEING_WHITE || sctype == scoretype::SETPART_FWHITE )
+   {
+      std::vector<int> nlinkingvarsforblock(getNBlocks(), 0);
+      std::vector<int> nblocksforlinkingvar(getNBlocks(), 0);
+
+      for( int lv = 0; lv < getNLinkingvars(); ++lv )
+      {
+         int linkingvarid = getLinkingvars()[lv];
+
+         for( int b = 0; b < getNBlocks(); ++b )
+         {
+            for ( int blc = 0; blc < getNConssForBlock(b); ++blc )
+            {
+               int blockcons = getConssForBlock(b)[blc];
+               if( !SCIPisZero( seeedpool->scip, seeedpool->getVal(blockcons, linkingvarid) ) )
+                  ;
+            }
+         }
+      }
+   }
+
+
    SCIP_CALL( SCIPallocBufferArray( scip, & nzblocks, nBlocks ) );
    SCIP_CALL( SCIPallocBufferArray( scip, & nlinkvarsblocks, nBlocks ) );
    SCIP_CALL( SCIPallocBufferArray( scip, & blockdensities, nBlocks ) );

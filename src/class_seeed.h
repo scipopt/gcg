@@ -153,9 +153,13 @@ private:
    SCIP_Real score;                                   /**< score to evaluate the seeeds */
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
 
-   SCIP_Real borderareascore;                         /**< @todo comment */
+   SCIP_Real borderareascore;                         /**< fraction of border area to complete area */
 
-   char* detectorchainstring;                         /**< @todo comment */
+   SCIP_Real maxforeseeeingwhitescore;                /**< maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
+
+   SCIP_Real setpartfwhitescore;                      /** setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )*/
+
+   char* detectorchainstring;                         /**< string formed by the chars of the detectors involved for this seeed  */
 
    /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
    bool stemsFromUnpresolved;             /**< seeed has at least one ancestor that is a seeed from unpresolved problem */
