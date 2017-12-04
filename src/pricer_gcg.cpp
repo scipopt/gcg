@@ -207,6 +207,7 @@ struct SCIP_PricerData
                                               *   if pricing problems cannot be aggregation */
    SCIP_Bool             useartificialvars;  /**< use artificial variables to make RMP feasible (instead of applying Farkas pricing) */
    SCIP_Bool             addtrivialsols;     /**< should the master variables corresponding to trivial pricing solutions be added in the first Farkas pricing? */
+   SCIP_Bool             filldualfarkas;     /**< should the master variables corresponding to trivial pricing solutions be added in the first Farkas pricing? */
    int                   colpoolagelimit;    /**< agelimit of columns in colpool */
    int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
 
@@ -1079,7 +1080,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->consGetDual(scip_, masterconss[i]);
       }
 
-      if( DEFAULT_FARKASFILLDUAL && stabilization->inFarkas() )
+      if( pricerdata->filldualfarkas && stabilization->inFarkas() )
       {
 //         SCIPinfoMessage(scip_, NULL, "dualsol1 = %f\n", dualsol);
          if( SCIPisNegative(scip_, SCIPgetRhsLinear(scip_, masterconss[i])) )
@@ -4657,6 +4658,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/farkas/addtrivialsols",
          "should the master variables corresponding to trivial pricing solutions be added in the first Farkas pricing?",
          &pricerdata->addtrivialsols, FALSE, DEFAULT_FARKASTRIVIALSOLS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/farkas/filldualfarkas",
+         "should the dual farkas values that are zero be shifted?",
+         &pricerdata->filldualfarkas, FALSE, DEFAULT_FARKASFILLDUAL, NULL, NULL) );
 
    SCIP_CALL( SCIPsetIntParam(scip, "lp/disablecutoff", DEFAULT_DISABLECUTOFF) );
 
