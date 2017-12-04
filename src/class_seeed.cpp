@@ -2997,14 +2997,6 @@ SCIP_Real Seeed::evaluate(
       maxforeseeingwhitescore = 1. - maxforeseeingwhitescore;
    }
 
-   std::cout << "Max foreseeeing white score: " << maxforeseeingwhitescore << std::endl;
-
-   if ( sctype == scoretype::MAX_FORESSEEING_WHITE )
-      return maxforeseeingwhitescore;
-
-
-
-
    SCIP_CALL( SCIPallocBufferArray( scip, & nzblocks, nBlocks ) );
    SCIP_CALL( SCIPallocBufferArray( scip, & nlinkvarsblocks, nBlocks ) );
    SCIP_CALL( SCIPallocBufferArray( scip, & blockdensities, nBlocks ) );

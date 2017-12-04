@@ -382,6 +382,27 @@ SCIP_Bool cmpSeeedsClassic(
    return ( i->getScore( CLASSIC )  > j->getScore( CLASSIC ) );
 }
 
+/** returns TRUE if seeed i has a greater score than seeed j */
+SCIP_Bool cmpSeeedsFWhite(
+   SeeedPtr i,
+   SeeedPtr j
+   )
+{
+   return ( i->getScore( MAX_FORESSEEING_WHITE )  > j->getScore( MAX_FORESSEEING_WHITE ) );
+}
+
+
+/** returns TRUE if seeed i has a greater score than seeed j */
+SCIP_Bool cmpSeeedsPPCfWhite(
+   SeeedPtr i,
+   SeeedPtr j
+   )
+{
+   return ( i->getScore( SETPART_FWHITE )  > j->getScore( SETPART_FWHITE ) );
+}
+
+
+
 /* method to thin out the vector of given seeeds */
 std::vector<SeeedPtr> thinout(
    std::vector<SeeedPtr> finishedseeeds,
@@ -1473,7 +1494,16 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
    if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::CLASSIC )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsClassic);
+
+   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_FORESSEEING_WHITE )
+      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsFWhite);
+
+   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::SETPART_FWHITE )
+      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCfWhite);
+
 }
+
+
 
 /** method to complete a set of incomplete seeeds with the help of all included detectors that implement a finishing method
  *  @return set of completed decomposition */
@@ -3843,7 +3873,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIP_VAR** linkingvars;
    SCIP_CONS** linkingconss;
    SCIP_CONS*** subscipconss;
-   DEC_SCORES scores;
    int* nsubscipconss;
    int* nsubscipvars;
    int* nstairlinkingvars;
@@ -4132,12 +4161,9 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    std::cout <<" seeed maxwhitescore: " << seeed->getMaxWhiteScore() << std::endl;
 
-   scores.maxwhitescore = seeed->getMaxWhiteScore();
-
    DECsetMaxWhiteScore(scip, *newdecomp, seeed->getMaxWhiteScore() );
 
 
-   assert( scores.maxwhitescore == seeed->getMaxWhiteScore() );
    assert( DECdecompCheckConsistency( scip, ( * newdecomp ) ) );
    assert( ! SCIPhashmapIsEmpty( ( * newdecomp )->constoblock ) );
    assert( ! SCIPhashmapIsEmpty( ( * newdecomp )->vartoblock ) );
