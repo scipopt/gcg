@@ -406,6 +406,10 @@ public:
    /** returns the number of constraints considered in the seeedpool */
    int getNConss();
 
+   /* returns associated scip */
+   SCIP* getScip();
+
+
    /** returns the candidates for block size sorted in descending order by how often a candidate was added */
    std::vector<int> getSortedCandidatesNBlocks();
 

@@ -2498,7 +2498,12 @@ SCIP_RETCODE Seeed::displayInfo(
    if( getNOpenconss() + getNOpenconss() > 0 )
       std::cout << " Maxwhitescore >= " << maxwhitescore << std::endl;
    else
-      std::cout << " Maxwhitescore: " << maxwhitescore << std::endl;
+      std::cout << " Max white score: " << maxwhitescore << std::endl;
+   if( getNOpenconss() + getNOpenconss() == 0 )
+         std::cout << " Max-foreseeing-white-score >= " << maxforeseeingwhitescore << std::endl;
+   if( getNOpenconss() + getNOpenconss() == 0 )
+         std::cout << " PPC-max-foreseeing-white-score >= " <<  setpartfwhitescore << std::endl;
+
    std::cout << " Seeed is for the " << ( isfromunpresolved ? "unpresolved" : "presolved" ) << " problem and "
       << ( usergiven ? "usergiven" : "not usergiven" ) << "." << std::endl;
    std::cout << " Number of constraints: " << getNConss() << std::endl;
@@ -2932,10 +2937,18 @@ SCIP_Real Seeed::evaluate(
    if( getNOpenconss() != 0 || getNOpenvars() != 0 )
       SCIPwarningMessage( scip, "Evaluation for seeeds is not implemented for seeeds with open conss or open vars.\n" );
 
-   if ( sctype == scoretype::MAX_FORESSEEING_WHITE || sctype == scoretype::SETPART_FWHITE )
+ //  if ( sctype == scoretype::MAX_FORESSEEING_WHITE || sctype == scoretype::SETPART_FWHITE )
    {
       std::vector<int> nlinkingvarsforblock(getNBlocks(), 0);
-      std::vector<int> nblocksforlinkingvar(getNBlocks(), 0);
+      std::vector<int> nblocksforlinkingvar(getNLinkingvars(), 0);
+
+      int sumblockshittinglinkingvar;
+      int sumlinkingvarshittingblock;
+      int newheight;
+      int newwidth;
+      int newmasterarea;
+      int newblockarea;
+
 
       for( int lv = 0; lv < getNLinkingvars(); ++lv )
       {
@@ -2946,12 +2959,49 @@ SCIP_Real Seeed::evaluate(
             for ( int blc = 0; blc < getNConssForBlock(b); ++blc )
             {
                int blockcons = getConssForBlock(b)[blc];
-               if( !SCIPisZero( seeedpool->scip, seeedpool->getVal(blockcons, linkingvarid) ) )
-                  ;
+               if( !SCIPisZero( seeedpool->getScip(), seeedpool->getVal(blockcons, linkingvarid) ) )
+               {
+                  /** linking var hits block */
+                  ++nlinkingvarsforblock[b];
+                  ++nblocksforlinkingvar[lv];
+                  break;
+               }
             }
          }
       }
+      sumblockshittinglinkingvar = 0;
+      sumlinkingvarshittingblock = 0;
+      for( int b = 0; b < getNBlocks(); ++b )
+      {
+         sumlinkingvarshittingblock += nlinkingvarsforblock[b];
+      }
+      for( int lv = 0; lv < getNLinkingvars(); ++lv )
+      {
+         sumblockshittinglinkingvar += nblocksforlinkingvar[lv];
+      }
+
+      newheight = getNConss() + sumblockshittinglinkingvar;
+      newwidth = getNVars() + sumlinkingvarshittingblock;
+
+      newmasterarea = ( getNMasterconss() + sumblockshittinglinkingvar) * ( getNVars() + sumlinkingvarshittingblock );
+      newblockarea = 0;
+
+      for( int b = 0; b < getNBlocks(); ++b )
+      {
+         newblockarea += getNConssForBlock(b) * ( getNVarsForBlock(b) + nlinkingvarsforblock[b] );
+      }
+
+      maxforeseeingwhitescore = (SCIP_Real ) newblockarea + (SCIP_Real) newmasterarea / (SCIP_Real) newwidth;
+      maxforeseeingwhitescore =  maxforeseeingwhitescore / (SCIP_Real) newheight ;
+
    }
+
+   std::cout << "Max foreseeeing white score: " << maxforeseeingwhitescore << std::endl;
+
+   if ( sctype == scoretype::MAX_FORESSEEING_WHITE )
+      return maxforeseeingwhitescore;
+
+
 
 
    SCIP_CALL( SCIPallocBufferArray( scip, & nzblocks, nBlocks ) );

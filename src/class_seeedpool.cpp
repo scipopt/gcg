@@ -2442,6 +2442,13 @@ int Seeedpool::getNConss()
    return nConss;
 }
 
+/* returns associated scip */
+
+SCIP* Seeedpool::getScip()
+{
+   return scip;
+}
+
 /** returns the candidates for block size sorted in descending order by how often a candidate was added */
 std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
 {
