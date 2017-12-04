@@ -2500,9 +2500,9 @@ SCIP_RETCODE Seeed::displayInfo(
    else
       std::cout << " Max white score: " << maxwhitescore << std::endl;
    if( getNOpenconss() + getNOpenconss() == 0 )
-         std::cout << " Max-foreseeing-white-score >= " << maxforeseeingwhitescore << std::endl;
+         std::cout << " Max-foreseeing-white-score: " << maxforeseeingwhitescore << std::endl;
    if( getNOpenconss() + getNOpenconss() == 0 )
-         std::cout << " PPC-max-foreseeing-white-score >= " <<  setpartfwhitescore << std::endl;
+         std::cout << " PPC-max-foreseeing-white-score: " <<  setpartfwhitescore << std::endl;
 
    std::cout << " Seeed is for the " << ( isfromunpresolved ? "unpresolved" : "presolved" ) << " problem and "
       << ( usergiven ? "usergiven" : "not usergiven" ) << "." << std::endl;
@@ -2991,9 +2991,10 @@ SCIP_Real Seeed::evaluate(
          newblockarea += getNConssForBlock(b) * ( getNVarsForBlock(b) + nlinkingvarsforblock[b] );
       }
 
-      maxforeseeingwhitescore = (SCIP_Real ) newblockarea + (SCIP_Real) newmasterarea / (SCIP_Real) newwidth;
+      maxforeseeingwhitescore = ((SCIP_Real ) newblockarea + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
       maxforeseeingwhitescore =  maxforeseeingwhitescore / (SCIP_Real) newheight ;
 
+      maxforeseeingwhitescore = 1. - maxforeseeingwhitescore;
    }
 
    std::cout << "Max foreseeeing white score: " << maxforeseeingwhitescore << std::endl;
@@ -4124,6 +4125,13 @@ SCIP_Real Seeed::getScore(
 
    if( type == scoretype::BORDER_AREA )
       return borderareascore;
+
+   if( type == scoretype::MAX_FORESSEEING_WHITE )
+      return maxforeseeingwhitescore;
+
+   if( type == scoretype::SETPART_FWHITE )
+      return setpartfwhitescore;
+
 
    return 0;
 }
