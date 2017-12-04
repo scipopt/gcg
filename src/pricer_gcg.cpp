@@ -4301,7 +4301,7 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    return retcode;
 }
 
-/** add artificial vars */
+/** add artificial columns corresponding to trivial sols */
 SCIP_RETCODE ObjPricerGcg::addTrivialsols(
    )
 {
