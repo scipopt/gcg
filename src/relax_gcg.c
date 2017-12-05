@@ -1359,6 +1359,18 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
 
+   /* settings needed for Farkas pricing */
+   /* store parameters that are changed for the generation of the subproblem cuts */
+   SCIPsetParam(masterscip, "conflict/enable", FALSE);
+
+   SCIPsetIntParam(masterscip, "lp/disablecutoff", 1);
+   SCIPsetIntParam(masterscip, "lp/scaling", 0);
+
+   SCIPsetCharParam(masterscip, "lp/initalgorithm", 'd');
+   SCIPsetCharParam(masterscip, "lp/resolvealgorithm", 'd');
+
+   SCIPsetBoolParam(masterscip, "misc/alwaysgetduals", TRUE);
+
    return SCIP_OKAY;
 }
 
@@ -2355,18 +2367,17 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       /* set the lower bound pointer */
-      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
+      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING && GCGmasterIsCurrentSolValid(masterprob) )
       {
          *lowerbound = SCIPgetLocalDualbound(masterprob);
-
       }
       else
       {
          SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
          assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
-         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && GCGmasterIsCurrentSolValid(masterprob) )
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT )
+         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || !GCGmasterIsCurrentSolValid(masterprob) )
          {
             SCIP_Real tilim;
             SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
@@ -2398,7 +2409,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       /* if a new primal solution was found in the master problem, transfer it to the original problem */
-      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
+      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) && GCGmasterIsCurrentSolValid(masterprob) )
       {
          SCIP_SOL* newsol;
 
@@ -3720,7 +3731,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          return SCIP_OKAY;
       }
 
-      if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) )
+      if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) && GCGmasterIsSolValid(relaxdata->masterprob, mastersol) )
       {
          int i;
 

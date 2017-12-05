@@ -193,6 +193,12 @@ public:
       return origprob;
    }
 
+   /** add artificial vars */
+   SCIP_RETCODE addArtificialVars();
+
+   /** add trivial sols */
+   SCIP_RETCODE addTrivialsols();
+
    /** create the pointers for the pricing types */
    SCIP_RETCODE createPricingTypes();
 
@@ -247,6 +253,12 @@ private:
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    ) const;
+
+   SCIP_Real computeQuasiRedCostGcgCol(
+      PricingType*          pricetype,          /**< type of pricing */
+      GCG_Col*              gcgcol,             /**< gcg column to compute reduced cost for */
+      SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
+      ) const;
 
    /** for given columns, (re-)compute and update their reduced costs */
    void updateRedcosts(

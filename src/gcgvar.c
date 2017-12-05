@@ -715,6 +715,10 @@ SCIP_Bool GCGmasterVarIsLinking(
    {
       SCIP_VAR** origvars;
       origvars = GCGmasterVarGetOrigvars(var);
+
+      if( GCGmasterVarIsArtificial(var) )
+         return FALSE;
+
       return GCGoriginalVarIsLinking(origvars[0]);
    }
    else
@@ -736,6 +740,21 @@ SCIP_Bool GCGmasterVarIsRay(
    return vardata->data.mastervardata.isray;
 }
 
+/** returns TRUE or FALSE whether a master variable is an artificial variable */
+SCIP_Bool GCGmasterVarIsArtificial(
+   SCIP_VAR*             var                 /**< variable data structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   return vardata->data.mastervardata.isartificial;
+}
+
 /** returns the number of original variables the master variable is contained in */
 int GCGmasterVarGetNOrigvars(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -751,7 +770,7 @@ int GCGmasterVarGetNOrigvars(
    assert(vardata->data.mastervardata.norigvars >= 0);
    assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
    assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
-   assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 1 );
+//   assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 1 );
 
    return vardata->data.mastervardata.norigvars;
 }
@@ -769,10 +788,10 @@ SCIP_VAR** GCGmasterVarGetOrigvars(
    assert(vardata != NULL);
 
    assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
-   assert(vardata->blocknr != -1 || vardata->data.mastervardata.origvars != NULL);
-   assert(vardata->blocknr != -1 || vardata->data.mastervardata.origvars[0] != NULL);
-   assert(vardata->blocknr != -1 || GCGvarGetBlock(vardata->data.mastervardata.origvars[0]) == -1
-      || GCGoriginalVarIsLinking(vardata->data.mastervardata.origvars[0]));
+//   assert(vardata->blocknr != -1 || vardata->data.mastervardata.origvars != NULL);
+//   assert(vardata->blocknr != -1 || vardata->data.mastervardata.origvars[0] != NULL);
+//   assert(vardata->blocknr != -1 || GCGvarGetBlock(vardata->data.mastervardata.origvars[0]) == -1
+//      || GCGoriginalVarIsLinking(vardata->data.mastervardata.origvars[0]));
 
 
    return vardata->data.mastervardata.origvars;
@@ -893,6 +912,9 @@ SCIP_Bool GCGisMasterVarInBlock(
       SCIP_VAR** origvars;
 
       origvars = GCGmasterVarGetOrigvars(mastervar);
+
+      if( GCGmasterVarIsArtificial(mastervar) )
+         return FALSE;
 
       /* the corresponding original variable is a linking variable */
       if( GCGoriginalVarIsLinking(origvars[0]) )
@@ -1122,6 +1144,7 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    /* store whether the variable represents a ray */
    newvardata->data.mastervardata.isray = solisray;
+   newvardata->data.mastervardata.isartificial = FALSE;
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(scip, newvar, varname, 0.0, SCIPinfinity(scip), /* GCGrelaxGetNIdenticalBlocks(origprob, prob) */
@@ -1258,6 +1281,7 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    newvardata->vartype = GCG_VARTYPE_MASTER;
    newvardata->blocknr = -1;
    newvardata->data.mastervardata.isray = FALSE;
+   newvardata->data.mastervardata.isartificial = FALSE;
    newvardata->data.mastervardata.norigvars = 1;
 
    /* save corresoponding origvar */
@@ -1269,6 +1293,35 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(scip, newvar, SCIPvarGetName(var),
          SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var), SCIPvarGetObj(var), SCIPvarGetType(var),
+         TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
+
+   return SCIP_OKAY;
+}
+
+/** creates artificial variable and the vardata */
+SCIP_RETCODE GCGcreateArtificialVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            newvar,             /**< pointer to store new variable */
+   const char*           name,               /**< name of variable, or NULL for automatic name creation */
+   SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
+   )
+{
+   SCIP_VARDATA* newvardata;
+
+   /* create vardata */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
+   newvardata->vartype = GCG_VARTYPE_MASTER;
+   newvardata->blocknr = -1;
+   newvardata->data.mastervardata.isray = FALSE;
+   newvardata->data.mastervardata.norigvars = 0;
+   newvardata->data.mastervardata.isartificial = TRUE;
+
+   newvardata->data.mastervardata.origvars = NULL;
+   newvardata->data.mastervardata.origvals = NULL;
+
+   /* create variable in the master problem */
+   SCIP_CALL( SCIPcreateVar(scip, newvar, name,
+         0.0, SCIPinfinity(scip), objcoef, SCIP_VARTYPE_IMPLINT,
          TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
 
    return SCIP_OKAY;

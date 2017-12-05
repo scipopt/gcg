@@ -1,0 +1,11 @@
+# SCIP version 4.0.0
+
+pricing/masterpricer/farkas/stabilization = TRUE
+
+pricing/masterpricer/farkas/alpha = 0.001
+
+pricing/masterpricer/farkas/maxobjbound = FALSE
+
+sepa/basis/enable = FALSE
+
+sepa/master/enable = FALSE
