@@ -204,6 +204,7 @@ LIBOBJ		=	reader_tex.o \
 			dec_dbscan.o \
 			dec_mst.o \
 			dec_mcl.o \
+			dec_postprocess.o \
 			dec_compgreedily.o \
 			dec_mastersetcover.o \
 			dec_mastersetpack.o \
@@ -234,6 +235,7 @@ LIBOBJ		=	reader_tex.o \
 			class_miscvisualization.o \
 			params_visu.o \
 			dec_compgreedily.o \
+			dec_postprocess.o \
 			dec_mastersetcover.o \
 			dec_mastersetpack.o \
 			dec_mastersetpart.o \

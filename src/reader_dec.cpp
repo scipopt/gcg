@@ -478,7 +478,7 @@ SCIP_Bool isNewSection(
 
    }
 
-   if( strcasecmp(decinput->token, "MASTERCONSS") == 0 )
+   if( strcasecmp(decinput->token, "MASTERCONSS") == 0 || strcasecmp(decinput->token, "MASTERCONS") == 0 )
    {
       decinput->section = DEC_MASTERCONSS;
 
@@ -577,7 +577,7 @@ SCIP_RETCODE readConsDefaultMaster(
       if( isNewSection(scip, decinput) )
          return SCIP_OKAY;
 
-      /* read number of blocks */
+      /* read if the consdefaultmaster */
       if( isInt(scip, decinput, &consdefaultmaster) )
       {
          if( consdefaultmaster == 1 )
@@ -586,7 +586,7 @@ SCIP_RETCODE readConsDefaultMaster(
             decinput->consdefaultmaster = FALSE;
          else
             syntaxError(scip, decinput, "consdefaultmaster parameter must be 0 or 1");
-         SCIPdebugMessage("The constraints that are not specified is this decomposition are %s  forced to the master\n",
+         SCIPdebugMessage("The constraints that are not specified in this decomposition are %s  forced to the master\n",
             decinput->consdefaultmaster ? "" : " not");
       }
    }
@@ -1118,7 +1118,7 @@ SCIP_RETCODE readDECFile(
             }
             if( !decinput->haspresolvesection )
             {
-               SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
+               SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. Please add a presolve section. File reading is aborted. \n");
             }
             break;
 
@@ -1305,6 +1305,7 @@ SCIP_RETCODE SCIPreadDec(
    decinput.nblocks = NOVALUE;
    decinput.blocknr = - 2;
    decinput.haserror = FALSE;
+   decinput.consdefaultmaster = TRUE;
 
    /* read the file */
    retcode = readDECFile(scip, reader, &decinput, filename);

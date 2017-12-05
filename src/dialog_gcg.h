@@ -55,10 +55,17 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics);
 
-//** dialog execution method for the display statistics command */
+/** dialog execution method print complete detection information */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecPrintDetectionInformation);
+
+/** dialog execution method for the display statistics command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddBlocknr);
 
+/** dialog execution method add an instance name, used for make test with statistic reading */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddInstancename);
 
 /** dialog execution method for the display detectors command */
 extern

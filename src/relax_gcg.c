@@ -1961,7 +1961,7 @@ SCIP_RETCODE initRelaxator(
    }
 
    SCIPinfoMessage(scip, NULL, "Chosen structure has %d blocks, %d linking vars and %d linking constraints.\n", DECdecompGetNBlocks(relaxdata->decdecomp), DECdecompGetNLinkingvars(relaxdata->decdecomp), DECdecompGetNLinkingconss(relaxdata->decdecomp));
-   SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f .\n", 1. - DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
+   SCIPinfoMessage(scip, NULL, "This decomposition has a maxwhite score of %f .\n", DECdecompGetMaxwhiteScore(relaxdata->decdecomp));
 
 
    /* permute the decomposition if the permutation seed is set */

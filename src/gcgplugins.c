@@ -190,6 +190,7 @@
 #include "dec_compgreedily.h"
 #include "dec_staircase_lsp.h"
 #include "dec_consname.h"
+#include "dec_postprocess.h"
 #include "dec_mastersetpack.h"
 #include "dec_mastersetpart.h"
 #include "dec_mastersetcover.h"
@@ -368,6 +369,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectorConnected(scip) );
    SCIP_CALL( SCIPincludeDetectorConstype(scip) );
+   SCIP_CALL( SCIPincludeDetectorPostprocess(scip) );
    SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
    SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );

@@ -226,11 +226,6 @@ struct SCIP_ConshdlrData
 
 };
 
-struct sort_pred {
-    bool operator()(const std::pair<SeeedPtr, SCIP_Real> &left, const std::pair<SeeedPtr, SCIP_Real> &right) {
-        return left.second < right.second;
-    }
-};
 
 enum weightinggpresolvedoriginaldecomps{
    NO_MODIF = 0,
@@ -410,7 +405,8 @@ SCIP_RETCODE  SCIPconshdlrDecompAddCompleteSeeedForPresolved(
 
      conshdlrdata->seeedpool->addSeeedToFinished(seeed, &success);
 
-     SCIPinfoMessage(scip, NULL, " Added decomposition is already in!!!!!!!!!!!!!!!!!!!!!\n");
+     if( !success )
+        SCIPinfoMessage(scip, NULL, " Added decomposition is already in!!!!!!!!!!!!!!!!!!!!!\n");
 
       return SCIP_OKAY;
    }
@@ -628,6 +624,13 @@ SeeedPtr  SCIPconshdlrDecompGetSeeed(
       else
          return seeed;
 }
+
+
+struct sort_pred {
+    bool operator()(const std::pair<SeeedPtr, SCIP_Real> &left, const std::pair<SeeedPtr, SCIP_Real> &right) {
+        return left.second > right.second;
+    }
+};
 
 
 #ifdef ADDONEBLOCKDECOMP
@@ -1112,9 +1115,9 @@ SCIP_RETCODE SCIPconshdlrDecompShowListExtract(
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNMastervars() );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNTotalStairlinkingvars() );
       if( seeed->isComplete() )
-         SCIPdialogMessage(scip, NULL, "%.4f  ", 1. - seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) );
+         SCIPdialogMessage(scip, NULL, "%.4f  ",  seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) );
       else
-         SCIPdialogMessage(scip, NULL, "<=%.2f  ", 1. - seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) );
+         SCIPdialogMessage(scip, NULL, "<=%.2f  ", seeed->getScore(SCIPconshdlrdataGetScoretype(conshdlrdata)) );
       SCIPdialogMessage(scip, NULL, "%7s  ", seeed->getDetectorChainString() );
       SCIPdialogMessage(scip, NULL, "%3s  ", (seeed->isFromUnpresolved() ? "no" : "yes")  );
       SCIPdialogMessage(scip, NULL, "%6d  ", seeed->getNOpenconss() );
@@ -2581,6 +2584,7 @@ SCIP_RETCODE DECincludeDetector(
    SCIP_Bool             enabled,                /**< whether the detector should be enabled by default                  */
    SCIP_Bool             enabledOriginal,        /**< whether the detector should be enabled by default for detecting the original problem */
    SCIP_Bool             enabledFinishing,       /**< whether the finishing should be enabled */
+   SCIP_Bool             enabledPostprocessing,  /**< wheteher the postprocessing should be enabled */
    SCIP_Bool             skip,                   /**< whether the detector should be skipped if others found structure   */
    SCIP_Bool             usefulRecall,           /** is it useful to call this detector on a descendant of the propagated seeed */
    SCIP_Bool             legacymode,             /**< whether (old) DETECTSTRUCTURE method should also be used for detection */
@@ -2591,6 +2595,7 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_EXITDETECTOR((*exitDetector)),       /**< deinitialization method of detector (or NULL) */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
    DEC_DECL_FINISHSEEED((*finishSeeedDetector)),
+   DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)),
    DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
    DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),
    DEC_DECL_SETPARAMFAST((*setParamFastDetector))
@@ -2640,6 +2645,7 @@ SCIP_RETCODE DECincludeDetector(
 
    detector->propagateSeeed = propagateSeeedDetector;
    detector->finishSeeed = finishSeeedDetector;
+   detector->postprocessSeeed = postprocessSeeedDetector;
    detector->setParamAggressive =  setParamAggressiveDetector;
    detector->setParamDefault =  setParamDefaultDetector;
    detector->setParamFast =  setParamFastDetector;
@@ -2656,6 +2662,7 @@ SCIP_RETCODE DECincludeDetector(
    detector->enabled = enabled;
    detector->enabledOrig = enabledOriginal;
    detector->enabledFinishing = enabledFinishing;
+   detector->enabledPostprocessing = enabledPostprocessing;
    detector->skip = skip;
    detector->usefulRecall = usefulRecall;
    detector->legacymode = legacymode;
@@ -2676,6 +2683,9 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled for finishing of incomplete decompositions", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabledFinishing), FALSE, enabledFinishing, NULL, NULL) );
 
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/postprocessingenabled", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled for postprocessing of finished decompositions", name);
+   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabledPostprocessing), FALSE, enabledPostprocessing, NULL, NULL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/skip", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> should be skipped if others found decompositions", name);
@@ -3443,9 +3453,6 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
 
    seeed->flushBooked();
 
-   seeed->considerImplicits(currseeedpool);
-
-
    if( seeed->shouldCompletedByConsToMaster() )
    {
       for( int opencons = 0; opencons < seeed->getNOpenconss(); ++opencons)
@@ -3453,6 +3460,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       seeed->flushBooked();
    }
 
+   seeed->considerImplicits(currseeedpool);
    currseeedpool->prepareSeeed(conshdlrdata->curruserseeed);
 
 
@@ -4428,6 +4436,9 @@ SCIP_RETCODE DECdetectStructure(
 //   SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
 
       //	  seeedpool.freeCurrSeeeds();
+
+      if( conshdlrdata->seeedpool->getNFinishedSeeeds() > 0 )
+         *result = SCIP_SUCCESS;
 
       SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
 
@@ -5639,9 +5650,9 @@ SCIP_RETCODE GCGprintDecompInformation(
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->getNTotalStairlinkingvars() );
 
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n", 1.-seeed->getMaxWhiteScore() );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getMaxWhiteScore() );
 
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n", 1.-seeed->getScore(scoretype::CLASSIC) );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getScore(scoretype::CLASSIC) );
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->hasSetpartitioningMaster(seeedpool) );
 

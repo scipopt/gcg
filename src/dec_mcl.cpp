@@ -65,6 +65,7 @@ using gcg::GraphGCG;
 #define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #endif
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -578,6 +579,8 @@ DEC_DECL_DETECTSTRUCTURE(detectMCL)
 
 #define finishSeeedMCL NULL
 
+#define detectorPostprocessSeeedMCL NULL
+
 #define setParamAggressiveMCL NULL
 #define setParamDefaultMCL NULL
 #define setParamFastMCL NULL
@@ -602,8 +605,8 @@ SCIP_RETCODE SCIPincludeDetectorMCL(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectMCL, freeMCL, initMCL, exitMCL, propagateSeeedMCL, finishSeeedMCL, setParamAggressiveMCL, setParamDefaultMCL, setParamFastMCL) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
+      detectordata, detectMCL, freeMCL, initMCL, exitMCL, propagateSeeedMCL, finishSeeedMCL, detectorPostprocessSeeedMCL, setParamAggressiveMCL, setParamDefaultMCL, setParamFastMCL) );
 
    /* add arrowheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/mcl/niterations", "Number of iterations to run MCL with different inflate factor (max=20).", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 1, 20, NULL, NULL) );
