@@ -122,6 +122,12 @@ SCIP_RETCODE writeAllDecompositions(
    }
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
 
+   /* if no directory is specified, initialize it with a standard solution */
+   if( dirname[0] == '\0' )
+   {
+      strcpy(dirname, "alldecompositions/");
+   }
+
    /* make sure directory exists */
    if( dirname != NULL )
    {
@@ -228,6 +234,12 @@ SCIP_RETCODE writeFamilyTree(
 
    strncpy(dirname, tmpstring, SCIP_MAXSTRLEN);
 
+   /* if no directory is specified, initialize it with a standard solution */
+   if( dirname[0] == '\0' )
+   {
+      strcpy(dirname, "familytree/");
+   }
+
    /* make sure directory exists */
    if( dirname != NULL )
    {
@@ -312,6 +324,12 @@ SCIP_RETCODE reportAllDecompositions(
       return SCIP_OKAY;
    }
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
+
+   /* if no directory is specified, initialize it with a standard solution */
+   if( dirname[0] == '\0' )
+   {
+      strcpy(dirname, "report/");
+   }
 
    /* make sure directory exists */
    if( dirname != NULL )
@@ -438,7 +456,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecChangeAddInstancename
 {  /*lint --e{715}*/
 
    char* instancename;
-   int blocknr;
    char tempstr[SCIP_MAXSTRLEN];
    SCIP_Bool endoffile;
 
