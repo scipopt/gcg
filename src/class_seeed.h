@@ -322,6 +322,9 @@ public:
       int firstBlock
       );
 
+   /** checks if aggregation of sub problems is possible and stores the corresponding aggreagtion information */
+   void calcAggregationInformation();
+
    /** calculates the hash value of the seeed for comparing */
    void calcHashvalue();
 

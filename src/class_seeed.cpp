@@ -53,6 +53,12 @@
 #include <fstream>
 #include <stdlib.h>
 
+#ifndef NBLISS
+#include "pub_bliss.h"
+#include "bliss_automorph.h"
+#endif
+
+
 #define SCIP_CALL_EXC( x ) do                                                                                 \
                        {                                                                                      \
                           SCIP_RETCODE _restat_;                                                              \
@@ -85,6 +91,7 @@ Seeed::Seeed(
    isconsopen( givennconss, true ), isvarmaster( givennvars, false ),   isconsmaster( givennconss, false ), varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
    masterconsssorted(true), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
+   agginfocalculated(FALSE), nrepblocks(0), reptoblocks(std::vector<int>(0)), blockstorep(std::vector<int>(0) ),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), usedClassifier( 0 ), classesToMaster( 0 ), classesToLinking( 0 ), listofancestorids( 0 ),
@@ -165,6 +172,11 @@ Seeed::Seeed(
    linkingvarssorted = seeedtocopy->linkingvarssorted;
    mastervarssorted = seeedtocopy->mastervarssorted;
 
+   agginfocalculated = seeedtocopy->agginfocalculated;
+   nrepblocks  = seeedtocopy->nrepblocks;
+   reptoblocks = seeedtocopy->reptoblocks;
+   blockstorep = seeedtocopy->blockstorep;
+
 }
 
 /** destructor */
@@ -201,6 +213,39 @@ SCIP_Bool Seeed::isconshittingblockca(
    }
    return FALSE;
 }
+
+
+#ifdef NBLISS
+/** checks whether two arrays of SCIP_Real's are identical */
+static
+SCIP_Bool realArraysAreEqual(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real*            array1,             /**< first array */
+   int                   array1length,       /**< length of first array */
+   SCIP_Real*            array2,             /**< second array */
+   int                   array2length        /**< length of second array */
+   )
+{
+   int i;
+
+   if( array1length != array2length )
+      return FALSE;
+
+   if( array1length == 0 )
+      return TRUE;
+
+   assert(array1 != NULL);
+   assert(array2 != NULL);
+
+   for( i = 0; i < array1length; i++ )
+   {
+      if( !SCIPisEQ(scip, array1[i], array2[i]) )
+         return FALSE;
+   }
+
+   return TRUE;
+}
+#endif
 
 
 /** returns true iff the second value of a is lower than the second value of b */
@@ -918,6 +963,56 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
    return SCIP_OKAY;
 }
 
+/** checks if aggregation of sub problems is possible and stores the corresponding aggreagtion information; */
+  void Seeed::calcAggregationInformation()
+  {
+     int nreps = 1;
+
+     if( agginfocalculated )
+        return;
+
+     std::vector<std::vector<int>> identblocksforblock( getNBlocks(), std::vector<int>(0) );
+
+
+     for( int b1 = 0; b1 < getNBlocks() - 1; ++b1 )
+     {
+        std::vector<int> currrep = std::vector<int>(0);
+        if( !identblocksforblock[b1].empty() )
+           continue;
+
+        currrep.push_back(b1);
+
+        for( int b2 = b1+1; b2 < getNBlocks(); ++b2 )
+        {
+           SCIP_Result identical;
+
+           if( !identblocksforblock[b2].empty() )
+              continue;
+
+#ifdef NBLISS
+           checkIdenticalBlocksBrute(seeedpool, b1, b2, &identical);
+#else
+           checkIdenticalBlocksBliss(seeedpool, b1, b2, &identical);
+
+           if( identical )
+           {
+              SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);
+              identblocksforblock[b1].push_back(b2);
+              identblocksforblock[b2].push_back(b1);
+              currrep.push_back(b2);
+           }
+        }
+
+        reptoblocks[nreps-1] = currrep;
+        for( size_t i = 0; i < currrep.size(); ++i )
+           blockstorep[currep[i]] = nreps-1;
+
+     }
+     nrepblocks = nreps;
+  }
+
+
+
 /** calculates the hashvalue of the seeed for comparing */
 void Seeed::calcHashvalue()
 {
@@ -1264,6 +1359,9 @@ bool Seeed::checkAllConssAssigned()
    return true;
 }
 
+
+
+
 /** returns true if the assignments in the seeed are consistent */
 bool Seeed::checkConsistency(
    Seeedpool* seeedpool
@@ -1578,6 +1676,150 @@ bool Seeed::checkConsistency(
 
    return true;
 }
+
+/** checks blocks for identity by brute force, identity is only found if variables are in correct order */
+void Seeed::checkIdenticalBlocksBrute(
+   Seeedpool*           seeedpool,
+   int                  b1,
+   int                  b2,
+   std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+   SCIP_Bool*           identical
+   )
+{
+
+   SCIP* scip;
+
+   scip = seeedpool->getScip();
+   *identical = FALSE;
+   SCIPdebugMessage("check block %d and block %d for identity...\n", b1, b2);
+   varmap = std::vector<int>(getNVars(), -1);
+
+   if( getNConssForBlock(b1) != getNConssForBlock(b2) )
+   {
+      SCIPdebugMessage("--> number of constraints differs!\n");
+      return;
+   }
+
+   if( getNVarsForBlock(b1) != getNVarsForBlock(b2) )
+   {
+      SCIPdebugMessage("--> number of variables differs!\n");
+      return;
+   }
+
+   /** check variables */
+   for( int i = 0; i < getNVarsForBlock(b1); ++i )
+   {
+      SCIP_VAR* var1;
+      SCIP_VAR* var2;
+
+      var1 = seeedpool->getVarForIndex( getVarsForBlock(b1)[i] );
+      var2 = seeedpool->getVarForIndex( getVarsForBlock(b2)[i] );
+
+      if( SCIPisEQ(scip, SCIPvarGetObj(var1), SCIPvarGetObj(var2) ) )
+      {
+         SCIPdebugMessage("--> obj differs for var %s and var %s!\n", SCIPvarGetName(var1), SCIPvarGetName(var2));
+             return;
+      }
+      if( SCIPisEQ(scip, SCIPvarGetLbOriginal(var1), SCIPvarGetLbOriginal(var2) ) )
+      {
+         SCIPdebugMessage("--> lb differs for var %s and var %s!\n", SCIPvarGetName(var1), SCIPvarGetName(var2));
+             return;
+      }
+      if( SCIPisEQ(scip, SCIPvarGetUbOriginal(var1), SCIPvarGetUbOriginal(var2) ) )
+      {
+         SCIPdebugMessage("--> ub differs for var %s and var %s!\n", SCIPvarGetName(var1), SCIPvarGetName(var2));
+             return;
+      }
+      if( SCIPvarGetType(var1) != SCIPvarGetType(var2) )
+      {
+         SCIPdebugMessage("--> type differs for var %s and var %s!\n", SCIPvarGetName(var1), SCIPvarGetName(var2));
+             return;
+      }
+
+      for( int mc = 0; mc < getNMasterconss(); ++mc )
+      {
+
+         if( !SCIPisEQ(scip, seeedpool->getVal(getNMasterconss()[mc], getVarsForBlock(b1)[i]), seeedpool->getVal(getNMasterconss()[mc], getVarsForBlock(b2)[i])  ))
+         {
+            SCIPdebugMessage("--> master coefficients differ for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
+            return;
+         }
+      }
+
+      /** variables seem to be identical so far */
+      varmap[getVarsForBlock(b2)[i]] = getVarsForBlock(b1)[i];
+   }
+
+   for( int i = 0; i < getNConssForBlock(b1); ++i )
+   {
+      int cons1id;
+      int cons2id;
+      SCIP_CONS* cons1;
+      SCIP_CONS* cons2;
+      SCIP_Real* vals1;
+      SCIP_Real* vals2;
+      int nvals1;
+      int nvals2;
+
+      cons1id = getConssForBlock(b1)[i];
+      cons2id = getConssForBlock(b2)[i];
+
+      cons1 = seeedpool->getConsForIndex(cons1id);
+      cons2 = seeedpool->getConsForIndex(cons2id);
+
+      if( seeedpool->getNVarsForCons(cons1id) != seeedpool->getNVarsForCons(cons2id) )
+      {
+         SCIPdebugMessage("--> nvars differs for cons %s and cons %s!\n", SCIPconsGetName(conss1), SCIPconsGetName(conss2));
+         return;
+      }
+
+      if( !SCIPisEQ(scip, GCGconsGetLhs(scip, cons1), GCGconsGetLhs(scip, cons2) ) )
+      {
+         SCIPdebugMessage("--> lhs differs for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
+         return SCIP_OKAY;
+      }
+
+      if( !SCIPisEQ(scip, GCGconsGetRhs(scip, cons1), GCGconsGetRhs(scip, cons2) ) )
+      {
+         SCIPdebugMessage("--> rhs differs for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
+         return SCIP_OKAY;
+      }
+
+      nvals1 = GCGconsGetNVars(scip, cons1);
+      nvals2 = GCGconsGetNVars(scip, cons2);
+      SCIP_CALL( SCIPallocBufferArray(scip, &vals1, nvals1) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &vals2, nvals2) );
+      GCGconsGetVals(scip, cons1, vals1, nvals1);
+      GCGconsGetVals(scip, cons2, vals2, nvals2);
+
+
+      if( !realArraysAreEqual(scip, vals1, nvals1, vals2, nvals2) )
+       {
+          SCIPdebugMessage("--> coefs differ for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
+          return;
+       }
+
+      for( int v = 0; v < seeedpool->getNVarsForCons(cons1id) ; ++v )
+      {
+         if( varmap[seeedpool->getVarsForCons(cons2id)[v]] != seeedpool->getVarsForCons(cons1id)[v])
+         {
+            SCIPdebugMessage("--> vars differ for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
+            return;
+
+         }
+      }
+
+
+
+      SCIPfreeBufferArray(scip, &vals1);
+      SCIPfreeBufferArray(scip, &vals2);
+
+   }
+
+   *identical = TRUE;
+   return;
+}
+
 
 /** assigns all open constraints and open variables
  *  strategy: assigns all conss and vars to the same block if they are indirectly connected
