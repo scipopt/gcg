@@ -2504,6 +2504,9 @@ SCIP_RETCODE Seeed::displayInfo(
    if( getNOpenconss() + getNOpenconss() == 0 )
          std::cout << " PPC-max-foreseeing-white-score: " <<  setpartfwhitescore << std::endl;
 
+   std::cout << " HassetppMaster: " << hasSetppMaster(seeedpool) << std::endl;
+   std::cout << " HassetppcMaster: " << hasSetppcMaster(seeedpool) << std::endl;
+   std::cout << " HassetppccardMaster: " << hasSetppccardMaster(seeedpool) << std::endl;
    std::cout << " Seeed is for the " << ( isfromunpresolved ? "unpresolved" : "presolved" ) << " problem and "
       << ( usergiven ? "usergiven" : "not usergiven" ) << "." << std::endl;
    std::cout << " Number of constraints: " << getNConss() << std::endl;
@@ -2890,7 +2893,6 @@ SCIP_Real Seeed::evaluate(
    int i;
    int j;
    int k;
-   bool masterissetppc;
    /*   int blockarea; */
    SCIP_Real varratio;
    int* nzblocks;
@@ -2903,9 +2905,6 @@ SCIP_Real Seeed::evaluate(
    SCIP_Real alphaborderarea;
    SCIP_Real alphalinking;
    SCIP_Real alphadensity;
-
-   SCIP_Bool smartscore;
-
 
    unsigned long blackarea;
 
@@ -2940,7 +2939,7 @@ SCIP_Real Seeed::evaluate(
  //  if ( sctype == scoretype::MAX_FORESSEEING_WHITE || sctype == scoretype::SETPART_FWHITE )
    {
       std::vector<int> nlinkingvarsforblock(getNBlocks(), 0);
-      std::vector<int> nblocksforlinkingvar(getNLinkingvars(), 0);
+      std::vector<int> nblocksforlinkingvar(getNLinkingvars() + getNTotalStairlinkingvars(), 0);
 
       int sumblockshittinglinkingvar;
       int sumlinkingvarshittingblock;
@@ -2969,6 +2968,18 @@ SCIP_Real Seeed::evaluate(
             }
          }
       }
+
+      for( int b = 0; b < getNBlocks(); ++b)
+      {
+         for( int slv = 0; slv < getNStairlinkingvars(b); ++slv )
+         {
+            ++nlinkingvarsforblock[b];
+            ++nlinkingvarsforblock[b+1];
+            ++nblocksforlinkingvar[getNLinkingvars() + slv];
+            ++nblocksforlinkingvar[getNLinkingvars() + slv];
+         }
+      }
+
       sumblockshittinglinkingvar = 0;
       sumlinkingvarshittingblock = 0;
       for( int b = 0; b < getNBlocks(); ++b )
@@ -2979,6 +2990,12 @@ SCIP_Real Seeed::evaluate(
       {
          sumblockshittinglinkingvar += nblocksforlinkingvar[lv];
       }
+
+      for( int slv = 0; slv < getNTotalStairlinkingvars(); ++slv )
+      {
+         sumblockshittinglinkingvar += nblocksforlinkingvar[getNLinkingvars() + slv];
+      }
+
 
       newheight = getNConss() + sumblockshittinglinkingvar;
       newwidth = getNVars() + sumlinkingvarshittingblock;
@@ -2996,6 +3013,13 @@ SCIP_Real Seeed::evaluate(
 
       maxforeseeingwhitescore = 1. - maxforeseeingwhitescore;
    }
+
+   if( hasSetppccardMaster(seeedpool) )
+      setpartfwhitescore = 0.5 * maxforeseeingwhitescore + 0.5;
+   else
+      setpartfwhitescore = 0.5 * maxforeseeingwhitescore;
+
+
 
    SCIP_CALL( SCIPallocBufferArray( scip, & nzblocks, nBlocks ) );
    SCIP_CALL( SCIPallocBufferArray( scip, & nlinkvarsblocks, nBlocks ) );
@@ -3197,29 +3221,6 @@ SCIP_Real Seeed::evaluate(
    if( totalscore > 1 )
       totalscore = 1;
 
-   SCIPgetBoolParam(scip, "detection/smartscore/enabled", &smartscore);
-
-   masterissetppc = false;
-
-   if( smartscore && maxwhitescore >= 0.2 && getNLinkingvars() == 0 )
-   {
-      masterissetppc = true;
-      for( int l = 0; l < getNMasterconss(); ++l )
-      {
-         int consid = getMasterconss()[l];
-         if( !seeedpool->isConsSetppc(consid) && !seeedpool->isConsCardinalityCons(consid) )
-         {
-            masterissetppc = false;
-            std::cout << "masterconstraint: " << SCIPconsGetName(seeedpool->getConsForIndex(consid) ) <<
-               " is no setppc and no cardinality conss" << std::endl;
-            break;
-         }
-      }
-      if ( masterissetppc )
-         maxwhitescore += 1.;
-   }
-
-
 
    SCIPfreeBufferArray( scip, & nvarsblocks );
    SCIPfreeBufferArray( scip, & blocksizes );
@@ -3234,9 +3235,37 @@ SCIP_Real Seeed::evaluate(
 
 
 /**
- * returns true if the master consists only setpartitioning or cardinality constraints
+ * returns true if the master consists only setpartitioning packing, covering, or cardinality constraints
  */
-SCIP_Bool Seeed::hasSetpartitioningMaster(
+SCIP_Bool Seeed::hasSetppccardMaster(
+   gcg::Seeedpool* seeedpool
+)
+{
+   SCIP_Bool hassetpartmaster;
+   SCIP_Bool verbose;
+   hassetpartmaster = TRUE;
+   verbose = FALSE;
+
+   for( int l = 0; l < getNMasterconss(); ++l )
+   {
+      int consid = getMasterconss()[l];
+      if( !seeedpool->isConsSetppc(consid) && !seeedpool->isConsCardinalityCons(consid) )
+      {
+         hassetpartmaster = FALSE;
+         if( verbose )
+            std::cout <<   " cons with name  " << SCIPconsGetName( seeedpool->getConsForIndex(consid) ) << " is no setppccard constraint." << std::endl;
+         break;
+      }
+   }
+
+   return hassetpartmaster;
+}
+
+
+/**
+ * returns true if the master consists only setpartitioning, packing, or covering constraints
+ */
+SCIP_Bool Seeed::hasSetppcMaster(
    gcg::Seeedpool* seeedpool
 )
 {
@@ -3246,7 +3275,7 @@ SCIP_Bool Seeed::hasSetpartitioningMaster(
    for( int l = 0; l < getNMasterconss(); ++l )
    {
       int consid = getMasterconss()[l];
-      if( !seeedpool->isConsSetppc(consid) && !seeedpool->isConsCardinalityCons(consid) )
+      if( !seeedpool->isConsSetppc(consid)  )
       {
          hassetpartmaster = FALSE;
          break;
@@ -3254,6 +3283,30 @@ SCIP_Bool Seeed::hasSetpartitioningMaster(
    }
    return hassetpartmaster;
 }
+
+
+/**
+ * returns true if the master consists only setpartitioning, or packing constraints
+ */
+SCIP_Bool Seeed::hasSetppMaster(
+   gcg::Seeedpool* seeedpool
+)
+{
+   SCIP_Bool hassetpartmaster;
+   hassetpartmaster = TRUE;
+
+   for( int l = 0; l < getNMasterconss(); ++l )
+   {
+      int consid = getMasterconss()[l];
+      if( !seeedpool->isConsSetpp(consid)  )
+      {
+         hassetpartmaster = FALSE;
+         break;
+      }
+   }
+   return hassetpartmaster;
+}
+
 
 
 

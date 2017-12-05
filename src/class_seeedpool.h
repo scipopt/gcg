@@ -288,10 +288,17 @@ public:
          int  consindexd
          );
 
-
+ /** is cons with specified indec partitioning packing, or covering constraint?*/
    bool isConsSetppc(
       int  consindexd
       );
+
+   /** is cons with specified indec partitioning, or packing covering constraint?*/
+   bool isConsSetpp(
+      int  consindexd
+      );
+
+
 
    /** returns the variable indices of the coefficient matrix for a constraint */
    const int* getVarsForCons(

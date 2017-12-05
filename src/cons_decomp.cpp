@@ -272,7 +272,7 @@ char*  SCIPconshdlrDecompGetScoretypeShortName(
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh") ;
 
    if( sctype == scoretype::SETPART_FWHITE)
-         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh") ;
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh ") ;
 
 
    SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
@@ -5895,7 +5895,7 @@ SCIP_RETCODE GCGprintDecompInformation(
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getScore(scoretype::CLASSIC) );
 
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->hasSetpartitioningMaster(seeedpool) );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->hasSetppccardMaster(seeedpool) );
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  (int) seeed->getDetectorchainVector( ).size() );
 

@@ -117,6 +117,12 @@ private:
 
    bool isFinishedByFinisher;                         /**< was this seeed finished by the finishseeed() method of a detector */
 
+   /** aggregation information */
+   SCIP_Bool            agginfocalculated;             /**< is aggregation information for the blocks already calculated */
+   int                  nrepblocks;                   /**< number of block representatives */
+   std::vector<int>     reptoblocks;                  /**< translation of the block representatives to (old) blocks */
+   std::vector<int>     blockstorep;                  /**< translation of the (old) blocks to the block representatives */
+
    /** statistic information */
    std::vector<DEC_DETECTOR*> detectorChain;          /**< vector containing detectors that worked on that seeed */
    std::vector<std::string> detectorchaininfo;        /**< vector containing information about the detector call */
@@ -600,9 +606,23 @@ public:
       SCORETYPE type
       );
 
-   SCIP_Bool hasSetpartitioningMaster(
+
+   /* Are all master constraints set partitioning, set packing, set cover, or cardinality constraints */
+   SCIP_Bool hasSetppccardMaster(
       gcg::Seeedpool* seeedpool
-      );
+   );
+
+   /* Are all master constraints set partitioning, set packing, or set cover constraints */
+   SCIP_Bool hasSetppcMaster(
+      gcg::Seeedpool* seeedpool
+   );
+
+
+   /* Are all master constraints set partitioning, or set packing constraints */
+   SCIP_Bool hasSetppMaster(
+      gcg::Seeedpool* seeedpool
+   );
+
 
 
    /** returns whether this seeed is usergiven */

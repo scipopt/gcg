@@ -2195,7 +2195,7 @@ bool Seeedpool::isConsCardinalityCons(
 
 }
 
-
+/** is cons with specified indec partitioning, packing, or covering constraint?*/
 bool Seeedpool::isConsSetppc(
       int  consindexd
       )
@@ -2245,6 +2245,56 @@ bool Seeedpool::isConsSetppc(
 
    return false;
 }
+
+/** is cons with specified indec partitioning, or packing  constraint?*/
+bool Seeedpool::isConsSetpp(
+      int  consindexd
+      )
+{
+   SCIP_CONS* cons;
+
+   cons = consToScipCons[consindexd];
+
+   assert(cons != NULL);
+
+   if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "setppc") == 0 )
+         {
+            switch( SCIPgetTypeSetppc(scip, cons) )
+            {
+            case SCIP_SETPPCTYPE_PARTITIONING:
+               return true;
+
+            case SCIP_SETPPCTYPE_PACKING:
+               return true;
+            case SCIP_SETPPCTYPE_COVERING:
+               return false;
+
+            }
+         }
+         else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0 )
+         {
+            SCIP_SETPPCTYPE type;
+
+            if( GCGgetConsIsSetppc(scip, cons, &type) )
+            {
+               switch( type )
+               {
+               case SCIP_SETPPCTYPE_PARTITIONING:
+               return true;
+               case SCIP_SETPPCTYPE_PACKING:
+               return true;
+               case SCIP_SETPPCTYPE_COVERING:
+                  return false;
+
+               }
+            }
+
+         }
+
+   return false;
+}
+
+
 
 
 /** sorts seeeds in allrelevantseeeds data structure by ascending id */
