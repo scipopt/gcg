@@ -91,7 +91,7 @@ Seeed::Seeed(
    isconsopen( givennconss, true ), isvarmaster( givennvars, false ),   isconsmaster( givennconss, false ), varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
    masterconsssorted(true), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
-   agginfocalculated(FALSE), nrepblocks(0), reptoblocks(std::vector<int>(0)), blockstorep(std::vector<int>(0) ),
+   agginfocalculated(FALSE), nrepblocks(0), reptoblocks(std::vector<std::vector<int>>(0)), blockstorep(std::vector<int>(0) ),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), usedClassifier( 0 ), classesToMaster( 0 ), classesToLinking( 0 ), listofancestorids( 0 ),
@@ -964,7 +964,9 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
 }
 
 /** checks if aggregation of sub problems is possible and stores the corresponding aggreagtion information; */
-  void Seeed::calcAggregationInformation()
+  void Seeed::calcAggregationInformation(
+     Seeedpool*  seeedpool
+     )
   {
      int nreps = 1;
 
@@ -984,16 +986,17 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
 
         for( int b2 = b1+1; b2 < getNBlocks(); ++b2 )
         {
-           SCIP_Result identical;
+           SCIP_Bool identical;
+           std::vector<int> varmap;
 
            if( !identblocksforblock[b2].empty() )
               continue;
 
 #ifdef NBLISS
-           checkIdenticalBlocksBrute(seeedpool, b1, b2, &identical);
+           checkIdenticalBlocksBrute(seeedpool, b1, b2,varmap, &identical);
 #else
            checkIdenticalBlocksBliss(seeedpool, b1, b2, &identical);
-
+#endif
            if( identical )
            {
               SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);

@@ -120,7 +120,7 @@ private:
    /** aggregation information */
    SCIP_Bool            agginfocalculated;             /**< is aggregation information for the blocks already calculated */
    int                  nrepblocks;                   /**< number of block representatives */
-   std::vector<int>     reptoblocks;                  /**< translation of the block representatives to (old) blocks */
+   std::vector<std::vector<int>> reptoblocks;                  /**< translation of the block representatives to (old) blocks */
    std::vector<int>     blockstorep;                  /**< translation of the (old) blocks to the block representatives */
 
    /** statistic information */
@@ -173,6 +173,16 @@ private:
    bool isFinishedByFinisherUnpresolved;  /**< was the ancestor seeed for the unpresolved problem finished by the
                                             *< finishseeed() method of a detector */
    DEC_DETECTOR* finishedUnpresolvedBy;   /**< index of finishing detector of unpresolved ancestor seeed */
+
+
+   /** checks blocks for identity by brute force, identity is only found if variables are in correct order */
+   void checkIdenticalBlocksBrute(
+      Seeedpool*           seeedpool,
+      int                  b1,
+      int                  b2,
+      std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+      SCIP_Bool*           identical
+      );
 
 
 public:
@@ -323,7 +333,9 @@ public:
       );
 
    /** checks if aggregation of sub problems is possible and stores the corresponding aggreagtion information */
-   void calcAggregationInformation();
+   void calcAggregationInformation(
+      Seeedpool*  seeedpool
+      );
 
    /** calculates the hash value of the seeed for comparing */
    void calcHashvalue();
