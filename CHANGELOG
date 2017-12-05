@@ -12,6 +12,8 @@ features
 - add check/bounds_script.py, which plots some information on the reduced cost pricing
   iterations in the root node (using additional statistics and given as input an *.out file)
 - add hybridization of dual variable smoothing with an ascent method
+- add price store similar to SCIP's sepa store for better column management
+- restructure column pool similar to SCIP's cut pool
 
 code cleanup
 - use SCIP_STATISTIC for pricing statistics and add compiler flag STATISTICS; if STATISTICS is set to true,
@@ -19,6 +21,19 @@ code cleanup
 
 bug fixes
 - fix a bug in the automatic update of the stabilization parameter alpha
+
+
+GCG Version 2.1.3
+=================
+
+- changed interface to SCIP 5.0.0
+
+bug fixes
+- fix memory bug in original diving event handler
+- fix memory bug in DECdecompRemoveDeletedConss
+- fix reading gzipped presolved decompositions in check script
+- fix bug in checking if master is a set partitioning/covering problem
+
 
 GCG Version 2.1.2
 =================

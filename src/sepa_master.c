@@ -266,7 +266,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    }
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
-         FALSE, FALSE, &delayed, &cutoff) );
+         FALSE, FALSE, TRUE, &delayed, &cutoff) );
 
    SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
 

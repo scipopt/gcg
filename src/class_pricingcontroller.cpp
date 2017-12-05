@@ -395,7 +395,10 @@ void Pricingcontroller::resetPricingjobLowerbound(
 
 /** for all pricing jobs, move their columns to the column pool */
 SCIP_RETCODE Pricingcontroller::moveColsToColpool(
-   Colpool*              colpool             /**< column pool */
+   GCG_COLPOOL*          colpool,            /**< column pool */
+   GCG_PRICESTORE*       pricestore,         /**< GCG pricing store */
+   SCIP_Bool             usecolpool,         /**< use column pool? */
+   SCIP_Bool             usepricestore       /**< use price store? */
    )
 {
    SCIPdebugMessage("Move columns to column pool\n");
@@ -414,7 +417,19 @@ SCIP_RETCODE Pricingcontroller::moveColsToColpool(
          {
             SCIPdebugMessage("  (prob %d) column %d/%d <%p>: ", GCGpricingjobGetProbnr(pricingjobs[i]), j+1, ncols, (void*) cols[j]);
 
-            SCIP_CALL( colpool->addCol(cols[j], &added) );
+            added = FALSE;
+
+            if( usepricestore && SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(cols[j])) )
+            {
+               SCIP_CALL( GCGcomputeColMastercoefs(scip_, cols[j]) );
+
+               SCIP_CALL( GCGpricestoreAddCol(scip_, pricestore, cols[j], FALSE) );
+               added = TRUE;
+            }
+            else if( usecolpool )
+            {
+               SCIP_CALL( GCGcolpoolAddCol(colpool, cols[j], &added) );
+            }
 
             if( !added )
             {
@@ -423,7 +438,7 @@ SCIP_RETCODE Pricingcontroller::moveColsToColpool(
             }
             else
             {
-               SCIPdebugPrintf("added to column pool.\n");
+               SCIPdebugPrintf("added to column pool or price store.\n");
             }
 
             cols[j] = NULL;

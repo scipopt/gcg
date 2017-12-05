@@ -35,7 +35,8 @@
 #ifndef CLASS_PRICINGCONTROLLER_H_
 #define CLASS_PRICINGCONTROLLER_H_
 
-#include "class_colpool.h"
+#include "colpool.h"
+#include "pricestore_gcg.h"
 #include "class_pricingtype.h"
 #include "type_gcgpqueue.h"
 #include "type_pricingjob.h"
@@ -138,7 +139,10 @@ public:
 
    /** for all pricing jobs, move their columns to the column pool */
    SCIP_RETCODE moveColsToColpool(
-      Colpool*           colpool             /**< column pool */
+      GCG_COLPOOL*          colpool,            /**< column pool */
+      GCG_PRICESTORE*       pricestore,         /**< GCG pricing store */
+      SCIP_Bool             usecolpool,         /**< use column pool? */
+      SCIP_Bool             usepricestore       /**< use price store? */
       );
 
    /** check if the next chunk of pricing problems is to be used */

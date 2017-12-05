@@ -25,50 +25,26 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_gcgcol.h
- * @brief  struct to store columns (solutions from a pricing problem)
+/**@file   colpool.h
+ * @brief  internal methods for storing cols in a col pool
  * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_GCGCOL_H_
-#define GCG_STRUCT_GCGCOL_H_
+#ifndef __GCG_COLPOOL_H__
+#define __GCG_COLPOOL_H__
 
-#include "scip/def.h"
-#include "scip/type_misc.h"
-#include "scip/scip.h"
-
-#include "type_gcgcol.h"
+#include "type_colpool.h"
+#include "pub_colpool.h"
+#include "type_pricestore_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct GCG_Col
-{
-   SCIP*                pricingprob;        /**< SCIP data structure (pricing problem)*/
-   int                  probnr;             /**< number of corresponding pricing problem */
-   SCIP_VAR**           vars;               /**< (sorted) array of variables of corresponding pricing problem */
-   SCIP_Real*           vals;               /**< array of solution values (belonging to vars) */
-   int                  nvars;              /**< number of variables */
-   SCIP_Bool            isray;              /**< is the column a ray? */
-   SCIP_Real            redcost;            /**< last known reduced cost */
-   int                  age;                /**< age of column (number of iterations since it was created;
-                                                 each time reduced cost are calculated counts as an interation) */
-   int                  pos;                /**< position in column pool (or -1) */
-   SCIP_Real*           mastercoefs;        /**< array of master coefficients */
-   int                  nmastercoefs;       /**< number of master coefficients */
-   SCIP_Real*           mastercuts;         /**< array of master cut coefficients */
-   int                  nmastercuts;        /**< number of master cut coefficients */
-   SCIP_Real            norm;               /**< norm of the coefficients in the master */
-   int*                 linkvars;           /**< array of indices of variables in var-array which are linking variables */
-   int                  nlinkvars;          /**< number of variables in var-array which are linking variables */
-   SCIP_Bool            initcoefs;          /**< returns if mastercoefs and linkvars have been computed */
-};
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRUCT_GCGCOL_H_ */
+#endif
