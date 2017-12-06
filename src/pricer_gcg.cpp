@@ -163,6 +163,7 @@ struct SCIP_PricerData
 
    SCIP_VAR**            artificialvars;     /**< array of artificial variables */
    int                   nartificialvars;    /**< number of artificial variables */
+   SCIP_Bool             artificialused;     /**< returns if artificial variables are used in current node's LP solution */
 
 
    SCIP_Real**           realdualvalues;     /**< real dual values for pricing variables */
@@ -3958,6 +3959,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    pricerdata->currnodenr = -1;
    pricerdata->eagerage = 0;
+   pricerdata->artificialused = FALSE;
 
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
@@ -4258,6 +4260,19 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
       }
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
    }
+
+   if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && GCGsepaGetNCuts(scip) == 0 && reducedcostpricing->getCalls() > 0
+      && GCGmasterIsCurrentSolValid(scip) && pricerdata->artificialused )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing without artificial variables...\n");
+   }
+
+   if( !GCGmasterIsCurrentSolValid(scip) )
+      pricerdata->artificialused = TRUE;
+   else
+      pricerdata->artificialused = FALSE;
+
+
    /* update number of reduced cost pricing rounds at the current node */
    if( SCIPgetNNodes(scip) == pricerdata->currnodenr )
    {
@@ -4424,6 +4439,8 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
 
    }
 
+   pricerdata->artificialused = TRUE;
+
    return SCIP_OKAY;
 }
 
@@ -4488,7 +4505,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
 
    if( pricerdata->useartificialvars && farkaspricing->getCalls() == 0 )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Add artificial variables.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Add artificial variables. This is only an experimental feature\n");
       SCIP_CALL( addArtificialVars() );
       farkaspricing->incCalls();
       return SCIP_OKAY;
@@ -5437,13 +5454,13 @@ SCIP_Bool GCGmasterIsCurrentSolValid(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   if( SCIPgetStage(scip) != SCIP_STAGE_SOLVING || SCIPgetStatus(scip) != SCIP_STATUS_OPTIMAL || pricerdata->nartificialvars == 0 )
+   if( pricerdata->nartificialvars == 0 )
       return TRUE;
 
    if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING )
       sol = NULL;
    else if( SCIPgetStatus(scip) == SCIP_STATUS_OPTIMAL )
-      SCIPgetBestSol(scip);
+      sol = SCIPgetBestSol(scip);
    else
       return TRUE;
 
