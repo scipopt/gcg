@@ -42,6 +42,7 @@
 #include "gcg.h"
 #include "scip/cons_linear.h"
 #include "pub_bliss.h"
+#include "class_seeed.h"
 
 #include <cstring>
 
@@ -269,6 +270,9 @@ SCIP_RETCODE testScipVars(
    return SCIP_OKAY;
 }
 
+
+
+
 /** tests if two scips have the same number of constraints */
 static
 SCIP_RETCODE testScipCons(
@@ -283,6 +287,39 @@ SCIP_RETCODE testScipCons(
    }
    return SCIP_OKAY;
 }
+
+/** tests if two blocks have the same number of variables */
+static
+SCIP_RETCODE testBlockVars(
+   gcg::Seeed*            seeed,
+   int                   block1,              /**< first SCIP data structure */
+   int                   block2,              /**< second SCIP data structure */
+   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
+   )
+{
+   if( seeed->getNVarsForBlock(block1) != seeed->getNVarsForBlock(block2) )
+   {
+      *result = SCIP_DIDNOTFIND;
+   }
+   return SCIP_OKAY;
+}
+
+/** tests if two blocks have the same number of constraints */
+static
+SCIP_RETCODE testBlockConss(
+   gcg::Seeed*           seeed,
+   int                   block1,              /**< first SCIP data structure */
+   int                   block2,              /**< second SCIP data structure */
+   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
+   )
+{
+   if( seeed->getNConssForBlock(block1) != seeed->getNConssForBlock(block2) )
+   {
+      *result = SCIP_DIDNOTFIND;
+   }
+   return SCIP_OKAY;
+}
+
 
 /** constructor for colorinfo arrays */
 static SCIP_RETCODE allocMemory(

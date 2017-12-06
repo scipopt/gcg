@@ -1001,7 +1001,7 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
 #ifdef NBLISS
            checkIdenticalBlocksBrute(seeedpool, b1, b2,varmap, &identical);
 #else
-           checkIdenticalBlocksBliss(seeedpool, b1, b2, &identical);
+         //  checkIdenticalBlocksBliss(seeedpool, b1, b2, &identical);
 #endif
            if( identical )
            {
