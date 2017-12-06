@@ -246,7 +246,7 @@ def make_plot(data, name):
             if stab > prev_stab or rnd > prev_rnd:
                 if rnd > prev_rnd:
                     # bold line for a new pricing round
-                    if params['lines'] or (x[i] - prev_x)/totalTime > 0.005 or enfLine:
+                    if params['lines'] or (x[i] - prev_x)/totalTime > 0.005 or enfLine or not farkasLine and not flat_data['farkas'][i]:
                         line = lines.Line2D([x[i],x[i]],[0,1],color='r',linewidth=1.0, transform = trans)
                         # add a blue line at the end of farkas pricing
                         if not farkasLine and not flat_data['farkas'][i]:
