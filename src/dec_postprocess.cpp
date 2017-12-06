@@ -186,6 +186,8 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
      seeedPropagationData->nNewSeeeds = 0;
      delete seeed;
      *result = SCIP_DIDNOTFIND;
+     SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+     SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
      return SCIP_OKAY;
    }
 

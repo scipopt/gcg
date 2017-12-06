@@ -852,11 +852,15 @@ Seeedpool::Seeedpool(
 Seeedpool::~Seeedpool()
 {
 
+
    for( size_t i = 0; i < ancestorseeeds.size(); ++i )
    {
       size_t help = ancestorseeeds.size() - i - 1;
       if( ancestorseeeds[help] != NULL && ancestorseeeds[help]->getID() >= 0 )
+      {
          delete ancestorseeeds[help];
+      }
+
    }
 
 
@@ -864,7 +868,9 @@ Seeedpool::~Seeedpool()
    {
       size_t help = finishedSeeeds.size() - i - 1;
       if( finishedSeeeds[help] != NULL && finishedSeeeds[help]->getID() >= 0 )
+      {
          delete finishedSeeeds[help];
+      }
    }
 
    for( size_t i = 0; i < incompleteSeeeds.size(); ++i )
@@ -1470,8 +1476,8 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          delete seeedPropData->seeedToPropagate;
          delete seeedPropData;
       }
-#pragma omp critical ( seeedptrstore )
-       addSeeedToAncestor(seeedPtr);
+//#pragma omp critical ( seeedptrstore )
+//       addSeeedToAncestor(seeedPtr);
 
    } // end for postprocessing finished seeeds
    for( size_t c = 0; c < postprocessed.size(); ++c)

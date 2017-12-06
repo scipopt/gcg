@@ -451,6 +451,8 @@ public:
       int openvar
       );
 
+   SCIP_RETCODE displayAggregationInformation();
+
    /** displays the assignments of the conss */
    SCIP_RETCODE displayConss(Seeedpool* seeedpool);
 

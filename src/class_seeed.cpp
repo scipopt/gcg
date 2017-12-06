@@ -182,7 +182,8 @@ Seeed::Seeed(
 /** destructor */
 Seeed::~Seeed()
 {
-   SCIPfreeBlockMemoryArrayNull( scip, & detectorchainstring, SCIP_MAXSTRLEN );
+   if ( detectorchainstring != NULL )
+      SCIPfreeBlockMemoryArrayNull( scip, & detectorchainstring, SCIP_MAXSTRLEN );
 }
 
 SCIP_Bool Seeed::isconshittingblockca(
@@ -970,13 +971,18 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
   {
      int nreps = 1;
 
+
      if( agginfocalculated )
+        return;
+
+     if( !isComplete() )
         return;
 
      std::vector<std::vector<int>> identblocksforblock( getNBlocks(), std::vector<int>(0) );
 
+     blockstorep = std::vector<int>(getNBlocks(), -1);
 
-     for( int b1 = 0; b1 < getNBlocks() - 1; ++b1 )
+     for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
      {
         std::vector<int> currrep = std::vector<int>(0);
         if( !identblocksforblock[b1].empty() )
@@ -1000,18 +1006,22 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
            if( identical )
            {
               SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);
+              SCIPinfoMessage(scip, NULL, "Block %d is identical to block %d!\n", b1, b2);
               identblocksforblock[b1].push_back(b2);
               identblocksforblock[b2].push_back(b1);
               currrep.push_back(b2);
            }
         }
 
-        reptoblocks[nreps-1] = currrep;
+        reptoblocks.push_back( currrep );
         for( size_t i = 0; i < currrep.size(); ++i )
-           blockstorep[currep[i]] = nreps-1;
+           blockstorep[currrep[i]] = nreps-1;
+        ++nreps;
 
      }
-     nrepblocks = nreps;
+     nrepblocks = nreps-1;
+
+     agginfocalculated = TRUE;
   }
 
 
@@ -1718,17 +1728,18 @@ void Seeed::checkIdenticalBlocksBrute(
       var1 = seeedpool->getVarForIndex( getVarsForBlock(b1)[i] );
       var2 = seeedpool->getVarForIndex( getVarsForBlock(b2)[i] );
 
-      if( SCIPisEQ(scip, SCIPvarGetObj(var1), SCIPvarGetObj(var2) ) )
+
+      if( !SCIPisEQ(scip, SCIPvarGetObj(var1), SCIPvarGetObj(var2) ) )
       {
          SCIPdebugMessage("--> obj differs for var %s and var %s!\n", SCIPvarGetName(var1), SCIPvarGetName(var2));
              return;
       }
-      if( SCIPisEQ(scip, SCIPvarGetLbOriginal(var1), SCIPvarGetLbOriginal(var2) ) )
+      if( !SCIPisEQ(scip, SCIPvarGetLbGlobal(var1), SCIPvarGetLbGlobal(var2) ) )
       {
          SCIPdebugMessage("--> lb differs for var %s and var %s!\n", SCIPvarGetName(var1), SCIPvarGetName(var2));
              return;
       }
-      if( SCIPisEQ(scip, SCIPvarGetUbOriginal(var1), SCIPvarGetUbOriginal(var2) ) )
+      if( !SCIPisEQ(scip, SCIPvarGetUbGlobal(var1), SCIPvarGetUbGlobal(var2) ) )
       {
          SCIPdebugMessage("--> ub differs for var %s and var %s!\n", SCIPvarGetName(var1), SCIPvarGetName(var2));
              return;
@@ -1742,9 +1753,9 @@ void Seeed::checkIdenticalBlocksBrute(
       for( int mc = 0; mc < getNMasterconss(); ++mc )
       {
 
-         if( !SCIPisEQ(scip, seeedpool->getVal(getNMasterconss()[mc], getVarsForBlock(b1)[i]), seeedpool->getVal(getNMasterconss()[mc], getVarsForBlock(b2)[i])  ))
+         if( !SCIPisEQ(scip, seeedpool->getVal(getMasterconss()[mc], getVarsForBlock(b1)[i]), seeedpool->getVal(getMasterconss()[mc], getVarsForBlock(b2)[i])  ))
          {
-            SCIPdebugMessage("--> master coefficients differ for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
+            SCIPdebugMessage("--> master coefficients differ for var %s (%f) and var %s  (%f) !\n", SCIPvarGetName(  seeedpool->getVarForIndex(getVarsForBlock(b1)[i]) ), seeedpool->getVal(getMasterconss()[mc], getVarsForBlock(b1)[i]), SCIPvarGetName( seeedpool->getVarForIndex(getVarsForBlock(b2)[i])), seeedpool->getVal(getMasterconss()[mc], getVarsForBlock(b2)[i])  );
             return;
          }
       }
@@ -1772,26 +1783,26 @@ void Seeed::checkIdenticalBlocksBrute(
 
       if( seeedpool->getNVarsForCons(cons1id) != seeedpool->getNVarsForCons(cons2id) )
       {
-         SCIPdebugMessage("--> nvars differs for cons %s and cons %s!\n", SCIPconsGetName(conss1), SCIPconsGetName(conss2));
+         SCIPdebugMessage("--> nvars differs for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
          return;
       }
 
       if( !SCIPisEQ(scip, GCGconsGetLhs(scip, cons1), GCGconsGetLhs(scip, cons2) ) )
       {
          SCIPdebugMessage("--> lhs differs for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
-         return SCIP_OKAY;
+         return;
       }
 
       if( !SCIPisEQ(scip, GCGconsGetRhs(scip, cons1), GCGconsGetRhs(scip, cons2) ) )
       {
          SCIPdebugMessage("--> rhs differs for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
-         return SCIP_OKAY;
+         return;
       }
 
       nvals1 = GCGconsGetNVars(scip, cons1);
       nvals2 = GCGconsGetNVars(scip, cons2);
-      SCIP_CALL( SCIPallocBufferArray(scip, &vals1, nvals1) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &vals2, nvals2) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals1, nvals1) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals2, nvals2) );
       GCGconsGetVals(scip, cons1, vals1, nvals1);
       GCGconsGetVals(scip, cons2, vals2, nvals2);
 
@@ -2681,6 +2692,28 @@ SCIP_RETCODE Seeed::deleteOpenvar(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE Seeed::displayAggregationInformation()
+{
+   if( !agginfocalculated )
+   {
+      SCIPinfoMessage(scip, NULL, " Aggregation information is not calculated yet \n ");
+      return SCIP_OKAY;
+   }
+
+   SCIPinfoMessage(scip, NULL, " number of representative blocks: %d \n", nrepblocks);
+   for( int i = 0; i < nrepblocks; ++i )
+   {
+      SCIPinfoMessage(scip, NULL, "representative block %d : ", i);
+
+      for( size_t b = 0; b < reptoblocks[i].size(); ++b )
+         SCIPinfoMessage(scip, NULL, "%d ", reptoblocks[i][b] );
+
+      SCIPinfoMessage(scip, NULL, "\n", i);
+   }
+
+   return SCIP_OKAY;
+}
+
 /** displays the assignments of the conss */
 SCIP_RETCODE Seeed::displayConss(Seeedpool* seeedpool)
 {
@@ -2757,7 +2790,10 @@ SCIP_RETCODE Seeed::displayInfo(
    std::cout << " Number of constraints: " << getNConss() << std::endl;
    std::cout << " Number of variables: " << getNVars() << std::endl;
 
+   displayAggregationInformation();
    std::cout << std::endl;
+
+
 
    /* detection information */
    std::cout << "-- Detection and detectors --" << std::endl;
@@ -3264,6 +3300,9 @@ SCIP_Real Seeed::evaluate(
    else
       setpartfwhitescore = 0.5 * maxforeseeingwhitescore;
 
+
+   //if( sctype == scoretype::SETPART_FWHITE )
+      calcAggregationInformation(seeedpool);
 
 
    SCIP_CALL( SCIPallocBufferArray( scip, & nzblocks, nBlocks ) );
