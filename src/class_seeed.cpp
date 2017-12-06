@@ -1006,7 +1006,6 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
            if( identical )
            {
               SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);
-              SCIPinfoMessage(scip, NULL, "Block %d is identical to block %d!\n", b1, b2);
               identblocksforblock[b1].push_back(b2);
               identblocksforblock[b2].push_back(b1);
               currrep.push_back(b2);
@@ -1700,9 +1699,7 @@ void Seeed::checkIdenticalBlocksBrute(
    )
 {
 
-   SCIP* scip;
 
-   scip = seeedpool->getScip();
    *identical = FALSE;
    SCIPdebugMessage("check block %d and block %d for identity...\n", b1, b2);
    varmap = std::vector<int>(getNVars(), -1);
