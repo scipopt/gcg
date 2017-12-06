@@ -3964,6 +3964,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
 
+   pricerdata->artificialvars = NULL;
+
    /* init array containing all pricing problems */
    pricerdata->npricingprobs = GCGgetNPricingprobs(origprob);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->pricingprobs), pricerdata->npricingprobs) );
@@ -4192,7 +4194,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 
       SCIP_CALL( SCIPreleaseVar(scip, &pricerdata->artificialvars[i]) );
    }
-   SCIPfreeMemoryArray(scip, &(pricerdata->artificialvars));
+   SCIPfreeMemoryArrayNull(scip, &(pricerdata->artificialvars));
    pricerdata->nartificialvars = 0;
 
    for( i = 0; i < pricerdata->npricedvars; i++ )
