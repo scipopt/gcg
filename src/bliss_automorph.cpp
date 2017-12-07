@@ -343,9 +343,9 @@ static SCIP_RETCODE allocMemoryNewDetection(
    int                   nvars               /**< number of variables */
    )
 {
-   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarraycoefs, ((size_t) seeedpool->getNNonzeros() )));
-   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayvars, (size_t) nvars));
-   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayconss, (size_t) nconss));
+   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getSCIP(), &colorinfo->ptrarraycoefs, ((size_t) seeedpool->getNNonzeros() )));
+   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getSCIP(), &colorinfo->ptrarrayvars, (size_t) nvars));
+   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getSCIP(), &colorinfo->ptrarrayconss, (size_t) nconss));
    return SCIP_OKAY;
 }
 
@@ -591,16 +591,20 @@ SCIP_RETCODE setuparraysnewdetection(
       //save the properties of constraints in a struct array and in a sorted pointer array
       for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
       {
-         SCIP_CONS* cons = seeedpool->getConsForIndex( seeed->getConssForBlock(block)[i] );
-         SCIP_Real* curvals = NULL;
+         int consid = seeed->getConssForBlock(block)[i];
+         SCIP_CONS* cons = seeedpool->getConsForIndex( consid );
+
+
 
          //ncurvars = GCGconsGetNVars(scip, conss[i]);    //SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(origscip), SCIPgetNVars(scip1)+1) );
-         if( ncurvars == 0 )
+
+         if( seeedpool->getNVarsForCons(consid) == 0 )
             continue;
-         AUT_CONS* scons = new AUT_CONS(scip, conss[i]);
+
+         AUT_CONS* scons = new AUT_CONS(scip, cons);
          //add to pointer array iff it doesn't exist
          SCIP_CALL( colorinfo->insert(scons, &added) );
-         if( s > 0 && added)
+         if( b > 0 && added)
          {
            *result = SCIP_DIDNOTFIND;
            break;
@@ -609,18 +613,17 @@ SCIP_RETCODE setuparraysnewdetection(
          if( !added )
             delete scons;
 
-         SCIP_CALL( SCIPallocBufferArray(origscip, &curvals, ncurvars));
-         SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
          //save the properties of variables of the constraints in a struct array and in a sorted pointer array
-         for( j = 0; j < ncurvars; j++ )
+         for( j = 0; j < seeedpool->getNVarsForCons(consid); j++ )
          {
-            AUT_COEF* scoef = new AUT_COEF(scip, curvals[j] );
+            SCIP_Real val = seeedpool->getVal(consid, seeedpool->getVarsForCons(consid)[j]);
+            AUT_COEF* scoef = new AUT_COEF(scip, val );
             //test, whether the coefficient is not zero
-            if( !SCIPisZero(scip, scoef->getVal()) )
+            if( !SCIPisZero(seeedpool->getScip(), scoef->getVal()) )
             {
                //add to pointer array iff it doesn't exist
                SCIP_CALL( colorinfo->insert(scoef, &added) );
-               if( s > 0 && added)
+               if( b > 0 && added)
                {
                   *result = SCIP_DIDNOTFIND;
                   break;
@@ -630,10 +633,9 @@ SCIP_RETCODE setuparraysnewdetection(
             if( !added )
                delete scoef;
          }
-         SCIPfreeBufferArray(origscip, &curvals);
       }
       //size of the next instance, in order to allocate memory
-      if( s < nscips - 1 )
+      if( b < nblocks - 1 )
       {
          nconss = SCIPgetNConss(scips[(size_t)s + 1]);
          nvars = SCIPgetNVars(scips[(size_t)s + 1]);
