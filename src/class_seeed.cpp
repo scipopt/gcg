@@ -1689,6 +1689,8 @@ bool Seeed::checkConsistency(
    return true;
 }
 
+
+#ifdef NBLISS
 /** checks blocks for identity by brute force, identity is only found if variables are in correct order */
 void Seeed::checkIdenticalBlocksBrute(
    Seeedpool*           seeedpool,
@@ -1830,6 +1832,8 @@ void Seeed::checkIdenticalBlocksBrute(
    *identical = TRUE;
    return;
 }
+
+#endif
 
 
 /** assigns all open constraints and open variables

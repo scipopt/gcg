@@ -335,6 +335,22 @@ static SCIP_RETCODE allocMemory(
    return SCIP_OKAY;
 }
 
+/** constructor for colorinfo arrays */
+static SCIP_RETCODE allocMemoryNewDetection(
+   gcg::Seeedpool*       seeedpool,               /**< SCIP data structure */
+   AUT_COLOR*            colorinfo,          /**< struct to save intermediate information */
+   int                   nconss,             /**< number of constraints */
+   int                   nvars               /**< number of variables */
+   )
+{
+   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarraycoefs, ((size_t) seeedpool->getNNonzeros() )));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayvars, (size_t) nvars));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayconss, (size_t) nconss));
+   return SCIP_OKAY;
+}
+
+
+
 /** reallocate colorinfo arrays with new size */
 static SCIP_RETCODE reallocMemory(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -520,6 +536,159 @@ SCIP_RETCODE setuparrays(
 
    return SCIP_OKAY;
 }
+
+
+/** set up a help structure for graph creation for new detection loop*/
+static
+SCIP_RETCODE setuparraysnewdetection(
+   gcg::Seeedpool*       seeedpool,           /**< seeedpool corresponing to presolved or unpresolved problem */
+   gcg::Seeed*           seeed,              /**< partial decomp the  symmetry for two blocks is checked for */
+   int                   nblocks,            /**< number of blocks the symmetry should be checked for */
+   std::vector<int>      blocks,             /**< vectors of block indices the symmetry be checked for */
+   AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
+   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
+   )
+{ /*lint -esym(593, scoef) */
+   int i;
+   int j;
+   int b;
+   int ncurvars;
+   int nconss;
+   int nvars;
+   SCIP_Bool added;
+
+   added = FALSE;
+
+   //allocate max n of coefarray, varsarray, and boundsarray in origscip
+   nconss = seeed->getNConssForBlock(blocks[0]) ;
+   nvars = seeed->getNVarsForBlock(blocks[0]) ;
+   SCIP_CALL( allocMemoryNewDetection(seeedpool, colorinfo, nconss, nvars) );
+   colorinfo->setOnlySign(FALSE);
+
+   for( b = 0; b < nblocks && *result == SCIP_SUCCESS; ++b )
+   {
+      int block = blocks[b];
+
+      //SCIP_CONS** conss = SCIPgetConss(scip);
+     // SCIP_VAR** vars = SCIPgetVars(scip);
+      SCIPdebugMessage("Handling block %i (id %d %d x %d)\n", b, block, seeed->getNConssForBlock(blocks[b]), seeed->getNVarsForBlock(blocks[b]));
+      //save the properties of variables in a struct array and in a sorted pointer array
+      for( i = 0; i < nvars; i++ )
+      {
+         SCIP_VAR* var = seeedpool->getVarForIndex( seeed->getVarsForBlock(block)[i] );
+         AUT_VAR* svar = new AUT_VAR(scip, var);
+         //add to pointer array iff it doesn't exist
+         SCIP_CALL( colorinfo->insert(svar, &added) );
+         if( b > 0 && added)
+         {
+           *result = SCIP_DIDNOTFIND;
+            break;
+         }
+         //otherwise free allocated memory
+         if( !added )
+            delete svar;
+      }
+      //save the properties of constraints in a struct array and in a sorted pointer array
+      for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
+      {
+         SCIP_CONS* cons = seeedpool->getConsForIndex( seeed->getConssForBlock(block)[i] );
+         SCIP_Real* curvals = NULL;
+
+         //ncurvars = GCGconsGetNVars(scip, conss[i]);    //SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(origscip), SCIPgetNVars(scip1)+1) );
+         if( ncurvars == 0 )
+            continue;
+         AUT_CONS* scons = new AUT_CONS(scip, conss[i]);
+         //add to pointer array iff it doesn't exist
+         SCIP_CALL( colorinfo->insert(scons, &added) );
+         if( s > 0 && added)
+         {
+           *result = SCIP_DIDNOTFIND;
+           break;
+         }
+         //otherwise free allocated memory
+         if( !added )
+            delete scons;
+
+         SCIP_CALL( SCIPallocBufferArray(origscip, &curvals, ncurvars));
+         SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
+         //save the properties of variables of the constraints in a struct array and in a sorted pointer array
+         for( j = 0; j < ncurvars; j++ )
+         {
+            AUT_COEF* scoef = new AUT_COEF(scip, curvals[j] );
+            //test, whether the coefficient is not zero
+            if( !SCIPisZero(scip, scoef->getVal()) )
+            {
+               //add to pointer array iff it doesn't exist
+               SCIP_CALL( colorinfo->insert(scoef, &added) );
+               if( s > 0 && added)
+               {
+                  *result = SCIP_DIDNOTFIND;
+                  break;
+               }
+            }
+            //otherwise free allocated memory
+            if( !added )
+               delete scoef;
+         }
+         SCIPfreeBufferArray(origscip, &curvals);
+      }
+      //size of the next instance, in order to allocate memory
+      if( s < nscips - 1 )
+      {
+         nconss = SCIPgetNConss(scips[(size_t)s + 1]);
+         nvars = SCIPgetNVars(scips[(size_t)s + 1]);
+      }
+      //set zero, if no next instance exists
+      else
+      {
+         nconss = 0;
+         nvars = 0;
+      }
+      //reallocate memory with size of ptrarray[bounds, vars, coefs] + max of scip[i+1]
+      SCIP_CALL( reallocMemory(origscip, colorinfo, nconss, nvars) );
+   }
+
+   /* add color information for master constraints */
+   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
+   int nmasterconss = GCGgetNMasterConss(origscip);
+
+   SCIP_CALL( reallocMemory(origscip, colorinfo, nmasterconss, SCIPgetNVars(origscip)) );
+
+   for( i = 0; i < nmasterconss && *result == SCIP_SUCCESS; ++i )
+   {
+      SCIP_CONS* mastercons = origmasterconss[i];
+      SCIP_Real* curvals = SCIPgetValsLinear(origscip, mastercons);
+      ncurvars = SCIPgetNVarsLinear(origscip, mastercons);
+
+      /* add right color for master constraint */
+      AUT_CONS* scons = new AUT_CONS(origscip, mastercons);
+      SCIP_CALL( colorinfo->insert(scons, &added) );
+
+      /* if it hasn't been added, it is already present */
+      if(!added)
+         delete scons;
+
+      for( j = 0; j < ncurvars; ++j )
+      {
+         AUT_COEF* scoef = new AUT_COEF(origscip, curvals[j] );
+
+         added = FALSE;
+
+         if( !SCIPisZero(origscip, scoef->getVal()) )
+         {
+            SCIP_CALL( colorinfo->insert(scoef, &added) );
+         }
+
+         if( !added )
+            delete scoef;
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
 /** create a graph out of an array of scips */
 static
 SCIP_RETCODE createGraph(
