@@ -217,7 +217,7 @@ SCIP_RETCODE writeFamilyTree(
 
    if( SCIPconshdlrDecompGetNFinishedDecomps(scip) == 0 )
    {
-      SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
+      SCIPdialogMessage(scip, NULL, "No decomposition to write for family tree, please read or detect one first.\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
       *nextdialog = NULL;
       return SCIP_OKAY;
