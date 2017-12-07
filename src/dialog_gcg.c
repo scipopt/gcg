@@ -252,6 +252,13 @@ SCIP_RETCODE writeFamilyTree(
       SCIPsplitFilename(probnamepath, NULL, &probname, NULL, NULL);
    (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "familytree-%s", probname);
 
+   /* make sure there are no dots in the pure filename */
+   for(size_t i = 0; i < strlen(filename); i++)
+   {
+      if(filename[i] == '.')
+         filename[i] = '-';
+   }
+
    (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", dirname, filename, extension);
 
    /* call the creation of the family tree */

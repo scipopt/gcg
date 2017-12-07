@@ -125,7 +125,6 @@ SCIP_RETCODE getRgbFromHex(
    )
 {
    char temp[SCIP_MAXSTRLEN];
-   int check = 0;
    unsigned int r = 0;
    unsigned int g = 0;
    unsigned int b = 0;
@@ -137,8 +136,7 @@ SCIP_RETCODE getRgbFromHex(
    memmove( temp, temp+1, strlen( temp ) );
 
    /* extract int values from the rest */
-   check = sscanf( temp, "%02x%02x%02x", &r, &g, &b );
-   assert( check == 3 );
+   sscanf( temp, "%02x%02x%02x", &r, &g, &b );
 
    *red = (int) r;
    *green = (int) g;
