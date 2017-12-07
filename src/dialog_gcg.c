@@ -273,7 +273,8 @@ SCIP_RETCODE writeFamilyTree(
       SCIP_CALL( retcode );
 
       /* print result message if writing was successful */
-      SCIPdialogMessage(scip, NULL, "Family tree visualization is written to %s\n", outname);
+      SCIPdialogMessage(scip, NULL,
+         "Family tree visualization is written to %s.\n For compilation read the README in the same folder.\n", outname);
    }
 
    return SCIP_OKAY;
@@ -380,7 +381,8 @@ SCIP_RETCODE reportAllDecompositions(
    SCIPfreeBlockMemoryArray(scip, &seeedids, ndecomps);
 
    /* print result message if writing was successful */
-   SCIPdialogMessage(scip, NULL, "report is written to file %s\n", outname);
+   SCIPdialogMessage(scip, NULL,
+      "Report is written to file %s\n. For compilation read the README in the same folder.\n", outname);
 
    /* free the decomp files */
    for( i = 0; i < ndecomps; ++i )

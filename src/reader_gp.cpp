@@ -274,8 +274,6 @@ SCIP_RETCODE writeGpNonzeros(
          assert( orderToCols[col] != -1 );
          if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
             ofs << col + 0.5 << " " << row + 0.5 << std::endl;
-//            ofs << "set object circle at graph " << col + 0.5 << "," << row + 0.5 << " radius char " << radius <<
-//               "\\" << std::endl << "fc rgb \"" << SCIPvisuGetColorNonzero() << "\" fill solid" << std::endl;
       }
    }
 

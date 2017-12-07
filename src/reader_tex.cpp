@@ -1194,13 +1194,17 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
       return SCIP_FILECREATEERROR;
    }
 
-   SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file     \n", name);
+   SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file.    \n", name);
    SCIPinfoMessage(scip, readme, "                                                                             \n");
-   SCIPinfoMessage(scip, readme, "Instead of using the command 'make' use 'make -f %s'                         \n", name);
+   SCIPinfoMessage(scip, readme, "Use the command\n\t'make -f %s'\nto compile.                                  \n", name);
+   SCIPinfoMessage(scip, readme, "Depending on the size of your problem that may take some time.               \n");
+   SCIPinfoMessage(scip, readme,
+      "Please do not delete any new files that might be generated during the compile process.                  \n");
+   SCIPinfoMessage(scip, readme, "All access files will be deleted automatically once the compilation is complete.\n");
    SCIPinfoMessage(scip, readme, "                                                                             \n");
    SCIPinfoMessage(scip, readme, "Clean options:                                                               \n");
-   SCIPinfoMessage(scip, readme, "\t'clean' clears all present intermediate files (if any exist)               \n");
-   SCIPinfoMessage(scip, readme, "\t'cleanall' clears all generated files INCLUDING .pdf                       \n");
+   SCIPinfoMessage(scip, readme, "\t'make -f %s clean' clears all present intermediate files (if any exist)    \n", name);
+   SCIPinfoMessage(scip, readme, "\t'make -f %s cleanall' clears all generated files INCLUDING .pdf            \n", name);
 
    /* close readme file */
    fclose(readme);
