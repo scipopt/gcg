@@ -501,11 +501,15 @@ BEGIN {
    if( $4 != "-" )
       db = $4;
 }
-/^  Root Dual Bound  :/ {
-   if( $5 != "-" )
-      rootdb = $5;
-   else
-       rootdb = db;  # SCIP most likely finished during root node, perhaps due to a solution limit. the rootdb is NOT printed then, but needed later
+/^  Final Dual Bound :/ {
+   if( !inmasterprob )
+   {
+      if( $5 != "-" )
+         rootdb = $5;
+      else
+         rootdb = db;  # SCIP most likely finished during root node, perhaps due to a solution limit. the rootdb is NOT printed then, but needed later
+   }
+
 }
 #
 # iterations
