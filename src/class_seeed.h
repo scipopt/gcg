@@ -85,6 +85,11 @@ private:
    std::vector<bool> isvarmaster;
    std::vector<bool> isconsmaster;
 
+   std::vector<int>  ncoeffsforblock;                          /**< number of coeffs per block */
+
+   SCIP_Bool         calculatedncoeffsforblock;                        /**< is the  number of coeff per block already calculated*/
+   int               ncoeffsformaster;                                    /**< number of master coefficients */
+
    bool varsforblocksorted;
    bool stairlinkingvarsforblocksorted;
    bool conssforblocksorted;
@@ -173,6 +178,16 @@ private:
    bool isFinishedByFinisherUnpresolved;  /**< was the ancestor seeed for the unpresolved problem finished by the
                                             *< finishseeed() method of a detector */
    DEC_DETECTOR* finishedUnpresolvedBy;   /**< index of finishing detector of unpresolved ancestor seeed */
+
+
+   /** checks blocks for identity by graph automorphism check done by bliss, identity is only found if variables are in correct order */
+   void checkIdenticalBlocksBliss(
+      Seeedpool*           seeedpool,
+      int                  b1,
+      int                  b2,
+      std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+      SCIP_Bool*           identical
+      );
 
 
    /** checks blocks for identity by brute force, identity is only found if variables are in correct order */
@@ -618,6 +633,18 @@ public:
    /** returns the "maximum white score" */
    SCIP_Real getMaxWhiteScore();
 
+   /** returns the number of nonzero coeffs in a certain block */
+   int  getNCoeffsForBlock(
+      gcg::Seeedpool* seeedpool,
+      int blockid
+      );
+
+   /** returns the number of nonzero coeffs in master */
+   int  getNCoeffsForMaster(
+      gcg::Seeedpool* seeedpool
+      );
+
+
    /** returns the score of the seeed (depending on used scoretype) */
    SCIP_Real getScore(
       SCORETYPE type
@@ -787,6 +814,12 @@ public:
    const int* getVarsForBlock(
       int block
       );
+
+   /** returns array containing vars of a block */
+   int getVarProbindexForBlock(
+      int varid,
+      int block
+   );
 
    /** returns true if this seeed is complete,
     *  i.e. it has no more open constraints and variables */
@@ -1124,6 +1157,12 @@ private:
    SCIP_RETCODE assignOpenPartialHittingVarsToMaster(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
+
+   /** calculates the number of nonzero coefficients for the blocks */
+   SCIP_RETCODE calcNCoeffsForBlocks(
+   Seeedpool*   seeedpool
+   );
+
 };
 
 } /* namespace gcg */

@@ -88,7 +88,9 @@ Seeed::Seeed(
    ) :
    scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
    masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givennvars, true ),
-   isconsopen( givennconss, true ), isvarmaster( givennvars, false ),   isconsmaster( givennconss, false ), varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
+   isconsopen( givennconss, true ), isvarmaster( givennvars, false ),   isconsmaster( givennconss, false ),
+   ncoeffsforblock(std::vector<int>(0)), calculatedncoeffsforblock(FALSE),
+   varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
    masterconsssorted(true), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
    agginfocalculated(FALSE), nrepblocks(0), reptoblocks(std::vector<std::vector<int>>(0)), blockstorep(std::vector<int>(0) ),
@@ -1001,7 +1003,7 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
 #ifdef NBLISS
            checkIdenticalBlocksBrute(seeedpool, b1, b2,varmap, &identical);
 #else
-         //  checkIdenticalBlocksBliss(seeedpool, b1, b2, &identical);
+           checkIdenticalBlocksBliss(seeedpool, b1, b2,varmap, &identical);
 #endif
            if( identical )
            {
@@ -1070,6 +1072,50 @@ void Seeed::calcHashvalue()
 
    this->hashvalue = hashval;
 }
+
+/** calculates the number of nonzero coefficients for the blocks */
+SCIP_RETCODE Seeed::calcNCoeffsForBlocks(
+Seeedpool*   seeedpool
+){
+
+   if( calculatedncoeffsforblock )
+      return SCIP_OKAY;
+
+   ncoeffsforblock = std::vector<int>(getNBlocks(), 0);
+   int counter;
+
+
+
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      counter = 0;
+      for( int blco = 0; blco < getNConssForBlock(b); ++blco )
+      {
+            int consid = getConssForBlock(b)[blco];
+
+            for( int cva = 0; cva < seeedpool->getNVarsForCons(consid) ;++cva )
+               if( isVarBlockvarOfBlock(seeedpool->getVarsForCons(consid)[cva], b ) )
+                  ++counter;
+      }
+      ncoeffsforblock[b] = counter;
+   }
+
+   counter = 0;
+
+   for( int mco = 0; mco < getNMasterconss(); ++mco )
+   {
+         int consid = getMasterconss()[mco];
+
+         counter += seeedpool->getNVarsForCons(consid);
+   }
+   ncoeffsformaster = counter;
+
+   calculatedncoeffsforblock = TRUE;
+
+   return SCIP_OKAY;
+}
+
+
 
 /** reassigns linking vars stairlinkingvars if possible
  *  potentially reorders blocks for making a maximum number of linking vars stairlinking
@@ -1690,6 +1736,46 @@ bool Seeed::checkConsistency(
 }
 
 
+/** checks blocks for identity by graph automorphism check done by bliss, identity is only found if variables are in correct order */
+void Seeed::checkIdenticalBlocksBliss(
+   Seeedpool*           seeedpool,
+   int                  b1,
+   int                  b2,
+   std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+   SCIP_Bool*           identical
+   )
+{
+   *identical = FALSE;
+
+   if( getNConssForBlock(b1) != getNConssForBlock(b2) )
+   {
+      SCIPdebugMessage("--> number of constraints differs!\n");
+      return;
+   }
+
+   if( getNVarsForBlock(b1) != getNVarsForBlock(b2) )
+   {
+      SCIPdebugMessage("--> number of variables differs!\n");
+      return;
+   }
+
+   if( getNCoeffsForBlock(seeedpool, b1) != getNCoeffsForBlock(seeedpool, b2) )
+   {
+      SCIPdebugMessage("--> number of nonzero coeffs differs!\n");
+      return;
+   }
+
+
+
+
+
+   *identical = TRUE;
+   return;
+
+}
+
+
+
 #ifdef NBLISS
 /** checks blocks for identity by brute force, identity is only found if variables are in correct order */
 void Seeed::checkIdenticalBlocksBrute(
@@ -1715,6 +1801,13 @@ void Seeed::checkIdenticalBlocksBrute(
    if( getNVarsForBlock(b1) != getNVarsForBlock(b2) )
    {
       SCIPdebugMessage("--> number of variables differs!\n");
+      return;
+   }
+
+
+   if( getNCoeffsForBlock(seeedpool, b1) != getNCoeffsForBlock(seeedpool, b2) )
+   {
+      SCIPdebugMessage("--> number of nonzero coeffs differs!\n");
       return;
    }
 
@@ -4442,6 +4535,32 @@ SCIP_Real Seeed::getMaxWhiteScore()
    return maxwhitescore;
 }
 
+
+/** returns the number of nonzero coeffs in a certain block */
+int  Seeed::getNCoeffsForBlock(
+   gcg::Seeedpool* seeedpool,
+   int blockid
+   ){
+
+   if( calculatedncoeffsforblock )
+      calcNCoeffsForBlocks(seeedpool);
+
+   return ncoeffsforblock[blockid];
+}
+
+
+/** returns the number of nonzero coeffs in master */
+int  Seeed::getNCoeffsForMaster(
+   gcg::Seeedpool* seeedpool
+   ){
+
+   if( calculatedncoeffsforblock )
+      calcNCoeffsForBlocks(seeedpool);
+
+   return ncoeffsformaster;
+}
+
+
 /** returns the score of the seeed (depending on used scoretype) */
 SCIP_Real Seeed::getScore(
    SCORETYPE type
@@ -4824,6 +4943,22 @@ const int* Seeed::getVarsForBlock(
    assert( block >= 0 && block < nBlocks );
    return & varsForBlocks[block][0];
 }
+
+/** returns array containing vars of a block */
+int Seeed::getVarProbindexForBlock(
+   int varid,
+   int block
+){
+   std::vector<int>::iterator lb = lower_bound( varsForBlocks[block].begin(), varsForBlocks[block].end(), varid );
+
+   if( lb != varsForBlocks[block].end() )
+      return (int) ( lb - varsForBlocks[block].begin() );
+   else
+      return -1;
+
+}
+
+
 
 /** returns true if this seeed is complete,
  *  i.e. it has at no more open constraints and variables */

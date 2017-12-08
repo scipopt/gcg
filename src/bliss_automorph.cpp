@@ -43,6 +43,7 @@
 #include "scip/cons_linear.h"
 #include "pub_bliss.h"
 #include "class_seeed.h"
+#include "class_seeedpool.h"
 
 #include <cstring>
 
@@ -340,12 +341,13 @@ static SCIP_RETCODE allocMemoryNewDetection(
    gcg::Seeedpool*       seeedpool,               /**< SCIP data structure */
    AUT_COLOR*            colorinfo,          /**< struct to save intermediate information */
    int                   nconss,             /**< number of constraints */
-   int                   nvars               /**< number of variables */
+   int                   nvars,               /**< number of variables */
+   int                   ncoeffs
    )
 {
-   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getSCIP(), &colorinfo->ptrarraycoefs, ((size_t) seeedpool->getNNonzeros() )));
-   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getSCIP(), &colorinfo->ptrarrayvars, (size_t) nvars));
-   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getSCIP(), &colorinfo->ptrarrayconss, (size_t) nconss));
+   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getScip(), &colorinfo->ptrarraycoefs, ((size_t) ncoeffs )));
+   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getScip(), &colorinfo->ptrarrayvars, (size_t) nvars));
+   SCIP_CALL( SCIPallocMemoryArray(seeedpool->getScip(), &colorinfo->ptrarrayconss, (size_t) nconss));
    return SCIP_OKAY;
 }
 
@@ -353,7 +355,7 @@ static SCIP_RETCODE allocMemoryNewDetection(
 
 /** reallocate colorinfo arrays with new size */
 static SCIP_RETCODE reallocMemory(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< problem information */
    AUT_COLOR*            colorinfo,          /**< struct to save intermediate information */
    int                   nconss,             /**< number of constraints */
    int                   nvars               /**< number of variables */
@@ -364,6 +366,7 @@ static SCIP_RETCODE reallocMemory(
    SCIP_CALL( SCIPreallocMemoryArray(scip, &colorinfo->ptrarrayconss, (size_t) colorinfo->lenconssarray + nconss));
    return SCIP_OKAY;
 }
+
 
 /** destructor for colorinfoarrays */
 static
@@ -549,20 +552,25 @@ SCIP_RETCODE setuparraysnewdetection(
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
 { /*lint -esym(593, scoef) */
+   SCIP* scip;
    int i;
    int j;
    int b;
-   int ncurvars;
    int nconss;
    int nvars;
+   int ncoeffs;
    SCIP_Bool added;
 
+
    added = FALSE;
+
+   scip = seeedpool->getScip();
 
    //allocate max n of coefarray, varsarray, and boundsarray in origscip
    nconss = seeed->getNConssForBlock(blocks[0]) ;
    nvars = seeed->getNVarsForBlock(blocks[0]) ;
-   SCIP_CALL( allocMemoryNewDetection(seeedpool, colorinfo, nconss, nvars) );
+   ncoeffs = seeed->getNCoeffsForBlock(seeedpool, blocks[0]);
+   SCIP_CALL( allocMemoryNewDetection(seeedpool, colorinfo, nconss*nblocks+seeed->getNMasterconss(), nvars*nblocks, ncoeffs*nblocks + seeed->getNCoeffsForMaster(seeedpool) ) );
    colorinfo->setOnlySign(FALSE);
 
    for( b = 0; b < nblocks && *result == SCIP_SUCCESS; ++b )
@@ -575,8 +583,11 @@ SCIP_RETCODE setuparraysnewdetection(
       //save the properties of variables in a struct array and in a sorted pointer array
       for( i = 0; i < nvars; i++ )
       {
-         SCIP_VAR* var = seeedpool->getVarForIndex( seeed->getVarsForBlock(block)[i] );
-         AUT_VAR* svar = new AUT_VAR(scip, var);
+         SCIP_VAR* var;
+         AUT_VAR* svar;
+
+         var = seeedpool->getVarForIndex( seeed->getVarsForBlock(block)[i] );
+         svar = new AUT_VAR(scip, var);
          //add to pointer array iff it doesn't exist
          SCIP_CALL( colorinfo->insert(svar, &added) );
          if( b > 0 && added)
@@ -591,10 +602,11 @@ SCIP_RETCODE setuparraysnewdetection(
       //save the properties of constraints in a struct array and in a sorted pointer array
       for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
       {
-         int consid = seeed->getConssForBlock(block)[i];
-         SCIP_CONS* cons = seeedpool->getConsForIndex( consid );
+         int consid;
+         SCIP_CONS* cons;
 
-
+         consid = seeed->getConssForBlock(block)[i];
+         cons = seeedpool->getConsForIndex( consid );
 
          //ncurvars = GCGconsGetNVars(scip, conss[i]);    //SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(origscip), SCIPgetNVars(scip1)+1) );
 
@@ -616,8 +628,10 @@ SCIP_RETCODE setuparraysnewdetection(
          //save the properties of variables of the constraints in a struct array and in a sorted pointer array
          for( j = 0; j < seeedpool->getNVarsForCons(consid); j++ )
          {
-            SCIP_Real val = seeedpool->getVal(consid, seeedpool->getVarsForCons(consid)[j]);
-            AUT_COEF* scoef = new AUT_COEF(scip, val );
+            SCIP_Real val;
+            AUT_COEF* scoef;
+            val = seeedpool->getVal(consid, seeedpool->getVarsForCons(consid)[j]);
+            scoef = new AUT_COEF(scip, val );
             //test, whether the coefficient is not zero
             if( !SCIPisZero(seeedpool->getScip(), scoef->getVal()) )
             {
@@ -634,49 +648,39 @@ SCIP_RETCODE setuparraysnewdetection(
                delete scoef;
          }
       }
-      //size of the next instance, in order to allocate memory
-      if( b < nblocks - 1 )
-      {
-         nconss = SCIPgetNConss(scips[(size_t)s + 1]);
-         nvars = SCIPgetNVars(scips[(size_t)s + 1]);
-      }
-      //set zero, if no next instance exists
-      else
-      {
-         nconss = 0;
-         nvars = 0;
-      }
-      //reallocate memory with size of ptrarray[bounds, vars, coefs] + max of scip[i+1]
-      SCIP_CALL( reallocMemory(origscip, colorinfo, nconss, nvars) );
    }
 
    /* add color information for master constraints */
-   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
-   int nmasterconss = GCGgetNMasterConss(origscip);
 
-   SCIP_CALL( reallocMemory(origscip, colorinfo, nmasterconss, SCIPgetNVars(origscip)) );
 
-   for( i = 0; i < nmasterconss && *result == SCIP_SUCCESS; ++i )
+
+   for( i = 0; i < seeed->getNMasterconss() && *result == SCIP_SUCCESS; ++i )
    {
-      SCIP_CONS* mastercons = origmasterconss[i];
-      SCIP_Real* curvals = SCIPgetValsLinear(origscip, mastercons);
-      ncurvars = SCIPgetNVarsLinear(origscip, mastercons);
+      int masterconsid;
+      SCIP_CONS* mastercons;
+
+      masterconsid = seeed->getMasterconss()[i];
+      mastercons = seeedpool->getConsForIndex(masterconsid);
 
       /* add right color for master constraint */
-      AUT_CONS* scons = new AUT_CONS(origscip, mastercons);
+      AUT_CONS* scons = new AUT_CONS(seeedpool->getScip(), mastercons);
       SCIP_CALL( colorinfo->insert(scons, &added) );
 
       /* if it hasn't been added, it is already present */
       if(!added)
          delete scons;
 
-      for( j = 0; j < ncurvars; ++j )
+      for( j = 0; j < seeedpool->getNVarsForCons(masterconsid); ++j )
       {
-         AUT_COEF* scoef = new AUT_COEF(origscip, curvals[j] );
+         AUT_COEF* scoef;
+         int varid;
+
+         varid = seeedpool->getVarsForCons(masterconsid)[j];
+         scoef= new AUT_COEF(seeedpool->getScip(), seeedpool->getVal(masterconsid, varid) );
 
          added = FALSE;
 
-         if( !SCIPisZero(origscip, scoef->getVal()) )
+         if( !SCIPisZero(seeedpool->getScip(), scoef->getVal()) )
          {
             SCIP_CALL( colorinfo->insert(scoef, &added) );
          }
@@ -698,7 +702,7 @@ SCIP_RETCODE createGraph(
    SCIP**                scips,              /**< SCIPs to compare */
    int                   nscips,             /**< number of SCIPs */
    int*                  pricingindices,     /**< indices of the given pricing problems */
-   AUT_COLOR             colorinfo,          /**< result pointer to indicate success or failure */
+   AUT_COLOR             colorinfo,          /**< data structure to save coloring information for conss, vars, and coeffs*/
    bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
    int*                  pricingnodes,       /**< number of pricing nodes without master  */
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
@@ -945,6 +949,307 @@ SCIP_RETCODE createGraph(
    return SCIP_OKAY;
 }
 
+/** create a graph out of an array of scips */
+static
+SCIP_RETCODE createGraphNewDetection(
+   gcg::Seeedpool*       seeedpool,           /**< seeedpool corresponing to presolved or unpresolved problem */
+   gcg::Seeed*           seeed,              /**< partial decomp the  symmetry for two blocks is checked for */
+   int                   nblocks,            /**< number of blocks the symmetry should be checked for */
+   std::vector<int>      blocks,             /**< vectors of block indices the symmetry be checked for */
+   AUT_COLOR             colorinfo,          /**< data structure to save intermediate data  */
+   bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
+   int*                  pricingnodes,       /**< number of pricing nodes without master  */
+   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
+   )
+{
+   SCIP* scip;
+   int i;
+   int j;
+   int b;
+   int ncurvars;
+   int curvar;
+   int* nnodesoffset = NULL;
+   int color;
+   int nconss;
+   int nvars;
+
+
+   int nnodes = 0;
+   //building the graph out of the arrays
+   bliss::Graph* h = graph;
+
+   int* pricingnonzeros = NULL;
+   int* mastercoefindex = NULL;
+
+//   SCIP_CALL( SCIPallocMemoryArray(origscip, &pricingnonzeros, nscips) );
+//   SCIP_CALL( SCIPallocMemoryArray(origscip, &nnodesoffset, nscips) );
+//   SCIP_CALL( SCIPallocMemoryArray(origscip, &mastercoefindex, nscips) );
+//   BMSclearMemoryArray(pricingnonzeros, nscips);
+//   BMSclearMemoryArray(nnodesoffset, nscips);
+//   BMSclearMemoryArray(mastercoefindex, nscips);
+//
+//   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
+//   int nmasterconss = GCGgetNMasterConss(origscip);
+
+   nconss = seeed->getNConssForBlock(blocks[0]);
+   nvars = seeed->getNVarsForBlock(blocks[0]);
+
+   scip = seeedpool->getScip();
+
+   SCIP_CALL( SCIPallocMemoryArray(origscip, &nnodesoffset, nblocks) );
+   BMSclearMemoryArray(nnodesoffset, nblocks);
+   SCIP_CALL( SCIPallocMemoryArray(origscip, &pricingnonzeros, nblocks) );
+   BMSclearMemoryArray(pricingnonzeros, nblocks);
+
+   for( b = 0; b < nblocks && *result == SCIP_SUCCESS; ++b )
+   {
+      int block;
+
+      block = blocks[b];
+      SCIPdebugMessage("Pricing problem %d\n", blocks[b]);
+//      SCIP* scip = scips[s];
+      int z;
+
+      z = 0;
+
+      nnodesoffset[b] = nnodes;
+
+      //add a node for every constraint
+      for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
+      {
+         int consid;
+         SCIP_CONS* cons;
+
+         consid = seeed->getConssForBlock(block)[i];
+         ncurvars = seeedpool->getNVarsForCons(consid);
+         cons = seeedpool->getConsForIndex(consid);
+
+         if( ncurvars == 0 )
+            continue;
+
+         color = colorinfo.get( AUT_CONS(scip, cons) );
+
+         if(color == -1) {
+            *result = SCIP_DIDNOTFIND;
+            break;
+         }
+
+         SCIPdebugMessage("cons <%s> color %d\n", SCIPconsGetName(cons), color);
+         (void) h->add_vertex((unsigned int)color);
+         nnodes++;
+      }
+      //add a node for every variable
+      for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
+      {
+         int varid;
+         SCIP_VAR* var;
+
+         varid = seeed->getVarsForBlock(block)[i];
+         var = seeedpool->getVarForIndex(varid);
+
+         color = colorinfo.get( AUT_VAR(scip, var) );
+
+         if(color == -1) {
+            *result = SCIP_DIDNOTFIND;
+            break;
+         }
+
+         (void) h->add_vertex((unsigned int) colorinfo.getLenCons() + color);
+         nnodes++;
+      }
+      //connecting the nodes with an additional node in the middle
+      //it is necessary, since only nodes have colors
+      for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
+      {
+         int consid;
+         SCIP_CONS* cons;
+         int conscolor;
+
+         consid = seeed->getConssForBlock(block)[i];
+         ncurvars = seeedpool->getNVarsForCons(consid);
+         cons = seeedpool->getConsForIndex(consid);
+         conscolor = colorinfo.get(AUT_CONS(scip, cons));
+
+         if( ncurvars == 0 )
+            continue;
+
+         for( j = 0; j < ncurvars; j++ )
+         {
+            int varcolor;
+            int varid;
+            SCIP_VAR* var;
+            SCIP_Real val;
+
+            varid = seeedpool->getVarsForCons(consid)[j];
+            var = seeedpool->getVarForIndex(varid);
+
+            val = seeedpool->getVal(consid, varid);
+
+            varcolor = colorinfo.get( AUT_VAR(scip, var )) + colorinfo.getLenCons(); /*lint !e864 */
+            color = colorinfo.get( AUT_COEF(scip, val ));
+            if( color == -1 )
+            {
+               *result = SCIP_DIDNOTFIND;
+               break;
+            }
+            color += colorinfo.getLenCons() + colorinfo.getLenVar(); /*lint !e864 */
+            (void) h->add_vertex((unsigned int) color);
+            nnodes++;
+            h->add_edge((unsigned int) nnodesoffset[b] + i, (unsigned int) nnodesoffset[b] + nconss + nvars + z);
+            h->add_edge((unsigned int) nnodesoffset[b] + nconss + nvars + z, (unsigned int) nnodesoffset[b]+nconss + curvar);
+            SCIPdebugMessage("nz: c <%s> (id: %d, color: %d) -> nz (id: %d) (value: %f, color: %d) -> var <%s> (id: %d, color: %d) \n",
+                              SCIPconsGetName(cons),
+                              nnodesoffset[b] + i,
+                              conscolor,
+                              nnodesoffset[b] + nconss + nvars + z,
+                              val,
+                              color+colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
+                              SCIPvarGetName(var),
+                              nnodesoffset[b] + nconss + curvar,
+                              varcolor);
+            z++;
+         }
+      }
+      pricingnonzeros[b] = z;
+
+      /* add coefficient nodes for nonzeros in the master */
+      for( i = 0; i < seeed->getNMasterconss() && *result == SCIP_SUCCESS; ++i )
+      {
+         int masterconsid;
+         SCIP_CONS* mastercons;
+
+         masterconsid = seeed->getMasterconss()[i];
+         mastercons = seeedpool->getConsForIndex(masterconsid);
+         ncurvars = seeedpool->getNVarsForCons(masterconsid);
+
+         for( j = 0; j < ncurvars; ++j )
+         {
+            int varid;
+            SCIP_VAR* var;
+            SCIP_Real val;
+
+            varid = seeedpool->getVarsForCons(masterconsid)[j];
+            /* ignore if the variable belongs to a different block */
+            if( seeed->isVarBlockvarOfBlock(varid, block) )
+            {
+               SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(seeedpool->getVarForIndex(varid) ), block);
+               continue;
+            }
+
+            var = seeedpool->getVarForIndex(varid);
+            val = seeedpool->getVal(masterconsid, varid);
+            color = colorinfo.get(AUT_COEF(seeedpool->getScip(), val));
+            assert(color != -1);
+            color += colorinfo.getLenCons() + colorinfo.getLenVar(); /*lint !e864 */
+
+            /* add coefficent node for current coeff */
+            (void) h->add_vertex((unsigned int)color);
+            assert(ABS(val < SCIPinfinity(scip)));
+            SCIPdebugMessage("master nz for var <%s> (id: %d) (value: %f, color: %d)\n", SCIPvarGetName(var), nnodes, val, color);
+            nnodes++;
+         }
+      }
+      SCIPdebugMessage("Iteration %d: nnodes = %d\n", b, nnodes);
+      assert(*result == SCIP_SUCCESS && (unsigned int) nnodes == h->get_nof_vertices());
+   }
+   /* connect the created graphs with nodes for the master problem */
+
+   SCIPdebugMessage( "handling %d masterconss\n", seeed->getNMasterconss());
+   *pricingnodes = nnodes;
+
+   for( i = 0; i < seeed->getNMasterconss() && *result == SCIP_SUCCESS; ++i )
+   {
+      int masterconsid;
+      SCIP_CONS* mastercons;
+      int masterconsnode;
+      int conscolor;
+
+
+      masterconsid= seeed->getMasterconss()[i];
+      mastercons = seeedpool->getConsForIndex(masterconsid);
+      ncurvars = seeedpool->getNVarsForCons(masterconsid);
+
+      SCIPdebugMessage("Handling cons <%s>\n", SCIPconsGetName(mastercons));
+
+      /* create node for masterconss and get right color */
+      conscolor = colorinfo.get(AUT_CONS(scip, mastercons) );
+      assert(conscolor != -1);
+      (void) h->add_vertex((unsigned int) conscolor);
+      masterconsnode = nnodes;
+      nnodes++;
+
+      for( j = 0; j < ncurvars; ++j )
+      {
+         int varid;
+         SCIP_VAR* var;
+         SCIP_Real val;
+         int blockid;
+         int coefnodeindex;
+         int bid;
+
+         blockid = -1;
+         bid = -1;
+         varid = seeedpool->getVarsForCons(masterconsid)[j];
+
+         var = seeedpool->getVarForIndex(varid);
+
+         for( b = 0; b < nblocks; ++b )
+         {
+            if( seeed->isVarBlockvarOfBlock(varid, blocks[b]) )
+            {
+               bid = b;
+               blockid = blocks[b];
+               break;
+            }
+         }
+
+         /* ignore if the variable belongs to a different block */
+         if( blockid == -1 )
+         {
+            SCIPdebugMessage("Var <%s> belongs to a different block \n", SCIPvarGetName(var));
+            continue;
+         }
+         val = seeedpool->getVal(masterconsid, varid);
+
+         color = colorinfo.get(AUT_COEF(scip, val));
+         assert(color != -1);
+         color += colorinfo.getLenCons() + colorinfo.getLenVar(); /*lint !e864 */
+
+         /* get coefficient node for current coefficient */
+         coefnodeindex = nnodesoffset[bid] + nvars + nconss + pricingnonzeros[bid] + mastercoefindex[bid];
+         ++(mastercoefindex[bid]);
+
+         int varcolor = colorinfo.get(AUT_VAR(scip, var));
+         assert(varcolor != -1);
+         varcolor += colorinfo.getLenCons();
+
+         assert( (uint) masterconsnode < h->get_nof_vertices());
+         assert( (uint) coefnodeindex < h->get_nof_vertices());
+         /* master constraint and coefficient */
+         h->add_edge((unsigned int) masterconsnode, (unsigned int) coefnodeindex);
+         SCIPdebugMessage("ma: c <%s> (id: %d, color: %d) -> nz (id: %d) (value: <%.6f> , color: %d) -> pricingvar <%s> (id: %d, color: %d)\n",
+            SCIPconsGetName(mastercons),
+            masterconsnode, conscolor, coefnodeindex, val, color, SCIPvarGetName(var),
+            nnodesoffset[bid] + nconss + varid, varcolor);
+
+         /* get node index for pricing variable and connect masterconss, coeff and pricingvar nodes */
+         h->add_edge((unsigned int) coefnodeindex, (unsigned int) nnodesoffset[bid] + nconss + seeed->getVarProbindexForBlock(varid, blockid) );
+      }
+   }
+
+
+   //free all allocated memory
+   SCIP_CALL( freeMemory(scip, &colorinfo) );
+   SCIPfreeMemoryArray(scip, &mastercoefindex);
+   SCIPfreeMemoryArray(scip, &nnodesoffset);
+   SCIPfreeMemoryArray(scip, &pricingnonzeros);
+
+   return SCIP_OKAY;
+}
+
+
+
+
 /** compare two graphs w.r.t. automorphism */
 extern "C"
 SCIP_RETCODE cmpGraphPair(
@@ -978,6 +1283,53 @@ SCIP_RETCODE cmpGraphPair(
 
    SCIP_CALL( setuparrays(origscip, scips, nscips, &colorinfo, result) );
    SCIP_CALL( createGraph(origscip, scips, nscips, pricingindices, colorinfo, &graph,  &pricingnodes, result) );
+
+   ptrhook = new AUT_HOOK(varmap, consmap, FALSE, (unsigned int) pricingnodes, scips);
+   graph.find_automorphisms(bstats, fhook, ptrhook);
+
+   if( !ptrhook->getBool() )
+      *result = SCIP_DIDNOTFIND;
+
+   SCIPfreeMemoryArrayNull(scip, &ptrhook->nodemap);
+   delete ptrhook;
+   return SCIP_OKAY;
+}
+
+/** compare two graphs w.r.t. automorphism */
+extern "C"
+SCIP_RETCODE cmpGraphPairNewdetection(
+   gcg::Seeedpool*       seeedpool,
+   gcg::Seeed*           seeed,
+   int                   block1,              /**< index of first pricing prob */
+   int                   block2,              /**< index of second pricing prob */
+   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
+   SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
+   SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
+   )
+{
+   bliss::Graph graph;
+   bliss::Stats bstats;
+   AUT_HOOK *ptrhook;
+   AUT_COLOR colorinfo;
+   int nscips;
+   std::vector<int> blocks;
+   int pricingindices[2];
+   int pricingnodes = 0;
+   scips[0] = scip1;
+   scips[1] = scip2;
+   pricingindices[0] = prob1;
+   pricingindices[1] = prob2;
+   nscips = 2;
+   *result = SCIP_SUCCESS;
+
+
+   blocks = std::vector<int>(2, -1);
+   blocks[0] = block1;
+   blocks[1] = block2;
+
+
+   SCIP_CALL( setuparraysnewdetection(seeedpool, seeed, 2, blocks, &colorinfo, result) );
+   SCIP_CALL( createGraphNewDetection(seeedpool, seeed, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );
 
    ptrhook = new AUT_HOOK(varmap, consmap, FALSE, (unsigned int) pricingnodes, scips);
    graph.find_automorphisms(bstats, fhook, ptrhook);
