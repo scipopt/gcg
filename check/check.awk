@@ -1064,7 +1064,7 @@ END {
    printf(tablehead3);
    printf("\n");
 
-   tablebottom1 = "------------------------------[Nodes]---------------[Time]----------[Pricing-Time]--------[LP-Time]-------[Pricing-Probs]--";
+   tablebottom1 = "------------------------------[Nodes]---------------[Time]----------[Pricing-Time]--------[LP-Time]-------[Pricing-Calls]--";
    tablebottom2 = "  Cnt  Pass  Time  Fail  total(k)     geom.     total     geom.     total     geom.     total     geom.    total     geom. ";
    tablebottom3 = "---------------------------------------------------------------------------------------------------------------------------";
 
@@ -1084,7 +1084,7 @@ END {
 
    printf("%5d %5d %5d %5d %9d %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9d %9.1f ",
 	  nprobs, pass, timeouts, fail, sbab / 1000, nodegeom, stottime, timegeom, spricetime, pricegeom,
-	  slptime, lpgeom, spriceprobs, priceprobsgeom);
+	  slptime, lpgeom, spricecalls, pricecallsgeom);
    if( printsoltimes )
       printf("%9.1f %9.1f %9.1f %9.1f", stimetofirst, timetofirstgeom, stimetobest, timetobestgeom);
 
