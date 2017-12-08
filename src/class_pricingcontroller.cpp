@@ -241,14 +241,18 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
 
    for( int i = 0; i < npricingprobs; ++i )
    {
-      if( pricingjobs[i] != NULL && GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )
+      if( pricingjobs[i] != NULL )
       {
          SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], useheurpricing, maxcolsprob,
             sorting, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
-         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjobs[i]) );
 
          bestobjvals[i] = -SCIPinfinity(scip_);
          bestredcosts[i] = 0.0;
+
+         if( GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )
+         {
+            SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjobs[i]) );
+         }
       }
    }
 
