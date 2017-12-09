@@ -60,6 +60,9 @@ struct struct_hook
    SCIP** scips;                             /**< array of scips to search for automorphisms */
    int* nodemap;                             /**< mapping of the nodes; filled generator-wise */
    int* consperm;                            /**< mapping of constraints */
+   gcg::Seeedpool* seeedpool;                /**< problem information the automorphism should be searched for */
+   gcg::Seeed*     seeed;                    /**< decomposition information */
+   std::vector<int> blocks;                  /**< array of blocks the automporphisms are searched for */
 
    /** constructor for the hook struct*/
    struct_hook(
@@ -80,6 +83,13 @@ struct struct_hook
    /** setter for the bool aut */
    void setBool(SCIP_Bool aut);
 
+   /** setter for new detection stuff */
+   void setNewDetectionStuff(
+      gcg::Seeedpool* seeedpool,
+      gcg::Seeed*     seeed,
+      std::vector<int> blocks
+      );
+
    /** getter for the number of nodes */
    unsigned int getNNodes();
 
@@ -91,6 +101,8 @@ struct struct_hook
 
    /** getter for the SCIPs */
    SCIP** getScips();
+
+
 };
 
 
@@ -99,6 +111,18 @@ struct struct_hook
 void struct_hook::setBool( SCIP_Bool aut_ )
 {
    aut = aut_;
+}
+
+
+void struct_hook::setNewDetectionStuff(
+   gcg::Seeedpool* seeedpool,
+   gcg::Seeed*     seeed,
+   std::vector<int> blocks
+)
+{
+   this->seeedpool = seeedpool;
+   this->seeed = seeed;
+   this->blocks = blocks;
 }
 
 SCIP_Bool struct_hook::getBool()
@@ -145,6 +169,9 @@ struct_hook::struct_hook(
    for (i = 0; i < n_; ++i)
       nodemap[i] = -1;
 
+   seeedpool = NULL;
+   seeed = NULL;
+   blocks = std::vector<int>(0);
 }
 
 /** hook function to save the permutation of the graph; fhook() is called by metis for every generator,
