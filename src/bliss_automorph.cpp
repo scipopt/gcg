@@ -193,10 +193,20 @@ void fhook(
    SCIP_VAR** vars2;
    SCIP_CONS** conss1;
    SCIP_CONS** conss2;
+   SCIP_Bool newdetection;
+   SCIP* seeedscip;
+   gcg::Seeedpool* seeedpool;
+   gcg::Seeed* seeed;
    AUT_HOOK* hook = (AUT_HOOK*) user_param;
 
    j = 0;
    n = hook->getNNodes();
+
+   /** new detection stuff */
+   newdetection = (hook->seeedpool != NULL) ;
+   seeed = hook->seeed;
+   seeedpool = hook->seeedpool;
+   seeedscip = NULL;
 
    if(hook->getBool())
       return;
@@ -242,16 +252,49 @@ void fhook(
    if( !hook->getBool() )
       return;
 
-   nvars = SCIPgetNVars(hook->getScips()[0]);
-   assert(nvars == SCIPgetNVars(hook->getScips()[1]));
 
-   vars1 = SCIPgetVars(hook->getScips()[0]);
-   vars2 = SCIPgetVars(hook->getScips()[1]);
-   nconss = SCIPgetNConss(hook->getScips()[0]);
-   assert(nconss == SCIPgetNConss(hook->getScips()[1]));
+   if( newdetection )
+      nvars = seeed->getNVarsForBlock(hook->blocks[0]);
+   else
+      nvars = SCIPgetNVars(hook->getScips()[0]);
+   if( newdetection )
+      assert(nvars == seeed->getNVarsForBlock(hook->blocks[1]) );
+   else
+      assert(nvars == SCIPgetNVars(hook->getScips()[1]));
 
-   conss1 = SCIPgetConss(hook->getScips()[0]);
-   conss2 = SCIPgetConss(hook->getScips()[1]);
+   if( newdetection )
+   {
+      seeedscip = seeedpool->getScip();
+      SCIPallocBufferArray(seeedscip, &vars1, nvars );
+      SCIPallocBufferArray(seeedscip, &vars2, nvars );
+      nconss = seeed->getNConssForBlock(hook->blocks[0]);
+      assert(nconss == seeed->getNConssForBlock(hook->blocks[1]));
+
+      SCIPallocBufferArray(seeedscip, &conss1, nconss );
+      SCIPallocBufferArray(seeedscip, &conss2, nconss );
+
+      for( int v = 0; v < nvars; ++v )
+      {
+         vars1[v] = seeedpool->getVarForIndex(seeed->getVarsForBlock(hook->blocks[0])[v]);
+         vars2[v] = seeedpool->getVarForIndex(seeed->getVarsForBlock(hook->blocks[1])[v]);
+      }
+
+      for( int c = 0; c < nconss; ++c )
+      {
+         conss1[c] = seeedpool->getConsForIndex(seeed->getConssForBlock(hook->blocks[0])[c]);
+         conss2[c] = seeedpool->getConsForIndex(seeed->getConssForBlock(hook->blocks[1])[c]);
+      }
+   }
+   else
+   {
+      vars1 = SCIPgetVars(hook->getScips()[0]);
+      vars2 = SCIPgetVars(hook->getScips()[1]);
+      nconss = SCIPgetNConss(hook->getScips()[0]);
+      assert(nconss == SCIPgetNConss(hook->getScips()[1]));
+
+      conss1 = SCIPgetConss(hook->getScips()[0]);
+      conss2 = SCIPgetConss(hook->getScips()[1]);
+   }
 
    for( i = 0; i < (unsigned int) nvars+nconss; i++ )
    {
