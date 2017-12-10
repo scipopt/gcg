@@ -739,6 +739,9 @@ def parse_files(files):
                         done = True
                         continue
 
+            if not done:
+                collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+
 def main():
     """Entry point when calling this script"""
     args = sys.argv[1:]
