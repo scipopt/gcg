@@ -1955,8 +1955,13 @@ SCIP_RETCODE initRelaxator(
       relaxdata->decdecomp = DECgetBestDecomp(scip);
       if( relaxdata->decdecomp == NULL )
       {
-         SCIPerrorMessage("No decomposition specified!\n");
-         return SCIP_ERROR;
+         SCIP_CALL(SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE) );
+         relaxdata->decdecomp = DECgetBestDecomp(scip);
+         if( relaxdata->decdecomp == NULL )
+         {
+            SCIPerrorMessage("No decomposition specified!\n");
+            return SCIP_ERROR;
+         }
       }
    }
 

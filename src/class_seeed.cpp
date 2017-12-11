@@ -178,6 +178,8 @@ Seeed::Seeed(
    nrepblocks  = seeedtocopy->nrepblocks;
    reptoblocks = seeedtocopy->reptoblocks;
    blockstorep = seeedtocopy->blockstorep;
+   ncoeffsforblock = seeedtocopy->ncoeffsforblock;
+   calculatedncoeffsforblock = seeedtocopy->calculatedncoeffsforblock;
 
 }
 
@@ -4542,7 +4544,7 @@ int  Seeed::getNCoeffsForBlock(
    int blockid
    ){
 
-   if( calculatedncoeffsforblock )
+   if( !calculatedncoeffsforblock )
       calcNCoeffsForBlocks(seeedpool);
 
    return ncoeffsforblock[blockid];
@@ -4554,7 +4556,7 @@ int  Seeed::getNCoeffsForMaster(
    gcg::Seeedpool* seeedpool
    ){
 
-   if( calculatedncoeffsforblock )
+   if( !calculatedncoeffsforblock )
       calcNCoeffsForBlocks(seeedpool);
 
    return ncoeffsformaster;

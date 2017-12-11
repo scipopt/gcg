@@ -1167,7 +1167,7 @@ SCIP_RETCODE createGraphNewDetection(
             (void) h->add_vertex((unsigned int) color);
             nnodes++;
             h->add_edge((unsigned int) nnodesoffset[b] + i, (unsigned int) nnodesoffset[b] + nconss + nvars + z);
-            h->add_edge((unsigned int) nnodesoffset[b] + nconss + nvars + z, (unsigned int) nnodesoffset[b]+nconss + seeed->getVarProbindexForBlock()     );
+            h->add_edge((unsigned int) nnodesoffset[b] + nconss + nvars + z, (unsigned int) nnodesoffset[b]+nconss + seeed->getVarProbindexForBlock(varid, block)     );
             SCIPdebugMessage("nz: c <%s> (id: %d, color: %d) -> nz (id: %d) (value: %f, color: %d) -> var <%s> (id: %d, color: %d) \n",
                               SCIPconsGetName(cons),
                               nnodesoffset[b] + i,
