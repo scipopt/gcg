@@ -1795,9 +1795,37 @@ void Seeedpool::translateSeeedData(
    std::vector<int> colthistoother;
    std::vector<int> missingrowinthis;
 
-   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL, " started translate seeed method \n" );
+   SCIP_Bool presolvingdisabled;
+   int presolvingrounds;
 
-   calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
+   presolvingdisabled = FALSE;
+
+   SCIPgetIntParam(scip, "presolving/maxrounds", &presolvingrounds);
+
+   if ( presolvingrounds == 0)
+      presolvingdisabled = TRUE;
+
+   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL, "started translate seeed method: presolving is %s \n", (presolvingdisabled ? "disabled, try short method." : "enabled, has to do long version. " ) );
+
+   if( presolvingdisabled )
+   {
+      missingrowinthis = std::vector<int>(0);
+      rowothertothis = std::vector<int>(0);
+      rowthistoother = std::vector<int>(0);
+      colothertothis = std::vector<int>(0);
+      colthistoother = std::vector<int>(0);
+      for( int i = 0; i < nConss ; ++i )
+      {
+         rowothertothis.push_back(i);
+         rowthistoother.push_back(i);
+      }
+      for( int j = 0; j < nVars ; ++j )
+      {
+         colthistoother.push_back(j);
+         colothertothis.push_back(j);
+      }
+   } else
+      calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
    SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
       " calculated translation; number of missing constraints: %d; number of other seeeds: %d \n", missingrowinthis.size(),
@@ -1817,15 +1845,45 @@ void Seeedpool::translateSeeeds(
 {
    assert( newseeeds.empty() );
 
+   SCIP_Bool presolvingdisabled;
+   int presolvingrounds;
+
    std::vector<int> rowothertothis( 0 );
    std::vector<int> rowthistoother( 0 );
    std::vector<int> colothertothis( 0 );
    std::vector<int> colthistoother( 0 );
    std::vector<int> missingrowinthis( 0 );
 
-   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL, "started translate seeed method \n" );
 
-   calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
+   presolvingdisabled = FALSE;
+
+   SCIPgetIntParam(scip, "presolving/maxrounds", &presolvingrounds);
+
+   if ( presolvingrounds == 0)
+      presolvingdisabled = TRUE;
+
+
+   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL, "started translate seeed method: presolving is %s \n", (presolvingdisabled ? "disabled, try short method." : "enabled, has to do long version. " ) );
+
+   if( presolvingdisabled )
+   {
+      missingrowinthis = std::vector<int>(0);
+      rowothertothis = std::vector<int>(0);
+      rowthistoother = std::vector<int>(0);
+      colothertothis = std::vector<int>(0);
+      colthistoother = std::vector<int>(0);
+      for( int i = 0; i < nConss ; ++i )
+      {
+         rowothertothis.push_back(i);
+         rowthistoother.push_back(i);
+      }
+      for( int j = 0; j < nVars ; ++j )
+      {
+         colthistoother.push_back(j);
+         colothertothis.push_back(j);
+      }
+   } else
+      calcTranslationMapping( origpool, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
 
    SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
       " calculated translation; number of missing constraints: %d; number of other seeeds: %d \n", missingrowinthis.size(),

@@ -1003,9 +1003,9 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
               continue;
 
 #ifdef NBLISS
-           checkIdenticalBlocksBrute(seeedpool, b1, b2,varmap, &identical);
+           checkIdenticalBlocksBrute(seeedpool, b1, b2, varmap, &identical);
 #else
-           checkIdenticalBlocksBliss(seeedpool, b1, b2,varmap, &identical);
+           checkIdenticalBlocksBliss(seeedpool, b1, b2, varmap, &identical);
 #endif
            if( identical )
            {
