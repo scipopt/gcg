@@ -217,7 +217,7 @@ SCIP_RETCODE writeFamilyTree(
 
    if( SCIPconshdlrDecompGetNFinishedDecomps(scip) == 0 )
    {
-      SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
+      SCIPdialogMessage(scip, NULL, "No decomposition to write for family tree, please read or detect one first.\n");
       SCIPdialoghdlrClearBuffer(dialoghdlr);
       *nextdialog = NULL;
       return SCIP_OKAY;
@@ -1399,7 +1399,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteFamilyTree, NULL, NULL,
             "familytree",
-            "write all (partial) decompositions contained in family tree to files (.gp/.tex) and creates family tree file (.tex)",
+            "write all (partial) decompositions contained in family tree to files (.gp/.tex) and create family tree file (.tex)",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );

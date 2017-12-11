@@ -141,28 +141,32 @@ Seeedpool* MiscVisualization::GCGgetSeeedpoolForSeeed(
    seeedpool = seeedwr.seeedpool;
 
    /* find in presolved */
-   for( int i = 0; i < seeedpool->getNAncestorSeeeds(); ++i)
-   {
-      if( seeedpool->getAncestorSeeed(i)!= NULL && seeedpool->getAncestorSeeed(i)->getID() == seeedid )
-         return seeedpool;
-   }
 
-   for( int i = 0; i < seeedpool->getNIncompleteSeeeds(); ++i)
+   if( seeedpool != NULL )
    {
-      if( seeedpool->getIncompleteSeeed(i)->getID() == seeedid )
-         return seeedpool;
-   }
+      for( int i = 0; i < seeedpool->getNAncestorSeeeds(); ++i)
+      {
+         if( seeedpool->getAncestorSeeed(i)!= NULL && seeedpool->getAncestorSeeed(i)->getID() == seeedid )
+            return seeedpool;
+      }
 
-   for( int i = 0; i < seeedpool->getNFinishedSeeeds(); ++i)
-   {
-      if( seeedpool->getFinishedSeeed(i)->getID() == seeedid )
-         return seeedpool;
-   }
+      for( int i = 0; i < seeedpool->getNIncompleteSeeeds(); ++i)
+      {
+         if( seeedpool->getIncompleteSeeed(i)->getID() == seeedid )
+            return seeedpool;
+      }
 
-   for( int i = 0; i < seeedpool->getNCurrentSeeeds(); ++i)
-   {
-      if( seeedpool->getCurrentSeeed(i)->getID() == seeedid )
-         return seeedpool;
+      for( int i = 0; i < seeedpool->getNFinishedSeeeds(); ++i)
+      {
+         if( seeedpool->getFinishedSeeed(i)->getID() == seeedid )
+            return seeedpool;
+      }
+
+      for( int i = 0; i < seeedpool->getNCurrentSeeeds(); ++i)
+      {
+         if( seeedpool->getCurrentSeeed(i)->getID() == seeedid )
+            return seeedpool;
+      }
    }
 
    /* find in unpresolved */

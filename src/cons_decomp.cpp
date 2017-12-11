@@ -4688,28 +4688,28 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
    /* get the current max id */
    int maxid  = 0;
 
-   for( int i = 0; i < conshdlrdata->seeedpool->getNAncestorSeeeds(); ++i )
+   for( int i = 0; conshdlrdata->seeedpool != NULL && i < conshdlrdata->seeedpool->getNAncestorSeeeds(); ++i )
    {
       if( conshdlrdata->seeedpool->getAncestorSeeed( i ) != NULL &&
          conshdlrdata->seeedpool->getAncestorSeeed( i )->getID() > maxid )
          maxid = conshdlrdata->seeedpool->getAncestorSeeed( i )->getID();
    }
 
-   for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
+   for( int i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds(); ++i )
    {
       if( conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i ) != NULL &&
          conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID() > maxid )
          maxid = conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i )->getID();
    }
 
-   for( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+   for( int i = 0; conshdlrdata->seeedpool != NULL && i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
       {
          if( conshdlrdata->seeedpool->getFinishedSeeed( i ) != NULL &&
             conshdlrdata->seeedpool->getFinishedSeeed( i )->getID() > maxid )
             maxid = conshdlrdata->seeedpool->getFinishedSeeed( i )->getID();
       }
 
-      for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
+      for( int i = 0; conshdlrdata->seeedpoolunpresolved != NULL && i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
       {
          if( conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i ) != NULL &&
             conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i )->getID() > maxid )
@@ -4736,7 +4736,7 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
             conshdlrdata->seeedpoolunpresolved->getAncestorSeeed( i );
       }
 
-   for( int i = 0; i < conshdlrdata->seeedpool->getNAncestorSeeeds(); ++i )
+   for( int i = 0; conshdlrdata->seeedpool != NULL && i < conshdlrdata->seeedpool->getNAncestorSeeeds(); ++i )
       {
          if( conshdlrdata->seeedpool->getAncestorSeeed( i ) == NULL ||
             conshdlrdata->seeedpool->getAncestorSeeed( i )->getID() < 0  )
@@ -4754,7 +4754,7 @@ SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
             conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
       }
 
-   for( int i = 0; i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+   for( int i = 0; conshdlrdata->seeedpool != NULL && i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
       {
          if( conshdlrdata->seeedpool->getFinishedSeeed( i ) == NULL ||
             conshdlrdata->seeedpool->getFinishedSeeed( i )->getID() < 0  )
@@ -5031,7 +5031,7 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
       decomps[i] = decomp;
    }
 
-/**  atm only presolved decomposition are allowed
+/**  atm presolved decomposition are allowed (for visualization, by family tree, write all decomps etc)*/
    for( int i = 0; i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds(); ++i )
    {
       DEC_DECOMP* decomp;
@@ -5039,7 +5039,7 @@ DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
 
       decomps[i + conshdlrdata->seeedpool->getNFinishedSeeeds()] = decomp;
    }
-**/
+
    return decomps;
 }
 
@@ -5060,11 +5060,14 @@ int SCIPconshdlrDecompGetNFinishedDecomps(
    assert(conshdlrdata != NULL);
 
    /* case if there is no seeedpool in data yet */
-   if(conshdlrdata->seeedpool == NULL)
+   if( conshdlrdata->seeedpool == NULL && conshdlrdata->seeedpoolunpresolved == NULL )
       return 0;
 
+   if( conshdlrdata->seeedpool == NULL )
+      return conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds();
+
    /* all other cases */
-   return (int) /*conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() +*/ conshdlrdata->seeedpool->getNFinishedSeeeds();
+   return (int) conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() + conshdlrdata->seeedpool->getNFinishedSeeeds();
 }
 
 /* returns number of all Seeeds */
@@ -5082,6 +5085,12 @@ int SCIPconshdlrDecompGetNSeeeds(
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+
+   if ( conshdlrdata->seeedpool == NULL )
+      return (int) conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds() +
+         conshdlrdata->seeedpoolunpresolved->getNCurrentSeeeds() +
+         conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds();
+
 
    return (int) conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds() +
       conshdlrdata->seeedpoolunpresolved->getNCurrentSeeeds() +
