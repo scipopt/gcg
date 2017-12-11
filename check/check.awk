@@ -285,21 +285,42 @@ BEGIN {
 /^loaded parameter file/ { settings = $4; sub(/<.*settings\//, "", settings); sub(/\.set>/, "", settings); }
 /^parameter <limits\/time> set to/ { timelimit = $5; }
 /^limits\/time =/ { timelimit = $3; }
-#
-# get objective sense
-#
-/^  Objective sense  :/ {
-   if ( $4 == "minimize" )
-      objsense = 1;
-   if ( $4 == "maximize" )
-      objsense = -1;
-   # objsense is 0 otherwise
-}
+
 #
 # problem: master or original?
 #
 /^Original Program statistics:/ { inmasterprob = 0; inoriginalprob = 1; }
 /^Master Program statistics:/ { inmasterprob = 1; inoriginalprob = 0; }
+
+#
+# get objective sense
+#
+/^  Objective sense  :/ {
+   if( inoriginalprob )
+   {
+      if ( $4 == "minimize" )
+         objsense = 1;
+      if ( $4 == "maximize" )
+         objsense = -1;
+      # objsense is 0 otherwise
+   }
+}
+# SCIP API version >= 9
+/^  Objective        :/ {
+   if( inoriginalprob )
+   {
+      if( objsense == 0 )
+      {
+         if ( $3 == "minimize," || $3 == "minimize,\r")
+            objsense = 1;
+         if ( $3 == "maximize," || $3 == "maximize,\r" )
+            objsense = -1;
+
+         # objsense is 0 otherwise
+      }
+   }
+}
+
 #
 # conflict analysis
 #
