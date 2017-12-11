@@ -291,21 +291,42 @@ BEGIN {
 /set limits objective/ {
    objectivelimit = $4;
 }
-#
-# get objective sense
-#
-/^  Objective sense  :/ {
-   if ( $4 == "minimize" )
-      objsense = 1;
-   if ( $4 == "maximize" )
-      objsense = -1;
-   # objsense is 0 otherwise
-}
+
 #
 # problem: master or original?
 #
 /^Original Program statistics:/ { inmasterprob = 0; inoriginalprob = 1; }
 /^Master Program statistics:/ { inmasterprob = 1; inoriginalprob = 0; }
+
+#
+# get objective sense
+#
+/^  Objective sense  :/ {
+   if( inoriginalprob )
+   {
+      if ( $4 == "minimize" )
+         objsense = 1;
+      if ( $4 == "maximize" )
+         objsense = -1;
+      # objsense is 0 otherwise
+   }
+}
+# SCIP API version >= 9
+/^  Objective        :/ {
+   if( inoriginalprob )
+   {
+      if( objsense == 0 )
+      {
+         if ( $3 == "minimize," || $3 == "minimize,\r")
+            objsense = 1;
+         if ( $3 == "maximize," || $3 == "maximize,\r" )
+            objsense = -1;
+
+         # objsense is 0 otherwise
+      }
+   }
+}
+
 #
 # conflict analysis
 #
@@ -511,11 +532,15 @@ BEGIN {
    if( $4 != "-" )
       db = $4;
 }
-/^  Root Dual Bound  :/ {
-   if( $5 != "-" )
-      rootdb = $5;
-   else
-       rootdb = db;  # SCIP most likely finished during root node, perhaps due to a solution limit. the rootdb is NOT printed then, but needed later
+/^  Final Dual Bound :/ {
+   if( !inmasterprob )
+   {
+      if( $5 != "-" )
+         rootdb = $5;
+      else
+         rootdb = db;  # SCIP most likely finished during root node, perhaps due to a solution limit. the rootdb is NOT printed then, but needed later
+   }
+
 }
 #
 # iterations
@@ -1088,7 +1113,7 @@ END {
    printf(tablehead3);
    printf("\n");
 
-   tablebottom1 = "------------------------------[Nodes]---------------[Time]----------[Pricing-Time]--------[LP-Time]-------[Pricing-Probs]--";
+   tablebottom1 = "------------------------------[Nodes]---------------[Time]----------[Pricing-Time]--------[LP-Time]-------[Pricing-Calls]--";
    tablebottom2 = "  Cnt  Pass  Time  Fail  total(k)     geom.     total     geom.     total     geom.     total     geom.    total     geom. ";
    tablebottom3 = "---------------------------------------------------------------------------------------------------------------------------";
 
@@ -1108,7 +1133,7 @@ END {
 
    printf("%5d %5d %5d %5d %9d %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9d %9.1f ",
 	  nprobs, pass, timeouts, fail, sbab / 1000, nodegeom, stottime, timegeom, spricetime, pricegeom,
-	  slptime, lpgeom, spriceprobs, priceprobsgeom);
+	  slptime, lpgeom, spricecalls, pricecallsgeom);
    if( printsoltimes )
       printf("%9.1f %9.1f %9.1f %9.1f", stimetofirst, timetofirstgeom, stimetobest, timetobestgeom);
 
