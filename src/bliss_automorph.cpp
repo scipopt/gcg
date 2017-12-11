@@ -115,14 +115,14 @@ void struct_hook::setBool( SCIP_Bool aut_ )
 
 
 void struct_hook::setNewDetectionStuff(
-   gcg::Seeedpool* seeedpool,
-   gcg::Seeed*     seeed,
-   std::vector<int> blocks
+   gcg::Seeedpool* givenseeedpool,
+   gcg::Seeed*     givenseeed,
+   std::vector<int> givenblocks
 )
 {
-   this->seeedpool = seeedpool;
-   this->seeed = seeed;
-   this->blocks = blocks;
+   this->seeedpool = givenseeedpool;
+   this->seeed = givenseeed;
+   this->blocks = givenblocks;
 }
 
 SCIP_Bool struct_hook::getBool()
@@ -265,13 +265,14 @@ void fhook(
    if( newdetection )
    {
       seeedscip = seeedpool->getScip();
-      SCIPallocBufferArray(seeedscip, &vars1, nvars );
-      SCIPallocBufferArray(seeedscip, &vars2, nvars );
+
+      SCIP_CALL_ABORT(SCIPallocBufferArray(seeedscip, &vars1, nvars ));
+      SCIP_CALL_ABORT(SCIPallocBufferArray(seeedscip, &vars2, nvars ));
       nconss = seeed->getNConssForBlock(hook->blocks[0]);
       assert(nconss == seeed->getNConssForBlock(hook->blocks[1]));
 
-      SCIPallocBufferArray(seeedscip, &conss1, nconss );
-      SCIPallocBufferArray(seeedscip, &conss2, nconss );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(seeedscip, &conss1, nconss ) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(seeedscip, &conss2, nconss ) );
 
       for( int v = 0; v < nvars; ++v )
       {
@@ -1166,7 +1167,7 @@ SCIP_RETCODE createGraphNewDetection(
             (void) h->add_vertex((unsigned int) color);
             nnodes++;
             h->add_edge((unsigned int) nnodesoffset[b] + i, (unsigned int) nnodesoffset[b] + nconss + nvars + z);
-            h->add_edge((unsigned int) nnodesoffset[b] + nconss + nvars + z, (unsigned int) nnodesoffset[b]+nconss + curvar);
+            h->add_edge((unsigned int) nnodesoffset[b] + nconss + nvars + z, (unsigned int) nnodesoffset[b]+nconss + seeed->getVarProbindexForBlock()     );
             SCIPdebugMessage("nz: c <%s> (id: %d, color: %d) -> nz (id: %d) (value: %f, color: %d) -> var <%s> (id: %d, color: %d) \n",
                               SCIPconsGetName(cons),
                               nnodesoffset[b] + i,
@@ -1186,10 +1187,8 @@ SCIP_RETCODE createGraphNewDetection(
       for( i = 0; i < seeed->getNMasterconss() && *result == SCIP_SUCCESS; ++i )
       {
          int masterconsid;
-         SCIP_CONS* mastercons;
 
          masterconsid = seeed->getMasterconss()[i];
-         mastercons = seeedpool->getConsForIndex(masterconsid);
          ncurvars = seeedpool->getNVarsForCons(masterconsid);
 
          for( j = 0; j < ncurvars; ++j )
@@ -1381,15 +1380,9 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    bliss::Stats bstats;
    AUT_HOOK *ptrhook;
    AUT_COLOR colorinfo;
-   int nscips;
    std::vector<int> blocks;
-   int pricingindices[2];
+//   int pricingindices[2];
    int pricingnodes = 0;
-   scips[0] = scip1;
-   scips[1] = scip2;
-   pricingindices[0] = prob1;
-   pricingindices[1] = prob2;
-   nscips = 2;
    *result = SCIP_SUCCESS;
 
 
@@ -1401,7 +1394,8 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    SCIP_CALL( setuparraysnewdetection(seeedpool, seeed, 2, blocks, &colorinfo, result) );
    SCIP_CALL( createGraphNewDetection(seeedpool, seeed, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );
 
-   ptrhook = new AUT_HOOK(varmap, consmap, FALSE, (unsigned int) pricingnodes, scips);
+   ptrhook = new AUT_HOOK(varmap, consmap, FALSE, (unsigned int) pricingnodes, NULL);
+   ptrhook->setNewDetectionStuff(seeedpool, seeed, blocks);
    graph.find_automorphisms(bstats, fhook, ptrhook);
 
    if( !ptrhook->getBool() )
