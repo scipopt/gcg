@@ -1399,7 +1399,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteFamilyTree, NULL, NULL,
             "familytree",
-            "write all (partial) decompositions contained in family tree to files (.gp/.tex) and creates family tree file (.tex)",
+            "write all (partial) decompositions contained in family tree to files (.gp/.tex) and create family tree file (.tex)",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
