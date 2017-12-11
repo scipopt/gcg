@@ -92,6 +92,13 @@ SCIP_RETCODE MiscVisualization::GCGgetVisualizationFilename(
          seeed->getNBlocks(), extension);
    }
 
+   /* some filenames can still have dots in them (usually from prob name) which can cause confusion */
+   for(size_t i = 0; i < strlen(filename); i++)
+   {
+      if(filename[i] == '.')
+         filename[i] = '-';
+   }
+
    return SCIP_OKAY;
 }
 

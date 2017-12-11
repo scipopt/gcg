@@ -178,19 +178,20 @@ $(LIBOBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/s
  src/cons_origbranch.h src/disp_gcg.h src/dialog_gcg.h src/reader_ref.h \
  src/event_bestsol.h src/event_mastersol.h src/cons_decomp.h \
  src/type_detector.h src/dec_connected.h src/params_visu.h \
- src/reader_gp.h src/reader_tex.h src/dec_isomorph.h src/dec_constype.h \
- src/dec_consclass.h src/dec_densemasterconss.h src/dec_stairheur.h \
- src/dec_staircase.h src/dec_random.h src/dec_colors.h \
- src/dec_compgreedily.h src/dec_staircase_lsp.h src/dec_consname.h \
- src/dec_mastersetpack.h src/dec_mastersetpart.h src/dec_mastersetcover.h \
- src/dec_hrcgpartition.h src/dec_hrgpartition.h src/dec_hcgpartition.h \
- src/dec_connectedbase.h src/dec_connected_noNewLinkingVars.h \
- src/dec_generalmastersetcover.h src/dec_generalmastersetpack.h \
- src/dec_generalmastersetpart.h src/dec_varclass.h \
- src/heur_gcgcoefdiving.h src/heur_gcgdins.h src/heur_gcgfeaspump.h \
- src/heur_gcgfracdiving.h src/heur_gcgguideddiving.h \
- src/heur_gcglinesdiving.h src/heur_gcgpscostdiving.h src/heur_gcgrens.h \
- src/heur_gcgrins.h src/heur_gcgrounding.h src/heur_gcgshifting.h \
+ src/reader_gp.h src/reader_tex.h src/reader_cls.h src/dec_isomorph.h \
+ src/dec_constype.h src/dec_consclass.h src/dec_densemasterconss.h \
+ src/dec_stairheur.h src/dec_staircase.h src/dec_random.h \
+ src/dec_colors.h src/dec_compgreedily.h src/dec_staircase_lsp.h \
+ src/dec_consname.h src/dec_postprocess.h src/dec_mastersetpack.h \
+ src/dec_mastersetpart.h src/dec_mastersetcover.h src/dec_hrcgpartition.h \
+ src/dec_hrgpartition.h src/dec_hcgpartition.h src/dec_connectedbase.h \
+ src/dec_connected_noNewLinkingVars.h src/dec_generalmastersetcover.h \
+ src/dec_generalmastersetpack.h src/dec_generalmastersetpart.h \
+ src/dec_varclass.h src/heur_gcgcoefdiving.h src/heur_gcgdins.h \
+ src/heur_gcgfeaspump.h src/heur_gcgfracdiving.h \
+ src/heur_gcgguideddiving.h src/heur_gcglinesdiving.h \
+ src/heur_gcgpscostdiving.h src/heur_gcgrens.h src/heur_gcgrins.h \
+ src/heur_gcgrounding.h src/heur_gcgshifting.h \
  src/heur_gcgsimplerounding.h src/heur_gcgveclendiving.h \
  src/heur_gcgzirounding.h src/heur_origdiving.h src/type_origdiving.h \
  src/heur_xpcrossover.h src/heur_xprins.h src/dec_cutpacking.h \
@@ -3730,7 +3731,7 @@ $(LIBOBJDIR)/dialog_gcg.o: src/dialog_gcg.c lib/scip/src/scip/pub_dialog.h \
  src/type_solver.h src/pub_gcgcol.h src/type_gcgcol.h src/struct_gcgcol.h \
  src/pub_gcgvar.h src/pub_decomp.h src/dialog_gcg.h src/relax_gcg.h \
  src/pricer_gcg.h src/cons_decomp.h src/pub_gcgheur.h src/stat.h \
- src/reader_dec.h
+ src/reader_dec.h src/reader_tex.h src/params_visu.h
 $(LIBOBJDIR)/dialog_master.o: src/dialog_master.c lib/scip/src/scip/dialog_default.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -5134,7 +5135,7 @@ $(LIBOBJDIR)/gcgcol.o: src/gcgcol.c src/pub_gcgcol.h src/type_gcgcol.h \
  src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
  src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h src/scip_misc.h \
  lib/scip/src/scip/cons_setppc.h src/relax_gcg.h
-$(LIBOBJDIR)/params_visu.o: src/params_visu.c src/params_visu.h \
+$(LIBOBJDIR)/params_visu.o: src/params_visu.c src/params_visu.h src/type_decomp.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \

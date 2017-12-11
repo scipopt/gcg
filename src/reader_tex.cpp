@@ -125,7 +125,6 @@ SCIP_RETCODE getRgbFromHex(
    )
 {
    char temp[SCIP_MAXSTRLEN];
-   int check = 0;
    unsigned int r = 0;
    unsigned int g = 0;
    unsigned int b = 0;
@@ -137,8 +136,7 @@ SCIP_RETCODE getRgbFromHex(
    memmove( temp, temp+1, strlen( temp ) );
 
    /* extract int values from the rest */
-   check = sscanf( temp, "%02x%02x%02x", &r, &g, &b );
-   assert( check == 3 );
+   sscanf( temp, "%02x%02x%02x", &r, &g, &b );
 
    *red = (int) r;
    *green = (int) g;
@@ -233,10 +231,15 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}                                                \n");
    SCIPinfoMessage(scip, file, "\\usepackage{pdfpages}                                                           \n");
    SCIPinfoMessage(scip, file, "\\usepackage{fancybox}                                                           \n");
-   SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
-   SCIPinfoMessage(scip, file, "\\usetikzlibrary{positioning}                                                    \n");
-//   SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      \n");
-//   SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               \n");
+   if(!GCGgetUseGp())
+   {
+//      SCIPinfoMessage(scip, file, "\\usepackage{pgfplots}                                                           \n");
+//      SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=newest}                                                     \n");
+      SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
+      SCIPinfoMessage(scip, file, "\\usetikzlibrary{positioning}                                                    \n");
+//      SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      \n");
+//      SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               \n");
+   }
    SCIPinfoMessage(scip, file, "                                                                                 \n");
 
   /* introduce colors of current color scheme */
@@ -400,9 +403,9 @@ SCIP_RETCODE writeTikzNonzeros(
    }
 
    /* block constraints */
-   for( int b = 0; b < seeed->getNBlocks() ; ++b )
+   for( int b = 0; b < seeed->getNBlocks(); ++b )
    {
-      for(int i = 0; i < seeed->getNConssForBlock(b) ; ++i )
+      for(int i = 0; i < seeed->getNConssForBlock(b); ++i )
       {
          int rowidx = seeed->getConssForBlock(b)[i];
          orderToRows[counterrows] = rowidx;
@@ -412,7 +415,7 @@ SCIP_RETCODE writeTikzNonzeros(
    }
 
    /** open constraints */
-   for( int i = 0; i < seeed->getNOpenconss() ; ++i )
+   for( int i = 0; i < seeed->getNOpenconss(); ++i )
    {
       int rowidx = seeed->getOpenconss()[i];
       orderToRows[counterrows] = rowidx;
@@ -441,16 +444,16 @@ SCIP_RETCODE writeTikzNonzeros(
    }
 
    /* block variables */
-   for( int b = 0; b < seeed->getNBlocks() ; ++b )
+   for( int b = 0; b < seeed->getNBlocks(); ++b )
    {
-      for(int i = 0; i < seeed->getNVarsForBlock(b) ; ++i )
+      for(int i = 0; i < seeed->getNVarsForBlock(b); ++i )
       {
          int colidx = seeed->getVarsForBlock(b)[i];
          orderToCols[countercols] = colidx;
          colsToOrder[colidx] = countercols;
          ++countercols;
       }
-      for(int i = 0; i < seeed->getNStairlinkingvars(b) ; ++i )
+      for(int i = 0; i < seeed->getNStairlinkingvars(b); ++i )
       {
          int colidx = seeed->getStairlinkingvars(b)[i];
          orderToCols[countercols] = colidx;
@@ -475,7 +478,7 @@ SCIP_RETCODE writeTikzNonzeros(
       {
          assert( orderToRows[row] != -1 );
          assert( orderToCols[col] != -1 );
-         if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
+         if( seeedpool->getVal( orderToRows[row], orderToCols[col] ) != 0 )
          {
             SCIPinfoMessage(scip, file,
                "    \\draw [fill] (%f*\\textwidth*0.75,%f*\\textwidth*0.75) circle [radius=%f*0.75];\n",
@@ -510,7 +513,9 @@ SCIP_RETCODE writeTexSeeed(
       SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]                                              \n");
       SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
    }
-   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}                                             \n");
+   SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}[yscale=-1]                                     \n");
+//   SCIPinfoMessage(scip, file, "     \\begin{axis}[ymin=0,ymax=%d,xmin=0,xmax=%d] \n",
+//      seeed->getNConss(), seeed->getNVars());
 
    /* --- draw boxes ---*/
 
@@ -561,6 +566,7 @@ SCIP_RETCODE writeTexSeeed(
          nvars, nconss);
    }
 
+//   SCIPinfoMessage(scip, file, "     \\end{axis} \n");
    SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                               \n");
    if(!nofigure)
    {
@@ -1194,13 +1200,17 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
       return SCIP_FILECREATEERROR;
    }
 
-   SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file     \n", name);
+   SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file.    \n", name);
    SCIPinfoMessage(scip, readme, "                                                                             \n");
-   SCIPinfoMessage(scip, readme, "Instead of using the command 'make' use 'make -f %s'                         \n", name);
+   SCIPinfoMessage(scip, readme, "Use the command\n\t'make -f %s'\nto compile.                                  \n", name);
+   SCIPinfoMessage(scip, readme, "Depending on the size of your problem that may take some time.               \n");
+   SCIPinfoMessage(scip, readme,
+      "Please do not delete any new files that might be generated during the compile process.                  \n");
+   SCIPinfoMessage(scip, readme, "All access files will be deleted automatically once the compilation is complete.\n");
    SCIPinfoMessage(scip, readme, "                                                                             \n");
    SCIPinfoMessage(scip, readme, "Clean options:                                                               \n");
-   SCIPinfoMessage(scip, readme, "\t'clean' clears all present intermediate files (if any exist)               \n");
-   SCIPinfoMessage(scip, readme, "\t'cleanall' clears all generated files INCLUDING .pdf                       \n");
+   SCIPinfoMessage(scip, readme, "\t'make -f %s clean' clears all present intermediate files (if any exist)    \n", name);
+   SCIPinfoMessage(scip, readme, "\t'make -f %s cleanall' clears all generated files INCLUDING .pdf            \n", name);
 
    /* close readme file */
    fclose(readme);

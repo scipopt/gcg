@@ -179,8 +179,7 @@ SCIP_RETCODE writeGpNonzeros(
    int countercols = 0;
    std::ofstream ofs;
 
-   /* --- order of constraints --- */
-
+   /** order of constraints */
    /* master constraints */
    for( int i = 0; i < seeed->getNMasterconss() ; ++i )
    {
@@ -191,9 +190,9 @@ SCIP_RETCODE writeGpNonzeros(
    }
 
    /* block constraints */
-   for( int b = 0; b < seeed->getNBlocks() ; ++b )
+   for( int b = 0; b < seeed->getNBlocks(); ++b )
    {
-      for( int i = 0; i < seeed->getNConssForBlock(b) ; ++i )
+      for(int i = 0; i < seeed->getNConssForBlock(b); ++i )
       {
          int rowidx = seeed->getConssForBlock(b)[i];
          orderToRows[counterrows] = rowidx;
@@ -203,7 +202,7 @@ SCIP_RETCODE writeGpNonzeros(
    }
 
    /** open constraints */
-   for( int i = 0; i < seeed->getNOpenconss() ; ++i )
+   for( int i = 0; i < seeed->getNOpenconss(); ++i )
    {
       int rowidx = seeed->getOpenconss()[i];
       orderToRows[counterrows] = rowidx;
@@ -211,7 +210,7 @@ SCIP_RETCODE writeGpNonzeros(
       ++counterrows;
    }
 
-   /* --- order of variables --- */
+   /** order of variables */
 
    /* linking variables */
    for( int i = 0; i < seeed->getNLinkingvars() ; ++i )
@@ -232,16 +231,16 @@ SCIP_RETCODE writeGpNonzeros(
    }
 
    /* block variables */
-   for( int b = 0; b < seeed->getNBlocks() ; ++b )
+   for( int b = 0; b < seeed->getNBlocks(); ++b )
    {
-      for( int i = 0; i < seeed->getNVarsForBlock(b) ; ++i )
+      for(int i = 0; i < seeed->getNVarsForBlock(b); ++i )
       {
          int colidx = seeed->getVarsForBlock(b)[i];
          orderToCols[countercols] = colidx;
          colsToOrder[colidx] = countercols;
          ++countercols;
       }
-      for( int i = 0; i < seeed->getNStairlinkingvars(b) ; ++i )
+      for(int i = 0; i < seeed->getNStairlinkingvars(b); ++i )
       {
          int colidx = seeed->getStairlinkingvars(b)[i];
          orderToCols[countercols] = colidx;
@@ -250,7 +249,7 @@ SCIP_RETCODE writeGpNonzeros(
       }
    }
 
-   /** open vars */
+   /* open vars */
    for( int i = 0; i < seeed->getNOpenvars() ; ++i )
    {
       int colidx = seeed->getOpenvars()[i];
@@ -272,10 +271,8 @@ SCIP_RETCODE writeGpNonzeros(
       {
          assert( orderToRows[row] != -1 );
          assert( orderToCols[col] != -1 );
-         if( seeedpool->getVal( orderToRows[row], orderToCols[col]  ) != 0 )
+         if( seeedpool->getVal( orderToRows[row], orderToCols[col] ) != 0 )
             ofs << col + 0.5 << " " << row + 0.5 << std::endl;
-//            ofs << "set object circle at graph " << col + 0.5 << "," << row + 0.5 << " radius char " << radius <<
-//               "\\" << std::endl << "fc rgb \"" << SCIPvisuGetColorNonzero() << "\" fill solid" << std::endl;
       }
    }
 
@@ -304,7 +301,7 @@ SCIP_RETCODE writeGpSeeed(
 
    /* set coordinate range */
    ofs << "set xrange [-1:" << seeed->getNVars() << "]" << std::endl;
-   ofs << "set yrange[-1:" << seeed->getNConss() << "]" << std::endl;
+   ofs << "set yrange[" << seeed->getNConss() << ":-1]" << std::endl;
 
    /* --- draw boxes ---*/
 
