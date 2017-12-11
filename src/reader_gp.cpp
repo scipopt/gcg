@@ -144,8 +144,6 @@ static
 SCIP_RETCODE drawGpBox(
    char* filename,   /**< filename (including path) to write to */
    int objectid,     /**< id number of box (>0), must be unique */
-   int xmax,         /**< maximum x axis value */
-   int ymax,         /**< maximum y axis value */
    int x1,           /**< x value of lower left vertex coordinate */
    int y1,           /**< y value of lower left vertex coordinate */
    int x2,           /**< x value of upper right vertex coordinate */
@@ -156,8 +154,7 @@ SCIP_RETCODE drawGpBox(
    std::ofstream ofs;
    ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
-   ofs << "set object " << objectid << " rect from " << ( (float) x1 / (float) xmax ) << ","
-      << ( (float) y1 / (float) ymax ) << " to " << ( (float) x2 / (float) xmax ) << "," << ( (float) y2 / (float) ymax )
+   ofs << "set object " << objectid << " rect from " << x1 << "," << y1 << " to " << x2 << "," << y2
       << " fc rgb \"" << color << "\"" << " lc rgb \"" << SCIPvisuGetColorLine() << "\"" << std::endl;
 
    ofs.close();
@@ -171,9 +168,7 @@ SCIP_RETCODE writeGpNonzeros(
    const char* filename,   /**< filename to write to (including path & extension) */
    Seeed* seeed,           /**< Seeed for which the nonzeros should be visualized */
    Seeedpool* seeedpool,   /**< current Seeedpool */
-   float radius,           /**< radius of the dots */
-   int xmax,               /**< maximum x axis value */
-   int ymax                /**< maximum y axis value */
+   float radius            /**< radius of the dots */
    )
 {
    std::vector<int> orderToRows(seeed->getNConss(), -1);
@@ -277,7 +272,7 @@ SCIP_RETCODE writeGpNonzeros(
          assert( orderToRows[row] != -1 );
          assert( orderToCols[col] != -1 );
          if( seeedpool->getVal( orderToRows[row], orderToCols[col] ) != 0 )
-            ofs << ( (float) col + 0.5 ) / (float) xmax << " " << ( (float) row + 0.5 ) / (float) ymax << std::endl;
+            ofs << col + 0.5 << " " << row + 0.5 << std::endl;
       }
    }
 
@@ -310,26 +305,26 @@ SCIP_RETCODE writeGpSeeed(
    ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
    /* set coordinate range */
-   ofs << "set xrange [-1:" << nvars / nvars << "]" << std::endl;
-   ofs << "set yrange[" << nconss / nconss << ":-1]" << std::endl;
+   ofs << "set xrange [-1:" << nvars << "]" << std::endl;
+   ofs << "set yrange[" << nconss << ":-1]" << std::endl;
 
    /* --- draw boxes ---*/
 
    /* linking vars */
    ++objcounter; /* has to start at 1 for gnuplot */
-   drawGpBox( filename, objcounter, nvars, nconss, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
+   drawGpBox( filename, objcounter, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
       SCIPvisuGetColorLinking() );
    colboxcounter += seeed->getNLinkingvars();
 
    /* mastervars */
    ++objcounter;
-   drawGpBox( filename, objcounter, nvars, nconss, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
+   drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
       seeed->getNConss(), SCIPvisuGetColorMastervars() );
    colboxcounter += seeed->getNMastervars();
 
    /* masterconss */
    ++objcounter;
-   drawGpBox( filename, objcounter, nvars, nconss, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
+   drawGpBox( filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
       SCIPvisuGetColorMasterconss() );
    rowboxcounter += seeed->getNMasterconss();
 
@@ -337,14 +332,14 @@ SCIP_RETCODE writeGpSeeed(
    for( int b = 0; b < seeed->getNBlocks() ; ++b )
    {
       ++objcounter;
-      drawGpBox(filename, objcounter, nvars, nconss, colboxcounter, rowboxcounter,
+      drawGpBox(filename, objcounter, colboxcounter, rowboxcounter,
          colboxcounter + seeed->getNVarsForBlock(b), rowboxcounter + seeed->getNConssForBlock(b), SCIPvisuGetColorBlock());
       colboxcounter += seeed->getNVarsForBlock(b);
 
       if( seeed->getNStairlinkingvars(b) != 0 )
       {
          ++objcounter;
-         drawGpBox( filename, objcounter, nvars, nconss, colboxcounter, rowboxcounter,
+         drawGpBox( filename, objcounter, colboxcounter, rowboxcounter,
             colboxcounter + seeed->getNStairlinkingvars(b),
             rowboxcounter + seeed->getNConssForBlock(b) + seeed->getNConssForBlock(b+1), SCIPvisuGetColorStairlinking() );
       }
@@ -354,7 +349,7 @@ SCIP_RETCODE writeGpSeeed(
 
    /* open */
    ++objcounter;
-   drawGpBox( filename, objcounter, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
+   drawGpBox( filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
       rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
    colboxcounter += seeed->getNOpenvars();
    rowboxcounter += seeed->getNOpenconss();
@@ -362,12 +357,11 @@ SCIP_RETCODE writeGpSeeed(
    /* --- draw nonzeros --- */
    if(SCIPvisuGetDraftmode() == FALSE)
    {
-      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius( seeed->getNVars(), seeed->getNConss(), 1 ),
-         nvars, nconss );
+      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), 250) );
    }
    else
    {
-      ofs << "plot \"-\" using 1:2:(0) notitle with circles fc rgb \"black\" fill solid"
+      ofs << "plot \"-\" using 1:2:(0) notitle with circles lw 2 fc rgb \"black\" fill solid"
          << std::endl << "0 0" << std::endl << "e" << std::endl;
    }
 
