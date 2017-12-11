@@ -967,10 +967,13 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    SCIPinfoMessage(scip, file,
       "\\begin{tikzpicture}[level/.style={sibling distance=%f\\textwidth/#1}, level distance=12em, ->, dashed]\n",
       firstsibldist);
-   SCIPinfoMessage(scip, file, "\\node ");
 
    /** iterate tree and write file */
    curr = root;
+
+   if(curr != -1)
+      SCIPinfoMessage(scip, file, "\\node ");
+
    while ( curr != -1 )
    {
       if( !visited[curr] )
@@ -1010,13 +1013,43 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       }
    }
 
-   SCIPinfoMessage(scip, file, ";\n");
-   for( size_t i = 0; i < treeseeeds.size(); ++i)
+   if(root != -1)
    {
-      if ( treeseeeds[i]->getID() == root2 )
-         continue;
-      SCIPinfoMessage(scip, file, "\\node[below = \\belowcaptionskip of s%d] (caps%d) {\\scriptsize %s}; \n",
-         treeseeeds[i]->getID(), treeseeeds[i]->getID(), treeseeeds[i]->getShortCaption());
+      SCIPinfoMessage(scip, file, ";\n");
+      for( size_t i = 0; i < treeseeeds.size(); ++i)
+      {
+         if ( treeseeeds[i]->getID() == root2 )
+            continue;
+         SCIPinfoMessage(scip, file, "\\node[below = \\belowcaptionskip of s%d] (caps%d) {\\scriptsize %s}; \n",
+            treeseeeds[i]->getID(), treeseeeds[i]->getID(), treeseeeds[i]->getShortCaption());
+      }
+   }
+   else
+   {
+      /* this case should only appear for decompositions that were read instead of detected, therefore no root */
+      SCIP_Bool isnodefirst = true;
+      for( size_t i = 0; i < treeseeeds.size(); ++i)
+      {
+         if ( treeseeeds[i]->getID() == root2 )
+         {
+            isnodefirst = false;
+            continue;
+         }
+         if(isnodefirst)
+         {
+            /* in this case the picture is not included as a loop yet and has to be added */
+            char temp[SCIP_MAXSTRLEN];
+            miscvisu->GCGgetVisualizationFilename(scip, treeseeeds[i], "pdf", temp);
+            SCIPinfoMessage(scip, file, "\\node[] (s%d) { \\includegraphics[width=0.15\\textwidth]{%s.pdf} };",
+               treeseeeds[i]->getID(), temp);
+            SCIPinfoMessage(scip, file, "\\node[below = \\belowcaptionskip of s%d] (caps%d) {\\scriptsize %s}; \n",
+               treeseeeds[i]->getID(), treeseeeds[i]->getID(), treeseeeds[i]->getShortCaption());
+         }
+         else
+            SCIPinfoMessage(scip, file, "\\node[below = \\belowcaptionskip of s%d] (caps%d) {\\scriptsize %s}; \n",
+               treeseeeds[i]->getID(), treeseeeds[i]->getID(), treeseeeds[i]->getShortCaption());
+         isnodefirst = false;
+      }
    }
 
    SCIPinfoMessage(scip, file, "\\end{tikzpicture}\n");

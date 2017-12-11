@@ -5086,7 +5086,7 @@ int SCIPconshdlrDecompGetNSeeeds(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   if ( conshdlrdata->seeedpool == NULL )
+   if( conshdlrdata->seeedpool == NULL )
       return (int) conshdlrdata->seeedpoolunpresolved->getNAncestorSeeeds() +
          conshdlrdata->seeedpoolunpresolved->getNCurrentSeeeds() +
          conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds();
