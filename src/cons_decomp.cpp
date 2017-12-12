@@ -271,8 +271,15 @@ char*  SCIPconshdlrDecompGetScoretypeShortName(
    if( sctype == scoretype::MAX_FORESSEEING_WHITE)
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh") ;
 
+   if( sctype == scoretype::MAX_FORESSEEING_AGG_WHITE)
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "fawh") ;
+
+
    if( sctype == scoretype::SETPART_FWHITE)
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh ") ;
+
+   if( sctype == scoretype::SETPART_AGG_FWHITE)
+           SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfawh") ;
 
 
    SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
@@ -304,8 +311,15 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
       if( sctype == scoretype::MAX_FORESSEEING_WHITE)
             SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
 
+      if( sctype == scoretype::MAX_FORESSEEING_AGG_WHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
+
+
       if( sctype == scoretype::SETPART_FWHITE)
-                  SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
+
+      if( sctype == scoretype::SETPART_AGG_FWHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
 
 
       SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
@@ -1071,8 +1085,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
       NO_MODIF, 0, 3, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/scoretype",
-         "indicates which score should be used for comparing (partial) decompositions (0:max white, 1: border area, 2:classic, 3:max foreseeing white, 4: ppc-max-white ): ", &conshdlrdata->currscoretype, TRUE,
-         scoretype::MAX_WHITE, 0, 4, NULL, NULL) );
+         "indicates which score should be used for comparing (partial) decompositions (0:max white, 1: border area, 2:classic, 3:max foreseeing white, 4:max foreseeing white with aggregation info, 5: ppc-max-white, 6: ppc-max-white with aggregation info): ", &conshdlrdata->currscoretype, FALSE,
+         scoretype::SETPART_AGG_FWHITE, 0, 6, NULL, NULL) );
 
 
 

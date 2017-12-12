@@ -391,6 +391,15 @@ SCIP_Bool cmpSeeedsFWhite(
    return ( i->getScore( MAX_FORESSEEING_WHITE )  > j->getScore( MAX_FORESSEEING_WHITE ) );
 }
 
+/** returns TRUE if seeed i has a greater score than seeed j */
+SCIP_Bool cmpSeeedsAggFWhite(
+   SeeedPtr i,
+   SeeedPtr j
+   )
+{
+   return ( i->getScore( MAX_FORESSEEING_AGG_WHITE )  > j->getScore( MAX_FORESSEEING_AGG_WHITE ) );
+}
+
 
 /** returns TRUE if seeed i has a greater score than seeed j */
 SCIP_Bool cmpSeeedsPPCfWhite(
@@ -400,6 +409,16 @@ SCIP_Bool cmpSeeedsPPCfWhite(
 {
    return ( i->getScore( SETPART_FWHITE )  > j->getScore( SETPART_FWHITE ) );
 }
+
+/** returns TRUE if seeed i has a greater score than seeed j */
+SCIP_Bool cmpSeeedsPPCaggFWhite(
+   SeeedPtr i,
+   SeeedPtr j
+   )
+{
+   return ( i->getScore( SETPART_AGG_FWHITE )  > j->getScore( SETPART_AGG_FWHITE ) );
+}
+
 
 
 
@@ -1504,8 +1523,14 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_FORESSEEING_WHITE )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsFWhite);
 
+   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::MAX_FORESSEEING_AGG_WHITE )
+         std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsAggFWhite);
+
    if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::SETPART_FWHITE )
       std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCfWhite);
+
+   if( SCIPconshdlrDecompGetCurrScoretype(scip) == scoretype::SETPART_AGG_FWHITE )
+      std::sort(finishedSeeeds.begin(), finishedSeeeds.end(), cmpSeeedsPPCaggFWhite);
 
 }
 

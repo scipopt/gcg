@@ -2876,7 +2876,13 @@ SCIP_RETCODE Seeed::displayInfo(
    if( getNOpenconss() + getNOpenconss() == 0 )
          std::cout << " Max-foreseeing-white-score: " << maxforeseeingwhitescore << std::endl;
    if( getNOpenconss() + getNOpenconss() == 0 )
+         std::cout << " Max-foreseeing-white-aggregated-score: " << maxforeseeingwhitescoreagg << std::endl;
+   if( getNOpenconss() + getNOpenconss() == 0 )
          std::cout << " PPC-max-foreseeing-white-score: " <<  setpartfwhitescore << std::endl;
+
+   if( getNOpenconss() + getNOpenconss() == 0 )
+          std::cout << " PPC-max-foreseeing-white-aggregated-score: " <<  setpartfwhitescoreagg << std::endl;
+
 
    std::cout << " HassetppMaster: " << hasSetppMaster(seeedpool) << std::endl;
    std::cout << " HassetppcMaster: " << hasSetppcMaster(seeedpool) << std::endl;
@@ -3284,12 +3290,14 @@ SCIP_Real Seeed::evaluate(
    SCIP_Real alphadensity;
 
    unsigned long blackarea;
+   unsigned long blackareaagg;
 
    maxwhitescore = 0.;
    alphaborderarea = 0.6;
    alphalinking = 0.2;
    alphadensity = 0.2;
    blackarea = 0;
+   blackareaagg = 0;
 
    assert( checkConsistency(seeedpool) );
 
@@ -3314,6 +3322,8 @@ SCIP_Real Seeed::evaluate(
       SCIPwarningMessage( scip, "Evaluation for seeeds is not implemented for seeeds with open conss or open vars.\n" );
 
  //  if ( sctype == scoretype::MAX_FORESSEEING_WHITE || sctype == scoretype::SETPART_FWHITE )
+
+   calcAggregationInformation(seeedpool);
    {
       std::vector<int> nlinkingvarsforblock(getNBlocks(), 0);
       std::vector<int> nblocksforlinkingvar(getNLinkingvars() + getNTotalStairlinkingvars(), 0);
@@ -3324,6 +3334,7 @@ SCIP_Real Seeed::evaluate(
       int newwidth;
       int newmasterarea;
       int newblockarea;
+      int newblockareaagg;
 
 
       for( int lv = 0; lv < getNLinkingvars(); ++lv )
@@ -3379,26 +3390,43 @@ SCIP_Real Seeed::evaluate(
 
       newmasterarea = ( getNMasterconss() + sumblockshittinglinkingvar) * ( getNVars() + sumlinkingvarshittingblock );
       newblockarea = 0;
+      newblockareaagg = 0;
 
       for( int b = 0; b < getNBlocks(); ++b )
       {
          newblockarea += getNConssForBlock(b) * ( getNVarsForBlock(b) + nlinkingvarsforblock[b] );
       }
 
+      for( int br = 0; br < nrepblocks; ++br )
+      {
+         newblockareaagg += getNConssForBlock( reptoblocks[br][0] ) * ( getNVarsForBlock( reptoblocks[br][0] ) + nlinkingvarsforblock[reptoblocks[br][0]] );
+      }
+
       maxforeseeingwhitescore = ((SCIP_Real ) newblockarea + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
       maxforeseeingwhitescore =  maxforeseeingwhitescore / (SCIP_Real) newheight ;
 
+      maxforeseeingwhitescoreagg = ((SCIP_Real ) newblockareaagg + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
+      maxforeseeingwhitescoreagg =  maxforeseeingwhitescoreagg / (SCIP_Real) newheight ;
+
+
       maxforeseeingwhitescore = 1. - maxforeseeingwhitescore;
+      maxforeseeingwhitescoreagg = 1. - maxforeseeingwhitescoreagg;
    }
 
-   if( hasSetppccardMaster(seeedpool) )
+   if( hasSetppccardMaster(seeedpool) && !isTrivial() && getNBlocks() > 1 )
+   {
       setpartfwhitescore = 0.5 * maxforeseeingwhitescore + 0.5;
+      setpartfwhitescoreagg = 0.5 * maxforeseeingwhitescoreagg + 0.5;
+   }
    else
+   {
       setpartfwhitescore = 0.5 * maxforeseeingwhitescore;
-
+      setpartfwhitescoreagg = 0.5 * maxforeseeingwhitescoreagg;
+   }
 
    //if( sctype == scoretype::SETPART_FWHITE )
-      calcAggregationInformation(seeedpool);
+
+
 
 
    SCIP_CALL( SCIPallocBufferArray( scip, & nzblocks, nBlocks ) );
@@ -3625,6 +3653,9 @@ SCIP_Bool Seeed::hasSetppccardMaster(
    SCIP_Bool verbose;
    hassetpartmaster = TRUE;
    verbose = FALSE;
+
+   if( getNTotalStairlinkingvars() + getNLinkingvars() > 0 )
+      return FALSE;
 
    for( int l = 0; l < getNMasterconss(); ++l )
    {
@@ -4580,8 +4611,15 @@ SCIP_Real Seeed::getScore(
    if( type == scoretype::MAX_FORESSEEING_WHITE )
       return maxforeseeingwhitescore;
 
+   if( type == scoretype::MAX_FORESSEEING_AGG_WHITE )
+      return maxforeseeingwhitescoreagg;
+
+
    if( type == scoretype::SETPART_FWHITE )
       return setpartfwhitescore;
+
+   if( type == scoretype::SETPART_AGG_FWHITE )
+      return setpartfwhitescoreagg;
 
 
    return 0;
@@ -5141,7 +5179,7 @@ bool Seeed::isPropagatedBy(
  *  i.e. all conss are in one block, all conss are in border, all variables linking or mastervars */
 bool Seeed::isTrivial()
 {
-   if( getNBlocks() == 1 && getNConssForBlock( 0 ) == getNConss() )
+   if( getNBlocks() == 1 && (SCIP_Real) getNConssForBlock( 0 ) >= 0.95 * getNConss() )
       return true;
 
    if( getNConss() == getNMasterconss() )
