@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -30,10 +30,13 @@
  * @brief  branching rule based on vanderbeck's generic branching scheme
  * @author Marcel Schmickerath
  * @author Martin Bergner
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+
+/*#define SCIP_DEBUG*/
+
 #include "branch_generic.h"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
@@ -257,9 +260,9 @@ SCIP_RETCODE createBranchingCons(
 
    return SCIP_OKAY;
 }
-/** initialization method of event handler (called after problem was transformed) */
+/** solving process initialization method of event handler (called when branch and bound process is about to begin) */
 static
-SCIP_DECL_EVENTINIT(eventInitGenericbranchvaradd)
+SCIP_DECL_EVENTINITSOL(eventInitsolGenericbranchvaradd)
 {  /*lint --e{715}*/
     assert(scip != NULL);
     assert(eventhdlr != NULL);
@@ -271,9 +274,9 @@ SCIP_DECL_EVENTINIT(eventInitGenericbranchvaradd)
     return SCIP_OKAY;
 }
 
-/** deinitialization method of event handler (called before transformed problem is freed) */
+/** solving process deinitialization method of event handler (called before branch and bound process data is freed) */
 static
-SCIP_DECL_EVENTEXIT(eventExitGenericbranchvaradd)
+SCIP_DECL_EVENTEXITSOL(eventExitsolGenericbranchvaradd)
 {  /*lint --e{715}*/
     assert(scip != NULL);
     assert(eventhdlr != NULL);
@@ -318,7 +321,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    assert(masterbranchcons != NULL);
 
    /* if branch rule is not generic, abort */
-   if( !GCGisBranchruleGeneric(GCGconsMasterbranchGetbranchrule(masterbranchcons)) )
+   if( !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(masterbranchcons)) )
       return SCIP_OKAY;
 
    SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
@@ -328,17 +331,14 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 
 
-   if( GCGvarIsMaster(mastervar) &&  (GCGconsMasterbranchGetbranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ) )
+   if( GCGvarIsMaster(mastervar) && GCGconsMasterbranchGetBranchrule(parentcons) != NULL )
    {
       SCIP_Bool added = FALSE;
       SCIPdebugMessage("Mastervar <%s>\n", SCIPvarGetName(mastervar));
       while( parentcons != NULL && branchdata != NULL
             && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 )
       {
-         if( GCGconsMasterbranchGetbranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") != 0 )
-            break;
-
-         if( GCGconsMasterbranchGetOrigbranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetOrigbranchrule(parentcons)), "generic") != 0 )
+         if( GCGconsMasterbranchGetBranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetBranchrule(parentcons)), "generic") != 0 )
             break;
 
          assert(branchdata != NULL);
@@ -365,10 +365,10 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    return SCIP_OKAY;
 }
 
+
 /*
  * branching specific interface methods
  */
-
 
 /** method for initializing the set of respected indices */
 static
@@ -1868,7 +1868,9 @@ SCIP_RETCODE ChooseSeparateMethod(
       for( i = 0; i < nstrips; ++i )
       {
          assert(strips != NULL);
-         SCIP_CALL( SCIPduplicateBuffer(scip, &((*checkedblockssortstrips)[(*ncheckedblocks)-1][i]), strips[i]) );
+
+         SCIP_CALL( SCIPallocBuffer(scip, &(*checkedblockssortstrips[*ncheckedblocks-1][i])) ); /*lint !e866*/
+         *checkedblockssortstrips[*ncheckedblocks-1][i] = strips[i];
       }
 
       for( i=0; i<nstrips; ++i )
@@ -1983,7 +1985,7 @@ SCIP_Bool checkchildconsS(
    int i;
    int nchildren;
 
-   nchildren = GCGconsMasterbranchGetNChildcons(parentcons);
+   nchildren = GCGconsMasterbranchGetNChildconss(parentcons);
    assert(nchildren>0);
 
    for( i=0; i<nchildren; ++i )
@@ -1998,14 +2000,11 @@ SCIP_Bool checkchildconsS(
       if( childcons == NULL )
          continue;
 
-      if( GCGconsMasterbranchGetbranchrule(childcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(childcons)), "generic") != 0 )
+      if( GCGconsMasterbranchGetBranchrule(childcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetBranchrule(childcons)), "generic") != 0 )
          continue;
 
       branchdata = GCGconsMasterbranchGetBranchdata(childcons);
-      assert(branchdata != NULL || GCGconsMasterbranchGetOrigbranchdata(childcons) != NULL);
-
-      if( branchdata == NULL )
-         branchdata = GCGconsMasterbranchGetOrigbranchdata(childcons);
+      assert(branchdata != NULL);
 
       if( childBlocknr != branchdata->consblocknr || childSsize != branchdata->consSsize || !SCIPisEQ(scip, lhs, branchdata->lhs) )
          continue;
@@ -2065,7 +2064,7 @@ SCIP_Bool pruneChildNodeByDominanceGeneric(
          /* root node: check children for pruning */
          return checkchildconsS(scip, lhs, childS, childSsize, cons, childBlocknr);
       }
-      if( strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(cons)), "generic") != 0 )
+      if( strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetBranchrule(cons)), "generic") != 0 )
          return checkchildconsS(scip, lhs, childS, childSsize, cons, childBlocknr);
 
       ispruned = checkchildconsS(scip, lhs, childS, childSsize, cons, childBlocknr);
@@ -2285,21 +2284,19 @@ SCIP_RETCODE createChildNodesGeneric(
             char childname[SCIP_MAXSTRLEN];
             ++nchildnodes;
 
-            SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-            SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &childcons, child, GCGconsMasterbranchGetActiveCons(masterscip)) );
-            SCIP_CALL( SCIPaddConsNode(masterscip, child, childcons, NULL) );
+            assert(branchchilddata != NULL);
 
             /* define names for origbranch constraints */
-            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%lld,%d, %d) (last comp=%s %s %g) >= %g", SCIPnodeGetNumber(child), blocknr, p+1,
+            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d, %d) (last comp=%s %s %g) >= %g", blocknr, p+1,
                SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
                branchchilddata->consS[branchchilddata->consSsize-1].sense == GCG_COMPSENSE_GE? ">=": "<",
                branchchilddata->consS[branchchilddata->consSsize-1].bound,
                branchchilddata->lhs);
 
-            assert(branchchilddata != NULL);
-
-            SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, childcons, childname, branchrule, branchchilddata,
-               NULL, 0, FALSE, FALSE, FALSE, NULL, 0.0, GCG_BOUNDTYPE_NONE, 0.0) );
+            SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+            SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &childcons, childname, child,
+               GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchchilddata, NULL, 0) );
+            SCIP_CALL( SCIPaddConsNode(masterscip, child, childcons, NULL) );
 
             SCIP_CALL( createBranchingCons(masterscip, child, branchchilddata) );
 
@@ -2394,26 +2391,23 @@ SCIP_RETCODE branchDirectlyOnMastervar(
    branchdownchilddata->consS[0].bound = bound;
 
 
-   (void) SCIPsnprintf(upchildname, SCIP_MAXSTRLEN, "node(1,-3, %f) direct up on comp=%s", branchupchilddata->consS[0].bound,
+   assert(branchupchilddata != NULL);
+   assert(branchdownchilddata != NULL);
+
+   (void) SCIPsnprintf(upchildname, SCIP_MAXSTRLEN, "node(-3, %f) direct up on comp=%s", branchupchilddata->consS[0].bound,
                SCIPvarGetName(branchupchilddata->consS[branchupchilddata->consSsize-1].component));
-   (void) SCIPsnprintf(downchildname, SCIP_MAXSTRLEN, "node(1,-3, %f) direct up on comp=%s", branchdownchilddata->consS[0].bound,
+   (void) SCIPsnprintf(downchildname, SCIP_MAXSTRLEN, "node(-3, %f) direct up on comp=%s", branchdownchilddata->consS[0].bound,
                SCIPvarGetName(branchdownchilddata->consS[branchdownchilddata->consSsize-1].component));
 
    SCIP_CALL( SCIPcreateChild(masterscip, &upchild, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &upchildcons, upchild, GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &upchildcons, upchildname, upchild,
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchupchilddata, NULL, 0) );
    SCIP_CALL( SCIPaddConsNode(masterscip, upchild, upchildcons, NULL) );
 
    SCIP_CALL( SCIPcreateChild(masterscip, &downchild, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &downchildcons, downchild, GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &downchildcons, downchildname, downchild,
+      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, branchdownchilddata, NULL, 0) );
    SCIP_CALL( SCIPaddConsNode(masterscip, downchild, downchildcons, NULL) );
-
-   assert(branchupchilddata != NULL);
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, upchildcons, upchildname, branchrule, branchupchilddata,
-      NULL, 0, FALSE, FALSE, FALSE, NULL, 0.0, GCG_BOUNDTYPE_NONE, 0.0) );
-
-   assert(branchdownchilddata != NULL);
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, downchildcons, downchildname, branchrule, branchdownchilddata,
-      NULL, 0, FALSE, FALSE, FALSE, NULL, 0.0, GCG_BOUNDTYPE_NONE, 0.0) );
 
    /*  create branching constraint in master */
    SCIP_CALL( createDirectBranchingCons(masterscip, upchild, branchupchilddata) );
@@ -2524,7 +2518,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          if( checked )
             continue;
          /* else the block has not been checked and the variable is in it , we have a candidate */
-         else if( GCGisMasterVarInBlock(mastervar, j))
+         else if( GCGisMasterVarInBlock(mastervar, j) )
          {
 #ifndef NDEBUG
             foundblocknr = TRUE;
@@ -2651,8 +2645,8 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       int Csize = 0;
       SCIP_CONS* parentcons = masterbranchcons;
 
-      while( parentcons != NULL && GCGconsMasterbranchGetbranchrule(parentcons) != NULL
-         && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0)
+      while( parentcons != NULL && GCGconsMasterbranchGetBranchrule(parentcons) != NULL
+         && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetBranchrule(parentcons)), "generic") == 0)
       {
          branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
          if( branchdata == NULL )
@@ -3014,13 +3008,13 @@ SCIP_DECL_BRANCHINIT(branchInitGeneric)
    return SCIP_OKAY;
 }
 
-/** creates the most infeasible LP branching rule and includes it in SCIP */
+/** creates the generic branching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_BRANCHRULEDATA* branchruledata;
-   SCIP_BRANCHRULE* branchrule;
+   //SCIP_BRANCHRULE* branchrule;
 
    /* create branching rule data */
    branchruledata = NULL;
@@ -3036,14 +3030,14 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
 
    /* include event handler for adding generated mastervars to the branching constraints */
    SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,
-         NULL, NULL, eventInitGenericbranchvaradd, eventExitGenericbranchvaradd,
-         NULL, NULL, NULL, eventExecGenericbranchvaradd,
+         NULL, NULL, NULL, NULL, eventInitsolGenericbranchvaradd, eventExitsolGenericbranchvaradd,
+         NULL, eventExecGenericbranchvaradd,
          NULL) );
 
-   branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
-   assert(branchrule != NULL);
-
-   SCIP_CALL( GCGcreateBranchruleConsOrig(scip, branchrule) );
+//   branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
+//   assert(branchrule != NULL);
+//
+//   SCIP_CALL( GCGcreateBranchruleConsOrig(scip, branchrule) );
 
    return SCIP_OKAY;
 }

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -118,6 +118,7 @@ TEST_F(GcgVarTest, BlockVarIsNotLinkingVar) {
    SCIP_VARDATA vardata;
    var.vardata = &vardata;
    vardata.blocknr = 1;
+   vardata.vartype = GCG_VARTYPE_ORIGINAL;
 
    ASSERT_EQ(FALSE, GCGoriginalVarIsLinking(&var));
 }
@@ -127,6 +128,7 @@ TEST_F(GcgVarTest, MasterVarIsNotLinkingVar) {
    SCIP_VARDATA vardata;
    var.vardata = &vardata;
    vardata.blocknr = -1;
+   vardata.vartype = GCG_VARTYPE_ORIGINAL;
 
    ASSERT_EQ(FALSE, GCGoriginalVarIsLinking(&var));
 }
@@ -251,10 +253,11 @@ TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenNonempty) {
    vardata.blocknr = 0;
    vardata.data.pricingvardata.origvars = vars;
    vardata.data.pricingvardata.norigvars = 1;
+   vardata.data.pricingvardata.maxorigvars = 1;
 
    SCIP_CALL_EXPECT(GCGpricingVarAddOrigVar(scip, &var, &ovar));
    ASSERT_EQ(2, GCGpricingVarGetNOrigvars(&var));
-   SCIPfreeBlockMemoryArray(scip, &vardata.data.pricingvardata.origvars, vardata.data.pricingvardata.norigvars);
+   SCIPfreeBlockMemoryArray(scip, &vardata.data.pricingvardata.origvars, vardata.data.pricingvardata.maxorigvars);
 }
 
 TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenEmpty) {
@@ -268,10 +271,11 @@ TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenEmpty) {
    vardata.blocknr = 0;
    vardata.data.pricingvardata.origvars = vars;
    vardata.data.pricingvardata.norigvars = 0;
+   vardata.data.pricingvardata.maxorigvars = 1;
 
    SCIP_CALL_EXPECT(GCGpricingVarAddOrigVar(scip, &var, &ovar));
    ASSERT_EQ(1, GCGpricingVarGetNOrigvars(&var));
-   SCIPfreeBlockMemoryArray(scip, &vardata.data.pricingvardata.origvars, vardata.data.pricingvardata.norigvars);
+   SCIPfreeBlockMemoryArray(scip, &vardata.data.pricingvardata.origvars, vardata.data.pricingvardata.maxorigvars);
 }
 
 TEST_F(GcgVarTest, OriginalVarGetNMastervars) {
@@ -300,6 +304,7 @@ TEST_F(GcgVarTest, OriginalVarGetCoefs) {
 
 TEST_F(GcgVarTest, OriginalVarGetNCoefs) {
    ORIGVAR(ovar, ovardata);
+   ovardata.data.origvardata.coefs = (SCIP_Real*) 0xDEADBEEF;
    ovardata.data.origvardata.ncoefs = 0xDEAD;
    ASSERT_EQ(0xDEAD, GCGoriginalVarGetNCoefs(&ovar));
 }
@@ -455,7 +460,10 @@ TEST_F(GcgVarTest, MastervarGetOrigvars) {
 
 TEST_F(GcgVarTest, MastervarGetNOrigvars) {
    MASTERVAR(var, vardata);
+   ORIGVAR(var2, vardata2);
+   SCIP_VAR* vars[1] = { &var2 };
    vardata.blocknr = 1;
+   vardata.data.mastervardata.origvars = vars;
    vardata.data.mastervardata.norigvars = 0xDEAD;
    ASSERT_EQ(0xDEAD, GCGmasterVarGetNOrigvars(&var));
 }
@@ -708,6 +716,7 @@ TEST_F(GcgVarTest, CreateMasterVar)
    mvardata = SCIPvarGetData(newvar);
    SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvals, mvardata->data.mastervardata.norigvars);
    SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvars, mvardata->data.mastervardata.norigvars);
+   SCIPfreeBlockMemory(scip, &mvardata);
 
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &newvar));
 
@@ -749,6 +758,7 @@ TEST_F(GcgVarTest, CreateInitialLinkingMasterVar)
    mvardata = SCIPvarGetData(mvar);
    SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvals, mvardata->data.mastervardata.norigvars);
    SCIPfreeBlockMemoryArrayNull(scip, &mvardata->data.mastervardata.origvars, mvardata->data.mastervardata.norigvars);
+   SCIPfreeBlockMemory(scip, &mvardata);
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &mvar));
 }
 

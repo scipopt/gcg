@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -94,6 +94,7 @@ struct SCIP_HeurData
    SCIP_Bool             addallsols;         /**< should all subproblem solutions be added to the original SCIP? */
 
 #ifdef SCIP_STATISTIC
+   SCIP_Longint          nfixfails;          /**< number of abortions due to a bad fixing rate                      */
    SCIP_Real             avgfixrate;         /**< average rate of variables that are fixed                            */
    SCIP_Real             avgzerorate;        /**< average rate of fixed variables that are zero                       */
    SCIP_Longint          totalsols;          /**< total number of subSCIP solutions (including those which have not
@@ -201,7 +202,7 @@ SCIP_RETCODE createSubproblem(
    if( *intfixingrate < minfixingrate )
    {
       *success = FALSE;
-      SCIPstatisticPrintf("GCG RENS statistic: fixed only %5.2f (%5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
+      SCIPstatisticPrintf("gcgrens statistic: fixed only %5.2f ( %5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
       return SCIP_OKAY;
    }
 
@@ -312,13 +313,13 @@ SCIP_RETCODE createNewSol(
 #ifdef SCIP_STATISTIC
    if( !*success || heurdata->addallsols )
 #endif
-      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, success) );
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, success) );
 
 #ifdef SCIP_STATISTIC
    if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )
       heurdata->bestprimalbd = SCIPgetSolTransObj(scip, newsol);
 
-   SCIPstatisticPrintf("GCG RENS statistic: Solution %13.6e found at node %"SCIP_LONGINT_FORMAT"\n",
+   SCIPstatisticPrintf("gcgrens statistic: Solution %13.6e found at node %"SCIP_LONGINT_FORMAT"\n",
       SCIPgetSolTransObj(scip, newsol), SCIPsolGetNodenum(subsol));
 #endif
 
@@ -402,7 +403,7 @@ SCIP_RETCODE GCGapplyGcgrens(
    SCIP_CALL( SCIPcreate(&subscip) );
 
    /* create the variable mapping hash map */
-   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), SCIPcalcHashtableSize(5 * nvars)) );
+   SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), nvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &subvars, nvars) );
 
    /* different methods to create sub-problem: either copy LP relaxation or the CIP with all constraints */
@@ -420,7 +421,7 @@ SCIP_RETCODE GCGapplyGcgrens(
       SCIP_CALL( SCIPcreateProb(subscip, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
       /* copy all variables */
-      SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, TRUE) );
+      SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, NULL, NULL, 0, TRUE) );
    }
    else
    {
@@ -445,6 +446,8 @@ SCIP_RETCODE GCGapplyGcgrens(
 
    /* free hash map */
    SCIPhashmapFree(&varmapfw);
+
+   SCIPstatisticPrintf("gcgrens statistic: called at node %"SCIP_LONGINT_FORMAT"\n", SCIPgetNNodes(scip));
 
    /* create a new problem, which fixes variables with same value in bestsol and LP relaxation */
    SCIP_CALL( createSubproblem(scip, subscip, subvars, minfixingrate, binarybounds, uselprows, &intfixingrate, &zerofixingrate, &success) );
@@ -495,12 +498,20 @@ SCIP_RETCODE GCGapplyGcgrens(
    SCIP_CALL( SCIPsetIntParam(subscip, "display/freq", 100000000) );
 #endif
 
+#ifdef SCIP_STATISTIC
+   heurdata->avgfixrate += intfixingrate;
+   heurdata->avgzerorate += zerofixingrate;
+#endif
+
    /* if the subproblem could not be created, free memory and return */
    if( !success )
    {
       *result = SCIP_DIDNOTRUN;
       SCIPfreeBufferArray(scip, &subvars);
       SCIP_CALL( SCIPfree(&subscip) );
+#ifdef SCIP_STATISTIC
+      ++heurdata->nfixfails;
+#endif
       return SCIP_OKAY;
    }
 
@@ -527,12 +538,6 @@ SCIP_RETCODE GCGapplyGcgrens(
       cutoff = MIN(upperbound, cutoff);
       SCIP_CALL( SCIPsetObjlimit(subscip, cutoff) );
    }
-
-#ifdef SCIP_STATISTIC
-   heurdata->avgfixrate += intfixingrate;
-   heurdata->avgzerorate += zerofixingrate;
-#endif
-
    /* presolve the subproblem */
    retcode = SCIPpresolve(subscip);
 
@@ -605,13 +610,13 @@ SCIP_RETCODE GCGapplyGcgrens(
             *result = SCIP_FOUNDSOL;
       }
 
-      SCIPstatisticPrintf("GCG RENS statistic: fixed %6.3f integer variables (%6.3f zero), %6.3f all variables, needed %6.1f seconds, %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
-         intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetNNodes(subscip), nsubsols,
+      SCIPstatisticPrintf("gcgrens statistic: fixed %6.3f integer variables ( %6.3f zero), %6.3f all variables, needed %6.1f sec (SCIP time: %6.1f sec), %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
+         intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetSolvingTime(scip), SCIPgetNNodes(subscip), nsubsols,
          success ? SCIPgetPrimalbound(scip) : SCIPinfinity(scip), nsubsols > 0 ? SCIPsolGetNodenum(SCIPgetBestSol(subscip)) : -1 );
    }
    else
    {
-      SCIPstatisticPrintf("GCG RENS statistic: fixed only %6.3f integer variables (%6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
+      SCIPstatisticPrintf("gcgrens statistic: fixed only %6.3f integer variables ( %6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
    }
 
    /* free subproblem */
@@ -708,8 +713,9 @@ SCIP_DECL_HEUREXITSOL(heurExitsolGcgrens)
    heurdata->avgzerorate /= MAX((SCIP_Real)ncalls, 1.0);
 
    /* print detailed statistics */
-   SCIPstatisticPrintf("LNS Statistics -- GCG RENS:\n");
+   SCIPstatisticPrintf("LNS Statistics -- %s:\n", SCIPheurGetName(heur));
    SCIPstatisticPrintf("Calls            : %13"SCIP_LONGINT_FORMAT"\n", ncalls);
+   SCIPstatisticPrintf("Failed Fixings   : %13"SCIP_LONGINT_FORMAT"\n", heurdata->nfixfails);
    SCIPstatisticPrintf("Sols             : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNSolsFound(heur));
    SCIPstatisticPrintf("Improving Sols   : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNBestSolsFound(heur));
    SCIPstatisticPrintf("Total Sols       : %13"SCIP_LONGINT_FORMAT"\n", heurdata->totalsols);

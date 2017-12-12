@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -43,7 +43,7 @@ extern "C" {
 
 /** creates the handler for staircase constraints and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectionStaircase(
+SCIP_RETCODE SCIPincludeDetectorStaircase(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

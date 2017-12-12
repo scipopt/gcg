@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -70,7 +70,7 @@ SCIP_RETCODE GCGcreateGcgCol(
 
 /** free a gcg column */
 extern
-SCIP_RETCODE GCGfreeGcgCol(
+void GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
 );
 
@@ -85,51 +85,45 @@ SCIP_RETCODE GCGcreateGcgColFromSol(
    SCIP_Real            redcost             /**< last known reduced cost */
 );
 
-/** Get pricing problem index of gcg column */
+/** get pricing problem index of gcg column */
 extern
 int GCGcolGetProbNr(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get pricing problem of gcg column */
+/** get pricing problem of gcg column */
 extern
 SCIP* GCGcolGetPricingProb(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get variables of gcg column */
+/** get variables of gcg column */
 extern
 SCIP_VAR** GCGcolGetVars(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get values of gcg column */
+/** get values of gcg column */
 extern
 SCIP_Real* GCGcolGetVals(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get number of variables of gcg column */
+/** get number of variables of gcg column */
 extern
 int GCGcolGetNVars(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Is gcg column a ray? */
+/** is gcg column a ray? */
 extern
 SCIP_Bool GCGcolIsRay(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
-/** Get reduced cost of gcg column */
+/** get reduced cost of gcg column */
 extern
 SCIP_Real GCGcolGetRedcost(
-   GCG_COL*             gcgcol              /**< gcg column structure */
-);
-
-/** Get age of gcg column */
-extern
-int GCGcolGetAge(
    GCG_COL*             gcgcol              /**< gcg column structure */
 );
 
@@ -162,6 +156,124 @@ SCIP_Real GCGcolGetSolVal(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_COL*             gcgcol,             /**< gcg column */
    SCIP_VAR*            var                 /**< variable */
+   );
+
+/** get master coefficients of column */
+extern
+SCIP_Real* GCGcolGetMastercoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get number of master coefficients of column */
+extern
+int GCGcolGetNMastercoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** set master coefficients of column */
+extern
+SCIP_RETCODE GCGcolSetMastercoefs(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           mastercoefs,        /**< array of master coefficients */
+   int                  nmastercoefs        /**< number of master coefficients */
+   );
+
+/** set norm of column */
+extern
+void GCGcolSetNorm(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real            norm                /**< norm of column */
+   );
+/** get norm of column */
+extern
+void GCGcolComputeNorm(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** set master coefficients of column as initialized */
+extern
+SCIP_RETCODE GCGcolSetInitializedCoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** return if master coefficients of column have been initialized */
+extern
+SCIP_Bool GCGcolGetInitializedCoefs(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get master coefficients of column */
+extern
+int* GCGcolGetLinkvars(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get number of master coefficients of column */
+extern
+int GCGcolGetNLinkvars(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** set master coefficients information of column */
+extern
+SCIP_RETCODE GCGcolSetLinkvars(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   int*                 linkvars,           /**< array of linking variable indices for gcgcol->var */
+   int                  nlinkvars           /**< number of linking variables in gcgcol->var */
+   );
+
+/** get master cut coefficients of column */
+extern
+SCIP_Real* GCGcolGetMastercuts(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get number of master cut coefficients of column */
+extern
+int GCGcolGetNMastercuts(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get norm of column */
+extern
+int GCGcolGetNorm(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** update master cut coefficients information of column */
+extern
+SCIP_RETCODE GCGcolUpdateMastercuts(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           newmastercuts,      /**< pointer to new array of master cut coefficients */
+   int                  nnewmastercuts      /**< new number of master cut coefficients */
+   );
+
+/** gets the age of the col */
+extern
+int GCGcolGetAge(
+   GCG_COL*             col                 /**< col */
+   );
+
+/** returns whether the col's age exceeds the age limit */
+extern
+SCIP_Bool GCGcolIsAged(
+   GCG_COL*              col,                /**< col to check */
+   int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool, or -1 */
+   );
+
+/** compute parallelism of column to dual objective */
+SCIP_Real GCGcolComputeDualObjPara(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COL*             gcgcol              /**< gcg column */
+   );
+
+/** compute orthogonality of two gcg columns */
+extern
+SCIP_Real GCGcolComputeOrth(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COL*             gcgcol1,            /**< first gcg column */
+   GCG_COL*             gcgcol2             /**< second gcg column */
    );
 
 /**@} */

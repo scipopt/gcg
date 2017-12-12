@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -490,8 +490,6 @@ SCIP_RETCODE applyProbing(
    )
 {
    SCIP* masterscip;
-   SCIP_NODE* probingnode;
-   SCIP_CONS* probingcons;
 
    /* SCIP_Real varsol; */
    SCIP_Real leftlbprobing;
@@ -539,15 +537,8 @@ SCIP_RETCODE applyProbing(
       SCIPvarGetNCliques(probingvar, FALSE), SCIPvarGetNCliques(probingvar, TRUE));
 
    /* start probing mode */
-   SCIP_CALL( SCIPstartProbing(scip) );
    SCIP_CALL( GCGrelaxStartProbing(scip, NULL) );
-   SCIP_CALL( SCIPnewProbingNode(scip) );
-
-   probingnode = SCIPgetCurrentNode(scip);
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
-         GCGconsOrigbranchGetActiveCons(scip), NULL, NULL) );
-   SCIP_CALL( SCIPaddConsNode(scip, probingnode, probingcons, NULL) );
-   SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
+   SCIP_CALL( GCGrelaxNewProbingnodeOrig(scip) );
 
    *lpsolved = FALSE;
    *lperror = FALSE;
@@ -586,12 +577,12 @@ SCIP_RETCODE applyProbing(
       *nlpiterations -= SCIPgetNLPIterations(masterscip);
 
       /** @todo handle the feasible result */
+      SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
       SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, -1, nlpiterations, NULL,
             lpobjvalue, lpsolved, lperror, cutoff) );
    }
 
    /* exit probing mode */
-   SCIP_CALL( SCIPendProbing(scip) );
    SCIP_CALL( GCGrelaxEndProbing(scip) );
 
    SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",
@@ -1370,19 +1361,6 @@ SCIP_RETCODE execRelpsprob(
  * Callback methods
  */
 
-/** copy method for branchrule plugins (called when SCIP copies plugins) */
-static
-SCIP_DECL_BRANCHCOPY(branchCopyRelpsprob)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(branchrule != NULL);
-   assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
-
-   /* call inclusion method of branching rule  */
-
-   return SCIP_OKAY;
-}
-
 /** destructor of branching rule to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_BRANCHFREE(branchFreeRelpsprob)
@@ -1400,9 +1378,6 @@ SCIP_DECL_BRANCHFREE(branchFreeRelpsprob)
    return SCIP_OKAY;
 }
 
-
-/** initialization method of branching rule (called after problem was transformed) */
-#define branchInitRelpsprob NULL
 
 /** solving process initialization method of branching rule (called when branch and bound process is about to begin) */
 static
@@ -1429,9 +1404,6 @@ SCIP_DECL_BRANCHINITSOL(branchInitsolRelpsprob)
 
    return SCIP_OKAY;
 }
-
-/** deinitialization method of branching rule (called before transformed problem is freed) */
-#define branchExitRelpsprob NULL
 
 /** solving process deinitialization method of branching rule (called before branch and bound process data is freed) */
 static
@@ -1463,14 +1435,6 @@ SCIP_DECL_BRANCHEXITSOL(branchExitsolRelpsprob)
 }
 
 
-/** branching execution method for fractional LP solutions */
-#define branchExeclpRelpsprob NULL
-#define branchExecextRelpsprob NULL
-
-/** branching execution method for not completely fixed pseudo solutions */
-#define branchExecpsRelpsprob NULL
-
-
 /*
  * branching specific interface methods
  */
@@ -1481,12 +1445,10 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
    )
 {
    SCIP* origscip;
-   SCIP_BRANCHRULEDATA* branchruledata;
    SCIP_BRANCHRULE* branchrule;
+   SCIP_BRANCHRULEDATA* branchruledata;
 
-   SCIPdebugMessage("include method of branchrelpsprob called.\n");
-
-   assert(scip != NULL);
+   /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
@@ -1494,11 +1456,14 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
    SCIP_CALL( SCIPallocMemory(scip, &branchruledata) );
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchCopyRelpsprob,
-         branchFreeRelpsprob, branchInitRelpsprob, branchExitRelpsprob, branchInitsolRelpsprob, branchExitsolRelpsprob,
-         branchExeclpRelpsprob, branchExecextRelpsprob, branchExecpsRelpsprob,
-         branchruledata) );
+   SCIP_CALL( SCIPincludeBranchruleBasic(scip, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
+            BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
+   assert(branchrule != NULL);
+
+   /* set non fundamental callbacks via setter functions */
+   SCIP_CALL( SCIPsetBranchruleFree(scip, branchrule, branchFreeRelpsprob) );
+   SCIP_CALL( SCIPsetBranchruleInitsol(scip, branchrule, branchInitsolRelpsprob) );
+   SCIP_CALL( SCIPsetBranchruleExitsol(scip, branchrule, branchExitsolRelpsprob) );
 
    /* relpsprob branching rule parameters */
    SCIP_CALL( SCIPaddRealParam(origscip,
@@ -1562,10 +1527,8 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
          "reliability value for probing",
          &branchruledata->reliability, FALSE, DEFAULT_RELIABILITY, 0.0, 1.0, NULL, NULL) );
 
-   branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
-   assert(branchrule != NULL);
-
-   SCIP_CALL( GCGcreateBranchruleConsOrig(scip, branchrule) );
+   /* notify cons_integralorig about the original variable branching rule */
+   SCIP_CALL( GCGconsIntegralorigAddBranchrule(scip, branchrule) );
 
    return SCIP_OKAY;
 }

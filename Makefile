@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.0.1
+VERSION         :=	2.1.3
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -56,10 +56,12 @@ MASTERSETTINGS	=	default
 
 VALGRIND	=	false
 MODE		=	readdec
+PROJECT		=	none
 GTEST		=	true
 PARASCIP	= 	true
-BLISS       	=   	true
-OPENMP          =       false
+BLISS      	=   true
+OPENMP      =   false
+GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 
@@ -67,6 +69,12 @@ LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 ifeq ($(OPENMP),true)
 override PARASCIP=true
 endif
+
+# overriding SCIP LPS setting if compiled with CPLEXSOLVER
+ifeq ($(CPLEXSOLVER),true)
+override LPS =  cpx
+endif
+
 
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
@@ -94,13 +102,29 @@ LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, 
 endif
 
 #-----------------------------------------------------------------------------
+# GSL
+#-----------------------------------------------------------------------------
+ifeq ($(GSL),true)
+LDFLAGS                +=      -lgsl -lgslcblas -lm
+FLAGS		           +=	   -DGSL
+endif
+
+#-----------------------------------------------------------------------------
 # CPLEX pricing solver
 #-----------------------------------------------------------------------------
 
-ifeq ($(LPS),cpx)
-FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/cpxinc
+ifeq ($(CPLEXSOLVER),true)
+FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
 else
 FLAGS		+=	-DNCPLEXSOLVER
+endif
+
+#-----------------------------------------------------------------------------
+# GCG statistics
+#-----------------------------------------------------------------------------
+
+ifeq ($(STATISTICS),true)
+FLAGS		+=	-DSCIP_STATISTIC
 endif
 
 #-----------------------------------------------------------------------------
@@ -144,6 +168,7 @@ LIBOBJ		=	reader_blk.o \
 			heur_origdiving.o \
 			heur_relaxcolsel.o \
 			heur_restmaster.o \
+			heur_setcover.o \
 			heur_xpcrossover.o \
 			heur_xprins.o \
 			branch_empty.o \
@@ -151,6 +176,7 @@ LIBOBJ		=	reader_blk.o \
 			masterplugins.o \
 			nodesel_master.o \
 			sepa_master.o \
+			sepa_basis.o \
 			disp_gcg.o \
 			disp_master.o \
 			dialog_gcg.o \
@@ -167,6 +193,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_arrowheur.o \
 			dec_stairheur.o \
 			dec_connected.o \
+			dec_consname.o \
 			dec_cutpacking.o \
 			dec_staircase.o \
 			dec_random.o \
@@ -185,8 +212,11 @@ LIBOBJ		=	reader_blk.o \
 			stat.o \
 			objdialog.o \
 			dialog_graph.o \
+			gcgsort.o \
+			gcgpqueue.o \
 			gcgcol.o \
-			gcgsort.o
+			colpool.o \
+			pricestore_gcg.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
@@ -194,7 +224,7 @@ LIBOBJ		+=	bliss_automorph.o \
 			bliss.o
 endif
 
-ifeq ($(LPS),cpx)
+ifeq ($(CPLEXSOLVER),true)
 LIBOBJ		+=	solver_cplex.o
 endif
 
@@ -333,7 +363,7 @@ githash::   # do not remove the double-colon
 .PHONY: test
 test:
 		cd check; \
-		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE);
+		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE) $(SETCUTOFF) $(STATISTICS);
 
 .PHONY: eval
 eval:
@@ -404,13 +434,13 @@ $(GCGLIBLINK):	$(GCGLIBFILE)
 		cd $(dir $@) && $(LN_s) $(notdir $(GCGLIBFILE)) $(notdir $@)
 
 
-$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
+$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(TPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
 		$(LINKCXX_l)$(GCGLIB)$(LINKLIBSUFFIX) \
-		$(LINKCXX_L)$(SCIPDIR)/lib $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
+		$(LINKCXX_L)$(SCIPDIR)/lib/static $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
                 $(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
-		$(LINKCXX_l)$(NLPILIB)$(LINKLIBSUFFIX) \
+		$(LINKCXX_l)$(NLPILIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(TPILIB)$(LINKLIBSUFFIX) \
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@
 
@@ -463,9 +493,16 @@ $(DIRECTORIES):
 
 .PHONY: touchexternal
 touchexternal: | $(LIBOBJDIR)
-ifneq ($(LAST_LPS),$(LPS))
+ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
 		@-touch $(SRCDIR)/solver_cplex.c
 endif
+ifneq ($(LAST_STATISTICS),$(STATISTICS))
+		@-touch $(SRCDIR)/pricer_gcg.h
+		@-touch $(SRCDIR)/pricer_gcg.cpp
+		@-touch $(SRCDIR)/stat.c
+		@-touch $(SRCDIR)/event_bestsol.h
+endif
+
 ifneq ($(LAST_BLISS),$(BLISS))
 		@-touch $(SRCDIR)/dec_isomorph.cpp
 		@-touch $(SRCDIR)/relax_gcg.c
@@ -512,6 +549,8 @@ endif
 		@echo "LAST_USRARFLAGS=$(USRARFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRDFLAGS=$(USRDFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_OPENMP=$(OPENMP)" >> $(LASTSETTINGS)
+		@echo "LAST_CPLEXSOLVER=$(CPLEXSOLVER)" >> $(LASTSETTINGS)
+		@echo "LAST_STATISTICS=$(STATISTICS)" >> $(LASTSETTINGS)
 
 .PHONY: $(SOFTLINKS)
 $(SOFTLINKS):
@@ -553,7 +592,7 @@ ifeq ($(MAKESOFTLINKS), true)
 		                echo "* Please insert the paths to SCIP below." ; \
 		                echo "* The link will be installed in the 'lib' directory." ; \
 		                echo ; \
-				echo "> Enter soft-link target file or directory for \"scip\" (e.g., scipoptsuite-3.1.0/scip-3.1.0):" ; \
+				echo "> Enter soft-link target file or directory for \"scip\" (e.g., scipoptsuite-4.0.0/scip-4.0.0):" ; \
 				echo -n "> " ; \
 				cd $$DIRNAME ; \
 				eval $(READ) TARGET ; \

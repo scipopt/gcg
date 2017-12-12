@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -113,6 +113,9 @@
 #include "scip/sepa_strongcg.h"
 #endif
 
+/* Jonas' stuff */
+#include "sepa_basis.h"
+
 #include "scip/reader_cip.h"
 #include "scip/reader_lp.h"
 #include "scip/scipshell.h"
@@ -146,10 +149,13 @@
 #include "heur_mastervecldiving.h"
 #include "heur_relaxcolsel.h"
 #include "heur_restmaster.h"
+#include "heur_setcover.h"
 
 #ifndef NCPLEXSOLVER
 #include "solver_cplex.h"
 #endif
+
+#include "scip/table_default.h"
 
 /** includes default GCG master plugins */
 SCIP_RETCODE GCGincludeMasterPlugins(
@@ -238,6 +244,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( GCGincludeHeurMastervecldiving(scip) );
    SCIP_CALL( SCIPincludeHeurRelaxcolsel(scip) );
    SCIP_CALL( SCIPincludeHeurRestmaster(scip) );
+   SCIP_CALL( SCIPincludeHeurSetcover(scip) );
 #endif
 
 #if USESEPA
@@ -257,6 +264,10 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeDialogMaster(scip) );
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
+   SCIP_CALL( SCIPincludeTableDefault(scip) );
+
+   /* Jonas' stuff */
+   SCIP_CALL( SCIPincludeSepaBasis(scip) );
 
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );

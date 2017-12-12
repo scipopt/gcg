@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -79,6 +79,7 @@ struct GCG_PricingVarData
 {
    SCIP_VAR**            origvars;           /**< corresponding variables in the original program */
    int                   norigvars;          /**< number of corresponding variables in the original program */
+   int                   maxorigvars;        /**< length of origvars array */
 };
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 
@@ -109,6 +110,8 @@ struct SCIP_VarData
                                               *   or -1 if variable is directly transferred to the master problem,
                                               *   or -2 if variable is a linking variable */
    SCIP_Longint          creationnode;       /**< node where the variable is created */
+   SCIP_Longint          rootredcostcall;    /**< pricing reduced cost call when the variable is created
+                                              *   (-1 if variable was not created at the root node or was created in Farkas pricing) */
    SCIP_Real             creationtime;       /**< time when the variable is created */
    SCIP_Longint          iteration;          /**< iteration when the variable is created */
    SCIP_Real             gap;                /**< gap when the variable was created */

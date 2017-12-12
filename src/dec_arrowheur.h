@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -42,9 +42,9 @@
 extern "C" {
 #endif
 
-/** creates the arrowheur presolver and includes it in SCIP */
+/** creates the arrowheur detector and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
+SCIP_RETCODE SCIPincludeDetectorArrowheur(
    SCIP* scip                 /**< SCIP data structure */
    );
 

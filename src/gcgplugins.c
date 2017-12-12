@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -101,7 +101,6 @@
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_trivial.h"
 #include "scip/presol_boundshift.h"
-#include "scip/presol_components.h"
 #include "scip/presol_domcol.h"
 #include "scip/presol_convertinttobin.h"
 
@@ -136,8 +135,6 @@
 
 #if USESEPA
 #include "scip/sepa_clique.h"
-#include "scip/sepa_cmir.h"
-#include "scip/sepa_flowcover.h"
 #include "scip/sepa_gomory.h"
 #include "scip/sepa_impliedbounds.h"
 #include "scip/sepa_intobj.h"
@@ -145,7 +142,13 @@
 #include "scip/sepa_oddcycle.h"
 #include "scip/sepa_strongcg.h"
 #include "scip/sepa_zerohalf.h"
+
+/** added by Jonas */
+#include "scip/sepa_closecuts.h"
+#include "scip/sepa_rapidlearning.h"
 #endif
+
+
 
 #include "scip/scipshell.h"
 #include "reader_blk.h"
@@ -175,6 +178,7 @@
 #include "dec_staircase.h"
 #include "dec_random.h"
 #include "dec_colors.h"
+#include "dec_consname.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -198,6 +202,7 @@
 /* Friedrike's detection stuff */
 #include "dec_cutpacking.h"
 #include "scip_misc.h"
+#include "scip/table_default.h"
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -234,7 +239,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
-   SCIP_CALL( SCIPincludePresolComponents(scip) );
    SCIP_CALL( SCIPincludePresolDomcol(scip) );
    SCIP_CALL( SCIPincludePresolConvertinttobin(scip) );
 
@@ -299,8 +303,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
 #if USESEPA
    SCIP_CALL( SCIPincludeSepaClique(scip) );
-   SCIP_CALL( SCIPincludeSepaCmir(scip) );
-   SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
    SCIP_CALL( SCIPincludeSepaGomory(scip) );
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
@@ -308,6 +310,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
+
+   /* added by Jonas */
+   SCIP_CALL( SCIPincludeSepaClosecuts(scip) );
+   SCIP_CALL( SCIPincludeSepaRapidlearning(scip) );
 #endif
 
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
@@ -323,17 +329,18 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    /* Detectors and decompositions */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
-   SCIP_CALL( SCIPincludeDetectionConnected(scip) );
-   SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
-   SCIP_CALL( SCIPincludeDetectionStairheur(scip) );
-   SCIP_CALL( SCIPincludeDetectionStaircase(scip) );
-   SCIP_CALL( SCIPincludeDetectionRandom(scip) );
-   SCIP_CALL( SCIPincludeDetectionColors(scip) );
-   SCIP_CALL( SCIPincludeDetectionCutpacking(scip) );
+   SCIP_CALL( SCIPincludeDetectorConnected(scip) );
+   SCIP_CALL( SCIPincludeDetectorArrowheur(scip) );
+   SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
+   SCIP_CALL( SCIPincludeDetectorStaircase(scip) );
+   SCIP_CALL( SCIPincludeDetectorRandom(scip) );
+   SCIP_CALL( SCIPincludeDetectorColors(scip) );
+   SCIP_CALL( SCIPincludeDetectorCutpacking(scip) );
+   SCIP_CALL( SCIPincludeDetectorConsname(scip) );
 
 
 #ifndef NBLISS
-   SCIP_CALL( SCIPincludeDetectionIsomorphism(scip) );
+   SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
 #endif
 
    /* Christian's heuristics */
@@ -355,10 +362,13 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );
 
+   /* Jonas' stuff */
+   SCIP_CALL( SCIPsetSeparating(scip, SCIP_PARAMSETTING_OFF, TRUE) );
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
    SCIP_CALL( GCGincludeDialogsGraph(scip) );
+   SCIP_CALL( SCIPincludeTableDefault(scip) );
 
    return SCIP_OKAY;
 }

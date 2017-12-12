@@ -1,13 +1,13 @@
 <div id="authors">
   <h2><a name="main"></a>Current team</h2>
-  <h3>Project lead</h3>
+  <h3>Project head</h3>
   <table class="desc">
     <tr>
       <td width="180px">
-	<a href="http://www.or.rwth-aachen.de/luebbecke">Marco Lübbecke</a>
+    <a href="http://www.or.rwth-aachen.de/luebbecke">Marco Lübbecke</a>
       </td>
       <td>
-	Project initiator and head
+    Project initiator and head
       </td>
     </tr>
   </table>
@@ -16,23 +16,31 @@
   <table class="desc">
     <tr>
       <td width="180px">
-	<a href="http://www.or.rwth-aachen.de/bergner">Martin Bergner</a>
+        <a href="http://www.or.rwth-aachen.de/team/staff/michael-bastubbe/">Michael Bastubbe</a>
       </td>
       <td>
-	Detection, main developer
+    Structure detection
+      </td>
+    </tr>
+    <tr>
+      <td width="180px">
+    <a href="http://www.or.rwth-aachen.de/bergner">Martin Bergner</a>
+      </td>
+      <td>
+    Structure detection, former main developer
       </td>
     </tr>
     <tr>
       <td>
-	<a href="http://www.zib.de/gamrath/">Gerald Gamrath</a>
+    <a href="http://www.zib.de/gamrath/">Gerald Gamrath</a>
       </td>
       <td>
-	Original and main developer
+    Original and main developer
       </td>
     </tr>
     <tr>
       <td>
-	<a href="http://www.or.rwth-aachen.de/puchert/">Christian Puchert</a>
+    <a href="http://www.or.rwth-aachen.de/puchert/">Christian Puchert</a>
       </td>
       <td>
         Primal heuristics, main developer
@@ -40,7 +48,7 @@
     </tr>
     <tr>
       <td>
-	<a href="http://www.or.rwth-aachen.de/team/staff/jonas-witt/">Jonas Witt</a>
+    <a href="http://www.or.rwth-aachen.de/team/staff/jonas-witt/">Jonas Witt</a>
       </td>
       <td>
         Cutting planes, main developer
@@ -52,42 +60,66 @@
   <table class="desc">
     <tr>
       <td width="180px">
-        <a href="http://www.or.rwth-aachen.de/team/staff/michael-bastubbe/">Michael Bastubbe</a>
+    Björn Dählmann
       </td>
       <td>
-	Graph library methods
-      </td>
-    </tr>
-    <tr>
-      <td>
-	Alexander Gross
-      </td>
-      <td>
-	Student assistant, statistics
+    Student assistant, structure detection
       </td>
     </tr>
     <tr>
       <td width="180px">
-	Lukas Kirchhart
+    Hanna Franzen
       </td>
       <td>
-	Student assistant, documentation
+    Student assistant, structure detection
+      </td>
+    </tr>
+    <tr>
+      <td>
+    Alexander Groß
+      </td>
+      <td>
+    Student assistant, statistics
       </td>
     </tr>
     <tr>
       <td width="180px">
-	Daniel Peters
+    Lukas Kirchhart
       </td>
       <td>
-	Student assistant, detection of similar pricing problems
+    Student assistant, documentation
       </td>
     </tr>
     <tr>
       <td width="180px">
-        Marcel Schmickerath
+    Tobias Oelschlägel
       </td>
       <td>
-	Student assistant, generic branching
+    Student assistant, set covering heuristic
+      </td>
+    </tr>
+    <tr>
+      <td width="180px">
+    Marc Peiter
+      </td>
+      <td>
+    Student assistant, testing
+      </td>
+    </tr>
+    <tr>
+      <td width="180px">
+    Daniel Peters
+      </td>
+      <td>
+    Student assistant, detection of similar pricing problems
+      </td>
+    </tr>
+    <tr>
+      <td width="180px">
+    Marcel Schmickerath
+      </td>
+      <td>
+    Student assistant, generic branching
       </td>
     </tr>
     <tr>
@@ -95,7 +127,7 @@
         <a href="http://www.or.rwth-aachen.de/team/staff/annika-thome/">Annika Thome</a>
       </td>
       <td>
-	Graph library methods
+    Graph library methods
       </td>
     </tr>
   </table>

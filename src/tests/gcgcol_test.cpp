@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -65,7 +65,7 @@ TEST_F(GcgColTest, CreateEmptyColTest) {
 
    SCIP_CALL_EXPECT( GCGcreateGcgCol(scip, &gcgcol, 0, NULL, NULL, 0, FALSE, SCIPinfinity(scip)) );
 
-   SCIP_CALL_EXPECT( GCGfreeGcgCol(&gcgcol) );
+   GCGfreeGcgCol(&gcgcol);
 }
 
 TEST_F(GcgColTest, CreateColTest) {
@@ -102,7 +102,7 @@ TEST_F(GcgColTest, CreateColTest) {
    ASSERT_EQ(gcgcol->isray, FALSE);
    ASSERT_EQ(gcgcol->redcost, SCIPinfinity(scip));
 
-   SCIP_CALL_EXPECT( GCGfreeGcgCol(&gcgcol) );
+   GCGfreeGcgCol(&gcgcol);
 
    for( i = 0; i < 4; ++i )
    {
@@ -142,8 +142,8 @@ TEST_F(GcgColTest, EqColsColIsEqTest) {
 
    ASSERT_EQ(GCGcolIsEq(gcgcol1, gcgcol2), TRUE);
 
-   SCIP_CALL_EXPECT( GCGfreeGcgCol(&gcgcol2) );
-   SCIP_CALL_EXPECT( GCGfreeGcgCol(&gcgcol1) );
+   GCGfreeGcgCol(&gcgcol2);
+   GCGfreeGcgCol(&gcgcol1);
 
    for( i = 0; i < 4; ++i )
    {
@@ -181,8 +181,8 @@ TEST_F(GcgColTest, NeqColsColIsEqTest) {
 
    ASSERT_EQ(GCGcolIsEq(gcgcol1, gcgcol2), FALSE);
 
-   SCIP_CALL_EXPECT( GCGfreeGcgCol(&gcgcol2) );
-   SCIP_CALL_EXPECT( GCGfreeGcgCol(&gcgcol1) );
+   GCGfreeGcgCol(&gcgcol2);
+   GCGfreeGcgCol(&gcgcol1);
 
    for( i = 0; i < 4; ++i )
    {
@@ -218,7 +218,7 @@ TEST_F(GcgColTest, GetSolValTest) {
    ASSERT_EQ(GCGcolGetSolVal(scip, gcgcol, vars[2]), 0.0);
    ASSERT_EQ(GCGcolGetSolVal(scip, gcgcol, vars[3]), -1.0);
 
-   SCIP_CALL_EXPECT( GCGfreeGcgCol(&gcgcol) );
+   GCGfreeGcgCol(&gcgcol);
 
    for( i = 0; i < 4; ++i )
    {

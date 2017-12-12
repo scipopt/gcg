@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -56,12 +56,12 @@
 
 /** copy method for display plugins (called when SCIP copies plugins) */
 static
-SCIP_DECL_DISPCOPY(dispCopyDefault)
+SCIP_DECL_DISPCOPY(dispCopyMaster)
 {  /*lint --e{715}*/
    assert(scip != NULL);
    assert(disp != NULL);
 
-   /* call inclusion method of dialog */
+   /* call inclusion method of default SCIP display plugin */
    SCIP_CALL( SCIPincludeDispDefault(scip) );
 
    return SCIP_OKAY;
@@ -91,7 +91,7 @@ SCIP_RETCODE SCIPincludeDispMaster(
    )
 {
    SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_ORIGINAL, DISP_DESC_ORIGINAL, DISP_HEAD_ORIGINAL,
-         SCIP_DISPSTATUS_AUTO, dispCopyDefault, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputOriginal, NULL,
+         SCIP_DISPSTATUS_AUTO, dispCopyMaster, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputOriginal, NULL,
          DISP_WIDT_ORIGINAL, DISP_PRIO_ORIGINAL, DISP_POSI_ORIGINAL, DISP_STRI_ORIGINAL) );
 
    return SCIP_OKAY;

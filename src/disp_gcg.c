@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -39,6 +39,7 @@
 #include <string.h>
 
 #include "disp_gcg.h"
+#include "scip/disp_default.h"
 #include "gcg.h"
 
 #include "relax_gcg.h"
@@ -370,13 +371,13 @@
 
 /** copy method for display plugins (called when SCIP copies plugins) */
 static
-SCIP_DECL_DISPCOPY(dispCopyDefault)
+SCIP_DECL_DISPCOPY(dispCopyGcg)
 {  /*lint --e{715}*/
    assert(scip != NULL);
    assert(disp != NULL);
 
-   /* call inclusion method of dialog */
-   SCIP_CALL( SCIPincludeDispGcg(scip) );
+   /* call inclusion method of default SCIP display plugin */
+   SCIP_CALL( SCIPincludeDispDefault(scip) );
 
    return SCIP_OKAY;
 }
@@ -1023,7 +1024,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
    /* this is the gap calculation from SCIPgetGap() */
    if( SCIPisEQ(scip, primalbound, dualbound) )
       gap = 0.0;
-   else if( SCIPisZero(scip, dualbound)
+   else if( SCIPisZero(scip, dualbound )
       || SCIPisZero(scip, primalbound)
       || SCIPisInfinity(scip, REALABS(primalbound))
       || SCIPisInfinity(scip, REALABS(dualbound))
@@ -1233,7 +1234,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_SOLFOUND, DISP_DESC_SOLFOUND, DISP_HEAD_SOLFOUND,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, SCIPdispInitsolSolFound, NULL, SCIPdispOutputSolFound, NULL,
             DISP_WIDT_SOLFOUND, DISP_PRIO_SOLFOUND, DISP_POSI_SOLFOUND, DISP_STRI_SOLFOUND) );
    }
@@ -1242,7 +1243,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_TIME, DISP_DESC_TIME, DISP_HEAD_TIME,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputSolvingTime, NULL,
             DISP_WIDT_TIME, DISP_PRIO_TIME, DISP_POSI_TIME, DISP_STRI_TIME) );
    }
@@ -1251,7 +1252,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_NNODES, DISP_DESC_NNODES, DISP_HEAD_NNODES,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNNodes, NULL,
             DISP_WIDT_NNODES, DISP_PRIO_NNODES, DISP_POSI_NNODES, DISP_STRI_NNODES) );
    }
@@ -1260,7 +1261,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_NODESLEFT, DISP_DESC_NODESLEFT, DISP_HEAD_NODESLEFT,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNNodesLeft, NULL,
             DISP_WIDT_NODESLEFT, DISP_PRIO_NODESLEFT, DISP_POSI_NODESLEFT, DISP_STRI_NODESLEFT) );
    }
@@ -1269,7 +1270,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_LPITERATIONS, DISP_DESC_LPITERATIONS, DISP_HEAD_LPITERATIONS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNLPIterations, NULL,
             DISP_WIDT_LPITERATIONS, DISP_PRIO_LPITERATIONS, DISP_POSI_LPITERATIONS, DISP_STRI_LPITERATIONS) );
    }
@@ -1278,7 +1279,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_LPAVGITERS, DISP_DESC_LPAVGITERS, DISP_HEAD_LPAVGITERS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNLPAvgIters, NULL,
             DISP_WIDT_LPAVGITERS, DISP_PRIO_LPAVGITERS, DISP_POSI_LPAVGITERS, DISP_STRI_LPAVGITERS) );
    }
@@ -1287,7 +1288,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_LPCOND, DISP_DESC_LPCOND, DISP_HEAD_LPCOND,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputLPCondition, NULL,
             DISP_WIDT_LPCOND, DISP_PRIO_LPCOND, DISP_POSI_LPCOND, DISP_STRI_LPCOND) );
    }
@@ -1296,7 +1297,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MEMUSED, DISP_DESC_MEMUSED, DISP_HEAD_MEMUSED,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMemUsed, NULL,
             DISP_WIDT_MEMUSED, DISP_PRIO_MEMUSED, DISP_POSI_MEMUSED, DISP_STRI_MEMUSED) );
    }
@@ -1305,7 +1306,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_DEPTH, DISP_DESC_DEPTH, DISP_HEAD_DEPTH,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputDepth, NULL,
             DISP_WIDT_DEPTH, DISP_PRIO_DEPTH, DISP_POSI_DEPTH, DISP_STRI_DEPTH) );
    }
@@ -1314,7 +1315,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MAXDEPTH, DISP_DESC_MAXDEPTH, DISP_HEAD_MAXDEPTH,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMaxDepth, NULL,
             DISP_WIDT_MAXDEPTH, DISP_PRIO_MAXDEPTH, DISP_POSI_MAXDEPTH, DISP_STRI_MAXDEPTH) );
    }
@@ -1323,7 +1324,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_PLUNGEDEPTH, DISP_DESC_PLUNGEDEPTH, DISP_HEAD_PLUNGEDEPTH,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPlungeDepth, NULL,
             DISP_WIDT_PLUNGEDEPTH, DISP_PRIO_PLUNGEDEPTH, DISP_POSI_PLUNGEDEPTH, DISP_STRI_PLUNGEDEPTH) );
    }
@@ -1332,7 +1333,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_NFRAC, DISP_DESC_NFRAC, DISP_HEAD_NFRAC,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNFrac, NULL,
             DISP_WIDT_NFRAC, DISP_PRIO_NFRAC, DISP_POSI_NFRAC, DISP_STRI_NFRAC) );
    }
@@ -1341,7 +1342,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_NEXTERNCANDS, DISP_DESC_NEXTERNCANDS, DISP_HEAD_NEXTERNCANDS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNExternCands, NULL,
             DISP_WIDT_NEXTERNCANDS, DISP_PRIO_NEXTERNCANDS, DISP_POSI_NEXTERNCANDS, DISP_STRI_NEXTERNCANDS) );
    }
@@ -1350,7 +1351,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_VARS, DISP_DESC_VARS, DISP_HEAD_VARS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNVars, NULL,
             DISP_WIDT_VARS, DISP_PRIO_VARS, DISP_POSI_VARS, DISP_STRI_VARS) );
    }
@@ -1359,7 +1360,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CONSS, DISP_DESC_CONSS, DISP_HEAD_CONSS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNConss, NULL,
             DISP_WIDT_CONSS, DISP_PRIO_CONSS, DISP_POSI_CONSS, DISP_STRI_CONSS) );
    }
@@ -1368,7 +1369,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CURCONSS, DISP_DESC_CURCONSS, DISP_HEAD_CURCONSS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNCurConss, NULL,
             DISP_WIDT_CURCONSS, DISP_PRIO_CURCONSS, DISP_POSI_CURCONSS, DISP_STRI_CURCONSS) );
    }
@@ -1377,7 +1378,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CURCOLS, DISP_DESC_CURCOLS, DISP_HEAD_CURCOLS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNCurCols, NULL,
             DISP_WIDT_CURCOLS, DISP_PRIO_CURCOLS, DISP_POSI_CURCOLS, DISP_STRI_CURCOLS) );
    }
@@ -1386,7 +1387,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CURROWS, DISP_DESC_CURROWS, DISP_HEAD_CURROWS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNCurRows, NULL,
             DISP_WIDT_CURROWS, DISP_PRIO_CURROWS, DISP_POSI_CURROWS, DISP_STRI_CURROWS) );
    }
@@ -1395,7 +1396,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CUTS, DISP_DESC_CUTS, DISP_HEAD_CUTS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNAppliedCuts, NULL,
             DISP_WIDT_CUTS, DISP_PRIO_CUTS, DISP_POSI_CUTS, DISP_STRI_CUTS) );
    }
@@ -1404,7 +1405,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_SEPAROUNDS, DISP_DESC_SEPAROUNDS, DISP_HEAD_SEPAROUNDS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNSepaRounds, NULL,
             DISP_WIDT_SEPAROUNDS, DISP_PRIO_SEPAROUNDS, DISP_POSI_SEPAROUNDS, DISP_STRI_SEPAROUNDS) );
    }
@@ -1413,7 +1414,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_POOLSIZE, DISP_DESC_POOLSIZE, DISP_HEAD_POOLSIZE,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputCutPoolSize, NULL,
             DISP_WIDT_POOLSIZE, DISP_PRIO_POOLSIZE, DISP_POSI_POOLSIZE, DISP_STRI_POOLSIZE) );
    }
@@ -1422,7 +1423,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CONFLICTS, DISP_DESC_CONFLICTS, DISP_HEAD_CONFLICTS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNConflicts, NULL,
             DISP_WIDT_CONFLICTS, DISP_PRIO_CONFLICTS, DISP_POSI_CONFLICTS, DISP_STRI_CONFLICTS) );
    }
@@ -1431,7 +1432,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_STRONGBRANCHS, DISP_DESC_STRONGBRANCHS, DISP_HEAD_STRONGBRANCHS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNStrongbranchs, NULL,
             DISP_WIDT_STRONGBRANCHS, DISP_PRIO_STRONGBRANCHS, DISP_POSI_STRONGBRANCHS, DISP_STRI_STRONGBRANCHS) );
    }
@@ -1440,7 +1441,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_PSEUDOOBJ, DISP_DESC_PSEUDOOBJ, DISP_HEAD_PSEUDOOBJ,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPseudoObjval, NULL,
             DISP_WIDT_PSEUDOOBJ, DISP_PRIO_PSEUDOOBJ, DISP_POSI_PSEUDOOBJ, DISP_STRI_PSEUDOOBJ) );
    }
@@ -1449,7 +1450,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_LPOBJ, DISP_DESC_LPOBJ, DISP_HEAD_LPOBJ,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputLPObjval, NULL,
             DISP_WIDT_LPOBJ, DISP_PRIO_LPOBJ, DISP_POSI_LPOBJ, DISP_STRI_LPOBJ) );
    }
@@ -1458,7 +1459,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CURDUALBOUND, DISP_DESC_CURDUALBOUND, DISP_HEAD_CURDUALBOUND,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputCurDualbound, NULL,
             DISP_WIDT_CURDUALBOUND, DISP_PRIO_CURDUALBOUND, DISP_POSI_CURDUALBOUND, DISP_STRI_CURDUALBOUND) );
    }
@@ -1467,7 +1468,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_ESTIMATE, DISP_DESC_ESTIMATE, DISP_HEAD_ESTIMATE,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputLocalOrigEstimate, NULL,
             DISP_WIDT_ESTIMATE, DISP_PRIO_ESTIMATE, DISP_POSI_ESTIMATE, DISP_STRI_ESTIMATE) );
    }
@@ -1476,7 +1477,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_AVGDUALBOUND, DISP_DESC_AVGDUALBOUND, DISP_HEAD_AVGDUALBOUND,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputAvgDualbound, NULL,
             DISP_WIDT_AVGDUALBOUND, DISP_PRIO_AVGDUALBOUND, DISP_POSI_AVGDUALBOUND, DISP_STRI_AVGDUALBOUND) );
    }
@@ -1485,7 +1486,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_DUALBOUND, DISP_DESC_DUALBOUND, DISP_HEAD_DUALBOUND,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputDualbound, NULL,
             DISP_WIDT_DUALBOUND, DISP_PRIO_DUALBOUND, DISP_POSI_DUALBOUND, DISP_STRI_DUALBOUND) );
    }
@@ -1494,7 +1495,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_PRIMALBOUND, DISP_DESC_PRIMALBOUND, DISP_HEAD_PRIMALBOUND,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPrimalbound, NULL,
             DISP_WIDT_PRIMALBOUND, DISP_PRIO_PRIMALBOUND, DISP_POSI_PRIMALBOUND, DISP_STRI_PRIMALBOUND) );
    }
@@ -1503,7 +1504,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CUTOFFBOUND, DISP_DESC_CUTOFFBOUND, DISP_HEAD_CUTOFFBOUND,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputCutoffbound, NULL,
             DISP_WIDT_CUTOFFBOUND, DISP_PRIO_CUTOFFBOUND, DISP_POSI_CUTOFFBOUND, DISP_STRI_CUTOFFBOUND) );
    }
@@ -1512,7 +1513,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_GAP, DISP_DESC_GAP, DISP_HEAD_GAP,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputGap, NULL,
             DISP_WIDT_GAP, DISP_PRIO_GAP, DISP_POSI_GAP, DISP_STRI_GAP) );
    }
@@ -1521,7 +1522,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_PRIMALGAP, DISP_DESC_PRIMALGAP, DISP_HEAD_PRIMALGAP,
             SCIP_DISPSTATUS_OFF,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPrimalgap, NULL,
             DISP_WIDT_PRIMALGAP, DISP_PRIO_PRIMALGAP, DISP_POSI_PRIMALGAP, DISP_STRI_PRIMALGAP) );
    }
@@ -1530,7 +1531,7 @@ SCIP_RETCODE SCIPincludeDispGcg(
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_NSOLS, DISP_DESC_NSOLS, DISP_HEAD_NSOLS,
             SCIP_DISPSTATUS_AUTO,
-            dispCopyDefault,
+            dispCopyGcg,
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNSols, NULL,
             DISP_WIDT_NSOLS, DISP_PRIO_NSOLS, DISP_POSI_NSOLS, DISP_STRI_NSOLS) );
    }
@@ -1538,28 +1539,28 @@ SCIP_RETCODE SCIPincludeDispGcg(
    if( tmpdisp == NULL )
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MLPITERATIONS, DISP_DESC_MLPITERATIONS, DISP_HEAD_MLPITERATIONS,
-            SCIP_DISPSTATUS_AUTO, dispCopyDefault, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMlpiterations, NULL,
+            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMlpiterations, NULL,
             DISP_WIDT_MLPITERATIONS, DISP_PRIO_MLPITERATIONS, DISP_POSI_MLPITERATIONS, DISP_STRI_MLPITERATIONS) );
    }
    tmpdisp = SCIPfindDisp(scip, DISP_NAME_MVARS);
    if( tmpdisp == NULL )
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MVARS, DISP_DESC_MVARS, DISP_HEAD_MVARS,
-            SCIP_DISPSTATUS_AUTO, dispCopyDefault, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMvars, NULL,
+            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMvars, NULL,
             DISP_WIDT_MVARS, DISP_PRIO_MVARS, DISP_POSI_MVARS, DISP_STRI_MVARS) );
    }
    tmpdisp = SCIPfindDisp(scip, DISP_NAME_MCONSS);
    if( tmpdisp == NULL )
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MCONSS, DISP_DESC_MCONSS, DISP_HEAD_MCONSS,
-            SCIP_DISPSTATUS_AUTO, dispCopyDefault, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMconss, NULL,
+            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMconss, NULL,
             DISP_WIDT_MCONSS, DISP_PRIO_MCONSS, DISP_POSI_MCONSS, DISP_STRI_MCONSS) );
    }
    tmpdisp = SCIPfindDisp(scip, DISP_NAME_MCUTS);
    if( tmpdisp == NULL )
    {
       SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MCUTS, DISP_DESC_MCUTS, DISP_HEAD_MCUTS,
-            SCIP_DISPSTATUS_AUTO, dispCopyDefault, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMcuts, NULL,
+            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMcuts, NULL,
             DISP_WIDT_MCUTS, DISP_PRIO_MCUTS, DISP_POSI_MCUTS, DISP_STRI_MCUTS) );
    }
    tmpdisp = SCIPfindDisp(scip, DISP_NAME_DEGENERACY);

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -44,6 +44,7 @@
 #include "scip/cons_linear.h"
 
 #define STARTMAXMASTERVARS 8
+#define STARTMAXORIGVARS 1
 
 /*
  * Vardata methods
@@ -98,7 +99,7 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
    if( (*vardata)->vartype == GCG_VARTYPE_PRICING )
    {
       assert((*vardata)->data.pricingvardata.norigvars >= 1);
-      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.pricingvardata.origvars), (*vardata)->data.pricingvardata.norigvars);
+      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.pricingvardata.origvars), (*vardata)->data.pricingvardata.maxorigvars);
    }
    assert((*vardata)->vartype != GCG_VARTYPE_MASTER);
    SCIPfreeBlockMemory(scip, vardata);
@@ -179,6 +180,21 @@ SCIP_Bool GCGoriginalVarIsLinking(
    assert(vardata != NULL);
 
    return vardata->blocknr == -2;
+}
+
+/** returns TRUE or FALSE whether variable is a directly transferred variable or not */
+SCIP_Bool GCGoriginalVarIsTransVar(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsOriginal(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   return vardata->blocknr == -1;
 }
 
 /** returns the pricing var of an original variable */
@@ -432,11 +448,18 @@ SCIP_RETCODE GCGpricingVarAddOrigVar(
    assert(vardata->data.pricingvardata.origvars != NULL);
    assert(vardata->data.pricingvardata.origvars[0] != NULL);
    assert(vardata->blocknr >= 0); /* variable belongs to exactly one block */
-   if( vardata->data.pricingvardata.norigvars >= 1 )
+
+   /* realloc origvars array of the pricing variable, if needed */
+   if( vardata->data.pricingvardata.maxorigvars == vardata->data.pricingvardata.norigvars )
    {
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars),
-            vardata->data.pricingvardata.norigvars, (size_t)vardata->data.pricingvardata.norigvars + 1) );
+      int newsize = SCIPcalcMemGrowSize(scip, vardata->data.pricingvardata.norigvars+1);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.maxorigvars,
+            newsize) );
+      SCIPdebugMessage("origvars array of var %s resized from %d to %d\n", SCIPvarGetName(origvar),
+         vardata->data.pricingvardata.maxorigvars, newsize);
+      vardata->data.pricingvardata.maxorigvars = newsize;
    }
+
    vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars] = origvar;
    vardata->data.pricingvardata.norigvars++;
 
@@ -1001,7 +1024,8 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
    vardata->vartype = GCG_VARTYPE_PRICING;
    vardata->blocknr = pricingprobnr;
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars), 1) ); /*lint !e506*/
+   vardata->data.pricingvardata.maxorigvars = STARTMAXORIGVARS;
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.maxorigvars) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
 
@@ -1038,7 +1062,8 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemory(pricingscip, &vardata) );
    vardata->vartype = GCG_VARTYPE_PRICING;
    vardata->blocknr = pricingprobnr;
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), 1) ); /*lint !e506*/
+   vardata->data.pricingvardata.maxorigvars = STARTMAXORIGVARS;
+   SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.maxorigvars) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
 
@@ -1144,10 +1169,14 @@ SCIP_RETCODE GCGcreateMasterVar(
    /* update variable datas */
    for( i = 0; i < nsolvars && !trivialsol; i++ )
    {
+      SCIP_Real solval;
+
       assert(solvars != NULL);
       assert(solvals != NULL);
 
-      if( !SCIPisZero(scip, solvals[i]) )
+      solval = solvals[i];
+
+      if( !SCIPisZero(scip, solval) )
       {
          SCIP_VAR* origvar;
          assert(GCGvarIsPricing(solvars[i]));
@@ -1158,13 +1187,17 @@ SCIP_RETCODE GCGcreateMasterVar(
          assert(newvardata->data.mastervardata.origvars != NULL);
          assert(newvardata->data.mastervardata.origvals != NULL);
          assert(GCGvarIsOriginal(origvar));
-         assert(!solisray || vartype == SCIP_VARTYPE_CONTINUOUS || SCIPisIntegral(scip, solvals[i]) || SCIPvarGetType(solvars[i]) == SCIP_VARTYPE_CONTINUOUS);
+         assert(!solisray || vartype == SCIP_VARTYPE_CONTINUOUS || SCIPisIntegral(scip, solval) || SCIPvarGetType(solvars[i]) == SCIP_VARTYPE_CONTINUOUS);
+
+         /* round solval if possible to avoid numerical troubles */
+         if( SCIPvarIsIntegral(solvars[i]) && SCIPisIntegral(scip, solval) )
+            solval = SCIPround(scip, solval);
 
          /* save in the master problem variable's data the quota of the corresponding original variable */
          newvardata->data.mastervardata.origvars[j] = origvar;
-         newvardata->data.mastervardata.origvals[j] = solvals[i];
+         newvardata->data.mastervardata.origvals[j] = solval;
          /* save the quota in the original variable's data */
-         SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, solvals[i]) );
+         SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, solval) );
          j++;
       }
    }
@@ -1301,6 +1334,36 @@ SCIP_Real GCGgetCreationTime(
    return vardata->creationtime;
 }
 
+/** store pricing reduced cost call */
+void GCGsetRootRedcostCall(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable data structure */
+   SCIP_Longint          rootredcostcall     /**< iteration at which the variable is created */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(scip != NULL);
+   assert(var != NULL);
+   assert(rootredcostcall >= -1);
+
+   vardata = SCIPvarGetData(var);
+   vardata->rootredcostcall = rootredcostcall;
+}
+
+/** return stored pricing reduced cost call */
+SCIP_Longint GCGgetRootRedcostCall(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(scip != NULL);
+   assert(var != NULL);
+
+   vardata = SCIPvarGetData(var);
+   return vardata->rootredcostcall;
+}
+
 /** store iteration */
 void GCGsetIteration(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -1399,14 +1462,18 @@ void GCGupdateVarStatistics(
     SCIP_Real            redcost             /**< reduced cost of the variable */
     )
 {
+   SCIP_Longint redcostcall;
    assert(scip != NULL);
    assert(GCGisMaster(scip));
    assert(origprob != NULL);
    assert(GCGisOriginal(origprob));
    assert(newvar != NULL);
 
+   redcostcall = -1;
    GCGsetCreationNode(origprob, newvar, SCIPnodeGetNumber(SCIPgetCurrentNode(origprob)));
    GCGsetCreationTime(origprob, newvar, SCIPgetSolvingTime(scip));
+
+   GCGsetRootRedcostCall(origprob, newvar, redcostcall);
    GCGsetIteration(origprob, newvar, SCIPgetNLPIterations(scip));
    GCGsetGap(origprob, newvar, MIN(SCIPgetGap(origprob), SCIPgetGap(scip))); /*lint !e666*/
    GCGsetRedcost(origprob, newvar, redcost);

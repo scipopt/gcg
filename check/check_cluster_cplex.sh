@@ -4,7 +4,7 @@
 #*                  This file is part of the program and library             *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#*    Copyright (C) 2002-2011 Konrad-Zuse-Zentrum                            *
+#*    Copyright (C) 2002-2017 Konrad-Zuse-Zentrum                            *
 #*                            fuer Informationstechnik Berlin                *
 #*                                                                           *
 #*  SCIP is distributed under the terms of the ZIB Academic License.         *
@@ -19,13 +19,13 @@
 # The queue is passed via $QUEUE (possibly defined in a local makefile in scip/make/local).
 #
 # For each run, we can specify the number of nodes reserved for a run via $PPN. If tests runs
-# with valid time measurements should be executed, this number should be chosen in such a way 
+# with valid time measurements should be executed, this number should be chosen in such a way
 # that a job is run on a single computer, i.e., in general, $PPN should equal the number of cores
 # of each computer. If course, the value depends on the specific computer/queue.
 #
 # To get the result files call "./evalcheck_cluster.sh
 # results/check.$TSTNAME.$BINNAME.$SETNAME.eval in directory check/
-# This leads to result files 
+# This leads to result files
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.out
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.res
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.err
@@ -70,7 +70,7 @@ fi
 # we add 100% to the hard time limit and additional 600 seconds in case of small time limits
 # NOTE: the jobs should have a hard running time of more than 5 minutes; if not so, these
 #       jobs get automatically assigned in the "express" queue; this queue has only 4 CPUs
-#       available 
+#       available
 HARDTIMELIMIT=`expr \`expr $TIMELIMIT + 600\` + $TIMELIMIT`
 
 # we add 10% to the hard memory limit and additional 100mb to the hard memory limit
@@ -80,7 +80,7 @@ HARDMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
 EVALFILE=$SCIPPATH/results/check.$QUEUE.$TSTNAME.$BINID.$SETNAME.eval
 echo > $EVALFILE
 
-# counter to define file names for a test set uniquely 
+# counter to define file names for a test set uniquely
 COUNT=1
 
 for i in `cat testset/$TSTNAME.test` DONE
@@ -116,11 +116,11 @@ do
 
   COUNT=`expr $COUNT + 1`
 
-  # in case we want to continue we check if the job was already performed 
+  # in case we want to continue we check if the job was already performed
   if test "$CONTINUE" != "false"
   then
       if test -e results/$FILENAME.out
-      then 
+      then
           echo skipping file $i due to existing output file $FILENAME.out
 	  continue
       fi

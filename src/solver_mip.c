@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -53,13 +53,19 @@
 
 #define SOLVER_ENABLED      TRUE  /**< indicates whether the solver should be enabled */
 
-#define DEFAULT_CHECKSOLS    TRUE
-#define DEFAULT_SETTINGSFILE "-"
+#define DEFAULT_CHECKSOLS           TRUE
+#define DEFAULT_HEURNODELIMIT       1000LL
+#define DEFAULT_HEURSTALLNODELIMIT  100LL
+#define DEFAULT_HEURGAPLIMIT        0.2
+#define DEFAULT_SETTINGSFILE        "-"
 
 /** branching data for branching decisions */
 struct GCG_SolverData
 {
    SCIP_Bool             checksols;          /**< should solutions be checked extensively */
+   SCIP_Longint          heurnodelimit;      /**< node limit for heuristic pricing */
+   SCIP_Longint          heurstallnodelimit; /**< stall node limit for heuristic pricing */
+   SCIP_Real             heurgaplimit;       /**< gap limit for heuristic pricing */
    char*                 settingsfile;       /**< settings file to be applied in pricing problems */
 };
 
@@ -171,11 +177,11 @@ SCIP_RETCODE checkSolNew(
    {
       assert(sols[s] != NULL);
       /** @todo ensure that the solutions are sorted  */
-      if( (!SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[s])) && !SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[idx])))
+      if( (!SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[s])) && !SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[idx])) )
         && !SCIPisEQ(pricingprob, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])) )
          continue;
 
-      if( (SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[s])) && !SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[idx])))
+      if( (SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[s])) && !SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[idx])) )
        ||(!SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[s])) &&  SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, sols[idx]))) )
          continue;
 
@@ -287,7 +293,7 @@ SCIP_RETCODE filterInfiniteColumns(
                SCIPwarningMessage(pricingprob, "Removing solution with infinite value.\n");
             }
 
-            SCIP_CALL( GCGfreeGcgCol(&cols[s]) );
+            GCGfreeGcgCol(&cols[s]);
 
             cols[s] = cols[*ncols-1];
             --(*ncols);
@@ -406,7 +412,7 @@ SCIP_RETCODE solveProblem(
       *ncols = 0;
       *status = SCIP_STATUS_OPTIMAL;
 
-      for( s = 0; s < nprobsols && s < maxcols; s++ )
+      for( s = 0; s < nprobsols && *ncols < maxcols; s++ )
       {
          SCIP_Bool feasible;
          assert(probsols[s] != NULL);
@@ -538,9 +544,9 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", 100LL) );
-   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", 1000LL) );
-   SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", 0.2) );
+   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", solverdata->heurstallnodelimit) );
+   SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", solverdata->heurnodelimit) );
+   SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", solverdata->heurgaplimit) );
    /*SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/bestsol", 5) );*/ /* TODO: do we want a solution limit? */
 
    SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, cols, maxcols, ncols, lowerbound, result) );
@@ -563,22 +569,37 @@ SCIP_RETCODE GCGincludeSolverMip(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   GCG_SOLVERDATA* data;
+   SCIP* origprob;
+   GCG_SOLVERDATA* solverdata;
 
-   SCIP_CALL( SCIPallocMemory(scip, &data) );
-   data->settingsfile = NULL;
+   origprob = GCGmasterGetOrigprob(scip);
+
+   SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
+   solverdata->settingsfile = NULL;
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
          solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
-         solverInitsolMip, solverExitsolMip, data) );
+         solverInitsolMip, solverExitsolMip, solverdata) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/checksols",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/mip/checksols",
          "should solutions of the pricing MIPs be checked for duplicity?",
-         &data->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
+         &solverdata->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddStringParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/settingsfile",
+   SCIP_CALL( SCIPaddLongintParam(origprob, "pricingsolver/mip/heurnodelimit",
+         "node limit for heuristic pricing",
+         &solverdata->heurnodelimit, TRUE, DEFAULT_HEURNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddLongintParam(origprob, "pricingsolver/mip/heurstallnodelimit",
+         "stall node limit for heuristic pricing",
+         &solverdata->heurstallnodelimit, TRUE, DEFAULT_HEURSTALLNODELIMIT, -1LL, SCIP_LONGINT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/mip/heurgaplimit",
+         "gap limit for heuristic pricing",
+         &solverdata->heurgaplimit, TRUE, DEFAULT_HEURGAPLIMIT, 0.0, 1.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(origprob, "pricingsolver/mip/settingsfile",
          "settings file for pricing problems",
-         &data->settingsfile, TRUE, DEFAULT_SETTINGSFILE, NULL, NULL) );
+         &solverdata->settingsfile, TRUE, DEFAULT_SETTINGSFILE, NULL, NULL) );
 
 
    return SCIP_OKAY;

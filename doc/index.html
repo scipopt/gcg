@@ -90,25 +90,38 @@
             <table class="desc">
 	      <tbody>
 		<tr>
-		  <td class="w-150">18/Dec/2014</td>
-		  <td>A small GCG 2.0.1 bugfix release is available together with the SCIP optimization Suite 3.1.1.
-		      See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
+		  <td valign=top class="w-150">09/Mar/2017</td>
+		  <td>A small GCG 2.1.2 bugfix release is available together with the SCIP optimization Suite 4.0.0.
+              See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
 		</tr>
 		<tr>
-		  <td class="w-150">26/Feb/2014</td>
-		  <td>A new major version GCG 2.0.0 is available together with the SCIP optimization Suite 3.1.0 and plenty of new features!
-		      See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
+		  <td valign=top class="w-150">29/Feb/2016</td>
+		  <td>A small GCG 2.1.1 bugfix release is available together with the SCIP optimization Suite 3.2.1.
+              See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
 		</tr>
 		<tr>
-		  <td class="w-150">16/Oct/2013</td>
+		  <td valign=top class="w-150">01/Jul/2015</td>
+		  <td>We released the minor version GCG 2.1.0 together with the SCIP optimization Suite 3.2.0.
+              See the <a href="doc/CHANGELOG.html">CHANGELOG</a> and the <a href="doc/RELEASENOTES.html">Release notes</a> for more information.</td>
+		</tr>
+		<tr>
+		  <td valign=top class="w-150">18/Dec/2014</td>
+		  <td>A small GCG 2.0.1 bugfix release is available together with the SCIP optimization Suite 3.1.1.</td>
+		</tr>
+		<tr>
+		  <td valign=top class="w-150">26/Feb/2014</td>
+		  <td>A new major version GCG 2.0.0 is available together with the SCIP optimization Suite 3.1.0 and plenty of new features!</td>
+		</tr>
+		<tr>
+		  <td valign=top class="w-150">16/Oct/2013</td>
 		  <td>A small GCG 1.1.1 bugfix release version is available together with the SCIP optimization Suite 3.0.2. </td>
 		</tr>
 		<tr>
-		  <td class="w-150">04/Jan/2013</td>
+		  <td valign=top class="w-150">04/Jan/2013</td>
 		  <td>We released the minor version GCG 1.1.0 together with the SCIP optimization Suite 3.0.1. </td>
 		</tr>
 		<tr>
-		  <td class="w-150">01/Aug/2012</td>
+		  <td valign=top class="w-150">01/Aug/2012</td>
 		  <td>We released the first version of GCG 1.0.0 together with the SCIP optimization Suite 3.0.0. </td>
 		</tr>
 	    </tbody></table>
@@ -189,7 +202,6 @@
 	    </p>
 	  </div>
           <div>
-
             <h1 id="developers">Developers</h1>
             <h3>Project head</h3>
 	    <table class="desc">
@@ -210,10 +222,18 @@
 	      <tbody><tr>
 		<tr>
 		  <td class="w-200">
+		    <a href="http://www.or.rwth-aachen.de/team/staff/michael-bastubbe/">Michael Bastubbe</a>
+		  </td>
+		  <td>
+		    Structure detection
+		  </td>
+		</tr>
+		<tr>
+		  <td class="w-200">
 		    <a href="http://www.or.rwth-aachen.de/bergner">Martin Bergner</a>
 		  </td>
 		  <td>
-		    Detection, main developer
+		    Structure detection, former main developer
 		  </td>
 		</tr>
 		<tr>
@@ -246,17 +266,25 @@
 	    <h3 id="contributors">Contributors</h3>
 	    <table class="desc">
 	      <tbody>
+        <tr>
+          <td width="180px">
+            Björn Dählmann
+         </td>
+          <td>
+            Student assistant, structure detection
+         </td>
+       </tr>
 		<tr>
-		  <td class="w-200">
-		    <a href="http://www.or.rwth-aachen.de/team/staff/michael-bastubbe/">Michael Bastubbe</a>
+		  <td width="180px">
+		    Hanna Franzen
 		  </td>
 		  <td>
-		    Graph library methods
+		    Student assistant, structure detection
 		  </td>
 		</tr>
 		<tr>
-		  <td>
-		    Alexander Gross
+		  <td width="180px">
+		    Alexander Groß
 		  </td>
 		  <td>
 		    Student assistant, statistics
@@ -268,6 +296,22 @@
 		  </td>
 		  <td>
 		    Student assistant, documentation
+		  </td>
+		</tr>
+		<tr>
+		  <td width="180px">
+		    Tobias Oelschlägel
+		  </td>
+		  <td>
+		    Student assistant, set covering heuristic
+		  </td>
+		</tr>
+		<tr>
+		  <td width="180px">
+		    Marc Peiter
+		  </td>
+		  <td>
+		    Student assistant, testing
 		  </td>
 		</tr>
 		<tr>
@@ -304,8 +348,16 @@
 	      <li style="display: block;" id="papers_ans" class="answer">
 		<ul>
 		  <li>
+		    <a href="http://dx.doi.org/10.1145/2851492">A Branch-Price-and-Cut Algorithm for Packing Cuts in Undirected Graphs</a>
+		    Martin Bergner, Marco E. Lübbecke, Jonas T. Witt, Journal of Experimental Algorithmics (JEA) 21 (2016-): Article No. 1.2
+		  </li>
+		  <li>
 		    <a href="http://doi.org/10.1080/10556788.2013.768993">Solving a vehicle routing problem with resource conflicts and makespan objective with an application in car body manufacturing</a>
 		    Jörg Rambau, Cornelius Schwarz, Optimization Methods and Software, Vol. 29, Iss. 2, 2014
+		  </li>
+		  <li>
+		    <a href="http://www.patatconference.org/patat2014/proceedings/2_26.pdf">Branch-and-price and improved bounds to the traveling umpire problem</a>
+		    Túlio A. M. Toffolo, Sam van Malderen, Tony Wauters, Greet van den Berghe, Proceedings of the 10th international conference of the practice and theory of automated timetabling, 2014, pp. 420-32
 		  </li>
 		</ul>
 	      </li>
@@ -347,7 +399,10 @@
 	      Due to licensing issues, we can not offer precompiled binaries. You can download the source code here:
 	    </p>
 	    <ul>
-	      <li><a href="files/gcg-2.0.0.tgz">gcg-2.0.1.tgz</a> (1053kB)</li>
+	      <li><a href="files/gcg-2.1.2.tgz">gcg-2.1.2.tgz</a> (1118kB)</li>
+	      <li><a href="files/gcg-2.1.1.tgz">gcg-2.1.1.tgz</a> (1100kB)</li>
+	      <li><a href="files/gcg-2.1.0.tgz">gcg-2.1.0.tgz</a> (1096kB)</li>
+	      <li><a href="files/gcg-2.0.1.tgz">gcg-2.0.1.tgz</a> (1053kB)</li>
 	      <li><a href="files/gcg-2.0.0.tgz">gcg-2.0.0.tgz</a> (1007kB)</li>
 	      <li><a href="files/gcg-1.1.1.tgz">gcg-1.1.1.tgz</a> (664kB)</li>
 	      <li><a href="files/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (664kB)</li>
@@ -366,8 +421,8 @@
       <div class="container">
 	<div class="row">
 	  <div class="col-md-12">
-	          &copy; 2010-2014 by Operations Research, RWTH Aachen University, <a href="http://www.or.rwth-aachen.de/en/disclaimer/">Imprint</a><br />
-		  &copy; 2010-2014 by Zuse Institute Berlin (ZIB)<br />
+	          &copy; 2010-2017 by Operations Research, RWTH Aachen University, <a href="http://www.or.rwth-aachen.de/en/disclaimer/">Imprint</a><br />
+		  &copy; 2010-2017 by Zuse Institute Berlin (ZIB)<br />
 
 	  </div>
 	</div>

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -200,23 +200,3 @@ TEST_F(GcgDecompTest, GetPresolvedTest) {
    decomp->presolved = TRUE;
    ASSERT_EQ((uint)TRUE, DECdecompGetPresolved(decomp));
 }
-
-TEST_F(GcgDecompTest, RemoveLinkingVar) {
-   SCIP_Bool success;
-   SCIP_VAR** vars;
-   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
-   SCIP_CALL_EXPECT( SCIPallocMemoryArray(scip, &vars, 2) );
-   vars[0]  = (SCIP_VAR*) 0xDEADBEEF;
-   vars[1] = (SCIP_VAR*) 0xDEADCAFF;
-   decomp->linkingvars = vars;
-   decomp->nlinkingvars = 2;
-
-   SCIP_CALL_EXPECT( DECdecompRemoveLinkingVar(scip, decomp, vars[0], &success) );
-   ASSERT_EQ(1, decomp->nlinkingvars);
-   ASSERT_EQ((SCIP_VAR*) 0xDEADCAFF, decomp->linkingvars[0]);
-
-   SCIPfreeMemoryArray(scip, &decomp->linkingvars);
-   decomp->linkingvars = NULL;
-   decomp->nlinkingvars = 0;
-}
-

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -45,31 +45,46 @@ class Stabilization
 {
 private:
    SCIP* scip_;
-   SCIP_Real* stabcenterconss;
-   int stabcenterconsssize;
-   int nstabcenterconss;
-   SCIP_Real* stabcentercuts;
-   int stabcentercutssize;
-   int nstabcentercuts;
-   SCIP_Real* stabcenterlinkingconss;
-   int nstabcenterlinkingconss;
+   SCIP_Real* stabcenterconsvals;
+   int stabcenterconsvalssize;
+   int nstabcenterconsvals;
+   SCIP_Real* stabcentercutvals;
+   int stabcentercutvalssize;
+   int nstabcentercutvals;
+   SCIP_Real* stabcenterlinkingconsvals;
+   int nstabcenterlinkingconsvals;
    SCIP_Real* stabcenterconv;
    int nstabcenterconv;
+   SCIP_Real dualdiffnorm; /**< norm of difference between stabcenter and current duals */
+   SCIP_Real* subgradientconsvals;
+   int subgradientconsvalssize;
+   int nsubgradientconsvals;
+   SCIP_Real* subgradientcutvals;
+   int subgradientcutvalssize;
+   int nsubgradientcutvals;
+   SCIP_Real* subgradientlinkingconsvals;
+   int nsubgradientlinkingconsvals;
+   SCIP_Real subgradientnorm;
+   SCIP_Real hybridfactor;
    PricingType* pricingtype;
    SCIP_Real alpha;
    SCIP_Real alphabar; /**< alpha that is used and updated in a mispricing schedule */
+   SCIP_Bool hybridascent; /**< hybridize smoothing with an ascent method? */
+   SCIP_Real beta;
    SCIP_Longint nodenr;
    int k; /**< counter for the number of stabilized pricing rounds in B&B node, excluding the mispricing schedule iterations  */
    int t; /**< counter for the number of pricing rounds during a mispricing schedule, restarted after a mispricing schedule is finished */
    SCIP_Bool hasstabilitycenter;
    SCIP_Real stabcenterbound;
    SCIP_Bool inmispricingschedule; /**< currently in mispricing schedule */
+   SCIP_Real subgradientproduct;
 
 public:
    /** constructor */
    Stabilization(
       SCIP*              scip,               /**< SCIP data structure */
-      PricingType*       pricingtype         /**< the pricing type when the stabilization should run */
+      PricingType*       pricingtype,        /**< the pricing type when the stabilization should run */
+      SCIP_Bool          hybridascent        /**< enable hybridization of smoothing with an ascent method? */
    );
    /** constructor */
    Stabilization();
@@ -97,7 +112,8 @@ public:
    /** updates the stability center if the bound has increased */
    SCIP_RETCODE updateStabilityCenter(
       SCIP_Real             lowerbound,         /**< lower bound due to lagrange function corresponding to current (stabilized) dual vars */
-      SCIP_Real*            dualsolconv         /**< corresponding feasible dual solution for convexity constraints */
+      SCIP_Real*            dualsolconv,        /**< corresponding feasible dual solution for convexity constraints */
+      GCG_COL**             pricingcols         /**< columns of the pricing problems */
    );
 
    /** updates the alpha after unsuccessful pricing */
@@ -131,12 +147,12 @@ public:
    );
 
    /** increases the number of new variable linking constraints */
-   SCIP_RETCODE setNLinkingconss(
+   SCIP_RETCODE setNLinkingconsvals(
       int                nlinkingconssnew    /**< number of new linking constraints */
    );
 
    /** increases the number of new convexity constraints */
-   SCIP_RETCODE setNConvconss(
+   SCIP_RETCODE setNConvconsvals(
       int nconvconssnew
    );
 
@@ -145,7 +161,16 @@ public:
       int i
       );
 
+   /**< update node */
    void updateNode();
+
+   /**< update information for hybrid stablization with dual ascent */
+   SCIP_RETCODE updateHybrid();
+
+   /** update subgradient product */
+   SCIP_RETCODE updateSubgradientProduct(
+      GCG_COL**            pricingcols         /**< solutions of the pricing problems */
+   );
 
 private:
    /** updates the number of iterations */
@@ -155,10 +180,16 @@ private:
    void updateIterationCountMispricing();
 
    /** updates the constraints in the stability center (and allocates more memory) */
-   SCIP_RETCODE updateStabcenterconss();
+   SCIP_RETCODE updateStabcenterconsvals();
 
    /** updates the cuts in the stability center (and allocates more memory) */
-   SCIP_RETCODE updateStabcentercuts();
+   SCIP_RETCODE updateStabcentercutvals();
+
+   /** updates the constraints in the subgradient (and allocates more memory) */
+   SCIP_RETCODE updateSubgradientconsvals();
+
+   /** updates the cuts in the subgradient (and allocates more memory) */
+   SCIP_RETCODE updateSubgradientcutvals();
 
    /** increase the alpha value */
    void increaseAlpha();
@@ -166,15 +197,34 @@ private:
    /** decrease the alpha value */
    void decreaseAlpha();
 
-   /** calculates the subgradient (with linking variables */
-   SCIP_Real calculateSubgradient(
+   /** calculates the product of subgradient (with linking variables)
+    * with the difference of current duals and the stability center */
+   SCIP_Real calculateSubgradientProduct(
       GCG_COL**            pricingcols         /**< columns of the pricing problems */
    );
+
+   /** calculates the normalized subgradient (with linking variables) multiplied
+    * with the norm of the difference of current duals and the stability center */
+   void calculateSubgradient(
+      GCG_COL**            pricingcols         /**< columns of the pricing problems */
+   );
+
+   /**< calculate norm of difference between stabcenter and current duals */
+   void calculateDualdiffnorm();
+
+   /**< calculate beta */
+   void calculateBeta();
+
+   /**< calculate factor that is needed in hybrid stabilization */
+   void calculateHybridFactor();
 
    /** computes the new dual value based on the current and the stability center values */
    SCIP_Real computeDual(
       SCIP_Real          center,             /**< value of stabilility center */
-      SCIP_Real          current             /**< current dual value */
+      SCIP_Real          current,            /**< current dual value */
+      SCIP_Real          subgradient,         /**< subgradient (or 0.0 if not needed) */
+      SCIP_Real          lhs,                 /**< lhs (or 0.0 if not needed) */
+      SCIP_Real          rhs                  /**< rhs (or 0.0 if not needed) */
    ) const;
 };
 

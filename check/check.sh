@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -47,6 +47,8 @@ VERSION=${14}
 LPS=${15}
 VALGRIND=${16}
 MODE=${17}
+SETCUTOFF=${18}
+STATISTICS=${19}
 
 SETDIR=../settings
 
@@ -59,16 +61,16 @@ then
     mkdir locks
 fi
 
-LOCKFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.lock
-RUNFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.run.$BINID
-DONEFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.done
+LOCKFILE=locks/$TSTNAME.$SETNAME.$MSETNAME.$VERSION.$LPS.lock
+RUNFILE=locks/$TSTNAME.$SETNAME.$MSETNAME.$VERSION.$LPS.run.$BINID
+DONEFILE=locks/$TSTNAME.$SETNAME.$MSETNAME.$VERSION.$LPS.done
 
-OUTFILE=results/check.$TSTNAME.$BINID.$SETNAME.out
-ERRFILE=results/check.$TSTNAME.$BINID.$SETNAME.err
-RESFILE=results/check.$TSTNAME.$BINID.$SETNAME.res
-TEXFILE=results/check.$TSTNAME.$BINID.$SETNAME.tex
-TMPFILE=results/check.$TSTNAME.$BINID.$SETNAME.tmp
-SETFILE=results/check.$TSTNAME.$BINID.$SETNAME.set
+OUTFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.out
+ERRFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.err
+RESFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.res
+TEXFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.tex
+TMPFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.tmp
+SETFILE=results/check.$TSTNAME.$BINID.$SETNAME.$MSETNAME.set
 
 SETTINGS=$SETDIR/$SETNAME.set
 MSETTINGS=$SETDIR/$MSETNAME.set
@@ -148,6 +150,26 @@ then
    VALGRINDCMD="valgrind --log-fd=1 --leak-check=full"
 fi
 
+SOLUFILE=""
+for SOLU in testset/$TSTNAME.solu testset/all.solu
+do
+    if test -e $SOLU
+    then
+        SOLUFILE=$SOLU
+        break
+    fi
+done
+
+# if cutoff should be passed, solu file must exist
+if test $SETCUTOFF = "true"
+then
+    if test $SOLUFILE = ""
+    then
+        echo "Skipping test: SETCUTOFF=true set, but no .solu file (testset/$TSTNAME.solu or testset/all.solu) available"
+        exit
+    fi
+fi
+
 for i in `cat testset/$TSTNAME.test` DONE
 do
     if test "$i" = "DONE"
@@ -194,6 +216,14 @@ do
             then
                 echo set numerics feastol $FEASTOL >> $TMPFILE
             fi
+
+            if test -e "$SOLUFILE"
+            then
+                OBJECTIVEVAL=`grep "$NAME" $SOLUFILE | grep -v =feas= | grep -v =inf= | tail -n 1 | awk '{print $3}'`
+            else
+                OBJECTIVEVAL=""
+            fi
+
             echo set limits time $TIMELIMIT        >> $TMPFILE
             echo set limits nodes $NODELIMIT       >> $TMPFILE
             echo set limits memory $MEMLIMIT       >> $TMPFILE
@@ -209,24 +239,52 @@ do
             echo set save $SETFILE                 >> $TMPFILE
             echo read $PROB                        >> $TMPFILE
 
+	    # set objective limit: optimal solution value from solu file, if existent
+	    if test $SETCUTOFF = "true"
+	    then
+	        if test $SOLUFILE == ""
+	        then
+	            echo Exiting test because no solu file can be found for this test
+	            exit
+	        fi
+	        if test ""$OBJECTIVEVAL != ""
+	        then
+	            echo set limits objective $OBJECTIVEVAL >> $TMPFILE
+	            echo set heur emph off                  >> $TMPFILE
+	            echo master                             >> $TMPFILE
+	            echo set heur emph off                  >> $TMPFILE
+	            echo quit                               >> $TMPFILE
+	        fi
+	    fi
+
+
             if test $MODE = "detect"
             then
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
                 echo display statistics            >> $TMPFILE
+                if test $STATISTICS = "true"
+                then
+                    echo display additionalstatistics  >> $TMPFILE
+                fi
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
                 echo write prob bip\/$NAME-dec.bip >> $TMPFILE
                 echo display statistics            >> $TMPFILE
+                if test $STATISTICS = "true"
+                then
+                    echo display additionalstatistics  >> $TMPFILE
+                fi
+
             elif test $MODE = "detectall"
             then
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
-                mkdir -p decs/$TSTNAME.$SETTINGS
-                mkdir -p images/$TSTNAME.$SETTINGS
+                mkdir -p decs/$TSTNAME.$SETNAME
+                mkdir -p images/$TSTNAME.$SETNAME
                 echo write all decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
-		echo write all images\/$TSTNAME.$SETNAME gp >> $TMPFILE
+                echo write all images\/$TSTNAME.$SETNAME gp >> $TMPFILE
             else
                 if test $MODE = "readdec"
                 then
@@ -236,11 +294,18 @@ do
                     fi
                     if test -f $BLKFILE
                     then
-                        presol=`grep -A1 PRESOLVE $BLKFILE`
-                    # if we find a presolving file
+                        EXT=${BLKFILE##*.}
+                        if test "$EXT" = "gz"
+                        then
+                            presol=`zgrep -A1 PRESOLVE $BLKFILE`
+                        else
+                            presol=`grep -A1 PRESOLVE $BLKFILE`
+                        fi
+                        echo $presol
+                        # If the decomposition contains presolving information ...
                         if test $? = 0
                         then
-                        # look if its in there
+                            # ... check if it belongs to a presolved problem
                             if grep -xq 1 - <<EOF
 $presol
 EOF
@@ -253,7 +318,10 @@ EOF
                 fi
                 echo optimize                      >> $TMPFILE
                 echo display statistics            >> $TMPFILE
-#               echo display additionalstatistics  >> $TMPFILE
+                if test $STATISTICS = "true"
+                then
+                    echo display additionalstatistics  >> $TMPFILE
+                fi
 #               echo display solution              >> $TMPFILE
                 echo checksol                      >> $TMPFILE
             fi

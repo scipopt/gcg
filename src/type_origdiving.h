@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -120,11 +120,13 @@ typedef struct GCG_DivingData GCG_DIVINGDATA;   /**< locally defined diving data
  *  input:
  *  - scip             : SCIP main data structure
  *  - heur             : the diving heuristic itself
+ *  - tabulist         : an array containing variables that must not be chosen
+ *  - tabulistsize     : the size of the array
  *  - bestcand         : pointer to store the SCIP_VAR* returned by the selection rule
  *  - bestcandmayround : pointer to store whether the variable may be rounded without losing LP feasibility
  *  - bestcandroundup  : pointer to store whether the variable is to be rounded up
  */
-#define GCG_DECL_DIVINGSELECTVAR(x) SCIP_RETCODE x (SCIP* scip, SCIP_HEUR* heur, SCIP_VAR** bestcand, SCIP_Bool* bestcandmayround, SCIP_Bool* bestcandroundup)
+#define GCG_DECL_DIVINGSELECTVAR(x) SCIP_RETCODE x (SCIP* scip, SCIP_HEUR* heur, SCIP_VAR** tabulist, int tabulistsize, SCIP_VAR** bestcand, SCIP_Bool* bestcandmayround, SCIP_Bool* bestcandroundup)
 
 #ifdef __cplusplus
 }

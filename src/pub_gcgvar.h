@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -65,6 +65,12 @@ SCIP_Bool GCGvarIsMaster(
 /** returns TRUE or FALSE whether variable is a linking variable or not */
 extern
 SCIP_Bool GCGoriginalVarIsLinking(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   );
+
+/** returns TRUE or FALSE whether variable is a directly transferred variable or not */
+extern
+SCIP_Bool GCGoriginalVarIsTransVar(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    );
 
@@ -382,6 +388,21 @@ extern
 SCIP_Real GCGgetCreationTime(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var                 /**< created variable */
+   );
+
+/** store pricing reduced cost call */
+extern
+void GCGsetRootRedcostCall(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable data structure */
+   SCIP_Longint          rootredcostcall     /**< iteration at which the variable is created */
+   );
+
+/** return stored pricing reduced cost call */
+extern
+SCIP_Longint GCGgetRootRedcostCall(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
    );
 
 /** returns the iteration when the var was created */

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -49,7 +49,8 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
    );
 
 extern
-SCIP_RETCODE GCGcreateBranchruleConsOrig(
+/** insert branchrule in constraint handler data */
+SCIP_RETCODE GCGconsIntegralorigAddBranchrule(
    SCIP*                 scip,
    SCIP_BRANCHRULE*      branchrule
    );

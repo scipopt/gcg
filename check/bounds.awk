@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -55,7 +55,7 @@ BEGIN {
 #
 # problem name
 #
-/^@01/ { 
+/^@01/ {
    filename = $2;
 
    n  = split ($2, a, "/");
@@ -124,8 +124,8 @@ BEGIN {
       pb = sprintf("%13.6e", $4);
    }
 }
-/^  Dual Bound       :/ { 
-   if( inoriginalprob && $4 != "-" ) 
+/^  Dual Bound       :/ {
+   if( inoriginalprob && $4 != "-" )
       db = sprintf("%13.6e", $4);
 }
 /^  Gap              :/ {
@@ -136,7 +136,7 @@ BEGIN {
 # time
 #
 /^Solving Time       :/ { tottime = sprintf("%4.1f", $4) } # for older scip version ( < 2.0.1.3 )
-/^  solving          :/ { tottime = sprintf("%4.1f", $3) } 
+/^  solving          :/ { tottime = sprintf("%4.1f", $3) }
 
 /^=ready=/ {
 

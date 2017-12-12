@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -53,14 +53,14 @@
 #define DEFAULT_MIPSRELFARKAS            1.0        /**< factor of farkas pricing MIPs to be solved */
 
 
-#define SCIP_CALL_EXC(x)   do                                                                                  \
+#define SCIP_CALL_EXC(x)   do                                                                                 \
                        {                                                                                      \
                           SCIP_RETCODE _restat_;                                                              \
                           if( (_restat_ = (x)) !=  SCIP_OKAY )                                                \
                           {                                                                                   \
                              SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
                              throw std::exception();                                                          \
-                           }                                                                                  \
+                          }                                                                                   \
                        }                                                                                      \
                        while( FALSE )
 
@@ -85,7 +85,7 @@ PricingType::PricingType(
 
 PricingType::~PricingType()
 {
-   SCIP_CALL_EXC( SCIPfreeClock(scip_, &(clock)) );
+   SCIP_CALL_ABORT( SCIPfreeClock(scip_, &(clock)) );
 
    scip_ = (SCIP*) NULL;
 }

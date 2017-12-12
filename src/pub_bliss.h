@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -30,6 +30,7 @@
  *
  * @author  Martin Bergner
  * @author  Daniel Peters
+ * @author  Jonas Witt
  *
  */
 
@@ -119,6 +120,8 @@ struct struct_colorinformation
    void**               ptrarrayvars;       /**< array of pointers to variables */
    void**               ptrarrayconss;      /**< array of pointers to constraints */
 
+   SCIP_Bool            onlysign;           /**< use sign of values instead of values? (should be FALSE if we check whether pricin problems can be aggregated) */
+
    /** default constructor */
    struct_colorinformation();
 
@@ -138,13 +141,19 @@ struct struct_colorinformation
    int getLenCons();
 
    /** getter for the variable struct */
-   int get( AUT_VAR svar );
+   int get( AUT_VAR svar);
 
    /** getter for the constraint struct */
-   int get( AUT_CONS scons );
+   int get( AUT_CONS scons);
 
    /** getter for the coefficient struct */
-   int get( AUT_COEF scoef );
+   int get( AUT_COEF scoef);
+
+   /** set onlysign bool */
+   SCIP_RETCODE setOnlySign(SCIP_Bool onlysign_);
+
+   /** get onlysign bool */
+   SCIP_Bool getOnlySign();
 };
 #endif
 

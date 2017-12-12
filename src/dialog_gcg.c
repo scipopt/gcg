@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -462,7 +462,58 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteAllDecompositions)
    return SCIP_OKAY;
 }
 
-/** dialog execution method for the set detector aggressive command */
+/** dialog execution method for writing problem statistics */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteStatistics)
+{
+   char* filename;
+   SCIP_Bool endoffile;
+
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter filename: ", &filename, &endoffile) );
+   if( endoffile )
+   {
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+   if( filename[0] != '\0' )
+   {
+      FILE* file;
+
+      SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, filename, TRUE) );
+
+      file = fopen(filename, "w");
+      if( file == NULL )
+      {
+         SCIPdialogMessage(scip, NULL, "error creating file <%s>\n", filename);
+         SCIPprintSysError(filename);
+         SCIPdialoghdlrClearBuffer(dialoghdlr);
+      }
+      else
+      {
+         SCIP_RETCODE retcode;
+         retcode = GCGprintStatistics(scip, file);
+         if( retcode != SCIP_OKAY )
+         {
+            fclose(file);
+            SCIP_CALL( retcode );
+         }
+         else
+         {
+            SCIPdialogMessage(scip, NULL, "written statistics to file <%s>\n", filename);
+            fclose(file);
+         }
+      }
+   }
+
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+/** dialog execution method for the set detectors aggressive command */
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsAggressive)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
@@ -474,7 +525,19 @@ SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsAggressive)
    return SCIP_OKAY;
 }
 
-/** dialog execution method for the set detector off command */
+/** dialog execution method for the set detectors default command */
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsDefault)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_DEFAULT, FALSE) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set detectors off command */
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsOff)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
@@ -486,7 +549,7 @@ SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsOff)
    return SCIP_OKAY;
 }
 
-/** dialog execution method for the set detector fast command */
+/** dialog execution method for the set detectors fast command */
 SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsFast)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
@@ -753,6 +816,16 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
+   /* set detectors emphasis default */
+   if( !SCIPdialogHasEntry(emphasismenu, "default") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL, SCIPdialogExecSetDetectorsDefault, NULL, NULL,
+         "default", "sets detectors <default>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
    /* set detectors emphasis fast */
    if( !SCIPdialogHasEntry(emphasismenu, "fast") )
    {
@@ -847,6 +920,18 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+
+   /* write statistics */
+   if( !SCIPdialogHasEntry(submenu, "statistics") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteStatistics, NULL, NULL,
+            "statistics",
+            "write statistics to file",
+            FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
 
    return SCIP_OKAY;
 }

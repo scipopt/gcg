@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2014 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -49,7 +49,7 @@
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "random"    /**< name of detector */
-#define DEC_DESC                 "Random structure detection" /**< description of detector*/
+#define DEC_DESC                 "Random structure detection" /**< description of detector */
 #define DEC_PRIORITY             -10         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'r'         /**< display character of detector */
 #define DEC_ENABLED              FALSE       /**< should the detection be enabled */
@@ -57,7 +57,7 @@
 
 #define DEFAULT_MAXBLOCKS        -1          /**< the maximal number of blocks, -1 defaults to average number of constraints */
 #define DEFAULT_AVGCONSPERBLOCK  100         /**< average constraints per block to limit the maximal block number */
-#define DEFAULT_SEED             -1          /**< random seed for the random number generator, -1 is the current time */
+#define DEFAULT_RANDSEED         23          /**< initial random seed */
 
 /*
  * Data structures
@@ -68,7 +68,7 @@
 /** detector handler data */
 struct DEC_DetectorData
 {
-   int                   seed;               /**< random seed for the random number generator */
+   SCIP_RANDNUMGEN*      randnumgen;         /**< random number generator */
    int                   maxblocks;          /**< the maximal number of blocks, -1 defaults to nconss/maxconsperblock */
    int                   avgconsperblock;    /**< the average number of constraints per block */
    SCIP_HASHMAP*         constoblock;        /**< hashmap to store partition */
@@ -89,7 +89,6 @@ SCIP_RETCODE findRandomPartition(
    DEC_DETECTORDATA*  detectordata           /**< detector data structure */
    )
 {
-   unsigned int seed;
    int nconss;
    SCIP_CONS** conss;
    int i;
@@ -108,15 +107,6 @@ SCIP_RETCODE findRandomPartition(
    SCIP_CALL( SCIPallocMemoryArray(scip, &consblocks, nconss) );
    BMSclearMemoryArray(consblocks, nconss);
    
-   if( detectordata->seed == -1 )
-      seed = (unsigned int) SCIPround(scip, SCIPclockGetTimeOfDay());
-   else
-   {
-      assert(detectordata->seed >= 0);
-      seed = (unsigned int) detectordata->seed;
-   }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " (seed = %d)", seed);
-
    if( detectordata->maxblocks == -1 )
       maxblocks = nconss/detectordata->avgconsperblock;
    else
@@ -125,9 +115,7 @@ SCIP_RETCODE findRandomPartition(
    nblocks = 0;
 
    for( i = 0; i < nconss; ++i )
-   {
-      consblocks[i] = SCIPgetRandomInt(0, maxblocks, &seed);
-   }
+      consblocks[i] = SCIPrandomGetInt(detectordata->randnumgen, 0, maxblocks);
 
    SCIPsortIntPtr(consblocks, (void**)conss, nconss);
    oldblock = -1;
@@ -156,9 +144,9 @@ SCIP_RETCODE findRandomPartition(
  * detector callback methods
  */
 
-/** destructor of detector to free detector data (called before the solving process begins) */
+/** destructor of detector to free user data (called when GCG is exiting) */
 static
-DEC_DECL_EXITDETECTOR(exitRandom)
+DEC_DECL_FREEDETECTOR(detectorFreeRandom)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -169,18 +157,15 @@ DEC_DECL_EXITDETECTOR(exitRandom)
 
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
-
-   if( detectordata->constoblock  != NULL )
-      SCIPhashmapFree(&detectordata->constoblock);
 
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
 }
 
-/** detection initialization function of detector (called before solving is about to begin) */
+/** detector initialization method (called after problem was transformed) */
 static
-DEC_DECL_INITDETECTOR(initRandom)
+DEC_DECL_INITDETECTOR(detectorInitRandom)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
 
@@ -192,20 +177,48 @@ DEC_DECL_INITDETECTOR(initRandom)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
+   detectordata->maxblocks = 0;
+   detectordata->constoblock = NULL;
    detectordata->nblocks = 0;
 
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+   /* create random number generator */
+   SCIP_CALL( SCIPcreateRandom(scip, &detectordata->randnumgen,
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
+
+   return SCIP_OKAY;
+}
+
+/** detector deinitialization method (called before the transformed problem is freed) */
+static
+DEC_DECL_EXITDETECTOR(detectorExitRandom)
+{  /*lint --e{715}*/
+   DEC_DETECTORDATA *detectordata;
+
+   assert(scip != NULL);
+   assert(detector != NULL);
+
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+
+   /* free random number generator */
+   SCIPfreeRandom(scip, &detectordata->randnumgen);
 
    return SCIP_OKAY;
 }
 
 /** detection function of detector */
 static
-DEC_DECL_DETECTSTRUCTURE(detectRandom)
+DEC_DECL_DETECTSTRUCTURE(detectorDetectRandom)
 { /*lint --e{715}*/
    *result = SCIP_DIDNOTFIND;
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting random structure:");
+
+   detectordata->nblocks = 0;
+
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    SCIP_CALL( findRandomPartition(scip, detectordata) );
 
@@ -224,23 +237,20 @@ DEC_DECL_DETECTSTRUCTURE(detectRandom)
    }
    else
    {
+      SCIPhashmapFree(&detectordata->constoblock);
+      detectordata->constoblock = NULL;
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
-      if( detectordata->constoblock != NULL )
-      {
-         SCIPhashmapFree(&detectordata->constoblock);
-      }
    }
 
    return SCIP_OKAY;
 }
-
 
 /*
  * detector specific interface methods
  */
 
 /** creates the handler for random detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionRandom(
+SCIP_RETCODE SCIPincludeDetectorRandom(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -249,16 +259,15 @@ SCIP_RETCODE SCIPincludeDetectionRandom(
    detectordata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
-   detectordata->maxblocks = 0;
-   detectordata->seed = -1;
-   detectordata->constoblock = NULL;
-   detectordata->nblocks = 0;
+   assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectRandom, initRandom, exitRandom) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectorDetectRandom, detectorFreeRandom, detectorInitRandom, detectorExitRandom) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/seed", "random seed for the random number generator, -1 is the current time", &detectordata->seed, FALSE, DEFAULT_SEED, -1, INT_MAX, NULL, NULL ) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/maxblocks", "the maximal number of blocks, -1 defaults to avgconsperblock", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, -1, INT_MAX, NULL, NULL ) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/avgconsperblock", "average constraints per block", &detectordata->avgconsperblock, FALSE, DEFAULT_AVGCONSPERBLOCK, 1, 10000, NULL, NULL ) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/maxblocks", "the maximal number of blocks, -1 defaults to avgconsperblock",
+      &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, -1, INT_MAX, NULL, NULL ) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/avgconsperblock", "average constraints per block",
+      &detectordata->avgconsperblock, FALSE, DEFAULT_AVGCONSPERBLOCK, 1, 10000, NULL, NULL ) );
 
    return SCIP_OKAY;
 }
