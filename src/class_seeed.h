@@ -192,6 +192,7 @@ private:
       int                  b1,
       int                  b2,
       std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+      SCIP_HASHMAP*        varmap2,
       SCIP_Bool*           identical
       );
 
@@ -202,6 +203,7 @@ private:
       int                  b1,
       int                  b2,
       std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+      SCIP_HASHMAP*        varmap2,
       SCIP_Bool*           identical
       );
 

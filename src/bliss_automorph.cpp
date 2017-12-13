@@ -1382,14 +1382,14 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    AUT_COLOR colorinfo;
    std::vector<int> blocks;
 //   int pricingindices[2];
-   int pricingnodes = 0;
+   int pricingnodes;
    *result = SCIP_SUCCESS;
 
 
    blocks = std::vector<int>(2, -1);
    blocks[0] = block1;
    blocks[1] = block2;
-
+   pricingnodes = 0;
 
    SCIP_CALL( setuparraysnewdetection(seeedpool, seeed, 2, blocks, &colorinfo, result) );
    SCIP_CALL( createGraphNewDetection(seeedpool, seeed, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );

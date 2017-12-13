@@ -33,6 +33,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+
 #include "class_seeed.h"
 #include "gcg.h"
 #include "class_seeedpool.h"
@@ -998,14 +999,19 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
         {
            SCIP_Bool identical;
            std::vector<int> varmap;
+           SCIP_HASHMAP* varmap2;
+
+           SCIP_CALL_ABORT( SCIPhashmapCreate(&varmap2,
+                          SCIPblkmem(seeedpool->getScip()),
+                          5 * getNVarsForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
 
            if( !identblocksforblock[b2].empty() )
               continue;
 
 #ifdef NBLISS
-           checkIdenticalBlocksBrute(seeedpool, b1, b2, varmap, &identical);
+           checkIdenticalBlocksBrute(seeedpool, b1, b2, varmap, varmap2, &identical);
 #else
-           checkIdenticalBlocksBliss(seeedpool, b1, b2, varmap, &identical);
+           checkIdenticalBlocksBliss(seeedpool, b1, b2, varmap, varmap2, &identical);
 #endif
            if( identical )
            {
@@ -1014,6 +1020,8 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
               identblocksforblock[b2].push_back(b1);
               currrep.push_back(b2);
            }
+           else
+              SCIPhashmapFree(&varmap2);
         }
 
         reptoblocks.push_back( currrep );
@@ -1744,16 +1752,20 @@ void Seeed::checkIdenticalBlocksBliss(
    int                  b1,
    int                  b2,
    std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+   SCIP_HASHMAP*        varmap2,
    SCIP_Bool*           identical
    )
 {
    *identical = FALSE;
+   SCIP_HASHMAP* consmap;
+   SCIP_Result result;
 
    if( getNConssForBlock(b1) != getNConssForBlock(b2) )
    {
       SCIPdebugMessage("--> number of constraints differs!\n");
       return;
    }
+
 
    if( getNVarsForBlock(b1) != getNVarsForBlock(b2) )
    {
@@ -1767,11 +1779,17 @@ void Seeed::checkIdenticalBlocksBliss(
       return;
    }
 
+   SCIP_CALL_ABORT( SCIPhashmapCreate(&consmap,
+      SCIPblkmem(seeedpool->getScip() ),
+      getNConssForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
 
 
+   cmpGraphPairNewdetection(seeedpool, this, b1, b2, &result, varmap2, consmap );
+   if (result == SCIP_SUCCESS)
+      *identical = TRUE;
+   else
+      *identical = FALSE;
 
-
-   *identical = TRUE;
    return;
 
 }
@@ -1785,6 +1803,7 @@ void Seeed::checkIdenticalBlocksBrute(
    int                  b1,
    int                  b2,
    std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+   SCIP_HASHMAP*        varmap2,
    SCIP_Bool*           identical
    )
 {
