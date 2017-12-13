@@ -48,7 +48,8 @@ SCIP_RETCODE GCGpricingjobCreate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB**      pricingjob,         /**< pricing job to be created */
    SCIP*                 pricingscip,        /**< SCIP data structure of the corresponding pricing problem */
-   int                   probnr              /**< index of the corresponding pricing problem */
+   int                   probnr,             /**< index of the corresponding pricing problem */
+   int                   chunk               /**< chunk that the pricing problem should belong to */
 );
 
 /** free a pricing job */
@@ -74,7 +75,7 @@ SCIP_RETCODE GCGpricingjobSetup(
 
 /** update a pricing job after the pricing problem has been solved */
 EXTERN
-void GCGpricingjobUpdate(
+SCIP_RETCODE GCGpricingjobUpdate(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_STATUS           status,             /**< status after solving the pricing problem */

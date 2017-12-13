@@ -35,7 +35,8 @@
 #ifndef CLASS_PRICINGCONTROLLER_H_
 #define CLASS_PRICINGCONTROLLER_H_
 
-#include "class_colpool.h"
+#include "colpool.h"
+#include "pricestore_gcg.h"
 #include "class_pricingtype.h"
 #include "type_gcgpqueue.h"
 #include "type_pricingjob.h"
@@ -55,12 +56,16 @@ private:
    SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
    int                   sorting;            /**< how should pricing problems be sorted */
    SCIP_Real             relmaxsuccessfulprobs; /**< maximal percentage of pricing problems that need to be solved successfully */
+   int                   chunksize;          /**< maximal number of pricing problems to be solved during one pricing loop */
    int                   eagerfreq;          /**< frequency at which all pricing problems should be solved */
    SCIP_Real             jobtimelimit;       /**< time limit per iteration of a pricing job */
 
    /* strategy */
    GCG_PQUEUE*           pqueue;             /**< priority queue containing the pricing jobs */
    SCIP_Real*            score;              /**< scores of the pricing problems */
+   int                   nchunks;            /**< number of pricing problem 'chunks' */
+   int                   curchunk;           /**< index of current chunk of pricing problems */
+   int                   startchunk;         /**< first chunk considered in a pricing call */
    PricingType*          pricingtype_;       /**< current pricing type */
 
    /* statistics */
@@ -91,7 +96,9 @@ public:
    /** setup the priority queue (done once per stabilization round): add all pricing jobs to be performed */
    SCIP_RETCODE setupPriorityQueue(
       SCIP_Real*            dualsolconv,        /**< dual solution values / Farkas coefficients of convexity constraints */
-      int                   maxcols             /**< maximum number of columns to be generated */
+      int                   maxcols,            /**< maximum number of columns to be generated */
+      SCIP_Real*            bestobjvals,
+      SCIP_Real*            bestredcosts
       );
 
    /** get the next pricing job to be performed */
@@ -103,7 +110,7 @@ public:
       );
 
    /** update statistics of a pricing job, and possibly add it again to the queue with different settings */
-   void updatePricingjob(
+   SCIP_RETCODE updatePricingjob(
       GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
       SCIP_STATUS           status,             /**< status after solving the pricing problem */
       SCIP_Real             lowerbound,         /**< lower bound returned by the pricing problem */
@@ -119,6 +126,12 @@ public:
    /** return whether the reduced cost is valid */
    SCIP_Bool redcostIsValid();
 
+   /* return whether all pricing problems have been solved to optimality */
+   SCIP_Bool pricingIsOptimal();
+
+   /* return whether the current node is infeasible */
+   SCIP_Bool pricingIsInfeasible();
+
    /** reset the lower bound of a pricing job */
    void resetPricingjobLowerbound(
       GCG_PRICINGJOB*       pricingjob          /**< pricing job */
@@ -126,12 +139,23 @@ public:
 
    /** for all pricing jobs, move their columns to the column pool */
    SCIP_RETCODE moveColsToColpool(
-      Colpool*           colpool             /**< column pool */
+      GCG_COLPOOL*          colpool,            /**< column pool */
+      GCG_PRICESTORE*       pricestore,         /**< GCG pricing store */
+      SCIP_Bool             usecolpool,         /**< use column pool? */
+      SCIP_Bool             usepricestore       /**< use price store? */
       );
+
+   /** check if the next chunk of pricing problems is to be used */
+   SCIP_Bool checkNextChunk();
 
    /** get best columns found by the pricing jobs */
    void getBestCols(
       GCG_COL**             cols                /**< column array to be filled */
+      );
+
+   /** get the sum over the dual values of convexity constraints */
+   SCIP_Real getDualconvsum(
+      PricingType*          pricetype           /**< type of pricing (reduced cost or Farkas) */
       );
 
    /** free all columns of the pricing jobs */

@@ -43,6 +43,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
+
 #include "class_stabilization.h"
 #include "pricer_gcg.h"
 #include "gcg.h"
@@ -55,7 +56,8 @@ namespace gcg {
 Stabilization::Stabilization(
    SCIP* scip,
    PricingType* pricingtype_,
-   SCIP_Bool hybridascent_
+   SCIP_Bool hybridascent_,
+   SCIP_Real farkasalpha_
    ) :scip_(scip), stabcenterconsvals((SCIP_Real*) NULL), stabcenterconsvalssize(0), nstabcenterconsvals(0),
       stabcentercutvals((SCIP_Real*) NULL), stabcentercutvalssize(0), nstabcentercutvals(0),
       stabcenterlinkingconsvals((SCIP_Real*) NULL), nstabcenterlinkingconsvals(0),
@@ -65,7 +67,7 @@ Stabilization::Stabilization(
       subgradientlinkingconsvals(NULL), nsubgradientlinkingconsvals(0),
       subgradientnorm(0.0), hybridfactor(0.0),
       pricingtype(pricingtype_), alpha(0.8), alphabar(0.8), hybridascent(hybridascent_), beta(0.0), nodenr(-1), k(0), t(0), hasstabilitycenter(FALSE),stabcenterbound(-SCIPinfinity(scip)),
-      inmispricingschedule(FALSE), subgradientproduct(0.0)
+      inmispricingschedule(FALSE), subgradientproduct(0.0), farkasalpha(farkasalpha_), farkasalphabar(farkasalpha_), infarkas(FALSE)
 {
 
 }
@@ -254,6 +256,18 @@ SCIP_RETCODE Stabilization::consGetDual(
 
    SCIP_CONS* cons = GCGgetMasterConss(origprob)[i];
 
+   if( infarkas )
+   {
+      SCIP_Real usedalpha;
+      usedalpha = farkasalpha;
+      if( inmispricingschedule )
+         usedalpha = farkasalphabar;
+
+      *dual = usedalpha * SCIPgetDualsolLinear(scip_, cons) + (1-usedalpha) * SCIPgetDualfarkasLinear(scip_, cons);
+
+      return SCIP_OKAY;
+   }
+
    if( i >= nstabcenterconsvals )
       SCIP_CALL( updateStabcenterconsvals() );
 
@@ -330,6 +344,11 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    assert(dualsolconv != NULL);
    SCIPdebugMessage("Updating stability center: ");
 
+   /* in case the bound is not improving and we have a stability center, do nothing */
+   if( infarkas )
+   {
+      return SCIP_OKAY;
+   }
    /* in case the bound is not improving and we have a stability center, do nothing */
    if( SCIPisLE(scip_, lowerbound, stabcenterbound) && hasstabilitycenter )
    {
@@ -447,13 +466,15 @@ void Stabilization::updateNode()
       hasstabilitycenter = FALSE;
       stabcenterbound = -SCIPinfinity(scip_);
       inmispricingschedule = FALSE;
+
+      alphabar = 0.8;
    }
 }
 
 /**< update information for hybrid stabilization with dual ascent */
 SCIP_RETCODE Stabilization::updateHybrid()
 {
-   if( hasstabilitycenter && hybridascent && !inmispricingschedule )
+   if( hasstabilitycenter && hybridascent && !inmispricingschedule && !infarkas )
    {
       /* first update the arrays */
       SCIP_CALL( updateStabcenterconsvals() );
@@ -477,44 +498,83 @@ void Stabilization::updateAlphaMisprice()
 {
    SCIPdebugMessage("Alphabar update after mispricing\n");
    updateIterationCountMispricing();
-   alphabar = MAX(0.0, 1-k*(1-alpha));
-   SCIPdebugMessage("alphabar updated to %g in mispricing iteration k=%d and node pricing iteration t=%d \n", alphabar, k, t);
-}
-
-void Stabilization::updateAlpha(
-   GCG_COL**            pricingcols         /**< solutions of the pricing problems */
-   )
-{
-   SCIPdebugMessage("Alpha update after successful pricing\n");
-   updateIterationCount();
-
-   /* There is a sign error in the stabilization paper:
-    * if the scalar product (subgradientproduct) is positive, the angle is less than 90° and we want to decrease alpha
-    */
-   if( SCIPisNegative(scip_, subgradientproduct) )
+   if( infarkas )
    {
-      increaseAlpha();
+      //farkasalphabar = MAX(0.0, farkasalpha-k*0.1);
+      farkasalphabar = 0.0;
+      SCIPdebugMessage("farkasalphabar updated to %g in mispricing iteration k=%d and node pricing iteration t=%d \n", farkasalphabar, k, t);
    }
    else
    {
-      decreaseAlpha();
+      alphabar = MAX(0.0, 1-k*(1-alpha));
+      SCIPdebugMessage("alphabar updated to %g in mispricing iteration k=%d and node pricing iteration t=%d \n", alphabar, k, t);
    }
+}
 
+void Stabilization::updateAlpha()
+{
+   if( infarkas )
+   {
+
+   }
+   else
+   {
+      SCIPdebugMessage("Alpha update after successful pricing\n");
+      updateIterationCount();
+
+      /* There is a sign error in the stabilization paper:
+       * if the scalar product (subgradientproduct) is positive, the angle is less than 90° and we want to decrease alpha
+       */
+      if( SCIPisNegative(scip_, subgradientproduct) )
+      {
+         increaseAlpha();
+      }
+      else
+      {
+         decreaseAlpha();
+      }
+   }
+}
+
+void Stabilization::increaseFarkasAlpha()
+{
+   if( infarkas )
+   {
+      farkasalpha = MIN(1.0, alpha+0.1);
+      SCIPdebugMessage("farkasalpha increased to %g\n", farkasalpha);
+   }
 }
 
 void Stabilization::increaseAlpha()
 {
-   /* to avoid numerical problems, we assure alpha <= 0.9 */
-   alpha = MIN(0.9, alpha+(1-alpha)*0.1);
+   if( infarkas )
+   {
+//      farkasalpha = MIN(1.0, alpha+0.1);
+//      SCIPdebugMessage("farkasalpha increased to %g\n", farkasalpha);
+   }
+   else
+   {
+      /* to avoid numerical problems, we assure alpha <= 0.9 */
+      alpha = MIN(0.9, alpha+(1-alpha)*0.1);
 
-   SCIPdebugMessage("alpha increased to %g\n", alpha);
+      SCIPdebugMessage("alpha increased to %g\n", alpha);
+   }
 }
 
 void Stabilization::decreaseAlpha()
 {
-   alpha = MAX(0.0, alpha-0.1);
+   if( infarkas )
+   {
+//      alpha = MAX(0.0, alpha-0.1);
+//
+//      SCIPdebugMessage("farkasalpha decreased to %g\n", farkasalpha);
+   }
+   else
+   {
+      alpha = MAX(0.0, alpha-0.1);
 
-   SCIPdebugMessage("alpha decreased to %g\n", alpha);
+      SCIPdebugMessage("alpha decreased to %g\n", alpha);
+   }
 }
 
 SCIP_Real Stabilization::calculateSubgradientProduct(
@@ -1094,7 +1154,13 @@ void Stabilization::calculateHybridFactor()
 
 SCIP_Bool Stabilization::isStabilized()
 {
-   if( inmispricingschedule )
+   if( infarkas )
+   {
+      if( inmispricingschedule)
+         return SCIPisGT(scip_, farkasalphabar, 0.0);
+      return SCIPisGT(scip_, farkasalpha, 0.0);
+   }
+   if( inmispricingschedule)
       return SCIPisGT(scip_, alphabar, 0.0);
    return SCIPisGT(scip_, alpha, 0.0);
 }
@@ -1110,6 +1176,11 @@ void Stabilization::activateMispricingSchedule(
 void Stabilization::disablingMispricingSchedule(
 )
 {
+   if( infarkas )
+   {
+//      farkasalpha = farkasalphabar;
+//      SCIPdebugMessage("farkasalphabar updated to %g after mispricing \n", farkasalpha);
+   }
    inmispricingschedule = FALSE;
    k=0;
 }
@@ -1121,19 +1192,52 @@ SCIP_Bool Stabilization::isInMispricingSchedule(
    return inmispricingschedule;
 }
 
+/** enabling Farkas */
+void Stabilization::activateFarkas(
+)
+{
+   infarkas = TRUE;
+}
+
+/** disabling Farkas */
+void Stabilization::disablingFarkas(
+)
+{
+   infarkas = FALSE;
+}
+
+/** in Farkas*/
+SCIP_Bool Stabilization::inFarkas(
+) const
+{
+   return infarkas;
+}
+/** get Farkas alpha */
+SCIP_Real Stabilization::getFarkasAlpha(
+) const
+{
+   assert(infarkas);
+
+   if( inmispricingschedule )
+      return farkasalphabar;
+
+   return farkasalpha;
+}
+
 /** update subgradient product */
 SCIP_RETCODE Stabilization::updateSubgradientProduct(
    GCG_COL**            pricingcols         /**< solutions of the pricing problems */
 )
 {
-   /* first update the arrays */
-   SCIP_CALL( updateStabcenterconsvals() );
-   SCIP_CALL( updateStabcentercutvals() );
+   if( !infarkas )
+   {
+      /* first update the arrays */
+      SCIP_CALL( updateStabcenterconsvals() );
+      SCIP_CALL( updateStabcentercutvals() );
 
-   subgradientproduct = calculateSubgradientProduct(pricingcols);
-
+      subgradientproduct = calculateSubgradientProduct(pricingcols);
+   }
    return SCIP_OKAY;
 }
-
 
 } /* namespace gcg */

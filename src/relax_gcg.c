@@ -516,8 +516,8 @@ SCIP_RETCODE checkSetppcStructure(
          {
             relaxdata->masterissetcover = FALSE;
             relaxdata->masterissetpart = FALSE;
+            break;
          }
-         break;
       }
       else
       {
@@ -1359,6 +1359,18 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
    SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
 
+   /* settings needed for Farkas pricing */
+   /* store parameters that are changed for the generation of the subproblem cuts */
+   SCIPsetParam(masterscip, "conflict/enable", FALSE);
+
+   SCIPsetIntParam(masterscip, "lp/disablecutoff", 1);
+   SCIPsetIntParam(masterscip, "lp/scaling", 0);
+
+   SCIPsetCharParam(masterscip, "lp/initalgorithm", 'd');
+   SCIPsetCharParam(masterscip, "lp/resolvealgorithm", 'd');
+
+   SCIPsetBoolParam(masterscip, "misc/alwaysgetduals", TRUE);
+
    return SCIP_OKAY;
 }
 
@@ -1960,9 +1972,9 @@ SCIP_RETCODE initRelaxator(
    {
       SCIP_RANDNUMGEN* randnumgen;
 
-      SCIP_CALL( SCIPrandomCreate(&randnumgen, SCIPblkmem(scip), (unsigned int) permutationseed) );
+      SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, (unsigned int) permutationseed) );
       SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, randnumgen) );
-      SCIPrandomFree(&randnumgen);
+      SCIPfreeRandom(scip, &randnumgen);
    }
 
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
@@ -2355,18 +2367,17 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       /* set the lower bound pointer */
-      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
+      if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING && GCGmasterIsCurrentSolValid(masterprob) )
       {
          *lowerbound = SCIPgetLocalDualbound(masterprob);
-
       }
       else
       {
          SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
          assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
-         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+         if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && GCGmasterIsCurrentSolValid(masterprob) )
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT )
+         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || !GCGmasterIsCurrentSolValid(masterprob) )
          {
             SCIP_Real tilim;
             SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
@@ -2398,7 +2409,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       /* if a new primal solution was found in the master problem, transfer it to the original problem */
-      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
+      if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) && GCGmasterIsCurrentSolValid(masterprob) )
       {
          SCIP_SOL* newsol;
 
@@ -2473,7 +2484,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    initRelaxdata(relaxdata);
 
    /* include relaxator */
-   SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, RELAX_INCLUDESLP, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
+   SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
          relaxExitGcg, relaxInitsolGcg, relaxExitsolGcg, relaxExecGcg, relaxdata) );
 
    /* inform the main scip, that no LPs should be solved */
@@ -3622,7 +3633,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
       int i;
 
       SCIP_CALL( SCIPcreateSol(scip, &relaxdata->currentorigsol, NULL) );
-      SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->storedorigsol) );
+      SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->storedorigsol, RELAX_INCLUDESLP) );
 
       for( i = 0; i < nvars; i++ )
       {
@@ -3720,7 +3731,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          return SCIP_OKAY;
       }
 
-      if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) )
+      if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) && GCGmasterIsSolValid(relaxdata->masterprob, mastersol) )
       {
          int i;
 
@@ -3728,7 +3739,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIP_CALL( GCGtransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol)) );
 
          /* store the solution as relaxation solution */
-         SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol) );
+         SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol, RELAX_INCLUDESLP) );
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
 
          SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, FALSE, TRUE) );
