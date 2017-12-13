@@ -364,6 +364,16 @@ SCIP_DECL_CONSENFOLP(consEnfolpOrigbranch)
    return SCIP_OKAY;
 }
 
+/** lp solution enforcement method */
+static
+SCIP_DECL_CONSENFORELAX(consEnforeOrigbranch)
+{  /*lint --e{715}*/
+   *result = SCIP_FEASIBLE;
+
+   return SCIP_OKAY;
+}
+
+
 /** pseudo solution enforcement method */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsOrigbranch)
@@ -415,6 +425,7 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
          consLockOrigbranch, conshdlrData) );
    assert(conshdlr != NULL);
 
+   SCIP_CALL( SCIPsetConshdlrEnforelax(scip, conshdlr, consEnforeOrigbranch) );
    SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeOrigbranch) );
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitOrigbranch) );
    SCIP_CALL( SCIPsetConshdlrInitsol(scip, conshdlr, consInitsolOrigbranch) );

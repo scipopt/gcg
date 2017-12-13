@@ -71,7 +71,7 @@
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
 #define RELAX_PRIORITY         -1
 #define RELAX_FREQ             1
-#define RELAX_INCLUDESLP       FALSE
+#define RELAX_INCLUDESLP       TRUE
 
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
