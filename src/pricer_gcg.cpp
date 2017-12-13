@@ -3032,7 +3032,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 #endif
 
 #ifdef SCIP_STATISTIC
-   SCIPstatisticMessage("New pricing round at node %" SCIP_LONGINT_FORMAT "\n", SCIPgetNNodes(scip_));
+   SCIPstatisticMessage("New pr, node %" SCIP_LONGINT_FORMAT "\n", SCIPgetNNodes(scip_));
    nstabrounds = 0;
 #endif
    
@@ -3064,7 +3064,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          SCIPdebugMessage("****************************** Mispricing iteration ******************************\n");
 #ifdef SCIP_STATISTIC
          ++nstabrounds;
-         SCIPstatisticMessage("Stabilization round %d\n", nstabrounds);
+         SCIPstatisticMessage("Sr %d\n", nstabrounds);
 #endif
       }
 
@@ -3179,7 +3179,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             }
 
 #ifdef SCIP_STATISTIC
-            SCIPstatisticMessage("Pricing prob %d : found %d improving columns, time = %g\n",
+            SCIPstatisticMessage("P p %d : %d in %g\n",
                GCGpricingjobGetProbnr(pricingjob), GCGpricingjobGetNImpCols(pricingjob) - oldnimpcols, pricingtime);
 #endif
          }
