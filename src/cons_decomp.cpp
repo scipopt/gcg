@@ -4292,8 +4292,12 @@ SCIP_RETCODE DECdetectStructure(
 
    conshdlrdata->seeedpool = NULL;
 
+
+   *result = SCIP_DIDNOTRUN;
+
    SCIP_CALL(SCIPresetClock(scip, conshdlrdata->completedetectionclock));
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock));
+
 
 
    /* check whether only legacy mode should be executed */
@@ -4431,6 +4435,9 @@ SCIP_RETCODE DECdetectStructure(
 
 
       conshdlrdata->seeedpool->findDecompositions();
+
+      if( conshdlrdata->seeedpool->getNFinishedSeeeds() > 0 )
+         *result = SCIP_SUCCESS;
 
 //   SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
 //   SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
