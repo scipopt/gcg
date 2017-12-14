@@ -64,6 +64,7 @@ struct seeedpool_wrapper;
 
 typedef struct seeedpool_wrapper SEEEDPOOL_WRAPPER ;
 
+
 SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP*          scip
 );

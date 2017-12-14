@@ -1023,8 +1023,8 @@ SCIP_RETCODE createGraph(
 /** create a graph out of an array of scips */
 static
 SCIP_RETCODE createGraphNewDetection(
-   gcg::Seeedpool*       seeedpool,           /**< seeedpool corresponing to presolved or unpresolved problem */
-   gcg::Seeed*           seeed,              /**< partial decomp the  symmetry for two blocks is checked for */
+   gcg::Seeedpool*       seeedpool,               /** SCIP data structure */
+   gcg::Seeed*           seeed,            /** id of the seeed the graphs should be compared for */
    int                   nblocks,            /**< number of blocks the symmetry should be checked for */
    std::vector<int>      blocks,             /**< vectors of block indices the symmetry be checked for */
    AUT_COLOR             colorinfo,          /**< data structure to save intermediate data  */
@@ -1043,29 +1043,34 @@ SCIP_RETCODE createGraphNewDetection(
    int color;
    int nconss;
    int nvars;
+   int nnodes;
+   bliss::Graph* h;
+   int* pricingnonzeros;
+   int* mastercoefindex;
+
+   pricingnonzeros = NULL;
+   mastercoefindex = NULL;
 
 
-   int nnodes = 0;
+    nnodes = 0;
    //building the graph out of the arrays
-   bliss::Graph* h = graph;
+   h = graph;
 
-   int* pricingnonzeros = NULL;
-   int* mastercoefindex = NULL;
+   scip = seeedpool->getScip();
+
 
 //   SCIP_CALL( SCIPallocMemoryArray(origscip, &pricingnonzeros, nscips) );
 //   SCIP_CALL( SCIPallocMemoryArray(origscip, &nnodesoffset, nscips) );
-//   SCIP_CALL( SCIPallocMemoryArray(origscip, &mastercoefindex, nscips) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &mastercoefindex, nblocks) );
 //   BMSclearMemoryArray(pricingnonzeros, nscips);
 //   BMSclearMemoryArray(nnodesoffset, nscips);
-//   BMSclearMemoryArray(mastercoefindex, nscips);
+   BMSclearMemoryArray(mastercoefindex, nblocks);
 //
 //   SCIP_CONS** origmasterconss = GCGgetLinearOrigMasterConss(origscip);
 //   int nmasterconss = GCGgetNMasterConss(origscip);
 
    nconss = seeed->getNConssForBlock(blocks[0]);
    nvars = seeed->getNVarsForBlock(blocks[0]);
-
-   scip = seeedpool->getScip();
 
    SCIP_CALL( SCIPallocMemoryArray(origscip, &nnodesoffset, nblocks) );
    BMSclearMemoryArray(nnodesoffset, nblocks);
@@ -1367,10 +1372,10 @@ SCIP_RETCODE cmpGraphPair(
 /** compare two graphs w.r.t. automorphism */
 extern "C"
 SCIP_RETCODE cmpGraphPairNewdetection(
-   gcg::Seeedpool*       seeedpool,
-   gcg::Seeed*           seeed,
-   int                   block1,              /**< index of first pricing prob */
-   int                   block2,              /**< index of second pricing prob */
+   SCIP*                 scip,               /** SCIP data structure */
+   SEEED_WRAPPER*        seeedwr,            /** id of the seeed the graphs should be compared for */
+   int                   block1,             /**< index of first pricing prob */
+   int                   block2,             /**< index of second pricing prob */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
    SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
@@ -1381,15 +1386,33 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    AUT_HOOK *ptrhook;
    AUT_COLOR colorinfo;
    std::vector<int> blocks;
+   gcg::Seeedpool* seeedpool;
+   gcg::Seeedpool* seeedpoolunpresolved;
+   gcg::Seeedpool* seeedpoolpresolved;
+   gcg::Seeed* seeed;
+
 //   int pricingindices[2];
    int pricingnodes;
+
+   seeed = (gcg::Seeed*) seeedwr;
    *result = SCIP_SUCCESS;
 
+   assert(seeed != NULL );
 
    blocks = std::vector<int>(2, -1);
    blocks[0] = block1;
    blocks[1] = block2;
    pricingnodes = 0;
+
+   seeedpoolpresolved = (gcg::Seeedpool*) SCIPconshdlrDecompGetSeeedpoolExtern(scip);
+   seeedpoolunpresolved = (gcg::Seeedpool*) SCIPconshdlrDecompGetSeeedpoolUnpresolvedExtern(scip);
+
+   if (seeed->isFromUnpresolved() )
+      seeedpool = seeedpoolunpresolved;
+   else
+      seeedpool = seeedpoolpresolved;
+
+   assert(seeedpool != NULL);
 
    SCIP_CALL( setuparraysnewdetection(seeedpool, seeed, 2, blocks, &colorinfo, result) );
    SCIP_CALL( createGraphNewDetection(seeedpool, seeed, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );

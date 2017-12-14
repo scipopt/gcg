@@ -175,6 +175,11 @@ public:
    /** calls findSeeeds method and translates the resulting seeeds into decompositions */
    void findDecompositions();
 
+   /** returns seeed with the corresponding id */
+   gcg::Seeed* findFinishedSeeedByID(
+      int      seeedid
+      );
+
    /** adds a seeed to ancestor seeeds */
    void addSeeedToAncestor(
       SeeedPtr seeed

@@ -36,13 +36,14 @@
 #include "scip/type_scip.h"
 #include "scip/type_result.h"
 #include "scip/type_misc.h"
-#include "class_seeed.h"
-#include "class_seeedpool.h"
 
 
 #ifndef BLISS_AUTOMORPH_H_
 #define BLISS_AUTOMORPH_H_
 
+struct seeed_wrapper;
+
+typedef struct seeed_wrapper SEEED_WRAPPER ;
 
 
 #ifdef __cplusplus
@@ -63,13 +64,13 @@ SCIP_RETCODE cmpGraphPair(
 
 /** compare two graphs w.r.t. automorphism */
 SCIP_RETCODE cmpGraphPairNewdetection(
-   gcg::Seeedpool*       seeedpool,
-    gcg::Seeed*           seeed,
-    int                   block1,              /**< index of first pricing prob */
-    int                   block2,              /**< index of second pricing prob */
-    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-    SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-    SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
+   SCIP*                 scip,               /** SCIP data structure */
+   SEEED_WRAPPER*        seeedwr,            /** id of the seeed the graphs should be compared for */
+   int                   block1,             /**< index of first pricing prob */
+   int                   block2,             /**< index of second pricing prob */
+   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
+   SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
+   SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
    );
 
 

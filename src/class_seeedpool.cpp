@@ -1637,6 +1637,22 @@ void Seeedpool::findDecompositions()
    }
 }*/
 
+/** returns seeed with the corresponding id or NULL if there is no finished seeed with that id */
+  gcg::Seeed* Seeedpool::findFinishedSeeedByID(
+     int      seeedid
+     )
+  {
+     for( size_t fs = 0; fs < finishedSeeeds.size(); ++fs )
+     {
+        if ( finishedSeeeds[fs]->getID() == seeedid )
+           return finishedSeeeds[fs];
+     }
+
+     return NULL;
+  }
+
+
+
 /** adds a seeed to ancestor seeeds */
 void Seeedpool::addSeeedToAncestor(
    SeeedPtr seeed

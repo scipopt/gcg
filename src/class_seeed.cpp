@@ -1784,7 +1784,7 @@ void Seeed::checkIdenticalBlocksBliss(
       getNConssForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
 
 
-   cmpGraphPairNewdetection(seeedpool, this, b1, b2, &result, varmap2, consmap );
+   cmpGraphPairNewdetection(seeedpool->getScip(), (SEEED_WRAPPER*) this, b1, b2, &result, varmap2, consmap );
    if (result == SCIP_SUCCESS)
       *identical = TRUE;
    else
