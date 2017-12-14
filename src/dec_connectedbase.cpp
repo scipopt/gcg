@@ -60,6 +60,7 @@
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       TRUE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      TRUE        /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -205,11 +206,18 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
    char decinfo[SCIP_MAXSTRLEN];
 
-   gcg::Seeed* seeed;
-   seeed  = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
+   SCIP_Bool byconssadj;
 
+   gcg::Seeed* seeed;
+   seeed = new gcg::Seeed(seeedPropagationData->seeedToPropagate);
+
+   SCIPgetBoolParam(scip, "detectors/connectedbase/useconssadj", &byconssadj);
    //complete the seeed by bfs
-   seeed->completeByConnected(seeedPropagationData->seeedpool );
+
+   if( byconssadj )
+      seeed->completeByConnectedConssAdjacency(seeedPropagationData->seeedpool );
+   else
+      seeed->completeByConnected(seeedPropagationData->seeedpool );
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), 1) );
    seeedPropagationData->newSeeeds[0] = seeed;
@@ -227,6 +235,8 @@ DEC_DECL_FINISHSEEED(finishSeeedConnectedbase)
 
    return SCIP_OKAY;
 }
+
+#define detectorPostprocessSeeedConnectedbase NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConnectedbase)
@@ -311,7 +321,7 @@ SCIP_RETCODE SCIPincludeDetectorConnectedbase(
 
    detectordata->useconssadj = TRUE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectConnectedbase, freeConnectedbase, initConnectedbase, exitConnectedbase, propagateSeeedConnectedbase, finishSeeedConnectedbase, setParamAggressiveConnectedbase, setParamDefaultConnectedbase, setParamFastConnectedbase) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectConnectedbase, freeConnectedbase, initConnectedbase, exitConnectedbase, propagateSeeedConnectedbase, finishSeeedConnectedbase, detectorPostprocessSeeedConnectedbase, setParamAggressiveConnectedbase, setParamDefaultConnectedbase, setParamFastConnectedbase) );
 
    /* add consname detector parameters */
       /**@todo add connectedbase detector parameters */

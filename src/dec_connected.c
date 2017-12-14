@@ -68,6 +68,7 @@
 #define DEC_ENABLED               FALSE           /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE        /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the finishing be enabled */
 #define DEFAULT_SETPPCINMASTER    TRUE           /**< should the extended structure be detected */
 #define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
@@ -349,6 +350,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectConnected)
 #define detectorPropagateSeeedConnected NULL
 #define detectorFinishSeeedConnected NULL
 
+#define detectorPostprocessSeeedConnected NULL
 #define setParamAggressiveConnected NULL
 #define setParamDefaultConnected NULL
 #define setParamFastConnected NULL
@@ -374,8 +376,8 @@ SCIP_RETCODE SCIPincludeDetectorConnected(
 
    detectordata->blockdiagonal = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectorDetectConnected, detectorFreeConnected, detectorInitConnected, detectorExitConnected, detectorPropagateSeeedConnected, detectorFinishSeeedConnected, setParamAggressiveConnected, setParamDefaultConnected, setParamFastConnected) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
+      detectordata, detectorDetectConnected, detectorFreeConnected, detectorInitConnected, detectorExitConnected, detectorPropagateSeeedConnected, detectorFinishSeeedConnected, detectorPostprocessSeeedConnected, setParamAggressiveConnected, setParamDefaultConnected, setParamFastConnected) );
 
 
    /* add connected constraint handler parameters */

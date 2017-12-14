@@ -82,9 +82,9 @@ Seeed::Seeed(
    ) :
    scip( _scip ), id( givenid ), nBlocks( 0 ), nVars( givennvars ), nConss( givennconss ), masterConss( 0 ),
    masterVars( 0 ), conssForBlocks( 0 ), varsForBlocks( 0 ), linkingVars( 0 ), stairlinkingVars( 0 ), isvaropen( givennvars, true ),
-   isconsopen( givennconss, true ) ,isvarmaster( givennvars, false ), varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
-   conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true), masterconsssorted(true),
-   isconsmaster( givennconss, false ), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
+   isconsopen( givennconss, true ), isvarmaster( givennvars, false ),   isconsmaster( givennconss, false ), varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
+   conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
+   masterconsssorted(true), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), usedClassifier( 0 ), classesToMaster( 0 ), classesToLinking( 0 ), listofancestorids( 0 ),
@@ -121,6 +121,8 @@ Seeed::Seeed(
    openConss = seeedtocopy->openConss;
 
    isvaropen = seeedtocopy->isvaropen;
+   masterconsssorted = seeedtocopy->masterconsssorted;
+
    isconsopen = seeedtocopy->isconsopen;
 
    isvarmaster = seeedtocopy->isvarmaster;
@@ -162,7 +164,6 @@ Seeed::Seeed(
    conssforblocksorted = seeedtocopy->conssforblocksorted;
    linkingvarssorted = seeedtocopy->linkingvarssorted;
    mastervarssorted = seeedtocopy->mastervarssorted;
-   masterconsssorted = seeedtocopy->masterconsssorted;
 
 }
 
@@ -171,6 +172,36 @@ Seeed::~Seeed()
 {
    SCIPfreeBlockMemoryArrayNull( scip, & detectorchainstring, SCIP_MAXSTRLEN );
 }
+
+SCIP_Bool Seeed::isconshittingblockca(
+   gcg::Seeedpool* seeedpool,
+   int masterconsid,
+   int b
+   )
+{
+   int neighborc = 0;
+   int blockc = 0;
+   const int* conssforblock = getConssForBlock(b);
+   const int* conssforcons = seeedpool->getConssForCons(masterconsid);
+
+   int nconssforblock = getNConssForBlock(b);
+   int nconssforcons = seeedpool->getNConssForCons(masterconsid);
+   while ( blockc < nconssforblock && neighborc < nconssforcons )
+   {
+      int diff = conssforblock[blockc] - conssforcons[neighborc];
+      if ( diff < 0 )
+         ++blockc;
+      else if( diff > 0 )
+         ++neighborc;
+      else
+      {
+         assert(diff == 0);
+         return TRUE;
+      }
+   }
+   return FALSE;
+}
+
 
 /** returns true iff the second value of a is lower than the second value of b */
 bool compare_blocks(
@@ -1357,6 +1388,17 @@ bool Seeed::checkConsistency(
       }
    }
 
+   for( size_t i = 0; i < openVarsBool.size(); ++ i )
+   {
+      if( openVarsBool[i] != isvaropen[i] )
+      {
+         SCIPwarningMessage(scip, "In (seeed %d) variable with index %d is causes asynchronity with isvaropen array ! \n" , id, openVars[i]  );
+         assert( false );
+         return false;
+
+      }
+   }
+
    /** check constraints (every constraint is assigned at most once) */
    std::vector<bool> openConssBool( nConss, true );
    std::vector<int> openConssVec( 0 );
@@ -1500,10 +1542,34 @@ bool Seeed::checkConsistency(
             if( ! ( isVarBlockvarOfBlock( varid, b ) || isVarLinkingvar( varid ) || isVarStairlinkingvarOfBlock( varid, b )
                || isVarOpenvar( varid ) ) )
             {
+               SCIP_Bool partofblock;
+
+               partofblock = FALSE;
+
                SCIPwarningMessage( scip,
                   "WARNING! Variable %d is not part of block %d or linking or open as constraint %d suggests! \n ", varid, b,
                   getConssForBlock( b )[c] );
 
+               for( int b2 = 0; b2 < getNBlocks(); ++b2 )
+               {
+                  if ( isVarBlockvarOfBlock(varid, b2 ) )
+                  {
+                     partofblock = TRUE;
+                     SCIPwarningMessage( scip,
+                        "instead Variable %d is part of block %d  \n ", varid, b2 );
+                     break;
+                  }
+               }
+
+               if( !partofblock )
+               {
+                  if( isvarmaster[varid] )
+                     SCIPwarningMessage( scip,
+                                             "instead Variable %d is part of master  \n ", varid );
+                  else
+                     SCIPwarningMessage( scip,
+                                                               "in fact Variable %d is completely unassigned  \n ", varid );
+               }
                return false;
             }
          }
@@ -1656,6 +1722,105 @@ SCIP_RETCODE Seeed::completeByConnected(
    return SCIP_OKAY;
 }
 
+
+/** try to reassign each  mastercons to one block without inducing conflicts  */
+ SCIP_RETCODE Seeed::postprocessMasterToBlocks(
+    Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+    SCIP_Bool* success
+    )
+ {
+    *success = FALSE;
+    return SCIP_OKAY;
+ }
+
+
+ /** try to reassign each  mastercons to one block without inducing conflicts  */
+ SCIP_RETCODE Seeed::postprocessMasterToBlocksConssAdjacency(
+    Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+    SCIP_Bool* success
+    )
+ {
+    *success = FALSE;
+    std::vector<int> constoreassign(0);
+    std::vector<int> blockforconstoreassign(0);
+
+    sort();
+
+    std::vector<int> blockforvar(getNVars(), -1 );
+
+
+    /**  */
+    for( int b = 0; b < getNBlocks(); ++b )
+    {
+       for( size_t j  = 0; j < (size_t) getNVarsForBlock(b); ++j )
+       {
+          blockforvar[getVarsForBlock(b)[j] ] = b;
+       }
+    }
+
+
+    for( int mc = 0; mc < getNMasterconss(); ++mc )
+    {
+       int masterconsid = getMasterconss()[mc];
+       int hittenblock  = -1;
+
+       SCIP_Bool hitsmastervar = FALSE;
+       SCIP_Bool varhitsotherblock = FALSE;
+
+       for( int var = 0; var < seeedpool->getNVarsForCons(masterconsid); ++var )
+       {
+          int varid = seeedpool->getVarsForCons(masterconsid)[var];
+          if( isvarmaster[varid] )
+          {
+             hitsmastervar = TRUE;
+             break;
+          }
+
+          if ( blockforvar[varid] != -1 )
+          {
+             if( hittenblock == -1 )
+                hittenblock = blockforvar[varid];
+             else if( hittenblock != blockforvar[varid] )
+             {
+                varhitsotherblock = TRUE;
+                break;
+             }
+          }
+       }
+
+       if( hitsmastervar || varhitsotherblock )
+          continue;
+
+       if ( hittenblock != -1 )
+       {
+          constoreassign.push_back(masterconsid);
+          blockforconstoreassign.push_back(hittenblock);
+       }
+    }
+
+
+    for( size_t i = 0; i < constoreassign.size() ; ++i )
+    {
+          std::vector<int>::iterator todelete = lower_bound( masterConss.begin(), masterConss.end(), constoreassign[i] );
+          masterConss.erase(todelete);
+
+          conssForBlocks[blockforconstoreassign[i]].push_back( constoreassign[i] );
+          conssforblocksorted = false;
+
+    }
+
+    if( constoreassign.size() > 0 )
+       *success = SCIP_SUCCESS;
+
+    sort();
+
+    evaluate( seeedpool, SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
+    calcHashvalue();
+
+    return SCIP_OKAY;
+ }
+
+
 /** assigns all open constraints and open variables
   *  strategy: assigns all conss same block if they are connected
   *  two constraints are adjacent if there is a common variable
@@ -1669,6 +1834,7 @@ SCIP_RETCODE Seeed::completeByConnected(
     int var;
 
     changedHashvalue = true;
+
 
     /** tools to check if the openVars can still be found in a constraint yet */
     std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
@@ -1684,6 +1850,7 @@ SCIP_RETCODE Seeed::completeByConnected(
     std::vector<bool> isConsOpen( nConss, false );
     std::vector<bool> isConsVisited( nConss, false );
 
+    varInBlocks = std::vector<int>(nVars, -1);
 
     std::queue<int> helpqueue = std::queue<int>();
     std::vector<int> neighborConss( 0 );
@@ -1694,6 +1861,7 @@ SCIP_RETCODE Seeed::completeByConnected(
 
     SCIP_CALL( refineToMaster( seeedpool ) );
 
+    assert(checkConsistency(seeedpool) );
 
     if( nBlocks < 0 )
        nBlocks = 0;
@@ -1750,13 +1918,14 @@ SCIP_RETCODE Seeed::completeByConnected(
           {
              int newvar = seeedpool->getVarsForCons(cons)[j];
 
-             if( isVarLinkingvar(newvar) )
+             if( isVarLinkingvar(newvar) || varInBlocks[newvar] != -1 )
                 continue;
 
              assert(! isVarMastervar( newvar) );
              setVarToBlock( newvar, newBlockNr - 1 );
-             assert( isVarOpenvar( newvar ) );
-             deleteOpenvar( newvar );
+             varInBlocks[newvar] = newBlockNr - 1;
+             if( isVarOpenvar(newvar) )
+                deleteOpenvar( newvar );
           }
 
        }
@@ -2097,7 +2266,7 @@ SCIP_RETCODE Seeed::considerImplicits(
 
    flushBooked();
 
-   /** set open var to linking, if it can be found in more than one block or set it to a block if it has only constraints in that block and no open constraints */
+   /** set open var to linking, if it can be found in more than one block or set it to a block if it has only constraints in that block and no open constraints or set it to master if it only hits master constraints */
    for( size_t i = 0; i < openVars.size(); ++ i )
    {
       blocksOfOpenvar.clear();
@@ -2735,7 +2904,7 @@ SCIP_Real Seeed::evaluate(
 
    unsigned long blackarea;
 
-   maxwhitescore = 1.;
+   maxwhitescore = 0.;
    alphaborderarea = 0.6;
    alphalinking = 0.2;
    alphadensity = 0.2;
@@ -2754,7 +2923,7 @@ SCIP_Real Seeed::evaluate(
          blackarea += (unsigned long) getNConssForBlock( i ) * (unsigned long) getNVarsForBlock( i );
       }
 
-      maxwhitescore = (SCIP_Real) blackarea / (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() );
+      maxwhitescore = 1. - ( (SCIP_Real) blackarea / (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() ) );
 
       return maxwhitescore;
 
@@ -2871,7 +3040,7 @@ SCIP_Real Seeed::evaluate(
    borderarea = getNMasterconss() * nVars
       + ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) * ( nConss - getNMasterconss() );
 
-   maxwhitescore = (SCIP_Real) blackarea /  (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() );
+   maxwhitescore = 1. - ( (SCIP_Real) blackarea /  (SCIP_Real) ( (unsigned long) getNConss() * (unsigned long) getNVars() ) );
 //   std::cout << "black area ration =  " << blackarea << "/ ( " << getNConss() << " * " << getNVars() << " =  " << ( (unsigned long) getNConss() * (unsigned long) getNVars() ) << ")  = " << maxwhitescore << std::endl;
 
    //std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    this seeed has a black area ratio of " << maxwhitescore << std::endl;
@@ -2903,7 +3072,7 @@ SCIP_Real Seeed::evaluate(
    }
 
    borderscore = ( 1.0 * ( borderarea ) / matrixarea );
-   borderareascore = borderscore;
+   borderareascore = 1. - borderscore;
 
    DEC_DECTYPE type;
    if( getNLinkingvars() == getNTotalStairlinkingvars() && getNMasterconss() == 0 && getNLinkingvars() > 0 )
@@ -2930,36 +3099,36 @@ SCIP_Real Seeed::evaluate(
    switch( type )
    {
       case DEC_DECTYPE_ARROWHEAD:
-         totalscore = alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore );
+         totalscore = 1. - (alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore ) );
 //      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
          break;
       case DEC_DECTYPE_BORDERED:
-         totalscore = alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore );
+         totalscore = 1. - ( alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore ) );
 //      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
          break;
       case DEC_DECTYPE_DIAGONAL:
          if( nBlocks == 1 || nBlocks == 0 )
-            totalscore = 1.0;
-         else
             totalscore = 0.0;
+         else
+            totalscore = 1.0;
          break;
       case DEC_DECTYPE_STAIRCASE:
-         totalscore = alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + 0.2 * ( densityscore );
+         totalscore = 1. - ( alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + 0.2 * ( densityscore ) );
          break;
       case DEC_DECTYPE_UNKNOWN:
          assert (FALSE);
-         totalscore = 1.0;
+         totalscore = 0.0;
          break;
       default:
          SCIPerrorMessage( "No rule for this decomposition type, cannot compute score\n" );
          assert( FALSE );
-         totalscore = 1.0;
+         totalscore = 0.0;
          break;
    }
    if( nBlocks == 0 )
-      totalscore = 1.0;
+      totalscore = 0.0;
    if( nBlocks == 1 )
-      totalscore *= 4;
+      totalscore *= 0.25;
    if( totalscore > 1 )
       totalscore = 1;
 
@@ -2967,9 +3136,7 @@ SCIP_Real Seeed::evaluate(
 
    masterissetppc = false;
 
-   std::cout << "smartscore is set to " << smartscore << std::endl;
-
-   if( smartscore && maxwhitescore <= 0.8 && getNLinkingvars() == 0 )
+   if( smartscore && maxwhitescore >= 0.2 && getNLinkingvars() == 0 )
    {
       masterissetppc = true;
       for( int l = 0; l < getNMasterconss(); ++l )
@@ -2984,7 +3151,7 @@ SCIP_Real Seeed::evaluate(
          }
       }
       if ( masterissetppc )
-         maxwhitescore -= 1.;
+         maxwhitescore += 1.;
    }
 
 
@@ -2999,6 +3166,31 @@ SCIP_Real Seeed::evaluate(
    return   getScore(sctype);
 
 }
+
+
+/**
+ * returns true if the master consists only setpartitioning or cardinality constraints
+ */
+SCIP_Bool Seeed::hasSetpartitioningMaster(
+   gcg::Seeedpool* seeedpool
+)
+{
+   SCIP_Bool hassetpartmaster;
+   hassetpartmaster = TRUE;
+
+   for( int l = 0; l < getNMasterconss(); ++l )
+   {
+      int consid = getMasterconss()[l];
+      if( !seeedpool->isConsSetppc(consid) && !seeedpool->isConsCardinalityCons(consid) )
+      {
+         hassetpartmaster = FALSE;
+         break;
+      }
+   }
+   return hassetpartmaster;
+}
+
+
 
 /** assigns all conss to master or declares them to be open (and declares all vars to be open)
  *  according to the cons assignment information given in constoblock hashmap
@@ -3841,7 +4033,7 @@ const int* Seeed::getMastervars()
    return & masterVars[0];
 }
 
-/** returns the "maximum white score" (the smaller the better) */
+/** returns the "maximum white score" */
 SCIP_Real Seeed::getMaxWhiteScore()
 {
    return maxwhitescore;
@@ -3908,6 +4100,13 @@ int Seeed::getNDetectors()
 {
    return (int) detectorChain.size();
 }
+
+/** returns the number used classifiers */
+int Seeed::getNUsedClassifier()
+{
+   return (int) usedClassifier.size();
+}
+
 
 /** returns size of the vector containing linking vars */
 int Seeed::getNLinkingvars()
@@ -4499,6 +4698,87 @@ bool Seeed::isVarStairlinkingvarOfBlock(
       }
    }
 }
+
+
+SCIP_RETCODE Seeed::printClassifierInformation(
+   SCIP*                givenscip,
+   gcg::Seeedpool*      seeedpool,
+   FILE*                file
+   )
+{
+
+   int nusedclassifier = (int) getNUsedClassifier();
+   int nconsclassifier = 0;
+   int nvarclassifier = 0;
+
+   //SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  nusedclassifier );
+
+   for( int classif = 0; classif < nusedclassifier; ++classif)
+   {
+      if( usedClassifier[classif] == NULL )
+         continue;
+
+      if( dynamic_cast<ConsClassifier*>( usedClassifier[classif] ) != NULL )
+      {
+         /** classifier is cons classifier */
+         ++nconsclassifier;
+      }
+      else
+      {
+         /** classifier is var classifier */
+         ++nvarclassifier;
+      }
+   }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  nconsclassifier );
+
+   for( int classif = 0; classif < nusedclassifier; ++classif)
+   {
+      if( dynamic_cast<ConsClassifier*>( usedClassifier[classif] ) != NULL )
+      {
+         /** classifier is cons classifier */
+         int nmasterclasses = (int) classesToMaster[classif].size();
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedClassifier[classif]->getName() );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nmasterclasses  );
+         for ( int mclass = 0; mclass < (int) classesToMaster[classif].size(); ++mclass )
+         {
+            int classid = classesToMaster[classif][mclass];
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedClassifier[classif]->getClassName(classid), usedClassifier[classif]->getClassDescription(classid)  );
+         }
+      }
+   }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  nvarclassifier );
+
+   for( int classif = 0; classif < nusedclassifier; ++classif)
+   {
+      if( dynamic_cast<VarClassifier*>( usedClassifier[classif] ) != NULL )
+      {
+         /** classifier is var classifier */
+         int nmasterclasses = (int) classesToMaster[classif].size();
+         int nlinkingclasses = (int) classesToLinking[classif].size();
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s\n", usedClassifier[classif]->getName() );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nmasterclasses  );
+         for ( int mclass = 0; mclass < (int) classesToMaster[classif].size();   ++mclass )
+         {
+            int classid = classesToMaster[classif][mclass];
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s : %s\n", usedClassifier[classif]->getClassName(classid), usedClassifier[classif]->getClassDescription(classid)  );
+         }
+
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", nlinkingclasses  );
+         for ( int linkingclass = 0; linkingclass < nlinkingclasses;   ++linkingclass )
+         {
+            int classid = classesToLinking[classif][linkingclass];
+            SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%s : %s\n", usedClassifier[classif]->getClassName(classid),  usedClassifier[classif]->getClassDescription(classid) );
+         }
+
+      }
+   }
+
+
+   return SCIP_OKAY;
+}
+
 
 /** refine seeed with focus on blocks: assigns open conss and vars if they can be
  *  found in blocks (assignHittingOpenconss(), assignHittingOpenvars()) */

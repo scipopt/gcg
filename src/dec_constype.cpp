@@ -59,6 +59,7 @@
 #define DEC_ENABLED               FALSE        /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -242,7 +243,7 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
 }
 
 #define finishSeeedConstype NULL
-
+#define detectorPostprocessSeeedConstype NULL
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConstype)
 {
@@ -309,8 +310,8 @@ SCIP_RETCODE SCIPincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectConstype,
-         freeConstype, initConstype, exitConstype, propagateSeeedConstype, finishSeeedConstype, setParamAggressiveConstype, setParamDefaultConstype, setParamFastConstype));
+         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectConstype,
+         freeConstype, initConstype, exitConstype, propagateSeeedConstype, finishSeeedConstype, detectorPostprocessSeeedConstype, setParamAggressiveConstype, setParamDefaultConstype, setParamFastConstype));
 
    /**@todo add constype detector parameters */
 

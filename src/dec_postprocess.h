@@ -25,16 +25,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_connectedbase.h
- * @brief  connectedbase detector
- * @author Martin Bergner
+/**@file   dec_postprocess.h
+ * @brief  postprocess detector
  * @author Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_CONNECTEDBASE_H__
-#define GCG_DEC_CONNECTEDBASE_H__
+#ifndef GCG_DEC_POSTPROCESS_H__
+#define GCG_DEC_POSTPROCESS_H__
 
 #include "scip/scip.h"
 
@@ -42,9 +41,9 @@
 extern "C" {
 #endif
 
-/** creates the handler for connectedbase detector and includes it in SCIP */
+/** creates the handler for postprocess detector and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDetectorConnectedbase(
+SCIP_RETCODE SCIPincludeDetectorPostprocess(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

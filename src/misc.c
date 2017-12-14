@@ -39,6 +39,8 @@
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
 
+
+
 #include <string.h>
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
@@ -459,6 +461,42 @@ SCIP_RETCODE GCGprintStatistics(
    }
    return SCIP_OKAY;
 }
+
+SCIP_RETCODE GCGprintInstanceName(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "filename: %s \n", GCGgetFilename(scip) );
+   return SCIP_OKAY;
+}
+
+
+
+/** print out complete detection statistics */
+SCIP_RETCODE GCGprintCompleteDetectionStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   assert(scip != NULL);
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nStart writing complete detection information:\n");
+
+   SCIP_CALL( GCGprintInstanceName(scip, file) );
+
+   GCGprintBlockcandidateInformation(scip, file);
+
+   GCGprintClassifierInformation(scip, file);
+
+   GCGprintDecompInformation(scip, file);
+
+//   GCGprintMiplibStructureInformation(scip, file);
+
+   return SCIP_OKAY;
+}
+
+
 
 /** returns whether the constraint belongs to GCG or not */
 SCIP_Bool GCGisConsGCGCons(

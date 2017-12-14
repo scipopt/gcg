@@ -118,6 +118,7 @@ SCIP_RETCODE DECincludeDetector(
    SCIP_Bool             enabled,            /**< whether the detector should be enabled by default                  */
    SCIP_Bool             enabledOriginal,        /**< whether the detector should be enabled by default for detecting the original problem */
    SCIP_Bool             enabledFinishing,   /**< whether the finishing should be enabled */
+   SCIP_Bool             enabledPostprocessing,   /**< whether the postprocessing should be enabled */
    SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure   */
    SCIP_Bool             usefulRecall,       /** is it useful to call this detector on a descendant of the propagated seeed */
    SCIP_Bool             legacymode,         /**< whether (old) DETECTSTRUCTURE method should also be used for detection */
@@ -128,6 +129,7 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_EXITDETECTOR((*exitDetector)),    /**< deinitialization method of detector (or NULL)                      */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
    DEC_DECL_FINISHSEEED((*finishSeeedDetector)),
+   DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)),
    DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
    DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),
    DEC_DECL_SETPARAMFAST((*setParamFastDetector))

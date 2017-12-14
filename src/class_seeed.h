@@ -184,6 +184,12 @@ public:
    /** destructor */
    ~Seeed();
 
+   SCIP_Bool isconshittingblockca(
+      gcg::Seeedpool* seeedpool,
+      int masterconsid,
+      int b
+      );
+
    /** adds a block, returns the number of the new block */
    int addBlock();
 
@@ -353,6 +359,20 @@ public:
    SCIP_RETCODE completeByConnected(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
+
+   /** try to reassign each  mastercons to one block without inducing conflicts  */
+   SCIP_RETCODE postprocessMasterToBlocks(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      SCIP_Bool* success
+      );
+
+
+   /** try to reassign each  mastercons to one block without inducing conflicts  */
+   SCIP_RETCODE postprocessMasterToBlocksConssAdjacency(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      SCIP_Bool* success
+      );
+
 
    /** assigns all open constraints and open variables
      *  strategy: assigns all conss same block if they are connected
@@ -568,13 +588,18 @@ public:
    /** returns array containing all master vars (hitting only constraints in the master) */
    const int* getMastervars();
 
-   /** returns the "maximum white score" (the smaller the better) */
+   /** returns the "maximum white score" */
    SCIP_Real getMaxWhiteScore();
 
    /** returns the score of the seeed (depending on used scoretype) */
    SCIP_Real getScore(
       SCORETYPE type
       );
+
+   SCIP_Bool hasSetpartitioningMaster(
+      gcg::Seeedpool* seeedpool
+      );
+
 
    /** returns whether this seeed is usergiven */
    USERGIVEN getUsergiven();
@@ -598,6 +623,9 @@ public:
 
    /** returns the number of detectors the seeed is propagated by */
    int getNDetectors();
+
+   /** returns the number used classifiers */
+   int getNUsedClassifier();
 
    /** returns size of the vector containing linking vars */
    int getNLinkingvars();
@@ -800,6 +828,13 @@ public:
       int var,
       int block
       );
+
+   SCIP_RETCODE printClassifierInformation(
+      SCIP*                scip,
+      gcg::Seeedpool*      seeedpool,
+      FILE*                file);
+
+
 
    /** refine seeed with focus on blocks: assigns open conss and vars if they can be found
     *  in blocks without respect to open vars and conss (assignHittingOpenconss(), assignHittingOpenvars()) */
