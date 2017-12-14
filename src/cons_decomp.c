@@ -207,6 +207,14 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 
 /** constraint enforcing method of constraint handler for LP solutions */
 static
+SCIP_DECL_CONSENFORELAX(consEnforeDecomp)
+{  /*lint --e{715}*/
+   *result = SCIP_FEASIBLE;
+   return SCIP_OKAY;
+}
+
+/** constraint enforcing method of constraint handler for LP solutions */
+static
 SCIP_DECL_CONSENFOLP(consEnfolpDecomp)
 {  /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
@@ -274,6 +282,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          conshdlrdata) );
    assert(conshdlr != FALSE);
 
+   SCIP_CALL( SCIPsetConshdlrEnforelax(scip, conshdlr, consEnforeDecomp) );
    SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeDecomp) );
    SCIP_CALL( SCIPsetConshdlrInit(scip, conshdlr, consInitDecomp) );
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitDecomp) );
