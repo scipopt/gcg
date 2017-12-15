@@ -3097,11 +3097,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( pricerdata->usecolpool )
       {
          SCIP_Bool foundvarscolpool;
+         int oldnfoundcols;
 
          foundvarscolpool = FALSE;
+         oldnfoundcols = GCGpricestoreGetNCols(pricestore);
 
          SCIP_CALL( GCGcolpoolPrice(scip_, colpool, pricestore, NULL, FALSE, TRUE, &foundvarscolpool) );
-
+         SCIPstatisticMessage("found %d improving column(s) in column pool\n", GCGpricestoreGetNCols(pricestore) - oldnfoundcols);
 
          if( foundvarscolpool )
          {
