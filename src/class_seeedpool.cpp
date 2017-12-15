@@ -1240,6 +1240,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
                seeed->setID( getNewIdForSeeed() );
                seeed->sort();
                seeed->calcHashvalue();
+               seeed->setSeeedpool(this);
                seeed->addDecChangesFromAncestor( seeedPtr );
                seeed->setFinishedByFinisher( true );
 #pragma omp critical ( seeedptrstore )
@@ -1324,6 +1325,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             seeed->calcHashvalue();
             seeed->addDecChangesFromAncestor( seeedPtr );
             seeed->setFinishedByFinisher( true );
+            seeed->setSeeedpool(this);
 
             if( seeedIsNoDuplicateOfSeeeds( seeed, finishedSeeeds, false ) )
             {
@@ -1396,11 +1398,11 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 
    if( (int) finishedSeeeds.size() != 0 )
    {
-       SCIP_Real maxscore = finishedSeeeds[0]->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
+       SCIP_Real maxscore = finishedSeeeds[0]->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) );
       //            SeeedPtr bestSeeed = finishedSeeeds[0];
       for( size_t i = 1; i < finishedSeeeds.size(); ++ i )
       {
-          SCIP_Real score = finishedSeeeds[i]->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
+          SCIP_Real score = finishedSeeeds[i]->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) );
          if( score > maxscore )
          {
             maxscore = score;
@@ -1470,6 +1472,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
             seeed->calcHashvalue();
             seeed->addDecChangesFromAncestor( seeedPtr );
             seeed->setFinishedByFinisher( true );
+            seeed->setSeeedpool(this);
 
             if( seeedIsNoDuplicateOfSeeeds( seeed, finishedSeeeds, false ) && seeedIsNoDuplicateOfSeeeds( seeed, postprocessed, false )  )
             {
@@ -2280,7 +2283,8 @@ SCIP_RETCODE Seeedpool::prepareSeeed(
 {
    seeed->considerImplicits( this );
    seeed->calcHashvalue();
-   seeed->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
+   seeed->setSeeedpool(this);
+   //seeed->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) );
 
    return SCIP_OKAY;
 }

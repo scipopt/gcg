@@ -2925,7 +2925,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
 
    conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool->getNConss(), currseeedpool->getNVars() );
 
-
+   conshdlrdata->curruserseeed->setSeeedpool(currseeedpool );
    conshdlrdata->curruserseeed->setStemsFromUnpresolved( !presolved );
 
    return SCIP_OKAY;
@@ -3579,9 +3579,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    }
 
    seeed = conshdlrdata->curruserseeed;
-
    currseeedpool = seeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
-
+   seeed->setSeeedpool(currseeedpool);
    seeed->flushBooked();
 
    if( seeed->shouldCompletedByConsToMaster() )
@@ -3594,18 +3593,13 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    seeed->considerImplicits(currseeedpool);
    currseeedpool->prepareSeeed(conshdlrdata->curruserseeed);
 
-
    if( !seeed->checkConsistency(currseeedpool) )
    {
       SCIPconshdlrDecompUserSeeedReject(scip);
       SCIPwarningMessage(scip, "seeed that was given by the user was rejected because of inconsistencies! \n");
       return SCIP_OKAY;
    }
-
-
    conshdlrdata->curruserseeed->buildDecChainString();
-
-
    if( conshdlrdata->curruserseeed->isComplete() )
    {
       if( !seeed->shouldCompletedByConsToMaster() )

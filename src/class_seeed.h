@@ -163,9 +163,9 @@ private:
    bool isfromlegacymode;                             /**< true if this seeed stems from a detector operating in legacy mode */
    SCIP_Real score;                                   /**< score to evaluate the seeeds */
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
+   SCIP_Real borderareascore;                         /**< 1 - fraction of border area to complete area */
    SCIP_Real maxwhitescoreagg;                        /**< score corresponding to the max white measure according to aggregated blocks */
 
-   SCIP_Real borderareascore;                         /**< 1 - fraction of border area to complete area */
    SCIP_Real blockareascore;                          /**< 1 - fraction of block area to complete area */
    SCIP_Real blockareascoreagg;                       /**< 1 - fraction of aggregated block area to complete area */
 
@@ -185,6 +185,7 @@ private:
                                             *< finishseeed() method of a detector */
    DEC_DETECTOR* finishedUnpresolvedBy;   /**< index of finishing detector of unpresolved ancestor seeed */
 
+   Seeedpool*    seeedpool;               /**< seeedpool for the corresponding problem */
 
    /** checks blocks for identity by graph automorphism check done by bliss, identity is only found if variables are in correct order */
    void checkIdenticalBlocksBliss(
@@ -802,6 +803,9 @@ public:
    /** returns fraction of constraints that are not longer open for detectors in detectorchain */
    std::vector<SCIP_Real> getPctConssFromFreeVector();
 
+   /** returns the corresponding seeedpool */
+   Seeedpool* getSeeedpool();
+
    /** returns array containing stairlinking vars */
    const int* getStairlinkingvars(
       int block
@@ -1005,6 +1009,11 @@ public:
       bool selected
       );
 
+   /** set the corresponding seeedpool */
+   void setSeeedpool(
+      Seeedpool* seeedpool
+      );
+
    /** sets whether this seeed stems from an unpresolved problem seeed */
    void setStemsFromUnpresolved(
       bool stemsfromunpresolved
@@ -1170,6 +1179,26 @@ private:
    SCIP_RETCODE calcNCoeffsForBlocks(
    Seeedpool*   seeedpool
    );
+
+
+   void calcmaxwhitescore();
+
+   void calcclassicscore();
+
+   void calcborderareascore();
+
+   void calcmaxforeseeingwhitescore();
+
+   void calcmaxforeseeingwhitescoreagg();
+
+   void calcsetpartfwhitescore();
+
+   void calcsetpartfwhitescoreagg();
+
+   void calcblockareascore();
+
+   void calcblockareascoreagg();
+
 
 };
 
