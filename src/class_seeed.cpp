@@ -6068,6 +6068,13 @@ void Seeed::calcmaxwhitescore(){
 
 SCIP_RETCODE Seeed::calcclassicscore()
 {
+   int i;
+   int j;
+   int k;
+
+   unsigned long matrixarea;
+   unsigned long borderarea;
+   SCIP_Real blockarea;
    SCIP_Real borderscore; /**< score of the border */
    SCIP_Real densityscore; /**< score of block densities */
    SCIP_Real linkingscore; /**< score related to interlinking blocks */
@@ -6172,8 +6179,9 @@ SCIP_RETCODE Seeed::calcclassicscore()
    }
 
 
-//borderarea = getNMasterconss() * nVars
-//   + ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) * ( nConss - getNMasterconss() );
+   borderarea = ((unsigned long) getNMasterconss() * nVars )  + ( ((unsigned long) getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) ) * ( nConss - getNMasterconss() );
+
+   matrixarea = ((unsigned long) nVars ) * ((unsigned long) nConss );
 
 //   std::cout << "black area ration =  " << blackarea << "/ ( " << getNConss() << " * " << getNVars() << " =  " << ( (unsigned long) getNConss() * (unsigned long) getNVars() ) << ")  = " << maxwhitescore << std::endl;
 
@@ -6185,25 +6193,22 @@ SCIP_RETCODE Seeed::calcclassicscore()
    borderscore =  1.;
    densityscore = 1.;
 
-   if( sctype != SCORETYPE::MAX_WHITE )
+   for( i = 0; i < nBlocks; ++ i )
    {
-      for( i = 0; i < nBlocks; ++ i )
+      density = MIN( density, blockdensities[i] );
+
+      if( ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) > 0 )
       {
-         density = MIN( density, blockdensities[i] );
-
-         if( ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() ) > 0 )
-         {
-            varratio *= 1.0 * nlinkvarsblocks[i] / ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() );
-         }
-         else
-         {
-            varratio = 0.;
-         }
+         varratio *= 1.0 * nlinkvarsblocks[i] / ( getNLinkingvars() + getNMastervars() + getNTotalStairlinkingvars() );
       }
-      linkingscore = ( 0.5 + 0.5 * varratio );
-
-      densityscore = ( 1. - density );
+      else
+      {
+         varratio = 0.;
+      }
    }
+   linkingscore = ( 0.5 + 0.5 * varratio );
+
+   densityscore = ( 1. - density );
 
    borderscore = ( 1.0 * ( borderarea ) / matrixarea );
 
@@ -6292,7 +6297,6 @@ void Seeed::calcmaxforeseeingwhitescore(){
 
    newmasterarea = ( getNMasterconss() + sumblockshittinglinkingvar) * ( getNVars() + sumlinkingvarshittingblock );
    newblockarea = 0;
-   newblockareaagg = 0;
 
    for( int b = 0; b < getNBlocks(); ++b )
    {
@@ -6316,7 +6320,7 @@ void Seeed::calcmaxforeseeingwhitescoreagg(){
    unsigned long newheight;
    unsigned long newwidth;
    unsigned long newmasterarea;
-   unsigned long newblockarea;
+   unsigned long newblockareaagg;
 
    calcAggregationInformation(seeedpool);
 
@@ -6379,7 +6383,7 @@ void Seeed::calcmaxforeseeingwhitescoreagg(){
       newblockareaagg += getNConssForBlock( reptoblocks[br][0] ) * ( getNVarsForBlock( reptoblocks[br][0] ) + nlinkingvarsforblock[reptoblocks[br][0]] );
    }
 
-   maxforeseeingwhitescoreagg = ((SCIP_Real ) newblockarea + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
+   maxforeseeingwhitescoreagg = ((SCIP_Real ) newblockareaagg + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
    maxforeseeingwhitescoreagg =  maxforeseeingwhitescoreagg / (SCIP_Real) newheight ;
 
    maxforeseeingwhitescoreagg = 1. - maxforeseeingwhitescoreagg;
@@ -6442,18 +6446,18 @@ void Seeed::calcblockareascore(){
 
 void Seeed::calcblockareascoreagg(){
 
-   (unsigned long) matrixarea;
-      (unsigned long) borderarea;
+   unsigned long matrixarea;
+   unsigned long borderarea;
 
-      matrixarea = getNVars() * getNConss();
-      borderarea = 0;
+   matrixarea = getNVars() * getNConss();
+   borderarea = 0;
 
-      borderarea += (unsigned long) ( getNLinkingvars() + getNTotalStairlinkingvars() ) * (unsigned long) getNConss();
-      borderarea += (unsigned long) getNMasterconss() * ( (unsigned long) getNVars() - ( getNLinkingvars() + getNTotalStairlinkingvars() ) ) ;
+   borderarea += (unsigned long) ( getNLinkingvars() + getNTotalStairlinkingvars() ) * (unsigned long) getNConss();
+   borderarea += (unsigned long) getNMasterconss() * ( (unsigned long) getNVars() - ( getNLinkingvars() + getNTotalStairlinkingvars() ) ) ;
 
-      borderareascore = 1. - ( (SCIP_Real) borderarea / (SCIP_Real) matrixarea );
+   borderareascore = 1. - ( (SCIP_Real) borderarea / (SCIP_Real) matrixarea );
 
-      return;
+   return;
 }
 
 

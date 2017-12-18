@@ -1183,7 +1183,7 @@ private:
 
    void calcmaxwhitescore();
 
-   void calcclassicscore();
+   SCIP_RETCODE calcclassicscore();
 
    void calcborderareascore();
 
