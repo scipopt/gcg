@@ -196,6 +196,7 @@ struct_hook::~struct_hook()
 {   /*lint -esym(1540,struct_hook::conssperm) */
    if( conssperm != NULL )
       SCIPfreeMemoryArrayNull(scip, &conssperm);
+   conssperm  = NULL;
    scip = NULL;
 }
 /** hook function to save the permutation of the graph */

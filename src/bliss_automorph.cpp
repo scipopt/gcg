@@ -123,6 +123,10 @@ void struct_hook::setNewDetectionStuff(
    this->seeedpool = givenseeedpool;
    this->seeed = givenseeed;
    this->blocks = givenblocks;
+
+   SCIP_CALL_ABORT( SCIPallocMemoryArray(seeedpool->getScip(), &(this->consperm), seeedpool->getNConss() ) ); /*lint !e666*/
+
+
 }
 
 SCIP_Bool struct_hook::getBool()
@@ -168,6 +172,7 @@ struct_hook::struct_hook(
    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &nodemap, n_) ); /*lint !e666*/
    for (i = 0; i < n_; ++i)
       nodemap[i] = -1;
+
 
    seeedpool = NULL;
    seeed = NULL;
