@@ -2187,7 +2187,7 @@ SCIP_RETCODE Seeed::completeByConnected(
 
     sort();
 
-    evaluate( givenseeedpool, SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
+    getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
     calcHashvalue();
 
     return SCIP_OKAY;
@@ -3311,14 +3311,12 @@ SCIP_Real Seeed::evaluate(
    SCIP_Real alphadensity;
 
    unsigned long blackarea;
-   unsigned long blackareaagg;
 
    maxwhitescore = 0.;
    alphaborderarea = 0.6;
    alphalinking = 0.2;
    alphadensity = 0.2;
    blackarea = 0;
-   blackareaagg = 0;
 
    assert( checkConsistency(givenseeedpool) );
 
@@ -6074,7 +6072,6 @@ SCIP_RETCODE Seeed::calcclassicscore()
 
    unsigned long matrixarea;
    unsigned long borderarea;
-   SCIP_Real blockarea;
    SCIP_Real borderscore; /**< score of the border */
    SCIP_Real densityscore; /**< score of block densities */
    SCIP_Real linkingscore; /**< score related to interlinking blocks */
@@ -6097,6 +6094,11 @@ SCIP_RETCODE Seeed::calcclassicscore()
    SCIP_CALL( SCIPallocBufferArray( scip, & blockdensities, nBlocks ) );
    SCIP_CALL( SCIPallocBufferArray( scip, & blocksizes, nBlocks ) );
    SCIP_CALL( SCIPallocBufferArray( scip, & nvarsblocks, nBlocks ) );
+
+   alphaborderarea = 0.6;
+   alphalinking = 0.2;
+   alphadensity = 0.2;
+
 
    /*
     * 3 Scores
@@ -6214,6 +6216,9 @@ SCIP_RETCODE Seeed::calcclassicscore()
 
    totalscore = 1. - (alphaborderarea * ( borderscore ) + alphalinking * ( linkingscore ) + alphadensity * ( densityscore ) );
 
+   score = totalscore;
+
+   return SCIP_OKAY;
 }
 
 void Seeed::calcborderareascore(){
@@ -6447,15 +6452,19 @@ void Seeed::calcblockareascore(){
 void Seeed::calcblockareascoreagg(){
 
    unsigned long matrixarea;
-   unsigned long borderarea;
+   unsigned long blockarea;
 
    matrixarea = getNVars() * getNConss();
-   borderarea = 0;
+   blockarea = 0;
 
-   borderarea += (unsigned long) ( getNLinkingvars() + getNTotalStairlinkingvars() ) * (unsigned long) getNConss();
-   borderarea += (unsigned long) getNMasterconss() * ( (unsigned long) getNVars() - ( getNLinkingvars() + getNTotalStairlinkingvars() ) ) ;
+   for( int i = 0; i < nrepblocks; ++ i )
+   {
+      blockarea += (unsigned long) getNConssForBlock( reptoblocks[i][0] ) * ( (unsigned long) getNVarsForBlock( reptoblocks[i][0] ) );
+   }
 
-   borderareascore = 1. - ( (SCIP_Real) borderarea / (SCIP_Real) matrixarea );
+   blockareascoreagg = 1. - ( (SCIP_Real) blockarea / (SCIP_Real) matrixarea );
+
+
 
    return;
 }

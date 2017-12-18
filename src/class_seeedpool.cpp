@@ -2144,7 +2144,8 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       newseeed->sort();
       newseeed->considerImplicits( this );
       newseeed->deleteEmptyBlocks(false);
-      newseeed->evaluate( this, SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
+      newseeed->setSeeedpool(this);
+      newseeed->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) ) ;
 
       if( newseeed->checkConsistency( this ) )
          newseeeds.push_back( newseeed );
