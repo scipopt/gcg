@@ -3014,7 +3014,7 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
    )
 {
    SCIP_BRANCHRULEDATA* branchruledata;
-   //SCIP_BRANCHRULE* branchrule;
+   SCIP_BRANCHRULE* branchrule;
 
    /* create branching rule data */
    branchruledata = NULL;
@@ -3034,10 +3034,10 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
          NULL, eventExecGenericbranchvaradd,
          NULL) );
 
-//   branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
-//   assert(branchrule != NULL);
-//
-//   SCIP_CALL( GCGcreateBranchruleConsOrig(scip, branchrule) );
+   branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
+   assert(branchrule != NULL);
+
+   SCIP_CALL( GCGconsIntegralorigAddBranchrule(scip, branchrule) );
 
    return SCIP_OKAY;
 }
