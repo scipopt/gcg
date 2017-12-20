@@ -74,7 +74,7 @@ struct struct_hook
       );
 
    /** destructor for hook struct */
-//   ~struct_hook();
+   ~struct_hook();
 
 
    /** getter for the bool aut */
@@ -128,6 +128,17 @@ void struct_hook::setNewDetectionStuff(
 
 
 }
+
+struct_hook::~struct_hook()
+{   /*lint -esym(1540,struct_hook::conssperm) */
+   if( consperm != NULL )
+      SCIPfreeMemoryArrayNull(scip, &consperm);
+   consperm  = NULL;
+   seeedpool = NULL;
+   seeed = NULL;
+}
+
+
 
 SCIP_Bool struct_hook::getBool()
 {
