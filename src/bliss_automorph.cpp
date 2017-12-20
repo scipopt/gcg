@@ -59,10 +59,12 @@ struct struct_hook
    SCIP_HASHMAP* consmap;                    /**< hashmap for permutated constraints */
    SCIP** scips;                             /**< array of scips to search for automorphisms */
    int* nodemap;                             /**< mapping of the nodes; filled generator-wise */
-   int* consperm;                            /**< mapping of constraints */
+   int* conssperm;                            /**< mapping of constraints */
    gcg::Seeedpool* seeedpool;                /**< problem information the automorphism should be searched for */
    gcg::Seeed*     seeed;                    /**< decomposition information */
    std::vector<int> blocks;                  /**< array of blocks the automporphisms are searched for */
+   SCIP*            scip;
+
 
    /** constructor for the hook struct*/
    struct_hook(
@@ -73,8 +75,8 @@ struct struct_hook
       SCIP** scips                           /**< array of scips to search for automorphisms */
       );
 
-   /** destructor for hook struct */
-   ~struct_hook();
+//   /** destructor for hook struct */
+//   ~struct_hook();
 
 
    /** getter for the bool aut */
@@ -124,19 +126,20 @@ void struct_hook::setNewDetectionStuff(
    this->seeed = givenseeed;
    this->blocks = givenblocks;
 
-   SCIP_CALL_ABORT( SCIPallocMemoryArray(seeedpool->getScip(), &(this->consperm), seeedpool->getNConss() ) ); /*lint !e666*/
+   SCIP_CALL_ABORT( SCIPallocMemoryArray(seeedpool->getScip(), &(this->conssperm), seeedpool->getNConss() ) ); /*lint !e666*/
 
+   scip = seeedpool->getScip();
 
 }
 
-struct_hook::~struct_hook()
-{   /*lint -esym(1540,struct_hook::conssperm) */
-   if( consperm != NULL )
-      SCIPfreeMemoryArrayNull(scip, &consperm);
-   consperm  = NULL;
-   seeedpool = NULL;
-   seeed = NULL;
-}
+//struct_hook::~struct_hook()
+//{   /*lint -esym(1540,struct_hook::conssperm) */
+//   if( consperm != NULL )
+//      SCIPfreeMemoryArrayNull(scip, &consperm);
+//   consperm  = NULL;
+//   seeedpool = NULL;
+//   seeed = NULL;
+//}
 
 
 
@@ -184,7 +187,7 @@ struct_hook::struct_hook(
    for (i = 0; i < n_; ++i)
       nodemap[i] = -1;
 
-
+   conssperm = NULL;
    seeedpool = NULL;
    seeed = NULL;
    blocks = std::vector<int>(0);
