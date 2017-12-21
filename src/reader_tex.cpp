@@ -524,21 +524,30 @@ SCIP_RETCODE writeTexSeeed(
    /* --- draw boxes ---*/
 
    /* linking vars */
-   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
-      (const char*) "colorlinking");
-   colboxcounter += seeed->getNLinkingvars();
+   if(seeed->getNLinkingvars() != 0)
+   {
+      writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
+         (const char*) "colorlinking");
+      colboxcounter += seeed->getNLinkingvars();
+   }
 
    /* masterconss */
-   writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
-      (const char*) "colormasterconss");
-   rowboxcounter += seeed->getNMasterconss();
+   if(seeed->getNMasterconss() != 0)
+   {
+      writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
+         (const char*) "colormasterconss");
+      rowboxcounter += seeed->getNMasterconss();
+   }
 
    /* mastervars */
-   writeTikzBox(scip, file, nvars, nconss, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
-      seeed->getNMasterconss(), (const char*) "colormastervars");
-   colboxcounter += seeed->getNMastervars();
+   if(seeed->getNMastervars() != 0)
+   {
+      writeTikzBox(scip, file, nvars, nconss, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
+         seeed->getNMasterconss(), (const char*) "colormastervars");
+      colboxcounter += seeed->getNMastervars();
+   }
 
-   /* blocks */
+   /* blocks (blocks are not empty) */
    for( int b = 0; b < seeed->getNBlocks() ; ++b )
    {
       writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter,
@@ -558,10 +567,13 @@ SCIP_RETCODE writeTexSeeed(
    }
 
    /* open */
-   writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
-      rowboxcounter+seeed->getNOpenconss(), (const char*) "coloropen" );
-   colboxcounter += seeed->getNOpenvars();
-   rowboxcounter += seeed->getNOpenconss();
+   if(seeed->getNOpenvars() != 0)
+   {
+      writeTikzBox(scip, file, nvars, nconss, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
+         rowboxcounter+seeed->getNOpenconss(), (const char*) "coloropen" );
+      colboxcounter += seeed->getNOpenvars();
+      rowboxcounter += seeed->getNOpenconss();
+   }
 
    /* --- draw nonzeros --- */
    if(SCIPvisuGetDraftmode() == FALSE)

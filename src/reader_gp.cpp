@@ -311,24 +311,33 @@ SCIP_RETCODE writeGpSeeed(
    /* --- draw boxes ---*/
 
    /* linking vars */
-   ++objcounter; /* has to start at 1 for gnuplot */
-   drawGpBox( filename, objcounter, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
-      SCIPvisuGetColorLinking() );
-   colboxcounter += seeed->getNLinkingvars();
+   if(seeed->getNLinkingvars() != 0)
+   {
+      ++objcounter; /* has to start at 1 for gnuplot */
+      drawGpBox( filename, objcounter, 0, 0, seeed->getNLinkingvars(), seeed->getNConss(),
+         SCIPvisuGetColorLinking() );
+      colboxcounter += seeed->getNLinkingvars();
+   }
 
    /* masterconss */
-   ++objcounter;
-   drawGpBox( filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
-      SCIPvisuGetColorMasterconss() );
-   rowboxcounter += seeed->getNMasterconss();
+   if(seeed->getNMasterconss() != 0)
+   {
+      ++objcounter;
+      drawGpBox( filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
+         SCIPvisuGetColorMasterconss() );
+      rowboxcounter += seeed->getNMasterconss();
+   }
 
    /* mastervars */
-   ++objcounter;
-   drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
-      seeed->getNMasterconss(), SCIPvisuGetColorMastervars() );
-   colboxcounter += seeed->getNMastervars();
+   if(seeed->getNMastervars() != 0)
+   {
+      ++objcounter;
+      drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
+         seeed->getNMasterconss(), SCIPvisuGetColorMastervars() );
+      colboxcounter += seeed->getNMastervars();
+   }
 
-   /* blocks */
+   /* blocks (blocks are not empty) */
    for( int b = 0; b < seeed->getNBlocks() ; ++b )
    {
       ++objcounter;
@@ -348,11 +357,14 @@ SCIP_RETCODE writeGpSeeed(
    }
 
    /* open */
-   ++objcounter;
-   drawGpBox( filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
-      rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
-   colboxcounter += seeed->getNOpenvars();
-   rowboxcounter += seeed->getNOpenconss();
+   if(seeed->getNOpenvars() != 0)
+   {
+      ++objcounter;
+      drawGpBox( filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + seeed->getNOpenvars(),
+         rowboxcounter+seeed->getNOpenconss(), SCIPvisuGetColorOpen() );
+      colboxcounter += seeed->getNOpenvars();
+      rowboxcounter += seeed->getNOpenconss();
+   }
 
    /* --- draw nonzeros --- */
    if(SCIPvisuGetDraftmode() == FALSE)
