@@ -170,9 +170,16 @@ def make_plot(data, name):
     # set the heights of zero
     ymin = -0.15
 
+    # workaround for most times being zero (0,01s is SCIPs smallest time-interval)
+    data.time = data.time + 0.01
+
+    # extract the column pool data
+    x_colpool = (data.query('pricing_prob == -1').time.cumsum() - data.query('pricing_prob == -1').time).values
+    y_colpool = (data.query('pricing_prob == -1').nVars).values
+    data = data.query('pricing_prob <> -1')
+
     # flat out the data again
     flat_data = data.reset_index()
-    flat_data.time = flat_data.time + 0.01 # workaround for most times being zero (0,01s is SCIPs smallest time-interval)
 
     # define position, width and height of the peaks; the former are defined by time, the latter by nVars
     x = (flat_data.time.cumsum()-flat_data.time).values
@@ -191,6 +198,9 @@ def make_plot(data, name):
     plt.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = lw, edgecolor = 'k', color = colors, label='pricing problems')
     fig = plt.gcf()
     ax = plt.gca()
+
+    # add the column pool data as a scatter plot
+    ax.scatter(x_colpool, y_colpool, color = 'green', marker = 'x')
 
     print '    data plotted:', time.time() - start_time
     start_time = time.time()
@@ -251,7 +261,7 @@ def make_plot(data, name):
                         # add a blue line at the end of farkas pricing
                         if not farkasLine and not flat_data['farkas'][i]:
                             line.set_color('blue')
-                            ax.text(x[i], .5, "\it{End of initial Farkas Pricing}", va = 'center', ha = 'left', rotation = 90, color = 'blue', zorder = 1, transform = trans)
+                            ax.text(x[i], .5, "\it{End of initial Farkas Pricing}", va = 'center', ha = 'left', rotation = 90, color = 'blue', zorder = 1, size = textsize, transform = trans)
                             farkasLine = True
                         ax.add_line(line)
                         if (x[i] - prev_x)/totalTime > 0.025:
@@ -320,6 +330,9 @@ def make_summary_plot(data, name):
     :return:
     """
     start_time = time.time()
+
+    # ignore the column pool (pricing problem -1) in this plot
+    data = data.query('pricing_prob <> -1')
 
     summary = pd.DataFrame()
     summary['time'] = data.groupby(level=['node','pricing_round','stab_round', 'round']).sum().time
@@ -703,6 +716,34 @@ def parse_files(files):
                         stab_round = int(message.split()[-1])
                         if stab_round > 1:
                             round_counter += 1
+                    except ValueError:
+                        print '    ended abruptly'
+                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        print '    leaving', problemFileName
+                        done = True
+                        continue
+
+                # todo: include non-sparse output
+                # assumption: if one or more improving columns have been found in the column pool, no pricing problems were solved. todo: check that
+                elif message.startswith("cp: "):
+                    try:
+                        if int(message.split()[1]) > 0:
+                            # check if the column pool output should be included in the plot
+                            if (params['root_only'] and node > 1) or pricing_round < params['minRound'] or (0 < params['maxRound'] < pricing_round):
+                                continue
+
+                            # store all indices
+                            ind_node.append(node)
+                            ind_pricing_round.append(pricing_round)
+                            ind_stab_round.append(stab_round)
+                            ind_round.append(round_counter)
+                            # the column pool is represented as a pricing problem with ID -1
+                            ind_pricing_prob.append(-1)
+
+                            # store the data
+                            val_time.append(0.0)
+                            val_nVars.append(int(message.split()[1]))
+                            val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
                         collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
