@@ -159,10 +159,6 @@ SCIP_RETCODE SCIPincludeParamsVisu(
       "visual/nonzeroradius", "integer value to scale dots on range 1-10",
       &visudata->visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip,
-      "visual/usegp", "if true gnuplot is used for sub-visualizations in report, otherwise LaTeX/Tikz",
-      &visudata->visuusegp, FALSE, DEFAULT_VISU_USEGP, NULL, NULL) );
-
    SCIP_CALL( SCIPaddStringParam(scip,
       "visual/pdfreader", "pdf reader that opens visualizations in select menu",
       &visudata->pdfreader, FALSE, (char*) DEFAULT_PDFREADER, NULL, NULL) );
@@ -223,6 +219,10 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    SCIP_CALL( SCIPaddBoolParam(scip,
       "visual/report/showstatistics", "if true statistics are included for each decomp",
       &visudata->rep_statistics, FALSE, DEFAULT_REPORT_SHOWSTATISTICS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip,
+      "visual/report/usegp", "if true gnuplot is used for sub-visualizations in report, otherwise LaTeX/Tikz",
+      &visudata->visuusegp, FALSE, DEFAULT_VISU_USEGP, NULL, NULL) );
 
    /* add parameters for family tree */
 

@@ -357,7 +357,14 @@ SCIP_RETCODE writeGpSeeed(
    /* --- draw nonzeros --- */
    if(SCIPvisuGetDraftmode() == FALSE)
    {
-      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), 250) );
+      /* scale nonzero radius with 2% of maximal index */
+      int radiusscale;
+      if(seeed->getNVars() > seeed->getNConss())
+         radiusscale = seeed->getNVars() / 50;
+      else
+         radiusscale = seeed->getNConss() / 50;
+
+      writeGpNonzeros( filename, seeed, seeedpool, SCIPvisuGetNonzeroRadius(seeed->getNVars(), seeed->getNConss(), radiusscale) );
    }
    else
    {

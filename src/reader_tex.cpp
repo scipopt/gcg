@@ -188,7 +188,8 @@ SCIP_RETCODE getTexColorFromHex(
 static
 SCIP_RETCODE writeTexHeader(
    SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file                /**< File pointer to write to */
+   FILE*                file,               /**< File pointer to write to */
+   SCIP_Bool            externalizepics     /**< whether to use the tikz externalize package */
    )
 {
    char temp[SCIP_MAXSTRLEN];
@@ -233,12 +234,15 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\\usepackage{fancybox}                                                           \n");
    if(!GCGgetUseGp())
    {
-//      SCIPinfoMessage(scip, file, "\\usepackage{pgfplots}                                                           \n");
-//      SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=newest}                                                     \n");
+//      SCIPinfoMessage(scip, file, "\\usepackage{pgfplots}                                                          \n");
+//      SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=newest}                                                    \n");
       SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
       SCIPinfoMessage(scip, file, "\\usetikzlibrary{positioning}                                                    \n");
-//      SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                      \n");
-//      SCIPinfoMessage(scip, file, " \\tikzexternalize                                                               \n");
+      if(externalizepics)
+      {
+         SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                     \n");
+         SCIPinfoMessage(scip, file, " \\tikzexternalize                                                              \n");
+      }
    }
    SCIPinfoMessage(scip, file, "                                                                                 \n");
 
@@ -766,7 +770,7 @@ SCIP_RETCODE GCGwriteTexReport(
       *nseeeds = GCGreportGetMaxNDecomps();
 
    /* write tex code into file */
-   writeTexHeader(scip, file);
+   writeTexHeader(scip, file, TRUE);
    if(titlepage)
       writeTexTitlepage(scip, file, nseeeds);
    if(toc)
@@ -960,7 +964,7 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    }
 
    /* start document with header */
-   writeTexHeader(scip, file);
+   writeTexHeader(scip, file, FALSE);
 //   SCIPinfoMessage(scip, file, "\\begin{center}\n");
 
    /* beginning of tree */
@@ -1090,7 +1094,7 @@ SCIP_RETCODE GCGwriteTexVisualization(
    seeedpool = misc->GCGgetSeeedpoolForSeeed(scip, seeedid);
 
    /* write tex code into file */
-   writeTexHeader(scip, file);
+   writeTexHeader(scip, file, FALSE);
 
    if(!usegp)
    {
@@ -1206,6 +1210,9 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    SCIPinfoMessage(scip, makefile, "\t@latexmk -c                                                                \n");
    SCIPinfoMessage(scip, makefile, "\t@rm -f report_*figure*.*                                                   \n");
    SCIPinfoMessage(scip, makefile, "\t@rm -f *.auxlock                                                           \n");
+   SCIPinfoMessage(scip, makefile, "\t@rm -f *figure*.md5                                                        \n");
+   SCIPinfoMessage(scip, makefile, "\t@rm -f *figure*.log                                                        \n");
+   SCIPinfoMessage(scip, makefile, "\t@rm -f *figure*.dpth                                                       \n");
    if( usegp )
    {
       SCIPinfoMessage(scip, makefile, "\t@rm -f *.gp                                                             \n");
