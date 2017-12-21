@@ -325,7 +325,7 @@ void Pricingcontroller::evaluatePricingjob(
          GCGpricingjobSetExact(pricingjob);
          SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
       }
-      else if( status == SCIP_STATUS_SOLLIMIT )
+      else if( GCGpricingjobGetStatus(pricingjob) != SCIP_STATUS_OPTIMAL && status == SCIP_STATUS_SOLLIMIT )
       {
          SCIPdebugMessage("  -> increase solution limit\n");
          SCIP_CALL_EXC( GCGpricingjobIncreaseSollimit(pricingjob,
