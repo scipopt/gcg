@@ -56,7 +56,7 @@
 #define COLOR_BLACK     "#000000"   /**< standard black */
 
 /* default colors (use defines above for changes) */
-#define DEFAULT_COLOR_MASTERVARS   COLOR_WHITE     /**< for mastervars (in block area) */
+#define DEFAULT_COLOR_MASTERVARS   COLOR_BLUE      /**< for mastervars (in block area) */
 #define DEFAULT_COLOR_MASTERCONSS  COLOR_BLUE      /**< for masterconss */
 #define DEFAULT_COLOR_LINKING      COLOR_PURPLE    /**< for linking areas */
 #define DEFAULT_COLOR_STAIRLINKING COLOR_MAGENTA   /**< for stairlinking areas */

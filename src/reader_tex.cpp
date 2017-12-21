@@ -528,15 +528,15 @@ SCIP_RETCODE writeTexSeeed(
       (const char*) "colorlinking");
    colboxcounter += seeed->getNLinkingvars();
 
-   /* mastervars */
-   writeTikzBox(scip, file, nvars, nconss, colboxcounter, 0, seeed->getNMastervars()+colboxcounter, seeed->getNConss(),
-      (const char*) "colormastervars");
-   colboxcounter += seeed->getNMastervars();
-
    /* masterconss */
    writeTikzBox(scip, file, nvars, nconss, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
       (const char*) "colormasterconss");
    rowboxcounter += seeed->getNMasterconss();
+
+   /* mastervars */
+   writeTikzBox(scip, file, nvars, nconss, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
+      seeed->getNMasterconss(), (const char*) "colormastervars");
+   colboxcounter += seeed->getNMastervars();
 
    /* blocks */
    for( int b = 0; b < seeed->getNBlocks() ; ++b )
@@ -1241,6 +1241,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    }
 
    SCIPinfoMessage(scip, readme, "README: How to create a PDF file from the .tex file(s) using the %s file.    \n", name);
+   SCIPinfoMessage(scip, readme, "Note: The package pdflatex is required.                                      \n", name);
    SCIPinfoMessage(scip, readme, "                                                                             \n");
    SCIPinfoMessage(scip, readme, "Use the command\n\t'make -f %s'\nto compile.                                  \n", name);
    SCIPinfoMessage(scip, readme, "Depending on the size of your problem that may take some time.               \n");

@@ -316,17 +316,17 @@ SCIP_RETCODE writeGpSeeed(
       SCIPvisuGetColorLinking() );
    colboxcounter += seeed->getNLinkingvars();
 
-   /* mastervars */
-   ++objcounter;
-   drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
-      seeed->getNConss(), SCIPvisuGetColorMastervars() );
-   colboxcounter += seeed->getNMastervars();
-
    /* masterconss */
    ++objcounter;
    drawGpBox( filename, objcounter, 0, 0, seeed->getNVars(), seeed->getNMasterconss(),
       SCIPvisuGetColorMasterconss() );
    rowboxcounter += seeed->getNMasterconss();
+
+   /* mastervars */
+   ++objcounter;
+   drawGpBox( filename, objcounter, colboxcounter, 0, seeed->getNMastervars()+colboxcounter,
+      seeed->getNMasterconss(), SCIPvisuGetColorMastervars() );
+   colboxcounter += seeed->getNMastervars();
 
    /* blocks */
    for( int b = 0; b < seeed->getNBlocks() ; ++b )
