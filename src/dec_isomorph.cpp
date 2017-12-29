@@ -154,6 +154,19 @@ gcg::Seeedpool* struct_hook::getSeeedpool()
    return this->seeedpool;
 }
 
+SCIP_Bool struct_hook::getBool()
+{
+   return aut;
+}
+
+void struct_hook::setBool( SCIP_Bool aut_ )
+{
+   aut = aut_;
+}
+
+
+
+
 /** methode to calculate the greates common divisor */
 
 int gcd(int a, int b) {

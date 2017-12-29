@@ -40,7 +40,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include <assert.h>
 #include <string.h>
 
 #include "scip/scipdefplugins.h"
@@ -830,7 +829,7 @@ SCIP_RETCODE checkIdenticalBlocks(
    relaxdata->nrelpricingprobs = relaxdata->npricingprobs;
    nrelevant = 0;
 
-   if( !relaxdata->discretization || !relaxdata->aggregation )
+   if(  ( !relaxdata->discretization || !relaxdata->aggregation ) )
    {
       SCIPdebugMessage("discretization is off, aggregation is off\n");
       return SCIP_OKAY;

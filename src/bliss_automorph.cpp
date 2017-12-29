@@ -47,11 +47,11 @@
 
 #include <cstring>
 
-typedef struct struct_hook AUT_HOOK;
+typedef struct struct_hook2 AUT_HOOK2;
 
 
 /** saves information of the permutation */
-struct struct_hook
+struct struct_hook2
 {
    SCIP_Bool aut;                            /**< true if there is an automorphism */
    unsigned int n;                           /**< number of permutations */
@@ -67,7 +67,7 @@ struct struct_hook
 
 
    /** constructor for the hook struct*/
-   struct_hook(
+   struct_hook2(
       SCIP_HASHMAP* varmap,                  /**< hashmap for permutated variables */
       SCIP_HASHMAP* consmap,                 /**< hashmap for permutated constraints */
       SCIP_Bool aut,                         /**< true if there is an automorphism */
@@ -75,8 +75,8 @@ struct struct_hook
       SCIP** scips                           /**< array of scips to search for automorphisms */
       );
 
-//   /** destructor for hook struct */
-//   ~struct_hook();
+   /** destructor for hook struct */
+   ~struct_hook2();
 
 
    /** getter for the bool aut */
@@ -110,13 +110,13 @@ struct struct_hook
 
 
 
-void struct_hook::setBool( SCIP_Bool aut_ )
+void struct_hook2::setBool( SCIP_Bool aut_ )
 {
    aut = aut_;
 }
 
 
-void struct_hook::setNewDetectionStuff(
+void struct_hook2::setNewDetectionStuff(
    gcg::Seeedpool* givenseeedpool,
    gcg::Seeed*     givenseeed,
    std::vector<int> givenblocks
@@ -132,44 +132,44 @@ void struct_hook::setNewDetectionStuff(
 
 }
 
-//struct_hook::~struct_hook()
-//{   /*lint -esym(1540,struct_hook::conssperm) */
-//   if( consperm != NULL )
-//      SCIPfreeMemoryArrayNull(scip, &consperm);
-//   consperm  = NULL;
-//   seeedpool = NULL;
-//   seeed = NULL;
-//}
+struct_hook2::~struct_hook2()
+{   /*lint -esym(1540,struct_hook::conssperm) */
+   if( conssperm != NULL )
+      SCIPfreeMemoryArrayNull(scip, &conssperm);
+   conssperm  = NULL;
+   seeedpool = NULL;
+   seeed = NULL;
+}
 
 
 
-SCIP_Bool struct_hook::getBool()
+SCIP_Bool struct_hook2::getBool()
 {
    return aut;
 }
 
-unsigned int struct_hook::getNNodes()
+unsigned int struct_hook2::getNNodes()
 {
    return n;
 }
 
-SCIP_HASHMAP* struct_hook::getVarHash()
+SCIP_HASHMAP* struct_hook2::getVarHash()
 {
    return varmap;
 }
 
-SCIP_HASHMAP* struct_hook::getConsHash()
+SCIP_HASHMAP* struct_hook2::getConsHash()
 {
    return consmap;
 }
 
-SCIP** struct_hook::getScips()
+SCIP** struct_hook2::getScips()
 {
    return scips;
 }
 
 /** constructor of the hook struct */
-struct_hook::struct_hook(
+struct_hook2::struct_hook2(
    SCIP_HASHMAP*         varmap_,            /**< hashmap of permutated variables */
    SCIP_HASHMAP*         consmap_,           /**< hahsmap of permutated constraints */
    SCIP_Bool             aut_,               /**< true if there is an automorphism */
@@ -216,7 +216,7 @@ void fhook(
    SCIP* seeedscip;
    gcg::Seeedpool* seeedpool;
    gcg::Seeed* seeed;
-   AUT_HOOK* hook = (AUT_HOOK*) user_param;
+   AUT_HOOK2* hook = (AUT_HOOK2*) user_param;
 
    j = 0;
    n = hook->getNNodes();
@@ -1358,7 +1358,7 @@ SCIP_RETCODE cmpGraphPair(
 {
    bliss::Graph graph;
    bliss::Stats bstats;
-   AUT_HOOK *ptrhook;
+   AUT_HOOK2 *ptrhook;
    AUT_COLOR colorinfo;
    int nscips;
    SCIP* scips[2];
@@ -1377,7 +1377,7 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_CALL( setuparrays(origscip, scips, nscips, &colorinfo, result) );
    SCIP_CALL( createGraph(origscip, scips, nscips, pricingindices, colorinfo, &graph,  &pricingnodes, result) );
 
-   ptrhook = new AUT_HOOK(varmap, consmap, FALSE, (unsigned int) pricingnodes, scips);
+   ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, scips);
    graph.find_automorphisms(bstats, fhook, ptrhook);
 
    if( !ptrhook->getBool() )
@@ -1402,7 +1402,7 @@ SCIP_RETCODE cmpGraphPairNewdetection(
 {
    bliss::Graph graph;
    bliss::Stats bstats;
-   AUT_HOOK *ptrhook;
+   AUT_HOOK2 *ptrhook;
    AUT_COLOR colorinfo;
    std::vector<int> blocks;
    gcg::Seeedpool* seeedpool;
@@ -1436,7 +1436,7 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    SCIP_CALL( setuparraysnewdetection(seeedpool, seeed, 2, blocks, &colorinfo, result) );
    SCIP_CALL( createGraphNewDetection(seeedpool, seeed, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );
 
-   ptrhook = new AUT_HOOK(varmap, consmap, FALSE, (unsigned int) pricingnodes, NULL);
+   ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, NULL);
    ptrhook->setNewDetectionStuff(seeedpool, seeed, blocks);
    graph.find_automorphisms(bstats, fhook, ptrhook);
 
