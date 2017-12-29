@@ -1086,7 +1086,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/scoretype",
          "indicates which score should be used for comparing (partial) decompositions (0:max white, 1: border area, 2:classic, 3:max foreseeing white, 4:max foreseeing white with aggregation info, 5: ppc-max-white, 6: ppc-max-white with aggregation info): ", &conshdlrdata->currscoretype, FALSE,
-         scoretype::SETPART_AGG_FWHITE, 0, 6, NULL, NULL) );
+         scoretype::SETPART_FWHITE, 0, 6, NULL, NULL) );
 
 
 
