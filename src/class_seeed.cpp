@@ -4585,7 +4585,8 @@ const int* Seeed::getMastervars()
 /** returns the "maximum white score" */
 SCIP_Real Seeed::getMaxWhiteScore()
 {
-   return maxwhitescore;
+
+   return getScore(SCORETYPE::MAX_WHITE);
 }
 
 
@@ -4619,12 +4620,14 @@ SCIP_Real Seeed::getScore(
    SCORETYPE type
    )
 {
-   if( type == scoretype::MAX_WHITE )
-   {
-      if( maxwhitescore == -1. )
-         calcmaxwhitescore();
+
+   /** calculate maximum white score anyway */
+   if( maxwhitescore == -1. )
+      calcmaxwhitescore();
+
+   if( type == scoretype::CLASSIC )
       return maxwhitescore;
-   }
+
    if( type == scoretype::CLASSIC )
    {
       if ( score == -1. )
