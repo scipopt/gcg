@@ -183,6 +183,17 @@ Seeed::Seeed(
    blockstorep = seeedtocopy->blockstorep;
    ncoeffsforblock = seeedtocopy->ncoeffsforblock;
    calculatedncoeffsforblock = seeedtocopy->calculatedncoeffsforblock;
+
+   blockareascore = seeedtocopy->blockareascore;
+   maxwhitescoreagg = seeedtocopy->maxwhitescoreagg;
+   blockareascoreagg = seeedtocopy->blockareascoreagg;
+   maxforeseeingwhitescore = seeedtocopy->maxforeseeingwhitescore;
+   maxforeseeingwhitescoreagg = seeedtocopy->maxforeseeingwhitescoreagg;
+
+   setpartfwhitescore = seeedtocopy->setpartfwhitescore;
+   setpartfwhitescoreagg = seeedtocopy->setpartfwhitescoreagg;
+
+
    seeedpool = seeedtocopy->seeedpool;
 
 }
@@ -4625,7 +4636,7 @@ SCIP_Real Seeed::getScore(
    if( maxwhitescore == -1. )
       calcmaxwhitescore();
 
-   if( type == scoretype::CLASSIC )
+   if( type == scoretype::MAX_WHITE )
       return maxwhitescore;
 
    if( type == scoretype::CLASSIC )
@@ -6062,6 +6073,7 @@ void Seeed::calcmaxwhitescore(){
       calcborderareascore();
 
    /** maxwhitescore = 1 - ( 1 - blackerascore) + (1 - borderarescore ) ) */
+
    maxwhitescore = blockareascore + borderareascore - 1.;
 
    return;

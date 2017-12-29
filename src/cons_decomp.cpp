@@ -3690,7 +3690,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       "%d mastervars, and max white score of %s %f \n", usergiveninfo, presolvedinfo,
       conshdlrdata->curruserseeed->getNBlocks(), conshdlrdata->curruserseeed->getNMasterconss(),
       conshdlrdata->curruserseeed->getNLinkingvars(), conshdlrdata->curruserseeed->getNMastervars(), (conshdlrdata->curruserseeed->isComplete() ? " " : " at best "),
-      conshdlrdata->curruserseeed->getMaxWhiteScore() );
+      conshdlrdata->curruserseeed->getScore(SCORETYPE::MAX_WHITE) );
 
    conshdlrdata->curruserseeed = NULL;
 
