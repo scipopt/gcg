@@ -33,6 +33,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#define SCIP_DEBUG
 
 #include "class_seeed.h"
 #include "gcg.h"
@@ -1015,12 +1016,13 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
            std::vector<int> varmap;
            SCIP_HASHMAP* varmap2;
 
+           if( !identblocksforblock[b2].empty() )
+              continue;
+
            SCIP_CALL_ABORT( SCIPhashmapCreate(&varmap2,
                           SCIPblkmem(givenseeedpool->getScip()),
                           5 * getNVarsForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
 
-           if( !identblocksforblock[b2].empty() )
-              continue;
 
 #ifdef NBLISS
            checkIdenticalBlocksBrute(givenseeedpool, b1, b2, varmap, varmap2, &identical);
@@ -1035,7 +1037,10 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
               currrep.push_back(b2);
            }
            else
+           {
+              SCIPdebugMessage("Block %d is not identical to block %d!\n", b1, b2);
               SCIPhashmapFree(&varmap2);
+           }
         }
 
         reptoblocks.push_back( currrep );
@@ -1799,7 +1804,7 @@ void Seeed::checkIdenticalBlocksBliss(
 
 
    cmpGraphPairNewdetection(givenseeedpool->getScip(), (SEEED_WRAPPER*) this, b1, b2, &result, varmap2, consmap );
-   if (result == SCIP_SUCCESS)
+   if ( result == SCIP_SUCCESS )
       *identical = TRUE;
    else
       *identical = FALSE;
