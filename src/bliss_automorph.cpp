@@ -35,6 +35,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+
 #include "graph.hh"
 #include "bliss_automorph.h"
 #include "scip_misc.h"
@@ -343,6 +344,15 @@ void fhook(
          SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getVarHash(), var1, var2) );
          SCIPdebugMessage("var <%s> <-> var <%s>\n", SCIPvarGetName(var1), SCIPvarGetName(var2));
       }
+   }
+
+   if( newdetection )
+   {
+      seeedscip = seeedpool->getScip();
+      SCIPfreeBufferArray(seeedscip, &conss1);
+      SCIPfreeBufferArray(seeedscip, &conss2);
+      SCIPfreeBufferArray(seeedscip, &vars1);
+      SCIPfreeBufferArray(seeedscip, &vars2);
    }
 }
 
@@ -865,6 +875,7 @@ SCIP_RETCODE createGraph(
             *result = SCIP_DIDNOTFIND;
             break;
          }
+         SCIPdebugMessage("var <%s> color %d\n", SCIPvarGetName(vars[i]), color);
 
          (void) h->add_vertex((unsigned int) colorinfo.getLenCons() + color);
          nnodes++;
@@ -933,7 +944,7 @@ SCIP_RETCODE createGraph(
             /* ignore if the variable belongs to a different block */
             if( block != pricingindices[s] )
             {
-               SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(curvars[j]), block);
+    //           SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(curvars[j]), block);
                continue;
             }
 
@@ -998,7 +1009,7 @@ SCIP_RETCODE createGraph(
          /* ignore if the variable belongs to a different block */
          if( pricingscip == NULL )
          {
-            SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(curvars[j]), block);
+   //         SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(curvars[j]), block);
             continue;
          }
 
@@ -1028,7 +1039,6 @@ SCIP_RETCODE createGraph(
          h->add_edge((unsigned int) coefnodeindex, (unsigned int) nnodesoffset[ind] + SCIPgetNConss(pricingscip) + SCIPvarGetProbindex(pricingvar));
       }
    }
-
 
    //free all allocated memory
    SCIP_CALL( freeMemory(origscip, &colorinfo) );
@@ -1149,6 +1159,7 @@ SCIP_RETCODE createGraphNewDetection(
             break;
          }
 
+         SCIPdebugMessage("var <%s> color %d\n", SCIPvarGetName(var), color);
          (void) h->add_vertex((unsigned int) colorinfo.getLenCons() + color);
          nnodes++;
       }
@@ -1223,7 +1234,7 @@ SCIP_RETCODE createGraphNewDetection(
 
             varid = seeedpool->getVarsForCons(masterconsid)[j];
             /* ignore if the variable belongs to a different block */
-            if( seeed->isVarBlockvarOfBlock(varid, block) )
+            if( !seeed->isVarBlockvarOfBlock(varid, block) )
             {
                SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(seeedpool->getVarForIndex(varid) ), block);
                continue;
@@ -1371,6 +1382,7 @@ SCIP_RETCODE cmpGraphPair(
    nscips = 2;
    *result = SCIP_SUCCESS;
 
+
    SCIP_CALL( testScipVars(scips[0], scips[1], result) );
    SCIP_CALL( testScipCons(scips[0], scips[1], result) );
 
@@ -1435,9 +1447,6 @@ SCIP_RETCODE cmpGraphPairNewdetection(
 
    SCIP_CALL( setuparraysnewdetection(seeedpool, seeed, 2, blocks, &colorinfo, result) );
    SCIP_CALL( createGraphNewDetection(seeedpool, seeed, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );
-
-   if( block1 == 50 && block2 == 66 )
-      graph.write_dimacs(NULL);
 
    ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, NULL);
    ptrhook->setNewDetectionStuff(seeedpool, seeed, blocks);
