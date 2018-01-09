@@ -848,6 +848,14 @@ SCIP_RETCODE checkIdenticalBlocks(
 
          SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
 
+/** for wednesday
+ *  new method of cons_decomp that uses seeed information
+ * 1) check varmap
+ * 2) build varmap for seeeds
+ * 3) translate varmap when transforming seeed to decomp (store varmap in decomp or seeed?)
+ * 4) write method in cons_decomp using seeed agg info and varmap*/
+
+
          if( identical )
          {
             SCIPdebugMessage("Block %d is identical to block %d!\n", i, j);
