@@ -1001,6 +1001,23 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
 
      blockstorep = std::vector<int>(getNBlocks(), -1);
 
+     /** check if calculating aggregation information is too expensive */
+     for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
+     {
+        for( int b2 = b1+1; b2 < getNBlocks(); ++b2 )
+        {
+           if( getNVarsForBlock(b1) != getNVarsForBlock(b2) )
+              continue;
+
+           if( getNConssForBlock(b1) != getNConssForBlock(b2) )
+              continue;
+
+           if( getNConssForBlock(b1) >= 200 || getNVarsForBlock(b1) > 200 )
+              return;
+        }
+     }
+
+
      for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
      {
         std::vector<int> currrep = std::vector<int>(0);
