@@ -234,9 +234,10 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\\usepackage{fancybox}                                                           \n");
    if(!GCGgetUseGp())
    {
-//      SCIPinfoMessage(scip, file, "\\usepackage{pgfplots}                                                          \n");
+      SCIPinfoMessage(scip, file, "\\usepackage{pgfplots}                                                          \n");
+      SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=1.12}                                                      \n");
 //      SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=newest}                                                    \n");
-      SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
+//      SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
       SCIPinfoMessage(scip, file, "\\usetikzlibrary{positioning}                                                    \n");
       if(externalizepics)
       {
@@ -518,8 +519,11 @@ SCIP_RETCODE writeTexSeeed(
       SCIPinfoMessage(scip, file, "  \\begin{center}                                                  \n");
    }
    SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}[yscale=-1]                                     \n");
-//   SCIPinfoMessage(scip, file, "     \\begin{axis}[ymin=0,ymax=%d,xmin=0,xmax=%d] \n",
-//      seeed->getNConss(), seeed->getNVars());
+   SCIPinfoMessage(scip, file, "     \\begin{axis}[ymin=0,ymax=%d,xmin=0,xmax=%d,",
+      seeed->getNConss(), seeed->getNVars());
+   SCIPinfoMessage(scip, file, "          xticklabel style={rotate=180},yticklabel style={rotate=180},]\n");
+//   SCIPinfoMessage(scip, file, "          xticklabel={\\reflectbox{\\tick}}]\n");
+   // ,/pgf/number format/precision=0,
 
    /* --- draw boxes ---*/
 
@@ -582,7 +586,7 @@ SCIP_RETCODE writeTexSeeed(
          nvars, nconss);
    }
 
-//   SCIPinfoMessage(scip, file, "     \\end{axis} \n");
+   SCIPinfoMessage(scip, file, "     \\end{axis} \n");
    SCIPinfoMessage(scip, file, "  \\end{tikzpicture}                                               \n");
    if(!nofigure)
    {
