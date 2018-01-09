@@ -237,8 +237,10 @@ SCIP_RETCODE writeTexHeader(
       SCIPinfoMessage(scip, file, "\\usepackage{pgfplots}                                                          \n");
       SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=1.12}                                                      \n");
 //      SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=newest}                                                    \n");
+//      SCIPinfoMessage(scip, file, "\\pgfplotsset{legend image with text/.style={\nlegend image code/.code={%       \n");
+//      SCIPinfoMessage(scip, file, "\\node[anchor=center] at (0.3cm,0cm) {#1};\n}},}\n"                                );
 //      SCIPinfoMessage(scip, file, "\\usepackage{tikz}                                                               \n");
-      SCIPinfoMessage(scip, file, "\\usetikzlibrary{positioning}                                                    \n");
+      SCIPinfoMessage(scip, file, "\\usetikzlibrary{positioning}                                                   \n");
       if(externalizepics)
       {
          SCIPinfoMessage(scip, file, " \\usetikzlibrary{external}                                                     \n");
@@ -521,7 +523,7 @@ SCIP_RETCODE writeTexSeeed(
    SCIPinfoMessage(scip, file, "  \\begin{tikzpicture}[yscale=-1]                                     \n");
    SCIPinfoMessage(scip, file, "     \\begin{axis}[ymin=0,ymax=%d,xmin=0,xmax=%d,",
       seeed->getNConss(), seeed->getNVars());
-   SCIPinfoMessage(scip, file, "          xticklabel style={rotate=180},yticklabel style={rotate=180},]\n");
+   SCIPinfoMessage(scip, file, "xticklabel style={rotate=180},yticklabel style={rotate=180},]\n");
 //   SCIPinfoMessage(scip, file, "          xticklabel={\\reflectbox{\\tick}}]\n");
    // ,/pgf/number format/precision=0,
 
@@ -664,15 +666,18 @@ SCIP_RETCODE writeTexEnding(
 /** help function for GCGwriteTexFamilyTree:
  * writes edges between nodes that are labeled corresponding to involved detectors */
 SCIP_RETCODE writeSeeedDetectorChainInfoLatex(
-   SCIP* scip,
-   FILE* file,       /**< file to write to */
-   SeeedPtr seeed,   /**< seeed to write about */
-   int currheight,
-   int visucounter
+   SCIP* scip,          /**y SCIP data structure */
+   FILE* file,          /**< file to write to */
+   SeeedPtr seeed,      /**< seeed to write about */
+   int currheight,      /**< current height in tree */
+   int visucounter,
+   int legendcounter,   /**< counter for legend items */
+   char* info           /**< output for text to put into legend for this legend counter */
    )
 {
    char relposition[SCIP_MAXSTRLEN];
    int position = visucounter % 3;
+
    if( position == 0 )
       strcpy(relposition, "above");
    else if ( position == 1)
@@ -685,36 +690,41 @@ SCIP_RETCODE writeSeeedDetectorChainInfoLatex(
    if( currheight != 1)
       strcpy(relposition, " ");
 
+   strcpy(info, "no info");
+
    if( currheight > seeed->getNDetectorchainInfo() )
    {
-      SCIPinfoMessage(scip, file, "edge from parent node [%s] {no info%d-%d } ", relposition, seeed->getID(),
-         currheight - 1);
+      SCIPinfoMessage(scip, file, "edge from parent node [%s] {%d} ", relposition, legendcounter);
+      strcpy(info, "no info");
+      strcat( info, std::to_string(seeed->getID()).c_str() );
+      strcat( info, std::to_string(currheight - 1).c_str() );
    }
    else
    {
       std::string oldinfo = seeed->getDetectorchainInfo( currheight - 1 );
       /** take latexified detectorchaininfo */
       size_t index = 0;
-      while(true)
-      {
-         /* Locate the substring to replace. */
-         index = oldinfo.find("_", index);
-         if(index == std::string::npos)
-            break;
-         if( index > 0 && oldinfo.at(index-1) == '\\' )
-         {
-            ++index;
-            continue;
-         }
+//      while(true)
+//      {
+//         /* Locate the substring to replace. */
+//         index = oldinfo.find("_", index);
+//         if(index == std::string::npos)
+//            break;
+//         if( index > 0 && oldinfo.at(index-1) == '\\' )
+//         {
+//            ++index;
+//            continue;
+//         }
+//
+//         /* Make the replacement. */
+//         oldinfo.replace(index, 1, "\\_");
+//
+//         /* Advance index forward so the next iteration doesn't pick it up as well. */
+//         index += 2;
+//      }
 
-         /* Make the replacement. */
-         oldinfo.replace(index, 1, "\\_");
-
-         /* Advance index forward so the next iteration doesn't pick it up as well. */
-         index += 2;
-      }
-
-      SCIPinfoMessage(scip, file, "edge from parent node [%s] {%s} ", relposition, oldinfo.c_str());
+      SCIPinfoMessage(scip, file, "edge from parent node [%s] {%d} ", relposition, legendcounter);
+      strcpy(info,oldinfo.c_str());
    }
 
    return SCIP_OKAY;
@@ -866,6 +876,16 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    int curr = -1;
    int currheight = 0;
    int helpvisucounter;    /* help counter for family tree visualization to iterate the heights */
+   int legendcounter = 0;
+
+   /* keep legend items together for readability reasons */
+   typedef struct Legenditems
+   {
+      int counter;
+      char* info;
+   } Legenditem;
+
+   std::vector<Legenditem> legend;
 
    /* collection of treeseeds */
    std::vector<SeeedPtr> treeseeeds(0);
@@ -984,6 +1004,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
 //   SCIPinfoMessage(scip, file, "\\begin{center}\n");
 
    /* beginning of tree */
+   SCIPinfoMessage(scip, file, "\\begin{center}\n");
+//   SCIPinfoMessage(scip, file, "\\resizebox{\\textwidth}{}{%%\n");
    SCIPinfoMessage(scip, file,
       "\\begin{tikzpicture}[level/.style={sibling distance=%f\\textwidth/#1}, level distance=12em, ->, dashed]\n",
       firstsibldist);
@@ -1023,8 +1045,17 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       else
       {
          if ( parents[curr] != -1 ){
-            writeSeeedDetectorChainInfoLatex(scip, file, allrelevantseeedswr[curr]->seeed, currheight, helpvisucounter);
+            char legendinfo[SCIP_MAXSTRLEN];
+            writeSeeedDetectorChainInfoLatex(scip, file, allrelevantseeedswr[curr]->seeed, currheight, helpvisucounter,
+               legendcounter, legendinfo);
             ++helpvisucounter;
+
+            /* add new legend item containing the detectorchainstringinfo */
+            Legenditem newitem;
+            newitem.counter=legendcounter;
+            legendcounter++;
+            newitem.info=legendinfo;
+            legend.push_back(newitem);
          }
          --currheight;
          curr = parents[curr];
@@ -1072,8 +1103,15 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       }
    }
 
+   for( size_t i = 0; i < legend.size(); i++)
+   {
+      SCIPinfoMessage(scip, file, "\\addlegendimage{\\node[anchor=center] at (0.3cm,0cm) {%d}}\n", legend[i].counter);
+      SCIPinfoMessage(scip, file, "\\addlegendentry{%s}\n", legend[i].info);
+   }
+
    SCIPinfoMessage(scip, file, "\\end{tikzpicture}\n");
-//   SCIPinfoMessage(scip, file, "\\end{center}\n");
+//   SCIPinfoMessage(scip, file, "}\n"); // close resizebox
+   SCIPinfoMessage(scip, file, "\\end{center}\n");
    writeTexEnding(scip, file);
 
    for( int i = 0; i < nallrelevantseeeds; ++i )
