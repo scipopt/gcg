@@ -752,6 +752,58 @@ SCIP_RETCODE checkIdentical(
 
 /* checks whether two pricingproblems represent identical blocks */
 static
+SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
+   SCIP_HASHMAP*         hashorig2pricingvar,/**< mapping from orig to pricingvar  */
+   int                   probnr1,            /**< number of the first pricingproblem */
+   int                   probnr2,            /**< number of the second pricingproblem */
+   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
+                                              *   to those of the first pricing problem */
+   SCIP_Bool*            identical           /**< return value: are blocks identical */
+   )
+{
+   SCIP* scip1;
+   SCIP* scip2;
+   int seeedid;
+
+#ifndef NBLISS
+   SCIP_RESULT result;
+   SCIP_HASHMAP* consmap;
+#endif
+
+   assert(relaxdata != NULL);
+   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
+   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
+   assert(varmap != NULL);
+   assert(identical != NULL);
+
+   scip1 = relaxdata->pricingprobs[probnr1];
+   scip2 = relaxdata->pricingprobs[probnr2];
+   assert(scip1 != NULL);
+   assert(scip2 != NULL);
+
+   *identical = FALSE;
+
+   /* 1) find seeed number */
+
+   seeedid = DECdecompGetSeeedID(relaxdata->decdecomp);
+
+   /* 2) are pricingproblems identical for this seeed? */
+   SCIP_CALL(SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(scip, seeedid, probnr1, probnr2, identical) );
+
+   /* 3) create varmap if pricing probs are identical */
+   if( *identical )
+   {
+      SCIP_CALL(SCIPconshdlrDecompCreateVarmapForSeeedId(scip, hashorig2pricingvar, seeedid, probnr1, probnr2, scip1, scip2, varmap) );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+/* checks whether two pricingproblems represent identical blocks */
+static
 SCIP_RETCODE pricingprobsAreIdentical(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
@@ -801,7 +853,8 @@ SCIP_RETCODE pricingprobsAreIdentical(
 static
 SCIP_RETCODE checkIdenticalBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAXDATA*       relaxdata           /**< the relaxator data data structure*/
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator data data structure*/
+   SCIP_HASHMAP*         hashorig2pricingvar /**< mapping from orig to pricingvar  */
    )
 {
    SCIP_HASHMAP* varmap;
@@ -848,10 +901,13 @@ SCIP_RETCODE checkIdenticalBlocks(
 
          SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
 
-/** for wednesday
+         SCIP_CALL( pricingprobsAreIdenticalFromDetectionInfo( scip, relaxdata, hashorig2pricingvar, i, j, varmap, &identical ) );
+
+
+/**
  *  new method of cons_decomp that uses seeed information
  * 1) check varmap
- * 2) build varmap for seeeds
+ * 2) build varmap for seeeds in seeed datatstructures
  * 3) translate varmap when transforming seeed to decomp (store varmap in decomp or seeed?)
  * 4) write method in cons_decomp using seeed agg info and varmap*/
 
@@ -863,6 +919,33 @@ SCIP_RETCODE checkIdenticalBlocks(
             /* save variables in pricing problem variable */
             vars = SCIPgetVars(relaxdata->pricingprobs[i]);
             nvars = SCIPgetNVars(relaxdata->pricingprobs[i]);
+
+            /** temp: */
+            SCIP_Bool output = TRUE;
+            if( output )
+            {
+
+               for( int i = 0; i < SCIPgetNVars(scip); ++i )
+
+               {
+                  SCIP_VAR* var;
+                  SCIP_VAR* imagevar;
+
+                  imagevar = NULL;
+                  var = SCIPgetVars(scip)[i];
+
+
+                  if( SCIPhashmapExists(varmap, (void*) var) )
+                  {
+                     imagevar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) var );
+                     SCIPinfoMessage(scip, NULL, "Variable %s has the variable %s as image.\n", SCIPvarGetName(var), imagevar );
+                  }
+                  else
+                     SCIPinfoMessage(scip, NULL, "Variable %s has no image.\n", SCIPvarGetName(var) );
+
+               }
+               SCIPinfoMessage(scip, NULL, "Hashmap has %d many entries.\n", SCIPhashmapGetNElements(varmap) );
+            }
 
             /*
              * quick check whether some of the variables are linking in which case we can not aggregate
@@ -1669,7 +1752,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
 
    /* check for identity of blocks */
-   SCIP_CALL( checkIdenticalBlocks(scip, relaxdata) );
+   SCIP_CALL( checkIdenticalBlocks(scip, relaxdata, hashorig2pricingvar) );
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {

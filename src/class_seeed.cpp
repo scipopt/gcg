@@ -33,7 +33,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-
 #include "class_seeed.h"
 #include "gcg.h"
 #include "class_seeedpool.h"
@@ -94,7 +93,7 @@ Seeed::Seeed(
    varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
    masterconsssorted(true), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
-   agginfocalculated(FALSE), nrepblocks(0), reptoblocks(std::vector<std::vector<int>>(0)), blockstorep(std::vector<int>(0) ),
+   agginfocalculated(FALSE), nrepblocks(0), reptoblocks(std::vector<std::vector<int>>(0)), blockstorep(std::vector<int>(0) ), pidtopidvarmaptofirst(std::vector<std::vector<std::vector<int> > >(0)),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
    nNewBlocks( 0 ), usedClassifier( 0 ), classesToMaster( 0 ), classesToLinking( 0 ), listofancestorids( 0 ),
@@ -181,6 +180,7 @@ Seeed::Seeed(
    nrepblocks  = seeedtocopy->nrepblocks;
    reptoblocks = seeedtocopy->reptoblocks;
    blockstorep = seeedtocopy->blockstorep;
+   pidtopidvarmaptofirst = seeedtocopy->pidtopidvarmaptofirst;
    ncoeffsforblock = seeedtocopy->ncoeffsforblock;
    calculatedncoeffsforblock = seeedtocopy->calculatedncoeffsforblock;
 
@@ -1021,6 +1021,8 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
      for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
      {
         std::vector<int> currrep = std::vector<int>(0);
+        std::vector< std::vector<int> > currrepvarmap =std::vector<std::vector<int>>(0);
+
         if( !identblocksforblock[b1].empty() )
            continue;
 
@@ -1039,6 +1041,7 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
                           SCIPblkmem(givenseeedpool->getScip()),
                           5 * getNVarsForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
 
+           SCIPdebugMessage("Check identity for block %d and block %d!\n", b1, b2);
 
 #ifdef NBLISS
            checkIdenticalBlocksBrute(givenseeedpool, b1, b2, varmap, varmap2, &identical);
@@ -1047,10 +1050,14 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
 #endif
            if( identical )
            {
+              std::vector<int> varmapvector = std::vector<int>(getNVarsForBlock(b1));
               SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);
               identblocksforblock[b1].push_back(b2);
               identblocksforblock[b2].push_back(b1);
               currrep.push_back(b2);
+              /** handle varmap */
+
+
            }
            else
            {
@@ -1060,6 +1067,7 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
         }
 
         reptoblocks.push_back( currrep );
+        pidtopidvarmaptofirst.push_back(currrepvarmap);
         for( size_t i = 0; i < currrep.size(); ++i )
            blockstorep[currrep[i]] = nreps-1;
         ++nreps;
@@ -1821,7 +1829,11 @@ void Seeed::checkIdenticalBlocksBliss(
 
    cmpGraphPairNewdetection(givenseeedpool->getScip(), (SEEED_WRAPPER*) this, b1, b2, &result, varmap2, consmap );
    if ( result == SCIP_SUCCESS )
+   {
       *identical = TRUE;
+      /** TODO translate varmaps */
+
+   }
    else
       *identical = FALSE;
 
@@ -4194,6 +4206,12 @@ std::vector<int> Seeed::getAncestorList(
    return listofancestorids;
 }
 
+const std::vector<int> & Seeed::getBlocksForRep(int repid)
+{
+   return reptoblocks[repid];
+}
+
+
 /** returns ancestor id of given ancestor */
 void Seeed::setAncestorList(
    std::vector<int> newlist
@@ -5013,6 +5031,22 @@ std::vector<SCIP_Real> Seeed::getPctConssFromFreeVector()
 {
    return pctConssFromFree;
 }
+
+/** returns index of the representative block */
+int Seeed::getRepForBlock(
+   int blockid
+   ){
+     return blockstorep[blockid];
+}
+
+const std::vector<int> & Seeed::getRepVarmap(
+      int repid,
+      int blockrepid
+      )
+{
+   return pidtopidvarmaptofirst[repid][blockrepid];
+}
+
 
 /** returns the corresponding seeedpool */
 Seeedpool* Seeed::getSeeedpool()

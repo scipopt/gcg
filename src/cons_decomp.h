@@ -146,6 +146,30 @@ SCIP_Real DECgetRemainingTime(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** checks if two pricing problems are identical based on information from detection */
+extern
+SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
+   SCIP*                scip,
+   int                  seeedid,
+   int                  probnr1,
+   int                  probnr2,
+   SCIP_Bool*           identical
+   );
+
+/** for two identical pricing problems a corresponding varmap is created */
+extern
+SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
+   SCIP*                scip,
+   SCIP_HASHMAP*        hashorig2pricingvar, /**< mapping from orig to pricingvar  */
+   int                  seeedid,
+   int                  probnr1,
+   int                  probnr2,
+   SCIP*                scip1,
+   SCIP*                scip2,
+   SCIP_HASHMAP*        varmap
+   );
+
+
 /** sets (and adds) the decomposition structure **/
 extern
 SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(

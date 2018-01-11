@@ -2891,6 +2891,175 @@ SCIP_Real DECgetRemainingTime(
    return timelimit;
 }
 
+/** checks if two pricing problems are identical based on information from detection */
+SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
+   SCIP*                scip,
+   int                  seeedid,
+   int                  probnr1,
+   int                  probnr2,
+   SCIP_Bool*           identical
+   )
+{
+   gcg::Seeed* seeed;
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+
+   int blockid1;
+   int blockid2;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeed = conshdlrdata->seeedpool->findFinishedSeeedByID(seeedid);
+   currseeedpool = conshdlrdata->seeedpool;
+
+   if ( seeed == NULL )
+   {
+      seeed = conshdlrdata->seeedpoolunpresolved->findFinishedSeeedByID(seeedid);
+      currseeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+
+   assert(seeed != NULL);
+
+   if( seeed->getRepForBlock(probnr1) == seeed->getRepForBlock(probnr2) )
+      *identical = TRUE;
+   else
+      *identical = FALSE;
+
+   return SCIP_OKAY;
+}
+
+/** for two identical pricing problems a corresponding varmap is created */
+SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
+   SCIP*                scip,
+   SCIP_HASHMAP*        hashorig2pricingvar, /**< mapping from orig to pricingvar  */
+   int                  seeedid,
+   int                  probnr1,
+   int                  probnr2,
+   SCIP*                scip1,
+   SCIP*                scip2,
+   SCIP_HASHMAP*        varmap
+   )
+{
+   gcg::Seeed* seeed;
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+
+   int blockid1;
+   int blockid2;
+   int representative;
+   int repid1;
+   int repid2;
+   int nblocksforrep;
+   std::vector<int> pidtopid;
+
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeed = conshdlrdata->seeedpool->findFinishedSeeedByID(seeedid);
+   currseeedpool = conshdlrdata->seeedpool;
+
+   if ( seeed == NULL )
+   {
+      seeed = conshdlrdata->seeedpoolunpresolved->findFinishedSeeedByID(seeedid);
+      currseeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+
+   assert(seeed != NULL);
+
+   if( probnr1 > probnr2 )
+   {
+      blockid1 = probnr2;
+      blockid2 = probnr1;
+   }
+   else
+   {
+      blockid1 = probnr1;
+      blockid2 = probnr2;
+   }
+
+   representative = seeed->getRepForBlock(blockid1);
+   assert( representative == seeed->getRepForBlock(blockid2) );
+   nblocksforrep = (int) seeed->getBlocksForRep(representative).size();
+
+   /** find index in representatives */
+   for( int i = 0; i < nblocksforrep; ++i )
+   {
+      if( seeed->getBlocksForRep(representative)[i] == blockid1 )
+         repid1 = i;
+      if( seeed->getBlocksForRep(representative)[i] == blockid2 )
+      {
+         repid2 = i;
+         break;
+      }
+   }
+
+   /** blockid1 should be the representative */
+   if( repid1 != 0 )
+   {
+      SCIPhashmapFree(&varmap);
+      varmap = NULL;
+      SCIPwarningMessage(scip, NULL, "blockid1 should be the representative (hence has id=0 in reptoblocksarray but in fact has %d) \n", repid1);
+      return SCIP_OKAY;
+   }
+
+   pidtopid = seeed->getRepVarmap(repid1, repid2);
+
+   for( int v = 0; v < SCIPgetNVars(scip2); ++v )
+   {
+      SCIP_VAR* var1;
+      SCIP_VAR* var2;
+      SCIP_VAR* var1orig;
+      SCIP_VAR* var2orig;
+      int var1origid;
+      int var2origid;
+      int var1originblockid;
+      int var2originblockid;
+
+      var2 = SCIPgetVars(scip2)[v];
+      assert(var2 != NULL);
+      var2orig = GCGpricingVarGetOriginalVar(var2);
+      assert(var2orig!=NULL);
+      var2origid = currseeedpool->getIndexForVar(var2orig) ;
+      assert(var2origid>=0);
+      var2originblockid = seeed->getVarProbindexForBlock(var2origid, blockid2) ;
+      assert(var2originblockid >= 0);
+      var1originblockid = pidtopid[var2originblockid];
+      assert(var1originblockid>=0);
+      var1origid = seeed->getVarsForBlock(blockid1)[var1originblockid];
+      assert(var1origid>=0);
+      var1orig = currseeedpool->getVarForIndex(var1origid) ;
+      assert(var1orig != NULL);
+      var1 = (SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar, (void*) var1orig ) ;
+      assert(var1 != NULL);
+
+      SCIPhashmapInsert(varmap, (void*) var2, (void*) var1);
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
 /** creates a user seeed for the presolved problem **/
 SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    SCIP*                 scip,               /**< SCIP data structure */

@@ -123,10 +123,11 @@ private:
    bool isFinishedByFinisher;                         /**< was this seeed finished by the finishseeed() method of a detector */
 
    /** aggregation information */
-   SCIP_Bool            agginfocalculated;             /**< is aggregation information for the blocks already calculated */
-   int                  nrepblocks;                   /**< number of block representatives */
-   std::vector<std::vector<int>> reptoblocks;                  /**< translation of the block representatives to (old) blocks */
-   std::vector<int>     blockstorep;                  /**< translation of the (old) blocks to the block representatives */
+   SCIP_Bool            agginfocalculated;                             /**< is aggregation information for the blocks already calculated */
+   int                  nrepblocks;                                    /**< number of block representatives */
+   std::vector<std::vector<int>> reptoblocks;                          /**< translation of the block representatives to (old) blocks */
+   std::vector<int>     blockstorep;                                   /**< translation of the (old) blocks to the block representatives */
+   std::vector<std::vector<std::vector<int> > > pidtopidvarmaptofirst; /**< [nrepblocks][blockstorep[k].size()][nvarsforprob] collection of varmaps of probindices from k-th subproblem to the zeroth block that is represented */
 
    /** statistic information */
    std::vector<DEC_DETECTOR*> detectorChain;          /**< vector containing detectors that worked on that seeed */
@@ -568,6 +569,7 @@ public:
       int ancestor
       );
 
+   const std::vector<int> & getBlocksForRep(int repid);
 
    /** returns detectorchainstring */
    char* getDetectorChainString();
@@ -802,6 +804,16 @@ public:
 
    /** returns fraction of constraints that are not longer open for detectors in detectorchain */
    std::vector<SCIP_Real> getPctConssFromFreeVector();
+
+   /** returns index of the representative block */
+   int getRepForBlock(
+      int blockid
+      );
+
+   const std::vector<int> & getRepVarmap(
+      int repid,
+      int blockrepid
+      );
 
    /** returns the corresponding seeedpool */
    Seeedpool* getSeeedpool();

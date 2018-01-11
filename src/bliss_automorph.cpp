@@ -1236,7 +1236,7 @@ SCIP_RETCODE createGraphNewDetection(
             /* ignore if the variable belongs to a different block */
             if( !seeed->isVarBlockvarOfBlock(varid, block) )
             {
-               SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(seeedpool->getVarForIndex(varid) ), block);
+//               SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(seeedpool->getVarForIndex(varid) ), block);
                continue;
             }
 
@@ -1310,7 +1310,7 @@ SCIP_RETCODE createGraphNewDetection(
          /* ignore if the variable belongs to a different block */
          if( blockid == -1 )
          {
-            SCIPdebugMessage("Var <%s> belongs to a different block \n", SCIPvarGetName(var));
+            //SCIPdebugMessage("Var <%s> belongs to a different block \n", SCIPvarGetName(var));
             continue;
          }
          val = seeedpool->getVal(masterconsid, varid);
@@ -1451,6 +1451,39 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, NULL);
    ptrhook->setNewDetectionStuff(seeedpool, seeed, blocks);
    graph.find_automorphisms(bstats, fhook, ptrhook);
+
+   /* insert code for varmap creation in seeed here
+   1) print out varmap to learn about it
+   */
+   /** iterate over blocks */
+//   for( int b = 0; b < seeed->getNBlocks(); ++b )
+//   {
+
+   SCIP_Bool output = FALSE;
+   if( output )
+      {
+
+      for( int i = 0; i < seeedpool->getNVars(); ++i )
+      {
+         SCIP_VAR* var;
+         SCIP_VAR* imagevar;
+
+         imagevar = NULL;
+         var = seeedpool->getVarForIndex(i);
+
+
+         if( SCIPhashmapExists(ptrhook->getVarHash(), (void*) var) )
+         {
+            imagevar = (SCIP_VAR*) SCIPhashmapGetImage(ptrhook->getVarHash(), (void*) var );
+            SCIPinfoMessage(scip, NULL, "Variable %s has the variable %s as image.\n", SCIPvarGetName(var), imagevar );
+         }
+         else
+            SCIPinfoMessage(scip, NULL, "Variable %s has no image.\n", SCIPvarGetName(var) );
+
+      }
+      SCIPinfoMessage(scip, NULL, "Hashmap has %d many entries.\n", SCIPhashmapGetNElements(ptrhook->getVarHash()) );
+      }
+//   }
 
    if( !ptrhook->getBool() )
       *result = SCIP_DIDNOTFIND;
