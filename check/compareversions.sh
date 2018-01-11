@@ -6,13 +6,15 @@
 #	          if comparison, tolerances, e.g. for slightly different run times? maybe same O(log)?
 #	- Checkout different versions simultaniously in different folders? 
 
+
 #####
 # README: 
 # The script can be called with parameters of the form 
-# "testset" "version1" "comparams1" "params1" "version2" "comparams2" "params2" "version3" ...
+# "testset" "testparams" "version1" "comparams1" "params1" "version2" "comparams2" "params2" "version3" ...
 # If no such parameters are present the script interactively asks to enter these parameters.
 # Parameters:
 #	- testset:	Testset to run the different versions on
+#	- testparams:	Parameters for the test script
 #	- versionN:	git branch or hash #N
 #	- comparamsN:	compile parameters for GCG version #N
 #	- paramsN:	parameters with which to run GCG version #N
@@ -25,6 +27,7 @@ TESTSET=""		# testset on which to run all versions
 USERINPUT=""		# temp var for user inputs
 VERSIONCOUNTER=0	# stores amount of versions to compare
 
+
 # 1) If no params were given ask for testset, versions and parameters, and store them.
 #    Else store testset and fill other parameters into arrays without interaction.
 echo ""
@@ -35,8 +38,9 @@ then
 	# Case that no parameters where given when script was started
 	echo "You have not specified what you want to compare yet."
 	echo "If you would like to avoid this dialog in the future please call this script with"
-	echo "\"testset\" \"version1\" \"comparams1\" \"params1\" \"version2\" \"comparams2\" \"params2\" ... "
-	echo "(where \"version\" is a git branch or git hash; GCG should be compiled with \"comparams\" and called with \"params\")."
+	echo "\"testset\" \"testparams\" \"version1\" \"comparams1\" \"params1\" \"version2\" \"comparams2\" \"params2\" ... "
+	echo "(where\"testparams\" are parameters for the test script; \"version\" is a git branch or git hash;"
+	echo "GCG should be compiled with \"comparams\" and called with \"params\")."
 	echo ""
 
 	# Let user specify the testset
@@ -48,6 +52,11 @@ then
 		read USERINPUT
 	done
 	TESTSET="$USERINPUT"
+
+	# Let user specify test script parameters (which might be empty)
+	echo "What parameters would you like the test to run with? (Press Enter for no parameters)"
+	read USERINPUT
+	TESTPARAMS="$USERINPUT"
 
 	# Set VERSIONCOUNTER manually
 	echo "How many different versions of GCG would you like to compare?"
@@ -62,7 +71,7 @@ then
 
 	# Let user enter git version and params (all params might be empty)
 	# Note: for better user interaction the indices of VERSION, COMPARAMS and PARAMS arrays start at 1
-	i=1;
+	i=1
 	while [ "$i" -le "$VERSIONCOUNTER" ]
 	do
 		echo "Please enter the git branch name or git hash of GCG version" $i ": "
@@ -85,16 +94,17 @@ then
 else
 	# Case that parameters where given when script was started
 	TESTSET=$1
+	TESTPARAMS=$2
 	VERSIONCOUNTER=0
-	# Cycle through arguments starting from the second one (first was testset)
-	for i in "${@:2}"
+	# Cycle through arguments starting from the third one (first was testset, second was testparams)
+	for i in "${@:3}"
 	do
 		# check whether the current index belongs to version, comparams or params
-		if [ $(($i % 3)) = 2 ]
+		if [ $(($i % 3)) = 0 ]
 		then
 			VERSIONCOUNTER=$((VERSIONCOUNTER + 1))
 			VERSION[VERSIONCOUNTER]=${i}
-		elif [ $(($i % 3)) = 0 ]; then
+		elif [ $(($i % 3)) = 1 ]; then
 			COMPARAMS[VERSIONCOUNTER]=${i}
 		else
 			PARAMS[VERSIONCOUNTER]=${i}
@@ -112,13 +122,44 @@ else
 fi
 
 
-
 # 2) check out the version(s), compile, run with corresponding parameter(s)
-#	2.1) Add case: same version with same parameters twice: call normal test script
-#	2.2) Add case: same version with different parameters: check out and run twice with diff params
-#	2.3) Add case: different versions with same parameters: check out & run successively
-#	2.4) Add case: different versions with different parameters: as 2.3)
-#    for 2.3) and 2.4): if out files would get overwritten then add version/params coding to their names
+
+# Check whether all versions/comparams/params are the same to determine different cases in the following
+i=1
+SAMEVERSION=1
+SAMECOMPARAMS=1
+SAMEPARAMS=1
+while (( i <= "$VERSIONCOUNTER" ))
+do
+	while (( j <= "$VERSIONCOUNTER" ))
+	do
+		if [ VERSION[i] != VERSION[j] ] && (( i != j ))
+		then
+			SAMEVERSION=0
+		fi
+		if [ COMPARAMS[i] != COMPARAMS[j] ] && (( i != j ))
+		then
+			SAMECOMPARAMS=0
+		fi
+		if [ PARAMS[i] != PARAMS[j] ] && (( i != j ))
+		then
+			SAMEPARAMS=0
+		fi
+		j=$(($j + 1))
+	done
+	i=$(($i + 1))
+done
+echo "$SAMEVERSION" "$SAMECOMPARAMS" "$SAMEPARAMS"
+
+
+# 	in all cases check whether checkout was successful & compilation was successful
+#	Case 2.1) same version with same parameters twice: call normal test script
+#	Case 2.2) Add case: same version with different parameters: check out and run twice with diff params
+#	Case 2.3) Add case: different versions with same parameters: check out & run successively
+#		if out files would get overwritten then add version/params coding to their names
+#	Case 2.4) Add case: different versions with different parameters: as 2.3)
+#		if out files would get overwritten then add version/params coding to their names
+
 # 3) if wished do sth with the output, e.g. make summary of differences in summary etc.
 
 # termination
