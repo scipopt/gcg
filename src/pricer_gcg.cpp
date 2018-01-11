@@ -827,6 +827,10 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
       assert(status == SCIP_STATUS_OPTIMAL
          || status == SCIP_STATUS_INFEASIBLE
          || status == SCIP_STATUS_UNBOUNDED
+         || status == SCIP_STATUS_NODELIMIT
+         || status == SCIP_STATUS_STALLNODELIMIT
+         || status == SCIP_STATUS_GAPLIMIT
+         || status == SCIP_STATUS_SOLLIMIT
          || status == SCIP_STATUS_UNKNOWN);
 
       if( !GCGpricingjobIsHeuristic(pricingjob) )
@@ -845,7 +849,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
          SCIP_CALL_ABORT( SCIPstopClock(scip_, clock) );
       }
 
-      /* @todo: Why do 'UNKNOWN' calls not count? */
+      /* @todo: Do a better case distinction */
       if( status != SCIP_STATUS_UNKNOWN )
       {
          #pragma omp atomic
@@ -862,6 +866,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
             GCGpricerCollectStatistic(pricerdata, pricetype->getType(), probnr,
                SCIPgetSolvingTime(pricingscip));
 #endif
+            /* @todo: This should actually be a MIP solver specific statistic */
             if( SCIPgetStage(pricingscip) > SCIP_STAGE_SOLVING )
             {
                #pragma omp atomic
@@ -2836,7 +2841,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_CALL( computeGenericBranchingconssStack(pricetype, GCGpricingjobGetProbnr(pricingjob), &branchconss, &nbranchconss, &branchduals) );
 
    SCIP_CALL( solvePricingProblem(pricingjob, pricetype, maxcols) );
-   if( GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_OPTIMAL )
+   if( GCGpricingjobGetNImpCols(pricingjob) > 0 )
    {
       bestcol = GCGpricingjobGetCol(pricingjob, 0);
       redcost = GCGcolGetRedcost(bestcol);
@@ -2861,7 +2866,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       SCIP_CALL( addBranchingBoundChangesToPricing(GCGpricingjobGetProbnr(pricingjob), branchconss[i]) );
 
       SCIP_CALL( solvePricingProblem(pricingjob, pricetype, 1) );
-      if( GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_OPTIMAL )
+      if( GCGpricingjobGetNImpCols(pricingjob) > 0 )
       {
          bestcol = GCGpricingjobGetCol(pricingjob, 0);
          redcost = GCGcolGetRedcost(bestcol);
@@ -3113,8 +3118,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
       }
 
+      // @todo: maybe put 'bestobjvals' and 'bestredcosts' completely to the pricing controller or pricing jobs
+      pricingcontroller->setupPriorityQueue(pricerdata->dualsolconv, maxcols, bestobjvals, bestredcosts);
+
       /* perform all pricing jobs */
-      #pragma omp parallel for ordered firstprivate(pricingjob) private(oldnfoundvars) shared(retcode, optimal, cols, ncols, maxcols, pricetype, bestredcost, beststabobj, bestredcostvalid, nfoundvars, nsuccessfulprobs, pricinghaserror) reduction(+:nsolvedprobs) schedule(static,1)
+      #pragma omp parallel for ordered firstprivate(pricingjob) private(oldnfoundvars) shared(retcode, optimal, cols, ncols, maxcols, pricetype, bestredcost, beststabobj, bestredcostvalid, nfoundvars, nsuccessfulprobs) reduction(+:nsolvedprobs) schedule(static,1)
       /* @todo: check abortion criterion here; pricingjob must be private? */
       while( (pricingjob = pricingcontroller->getNextPricingjob()) != NULL )
       {

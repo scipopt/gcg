@@ -49,7 +49,7 @@
 #include "pub_gcgcol.h"
 
 #define SOLVER_NAME          "mip"
-#define SOLVER_DESC          "mip solver for pricing problems"
+#define SOLVER_DESC          "pricing solver solving the pricing problem as a sub-MIP, using SCIP"
 #define SOLVER_PRIORITY      0
 
 #define SOLVER_ENABLED      TRUE  /**< indicates whether the solver should be enabled */
@@ -203,41 +203,71 @@ SCIP_RETCODE checkSolNew(
    return SCIP_OKAY;
 }
 
-/** returns whether the solution is unbounded or not */
+/** get the status of the pricing SCIP instance */
 static
-SCIP_Bool problemIsUnbounded(
-   SCIP*                 pricingprob         /**< pricing problem SCIP data structure */
-   )
-
+SCIP_STATUS getPricingstatus(
+  SCIP*                 pricingprob         /**< pricing problem SCIP data structure */
+  )
 {
-   return SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD;
-}
+   /* all SCIP statuses handled so far; these are currently:
+    *    SCIP_STATUS_USERINTERRUPT
+    *    SCIP_STATUS_NODELIMIT
+    *    SCIP_STATUS_TOTALNODELIMIT
+    *    SCIP_STATUS_STALLNODELIMIT
+    *    SCIP_STATUS_TIMELIMIT
+    *    SCIP_STATUS_MEMLIMIT
+    *    SCIP_STATUS_GAPLIMIT
+    *    SCIP_STATUS_SOLLIMIT
+    *    SCIP_STATUS_BESTSOLLIMIT
+    *    SCIP_STATUS_OPTIMAL
+    *    SCIP_STATUS_INFEASIBLE
+    *    SCIP_STATUS_UNBOUNDED
+    *    SCIP_STATUS_INFORUNBD
+    */
+   /* @todo: can SCIP_STATUS_UNKNOWN happen, too? */
+   assert((SCIPgetStatus(pricingprob) >= SCIP_STATUS_USERINTERRUPT && SCIPgetStatus(pricingprob) <= SCIP_STATUS_BESTSOLLIMIT)
+          || SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
+          || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
+          || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
+          || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD);
 
-/** returns whether the solution process was aborted */
-static
-SCIP_Bool problemIsInterrupted(
-   SCIP*                 pricingprob         /**< pricing problem SCIP data structure */
-   )
-{
-   return SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT ||
-          SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT ||
-          SCIPgetStatus(pricingprob) == SCIP_STATUS_NODELIMIT ||
-          SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT ||
-          SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT ||
-          SCIPgetStatus(pricingprob) == SCIP_STATUS_TOTALNODELIMIT ||
-          SCIPgetStatus(pricingprob) == SCIP_STATUS_UNKNOWN;
-}
+   switch( SCIPgetStatus(pricingprob) )
+   {
+   case SCIP_STATUS_USERINTERRUPT:
+     SCIPdebugMessage("  -> interrupted, %d solutions found\n", SCIPgetNSols(pricingprob));
+   case SCIP_STATUS_UNKNOWN:
+   case SCIP_STATUS_TOTALNODELIMIT:
+   case SCIP_STATUS_TIMELIMIT:
+   case SCIP_STATUS_MEMLIMIT:
+   case SCIP_STATUS_BESTSOLLIMIT:
+     return SCIP_STATUS_UNKNOWN;
 
-/** returns whether the pricing problem is guaranteed to have at least one feasible solution */
-static
-SCIP_Bool problemIsFeasible(
-   SCIP*                 pricingprob         /**< pricing problem SCIP data structure */
-   )
-{
-   return SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL ||
-      SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT ||
-      SCIPgetStatus(pricingprob) == SCIP_STATUS_SOLLIMIT ||
-      SCIPgetStatus(pricingprob) == SCIP_STATUS_BESTSOLLIMIT;
+   case SCIP_STATUS_NODELIMIT:
+     return SCIP_STATUS_NODELIMIT;
+
+   case SCIP_STATUS_STALLNODELIMIT:
+     return SCIP_STATUS_STALLNODELIMIT;
+
+   case SCIP_STATUS_GAPLIMIT:
+     return SCIP_STATUS_GAPLIMIT;
+
+   case SCIP_STATUS_SOLLIMIT:
+     return SCIP_STATUS_SOLLIMIT;
+
+   case SCIP_STATUS_OPTIMAL:
+     return SCIP_STATUS_OPTIMAL;
+
+   case SCIP_STATUS_INFEASIBLE:
+     return SCIP_STATUS_INFEASIBLE;
+
+   case SCIP_STATUS_UNBOUNDED:
+   case SCIP_STATUS_INFORUNBD:
+     return SCIP_STATUS_UNBOUNDED;
+
+   default:
+     SCIPerrorMessage("invalid pricing problem status: %d\n", SCIPgetStatus(pricingprob));
+     return SCIP_STATUS_UNKNOWN;
+   }
 }
 
 /** check whether a column contains an infinite solution value */
@@ -310,10 +340,6 @@ SCIP_RETCODE getColumnsFromPricingprob(
       {
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &(cols[*ncols]), probnr, probsols[s], FALSE, SCIPinfinity(pricingprob)) );
          ++(*ncols);
-
-         /* If the best solution is feasible, we set the status to OPTIMAL */
-         if( feasible && s == 0 )
-            *status = SCIP_STATUS_OPTIMAL;
       }
       /* If the best solution has infinite values, try to repair it */
       else if( s == 0 )
@@ -332,7 +358,6 @@ SCIP_RETCODE getColumnsFromPricingprob(
 
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &cols[0], probnr, newsol, FALSE, SCIPinfinity(pricingprob)) );
          ++(*ncols);
-         *status = SCIP_STATUS_OPTIMAL;
       }
    }
 
@@ -363,12 +388,8 @@ SCIP_RETCODE solveProblem(
    assert(lowerbound != NULL);
    assert(status != NULL);
 
-   /* solve the pricing submip */
+   /* solve the pricing SCIP */
    retcode = SCIPsolve(pricingprob);
-
-   *ncols = 0;
-   *status = SCIP_STATUS_UNKNOWN;
-
    if( retcode != SCIP_OKAY )
    {
       SCIPwarningMessage(pricingprob, "Pricing problem %d terminated with retcode = %d, ignoring\n", probnr, retcode);
@@ -376,40 +397,19 @@ SCIP_RETCODE solveProblem(
    }
    SCIPdebugMessage("  -> status = %d\n", SCIPgetStatus(pricingprob));
 
-   /* all SCIP statuses handled so far; these are currently:
-    *    SCIP_STATUS_USERINTERRUPT
-    *    SCIP_STATUS_NODELIMIT
-    *    SCIP_STATUS_TOTALNODELIMIT
-    *    SCIP_STATUS_STALLNODELIMIT
-    *    SCIP_STATUS_TIMELIMIT
-    *    SCIP_STATUS_MEMLIMIT
-    *    SCIP_STATUS_GAPLIMIT
-    *    SCIP_STATUS_SOLLIMIT
-    *    SCIP_STATUS_BESTSOLLIMIT
-    *    SCIP_STATUS_OPTIMAL
-    *    SCIP_STATUS_INFEASIBLE
-    *    SCIP_STATUS_UNBOUNDED
-    *    SCIP_STATUS_INFORUNBD
-    */
-   /* @todo: can SCIP_STATUS_UNKNOWN happen, too? */
-   assert((SCIPgetStatus(pricingprob) >= SCIP_STATUS_USERINTERRUPT && SCIPgetStatus(pricingprob) <= SCIP_STATUS_BESTSOLLIMIT)
-          || SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
-          || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
-          || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
-          || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD);
+   *status = getPricingstatus(pricingprob);
+   *ncols = 0;
 
-   if( SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE )
+   switch( *status )
    {
-      SCIPdebugMessage("  -> infeasible, abort immediately.\n");
-      *status = SCIP_STATUS_INFEASIBLE;
-      return SCIP_OKAY;
-   }
+   case SCIP_STATUS_INFEASIBLE:
+      SCIPdebugMessage("  -> infeasible.\n");
+      break;
 
    /* The pricing problem was declared to be unbounded and we should have a primal ray at hand,
     * so copy the primal ray into the solution structure and mark it to be a primal ray
     */
-   if( problemIsUnbounded(pricingprob) )
-   {
+   case SCIP_STATUS_UNBOUNDED:
       if( !SCIPhasPrimalRay(pricingprob) )
       {
          SCIP_CALL( resolvePricingWithoutPresolving(pricingprob) );
@@ -419,30 +419,28 @@ SCIP_RETCODE solveProblem(
       SCIP_CALL( createColumnFromRay(pricingprob, probnr, &cols[0]) );
 
       *ncols = 1;
-      *status = SCIP_STATUS_UNBOUNDED;
-   }
-   else if( problemIsInterrupted(pricingprob) || problemIsFeasible(pricingprob) )
-   {
-      assert(SCIPgetNSols(pricingprob) > 0 || !problemIsFeasible(pricingprob));
+      break;
 
-#ifdef SCIP_DEBUG
-      if( problemIsInterrupted(pricingprob) )
-      {
-         SCIPdebugMessage("  -> interrupted, %d solutions found\n", SCIPgetNSols(pricingprob));
-      }
-#endif
+   /* If the pricing problem is neither infeasible nor unbounded, try to extract feasible columns */
+   case SCIP_STATUS_UNKNOWN:
+   case SCIP_STATUS_NODELIMIT:
+   case SCIP_STATUS_STALLNODELIMIT:
+   case SCIP_STATUS_GAPLIMIT:
+   case SCIP_STATUS_SOLLIMIT:
+   case SCIP_STATUS_OPTIMAL:
+      assert(SCIPgetNSols(pricingprob) > 0 || (*status != SCIP_STATUS_OPTIMAL && *status != SCIP_STATUS_GAPLIMIT && *status != SCIP_STATUS_SOLLIMIT));
 
       /* Transform at most maxcols many solutions from the pricing problem into columns */
       SCIP_CALL( getColumnsFromPricingprob(pricingprob, probnr, solverdata->checksols, maxcols, cols, ncols, status) );
 
-      if( problemIsFeasible(pricingprob) )
-         *lowerbound = SCIPgetDualbound(pricingprob);
+      *lowerbound = SCIPgetDualbound(pricingprob);
 
       SCIPdebugMessage("  -> found %d columns, lowerbound = %.4g\n", *ncols, *lowerbound);
-   }
-   else
-   {
-      SCIPerrorMessage("invalid status of pricing problem %d: %d\n", probnr, SCIPgetStatus(pricingprob));
+      break;
+
+   default:
+      SCIPerrorMessage("Pricing problem %d has invalid status: %d\n", probnr, SCIPgetStatus(pricingprob));
+      break;
    }
 
    assert(*ncols >= 0);

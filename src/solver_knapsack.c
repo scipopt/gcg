@@ -114,30 +114,23 @@ SCIP_RETCODE solveKnapsack(
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
 
+   *result = SCIP_STATUS_UNKNOWN;
+
    /* check prerequisites: the pricing problem can be solved as a knapsack problem only if
     * - all variables are nonnegative integer variables
     * - there is only one constraint, which has infinite lhs and integer rhs
     */
    if( SCIPgetNBinVars(pricingprob) + SCIPgetNIntVars(pricingprob) < npricingprobvars )
-   {
-      *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
-   }
    for( i = SCIPgetNBinVars(pricingprob); i < SCIPgetNBinVars(pricingprob) + SCIPgetNIntVars(pricingprob); ++i )
    {
       if( SCIPisNegative(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i])) )
-      {
-         *result = SCIP_STATUS_UNKNOWN;
          return SCIP_OKAY;
-      }
    }
 
    nconss = SCIPgetNConss(pricingprob);
    if( nconss != 1 )
-   {
-      *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
-   }
 
    cons = SCIPgetConss(pricingprob)[0];
    assert(cons != NULL);
@@ -157,10 +150,7 @@ SCIP_RETCODE solveKnapsack(
 
       if( !SCIPisIntegral(pricingprob, SCIPgetRhsLinear(pricingprob, cons)) ||
          !SCIPisInfinity(pricingprob, - SCIPgetLhsLinear(pricingprob, cons)) )
-      {
-         *result = SCIP_STATUS_UNKNOWN;
          return SCIP_OKAY;
-      }
 
       consvars = SCIPgetVarsLinear(pricingprob, cons);
       realconsvals = SCIPgetValsLinear(pricingprob, cons);
@@ -173,7 +163,6 @@ SCIP_RETCODE solveKnapsack(
          if( !SCIPisIntegral(pricingprob, realconsvals[i]) )
          {
             SCIPfreeBufferArray(pricingprob, &consvals);
-            *result = SCIP_STATUS_UNKNOWN;
             return SCIP_OKAY;
          }
          else
@@ -198,13 +187,11 @@ SCIP_RETCODE solveKnapsack(
             if( SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])) )
             {
                SCIPfreeBufferArray(pricingprob, &consvals);
-               *result = SCIP_STATUS_UNKNOWN;
                return SCIP_OKAY;
             }
             else if( SCIPisNegative(pricingprob, SCIPvarGetObj(consvars[i])) )
             {
                SCIPfreeBufferArray(pricingprob, &consvals);
-               *result = SCIP_STATUS_UNKNOWN;
                return SCIP_OKAY;
             }
 
@@ -250,10 +237,7 @@ SCIP_RETCODE solveKnapsack(
       }
    }
    else
-   {
-      *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
-   }
 
    nitems = 0;
    for( i = 0; i < nconsvars; i++ )
@@ -335,11 +319,13 @@ SCIP_RETCODE solveKnapsack(
          nonsolitems, &nsolitems, &nnonsolitems, &solval ));
    }
 
-   if( ! success )
+   if( !success )
    {
       SCIPwarningMessage(pricingprob, "Knapsack solver could not solve pricing problem!");
       goto TERMINATE;
    }
+   else if( exactly )
+      *result = SCIP_STATUS_OPTIMAL;
 
    SCIPdebugMessage("knapsack solved, solval = %g\n", solval);
 
@@ -414,8 +400,6 @@ SCIP_RETCODE solveKnapsack(
    }
 
    *lowerbound = solval;
-
-   *result = SCIP_STATUS_OPTIMAL;
 
  TERMINATE:
    SCIPfreeBufferArray(pricingprob, &nonsolitems);
