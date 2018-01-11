@@ -672,7 +672,7 @@ SCIP_RETCODE writeSeeedDetectorChainInfoLatex(
    int currheight,      /**< current height in tree */
    int visucounter,
    int legendcounter,   /**< counter for legend items */
-   char* info           /**< output for text to put into legend for this legend counter */
+   std::string info     /**< output for text to put into legend for this legend counter */
    )
 {
    char relposition[SCIP_MAXSTRLEN];
@@ -690,41 +690,40 @@ SCIP_RETCODE writeSeeedDetectorChainInfoLatex(
    if( currheight != 1)
       strcpy(relposition, " ");
 
-   strcpy(info, "no info");
+   info = "no info";
 
    if( currheight > seeed->getNDetectorchainInfo() )
    {
       SCIPinfoMessage(scip, file, "edge from parent node [%s] {%d} ", relposition, legendcounter);
-      strcpy(info, "no info");
-      strcat( info, std::to_string(seeed->getID()).c_str() );
-      strcat( info, std::to_string(currheight - 1).c_str() );
+      info.append( std::to_string(seeed->getID()).c_str() );
+      info.append( std::to_string(currheight - 1).c_str() );
    }
    else
    {
       std::string oldinfo = seeed->getDetectorchainInfo( currheight - 1 );
       /** take latexified detectorchaininfo */
       size_t index = 0;
-//      while(true)
-//      {
-//         /* Locate the substring to replace. */
-//         index = oldinfo.find("_", index);
-//         if(index == std::string::npos)
-//            break;
-//         if( index > 0 && oldinfo.at(index-1) == '\\' )
-//         {
-//            ++index;
-//            continue;
-//         }
-//
-//         /* Make the replacement. */
-//         oldinfo.replace(index, 1, "\\_");
-//
-//         /* Advance index forward so the next iteration doesn't pick it up as well. */
-//         index += 2;
-//      }
+      while(true)
+      {
+         /* Locate the substring to replace. */
+         index = oldinfo.find("_", index);
+         if(index == std::string::npos)
+            break;
+         if( index > 0 && oldinfo.at(index-1) == '\\' )
+         {
+            ++index;
+            continue;
+         }
+
+         /* Make the replacement. */
+         oldinfo.replace(index, 1, "\\_");
+
+         /* Advance index forward so the next iteration doesn't pick it up as well. */
+         index += 2;
+      }
 
       SCIPinfoMessage(scip, file, "edge from parent node [%s] {%d} ", relposition, legendcounter);
-      strcpy(info,oldinfo.c_str());
+      info = oldinfo;
    }
 
    return SCIP_OKAY;
@@ -877,15 +876,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
    int currheight = 0;
    int helpvisucounter;    /* help counter for family tree visualization to iterate the heights */
    int legendcounter = 0;
-
-   /* keep legend items together for readability reasons */
-   typedef struct Legenditems
-   {
-      int counter;
-      char* info;
-   } Legenditem;
-
-   std::vector<Legenditem> legend;
+   std::vector<std::string> legend;
+   legend.reserve(10); /*@todo make this number flexible*/
 
    /* collection of treeseeds */
    std::vector<SeeedPtr> treeseeeds(0);
@@ -1049,13 +1041,8 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
             writeSeeedDetectorChainInfoLatex(scip, file, allrelevantseeedswr[curr]->seeed, currheight, helpvisucounter,
                legendcounter, legendinfo);
             ++helpvisucounter;
-
-            /* add new legend item containing the detectorchainstringinfo */
-            Legenditem newitem;
-            newitem.counter=legendcounter;
-            legendcounter++;
-            newitem.info=legendinfo;
-            legend.push_back(newitem);
+            ++legendcounter;
+            legend.push_back(legendinfo);
          }
          --currheight;
          curr = parents[curr];
@@ -1103,10 +1090,10 @@ SCIP_RETCODE GCGwriteTexFamilyTree(
       }
    }
 
-   for( size_t i = 0; i < legend.size(); i++)
+   for( int i = 0; i < legendcounter; i++ )
    {
-      SCIPinfoMessage(scip, file, "\\addlegendimage{\\node[anchor=center] at (0.3cm,0cm) {%d}}\n", legend[i].counter);
-      SCIPinfoMessage(scip, file, "\\addlegendentry{%s}\n", legend[i].info);
+      SCIPinfoMessage(scip, file, "\\addlegendimage{\\node[anchor=center] at (0.3cm,0cm) {%d}}\n", i);
+      SCIPinfoMessage(scip, file, "\\addlegendentry{%s}\n", legend[i].c_str());
    }
 
    SCIPinfoMessage(scip, file, "\\end{tikzpicture}\n");
