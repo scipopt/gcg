@@ -2928,6 +2928,11 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
       currseeedpool = conshdlrdata->seeedpoolunpresolved;
    }
 
+   if( seeed->getNReps() == 0 )
+   {
+      seeed->calcAggregationInformation(currseeedpool);
+   }
+
    assert(seeed != NULL);
 
    if( seeed->getRepForBlock(probnr1) == seeed->getRepForBlock(probnr2) )
@@ -2935,13 +2940,15 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
    else
       *identical = FALSE;
 
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " block %d and block %d are represented by %d and %d hence they are identical=%d.\n", probnr1, probnr2, seeed->getRepForBlock(probnr1), seeed->getRepForBlock(probnr2), *identical );
+
    return SCIP_OKAY;
 }
 
 /** for two identical pricing problems a corresponding varmap is created */
 SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
    SCIP*                scip,
-   SCIP_HASHMAP*        hashorig2pricingvar, /**< mapping from orig to pricingvar  */
+   SCIP_HASHMAP**       hashorig2pricingvar, /**< mapping from orig to pricingvar  */
    int                  seeedid,
    int                  probnr1,
    int                  probnr2,
@@ -2963,6 +2970,8 @@ SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
    int nblocksforrep;
    std::vector<int> pidtopid;
 
+   repid1 = -1;
+   repid2 = -1;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -3022,7 +3031,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
       return SCIP_OKAY;
    }
 
-   pidtopid = seeed->getRepVarmap(repid1, repid2);
+   pidtopid = seeed->getRepVarmap(representative, repid2);
 
    for( int v = 0; v < SCIPgetNVars(scip2); ++v )
    {
@@ -3049,7 +3058,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
       assert(var1origid>=0);
       var1orig = currseeedpool->getVarForIndex(var1origid) ;
       assert(var1orig != NULL);
-      var1 = (SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar, (void*) var1orig ) ;
+      var1 = (SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar[blockid1], (void*) var1orig ) ;
       assert(var1 != NULL);
 
       SCIPhashmapInsert(varmap, (void*) var2, (void*) var1);
@@ -5392,6 +5401,7 @@ DEC_DECOMP* DECgetBestDecomp(
 
 
    seeedpool->createDecompFromSeeed(seeed, &decomp) ;
+
 
    return decomp;
 

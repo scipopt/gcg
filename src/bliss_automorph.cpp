@@ -30,11 +30,11 @@
  * @author  Daniel Peters
  * @author  Martin Bergner
  * @author  Jonas Witt
+ * @author  Michael Bastubbe
  *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
 
 #include "graph.hh"
 #include "bliss_automorph.h"
@@ -331,8 +331,8 @@ void fhook(
          assert( consindex2 < (unsigned int) nconss);
          SCIP_CONS* cons1 = conss1[consindex];
          SCIP_CONS* cons2 = conss2[consindex2];
-         SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getConsHash(), cons1, cons2) );
-         SCIPdebugMessage("cons <%s> <-> cons <%s>\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
+         SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getConsHash(), cons2, cons1) );
+         SCIPdebugMessage("cons <%s> <-> cons <%s>\n", SCIPconsGetName(cons2), SCIPconsGetName(cons1));
       }
       else if( i < (unsigned int) nvars+nconss )
       {
@@ -341,8 +341,8 @@ void fhook(
          assert( varindex2 < (unsigned int) nvars);
          SCIP_VAR* var1 = vars1[varindex];
          SCIP_VAR* var2 = vars2[varindex2];
-         SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getVarHash(), var1, var2) );
-         SCIPdebugMessage("var <%s> <-> var <%s>\n", SCIPvarGetName(var1), SCIPvarGetName(var2));
+         SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getVarHash(), var2, var1) );
+         SCIPdebugMessage("var <%s> <-> var <%s>\n", SCIPvarGetName(var2), SCIPvarGetName(var1));
       }
    }
 
@@ -1211,7 +1211,7 @@ SCIP_RETCODE createGraphNewDetection(
                               val,
                               color+colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
                               SCIPvarGetName(var),
-                              nnodesoffset[b] + nconss + curvar,
+                              nnodesoffset[b]+nconss + seeed->getVarProbindexForBlock(varid, block),
                               varcolor);
             z++;
          }
@@ -1461,7 +1461,7 @@ SCIP_RETCODE cmpGraphPairNewdetection(
 
    SCIP_Bool output = FALSE;
    if( output )
-      {
+   {
 
       for( int i = 0; i < seeedpool->getNVars(); ++i )
       {
@@ -1475,14 +1475,13 @@ SCIP_RETCODE cmpGraphPairNewdetection(
          if( SCIPhashmapExists(ptrhook->getVarHash(), (void*) var) )
          {
             imagevar = (SCIP_VAR*) SCIPhashmapGetImage(ptrhook->getVarHash(), (void*) var );
-            SCIPinfoMessage(scip, NULL, "Variable %s has the variable %s as image.\n", SCIPvarGetName(var), imagevar );
+            //            SCIPinfoMessage(scip, NULL, "Variable %s has the variable %s as image.\n", SCIPvarGetName(var), imagevar );
          }
-         else
-            SCIPinfoMessage(scip, NULL, "Variable %s has no image.\n", SCIPvarGetName(var) );
+         //         else
+         //            SCIPinfoMessage(scip, NULL, "Variable %s has no image.\n", SCIPvarGetName(var) );
 
       }
-      SCIPinfoMessage(scip, NULL, "Hashmap has %d many entries.\n", SCIPhashmapGetNElements(ptrhook->getVarHash()) );
-      }
+   }
 //   }
 
    if( !ptrhook->getBool() )

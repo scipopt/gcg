@@ -983,7 +983,7 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
    return SCIP_OKAY;
 }
 
-/** checks if aggregation of sub problems is possible and stores the corresponding aggreagtion information; */
+/** checks if aggregation of sub problems is possible and stores the corresponding aggregation information; */
   void Seeed::calcAggregationInformation(
      Seeedpool*  givenseeedpool
      )
@@ -1021,12 +1021,19 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
      for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
      {
         std::vector<int> currrep = std::vector<int>(0);
-        std::vector< std::vector<int> > currrepvarmap =std::vector<std::vector<int>>(0);
+        std::vector< std::vector<int> > currrepvarmapforthisrep =std::vector<std::vector<int>>(0);
+        std::vector<int> identityvec = std::vector<int>(0);
+
 
         if( !identblocksforblock[b1].empty() )
            continue;
 
+        for( int i = 0; i  < getNVarsForBlock(b1); ++i )
+           identityvec.push_back(i);
+
         currrep.push_back(b1);
+        currrepvarmapforthisrep.push_back(identityvec);
+
 
         for( int b2 = b1+1; b2 < getNBlocks(); ++b2 )
         {
@@ -1050,13 +1057,12 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
 #endif
            if( identical )
            {
-              std::vector<int> varmapvector = std::vector<int>(getNVarsForBlock(b1));
               SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);
               identblocksforblock[b1].push_back(b2);
               identblocksforblock[b2].push_back(b1);
               currrep.push_back(b2);
               /** handle varmap */
-
+              currrepvarmapforthisrep.push_back(varmap);
 
            }
            else
@@ -1067,7 +1073,7 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
         }
 
         reptoblocks.push_back( currrep );
-        pidtopidvarmaptofirst.push_back(currrepvarmap);
+        pidtopidvarmaptofirst.push_back(currrepvarmapforthisrep);
         for( size_t i = 0; i < currrep.size(); ++i )
            blockstorep[currrep[i]] = nreps-1;
         ++nreps;
@@ -1803,6 +1809,8 @@ void Seeed::checkIdenticalBlocksBliss(
    SCIP_HASHMAP* consmap;
    SCIP_Result result;
 
+
+
    if( getNConssForBlock(b1) != getNConssForBlock(b2) )
    {
       SCIPdebugMessage("--> number of constraints differs!\n");
@@ -1822,6 +1830,8 @@ void Seeed::checkIdenticalBlocksBliss(
       return;
    }
 
+   varmap = std::vector<int>(getNVarsForBlock(b1), -1);
+
    SCIP_CALL_ABORT( SCIPhashmapCreate(&consmap,
       SCIPblkmem(givenseeedpool->getScip() ),
       getNConssForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
@@ -1832,6 +1842,19 @@ void Seeed::checkIdenticalBlocksBliss(
    {
       *identical = TRUE;
       /** TODO translate varmaps */
+      for( int var2idinblock = 0; var2idinblock < getNVarsForBlock(b2) ; ++var2idinblock )
+      {
+         SCIP_VAR* var2;
+         SCIP_VAR* var1;
+         int var1idinblock;
+         int var1id;
+
+         var2 = givenseeedpool->getVarForIndex(getVarsForBlock(b2)[var2idinblock]);
+         var1 = (SCIP_VAR*) SCIPhashmapGetImage(varmap2, (void*) var2);
+         var1id = givenseeedpool->getIndexForVar(var1);
+         var1idinblock = getVarProbindexForBlock(var1id, b1);
+         varmap[var2idinblock] = var1idinblock;
+      }
 
    }
    else
@@ -4840,6 +4863,12 @@ int Seeed::getNOpenvars()
    return (int) openVars.size();
 }
 
+/** returns the number of blockrepresentatives */
+int Seeed::getNReps(){
+
+   return nrepblocks;
+}
+
 /** returns size of the vector containing stairlinking vars */
 int Seeed::getNStairlinkingvars(
    int block
@@ -5039,7 +5068,7 @@ int Seeed::getRepForBlock(
      return blockstorep[blockid];
 }
 
-const std::vector<int> & Seeed::getRepVarmap(
+std::vector<int> & Seeed::getRepVarmap(
       int repid,
       int blockrepid
       )

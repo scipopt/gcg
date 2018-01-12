@@ -160,7 +160,7 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
 extern
 SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
    SCIP*                scip,
-   SCIP_HASHMAP*        hashorig2pricingvar, /**< mapping from orig to pricingvar  */
+   SCIP_HASHMAP**       hashorig2pricingvar, /**< mapping from orig to pricingvar  */
    int                  seeedid,
    int                  probnr1,
    int                  probnr2,

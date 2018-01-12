@@ -732,6 +732,9 @@ public:
    /** returns size of vector containing variables not assigned yet */
    int getNOpenvars();
 
+   /** returns the number of blockrepresentatives */
+   int getNReps();
+
    /** returns size of the vector containing stairlinking vars */
    int getNStairlinkingvars(
       int block
@@ -810,7 +813,7 @@ public:
       int blockid
       );
 
-   const std::vector<int> & getRepVarmap(
+   std::vector<int> & getRepVarmap(
       int repid,
       int blockrepid
       );

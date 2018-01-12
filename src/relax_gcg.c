@@ -755,7 +755,7 @@ static
 SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
-   SCIP_HASHMAP*         hashorig2pricingvar,/**< mapping from orig to pricingvar  */
+   SCIP_HASHMAP**        hashorig2pricingvar,/**< mapping from orig to pricingvar  */
    int                   probnr1,            /**< number of the first pricingproblem */
    int                   probnr2,            /**< number of the second pricingproblem */
    SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
@@ -790,12 +790,12 @@ SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
    seeedid = DECdecompGetSeeedID(relaxdata->decdecomp);
 
    /* 2) are pricingproblems identical for this seeed? */
-   SCIP_CALL(SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(scip, seeedid, probnr1, probnr2, identical) );
+   SCIP_CALL(SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(scip, seeedid, probnr2, probnr1, identical) );
 
    /* 3) create varmap if pricing probs are identical */
    if( *identical )
    {
-      SCIP_CALL(SCIPconshdlrDecompCreateVarmapForSeeedId(scip, hashorig2pricingvar, seeedid, probnr1, probnr2, scip1, scip2, varmap) );
+      SCIP_CALL(SCIPconshdlrDecompCreateVarmapForSeeedId(scip, hashorig2pricingvar, seeedid, probnr2, probnr1, scip2, scip1, varmap) );
    }
 
    return SCIP_OKAY;
@@ -854,7 +854,7 @@ static
 SCIP_RETCODE checkIdenticalBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< the relaxator data data structure*/
-   SCIP_HASHMAP*         hashorig2pricingvar /**< mapping from orig to pricingvar  */
+   SCIP_HASHMAP**         hashorig2pricingvar /**< mapping from orig to pricingvar for each block */
    )
 {
    SCIP_HASHMAP* varmap;
@@ -888,6 +888,7 @@ SCIP_RETCODE checkIdenticalBlocks(
       return SCIP_OKAY;
    }
 
+
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
       for( j = 0; j < i && relaxdata->blockrepresentative[i] == i; j++ )
@@ -899,7 +900,7 @@ SCIP_RETCODE checkIdenticalBlocks(
                SCIPblkmem(scip),
                5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* +1 to deal with empty subproblems */
 
-         SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
+//         SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
 
          SCIP_CALL( pricingprobsAreIdenticalFromDetectionInfo( scip, relaxdata, hashorig2pricingvar, i, j, varmap, &identical ) );
 
@@ -938,13 +939,12 @@ SCIP_RETCODE checkIdenticalBlocks(
                   if( SCIPhashmapExists(varmap, (void*) var) )
                   {
                      imagevar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) var );
-                     SCIPinfoMessage(scip, NULL, "Variable %s has the variable %s as image.\n", SCIPvarGetName(var), imagevar );
+    //                 SCIPinfoMessage(scip, NULL, "Variable %s has the variable %s as image.\n", SCIPvarGetName(var), imagevar );
                   }
-                  else
-                     SCIPinfoMessage(scip, NULL, "Variable %s has no image.\n", SCIPvarGetName(var) );
+  //                else
+//                     SCIPinfoMessage(scip, NULL, "Variable %s has no image.\n", SCIPvarGetName(var) );
 
                }
-               SCIPinfoMessage(scip, NULL, "Hashmap has %d many entries.\n", SCIPhashmapGetNElements(varmap) );
             }
 
             /*
