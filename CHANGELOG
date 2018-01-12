@@ -33,6 +33,8 @@ bug fixes
 - fix memory bug in DECdecompRemoveDeletedConss
 - fix bugs in check script
 - fix bug in checking if master is a set partitioning problem
+- implement enforelax callbacks
+- diving heuristics and branching rules compute fractionalities by themselves
 
 
 GCG Version 2.1.2
