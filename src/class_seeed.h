@@ -117,6 +117,8 @@ private:
 
    bool isselected;                                            /**< is this seeed selected */
 
+   bool isagginfoalreadytoexpensive;                            /** is agginfo already known to be to expensive */
+
    const static int primes[];
    const static int nPrimes;
 
@@ -847,6 +849,9 @@ public:
       int varid,
       int block
    );
+
+   SCIP_Bool isAgginfoToExpensive();
+
 
    /** returns true if this seeed is complete,
     *  i.e. it has no more open constraints and variables */
