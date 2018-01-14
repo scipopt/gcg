@@ -238,6 +238,12 @@ void fhook(
 
    ++hook->ncalls;
 
+   if( hook->ncalls > 100 )
+   {
+      hook->setBool(false);
+      return;
+   }
+
   // SCIPdebugMessage("Looking for a permutation from [0,%u] bijective to [%u:%u] (N=%u) \n", n/2-1, n/2, n-1, N);
    for( i = 0; i < n / 2; i++ )
    {
