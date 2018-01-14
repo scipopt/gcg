@@ -1446,11 +1446,15 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    assert(seeedpool != NULL);
 
    SCIP_CALL( setuparraysnewdetection(seeedpool, seeed, 2, blocks, &colorinfo, result) );
+   SCIPdebugMessage("finished setup array method.\n");
    SCIP_CALL( createGraphNewDetection(seeedpool, seeed, 2, blocks, colorinfo, &graph,  &pricingnodes, result) );
-
+   SCIPdebugMessage("finished create graph.\n");
    ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, NULL);
+   SCIPdebugMessage("finished creating aut hook.\n");
    ptrhook->setNewDetectionStuff(seeedpool, seeed, blocks);
    graph.find_automorphisms(bstats, fhook, ptrhook);
+   SCIPdebugMessage("finished find automorphisms.\n");
+
 
    /* insert code for varmap creation in seeed here
    1) print out varmap to learn about it
