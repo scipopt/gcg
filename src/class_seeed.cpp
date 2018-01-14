@@ -1002,12 +1002,14 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
          if( getNConssForBlock(b1) != getNConssForBlock(b2) )
             continue;
 
-         if( getNConssForBlock(b1) >= 200 || getNVarsForBlock(b1) >= 200 )
+         if( getNConssForBlock(b2) >= 200 || getNVarsForBlock(b2) >= 200 )
          {
+            SCIPdebugMessage("Calculating agg info is too expensive, nconss: %d, nvars: %d . \n", getNConssForBlock(b2), getNVarsForBlock(b2) );
             isagginfoalreadytoexpensive = true;
             return TRUE;
          }
       }
+      SCIPdebugMessage("Calculating agg info is NOT too expensive.\n")
    }
    return FALSE;
 }
@@ -1854,6 +1856,8 @@ void Seeed::checkIdenticalBlocksBliss(
       SCIPblkmem(givenseeedpool->getScip() ),
       getNConssForBlock(b1)+1) ); /* +1 to deal with empty subproblems */
 
+
+   SCIPdebugMessage("obvious test fails, start building graph \n");
 
    cmpGraphPairNewdetection(givenseeedpool->getScip(), (SEEED_WRAPPER*) this, b1, b2, &result, varmap2, consmap );
    if ( result == SCIP_SUCCESS )
