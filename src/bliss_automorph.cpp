@@ -36,7 +36,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 
 #include "graph.hh"
 #include "bliss_automorph.h"
@@ -233,7 +233,7 @@ void fhook(
    if(hook->getBool())
       return;
 
-   SCIPdebugMessage("Looking for a permutation from [0,%u] bijective to [%u:%u] (N=%u) \n", n/2-1, n/2, n-1, N);
+  // SCIPdebugMessage("Looking for a permutation from [0,%u] bijective to [%u:%u] (N=%u) \n", n/2-1, n/2, n-1, N);
    for( i = 0; i < n / 2; i++ )
    {
       assert(aut[i] < INT_MAX);
@@ -262,7 +262,7 @@ void fhook(
    {
       if( aut[i] != i )
       {
-         SCIPdebugMessage("Master %u -> %u not the identity, no decomposition possible!\n", i, aut[i]);
+    //     SCIPdebugMessage("Master %u -> %u not the identity, no decomposition possible!\n", i, aut[i]);
          hook->setBool(false);
          break;
       }
