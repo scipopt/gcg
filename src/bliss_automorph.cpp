@@ -1462,6 +1462,8 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    SCIPdebugMessage("finished creating aut hook.\n");
    ptrhook->setNewDetectionStuff(seeedpool, seeed, blocks);
    graph.find_automorphisms(bstats, fhook, ptrhook);
+   SCIPinfoMessage(scip, NULL, "!!!!!!!!!!number of hook function calls: %d \n", ptrhook->ncalls);
+
    SCIPdebugMessage("finished find automorphisms.\n");
 
 
