@@ -1007,7 +1007,7 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
             return TRUE;
          }
       }
-      SCIPdebugMessage("Calculating agg info is NOT too expensive.\n")
+      SCIPdebugMessage("Calculating agg info is NOT too expensive.\n");
    }
    return FALSE;
 }
