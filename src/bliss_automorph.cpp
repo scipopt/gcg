@@ -241,7 +241,7 @@ void fhook(
       if( (aut[i]) >= n / 2 && hook->nodemap[i] == -1 )
       {
          assert(aut[i] < n);
-         SCIPdebugMessage("current generator: %u -> %u\n", i, aut[i]);
+//         SCIPdebugMessage("current generator: %u -> %u\n", i, aut[i]);
          hook->nodemap[i] = aut[i];
       }
    }
@@ -268,8 +268,8 @@ void fhook(
       }
    }
 
-   SCIPdebugMessage("Permutation %s found.\n", hook->getBool() ? "":"not");
-   SCIPdebugMessage("j = %u\n", j);
+//   SCIPdebugMessage("Permutation %s found.\n", hook->getBool() ? "":"not");
+//   SCIPdebugMessage("j = %u\n", j);
 
    if( !hook->getBool() )
       return;
