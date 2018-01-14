@@ -36,7 +36,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 
 #include "graph.hh"
 #include "bliss_automorph.h"
@@ -67,6 +67,7 @@ struct struct_hook2
    gcg::Seeed*     seeed;                    /**< decomposition information */
    std::vector<int> blocks;                  /**< array of blocks the automporphisms are searched for */
    SCIP*            scip;
+   int ncalls;
 
 
    /** constructor for the hook struct*/
@@ -194,6 +195,8 @@ struct_hook2::struct_hook2(
    seeedpool = NULL;
    seeed = NULL;
    blocks = std::vector<int>(0);
+
+   ncalls = 0;
 }
 
 /** hook function to save the permutation of the graph; fhook() is called by metis for every generator,
@@ -232,6 +235,8 @@ void fhook(
 
    if(hook->getBool())
       return;
+
+   ++hook->ncalls;
 
   // SCIPdebugMessage("Looking for a permutation from [0,%u] bijective to [%u:%u] (N=%u) \n", n/2-1, n/2, n-1, N);
    for( i = 0; i < n / 2; i++ )
@@ -1393,6 +1398,8 @@ SCIP_RETCODE cmpGraphPair(
 
    ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, scips);
    graph.find_automorphisms(bstats, fhook, ptrhook);
+
+   SCIPinfoMessage(origscip, NULL, "!!!!!!!!!!number of hook function calls: %d \n", ptrhook->ncalls);
 
    if( !ptrhook->getBool() )
       *result = SCIP_DIDNOTFIND;
