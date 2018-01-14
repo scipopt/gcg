@@ -93,7 +93,7 @@ Seeed::Seeed(
    ncoeffsforblock(std::vector<int>(0)), calculatedncoeffsforblock(FALSE),
    varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
-   masterconsssorted(true), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isFinishedByFinisher( false ),
+   masterconsssorted(true), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isagginfoalreadytoexpensive(false), isFinishedByFinisher( false ),
    agginfocalculated(FALSE), nrepblocks(0), reptoblocks(std::vector<std::vector<int>>(0)), blockstorep(std::vector<int>(0) ), pidtopidvarmaptofirst(std::vector<std::vector<std::vector<int> > >(0)),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
@@ -194,6 +194,7 @@ Seeed::Seeed(
    setpartfwhitescore = seeedtocopy->setpartfwhitescore;
    setpartfwhitescoreagg = seeedtocopy->setpartfwhitescoreagg;
 
+   isagginfoalreadytoexpensive = seeedtocopy->isagginfoalreadytoexpensive;
 
    seeedpool = seeedtocopy->seeedpool;
 
@@ -984,6 +985,32 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
    return SCIP_OKAY;
 }
 
+SCIP_Bool Seeed::isAgginfoToExpensive()
+{
+   if( isagginfoalreadytoexpensive )
+      return TRUE;
+
+   /** check if calculating aggregation information is too expensive */
+   for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
+   {
+      for( int b2 = b1+1; b2 < getNBlocks(); ++b2 )
+      {
+         if( getNVarsForBlock(b1) != getNVarsForBlock(b2) )
+            continue;
+
+         if( getNConssForBlock(b1) != getNConssForBlock(b2) )
+            continue;
+
+         if( getNConssForBlock(b1) >= 200 || getNVarsForBlock(b1) >= 200 )
+         {
+            isagginfoalreadytoexpensive = true;
+            return TRUE;
+         }
+      }
+   }
+   return FALSE;
+}
+
 /** checks if aggregation of sub problems is possible and stores the corresponding aggregation information; */
   void Seeed::calcAggregationInformation(
      Seeedpool*  givenseeedpool
@@ -998,25 +1025,14 @@ SCIP_RETCODE Seeed::bookAsStairlinkingVar(
      if( !isComplete() )
         return;
 
+     if( isAgginfoToExpensive() )
+        return;
+
      std::vector<std::vector<int>> identblocksforblock( getNBlocks(), std::vector<int>(0) );
 
      blockstorep = std::vector<int>(getNBlocks(), -1);
 
-     /** check if calculating aggregation information is too expensive */
-     for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
-     {
-        for( int b2 = b1+1; b2 < getNBlocks(); ++b2 )
-        {
-           if( getNVarsForBlock(b1) != getNVarsForBlock(b2) )
-              continue;
 
-           if( getNConssForBlock(b1) != getNConssForBlock(b2) )
-              continue;
-
-           if( getNConssForBlock(b1) >= 200 || getNVarsForBlock(b1) > 200 )
-              return;
-        }
-     }
 
 
      for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
