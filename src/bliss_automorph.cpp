@@ -248,7 +248,7 @@ void fhook(
 
    for( i = 0; i < n / 2; i++ )
    {
-      SCIPdebugMessage("general mapping : %u -> %u\n", i, hook->nodemap[i]);
+//      SCIPdebugMessage("general mapping : %u -> %u\n", i, hook->nodemap[i]);
       if( hook->nodemap[i] >= (int) n / 2 )
          ++j;
    }
