@@ -1002,6 +1002,7 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
          if( getNConssForBlock(b1) != getNConssForBlock(b2) )
             continue;
 
+         SCIPdebugMessage("Checking  if agg info is too expensive, nconss: %d, nvars: %d . \n", getNConssForBlock(b2), getNVarsForBlock(b2) );
          if( getNConssForBlock(b2) >= 200 || getNVarsForBlock(b2) >= 200 )
          {
             SCIPdebugMessage("Calculating agg info is too expensive, nconss: %d, nvars: %d . \n", getNConssForBlock(b2), getNVarsForBlock(b2) );
@@ -1009,8 +1010,9 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
             return TRUE;
          }
       }
-      SCIPdebugMessage("Calculating agg info is NOT too expensive.\n");
+
    }
+   SCIPdebugMessage("Calculating agg info is NOT too expensive.\n");
    return FALSE;
 }
 
