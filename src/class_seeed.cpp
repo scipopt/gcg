@@ -1082,6 +1082,7 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
            SCIP_HASHMAP* varmap2;
 
            notidentical = FALSE;
+           identical = FALSE;
 
            if( !identblocksforblock[b2].empty() )
               continue;
