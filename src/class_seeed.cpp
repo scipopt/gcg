@@ -1103,8 +1103,10 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
            {
               checkIdenticalBlocksBrute(givenseeedpool, b1, b2, varmap, varmap2, &identical);
 
+#ifndef NBLISS
               if( !tooexpensive && !identical )
                  checkIdenticalBlocksBliss(givenseeedpool, b1, b2, varmap, varmap2, &identical);
+#endif
            }
            else
               identical = FALSE;
@@ -1851,6 +1853,7 @@ bool Seeed::checkConsistency(
 }
 
 
+#ifndef NBLISS
 /** checks blocks for identity by graph automorphism check done by bliss, identity is only found if variables are in correct order */
 void Seeed::checkIdenticalBlocksBliss(
    Seeedpool*           givenseeedpool,
@@ -1904,7 +1907,7 @@ void Seeed::checkIdenticalBlocksBliss(
    return;
 
 }
-
+#endif
 
 
 /** checks blocks for identity by brute force, identity is only found if variables are in correct order */
