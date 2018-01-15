@@ -238,7 +238,6 @@ SCIP_Bool Seeed::isconshittingblockca(
 }
 
 
-#ifdef NBLISS
 /** checks whether two arrays of SCIP_Real's are identical */
 static
 SCIP_Bool realArraysAreEqual(
@@ -268,7 +267,6 @@ SCIP_Bool realArraysAreEqual(
 
    return TRUE;
 }
-#endif
 
 
 /** returns true iff the second value of a is lower than the second value of b */
@@ -1003,7 +1001,7 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
             continue;
 
          SCIPdebugMessage("Checking  if agg info is too expensive for blocks %d and %d, nconss: %d, nvars: %d . \n", b1, b2, getNConssForBlock(b2), getNVarsForBlock(b2) );
-         if( getNConssForBlock(b2) >= 200 || getNVarsForBlock(b2) >= 200 )
+         if( getNConssForBlock(b2) >= 300 || getNVarsForBlock(b2) >= 300 )
          {
             SCIPdebugMessage("Calculating agg info is too expensive, nconss: %d, nvars: %d . \n", getNConssForBlock(b2), getNVarsForBlock(b2) );
             isagginfoalreadytoexpensive = true;
@@ -1021,8 +1019,9 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
      Seeedpool*  givenseeedpool
      )
   {
-     int nreps = 1;
 
+     SCIP_Bool tooexpensive;
+     int nreps = 1;
 
      if( agginfocalculated )
         return;
@@ -1031,7 +1030,9 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
         return;
 
      if( isAgginfoToExpensive() )
-        return;
+        tooexpensive = TRUE;
+     else
+        tooexpensive = FALSE;
 
      std::vector<std::vector<int>> identblocksforblock( getNBlocks(), std::vector<int>(0) );
 
@@ -1075,7 +1076,10 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
 #ifdef NBLISS
            checkIdenticalBlocksBrute(givenseeedpool, b1, b2, varmap, varmap2, &identical);
 #else
-           checkIdenticalBlocksBliss(givenseeedpool, b1, b2, varmap, varmap2, &identical);
+           if( !tooexpensive )
+              checkIdenticalBlocksBliss(givenseeedpool, b1, b2, varmap, varmap2, &identical);
+           else
+              checkIdenticalBlocksBrute(givenseeedpool, b1, b2, varmap, varmap2, &identical);
 #endif
            if( identical )
            {
@@ -1104,6 +1108,8 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
      nrepblocks = nreps-1;
 
      agginfocalculated = TRUE;
+
+     return;
   }
 
 
@@ -1890,7 +1896,6 @@ void Seeed::checkIdenticalBlocksBliss(
 
 
 
-#ifdef NBLISS
 /** checks blocks for identity by brute force, identity is only found if variables are in correct order */
 void Seeed::checkIdenticalBlocksBrute(
    Seeedpool*           givenseeedpool,
@@ -2036,11 +2041,14 @@ void Seeed::checkIdenticalBlocksBrute(
 
    }
 
+
+   varmap = std::vector<int>(getNVarsForBlock(b1), -1);
+   for( int i = 0; i < getNVarsForBlock(b1); ++i )
+      varmap[i] = i;
+
    *identical = TRUE;
    return;
 }
-
-#endif
 
 
 /** assigns all open constraints and open variables

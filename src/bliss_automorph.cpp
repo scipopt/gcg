@@ -238,6 +238,12 @@ void fhook(
 
    ++hook->ncalls;
 
+   if( hook->ncalls > 100 )
+   {
+      hook->setBool(false);
+      return;
+   }
+
   // SCIPdebugMessage("Looking for a permutation from [0,%u] bijective to [%u:%u] (N=%u) \n", n/2-1, n/2, n-1, N);
    for( i = 0; i < n / 2; i++ )
    {
@@ -1430,6 +1436,9 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    gcg::Seeedpool* seeedpoolunpresolved;
    gcg::Seeedpool* seeedpoolpresolved;
    gcg::Seeed* seeed;
+   FILE* graphfile;
+
+   graphfile = fopen("helpgraph.g", "w");
 
 //   int pricingindices[2];
    int pricingnodes;
@@ -1461,6 +1470,10 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, NULL);
    SCIPdebugMessage("finished creating aut hook.\n");
    ptrhook->setNewDetectionStuff(seeedpool, seeed, blocks);
+
+   graph.write_dimacs(graphfile);
+
+   fclose(graphfile);
    graph.find_automorphisms(bstats, fhook, ptrhook);
    SCIPinfoMessage(scip, NULL, "!!!!!!!!!!number of hook function calls: %d \n", ptrhook->ncalls);
 
