@@ -124,6 +124,8 @@ private:
 
    bool isFinishedByFinisher;                         /**< was this seeed finished by the finishseeed() method of a detector */
 
+   std::vector<std::vector<int>>    ncoeffsforblockformastercons;    /**< number of coeffs a block has in a certain master constraint */
+
    /** aggregation information */
    SCIP_Bool            agginfocalculated;                             /**< is aggregation information for the blocks already calculated */
    int                  nrepblocks;                                    /**< number of block representatives */
@@ -211,6 +213,12 @@ private:
       SCIP_Bool*           identical
       );
 
+   SCIP_RETCODE checkIdenticalBlocksTrivial(
+      Seeedpool*           givenseeedpool,
+      int                  b1,
+      int                  b2,
+      SCIP_Bool*           notidentical
+      );
 
 public:
 
@@ -375,6 +383,12 @@ public:
    void calcStairlinkingVars(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
+
+
+   void calcNCoeffsForBlockForMastercons(
+      Seeedpool*           givenseeedpool
+      );
+
 
    /** changes the block order in a way such that all linking vars that are potentially stairlinking
     *  may be reassigned to stairlinking

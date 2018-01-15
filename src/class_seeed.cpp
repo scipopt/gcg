@@ -95,6 +95,7 @@ Seeed::Seeed(
    varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
    masterconsssorted(true), hashvalue( 0 ), changedHashvalue( false ), isselected( false ), isagginfoalreadytoexpensive(false), isFinishedByFinisher( false ),
+   ncoeffsforblockformastercons(0),
    agginfocalculated(FALSE), nrepblocks(0), reptoblocks(std::vector<std::vector<int>>(0)), blockstorep(std::vector<int>(0) ), pidtopidvarmaptofirst(std::vector<std::vector<std::vector<int> > >(0)),
    detectorChain( 0 ), detectorChainFinishingUsed( 0 ), detectorClockTimes( 0 ), pctVarsToBorder( 0 ),
    pctVarsToBlock( 0 ), pctVarsFromFree( 0 ), pctConssToBorder( 0 ), pctConssToBlock( 0 ), pctConssFromFree( 0 ),
@@ -162,6 +163,7 @@ Seeed::Seeed(
    classesToMaster = seeedtocopy->classesToMaster;
    classesToLinking = seeedtocopy->classesToLinking;
    isFinishedByFinisher = seeedtocopy->isFinishedByFinisher;
+   ncoeffsforblockformastercons = seeedtocopy->ncoeffsforblockformastercons;
    changedHashvalue = seeedtocopy->changedHashvalue;
    nNewBlocks = seeedtocopy->nNewBlocks;
    stemsFromUnpresolved = seeedtocopy->stemsFromUnpresolved;
@@ -1010,9 +1012,14 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
       }
 
    }
-   SCIPdebugMessage("Calculating agg info is NOT too expensive.\n");
+
+   /** check if there are too many master coeffs */
+
+   SCIPdebugMessage("Calculated: agg info is NOT too expensive.\n");
    return FALSE;
 }
+
+
 
 /** checks if aggregation of sub problems is possible and stores the corresponding aggregation information; */
   void Seeed::calcAggregationInformation(
@@ -1038,9 +1045,6 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
 
      blockstorep = std::vector<int>(getNBlocks(), -1);
 
-
-
-
      for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
      {
         std::vector<int> currrep = std::vector<int>(0);
@@ -1061,8 +1065,11 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
         for( int b2 = b1+1; b2 < getNBlocks(); ++b2 )
         {
            SCIP_Bool identical;
+           SCIP_Bool notidentical;
            std::vector<int> varmap;
            SCIP_HASHMAP* varmap2;
+
+           notidentical = FALSE;
 
            if( !identblocksforblock[b2].empty() )
               continue;
@@ -1073,14 +1080,18 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
 
            SCIPdebugMessage("Check identity for block %d and block %d!\n", b1, b2);
 
-#ifdef NBLISS
-           checkIdenticalBlocksBrute(givenseeedpool, b1, b2, varmap, varmap2, &identical);
-#else
-           if( !tooexpensive )
-              checkIdenticalBlocksBliss(givenseeedpool, b1, b2, varmap, varmap2, &identical);
-           else
+           checkIdenticalBlocksTrivial(givenseeedpool, b1, b2, &notidentical);
+
+           if( !notidentical )
+           {
               checkIdenticalBlocksBrute(givenseeedpool, b1, b2, varmap, varmap2, &identical);
-#endif
+
+              if( !tooexpensive && !identical )
+                 checkIdenticalBlocksBliss(givenseeedpool, b1, b2, varmap, varmap2, &identical);
+           }
+           else
+              identical = FALSE;
+
            if( identical )
            {
               SCIPdebugMessage("Block %d is identical to block %d!\n", b1, b2);
@@ -1839,24 +1850,7 @@ void Seeed::checkIdenticalBlocksBliss(
 
 
 
-   if( getNConssForBlock(b1) != getNConssForBlock(b2) )
-   {
-      SCIPdebugMessage("--> number of constraints differs!\n");
-      return;
-   }
 
-
-   if( getNVarsForBlock(b1) != getNVarsForBlock(b2) )
-   {
-      SCIPdebugMessage("--> number of variables differs!\n");
-      return;
-   }
-
-   if( getNCoeffsForBlock(givenseeedpool, b1) != getNCoeffsForBlock(givenseeedpool, b2) )
-   {
-      SCIPdebugMessage("--> number of nonzero coeffs differs!\n");
-      return;
-   }
 
    varmap = std::vector<int>(getNVarsForBlock(b1), -1);
 
@@ -1912,24 +1906,6 @@ void Seeed::checkIdenticalBlocksBrute(
    SCIPdebugMessage("check block %d and block %d for identity...\n", b1, b2);
    varmap = std::vector<int>(getNVars(), -1);
 
-   if( getNConssForBlock(b1) != getNConssForBlock(b2) )
-   {
-      SCIPdebugMessage("--> number of constraints differs!\n");
-      return;
-   }
-
-   if( getNVarsForBlock(b1) != getNVarsForBlock(b2) )
-   {
-      SCIPdebugMessage("--> number of variables differs!\n");
-      return;
-   }
-
-
-   if( getNCoeffsForBlock(givenseeedpool, b1) != getNCoeffsForBlock(givenseeedpool, b2) )
-   {
-      SCIPdebugMessage("--> number of nonzero coeffs differs!\n");
-      return;
-   }
 
    /** check variables */
    for( int i = 0; i < getNVarsForBlock(b1); ++i )
@@ -2049,6 +2025,79 @@ void Seeed::checkIdenticalBlocksBrute(
    *identical = TRUE;
    return;
 }
+
+void Seeed::calcNCoeffsForBlockForMastercons(
+   Seeedpool*           givenseeedpool
+   )
+{
+   ncoeffsforblockformastercons = std::vector<std::vector<int>>(getNBlocks());
+
+   for( int b = 0; b < getNBlocks(); ++b )
+      ncoeffsforblockformastercons[b] = std::vector<int>(getNMasterconss(), 0);
+
+   for( int mc = 0; mc < getNMasterconss(); ++mc )
+   {
+      int cons = getMasterconss()[mc];
+      for ( int vmc = 0; vmc < givenseeedpool->getNVarsForCons(cons); ++vmc )
+      {
+         int var = givenseeedpool->getVarsForCons(cons)[vmc];
+         for( int b = 0; b < getNBlocks(); ++b )
+         {
+            if( isVarBlockvarOfBlock(var, b) )
+               ++ncoeffsforblockformastercons[b][mc];
+         }
+      }
+   }
+   return;
+}
+
+
+SCIP_RETCODE Seeed::checkIdenticalBlocksTrivial(
+   Seeedpool*           givenseeedpool,
+   int                  b1,
+   int                  b2,
+   SCIP_Bool*           notidentical)
+{
+
+   if( getNConssForBlock(b1) != getNConssForBlock(b2) )
+     {
+        SCIPdebugMessage("--> number of constraints differs!\n");
+        *notidentical = TRUE;
+        return SCIP_OKAY;
+     }
+
+
+     if( getNVarsForBlock(b1) != getNVarsForBlock(b2) )
+     {
+        SCIPdebugMessage("--> number of variables differs!\n");
+        *notidentical = TRUE;
+        return SCIP_OKAY;
+     }
+
+     if( getNCoeffsForBlock(givenseeedpool, b1) != getNCoeffsForBlock(givenseeedpool, b2) )
+     {
+        SCIPdebugMessage("--> number of nonzero coeffs differs!\n");
+        *notidentical = TRUE;
+        return SCIP_OKAY;
+     }
+
+     if( ncoeffsforblockformastercons.size() == 0 )
+         calcNCoeffsForBlockForMastercons(givenseeedpool);
+
+     for( int mc = 0; mc < getNMasterconss(); ++mc )
+     {
+        if ( ncoeffsforblockformastercons[b1][mc] != ncoeffsforblockformastercons[b2][mc] )
+        {
+           SCIPdebugMessage("--> number of nonzero coeffs in %d-th master cons differs!\n", mc);
+           *notidentical = TRUE;
+           return SCIP_OKAY;
+        }
+     }
+
+
+   return SCIP_OKAY;
+}
+
 
 
 /** assigns all open constraints and open variables

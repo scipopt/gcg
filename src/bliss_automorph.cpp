@@ -1089,6 +1089,9 @@ SCIP_RETCODE createGraphNewDetection(
    bliss::Graph* h;
    int* pricingnonzeros;
    int* mastercoefindex;
+   std::vector<bool> masterconssrelevant;
+
+   masterconssrelevant = std::vector<bool>(seeed->getNMasterconss(), false);
 
    pricingnonzeros = NULL;
    mastercoefindex = NULL;
@@ -1259,6 +1262,8 @@ SCIP_RETCODE createGraphNewDetection(
             assert(color != -1);
             color += colorinfo.getLenCons() + colorinfo.getLenVar(); /*lint !e864 */
 
+            masterconssrelevant[i] = true;
+
             /* add coefficent node for current coeff */
             (void) h->add_vertex((unsigned int)color);
             assert(ABS(val < SCIPinfinity(scip)));
@@ -1281,12 +1286,18 @@ SCIP_RETCODE createGraphNewDetection(
       int masterconsnode;
       int conscolor;
 
+      /**experimental */
+      if( !masterconssrelevant[i] )
+         continue;
+      /*experimental end */
+
 
       masterconsid= seeed->getMasterconss()[i];
       mastercons = seeedpool->getConsForIndex(masterconsid);
       ncurvars = seeedpool->getNVarsForCons(masterconsid);
 
       SCIPdebugMessage("Handling cons <%s>\n", SCIPconsGetName(mastercons));
+
 
       /* create node for masterconss and get right color */
       conscolor = colorinfo.get(AUT_CONS(scip, mastercons) );
@@ -1303,6 +1314,7 @@ SCIP_RETCODE createGraphNewDetection(
          int blockid;
          int coefnodeindex;
          int bid;
+         int varcolor;
 
          blockid = -1;
          bid = -1;
@@ -1336,7 +1348,7 @@ SCIP_RETCODE createGraphNewDetection(
          coefnodeindex = nnodesoffset[bid] + nvars + nconss + pricingnonzeros[bid] + mastercoefindex[bid];
          ++(mastercoefindex[bid]);
 
-         int varcolor = colorinfo.get(AUT_VAR(scip, var));
+         varcolor = colorinfo.get(AUT_VAR(scip, var));
          assert(varcolor != -1);
          varcolor += colorinfo.getLenCons();
 
@@ -1471,7 +1483,7 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    SCIPdebugMessage("finished creating aut hook.\n");
    ptrhook->setNewDetectionStuff(seeedpool, seeed, blocks);
 
-   graph.write_dimacs(graphfile);
+   //graph.write_dimacs(graphfile);
 
    fclose(graphfile);
    graph.find_automorphisms(bstats, fhook, ptrhook);
