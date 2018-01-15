@@ -207,6 +207,8 @@ public:
       SCIP_Bool* success
       );
 
+   SCIP_Bool areThereContinuousVars();
+
    /** clears ancestor seeed data structure */
    void clearAncestorSeeeds();
 

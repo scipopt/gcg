@@ -180,22 +180,22 @@ Seeed::Seeed(
    linkingvarssorted = seeedtocopy->linkingvarssorted;
    mastervarssorted = seeedtocopy->mastervarssorted;
 
-   agginfocalculated = seeedtocopy->agginfocalculated;
+   agginfocalculated = FALSE;
    nrepblocks  = seeedtocopy->nrepblocks;
    reptoblocks = seeedtocopy->reptoblocks;
    blockstorep = seeedtocopy->blockstorep;
    pidtopidvarmaptofirst = seeedtocopy->pidtopidvarmaptofirst;
    ncoeffsforblock = seeedtocopy->ncoeffsforblock;
-   calculatedncoeffsforblock = seeedtocopy->calculatedncoeffsforblock;
+   calculatedncoeffsforblock = FALSE;
 
-   blockareascore = seeedtocopy->blockareascore;
-   maxwhitescoreagg = seeedtocopy->maxwhitescoreagg;
-   blockareascoreagg = seeedtocopy->blockareascoreagg;
-   maxforeseeingwhitescore = seeedtocopy->maxforeseeingwhitescore;
-   maxforeseeingwhitescoreagg = seeedtocopy->maxforeseeingwhitescoreagg;
+   blockareascore = -1.;
+   maxwhitescoreagg = -1.;
+   blockareascoreagg = -1.;
+   maxforeseeingwhitescore = -1.;
+   maxforeseeingwhitescoreagg = -1.;
 
-   setpartfwhitescore = seeedtocopy->setpartfwhitescore;
-   setpartfwhitescoreagg = seeedtocopy->setpartfwhitescoreagg;
+   setpartfwhitescore = -1.;
+   setpartfwhitescoreagg = -1.;
 
    isagginfoalreadytoexpensive = seeedtocopy->isagginfoalreadytoexpensive;
 
@@ -1028,6 +1028,10 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
   {
 
      SCIP_Bool tooexpensive;
+     SCIP_Bool aggisnotactive;
+     SCIP_Bool discretization;
+     SCIP_Bool aggregation;
+
      int nreps = 1;
 
      if( agginfocalculated )
@@ -1040,6 +1044,14 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
         tooexpensive = TRUE;
      else
         tooexpensive = FALSE;
+
+     SCIPgetBoolParam(givenseeedpool->getScip(), "relaxing/gcg/aggregation", &aggregation);
+     SCIPgetBoolParam(givenseeedpool->getScip(), "relaxing/gcg/discretization", &discretization);
+
+     if( discretization && aggregation && !givenseeedpool->areThereContinuousVars() )
+        aggisnotactive = FALSE;
+     else
+        aggisnotactive = TRUE;
 
      std::vector<std::vector<int>> identblocksforblock( getNBlocks(), std::vector<int>(0) );
 
@@ -1073,6 +1085,10 @@ SCIP_Bool Seeed::isAgginfoToExpensive()
 
            if( !identblocksforblock[b2].empty() )
               continue;
+
+           if( aggisnotactive )
+              continue;
+
 
            SCIP_CALL_ABORT( SCIPhashmapCreate(&varmap2,
                           SCIPblkmem(givenseeedpool->getScip()),
@@ -3579,6 +3595,7 @@ SCIP_Real Seeed::evaluate(
 
       maxforeseeingwhitescore = 1. - maxforeseeingwhitescore;
       maxforeseeingwhitescoreagg = 1. - maxforeseeingwhitescoreagg;
+
    }
 
    if( hasSetppccardMaster(givenseeedpool) && !isTrivial() && getNBlocks() > 1 )
@@ -3822,6 +3839,7 @@ SCIP_Bool Seeed::hasSetppccardMaster(
    hassetpartmaster = TRUE;
    verbose = FALSE;
 
+
    if( getNTotalStairlinkingvars() + getNLinkingvars() > 0 )
       return FALSE;
 
@@ -3851,6 +3869,10 @@ SCIP_Bool Seeed::hasSetppcMaster(
    SCIP_Bool hassetpartmaster;
    hassetpartmaster = TRUE;
 
+    if( getNTotalStairlinkingvars() + getNLinkingvars() > 0 )
+      return FALSE;
+
+
    for( int l = 0; l < getNMasterconss(); ++l )
    {
       int consid = getMasterconss()[l];
@@ -3873,6 +3895,9 @@ SCIP_Bool Seeed::hasSetppMaster(
 {
    SCIP_Bool hassetpartmaster;
    hassetpartmaster = TRUE;
+
+   if( getNTotalStairlinkingvars() + getNLinkingvars() > 0 )
+      return FALSE;
 
    for( int l = 0; l < getNMasterconss(); ++l )
    {
@@ -6563,6 +6588,7 @@ void Seeed::calcmaxforeseeingwhitescoreagg(){
    newmasterarea = ( getNMasterconss() + sumblockshittinglinkingvar) * ( getNVars() + sumlinkingvarshittingblock );
    newblockareaagg = 0;
 
+   assert(nrepblocks > 0 );
    for( int br = 0; br < nrepblocks; ++br )
    {
       newblockareaagg += getNConssForBlock( reptoblocks[br][0] ) * ( getNVarsForBlock( reptoblocks[br][0] ) + nlinkingvarsforblock[reptoblocks[br][0]] );

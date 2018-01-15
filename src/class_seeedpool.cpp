@@ -1718,6 +1718,15 @@ void Seeedpool::addSeeedToIncomplete(
    return;
 
 }
+SCIP_Bool Seeedpool::areThereContinuousVars(){
+
+   for( int v = 0; v < getNVars(); ++v )
+   {
+      if( SCIPvarGetType( getVarForIndex(v)) == SCIP_VARTYPE_CONTINUOUS  || SCIPvarGetType( getVarForIndex(v)) == SCIP_VARTYPE_IMPLINT   )
+         return TRUE;
+   }
+   return FALSE;
+}
 
 /** clears ancestor seeed data structure */
 void Seeedpool::clearAncestorSeeeds()

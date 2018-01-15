@@ -1417,7 +1417,7 @@ SCIP_RETCODE cmpGraphPair(
    ptrhook = new AUT_HOOK2(varmap, consmap, FALSE, (unsigned int) pricingnodes, scips);
    graph.find_automorphisms(bstats, fhook, ptrhook);
 
-   SCIPinfoMessage(origscip, NULL, "!!!!!!!!!!number of hook function calls: %d \n", ptrhook->ncalls);
+   SCIPverbMessage(origscip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
 
    if( !ptrhook->getBool() )
       *result = SCIP_DIDNOTFIND;
@@ -1448,9 +1448,6 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    gcg::Seeedpool* seeedpoolunpresolved;
    gcg::Seeedpool* seeedpoolpresolved;
    gcg::Seeed* seeed;
-   FILE* graphfile;
-
-   graphfile = fopen("helpgraph.g", "w");
 
 //   int pricingindices[2];
    int pricingnodes;
@@ -1483,11 +1480,9 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    SCIPdebugMessage("finished creating aut hook.\n");
    ptrhook->setNewDetectionStuff(seeedpool, seeed, blocks);
 
-   //graph.write_dimacs(graphfile);
 
-   fclose(graphfile);
    graph.find_automorphisms(bstats, fhook, ptrhook);
-   SCIPinfoMessage(scip, NULL, "!!!!!!!!!!number of hook function calls: %d \n", ptrhook->ncalls);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
 
    SCIPdebugMessage("finished find automorphisms.\n");
 
