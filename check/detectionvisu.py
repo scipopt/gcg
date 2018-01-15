@@ -61,10 +61,10 @@ class App:
             self.listboxclassifier.insert(END, item)
 
         self.l1text = "Filename: " + self.datasets[0].getfilename()
-        self.l2text = "Number of instances: "+str(self.datasets[0].getninstances()) 
-        self.l3text = "found at least one nontrivial decomp for " + str(self.datasets[0].getNNonTrivialDecomp()) 
+        self.l2text = "Number of instances: "+str(self.datasets[0].getninstances())
+        self.l3text = "found at least one nontrivial decomp for " + str(self.datasets[0].getNNonTrivialDecomp())
 
-        self.l4text = "found at least one nontrivial decomp with setpartitioning master for " + str(self.datasets[0].getNNonTrivialDecompSetpartmaster()) + "     " 
+        self.l4text = "found at least one nontrivial decomp with setpartitioning master for " + str(self.datasets[0].getNNonTrivialDecompSetpartmaster()) + "     "
 
 
         Label(self.frame, text=self.l1text).grid(row=0, column=0, sticky=W)

@@ -220,7 +220,6 @@ class Plotter:
 			instancefractions.append(self.fractionofinstanceswithnblocksleast(self.decompnblocks, tau) )
 		plt.ylabel('fraction of instances')
 		plt.xlabel('whitest found decomposition has at least this number of blocks ')
-		
 	#	print tauvals
 		#print instancefractions
 
@@ -284,12 +283,12 @@ def main(argv):
 	if len(argv) != 2:
 #		print "Usage: ./plotclassifier.py myOutfile.out classifiername"
 		return
-	
+
 	plotty = Plotter(argv[0])
-	#end file reading, start 
+	#end file reading, start
 
 	print(plotty.classifiernames)
-	#plot decomp quality 
+	#plot decomp quality
 	plotty.plotnclassesforclassifier("constypes")
 	plotty.plotdetectionquality()
 	plotty.plotnblocksofbest()
@@ -304,8 +303,6 @@ def main(argv):
 	#print decompscores
 
 
-	
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
 	main(sys.argv[1:])
-

@@ -38,12 +38,12 @@ class Plotter:
             plt.plot(tauvals, instfractsfordataset[datasetid])
             labels.append(datasets[datasetid].getsettingsname())
 
-        plt.legend(labels, ncol=4, loc='upper center', 
-           bbox_to_anchor=[0.5, 1.1], 
+        plt.legend(labels, ncol=4, loc='upper center',
+           bbox_to_anchor=[0.5, 1.1],
            columnspacing=1.0, labelspacing=0.0,
            handletextpad=0.0, handlelength=1.5,
            fancybox=True, shadow=True)
-        
+
         plt.xscale('symlog')
         plt.show()
 
@@ -70,8 +70,8 @@ class Plotter:
             plt.plot(tauvals, instfractsfordataset[datasetid])
             labels.append(datasets[datasetid].getsettingsname())
 
-        plt.legend(labels, ncol=4, loc='upper center', 
-           bbox_to_anchor=[0.5, 1.1], 
+        plt.legend(labels, ncol=4, loc='upper center',
+           bbox_to_anchor=[0.5, 1.1],
            columnspacing=1.0, labelspacing=0.0,
            handletextpad=0.0, handlelength=1.5,
            fancybox=True, shadow=True)
@@ -98,8 +98,8 @@ class Plotter:
             plt.plot(tauvals, instfractsfordataset[datasetid])
             labels.append(datasets[datasetid].getsettingsname())
 
-        plt.legend(labels, ncol=4, loc='upper center', 
-           bbox_to_anchor=[0.5, 1.1], 
+        plt.legend(labels, ncol=4, loc='upper center',
+           bbox_to_anchor=[0.5, 1.1],
            columnspacing=1.0, labelspacing=0.0,
            handletextpad=0.0, handlelength=1.5,
            fancybox=True, shadow=True)
@@ -127,15 +127,14 @@ class Plotter:
 
         plt.ylabel('fraction of instances')
         plt.xlabel('whitest found decomposition has at least this number of blocks ')
-        
     #   print tauvals
         #print instancefractions
         for datasetid in range(len(datasets)):
             plt.semilogx(tauvals, instfractsfordataset[datasetid])
             labels.append(datasets[datasetid].getsettingsname())
 
-        plt.legend(labels, ncol=4, loc='upper center', 
-           bbox_to_anchor=[0.5, 1.1], 
+        plt.legend(labels, ncol=4, loc='upper center',
+           bbox_to_anchor=[0.5, 1.1],
            columnspacing=1.0, labelspacing=0.0,
            handletextpad=0.0, handlelength=1.5,
            fancybox=True, shadow=True)
@@ -168,8 +167,8 @@ class Plotter:
             plt.plot(tauvals, instfractsfordataset[datasetid])
             labels.append(datasets[datasetid].getsettingsname())
 
-        plt.legend(labels, ncol=4, loc='upper center', 
-           bbox_to_anchor=[0.5, 1.1], 
+        plt.legend(labels, ncol=4, loc='upper center',
+           bbox_to_anchor=[0.5, 1.1],
            columnspacing=1.0, labelspacing=0.0,
            handletextpad=0.0, handlelength=1.5,
            fancybox=True, shadow=True)
@@ -198,21 +197,16 @@ class Plotter:
 
         plt.show()
 
-
-
-
-    
-
 def main(argv):
     if len(argv) != 2:
 #       print "Usage: ./plotclassifier.py myOutfile.out classifiername"
         return
-    
+
     plotty = Plotter(argv[0])
-    #end file reading, start 
+    #end file reading, start
 
     print(plotty.classifiernames)
-    #plot decomp quality 
+    #plot decomp quality
     plotty.plotnclassesforclassifier("constypes")
     plotty.plotdetectionquality()
     plotty.plotnblocksofbest()
@@ -226,9 +220,5 @@ def main(argv):
     #print decompnblocks
     #print decompscores
 
-
-    
-
-if __name__ == "__main__": 
+if __name__ == "__main__":
     main(sys.argv[1:])
-
