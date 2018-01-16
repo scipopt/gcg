@@ -37,6 +37,7 @@
 #include "solver_xyz.h"
 #include "type_solver.h"
 #include "pricer_gcg.h"
+#include "solver.h"
 
 #define SOLVER_NAME          "xyz"
 #define SOLVER_DESC          "xyz solver for pricing problems"
@@ -149,16 +150,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveXyz)
    return SCIP_OKAY;
 }
 
-
-static
-GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurXyz)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of xyz pricing problem solver not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-
 /** creates the most infeasible LP braching rule and includes it in SCIP */
 SCIP_RETCODE GCGincludeSolverXyz(
    SCIP*                 scip                /**< SCIP data structure */
@@ -172,7 +163,7 @@ SCIP_RETCODE GCGincludeSolverXyz(
 
    /* include pricing problem solver */
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_ENABLED,
-         solverSolveXyz, solverSolveHeurXyz, solverFreeXyz, solverInitXyz, solverExitXyz,
+         solverSolveXyz, solverFreeXyz, solverInitXyz, solverExitXyz,
          solverInitsolXyz, solverExitsolXyz, solverdata) );
 
    /* add xyz propagator parameters */

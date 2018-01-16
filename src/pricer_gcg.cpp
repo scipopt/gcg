@@ -36,7 +36,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+//#define SCIP_DEBUG
 #include <cassert>
 #include <cstring>
 
@@ -73,6 +73,7 @@
 #include "branch_generic.h"
 #include "event_display.h"
 #include "pub_colpool.h"
+#include "solver.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -694,37 +695,18 @@ SCIP_RETCODE ObjPricerGcg::getSolverPointers(
    assert(solver != NULL);
    assert(clock != NULL);
    assert(calls != NULL);
-   switch( optimal )
+
+   if( pricetype->getType() == GCG_PRICETYPE_FARKAS )
    {
-   case TRUE:
-      if( pricetype->getType() == GCG_PRICETYPE_FARKAS )
-      {
-         *clock = solver->optfarkasclock;
-         *calls = &(solver->optfarkascalls);
-      }
-      else
-      {
-         *clock = solver->optredcostclock;
-         *calls = &(solver->optredcostcalls);
-      }
-      *solversolve = solver->solversolve;
-      break;
-   case FALSE:
-      if( pricetype->getType() == GCG_PRICETYPE_FARKAS )
-      {
-         *clock = solver->heurfarkasclock;
-         *calls = &(solver->heurfarkascalls);
-      }
-      else
-      {
-         *clock = solver->heurredcostclock;
-         *calls = &(solver->heurredcostcalls);
-      }
-      *solversolve = solver->solversolveheur;
-      break;
-   default:
-      return SCIP_ERROR;
+      *clock = solver->optfarkasclock;
+      *calls = &(solver->optfarkascalls);
    }
+   else
+   {
+      *clock = solver->optredcostclock;
+      *calls = &(solver->optredcostcalls);
+   }
+   *solversolve = solver->solversolve;
 
    return SCIP_OKAY;
 }
@@ -809,7 +791,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
 
 
       SCIP_CALL( getSolverPointers(solver, pricetype, !GCGpricingjobIsHeuristic(pricingjob), &clock, &calls, &solversolve) );
-      assert(solversolve == solver->solversolve || solversolve == solver->solversolveheur);
+      assert(solversolve == solver->solversolve);
 
       /* continue if the appropriate solver is not available */
       if( solversolve == NULL )
@@ -821,7 +803,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
          SCIP_CALL_ABORT( SCIPstartClock(scip_, clock) );
       }
 
-      SCIP_CALL( solversolve(pricingscip, solver, probnr, pricerdata->dualsolconv[probnr],
+      SCIP_CALL( solversolve(pricingscip, solver, GCGpricingjobIsHeuristic(pricingjob), GCGpricingjobGetNodelimit(pricingjob), GCGpricingjobGetStallnodelimit(pricingjob), GCGpricingjobGetGaplimit(pricingjob), probnr, pricerdata->dualsolconv[probnr],
             &lowerbound, cols, maxcols, &ncols, &status) );      
 
       assert(status == SCIP_STATUS_OPTIMAL
@@ -4629,7 +4611,6 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    int                   priority,           /**< priority of solver */
    SCIP_Bool             enabled,            /**< flag to indicate whether the solver is enabled */
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
-   GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**< heuristic solving method for solver */
    GCG_DECL_SOLVERFREE   ((*solverfree)),    /**< free method of solver */
    GCG_DECL_SOLVERINIT   ((*solverinit)),    /**< init method of solver */
    GCG_DECL_SOLVEREXIT   ((*solverexit)),    /**< exit method of solver */
@@ -4669,7 +4650,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    pricerdata->solvers[pos]->enabled = enabled;
    pricerdata->solvers[pos]->priority = priority;
    pricerdata->solvers[pos]->solversolve = solversolve;
-   pricerdata->solvers[pos]->solversolveheur = solveheur;
+//   pricerdata->solvers[pos]->solversolveheur = solveheur;
    pricerdata->solvers[pos]->solverfree = solverfree;
    pricerdata->solvers[pos]->solverinit = solverinit;
    pricerdata->solvers[pos]->solverexit = solverexit;
@@ -4699,10 +4680,10 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    return SCIP_OKAY;
 }
 
-/** returns the solverdata of a solver */
+/** returns the solverdata of a solver 
 extern "C"
 GCG_SOLVERDATA* GCGsolverGetSolverdata(
-   GCG_SOLVER*           solver              /**< pointer so solver */
+   GCG_SOLVER*           solver              // pointer so solver 
    )
 {
    assert(solver != NULL);
@@ -4710,18 +4691,18 @@ GCG_SOLVERDATA* GCGsolverGetSolverdata(
    return solver->solverdata;
 }
 
-/** sets solver data of specific solver */
+// sets solver data of specific solver 
 extern "C"
 void GCGsolverSetSolverdata(
-   GCG_SOLVER*           solver,             /**< pointer to solver  */
-   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
+   GCG_SOLVER*           solver,             //< pointer to solver  
+   GCG_SOLVERDATA*       solverdata          //< solverdata data structure 
    )
 {
    assert(solver != NULL);
 
    solver->solverdata = solverdata;
 }
-
+*/
 /** writes out a list of all pricing problem solvers */
 extern "C"
 void GCGpricerPrintListOfSolvers(

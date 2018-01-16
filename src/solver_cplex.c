@@ -45,6 +45,7 @@
 #ifdef CPLEXSOLVER
 #include "pricer_gcg.h"
 #include "scip_misc.h"
+#include "solver.h"
 
 #include "cplex.h"
 
@@ -981,61 +982,20 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
 #define solverInitCplex NULL
 #define solverExitCplex NULL
 
-
-/** heuristic solving method of mip solver */
-static
-GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCplex)
-{
-   GCG_SOLVERDATA* solverdata;
-   SCIP_RETCODE retval;
-   long long nodelim;
-
-   solverdata = GCGsolverGetSolverdata(solver);
-   assert(solverdata != NULL);
-   assert(solverdata->created != NULL);
-
-   SCIPdebugMessage("calling heuristic pricing with CPLEX for pricing problem %d\n", probnr);
-
-   retval = SCIP_OKAY;
-
-   /* build the pricing problem in CPLEX or update it */
-   if( !solverdata->created[probnr] )
-   {
-      SCIP_CALL( buildProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
-   }
-   else
-   {
-      SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
-   }
-
-   CHECK_ZERO( CPXgetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, &nodelim) );
-   CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, solverdata->heurnodelimit) );
-   CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, solverdata->heurgaplimit) );
-
-   /* solve the pricing problem and evaluate solution */
-   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, result) );
-   assert(*result != SCIP_STATUS_OPTIMAL || *ncols > 0);
-
-   CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, nodelim) );
-   CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, 0.0) );
-
- TERMINATE:
-   return retval;
-}
-
-/** solving method for pricing solver which solves the pricing problem to optimality */
+/** solving method for pricing solver which solves the pricing problem either heuristically or to optimality */
 static
 GCG_DECL_SOLVERSOLVE(solverSolveCplex)
 {
    GCG_SOLVERDATA* solverdata;
-
-   assert(solver != NULL);
+   if( heuristic )
+   {
+      SCIP_RETCODE retval;
+      long long nodelim;
+   }
 
    solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
    assert(solverdata->created != NULL);
-
-   SCIPdebugMessage("calling CPLEX pricing solver for pricing problem %d\n", probnr);
 
    /* build the pricing problem in CPLEX or update it */
    if( !solverdata->created[probnr] )
@@ -1047,10 +1007,31 @@ GCG_DECL_SOLVERSOLVE(solverSolveCplex)
       SCIP_CALL( updateProblem(solverdata->masterprob, solverdata, pricingprob, probnr) );
    }
 
-   /* solve the pricing problem and evaluate solution */
-   SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, result) );
-   assert(*result != SCIP_STATUS_OPTIMAL || *ncols > 0);
-   return SCIP_OKAY;
+   if( heuristic )
+   {
+      SCIPdebugMessage("calling heuristic pricing with CPLEX for pricing problem %d\n", probnr);
+      CHECK_ZERO( CPXgetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, &nodelim) );
+      CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, solverdata->heurnodelimit) );
+      CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, solverdata->heurgaplimit) );
+
+      /* solve the pricing problem and evaluate solution */
+      SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, result) );
+      assert(*result != SCIP_STATUS_OPTIMAL || *ncols > 0);
+
+      CHECK_ZERO( CPXsetlongparam(solverdata->cpxenv[probnr], CPX_PARAM_NODELIM, nodelim) );
+      CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, 0.0) );
+
+    TERMINATE:
+      return retval;
+   }
+   else
+   {
+      SCIPdebugMessage("calling CPLEX pricing solver for pricing problem %d\n", probnr);
+      /* solve the pricing problem and evaluate solution */
+      SCIP_CALL( solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, cols, maxcols, ncols, result) );
+      assert(*result != SCIP_STATUS_OPTIMAL || *ncols > 0);
+      return SCIP_OKAY;      
+   }
 }
 #endif
 /** creates the CPLEX pricing solver and includes it in GCG */
@@ -1067,7 +1048,7 @@ SCIP_RETCODE GCGincludeSolverCplex(
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
          SOLVER_ENABLED,
-         solverSolveCplex, solverSolveHeurCplex, solverFreeCplex, solverInitCplex,
+         solverSolveCplex, solverFreeCplex, solverInitCplex,
          solverExitCplex, solverInitsolCplex, solverExitsolCplex, solverdata));
 
    SCIP_CALL( SCIPaddBoolParam(solverdata->origprob, "pricingsolver/cplex/checksols",

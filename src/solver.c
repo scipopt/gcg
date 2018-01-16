@@ -25,53 +25,34 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_gcgcol.h
- * @brief  struct to store pricing jobs
- * @author Christian Puchert
+/**@file   solver.c
+ * @brief  management of pricing solvers
+ * @author Henri Lotze
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
-#ifndef GCG_STRUCT_PRICINGJOB_H_
-#define GCG_STRUCT_PRICINGJOB_H_
-
-#include "scip/def.h"
-#include "scip/type_misc.h"
 #include "scip/scip.h"
+#include "solver.h"
+#include "type_solver.h"
+#include "struct_solver.h"
 
-#include "type_pricingjob.h"
-#include "type_gcgcol.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct GCG_PricingJob
+/** returns the solverdata of a solver */
+GCG_SOLVERDATA* GCGsolverGetSolverdata(
+   GCG_SOLVER*           solver              /**< pointer so solver */
+   )
 {
-   /* problem data */
-   SCIP*                pricingscip;        /**< SCIP data structure of the corresponding pricing problem */
-   int                  probnr;             /**< index of the corresponding pricing problem */
+   assert(solver != NULL);
 
-   /* strategic parameters */
-   int                  chunk;              /**< chunk the pricing job belongs to */
-   SCIP_Real            score;              /**< current score of the pricing job */
-   SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
-   SCIP_Longint         nodelimit;          /**< node limit to which the pricing job is to be exectuted */
-   SCIP_Longint         stallnodelimit;     /**< stall node limit to which the pricing job is to be executed */
-   SCIP_Real            gaplimit;           /**< Gap limit to which the pricing job is to be executed */
-
-   /* result values */
-   int                  nsolves;            /**< number of times the pricing job was performed during the loop */
-   SCIP_STATUS          pricingstatus;      /**< current solution status of the pricing problem */
-   SCIP_Real            lowerbound;         /**< lower bound obtained by solving the pricing problem */
-   GCG_COL**            cols;               /**< array of columns found by the pricing problem */
-   int                  colssize;           /**< size of column array */
-   int                  ncols;              /**< number of columns found by the pricing problem */
-   int                  nimpcols;           /**< number of improving columns found by the pricing problem */
-};
-
-#ifdef __cplusplus
+   return solver->solverdata;
 }
-#endif
 
-#endif /* STRUCT_PRICINGJOB_H_ */
+/** sets solver data of specific solver */
+void GCGsolverSetSolverdata(
+   GCG_SOLVER*           solver,             /**< pointer to solver  */
+   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
+   )
+{
+   assert(solver != NULL);
+
+   solver->solverdata = solverdata;
+}

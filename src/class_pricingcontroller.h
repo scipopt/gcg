@@ -54,6 +54,9 @@ private:
 
    /* parameters */
    SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
+   SCIP_Longint          nodelimit;          /**< node limit to which the pricing job is to be exectuted */
+   SCIP_Longint          stallnodelimit;     /**< stall node limit to which the pricing job is to be executed */
+   SCIP_Real             gaplimit;           /**< gap limit to which the pricing job is to be executed */
    int                   sorting;            /**< how should pricing problems be sorted */
    SCIP_Real             relmaxsuccessfulprobs; /**< maximal percentage of pricing problems that need to be solved successfully */
    int                   chunksize;          /**< maximal number of pricing problems to be solved during one pricing loop */

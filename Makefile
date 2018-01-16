@@ -65,6 +65,8 @@ GSL         =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 
+STATISTICS = false
+
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
 override PARASCIP=true
@@ -186,6 +188,7 @@ LIBOBJ		=	reader_blk.o \
 			event_relaxsol.o \
 			event_solvingstats.o \
 			event_display.o \
+			solver.o \
 			solver_mip.o \
 			solver_knapsack.o \
 			cons_decomp.o \
