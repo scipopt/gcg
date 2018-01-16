@@ -815,30 +815,6 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
    if( conshdlrdata->useddecomp != NULL )
       SCIP_CALL( DECdecompFree(scip, &conshdlrdata->useddecomp) );
 
-//   if( conshdlrdata->ndecomps > 0 )
-//   {
-//      for( i = 0; i < conshdlrdata->ndecomps; ++i )
-//      {
-//         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
-//      }
-//      SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
-//      conshdlrdata->decdecomps = NULL;
-//      conshdlrdata->ndecomps = 0;
-//   }
-
-//   if( conshdlrdata->nallrelevantseeeds > 0 )
-//   {
-//      for( i = 0; i < conshdlrdata->nallrelevantseeeds; ++i )
-//      {
-//         delete conshdlrdata->allrelevantfinishedseeeds[i];
-//      }
-//
-//   }
-//
-//   if( conshdlrdata->allrelevantfinishedseeeds != NULL )
-//      SCIPfreeMemoryArray(scip, &conshdlrdata->allrelevantfinishedseeeds);
-//   conshdlrdata->allrelevantfinishedseeeds = NULL;
-//   conshdlrdata->nallrelevantseeeds = 0;
 
    conshdlrdata->hasrun = FALSE;
 
@@ -965,8 +941,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    assert(conshdlrdata != NULL);
 
    conshdlrdata->useddecomp = NULL;
-//   conshdlrdata->decdecomps = NULL;
-//   conshdlrdata->ndecomps = 0;
    conshdlrdata->ndetectors = 0;
    conshdlrdata->priorities = NULL;
    conshdlrdata->detectors = NULL;
@@ -979,10 +953,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->seeedpool = NULL;
    conshdlrdata->ncallscreatedecomp = 0;
 
-//   conshdlrdata->allrelevantfinishedseeeds = NULL;
-//   conshdlrdata->incompleteseeeds = NULL;
-//   conshdlrdata->nallrelevantseeeds = 0;
-//   conshdlrdata->nincompleteseeeds = 0;
    conshdlrdata->curruserseeed = NULL;
    conshdlrdata->lastuserseeed = NULL;
    conshdlrdata->unpresolveduserseeedadded = FALSE;
@@ -993,15 +963,11 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->candidates = new std::vector<std::pair<SeeedPtr, SCIP_Real > >(0);
    conshdlrdata->selectedexists = FALSE;
    conshdlrdata->sizedecomps = 10;
- //  conshdlrdata->sizeincompleteseeeds = 10;
    conshdlrdata->seeedcounter = 0;
    conshdlrdata->currscoretype = scoretype::MAX_WHITE;
    conshdlrdata->resortcandidates = TRUE;
    conshdlrdata->userblocknrcandidates = new std::vector<int>(0);
 
- //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->decdecomps, conshdlrdata->sizedecomps) );
- //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->allrelevantfinishedseeeds, conshdlrdata->sizedecomps) );
-//   SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->incompleteseeeds, conshdlrdata->sizeincompleteseeeds) );
 
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->completedetectionclock) );
@@ -4548,6 +4514,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_Bool onlylegacymode;
    SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacymode);
 
+   SCIPdebugMessage("start only legay mode? %s \n", (onlylegacymode ? "yes": "no") );
    if( !onlylegacymode )
    {
       std::vector<int> candidatesNBlocks(0); /**< candidates for number of blocks */
@@ -4567,13 +4534,15 @@ SCIP_RETCODE DECdetectStructure(
       SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
       SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
 
-   /** get data of the seeedpool with original vars and conss */
+      /** get data of the seeedpool with original vars and conss */
+      SCIPdebugMessage("is seeedpoolunpresolved not initilized yet ? %s -> %s create it \n", (conshdlrdata->seeedpoolunpresolved == NULL ? "yes" : "no"), (conshdlrdata->seeedpoolunpresolved == NULL ? "" : "Do not")  );
       if ( conshdlrdata->seeedpoolunpresolved == NULL )
          conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
 
       SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
 
+      SCIPdebugMessage("is stage < transformed ? %s -> do %s transformProb() ", (SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED ? "yes" : "no"), (SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED ? "" : "not")  );
       if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
          SCIP_CALL(SCIPtransformProb(scip));
 
@@ -4582,18 +4551,23 @@ SCIP_RETCODE DECdetectStructure(
       /** get block number candidates and conslcassifier for original problem*/
       if( classifyOrig )
       {
+         SCIPdebugMessage("classification for orig problem enabled: calc classifier and nblock candidates \n" );
          conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
          candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
       }
+      else
+         SCIPdebugMessage("classification for orig problem disabled \n" );
 
       /** detection for original problem */
       if( calculateOrigDecomps )
       {
+         SCIPdebugMessage("start finding decompositions for original problem!\n" );
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "start finding decompositions for original problem!\n");
          seeedsunpresolved = conshdlrdata->seeedpoolunpresolved->findSeeeds();
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "finished finding decompositions for original problem!\n");
-
-      }
+         SCIPdebugMessage("finished finding decompositions for original problem!\n" );
+      } else
+         SCIPdebugMessage("finding decompositions for original problem is NOT enabled!\n" );
 
       /** get the cons and var classifier for translating them later*/
       for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNConsClassifiers(); ++i )
@@ -4626,8 +4600,6 @@ SCIP_RETCODE DECdetectStructure(
          *result = SCIP_DIDNOTRUN;
          return SCIP_OKAY;
       }
-
-
 
       /** start detection clocks */
       SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
