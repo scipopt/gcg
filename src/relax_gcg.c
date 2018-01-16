@@ -767,10 +767,6 @@ SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
    SCIP* scip2;
    int seeedid;
 
-#ifndef NBLISS
-   SCIP_RESULT result;
-   SCIP_HASHMAP* consmap;
-#endif
 
    assert(relaxdata != NULL);
    assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
@@ -802,52 +798,52 @@ SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
 }
 
 
-/* checks whether two pricingproblems represent identical blocks */
-static
-SCIP_RETCODE pricingprobsAreIdentical(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
-   int                   probnr1,            /**< number of the first pricingproblem */
-   int                   probnr2,            /**< number of the second pricingproblem */
-   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
-                                              *   to those of the first pricing problem */
-   SCIP_Bool*            identical           /**< return value: are blocks identical */
-   )
-{
-   SCIP* scip1;
-   SCIP* scip2;
-
-#ifndef NBLISS
-   SCIP_RESULT result;
-   SCIP_HASHMAP* consmap;
-#endif
-
-   assert(relaxdata != NULL);
-   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
-   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
-   assert(varmap != NULL);
-   assert(identical != NULL);
-
-   scip1 = relaxdata->pricingprobs[probnr1];
-   scip2 = relaxdata->pricingprobs[probnr2];
-   assert(scip1 != NULL);
-   assert(scip2 != NULL);
-
-   *identical = FALSE;
-
-#ifdef NBLISS
-   checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
-#else
-   SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1)+1) );
-   SCIP_CALL( cmpGraphPair(scip, scip1, scip2, probnr1, probnr2, &result, varmap, consmap) );
-
-   *identical = (result == SCIP_SUCCESS);
-
-   SCIPhashmapFree(&consmap);
-#endif
-
-   return SCIP_OKAY;
-}
+/* @TODO delete:  this method is deprecated since identical checks are done by pricingprobsAreIdenticalFromDetectionInfo and were calculated during detection */
+//static
+//SCIP_RETCODE pricingprobsAreIdentical(
+//   SCIP*                 scip,               /**< SCIP data structure */
+//   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
+//   int                   probnr1,            /**< number of the first pricingproblem */
+//   int                   probnr2,            /**< number of the second pricingproblem */
+//   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
+//                                              *   to those of the first pricing problem */
+//   SCIP_Bool*            identical           /**< return value: are blocks identical */
+//   )
+//{
+//   SCIP* scip1;
+//   SCIP* scip2;
+//
+//#ifndef NBLISS
+//   SCIP_RESULT result;
+//   SCIP_HASHMAP* consmap;
+//#endif
+//
+//   assert(relaxdata != NULL);
+//   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
+//   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
+//   assert(varmap != NULL);
+//   assert(identical != NULL);
+//
+//   scip1 = relaxdata->pricingprobs[probnr1];
+//   scip2 = relaxdata->pricingprobs[probnr2];
+//   assert(scip1 != NULL);
+//   assert(scip2 != NULL);
+//
+//   *identical = FALSE;
+//
+//#ifdef NBLISS
+//   checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
+//#else
+//   SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1)+1) );
+//   SCIP_CALL( cmpGraphPair(scip, scip1, scip2, probnr1, probnr2, &result, varmap, consmap) );
+//
+//   *identical = (result == SCIP_SUCCESS);
+//
+//   SCIPhashmapFree(&consmap);
+//#endif
+//
+//   return SCIP_OKAY;
+//}
 
 /** checks whether there are identical pricing blocks */
 static
@@ -920,32 +916,6 @@ SCIP_RETCODE checkIdenticalBlocks(
             /* save variables in pricing problem variable */
             vars = SCIPgetVars(relaxdata->pricingprobs[i]);
             nvars = SCIPgetNVars(relaxdata->pricingprobs[i]);
-
-            /** temp: */
-            SCIP_Bool output = TRUE;
-            if( output )
-            {
-
-               for( int i = 0; i < SCIPgetNVars(scip); ++i )
-
-               {
-                  SCIP_VAR* var;
-                  SCIP_VAR* imagevar;
-
-                  imagevar = NULL;
-                  var = SCIPgetVars(scip)[i];
-
-
-                  if( SCIPhashmapExists(varmap, (void*) var) )
-                  {
-                     imagevar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) var );
-    //                 SCIPinfoMessage(scip, NULL, "Variable %s has the variable %s as image.\n", SCIPvarGetName(var), imagevar );
-                  }
-  //                else
-//                     SCIPinfoMessage(scip, NULL, "Variable %s has no image.\n", SCIPvarGetName(var) );
-
-               }
-            }
 
             /*
              * quick check whether some of the variables are linking in which case we can not aggregate

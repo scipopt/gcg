@@ -402,38 +402,6 @@ SCIP_RETCODE testScipCons(
    return SCIP_OKAY;
 }
 
-/** tests if two blocks have the same number of variables */
-static
-SCIP_RETCODE testBlockVars(
-   gcg::Seeed*            seeed,
-   int                   block1,              /**< first SCIP data structure */
-   int                   block2,              /**< second SCIP data structure */
-   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
-   )
-{
-   if( seeed->getNVarsForBlock(block1) != seeed->getNVarsForBlock(block2) )
-   {
-      *result = SCIP_DIDNOTFIND;
-   }
-   return SCIP_OKAY;
-}
-
-/** tests if two blocks have the same number of constraints */
-static
-SCIP_RETCODE testBlockConss(
-   gcg::Seeed*           seeed,
-   int                   block1,              /**< first SCIP data structure */
-   int                   block2,              /**< second SCIP data structure */
-   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
-   )
-{
-   if( seeed->getNConssForBlock(block1) != seeed->getNConssForBlock(block2) )
-   {
-      *result = SCIP_DIDNOTFIND;
-   }
-   return SCIP_OKAY;
-}
-
 
 /** constructor for colorinfo arrays */
 static SCIP_RETCODE allocMemory(
@@ -1080,8 +1048,7 @@ SCIP_RETCODE createGraphNewDetection(
    int j;
    int b;
    int ncurvars;
-   int curvar;
-   int* nnodesoffset = NULL;
+   int* nnodesoffset;
    int color;
    int nconss;
    int nvars;
@@ -1095,7 +1062,7 @@ SCIP_RETCODE createGraphNewDetection(
 
    pricingnonzeros = NULL;
    mastercoefindex = NULL;
-
+   nnodesoffset = NULL;
 
     nnodes = 0;
    //building the graph out of the arrays
@@ -1485,39 +1452,6 @@ SCIP_RETCODE cmpGraphPairNewdetection(
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
 
    SCIPdebugMessage("finished find automorphisms.\n");
-
-
-   /* insert code for varmap creation in seeed here
-   1) print out varmap to learn about it
-   */
-   /** iterate over blocks */
-//   for( int b = 0; b < seeed->getNBlocks(); ++b )
-//   {
-
-   SCIP_Bool output = FALSE;
-   if( output )
-   {
-
-      for( int i = 0; i < seeedpool->getNVars(); ++i )
-      {
-         SCIP_VAR* var;
-         SCIP_VAR* imagevar;
-
-         imagevar = NULL;
-         var = seeedpool->getVarForIndex(i);
-
-
-         if( SCIPhashmapExists(ptrhook->getVarHash(), (void*) var) )
-         {
-            imagevar = (SCIP_VAR*) SCIPhashmapGetImage(ptrhook->getVarHash(), (void*) var );
-            //            SCIPinfoMessage(scip, NULL, "Variable %s has the variable %s as image.\n", SCIPvarGetName(var), imagevar );
-         }
-         //         else
-         //            SCIPinfoMessage(scip, NULL, "Variable %s has no image.\n", SCIPvarGetName(var) );
-
-      }
-   }
-//   }
 
    if( !ptrhook->getBool() )
       *result = SCIP_DIDNOTFIND;

@@ -582,20 +582,6 @@ SCIP_RETCODE  SCIPconshdlrDecompAddSeeed(
      SeeedPtr  seeed
    ){
 
-      SCIP_CONSHDLR* conshdlr;
-      SCIP_CONSHDLRDATA* conshdlrdata;
-
-      conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-      if( conshdlr == NULL )
-      {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-         return SCIP_ERROR;
-      }
-
-      conshdlrdata = SCIPconshdlrGetData(conshdlr);
-      assert(conshdlrdata != NULL);
-
       if( seeed->isComplete() )
       {
          if( seeed->isFromUnpresolved())
@@ -713,28 +699,14 @@ SeeedPtr  SCIPconshdlrDecompGetSeeed(
      int  seeedid
    ){
 
-      SCIP_CONSHDLR* conshdlr;
-      SCIP_CONSHDLRDATA* conshdlrdata;
+   SeeedPtr seeed = NULL;
 
-      SeeedPtr seeed = NULL;
+   seeed =  SCIPconshdlrDecompGetSeeedFromPresolved(scip, seeedid);
 
-      conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-      if( conshdlr == NULL )
-      {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-         return NULL;
-      }
-
-      conshdlrdata = SCIPconshdlrGetData(conshdlr);
-      assert(conshdlrdata != NULL);
-
-      seeed =  SCIPconshdlrDecompGetSeeedFromPresolved(scip, seeedid);
-
-      if( seeed == NULL)
-         return SCIPconshdlrDecompGetSeeedFromUnpresolved(scip, seeedid);
-      else
-         return seeed;
+   if( seeed == NULL)
+      return SCIPconshdlrDecompGetSeeedFromUnpresolved(scip, seeedid);
+   else
+      return seeed;
 }
 
 
@@ -1383,19 +1355,9 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    )
 {
 
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
 
    SCIPdialogMessage(scip, NULL, "Options to proceed: \n" );
-
-
-
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "option", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------", "-----------");
@@ -1406,7 +1368,6 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "quit the modification process and returns to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "shows a visualization of the current decomposition ");
-
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
@@ -1684,27 +1645,10 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    )
 {
 
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
 
    SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
-
-//   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  maxwhi  history  pre  nopcon  nopvar"
-//      "  usr"
-//      "  sel \n");
-//   SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------"
-//      "  ---"
-//      "  --- \n");
-
    SCIPdialogMessage(scip, NULL, "\n" );
-
    SCIPdialogMessage(scip, NULL, "List of selection commands \n" );
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "command", "description");
@@ -1720,7 +1664,6 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes selection and goes back to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "experimental feature: visualizes the specified decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition ");
-
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
@@ -2904,9 +2847,6 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    gcg::Seeedpool* currseeedpool;
-
-   int blockid1;
-   int blockid2;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
