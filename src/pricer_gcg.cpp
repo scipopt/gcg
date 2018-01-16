@@ -3259,7 +3259,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             SCIPgetLPObjval(scip_), bestredcost, stabdualval, beststabobj);
          SCIPdebugMessage("lowerboundcandidate = %.8g\n", lowerboundcandidate);
 
-         assert(!optimal || stabilized || SCIPisDualfeasEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, lowerboundcandidate));
+         assert(!optimal || !*bestredcostvalid || stabilized || SCIPisDualfeasEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, lowerboundcandidate));
 
          if( enablestab )
          {
