@@ -96,6 +96,7 @@ int indset_addNodeToGraph(
       }
       else
       {
+         /* Var has positive weight but is still supposed to be added to the graph. Fix its weight to 1. */
          g->weights[*indexcount] = 1;
       }
       nodeindex = *indexcount;
@@ -136,6 +137,11 @@ int indset_getNodeIndex(
  *
  * If you would like to add the handling of more types of constraints, please note that the current code 
  * assumes that at no point edges are added to the graph, except during initialisation.
+ * 
+ * Cliquer library restrictions:
+ * - Nodes cannot be deleted
+ * - Weights have to be Integers between 1 and INT_MAX
+ * - Sum of node weights has to be smaller than INT_MAX
  */
 
 /** Solve the pricing problem as an independent set problem, in an approximate way. */
@@ -271,175 +277,187 @@ SCIP_RETCODE solveIndependentSet(
       /* The constraint may not be of type 'linear' */
       if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
       {
-         lconsvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
-         /* Check if we have an IS constraint */
-         if( SCIPgetNVarsLinear(pricingprob, constraints[i]) == 2 &&
-             SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),1) ) 
+         /* Filter equality constraints*/
+         if( SCIPgetRhsLinear(pricingprob,constraints[i]) != SCIPgetLhsLinear(pricingprob,constraints[i]) )
          {
-            /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
-            if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) || SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
+            lconsvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
+            /* Check if we have an IS constraint */
+            if( SCIPgetNVarsLinear(pricingprob, constraints[i]) == 2 &&
+                SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),1) ) 
             {
-               if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) )
+               /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) || SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
                {
-                  nodeindex0 = indset_addNodeToGraph(g, lconsvars[0], &indexcount, scalingfactor, indsetvars);
-               }
-
-               if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
-               {
-                  nodeindex1 = indset_addNodeToGraph(g, lconsvars[1], &indexcount, scalingfactor, indsetvars);
-               }
-
-               if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
-               {
-                  if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) )
                   {
-                     GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
+                     nodeindex0 = indset_addNodeToGraph(g, lconsvars[0], &indexcount, scalingfactor, indsetvars);
                   }
-               }
-            }
-         }
-         /* Handle other constraints that behave like IS constraints, i.e. cx+dy<=rhs with c+d>rhs, c>0, d>0 */
-         else if( SCIPgetNVarsLinear(pricingprob,constraints[i]) == 2 )
-         {
-            consvals = SCIPgetValsLinear(pricingprob, constraints[i]);
-            if( consvals[0] > 0 && consvals[1] > 0 && SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0] + consvals[1]) 
-               && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0])
-               && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[1]) )
-            {
-               /* As before, the constraint is only regarded if it is relevant for pricing */
-               if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) )
-               {
-                  nodeindex0 = indset_addNodeToGraph(g, lconsvars[0], &indexcount, scalingfactor, indsetvars);
-               }
 
-               if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
-               {
-                  nodeindex1 = indset_addNodeToGraph(g, lconsvars[1], &indexcount, scalingfactor, indsetvars);
-               }
-               if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
-               {
-                  if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
                   {
-                     GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
+                     nodeindex1 = indset_addNodeToGraph(g, lconsvars[1], &indexcount, scalingfactor, indsetvars);
                   }
-               }
-            }
-         }
-         else
-         {
-            /* The current constraint is no linear IS constraint */
-            SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
-            consvals = SCIPgetValsLinear(pricingprob,constraints[i]);
-            lconsvars = SCIPgetVarsLinear(pricingprob,constraints[i]);
-            coefindex = -1;
 
-            /* Check the coefficients of the variables in the constraint */
-            for( int j = 0; j < nvars; ++j )
-            {
-               if( consvals[j] != 1 && (coefindex == -1) )
-               {
-                  coefindex = j;
-               }
-               else if( consvals[j] != 1 && coefindex != -1 )
-               {
-                  /* More than one variable has a coefficient unequal to 1 */
-                  SCIPdebugMessage("Exit: More than one coefficient unequal 1.\n");
-                  *result = SCIP_STATUS_UNKNOWN;
-                  goto TERMINATE;
-               }
-            }
-            /* Check if we have a clique constraint (rhs 1 and coefficients 1) */
-            if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),1) )
-            {
-               /* Delete the edges between all the variables of the constraint. 
-                  This way, at most one can be part of the maximum clique */
-               for( int k = 0; k < nvars; ++k )
-               {
-                  /* We are only interested in vars potentially relevant for pricing (!= 0) */
-                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[k]),0) )
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
                   {
-                     nodeindex0 = indset_addNodeToGraph(g, lconsvars[k], &indexcount, scalingfactor, indsetvars);
-
-                     for( int l = k + 1; l < nvars; ++l )
+                     if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                      {
-                        nodeindex1 = indset_addNodeToGraph(g, lconsvars[l], &indexcount, scalingfactor, indsetvars);
-
-                        if( nodeindex0 != nodeindex1 )
-                        {
-                           if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
-                           {
-                              GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
-                           }
-                        }
+                        GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
                      }
                   }
                }
             }
-            /* Check if we have a coupling constraint (rhs 0) */
-            else if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]), 0.0) )
+            /* Handle other constraints that behave like IS constraints, i.e. cx+dy<=rhs with c+d>rhs, c>0, d>0 */
+            else if( SCIPgetNVarsLinear(pricingprob,constraints[i]) == 2 )
             {
-               /* Special case: The coupling constraint is purely decorative (coefficient + 1 of coupling var >= #vars)*/
-               if( abs(consvals[coefindex]) + 1 >= nvars )
+               consvals = SCIPgetValsLinear(pricingprob, constraints[i]);
+               if( consvals[0] > 0 && consvals[1] > 0 && SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0] + consvals[1]) 
+                  && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0])
+                  && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[1]) )
                {
-                  /* We cannot guarantee that there is no constraint of the form x+CouplingVar <= 1 */
-                  /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
-                  nodeindex0 = indset_addNodeToGraph(g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars);
+                  /* As before, the constraint is only regarded if it is relevant for pricing */
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) )
+                  {
+                     nodeindex0 = indset_addNodeToGraph(g, lconsvars[0], &indexcount, scalingfactor, indsetvars);
+                  }
 
-                  /* We additionally have to mark the variable to later set it to one */ 
-                  solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
+                  {
+                     nodeindex1 = indset_addNodeToGraph(g, lconsvars[1], &indexcount, scalingfactor, indsetvars);
+                  }
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
+                  {
+                     if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
+                     {
+                        GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
+                     }
+                  }
                }
-               /* Special case: The coefficient is -1, we treat the case like a clique constraint. */
-               else if( abs(consvals[coefindex]) == 1 )
+            }
+            else
+            {
+               /* The current constraint is no linear IS constraint */
+               SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
+               consvals = SCIPgetValsLinear(pricingprob,constraints[i]);
+               lconsvars = SCIPgetVarsLinear(pricingprob,constraints[i]);
+               coefindex = -1;
+
+               /* Check the coefficients of the variables in the constraint */
+               for( int j = 0; j < nvars; ++j )
                {
-                  /* We cannot guarantee that there is no constraint of the form x+CouplingVar <= 1 */
-                  /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
-                  /* We additionally have to mark the variable to later set it to one */ 
-                  nodeindex0 = indset_addNodeToGraph(g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars);
-
-                  /* We additionally have to mark the variable to later set it to one */ 
-                  solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
-
-                  /* Delete the edges between all the variables of the constraint that are not the coupling variable.
+                  if( consvals[j] != 1 && (coefindex == -1) )
+                  {
+                     coefindex = j;
+                  }
+                  else if( consvals[j] != 1 && coefindex != -1 )
+                  {
+                     /* More than one variable has a coefficient unequal to 1 */
+                     SCIPdebugMessage("Exit: More than one coefficient unequal 1.\n");
+                     *result = SCIP_STATUS_UNKNOWN;
+                     goto TERMINATE;
+                  }
+               }
+               /* Check if we have a clique constraint (rhs 1 and coefficients 1) */
+               if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),1) )
+               {
+                  /* Delete the edges between all the variables of the constraint. 
                      This way, at most one can be part of the maximum clique */
-                  for( int j = 0; j < nvars; ++j )
+                  for( int k = 0; k < nvars; ++k )
                   {
                      /* We are only interested in vars potentially relevant for pricing (!= 0) */
-                     if( j != coefindex && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[j]),0) )
+                     if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[k]),0) )
                      {
-                        /* Determine nodeindex0 */
-                        nodeindex0 = indset_addNodeToGraph(g, lconsvars[j], &indexcount, scalingfactor, indsetvars);
-                        /* Determine nodeindex1 */
-                        for( int k = j + 1; k < nvars; ++k )
+                        nodeindex0 = indset_addNodeToGraph(g, lconsvars[k], &indexcount, scalingfactor, indsetvars);
+
+                        for( int l = k + 1; l < nvars; ++l )
                         {
-                           if( k != coefindex )
+                           nodeindex1 = indset_addNodeToGraph(g, lconsvars[l], &indexcount, scalingfactor, indsetvars);
+
+                           if( nodeindex0 != nodeindex1 )
                            {
-                              nodeindex1 = indset_addNodeToGraph(g, lconsvars[k], &indexcount, scalingfactor, indsetvars);
-                              if( nodeindex0 != nodeindex1 )
+                              if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                               {
-                                 if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
-                                 {
-                                    GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
-                                 }
+                                 GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
                               }
                            }
                         }
                      }
                   }
                }
+               /* Check if we have a coupling constraint (rhs 0) */
+               else if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]), 0.0) )
+               {
+                  /* Special case: The coupling constraint is purely decorative (coefficient + 1 of coupling var >= #vars)*/
+                  if( abs(consvals[coefindex]) + 1 >= nvars )
+                  {
+                     /* We cannot guarantee that there is no constraint of the form x+CouplingVar <= 1 */
+                     /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
+                     nodeindex0 = indset_addNodeToGraph(g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars);
+
+                     /* We additionally have to mark the variable to later set it to one */ 
+                     solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
+                  }
+                  /* Special case: The coefficient is -1, we treat the case like a clique constraint. */
+                  else if( abs(consvals[coefindex]) == 1 )
+                  {
+                     /* We cannot guarantee that there is no constraint of the form x+CouplingVar <= 1 */
+                     /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
+                     /* We additionally have to mark the variable to later set it to one */ 
+                     nodeindex0 = indset_addNodeToGraph(g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars);
+
+                     /* We additionally have to mark the variable to later set it to one */ 
+                     solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
+
+                     /* Delete the edges between all the variables of the constraint that are not the coupling variable.
+                        This way, at most one can be part of the maximum clique */
+                     for( int j = 0; j < nvars; ++j )
+                     {
+                        /* We are only interested in vars potentially relevant for pricing (!= 0) */
+                        if( j != coefindex && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[j]),0) )
+                        {
+                           /* Determine nodeindex0 */
+                           nodeindex0 = indset_addNodeToGraph(g, lconsvars[j], &indexcount, scalingfactor, indsetvars);
+                           /* Determine nodeindex1 */
+                           for( int k = j + 1; k < nvars; ++k )
+                           {
+                              if( k != coefindex )
+                              {
+                                 nodeindex1 = indset_addNodeToGraph(g, lconsvars[k], &indexcount, scalingfactor, indsetvars);
+                                 if( nodeindex0 != nodeindex1 )
+                                 {
+                                    if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
+                                    {
+                                       GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
+                                    }
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  }
+                  else
+                  {
+                     /* Coupling coefficient is between 1 and npricingprobvars. */
+                     SCIPdebugMessage("Exit: Coupling coefficient unhandled, coef: %g.\n",consvals[coefindex]);
+                     *result = SCIP_STATUS_UNKNOWN;
+                     goto TERMINATE;
+                  }
+               }
                else
                {
-                  /* Coupling coefficient is between 1 and npricingprobvars. */
-                  SCIPdebugMessage("Exit: Coupling coefficient unhandled, coef: %g.\n",consvals[coefindex]);
+                  /* Constraint is neither a coupling nor a clique constraint */ 
+                  SCIPdebugMessage("Exit: Unhandled linear constraint.\n");
                   *result = SCIP_STATUS_UNKNOWN;
                   goto TERMINATE;
                }
             }
-            else{
-               /* Constraint is neither a coupling nor a clique constraint */ 
-               SCIPdebugMessage("Exit: Unhandled linear constraint.\n");
-               *result = SCIP_STATUS_UNKNOWN;
-               goto TERMINATE;
-            }
+         }
+         else
+         {
+            /* Constraint is a linear equality constraint */
+            SCIPdebugMessage("Exit: Unhandled linear equality constraint.\n");
+            *result = SCIP_STATUS_UNKNOWN;
+            goto TERMINATE;
          }
       }
       /* Constraint may be of type varbound: lhs <= x + c*y <= rhs */
