@@ -135,8 +135,6 @@
 
 #if USESEPA
 #include "scip/sepa_clique.h"
-#include "scip/sepa_cmir.h"
-#include "scip/sepa_flowcover.h"
 #include "scip/sepa_gomory.h"
 #include "scip/sepa_impliedbounds.h"
 #include "scip/sepa_intobj.h"
@@ -227,6 +225,7 @@
 /* Friedrike's detection stuff */
 #include "dec_cutpacking.h"
 #include "scip_misc.h"
+#include "scip/table_default.h"
 
 /* Igor's detection with clustering */
 #include "dec_dbscan.h"
@@ -333,8 +332,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
 #if USESEPA
    SCIP_CALL( SCIPincludeSepaClique(scip) );
-   SCIP_CALL( SCIPincludeSepaCmir(scip) );
-   SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
    SCIP_CALL( SCIPincludeSepaGomory(scip) );
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
@@ -425,6 +422,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
    SCIP_CALL( GCGincludeDialogsGraph(scip) );
+   SCIP_CALL( SCIPincludeTableDefault(scip) );
 
    return SCIP_OKAY;
 }

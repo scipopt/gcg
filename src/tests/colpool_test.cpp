@@ -39,10 +39,7 @@
 #include "gcg.h"
 #include "gcgpqueue.h"
 #include "pub_gcgpqueue.h"
-#include "class_colpool.h"
-
-
-using gcg::Colpool;
+#include "pub_colpool.h"
 
 class ColpoolTest : public ::testing::Test {
 
@@ -65,113 +62,9 @@ SCIP* ColpoolTest::scip = NULL;
 
 TEST_F(ColpoolTest, CreateEmptyColpoolTest) {
 
-   Colpool* colpool;
+   GCG_COLPOOL* colpool;
 
-   colpool = new Colpool(scip, 5, 10, 10);
+   SCIP_CALL_EXPECT( GCGcolpoolCreate(scip, &colpool, 5) );
 
-   delete colpool;
-}
-
-TEST_F(ColpoolTest, CreateColpoolTest) {
-
-   Colpool* colpool;
-
-   GCG_COL** gcgcols;
-   GCG_COL* gcgcol;
-   SCIP_Real redcosts[4] = {1.0, 2.0, 0.0, -1.0};
-   int probs[4] = {0, 1, 2, 3};
-
-   SCIP_Bool success;
-
-   int i;
-
-   colpool = new Colpool(scip, 5, 10, 10);
-
-   SCIP_CALL_EXPECT( SCIPallocMemoryArray(scip, &gcgcols, 4) );
-
-   for( i = 0; i < 4; ++i )
-   {
-      SCIP_CALL_EXPECT( SCIPallocMemory(scip, &(gcgcols[i])) );
-
-      gcgcols[i]->redcost = redcosts[i];
-
-      gcgcols[i]->probnr = probs[i];
-
-      colpool->addCol(gcgcols[i], &success);
-
-      ASSERT_EQ(success, TRUE);
-   }
-
-   colpool->getBestCol(&gcgcol);
-   ASSERT_EQ(gcgcol, gcgcols[3]);
-   SCIPfreeMemory(scip, &gcgcol);
-
-   colpool->getBestCol(&gcgcol);
-   ASSERT_EQ(gcgcol, gcgcols[2]);
-   SCIPfreeMemory(scip, &gcgcol);
-
-   colpool->getBestCol(&gcgcol);
-   ASSERT_EQ(gcgcol, gcgcols[0]);
-   SCIPfreeMemory(scip, &gcgcol);
-
-   colpool->getBestCol(&gcgcol);
-   ASSERT_EQ(gcgcol, gcgcols[1]);
-   SCIPfreeMemory(scip, &gcgcol);
-
-   SCIPfreeMemoryArray(scip, &gcgcols);
-
-   delete colpool;
-}
-
-TEST_F(ColpoolTest, DeleteOldTest) {
-
-   Colpool* colpool;
-
-   GCG_COL** gcgcols;
-   GCG_COL* gcgcol;
-   SCIP_Real redcosts[4] = {1.0, 2.0, 0.0, -1.0};
-   int probs[4] = {0, 1, 2, 3};
-   int ages[4] = {4, 9, 2, 7};
-
-   SCIP_Bool success;
-
-   int i;
-
-   colpool = new Colpool(scip, 5, 10, 10);
-
-   SCIP_CALL_EXPECT( SCIPallocMemoryArray(scip, &gcgcols, 4) );
-
-   for( i = 0; i < 4; ++i )
-   {
-      SCIP_CALL_EXPECT( GCGcreateGcgCol(scip, &(gcgcols[i]), probs[i], NULL, NULL, 0, FALSE, redcosts[i] ) );
-
-      gcgcols[i]->redcost = redcosts[i];
-
-      gcgcols[i]->probnr = probs[i];
-
-      gcgcols[i]->age = ages[i];
-
-      colpool->addCol(gcgcols[i], &success);
-
-      ASSERT_EQ(success, TRUE);
-   }
-
-   colpool->deleteOldColumns();
-
-   colpool->resortColumns();
-
-   ASSERT_EQ(colpool->getNCols(), 2);
-
-   colpool->getBestCol(&gcgcol);
-   ASSERT_EQ(gcgcol, gcgcols[2]);
-
-   GCGfreeGcgCol(&gcgcol);
-
-   colpool->getBestCol(&gcgcol);
-   ASSERT_EQ(gcgcol, gcgcols[0]);
-   GCGfreeGcgCol(&gcgcol);
-
-   SCIPfreeMemoryArray(scip, &gcgcols);
-
-   delete colpool;
+   GCGcolpoolFree(scip, &colpool);
 }

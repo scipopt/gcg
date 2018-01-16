@@ -603,7 +603,7 @@ SCIP_DECL_HEURINIT(heurInitGcgfeaspump)
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
-      DEFAULT_RANDSEED) );
+      SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
 
    return SCIP_OKAY;
 }

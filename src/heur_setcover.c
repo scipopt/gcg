@@ -3048,7 +3048,7 @@ SCIP_DECL_HEURINIT(heurInitSetcover)
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
-         DEFAULT_RANDSEED) );
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
 
    return SCIP_OKAY;
 }
@@ -3067,7 +3067,7 @@ SCIP_DECL_HEUREXIT(heurExitSetcover)
    assert(heurdata != NULL);
 
    /* free random number generator */
-   SCIPfreeRandom(scip, &heurdata->randnumgen );
+   SCIPfreeRandom(scip, &heurdata->randnumgen);
 
    return SCIP_OKAY;
 }

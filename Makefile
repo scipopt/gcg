@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.1.2
+VERSION         :=	2.1.3
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -228,7 +228,6 @@ LIBOBJ		=	reader_blk.o \
 			dialog_graph.o \
 			gcgpqueue.o \
 			gcgcol.o \
-			class_colpool.o \
 			class_seeed.o \
 			class_seeedpool.o \
 			dec_compgreedily.o \
@@ -248,8 +247,9 @@ LIBOBJ		=	reader_blk.o \
 			class_indexclassifier.o \
 			class_consclassifier.o \
 			class_varclassifier.o \
-			presol_roundbound.o
-
+			presol_roundbound.o \
+			colpool.o \
+			pricestore_gcg.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
@@ -396,7 +396,7 @@ githash::   # do not remove the double-colon
 .PHONY: test
 test:
 		cd check; \
-		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE) $(SETCUTOFF);
+		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE) $(SETCUTOFF) $(STATISTICS);
 
 .PHONY: eval
 eval:
@@ -531,7 +531,7 @@ ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
 endif
 ifneq ($(LAST_STATISTICS),$(STATISTICS))
 		@-touch $(SRCDIR)/pricer_gcg.h
-		@-touch $(SRCDIR)/pricer_gcg.c
+		@-touch $(SRCDIR)/pricer_gcg.cpp
 		@-touch $(SRCDIR)/stat.c
 		@-touch $(SRCDIR)/event_bestsol.h
 endif

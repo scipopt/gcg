@@ -72,7 +72,7 @@
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
 #define RELAX_PRIORITY         -1
 #define RELAX_FREQ             1
-#define RELAX_INCLUDESLP       FALSE
+#define RELAX_INCLUDESLP       TRUE
 
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
@@ -520,8 +520,8 @@ SCIP_RETCODE checkSetppcStructure(
          {
             relaxdata->masterissetcover = FALSE;
             relaxdata->masterissetpart = FALSE;
+            break;
          }
-         break;
       }
       else
       {
@@ -2037,7 +2037,7 @@ SCIP_RETCODE initRelaxator(
 
       SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, (unsigned int) permutationseed) );
       SCIP_CALL( DECpermuteDecomp(scip, relaxdata->decdecomp, randnumgen) );
-      SCIPfreeRandom(scip, &randnumgen );
+      SCIPfreeRandom(scip, &randnumgen);
    }
 
    if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
@@ -2560,7 +2560,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    initRelaxdata(relaxdata);
 
    /* include relaxator */
-   SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, RELAX_INCLUDESLP, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
+   SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
          relaxExitGcg, relaxInitsolGcg, relaxExitsolGcg, relaxExecGcg, relaxdata) );
 
    /* inform the main scip, that no LPs should be solved */
@@ -3709,7 +3709,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
       int i;
 
       SCIP_CALL( SCIPcreateSol(scip, &relaxdata->currentorigsol, NULL) );
-      SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->storedorigsol) );
+      SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->storedorigsol, RELAX_INCLUDESLP) );
 
       for( i = 0; i < nvars; i++ )
       {
@@ -3815,7 +3815,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIP_CALL( GCGtransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol)) );
 
          /* store the solution as relaxation solution */
-         SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol) );
+         SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol, RELAX_INCLUDESLP) );
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
 
          SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, FALSE, TRUE) );
