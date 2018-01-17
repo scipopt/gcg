@@ -202,8 +202,6 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedConstype)
   SCIP_CALL( SCIPallocMemoryArray(scip, &(seeedPropagationData->newSeeeds), subsetsOfConstypes.size() - 1) );
   seeedPropagationData->nNewSeeeds = subsetsOfConstypes.size() - 1;
 
-
-
   for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
   {
       if(subsetsOfConstypes[subset].size() == 0)

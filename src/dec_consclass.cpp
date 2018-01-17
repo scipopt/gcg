@@ -61,16 +61,16 @@
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'c'         /**< display character of detector */
 #define DEC_ENABLED               TRUE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
-#define DEC_ENABLEDFINISHING      FALSE        /**< should the detection be enabled */
-#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the finishing be enabled */
+#define DEC_ENABLEDORIGINAL       FALSE       /**< should the detection of the original problem be enabled */
+#define DEC_ENABLEDFINISHING      FALSE       /**< should the detection be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE       /**< should the finishing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
-#define DEFAULT_MAXIMUMNCLASSES     7
-#define AGGRESSIVE_MAXIMUMNCLASSES  10
-#define FAST_MAXIMUMNCLASSES        5
+#define DEFAULT_MAXIMUMNCLASSES     5
+#define AGGRESSIVE_MAXIMUMNCLASSES  9
+#define FAST_MAXIMUMNCLASSES        3
 
 #define SET_MULTIPLEFORSIZETRANSF   12500
 
