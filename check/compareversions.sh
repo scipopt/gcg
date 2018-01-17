@@ -92,25 +92,44 @@ then
 		i=$(($i + 1))
 	done
 else
-	# Case that parameters where given when script was started
+	# Case that parameters where given when script was started:
+	# Go through all input arguments and store them
+	if (($# == 1))
+	then
+		echo "You entered only one argument. Try putting \"\" around each argument."
+		echo "Remember, the proper format for input is:"
+		echo "\"testset\" \"testparams\" \"version1\" \"comparams1\" \"params1\" \"version2\" \"comparams2\" \"params2\" ... "
+		exit 0
+	fi
+	i=0
 	TESTSET=$1
-	TESTPARAMS=$2
+	shift
+	i=$((i + 1))
+	TESTPARAMS=$1
+	shift
+	i=$((i + 1))
 	VERSIONCOUNTER=0
-	# Cycle through arguments starting from the third one (first was testset, second was testparams)
-	for i in "${@:3}"
+	inputtype=1 # 1 is version, 2 is comparam, 3 is param
+	# Go through arguments starting from the third one (first was testset, second was testparams)
+	while ((i > 0))
 	do
 		# check whether the current index belongs to version, comparams or params
-		if [ $(($i % 3)) = 0 ]
+		if ((inputtype = 1))
 		then
 			VERSIONCOUNTER=$((VERSIONCOUNTER + 1))
-			VERSION[VERSIONCOUNTER]=${i}
-		elif [ $(($i % 3)) = 1 ]; then
-			COMPARAMS[VERSIONCOUNTER]=${i}
+			VERSION=("${VERSION[@]}" "$1")
+			inputtype=2
+		elif ((inputtype = 2)); then
+			COMPARAMS=("${COMPARAMS[@]}" "$1")
+			inputtype=3
 		else
-			PARAMS[VERSIONCOUNTER]=${i}
+			PARAMS=("${PARAMS[@]}" "$1")
+			inputtype=1
 		fi
+		shift
+		i=$((i - 1))
 	done
-	# Quick sanity check for input
+	# Quick sanity check for input TODO add length version = length comparams = length params
 	if [ "$VERSIONCOUNTER" -eq 0 ]
 	then
 		echo "There are no versions to compare. The correct argument format of this script is:"
@@ -120,6 +139,7 @@ else
 		exit 0
 	fi
 fi
+echo VERSIONCOUNTER= "$VERSIONCOUNTER", VERSION= "${VERION[@]}", COMPARAMS= "${COMPARAMS[@]}", PARAMS= "${PARAMS[@]}".
 
 
 # 2) check out the version(s), compile, run with corresponding parameter(s)
@@ -149,7 +169,7 @@ do
 	done
 	i=$(($i + 1))
 done
-echo "$SAMEVERSION" "$SAMECOMPARAMS" "$SAMEPARAMS"
+echo "$SAMEVERSION" "$SAMECOMPARAMS" "$SAMEPARAMS" #TODO remove 
 
 
 # 	in all cases check whether checkout was successful & compilation was successful
