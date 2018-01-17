@@ -179,6 +179,11 @@ private:
    /** comparison operator for pricing jobs w.r.t. their solution priority */
    static
    SCIP_DECL_SORTPTRCOMP(comparePricingjobs);
+
+   /** check if the pricing job is done */
+   SCIP_Bool pricingjobIsDone(
+      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+      ) const;
 };
 
 } /* namespace gcg */
