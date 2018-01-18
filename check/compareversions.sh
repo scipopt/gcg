@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Open questions: 
-#	- Does still script run when a different (not script-containing) version is called by checkout?
-#	- Output: do normal out files suffice? Maybe add a nice comparison of the summaries?
-#	          if comparison, tolerances, e.g. for slightly different run times? maybe same O(log)?
-#	- Checkout different versions simultaniously in different folders? 
-
 
 #####
 # README: 
@@ -130,7 +124,7 @@ else
 		shift
 		i=$((i - 1))
 	done
-	# Quick sanity check for input TODO add length version = length comparams = length params
+	# Quick sanity check for input
 	if [ "$VERSIONCOUNTER" -eq 0 ]
 	then
 		echo "There are no versions to compare. The correct argument format of this script is:"
@@ -140,12 +134,11 @@ else
 		exit 0
 	fi
 fi
-echo VERSIONCOUNTER= "$VERSIONCOUNTER", VERSION= "${VERSION[*]}", COMPARAMS= "${COMPARAMS[*]}", PARAMS= "${PARAMS[*]}". #TODO debug output
+#echo VERSIONCOUNTER= "$VERSIONCOUNTER", VERSION= "${VERSION[*]}", COMPARAMS= "${COMPARAMS[*]}", PARAMS= "${PARAMS[*]}". #TODO debug output
 
 
 # 2) check out the version(s), compile, run with corresponding parameter(s)
 #		if out files would get overwritten then add version/params coding to their names
-#TODO store the current branch and return to it after step 2
 
 # Store current branch to return in the end
 CURRENTBRANCH=$(git symbolic-ref -q HEAD)
@@ -162,10 +155,8 @@ do
 	git submodule sync
 	git submodule update
 	make "${COMPARAMS[${i}]}" deps
-	make "${COMPARAMS[${i}]}" depend
 	make "${COMPARAMS[${i}]}"
 
-	git checkout .				# Reset current branch before leaving in case e.g. depends were changed (only reset tracked files, keep output!)
 	i=$((i + 1))
 done
 git checkout "${CURRENTBRANCH}"
