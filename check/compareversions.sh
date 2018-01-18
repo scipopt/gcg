@@ -92,6 +92,7 @@ then
 		i=$(($i + 1))
 	done
 else
+	#TODO this case does not work properly (versions & paramss)
 	# Case that parameters where given when script was started:
 	# Go through all input arguments and store them
 	if (($# == 1))
@@ -117,13 +118,13 @@ else
 		if ((inputtype = 1))
 		then
 			VERSIONCOUNTER=$((VERSIONCOUNTER + 1))
-			VERSION=("${VERSION[@]}" "$1")
+			VERSION=("${VERSION[*]}" "$1")
 			inputtype=2
 		elif ((inputtype = 2)); then
-			COMPARAMS=("${COMPARAMS[@]}" "$1")
+			COMPARAMS=("${COMPARAMS[*]}" "$1")
 			inputtype=3
 		else
-			PARAMS=("${PARAMS[@]}" "$1")
+			PARAMS=("${PARAMS[*]}" "$1")
 			inputtype=1
 		fi
 		shift
@@ -139,11 +140,12 @@ else
 		exit 0
 	fi
 fi
-echo VERSIONCOUNTER= "$VERSIONCOUNTER", VERSION= "${VERION[@]}", COMPARAMS= "${COMPARAMS[@]}", PARAMS= "${PARAMS[@]}".
+echo VERSIONCOUNTER= "$VERSIONCOUNTER", VERSION= "${VERSION[*]}", COMPARAMS= "${COMPARAMS[*]}", PARAMS= "${PARAMS[*]}". #TODO debug output
 
 
 # 2) check out the version(s), compile, run with corresponding parameter(s)
 
+#TODO does not work in all cases yet
 # Check whether all versions/comparams/params are the same to determine different cases in the following
 i=1
 SAMEVERSION=1
@@ -153,15 +155,15 @@ while (( i <= "$VERSIONCOUNTER" ))
 do
 	while (( j <= "$VERSIONCOUNTER" ))
 	do
-		if [ VERSION[i] != VERSION[j] ] && (( i != j ))
+		if [ "${VERSION[i]}" != "${VERSION[j]}" ] && [ "${i}" = "${j}" ]
 		then
 			SAMEVERSION=0
 		fi
-		if [ COMPARAMS[i] != COMPARAMS[j] ] && (( i != j ))
+		if [ "${COMPARAMS[i]}" != "${COMPARAMS[j]}" ] && [ "${i}" = "${j}" ]
 		then
-			SAMECOMPARAMS=0
+			SAMECOMPARAMS=0 
 		fi
-		if [ PARAMS[i] != PARAMS[j] ] && (( i != j ))
+		if [ "${PARAMS[i]}" != "${PARAMS[j]}" ] && [ "${i}" = "${j}" ]
 		then
 			SAMEPARAMS=0
 		fi
@@ -169,7 +171,7 @@ do
 	done
 	i=$(($i + 1))
 done
-echo "$SAMEVERSION" "$SAMECOMPARAMS" "$SAMEPARAMS" #TODO remove 
+echo "$SAMEVERSION" "$SAMECOMPARAMS" "$SAMEPARAMS" #TODO debug output
 
 
 # 	in all cases check whether checkout was successful & compilation was successful
