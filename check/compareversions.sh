@@ -145,10 +145,12 @@ echo VERSIONCOUNTER= "$VERSIONCOUNTER", VERSION= "${VERSION[*]}", COMPARAMS= "${
 
 # 2) check out the version(s), compile, run with corresponding parameter(s)
 #		if out files would get overwritten then add version/params coding to their names
+#TODO store the current branch and return to it after step 2
 i=1
 while (( i <= ${VERSIONCOUNTER} ))
 do
 	# checkout current version
+	cd ..					# Script is in check, so switch to gcg main folder
 	git checkout "${VERSION[${i}]}"
 	git submodule init
 	git submodule sync
