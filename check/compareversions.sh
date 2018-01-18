@@ -165,6 +165,7 @@ do
 	make "${COMPARAMS[${i}]}" depend
 	make "${COMPARAMS[${i}]}"
 
+	git checkout .				# Reset current branch before leaving in case e.g. depends were changed (only reset tracked files, keep output!)
 	i=$((i + 1))
 done
 git checkout "${CURRENTBRANCH}"
