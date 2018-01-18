@@ -144,43 +144,22 @@ echo VERSIONCOUNTER= "$VERSIONCOUNTER", VERSION= "${VERSION[*]}", COMPARAMS= "${
 
 
 # 2) check out the version(s), compile, run with corresponding parameter(s)
-
-#TODO does not work in all cases yet
-# Check whether all versions/comparams/params are the same to determine different cases in the following
+#		if out files would get overwritten then add version/params coding to their names
 i=1
-SAMEVERSION=1
-SAMECOMPARAMS=1
-SAMEPARAMS=1
-while (( i <= "$VERSIONCOUNTER" ))
+while (( i <= ${VERSIONCOUNTER} ))
 do
-	while (( j <= "$VERSIONCOUNTER" ))
-	do
-		if [ "${VERSION[i]}" != "${VERSION[j]}" ] && [ "${i}" = "${j}" ]
-		then
-			SAMEVERSION=0
-		fi
-		if [ "${COMPARAMS[i]}" != "${COMPARAMS[j]}" ] && [ "${i}" = "${j}" ]
-		then
-			SAMECOMPARAMS=0 
-		fi
-		if [ "${PARAMS[i]}" != "${PARAMS[j]}" ] && [ "${i}" = "${j}" ]
-		then
-			SAMEPARAMS=0
-		fi
-		j=$(($j + 1))
-	done
-	i=$(($i + 1))
+	# checkout current version
+	git checkout "${VERSION[${i}]}"
+	git submodule init
+	git submodule sync
+	git submodule update
+	make "${COMPARAMS[${i}]}" -j deps
+	make "${COMPARAMS[${i}]}" -j depend
+	make "${COMPARAMS[${i}]}" -j
+
+	i=$((i + 1))
 done
-echo "$SAMEVERSION" "$SAMECOMPARAMS" "$SAMEPARAMS" #TODO debug output
 
-
-# 	in all cases check whether checkout was successful & compilation was successful
-#	Case 2.1) same version with same parameters twice: call normal test script
-#	Case 2.2) Add case: same version with different parameters: check out and run twice with diff params
-#	Case 2.3) Add case: different versions with same parameters: check out & run successively
-#		if out files would get overwritten then add version/params coding to their names
-#	Case 2.4) Add case: different versions with different parameters: as 2.3)
-#		if out files would get overwritten then add version/params coding to their names
 
 # 3) if wished do sth with the output, e.g. make summary of differences in summary etc.
 
