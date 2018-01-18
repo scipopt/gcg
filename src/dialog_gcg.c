@@ -281,7 +281,7 @@ SCIP_RETCODE writeFamilyTree(
 
       /* print result message if writing was successful */
       SCIPdialogMessage(scip, NULL,
-         "Family tree visualization is written to %s.\n For compilation read the README in the same folder.\n", outname);
+         "Family tree visualization is written to %s. \n For compilation read the README in the same folder.\n", outname);
    }
 
    return SCIP_OKAY;
