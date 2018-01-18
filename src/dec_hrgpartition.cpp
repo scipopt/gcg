@@ -38,7 +38,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+#define SCIP_DEBUG
 #include "dec_hrgpartition.h"
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -671,14 +671,21 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    gcg::Seeed* seeed;
    seeed = seeedPropagationData->seeedToPropagate;
 
+   SCIPdebugMessage("Started propagate seeed of detector %s and partial decomp %d \n", DEC_DETECTORNAME, seeed->getID() );
+
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
-   if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
+   if( seeed->alreadyAssignedConssToBlocks() )
    {
       seeedPropagationData->nNewSeeeds = 0;
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
+   }
+
+   if( !connected(seeedPropagationData->seeedpool, seeed) )
+   {
+      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
@@ -825,7 +832,7 @@ DEC_DECL_SETPARAMFAST(setParamFastHrgpartition)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
    if ( SCIPgetNConss(scip) + SCIPgetNVars(scip) > 6000 )
       SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-   else SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   else SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
