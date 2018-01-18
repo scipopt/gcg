@@ -146,6 +146,12 @@ echo VERSIONCOUNTER= "$VERSIONCOUNTER", VERSION= "${VERSION[*]}", COMPARAMS= "${
 # 2) check out the version(s), compile, run with corresponding parameter(s)
 #		if out files would get overwritten then add version/params coding to their names
 #TODO store the current branch and return to it after step 2
+
+# Store current branch to return in the end
+CURRENTBRANCH=$(git symbolic-ref -q HEAD)
+CURRENTBRANCH=${CURRENTBRANCH##refs/heads/}
+CURRENTBRANCH=${CURRENTBRANCH:-HEAD}
+
 i=1
 while (( i <= ${VERSIONCOUNTER} ))
 do
@@ -155,12 +161,13 @@ do
 	git submodule init
 	git submodule sync
 	git submodule update
-	make "${COMPARAMS[${i}]}" -j deps
-	make "${COMPARAMS[${i}]}" -j depend
-	make "${COMPARAMS[${i}]}" -j
+	make "${COMPARAMS[${i}]}" deps
+	make "${COMPARAMS[${i}]}" depend
+	make "${COMPARAMS[${i}]}"
 
 	i=$((i + 1))
 done
+git checkout "${CURRENTBRANCH}"
 
 
 # 3) if wished do sth with the output, e.g. make summary of differences in summary etc.
