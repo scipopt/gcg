@@ -2353,6 +2353,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    assert(relaxdata != NULL);
    *result = SCIP_DIDNOTRUN;
 
+   assert(FALSE);
+
    if( !relaxdata->relaxisinitialized )
    {
       SCIP_CALL( initRelaxator(scip, relax) );
