@@ -4333,7 +4333,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    DECsetMaxWhiteScore(scip, *newdecomp, seeed->getMaxWhiteScore() );
 
 
-   assert( DECdecompCheckConsistency( scip, ( * newdecomp ) ) );
+   /**there might be some remaining constraints assert( DECdecompCheckConsistency( scip, ( * newdecomp ) ) ); hence we do not check this here */
    assert( ! SCIPhashmapIsEmpty( ( * newdecomp )->constoblock ) );
    assert( ! SCIPhashmapIsEmpty( ( * newdecomp )->vartoblock ) );
 
