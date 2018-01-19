@@ -2534,12 +2534,11 @@ SCIP_RETCODE Seeed::completeByConnected(
      std::vector<std::vector<int>> varsfornewblocks(0);
 
      std::vector<int> constoconsider;
-
-     constoconsider = openConss;
-
      int nnewblocks;
      int largestcomponent;
      int sizelargestcomponent;
+
+     constoconsider = openConss;
 
      varInBlocks = std::vector<int>(nVars, -1);
      nnewblocks = 0;
@@ -2566,15 +2565,16 @@ SCIP_RETCODE Seeed::completeByConnected(
      }
 
      /** do breadth first search to find connected conss */
-     while( ! openConss.empty() )
+     while( ! constoconsider.empty() )
      {
-        assert( helpqueue.empty() );
-        helpqueue.push( openConss[0] );
-        neighborConss.clear();
-        neighborConss.push_back( openConss[0] );
-        isConsVisited[openConss[0]] = true;
         std::vector<int> newconss(0);
         std::vector<int> newvars(0);
+
+        assert( helpqueue.empty() );
+        helpqueue.push( constoconsider[0] );
+        neighborConss.clear();
+        neighborConss.push_back( constoconsider[0] );
+        isConsVisited[constoconsider[0]] = true;
 
         while( ! helpqueue.empty() )
         {
@@ -2583,7 +2583,8 @@ SCIP_RETCODE Seeed::completeByConnected(
            helpqueue.pop();
            for( int c = 0; c < givenseeedpool->getNConssForCons( nodeCons ); ++ c )
            {
-              int othercons = givenseeedpool->getConssForCons( nodeCons )[c];
+              int othercons;
+              othercons = givenseeedpool->getConssForCons( nodeCons )[c];
 
               if( isConsVisited[othercons] || isConsMastercons( othercons ) || ! isConsOpen[othercons] )
                  continue;
@@ -2599,8 +2600,11 @@ SCIP_RETCODE Seeed::completeByConnected(
         ++nnewblocks;
         for( size_t i = 0; i < neighborConss.size(); ++ i )
         {
+           std::vector<int>::iterator consiter;
            cons = neighborConss[i];
-
+           consiter = std::lower_bound(constoconsider.begin(), constoconsider.end(), cons);
+           assert(consiter != constoconsider.end() );
+           constoconsider.erase(consiter);
            assert( isConsOpencons( cons ) );
            newconss.push_back(cons);
 
@@ -2613,6 +2617,7 @@ SCIP_RETCODE Seeed::completeByConnected(
 
               assert(! isVarMastervar( newvar) );
               newvars.push_back(newvar);
+              varInBlocks[newvar] = nnewblocks;
            }
         }
         conssfornewblocks.push_back(newconss);
@@ -2631,22 +2636,25 @@ SCIP_RETCODE Seeed::completeByConnected(
      if( nnewblocks > 1 )
      {
         int oldnblocks;
-
+        bool largestdone = false;
         oldnblocks = getNBlocks();
         setNBlocks(nnewblocks - 1 + getNBlocks());
+
         for( int i = 0; i < nnewblocks; ++i)
         {
            if( i == largestcomponent )
+           {
+              largestdone = true;
               continue;
-
+           }
            for( int c = 0; c < (int) conssfornewblocks[i].size() ; ++c)
            {
-              bookAsBlockCons(conssfornewblocks[i][c], oldnblocks + i);
+              bookAsBlockCons(conssfornewblocks[i][c], oldnblocks + i - (largestdone ? 1 : 0) );
            }
 
            for( int v = 0; v < (int) varsfornewblocks[i].size() ; ++v )
            {
-              bookAsBlockVar(varsfornewblocks[i][v], oldnblocks + i);
+              bookAsBlockVar(varsfornewblocks[i][v], oldnblocks + i - (largestdone ? 1 : 0) );
            }
         }
 

@@ -720,9 +720,7 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrcgpartition)
 
    if( !connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
-      seeedPropagationData->nNewSeeeds = 0;
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
+      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
@@ -744,9 +742,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
 
    if(!connected(seeedPropagationData->seeedpool, seeed))
    {
-      seeedPropagationData->nNewSeeeds = 0;
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
+      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, result);

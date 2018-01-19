@@ -451,6 +451,8 @@ SCIP_RETCODE detection(
    if( numberOfBlocks.empty() )
       numberOfBlocks.push_back(DEFAULT_FALLBACK_NBLOCKS);
 
+
+
    int nconss = seeedPropagationData->seeedpool->getNConss();
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
@@ -458,6 +460,8 @@ SCIP_RETCODE detection(
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
 
    maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
+
+   SCIPdebugMessage("number of block numbers to test: %d , from these candidates (nvotes): %d \n", maxnblockcandidates, (seeedPropagationData->seeedpool->printBlockcandidateInformation(scip, NULL) == SCIP_OKAY) );
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -469,8 +473,7 @@ SCIP_RETCODE detection(
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
 
-
-   /* build the hypergraph structure from the original problem */
+    /* build the hypergraph structure from the original problem */
 
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
    graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
@@ -707,9 +710,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHrgpartition)
 
    if(!connected(seeedPropagationData->seeedpool, seeed))
    {
-      seeedPropagationData->nNewSeeeds = 0;
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
+      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, result);

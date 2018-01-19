@@ -127,7 +127,9 @@ struct sort_decr
       const std::pair<int, int> &left,
       const std::pair<int, int> &right)
    {
-      return left.second > right.second;
+      if( left.second != right.second )
+         return left.second > right.second;
+      else return left.first < right.first;
    }
 };
 
@@ -2751,10 +2753,16 @@ void Seeedpool::calcCandidatesNBlocks()
 
    /* if  distribution of classes exceeds this number it is skipped */
    int maximumnclasses = 18;
+   SCIP_Bool existnontrivialclassifier;
+
+   existnontrivialclassifier = FALSE;
 
    /** firstly, iterate over all consclassifiers */
    for( size_t classifier = 0; classifier < consclassescollection.size(); ++ classifier )
    {
+      if( consclassescollection[classifier]->getNClasses() > 1 )
+         existnontrivialclassifier = TRUE;
+
       /** check if there are too many classes in this distribution and skip it if so */
       if( consclassescollection[classifier]->getNClasses() > maximumnclasses )
       {
@@ -2791,6 +2799,10 @@ void Seeedpool::calcCandidatesNBlocks()
          addCandidatesNBlocks( greatestCD );
       }
    }
+
+   /** if there is no nontrivial constraint classifier, add 16 as a default candidate **/
+   if( !existnontrivialclassifier )
+      addCandidatesNBlocks(16);
 
    /** secondly, iterate over all varclassifiers */
    for( size_t classifier = 0; classifier < varclassescollection.size(); ++ classifier )
