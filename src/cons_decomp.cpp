@@ -2413,6 +2413,41 @@ DEC_DETECTORDATA* DECdetectorGetData(
 }
 
 
+/** returns the number of conss that were active while detecting decomp originating from seeed with given id **/
+int SCIPconshdlrDecompGetNFormerDetectionConssForID(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   id                  /**< id of the seeed */
+   ){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   gcg::Seeed* seeed;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeed = conshdlrdata->seeedpool->findFinishedSeeedByID(id);
+   currseeedpool = conshdlrdata->seeedpool;
+
+   if ( seeed == NULL )
+   {
+      seeed = conshdlrdata->seeedpoolunpresolved->findFinishedSeeedByID(id);
+      currseeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+
+   assert(seeed != NULL);
+
+   return currseeedpool->getNConss();
+
+
+}
+
+
 /** returns the seeedpool **/
 gcg::Seeedpool* SCIPconshdlrDecompGetSeeedpool(
    SCIP*                 scip                /**< SCIP data structure */
@@ -2809,10 +2844,11 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
    SCIP_Bool*           identical
    )
 {
-   gcg::Seeed* seeed;
+
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    gcg::Seeedpool* currseeedpool;
+   gcg::Seeed* seeed;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -4583,9 +4619,12 @@ SCIP_RETCODE DECdetectStructure(
       }
 
       SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
+
+
       //Presolving
       if( presolveOrigProblem )
          SCIP_CALL(SCIPpresolve(scip));
+
 
       /** detection for presolved problem */
 
@@ -4670,6 +4709,7 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock) );
 
+
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip, result );
 
    if( *result == SCIP_DIDNOTRUN )
@@ -4696,6 +4736,7 @@ SCIP_RETCODE DECdetectStructure(
    conshdlrdata->hasrun = TRUE;
    *result = SCIP_SUCCESS;
    SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+
 
 //   SCIPhashmapFree( &consToIndex );
 

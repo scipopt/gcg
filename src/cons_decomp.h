@@ -87,6 +87,15 @@ int SCIPconshdlrDecompGetNDecdecomps(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** returns the number of conss that were active while detecting decomp originating from seeed with given id **/
+extern
+int SCIPconshdlrDecompGetNFormerDetectionConssForID(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   id                  /**< id of the seeed */
+   );
+
+
+
 /** returns the data of the provided detector */
 extern
 DEC_DETECTORDATA* DECdetectorGetData(
