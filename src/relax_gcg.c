@@ -31,6 +31,7 @@
  * @author  Gerald Gamrath
  * @author  Martin Bergner
  * @author  Alexander Gross
+ * @author  Michael Bastubbe
  *
  * \bug
  * - The memory limit is not strictly enforced
@@ -268,7 +269,7 @@ SCIP_RETCODE convertStructToGCG(
    assert(DECdecompGetLinkingconss(decdecomp) != NULL || DECdecompGetNLinkingconss(decdecomp) == 0);
    assert(DECdecompGetNSubscipvars(decdecomp) != NULL || DECdecompGetSubscipvars(decdecomp) == NULL);
 
-   SCIP_CALL( DECdecompRemoveDeletedConss(scip, decdecomp) );
+   //SCIP_CALL( DECdecompRemoveDeletedConss(scip, decdecomp) );
    SCIP_CALL( DECdecompAddRemainingConss(scip, decdecomp) );
    SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
 
@@ -798,52 +799,54 @@ SCIP_RETCODE pricingprobsAreIdenticalFromDetectionInfo(
 }
 
 
-/* @TODO delete:  this method is deprecated since identical checks are done by pricingprobsAreIdenticalFromDetectionInfo and were calculated during detection */
-//static
-//SCIP_RETCODE pricingprobsAreIdentical(
-//   SCIP*                 scip,               /**< SCIP data structure */
-//   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
-//   int                   probnr1,            /**< number of the first pricingproblem */
-//   int                   probnr2,            /**< number of the second pricingproblem */
-//   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
-//                                              *   to those of the first pricing problem */
-//   SCIP_Bool*            identical           /**< return value: are blocks identical */
-//   )
-//{
-//   SCIP* scip1;
-//   SCIP* scip2;
-//
-//#ifndef NBLISS
-//   SCIP_RESULT result;
-//   SCIP_HASHMAP* consmap;
-//#endif
-//
-//   assert(relaxdata != NULL);
-//   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
-//   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
-//   assert(varmap != NULL);
-//   assert(identical != NULL);
-//
-//   scip1 = relaxdata->pricingprobs[probnr1];
-//   scip2 = relaxdata->pricingprobs[probnr2];
-//   assert(scip1 != NULL);
-//   assert(scip2 != NULL);
-//
-//   *identical = FALSE;
-//
-//#ifdef NBLISS
-//   checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
-//#else
-//   SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1)+1) );
-//   SCIP_CALL( cmpGraphPair(scip, scip1, scip2, probnr1, probnr2, &result, varmap, consmap) );
-//
-//   *identical = (result == SCIP_SUCCESS);
-//
-//   SCIPhashmapFree(&consmap);
-//#endif
-//
-//   return SCIP_OKAY;
-//}
+
+
+
+static
+SCIP_RETCODE pricingprobsAreIdentical(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
+   int                   probnr1,            /**< number of the first pricingproblem */
+   int                   probnr2,            /**< number of the second pricingproblem */
+   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
+                                              *   to those of the first pricing problem */
+   SCIP_Bool*            identical           /**< return value: are blocks identical */
+   )
+{
+   SCIP* scip1;
+   SCIP* scip2;
+
+#ifndef NBLISS
+   SCIP_RESULT result;
+   SCIP_HASHMAP* consmap;
+#endif
+
+   assert(relaxdata != NULL);
+   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
+   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
+   assert(varmap != NULL);
+   assert(identical != NULL);
+
+   scip1 = relaxdata->pricingprobs[probnr1];
+   scip2 = relaxdata->pricingprobs[probnr2];
+   assert(scip1 != NULL);
+   assert(scip2 != NULL);
+
+   *identical = FALSE;
+
+#ifdef NBLISS
+   checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
+#else
+   SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1)+1) );
+   SCIP_CALL( cmpGraphPair(scip, scip2, scip1, probnr2, probnr1, &result, varmap, consmap) );
+
+   *identical = (result == SCIP_SUCCESS);
+
+   SCIPhashmapFree(&consmap);
+#endif
+
+   return SCIP_OKAY;
+}
 
 /** checks whether there are identical pricing blocks */
 static
@@ -896,9 +899,17 @@ SCIP_RETCODE checkIdenticalBlocks(
                SCIPblkmem(scip),
                5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* +1 to deal with empty subproblems */
 
-//         SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
-
-         SCIP_CALL( pricingprobsAreIdenticalFromDetectionInfo( scip, relaxdata, hashorig2pricingvar, i, j, varmap, &identical ) );
+         /** if (possibly deactive) conss has been added since structure detecting we need to reevaluate identity of subproblems */
+         if( SCIPgetNConss(scip) != SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) )
+         {
+            //SCIPinfoMessage(scip, NULL, "nconss: %d; ndetectionconss: %d -> using classical identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ));
+            SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
+         }
+         else
+         {
+            //SCIPinfoMessage(scip,  NULL, "nconss: %d; ndetectionconss: %d -> using seeed information for identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) );
+            SCIP_CALL( pricingprobsAreIdenticalFromDetectionInfo( scip, relaxdata, hashorig2pricingvar, i, j, varmap, &identical ) );
+         }
 
 
 /**
@@ -918,7 +929,7 @@ SCIP_RETCODE checkIdenticalBlocks(
             nvars = SCIPgetNVars(relaxdata->pricingprobs[i]);
 
             /*
-             * quick check whether some of the variables are linking in which case we can not aggregate
+             * quick check whether some of the variables are linking in which case we cannot aggregate
              * this is suboptimal but we use bliss anyway
              */
 

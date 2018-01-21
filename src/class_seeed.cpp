@@ -2018,6 +2018,8 @@ void Seeed::checkIdenticalBlocksBrute(
       if( !realArraysAreEqual(scip, vals1, nvals1, vals2, nvals2) )
        {
           SCIPdebugMessage("--> coefs differ for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
+          SCIPfreeBufferArray(scip, &vals1);
+           SCIPfreeBufferArray(scip, &vals2);
           return;
        }
 
@@ -2025,6 +2027,8 @@ void Seeed::checkIdenticalBlocksBrute(
       {
          if( varmap[givenseeedpool->getVarsForCons(cons2id)[v]] != givenseeedpool->getVarsForCons(cons1id)[v])
          {
+            SCIPfreeBufferArray(scip, &vals1);
+             SCIPfreeBufferArray(scip, &vals2);
             SCIPdebugMessage("--> vars differ for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
             return;
          }
