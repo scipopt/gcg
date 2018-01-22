@@ -95,9 +95,11 @@
 /** detector data */
 struct DEC_DetectorData
 {
-   SCIP_RESULT          result;             /**< result pointer to indicate success or failure */
-   int                  maxdecompsexact;   /**< maximum number of decompositions */
-   int                  maxdecompsextend;  /**< maximum number of decompositions */
+   SCIP_RESULT          result;            /**< result pointer to indicate success or failure */
+   int                  maxdecompsexact;   /**< maximum number of decompositions for exact emthod */
+   int                  maxdecompsextend;  /**< maximum number of decompositions for extend method*/
+   SCIP_Bool            legacyextend;      /**< legacy parameter if extend mode is activated when doing legacy mode*/
+   SCIP_Bool            legacyexact;       /**< legacy parameter if exact mode is activated when doing legacy mode*/
 };
 
 typedef struct struct_hook AUT_HOOK;
@@ -1701,10 +1703,12 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
    *ndecdecomps = 0;
    *decdecomps = NULL;
 
-   if( detectordata->maxdecompsextend > 0 )
+
+   if( detectordata->legacyextend)
       SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, TRUE, detectordata->maxdecompsextend) );
 
-   if( detectordata->maxdecompsexact > 0 )
+   /** do exact detection */
+   if( detectordata->legacyexact)
       SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, FALSE, detectordata->maxdecompsexact) );
 
    return SCIP_OKAY;
@@ -1879,6 +1883,15 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecompsextend",
       "Maximum number of solutions/decompositions with extended detection", &detectordata->maxdecompsextend, FALSE,
       DEFAULT_MAXDECOMPSEXTEND, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/legacyextend",
+      "is extended detection activated when doing legacy detection", &detectordata->legacyextend, FALSE,
+      DEFAULT_LEGACYEXTEND, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/legacyexact",
+         "is exact detection activated when doing legacy detection", &detectordata->legacyexact, FALSE,
+         DEFAULT_LEGACYEXACT, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }
