@@ -135,6 +135,7 @@ typedef gcg::Seeed* SeeedPtr;
 #define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000     /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
 
 #define DEFAULT_ONLYLEGACYMODE                        FALSE    /**< indicates whether detection should only consist of legacy mode detection */
+#define DEFAULT_LEGACYMODE                            FALSE    /**< indicates whether detection should consist of legacy mode detection */
 #define DEFAULT_STAIRLINKINGHEUR                      FALSE    /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
 
 /*
@@ -181,7 +182,8 @@ struct SCIP_ConshdlrData
    SCIP_Bool             varclassobjvalsenabledorig;        /**< indicates whether variable classifier for objective function values is enabled for the original problem */
    SCIP_Bool             varclassobjvalsignsenabled;        /**< indicates whether variable classifier for objective function value signs is enabled */
    SCIP_Bool             varclassobjvalsignsenabledorig;    /**< indicates whether variable classifier for objective function value signs is enabled for the original problem */
-   SCIP_Bool             onlylegacymode;                    /**< indicates whether detection should only consist of legacy mode detection */
+   SCIP_Bool             onlylegacymode;                    /**< indicates whether detection should only consist of legacy mode detection, this is sufficient to enable it */
+   SCIP_Bool             legacymodeenabled;                 /**< indicates whether detection consist of legacy mode detection */
    SCIP_Bool             stairlinkingheur;                  /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
 
    int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
@@ -1002,6 +1004,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/enabled", "indicates whether variable classifier for objective function value signs is enabled", &conshdlrdata->varclassobjvalsignsenabled, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", "indicates whether variable classifier for objective function value signs is enabled for the original problem", &conshdlrdata->varclassobjvalsignsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/onlylegacymode", "indicates whether detection should only consist of legacy mode detection", &conshdlrdata->onlylegacymode, FALSE, DEFAULT_ONLYLEGACYMODE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/enabled", "indicates whether detection consist of legacy mode detection", &conshdlrdata->legacymodeenabled, FALSE, DEFAULT_LEGACYMODE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/stairlinkingheur", "indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated", &conshdlrdata->stairlinkingheur, FALSE, DEFAULT_STAIRLINKINGHEUR, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
@@ -4176,6 +4179,9 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    int dec;
    gcg::SeeedPtr seeed;
    int dupcount;
+   SCIP_Bool legacyenabled;
+   SCIP_Bool onlylegacy;
+
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -4189,16 +4195,10 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    assert(conshdlrdata != NULL);
 
    /* check whether legacymode of at least one detector is enabled */
-   bool legacyenabled = false;
-   for( d = 0; d < conshdlrdata->ndetectors; ++d )
-   {
-      if( conshdlrdata->detectors[d]->legacymode )
-      {
-         legacyenabled = true;
-         break;
-      }
-   }
-   if( !legacyenabled )
+   SCIPgetBoolParam(scip, "detection/legacymode/enabled", &legacyenabled);
+   SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacy);
+
+   if( !legacyenabled && !onlylegacy )
       return SCIP_OKAY;
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Start legacy mode detection.\n");
@@ -4547,7 +4547,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_Bool onlylegacymode;
    SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacymode);
 
-   SCIPdebugMessage("start only legay mode? %s \n", (onlylegacymode ? "yes": "no") );
+   SCIPdebugMessage("start only legacy mode? %s \n", (onlylegacymode ? "yes": "no") );
    if( !onlylegacymode )
    {
       std::vector<int> candidatesNBlocks(0); /**< candidates for number of blocks */

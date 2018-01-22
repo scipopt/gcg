@@ -76,11 +76,15 @@
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  TRUE        /**< should the detector be skipped if others found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_LEGACYMODE            TRUE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 
 #define DEFAULT_MAXDECOMPSEXACT  6           /**< default maximum number of decompositions */
 #define DEFAULT_MAXDECOMPSEXTEND 4           /**< default maximum number of decompositions */
+
+#define DEFAULT_LEGACYEXACT       TRUE       /**< is exact version activated when doing legacy mode  */
+#define DEFAULT_LEGACYEXTEND      FALSE      /**< is extended version activated when doing legacy mode */
+
 
 #define SET_MULTIPLEFORSIZETRANSF 12500
 
