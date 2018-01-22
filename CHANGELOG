@@ -70,6 +70,7 @@ new parameters:
 - new parameter "detection/consclassifier/*/enabled" indicates whether corresponding constraint classifier is enabled
 - new parameter "detection/consclassifier/*/origenabled" indicates whether corresponding constraint classifier is enabled for original problem (no effect if "detection/origprob/classificationenabled" is FALSE )
 - new parameter "detection/emphfast/enabled" indicates whether emphasis settings are set to fast, needed for make test"
+- new parameter "detection/legacymode/enabled" indicates whether detection should additionally do legacy mode detection
 - new parameter "detection/legacymode/onlylegacymode" indicates whether detection should only consist of legacy mode detection
 - new parameter "detection/maxnclassesperclassifier" to specify the maximum number of classes per classifier (if this number is exceeed two smallest classes are merged until it is reached, both classifier are kept) 
 - new parameter "detection/maxnclassesperclassifierforlargeprobs" same as "detection/maxnclassesperclassifier" but for problems with nvars + nconss >= 50000  
