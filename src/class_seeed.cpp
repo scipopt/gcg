@@ -6599,6 +6599,13 @@ SCIP_RETCODE Seeed::calcclassicscore()
 
    score = totalscore;
 
+   SCIPfreeBufferArray( scip, & nzblocks );
+   SCIPfreeBufferArray(  scip, & nlinkvarsblocks) ;
+   SCIPfreeBufferArray(  scip, & blockdensities);
+   SCIPfreeBufferArray(  scip, & blocksizes);
+   SCIPfreeBufferArray(  scip, & nvarsblocks);
+
+
    return SCIP_OKAY;
 }
 
