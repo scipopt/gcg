@@ -61,43 +61,37 @@ interfaces to external software:
 deleted and modified parameters:
 [] - complete list
 - modified parameter "detectors/*/priority"
+
+
 new parameters:
 [] rearrange
-- new parameter "detection/maxrounds" to specifiy the number of refinement rounds during detection
+- new parameter "constraints/decomp/createbasicdecomp" indicates whether to create a decomposition with all constraints in the master if no other specified (useful to have included comparison)
+- new parameter "detection/allowclassifierduplicates/enabled" indicates whether classifier duplicates are allowed (for statistical reasons)
+- new parameter "detection/consclassifier/*/enabled" indicates whether corresponding constraint classifier is enabled
+- new parameter "detection/consclassifier/*/origenabled" indicates whether corresponding constraint classifier is enabled for original problem (no effect if "detection/origprob/classificationenabled" is FALSE )
+- new parameter "detection/emphfast/enabled" indicates whether emphasis settings are set to fast, needed for make test"
+- new parameter "detection/legacymode/onlylegacymode" indicates whether detection should only consist of legacy mode detection
 - new parameter "detection/maxnclassesperclassifier" to specify the maximum number of classes per classifier (if this number is exceeed two smallest classes are merged until it is reached, both classifier are kept) 
 - new parameter "detection/maxnclassesperclassifierforlargeprobs" same as "detection/maxnclassesperclassifier" but for problems with nvars + nconss >= 50000  
-[] - new parameter "detection/origprob/weightinggpresolvedoriginaldecomps"
-[] - new parameter "detection/scoretype"
+- new parameter "detection/maxrounds" to specifiy the number of refinement rounds during detection
+- new parameter "detection/origprob/classificationenabled" indicates whether constraint and variable classification is also enabeled for opriginal problem
+- new parameter "detection/origprob/enabled" indicates whether to detect structures in original problem found decomps are tried to translate to transformed problem; only useful if presolving is enabled
+- new parameter "detection/origprob/weightinggpresolvedoriginaldecomps" weighting method when comparing decompositions for presolved and unpresolved problem: 0: NO_MODIF, 1: FRACTION_OF_NNONZEROS, 2: FRACTION_OF_NROWS, 3: FAVOUR_PRESOLVED
+- new parameter "detection/scoretype" indicates which score should be used for comparing (partial) decompositions (0: max white, 1: border area, 2: classic, 3: max foreseeing white, 4: ppc-max-white, 5: max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info)
+- new parameter "detectors/*/enabled" is this detector enabled when detecting in the transformed problem
+- new parameter "detectors/*/finishingenabled" is this detector enabled when finishing partial decompsositions in the original and transformed problem
 - new parameter "detectors/*/freqcallround" frequency the detector gets called in detection loop ,ie it is called in round r if and only if mincallround <= r <= maxcallround AND  (r - mincallround) mod freqCallRound == 0 
+- new paramater "detectors/*/legacymode" flag to indicate whether (old) DETECTSTRUCTURE method of detector should be used
 - new parameter "detectors/*/maxcallround" maximum round the detector gets called in detection loop
 - new parameter "detectors/*/mincallround" minimum  round the detector gets called in detection loop
+- new parameter "detectors/*/origenabled" is this detector enabled when detecting in the original problem (overruled by "detection/origprob/enabled" )
 - new parameter "detectors/*/origfreqcallround" same as "detectors/*/freqcallround" for original problem
 - new parameter "detectors/*/origmaxcallround" same as "detectors/*/maxcallround" for original problem
 - new parameter "detectors/*/origmincallround" same as "detectors/*/mincallround" for original problem 
-- new parameter "detectors/*/enabled" is this detector enabled when detecting in the transformed problem
-- new parameter "detectors/*/origenabled" is this detector enabled when detecting in the original problem (overruled by "detection/origprob/enabled" )
-- new paramater "detectors/*/usefulrecall" indicates whether this detector is called on descendants of a partial decomposition
-- new paramater "detectors/*/legacymode" flag to indicate whether (old) DETECTSTRUCTURE method of detector should be used 
 - new parameter "detectors/*/overruleemphasis" flag to indicate whether emphasis settings for detector <%s> should be overruled by normal settings
-- new parameter "detectors/*/finishingenabled" is this detector enabled when finishing partial decompsositions in the original and transformed problem
 - new parameter "detectors/*/postprocessingenabled" is this detector enabled when postprocessing in the original and the transformed problem
-- new parameter "constraints/decomp/createbasicdecomp" indicates whether to create a decomposition with all constraints in the master if no other specified (useful to have included comparison)
-- new parameter "detection/allowclassifierduplicates/enabled" indicates whether classifier duplicates are allowed (for statistical reasons)
-- new parameter "detection/emphfast/enabled" indicates whether emphasis settings are set to fast, needed for make test"
-- new parameter "detection/origprob/enabled" indicates whether to detect structures in original problem found decomps are tried to translate to transformed problem; only useful if presolving is enabled
-- new parameter "detection/origprob/classificationenabled" indicates whether constraint and variable classification is also enabeled for opriginal problem
-- new parameter "detection/consclassifier/*/enabled" indicates whether corresponding constraint classifier is enabled
-- new parameter "detection/consclassifier/*/origenabled" indicates whether corresponding constraint classifier is enabled for original problem (no effect if "detection/origprob/classificationenabled" is FALSE )
-- new parameter "detection/legacymode/onlylegacymode" indicates whether detection should only consist of legacy mode detection
-- 
-
-
-
-
-
-
-
-
+- new parameter "detectors/*/usefulrecall" indicates whether this detector is called on descendants of a partial decomposition
+-new parameter "detectors/connectedbase/useconssadj" should the constraint adjacency datastructure  be used (and not the constraint-variable-incidency)
 
 code cleanup
 - use SCIP_STATISTIC for pricing statistics and add compiler flag STATISTICS; if STATISTICS is set to true,
