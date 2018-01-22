@@ -426,6 +426,14 @@ public:
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
 
+   /** assigns all open constraints and open variables
+     *  strategy: assigns all conss and vars to the same block if they are connected
+     *  a cons and a var are adjacent if the var appears in the cons */
+   SCIP_RETCODE assignSmallestComponentsButOneConssAdjacency(
+      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
+      );
+
+
    /** try to reassign each  mastercons to one block without inducing conflicts  */
    SCIP_RETCODE postprocessMasterToBlocks(
       Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */

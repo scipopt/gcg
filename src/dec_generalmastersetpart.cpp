@@ -293,7 +293,6 @@ DEC_DECL_SETPARAMFAST(setParamFastGeneralmastersetpart)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
-
    return SCIP_OKAY;
 
 }

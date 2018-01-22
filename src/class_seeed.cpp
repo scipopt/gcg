@@ -2018,6 +2018,8 @@ void Seeed::checkIdenticalBlocksBrute(
       if( !realArraysAreEqual(scip, vals1, nvals1, vals2, nvals2) )
        {
           SCIPdebugMessage("--> coefs differ for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
+          SCIPfreeBufferArray(scip, &vals1);
+           SCIPfreeBufferArray(scip, &vals2);
           return;
        }
 
@@ -2025,6 +2027,8 @@ void Seeed::checkIdenticalBlocksBrute(
       {
          if( varmap[givenseeedpool->getVarsForCons(cons2id)[v]] != givenseeedpool->getVarsForCons(cons1id)[v])
          {
+            SCIPfreeBufferArray(scip, &vals1);
+             SCIPfreeBufferArray(scip, &vals2);
             SCIPdebugMessage("--> vars differ for cons %s and cons %s!\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
             return;
          }
@@ -2499,6 +2503,174 @@ SCIP_RETCODE Seeed::completeByConnected(
 
     return SCIP_OKAY;
  }
+
+
+ /** assigns all open constraints and open variables
+   *  strategy: assigns all conss same block if they are connected
+   *  two constraints are adjacent if there is a common variable
+   *  this relies on the consadjacency structure of the seeedpool
+   *  hence it cannot be applied in presence of linking variables */
+  SCIP_RETCODE Seeed::assignSmallestComponentsButOneConssAdjacency(
+     Seeedpool* givenseeedpool /**< a seeedpool that uses this seeed */
+     ){
+
+     int cons;
+     int var;
+
+     changedHashvalue = true;
+
+
+     /** tools to check if the openVars can still be found in a constraint yet */
+     std::vector<int> varInBlocks; /** stores, in which block the variable can be found */
+
+     /** tools to update openVars */
+     std::vector<int> oldOpenconss;
+     std::vector<int> openvarsToDelete;
+
+     if( getNLinkingvars() != 0 )
+        return completeByConnected(givenseeedpool);
+
+
+     std::vector<bool> isConsOpen( nConss, false );
+     std::vector<bool> isConsVisited( nConss, false );
+
+     std::vector<std::vector<int>> conssfornewblocks(0);
+     std::vector<std::vector<int>> varsfornewblocks(0);
+
+     std::vector<int> constoconsider;
+     int nnewblocks;
+     int largestcomponent;
+     int sizelargestcomponent;
+
+     constoconsider = openConss;
+
+     varInBlocks = std::vector<int>(nVars, -1);
+     nnewblocks = 0;
+     largestcomponent = -1;
+     sizelargestcomponent = 0;
+
+     std::queue<int> helpqueue = std::queue<int>();
+     std::vector<int> neighborConss( 0 );
+
+     assert( (int) conssForBlocks.size() == nBlocks );
+     assert( (int) varsForBlocks.size() == nBlocks );
+     assert( (int) stairlinkingVars.size() == nBlocks );
+
+     assert(checkConsistency(givenseeedpool) );
+
+     if( nBlocks < 0 )
+        nBlocks = 0;
+
+     /** initialize data structures */
+     for( size_t c = 0; c < openConss.size(); ++ c )
+     {
+        cons = openConss[c];
+        isConsOpen[cons] = true;
+     }
+
+     /** do breadth first search to find connected conss */
+     while( ! constoconsider.empty() )
+     {
+        std::vector<int> newconss(0);
+        std::vector<int> newvars(0);
+
+        assert( helpqueue.empty() );
+        helpqueue.push( constoconsider[0] );
+        neighborConss.clear();
+        neighborConss.push_back( constoconsider[0] );
+        isConsVisited[constoconsider[0]] = true;
+
+        while( ! helpqueue.empty() )
+        {
+           int nodeCons = helpqueue.front();
+           assert( isConsOpencons( nodeCons ) );
+           helpqueue.pop();
+           for( int c = 0; c < givenseeedpool->getNConssForCons( nodeCons ); ++ c )
+           {
+              int othercons;
+              othercons = givenseeedpool->getConssForCons( nodeCons )[c];
+
+              if( isConsVisited[othercons] || isConsMastercons( othercons ) || ! isConsOpen[othercons] )
+                 continue;
+
+              assert( isConsOpencons( othercons ) );
+              isConsVisited[othercons] = true;
+              neighborConss.push_back( othercons );
+              helpqueue.push( othercons );
+           }
+        }
+
+        /** assign found conss and vars to a new block */
+        ++nnewblocks;
+        for( size_t i = 0; i < neighborConss.size(); ++ i )
+        {
+           std::vector<int>::iterator consiter;
+           cons = neighborConss[i];
+           consiter = std::lower_bound(constoconsider.begin(), constoconsider.end(), cons);
+           assert(consiter != constoconsider.end() );
+           constoconsider.erase(consiter);
+           assert( isConsOpencons( cons ) );
+           newconss.push_back(cons);
+
+           for( int j = 0; j < givenseeedpool->getNVarsForCons(cons); ++ j )
+           {
+              int newvar = givenseeedpool->getVarsForCons(cons)[j];
+
+              if( isVarLinkingvar(newvar) || varInBlocks[newvar] != -1 )
+                 continue;
+
+              assert(! isVarMastervar( newvar) );
+              newvars.push_back(newvar);
+              varInBlocks[newvar] = nnewblocks;
+           }
+        }
+        conssfornewblocks.push_back(newconss);
+        varsfornewblocks.push_back(newvars);
+     }
+
+     for( int i = 0; i < nnewblocks; ++i )
+     {
+        if( (int)conssfornewblocks[i].size() > sizelargestcomponent )
+        {
+           sizelargestcomponent = (int)conssfornewblocks[i].size();
+           largestcomponent = i;
+        }
+     }
+
+     if( nnewblocks > 1 )
+     {
+        int oldnblocks;
+        bool largestdone = false;
+        oldnblocks = getNBlocks();
+        setNBlocks(nnewblocks - 1 + getNBlocks());
+
+        for( int i = 0; i < nnewblocks; ++i)
+        {
+           if( i == largestcomponent )
+           {
+              largestdone = true;
+              continue;
+           }
+           for( int c = 0; c < (int) conssfornewblocks[i].size() ; ++c)
+           {
+              bookAsBlockCons(conssfornewblocks[i][c], oldnblocks + i - (largestdone ? 1 : 0) );
+           }
+
+           for( int v = 0; v < (int) varsfornewblocks[i].size() ; ++v )
+           {
+              bookAsBlockVar(varsfornewblocks[i][v], oldnblocks + i - (largestdone ? 1 : 0) );
+           }
+        }
+
+        flushBooked();
+
+        sort();
+     }
+
+     assert( checkConsistency( givenseeedpool ) );
+
+     return SCIP_OKAY;
+  }
 
 
 

@@ -774,7 +774,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_PRESOLVED:
 
       assert(SCIPconshdlrDecompCheckConsistency(scip) );
-
      // SCIPdialogMessage(scip, NULL, "In presolved \n");
 
       if( !SCIPconshdlrDecompExistsSelected(scip) )
@@ -818,9 +817,11 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          //assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
          SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
       }
+
       /*lint -fallthrough*/
    case SCIP_STAGE_SOLVING:
       assert( SCIPconshdlrDecompCheckConsistency(scip) );
+      assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip) );
       if( SCIPconshdlrDecompExistsSelected(scip) )
          SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
       else

@@ -39,6 +39,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
+
 #include "dec_hrgpartition.h"
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -451,6 +452,8 @@ SCIP_RETCODE detection(
    if( numberOfBlocks.empty() )
       numberOfBlocks.push_back(DEFAULT_FALLBACK_NBLOCKS);
 
+
+
    int nconss = seeedPropagationData->seeedpool->getNConss();
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
@@ -458,6 +461,8 @@ SCIP_RETCODE detection(
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
 
    maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
+
+   SCIPdebugMessage("number of block numbers to test: %d , from these candidates (nvotes): %d \n", maxnblockcandidates, (seeedPropagationData->seeedpool->printBlockcandidateInformation(scip, NULL) == SCIP_OKAY) );
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -469,8 +474,7 @@ SCIP_RETCODE detection(
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(newSeeeds), 2 * nMaxSeeeds) );
 
-
-   /* build the hypergraph structure from the original problem */
+    /* build the hypergraph structure from the original problem */
 
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
    graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
@@ -671,14 +675,21 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHrgpartition)
    gcg::Seeed* seeed;
    seeed = seeedPropagationData->seeedToPropagate;
 
+   SCIPdebugMessage("Started propagate seeed of detector %s and partial decomp %d \n", DEC_DETECTORNAME, seeed->getID() );
+
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
-   if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
+   if( seeed->alreadyAssignedConssToBlocks() )
    {
       seeedPropagationData->nNewSeeeds = 0;
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
+   }
+
+   if( !connected(seeedPropagationData->seeedpool, seeed) )
+   {
+      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
@@ -700,9 +711,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHrgpartition)
 
    if(!connected(seeedPropagationData->seeedpool, seeed))
    {
-      seeedPropagationData->nNewSeeeds = 0;
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
+      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, result);
@@ -825,7 +834,7 @@ DEC_DECL_SETPARAMFAST(setParamFastHrgpartition)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
    if ( SCIPgetNConss(scip) + SCIPgetNVars(scip) > 6000 )
       SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
-   else SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   else SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
