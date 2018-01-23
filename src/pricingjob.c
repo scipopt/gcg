@@ -97,13 +97,16 @@ SCIP_RETCODE GCGpricingjobSetup(
    /* set the solution limit on the pricing problem */
    SCIP_CALL( SCIPsetIntParam(pricingjob->pricingscip, "limits/solutions", SCIPgetNLimSolsFound(pricingjob->pricingscip) + maxcolsprob) );
 
-   /* set the score */
+   /* set the score; the smaller, the better */
    switch( scoring )
    {
-   case 1:
+   case 'i':
+      pricingjob->score = - (SCIP_Real) pricingjob->probnr;
+      break;
+   case 'd':
       pricingjob->score = dualsolconv;
       break;
-   case 2:
+   case 'r':
       pricingjob->score = -(0.2 * npointsprob + nraysprob);
       break;
    default:

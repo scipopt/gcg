@@ -47,10 +47,10 @@
 #include <exception>
 
 #define DEFAULT_USEHEURPRICING           FALSE      /**< should heuristic pricing be used */
-#define DEFAULT_SORTING                  2          /**< default sorting method for pricing mips
-                                                     *    0 :   order of pricing problems
-                                                     *    1 :   according to dual solution of convexity constraint
-                                                     *    2 :   according to reliability from previous round
+#define DEFAULT_SORTING                  'r'          /**< order by which the pricing problems should be sorted:
+                                                     *    'i'ndices
+                                                     *    'd'ual solutions of convexity constraints
+                                                     *    'r'eliability from previous rounds
                                                      */
 #define DEFAULT_RELMAXSUCCESSFULPROBS    1.0        /**< maximal percentage of pricing problems that need to be solved successfully */
 #define DEFAULT_CHUNKSIZE                INT_MAX    /**< maximal number of pricing problems to be solved during one pricing loop */
@@ -105,9 +105,9 @@ SCIP_RETCODE Pricingcontroller::addParameters()
          "should pricing be performed heuristically before solving the MIPs to optimality?",
          &useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/sorting",
-         "which sorting method should be used to sort the pricing problems (0 = order of pricing problems, 1 = according to dual solution of convexity constraint, 2 = according to reliability from previous round)",
-         &sorting, FALSE, DEFAULT_SORTING, 0, 5, NULL, NULL) );
+   SCIP_CALL( SCIPaddCharParam(origprob, "pricing/masterpricer/sorting",
+         "order by which the pricing problems should be sorted ('i'ndices, 'd'ual solutions of convexity constraints, 'r'eliability from previous rounds)",
+         &sorting, FALSE, DEFAULT_SORTING, "dir", NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/relmaxsuccessfulprobs",
          "maximal percentage of pricing problems that need to be solved successfully",
