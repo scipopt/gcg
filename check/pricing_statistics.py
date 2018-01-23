@@ -10,6 +10,7 @@ from collections import OrderedDict
 import pandas as pd
 
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from matplotlib import lines
 from matplotlib import transforms
 from matplotlib import ticker
@@ -567,9 +568,12 @@ def make_bubble_plot(data, name):
     colors_stab = []
     cmapping = get_colmap(data[data.pricing_prob <> -1].pricing_prob.unique())[1]
     cmapping[-1] = 'green'
-    bubbleDF = data[(data.nVars >= 1) & (data.stab_round <= 0)][['round','pricing_prob']].reset_index()
-    bubbleDF_stab = data[(data.nVars >= 1) & (data.stab_round > 0)][['round','pricing_prob']].reset_index()
-    for p in data.pricing_prob.unique():
+    bubbleDF = data[(data.nVars >= 1) & (data.stab_round <= 0)][['round','pricing_prob','nVars']].reset_index()
+    bubbleDF_stab = data[(data.nVars >= 1) & (data.stab_round > 0)][['round','pricing_prob','nVars']].reset_index()
+    nVars = {}
+    nVars_total = 0
+    pricers = data.pricing_prob.unique()
+    for p in pricers:
         tmp = bubbleDF[bubbleDF.pricing_prob == p]['round'].tolist()
         x = x + tmp
         y = y + [p for i in tmp]
@@ -578,13 +582,20 @@ def make_bubble_plot(data, name):
         x_stab = x_stab + tmp
         y_stab = y_stab + [p for i in tmp]
         colors_stab = colors_stab + [cmapping[p] for i in tmp]
+        nVars[p] = bubbleDF[bubbleDF.pricing_prob == p].nVars.sum()
+        nVars[p] += bubbleDF_stab[bubbleDF_stab.pricing_prob == p].nVars.sum()
+        nVars_total += nVars[p]
+    y_bar = sorted(pricers.tolist())
+    x_bar = [100*float(nVars[p])/nVars_total for p in y_bar]
     del bubbleDF, bubbleDF_stab
 
     print '    extracted bubble data:', time.time() - start_time
     start_time = time.time()
 
     fig = plt.gcf()
-    ax = plt.gca()
+    gs = gridspec.GridSpec(1,2,width_ratios=[7,1], wspace = 0.05)
+    ax = plt.subplot(gs[0])
+    ax_bar = plt.subplot(gs[1], sharey = ax)
 
     # format the plot
     ax.set_xlabel('Pricing Round', size='large')
@@ -596,6 +607,9 @@ def make_bubble_plot(data, name):
     ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True))
     trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
     ax.tick_params(axis='both', labelsize='large')
+    ax_bar.set_xlabel('\% of found variables', size='large')
+    ax_bar.tick_params(axis='x', labelsize='large')
+    ax_bar.get_yaxis().set_visible(False)
 
     # make the xticks
     roundsDF = data.drop_duplicates('pricing_round').reset_index()[['pricing_round','round']]
@@ -619,9 +633,6 @@ def make_bubble_plot(data, name):
     # plot the data
     ax.scatter(x,y, color = colors, s=perimeter**2)
     ax.scatter(x_stab,y_stab, color = colors_stab, s=perimeter**2, marker = 'x', alpha = .5)
-
-    print '    plotted bubble data:', time.time() - start_time
-    start_time = time.time()
 
     # add a line after the root-node
     if data.node.max() > 1:
@@ -660,20 +671,25 @@ def make_bubble_plot(data, name):
             align = 'center'
         ax.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = align, color = 'blue', zorder = 11, transform = trans)
 
+    # draw the bar plot
+    ax_bar.barh(y_bar, x_bar, align = 'center', height = .95, color = [cmapping[p] for p in y_bar])
+
+    print '    plotted bubble data:', time.time() - start_time
+    start_time = time.time()
+
     # draw a legend
     handles = []
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markersize = 5, label = 'Pricer has found at least one variable'))
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'none', markeredgecolor = 'green', markersize = 5, label = 'Variables were taken from column pool'))
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, alpha = .5, label = 'Pricer has found at least one variable in stab. round'))
-    plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1., 1.04), ncol = 3, mode = 'expand')
+    ax.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1., 1.04), ncol = 3, mode = 'expand')
 
     # add other information
     ax.text(.5, 1.11, '\\textbf{\\underline{' + name.replace('_','\_') + '}}', ha = 'center', size = 'large', transform = ax.transAxes)
 
     # save the plot
     fig.set_size_inches(11.7,8.3)
-    plt.tight_layout()
-    fig.subplots_adjust(top = 0.87)
+    gs.tight_layout(fig,rect = (0,0,1,.9))
     if params['details']:
         plt.savefig(params['outdir'] + '/' + name + '_bubble.pdf')
     else:
@@ -940,7 +956,6 @@ def parse_files(files):
                         done = True
                         continue
 
-                # assumption: if one or more improving columns have been found in the column pool, no pricing problems were solved. todo: check that
                 elif message.startswith("cp: ") or message.startswith("found "):
                     try:
                         if int(message.split()[1]) > 0:
