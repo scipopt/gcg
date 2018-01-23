@@ -55,6 +55,7 @@ private:
    /* parameters */
    SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
    char                  sorting;            /**< order by which the pricing problems should be sorted */
+   int                   nroundscol;         /**< number of previous pricing rounds for which the number of improving columns should be counted */
    SCIP_Real             relmaxsuccessfulprobs; /**< maximal percentage of pricing problems that need to be solved successfully */
    int                   chunksize;          /**< maximal number of pricing problems to be solved during one pricing loop */
    int                   eagerfreq;          /**< frequency at which all pricing problems should be solved */
