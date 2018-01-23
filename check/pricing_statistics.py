@@ -231,7 +231,7 @@ def make_plot(data, name):
         lw = 0.01
     else:
         lw = 1.0
-    plt.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = lw, edgecolor = 'k', color = colors, label='pricing problems')
+    plt.bar(x, y, widths, bottom = ymin, align = 'edge', linewidth = lw, edgecolor = 'white', color = colors, label='pricing problems')
     fig = plt.gcf()
     ax = plt.gca()
 
@@ -256,10 +256,12 @@ def make_plot(data, name):
         ymax = max(y) * 1.5
     else:
         ymax = 1.01 * max(y.tolist() + y_colpool.tolist())
+    xmin = 0
+    xmax = x[-1]+widths[-1]
 
     # formatting
     ax.set_ylim([ymin,ymax])
-    ax.set_xlim([0,x[-1]+widths[-1]])
+    ax.set_xlim([xmin,xmax])
     ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True, nbins = 15))
     ax.tick_params(axis = 'both', length = textsize/2, width = textsize/40, labelsize = textsize*0.9, pad = 15)
     ax.set_xlabel('Time / s', size = 1.15*textsize)
@@ -282,10 +284,10 @@ def make_plot(data, name):
     else:
         # special cases: no or only (initial) farkas pricing in the plot
         if data.farkas.all():
-            ax.text(1.003, .8, "\it{Initial Farkas Pricing did not end}", va = 'center', ha = 'left', rotation = 90, color = 'blue', zorder = 11, size = textsize, transform = ax.transAxes)
+            ax.text(.991, .99, "\it{Initial Farkas Pricing did not end}", va = 'top', ha = 'right', rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = ax.transAxes, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
             farkasLine = True
         elif not data.farkas.any():
-            ax.text(-0.003, .8, "\it{No initial Farkas Pricing}", va = 'center', ha = 'right', rotation = 90, color = 'blue', zorder = 11, size = textsize, transform = ax.transAxes)
+            ax.text(.009, .99, "\it{No initial Farkas Pricing}", va = 'top', ha = 'left', rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = ax.transAxes, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
             farkasLine = True
         else:
             # add a line at the end of farkas pricing in the loop below
@@ -310,7 +312,11 @@ def make_plot(data, name):
                         # blue line at the end of farkas pricing
                         if not farkasLine and not data['farkas'][i]:
                             line.set_color('blue')
-                            ax.text(x[i], .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = 'center', rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
+                            if x[i] <= (xmax + xmin) / 2:
+                                align = 'left'
+                            else:
+                                align = 'right'
+                            ax.text(x[i], .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
                             farkasLine = True
                         ax.add_line(line)
                         prev_x_drawn = x[i]
@@ -419,6 +425,9 @@ def make_summary_plot(data, name):
     x_stab = summary[summary.stab_round > 0]['round'].values
     y_stab_time = summary[summary.stab_round > 0].time.values
     y_stab_found_frac = summary[summary.stab_round > 0].found_frac.values
+    x_mean = summary['round'].values
+    y_mean_time = summary.time.rolling(int(.05*(max(x_mean) - min(x_mean))), center = True).mean()
+    y_mean_found_frac = summary.found_frac.rolling(int(.05*(max(x_mean) - min(x_mean))), center = True).mean()
 
     # format the plot
     ax1.set_xlabel('Pricing Round', size='large')
@@ -429,7 +438,9 @@ def make_summary_plot(data, name):
     ax2.tick_params(axis='both', labelsize='large')
 
     # set the axes limits
-    ax1.set_xlim([0, max(x.tolist() + x_stab.tolist()) + 0.9])
+    xmin = 0
+    xmax = max(x.tolist() + x_stab.tolist()) + 0.9
+    ax1.set_xlim([xmin, xmax])
     if max(y_time) > 0:
         ax1.set_ylim([-max(y_time)*0.1,max(y_time)*1.1])
     else:
@@ -437,20 +448,21 @@ def make_summary_plot(data, name):
     ax2.set_ylim([-max(y_found_frac)*0.15,max(y_found_frac)*1.15])
 
     # make the xticks
+    roundsDF = summary.drop_duplicates('pricing_round').reset_index()[['pricing_round','round']]
     xtickpositions = []
     xticklabels = []
     deltaPosMin = int(summary['round'].max() / 20.00001)
     prev_pos = - deltaPosMin
-    for pos in summary[summary.stab_round == 0]['round']:
-        prnd = summary[summary['round'] == pos].pricing_round.iloc[0]
-        if (pos - prev_pos) > deltaPosMin:
+    for label, pos in zip(roundsDF['pricing_round'].tolist(),roundsDF['round'].tolist()):
+        if pos - prev_pos > deltaPosMin:
             xtickpositions.append(pos)
-            xticklabels.append(str(prnd))
+            xticklabels.append(str(label))
             prev_pos = pos
     ax1.set_xticks(xtickpositions)
     ax2.set_xticks(xtickpositions)
     ax1.set_xticklabels(xticklabels)
     ax2.set_xticklabels(xticklabels)
+    del roundsDF
 
     trans = transforms.blended_transform_factory(ax1.transData, ax1.transAxes)
 
@@ -462,6 +474,8 @@ def make_summary_plot(data, name):
     ax2.scatter(x,y_found_frac, color='r', s=perimeter**2)
     ax1.scatter(x_stab,y_stab_time, color='k', s=perimeter**2, marker='x', alpha=.5)
     ax2.scatter(x_stab,y_stab_found_frac, color='r', s=perimeter**2, marker='x', alpha=.5)
+    ax1.plot(x_mean,y_mean_time, 'k--')
+    ax2.plot(x_mean,y_mean_found_frac, 'r--')
 
     # add a line after the root-node
     if summary.node.max() > 1:
@@ -469,7 +483,15 @@ def make_summary_plot(data, name):
         line = lines.Line2D([x_line,x_line],[0,1.02],color='red',linewidth=.5,linestyle='--', transform = trans)
         line.set_clip_on(False)
         ax1.add_line(line)
-        ax1.text(x_line, 1.025, "\it{End of Root}", ha = 'center', size = 'smaller', color = 'red', zorder = 1, transform = trans)
+        if (x_line - xmin) < 0.1*(xmax - xmin):
+            align = 'left'
+            x_line = xmin
+        elif (xmax - x_line) < 0.1*(xmax - xmin):
+            align = 'right'
+            x_line = xmax
+        else:
+            align = 'center'
+        ax1.text(x_line, 1.025, "\it{End of Root}", ha = align, size = 'smaller', color = 'red', zorder = 1, transform = trans)
     elif summary.node.max() == 1:
         ax1.text(1., 1.025, "\it{Root did not end}", ha = 'right', size = 'smaller', color = 'red', zorder = 1, transform = ax1.transAxes)
 
@@ -482,15 +504,23 @@ def make_summary_plot(data, name):
         x_line = farkas_end
         line = lines.Line2D([x_line,x_line],[0,1],color='blue',linewidth=.5,linestyle='--', transform = trans)
         ax1.add_line(line)
-        ax1.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = 'center', color = 'blue', zorder = 1, transform = trans)
+        if (x_line - xmin) < 0.1*(xmax - xmin):
+            align = 'left'
+            x_line = xmin
+        elif (xmax - x_line) < 0.1*(xmax - xmin):
+            align = 'right'
+            x_line = xmax
+        else:
+            align = 'center'
+        ax1.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = align, color = 'blue', zorder = 1, transform = trans)
 
     print '    plotted summary:', time.time() - start_time
     start_time = time.time()
 
     # draw a legend
     handles = []
-    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markeredgecolor = 'k', markersize = perimeter*1.5, label = 'Pricing Round'))
-    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = perimeter*1.5, alpha = .7, label = 'Stabilization Round'))
+    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, label = 'Pricing Round'))
+    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, alpha = .7, label = 'Stabilization Round'))
     plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1., 1.04), ncol = 2, mode = 'expand')
 
     # add other information
@@ -522,26 +552,36 @@ def make_bubble_plot(data, name):
     # flat out the data again
     data = data.reset_index()
 
-    pricers = data[data.pricing_prob <> -1].pricing_prob.unique().tolist()
+    pricer_min = data.pricing_prob.min()
+    pricer_max = data.pricing_prob.max()
     if not data.farkas.all() and data.farkas.any():
         # get the last round of initial farkas pricing
         farkas_end = (data[data.farkas == False]['round'].values[0] + data[data.farkas == True]['round'].values[-1])/2.
 
     # add x and y data to plot for every pricer and the column pool
-    x = {}
-    y = {}
-    x_stab = {}
-    y_stab = {}
-    for p in (pricers + [-1]):
-        x[p] = data[(data.pricing_prob == p) & (data.nVars >= 1) & (data.stab_round <= 0)]['round'].values
-        y[p] = [p for i in x[p]]
-        x_stab[p] = data[(data.pricing_prob == p) & (data.nVars >= 1) & (data.stab_round > 0)]['round'].values
-        y_stab[p] = [p for i in x_stab[p]]
+    x = []
+    y = []
+    colors = []
+    x_stab = []
+    y_stab = []
+    colors_stab = []
+    cmapping = get_colmap(data[data.pricing_prob <> -1].pricing_prob.unique())[1]
+    cmapping[-1] = 'green'
+    bubbleDF = data[(data.nVars >= 1) & (data.stab_round <= 0)][['round','pricing_prob']].reset_index()
+    bubbleDF_stab = data[(data.nVars >= 1) & (data.stab_round > 0)][['round','pricing_prob']].reset_index()
+    for p in data.pricing_prob.unique():
+        tmp = bubbleDF[bubbleDF.pricing_prob == p]['round'].tolist()
+        x = x + tmp
+        y = y + [p for i in tmp]
+        colors = colors + [cmapping[p] for i in tmp]
+        tmp = bubbleDF_stab[bubbleDF_stab.pricing_prob == p]['round'].tolist()
+        x_stab = x_stab + tmp
+        y_stab = y_stab + [p for i in tmp]
+        colors_stab = colors_stab + [cmapping[p] for i in tmp]
+    del bubbleDF, bubbleDF_stab
 
     print '    extracted bubble data:', time.time() - start_time
     start_time = time.time()
-
-    colors = get_colmap(pricers)[0]
 
     fig = plt.gcf()
     ax = plt.gca()
@@ -549,37 +589,39 @@ def make_bubble_plot(data, name):
     # format the plot
     ax.set_xlabel('Pricing Round', size='large')
     ax.set_ylabel('Pricer ID', size='large')
-    ax.set_xlim([0,data['round'].max()+0.9])
-    ax.set_ylim([-1.5, max(pricers) + 0.5])
+    xmin = 0
+    xmax = data['round'].max()+0.9
+    ax.set_xlim([xmin,xmax])
+    ax.set_ylim([pricer_min - 0.5, pricer_max + 0.5])
     ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True))
     trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
     ax.tick_params(axis='both', labelsize='large')
 
     # make the xticks
+    roundsDF = data.drop_duplicates('pricing_round').reset_index()[['pricing_round','round']]
     xtickpositions = []
     xticklabels = []
     deltaPosMin = int(data['round'].max() / 20.00001)
     prev_pos = - deltaPosMin
-    for pos in data[data.stab_round == 0]['round']:
-        prnd = data[data['round'] == pos].pricing_round.iloc[0]
-        if (pos - prev_pos) > deltaPosMin:
+    for label, pos in zip(roundsDF['pricing_round'].tolist(),roundsDF['round'].tolist()):
+        if pos - prev_pos > deltaPosMin:
             xtickpositions.append(pos)
-            xticklabels.append(str(prnd))
+            xticklabels.append(str(label))
             prev_pos = pos
     ax.set_xticks(xtickpositions)
     ax.set_xticklabels(xticklabels)
+    del roundsDF
 
     # set the size of the markers, such that they do not overlap
-    p1,p2,p3 = ax.transData.transform([(1,min(pricers)),(2,min(pricers)),(1,min(pricers)+1)])
+    p1,p2,p3 = ax.transData.transform([(1,pricer_min),(2,pricer_min),(1,pricer_min+1)])
     perimeter = max(3.5,min((p2[0] - p1[0])/2.2 , (p3[1] - p1[1])/2.2))
 
     # plot the data
-    for p in pricers:
-        ax.scatter(x[p],y[p], color = colors[pricers.index(p)], s=perimeter**2)
-        ax.scatter(x_stab[p],y_stab[p], color = colors[pricers.index(p)], s=perimeter**2, marker = 'x', alpha = .5)
-    ax.scatter(x[-1],y[-1], facecolors = 'none', edgecolors = 'green', marker = 'o', s=perimeter**2)
-    ax.scatter(x_stab[-1],y_stab[-1], facecolors = 'none', edgecolors = 'green', marker = 'o', alpha = .5, s=perimeter**2)
-    ax.scatter(x_stab[-1],y_stab[-1], color = 'green', s=perimeter**2, marker = 'x', alpha = .5)
+    ax.scatter(x,y, color = colors, s=perimeter**2)
+    ax.scatter(x_stab,y_stab, color = colors_stab, s=perimeter**2, marker = 'x', alpha = .5)
+
+    print '    plotted bubble data:', time.time() - start_time
+    start_time = time.time()
 
     # add a line after the root-node
     if data.node.max() > 1:
@@ -587,7 +629,15 @@ def make_bubble_plot(data, name):
         line = lines.Line2D([x_line,x_line],[0,1.02],color='red',linewidth=.5,linestyle='--', transform = trans)
         line.set_clip_on(False)
         ax.add_line(line)
-        ax.text(x_line, 1.025, "\it{End of Root}", ha = 'center', size = 'smaller', color = 'red', zorder = 11, transform = trans)
+        if (x_line - xmin) < 0.1*(xmax - xmin):
+            align = 'left'
+            x_line = xmin
+        elif (xmax - x_line) < 0.1*(xmax - xmin):
+            align = 'right'
+            x_line = xmax
+        else:
+            align = 'center'
+        ax.text(x_line, 1.025, "\it{End of Root}", ha = align, size = 'smaller', color = 'red', zorder = 11, transform = trans)
     elif data.node.max() == 1:
         ax.text(1., 1.025, "\it{Root did not end}", ha = 'right', size = 'smaller', color = 'red', zorder = 11, transform = ax.transAxes)
 
@@ -600,16 +650,21 @@ def make_bubble_plot(data, name):
         x_line = farkas_end
         line = lines.Line2D([x_line,x_line],[0,1],color='blue',linewidth=.5,linestyle='--', transform = trans)
         ax.add_line(line)
-        ax.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = 'center', color = 'blue', zorder = 11, transform = trans)
-
-    print '    plotted bubble data:', time.time() - start_time
-    start_time = time.time()
+        if (x_line - xmin) < 0.1*(xmax - xmin):
+            align = 'left'
+            x_line = xmin
+        elif (xmax - x_line) < 0.1*(xmax - xmin):
+            align = 'right'
+            x_line = xmax
+        else:
+            align = 'center'
+        ax.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = align, color = 'blue', zorder = 11, transform = trans)
 
     # draw a legend
     handles = []
-    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markersize = perimeter*1.5, label = 'Pricer has found at least one variable'))
-    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'none', markeredgecolor = 'green', markersize = perimeter*1.5, label = 'Variables were taken from column pool'))
-    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = perimeter*1.5, alpha = .5, label = 'Pricer has found at least one variable in stab. round'))
+    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markersize = 5, label = 'Pricer has found at least one variable'))
+    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'none', markeredgecolor = 'green', markersize = 5, label = 'Variables were taken from column pool'))
+    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, alpha = .5, label = 'Pricer has found at least one variable in stab. round'))
     plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1., 1.04), ncol = 3, mode = 'expand')
 
     # add other information
