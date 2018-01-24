@@ -34,6 +34,7 @@
 
 #include "params_visu.h"
 #include "type_decomp.h"
+#include "cons_decomp.h"
 
 #include <limits.h>
 
@@ -161,7 +162,7 @@ SCIP_RETCODE SCIPincludeParamsVisu(
 
    SCIP_CALL( SCIPaddStringParam(scip,
       "visual/pdfreader", "pdf reader that opens visualizations in select menu",
-      &visudata->pdfreader, FALSE, (char*) DEFAULT_PDFREADER, NULL, NULL) );
+      &visudata->pdfreader, FALSE, (char*) SCIPconshdlrDecompGetPdfReader(scip), NULL, NULL) );
 
    /* add parameters for manual colors */
 

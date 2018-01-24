@@ -87,8 +87,8 @@ using gcg::Weights;
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              1000           /**< priority of the detector */
 #define DEC_DECCHAR               'G'            /**< display character of detector */
-#define DEC_ENABLED               TRUE           /**< should detector be called by default */
-#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLED               FALSE           /**< should detector be called by default */
+#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE          /**< should detector be called by default */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
@@ -685,14 +685,11 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
 
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
-   seeed->sort();
    //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
 
    if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
-      seeedPropagationData->nNewSeeeds = 0;
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
+      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
@@ -713,9 +710,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
 
    if( !connected(seeedPropagationData->seeedpool, seeed ) )
    {
-      seeedPropagationData->nNewSeeeds = 0;
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
+      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, result);

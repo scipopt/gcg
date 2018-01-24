@@ -70,17 +70,21 @@
 #define DEC_PRIORITY              100         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'I'         /**< display character of detector */
 
-#define DEC_ENABLED               TRUE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLED               FALSE        /**< should the detection be enabled */
+#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
 #define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  TRUE        /**< should the detector be skipped if others found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_LEGACYMODE            TRUE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 
 #define DEFAULT_MAXDECOMPSEXACT  6           /**< default maximum number of decompositions */
 #define DEFAULT_MAXDECOMPSEXTEND 4           /**< default maximum number of decompositions */
+
+#define DEFAULT_LEGACYEXACT       TRUE       /**< is exact version activated when doing legacy mode  */
+#define DEFAULT_LEGACYEXTEND      FALSE      /**< is extended version activated when doing legacy mode */
+
 
 #define SET_MULTIPLEFORSIZETRANSF 12500
 
@@ -91,9 +95,11 @@
 /** detector data */
 struct DEC_DetectorData
 {
-   SCIP_RESULT          result;             /**< result pointer to indicate success or failure */
-   int                  maxdecompsexact;   /**< maximum number of decompositions */
-   int                  maxdecompsextend;  /**< maximum number of decompositions */
+   SCIP_RESULT          result;            /**< result pointer to indicate success or failure */
+   int                  maxdecompsexact;   /**< maximum number of decompositions for exact emthod */
+   int                  maxdecompsextend;  /**< maximum number of decompositions for extend method*/
+   SCIP_Bool            legacyextend;      /**< legacy parameter if extend mode is activated when doing legacy mode*/
+   SCIP_Bool            legacyexact;       /**< legacy parameter if exact mode is activated when doing legacy mode*/
 };
 
 typedef struct struct_hook AUT_HOOK;
@@ -154,6 +160,19 @@ gcg::Seeedpool* struct_hook::getSeeedpool()
    return this->seeedpool;
 }
 
+SCIP_Bool struct_hook::getBool()
+{
+   return aut;
+}
+
+void struct_hook::setBool( SCIP_Bool aut_ )
+{
+   aut = aut_;
+}
+
+
+
+
 /** methode to calculate the greates common divisor */
 
 int gcd(int a, int b) {
@@ -194,7 +213,9 @@ struct_hook::struct_hook(
 
 struct_hook::~struct_hook()
 {   /*lint -esym(1540,struct_hook::conssperm) */
-   SCIPfreeMemoryArrayNull(scip, &conssperm);
+   if( conssperm != NULL )
+      SCIPfreeMemoryArrayNull(scip, &conssperm);
+   conssperm  = NULL;
    scip = NULL;
 }
 /** hook function to save the permutation of the graph */
@@ -1682,10 +1703,12 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
    *ndecdecomps = 0;
    *decdecomps = NULL;
 
-   if( detectordata->maxdecompsextend > 0 )
+
+   if( detectordata->legacyextend)
       SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, TRUE, detectordata->maxdecompsextend) );
 
-   if( detectordata->maxdecompsexact > 0 )
+   /** do exact detection */
+   if( detectordata->legacyexact)
       SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, FALSE, detectordata->maxdecompsexact) );
 
    return SCIP_OKAY;
@@ -1860,6 +1883,15 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecompsextend",
       "Maximum number of solutions/decompositions with extended detection", &detectordata->maxdecompsextend, FALSE,
       DEFAULT_MAXDECOMPSEXTEND, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/legacyextend",
+      "is extended detection activated when doing legacy detection", &detectordata->legacyextend, FALSE,
+      DEFAULT_LEGACYEXTEND, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/legacyexact",
+         "is exact detection activated when doing legacy detection", &detectordata->legacyexact, FALSE,
+         DEFAULT_LEGACYEXACT, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }

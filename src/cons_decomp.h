@@ -50,7 +50,11 @@ extern "C" {
 enum scoretype {
    MAX_WHITE = 0,
    BORDER_AREA,
-   CLASSIC
+   CLASSIC,
+   MAX_FORESSEEING_WHITE,
+   SETPART_FWHITE,
+   MAX_FORESSEEING_AGG_WHITE,
+   SETPART_AGG_FWHITE
 };
 
 typedef enum scoretype SCORETYPE;
@@ -58,6 +62,7 @@ typedef enum scoretype SCORETYPE;
 struct seeedpool_wrapper;
 
 typedef struct seeedpool_wrapper SEEEDPOOL_WRAPPER ;
+
 
 SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP*          scip
@@ -82,6 +87,18 @@ DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
 extern
 int SCIPconshdlrDecompGetNDecdecomps(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the number of conss that were active while detecting decomp originating from seeed with given id **/
+extern
+int SCIPconshdlrDecompGetNFormerDetectionConssForID(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   id                  /**< id of the seeed */
+   );
+
+extern
+const char* SCIPconshdlrDecompGetPdfReader(
+   SCIP*                scip
    );
 
 /** returns the data of the provided detector */
@@ -142,6 +159,30 @@ extern
 SCIP_Real DECgetRemainingTime(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
+/** checks if two pricing problems are identical based on information from detection */
+extern
+SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
+   SCIP*                scip,
+   int                  seeedid,
+   int                  probnr1,
+   int                  probnr2,
+   SCIP_Bool*           identical
+   );
+
+/** for two identical pricing problems a corresponding varmap is created */
+extern
+SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
+   SCIP*                scip,
+   SCIP_HASHMAP**       hashorig2pricingvar, /**< mapping from orig to pricingvar  */
+   int                  seeedid,
+   int                  probnr1,
+   int                  probnr2,
+   SCIP*                scip1,
+   SCIP*                scip2,
+   SCIP_HASHMAP*        varmap
+   );
+
 
 /** sets (and adds) the decomposition structure **/
 extern

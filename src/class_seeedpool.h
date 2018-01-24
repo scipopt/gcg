@@ -173,6 +173,11 @@ public:
    /** calls findSeeeds method and translates the resulting seeeds into decompositions */
    void findDecompositions();
 
+   /** returns seeed with the corresponding id */
+   gcg::Seeed* findFinishedSeeedByID(
+      int      seeedid
+      );
+
    /** adds a seeed to ancestor seeeds */
    void addSeeedToAncestor(
       SeeedPtr seeed
@@ -199,6 +204,8 @@ public:
       SeeedPtr seeed,
       SCIP_Bool* success
       );
+
+   SCIP_Bool areThereContinuousVars();
 
    /** clears ancestor seeed data structure */
    void clearAncestorSeeeds();
@@ -286,10 +293,17 @@ public:
          int  consindexd
          );
 
-
+ /** is cons with specified indec partitioning packing, or covering constraint?*/
    bool isConsSetppc(
       int  consindexd
       );
+
+   /** is cons with specified indec partitioning, or packing covering constraint?*/
+   bool isConsSetpp(
+      int  consindexd
+      );
+
+
 
    /** returns the variable indices of the coefficient matrix for a constraint */
    const int* getVarsForCons(
@@ -403,6 +417,10 @@ public:
 
    /** returns the number of constraints considered in the seeedpool */
    int getNConss();
+
+   /* returns associated scip */
+   SCIP* getScip();
+
 
    /** returns the candidates for block size sorted in descending order by how often a candidate was added */
    std::vector<int> getSortedCandidatesNBlocks();

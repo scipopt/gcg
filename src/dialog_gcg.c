@@ -102,8 +102,9 @@ SCIP_RETCODE writeAllDecompositions(
    SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
    )
 {
-   char* filename;
-   char* dirname;
+   char filename[SCIP_MAXSTRLEN];
+   char dirname[SCIP_MAXSTRLEN];
+   char* tmp;
    SCIP_Bool endoffile;
 
    if( SCIPconshdlrDecompGetNFinishedDecomps(scip) == 0 )
@@ -114,13 +115,20 @@ SCIP_RETCODE writeAllDecompositions(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory: ", &dirname, &endoffile) );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory: ", &tmp, &endoffile) );
+
+
    if( endoffile )
    {
       *nextdialog = NULL;
       return SCIP_OKAY;
    }
-   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, dirname, TRUE) );
+
+   SCIPdebugMessage("dirname: %s\n", tmp);
+
+   strcpy(dirname, tmp);
+
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, tmp, TRUE) );
 
    /* if no directory is specified, initialize it with a standard solution */
    if( dirname[0] == '\0' )
@@ -134,7 +142,8 @@ SCIP_RETCODE writeAllDecompositions(
       mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO);
    }
 
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &tmp, &endoffile) );
+   strcpy(filename, tmp);
 
    if( filename[0] != '\0' )
    {
@@ -651,6 +660,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
+      SCIPdebugMessage("Start DECdetectstructure!\n");
       SCIP_CALL( DECdetectStructure(scip, &result) );
       if( result == SCIP_SUCCESS )
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was successful.\n");
@@ -741,7 +751,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_PRESOLVED:
 
       assert(SCIPconshdlrDecompCheckConsistency(scip) );
-
      // SCIPdialogMessage(scip, NULL, "In presolved \n");
 
       if( !SCIPconshdlrDecompExistsSelected(scip) )
@@ -785,9 +794,11 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          //assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
          SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. Solution process started with original problem...\n");
       }
+
       /*lint -fallthrough*/
    case SCIP_STAGE_SOLVING:
       assert( SCIPconshdlrDecompCheckConsistency(scip) );
+      assert(SCIPgetNConss(scip) == SCIPgetNActiveConss(scip) );
       if( SCIPconshdlrDecompExistsSelected(scip) )
          SCIP_CALL( SCIPconshdlrDecompChooseCandidatesFromSelected(scip, FALSE ) );
       else
@@ -800,7 +811,6 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
          SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
       }
-
       SCIP_CALL( SCIPsolve(scip) );
       break;
 

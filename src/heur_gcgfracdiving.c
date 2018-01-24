@@ -302,7 +302,6 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgfracdiving) /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
-   SCIP_Real* lpcandsfrac;
    int nlpcands;
    SCIP_Real bestobjgain;
    SCIP_Real bestfrac;                       /* fractionality of best candidate */
@@ -322,9 +321,8 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgfracdiving) /*lint --e{715}*/
    assert(divingdata != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
    assert(lpcands != NULL);
-   assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);
 
    bestcandmayrounddown = TRUE;
@@ -360,7 +358,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgfracdiving) /*lint --e{715}*/
       mayroundup = SCIPvarMayRoundUp(var);
       SCIP_CALL( getMasterDownFrac(scip, var, &downfrac) );
       SCIP_CALL( getMasterUpFrac(scip, var, &upfrac) );
-      origfrac = lpcandsfrac[c];
+      origfrac = lpcandssol[c] - SCIPfloor(scip, lpcandssol[c]);
       obj = SCIPvarGetObj(var);
 
       if( mayrounddown || mayroundup )

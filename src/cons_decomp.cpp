@@ -39,7 +39,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-//#define SCIP_DEBUG
+/*#define SCIP_DEBUG*/
 
 #include "cons_decomp.h"
 
@@ -100,43 +100,43 @@ typedef gcg::Seeed* SeeedPtr;
 
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 #define DEFAULT_ALLOWCLASSIFIERDUPLICATES FALSE
-#define DEFAULT_MAXDETECTIONROUNDS 2    /**< maximal number of detection rounds */
+#define DEFAULT_MAXDETECTIONROUNDS 1    /**< maximal number of detection rounds */
 #define DEFAULT_MAXNCLASSESLARGEPROBS 5
 #define DEFAULT_MAXNCLASSES 9
 #define DEFAULT_ENABLEORIGDETECTION FALSE /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
-#define DEFAULT_SMARTSCORE                            FALSE
-#define DEFAULT_ENABLEORIGCLASSIFICATION TRUE /**< indicates whether to start detection for the original problem */
+#define DEFAULT_ENABLEORIGCLASSIFICATION FALSE /**< indicates whether to start detection for the original problem */
 
 #define DEFAULT_CONSSCLASSNNONZENABLED                TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled */
-#define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
+#define DEFAULT_CONSSCLASSNNONZENABLEDORIG            FALSE    /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED         TRUE    /**< indicates whether constraint classifier for scipconstype is enabled */
-#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     TRUE    /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
+#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     FALSE    /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLED         TRUE    /**< indicates whether constraint classifier for miplib consstype is enabled */
-#define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLEDORIG     TRUE    /**< indicates whether constraint classifier for miplib consstype is enabled for the original problem */
+#define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLEDORIG     FALSE    /**< indicates whether constraint classifier for miplib consstype is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED     FALSE    /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
-#define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG TRUE     /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
+#define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG FALSE     /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSLEVENSHTEINENABLED          FALSE    /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
-#define DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG      TRUE     /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
+#define DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG      FALSE     /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
 
 #define DEFAULT_VARCLASSSCIPVARTYPESENABLED           TRUE     /**< indicates whether variable classifier for scipvartypes is enabled */
-#define DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG       TRUE     /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
+#define DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG       FALSE     /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
 
 #define DEFAULT_VARCLASSOBJVALSENABLED                TRUE     /**< indicates whether variable classifier for objective function values is enabled */
-#define DEFAULT_VARCLASSOBJVALSENABLEDORIG            TRUE     /**< indicates whether variable classifier for objective function values is enabled for the original problem */
+#define DEFAULT_VARCLASSOBJVALSENABLEDORIG            FALSE     /**< indicates whether variable classifier for objective function values is enabled for the original problem */
 
 #define DEFAULT_VARCLASSOBJVALSIGNSENABLED            TRUE     /**< indicates whether variable classifier for objective function value signs is enabled */
-#define DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG        TRUE     /**< indicates whether variable classifier for objective function value signs is enabled for the original problem */
+#define DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG        FALSE     /**< indicates whether variable classifier for objective function value signs is enabled for the original problem */
 
 #define DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER    10000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis default */
 #define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000   /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
 #define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000     /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
 
 #define DEFAULT_ONLYLEGACYMODE                        FALSE    /**< indicates whether detection should only consist of legacy mode detection */
+#define DEFAULT_LEGACYMODE                            FALSE    /**< indicates whether detection should consist of legacy mode detection */
 #define DEFAULT_STAIRLINKINGHEUR                      FALSE    /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
 
 /*
@@ -165,7 +165,6 @@ struct SCIP_ConshdlrData
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool             allowclassifierduplicates;         /**< indicates whether classifier duplicates are allowed (for statistical reasons) */
    SCIP_Bool             enableemphfast;               /**< indicates whether emphasis settings are set to fast */
-   SCIP_Bool             smartscore;               /**< indicates whether smart score is enabled */
    SCIP_Bool             enableorigdetection;               /**< indicates whether to start detection for the original problem */
    SCIP_Bool             enableorigclassification;               /**< indicates whether to start constraint classification for the original problem */
    SCIP_Bool             conssclassnnonzenabled;            /**< indicates whether constraint classifier for nonzero entries is enabled */
@@ -184,7 +183,8 @@ struct SCIP_ConshdlrData
    SCIP_Bool             varclassobjvalsenabledorig;        /**< indicates whether variable classifier for objective function values is enabled for the original problem */
    SCIP_Bool             varclassobjvalsignsenabled;        /**< indicates whether variable classifier for objective function value signs is enabled */
    SCIP_Bool             varclassobjvalsignsenabledorig;    /**< indicates whether variable classifier for objective function value signs is enabled for the original problem */
-   SCIP_Bool             onlylegacymode;                    /**< indicates whether detection should only consist of legacy mode detection */
+   SCIP_Bool             onlylegacymode;                    /**< indicates whether detection should only consist of legacy mode detection, this is sufficient to enable it */
+   SCIP_Bool             legacymodeenabled;                 /**< indicates whether detection consist of legacy mode detection */
    SCIP_Bool             stairlinkingheur;                  /**< indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated */
 
    int**                 candidatesNBlocks;                 /**< pointer to store candidates for number of blocks calculated by the seeedpool */
@@ -266,6 +266,19 @@ char*  SCIPconshdlrDecompGetScoretypeShortName(
    if( sctype == scoretype::BORDER_AREA)
          SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "border") ;
 
+   if( sctype == scoretype::MAX_FORESSEEING_WHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "forswh") ;
+
+   if( sctype == scoretype::MAX_FORESSEEING_AGG_WHITE)
+      SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "fawh") ;
+
+
+   if( sctype == scoretype::SETPART_FWHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfwh ") ;
+
+   if( sctype == scoretype::SETPART_AGG_FWHITE)
+           SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "spfawh") ;
+
 
    SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
 
@@ -292,6 +305,19 @@ char*  SCIPconshdlrDecompGetScoretypeDescription(
 
       if( sctype == scoretype::BORDER_AREA)
             SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "minimum border score (i.e. minimizes fraction of border area score; )")  ;
+
+      if( sctype == scoretype::MAX_FORESSEEING_WHITE)
+            SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
+
+      if( sctype == scoretype::MAX_FORESSEEING_AGG_WHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "maximum foreseeing  white area score with aggregation information(i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking)")  ;
+
+
+      if( sctype == scoretype::SETPART_FWHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
+
+      if( sctype == scoretype::SETPART_AGG_FWHITE)
+         SCIPsnprintf( scoretypename, SCIP_MAXSTRLEN, "setpartitioning maximum foreseeing white area score with aggregation information (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )")  ;
 
 
       SCIP_CALL_ABORT ( SCIPduplicateBlockMemoryArray(scip, &copy, scoretypename, SCIP_MAXSTRLEN ) );
@@ -476,20 +502,6 @@ SCIP_RETCODE  SCIPconshdlrDecompAddSeeed(
      SeeedPtr  seeed
    ){
 
-      SCIP_CONSHDLR* conshdlr;
-      SCIP_CONSHDLRDATA* conshdlrdata;
-
-      conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-      if( conshdlr == NULL )
-      {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
-         return SCIP_ERROR;
-      }
-
-      conshdlrdata = SCIPconshdlrGetData(conshdlr);
-      assert(conshdlrdata != NULL);
-
       if( seeed->isComplete() )
       {
          if( seeed->isFromUnpresolved())
@@ -601,28 +613,14 @@ SeeedPtr  SCIPconshdlrDecompGetSeeed(
      int  seeedid
    ){
 
-      SCIP_CONSHDLR* conshdlr;
-      SCIP_CONSHDLRDATA* conshdlrdata;
+   SeeedPtr seeed = NULL;
 
-      SeeedPtr seeed = NULL;
+   seeed =  SCIPconshdlrDecompGetSeeedFromPresolved(scip, seeedid);
 
-      conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-
-      if( conshdlr == NULL )
-      {
-         SCIPerrorMessage("Decomp constraint handler is not included, cannot find Seeed!\n");
-         return NULL;
-      }
-
-      conshdlrdata = SCIPconshdlrGetData(conshdlr);
-      assert(conshdlrdata != NULL);
-
-      seeed =  SCIPconshdlrDecompGetSeeedFromPresolved(scip, seeedid);
-
-      if( seeed == NULL)
-         return SCIPconshdlrDecompGetSeeedFromUnpresolved(scip, seeedid);
-      else
-         return seeed;
+   if( seeed == NULL)
+      return SCIPconshdlrDecompGetSeeedFromUnpresolved(scip, seeedid);
+   else
+      return seeed;
 }
 
 
@@ -725,30 +723,6 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
    if( conshdlrdata->useddecomp != NULL )
       SCIP_CALL( DECdecompFree(scip, &conshdlrdata->useddecomp) );
 
-//   if( conshdlrdata->ndecomps > 0 )
-//   {
-//      for( i = 0; i < conshdlrdata->ndecomps; ++i )
-//      {
-//         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
-//      }
-//      SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
-//      conshdlrdata->decdecomps = NULL;
-//      conshdlrdata->ndecomps = 0;
-//   }
-
-//   if( conshdlrdata->nallrelevantseeeds > 0 )
-//   {
-//      for( i = 0; i < conshdlrdata->nallrelevantseeeds; ++i )
-//      {
-//         delete conshdlrdata->allrelevantfinishedseeeds[i];
-//      }
-//
-//   }
-//
-//   if( conshdlrdata->allrelevantfinishedseeeds != NULL )
-//      SCIPfreeMemoryArray(scip, &conshdlrdata->allrelevantfinishedseeeds);
-//   conshdlrdata->allrelevantfinishedseeeds = NULL;
-//   conshdlrdata->nallrelevantseeeds = 0;
 
    conshdlrdata->hasrun = FALSE;
 
@@ -875,8 +849,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    assert(conshdlrdata != NULL);
 
    conshdlrdata->useddecomp = NULL;
-//   conshdlrdata->decdecomps = NULL;
-//   conshdlrdata->ndecomps = 0;
    conshdlrdata->ndetectors = 0;
    conshdlrdata->priorities = NULL;
    conshdlrdata->detectors = NULL;
@@ -889,10 +861,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->seeedpool = NULL;
    conshdlrdata->ncallscreatedecomp = 0;
 
-//   conshdlrdata->allrelevantfinishedseeeds = NULL;
-//   conshdlrdata->incompleteseeeds = NULL;
-//   conshdlrdata->nallrelevantseeeds = 0;
-//   conshdlrdata->nincompleteseeeds = 0;
    conshdlrdata->curruserseeed = NULL;
    conshdlrdata->lastuserseeed = NULL;
    conshdlrdata->unpresolveduserseeedadded = FALSE;
@@ -903,15 +871,11 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->candidates = new std::vector<std::pair<SeeedPtr, SCIP_Real > >(0);
    conshdlrdata->selectedexists = FALSE;
    conshdlrdata->sizedecomps = 10;
- //  conshdlrdata->sizeincompleteseeeds = 10;
    conshdlrdata->seeedcounter = 0;
    conshdlrdata->currscoretype = scoretype::MAX_WHITE;
    conshdlrdata->resortcandidates = TRUE;
    conshdlrdata->userblocknrcandidates = new std::vector<int>(0);
 
- //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->decdecomps, conshdlrdata->sizedecomps) );
- //  SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->allrelevantfinishedseeeds, conshdlrdata->sizedecomps) );
-//   SCIP_CALL( SCIPallocMemoryArray( scip, &conshdlrdata->incompleteseeeds, conshdlrdata->sizeincompleteseeeds) );
 
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->completedetectionclock) );
@@ -929,7 +893,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/allowclassifierduplicates/enabled", "indicates whether classifier duplicates are allowed (for statistical reasons)", &conshdlrdata->allowclassifierduplicates, FALSE, DEFAULT_ALLOWCLASSIFIERDUPLICATES, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/emphfast/enabled", "indicates whether emphasis setting are set to fast", &conshdlrdata->enableemphfast, TRUE, DEFAULT_ENABLEEMPHFAST, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/smartscore/enabled", "indicates whether smart score should be activated", &conshdlrdata->smartscore, FALSE, DEFAULT_SMARTSCORE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/enabled", "indicates whether to start detection for the original problem", &conshdlrdata->enableorigdetection, FALSE, DEFAULT_ENABLEORIGDETECTION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/origprob/classificationenabled", "indicates whether to classify constraints and variables for the original problem", &conshdlrdata->enableorigclassification, FALSE, DEFAULT_ENABLEORIGCLASSIFICATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/consclassifier/nnonzeros/enabled", "indicates whether constraint classifier for nonzero entries is enabled", &conshdlrdata->conssclassnnonzenabled, FALSE, DEFAULT_CONSSCLASSNNONZENABLED, NULL, NULL) );
@@ -949,6 +912,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/enabled", "indicates whether variable classifier for objective function value signs is enabled", &conshdlrdata->varclassobjvalsignsenabled, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLED, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", "indicates whether variable classifier for objective function value signs is enabled for the original problem", &conshdlrdata->varclassobjvalsignsenabledorig, FALSE, DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/onlylegacymode", "indicates whether detection should only consist of legacy mode detection", &conshdlrdata->onlylegacymode, FALSE, DEFAULT_ONLYLEGACYMODE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/enabled", "indicates whether detection consist of legacy mode detection", &conshdlrdata->legacymodeenabled, FALSE, DEFAULT_LEGACYMODE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/stairlinkingheur", "indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated", &conshdlrdata->stairlinkingheur, FALSE, DEFAULT_STAIRLINKINGHEUR, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
@@ -967,8 +931,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
       NO_MODIF, 0, 3, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/scoretype",
-         "indicates which score should be used for comparing (partial) decompositions (0:max white, 1: border area, 2:classic): ", &conshdlrdata->currscoretype, TRUE,
-         scoretype::MAX_WHITE, 0, 2, NULL, NULL) );
+         "indicates which score should be used for comparing (partial) decompositions (0:max white, 1: border area, 2:classic, 3:max foreseeing white, 4: ppc-max-white, 5:max foreseeing white with aggregation info, 6: ppc-max-white with aggregation info): ", &conshdlrdata->currscoretype, FALSE,
+         scoretype::SETPART_FWHITE, 0, 6, NULL, NULL) );
 
 
 
@@ -1261,19 +1225,9 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    )
 {
 
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
 
    SCIPdialogMessage(scip, NULL, "Options to proceed: \n" );
-
-
-
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "option", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------", "-----------");
@@ -1284,7 +1238,6 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "quit the modification process and returns to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "shows a visualization of the current decomposition ");
-
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
@@ -1558,27 +1511,10 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    )
 {
 
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
 
    SCIPdialogMessage(scip, NULL, "============================================================================================= \n");
-
-//   SCIPdialogMessage(scip, NULL, "   id   nbloc  nmacon  nlivar  nmavar  nstlva  maxwhi  history  pre  nopcon  nopvar"
-//      "  usr"
-//      "  sel \n");
-//   SCIPdialogMessage(scip, NULL, " ----   -----  ------  ------  ------  ------  ------  -------  ---  ------  ------"
-//      "  ---"
-//      "  --- \n");
-
    SCIPdialogMessage(scip, NULL, "\n" );
-
    SCIPdialogMessage(scip, NULL, "List of selection commands \n" );
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "command", "description");
@@ -1594,7 +1530,6 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes selection and goes back to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "experimental feature: visualizes the specified decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition ");
-
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
@@ -2370,6 +2305,41 @@ DEC_DETECTORDATA* DECdetectorGetData(
 }
 
 
+/** returns the number of conss that were active while detecting decomp originating from seeed with given id **/
+int SCIPconshdlrDecompGetNFormerDetectionConssForID(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   id                  /**< id of the seeed */
+   ){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   gcg::Seeed* seeed;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeed = conshdlrdata->seeedpool->findFinishedSeeedByID(id);
+   currseeedpool = conshdlrdata->seeedpool;
+
+   if ( seeed == NULL )
+   {
+      seeed = conshdlrdata->seeedpoolunpresolved->findFinishedSeeedByID(id);
+      currseeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+
+   assert(seeed != NULL);
+
+   return currseeedpool->getNConss();
+
+
+}
+
+
 /** returns the seeedpool **/
 gcg::Seeedpool* SCIPconshdlrDecompGetSeeedpool(
    SCIP*                 scip                /**< SCIP data structure */
@@ -2757,6 +2727,182 @@ SCIP_Real DECgetRemainingTime(
    return timelimit;
 }
 
+/** checks if two pricing problems are identical based on information from detection */
+SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
+   SCIP*                scip,
+   int                  seeedid,
+   int                  probnr1,
+   int                  probnr2,
+   SCIP_Bool*           identical
+   )
+{
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+   gcg::Seeed* seeed;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeed = conshdlrdata->seeedpool->findFinishedSeeedByID(seeedid);
+   currseeedpool = conshdlrdata->seeedpool;
+
+   if ( seeed == NULL )
+   {
+      seeed = conshdlrdata->seeedpoolunpresolved->findFinishedSeeedByID(seeedid);
+      currseeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+
+   if( seeed->getNReps() == 0 )
+   {
+      seeed->calcAggregationInformation(currseeedpool);
+   }
+
+   assert(seeed != NULL);
+
+   if( seeed->getRepForBlock(probnr1) == seeed->getRepForBlock(probnr2) )
+      *identical = TRUE;
+   else
+      *identical = FALSE;
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, " block %d and block %d are represented by %d and %d hence they are identical=%d.\n", probnr1, probnr2, seeed->getRepForBlock(probnr1), seeed->getRepForBlock(probnr2), *identical );
+
+   return SCIP_OKAY;
+}
+
+/** for two identical pricing problems a corresponding varmap is created */
+SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
+   SCIP*                scip,
+   SCIP_HASHMAP**       hashorig2pricingvar, /**< mapping from orig to pricingvar  */
+   int                  seeedid,
+   int                  probnr1,
+   int                  probnr2,
+   SCIP*                scip1,
+   SCIP*                scip2,
+   SCIP_HASHMAP*        varmap
+   )
+{
+   gcg::Seeed* seeed;
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   gcg::Seeedpool* currseeedpool;
+
+   int blockid1;
+   int blockid2;
+   int representative;
+   int repid1;
+   int repid2;
+   int nblocksforrep;
+   std::vector<int> pidtopid;
+
+   repid1 = -1;
+   repid2 = -1;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   seeed = conshdlrdata->seeedpool->findFinishedSeeedByID(seeedid);
+   currseeedpool = conshdlrdata->seeedpool;
+
+   if ( seeed == NULL )
+   {
+      seeed = conshdlrdata->seeedpoolunpresolved->findFinishedSeeedByID(seeedid);
+      currseeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+
+   assert(seeed != NULL);
+
+   if( probnr1 > probnr2 )
+   {
+      blockid1 = probnr2;
+      blockid2 = probnr1;
+   }
+   else
+   {
+      blockid1 = probnr1;
+      blockid2 = probnr2;
+   }
+
+   representative = seeed->getRepForBlock(blockid1);
+   assert( representative == seeed->getRepForBlock(blockid2) );
+   nblocksforrep = (int) seeed->getBlocksForRep(representative).size();
+
+   /** find index in representatives */
+   for( int i = 0; i < nblocksforrep; ++i )
+   {
+      if( seeed->getBlocksForRep(representative)[i] == blockid1 )
+         repid1 = i;
+      if( seeed->getBlocksForRep(representative)[i] == blockid2 )
+      {
+         repid2 = i;
+         break;
+      }
+   }
+
+   /** blockid1 should be the representative */
+   if( repid1 != 0 )
+   {
+      SCIPhashmapFree(&varmap);
+      varmap = NULL;
+      SCIPwarningMessage(scip, NULL, "blockid1 should be the representative (hence has id=0 in reptoblocksarray but in fact has %d) \n", repid1);
+      return SCIP_OKAY;
+   }
+
+   pidtopid = seeed->getRepVarmap(representative, repid2);
+
+   for( int v = 0; v < SCIPgetNVars(scip2); ++v )
+   {
+      SCIP_VAR* var1;
+      SCIP_VAR* var2;
+      SCIP_VAR* var1orig;
+      SCIP_VAR* var2orig;
+      int var1origid;
+      int var2origid;
+      int var1originblockid;
+      int var2originblockid;
+
+      var2 = SCIPgetVars(scip2)[v];
+      assert(var2 != NULL);
+      var2orig = GCGpricingVarGetOriginalVar(var2);
+      assert(var2orig!=NULL);
+      var2origid = currseeedpool->getIndexForVar(var2orig) ;
+      assert(var2origid>=0);
+      var2originblockid = seeed->getVarProbindexForBlock(var2origid, blockid2) ;
+      assert(var2originblockid >= 0);
+      var1originblockid = pidtopid[var2originblockid];
+      assert(var1originblockid>=0);
+      var1origid = seeed->getVarsForBlock(blockid1)[var1originblockid];
+      assert(var1origid>=0);
+      var1orig = currseeedpool->getVarForIndex(var1origid) ;
+      assert(var1orig != NULL);
+      var1 = (SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar[blockid1], (void*) var1orig ) ;
+      assert(var1 != NULL);
+
+      SCIPhashmapInsert(varmap, (void*) var2, (void*) var1);
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
 /** creates a user seeed for the presolved problem **/
 SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -2791,7 +2937,7 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
 
    conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool->getNConss(), currseeedpool->getNVars() );
 
-
+   conshdlrdata->curruserseeed->setSeeedpool(currseeedpool );
    conshdlrdata->curruserseeed->setStemsFromUnpresolved( !presolved );
 
    return SCIP_OKAY;
@@ -3448,9 +3594,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    }
 
    seeed = conshdlrdata->curruserseeed;
-
    currseeedpool = seeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
-
+   seeed->setSeeedpool(currseeedpool);
    seeed->flushBooked();
 
    if( seeed->shouldCompletedByConsToMaster() )
@@ -3463,18 +3608,13 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    seeed->considerImplicits(currseeedpool);
    currseeedpool->prepareSeeed(conshdlrdata->curruserseeed);
 
-
    if( !seeed->checkConsistency(currseeedpool) )
    {
       SCIPconshdlrDecompUserSeeedReject(scip);
       SCIPwarningMessage(scip, "seeed that was given by the user was rejected because of inconsistencies! \n");
       return SCIP_OKAY;
    }
-
-
    conshdlrdata->curruserseeed->buildDecChainString();
-
-
    if( conshdlrdata->curruserseeed->isComplete() )
    {
       if( !seeed->shouldCompletedByConsToMaster() )
@@ -3565,7 +3705,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       "%d mastervars, and max white score of %s %f \n", usergiveninfo, presolvedinfo,
       conshdlrdata->curruserseeed->getNBlocks(), conshdlrdata->curruserseeed->getNMasterconss(),
       conshdlrdata->curruserseeed->getNLinkingvars(), conshdlrdata->curruserseeed->getNMastervars(), (conshdlrdata->curruserseeed->isComplete() ? " " : " at best "),
-      conshdlrdata->curruserseeed->getMaxWhiteScore() );
+      conshdlrdata->curruserseeed->getScore(SCORETYPE::MAX_WHITE) );
 
    conshdlrdata->curruserseeed = NULL;
 
@@ -3934,6 +4074,9 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    int dec;
    gcg::SeeedPtr seeed;
    int dupcount;
+   SCIP_Bool legacyenabled;
+   SCIP_Bool onlylegacy;
+
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -3947,16 +4090,10 @@ SCIP_RETCODE SCIPconshdlrDecompAddLegacymodeDecompositions(
    assert(conshdlrdata != NULL);
 
    /* check whether legacymode of at least one detector is enabled */
-   bool legacyenabled = false;
-   for( d = 0; d < conshdlrdata->ndetectors; ++d )
-   {
-      if( conshdlrdata->detectors[d]->legacymode )
-      {
-         legacyenabled = true;
-         break;
-      }
-   }
-   if( !legacyenabled )
+   SCIPgetBoolParam(scip, "detection/legacymode/enabled", &legacyenabled);
+   SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacy);
+
+   if( !legacyenabled && !onlylegacy )
       return SCIP_OKAY;
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Start legacy mode detection.\n");
@@ -4304,6 +4441,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_Bool onlylegacymode;
    SCIPgetBoolParam(scip, "detection/legacymode/onlylegacymode", &onlylegacymode);
 
+   SCIPdebugMessage("start only legacy mode? %s \n", (onlylegacymode ? "yes": "no") );
    if( !onlylegacymode )
    {
       std::vector<int> candidatesNBlocks(0); /**< candidates for number of blocks */
@@ -4323,13 +4461,15 @@ SCIP_RETCODE DECdetectStructure(
       SCIPgetBoolParam(scip, "detection/origprob/enabled", &calculateOrigDecomps);
       SCIPgetBoolParam(scip, "detection/origprob/classificationenabled", &classifyOrig);
 
-   /** get data of the seeedpool with original vars and conss */
+      /** get data of the seeedpool with original vars and conss */
+      SCIPdebugMessage("is seeedpoolunpresolved not initilized yet ? %s -> %s create it \n", (conshdlrdata->seeedpoolunpresolved == NULL ? "yes" : "no"), (conshdlrdata->seeedpoolunpresolved == NULL ? "" : "Do not")  );
       if ( conshdlrdata->seeedpoolunpresolved == NULL )
          conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);         /**< seeedpool with original variables and constraints */
 
 
       SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
 
+      SCIPdebugMessage("is stage < transformed ? %s -> do %s transformProb() ", (SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED ? "yes" : "no"), (SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED ? "" : "not")  );
       if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
          SCIP_CALL(SCIPtransformProb(scip));
 
@@ -4338,18 +4478,23 @@ SCIP_RETCODE DECdetectStructure(
       /** get block number candidates and conslcassifier for original problem*/
       if( classifyOrig )
       {
+         SCIPdebugMessage("classification for orig problem enabled: calc classifier and nblock candidates \n" );
          conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
          candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
       }
+      else
+         SCIPdebugMessage("classification for orig problem disabled \n" );
 
       /** detection for original problem */
       if( calculateOrigDecomps )
       {
+         SCIPdebugMessage("start finding decompositions for original problem!\n" );
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "start finding decompositions for original problem!\n");
          seeedsunpresolved = conshdlrdata->seeedpoolunpresolved->findSeeeds();
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "finished finding decompositions for original problem!\n");
-
-      }
+         SCIPdebugMessage("finished finding decompositions for original problem!\n" );
+      } else
+         SCIPdebugMessage("finding decompositions for original problem is NOT enabled!\n" );
 
       /** get the cons and var classifier for translating them later*/
       for( i = 0; i < conshdlrdata->seeedpoolunpresolved->getNConsClassifiers(); ++i )
@@ -4365,9 +4510,12 @@ SCIP_RETCODE DECdetectStructure(
       }
 
       SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock));
+
+
       //Presolving
       if( presolveOrigProblem )
          SCIP_CALL(SCIPpresolve(scip));
+
 
       /** detection for presolved problem */
 
@@ -4382,8 +4530,6 @@ SCIP_RETCODE DECdetectStructure(
          *result = SCIP_DIDNOTRUN;
          return SCIP_OKAY;
       }
-
-
 
       /** start detection clocks */
       SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
@@ -4402,7 +4548,6 @@ SCIP_RETCODE DECdetectStructure(
       /** get block number candidates and translate orig classification and found seeeds (if any) to presolved problem */
       if( calculateOrigDecomps ||  classifyOrig )
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "started translate seeed method!\n");
          std::vector<gcg::Seeed*> translatedSeeeds(0);
          std::vector<gcg::ConsClassifier*> translatedConsDistributions(0);
          std::vector<gcg::VarClassifier*> translatedVarDistributions(0);
@@ -4455,6 +4600,7 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock) );
 
+
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip, result );
 
    if( *result == SCIP_DIDNOTRUN )
@@ -4481,6 +4627,7 @@ SCIP_RETCODE DECdetectStructure(
    conshdlrdata->hasrun = TRUE;
    *result = SCIP_SUCCESS;
    SCIPconshdlrDecompChooseCandidatesFromSelected(scip, TRUE);
+
 
 //   SCIPhashmapFree( &consToIndex );
 
@@ -4623,7 +4770,6 @@ SCIP_RETCODE DECwriteAllDecomps(
 
         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
-        DECdecompFree(scip, &decomplocal);
         conshdlrdata->useddecomp = NULL;
      }
 
@@ -4669,6 +4815,24 @@ DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
     return conshdlrdata->detectors;
 }
 
+const char* SCIPconshdlrDecompGetPdfReader(
+   SCIP*       scip
+   )
+{
+   int ret = 1;
+   std::string viewers[] = { "okular", "acroread", "evince" };
+   int nviewers = 3;
+
+   for( int i = 0; i < nviewers; ++i )
+   {
+      std::string command = "which ";
+      command.append(viewers[i].c_str() );
+      ret = system(command.c_str());
+      if( ret == 0 )
+         return viewers[i].c_str();
+   }
+   return "no pdf viewer found ";
+}
 
 /** gets an array of all seeeds that are currently considered relevant
  * @params seeedswr  output of the relevant seeeds (don't forget to free the individual wrappers after use)
@@ -4898,6 +5062,7 @@ DEC_DECOMP* DECgetBestDecomp(
    }
 
    seeedpool->createDecompFromSeeed(seeed, &decomp);
+
 
    return decomp;
 }
@@ -5670,7 +5835,7 @@ SCIP_RETCODE GCGprintDecompInformation(
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getScore(scoretype::CLASSIC) );
 
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->hasSetpartitioningMaster(seeedpool) );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->hasSetppccardMaster(seeedpool) );
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (int) seeed->getDetectorchainVector( ).size() );
 

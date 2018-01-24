@@ -186,6 +186,8 @@ DEC_DECL_POSTPROCESSSEEED(postprocessSeeedPostprocess)
      seeedPropagationData->nNewSeeeds = 0;
      delete seeed;
      *result = SCIP_DIDNOTFIND;
+     SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+     SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
      return SCIP_OKAY;
    }
 
@@ -225,6 +227,9 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressivePostprocess)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
 
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/postprocessingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+
 
    return SCIP_OKAY;
 
@@ -239,13 +244,16 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultPostprocess)
    const char* name = DECdetectorGetName(detector);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/postprocessingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDPOSTPROCESSING ) );
 
 
    return SCIP_OKAY;
@@ -266,7 +274,11 @@ DEC_DECL_SETPARAMFAST(setParamFastPostprocess)
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/postprocessingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
 
    return SCIP_OKAY;
 
