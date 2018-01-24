@@ -2845,22 +2845,24 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    {
       bestcol = GCGpricingjobGetCol(pricingjob, 0);
       redcost = GCGcolGetRedcost(bestcol);
+      found = TRUE;
 
-      if( SCIPisDualfeasNegative(scip_, redcost) )
-         found = TRUE;
+      assert(SCIPisDualfeasNegative(scip_, redcost));
    }
 
-   /* If no reduced cost column has been found yet, traverse the generic branching path in reverse order
-    * until such a column is found
+   /* If no negative reduced cost column has been found yet,
+    * traverse the generic branching path in reverse order until such a column is found
     */
    for( i = nbranchconss-1; i >= 0 && !found; --i )
    {
-      if( bestcol != NULL )
+      /* todo: add columns to column pool */
+      GCGpricingjobFreeCols(pricingjob);
+
+      if( SCIPgetStage(GCGpricingjobGetPricingscip(pricingjob)) > SCIP_STAGE_SOLVING )
       {
-         /* todo: add columns to column pool */
-         GCGpricingjobFreeCols(pricingjob);
          SCIP_CALL( SCIPfreeTransform(GCGpricingjobGetPricingscip(pricingjob)) );
       }
+
       SCIPdebugMessage("Applying bound change of depth %d\n", -i);
       SCIP_CALL( SCIPtransformProb(GCGpricingjobGetPricingscip(pricingjob)) );
       SCIP_CALL( addBranchingBoundChangesToPricing(GCGpricingjobGetProbnr(pricingjob), branchconss[i]) );
@@ -2870,9 +2872,9 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       {
          bestcol = GCGpricingjobGetCol(pricingjob, 0);
          redcost = GCGcolGetRedcost(bestcol);
+         found = TRUE;
 
-         if( SCIPisDualfeasNegative(scip_, redcost) )
-            found = TRUE;
+         assert(SCIPisDualfeasNegative(scip_, redcost));
       }
    }
 

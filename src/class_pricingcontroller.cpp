@@ -47,11 +47,13 @@
 #include <exception>
 
 #define DEFAULT_USEHEURPRICING           FALSE      /**< should heuristic pricing be used */
-#define DEFAULT_SORTING                  2          /**< default sorting method for pricing mips
-                                                     *    0 :   order of pricing problems
-                                                     *    1 :   according to dual solution of convexity constraint
-                                                     *    2 :   according to reliability from previous round
+#define DEFAULT_SORTING                  'r'          /**< order by which the pricing problems should be sorted:
+                                                     *    'i'ndices
+                                                     *    'd'ual solutions of convexity constraints
+                                                     *    'r'eliability from all previous rounds
+                                                     *    reliability from the 'l'ast nroundscol rounds
                                                      */
+#define DEFAULT_NROUNDSCOL               15
 #define DEFAULT_RELMAXSUCCESSFULPROBS    1.0        /**< maximal percentage of pricing problems that need to be solved successfully */
 #define DEFAULT_CHUNKSIZE                INT_MAX    /**< maximal number of pricing problems to be solved during one pricing loop */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
@@ -80,6 +82,7 @@ Pricingcontroller::Pricingcontroller(
    npricingprobs = 0;
 
    sorting = DEFAULT_SORTING;
+   nroundscol = DEFAULT_NROUNDSCOL;
    relmaxsuccessfulprobs = DEFAULT_RELMAXSUCCESSFULPROBS;
    chunksize = DEFAULT_CHUNKSIZE;
    eagerfreq = DEFAULT_EAGERFREQ;
@@ -105,9 +108,13 @@ SCIP_RETCODE Pricingcontroller::addParameters()
          "should pricing be performed heuristically before solving the MIPs to optimality?",
          &useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/sorting",
-         "which sorting method should be used to sort the pricing problems (0 = order of pricing problems, 1 = according to dual solution of convexity constraint, 2 = according to reliability from previous round)",
-         &sorting, FALSE, DEFAULT_SORTING, 0, 5, NULL, NULL) );
+   SCIP_CALL( SCIPaddCharParam(origprob, "pricing/masterpricer/sorting",
+         "order by which the pricing problems should be sorted ('i'ndices, 'd'ual solutions of convexity constraints, 'r'eliability from previous rounds, reliability from the 'l'ast nroundscol rounds)",
+         &sorting, FALSE, DEFAULT_SORTING, "dilr", NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/nroundscol",
+         "number of previous pricing rounds for which the number of improving columns should be counted",
+         &nroundscol, TRUE, DEFAULT_NROUNDSCOL, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/relmaxsuccessfulprobs",
          "maximal percentage of pricing problems that need to be solved successfully",
@@ -189,7 +196,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
    {
       if( GCGisPricingprobRelevant(origprob, i) )
       {
-         SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[i], GCGgetPricingprob(origprob, i), i, k / actchunksize) );
+         SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[i], GCGgetPricingprob(origprob, i), i, k / actchunksize, nroundscol) );
          ++k;
       }
       else
@@ -231,6 +238,9 @@ void Pricingcontroller::initPricing(
 /** pricing deinitialization, called when pricing is finished */
 void Pricingcontroller::exitPricing()
 {
+   for( int i = 0; i < npricingprobs; ++i )
+      GCGpricingjobUpdateNColsround(pricingjobs[i], nroundscol);
+
    pricingtype_ = NULL;
 }
 
@@ -256,7 +266,7 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
       if( pricingjobs[i] != NULL )
       {
          SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], useheurpricing, maxcolsprob,
-            sorting, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
+            sorting, nroundscol, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
 
          bestobjvals[i] = -SCIPinfinity(scip_);
          bestredcosts[i] = 0.0;
