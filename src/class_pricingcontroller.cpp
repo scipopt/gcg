@@ -239,7 +239,8 @@ void Pricingcontroller::initPricing(
 void Pricingcontroller::exitPricing()
 {
    for( int i = 0; i < npricingprobs; ++i )
-      GCGpricingjobUpdateNColsround(pricingjobs[i], nroundscol);
+      if( GCGisPricingprobRelevant(origprob, i) )
+         GCGpricingjobUpdateNColsround(pricingjobs[i], nroundscol);
 
    pricingtype_ = NULL;
 }
