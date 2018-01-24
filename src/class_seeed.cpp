@@ -239,6 +239,23 @@ SCIP_Bool Seeed::isconshittingblockca(
    return FALSE;
 }
 
+static
+std::string getPdfReader()
+{
+   int ret = 1;
+   std::string viewers[] = { "okular", "acroread", "evince" };
+   int nviewers = 3;
+
+   for( int i = 0; i < nviewers; ++i )
+   {
+      std::string command = "which ";
+      command.append(viewers[i].c_str() );
+      ret = system(command.c_str());
+      if( ret == 0 )
+         return viewers[i];
+   }
+   return "no pdf viewer found ";
+}
 
 /** checks whether two arrays of SCIP_Real's are identical */
 static
@@ -6227,7 +6244,7 @@ void Seeed::showVisualisation(
          system( "gnuplot helper.plg" );
    }
 
-   command << "evince " << filename << " &";
+   command << getPdfReader() << " " << filename << " &";
 
    if( !writeonly )
       system( command.str().c_str() );
