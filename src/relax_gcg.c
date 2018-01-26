@@ -143,6 +143,7 @@ struct SCIP_RelaxData
 
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
+   SCIP_CLOCK*           rootnodetime;       /**< time in root node */
 };
 
 /*
@@ -2264,6 +2265,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+   SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
    *result = SCIP_DIDNOTRUN;
 
    if( !relaxdata->relaxisinitialized )
@@ -2300,6 +2302,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       /* loop to solve the master problem, this is a workaround and does not fix any problem */
       while( !SCIPisStopped(scip) )
       {
+         if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+         {
+            SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
+         }
          SCIP_Real mastertimelimit = SCIPinfinity(scip);
 
          /* set memorylimit for master */
@@ -2312,7 +2318,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
          if( !SCIPisInfinity(scip, timelimit) )
          {
-
             /* give the master 2% more time then the original scip has left */
             mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
             SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
@@ -2330,6 +2335,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
             if( *result == SCIP_SUCCESS )
             {
                *result = SCIP_CUTOFF;
+               if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+               {
+                  SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+               }
                return SCIP_OKAY;
             }
          }
@@ -2338,7 +2347,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          {
             SCIP_CALL( SCIPsolve(masterprob) );
          }
-
 
          if( SCIPgetStatus(masterprob) != SCIP_STATUS_TIMELIMIT )
          {
@@ -2358,7 +2366,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
       {
          *lowerbound = SCIPgetLocalDualbound(masterprob);
-
       }
       else
       {

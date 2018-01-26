@@ -24,7 +24,9 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/**@file   stat.h
+
+/**
+ * @file   stat.h
  * @brief  Prints information about the best decomposition
  * @author Alexander Gross
  * @author Martin Bergner
