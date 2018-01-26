@@ -2243,6 +2243,12 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
    }
 
+   /* free root node clock */
+   if( relaxdata->rootnodetime != NULL )
+   {
+      SCIP_CALL( SCIPfreeClock(scip, &(relaxdata->rootnodetime)) );
+   }
+
    relaxdata->relaxisinitialized = FALSE;
 
    return SCIP_OKAY;
