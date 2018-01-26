@@ -91,7 +91,7 @@ SCIP_RETCODE GCGwriteDecompositionData(
    SCIPinfoMessage(scip, NULL, "Number of Blocks: %d \n", nblocks);
    SCIPinfoMessage(scip, NULL, "Number of LinkingVars: %d\n", nlinkingvars);
    SCIPinfoMessage(scip, NULL, "Number of LinkingCons: %d\n", nlinkingconss);
-   SCIPinfoMessage(scip, NULL, "Time in root node: %f\n", SCIPgetClockTime(scip, rootnodetime));
+   SCIPinfoMessage(scip, NULL, "Time in root node: %6.2f\n", SCIPgetClockTime(scip, rootnodetime));
 
    /* print number of variables and constraints per block */
 /*   SCIPinfoMessage(scip, NULL, "Block Information\n");
