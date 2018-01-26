@@ -375,6 +375,7 @@ SCIP_RETCODE solveProblem(
       return SCIP_OKAY;
    }
    SCIPdebugMessage("  -> status = %d\n", SCIPgetStatus(pricingprob));
+   SCIPdebugMessage("  -> nsols = %d\n", SCIPgetNSols(pricingprob));
 
    /* all SCIP statuses handled so far; these are currently:
     *    SCIP_STATUS_USERINTERRUPT

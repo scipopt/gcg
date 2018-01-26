@@ -33,7 +33,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+
 #include <assert.h>
 #include <string.h>
 
@@ -113,6 +113,8 @@ SCIP_RETCODE solveKnapsack(
 
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
+
+   SCIPdebugMessage("Knapsack solver -- checking prerequisites\n");
 
    /* check prerequisites: the pricing problem can be solved as a knapsack problem only if
     * - all variables are nonnegative integer variables
@@ -319,9 +321,12 @@ SCIP_RETCODE solveKnapsack(
    /* problem is infeasible */
    if( capacity < 0 )
    {
+      SCIPdebugMessage("Pricing problem is infeasible\n");
       *result = SCIP_STATUS_INFEASIBLE;
       goto TERMINATE;
    }
+
+   SCIPdebugMessage("Solve pricing problem as knapsack\n");
 
    /* solve knapsack problem, all result pointers are needed! */
    if( exactly )

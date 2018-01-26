@@ -3001,8 +3001,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    }
 
 #ifdef _OPENMP
-      if( threads > 0 )
-         omp_set_num_threads(threads);
+   if( threads > 0 )
+      omp_set_num_threads(threads);
 #endif
 
    /* todo: We avoid checking for feasibility of the columns using this hack */
@@ -3037,6 +3037,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIPstatisticMessage("New pricing round at node %" SCIP_LONGINT_FORMAT "\n", SCIPgetNNodes(scip_));
    nstabrounds = 0;
 #endif
+
+   SCIPdebugMessage("***** New pricing round at node %" SCIP_LONGINT_FORMAT "\n", SCIPgetNNodes(scip_));
    
    if( stabilization->inFarkas() && pricerdata->farkasstab )
       SCIPinfoMessage(scip_, NULL, "start pricing with alpha = %f\n", stabilization->getFarkasAlpha());
@@ -3217,6 +3219,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          ;
       }
 
+      /* collect results from all performed pricing jobs */
+
       for( i = 0; i < pricerdata->npricingprobs; ++i )
       {
          if( GCGisPricingprobRelevant(origprob, i) )
@@ -3240,6 +3244,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       optimal = pricingcontroller->pricingIsOptimal();
 
       SCIPdebugMessage("optimal = %u, bestredcostvalid = %u, stabilized = %u\n", optimal, *bestredcostvalid, stabilized);
+
+      /* update stabilization information and lower bound */
 
       if( pricetype->getType() == GCG_PRICETYPE_REDCOST )
       {
