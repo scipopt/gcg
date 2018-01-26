@@ -2836,7 +2836,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_CALL( computeGenericBranchingconssStack(pricetype, GCGpricingjobGetProbnr(pricingjob), &branchconss, &nbranchconss, &branchduals) );
 
    SCIP_CALL( solvePricingProblem(pricingjob, pricetype, maxcols) );
-   if( GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_OPTIMAL )
+   if( GCGpricingjobGetNImpCols(pricingjob) > 0 )
    {
       bestcol = GCGpricingjobGetCol(pricingjob, 0);
       redcost = GCGcolGetRedcost(bestcol);
@@ -2863,7 +2863,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       SCIP_CALL( addBranchingBoundChangesToPricing(GCGpricingjobGetProbnr(pricingjob), branchconss[i]) );
 
       SCIP_CALL( solvePricingProblem(pricingjob, pricetype, 1) );
-      if( GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_OPTIMAL )
+      if( GCGpricingjobGetNImpCols(pricingjob) > 0 )
       {
          bestcol = GCGpricingjobGetCol(pricingjob, 0);
          redcost = GCGcolGetRedcost(bestcol);
