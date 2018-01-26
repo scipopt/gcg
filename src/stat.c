@@ -43,6 +43,7 @@
 #include "pub_gcgvar.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
+#include "gcg.h"
 
 
 /** prints information about the best decomposition*/
