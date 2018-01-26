@@ -261,6 +261,12 @@ int GCGgetNTransvars(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
+/** return clock clockig root node time */
+extern
+SCIP_CLOCK* GCGgetRootNodeTime(
+   SCIP*                 scip                /**< SCIP data structure */
+  );
+
 #ifdef __cplusplus
 }
 #endif

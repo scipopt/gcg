@@ -1,3 +1,4 @@
+#define SCIP_DEBUG
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
@@ -2093,6 +2094,7 @@ void initRelaxdata(
 
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
+   relaxdata->rootnodetime = NULL;
 }
 
 /*
@@ -2120,7 +2122,6 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
 }
 
 /** deinitialization method of relaxator (called before transformed problem is freed) */
-
 static
 SCIP_DECL_RELAXEXIT(relaxExitGcg)
 {
@@ -2165,6 +2166,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata->masterprob != NULL);
 
    initRelaxdata(relaxdata);
+   SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
 
    return SCIP_OKAY;
 }
@@ -2265,7 +2267,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-   SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
    *result = SCIP_DIDNOTRUN;
 
    if( !relaxdata->relaxisinitialized )
@@ -2290,6 +2291,13 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
+      /* start the root node time clock */
+      if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+      {
+         SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
+         SCIPdebugMessage("  Root Node Time clock started");
+      }
+
       /* update the number of the last solved node */
       relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
 
@@ -2302,10 +2310,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       /* loop to solve the master problem, this is a workaround and does not fix any problem */
       while( !SCIPisStopped(scip) )
       {
-         if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
-         {
-            SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
-         }
          SCIP_Real mastertimelimit = SCIPinfinity(scip);
 
          /* set memorylimit for master */
@@ -2338,6 +2342,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
                if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
                {
                   SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+                  SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
                }
                return SCIP_OKAY;
             }
@@ -2359,6 +2364,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
       {
          *result = SCIP_DIDNOTRUN;
+         if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+         {
+            SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+            SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+         }
          return SCIP_OKAY;
       }
 
@@ -2380,6 +2390,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
             if( tilim-SCIPgetSolvingTime(masterprob) < 0 )
             {
                *result = SCIP_DIDNOTRUN;
+               if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+               {
+                  SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+                  SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+               }
                return SCIP_OKAY;
             }
             *lowerbound = SCIPinfinity(scip);
@@ -2387,12 +2402,22 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          else if( SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN )
          {
             *result = SCIP_DIDNOTRUN;
+            if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+            {
+               SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+               SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+            }
             return SCIP_OKAY;
          }
          else
          {
             SCIPwarningMessage(scip, "Stage <%d> is not handled!\n", SCIPgetStage(masterprob));
             *result = SCIP_DIDNOTRUN;
+            if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+            {
+               SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+               SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+            }
             return SCIP_OKAY;
          }
       }
@@ -2419,7 +2444,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    #endif
          if( !stored )
          {
-
             SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
          }
          /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
@@ -2437,6 +2461,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
                GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
       }
 
+   if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
+   {
+      SCIP_CALL( SCIPstopClock(scip, relaxdata->rootnodetime) );
+      SCIPdebugMessage("  Root Node Time clock stopped at %6.2fs.\n", SCIPgetClockTime(scip, relaxdata->rootnodetime));
+   }
    }
    else
    {
@@ -3982,4 +4011,23 @@ int GCGgetNTransvars(
    assert(relaxdata != NULL);
 
    return relaxdata->ntransvars;
+}
+
+/** return clock clocking root node time */
+SCIP_CLOCK* GCGgetRootNodeTime(
+   SCIP*                scip                 /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->rootnodetime;
 }
