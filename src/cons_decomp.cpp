@@ -2017,13 +2017,14 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    char* command;
    SCIP_Bool endoffile;
    int commandlen;
+   SCIP_Bool selectedsomeseeed;
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert( conshdlr != NULL );
    finished = FALSE;
 
-
+   selectedsomeseeed = TRUE;
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
@@ -2081,6 +2082,14 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
                continue;
             }
 
+            if( strncmp( command, "quit", commandlen2) == 0 )
+            {
+               finished = TRUE;
+               selectedsomeseeed = FALSE;
+               continue;
+            }
+
+
             if( strncmp( command, "choose", commandlen2) == 0 )
             {
                SCIP_CALL(SCIPconshdlrDecompToolboxChoose(scip, dialoghdlr, dialog ) );
@@ -2092,6 +2101,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
             if( strncmp( command, "abort", commandlen2) == 0 )
             {
                finished = TRUE;
+               selectedsomeseeed = FALSE;
                continue;
             }
 
@@ -2143,7 +2153,27 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       else
       {
          isfromunpresolved = TRUE;
-         seeedpool = conshdlrdata->seeedpoolunpresolved;
+         if ( conshdlrdata->seeedpoolunpresolved == NULL )
+            conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+          seeedpool = conshdlrdata->seeedpoolunpresolved;
+
+      }
+      if( seeedpool == NULL )
+      {
+         if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
+
+         {
+            if (conshdlrdata->seeedpool == NULL )
+               conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+            seeedpool = conshdlrdata->seeedpool;
+         }
+         else
+         {
+            if ( conshdlrdata->seeedpoolunpresolved == NULL)
+               conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
+            seeedpool = conshdlrdata->seeedpoolunpresolved;
+         }
+
       }
       conshdlrdata->curruserseeed = new gcg::Seeed( scip, SCIPconshdlrDecompGetNextSeeedID(scip), seeedpool->getNConss(), seeedpool->getNVars() );
       conshdlrdata->curruserseeed->setIsFromUnpresolved(isfromunpresolved);
@@ -2152,7 +2182,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    /** curruserseeed is ready to modify */
 
    finished = FALSE;
-   while ( !finished )
+   while ( !finished && selectedsomeseeed )
    {
       int commandlen2;
       SCIP_Bool success;
