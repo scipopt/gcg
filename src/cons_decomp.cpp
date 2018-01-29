@@ -1233,7 +1233,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "------", "-----------");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "conss", "assign unassigned constraints to master/blocks");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "vars", "assign unassigned variables to master(only)/linking/blocks");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "refine ", "refine implicit constraint and variables assignments");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "refine", "refine implicit constraint and variables assignments");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "finish by detector", "choose a finishing detector that completes the decomposition");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "quit the modification process and returns to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
@@ -2127,7 +2127,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    else
    {
       /* create new decomposition */
-      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Should the new partial decomposition be for the presolved or the unpresolved problem? (or \"h\" for help) : \nGCG/toolbox> ", &command, &endoffile) );
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Should the new partial decomposition be for the presolved or the unpresolved problem? (type \"presolved\" or \"unpresolved\") : \nGCG/toolbox> ", &command, &endoffile) );
       commandlen = strlen(command);
 
       if( conshdlrdata->curruserseeed != NULL )
@@ -2135,6 +2135,12 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 
       gcg::Seeedpool* seeedpool;
       SCIP_Bool isfromunpresolved;
+
+      while( strncmp( command, "presolved", commandlen) != 0 && strncmp( command, "unpresolved", commandlen) != 0 )
+      {
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Invalid input. Should the new partial decomposition be for the presolved or the unpresolved problem? (type \"presolved\" or \"unpresolved\") : \nGCG/toolbox> ", &command, &endoffile) );
+         commandlen = strlen(command);
+      }
 
       /** case distinction: */
       if( strncmp( command, "presolved", commandlen) == 0 )
@@ -2144,7 +2150,11 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
             seeedpool = conshdlrdata->seeedpool;
          else
          {
-            SCIPdebugMessagePrint(scip, "create seeedpool for transformed problem, n detectors: %d \n", conshdlrdata->ndetectors);
+            if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+            {
+               SCIPinfoMessage(scip, NULL, "Problem is not presolved yet. Please presolve it first!\n");
+               return SCIP_OKAY;
+            }
 
             conshdlrdata->seeedpool = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
             seeedpool = conshdlrdata->seeedpool;
@@ -2154,7 +2164,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       {
          isfromunpresolved = TRUE;
          if ( conshdlrdata->seeedpoolunpresolved == NULL )
-            conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, TRUE);
+            conshdlrdata->seeedpoolunpresolved = new gcg::Seeedpool(scip, CONSHDLR_NAME, FALSE);
           seeedpool = conshdlrdata->seeedpoolunpresolved;
 
       }

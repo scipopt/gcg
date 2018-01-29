@@ -1195,12 +1195,12 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    }
 
    /* select */
-   if( !SCIPdialogHasEntry(root, "decomposition toolbox") )
+   if( !SCIPdialogHasEntry(root, "decomposition_toolbox") )
    {
       SCIP_CALL( SCIPincludeDialog(scip, &submenu,
          NULL,
          GCGdialogExecToolbox, NULL, NULL,
-         "decomposition toolbox", "create/modify (partial) decompositions", FALSE, NULL) );
+         "decomposition_toolbox", "create/modify (partial) decompositions", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
    }
