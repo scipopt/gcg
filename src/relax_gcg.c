@@ -1035,6 +1035,7 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
    SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
 
+
    /* disable solution storage ! */
    SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
 

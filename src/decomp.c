@@ -2241,8 +2241,6 @@ SCIP_RETCODE DECdecompCheckConsistency(
    /* Check whether subscipcons are correct */
    for( b = 0; b < DECdecompGetNBlocks(decdecomp); ++b )
    {
-
-
       for( c = 0; c < DECdecompGetNSubscipconss(decdecomp)[b]; ++c )
       {
          SCIP_VAR** curvars;
