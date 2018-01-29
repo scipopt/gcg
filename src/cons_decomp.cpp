@@ -5278,6 +5278,9 @@ int SCIPconshdlrDecompGetNFinishedDecomps(
    if( conshdlrdata->seeedpool == NULL )
       return conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds();
 
+   if( conshdlrdata->seeedpoolunpresolved == NULL )
+         return conshdlrdata->seeedpool->getNFinishedSeeeds();
+
    /* all other cases */
    return (int) conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() + conshdlrdata->seeedpool->getNFinishedSeeeds();
 }
