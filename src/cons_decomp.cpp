@@ -2804,6 +2804,7 @@ SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
 
    if( seeed->getNReps() == 0 )
    {
+      SCIPdebugMessage("calc aggregation information for seeed!\n");
       seeed->calcAggregationInformation(currseeedpool);
    }
 

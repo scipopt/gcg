@@ -41,6 +41,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+/*#define SCIP_DEBUG*/
+
 #include <string.h>
 
 #include "scip/scipdefplugins.h"
@@ -902,12 +904,12 @@ SCIP_RETCODE checkIdenticalBlocks(
          /** if (possibly deactive) conss has been added since structure detecting we need to reevaluate identity of subproblems */
          if( SCIPgetNConss(scip) != SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) )
          {
-            //SCIPinfoMessage(scip, NULL, "nconss: %d; ndetectionconss: %d -> using classical identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ));
+            SCIPdebugMessage("nconss: %d; ndetectionconss: %d -> using classical identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ));
             SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
          }
          else
          {
-            //SCIPinfoMessage(scip,  NULL, "nconss: %d; ndetectionconss: %d -> using seeed information for identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) );
+            SCIPdebugMessage( "nconss: %d; ndetectionconss: %d -> using seeed information for identity test \n", SCIPgetNConss(scip), SCIPconshdlrDecompGetNFormerDetectionConssForID(scip, DECdecompGetSeeedID(relaxdata->decdecomp) ) );
             SCIP_CALL( pricingprobsAreIdenticalFromDetectionInfo( scip, relaxdata, hashorig2pricingvar, i, j, varmap, &identical ) );
          }
 

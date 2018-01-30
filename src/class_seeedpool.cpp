@@ -44,7 +44,7 @@
 #endif
 
 //#define WRITE_ORIG_CONSTYPES
-//#define SCIP_DEBUG
+/* #define SCIP_DEBUG */
 
 #include "gcg.h"
 #include "objscip/objscip.h"
