@@ -250,6 +250,8 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
 
    SCIPdebugMessage("setup pricing queue, chunk = %d/%d\n", curchunk+1, nchunks);
 
+   GCGpqueueClear(pqueue);
+
    for( int i = 0; i < npricingprobs; ++i )
    {
       if( pricingjobs[i] != NULL )
