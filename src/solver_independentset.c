@@ -45,8 +45,6 @@
 #include "cliquer.h"
 #include "graph.h" //Graph structure from cliquer library
 
-#include <time.h> //@TDOO remove this line after debugging
-
 #include "pub_gcgvar.h"
 
 #define SOLVER_NAME          "independentset"
@@ -69,12 +67,12 @@ struct GCG_SolverData
 
 /** Add a variable to the bijection graph g and indsetvars array. Returns the index of the corresponding node in the graph. */
 static
-int INDSETaddNodeToGraph(
-   graph_t*       g,                               /**< Graph into which to insert the new variable as a node */
+int INDSETaddVarToGraph(
+   graph_t*       g,                              /**< Graph into which to insert the new variable as a node */
    SCIP_VAR*      consvar,                        /**< The variable that is to be assigned a node in the graph */
-   int*           indexcount,                          /**< Pointer to Index of the next unassigned node in the graph */
-   int            scalingfactor,                        /**< Factor for scaling the weight of newly mapped nodes */
-   SCIP_VAR**     indsetvars                     /**< Array that keeps track of variables that are part of the graph */
+   int*           indexcount,                     /**< Pointer to Index of the next unassigned node in the graph */
+   SCIP_Real      scalingfactor,                  /**< Factor for scaling the weight of newly mapped nodes */
+   SCIP_VAR**     indsetvars                      /**< Array that keeps track of variables that are part of the graph */
    )
 {
    int unique;
@@ -125,48 +123,155 @@ int INDSETgetNodeIndex(
    }
    return -1;
 }
-/*
-static SCIP_Real* INDSETgetObjectives(
-   SCIP_VAR** pricingprobvars
+
+/** Check if the objective coefficients of the variables are already Integral */
+static 
+int INDSETareObjectivesIntegral(
+   SCIP*       scip,
+   SCIP_VAR**  vars
    )
 {
-   SCIP_Real
-}*/
+   int i;
+   SCIP_Real objval;
+   SCIP_Real nvars;
 
-/** */
-static int INDSETscaleRelativeToMax(
-   SCIP*       pricingprob,
-   SCIP_VAR**  pricingprobvars
+   nvars = SCIPgetNVars(scip);
+
+   for( i = 0; i < nvars; ++i )
+   {
+      objval = SCIPvarGetObj(vars[i]);
+      if( !SCIPisZero(scip,objval-((int)objval)) )
+      {
+         return 0;
+      }
+   }
+   return 1;
+}
+
+/** Scale a wanted scaling factor until it is suitable for use with cliquer. If the factor is too big, it is divided by 2 recursively */
+static
+SCIP_Real INDSETscaleScalingFactor(
+   SCIP*       scip,
+   SCIP_VAR**  vars,
+   SCIP_Real   factor
+   )
+{
+   int i;
+   SCIP_Real varval;
+   SCIP_Real nvars;
+   SCIP_Real biggestobj;
+
+   nvars = SCIPgetNVars(scip);
+
+   biggestobj = 0.0;
+   for( i = 0; i < nvars; ++i )
+   {
+      varval = SCIPvarGetObj(vars[i]);
+      if( SCIPisLT(scip,varval,biggestobj) )
+      {
+         biggestobj = varval;
+      }
+   }
+   if( SCIPisZero(scip, biggestobj) )
+   {
+      biggestobj = 1.0;
+   }
+
+   /* Test if the factor is suitable for scaling, if not, divide it by 2 */
+   if( !(factor < INT_MAX/(nvars*fabs(biggestobj))) )
+   {
+      return INDSETscaleScalingFactor(scip,vars,factor/2);
+   }
+   else
+   {
+      return factor;
+   }
+}
+
+/** Scale the objective coefficients of the variables maximally s.t. they become integral and the sum of values does not exceed INT_MAX */
+static 
+SCIP_Real INDSETscaleRelativeToMax(
+   SCIP*       scip,
+   SCIP_VAR**  vars
    )
 {
    int       i;
-   int       scalingfactor;
-   SCIP_Real candidate;
+   SCIP_Real scalingfactor;
+   SCIP_Real varval;
    SCIP_Real biggestobj;
-   SCIP_Real npricingprobvars;
+   SCIP_Real nvars;
 
-   npricingprobvars = SCIPgetNVars(pricingprob);
+   nvars = SCIPgetNVars(scip);
 
-   scalingfactor = ((int) INT_MAX / npricingprobvars) - npricingprobvars;
+   scalingfactor = (INT_MAX / nvars) - nvars;
 
    /* Check for the biggest objective value to safely adjust the scalingfactor */
    biggestobj = 0.0;
-   for( i = 0; i < npricingprobvars; ++i )
+   for( i = 0; i < nvars; ++i )
    {
-      candidate = SCIPvarGetObj(pricingprobvars[i]);
-      if( SCIPisLT(pricingprob,candidate,biggestobj) )
+      varval = SCIPvarGetObj(vars[i]);
+      if( SCIPisLT(scip,varval,biggestobj) )
       {
-         biggestobj = candidate;
+         biggestobj = varval;
       }
    }
-   if( SCIPisLT(pricingprob,biggestobj,-1.0) )
+   if( SCIPisLT(scip,biggestobj,-1.0) )
    {
       /* Ensure that INT_MAX is never reached by the sum of all scaled weights */
-      scalingfactor = abs((int) scalingfactor / biggestobj);
+      scalingfactor = fabs(scalingfactor / biggestobj);
    }
    return scalingfactor;
 }
 
+/** Scale the objective coefficients of the variables relative to the smallest decimal part s.t. they become integral and the sum of values does not exceed INT_MAX  */
+static
+SCIP_Real INDSETscaleMinimalIntegral(
+   SCIP*       scip,
+   SCIP_VAR**  vars
+   )
+{
+   int i;
+   SCIP_Real minval;
+   SCIP_Real objval;
+   SCIP_Real scalefactor;
+
+   SCIP_Real nvars;
+
+   nvars = SCIPgetNVars(scip);
+   minval = SCIP_REAL_MAX;
+
+   /* Search for the smallest decimal part of all objectives.*/
+   for( i = 0; i < nvars; ++i )
+   {
+      objval = SCIPvarGetObj(vars[i]);
+      if( objval - ((int)objval) < minval )
+      {
+         minval = objval - ((int)objval);
+      }
+   }
+   if( SCIPisZero(scip, minval) )
+   {
+      minval = 1.0;
+   }
+
+   scalefactor = INDSETscaleScalingFactor(scip, vars, 1/fabs(minval));
+
+   if( SCIPisZero(scip,scalefactor) )
+   {
+      scalefactor = 1.0;
+   }
+   return scalefactor;
+}
+
+/** Dummy function to allow disabling of scaling by setting the scaling factor to 1. */
+static
+SCIP_Real INDSETscaleNoScaling(
+   SCIP*       scip,
+   SCIP_VAR**  vars
+   )
+{
+   return 1.0;
+}
 
 /* Basic idea of the heuristic solver: The biggest independent set in a graph corresponds to the biggest clique
  * of the complement graph, for which we use the cliquer library to find it. We therefore transform the variables 
@@ -200,6 +305,7 @@ SCIP_RETCODE solveIndependentSet(
 { /*lint -e715 */
    SCIP_CONS**    constraints;
    SCIP_CONS**    markedconstraints;
+   SCIP_CONS**    couplingcons;
    SCIP_CONSHDLR* conshdlr;
    SCIP_VAR**     lconsvars;
    SCIP_VAR**     vconsvars;
@@ -208,13 +314,15 @@ SCIP_RETCODE solveIndependentSet(
    SCIP_VAR**     pricingprobvars;
    SCIP_Real*     solvals;
    SCIP_Real*     consvals;
+   SCIP_Real      scalingfactor;
+   SCIP_Real      varsum;
    SCIP_Bool      retcode;
    set_t          clique;
    graph_t*       g;
    clique_options cl_opts;
+   int*           markedvars;
    int            nedges;
    int            markedcount;
-   int*           markedvars;
    int            npricingprobvars;
    int            nconss;
    int            indexcount;
@@ -222,12 +330,9 @@ SCIP_RETCODE solveIndependentSet(
    int            nodeindex1;
    int            nodeindex2;
    int            coefindex;
-   int            scalingfactor;
    int            nvars;
    int            flag;
-
-   time_t start_t, end_t;
-   double diff_t;
+   int            cconsindex;   
 
    assert(pricingprob != NULL);
    assert(solver != NULL);
@@ -254,64 +359,23 @@ SCIP_RETCODE solveIndependentSet(
     * Additionally, the sum of node weights needs to be smaller than INT_MAX.
     * We restrict our scaling factor to always honor this constraint.
     */
-   scalingfactor = INDSETscaleRelativeToMax(pricingprob, pricingprobvars);
-
-
-
-/*
-   SCIP_COL**     columns;
-   SCIP_ROW*      valrow;
-   SCIP_Real*     objectives;
-   int            counterv;
-
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&columns,npricingprobvars) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&objectives,npricingprobvars) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&solvals,npricingprobvars) );
-   counterv = 0;
-   SCIPwarningMessage(pricingprob,"00\n");
-   for( int i = 0; i < npricingprobvars; ++i )
+   if( !INDSETareObjectivesIntegral(pricingprob,pricingprobvars) )
    {
-      if( SCIPisZero(pricingprob,SCIPvarGetObj(pricingprobvars[i])) )
-      {
-         assert(SCIPvarGetCol(GCGpricingVarGetOriginalVar(pricingprobvars[i])) != NULL );
-         columns[counterv] = SCIPvarGetCol(GCGpricingVarGetOriginalVar(pricingprobvars[i]));
-         printf("%u %u \n", SCIPvarGetStatus(pricingprobvars[i]), SCIPvarGetStatus(GCGpricingVarGetOriginalVar(pricingprobvars[i])) );
-         objectives[counterv] = SCIPvarGetObj(pricingprobvars[i]);
-         ++counterv;
-      }
+      scalingfactor = INDSETscaleMinimalIntegral(pricingprob, pricingprobvars);
    }
-   SCIP_CALL( SCIPreallocBufferArray(pricingprob,&columns,counterv) );
-   SCIP_CALL( SCIPreallocBufferArray(pricingprob,&objectives,counterv) );
-   SCIP_CALL( SCIPreallocBufferArray(pricingprob,&solvals,counterv) );
-
-   SCIPwarningMessage(pricingprob,"01\n");
-   if( counterv > 2 )
+   else
    {
-      printf("%d\n", counterv);
-      SCIP_CALL( SCIPcreateRowUnspec(pricingprob, &valrow, "Objective scaler column",counterv,columns,objectives,-SCIPinfinity(pricingprob),SCIPinfinity(pricingprob),TRUE,TRUE,TRUE ) );
-      SCIPwarningMessage(pricingprob,"02\n");
-      SCIP_CALL( SCIPmakeRowIntegral(pricingprob,valrow,0,INT_MAX,1,scalingfactor,TRUE,&retcode) );
-      SCIPwarningMessage(pricingprob,"03\n");
-      solvals = SCIProwGetVals(valrow);
-      SCIPwarningMessage(pricingprob,"04\n");
-      for( int i = 0; i < counterv; ++i )
-      {
-         printf("%g\n",solvals[i]);
-      }
-      SCIPwarningMessage(pricingprob,"05\n");
+      scalingfactor = 1.0;
    }
-   SCIPfreeBufferArray(pricingprob,&solvals);
-   SCIPfreeBufferArray(pricingprob,&columns);
-   SCIPfreeBufferArray(pricingprob,&objectives);
-*/
+   
 
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&markedconstraints,nconss) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&indsetvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&solvals,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&mconsvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&markedvars,npricingprobvars) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&lconsvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&vconsvars,npricingprobvars) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&couplingcons,nconss) );
 
    /* Initialize arrays to ensure data consistency */
    for( int i = 0; i < npricingprobvars; ++i )
@@ -325,6 +389,9 @@ SCIP_RETCODE solveIndependentSet(
 
    /* Use to handle a rare combination of IS and varbound constraints */
    markedcount = 0;
+
+   /* Used to keep track of indizes of coupling constraints */ 
+   cconsindex = 0;
 
    /* Build complementary graph by first creating a complete graph and then deleting edges of IS constraints */
    /* Size is first chosen to be maximal and then later cropped down to the actual number of nodes */
@@ -361,12 +428,12 @@ SCIP_RETCODE solveIndependentSet(
             {
                if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) )
                {
-                  nodeindex0 = INDSETaddNodeToGraph(g, lconsvars[0], &indexcount, scalingfactor, indsetvars);
+                  nodeindex0 = INDSETaddVarToGraph(g, lconsvars[0], &indexcount, scalingfactor, indsetvars);
                }
 
                if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
                {
-                  nodeindex1 = INDSETaddNodeToGraph(g, lconsvars[1], &indexcount, scalingfactor, indsetvars);
+                  nodeindex1 = INDSETaddVarToGraph(g, lconsvars[1], &indexcount, scalingfactor, indsetvars);
                }
 
                if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
@@ -387,12 +454,12 @@ SCIP_RETCODE solveIndependentSet(
             /* As before, the constraint is only regarded if it is relevant for pricing */
             if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) )
             {
-               nodeindex0 = INDSETaddNodeToGraph(g, lconsvars[0], &indexcount, scalingfactor, indsetvars);
+               nodeindex0 = INDSETaddVarToGraph(g, lconsvars[0], &indexcount, scalingfactor, indsetvars);
             }
 
             if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
             {
-               nodeindex1 = INDSETaddNodeToGraph(g, lconsvars[1], &indexcount, scalingfactor, indsetvars);
+               nodeindex1 = INDSETaddVarToGraph(g, lconsvars[1], &indexcount, scalingfactor, indsetvars);
             }
             if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
             {
@@ -406,8 +473,6 @@ SCIP_RETCODE solveIndependentSet(
          {
             /* The current constraint is no linear IS constraint */
             SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
-            consvals = SCIPgetValsLinear(pricingprob,constraints[i]);
-            lconsvars = SCIPgetVarsLinear(pricingprob,constraints[i]);
             coefindex = -1;
 
             /* Check the coefficients of the variables in the constraint */
@@ -435,11 +500,11 @@ SCIP_RETCODE solveIndependentSet(
                   /* We are only interested in vars potentially relevant for pricing (!= 0) */
                   if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[k]),0) )
                   {
-                     nodeindex0 = INDSETaddNodeToGraph(g, lconsvars[k], &indexcount, scalingfactor, indsetvars);
+                     nodeindex0 = INDSETaddVarToGraph(g, lconsvars[k], &indexcount, scalingfactor, indsetvars);
 
                      for( int l = k + 1; l < nvars; ++l )
                      {
-                        nodeindex1 = INDSETaddNodeToGraph(g, lconsvars[l], &indexcount, scalingfactor, indsetvars);
+                        nodeindex1 = INDSETaddVarToGraph(g, lconsvars[l], &indexcount, scalingfactor, indsetvars);
 
                         if( nodeindex0 != nodeindex1 )
                         {
@@ -460,7 +525,7 @@ SCIP_RETCODE solveIndependentSet(
                {
                   /* We cannot guarantee that there is no constraint of the form x+CouplingVar <= 1 */
                   /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
-                  nodeindex0 = INDSETaddNodeToGraph(g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars);
+                  nodeindex0 = INDSETaddVarToGraph(g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars);
 
                   /* We additionally have to mark the variable to later set it to one */ 
                   solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
@@ -471,7 +536,7 @@ SCIP_RETCODE solveIndependentSet(
                   /* We cannot guarantee that there is no constraint of the form x+CouplingVar <= 1 */
                   /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
                   /* We additionally have to mark the variable to later set it to one */ 
-                  nodeindex0 = INDSETaddNodeToGraph(g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars);
+                  nodeindex0 = INDSETaddVarToGraph(g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars);
 
                   /* We additionally have to mark the variable to later set it to one */ 
                   solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
@@ -484,13 +549,13 @@ SCIP_RETCODE solveIndependentSet(
                      if( j != coefindex && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[j]),0) )
                      {
                         /* Determine nodeindex0 */
-                        nodeindex0 = INDSETaddNodeToGraph(g, lconsvars[j], &indexcount, scalingfactor, indsetvars);
+                        nodeindex0 = INDSETaddVarToGraph(g, lconsvars[j], &indexcount, scalingfactor, indsetvars);
                         /* Determine nodeindex1 */
                         for( int k = j + 1; k < nvars; ++k )
                         {
                            if( k != coefindex )
                            {
-                              nodeindex1 = INDSETaddNodeToGraph(g, lconsvars[k], &indexcount, scalingfactor, indsetvars);
+                              nodeindex1 = INDSETaddVarToGraph(g, lconsvars[k], &indexcount, scalingfactor, indsetvars);
                               if( nodeindex0 != nodeindex1 )
                               {
                                  if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
@@ -510,18 +575,11 @@ SCIP_RETCODE solveIndependentSet(
                   *result = SCIP_STATUS_UNKNOWN;
                   goto TERMINATE;
                }
-               
-               SCIP_Real varsum = 0;
-               for( int i = 0; i < nvars; ++i )
+               /* To later check whether we want the coupling variable to become 1 at all, we store the constraint.*/
+               if( coefindex != -1 )
                {
-                  varsum += SCIPvarGetObj(lconsvars[i]);
-               }
-               if( varsum > 0 )
-               {
-                  for( int i = 0; i < nvars; ++i )
-                  {
-                     solvals[SCIPvarGetProbindex(lconsvars[i])] = 0.0;
-                  }
+                  couplingcons[cconsindex] = constraints[i];
+                  ++cconsindex;
                }
             }
             else{
@@ -549,12 +607,12 @@ SCIP_RETCODE solveIndependentSet(
                   {
                      if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]),0) )
                      {
-                        nodeindex0 = INDSETaddNodeToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
+                        nodeindex0 = INDSETaddVarToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
                      }
 
                      if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[1]),0) )
                      {
-                        nodeindex1 = INDSETaddNodeToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
+                        nodeindex1 = INDSETaddVarToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
                      }
                      /* It may be the case, that both the constraints x - y <= 0 and x + y <= 1 are part of the problem */
                      /* Although rare, we later ensure that we do not set x to 1 while y is set to 0 */
@@ -566,7 +624,7 @@ SCIP_RETCODE solveIndependentSet(
                   {
                      if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[1]),0) )
                      {
-                        nodeindex1 = INDSETaddNodeToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
+                        nodeindex1 = INDSETaddVarToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
                      }
                   }
                   /* If none of the nodes are relevant, force x to be zero, since the constraint would be violated if x = 1 and y = 0 */
@@ -594,12 +652,12 @@ SCIP_RETCODE solveIndependentSet(
                {
                   if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]),0) )
                   {
-                     nodeindex0 = INDSETaddNodeToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
+                     nodeindex0 = INDSETaddVarToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
                   }
 
                   if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[1]),0) )
                   {
-                     nodeindex1 = INDSETaddNodeToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
+                     nodeindex1 = INDSETaddVarToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
                   }
 
                   if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[1]),0) )
@@ -629,8 +687,8 @@ SCIP_RETCODE solveIndependentSet(
                   This is heuristical, as a positive objective won't be weighted in the clique search */
                if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]) + SCIPvarGetObj(vconsvars[1]),0) )
                {
-                  nodeindex0 = INDSETaddNodeToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
-                  nodeindex1 = INDSETaddNodeToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
+                  nodeindex0 = INDSETaddVarToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
+                  nodeindex1 = INDSETaddVarToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
 
                   /* Technically the edge between both can still be deleted, if both cons x-y==0 and x+y<=1 are present. */
                   /* If the edge is deleted, we later force both to be zero */
@@ -663,8 +721,8 @@ SCIP_RETCODE solveIndependentSet(
                // One of the variables has to be set to one to satisfy the constraint but not both 
                // This is done by adding both to the graph and simply deleting the edge between them 
                // TODO: it may still be that neither is part of the max ind set 
-               nodeindex0 = INDSETaddNodeToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
-               nodeindex1 = INDSETaddNodeToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
+               nodeindex0 = INDSETaddVarToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
+               nodeindex1 = INDSETaddVarToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
 
                if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                {
@@ -735,6 +793,46 @@ SCIP_RETCODE solveIndependentSet(
       graph_resize(g,indexcount);
    }
 
+
+   /* Check if the coupling variable should be set to 0 (and all the coupled vars) */
+   for( int i = 0; i < cconsindex; ++i )
+   {
+      lconsvars = SCIPgetVarsLinear(pricingprob,couplingcons[i]);
+      consvals = SCIPgetValsLinear(pricingprob,couplingcons[i]);
+      SCIPgetConsNVars(pricingprob,couplingcons[i],&nvars,&retcode);
+      coefindex = -1;
+      /* Find index of coupling Var */
+      for( int j = 0; j < nvars; ++j )
+      {
+         if( consvals[j] != 1 && (coefindex == -1) )
+         {
+            coefindex = j;
+         }
+      }
+      /* Calculate sum of objective coefficients of vars that are in the graph */
+      varsum = 0;
+      for( int j = 0; j < nvars; ++j )
+      {
+         if( j != coefindex )
+         {
+            
+            nodeindex0 = INDSETgetNodeIndex(lconsvars[j],indsetvars,indexcount);
+            if( nodeindex0 != -1 )
+            {
+               varsum += SCIPvarGetObj(lconsvars[j]);
+            }
+         }
+      }
+      /* If the sum is lower than the objective coefficient of the coupling var, set all vars to 0. */
+      if( varsum + SCIPvarGetObj(lconsvars[coefindex]) > 0 )
+      {
+         for( int j = 0; j < nvars; ++j )
+         {
+            solvals[SCIPvarGetProbindex(lconsvars[j])] = 0.0;
+         }
+      }
+   }
+
    /* Handle the case of equality-Vbd-constraints */
    for( int i = 0; i < markedcount; ++i )
    {
@@ -757,7 +855,7 @@ SCIP_RETCODE solveIndependentSet(
                   SCIPgetConsNVars(pricingprob,constraints[j],&nvars,&retcode);
                   consvals = SCIPgetValsLinear(pricingprob, constraints[j]);
                   lconsvars = SCIPgetVarsLinear(pricingprob, constraints[j]);
-
+                  coefindex = -1;
                   for( int k = 0; k < nvars; ++k )
                   {
                      if( consvals[k] != 1 && (coefindex == -1) )
@@ -995,13 +1093,8 @@ SCIP_RETCODE solveIndependentSet(
    cl_opts.clique_list = NULL;
    cl_opts.clique_list_length = 0;
 
-
-   time(&start_t);
    /* Find maximum weight cliques using the cliquer library */
    clique = clique_find_single(g,0,0,FALSE,&cl_opts);
-   time(&end_t);
-   diff_t = difftime(end_t, start_t);
-   //printf("Execution time = %f\n", diff_t);
 
    /* Set all members of the maximum clique with objective coefficient < 0 to 1 */
    for( int i = 0; i < indexcount; ++i )
@@ -1023,7 +1116,6 @@ SCIP_RETCODE solveIndependentSet(
             solvals[SCIPvarGetProbindex(indsetvars[i])] = 0.0;
          }
       }
-      //SCIPdebugMessage("Node %d is Var %s.\n",i,SCIPvarGetName(indsetvars[i]));
    }
 
    /* Handle the case of marked inequality constraints of type x - y <= 0 in combination with x + y <= 1 -Constraints */
@@ -1083,7 +1175,6 @@ SCIP_RETCODE solveIndependentSet(
             solvals[i] = 0.0;
          }
       }
-      //SCIPdebugMessage("Var %d has Name %s and value %g .\n",i,SCIPvarGetName(pricingprobvars[i]),solvals[i]);
    }
    
    /*
@@ -1174,11 +1265,24 @@ SCIP_RETCODE solveIndependentSet(
    //graph_write_dimacs_ascii(g,NULL,outputgraph);
    //fclose(outputgraph);
    fclose(outputcons);
-
-   SCIPdebugMessage("\n\n");
    
+   SCIPdebugMessage("\n\n");
+
+   printf("Factor: %g\n", scalingfactor);
+   varsum = 0;
+   for( int i = 0; i < npricingprobvars; ++i )
+   {
+      if( solvals[i] == 1.0 )
+      {
+         varsum += SCIPvarGetObj(pricingprobvars[i]);
+      }
+      
+   }
+   printf("%g\n", varsum );
+
    //END DEBUG
    */
+
 
    /* Create a column corresponding to our clique result */
    SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[0], probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
@@ -1187,8 +1291,8 @@ SCIP_RETCODE solveIndependentSet(
    set_free(clique); /* clique can only be freed if non-empty */ 
 
  TERMINATE:
+   SCIPfreeBufferArray(pricingprob,&couplingcons);
    SCIPfreeBufferArray(pricingprob,&vconsvars);
-   SCIPfreeBufferArray(pricingprob,&lconsvars);
    SCIPfreeBufferArray(pricingprob,&markedvars);
    SCIPfreeBufferArray(pricingprob,&mconsvars);
    SCIPfreeBufferArray(pricingprob,&solvals);
