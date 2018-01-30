@@ -106,7 +106,7 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_MAXNCLASSESFORNBLOCKCANDIDATES 18                 /** Maximum number of classes a classifier can have to be used for voting nblockcandidates */
 #define DEFAULT_ENABLEORIGDETECTION FALSE                         /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
-#define DEFAULT_ENABLEORIGCLASSIFICATION FALSE                    /**< indicates whether to start detection for the original problem */
+#define DEFAULT_ENABLEORIGCLASSIFICATION              TRUE        /**< indicates whether to start detection for the original problem */
 
 #define DEFAULT_CONSSCLASSNNONZENABLED                TRUE        /**<  indicates whether constraint classifier for nonzero entries is enabled */
 #define DEFAULT_CONSSCLASSNNONZENABLEDORIG            FALSE       /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
@@ -4490,9 +4490,10 @@ SCIP_RETCODE DECdetectStructure(
    SCIPdebugMessage("start only legacy mode? %s \n", (onlylegacymode ? "yes": "no") );
    if( !onlylegacymode )
    {
-      std::vector<int> candidatesNBlocks(0); /**< candidates for number of blocks */
+      std::vector<std::pair<int, int>> candidatesNBlocks(0); /**< collection of different variable class distributions */
       std::vector<gcg::ConsClassifier*> consClassDistributions; /**< collection of different constraint class distributions */
       std::vector<gcg::VarClassifier*> varClassDistributions; /**< collection of different variable class distributions */
+
       std::vector<SCIP_CONS*> indexToCons; /**< stores the corresponding scip constraints pointer */
       std::vector<gcg::SeeedPtr> seeedsunpresolved(0); /**< seeeds that were found for the unpresolved problem */
       int i;
@@ -4526,7 +4527,7 @@ SCIP_RETCODE DECdetectStructure(
       {
          SCIPdebugMessage("classification for orig problem enabled: calc classifier and nblock candidates \n" );
          conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
-         candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocks();
+         candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocksFull();
       }
       else
          SCIPdebugMessage("classification for orig problem disabled \n" );
@@ -4615,7 +4616,7 @@ SCIP_RETCODE DECdetectStructure(
          SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL , NULL, "finished translate seeed method!\n");
 
          for( size_t c = 0; c < candidatesNBlocks.size(); ++c )
-            conshdlrdata->seeedpool->addCandidatesNBlocks(candidatesNBlocks[c]);
+            conshdlrdata->seeedpool->addCandidatesNBlocksNVotes(candidatesNBlocks[c].first, candidatesNBlocks[c].second );
       }
 
      for( int j = 0; j < (int) consClassDistributions.size(); ++j )
@@ -4646,6 +4647,11 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock) );
 
+   if( conshdlrdata->seeedpool != NULL )
+      conshdlrdata->seeedpool->printBlockcandidateInformation(scip, NULL);
+   else
+      if( conshdlrdata->seeedpoolunpresolved != NULL )
+         conshdlrdata->seeedpoolunpresolved->printBlockcandidateInformation(scip, NULL);
 
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip, result );
 

@@ -425,10 +425,21 @@ public:
    /** returns the candidates for block size sorted in descending order by how often a candidate was added */
    std::vector<int> getSortedCandidatesNBlocks();
 
+   /** returns the candidates for block size sorted in descending order by how often a candidate was added with nvotes information*/
+    std::vector<std::pair<int, int>> getSortedCandidatesNBlocksFull();
+
+
    /** adds a candidate for block size and counts how often a candidate is added */
    void addCandidatesNBlocks(
       int candidate /**< candidate for block size */
       );
+
+   /** adds a candidate for block size and counts how often a candidate is added */
+   void addCandidatesNBlocksNVotes(
+      int candidate, /**< candidate for block size */
+      int nvotes     /**< number of votes this candidates will get */
+      );
+
 
    /** adds a candidate for block size given by the user */
    void addUserCandidatesNBlocks(
