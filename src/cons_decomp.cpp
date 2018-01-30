@@ -103,37 +103,38 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_MAXDETECTIONROUNDS 1    /**< maximal number of detection rounds */
 #define DEFAULT_MAXNCLASSESLARGEPROBS 5
 #define DEFAULT_MAXNCLASSES 9
-#define DEFAULT_ENABLEORIGDETECTION FALSE /**< indicates whether to start detection for the original problem */
+#define DEFAULT_MAXNCLASSESFORNBLOCKCANDIDATES 18                 /** Maximum number of classes a classifier can have to be used for voting nblockcandidates */
+#define DEFAULT_ENABLEORIGDETECTION FALSE                         /**< indicates whether to start detection for the original problem */
 #define DEFAULT_ENABLEEMPHFAST                        FALSE
-#define DEFAULT_ENABLEORIGCLASSIFICATION FALSE /**< indicates whether to start detection for the original problem */
+#define DEFAULT_ENABLEORIGCLASSIFICATION FALSE                    /**< indicates whether to start detection for the original problem */
 
-#define DEFAULT_CONSSCLASSNNONZENABLED                TRUE    /**<  indicates whether constraint classifier for nonzero entries is enabled */
-#define DEFAULT_CONSSCLASSNNONZENABLEDORIG            FALSE    /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
+#define DEFAULT_CONSSCLASSNNONZENABLED                TRUE        /**<  indicates whether constraint classifier for nonzero entries is enabled */
+#define DEFAULT_CONSSCLASSNNONZENABLEDORIG            FALSE       /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
 
-#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED         TRUE    /**< indicates whether constraint classifier for scipconstype is enabled */
-#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     FALSE    /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
+#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED         TRUE        /**< indicates whether constraint classifier for scipconstype is enabled */
+#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     FALSE       /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
 
-#define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLED         TRUE    /**< indicates whether constraint classifier for miplib consstype is enabled */
-#define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLEDORIG     FALSE    /**< indicates whether constraint classifier for miplib consstype is enabled for the original problem */
+#define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLED         TRUE      /**< indicates whether constraint classifier for miplib consstype is enabled */
+#define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLEDORIG     FALSE     /**< indicates whether constraint classifier for miplib consstype is enabled for the original problem */
 
-#define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED     FALSE    /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
-#define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG FALSE     /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
+#define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED     FALSE       /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
+#define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG FALSE       /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
 
-#define DEFAULT_CONSSCLASSLEVENSHTEINENABLED          FALSE    /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
-#define DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG      FALSE     /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
+#define DEFAULT_CONSSCLASSLEVENSHTEINENABLED          FALSE       /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled */
+#define DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG      FALSE       /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
 
-#define DEFAULT_VARCLASSSCIPVARTYPESENABLED           TRUE     /**< indicates whether variable classifier for scipvartypes is enabled */
-#define DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG       FALSE     /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
+#define DEFAULT_VARCLASSSCIPVARTYPESENABLED           TRUE        /**< indicates whether variable classifier for scipvartypes is enabled */
+#define DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG       FALSE       /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
 
-#define DEFAULT_VARCLASSOBJVALSENABLED                TRUE     /**< indicates whether variable classifier for objective function values is enabled */
-#define DEFAULT_VARCLASSOBJVALSENABLEDORIG            FALSE     /**< indicates whether variable classifier for objective function values is enabled for the original problem */
+#define DEFAULT_VARCLASSOBJVALSENABLED                TRUE        /**< indicates whether variable classifier for objective function values is enabled */
+#define DEFAULT_VARCLASSOBJVALSENABLEDORIG            FALSE       /**< indicates whether variable classifier for objective function values is enabled for the original problem */
 
-#define DEFAULT_VARCLASSOBJVALSIGNSENABLED            TRUE     /**< indicates whether variable classifier for objective function value signs is enabled */
-#define DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG        FALSE     /**< indicates whether variable classifier for objective function value signs is enabled for the original problem */
+#define DEFAULT_VARCLASSOBJVALSIGNSENABLED            TRUE        /**< indicates whether variable classifier for objective function value signs is enabled */
+#define DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG        FALSE       /**< indicates whether variable classifier for objective function value signs is enabled for the original problem */
 
-#define DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER    10000    /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis default */
-#define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000   /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
-#define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000     /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
+#define DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER    10000       /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis default */
+#define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000      /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
+#define FAST_LEVENSHTEIN_MAXMATRIXHALFPERIMETER       2000        /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis fast */
 
 #define DEFAULT_ONLYLEGACYMODE                        FALSE    /**< indicates whether detection should only consist of legacy mode detection */
 #define DEFAULT_LEGACYMODE                            FALSE    /**< indicates whether detection should consist of legacy mode detection */
@@ -159,6 +160,7 @@ struct SCIP_ConshdlrData
    int                   sizedecomps;                       /**< size of the decomp and complete seeeds array */
    int                   sizeincompleteseeeds;              /**< size of the incomplete seeeds array */
    int                   maxndetectionrounds;               /**< maximum number of detection loop rounds  */
+   int                   maxnclassesfornblockcandidates;
    int                   maxnclassesperclassifier;              /**< maximum number of classes per classifier */
    int                   maxnclassesperclassifierforlargeprobs; /** maximum number of classes per classifier for large problems (nvars + nconss >= 50000) */
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
@@ -917,6 +919,10 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/maxnclassesfornblockcandidates",
+      "Maximum number of classes a classifier can have to be used for voting nblockcandidates", &conshdlrdata->maxnclassesfornblockcandidates, FALSE,
+      DEFAULT_MAXNCLASSESFORNBLOCKCANDIDATES, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxnclassesperclassifier",
       "Maximum number of classes per classifier", &conshdlrdata->maxnclassesperclassifier, FALSE,

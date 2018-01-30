@@ -2671,9 +2671,10 @@ void Seeedpool::calcCandidatesNBlocks()
     * of the corresponding number of constraints/variables assigned to this class */
 
    /* if  distribution of classes exceeds this number it is skipped */
-   int maximumnclasses = 18;
+   int maximumnclasses;
    SCIP_Bool existnontrivialclassifier;
 
+   SCIPgetIntParam(scip, "detection/maxnclassesfornblockcandidates", &maximumnclasses);
    existnontrivialclassifier = FALSE;
 
    /** firstly, iterate over all consclassifiers */
