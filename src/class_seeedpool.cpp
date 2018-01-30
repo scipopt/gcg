@@ -2612,7 +2612,52 @@ std::vector<int> Seeedpool::getSortedCandidatesNBlocks()
    return toreturn;
 }
 
-/** adds a candidate for block size and counts how often a candidate is added */
+
+/** returns the candidates for block size sorted in descending order by how often a candidate was added */
+std::vector<std::pair<int, int>> Seeedpool::getSortedCandidatesNBlocksFull()
+{
+   std::vector<std::pair<int, int> > toreturn( 0 );
+   SCIP_Bool output = false;
+
+   /** first: get the block number candidates directly given by the user */
+   if( output && !usercandidatesnblocks.empty() )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "number of user block number candidates: %d  \n", usercandidatesnblocks.size() );
+   }
+
+   for( size_t i = 0; i < usercandidatesnblocks.size() ; ++i)
+   {
+      toreturn.push_back( std::pair<int, int>(usercandidatesnblocks[i], INT_MAX ) );
+
+      if( output )
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "%d  \n", usercandidatesnblocks[i] );
+      }
+
+   }
+
+   /** second: sort the current candidates */
+   std::sort( candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
+
+   /** optional: print sorted candidates */
+   if( output )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "nCandidates: %d ", candidatesNBlocks.size() );
+
+
+      for( size_t i = 0; i < candidatesNBlocks.size(); ++ i )
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "nblockcandides: %d , %d times prop", candidatesNBlocks[i].first, candidatesNBlocks[i].second );
+   }
+
+   /** secondly: push candidates to output vector */
+   for( size_t i = 0; i < candidatesNBlocks.size(); ++ i )
+      toreturn.push_back( candidatesNBlocks[i] );
+
+   return toreturn;
+}
+
+
+/** adds a candidate for block number and counts how often a candidate is added */
 void Seeedpool::addCandidatesNBlocks(
    int candidate
    )
@@ -2636,6 +2681,34 @@ void Seeedpool::addCandidatesNBlocks(
       }
    }
 }
+
+/** adds a candidate for block number and counts how often a candidate is added */
+void Seeedpool::addCandidatesNBlocksNVotes(
+   int candidate,
+   int nvotes
+   )
+{
+   if( candidate > 1 )
+   {
+      bool alreadyIn = false;
+      for( size_t i = 0; i < candidatesNBlocks.size(); ++ i )
+      {
+         if( candidatesNBlocks[i].first == candidate )
+         {
+            alreadyIn = true;
+            candidatesNBlocks[i].second += nvotes;
+            break;
+         }
+      }
+      if( ! alreadyIn )
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "added block number candidate : %d \n ", candidate );
+         candidatesNBlocks.push_back( std::pair<int, int>( candidate, nvotes ) );
+      }
+   }
+}
+
+
 
 /** adds a candidate for block size given by the user */
 void Seeedpool::addUserCandidatesNBlocks(
@@ -2671,16 +2744,19 @@ void Seeedpool::calcCandidatesNBlocks()
     * of the corresponding number of constraints/variables assigned to this class */
 
    /* if  distribution of classes exceeds this number it is skipped */
-   int maximumnclasses = 18;
-   SCIP_Bool existnontrivialclassifier;
+   int maximumnclasses;
+   /** used for nvars / medianofnvars per conss */
+   std::list<int> nvarspercons(0);
+   std::list<int>::iterator iter;
+   int candidate = -1;
 
-   existnontrivialclassifier = FALSE;
+
+
+   SCIPgetIntParam(scip, "detection/maxnclassesfornblockcandidates", &maximumnclasses);
 
    /** firstly, iterate over all consclassifiers */
    for( size_t classifier = 0; classifier < consclassescollection.size(); ++ classifier )
    {
-      if( consclassescollection[classifier]->getNClasses() > 1 )
-         existnontrivialclassifier = TRUE;
 
       /** check if there are too many classes in this distribution and skip it if so */
       if( consclassescollection[classifier]->getNClasses() > maximumnclasses )
@@ -2718,10 +2794,6 @@ void Seeedpool::calcCandidatesNBlocks()
          addCandidatesNBlocks( greatestCD );
       }
    }
-
-   /** if there is no nontrivial constraint classifier, add 16 as a default candidate **/
-   if( !existnontrivialclassifier )
-      addCandidatesNBlocks(16);
 
    /** secondly, iterate over all varclassifiers */
    for( size_t classifier = 0; classifier < varclassescollection.size(); ++ classifier )
@@ -2762,6 +2834,23 @@ void Seeedpool::calcCandidatesNBlocks()
          addCandidatesNBlocks( greatestCD );
       }
    }
+
+   /** block number candidate could be nvars / median of nvarsinconss  */
+
+   for( int c = 0; c < getNConss(); ++c )
+   {
+      int nvars = getNVarsForCons(c);
+      iter = std::lower_bound(nvarspercons.begin(), nvarspercons.end(), nvars);
+      nvarspercons.insert(iter, nvars);
+   }
+   iter = nvarspercons.begin();
+   for( int c = 0; c < (int) 0.5 * getNConss(); ++c )
+      ++iter;
+
+   candidate = getNVars() / *iter;
+
+   addCandidatesNBlocks(candidate);
+
 }
 
 /** adds a constraint classifier if it is no duplicate of an existing classifier */
@@ -4487,7 +4576,8 @@ SCIP_RETCODE Seeedpool::printBlockcandidateInformation(
 {
 
    std::sort( candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n", (int) candidatesNBlocks.size() );
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "The following %d candidates for the number of blocks are found: (candidate : number of votes)   \n", (int) candidatesNBlocks.size() );
    for( size_t i  = 0; i  < candidatesNBlocks.size(); ++i )
    {
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d : %d  \n", candidatesNBlocks[i].first, candidatesNBlocks[i].second );
