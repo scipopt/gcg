@@ -50,7 +50,8 @@ SCIP_RETCODE GCGpricingjobCreate(
    GCG_PRICINGJOB**      pricingjob,         /**< pricing job to be created */
    SCIP*                 pricingscip,        /**< SCIP data structure of the corresponding pricing problem */
    int                   probnr,             /**< index of the corresponding pricing problem */
-   int                   chunk               /**< chunk that the pricing problem should belong to */
+   int                   chunk,              /**< chunk that the pricing problem should belong to */
+   int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
 )
 {
    SCIP_CALL( SCIPallocMemory(scip, pricingjob) );
@@ -65,6 +66,8 @@ SCIP_RETCODE GCGpricingjobCreate(
    (*pricingjob)->ncols = 0;
    (*pricingjob)->nimpcols = 0;
 
+   SCIP_CALL( SCIPallocClearMemoryArray(scip, &(*pricingjob)->ncolsround, nroundscol) );
+
    return SCIP_OKAY;
 }
 
@@ -75,6 +78,7 @@ void GCGpricingjobFree(
 )
 {
    SCIPfreeMemoryArrayNull(scip, &(*pricingjob)->cols);
+   SCIPfreeMemoryArray(scip, &(*pricingjob)->ncolsround);
    SCIPfreeMemory(scip, pricingjob);
    *pricingjob = NULL;
 }
@@ -86,25 +90,36 @@ SCIP_RETCODE GCGpricingjobSetup(
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
    int                   maxcolsprob,        /**< maximum number of columns that the problem should be looking for */
    int                   scoring,            /**< scoring parameter */
+   int                   nroundscol,         /**< number of previous pricing rounds for which the number of improving columns should be counted */
    SCIP_Real             dualsolconv,        /**< dual solution value of corresponding convexity constraint */
    int                   npointsprob,        /**< total number of extreme points generated so far by the pricing problem */
    int                   nraysprob,          /**< total number of extreme rays generated so far by the pricing problem */
    int                   maxcols             /**< maximum number of columns to be generated in total */
    )
 {
+   int i;
+
    pricingjob->heuristic = heuristic;
 
    /* set the solution limit on the pricing problem */
    SCIP_CALL( SCIPsetIntParam(pricingjob->pricingscip, "limits/solutions", SCIPgetNLimSolsFound(pricingjob->pricingscip) + maxcolsprob) );
 
-   /* set the score */
+   /* set the score; the larger, the better */
    switch( scoring )
    {
-   case 1:
+   case 'i':
+      pricingjob->score = (SCIP_Real) pricingjob->probnr;
+      break;
+   case 'd':
       pricingjob->score = dualsolconv;
       break;
-   case 2:
-      pricingjob->score = -(0.2 * npointsprob + nraysprob);
+   case 'r':
+      pricingjob->score = 0.2 * npointsprob + nraysprob;
+      break;
+   case 'l':
+      pricingjob->score = 0.0;
+      for( i = 0; i < nroundscol; ++i )
+         pricingjob->score += (SCIP_Real) pricingjob->ncolsround[i];
       break;
    default:
       pricingjob->score = 0.0;
@@ -330,4 +345,17 @@ int GCGpricingjobGetNImpCols(
    )
 {
    return pricingjob->nimpcols;
+}
+
+/* update numbers of improving columns over the last pricing rounds */
+void GCGpricingjobUpdateNColsround(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
+   )
+{
+   int i;
+
+   for( i = nroundscol-1; i > 0; --i )
+      pricingjob->ncolsround[i] = pricingjob->ncolsround[i-1];
+   pricingjob->ncolsround[0] = pricingjob->nimpcols;
 }
