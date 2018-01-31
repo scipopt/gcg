@@ -44,7 +44,7 @@
 #endif
 
 //#define WRITE_ORIG_CONSTYPES
-/* #define SCIP_DEBUG */
+ //#define SCIP_DEBUG
 
 #include "gcg.h"
 #include "objscip/objscip.h"
@@ -638,13 +638,6 @@ Seeedpool::Seeedpool(
          scipConsToIndex[relevantCons] = relevantConsCounter;
          consToScipCons.push_back( relevantCons );
 
-        //SCIPcaptureCons(scip, relevantCons);
-
-//         if( relevantConsCounter == 7712 && transformed )
-//         {
-//            ++ relevantConsCounter;
-//            -- relevantConsCounter;
-//         }
          ++relevantConsCounter;
       }
       else
@@ -1314,6 +1307,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
       }
    }
 
+   SCIPdebugMessage("Started score calculating of finished decompositions\n");
    if( (int) finishedSeeeds.size() != 0 )
    {
        SCIP_Real maxscore = finishedSeeeds[0]->getScore( SCIPconshdlrDecompGetCurrScoretype( scip ) );
@@ -1327,7 +1321,9 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
          }
       }
    }
+   SCIPdebugMessage("Finished score calculating of finished decompositions\n");
 
+   SCIPdebugMessage("Started marking curr seeeds for deletion\n");
    /** delete the seeeds */
    for( size_t c = 0; c < currSeeeds.size(); ++c )
    {
@@ -4190,6 +4186,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
          {
             assert( scipcons != NULL );
             subscipconss[b-ndeletedblocksbefore[b]][c-modifier] = scipcons;
+            SCIPdebugMessage("Set cons %s to block %d + 1 - %d in cons to block\n", SCIPconsGetName(scipcons), b, ndeletedblocksbefore[b] );
             SCIP_CALL_ABORT( SCIPhashmapInsert( constoblock, scipcons, (void*) ( size_t )( b + 1 - ndeletedblocksbefore[b] ) ) );
             SCIP_CALL_ABORT( SCIPhashmapInsert( consindex, scipcons, (void*) (size_t) conscounter ) );
             conscounter ++;
@@ -4227,6 +4224,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       assert( scipvar != NULL );
 
       linkingvars[v] = scipvar;
+      SCIPdebugMessage( "Set var %s to block %d + 2 - %d in var to block\n", SCIPvarGetName(scipvar), seeed->getNBlocks(), ndeletedblocks );
       SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, scipvar, (void*) ( size_t )( seeed->getNBlocks() + 2 - ndeletedblocks ) ) );
       SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, scipvar, (void*) (size_t) varcounter ) );
       varcounter ++;
@@ -4281,6 +4279,8 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
          assert( scipvar != NULL );
 
          subscipvars[b-ndeletedblocksbefore[b]][v] = scipvar;
+         SCIPdebugMessage("Set var %s to block %d + 1 - %d in var to block\n", SCIPvarGetName(scipvar), b, ndeletedblocksbefore[b] );
+         assert( !SCIPhashmapExists(vartoblock, scipvar) || SCIPhashmapGetImage(vartoblock, scipvar) == (void*) ( size_t )( b + 1 - ndeletedblocksbefore[b] ) );
          SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, scipvar, (void*) ( size_t )( b + 1 - ndeletedblocksbefore[b] ) ) );
          SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, scipvar, (void*) (size_t) varcounter ) );
          varcounter ++;
@@ -4420,7 +4420,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
  //  SCIP_CALL(DECdecompRemoveDeletedConss(scip, *newdecomp) );
 
    SCIP_CALL(DECdecompAddRemainingConss(scip, *newdecomp) );
-
+   assert(DECdecompCheckConsistency(scip, *newdecomp) );
    /**there might be some remaining constraints assert( DECdecompCheckConsistency( scip, ( * newdecomp ) ) ); hence we do not check this here */
    assert( ! SCIPhashmapIsEmpty( ( * newdecomp )->constoblock ) );
    assert( ! SCIPhashmapIsEmpty( ( * newdecomp )->vartoblock ) );

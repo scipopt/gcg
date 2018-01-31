@@ -363,6 +363,8 @@ SCIP_RETCODE convertStructToGCG(
          {
             SCIP_VAR** curvars;
             int        ncurvars;
+            if( SCIPconsIsDeleted(subscipconss[j][k]) )
+               continue;
             ncurvars = GCGconsGetNVars(scip, subscipconss[j][k]);
             curvars = NULL;
             if( ncurvars > 0 )

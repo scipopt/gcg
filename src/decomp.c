@@ -2140,11 +2140,12 @@ SCIP_RETCODE DECdecompAddRemainingConss(
       SCIP_CONS* cons;
       cons = SCIPgetConss(scip)[c];
 
+
       if( !GCGisConsGCGCons(cons) && !SCIPhashmapExists(DECdecompGetConstoblock(decdecomp), cons) )
       {
          int block;
          SCIP_CALL( DECdetermineConsBlock(scip, decdecomp, cons, &block) );
-         SCIPdebugMessage("cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
+         SCIPdebugMessage("add remaining: cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
 
          /* If the constraint has only variables appearing in the master only,
           * we assign it to the master rather than creating a new block
@@ -4049,6 +4050,8 @@ SCIP_RETCODE DECdetermineConsBlock(
 
    if( npricingvars == 0 && nmastervars > 0 )
       *block = -1;
+
+
 
    return SCIP_OKAY;
 }

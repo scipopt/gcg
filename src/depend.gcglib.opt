@@ -5565,7 +5565,8 @@ $(LIBOBJDIR)/params_visu.o: src/params_visu.c src/params_visu.h src/type_decomp.
  lib/scip/src/scip/type_visual.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h
+ lib/scip/src/scip/cons.h lib/scip/src/scip/solve.h src/cons_decomp.h \
+ src/type_detector.h
 $(LIBOBJDIR)/presol_roundbound.o: src/presol_roundbound.c src/presol_roundbound.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \

@@ -423,6 +423,8 @@ int GCGconsGetNVars(
    assert(conshdlr != NULL);
    conshdlrname = SCIPconshdlrGetName(conshdlr);
 
+
+
    if( strcmp(conshdlrname, "linear") == 0 )
    {
       return SCIPgetNVarsLinear(scip, cons);

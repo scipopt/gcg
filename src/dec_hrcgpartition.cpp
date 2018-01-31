@@ -740,7 +740,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHrcgpartition)
    seeed->considerImplicits(seeedPropagationData->seeedpool);
    seeed->refineToBlocks(seeedPropagationData->seeedpool);
 
-   if(!connected(seeedPropagationData->seeedpool, seeed))
+   if( !connected(seeedPropagationData->seeedpool, seeed) )
    {
       seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
