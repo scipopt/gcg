@@ -148,13 +148,13 @@ def get_colmap(pricers):
     # get a color map of the right length, so that each color-id gets its own color
     cmap = plt.get_cmap(params['colors'],len(pricer_ids))
 
-    # build a list of colors
-    colors = [cmap(pricer_ids.index(p)) for p in pricers]
-
     # build the mapping
     mapping = OrderedDict()
     for p in pricer_ids:
         mapping[p] = cmap(pricer_ids.index(p))
+
+    # build a list of colors
+    colors = [mapping[p] for p in pricers]
 
     return colors, mapping
 
@@ -302,37 +302,32 @@ def make_plot(data, name):
         texts = []
 
         texts.append(ax.text(-0.001, 1.01, '\\textbf{Round}', rotation=0,va='bottom', ha='right', size = textsize*.75, transform = ax.transAxes))
-        for i in range(len(x)):
-            rnd = data['pricing_round'][i]
-            stab = data['stab_round'][i]
+        for pos,rnd,stab,far in zip(x, data.pricing_round, data.stab_round, data.farkas):
             if stab > prev_stab or rnd > prev_rnd:
                 if rnd > prev_rnd:
                     # bold line for a new pricing round
-                    if params['lines'] or (x[i] - prev_x_drawn)/totalTime > 0.002 or (not farkasLine and not data['farkas'][i]):
-                        line = lines.Line2D([x[i],x[i]],[0,1],color='r',linewidth=1.0, transform = trans)
+                    if params['lines'] or (pos - prev_x_drawn)/totalTime > 0.002 or (not farkasLine and not far):
+                        line = lines.Line2D([pos,pos],[0,1],color='r',linewidth=1.0, transform = trans)
                         # blue line at the end of farkas pricing
-                        if not farkasLine and not data['farkas'][i]:
+                        if not farkasLine and not far:
                             line.set_color('blue')
-                            if x[i] <= (xmax + xmin) / 2:
+                            if pos <= (xmax + xmin) / 2:
                                 align = 'left'
                             else:
                                 align = 'right'
-                            ax.text(x[i], .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
+                            ax.text(pos, .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
                             farkasLine = True
                         ax.add_line(line)
-                        prev_x_drawn = x[i]
-#                        enfLine = False
-#                    elif (x[i] - prev_x_drawn)/totalTime > 0.001:
-#                        enfLine = True
+                        prev_x_drawn = pos
                     # write the round number, if there is space for it
                     if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
                         texts.append(ax.text(prev_x, 1.01, str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
                     prev_rnd = rnd
                     prev_stab = stab
-                    prev_x = x[i]
+                    prev_x = pos
                 else:
                     # dashed line for a new stabilization round
-                    line = lines.Line2D([x[i],x[i]],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
+                    line = lines.Line2D([pos,pos],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
                     ax.add_line(line)
                     prev_stab = stab
         if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
@@ -349,19 +344,18 @@ def make_plot(data, name):
         text_height += 0.0006
         texts = []
         texts.append(ax.text(node_header_x, text_height+0.001, '\\textbf{Node}', ha='right', size = textsize*.75, transform = trans))
-        for i in range(len(x)):
-            node = data['node'][i]
+        for pos, node in zip(x, data.node):
             if node > prev_node:
-                line = lines.Line2D([x[i],x[i]],[1,text_height],color='r',linewidth=1.0, transform = trans)
+                line = lines.Line2D([pos,pos],[1,text_height],color='r',linewidth=1.0, transform = trans)
                 line.set_clip_on(False)
                 ax.add_line(line)
                 # write the node number, if there is space for it
                 if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
                     texts.append(ax.text(prev_x, text_height, str(prev_node), ha='left', size = textsize, transform = trans))
                 prev_node = node
-                prev_x = x[i]
-        texts.append(ax.text(prev_x, text_height, str(prev_node), ha='left', size = textsize, transform = trans))
-
+                prev_x = pos
+        if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
+            texts.append(ax.text(prev_x, text_height, str(prev_node), ha='left', size = textsize, transform = trans))
         text_height = get_y1_in_ax(texts[-1], fig)
 
         print '    node information:', time.time() - start_time
