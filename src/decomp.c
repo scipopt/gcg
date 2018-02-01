@@ -2271,6 +2271,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
             assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
             assert(SCIPvarIsActive(var));
             assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp)+1 );
+
          }
          SCIPfreeBufferArray(scip, &curvars);
       }

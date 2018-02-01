@@ -637,6 +637,7 @@ Seeedpool::Seeedpool(
       {
          scipConsToIndex[relevantCons] = relevantConsCounter;
          consToScipCons.push_back( relevantCons );
+         SCIPcaptureCons(scip, relevantCons);
 
          ++relevantConsCounter;
       }
@@ -779,7 +780,13 @@ Seeedpool::Seeedpool(
 /** destructor */
 Seeedpool::~Seeedpool()
 {
+   for( int c = 0; c < nConss; ++c )
+   {
+      SCIP_CONS* cons;
 
+      cons = getConsForIndex(c);
+      SCIPreleaseCons(scip, &cons);
+   }
 
    for( size_t i = 0; i < ancestorseeeds.size(); ++i )
    {
