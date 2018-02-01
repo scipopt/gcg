@@ -34,7 +34,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	2.1.2
+VERSION         :=	2.1.3
 GCGGITHASH	=
 SCIPDIR         =   lib/scip
 
@@ -117,6 +117,14 @@ ifeq ($(CPLEXSOLVER),true)
 FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
 else
 FLAGS		+=	-DNCPLEXSOLVER
+endif
+
+#-----------------------------------------------------------------------------
+# GCG statistics
+#-----------------------------------------------------------------------------
+
+ifeq ($(STATISTICS),true)
+FLAGS		+=	-DSCIP_STATISTIC
 endif
 
 #-----------------------------------------------------------------------------
@@ -207,7 +215,8 @@ LIBOBJ		=	reader_blk.o \
 			dialog_graph.o \
 			gcgpqueue.o \
 			gcgcol.o \
-			class_colpool.o
+			colpool.o \
+			pricestore_gcg.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
@@ -354,7 +363,7 @@ githash::   # do not remove the double-colon
 .PHONY: test
 test:
 		cd check; \
-		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE);
+		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE) $(SETCUTOFF) $(STATISTICS);
 
 .PHONY: eval
 eval:
@@ -487,6 +496,13 @@ touchexternal: | $(LIBOBJDIR)
 ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
 		@-touch $(SRCDIR)/solver_cplex.c
 endif
+ifneq ($(LAST_STATISTICS),$(STATISTICS))
+		@-touch $(SRCDIR)/pricer_gcg.h
+		@-touch $(SRCDIR)/pricer_gcg.cpp
+		@-touch $(SRCDIR)/stat.c
+		@-touch $(SRCDIR)/event_bestsol.h
+endif
+
 ifneq ($(LAST_BLISS),$(BLISS))
 		@-touch $(SRCDIR)/dec_isomorph.cpp
 		@-touch $(SRCDIR)/relax_gcg.c
@@ -534,6 +550,7 @@ endif
 		@echo "LAST_USRDFLAGS=$(USRDFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_OPENMP=$(OPENMP)" >> $(LASTSETTINGS)
 		@echo "LAST_CPLEXSOLVER=$(CPLEXSOLVER)" >> $(LASTSETTINGS)
+		@echo "LAST_STATISTICS=$(STATISTICS)" >> $(LASTSETTINGS)
 
 .PHONY: $(SOFTLINKS)
 $(SOFTLINKS):

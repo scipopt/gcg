@@ -1,0 +1,5 @@
+# SCIP version 4.0.0
+
+pricing/masterpricer/stabilization = TRUE
+
+pricing/masterpricer/stabilization/hybridascent = TRUE

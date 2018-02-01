@@ -638,6 +638,7 @@ SCIP_RETCODE setupSubproblem(
 
    /* set limits for the subproblem */
    SCIP_CALL( SCIPsetLongintParam(subscip, "limits/nodes", nstallnodes) );
+   SCIP_CALL( SCIPsetLongintParam(subscip, "limits/stallnodes", MAX(10, nstallnodes/10)) );
    SCIP_CALL( SCIPsetRealParam(subscip, "limits/time", timelimit) );
    SCIP_CALL( SCIPsetRealParam(subscip, "limits/memory", memorylimit) );
 
@@ -1257,7 +1258,7 @@ SCIP_DECL_HEURINIT(heurInitXprins)
    heurdata->nextnodenumber = 0;
 
    /* create random number generator */
-   SCIP_CALL( SCIPrandomCreate(&heurdata->randnumgen, SCIPblkmem(scip),
+   SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
          SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
 
    return SCIP_OKAY;
@@ -1277,7 +1278,7 @@ SCIP_DECL_HEUREXIT(heurExitXprins)
    assert(heurdata != NULL);
 
    /* free random number generator */
-   SCIPrandomFree(&heurdata->randnumgen);
+   SCIPfreeRandom(scip, &heurdata->randnumgen);
 
    return SCIP_OKAY;
 }

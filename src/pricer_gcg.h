@@ -89,6 +89,21 @@ SCIP_RETCODE GCGmasterAddMasterconsToHashmap(
    int                   pos                 /**< the position of the constraint in the relaxator's masterconss array */
    );
 
+/** sets the optimal LP solution in the pricerdata */
+extern
+SCIP_RETCODE GCGmasterSetRootLPSol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL**            sol                 /**< pointer to optimal solution to root LP */
+   );
+
+#ifdef SCIP_STATISTIC
+/** gets the optimal LP solution in the pricerdata */
+extern
+SCIP_SOL* GCGmasterGetRootLPSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+#endif
+
 /** includes a solver into the pricer data */
 extern
 SCIP_RETCODE GCGpricerIncludeSolver(
@@ -189,6 +204,35 @@ SCIP_RETCODE GCGsetPricingObjs(
    SCIP_Real*            dualsolconv         /**< array of dual solutions corresponding to convexity constraints */
    );
 
+/** creates a new master variable corresponding to the given gcg column */
+extern
+SCIP_RETCODE GCGcreateNewMasterVarFromGcgCol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             infarkas,           /**< in Farkas pricing? */
+   GCG_COL*              gcgcol,             /**< GCG column data structure */
+   SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */
+   SCIP_Bool*            added,              /**< pointer to store whether the variable was successfully added */
+   SCIP_VAR**            addedvar,           /**< pointer to store the created variable */
+   SCIP_Real             score               /**< score of column (or -1.0 if not specified) */
+
+   );
+
+/** computes the reduced cost of a column */
+extern
+SCIP_Real GCGcomputeRedCostGcgCol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             infarkas,           /**< in Farkas pricing? */
+   GCG_COL*              gcgcol,             /**< gcg column to compute reduced cost for */
+   SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
+   );
+
+
+/** compute master and cut coefficients of column */
+extern
+SCIP_RETCODE GCGcomputeColMastercoefs(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COL*              gcgcol              /**< GCG column data structure */
+   );
 
 #ifdef __cplusplus
 }
