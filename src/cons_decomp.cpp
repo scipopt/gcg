@@ -109,13 +109,13 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_ENABLEORIGCLASSIFICATION              TRUE        /**< indicates whether to start detection for the original problem */
 
 #define DEFAULT_CONSSCLASSNNONZENABLED                TRUE        /**<  indicates whether constraint classifier for nonzero entries is enabled */
-#define DEFAULT_CONSSCLASSNNONZENABLEDORIG            FALSE       /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
+#define DEFAULT_CONSSCLASSNNONZENABLEDORIG            TRUE       /**<  indicates whether constraint classifier for nonzero entries is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLED         TRUE        /**< indicates whether constraint classifier for scipconstype is enabled */
-#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     FALSE       /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
+#define DEFAULT_CONSSCLASSSCIPCONSTYPEENABLEDORIG     TRUE       /**< indicates whether constraint classifier for scipconsstype is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLED         TRUE      /**< indicates whether constraint classifier for miplib consstype is enabled */
-#define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLEDORIG     FALSE     /**< indicates whether constraint classifier for miplib consstype is enabled for the original problem */
+#define DEFAULT_CONSSCLASSMIPLIBCONSTYPEENABLEDORIG     TRUE     /**< indicates whether constraint classifier for miplib consstype is enabled for the original problem */
 
 #define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLED     FALSE       /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled */
 #define DEFAULT_CONSSCLASSCONSNAMENONUMBERENABLEDORIG FALSE       /**< indicates whether constraint classifier for constraint names (remove digits; check for identity) is enabled for the original problem */
@@ -124,13 +124,13 @@ typedef gcg::Seeed* SeeedPtr;
 #define DEFAULT_CONSSCLASSLEVENSHTEINENABLEDORIG      FALSE       /**< indicates whether constraint classifier for constraint names (according to levenshtein distance graph) is enabled for the original problem */
 
 #define DEFAULT_VARCLASSSCIPVARTYPESENABLED           TRUE        /**< indicates whether variable classifier for scipvartypes is enabled */
-#define DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG       FALSE       /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
+#define DEFAULT_VARCLASSSCIPVARTYPESENABLEDORIG       TRUE       /**< indicates whether variable classifier for scipvartypes is enabled for the original problem */
 
 #define DEFAULT_VARCLASSOBJVALSENABLED                TRUE        /**< indicates whether variable classifier for objective function values is enabled */
-#define DEFAULT_VARCLASSOBJVALSENABLEDORIG            FALSE       /**< indicates whether variable classifier for objective function values is enabled for the original problem */
+#define DEFAULT_VARCLASSOBJVALSENABLEDORIG            TRUE       /**< indicates whether variable classifier for objective function values is enabled for the original problem */
 
 #define DEFAULT_VARCLASSOBJVALSIGNSENABLED            TRUE        /**< indicates whether variable classifier for objective function value signs is enabled */
-#define DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG        FALSE       /**< indicates whether variable classifier for objective function value signs is enabled for the original problem */
+#define DEFAULT_VARCLASSOBJVALSIGNSENABLEDORIG        TRUE       /**< indicates whether variable classifier for objective function value signs is enabled for the original problem */
 
 #define DEFAULT_LEVENSHTEIN_MAXMATRIXHALFPERIMETER    10000       /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis default */
 #define AGGRESSIVE_LEVENSHTEIN_MAXMATRIXHALFPERIMETER  80000      /**< deactivate levenshtein constraint classifier if nrows + ncols exceeds this value for emphasis aggressive */
@@ -4529,6 +4529,9 @@ SCIP_RETCODE DECdetectStructure(
          SCIPdebugMessage("classification for orig problem enabled: calc classifier and nblock candidates \n" );
          conshdlrdata->seeedpoolunpresolved->calcClassifierAndNBlockCandidates(scip);
          candidatesNBlocks = conshdlrdata->seeedpoolunpresolved->getSortedCandidatesNBlocksFull();
+         if( conshdlrdata->seeedpoolunpresolved != NULL )
+                  conshdlrdata->seeedpoolunpresolved->printBlockcandidateInformation(scip, NULL);
+
       }
       else
          SCIPdebugMessage("classification for orig problem disabled \n" );
@@ -4650,9 +4653,6 @@ SCIP_RETCODE DECdetectStructure(
 
    if( conshdlrdata->seeedpool != NULL )
       conshdlrdata->seeedpool->printBlockcandidateInformation(scip, NULL);
-   else
-      if( conshdlrdata->seeedpoolunpresolved != NULL )
-         conshdlrdata->seeedpoolunpresolved->printBlockcandidateInformation(scip, NULL);
 
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip, result );
 
