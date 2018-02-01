@@ -244,7 +244,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
          GCGpricerPrintStatistics(GCGgetMasterprob(scip), NULL);
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), NULL, "\n");
          SCIP_CALL( GCGwriteDecompositionData(scip) );
-         SCIP_CALL( GCGwriteVarCreationDetails(GCGgetMasterprob(scip)) );
+         //SCIP_CALL( GCGwriteVarCreationDetails(GCGgetMasterprob(scip)) );
       }
    }
    else

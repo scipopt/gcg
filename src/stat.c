@@ -57,12 +57,9 @@ SCIP_RETCODE GCGwriteDecompositionData(
    DEC_DECTYPE type;
    const char* typeName;
 
-//   int i;
    int nblocks;
    int nlinkingconss;
    int nlinkingvars;
-//   int* nvarsinblocks;
-//   int* nconssinblocks;
    SCIP_CLOCK* rootnodetime;
 
    assert(scip != NULL);
@@ -74,9 +71,6 @@ SCIP_RETCODE GCGwriteDecompositionData(
    detector = DECdecompGetDetector(decomposition);
 
    nblocks = DECdecompGetNBlocks(decomposition);
-
-//   nvarsinblocks = DECdecompGetNSubscipvars(decomposition);
-//   nconssinblocks = DECdecompGetNSubscipconss(decomposition);
 
    nlinkingvars = DECdecompGetNLinkingvars(decomposition);
    nlinkingconss = DECdecompGetNLinkingconss(decomposition);
@@ -93,14 +87,6 @@ SCIP_RETCODE GCGwriteDecompositionData(
    SCIPinfoMessage(scip, NULL, "Number of LinkingCons: %d\n", nlinkingconss);
    SCIPinfoMessage(scip, NULL, "Time in root node: %6.2f\n", SCIPgetClockTime(scip, rootnodetime));
 
-   /* print number of variables and constraints per block */
-/*   SCIPinfoMessage(scip, NULL, "Block Information\n");
-   SCIPinfoMessage(scip, NULL, "no.:\t\t#Vars\t\t#Constraints\n");
-   for( i = 0; i < nblocks; i++ )
-   {
-      SCIPinfoMessage(scip, NULL, "%d:\t\t%d\t\t%d\n", i, nvarsinblocks[i], nconssinblocks[i]);
-   }
-*/
    return SCIP_OKAY;
 }
 
@@ -109,7 +95,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-/*   SCIP_VAR** vars;
+   SCIP_VAR** vars;
    SCIP_SOL* sol;
    SCIP_Real solvingtime;
    SCIP_Longint nnodes;
@@ -208,6 +194,6 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
    }
 
    SCIPfreeMemoryArray(scip, &createnodestat);
-*/
+
    return SCIP_OKAY;
 }
