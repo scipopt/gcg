@@ -422,13 +422,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    /* Jonas' stuff */
    SCIP_CALL( SCIPsetSeparating(scip, SCIP_PARAMSETTING_OFF, TRUE) );
 
-   /* disable conflict analysis since adding constraints after structure detection may destroy symmetries */
-    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/enable", FALSE) );
-    SCIP_CALL( SCIPsetIntParam(scip, "heuristics/clique/freq", -1) );
-  //  SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/rangedrowartcons", FALSE) );
-    SCIP_CALL( SCIPfixParam(scip, "conflict/enable") );
-    SCIP_CALL( SCIPfixParam(scip, "heuristics/clique/freq") );
- //   SCIP_CALL( SCIPfixParam(scip, "constraints/linear/rangedrowartcons") );
 
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
