@@ -358,7 +358,7 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/gtest/gtest/gtest_prod.h lib/gtest/gtest/gtest-test-part.h \
  lib/gtest/gtest/gtest-typed-test.h lib/gtest/gtest/gtest_pred_impl.h \
  src/graph/graph_tclique.h src/graph/bridge.h \
- lib/scip/src/tclique/tclique.h
+ lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h
 $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  src/graph/bipartitegraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
@@ -421,10 +421,11 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
- src/type_decomp.h src/type_detector.h src/graph/bridge.h \
- src/graph/graph_interface.h src/graph/graph.h src/tests/graphtest.h \
- src/tests/test.h lib/scip/src/objscip/objscipdefplugins.h \
+ lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
+ src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
+ src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
+ src/graph/graph.h src/tests/graphtest.h src/tests/test.h \
+ lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
@@ -604,10 +605,11 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
- src/type_decomp.h src/type_detector.h src/graph/bridge.h \
- src/graph/graph_interface.h src/graph/hypergraph.h src/graph/graph.h \
- src/tests/test.h lib/scip/src/objscip/objscipdefplugins.h \
+ lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
+ src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
+ src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
+ src/graph/hypergraph.h src/graph/graph.h src/tests/test.h \
+ lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
@@ -787,10 +789,11 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
- src/type_decomp.h src/type_detector.h src/graph/bridge.h \
- src/graph/graph_interface.h src/graph/hypergraph.h src/graph/graph.h \
- src/tests/test.h lib/scip/src/objscip/objscipdefplugins.h \
+ lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
+ src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
+ src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
+ src/graph/hypergraph.h src/graph/graph.h src/tests/test.h \
+ lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
@@ -970,10 +973,11 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
- src/type_decomp.h src/type_detector.h src/graph/bridge.h \
- src/graph/graph_interface.h src/graph/hypergraph.h src/graph/graph.h \
- src/tests/test.h lib/scip/src/objscip/objscipdefplugins.h \
+ lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
+ src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
+ src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
+ src/graph/hypergraph.h src/graph/graph.h src/tests/test.h \
+ lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_distribution.h \
@@ -1691,10 +1695,10 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
- src/type_decomp.h src/type_detector.h src/graph/bridge.h \
- src/graph/graph_interface.h src/graph/bipartitegraph.h \
- src/graph/matrixgraph.h src/tests/test.h \
+ lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
+ src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
+ src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
+ src/graph/bipartitegraph.h src/graph/matrixgraph.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -1874,10 +1878,10 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
- src/type_decomp.h src/type_detector.h src/graph/bridge.h \
- src/graph/graph_interface.h src/graph/bipartitegraph.h \
- src/graph/matrixgraph.h src/tests/test.h \
+ lib/scip/src/tclique/tclique.h lib/scip/src/tclique/tclique_def.h \
+ src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
+ src/type_detector.h src/graph/bridge.h src/graph/graph_interface.h \
+ src/graph/bipartitegraph.h src/graph/matrixgraph.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -2717,11 +2721,12 @@ $(TESTOBJDIR)/graphalgorithm_test.o: src/tests/graphalgorithm_test.cpp src/tests
  lib/gtest/gtest/gtest_prod.h lib/gtest/gtest/gtest-test-part.h \
  lib/gtest/gtest/gtest-typed-test.h lib/gtest/gtest/gtest_pred_impl.h \
  src/graph/hypergraph.h lib/scip/src/tclique/tclique.h \
- src/graph/weights.h src/pub_decomp.h src/type_decomp.h \
- src/type_detector.h src/graph/graph.h src/graph/bridge.h \
- src/graph/graph_interface.h src/graph/graphalgorithms.h \
- src/graph/hypergraph.h src/graph/graphalgorithms_def.h \
- src/graph/graphalgorithms.h src/graph/graph_tclique.h
+ lib/scip/src/tclique/tclique_def.h src/graph/weights.h src/pub_decomp.h \
+ src/type_decomp.h src/type_detector.h src/graph/graph.h \
+ src/graph/bridge.h src/graph/graph_interface.h \
+ src/graph/graphalgorithms.h src/graph/hypergraph.h \
+ src/graph/graphalgorithms_def.h src/graph/graphalgorithms.h \
+ src/graph/graph_tclique.h
 $(TESTOBJDIR)/gcgcol_test.o: src/tests/gcgcol_test.cpp src/tests/test.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
