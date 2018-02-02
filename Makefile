@@ -56,6 +56,7 @@ MASTERSETTINGS	=	default
 
 VALGRIND	=	false
 MODE		=	readdec
+STATISTICS  =  false
 PROJECT		=	none
 GTEST		=	false
 PARASCIP	= 	true
