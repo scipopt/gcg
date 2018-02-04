@@ -60,6 +60,7 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 
+#include "scip/struct_set.h"
 #include "gcg.h"
 
 #ifndef NBLISS
@@ -144,6 +145,8 @@ struct SCIP_RelaxData
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
    SCIP_CLOCK*           rootnodetime;       /**< time in root node */
+   SCIP_Real*			 degeneracy;		 /**< degeneracy array */
+   SCIP_Real*			 dualbounds;		 /**< dual bounds array */
 };
 
 /*
@@ -2091,9 +2094,12 @@ void initRelaxdata(
    relaxdata->varlinkconsblock = NULL;
    relaxdata->pricingprobsmemused = 0.0;
 
-   relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
    relaxdata->rootnodetime = NULL;
+   relaxdata->degeneracy = NULL;
+   relaxdata->dualbounds = NULL;
+
+   relaxdata->relaxisinitialized = FALSE;
 }
 
 /*
@@ -2156,6 +2162,8 @@ static
 SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 {
    SCIP_RELAXDATA* relaxdata;
+   SCIP_Longint nodelimit;
+   SCIP_Longint i;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -2166,6 +2174,14 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 
    initRelaxdata(relaxdata);
    SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
+   SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &nodelimit) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->degeneracy), nodelimit) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->dualbounds), nodelimit) );
+   for( i = 0; i < nodelimit; i++ )
+   {
+      relaxdata->degeneracy[i] = -1.;
+      relaxdata->dualbounds[i] = -1.;	// this is okay as it suffices to check if degeneracy is set
+   }
 
    return SCIP_OKAY;
 }
@@ -2191,7 +2207,11 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    }
 
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->markedmasterconss));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->degeneracy));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->dualbounds));
    relaxdata->markedmasterconss = NULL;
+   relaxdata->degeneracy = NULL;
+   relaxdata->dualbounds = NULL;
 
 
    /* free arrays for constraints */
@@ -2293,6 +2313,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    /* solve the next node in the master problem */
    SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
+   /* get current degeneracy and dualbounds */
+   relaxdata->degeneracy[SCIPnodeGetNumber(SCIPgetCurrentNode(scip))] = GCGgetDegeneracy(scip);
+   relaxdata->dualbounds[SCIPnodeGetNumber(SCIPgetCurrentNode(scip))] = SCIPgetDualbound(scip);
+   
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
@@ -2302,6 +2326,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          SCIP_CALL( SCIPstartClock(scip, relaxdata->rootnodetime) );
          SCIPdebugMessage("  Root Node Time clock started");
       }
+	  
 
       /* update the number of the last solved node */
       relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
@@ -4035,4 +4060,42 @@ SCIP_CLOCK* GCGgetRootNodeTime(
    assert(relaxdata != NULL);
 
    return relaxdata->rootnodetime;
+}
+
+/** return degeneracy array */
+SCIP_Real* GCGgetDegeneracyArray(
+   SCIP*				scip				 /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->degeneracy;
+}
+
+/** return degeneracy array */
+SCIP_Real* GCGgetDualboundsArray(
+   SCIP*				scip				 /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->dualbounds;
 }

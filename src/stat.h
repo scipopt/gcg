@@ -55,7 +55,6 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
    SCIP*                 scip                /**< SCIP data structure */
 );
 
-
 #ifdef __cplusplus
 }
 #endif
