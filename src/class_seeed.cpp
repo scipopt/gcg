@@ -6225,15 +6225,23 @@ SCIP_RETCODE Seeed::buildDecChainString()
 
 void Seeed::calcmaxwhitescore(){
 
+   SCIP_CLOCK* clock;
+
+   SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
+   SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
+
    if( blockareascore == -1. )
       calcblockareascore();
 
    if( borderareascore == -1. )
       calcborderareascore();
 
-   /** maxwhitescore = 1 - ( 1 - blackerascore) + (1 - borderarescore ) ) */
-
+   /** maxwhitescore = 1 - ( 1 - blackareascore) + (1 - borderareascore ) ) */
    maxwhitescore = blockareascore + borderareascore - 1.;
+
+   SCIP_CALL_ABORT(SCIPstopClock( seeedpool->getScip(), clock) );
+   seeedpool->scorecalculatingtime += SCIPgetClockTime( seeedpool->getScip(), clock);
+   SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
 
    return;
 }
@@ -6262,6 +6270,13 @@ SCIP_RETCODE Seeed::calcclassicscore()
    SCIP_Real alphaborderarea;
    SCIP_Real alphalinking;
    SCIP_Real alphadensity;
+
+   SCIP_CLOCK* clock;
+
+   SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
+   SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
+
+
 
    SCIP_CALL( SCIPallocBufferArray( scip, & nzblocks, nBlocks ) );
    SCIP_CALL( SCIPallocBufferArray( scip, & nlinkvarsblocks, nBlocks ) );
@@ -6398,6 +6413,9 @@ SCIP_RETCODE Seeed::calcclassicscore()
    SCIPfreeBufferArray(  scip, & blocksizes);
    SCIPfreeBufferArray(  scip, & nvarsblocks);
 
+   SCIP_CALL_ABORT(SCIPstopClock( seeedpool->getScip(), clock) );
+   seeedpool->scorecalculatingtime += SCIPgetClockTime( seeedpool->getScip(), clock);
+   SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
 
    return SCIP_OKAY;
 }
@@ -6406,6 +6424,7 @@ void Seeed::calcborderareascore(){
 
    unsigned long matrixarea;
    unsigned long borderarea;
+
 
    matrixarea = getNVars() * getNConss();
    borderarea = 0;
@@ -6429,6 +6448,11 @@ void Seeed::calcmaxforeseeingwhitescore(){
    unsigned long newwidth;
    unsigned long newmasterarea;
    unsigned long newblockarea;
+
+   SCIP_CLOCK* clock;
+
+   SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
+   SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
    for( int lv = 0; lv < getNLinkingvars(); ++lv )
    {
@@ -6494,6 +6518,11 @@ void Seeed::calcmaxforeseeingwhitescore(){
 
    maxforeseeingwhitescore = 1. - maxforeseeingwhitescore;
 
+   SCIP_CALL_ABORT(SCIPstopClock( seeedpool->getScip(), clock) );
+   seeedpool->scorecalculatingtime += SCIPgetClockTime( seeedpool->getScip(), clock);
+   SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
+
+   return;
 }
 
 void Seeed::calcmaxforeseeingwhitescoreagg(){
@@ -6507,6 +6536,11 @@ void Seeed::calcmaxforeseeingwhitescoreagg(){
    unsigned long newwidth;
    unsigned long newmasterarea;
    unsigned long newblockareaagg;
+
+   SCIP_CLOCK* clock;
+
+   SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
+   SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
    calcAggregationInformation(seeedpool);
 
@@ -6575,6 +6609,10 @@ void Seeed::calcmaxforeseeingwhitescoreagg(){
 
    maxforeseeingwhitescoreagg = 1. - maxforeseeingwhitescoreagg;
 
+   SCIP_CALL_ABORT(SCIPstopClock( seeedpool->getScip(), clock) );
+   seeedpool->scorecalculatingtime += SCIPgetClockTime( seeedpool->getScip(), clock);
+   SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
+
    return;
 }
 
@@ -6582,6 +6620,10 @@ void Seeed::calcsetpartfwhitescore(){
 
    if( maxforeseeingwhitescore == -1. )
       calcmaxforeseeingwhitescore();
+   SCIP_CLOCK* clock;
+
+   SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
+   SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
    if( hasSetppccardMaster(seeedpool) && !isTrivial() && getNBlocks() > 1 )
    {
@@ -6592,6 +6634,10 @@ void Seeed::calcsetpartfwhitescore(){
       setpartfwhitescore = 0.5 * maxforeseeingwhitescore;
    }
 
+   SCIP_CALL_ABORT(SCIPstopClock( seeedpool->getScip(), clock) );
+   seeedpool->scorecalculatingtime += SCIPgetClockTime( seeedpool->getScip(), clock);
+   SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
+
    return;
 }
 
@@ -6599,6 +6645,11 @@ void Seeed::calcsetpartfwhitescoreagg(){
 
    if( maxforeseeingwhitescoreagg == -1. )
       calcmaxforeseeingwhitescoreagg();
+
+   SCIP_CLOCK* clock;
+
+   SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
+   SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
 
    if( hasSetppccardMaster(seeedpool) && !isTrivial() && getNBlocks() > 1 )
    {
@@ -6608,6 +6659,10 @@ void Seeed::calcsetpartfwhitescoreagg(){
    {
       setpartfwhitescoreagg = 0.5 * maxforeseeingwhitescoreagg;
    }
+
+   SCIP_CALL_ABORT(SCIPstopClock( seeedpool->getScip(), clock) );
+   seeedpool->scorecalculatingtime += SCIPgetClockTime( seeedpool->getScip(), clock);
+   SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
 
    return;
 }
@@ -6636,6 +6691,11 @@ void Seeed::calcblockareascoreagg(){
    unsigned long matrixarea;
    unsigned long blockarea;
 
+   SCIP_CLOCK* clock;
+
+   SCIP_CALL_ABORT( SCIPcreateClock( seeedpool->getScip(), &clock) );
+   SCIP_CALL_ABORT( SCIPstartClock( seeedpool->getScip(), clock) );
+
    matrixarea = getNVars() * getNConss();
    blockarea = 0;
 
@@ -6646,14 +6706,11 @@ void Seeed::calcblockareascoreagg(){
 
    blockareascoreagg = 1. - ( (SCIP_Real) blockarea / (SCIP_Real) matrixarea );
 
-
+   SCIP_CALL_ABORT(SCIPstopClock( seeedpool->getScip(), clock) );
+   seeedpool->scorecalculatingtime += SCIPgetClockTime( seeedpool->getScip(), clock);
+   SCIP_CALL_ABORT(SCIPfreeClock( seeedpool->getScip(), &clock) );
 
    return;
 }
-
-
-
-
-
 
 } /* namespace gcg */

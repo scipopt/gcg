@@ -516,7 +516,8 @@ Seeedpool::Seeedpool(
    ) :
    scip( givenScip ), incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 ),
    nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
-   nFinishingDetectors( 0 ), nPostprocessingDetectors(0), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed )
+   nFinishingDetectors( 0 ), nPostprocessingDetectors(0), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed ),
+   classificationtime(0.), nblockscandidatescalctime(0.), postprocessingtime(0.), scorecalculatingtime(0.)
 {
    SCIP_CONS** conss;
    SCIP_VAR** vars;
@@ -845,6 +846,12 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
    SCIP_Bool varclassscipvartypes;
    SCIP_Bool varclassobjvals;
    SCIP_Bool varclassobjvalsigns;
+   SCIP_CLOCK* classificationclock;
+   SCIP_CLOCK* nblockcandnclock;
+
+   SCIPcreateClock( scip, & classificationclock );
+   SCIPcreateClock( scip, & nblockcandnclock );
+   SCIP_CALL( SCIPstartClock( scip, classificationclock ) );
 
    if( transformed )
    {
@@ -869,6 +876,8 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
         SCIPgetBoolParam(scip, "detection/varclassifier/objectivevaluesigns/origenabled", &varclassobjvalsigns);
    }
 
+
+
    if( conssclassnnonzeros )
       addConsClassifier( createConsClassifierForNNonzeros() );
    if( conssclassscipconstypes )
@@ -888,10 +897,20 @@ SCIP_RETCODE Seeedpool::calcClassifierAndNBlockCandidates(
      if ( varclassobjvalsigns )
         addVarClassifier( createVarClassifierForObjValueSigns() );
 
+
    reduceConsclasses();
    reduceVarclasses();
 
+   SCIP_CALL( SCIPstopClock( scip, classificationclock ) );
+   classificationtime = SCIPgetClockTime( scip, classificationclock );
+   SCIPfreeClock( scip, & classificationclock );
+
+   SCIP_CALL( SCIPstartClock( scip, nblockcandnclock ) );
    calcCandidatesNBlocks();
+   SCIP_CALL( SCIPstopClock( scip, nblockcandnclock ) );
+   nblockscandidatescalctime = SCIPgetClockTime( scip, nblockcandnclock );
+   SCIPfreeClock( scip, & nblockcandnclock );
+
 
    return SCIP_OKAY;
 }
@@ -912,6 +931,9 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    std::vector<int> successDetectors;
    std::vector<SeeedPtr> delSeeeds;
    bool duplicate;
+   SCIP_CLOCK* postprocessingclock;
+   SCIPcreateClock( scip, & postprocessingclock );
+
 
    successDetectors = std::vector<int>( nDetectors, 0 );
 
@@ -1353,6 +1375,7 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    /** postprocess the finished seeeds */
    std::vector<SeeedPtr >postprocessed(0);
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Started Postprocessing of decompositions...\n");
+   SCIP_CALL_ABORT( SCIPstartClock( scip, postprocessingclock ) );
 #pragma omp parallel for schedule( static, 1 )
    for( size_t c = 0 ; c < finishedSeeeds.size(); ++c )
    {
@@ -1423,9 +1446,12 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
 //       addSeeedToAncestor(seeedPtr);
 
    } // end for postprocessing finished seeeds
+   SCIP_CALL_ABORT( SCIPstopClock( scip, postprocessingclock ) );
+   postprocessingtime = SCIPgetClockTime( scip, postprocessingclock );
    for( size_t c = 0; c < postprocessed.size(); ++c)
       addSeeedToFinishedUnchecked(postprocessed[c]);
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "...finished postprocessing of decompositions. Added %d new decomps. \n", postprocessed.size());
+   SCIP_CALL_ABORT( SCIPfreeClock( scip, & postprocessingclock ) );
 
 
    sortAllRelevantSeeeds();

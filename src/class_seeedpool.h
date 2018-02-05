@@ -139,8 +139,12 @@ private:
 public:
 
    std::vector<ConsClassifier*> consclassescollection;   /**< collection of different constraint class distributions  */
-   std::vector<VarClassifier*> varclassescollection;     /**< collection of different variabale class distributions   */
+   std::vector<VarClassifier*> varclassescollection;     /**< collection of different variable class distributions   */
 
+   SCIP_Real classificationtime;
+   SCIP_Real nblockscandidatescalctime;
+   SCIP_Real postprocessingtime;
+   SCIP_Real scorecalculatingtime;
 
    /** constructor */
    Seeedpool(
