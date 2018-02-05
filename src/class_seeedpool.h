@@ -145,6 +145,7 @@ public:
    SCIP_Real nblockscandidatescalctime;
    SCIP_Real postprocessingtime;
    SCIP_Real scorecalculatingtime;
+   SCIP_Real translatingtime;
 
    /** constructor */
    Seeedpool(

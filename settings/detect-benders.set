@@ -1,0 +1,13 @@
+detection/scoretype = 0
+detection/origprob/enabled  = TRUE
+detectors/hrcgpartition/enabled  = FALSE
+detectors/hrcgpartition/origenabled  = FALSE
+detectors/hrgpartition/enabled  = FALSE
+detectors/hrgpartition/origenabled  = FALSE
+detectors/hcgpartition/enabled  = TRUE
+detectors/hcgpartition/origenabled  = TRUE
+detectors/hcgpartition/maxnblockcandidates = 10
+detectors/varclass/origenabled = TRUE
+detectors/varclass/enabled = TRUE
+detectors/consclass/origenabled = FALSE
+detectors/consclass/enabled = FALSE
