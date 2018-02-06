@@ -1163,6 +1163,10 @@ public:
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
+   SCIP_RETCODE writeAsDec(
+      FILE* file
+      );
+
 
    /** creates and sets a detector chain short string for this seeed */
    SCIP_RETCODE buildDecChainString();

@@ -6195,6 +6195,42 @@ SCIP_RETCODE Seeed::setDetectorChainString(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE Seeed::writeAsDec(
+   FILE* file
+   ){
+   SCIP* scip;
+
+   scip = seeedpool->getScip();
+
+   /** @TODO: statistical stuff  */
+
+   if( !isComplete() )
+         SCIPinfoMessage(scip, file, "CONSDEFAULTMASTER\n 0\n" );
+   else
+         SCIPinfoMessage(scip, file, "CONSDEFAULTMASTER\n 1\n" );
+
+   if( stemsFromUnpresolved )
+      SCIPinfoMessage(scip, file, "PRESOLVED\n 0\n" );
+   else
+      SCIPinfoMessage(scip, file, "PRESOLVED\n 1\n" );
+
+   SCIPinfoMessage(scip, file, "NBLOCKS\n %d\n", getNBlocks() );
+
+
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      SCIPinfoMessage(scip, file, "BLOCKCONSS %d\n", b+1 );
+      for( size_t c = 0; c < conssForBlocks[b].size(); ++c )
+      {
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( conssForBlocks[b][c])) );
+      }
+   }
+
+
+
+}
+
+
 /** creates and sets a detector chain short string for this seeed */
 SCIP_RETCODE Seeed::buildDecChainString()
 {
