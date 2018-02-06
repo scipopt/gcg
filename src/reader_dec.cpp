@@ -1229,8 +1229,6 @@ SCIP_DECL_READERWRITE(readerWriteDec)
    assert(scip != NULL);
    assert(reader != NULL);
 
-   DEC_DECOMP* bestdecomp;
-
    SCIPconshdlrDecompWriteDec(scip, file, transformed);
    *result = SCIP_SUCCESS;
 
