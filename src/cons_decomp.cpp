@@ -226,6 +226,8 @@ struct SCIP_ConshdlrData
 
    std::vector<int>*       userblocknrcandidates;
 
+   SeeedPtr                seeedtowrite;
+
 };
 
 
@@ -877,7 +879,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->currscoretype = scoretype::MAX_WHITE;
    conshdlrdata->resortcandidates = TRUE;
    conshdlrdata->userblocknrcandidates = new std::vector<int>(0);
-
+   conshdlrdata->seeedtowrite = NULL;
 
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->completedetectionclock) );
@@ -4766,44 +4768,35 @@ SCIP_RETCODE DECwriteAllDecomps(
       return SCIP_OKAY;
    }
 
-   tmp = conshdlrdata->useddecomp;
-
-   /** write orig decomps currently disabled*/
-   if( FALSE )
+   /** write orig decomps */
+   for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL &&  i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i )
    {
-      for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL &&  i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i )
+      SeeedPtr seeed;
+      DEC_DECOMP* decomplocal;
+
+      seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
+
+      misc->GCGgetVisualizationFilename(scip, seeed, extension, tempstring);
+      if( directory != NULL )
       {
-         SeeedPtr seeed;
-         DEC_DECOMP* decomplocal;
-
-         seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
-
-         misc->GCGgetVisualizationFilename(scip, seeed, extension, tempstring);
-         if( directory != NULL )
-         {
-            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", directory, tempstring, extension);
-         }
-         else
-         {
-            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s.%s", tempstring, extension);
-         }
-
-         conshdlrdata->seeedpoolunpresolved->createDecompFromSeeed(seeed, &decomplocal) ;
-
-         conshdlrdata->useddecomp = decomplocal;
-
-         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
-
-         DECdecompFree(scip, &decomplocal);
- //        conshdlrdata->useddecomp = NULL;
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", directory, tempstring, extension);
       }
+      else
+      {
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s.%s", tempstring, extension);
+      }
+
+      conshdlrdata->seeedtowrite = seeed;
+
+      SCIP_CALL( SCIPwriteOrigProblem(scip, outname, extension, FALSE) );
+
+      conshdlrdata->seeedtowrite = NULL;
    }
 
    /** write presolved decomps */
      for( i = 0; conshdlrdata->seeedpool!= NULL && i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
      {
         SeeedPtr seeed;
-        DEC_DECOMP* decomplocal;
 
         seeed = conshdlrdata->seeedpool->getFinishedSeeed( i );
 
@@ -4817,18 +4810,14 @@ SCIP_RETCODE DECwriteAllDecomps(
            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s.%s", tempstring, extension);
         }
 
-        conshdlrdata->seeedpool->createDecompFromSeeed(seeed, &decomplocal) ;
-
-        conshdlrdata->useddecomp = decomplocal;
+        conshdlrdata->seeedtowrite = seeed;
 
         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
 
-        conshdlrdata->useddecomp = NULL;
+        conshdlrdata->seeedtowrite = NULL;
      }
 
-   conshdlrdata->useddecomp = tmp;
-
-   return SCIP_OKAY;
+     return SCIP_OKAY;
 }
 
 int SCIPconshdlrDecompGetNDetectors(
@@ -5085,7 +5074,11 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   assert( conshdlrdata->useddecomp == NULL );
+   if( conshdlrdata->seeedtowrite != NULL )
+   {
+      conshdlrdata->seeedtowrite->writeAsDec(file);
+      return SCIP_OKAY;
+   }
 
    if( conshdlrdata->candidates->size() == 0 )
    {
