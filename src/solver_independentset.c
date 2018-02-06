@@ -4,7 +4,7 @@
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
-/*         SCIP --- Solving Constraint Integer Programs                      */
+/*         SCIP --- Solving Constrainteger Programs                      */
 /*                                                                           */
 /* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
@@ -53,7 +53,7 @@
 
 #define SOLVER_ENABLED       TRUE  /**< indicates whether the solver should be enabled */
 
-#define DEFAULT_DENSITY      0.85
+#define DEFAULT_DENSITY      0.00
 
 struct GCG_SolverData 
 {
@@ -65,45 +65,127 @@ struct GCG_SolverData
  * Local methods
  */
 
-/** Add a variable to the bijection graph g and indsetvars array. Returns the index of the corresponding node in the graph. */
+/** Returns whether 2 variables are linked, either simply or in a transitive way in respect to a given linkedvars matrix.
+  * Use of the wrapper function INDSETareVarsLinked(..) is recommended */
 static
-int INDSETaddVarToGraph(
-   graph_t*       g,                              /**< Graph into which to insert the new variable as a node */
-   SCIP_VAR*      consvar,                        /**< The variable that is to be assigned a node in the graph */
-   int*           indexcount,                     /**< Pointer to Index of the next unassigned node in the graph */
-   SCIP_Real      scalingfactor,                  /**< Factor for scaling the weight of newly mapped nodes */
-   SCIP_VAR**     indsetvars                      /**< Array that keeps track of variables that are part of the graph */
+SCIP_Bool INDSETareVarsLinkedRec(
+   int** linkedvars,                              /**< Matrix indicating which variables are linked by a node */
+   int   vindex1,                                 /**< Problem index of the first variable in the pair that is to be checked */
+   int   vindex2,                                 /**< Problem index of the second variable in the pair that is to be checked */
+   int   nvars,                                   /**< Dimension of the matrix in both directions*/
+   int*  vartrace,                                /**< Array to keep track of which nodes have already been visited during recursion */
+   int   traceindex                               /**< Index to keep track of the number of visited nodes during recursion */
    )
 {
-   int unique;
-   int nodeindex;
-   unique = 1;
+   SCIP_Bool varintrace;
+   int       i,j;
 
-   for( int j = 0; j < *indexcount; ++j )
+   varintrace = FALSE;
+   /* Simple, direct link? (Matrix is symmetric) */
+   if( linkedvars[vindex1][vindex2] )
    {
-      if( consvar == indsetvars[j] )
+      return TRUE;
+   }
+   /* More complex link by transitivity? */
+   else
+   {
+      for( i = 0; i < nvars; ++i )
       {
-         /* Var already part of the graph, return its index */
-         unique = 0;
-         nodeindex = j;
+         if( linkedvars[vindex1][i] )
+         {
+            /* To ensure termination, we have to keep track of the visited vars */
+            for( j = 0; j < traceindex; ++j )
+            {
+               if( vartrace[j] == i )
+               {
+                  varintrace = TRUE;
+               }
+            }
+            if( !varintrace )
+            {
+               vartrace[traceindex] = vindex1;
+               ++traceindex;
+               return INDSETareVarsLinkedRec(linkedvars,i,vindex2,nvars,vartrace,traceindex);
+            }
+         }
       }
    }
-   if( unique )
+   return FALSE;
+}
+
+/** Wrapper function for INDSETareVarsLinkedRec, mallocs and cleans up the necessary memory and passes through the result */
+static
+SCIP_Bool INDSETareVarsLinked(
+   SCIP*     scip,                                /**< The problem instance */
+   int**     linkedvars,                          /**< Matrix indicating which variables are linked by a node */
+   SCIP_VAR* var1,                                /**< The first variable in the pair that is to be checked */
+   SCIP_VAR* var2                                 /**< The second variable in the pair that is to be checked */
+   )
+{
+   int*      vartrace;
+   int       traceindex;
+   int       i;
+   int       vindex1;
+   int       vindex2;
+   int       nvars;
+   SCIP_Bool varslinked;
+
+   vindex1 = SCIPvarGetProbindex(var1);
+   vindex2 = SCIPvarGetProbindex(var2);
+   nvars = SCIPgetNVars(scip);
+
+   SCIP_CALL( SCIPallocBufferArray(scip,&vartrace,nvars) );
+   traceindex = 0;
+   for( i = 0; i < nvars; ++i )
    {
-      /* Var not yet part of graph, add it with its corresponding weight */
-      indsetvars[*indexcount] = consvar;
-      if( !(SCIPvarGetObj(indsetvars[*indexcount]) > 0) )
-      {
-         g->weights[*indexcount] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[*indexcount])));
-      }
-      else
-      {
-         g->weights[*indexcount] = 1;
-      }
-      nodeindex = *indexcount;
-      ++(*indexcount);
+      vartrace[i] = -1;
    }
-   return nodeindex;
+
+   varslinked = INDSETareVarsLinkedRec(linkedvars,vindex1,vindex2,nvars,vartrace,traceindex);
+
+   SCIPfreeBufferArray(scip,&vartrace);
+
+   return varslinked;   
+}
+
+/** Update transitivity in the linkedvars matrix between 2 variables that are to be linked and all linked variables */
+static
+void INDSETupdateVarLinks(
+   SCIP*     scip,                                /**< The Problem instance */
+   int**     linkedvars,                          /**< Matrix indicating which variables are linked by a node */
+   SCIP_VAR* var1,                                /**< The first variable in the pair that is to be checked */
+   SCIP_VAR* var2                                 /**< The second variable in the pair that is to be checked */
+   )
+{
+   int        nvars;
+   int        varindex1,varindex2;
+   int        i;
+   SCIP_VAR** vars;
+
+   varindex1 = SCIPvarGetProbindex(var1);
+   varindex2 = SCIPvarGetProbindex(var2);
+
+   /* Variables may have not been simply linked before */
+   linkedvars[varindex1][varindex2] = 1;
+   linkedvars[varindex2][varindex1] = 1;
+
+   nvars = SCIPgetNVars(scip);
+   vars = SCIPgetVars(scip);
+   for( i = 0; i < nvars; ++i )
+   {
+      /* It is sufficient to check the links between var1 and all other vars, since var1 and var2 are linked */
+      if( varindex1 != i )
+      {
+         if( INDSETareVarsLinked(scip,linkedvars,var1,vars[i]) )
+         {
+            /* Add links to both var1 and var2 */
+            linkedvars[varindex1][i] = 1;
+            linkedvars[i][varindex1] = 1;
+            linkedvars[varindex2][i] = 1;
+            linkedvars[i][varindex2] = 1;
+         }
+      }
+   }
 }
 
 /** Get the node index of a given variable in the bijection if mapped, else return -1 */
@@ -124,16 +206,94 @@ int INDSETgetNodeIndex(
    return -1;
 }
 
+/** Returns the node index of a given variable in the bijection or that of a linked variable, if any. */
+static 
+int INDSETgetLinkedNodeIndex(
+   SCIP*          scip,                           /**< The problem instance */
+   SCIP_VAR*      var,                            /**< Variable for which the node index is to be determined */
+   SCIP_VAR**     indsetvars,                     /**< Array of variables that are mapped to a node of the graph */
+   int            indexcount,                     /**< Number of variables that are mapped in the graph */
+   int**          linkedvars                      /**< Matrix indicating which variables are linked by a node */
+   )
+{
+   int        nodeindex;
+   int        nvars;
+   SCIP_VAR** vars;
+   int        i;
+
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+
+   nodeindex = INDSETgetNodeIndex(var,indsetvars,indexcount);
+   if( nodeindex == -1 )
+   {
+      for( i = 0; i < nvars; ++i )
+      {
+         if( vars[i] != var )
+         {
+            if( INDSETareVarsLinked(scip,linkedvars,var,vars[i]) )
+            {
+               nodeindex = INDSETgetNodeIndex(vars[i],indsetvars,indexcount);
+               if( nodeindex != -1 )
+               {
+                  return nodeindex;
+               }
+            }
+         }
+      }
+   }
+   else
+   {
+      return nodeindex;
+   }
+   return -1;
+}
+
+/** Add a variable to the bijection graph g and indsetvars array. Returns the index of the corresponding node in the graph. */
+static
+int INDSETaddVarToGraph(
+   SCIP*          scip,
+   graph_t*       g,                              /**< Graph into which to insert the new variable as a node */
+   SCIP_VAR*      consvar,                        /**< The variable that is to be assigned a node in the graph */
+   int*           indexcount,                     /**< Pointer to Index of the next unassigned node in the graph */
+   SCIP_Real      scalingfactor,                  /**< Factor for scaling the weight of newly mapped nodes */
+   SCIP_VAR**     indsetvars,                     /**< Array that keeps track of variables that are part of the graph */
+   int**          linkedvars
+   )
+{
+   int nodeindex;
+
+   nodeindex = INDSETgetLinkedNodeIndex(scip,consvar,indsetvars,*indexcount,linkedvars);
+
+   if( nodeindex == -1 )
+   {
+      /* Var not yet part of graph, add it with its corresponding weight */
+      indsetvars[*indexcount] = consvar;
+      if( !(SCIPvarGetObj(indsetvars[*indexcount]) > 0) )
+      {
+         g->weights[*indexcount] = 1 + abs((int) (scalingfactor * SCIPvarGetObj(indsetvars[*indexcount])));
+      }
+      else
+      {
+         g->weights[*indexcount] = 1;
+      }
+      nodeindex = *indexcount;
+      ++(*indexcount);
+   }
+   return nodeindex;
+}
+
+
 /** Check if the objective coefficients of the variables are already Integral */
 static 
-int INDSETareObjectivesIntegral(
+SCIP_Bool INDSETareObjectivesIntegral(
    SCIP*       scip,
    SCIP_VAR**  vars
    )
 {
-   int i;
    SCIP_Real objval;
    SCIP_Real nvars;
+   int       i;
 
    nvars = SCIPgetNVars(scip);
 
@@ -142,10 +302,10 @@ int INDSETareObjectivesIntegral(
       objval = SCIPvarGetObj(vars[i]);
       if( !SCIPisZero(scip,objval-((int)objval)) )
       {
-         return 0;
+         return FALSE;
       }
    }
-   return 1;
+   return TRUE;
 }
 
 /** Scale a wanted scaling factor until it is suitable for use with cliquer. If the factor is too big, it is divided by 2 recursively */
@@ -156,10 +316,10 @@ SCIP_Real INDSETscaleScalingFactor(
    SCIP_Real   factor
    )
 {
-   int i;
    SCIP_Real varval;
    SCIP_Real nvars;
    SCIP_Real biggestobj;
+   int       i;
 
    nvars = SCIPgetNVars(scip);
 
@@ -195,11 +355,11 @@ SCIP_Real INDSETscaleRelativeToMax(
    SCIP_VAR**  vars
    )
 {
-   int       i;
    SCIP_Real scalingfactor;
    SCIP_Real varval;
    SCIP_Real biggestobj;
    SCIP_Real nvars;
+   int       i;
 
    nvars = SCIPgetNVars(scip);
 
@@ -230,12 +390,11 @@ SCIP_Real INDSETscaleMinimalIntegral(
    SCIP_VAR**  vars
    )
 {
-   int i;
    SCIP_Real minval;
    SCIP_Real objval;
-   SCIP_Real scalefactor;
-
+   SCIP_Real scalingfactor;
    SCIP_Real nvars;
+   int       i;
 
    nvars = SCIPgetNVars(scip);
    minval = SCIP_REAL_MAX;
@@ -254,13 +413,13 @@ SCIP_Real INDSETscaleMinimalIntegral(
       minval = 1.0;
    }
 
-   scalefactor = INDSETscaleScalingFactor(scip, vars, 1/fabs(minval));
+   scalingfactor = INDSETscaleScalingFactor(scip, vars, 1/fabs(minval));
 
-   if( SCIPisZero(scip,scalefactor) )
+   if( SCIPisZero(scip,scalingfactor) )
    {
-      scalefactor = 1.0;
+      scalingfactor = 1.0;
    }
-   return scalefactor;
+   return scalingfactor;
 }
 
 /** Dummy function to allow disabling of scaling by setting the scaling factor to 1. */
@@ -275,7 +434,7 @@ SCIP_Real INDSETscaleNoScaling(
 
 /* Basic idea of the heuristic solver: The biggest independent set in a graph corresponds to the biggest clique
  * of the complement graph, for which we use the cliquer library to find it. We therefore transform the variables 
- * into graph nodes and delete the edge between two nodes if there is an independent set constraint involving both. 
+ * into graph nodes and delete the edge between two nodes if there is an independent set constrainvolving both. 
  * By doing this, they cannot both be part of the maximum clique and thus not be both part of the independent set.
  * The correspondence between variables and graph nodes is done by a bijection using the indsetvars array:
  * The variable indsetvars[i] is the i-th node of the graph, indexcount keeps track of the next unmapped graph node.
@@ -309,7 +468,6 @@ SCIP_RETCODE solveIndependentSet(
    SCIP_CONSHDLR* conshdlr;
    SCIP_VAR**     lconsvars;
    SCIP_VAR**     vconsvars;
-   SCIP_VAR**     mconsvars;
    SCIP_VAR**     indsetvars;
    SCIP_VAR**     pricingprobvars;
    SCIP_Real*     solvals;
@@ -320,7 +478,7 @@ SCIP_RETCODE solveIndependentSet(
    set_t          clique;
    graph_t*       g;
    clique_options cl_opts;
-   int*           markedvars;
+   int**          linkedvars;
    int            nedges;
    int            markedcount;
    int            npricingprobvars;
@@ -328,11 +486,10 @@ SCIP_RETCODE solveIndependentSet(
    int            indexcount;
    int            nodeindex0;
    int            nodeindex1;
-   int            nodeindex2;
    int            coefindex;
    int            nvars;
-   int            flag;
-   int            cconsindex;   
+   int            cconsindex;
+   int            i,j,k;
 
    assert(pricingprob != NULL);
    assert(solver != NULL);
@@ -361,7 +518,7 @@ SCIP_RETCODE solveIndependentSet(
     */
    if( !INDSETareObjectivesIntegral(pricingprob,pricingprobvars) )
    {
-      scalingfactor = INDSETscaleMinimalIntegral(pricingprob, pricingprobvars);
+      scalingfactor = INDSETscaleRelativeToMax(pricingprob, pricingprobvars);
    }
    else
    {
@@ -372,16 +529,18 @@ SCIP_RETCODE solveIndependentSet(
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&markedconstraints,nconss) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&indsetvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&solvals,npricingprobvars) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&mconsvars,npricingprobvars) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&markedvars,npricingprobvars) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&vconsvars,npricingprobvars) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&vconsvars,2) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&couplingcons,nconss) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkedvars,npricingprobvars) );
+   for( i = 0; i < npricingprobvars; ++i )
+   {
+      SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkedvars[i],npricingprobvars) );
+   }
 
    /* Initialize arrays to ensure data consistency */
-   for( int i = 0; i < npricingprobvars; ++i )
+   for( i = 0; i < npricingprobvars; ++i )
    {
       solvals[i] = -1.0; /* To later determine whether a variable was constrained */
-      markedvars[i] = 0.0; /* To later determine if a var has to be set to 0 */
    }
 
    /* Used to keep track of node indizes for bijection while building the graph */
@@ -396,9 +555,9 @@ SCIP_RETCODE solveIndependentSet(
    /* Build complementary graph by first creating a complete graph and then deleting edges of IS constraints */
    /* Size is first chosen to be maximal and then later cropped down to the actual number of nodes */
    g = graph_new(npricingprobvars);
-   for( int i = 0; i < npricingprobvars; ++i )
+   for( i = 0; i < npricingprobvars; ++i )
    {
-      for( int j = 0; j < npricingprobvars; ++j )
+      for( j = 0; j < npricingprobvars; ++j )
       {
          if( i != j )
          {
@@ -407,8 +566,59 @@ SCIP_RETCODE solveIndependentSet(
       }
    }
 
+   /* Initialize the linkedvars array. */
+   for( i = 0; i < npricingprobvars; ++i )
+   {   
+      for( j = 0; j < npricingprobvars; ++j )
+      {
+         linkedvars[i][j] = 0;
+      }
+   }
+
+   /* Check for "same"-constraints present in Ryan-Foster-Branching and save the links between the variables. */
+   for( i = 0; i < nconss; ++i )
+   {
+      assert(constraints[i] != NULL);
+      conshdlr = SCIPconsGetHdlr(constraints[i]);
+      assert(conshdlr != NULL);
+      if( strcmp(SCIPconshdlrGetName(conshdlr), "varbound") == 0 )
+      {
+         /* Varbound constraint of type x + cy == rhs */
+         if( SCIPisEQ(pricingprob, SCIPgetLhsVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i])) )
+         {
+            /* c == -1, thus variables have to become both 0 or both 1 */ 
+            if( (SCIPgetRhsVarbound(pricingprob,constraints[i]) == 0) && (SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) == -1) )
+            {
+               vconsvars[0] = SCIPgetVarVarbound(pricingprob,constraints[i]);
+               vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,constraints[i]);
+               INDSETupdateVarLinks(pricingprob,linkedvars,vconsvars[0],vconsvars[1]);
+
+               /* Check if adding both variables to the solution would be worth it objective-wise:
+                  This is heuristical, as a positive objective won't be weighted in the clique search */
+               if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]) + SCIPvarGetObj(vconsvars[1]),0) )
+               {
+                  nodeindex0 = INDSETaddVarToGraph(pricingprob, g, vconsvars[0], &indexcount, scalingfactor, indsetvars, linkedvars);
+                  nodeindex1 = INDSETaddVarToGraph(pricingprob, g, vconsvars[1], &indexcount, scalingfactor, indsetvars, linkedvars);
+
+                  /* Technically the edge between both can still be deleted, if both cons x-y==0 and x+y<=1 are present. */
+                  /* If the edge is deleted, we later force both to be zero */
+                  markedconstraints[markedcount] = constraints[i];
+                  ++markedcount;
+               }
+               else
+               {  
+                  /* Both variables have to be set to 0 to satisfy the constraint. */
+                  markedconstraints[markedcount] = constraints[i];
+                  ++markedcount;
+               }
+
+            }
+         }
+      }
+   }
+
    /* Main loop to check the nature of each constraint */
-   for( int i = 0; i < nconss; ++i )
+   for( i = 0; i < nconss; ++i )
    {
       assert(constraints[i] != NULL);
       conshdlr = SCIPconsGetHdlr(constraints[i]);
@@ -423,20 +633,28 @@ SCIP_RETCODE solveIndependentSet(
          if( SCIPgetNVarsLinear(pricingprob, constraints[i]) == 2 &&
              SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),1) ) 
          {
-            /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
+            /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value < 0 */
             if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) || SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
             {
                if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) )
                {
-                  nodeindex0 = INDSETaddVarToGraph(g, lconsvars[0], &indexcount, scalingfactor, indsetvars);
+                  nodeindex0 = INDSETaddVarToGraph(pricingprob, g, lconsvars[0], &indexcount, scalingfactor, indsetvars, linkedvars);
+               }
+               else
+               {
+                  nodeindex0 = INDSETgetLinkedNodeIndex(pricingprob,lconsvars[0],indsetvars,indexcount,linkedvars);
                }
 
                if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
                {
-                  nodeindex1 = INDSETaddVarToGraph(g, lconsvars[1], &indexcount, scalingfactor, indsetvars);
+                  nodeindex1 = INDSETaddVarToGraph(pricingprob, g, lconsvars[1], &indexcount, scalingfactor, indsetvars, linkedvars);
+               }
+               else
+               {
+                  nodeindex1 = INDSETgetLinkedNodeIndex(pricingprob,lconsvars[1],indsetvars,indexcount,linkedvars);
                }
 
-               if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
+               if( nodeindex0 >= 0 && nodeindex1 >= 0 )
                {
                   if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                   {
@@ -454,14 +672,22 @@ SCIP_RETCODE solveIndependentSet(
             /* As before, the constraint is only regarded if it is relevant for pricing */
             if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) )
             {
-               nodeindex0 = INDSETaddVarToGraph(g, lconsvars[0], &indexcount, scalingfactor, indsetvars);
+               nodeindex0 = INDSETaddVarToGraph(pricingprob, g, lconsvars[0], &indexcount, scalingfactor, indsetvars, linkedvars);
+            }
+            else
+            {
+               nodeindex0 = INDSETgetLinkedNodeIndex(pricingprob,lconsvars[0],indsetvars,indexcount,linkedvars);
             }
 
             if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
             {
-               nodeindex1 = INDSETaddVarToGraph(g, lconsvars[1], &indexcount, scalingfactor, indsetvars);
+               nodeindex1 = INDSETaddVarToGraph(pricingprob, g, lconsvars[1], &indexcount, scalingfactor, indsetvars, linkedvars);
             }
-            if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[1]),0) )
+            else
+            {
+               nodeindex1 = INDSETgetLinkedNodeIndex(pricingprob,lconsvars[1],indsetvars,indexcount,linkedvars);
+            }
+            if( nodeindex0 >= 0 && nodeindex1 >= 0 )
             {
                if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                {
@@ -471,12 +697,12 @@ SCIP_RETCODE solveIndependentSet(
          }
          else
          {
-            /* The current constraint is no linear IS constraint */
+            /* The current constrais no linear IS constraint */
             SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
             coefindex = -1;
 
             /* Check the coefficients of the variables in the constraint */
-            for( int j = 0; j < nvars; ++j )
+            for( j = 0; j < nvars; ++j )
             {
                if( consvals[j] != 1 && (coefindex == -1) )
                {
@@ -495,16 +721,16 @@ SCIP_RETCODE solveIndependentSet(
             {
                /* Delete the edges between all the variables of the constraint. 
                   This way, at most one can be part of the maximum clique */
-               for( int k = 0; k < nvars; ++k )
+               for( k = 0; k < nvars; ++k )
                {
-                  /* We are only interested in vars potentially relevant for pricing (!= 0) */
-                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[k]),0) )
+                  /* We are only interested in vars potentially relevant for pricing (obj < 0) */
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[k]),0) || INDSETgetLinkedNodeIndex(pricingprob,lconsvars[k],indsetvars,indexcount,linkedvars) != -1 )
                   {
-                     nodeindex0 = INDSETaddVarToGraph(g, lconsvars[k], &indexcount, scalingfactor, indsetvars);
+                     nodeindex0 = INDSETaddVarToGraph(pricingprob, g, lconsvars[k], &indexcount, scalingfactor, indsetvars, linkedvars);
 
                      for( int l = k + 1; l < nvars; ++l )
                      {
-                        nodeindex1 = INDSETaddVarToGraph(g, lconsvars[l], &indexcount, scalingfactor, indsetvars);
+                        nodeindex1 = INDSETaddVarToGraph(pricingprob, g, lconsvars[l], &indexcount, scalingfactor, indsetvars, linkedvars);
 
                         if( nodeindex0 != nodeindex1 )
                         {
@@ -520,12 +746,12 @@ SCIP_RETCODE solveIndependentSet(
             /* Check if we have a coupling constraint (rhs 0) */
             else if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]), 0.0) )
             {
-               /* Special case: The coupling constraint is purely decorative (coefficient + 1 of coupling var >= #vars)*/
+               /* Special case: The coupling constrais purely decorative (coefficient + 1 of coupling var >= #vars)*/
                if( abs(consvals[coefindex]) + 1 >= nvars )
                {
                   /* We cannot guarantee that there is no constraint of the form x+CouplingVar <= 1 */
                   /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
-                  nodeindex0 = INDSETaddVarToGraph(g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars);
+                  nodeindex0 = INDSETaddVarToGraph(pricingprob, g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars, linkedvars);
 
                   /* We additionally have to mark the variable to later set it to one */ 
                   solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
@@ -536,26 +762,27 @@ SCIP_RETCODE solveIndependentSet(
                   /* We cannot guarantee that there is no constraint of the form x+CouplingVar <= 1 */
                   /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
                   /* We additionally have to mark the variable to later set it to one */ 
-                  nodeindex0 = INDSETaddVarToGraph(g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars);
+                  nodeindex0 = INDSETaddVarToGraph(pricingprob, g, lconsvars[coefindex], &indexcount, scalingfactor, indsetvars, linkedvars);
 
                   /* We additionally have to mark the variable to later set it to one */ 
                   solvals[SCIPvarGetProbindex(lconsvars[coefindex])] = -2.0;
 
                   /* Delete the edges between all the variables of the constraint that are not the coupling variable.
                      This way, at most one can be part of the maximum clique */
-                  for( int j = 0; j < nvars; ++j )
+                  for( j = 0; j < nvars; ++j )
                   {
-                     /* We are only interested in vars potentially relevant for pricing (!= 0) */
-                     if( j != coefindex && SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[j]),0) )
+                     /* We are only interested in vars potentially relevant for pricing (obj < 0) */
+                     if( j != coefindex && (SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[j]),0) 
+                        || INDSETgetLinkedNodeIndex(pricingprob,lconsvars[j],indsetvars,indexcount,linkedvars) != -1) )
                      {
                         /* Determine nodeindex0 */
-                        nodeindex0 = INDSETaddVarToGraph(g, lconsvars[j], &indexcount, scalingfactor, indsetvars);
+                        nodeindex0 = INDSETaddVarToGraph(pricingprob, g, lconsvars[j], &indexcount, scalingfactor, indsetvars, linkedvars);
                         /* Determine nodeindex1 */
-                        for( int k = j + 1; k < nvars; ++k )
+                        for( k = j + 1; k < nvars; ++k )
                         {
                            if( k != coefindex )
                            {
-                              nodeindex1 = INDSETaddVarToGraph(g, lconsvars[k], &indexcount, scalingfactor, indsetvars);
+                              nodeindex1 = INDSETaddVarToGraph(pricingprob, g, lconsvars[k], &indexcount, scalingfactor, indsetvars, linkedvars);
                               if( nodeindex0 != nodeindex1 )
                               {
                                  if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
@@ -583,7 +810,7 @@ SCIP_RETCODE solveIndependentSet(
                }
             }
             else{
-               /* Constraint is neither a coupling nor a clique constraint */ 
+               /* Constrais neither a coupling nor a clique constraint */ 
                SCIPdebugMessage("Exit: Unhandled linear constraint.\n");
                *result = SCIP_STATUS_UNKNOWN;
                goto TERMINATE;
@@ -603,17 +830,10 @@ SCIP_RETCODE solveIndependentSet(
                if( SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),-1) || SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),-1) ) 
                {
                   /* if x may be relevant, add both x and y to graph */
-                  if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]),0) )
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]),0) || INDSETgetLinkedNodeIndex(pricingprob,vconsvars[0],indsetvars,indexcount,linkedvars) != -1 )
                   {
-                     if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]),0) )
-                     {
-                        nodeindex0 = INDSETaddVarToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
-                     }
-
-                     if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[1]),0) )
-                     {
-                        nodeindex1 = INDSETaddVarToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
-                     }
+                     nodeindex0 = INDSETaddVarToGraph(pricingprob, g, vconsvars[0], &indexcount, scalingfactor, indsetvars, linkedvars);
+                     nodeindex1 = INDSETaddVarToGraph(pricingprob, g, vconsvars[1], &indexcount, scalingfactor, indsetvars, linkedvars);
                      /* It may be the case, that both the constraints x - y <= 0 and x + y <= 1 are part of the problem */
                      /* Although rare, we later ensure that we do not set x to 1 while y is set to 0 */
                      markedconstraints[markedcount] = constraints[i];
@@ -624,7 +844,7 @@ SCIP_RETCODE solveIndependentSet(
                   {
                      if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[1]),0) )
                      {
-                        nodeindex1 = INDSETaddVarToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
+                        nodeindex1 = INDSETaddVarToGraph(pricingprob, g, vconsvars[1], &indexcount, scalingfactor, indsetvars, linkedvars);
                      }
                   }
                   /* If none of the nodes are relevant, force x to be zero, since the constraint would be violated if x = 1 and y = 0 */
@@ -647,20 +867,28 @@ SCIP_RETCODE solveIndependentSet(
                   || (SCIPisLT(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) + 1) 
                   && SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]))) )
             {
-               /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value != 0 */
+               /* Preprocessing: Constrais only relevant for pricing if one of the variables has an objective value < 0 */
                if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]),0) || SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[1]),0) )
                {
                   if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]),0) )
                   {
-                     nodeindex0 = INDSETaddVarToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
+                     nodeindex0 = INDSETaddVarToGraph(pricingprob, g, vconsvars[0], &indexcount, scalingfactor, indsetvars, linkedvars);
+                  }
+                  else
+                  {
+                     nodeindex0 = INDSETgetLinkedNodeIndex(pricingprob,vconsvars[0],indsetvars,indexcount,linkedvars);
                   }
 
                   if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[1]),0) )
                   {
-                     nodeindex1 = INDSETaddVarToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
+                     nodeindex1 = INDSETaddVarToGraph(pricingprob, g, vconsvars[1], &indexcount, scalingfactor, indsetvars, linkedvars);
+                  }
+                  else
+                  {
+                     nodeindex1 = INDSETgetLinkedNodeIndex(pricingprob,vconsvars[1],indsetvars,indexcount,linkedvars);
                   }
 
-                  if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]),0) && SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[1]),0) )
+                  if( nodeindex0 >= 0 && nodeindex1 >= 0 )
                   {
                      if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
                      {
@@ -673,65 +901,15 @@ SCIP_RETCODE solveIndependentSet(
             {
                /* Rhs of varbound unequal to 0 and no IS constraint*/ 
                SCIPdebugMessage("Exit: Rhs of Varbound unhandled, Rhs: %g, Coeff:%g.\n",SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]));
-               *result = SCIP_STATUS_UNKNOWN;               
-               goto TERMINATE;          
+               *result = SCIP_STATUS_UNKNOWN;
+               goto TERMINATE;
             }
          }
          /* We may have a varbound constraint of type x + cy == rhs */
          else if( SCIPisEQ(pricingprob, SCIPgetLhsVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i])) )
          {
             /* If the rhs is 0 and c == -1, both variables have to be set to 0 or to 1 */ 
-            if( (SCIPgetRhsVarbound(pricingprob,constraints[i]) == 0) && (SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) == -1) )
-            {
-               /* Check if adding both variables to the solution would be worth it objective-wise:
-                  This is heuristical, as a positive objective won't be weighted in the clique search */
-               if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]) + SCIPvarGetObj(vconsvars[1]),0) )
-               {
-                  nodeindex0 = INDSETaddVarToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
-                  nodeindex1 = INDSETaddVarToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
-
-                  /* Technically the edge between both can still be deleted, if both cons x-y==0 and x+y<=1 are present. */
-                  /* If the edge is deleted, we later force both to be zero */
-                  markedconstraints[markedcount] = constraints[i];
-                  ++markedcount;
-               }
-               else
-               {  
-                  /* Both variables have to be set to 0 to satisfy the constraint. */
-                  markedconstraints[markedcount] = constraints[i];
-                  ++markedcount;
-                  solvals[SCIPvarGetProbindex(vconsvars[0])] = 0.0;
-                  solvals[SCIPvarGetProbindex(vconsvars[1])] = 0.0;
-               }
-            }
-            /*@TODO: Handle other vbd-constraint-types.
-            // Our right hand side is 1 but setting y to 1 would not satisfy the constraint
-            else if( SCIPgetRhsVarbound(pricingprob,constraints[i]) == 1 && SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) != 1 )
-            {
-               SCIPwarningMessage(pricingprob, "Special1.\n");
-               // x has to be set to one to satisfy the constraint
-               solvals[SCIPvarGetProbindex(consvars[0])] = 1.0;
-               solvals[SCIPvarGetProbindex(consvars[1])] = 0.0;
-               markedvars[SCIPvarGetProbindex(consvars[0])] = 1;
-               // TODO: x may not be part of max clique due to a seperate IS-constraint
-            }
-            // Our right hand side is 1 and setting y to 1 would already satisfy the constraint 
-            else if( SCIPisEQ(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),1) && SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),1) )
-            {
-               // One of the variables has to be set to one to satisfy the constraint but not both 
-               // This is done by adding both to the graph and simply deleting the edge between them 
-               // TODO: it may still be that neither is part of the max ind set 
-               nodeindex0 = INDSETaddVarToGraph(g, vconsvars[0], &indexcount, scalingfactor, indsetvars);
-               nodeindex1 = INDSETaddVarToGraph(g, vconsvars[1], &indexcount, scalingfactor, indsetvars);
-
-               if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
-               {
-                  GRAPH_DEL_EDGE(g,nodeindex0,nodeindex1);
-               }
-               SCIPwarningMessage(pricingprob, "Special2.\n");
-            }
-            */
-            else
+            if( !((SCIPgetRhsVarbound(pricingprob,constraints[i]) == 0) && (SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) == -1)) )
             {
                /* RHS is unequal 0 and unequal 1 */
                SCIPdebugMessage("Exit: Unhandled equality constraint, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
@@ -763,9 +941,9 @@ SCIP_RETCODE solveIndependentSet(
 
    /* Determine number of edges for graph density calculation */
    nedges = 0;
-   for ( int i = 0; i < g->n; i++ )
+   for ( i = 0; i < g->n; i++ )
    {
-      for ( int j = 0; j < g->n; j++ )
+      for ( j = 0; j < g->n; j++ )
       {
          if( SET_CONTAINS_FAST(g->edges[i],j) )
          {
@@ -795,14 +973,14 @@ SCIP_RETCODE solveIndependentSet(
 
 
    /* Check if the coupling variable should be set to 0 (and all the coupled vars) */
-   for( int i = 0; i < cconsindex; ++i )
+   for( i = 0; i < cconsindex; ++i )
    {
       lconsvars = SCIPgetVarsLinear(pricingprob,couplingcons[i]);
       consvals = SCIPgetValsLinear(pricingprob,couplingcons[i]);
       SCIPgetConsNVars(pricingprob,couplingcons[i],&nvars,&retcode);
       coefindex = -1;
       /* Find index of coupling Var */
-      for( int j = 0; j < nvars; ++j )
+      for( j = 0; j < nvars; ++j )
       {
          if( consvals[j] != 1 && (coefindex == -1) )
          {
@@ -811,12 +989,11 @@ SCIP_RETCODE solveIndependentSet(
       }
       /* Calculate sum of objective coefficients of vars that are in the graph */
       varsum = 0;
-      for( int j = 0; j < nvars; ++j )
+      for( j = 0; j < nvars; ++j )
       {
          if( j != coefindex )
          {
-            
-            nodeindex0 = INDSETgetNodeIndex(lconsvars[j],indsetvars,indexcount);
+            nodeindex0 = INDSETgetLinkedNodeIndex(pricingprob,lconsvars[j],indsetvars,indexcount,linkedvars);
             if( nodeindex0 != -1 )
             {
                varsum += SCIPvarGetObj(lconsvars[j]);
@@ -826,259 +1003,31 @@ SCIP_RETCODE solveIndependentSet(
       /* If the sum is lower than the objective coefficient of the coupling var, set all vars to 0. */
       if( varsum + SCIPvarGetObj(lconsvars[coefindex]) > 0 )
       {
-         for( int j = 0; j < nvars; ++j )
+         for( j = 0; j < nvars; ++j )
          {
             solvals[SCIPvarGetProbindex(lconsvars[j])] = 0.0;
          }
       }
    }
 
-   /* Handle the case of equality-Vbd-constraints */
-   for( int i = 0; i < markedcount; ++i )
-   {
-      mconsvars[0] = SCIPgetVarVarbound(pricingprob,markedconstraints[i]);
-      mconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,markedconstraints[i]);
-      nodeindex0 = INDSETgetNodeIndex(mconsvars[0],indsetvars,indexcount);
-      nodeindex1 = INDSETgetNodeIndex(mconsvars[1],indsetvars,indexcount);
-
-      if( SCIPisEQ(pricingprob, SCIPgetLhsVarbound(pricingprob,markedconstraints[i]), SCIPgetRhsVarbound(pricingprob,markedconstraints[i])) )
-      {
-         /* First handle general constraint checks, i.e. those that have to hold independent of which node is part of the graph */
-         for( int j = 0; j < nconss; ++j )
-         {
-            conshdlr = SCIPconsGetHdlr(constraints[j]);
-            if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
-            {
-               /* First we check non-IS constraints */
-               if( SCIPgetNVarsLinear(pricingprob, constraints[j]) > 2 )
-               {
-                  SCIPgetConsNVars(pricingprob,constraints[j],&nvars,&retcode);
-                  consvals = SCIPgetValsLinear(pricingprob, constraints[j]);
-                  lconsvars = SCIPgetVarsLinear(pricingprob, constraints[j]);
-                  coefindex = -1;
-                  for( int k = 0; k < nvars; ++k )
-                  {
-                     if( consvals[k] != 1 && (coefindex == -1) )
-                     {
-                        coefindex = k;
-                     }
-                  }
-                  /* Check if we have a clique constraint (rhs 1 and coefficients 1) */
-                  if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[j]),1) )
-                  {
-                     /* If both variables are part of a clique constraint, not both can become 1, so they both have to become 0 */
-                     for( int k = 0; k < nvars; ++k )
-                     {
-                        if( mconsvars[0] == lconsvars[k] )
-                        {
-                           for( int l = 0; l < nvars; ++l )
-                           {
-                              if( mconsvars[1] == lconsvars[l] )
-                              {
-                                 solvals[SCIPvarGetProbindex(lconsvars[0])] = 0.0;
-                                 solvals[SCIPvarGetProbindex(lconsvars[1])] = 0.0;                       
-                              }
-                           }
-                        }
-                     }
-                  } 
-                  /*Case Coupling constraint (rhs 0) */
-                  else if( !(coefindex == -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[j]),0) )
-                  {
-                     /* We only have to handle the case that one of the marked vars is the coupling variable. */
-                     if( mconsvars[0] == lconsvars[coefindex] || mconsvars[1] == lconsvars[coefindex] )
-                     {
-                        //@TODO for a later version: Handle this case if possible.
-                        SCIPdebugMessage("Exit: A variable of an equality constraint is the coupling variable.");
-                        *result = SCIP_STATUS_UNKNOWN;
-                        goto TERMINATE;
-                     }
-                  }
-               }
-            }
-            else if( strcmp(SCIPconshdlrGetName(conshdlr), "varbound") == 0 )
-            {
-               vconsvars[0] = SCIPgetVarVarbound(pricingprob,constraints[j]);
-               vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,constraints[j]);
-               nodeindex2 = INDSETgetNodeIndex(vconsvars[0],indsetvars,indexcount);
-               if( SCIPisEQ(pricingprob, SCIPgetLhsVarbound(pricingprob,constraints[j]), SCIPgetRhsVarbound(pricingprob,constraints[j])) )
-               {
-                  /* If the rhs is 0 and c == -1, both variables have to be set to 0 or to 1 */ 
-                  if( SCIPgetRhsVarbound(pricingprob,constraints[j]) == 0 && SCIPgetVbdcoefVarbound(pricingprob,constraints[j]) == -1 )
-                  {
-                     /* We assure that we are not processing the marked constraint with itself */
-                     if( markedconstraints[i] != constraints[j] )
-                     {
-                        if( mconsvars[0] == vconsvars[0] || mconsvars[0] == vconsvars[1] || mconsvars[1] == vconsvars[0] || mconsvars[1] == vconsvars[1] )
-                        {
-                           markedvars[SCIPvarGetProbindex(vconsvars[0])] = 1;
-                           markedvars[SCIPvarGetProbindex(vconsvars[1])] = 1;
-                           markedvars[SCIPvarGetProbindex(mconsvars[0])] = 1;
-                           markedvars[SCIPvarGetProbindex(mconsvars[1])] = 1;
-                        }
-                     }
-                  }
-               }
-               else if( SCIPgetRhsVarbound(pricingprob,constraints[j]) == 1 && SCIPgetVbdcoefVarbound(pricingprob,constraints[j]) != 1 )
-               {
-                  if( mconsvars[0] == vconsvars[1] || mconsvars[1] == vconsvars[1] )
-                  {
-                     /* The constraint would be violated if the marked variables are assigned to 1, so we force them to 0 */
-                     solvals[SCIPvarGetProbindex(mconsvars[0])] = 0.0;
-                     solvals[SCIPvarGetProbindex(mconsvars[1])] = 0.0;
-                  }
-               }
-            }
-            /* Handle IS-constraints */
-            nvars = 0;
-            if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
-            {
-               if( SCIPgetNVarsLinear(pricingprob, constraints[j]) == 2 
-               && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[j]),1) )
-               {
-                  lconsvars = SCIPgetVarsLinear(pricingprob, constraints[j]);
-                  nvars = 2;
-               }
-            }
-            else if( strcmp(SCIPconshdlrGetName(conshdlr), "varbound") == 0 )
-            {
-               if( (SCIPisEQ(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[j]),1) && SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[j]),1))
-                  || (SCIPisLT(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[j]),SCIPgetVbdcoefVarbound(pricingprob,constraints[j]) + 1) 
-                     && SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[j]), SCIPgetRhsVarbound(pricingprob,constraints[j]))) )
-               {
-                  vconsvars[0] = SCIPgetVarVarbound(pricingprob,constraints[j]);
-                  vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,constraints[j]);
-                  nvars = 2;
-               }
-            }
-            if( nvars == 2 )
-            {
-               if( nodeindex0 != -1 && nodeindex1 != -1 )
-               {
-                  if( !GRAPH_IS_EDGE(g,nodeindex0,nodeindex1) )
-                  {
-                     /* Not both variables can become 1, so the only option left for satisfiability is to set both to 0. */
-                     solvals[SCIPvarGetProbindex(mconsvars[0])] = 0.0;
-                     solvals[SCIPvarGetProbindex(mconsvars[1])] = 0.0;
-                  }
-               }
-               /* If one of the variables is part of an IS constraint and the other IS variable is part of the graph, we risk a violation. */
-               if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
-               {
-                  if( mconsvars[0] == lconsvars[0] || mconsvars[1] == lconsvars[0] )
-                  {
-                     nodeindex2 = INDSETgetNodeIndex(lconsvars[1],indsetvars,indexcount);
-                     if( nodeindex2 != -1 )
-                     {
-                           solvals[SCIPvarGetProbindex(mconsvars[0])] = 0.0;
-                           solvals[SCIPvarGetProbindex(mconsvars[1])] = 0.0;
-                     }
-                  }
-                  else if( mconsvars[0] == lconsvars[1] || mconsvars[1] == lconsvars[1] )
-                  {
-                     nodeindex2 = INDSETgetNodeIndex(lconsvars[0],indsetvars,indexcount);
-                     if( nodeindex2 != -1 )
-                     {
-                        solvals[SCIPvarGetProbindex(mconsvars[0])] = 0.0;
-                        solvals[SCIPvarGetProbindex(mconsvars[1])] = 0.0;
-                     }
-                  }
-               }
-               else if( strcmp(SCIPconshdlrGetName(conshdlr), "varbound") == 0 )
-               {
-                  if( mconsvars[0] == vconsvars[0] || mconsvars[1] == vconsvars[0] )
-                  {
-                     nodeindex2 = INDSETgetNodeIndex(vconsvars[1],indsetvars,indexcount);
-                     if( nodeindex2 != -1 )
-                     {
-                        solvals[SCIPvarGetProbindex(mconsvars[0])] = 0.0;
-                        solvals[SCIPvarGetProbindex(mconsvars[1])] = 0.0;
-                     }
-                  }
-                  else if( mconsvars[0] == vconsvars[1] || mconsvars[1] == vconsvars[1] )
-                  {
-                     nodeindex2 = INDSETgetNodeIndex(vconsvars[0],indsetvars,indexcount);
-                     if( nodeindex2 != -1 )
-                     {
-                        solvals[SCIPvarGetProbindex(mconsvars[0])] = 0.0;
-                        solvals[SCIPvarGetProbindex(mconsvars[1])] = 0.0;
-                     }
-                  }
-               }
-            }            
-         }
-      }
-   }
-
-   /* Handle linked equality constraints. They all have to agree on a solval of 0 or 1 to be valid. */
-   flag = -1;
-   for( int j = 0; j < npricingprobvars; ++j )
-   {
-      if( markedvars[j] == 1 )
-      {
-         if( solvals[SCIPvarGetProbindex(pricingprobvars[j])] == 0 )
-         {
-            if( flag == 1 )
-            {
-               SCIPerrorMessage("IS-solver: Contradiction in forced solvals for equality constraint (found 1 when expecting 0)\n");
-            }
-            flag = 0;
-
-         }
-         else if( solvals[SCIPvarGetProbindex(pricingprobvars[j])] == 1 )
-         {
-            if( flag == 0 )
-            {
-               SCIPerrorMessage("IS-solver: Contradiction in forced solvals for equality constraint (found 0 when expecting 1)\n");
-            }
-            flag = 1;
-         }
-      }
-   }
-   /* If no single variable has to be set to be set to 0, we may set the variables to 1 */
-   if( flag == -1 )
-   {
-      flag = 1;
-   }
-   if( flag == 0 )
-   {
-      for( int j = 0; j < npricingprobvars; ++j )
-      {
-         if( markedvars[j] == 1 )
-         {
-            solvals[SCIPvarGetProbindex(pricingprobvars[j])] = 0.0;
-         }
-      }
-   }
-   else if( flag == 1 )
-   {
-      for( int j = 0; j < npricingprobvars; ++j )
-      {
-         if( markedvars[j] == 1 )
-         {
-            solvals[SCIPvarGetProbindex(pricingprobvars[j])] = 1.0;
-         }
-      }
-   }
-
    /* Clean up the graph. If a variable's solval has been set to 0, it should not be part of the max clique */
    /* We enforce this by isolating the node and setting its weight to 1 */
-   for( int i = 0; i < npricingprobvars; ++i )
+   for( i = 0; i < npricingprobvars; ++i )
    {
       if( solvals[SCIPvarGetProbindex(pricingprobvars[i])] == 0 )
       {
-         nodeindex0 = INDSETgetNodeIndex(pricingprobvars[i],indsetvars,indexcount);
+         nodeindex0 = INDSETgetLinkedNodeIndex(pricingprob,pricingprobvars[i],indsetvars,indexcount,linkedvars);
          /* The var is part of the graph if its index is unequal to -1 */
          if( nodeindex0 != -1 )
          {
-            for( int j = 0; j < indexcount; ++j )
+            for( j = 0; j < indexcount; ++j )
             {
                if( GRAPH_IS_EDGE(g,nodeindex0,j) )
                {
                   GRAPH_DEL_EDGE(g,nodeindex0,j);
                }
             }
-            g->weights[nodeindex0] = 1;       
+            g->weights[nodeindex0] = 1;
          }
       }
    }
@@ -1093,11 +1042,11 @@ SCIP_RETCODE solveIndependentSet(
    cl_opts.clique_list = NULL;
    cl_opts.clique_list_length = 0;
 
-   /* Find maximum weight cliques using the cliquer library */
+   /* Find maximum weight clique using the cliquer library */
    clique = clique_find_single(g,0,0,FALSE,&cl_opts);
 
    /* Set all members of the maximum clique with objective coefficient < 0 to 1 */
-   for( int i = 0; i < indexcount; ++i )
+   for( i = 0; i < indexcount; ++i )
    {
       /* Coupling variables were pre-set to -2.0, if they are part of the maximum clique, we enable them. 
        * If we have already set a variable to 0, this was intended and should not be reverted.
@@ -1105,8 +1054,15 @@ SCIP_RETCODE solveIndependentSet(
       if( SET_CONTAINS(clique,i) && (SCIPisLT(pricingprob,SCIPvarGetObj(indsetvars[i]),0) || solvals[SCIPvarGetProbindex(indsetvars[i])] == -2.0) 
          && solvals[SCIPvarGetProbindex(indsetvars[i])] != 0.0 )
       {
+         /* Set all linked variables, if any */
+         for( j = 0; j < npricingprobvars; ++j )
+         {
+            if( j != SCIPvarGetProbindex(indsetvars[i]) && INDSETareVarsLinked(pricingprob,linkedvars,indsetvars[i],pricingprobvars[j]) )
+            {
+               solvals[SCIPvarGetProbindex(pricingprobvars[j])] = 1.0;
+            }
+         }
          solvals[SCIPvarGetProbindex(indsetvars[i])] = 1.0;
-         
       }
       else
       {
@@ -1119,7 +1075,7 @@ SCIP_RETCODE solveIndependentSet(
    }
 
    /* Handle the case of marked inequality constraints of type x - y <= 0 in combination with x + y <= 1 -Constraints */
-   for( int i = 0; i < markedcount; ++i )
+   for( i = 0; i < markedcount; ++i )
    {
       if( SCIPisEQ(pricingprob,SCIPgetRhsVarbound(pricingprob,markedconstraints[i]),0) 
          && (SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,markedconstraints[i]),-1) 
@@ -1139,7 +1095,7 @@ SCIP_RETCODE solveIndependentSet(
    /* Handle the case that there are still solvals of equality constraints that do not agree.
     * This may occur if one is unset (solval:-1) and the other one is already set (solval 0 or 1)
     */
-   for( int i = 0; i < markedcount; ++i )
+   for( i = 0; i < markedcount; ++i )
    {
       vconsvars[0] = SCIPgetVarVarbound(pricingprob,markedconstraints[i]);
       vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,markedconstraints[i]);
@@ -1161,8 +1117,8 @@ SCIP_RETCODE solveIndependentSet(
       }
    }
 
-   /* There may be variables left which are unconstrained. We set these to 1 manually if they have an objective value != 0*/
-   for( int i = 0; i < npricingprobvars; ++i )
+   /* There may be variables left which are unconstrained. We set these to 1 manually if they have an objective value < 0*/
+   for( i = 0; i < npricingprobvars; ++i )
    {
       if( solvals[i] == -1.0 )
       {
@@ -1189,7 +1145,7 @@ SCIP_RETCODE solveIndependentSet(
    //outputgraph = fopen("writegraph.dimacs","w");
    outputcons = fopen("constraints.out","a");
    fprintf(outputcons, "Markedcount: %d\n", markedcount);
-   for( int i = 0; i < nconss; ++i )
+   for( i = 0; i < nconss; ++i )
    {
       SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
       conshdlr = SCIPconsGetHdlr(constraints[i]);
@@ -1205,7 +1161,7 @@ SCIP_RETCODE solveIndependentSet(
       
       SCIPprintCons(pricingprob,constraints[i],outputcons);
       fputs(" |",outputcons);
-      for( int j = 0; j < nvars; ++j )
+      for( j = 0; j < nvars; ++j )
       {
          if(strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0)
             fprintf(outputcons," %g", solvals[SCIPvarGetProbindex(lconsvars[j])]);
@@ -1214,25 +1170,25 @@ SCIP_RETCODE solveIndependentSet(
       }
 
       fputs(" ||",outputcons);
-      for( int j = 0; j < nvars; ++j )
+      for( j = 0; j < nvars; ++j )
       {
          if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
-            fprintf(outputcons," %d", INDSETgetNodeIndex(lconsvars[j],indsetvars,indexcount));
+            fprintf(outputcons," %d", INDSETgetLinkedNodeIndex(pricingprob,lconsvars[j],indsetvars,indexcount,linkedvars) );
          else
-            fprintf(outputcons," %d", INDSETgetNodeIndex(vconsvars[j],indsetvars,indexcount));
+            fprintf(outputcons," %d", INDSETgetLinkedNodeIndex(pricingprob,vconsvars[j],indsetvars,indexcount,linkedvars) );
       }
       if( nvars == 2 )
       {
          if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
          {
-            nodeindex0 = INDSETgetNodeIndex(lconsvars[0],indsetvars,indexcount);
-            nodeindex1 = INDSETgetNodeIndex(lconsvars[1],indsetvars,indexcount);
+            nodeindex0 = INDSETgetLinkedNodeIndex(pricingprob,lconsvars[0],indsetvars,indexcount,linkedvars);
+            nodeindex1 = INDSETgetLinkedNodeIndex(pricingprob,lconsvars[1],indsetvars,indexcount,linkedvars);
          }
-         else{
-            nodeindex0 = INDSETgetNodeIndex(vconsvars[0],indsetvars,indexcount);
-            nodeindex1 = INDSETgetNodeIndex(vconsvars[1],indsetvars,indexcount);            
+         else
+         {
+            nodeindex0 = INDSETgetLinkedNodeIndex(pricingprob,vconsvars[0],indsetvars,indexcount,linkedvars);
+            nodeindex1 = INDSETgetLinkedNodeIndex(pricingprob,vconsvars[1],indsetvars,indexcount,linkedvars);
          }
-
          if( nodeindex0 != -1 && nodeindex0 != -1 )
          {
             if( GRAPH_IS_EDGE(g,nodeindex0,nodeindex1))
@@ -1244,7 +1200,7 @@ SCIP_RETCODE solveIndependentSet(
       }
 
       fputs(" ||",outputcons);
-      for( int j = 0; j < nvars; ++j )
+      for( j = 0; j < nvars; ++j )
       {
          if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
             fprintf(outputcons," %g  ", SCIPvarGetObj(lconsvars[j]));
@@ -1267,10 +1223,10 @@ SCIP_RETCODE solveIndependentSet(
    fclose(outputcons);
    
    SCIPdebugMessage("\n\n");
-
-   printf("Factor: %g\n", scalingfactor);
+   
+   //printf("Factor: %g\n", scalingfactor);
    varsum = 0;
-   for( int i = 0; i < npricingprobvars; ++i )
+   for( i = 0; i < npricingprobvars; ++i )
    {
       if( solvals[i] == 1.0 )
       {
@@ -1278,11 +1234,10 @@ SCIP_RETCODE solveIndependentSet(
       }
       
    }
-   printf("%g\n", varsum );
+   //printf("Cumulated obj. values of active vars:%g\n", varsum );
 
    //END DEBUG
    */
-
 
    /* Create a column corresponding to our clique result */
    SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[0], probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
@@ -1291,10 +1246,13 @@ SCIP_RETCODE solveIndependentSet(
    set_free(clique); /* clique can only be freed if non-empty */ 
 
  TERMINATE:
+   for( i = 0; i < npricingprobvars; ++i )
+   {
+      SCIPfreeBufferArray(pricingprob,&linkedvars[i]);
+   }
+   SCIPfreeBufferArray(pricingprob,&linkedvars);
    SCIPfreeBufferArray(pricingprob,&couplingcons);
    SCIPfreeBufferArray(pricingprob,&vconsvars);
-   SCIPfreeBufferArray(pricingprob,&markedvars);
-   SCIPfreeBufferArray(pricingprob,&mconsvars);
    SCIPfreeBufferArray(pricingprob,&solvals);
    SCIPfreeBufferArray(pricingprob,&indsetvars);
    SCIPfreeBufferArray(pricingprob,&markedconstraints);
