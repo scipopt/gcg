@@ -1145,14 +1145,6 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
-   /* display detectors */
-   if( !SCIPdialogHasEntry(submenu, "detectors") )
-   {
-      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayDetectors, NULL, NULL,
-            "detectors", "display available detectors", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
-   }
 
    /* display solvers */
    if( !SCIPdialogHasEntry(submenu, "solvers") )
@@ -1252,21 +1244,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
-   /* set detectors */
-   if( !SCIPdialogHasEntry(setmenu, "detectors") )
-   {
-      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
-            NULL,
-            SCIPdialogExecMenu, NULL, NULL,
-            "detectors", "change parameters for detectors", TRUE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
-   }
-   if( SCIPdialogFindEntry(setmenu, "detectors", &submenu) != 1 )
-   {
-      SCIPerrorMessage("detectors sub menu not found\n");
-      return SCIP_PLUGINNOTFOUND;
-   }
+
 
    /* set detectors */
       if( !SCIPdialogHasEntry(setmenu, "detection") )

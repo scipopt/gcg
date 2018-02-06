@@ -2,6 +2,6 @@
 
 detection/emphfast/enabled = TRUE
 detection/smartscore/enabled = FALSE
-detectors/isomorph/overruleemphasis = TRUE
-detectors/isomorph/maxdecompsexact = 1
-detectors/isomorph/maxdecompsextend = 0
+detection/detectors/isomorph/overruleemphasis = TRUE
+detection/detectors/isomorph/maxdecompsexact = 1
+detection/detectors/isomorph/maxdecompsextend = 0

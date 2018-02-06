@@ -2,5 +2,5 @@
 
 detection/emphfast/enabled = TRUE
 detection/smartscore/enabled = FALSE
-detectors/hrgpartition/overruleemphasis = TRUE
-detectors/hrgpartition/maxnblockcandidates = 1
+detection/detectors/hrgpartition/overruleemphasis = TRUE
+detection/detectors/hrgpartition/maxnblockcandidates = 1

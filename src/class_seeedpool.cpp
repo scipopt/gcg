@@ -246,20 +246,20 @@ SCIP_RETCODE getDetectorCallRoundInfo(
    char setstr[SCIP_MAXSTRLEN];
    if( transformed )
    {
-      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", detectorname );
+      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxcallround", detectorname );
       SCIP_CALL( SCIPgetIntParam( scip, setstr, maxcallround ) );
-      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detectors/%s/mincallround", detectorname );
+      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/mincallround", detectorname );
       SCIP_CALL( SCIPgetIntParam( scip, setstr, mincallround ) );
-      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detectors/%s/freqcallround", detectorname );
+      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/freqcallround", detectorname );
       SCIP_CALL_ABORT( SCIPgetIntParam( scip, setstr, freqcallround ) );
    }
    else
    {
-      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", detectorname );
+      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origmaxcallround", detectorname );
       SCIP_CALL( SCIPgetIntParam( scip, setstr, maxcallround ) );
-      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detectors/%s/origmincallround", detectorname );
+      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origmincallround", detectorname );
       SCIP_CALL( SCIPgetIntParam( scip, setstr, mincallround ) );
-      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detectors/%s/origfreqcallround", detectorname );
+      (void) SCIPsnprintf( setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origfreqcallround", detectorname );
       SCIP_CALL( SCIPgetIntParam( scip, setstr, freqcallround ) );
    }
 
@@ -531,11 +531,11 @@ Seeedpool::Seeedpool(
    createconssadj = TRUE;
 
    if( transformed )
-      SCIPgetBoolParam(scip, "detectors/connectedbase/enabled", &useconnected);
+      SCIPgetBoolParam(scip, "detection/detectors/connectedbase/enabled", &useconnected);
    else
-      SCIPgetBoolParam(scip, "detectors/connectedbase/origenabled", &useconnected);
+      SCIPgetBoolParam(scip, "detection/detectors/connectedbase/origenabled", &useconnected);
 
-   SCIPgetBoolParam(scip, "detectors/connectedbase/useconssadj", &useconssadj);
+   SCIPgetBoolParam(scip, "detection/detectors/connectedbase/useconssadj", &useconssadj);
 
   // createconssadj = useconnected && useconssadj;
 

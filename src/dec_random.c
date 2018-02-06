@@ -292,9 +292,9 @@ SCIP_RETCODE SCIPincludeDetectorRandom(
       detectordata, detectorDetectRandom, detectorFreeRandom, detectorInitRandom, detectorExitRandom, detectorPropagateSeeedRandom, detectorFinishSeeedRandom, detectorPostprocessSeeedRandom, setParamAggressiveRandom, setParamDefaultRandom, setParamFastRandom) );
 
 
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/maxblocks", "the maximal number of blocks, -1 defaults to avgconsperblock",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/random/maxblocks", "the maximal number of blocks, -1 defaults to avgconsperblock",
       &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, -1, INT_MAX, NULL, NULL ) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/avgconsperblock", "average constraints per block",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/random/avgconsperblock", "average constraints per block",
       &detectordata->avgconsperblock, FALSE, DEFAULT_AVGCONSPERBLOCK, 1, 10000, NULL, NULL ) );
 
    return SCIP_OKAY;

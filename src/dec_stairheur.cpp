@@ -2606,30 +2606,30 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
 
 
    /* add stairheur detector parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/nconssperblock",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/nconssperblock",
       "The number of constraints per block (static blocking only)",
       &detectordata->nconssperblock, FALSE, DEFAULT_NCONSSPERBLOCK, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxblocks",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/maxblocks",
       "The maximal number of blocks",
       &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/minblocks", "The minimal number of blocks",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/minblocks", "The minimal number of blocks",
       &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/desiredblocks",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/desiredblocks",
       "The desired number of blocks. 0 means automatic determination of the number of blocks.",
       &detectordata->desiredblocks, FALSE, DEFAULT_DESIREDBLOCKS, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/dynamicblocking",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/dynamicblocking",
       "Enable blocking type 'dynamic'",
       &detectordata->dynamicblocking, FALSE, DEFAULT_DYNAMICBLOCKING, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/staticblocking",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/staticblocking",
       "Enable blocking type 'static'",
       &detectordata->staticblocking, FALSE, DEFAULT_STATICBLOCKING, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/blockingassoonaspossible",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/blockingassoonaspossible",
       "Enable blocking type 'as soon as possible", &detectordata->blockingassoonaspossible,
       FALSE, DEFAULT_BLOCKINGASSOONASPOSSIBLE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/multipledecomps",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/multipledecomps",
       "Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks",
       &detectordata->multipledecomps, FALSE, DEFAULT_MULTIPLEDECOMPS, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxiterationsROC",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/maxiterationsROC",
       "The maximum number of iterations of the ROC-algorithm. -1 for no limit",
       &detectordata->maxiterationsROC, FALSE, DEFAULT_MAXITERATIONSROC, -1, 1000000, NULL, NULL) );
 
