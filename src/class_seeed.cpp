@@ -6225,7 +6225,7 @@ SCIP_RETCODE Seeed::writeAsDec(
    else
       SCIPinfoMessage(scip, file, "PRESOLVED\n1\n" );
 
-   SCIPinfoMessage(scip, file, "NBLOCKS\n %d\n", getNBlocks() );
+   SCIPinfoMessage(scip, file, "NBLOCKS\n%d\n", getNBlocks() );
 
 
    for( int b = 0; b < getNBlocks(); ++b )

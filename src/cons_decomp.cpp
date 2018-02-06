@@ -747,6 +747,11 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
 
    delete conshdlrdata->seeedpool;
 
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+        delete conshdlrdata->seeedpoolunpresolved;
+
+   conshdlrdata->seeedpoolunpresolved = NULL;
+
    conshdlrdata->seeedpool = NULL;
    return SCIP_OKAY;
 }
@@ -762,6 +767,14 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->completedetectionclock) );
+
+   if( conshdlrdata->seeedpool != NULL )
+      delete conshdlrdata->seeedpool;
+
+   if( conshdlrdata->seeedpoolunpresolved != NULL )
+      delete conshdlrdata->seeedpoolunpresolved;
+
+
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
@@ -782,12 +795,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    /* @todo: This is also done in consExitDecomp() and therefore probably makes no sense here. */
    if ( conshdlrdata->useddecomp != NULL )
       SCIP_CALL( DECdecompFree(scip, &conshdlrdata->useddecomp) );
-
-   if( conshdlrdata->seeedpool != NULL )
-      delete conshdlrdata->seeedpool;
-
-   if( conshdlrdata->seeedpoolunpresolved != NULL )
-      delete conshdlrdata->seeedpoolunpresolved;
 
    if( conshdlrdata->candidates != NULL )
          delete conshdlrdata->candidates;
@@ -4748,7 +4755,6 @@ SCIP_RETCODE DECwriteAllDecomps(
    MiscVisualization* misc = new MiscVisualization();
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   DEC_DECOMP *tmp;
    char outname[SCIP_MAXSTRLEN];
    char tempstring[SCIP_MAXSTRLEN];
    int i;
@@ -4772,7 +4778,6 @@ SCIP_RETCODE DECwriteAllDecomps(
    for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL &&  i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i )
    {
       SeeedPtr seeed;
-      DEC_DECOMP* decomplocal;
 
       seeed = conshdlrdata->seeedpoolunpresolved->getFinishedSeeed( i );
 
@@ -5060,14 +5065,8 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
 
-   DEC_DECOMP* decomp;
-   gcg::Seeedpool* seeedpool;
-   gcg::Seeedpool* seeedpoolunpresolved;
-   SeeedPtr seeed;
-
    int dec;
 
-   seeed = NULL;
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
@@ -5158,18 +5157,47 @@ DEC_DECOMP* DECgetBestDecomp(
 }
 
 /** returns the Seeed ID of the best Seeed if available and -1 otherwise */
-SCIP_RETCODE DECgetBestSeeed(
+SCIP_RETCODE DECgetSeeedToWrite(
    SCIP*                 scip,               /**< SCIP data structure */
-   int*                  seeedid             /**< output seeed id */
+   SCIP_Bool             transformed,
+   SEEED_WRAPPER*        seeedwrapper        /**< seeed wrapper to output */
    )
 {
-   DEC_DECOMP* decomp;
 
-   *seeedid = -1;
-   decomp = DECgetBestDecomp(scip);
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   int dec;
 
-   if(decomp != NULL)
-      *seeedid = DECdecompGetSeeedID(decomp);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->seeedtowrite != NULL )
+   {
+      seeedwrapper->seeed = conshdlrdata->seeedtowrite;
+
+      return SCIP_OKAY;
+   }
+
+   if( conshdlrdata->candidates->size() == 0 )
+   {
+      SCIPwarningMessage(scip, "There are no candidate decompositions!\n");
+      seeedwrapper->seeed = NULL;
+      return SCIP_OKAY;
+   }
+
+   for( dec = 0; dec  < (int) conshdlrdata->candidates->size(); ++dec )
+   {
+      if ( conshdlrdata->candidates->at(dec).first->isFromUnpresolved() == !transformed )
+         break;
+   }
+   if( dec !=  (int) conshdlrdata->candidates->size() )
+      seeedwrapper->seeed = conshdlrdata->candidates->at(dec).first;
+   else
+      SCIPwarningMessage(scip, "There is no candidate decomposition for the %s problem we can write information for!\n", transformed ? "transformed" : "untransformed");
 
    return SCIP_OKAY;
 }

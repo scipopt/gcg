@@ -90,24 +90,22 @@ SCIP_DECL_READERREAD(readerReadTex)
 
 SCIP_DECL_READERWRITE(readerWriteTex)
 {
-   int seeedid;
-
+   SEEED_WRAPPER swr;
    assert(scip != NULL);
    assert(reader != NULL);
 
-   seeedid = 0;
 
    /* get seeed to write */
-   DECgetBestSeeed(scip, &seeedid);
+   DECgetSeeedToWrite(scip, transformed, &swr);
 
-   if(seeedid == -1)
+   if( swr.seeed == NULL )
    {
       SCIPerrorMessage("Could not find best Seeed!\n");
       *result = SCIP_DIDNOTRUN;
    }
    else
    {
-      GCGwriteTexVisualization(scip, file, seeedid, TRUE, FALSE);
+      GCGwriteTexVisualization(scip, file, swr.seeed->getID(), TRUE, FALSE);
       *result = SCIP_SUCCESS;
    }
 

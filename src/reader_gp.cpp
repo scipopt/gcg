@@ -83,22 +83,20 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    SeeedPtr seeed;
    char* filename;
    char outputname[SCIP_MAXSTRLEN];
-   int seeedid;
 
    assert(scip != NULL);
    assert(file != NULL);
 
    /* get seeed to write */
-   DECgetBestSeeed(scip, &seeedid);
+   DECgetSeeedToWrite(scip, transformed, &seeedwr);
 
-   if(seeedid == -1)
+   if(seeedwr.seeed == NULL)
    {
       SCIPerrorMessage("Could not find best Seeed!\n");
       *result = SCIP_DIDNOTRUN;
    }
    else
    {
-      GCGgetSeeedFromID(scip, &seeedid, &seeedwr);
       seeed = seeedwr.seeed;
 
       /* reader internally works with the filename instead of the C FILE type */
@@ -109,7 +107,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
       strcat(outputname, ".pdf");
 
       /* actual writing */
-      GCGwriteGpVisualization(scip, filename, outputname, seeedid);
+      GCGwriteGpVisualization(scip, filename, outputname, seeed->getID() );
 
       *result = SCIP_SUCCESS;
    }

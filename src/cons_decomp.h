@@ -443,9 +443,10 @@ DEC_DECOMP* DECgetBestDecomp(
    );
 
 /** returns the Seeed ID of the best Seeed if available and -1 otherwise */
-SCIP_RETCODE DECgetBestSeeed(
+SCIP_RETCODE DECgetSeeedToWrite(
    SCIP*                 scip,               /**< SCIP data structure */
-   int*                  seeedid             /**< output seeed id */
+   SCIP_Bool             transformed,
+   SEEED_WRAPPER*        seeedwrapper        /**< seeed wrapper to output */
    );
 
 /** writes out a list of all detectors */
