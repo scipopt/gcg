@@ -6198,21 +6198,32 @@ SCIP_RETCODE Seeed::setDetectorChainString(
 SCIP_RETCODE Seeed::writeAsDec(
    FILE* file
    ){
-   SCIP* scip;
-
-   scip = seeedpool->getScip();
+   static const char commentchars[] = "\\";
 
    /** @TODO: statistical stuff  */
+   /* at first: write meta data of decomposition as comment */
+   SCIPinfoMessage(scip, file, "%s%s ndetectors \n", commentchars, commentchars );
+   SCIPinfoMessage(scip, file, "%s%s %d \n", commentchars, commentchars, getNDetectorchainInfo() );
+
+   SCIPinfoMessage(scip, file, "%s%s name time nnewblocks %%ofnewborderconss %%ofnewblockconss %%ofnewlinkingvars %%ofnewblockvars  \n", commentchars, commentchars );
+
+   for ( int i = 0; i < getNDetectorchainInfo() ; ++i )
+   {
+      SCIPinfoMessage(scip, file, "%s%s %s %f %d %f %f %f %f \n", commentchars, commentchars, DECdetectorGetName(getDetectorchain()[i] ), detectorClockTimes[i],
+         nNewBlocks[i], pctConssToBorder[i], pctConssToBlock[i], pctVarsToBorder[i],
+         pctVarsToBlock[i]) ;
+   }
+
 
    if( !isComplete() )
-         SCIPinfoMessage(scip, file, "CONSDEFAULTMASTER\n 0\n" );
+         SCIPinfoMessage(scip, file, "CONSDEFAULTMASTER\n0\n" );
    else
-         SCIPinfoMessage(scip, file, "CONSDEFAULTMASTER\n 1\n" );
+         SCIPinfoMessage(scip, file, "CONSDEFAULTMASTER\n1\n" );
 
-   if( stemsFromUnpresolved )
-      SCIPinfoMessage(scip, file, "PRESOLVED\n 0\n" );
+   if( isFromUnpresolved() )
+      SCIPinfoMessage(scip, file, "PRESOLVED\n0\n" );
    else
-      SCIPinfoMessage(scip, file, "PRESOLVED\n 1\n" );
+      SCIPinfoMessage(scip, file, "PRESOLVED\n1\n" );
 
    SCIPinfoMessage(scip, file, "NBLOCKS\n %d\n", getNBlocks() );
 
@@ -6226,7 +6237,34 @@ SCIP_RETCODE Seeed::writeAsDec(
       }
    }
 
+    SCIPinfoMessage(scip, file, "MASTERCONSS\n" );
+   for( int mc = 0; mc < getNMasterconss(); ++mc )
+   {
+      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( masterConss[mc])) );
+   }
 
+   for( int b = 0; b < getNBlocks(); ++b )
+   {
+      SCIPinfoMessage(scip, file, "BLOCKVARS %d\n", b+1 );
+      for( size_t v = 0; v < varsForBlocks[b].size(); ++v )
+      {
+         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( varsForBlocks[b][v])) );
+      }
+   }
+
+   SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
+   for( int lv = 0; lv < getNLinkingvars(); ++lv )
+   {
+      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getVarForIndex( linkingVars[lv])) );
+   }
+
+   SCIPinfoMessage(scip, file, "MASTERVARS\n" );
+   for( int mv = 0; mv < getNMastervars(); ++mv )
+   {
+      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getVarForIndex( masterVars[mv])) );
+   }
+
+   return SCIP_OKAY;
 
 }
 

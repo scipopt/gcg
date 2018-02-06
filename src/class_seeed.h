@@ -154,7 +154,7 @@ private:
                                                         *< for each detector working on that seeed*/
    std::vector<SCIP_Real> pctConssFromFree;           /**< vector containing the fraction of constraints that are not longer
                                                          *< open for each detector working on that seeed*/
-   std::vector<int> nNewBlocks;                       /**< vector containing detector indices that worked on that seeed */
+   std::vector<int> nNewBlocks;                       /**< vector containing information how many new blocks a detector has assigned */
 
    std::vector<IndexClassifier*> usedClassifier;      /**< vector containing pointer to the cons- or varclassifier
                                                          *< a detector made use of for each detector working on that seeed

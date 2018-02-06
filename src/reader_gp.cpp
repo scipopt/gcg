@@ -431,8 +431,6 @@ SCIP_RETCODE GCGwriteGpVisualization(
 /*
  * reader include
  */
-
-
 /** includes the gp file reader into SCIP */
 SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */

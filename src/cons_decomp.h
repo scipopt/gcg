@@ -429,6 +429,12 @@ SCIP_RETCODE DECwriteFamilyTree(
    SCIP_Bool 			    draft               /**< draft mode will not visualize non-zeros but is faster and takes less memory */
    );
 
+extern
+SCIP_RETCODE SCIPconshdlrDecompWriteDec(
+   SCIP*     scip,
+   FILE*     file,
+   SCIP_Bool transformed
+   );
 
 /** returns the best known decomposition, if available and NULL otherwise */
 extern

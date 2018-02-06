@@ -610,7 +610,6 @@ Seeedpool::Seeedpool(
       ++nPostprocessingDetectors;
    }
 
-
    /** initilize matrix datastructures */
    if( transformed )
    {
@@ -1792,6 +1791,8 @@ void Seeedpool::translateSeeedData(
    assert( newconsclassifiers.empty() );
    assert( newvarclassifiers.empty() );
 
+   SCIP_CLOCK* translationclock;
+
    std::vector<int> rowothertothis;
    std::vector<int> rowthistoother;
    std::vector<int> colothertothis;
@@ -1802,6 +1803,9 @@ void Seeedpool::translateSeeedData(
    int presolvingrounds;
 
    presolvingdisabled = FALSE;
+
+   SCIPcreateClock(scip, &translationclock);
+   SCIPstartClock(scip, translationclock);
 
    SCIPgetIntParam(scip, "presolving/maxrounds", &presolvingrounds);
 
@@ -1836,7 +1840,17 @@ void Seeedpool::translateSeeedData(
 
    newseeeds = getTranslatedSeeeds( origseeeds, rowothertothis, rowthistoother, colothertothis, colthistoother );
    newconsclassifiers = getTranslatedConsClassifiers( otherconsclassifiers, rowothertothis, rowthistoother );
-   newvarclassifiers = getTranslatedVarClassifiers( othervarclassifiers, colothertothis, colthistoother );
+   newvarclassifiers = getTranslatedVarClassifiers( othervarclassifiers, colothertothis, colthistoother );\
+
+   SCIPstopClock(scip, translationclock);
+
+   translatingtime += SCIPgetClockTime(scip, translationclock);
+
+   SCIPfreeClock(scip, &translationclock);
+
+   return;
+
+
 }
 
 /** translates seeeds if the index structure of the problem has changed, e.g. due to presolving */

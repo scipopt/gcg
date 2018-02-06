@@ -5061,6 +5061,50 @@ SCIP_RETCODE DECwriteFamilyTree(
 	return SCIP_OKAY;
 }
 
+SCIP_RETCODE SCIPconshdlrDecompWriteDec(
+   SCIP*     scip,
+   FILE*     file,
+   SCIP_Bool transformed
+   ){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+
+   DEC_DECOMP* decomp;
+   gcg::Seeedpool* seeedpool;
+   gcg::Seeedpool* seeedpoolunpresolved;
+   SeeedPtr seeed;
+
+   int dec;
+
+   seeed = NULL;
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   assert( conshdlrdata->useddecomp == NULL );
+
+   if( conshdlrdata->candidates->size() == 0 )
+   {
+      SCIPwarningMessage(scip, "There are no candidate decompositions!\n");
+      return SCIP_OKAY;
+   }
+
+   for( dec = 0; dec  < (int) conshdlrdata->candidates->size(); ++dec )
+   {
+      if ( conshdlrdata->candidates->at(dec).first->isFromUnpresolved() == !transformed )
+         break;
+   }
+   if( dec !=  (int) conshdlrdata->candidates->size() )
+      conshdlrdata->candidates->at(dec).first->writeAsDec(file);
+   else
+      SCIPwarningMessage(scip, "There is no candidate decomposition for the %s problem we can write information for!\n", transformed ? "transformed" : "untransformed");
+
+   return SCIP_OKAY;
+}
 
 /** returns the best known decomposition, if available and NULL otherwise, caller has to free returned DEC_DECOMP */
 DEC_DECOMP* DECgetBestDecomp(
