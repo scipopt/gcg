@@ -6255,13 +6255,13 @@ SCIP_RETCODE Seeed::writeAsDec(
    SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
    for( int lv = 0; lv < getNLinkingvars(); ++lv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getVarForIndex( linkingVars[lv])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( linkingVars[lv])) );
    }
 
    SCIPinfoMessage(scip, file, "MASTERVARS\n" );
    for( int mv = 0; mv < getNMastervars(); ++mv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getVarForIndex( masterVars[mv])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( masterVars[mv])) );
    }
 
    return SCIP_OKAY;
