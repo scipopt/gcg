@@ -23,6 +23,12 @@ bug fixes
 - fix a bug in the automatic update of the stabilization parameter alpha
 
 
+GCG Version 2.1.4
+=================
+
+- use SCIPaddRow() instead of deprecated SCIPaddCut()
+
+
 GCG Version 2.1.3
 =================
 
