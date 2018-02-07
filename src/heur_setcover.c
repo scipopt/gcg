@@ -1173,12 +1173,12 @@ SCIP_RETCODE computeCoreColumns(
 /** releases memory that is used by the core, including rows and columns, if they were computed */
 static
 void freeCore(
-   SCIP *scip,                               /**< master SCIP data structure                                    */
+   SCIP *scip,                               /**< master SCIP data structure                                      */
    SCP_CORE *core                            /**< SCP core data structure that is to be freed                     */
    )
 {
    assert(core != NULL);
-   assert(core->corevariables != NULL);
+   assert(core->varincore != NULL);
    assert(core->mapvariables != NULL);
    assert(core->nvarconss != NULL);
 
