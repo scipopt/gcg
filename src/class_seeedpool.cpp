@@ -471,6 +471,17 @@ SCIP_VAR* varGetRelevantRepr(
    return SCIPvarGetProbvar( var );
 }
 
+/** returns the relevant representative of a var */
+SCIP_Bool varIsFixedToZero(
+   SCIP* scip,
+   SCIP_VAR* var
+   )
+{
+
+   return ( SCIPisEQ(scip, SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var) ) && SCIPisEQ(scip, SCIPvarGetUbGlobal(var), 0. ) );
+}
+
+
 
 /** returns FALSE if there exists a seeed in seeeds that is a duplicate of compseeed */
 SCIP_Bool seeedIsNoDuplicateOfSeeeds(
@@ -651,6 +662,11 @@ Seeedpool::Seeedpool(
    {
       SCIP_VAR* relevantVar;
 
+      relevantVar = NULL;
+
+      if( varIsFixedToZero(scip, vars[i]) )
+         continue;
+
       if( transformed )
          relevantVar = varGetRelevantRepr( scip, vars[i] );
       else
@@ -703,6 +719,9 @@ Seeedpool::Seeedpool(
       {
          int varIndex;
          std::tr1::unordered_map<SCIP_VAR*, int>::const_iterator iterVar;
+
+         if( varIsFixedToZero(scip, currVars[currVar]) )
+            continue;
 
          /*@todo remove this after the bug is fixed */
          /* because of the bug of GCGconsGet*()-methods some variables have to be negated */
