@@ -2909,7 +2909,9 @@ void Seeedpool::calcCandidatesNBlocks()
    for( int c = 0; c < (int) 0.5 * getNConss(); ++c )
       ++iter;
 
-   candidate = getNVars() / *iter;
+   if( *iter != 0 )
+      candidate = getNVars() / *iter;
+
 
    addCandidatesNBlocks(candidate);
 
@@ -4486,6 +4488,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
  //  SCIP_CALL(DECdecompRemoveDeletedConss(scip, *newdecomp) );
 
    SCIP_CALL(DECdecompAddRemainingConss(scip, *newdecomp) );
+
    assert(DECdecompCheckConsistency(scip, *newdecomp) );
    /**there might be some remaining constraints assert( DECdecompCheckConsistency( scip, ( * newdecomp ) ) ); hence we do not check this here */
    assert( ! SCIPhashmapIsEmpty( ( * newdecomp )->constoblock ) );

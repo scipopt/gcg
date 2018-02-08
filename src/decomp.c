@@ -2228,6 +2228,8 @@ SCIP_RETCODE DECdecompCheckConsistency(
 
    for( v = 0; v < SCIPgetNVars(scip); ++v )
    {
+      if( SCIPisEQ(scip, SCIPvarGetLbGlobal(SCIPgetVars(scip)[v]), SCIPvarGetUbGlobal(SCIPgetVars(scip)[v]) ) && SCIPisEQ(scip, SCIPvarGetUbGlobal(SCIPgetVars(scip)[v]), 0. ) )
+         continue;
       assert(SCIPhashmapExists(DECdecompGetVartoblock(decdecomp), SCIPgetVars(scip)[v]));
    }
 
