@@ -2264,7 +2264,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
             int varblock;
             SCIP_VAR* var = SCIPvarGetProbvar(curvars[v]);
 
-            if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+            if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED || SCIPvarGetLbGlobal(var) == SCIPvarGetUbGlobal(var)  )
                continue;
 
             varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) - 1;  /*lint !e507*/
