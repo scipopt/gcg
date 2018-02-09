@@ -664,6 +664,8 @@ Seeedpool::Seeedpool(
 
       relevantVar = NULL;
 
+      if( varIsFixedToZero(scip, vars[i]) )
+         continue;
 
       if( transformed )
          relevantVar = varGetRelevantRepr( scip, vars[i] );
