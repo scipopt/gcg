@@ -1541,7 +1541,7 @@ SCIP_RETCODE createMasterprobConss(
    nmasterconss = DECdecompGetNLinkingconss(relaxdata->decdecomp);
    newcons = NULL;
 
-   assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
+ //  assert(SCIPhashmapGetNElements(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
    for( c = 0; c < nmasterconss; ++c )
    {
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0 )
@@ -1628,6 +1628,8 @@ SCIP_RETCODE createPricingprobConss(
          assert(success);
 
          SCIP_CALL( SCIPaddCons(relaxdata->pricingprobs[b], newcons) );
+
+
 #ifndef NDEBUG
          {
             SCIP_VAR** curvars;
@@ -1644,6 +1646,8 @@ SCIP_RETCODE createPricingprobConss(
 
                for( i = 0; i < ncurvars; ++i )
                {
+                  if( SCIPisFeasEQ( scip, SCIPvarGetLbGlobal(curvars[i]), SCIPvarGetUbGlobal(curvars[i]) ) && SCIPisFeasEQ( scip, SCIPvarGetUbGlobal(curvars[i]), 0. )  )
+                     continue;
                   assert(GCGvarIsPricing(curvars[i]));
                }
 

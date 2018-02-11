@@ -525,7 +525,7 @@ Seeedpool::Seeedpool(
    const char* conshdlrName,
    SCIP_Bool _transformed
    ) :
-   scip( givenScip ), incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 ),
+   scip( givenScip ), incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 ), unpresolvedfixedtozerovars(0),
    nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
    nFinishingDetectors( 0 ), nPostprocessingDetectors(0), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed ),
    classificationtime(0.), nblockscandidatescalctime(0.), postprocessingtime(0.), scorecalculatingtime(0.), translatingtime(0.)
@@ -548,7 +548,6 @@ Seeedpool::Seeedpool(
 
    SCIPgetBoolParam(scip, "detection/detectors/connectedbase/useconssadj", &useconssadj);
 
-  // createconssadj = useconnected && useconssadj;
 
    if( ! transformed )
    {
@@ -664,13 +663,17 @@ Seeedpool::Seeedpool(
 
       relevantVar = NULL;
 
-      if( varIsFixedToZero(scip, vars[i]) )
-         continue;
-
       if( transformed )
          relevantVar = varGetRelevantRepr( scip, vars[i] );
       else
          relevantVar = vars[i];
+
+
+      if( varIsFixedToZero(scip, vars[i]) )
+      {
+         unpresolvedfixedtozerovars.push_back(relevantVar);
+         continue;
+      }
 
       if( relevantVar != NULL )
       {
@@ -4126,10 +4129,12 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIP_VAR** linkingvars;
    SCIP_CONS** linkingconss;
    SCIP_CONS*** subscipconss;
+
    std::vector<SCIP_Bool> isblockdeleted;
    std::vector<int> ndeletedblocksbefore;
    std::vector<int> mastervaridsfromdeleted;
    std::vector<SCIP_Var*> mastervarsfromdeleted;
+
    int* nsubscipconss;
    int* nsubscipvars;
    int* nstairlinkingvars;
@@ -4190,8 +4195,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       }
    }
 
-
-   /** set nblocks */
+    /** set nblocks */
    DECdecompSetNBlocks( * newdecomp, seeed->getNBlocks() - ndeletedblocks );
 
    //detectorchaininfo ;
@@ -4274,11 +4278,11 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & nstairlinkingvars, seeed->getNBlocks() - ndeletedblocks ) );
    SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & stairlinkingvars, seeed->getNBlocks() -ndeletedblocks ) );
 
-   SCIP_CALL_ABORT( SCIPhashmapCreate( & vartoblock, SCIPblkmem( scip ), seeed->getNVars() ) );
-   SCIP_CALL_ABORT( SCIPhashmapCreate( & varindex, SCIPblkmem( scip ), seeed->getNVars() ) );
+   SCIP_CALL_ABORT( SCIPhashmapCreate( & vartoblock, SCIPblkmem( scip ), seeed->getNVars() + (int) unpresolvedfixedtozerovars.size() ) );
+   SCIP_CALL_ABORT( SCIPhashmapCreate( & varindex, SCIPblkmem( scip ), seeed->getNVars() + (int) unpresolvedfixedtozerovars.size()) );
 
    /** set linkingvars */
-   nlinkingvars = seeed->getNLinkingvars() + seeed->getNMastervars() + seeed->getNTotalStairlinkingvars() + nmastervarsfromdeleted;
+   nlinkingvars = seeed->getNLinkingvars() + seeed->getNMastervars() + seeed->getNTotalStairlinkingvars() + nmastervarsfromdeleted + (int) unpresolvedfixedtozerovars.size();
 
    if( nlinkingvars != 0 )
       SCIP_CALL_ABORT( SCIPallocBufferArray( scip, & linkingvars, nlinkingvars ) );
@@ -4318,6 +4322,18 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
       SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, var, (void*) (size_t) varcounter ) );
       varcounter ++;
    }
+
+   for( int v = 0; v < (int) unpresolvedfixedtozerovars.size(); ++v)
+      {
+         SCIP_VAR* var;
+         var = unpresolvedfixedtozerovars[v];
+
+         linkingvars[seeed->getNMastervars() + seeed->getNLinkingvars() + nmastervarsfromdeleted + v] = var;
+         SCIP_CALL_ABORT( SCIPhashmapInsert( vartoblock, var, (void*) ( size_t )( seeed->getNBlocks() + 2 - ndeletedblocks) ) );
+         SCIP_CALL_ABORT( SCIPhashmapInsert( varindex, var, (void*) (size_t) varcounter ) );
+         varcounter ++;
+      }
+
 
    /* set block variables */
    for( int b = 0; b < seeed->getNBlocks(); ++ b )

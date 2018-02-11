@@ -114,6 +114,8 @@ private:
    std::tr1::unordered_map<std::pair<int, int>, SCIP_Real, pair_hash> valsMap;   /**< maps an entry of the matrix to its
                                                                                    *< value, zeros are omitted */
 
+   std::vector<SCIP_VAR*> unpresolvedfixedtozerovars;
+
    int nVars;                    /**< number of variables */
    int nConss;                   /**< number of constraints */
    int nDetectors;               /**< number of detectors */
