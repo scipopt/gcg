@@ -6124,6 +6124,7 @@ void Seeed::showVisualisation()
    char command[SCIP_MAXSTRLEN];
    strcpy(command, "gnuplot ");
    strcat(command, filename);
+   SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
    system(command);
 
    /* open outputfile */
@@ -6131,6 +6132,7 @@ void Seeed::showVisualisation()
    strcat(command, " ");
    strcat(command, outname);
    strcat(command, " &");
+   SCIPinfoMessage(seeedpool->getScip(), NULL, "%s\n", command);
    system(command);
 
    return;
