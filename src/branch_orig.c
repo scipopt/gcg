@@ -379,7 +379,6 @@ SCIP_RETCODE branchExtern(
 
    /* branching candidates */
    SCIP_VAR** branchcands;
-   SCIP_Real* branchcandsscore;
    SCIP_Real* branchcandssol;
    int nbranchcands;
    int npriobranchcands;
@@ -409,7 +408,7 @@ SCIP_RETCODE branchExtern(
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepsstrong", &usepsstrong) );
 
    /* get the branching candidates */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, &branchcandsscore, &nbranchcands,
+   SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, NULL, &nbranchcands,
          &npriobranchcands, NULL, NULL, NULL) );
 
    branchvar = NULL;
@@ -420,7 +419,7 @@ SCIP_RETCODE branchExtern(
 
    if( usepsstrong )
    {
-      SCIP_CALL( SCIPgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, branchcandsscore, npriobranchcands,
+      SCIP_CALL( SCIPgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, npriobranchcands,
             npriobranchcands, result, &branchvar) );
       assert(branchvar != NULL || *result == SCIP_CUTOFF);
       assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);
@@ -483,7 +482,8 @@ SCIP_RETCODE branchExtern(
          else
          {
             /* compute the fractionality */
-            frac = MIN( branchcandsscore[i], 1.0 - branchcandsscore[i] );
+            frac = branchcandssol[i] - SCIPfloor(scip, branchcandssol[i]);
+            frac = MIN(frac, 1.0 - frac);
             assert(frac > 0);
 
             /* fractionality is higher than that of the current highest fractionality */
@@ -526,7 +526,8 @@ SCIP_RETCODE branchExtern(
          else
          {
             /* compute fractionality */
-            frac = MIN( branchcandsscore[i], 1.0 - branchcandsscore[i] );
+            frac = branchcandssol[i] - SCIPfloor(scip, branchcandssol[i]);
+            frac = MIN(frac, 1.0 - frac);
             assert(frac > 0);
 
             if( frac >= maxfrac )

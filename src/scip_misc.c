@@ -423,6 +423,8 @@ int GCGconsGetNVars(
    assert(conshdlr != NULL);
    conshdlrname = SCIPconshdlrGetName(conshdlr);
 
+
+
    if( strcmp(conshdlrname, "linear") == 0 )
    {
       return SCIPgetNVarsLinear(scip, cons);
@@ -815,11 +817,11 @@ SCIP_Bool GCGgetConsIsCardinalityCons(
       assert(vars != NULL);
       assert(vals != NULL);
 
-      if( !SCIPvarIsBinary(vars[i]) )
-      {
-         SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[i]) );
-         relevant = FALSE;
-      }
+//      if( !SCIPvarIsBinary(vars[i]) )
+//      {
+//         SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[i]) );
+//         relevant = FALSE;
+//      }
       if( !SCIPisEQ(scip, vals[i], 1.0) )
       {
          SCIPdebugPrintf("(coeff for var %s is %.2f != 1.0) ", SCIPvarGetName(vars[i]), vals[i] );

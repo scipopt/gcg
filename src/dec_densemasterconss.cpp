@@ -61,8 +61,9 @@
 #define DEC_PRIORITY              0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'd'         /**< display character of detector */
 #define DEC_ENABLED               TRUE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLEDORIGINAL       FALSE       /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE        /**< should the detection be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -223,19 +224,21 @@ static DEC_DECL_PROPAGATESEEED(propagateSeeedDensemasterconss)
    return SCIP_OKAY;
 }
 
+#define detectorPostprocessSeeedDensemasterconss NULL
+
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveDensemasterconss)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
 
@@ -250,15 +253,14 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultDensemasterconss)
    char setstr[SCIP_MAXSTRLEN];
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL ) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
-
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
 
@@ -270,13 +272,13 @@ DEC_DECL_SETPARAMFAST(setParamFastDensemasterconss)
    char setstr[SCIP_MAXSTRLEN];
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
-
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
 
@@ -301,8 +303,8 @@ SCIP_RETCODE SCIPincludeDetectorDensemasterconss(SCIP* scip /**< SCIP data struc
 
    SCIP_CALL(
       DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata,
-         detectDensemasterconss, freeDensemasterconss, initDensemasterconss, exitDensemasterconss, propagateSeeedDensemasterconss, finishSeeedDensemasterconss, setParamAggressiveDensemasterconss, setParamDefaultDensemasterconss, setParamFastDensemasterconss));
+         DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata,
+         detectDensemasterconss, freeDensemasterconss, initDensemasterconss, exitDensemasterconss, propagateSeeedDensemasterconss, finishSeeedDensemasterconss, detectorPostprocessSeeedDensemasterconss, setParamAggressiveDensemasterconss, setParamDefaultDensemasterconss, setParamFastDensemasterconss));
 
    /**@todo add densemasterconss detector parameters */
 

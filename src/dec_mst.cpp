@@ -57,9 +57,10 @@ using gcg::GraphGCG;
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              910         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'M'         /**< display character of detector */
-#define DEC_ENABLED               TRUE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLED               FALSE        /**< should the detection be enabled */
+#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE       /**< should detector be skipped if other detectors found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -645,6 +646,8 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedMST)
 
 #define finishSeeedMST NULL
 
+#define detectorPostprocessSeeedMST NULL
+
 #define setParamAggressiveMST NULL
 #define setParamDefaultMST NULL
 #define setParamFastMST NULL
@@ -668,17 +671,17 @@ SCIP_RETCODE SCIPincludeDetectorMST(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST, finishSeeedMST, setParamAggressiveMST, setParamDefaultMST, setParamFastMST) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
+      detectordata, detectMST, freeMST, initMST, exitMST, propagateSeeedMST, finishSeeedMST, detectorPostprocessSeeedMST, setParamAggressiveMST, setParamDefaultMST, setParamFastMST) );
 
    /* add arrowheur presolver parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/mst/niterations", "Number of iterations to run mst with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/mst/johson", "Enable johson distance measure.", &detectordata->johnsonenable, FALSE, DEFAULT_JOHNSON_ENABLE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/mst/intersection", "Enable intersection distance measure.", &detectordata->intersectionenable, FALSE, DEFAULT_INTERSECTION_ENABLE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/mst/jaccard", "Enable jaccard distance measure.", &detectordata->jaccardenable, FALSE, DEFAULT_JACCARD_ENABLE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/mst/cosine", "Enable cosine distance measure.", &detectordata->cosineenable, FALSE, DEFAULT_COSINE_ENABLE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/mst/simpson", "Enable simpson distance measure.", &detectordata->simpsonenable, FALSE, DEFAULT_SIMPSON_ENABLE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/mst/postprocenable", "Enable post-processing step..", &detectordata->postprocenable, FALSE, DEFAULT_POSTPROC_ENABLE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/mst/niterations", "Number of iterations to run mst with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/mst/johson", "Enable johson distance measure.", &detectordata->johnsonenable, FALSE, DEFAULT_JOHNSON_ENABLE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/mst/intersection", "Enable intersection distance measure.", &detectordata->intersectionenable, FALSE, DEFAULT_INTERSECTION_ENABLE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/mst/jaccard", "Enable jaccard distance measure.", &detectordata->jaccardenable, FALSE, DEFAULT_JACCARD_ENABLE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/mst/cosine", "Enable cosine distance measure.", &detectordata->cosineenable, FALSE, DEFAULT_COSINE_ENABLE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/mst/simpson", "Enable simpson distance measure.", &detectordata->simpsonenable, FALSE, DEFAULT_SIMPSON_ENABLE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/mst/postprocenable", "Enable post-processing step..", &detectordata->postprocenable, FALSE, DEFAULT_POSTPROC_ENABLE, NULL, NULL ) );
 
 #endif
    return SCIP_OKAY;

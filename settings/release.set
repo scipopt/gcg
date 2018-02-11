@@ -10,17 +10,17 @@ presolving/maxrestarts = 0
 
 # flag to indicate whether detector <connected> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/connected/enabled = TRUE
+detection/detectors/connected/enabled = TRUE
 
 # flag to indicate whether detector <arrowheur> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/arrowheur/enabled = FALSE
+detection/detectors/arrowheur/enabled = FALSE
 
 # flag to indicate whether detector <random> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
-detectors/random/enabled = FALSE
+detection/detectors/random/enabled = FALSE
 
 # flag to indicate whether detector <cutpacking> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
-detectors/staircase/enabled = FALSE
+detection/detectors/staircase/enabled = FALSE
 

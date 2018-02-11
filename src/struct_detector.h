@@ -57,9 +57,11 @@ struct DEC_Detector {
    SCIP_Bool             enabled;            /**< flag to indicate whether detector is enabled */
    SCIP_Bool             enabledOrig;   /**< flag to indicate whether detector is enabled for the original problem */
    SCIP_Bool             enabledFinishing;   /**< flag to indicate whether finishing is enabled */
+   SCIP_Bool             enabledPostprocessing;   /**< flag to indicate whether finishing is enabled */
    SCIP_Bool             skip;               /**< should detector be skipped if other detectors found decompositions */
    SCIP_Bool             usefulRecall;       /** is it useful to call this detector on a descendant of the propagated seeed */
    SCIP_Bool             legacymode;         /**< flag to indicate whether (old) DETECTSTRUCTURE method should also be used for detection */
+   SCIP_Bool             overruleemphasis;   /**< should the emphasis settings be overruled */
    DEC_DECOMP**          decomps;            /**< decompositions this detector has found */
    int                   ndecomps;           /**< number of decompositions the detector has found */
    SCIP_Real             dectime;            /**< time the detector took to find decompositions */
@@ -71,6 +73,7 @@ struct DEC_Detector {
    DEC_DECL_EXITDETECTOR((*exitDetection));  /**< deinitialization method of detector */
    DEC_DECL_PROPAGATESEEED((*propagateSeeed));
    DEC_DECL_FINISHSEEED((*finishSeeed));
+   DEC_DECL_POSTPROCESSSEEED((*postprocessSeeed));
    DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressive));
    DEC_DECL_SETPARAMDEFAULT((*setParamDefault));
    DEC_DECL_SETPARAMFAST((*setParamFast));

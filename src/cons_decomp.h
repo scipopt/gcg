@@ -43,7 +43,6 @@
 #include "type_detector.h"
 
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,7 +50,11 @@ extern "C" {
 enum scoretype {
    MAX_WHITE = 0,
    BORDER_AREA,
-   CLASSIC
+   CLASSIC,
+   MAX_FORESSEEING_WHITE,
+   SETPART_FWHITE,
+   MAX_FORESSEEING_AGG_WHITE,
+   SETPART_AGG_FWHITE
 };
 
 typedef enum scoretype SCORETYPE;
@@ -60,9 +63,13 @@ struct seeedpool_wrapper;
 
 typedef struct seeedpool_wrapper SEEEDPOOL_WRAPPER ;
 
+
 SCIP_RETCODE DECconshdlrDecompSortDecompositionsByScore(
    SCIP*          scip
 );
+
+struct Seeed_Wrapper;
+typedef struct Seeed_Wrapper SEEED_WRAPPER;
 
 /** creates the handler for decomp constraints and includes it in SCIP */
 extern
@@ -80,6 +87,18 @@ DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
 extern
 int SCIPconshdlrDecompGetNDecdecomps(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the number of conss that were active while detecting decomp originating from seeed with given id **/
+extern
+int SCIPconshdlrDecompGetNFormerDetectionConssForID(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   id                  /**< id of the seeed */
+   );
+
+extern
+const char* SCIPconshdlrDecompGetPdfReader(
+   SCIP*                scip
    );
 
 /** returns the data of the provided detector */
@@ -118,6 +137,7 @@ SCIP_RETCODE DECincludeDetector(
    SCIP_Bool             enabled,            /**< whether the detector should be enabled by default                  */
    SCIP_Bool             enabledOriginal,        /**< whether the detector should be enabled by default for detecting the original problem */
    SCIP_Bool             enabledFinishing,   /**< whether the finishing should be enabled */
+   SCIP_Bool             enabledPostprocessing,   /**< whether the postprocessing should be enabled */
    SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure   */
    SCIP_Bool             usefulRecall,       /** is it useful to call this detector on a descendant of the propagated seeed */
    SCIP_Bool             legacymode,         /**< whether (old) DETECTSTRUCTURE method should also be used for detection */
@@ -128,6 +148,7 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_EXITDETECTOR((*exitDetector)),    /**< deinitialization method of detector (or NULL)                      */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
    DEC_DECL_FINISHSEEED((*finishSeeedDetector)),
+   DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)),
    DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
    DEC_DECL_SETPARAMDEFAULT((*setParamDefaultDetector)),
    DEC_DECL_SETPARAMFAST((*setParamFastDetector))
@@ -138,6 +159,30 @@ extern
 SCIP_Real DECgetRemainingTime(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
+/** checks if two pricing problems are identical based on information from detection */
+extern
+SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
+   SCIP*                scip,
+   int                  seeedid,
+   int                  probnr1,
+   int                  probnr2,
+   SCIP_Bool*           identical
+   );
+
+/** for two identical pricing problems a corresponding varmap is created */
+extern
+SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
+   SCIP*                scip,
+   SCIP_HASHMAP**       hashorig2pricingvar, /**< mapping from orig to pricingvar  */
+   int                  seeedid,
+   int                  probnr1,
+   int                  probnr2,
+   SCIP*                scip1,
+   SCIP*                scip2,
+   SCIP_HASHMAP*        varmap
+   );
+
 
 /** sets (and adds) the decomposition structure **/
 extern
@@ -272,7 +317,6 @@ SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
      );
 
 
-
 /** rejects and deletes the current user seeed */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(
    SCIP*                 scip                 /**< SCIP data structure */
@@ -284,15 +328,16 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    SCIP*                 scip                 /**< SCIP data structure */
    );
 
+
 SCIP_RETCODE SCIPconshdlrDecompTranslateAndAddCompleteUnpresolvedSeeeds(
    SCIP*                 scip,                 /**< SCIP data structure */
    SCIP_Bool*            success
    );
 
+
 SCIP_Bool SCIPconshdlrDecompExistsSelected(
    SCIP* scip
    );
-
 
 
 int SCIPconshdlrDecompIncreaseAndGetNCallsCreateDecomp(
@@ -327,13 +372,13 @@ SCIP_Bool SCIPconshdlrDecompCheckConsistency(
    );
 
 /** returns the next seeed id managed by cons_decomp */
-   int SCIPconshdlrDecompGetNextSeeedID(
+int SCIPconshdlrDecompGetNextSeeedID(
    SCIP*   scip
    );
 
 
-   SCORETYPE SCIPconshdlrDecompGetCurrScoretype(
-         SCIP* scip
+SCORETYPE SCIPconshdlrDecompGetCurrScoretype(
+   SCIP* scip
    );
 
 //    char*  SCIPconshdlrDecompGetScoretypeShortName(
@@ -355,12 +400,25 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_RESULT*          result             /**< Result pointer to indicate whether some structure was found */
    );
 
+
 /** write out all known decompositions **/
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 directory,          /**< directory for decompositions */
    char*                 extension           /**< the file extension for the export */
    );
+
+
+/** gets an array of all seeeds that are currently considered relevant
+ * @params seeedswr  output of the relevant seeeds (don't forget to free the individual wrappers after use)
+ * @params nseeeds   amount of seeeds that are put in the array
+ */
+SCIP_RETCODE SCIPconshdlrDecompGetAllRelevantSeeeds(
+   SCIP* scip,                /**< SCIP data structure */
+   SEEED_WRAPPER** seeedswr,  /**< seeed wrapper array for output */
+   int* nseeeds               /**< number of seeeds in output */
+   );
+
 
 /** write family tree **/
 SCIP_RETCODE DECwriteFamilyTree(
@@ -371,6 +429,12 @@ SCIP_RETCODE DECwriteFamilyTree(
    SCIP_Bool 			    draft               /**< draft mode will not visualize non-zeros but is faster and takes less memory */
    );
 
+extern
+SCIP_RETCODE SCIPconshdlrDecompWriteDec(
+   SCIP*     scip,
+   FILE*     file,
+   SCIP_Bool transformed
+   );
 
 /** returns the best known decomposition, if available and NULL otherwise */
 extern
@@ -378,16 +442,32 @@ DEC_DECOMP* DECgetBestDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** returns the Seeed ID of the best Seeed if available and -1 otherwise */
+SCIP_RETCODE DECgetSeeedToWrite(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             transformed,
+   SEEED_WRAPPER*        seeedwrapper        /**< seeed wrapper to output */
+   );
+
 /** writes out a list of all detectors */
 void DECprintListOfDetectors(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** gets all currently finished decomps
+ * Note: the array is allocated and needs to be freed after use!
+ * */
 DEC_DECOMP** SCIPconshdlrDecompGetFinishedDecomps(
    SCIP*     scip
    );
 
+/* returns number of finished Seeeds */
 int SCIPconshdlrDecompGetNFinishedDecomps(
+   SCIP*       scip
+   );
+
+/* returns number of all Seeeds */
+int SCIPconshdlrDecompGetNSeeeds(
    SCIP*       scip
    );
 
@@ -399,8 +479,6 @@ int SCIPconshdlrDecompGetNDetectors(
 DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
    SCIP* scip
    );
-
-
 
 
 /** returns whether the detection has been performed */
@@ -430,6 +508,30 @@ SCIP_RETCODE GCGsetDetection(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_PARAMSETTING     paramsetting,       /**< parameter settings */
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
+   );
+
+
+/** returns wrapped Seeed with given id */
+SCIP_RETCODE GCGgetSeeedFromID(
+   SCIP*          scip,       /**< SCIP data structure */
+   int*           seeedid,    /**< id of Seeed */
+   SEEED_WRAPPER* seeedwr     /**< wrapper for output Seeed */
+   );
+
+
+/** returns wrapped Seeedpools */
+SCIP_RETCODE GCGgetCurrentSeeedpools(
+   SCIP*          scip,                   /**< SCIP data structure */
+   SEEED_WRAPPER* seeedpoolwr,            /**< wrapper for presolved output Seeedpool (or NULL) */
+   SEEED_WRAPPER* seeedpoolunpresolvedwr  /**< wrapper for unpresolved output Seeedpool (or NULL) */
+   );
+
+
+/** gets the ids of all selected seeeds */
+SCIP_RETCODE SCIPconshdlrDecompGetSelectedSeeeds(
+   SCIP* scip,       /**< SCIP data structure */
+   int** output,     /**< array to put ids into */
+   int* outputsize   /**< size of output */
    );
 
 

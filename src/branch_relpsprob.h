@@ -55,7 +55,6 @@ SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            branchcands,        /**< brancing candidates */
    SCIP_Real*            branchcandssol,     /**< solution value for the branching candidates */
-   SCIP_Real*            branchcandsfrac,    /**< fractional part of the branching candidates, zero possible */
    int                   nbranchcands,       /**< number of branching candidates */
    int                   nvars,              /**< number of variables to be watched by bdchgdata */
    SCIP_RESULT*          result,             /**< pointer to the result of the execution */

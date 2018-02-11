@@ -68,6 +68,7 @@
 #define DEC_ENABLED               FALSE          /**< should detector be called by default */
 #define DEC_ENABLEDORIGINAL       FALSE  /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE          /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -2048,6 +2049,8 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectCutpacking)
 #define detectorFinishSeeedCutpacking NULL
 #define detectorExitCutpacking NULL
 
+#define detectorPostprocessSeeedCutpacking NULL
+
 #define setParamAggressiveCutpacking NULL
 #define setParamDefaultCutpacking NULL
 #define setParamFastCutpacking NULL
@@ -2069,33 +2072,33 @@ SCIP_RETCODE SCIPincludeDetectorCutpacking(
 
    /* include structure detector */
    SCIP_CALL( DECincludeDetector(scip,
-      DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, detectorExitCutpacking, detectorPropagateSeeedCutpacking, detectorFinishSeeedCutpacking, setParamAggressiveCutpacking, setParamDefaultCutpacking, setParamFastCutpacking) );
+      DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
+      detectordata, detectorDetectCutpacking, detectorFreeCutpacking, detectorInitCutpacking, detectorExitCutpacking, detectorPropagateSeeedCutpacking, detectorFinishSeeedCutpacking, detectorPostprocessSeeedCutpacking, setParamAggressiveCutpacking, setParamDefaultCutpacking, setParamFastCutpacking) );
 
 
    /* add cutpacking detector parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/algorithm",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/cutpacking/algorithm",
       "should the Stoer-Wagner algorithm or metis be used for finding a minimal cut",
       &detectordata->usemetis, FALSE, DEFAULT_USEMETIS, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/fixedblocks",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/cutpacking/fixedblocks",
       "Should the blocks consist of a certain number of constraints",
       &detectordata->fixedblocks, FALSE, DEFAULT_FIXEDBLOCKS, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/cutpacking/blocksize",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/cutpacking/blocksize",
       "number of constraints per block",
       &detectordata->blocksize, FALSE, DEFAULT_BLOCKSIZE, 1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/tidy",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/cutpacking/tidy",
       "Whether to clean up temporary files",
       &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/cutpacking/randomseed",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/cutpacking/randomseed",
       "random seed for hmetis",
       &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detectors/cutpacking/ubfactor",
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/cutpacking/ubfactor",
       "Unbalance factor for metis",
       &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/metisverbose",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/cutpacking/metisverbose",
       "Should the metis output be displayed",
       &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/cutpacking/metisuseptyperb",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/cutpacking/metisuseptyperb",
       "Should the rb or kway method be used for partitioning by metis",
       &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
 #endif

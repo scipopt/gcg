@@ -104,18 +104,11 @@ SCIP_RETCODE GCGwriteCls(
     * 2. Write an output method to write these information into a file
     *
     */
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_Bool transformed;
    gcg::Seeedpool* seeedpool;
 
 
    assert(scip != NULL);
-   conshdlr = SCIPfindConshdlr(scip, "decomp");
-   assert( conshdlr != NULL );
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
 
    SCIP_CALL( SCIPgetBoolParam(scip,
          "reading/clsreader/usetransform", &transformed));

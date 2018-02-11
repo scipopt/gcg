@@ -48,6 +48,7 @@ LPS=${15}
 VALGRIND=${16}
 MODE=${17}
 SETCUTOFF=${18}
+STATISTICS=${19}
 
 SETDIR=../settings
 
@@ -250,6 +251,9 @@ do
 	        then
 	            echo set limits objective $OBJECTIVEVAL >> $TMPFILE
 	            echo set heur emph off                  >> $TMPFILE
+	            echo master                             >> $TMPFILE
+	            echo set heur emph off                  >> $TMPFILE
+	            echo quit                               >> $TMPFILE
 	        fi
 	    fi
 
@@ -258,13 +262,51 @@ do
             then
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
- #               echo display statistics            >> $TMPFILE
+                echo display statistics            >> $TMPFILE
+                if test $STATISTICS = "true"
+                then
+                    echo display additionalstatistics  >> $TMPFILE
+                fi
+	    elif test $MODE = "detectionstatistics"
+	    then
+		echo change instancename $PROB     >> $TMPFILE
+		echo set detection allowclassifier enabled TRUE >> $TMPFILE
+		echo presolve                      >> $TMPFILE
+		echo detect                        >> $TMPFILE
+                echo display detectionst           >> $TMPFILE
+	    elif test $MODE = "checkexistence"
+	    then
+		echo change instancename $PROB     >> $TMPFILE
+		echo set presolving maxrounds 0    >> $TMPFILE
+		echo presolve                      >> $TMPFILE
+		echo detect                        >> $TMPFILE
+		if test -f $DECFILE
+                    then
+                        BLKFILE=$DECFILE
+                    fi
+                    if test -f $BLKFILE
+                    then
+                        EXT=${BLKFILE##*.}
+                        if test "$EXT" = "gz"
+                        then
+                            presol=`zgrep -A1 PRESOLVE $BLKFILE`
+                        else
+                            presol=`grep -A1 PRESOLVE $BLKFILE`
+                        fi
+                        echo $presol
+                        # If the decomposition contains presolving information ...
+                        echo read $BLKFILE         >> $TMPFILE
+                    fi
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
                 echo write prob bip\/$NAME-dec.bip >> $TMPFILE
                 echo display statistics            >> $TMPFILE
-                echo display additionalstatistics  >> $TMPFILE
+                if test $STATISTICS = "true"
+                then
+                    echo display additionalstatistics  >> $TMPFILE
+                fi
+
             elif test $MODE = "detectall"
             then
                 echo presolve                      >> $TMPFILE
@@ -310,8 +352,10 @@ EOF
 #                echo write problem $HOME\/results\/decsBench\/$GP_BASE.dec >> $TMPFILE
                 echo optimize                      >> $TMPFILE
                 echo display statistics            >> $TMPFILE
-#               echo display additionalstatistics  >> $TMPFILE
-#               echo display additionalstatistics  >> $TMPFILE
+                if test $STATISTICS = "true"
+                then
+                    echo display additionalstatistics  >> $TMPFILE
+                fi
 #               echo display solution              >> $TMPFILE
                 echo checksol                      >> $TMPFILE
             fi

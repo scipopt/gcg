@@ -37,16 +37,19 @@
 #define GCG_CLASS_SEEED_H__
 
 #include "objscip/objscip.h"
-#include <vector>
 #include "struct_detector.h"
-#include <string>
 #include "cons_decomp.h"
+
+#include <vector>
+#include <string>
+
 #include "class_consclassifier.h"
 #include "class_varclassifier.h"
 #include "graph/graph_gcg.h"
 #include "graph/graph.h"
 
 namespace gcg {
+
 
 enum USERGIVEN
 {
@@ -85,6 +88,11 @@ private:
    std::vector<bool> isvarmaster;
    std::vector<bool> isconsmaster;
 
+   std::vector<int>  ncoeffsforblock;                          /**< number of coeffs per block */
+
+   SCIP_Bool         calculatedncoeffsforblock;                        /**< is the  number of coeff per block already calculated*/
+   int               ncoeffsformaster;                                    /**< number of master coefficients */
+
    bool varsforblocksorted;
    bool stairlinkingvarsforblocksorted;
    bool conssforblocksorted;
@@ -112,10 +120,21 @@ private:
 
    bool isselected;                                            /**< is this seeed selected */
 
+   bool isagginfoalreadytoexpensive;                            /** is agginfo already known to be to expensive */
+
    const static int primes[];
    const static int nPrimes;
 
    bool isFinishedByFinisher;                         /**< was this seeed finished by the finishseeed() method of a detector */
+
+   std::vector<std::vector<int>>    ncoeffsforblockformastercons;    /**< number of coeffs a block has in a certain master constraint */
+
+   /** aggregation information */
+   SCIP_Bool            agginfocalculated;                             /**< is aggregation information for the blocks already calculated */
+   int                  nrepblocks;                                    /**< number of block representatives */
+   std::vector<std::vector<int>> reptoblocks;                          /**< translation of the block representatives to (old) blocks */
+   std::vector<int>     blockstorep;                                   /**< translation of the (old) blocks to the block representatives */
+   std::vector<std::vector<std::vector<int> > > pidtopidvarmaptofirst; /**< [nrepblocks][blockstorep[k].size()][nvarsforprob] collection of varmaps of probindices from k-th subproblem to the zeroth block that is represented */
 
    /** statistic information */
    std::vector<DEC_DETECTOR*> detectorChain;          /**< vector containing detectors that worked on that seeed */
@@ -135,7 +154,7 @@ private:
                                                         *< for each detector working on that seeed*/
    std::vector<SCIP_Real> pctConssFromFree;           /**< vector containing the fraction of constraints that are not longer
                                                          *< open for each detector working on that seeed*/
-   std::vector<int> nNewBlocks;                       /**< vector containing detector indices that worked on that seeed */
+   std::vector<int> nNewBlocks;                       /**< vector containing information how many new blocks a detector has assigned */
 
    std::vector<IndexClassifier*> usedClassifier;      /**< vector containing pointer to the cons- or varclassifier
                                                          *< a detector made use of for each detector working on that seeed
@@ -154,9 +173,21 @@ private:
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
    SCIP_Real strongdecompositionscore;                /**< strong decomposition score  */
 
-   SCIP_Real borderareascore;                         /**< @todo comment */
+   SCIP_Real borderareascore;                         /**< 1 - fraction of border area to complete area */
+   SCIP_Real maxwhitescoreagg;                        /**< score corresponding to the max white measure according to aggregated blocks */
 
-   char* detectorchainstring;                         /**< @todo comment */
+   SCIP_Real blockareascore;                          /**< 1 - fraction of block area to complete area */
+   SCIP_Real blockareascoreagg;                       /**< 1 - fraction of aggregated block area to complete area */
+
+
+   SCIP_Real maxforeseeingwhitescore;                /**< maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
+   SCIP_Real maxforeseeingwhitescoreagg;             /**< maximum foreseeing  white area score with respect to aggregatable blocks  (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
+
+   SCIP_Real setpartfwhitescore;                      /** setpartitioning maximum foreseeing  white area score (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )*/
+   SCIP_Real setpartfwhitescoreagg;                   /** setpartitioning maximum foreseeing  white area score with respect to aggregateable  (i.e. convex combination of maximum foreseeing white area score and a boolean score rewarding a master containing only setppc and cardinality constraints )*/
+
+
+   char* detectorchainstring;                         /**< string formed by the chars of the detectors involved for this seeed  */
 
    /** datastructure to store information if this seeed stems from a seeed concerning the unpresolved problem */
    bool stemsFromUnpresolved;             /**< seeed has at least one ancestor that is a seeed from unpresolved problem */
@@ -165,6 +196,35 @@ private:
                                             *< finishseeed() method of a detector */
    DEC_DETECTOR* finishedUnpresolvedBy;   /**< index of finishing detector of unpresolved ancestor seeed */
 
+   Seeedpool*    seeedpool;               /**< seeedpool for the corresponding problem */
+
+   /** checks blocks for identity by graph automorphism check done by bliss, identity is only found if variables are in correct order */
+   void checkIdenticalBlocksBliss(
+      Seeedpool*           seeedpool,
+      int                  b1,
+      int                  b2,
+      std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+      SCIP_HASHMAP*        varmap2,
+      SCIP_Bool*           identical
+      );
+
+
+   /** checks blocks for identity by brute force, identity is only found if variables are in correct order */
+   void checkIdenticalBlocksBrute(
+      Seeedpool*           seeedpool,
+      int                  b1,
+      int                  b2,
+      std::vector<int>&    varmap,         /**< maps variable indices (corresponding to  seeedpool indices) of prob2 to prob1 */
+      SCIP_HASHMAP*        varmap2,
+      SCIP_Bool*           identical
+      );
+
+   SCIP_RETCODE checkIdenticalBlocksTrivial(
+      Seeedpool*           givenseeedpool,
+      int                  b1,
+      int                  b2,
+      SCIP_Bool*           notidentical
+      );
 
 public:
 
@@ -184,6 +244,12 @@ public:
 
    /** destructor */
    ~Seeed();
+
+   SCIP_Bool isconshittingblockca(
+      gcg::Seeedpool* seeedpool,
+      int masterconsid,
+      int b
+      );
 
    /** adds a block, returns the number of the new block */
    int addBlock();
@@ -307,6 +373,11 @@ public:
       int firstBlock
       );
 
+   /** checks if aggregation of sub problems is possible and stores the corresponding aggreagtion information */
+   void calcAggregationInformation(
+      Seeedpool*  seeedpool
+      );
+
    /** calculates the hash value of the seeed for comparing */
    void calcHashvalue();
 
@@ -318,6 +389,12 @@ public:
    void calcStairlinkingVars(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
+
+
+   void calcNCoeffsForBlockForMastercons(
+      Seeedpool*           givenseeedpool
+      );
+
 
    /** changes the block order in a way such that all linking vars that are potentially stairlinking
     *  may be reassigned to stairlinking
@@ -354,6 +431,28 @@ public:
    SCIP_RETCODE completeByConnected(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
+
+   /** assigns all open constraints and open variables
+     *  strategy: assigns all conss and vars to the same block if they are connected
+     *  a cons and a var are adjacent if the var appears in the cons */
+   SCIP_RETCODE assignSmallestComponentsButOneConssAdjacency(
+      Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
+      );
+
+
+   /** try to reassign each  mastercons to one block without inducing conflicts  */
+   SCIP_RETCODE postprocessMasterToBlocks(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      SCIP_Bool* success
+      );
+
+
+   /** try to reassign each  mastercons to one block without inducing conflicts  */
+   SCIP_RETCODE postprocessMasterToBlocksConssAdjacency(
+      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
+      SCIP_Bool* success
+      );
+
 
    /** assigns all open constraints and open variables
      *  strategy: assigns all conss same block if they are connected
@@ -406,6 +505,8 @@ public:
    SCIP_RETCODE deleteOpenvar(
       int openvar
       );
+
+   SCIP_RETCODE displayAggregationInformation();
 
    /** displays the assignments of the conss */
    SCIP_RETCODE displayConss(Seeedpool* seeedpool);
@@ -492,17 +593,17 @@ public:
       std::vector<int> newlist
       );
 
-
    /** adds ancestor id of given ancestor */
    void addAncestorID(
       int ancestor
       );
 
+   const std::vector<int> & getBlocksForRep(int repid);
 
    /** returns detectorchainstring */
    char* getDetectorChainString();
 
-   /** returns detectorchain info of detetctor related to given detectorchain index */
+   /** returns detectorchain info of detector related to given detectorchain index */
    std::string getDetectorchainInfo(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
@@ -569,13 +670,44 @@ public:
    /** returns array containing all master vars (hitting only constraints in the master) */
    const int* getMastervars();
 
-   /** returns the "maximum white score" (the smaller the better) */
+   /** returns the "maximum white score" */
    SCIP_Real getMaxWhiteScore();
+
+   /** returns the number of nonzero coeffs in a certain block */
+   int  getNCoeffsForBlock(
+      gcg::Seeedpool* seeedpool,
+      int blockid
+      );
+
+   /** returns the number of nonzero coeffs in master */
+   int  getNCoeffsForMaster(
+      gcg::Seeedpool* seeedpool
+      );
+
 
    /** returns the score of the seeed (depending on used scoretype) */
    SCIP_Real getScore(
       SCORETYPE type
       );
+
+
+   /* Are all master constraints set partitioning, set packing, set cover, or cardinality constraints */
+   SCIP_Bool hasSetppccardMaster(
+      gcg::Seeedpool* seeedpool
+   );
+
+   /* Are all master constraints set partitioning, set packing, or set cover constraints */
+   SCIP_Bool hasSetppcMaster(
+      gcg::Seeedpool* seeedpool
+   );
+
+
+   /* Are all master constraints set partitioning, or set packing constraints */
+   SCIP_Bool hasSetppMaster(
+      gcg::Seeedpool* seeedpool
+   );
+
+
 
    /** returns whether this seeed is usergiven */
    USERGIVEN getUsergiven();
@@ -599,6 +731,9 @@ public:
 
    /** returns the number of detectors the seeed is propagated by */
    int getNDetectors();
+
+   /** returns the number used classifiers */
+   int getNUsedClassifier();
 
    /** returns size of the vector containing linking vars */
    int getNLinkingvars();
@@ -625,6 +760,9 @@ public:
 
    /** returns size of vector containing variables not assigned yet */
    int getNOpenvars();
+
+   /** returns the number of blockrepresentatives */
+   int getNReps();
 
    /** returns size of the vector containing stairlinking vars */
    int getNStairlinkingvars(
@@ -699,6 +837,19 @@ public:
    /** returns fraction of constraints that are not longer open for detectors in detectorchain */
    std::vector<SCIP_Real> getPctConssFromFreeVector();
 
+   /** returns index of the representative block */
+   int getRepForBlock(
+      int blockid
+      );
+
+   std::vector<int> & getRepVarmap(
+      int repid,
+      int blockrepid
+      );
+
+   /** returns the corresponding seeedpool */
+   Seeedpool* getSeeedpool();
+
    /** returns array containing stairlinking vars */
    const int* getStairlinkingvars(
       int block
@@ -719,6 +870,15 @@ public:
    const int* getVarsForBlock(
       int block
       );
+
+   /** returns array containing vars of a block */
+   int getVarProbindexForBlock(
+      int varid,
+      int block
+   );
+
+   SCIP_Bool isAgginfoToExpensive();
+
 
    /** returns true if this seeed is complete,
     *  i.e. it has no more open constraints and variables */
@@ -801,6 +961,13 @@ public:
       int var,
       int block
       );
+
+   SCIP_RETCODE printClassifierInformation(
+      SCIP*                scip,
+      gcg::Seeedpool*      seeedpool,
+      FILE*                file);
+
+
 
    /** refine seeed with focus on blocks: assigns open conss and vars if they can be found
     *  in blocks without respect to open vars and conss (assignHittingOpenconss(), assignHittingOpenvars()) */
@@ -889,6 +1056,11 @@ public:
       bool selected
       );
 
+   /** set the corresponding seeedpool */
+   void setSeeedpool(
+      Seeedpool* seeedpool
+      );
+
    /** sets whether this seeed stems from an unpresolved problem seeed */
    void setStemsFromUnpresolved(
       bool stemsfromunpresolved
@@ -934,25 +1106,14 @@ public:
       int block2
       );
 
-   /*@todo description of this function*/
-   void showVisualisation( Seeedpool* seeedpool,
-      SCIP_Bool writeonly = FALSE,
-      const char* filename = NULL,
-      SCIP_Bool draft = false,
-      SCIP_Bool colored = true
-      );
+   /** generates and opens a gp visualization of the seeed */
+   void showVisualisation();
 
    /** returns true if this seeed is a userseeed that should be completed by setting unspecified constraints to master */
    SCIP_Bool shouldCompletedByConsToMaster();
 
    /** sorts the vars and conss by their indices */
    void sort();
-
-   /** displays the assignments of the vars */
-   SCIP_RETCODE writeScatterPlot(
-      Seeedpool* seeedpool, /**< a seeedpool that uses this seeed */
-      const char* filename
-      );
 
    /** returns a short caption for this seeed */
    const char* getShortCaption();
@@ -1005,6 +1166,10 @@ public:
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
 
+   SCIP_RETCODE writeAsDec(
+      FILE* file
+      );
+
 
    /** creates and sets a detector chain short string for this seeed */
    SCIP_RETCODE buildDecChainString();
@@ -1049,6 +1214,32 @@ private:
    SCIP_RETCODE assignOpenPartialHittingVarsToMaster(
       Seeedpool* seeedpool /**< a seeedpool that uses this seeed */
       );
+
+   /** calculates the number of nonzero coefficients for the blocks */
+   SCIP_RETCODE calcNCoeffsForBlocks(
+   Seeedpool*   seeedpool
+   );
+
+
+   void calcmaxwhitescore();
+
+   SCIP_RETCODE calcclassicscore();
+
+   void calcborderareascore();
+
+   void calcmaxforeseeingwhitescore();
+
+   void calcmaxforeseeingwhitescoreagg();
+
+   void calcsetpartfwhitescore();
+
+   void calcsetpartfwhitescoreagg();
+
+   void calcblockareascore();
+
+   void calcblockareascoreagg();
+
+
 };
 
 } /* namespace gcg */

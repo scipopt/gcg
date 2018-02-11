@@ -58,9 +58,8 @@ struct Seeed_Propagation_Data
 };
 
 
-
-
 namespace gcg{
+
 
 //typedef boost::shared_ptr<Seeed> SeeedPtr;
 typedef Seeed* SeeedPtr;
@@ -80,7 +79,6 @@ struct pair_hash
       return h1 ^ h2;
    }
 };
-
 
 class Seeedpool
 { /*lint -esym(1712,Seeedpool)*/
@@ -103,19 +101,26 @@ private:
    std::vector<SCIP_VAR*> varToScipVar;                        /**< stores the corresponding scip variable pointer */
    std::vector<DEC_DETECTOR*> detectorToScipDetector;          /**< stores the corresponding SCIP detector pinter */
    std::vector<DEC_DETECTOR*> detectorToFinishingScipDetector; /**< stores the corresponding finishing SCIP detector pointer*/
+   std::vector<DEC_DETECTOR*> detectorToPostprocessingScipDetector; /**< stores the corresponding postprocessing SCIP detector pointer*/
    std::vector<std::vector<int>> conssadjacencies;
    std::tr1::unordered_map<SCIP_CONS*, int> scipConsToIndex;   /**< maps SCIP_CONS* to the corresponding index */
    std::tr1::unordered_map<SCIP_VAR*, int> scipVarToIndex;     /**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int> scipDetectorToIndex;        /**< maps SCIP_VAR* to the corresponding index */
    std::tr1::unordered_map<DEC_DETECTOR*, int> scipFinishingDetectorToIndex;     /**< maps SCIP_VAR* to the corresponding
                                                                                    *< index */
+   std::tr1::unordered_map<DEC_DETECTOR*, int> scipPostprocessingDetectorToIndex;     /**< maps SCIP_VAR* to the corresponding
+                                                                                   *< index */
+
    std::tr1::unordered_map<std::pair<int, int>, SCIP_Real, pair_hash> valsMap;   /**< maps an entry of the matrix to its
                                                                                    *< value, zeros are omitted */
+
+   std::vector<SCIP_VAR*> unpresolvedfixedtozerovars;
 
    int nVars;                    /**< number of variables */
    int nConss;                   /**< number of constraints */
    int nDetectors;               /**< number of detectors */
    int nFinishingDetectors;      /**< number of finishing detectors */
+   int nPostprocessingDetectors; /**< number of postprocessing detectors */
    int nnonzeros;                /**< number of nonzero entries in the coefficient matrix */
 
 //   DEC_DECOMP** decompositions;  /**< decompositions found by the detectors */
@@ -143,8 +148,13 @@ private:
 public:
 
    std::vector<ConsClassifier*> consclassescollection;   /**< collection of different constraint class distributions  */
-   std::vector<VarClassifier*> varclassescollection;     /**< collection of different variabale class distributions   */
+   std::vector<VarClassifier*> varclassescollection;     /**< collection of different variable class distributions   */
 
+   SCIP_Real classificationtime;
+   SCIP_Real nblockscandidatescalctime;
+   SCIP_Real postprocessingtime;
+   SCIP_Real scorecalculatingtime;
+   SCIP_Real translatingtime;
 
    /** constructor */
    Seeedpool(
@@ -177,6 +187,11 @@ public:
    /** calls findSeeeds method and translates the resulting seeeds into decompositions */
    void findDecompositions();
 
+   /** returns seeed with the corresponding id */
+   gcg::Seeed* findFinishedSeeedByID(
+      int      seeedid
+      );
+
    /** adds a seeed to ancestor seeeds */
    void addSeeedToAncestor(
       SeeedPtr seeed
@@ -193,6 +208,11 @@ public:
       SCIP_Bool* success
       );
 
+   /** adds a seeed to finished seeeds without checking for duplicates, dev has to check this on his own*/
+   void addSeeedToFinishedUnchecked(
+      SeeedPtr seeed
+      );
+
    /** adds a seeed to incomplete seeeds */
    void addSeeedToIncomplete(
       SeeedPtr seeed,
@@ -204,6 +224,9 @@ public:
       SeeedPtr seeed,
       SCIP_Real* score
       );
+
+
+   SCIP_Bool areThereContinuousVars();
 
 
    /** clears ancestor seeed data structure */
@@ -294,10 +317,17 @@ public:
          int  consindexd
          );
 
-
+ /** is cons with specified indec partitioning packing, or covering constraint?*/
    bool isConsSetppc(
       int  consindexd
       );
+
+   /** is cons with specified indec partitioning, or packing covering constraint?*/
+   bool isConsSetpp(
+      int  consindexd
+      );
+
+
 
    /** returns the variable indices of the coefficient matrix for a constraint */
    const int* getVarsForCons(
@@ -365,6 +395,12 @@ public:
       int detectorIndex /**< index of the finishing detector to be considered */
       );
 
+   /** returns the detector related to a finishing detector index */
+   DEC_DETECTOR* getPostprocessingDetectorForIndex(
+      int detectorIndex /**< index of the postprocessing detector to be considered */
+      );
+
+
    /** returns a coefficient from the coefficient matrix */
    SCIP_Real getVal(
       int row, /**< index of the constraint to be considered */
@@ -391,6 +427,12 @@ public:
       DEC_DETECTOR* detector
       );
 
+   /** returns the postprocessing detector index related to a detector */
+   int getIndexForPostprocessingDetector(
+      DEC_DETECTOR* detector
+      );
+
+
    /** returns a new unique id for a seeed */
    int getNewIdForSeeed();
 
@@ -403,19 +445,37 @@ public:
    /** returns the number of finishing detectors used in the seeedpool */
    int getNFinishingDetectors();
 
+   /** returns the number of postprocessing detectors used in the seeedpool */
+   int getNPostprocessingDetectors();
+
    /** returns the number of variables considered in the seeedpool */
    int getNVars();
 
    /** returns the number of constraints considered in the seeedpool */
    int getNConss();
 
+   /* returns associated scip */
+   SCIP* getScip();
+
+
    /** returns the candidates for block size sorted in descending order by how often a candidate was added */
    std::vector<int> getSortedCandidatesNBlocks();
+
+   /** returns the candidates for block size sorted in descending order by how often a candidate was added with nvotes information*/
+    std::vector<std::pair<int, int>> getSortedCandidatesNBlocksFull();
+
 
    /** adds a candidate for block size and counts how often a candidate is added */
    void addCandidatesNBlocks(
       int candidate /**< candidate for block size */
       );
+
+   /** adds a candidate for block size and counts how often a candidate is added */
+   void addCandidatesNBlocksNVotes(
+      int candidate, /**< candidate for block size */
+      int nvotes     /**< number of votes this candidates will get */
+      );
+
 
    /** adds a candidate for block size given by the user */
    void addUserCandidatesNBlocks(
@@ -532,6 +592,17 @@ public:
    /** returns true if the matrix structure corresponds to the transformed problem */
    SCIP_Bool getTransformedInfo();
 
+   SCIP_RETCODE printBlockcandidateInformation(
+    SCIP*                 scip,               /**< SCIP data structure */
+    FILE*                 file                /**< output file or NULL for standard output */
+   );
+
+   SCIP_RETCODE printClassifierInformation(
+    SCIP*                 scip,               /**< SCIP data structure */
+    FILE*                 file                /**< output file or NULL for standard output */
+   );
+
+
 private:
 
    /** calculates necessary data for translating seeeds and classifiers */
@@ -567,8 +638,12 @@ private:
       std::vector<int>& colthistoother    /** variable index mapping from new to old seeedpool */
       );
 
+
+
 };
 /* class Seeedpool */
+
+
 
 } /* namespace gcg */
 #endif /* GCG_CLASS_SEEEDPOOL_H__ */

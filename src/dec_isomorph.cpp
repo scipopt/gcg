@@ -70,16 +70,21 @@
 #define DEC_PRIORITY              100         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR               'I'         /**< display character of detector */
 
-#define DEC_ENABLED               TRUE        /**< should the detection be enabled */
-#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLED               FALSE        /**< should the detection be enabled */
+#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE       /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  TRUE        /**< should the detector be skipped if others found decompositions */
 #define DEC_USEFULRECALL          FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
-#define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
+#define DEC_LEGACYMODE            TRUE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
 
 
 #define DEFAULT_MAXDECOMPSEXACT  6           /**< default maximum number of decompositions */
 #define DEFAULT_MAXDECOMPSEXTEND 4           /**< default maximum number of decompositions */
+
+#define DEFAULT_LEGACYEXACT       TRUE       /**< is exact version activated when doing legacy mode  */
+#define DEFAULT_LEGACYEXTEND      FALSE      /**< is extended version activated when doing legacy mode */
+
 
 #define SET_MULTIPLEFORSIZETRANSF 12500
 
@@ -90,9 +95,11 @@
 /** detector data */
 struct DEC_DetectorData
 {
-   SCIP_RESULT          result;             /**< result pointer to indicate success or failure */
-   int                  maxdecompsexact;   /**< maximum number of decompositions */
-   int                  maxdecompsextend;  /**< maximum number of decompositions */
+   SCIP_RESULT          result;            /**< result pointer to indicate success or failure */
+   int                  maxdecompsexact;   /**< maximum number of decompositions for exact emthod */
+   int                  maxdecompsextend;  /**< maximum number of decompositions for extend method*/
+   SCIP_Bool            legacyextend;      /**< legacy parameter if extend mode is activated when doing legacy mode*/
+   SCIP_Bool            legacyexact;       /**< legacy parameter if exact mode is activated when doing legacy mode*/
 };
 
 typedef struct struct_hook AUT_HOOK;
@@ -153,6 +160,19 @@ gcg::Seeedpool* struct_hook::getSeeedpool()
    return this->seeedpool;
 }
 
+SCIP_Bool struct_hook::getBool()
+{
+   return aut;
+}
+
+void struct_hook::setBool( SCIP_Bool aut_ )
+{
+   aut = aut_;
+}
+
+
+
+
 /** methode to calculate the greates common divisor */
 
 int gcd(int a, int b) {
@@ -193,7 +213,9 @@ struct_hook::struct_hook(
 
 struct_hook::~struct_hook()
 {   /*lint -esym(1540,struct_hook::conssperm) */
-   SCIPfreeMemoryArrayNull(scip, &conssperm);
+   if( conssperm != NULL )
+      SCIPfreeMemoryArrayNull(scip, &conssperm);
+   conssperm  = NULL;
    scip = NULL;
 }
 /** hook function to save the permutation of the graph */
@@ -1681,15 +1703,19 @@ static DEC_DECL_DETECTSTRUCTURE(detectorDetectIsomorph)
    *ndecdecomps = 0;
    *decdecomps = NULL;
 
-   if( detectordata->maxdecompsextend > 0 )
+
+   if( detectordata->legacyextend)
       SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, TRUE, detectordata->maxdecompsextend) );
 
-   if( detectordata->maxdecompsexact > 0 )
+   /** do exact detection */
+   if( detectordata->legacyexact)
       SCIP_CALL( detectIsomorph(scip, ndecdecomps, decdecomps, detectordata, result, FALSE, detectordata->maxdecompsexact) );
 
    return SCIP_OKAY;
 }
 #define detectorFinishSeeedIsomorph NULL
+
+#define detectorPostprocessSeeedIsomorph NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
@@ -1699,23 +1725,23 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
    int newval;
    SCIP_Real modifier;
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
 
-     (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", name);
+     (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxcallround", name);
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
    ++newval;
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "After Setting %s = %d\n", setstr, newval);
 
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origmaxcallround", name);
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
    ++newval;
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
@@ -1733,12 +1759,12 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
    modifier += 0;
 
    newval = MAX( 0, DEFAULT_MAXDECOMPSEXACT - modifier );
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsexact", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsexact", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
    newval = MAX( 0, DEFAULT_MAXDECOMPSEXTEND - modifier );
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsextend", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsextend", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
@@ -1756,13 +1782,13 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
 
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
@@ -1776,12 +1802,12 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
    modifier += 2;
 
    newval = MAX( 0, DEFAULT_MAXDECOMPSEXACT - modifier );
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsexact", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsexact", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
    newval = MAX( 0, DEFAULT_MAXDECOMPSEXTEND - modifier );
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsextend", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsextend", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
@@ -1799,23 +1825,23 @@ DEC_DECL_SETPARAMFAST(setParamFastIsomorph)
 
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
 
    newval = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) >  SET_MULTIPLEFORSIZETRANSF) ? 0 : 1;
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsexact", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsexact", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
    newval = 0;
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxdecompsextend", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxdecompsextend", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
@@ -1846,17 +1872,26 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, detectorFinishSeeedIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
+      detectordata, detectorDetectIsomorph, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagateSeeedIsomorph, detectorFinishSeeedIsomorph, detectorPostprocessSeeedIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
 
    /* add isomorph constraint handler parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecompsexact",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/isomorph/maxdecompsexact",
       "Maximum number of solutions/decompositions with exact detection", &detectordata->maxdecompsexact, FALSE,
       DEFAULT_MAXDECOMPSEXACT, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/isomorph/maxdecompsextend",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/isomorph/maxdecompsextend",
       "Maximum number of solutions/decompositions with extended detection", &detectordata->maxdecompsextend, FALSE,
       DEFAULT_MAXDECOMPSEXTEND, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/isomorph/legacyextend",
+      "is extended detection activated when doing legacy detection", &detectordata->legacyextend, FALSE,
+      DEFAULT_LEGACYEXTEND, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/isomorph/legacyexact",
+         "is exact detection activated when doing legacy detection", &detectordata->legacyexact, FALSE,
+         DEFAULT_LEGACYEXACT, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }

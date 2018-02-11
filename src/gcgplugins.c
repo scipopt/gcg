@@ -135,8 +135,6 @@
 
 #if USESEPA
 #include "scip/sepa_clique.h"
-#include "scip/sepa_cmir.h"
-#include "scip/sepa_flowcover.h"
 #include "scip/sepa_gomory.h"
 #include "scip/sepa_impliedbounds.h"
 #include "scip/sepa_intobj.h"
@@ -149,7 +147,6 @@
 #include "scip/sepa_closecuts.h"
 #include "scip/sepa_rapidlearning.h"
 #endif
-
 
 
 #include "scip/scipshell.h"
@@ -167,10 +164,12 @@
 #include "event_mastersol.h"
 
 /* Martin's detection stuff */
-#include "reader_gp.h"
 #include "cons_decomp.h"
 #include "dec_connected.h"
 
+/* visualization */
+#include "params_visu.h"
+#include "reader_gp.h"
 #include "reader_tex.h"
 #include "reader_cls.h"
 
@@ -189,6 +188,7 @@
 #include "dec_compgreedily.h"
 #include "dec_staircase_lsp.h"
 #include "dec_consname.h"
+#include "dec_postprocess.h"
 #include "dec_mastersetpack.h"
 #include "dec_mastersetpart.h"
 #include "dec_mastersetcover.h"
@@ -226,6 +226,7 @@
 /* Friedrike's detection stuff */
 #include "dec_cutpacking.h"
 #include "scip_misc.h"
+#include "scip/table_default.h"
 
 /* Igor's detection with clustering */
 #include "dec_dbscan.h"
@@ -332,8 +333,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
 #if USESEPA
    SCIP_CALL( SCIPincludeSepaClique(scip) );
-   SCIP_CALL( SCIPincludeSepaCmir(scip) );
-   SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
    SCIP_CALL( SCIPincludeSepaGomory(scip) );
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
@@ -357,14 +356,17 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
    SCIP_CALL( SCIPincludeEventHdlrMastersol(scip) );
 
-   /* Detectors and decompositions */
+   /* Visualizations */
+   SCIP_CALL( SCIPincludeParamsVisu(scip) );
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeReaderTex(scip) );
    SCIP_CALL( SCIPincludeReaderCls(scip) );
 
+   /* Detectors and decompositions */
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectorConnected(scip) );
    SCIP_CALL( SCIPincludeDetectorConstype(scip) );
+   SCIP_CALL( SCIPincludeDetectorPostprocess(scip) );
    SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
    SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
    SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
@@ -420,9 +422,17 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    /* Jonas' stuff */
    SCIP_CALL( SCIPsetSeparating(scip, SCIP_PARAMSETTING_OFF, TRUE) );
 
+   /* disable conflict analysis since adding constraints after structure detection may destroy symmetries */
+    SCIP_CALL( SCIPsetBoolParam(scip, "conflict/enable", FALSE) );
+    SCIP_CALL( SCIPsetIntParam(scip, "heuristics/clique/freq", -1) );
+    SCIP_CALL( SCIPfixParam(scip, "conflict/enable") );
+    SCIP_CALL( SCIPfixParam(scip, "heuristics/clique/freq") );
+
+
    SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
    SCIP_CALL( GCGincludeDialogsGraph(scip) );
+   SCIP_CALL( SCIPincludeTableDefault(scip) );
 
    return SCIP_OKAY;
 }

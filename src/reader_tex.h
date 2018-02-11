@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -30,8 +30,8 @@
  * @author Hanna Franzen
  * @ingroup FILEREADERS
 
- * This reader can write reports of decompositions to a tex file.
- * The gp reader is required for visualizations.
+ * This reader can write visualizations and reports of seeeds to a .tex LaTeX file.
+ * The gp reader might be required for visualizations.
 
  */
 
@@ -40,130 +40,62 @@
 #ifndef GCG_READER_TEX_H__
 #define GCG_READER_TEX_H__
 
-
 #include "scip/scip.h"
 #include "type_decomp.h"
+#include "cons_decomp.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
 /** includes the tex file reader into SCIP */
-extern
-SCIP_RETCODE SCIPincludeReaderTex(
-   SCIP*                 scip                /**< SCIP data structure */
+extern SCIP_RETCODE SCIPincludeReaderTex(
+   SCIP* scip     /**< SCIP data structure */
    );
 
-/** gets the path of the file */
-SCIP_RETCODE GCGgetFilePath(
-   SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file,               /**< file */
-   char*                pfile               /**< return path of file */
+/** writes a visualization for the given seeed */
+extern SCIP_RETCODE GCGwriteTexVisualization(
+   SCIP* scip,             /**< SCIP data structure */
+   FILE* file,             /**< filename including path */
+   int seeedid,            /**< id of seeed to visualize */
+   SCIP_Bool statistics,   /**< additionally to picture show statistics */
+   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
    );
 
-/** write LaTeX code header & begin of document
- * The proper order in which a tex file is written goes as follows:
- *    -> GCGtexWriteHeaderCode         (required)
- *    GCGtexWriteTitlepage             (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-SCIP_RETCODE GCGtexWriteHeaderCode(
-   SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file                /**< File pointer to write to */
+/** writes a visualization of the family tree of the current seeedpool */
+extern SCIP_RETCODE GCGwriteTexFamilyTree(
+   SCIP* scip,                /**< SCIP data structure */
+   FILE* file,                /**< filename including path */
+   const char* workfolder,    /**< directory in which should be worked, includes generation of intermediate files */
+   SEEED_WRAPPER** seeedswr,  /**< seeed wrapper for the seeeds the family tree should be constructed for */
+   int* nseeeds               /**< number of seeeds the family tree should be constructed for */
    );
 
-/** write LaTeX code title page that includes general statistics about the problem
- *  * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    -> GCGtexWriteTitlepage          (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-SCIP_RETCODE GCGtexWriteTitlepage(
-   SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file,               /**< File pointer to write to */
-   int*                 npresenteddecomps   /**< Number of decompositions to be shown in the file or NULL if unknown */
-   );
+/** writes a report for the given seeeds */
+extern SCIP_RETCODE GCGwriteTexReport(
+   SCIP* scip,             /**< SCIP data structure */
+   FILE* file,             /**< filename including path */
+   int* seeedids,          /**< ids of seeeds to visualize */
+   int* nseeeds,           /**< number of seeeds to visualize */
+   SCIP_Bool titlepage,    /**< true if a title page should be included in the document */
+   SCIP_Bool toc,          /**< true if an interactive table of contents should be included */
+   SCIP_Bool statistics,   /**< true if statistics for each seeed should be included */
+   SCIP_Bool usegp         /**< true if the gp reader should be used to visualize the individual seeeds */
+      );
 
-/** write LaTeX code for table of contents
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
- *    -> GCGtexWriteTableOfContents    (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-SCIP_RETCODE GCGtexWriteTableOfContents(
-   SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file                /**< File pointer to write to */
-   );
-
-/** write LaTeX code for one decomposition
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    -> GCGtexWriteDecompCode         (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-SCIP_RETCODE GCGtexWriteDecompCode(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decomp              /**< Decomposition pointer */
-   );
-
-/** write LaTeX code for end of document
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    -> GCGtexWriteEndCode            (required)
- *    GCGtexWriteMakefileAndReadme     (optional but highly recommended)
- */
-SCIP_RETCODE GCGtexWriteEndCode(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file                /**< File pointer to write to */
-   );
-
-/** makes a new makefile and readme for the given .tex file
- * The proper order in which a tex file is written goes as follows:
- *    GCGtexWriteHeaderCode            (required)
- *    GCGtexWriteTitlepage             (optional)
- *    GCGtexWriteTableOfContents       (optional)
- *    GCGtexWriteDecompCode            (required as often as the number of decompositions you wish to visualize)
- *    GCGtexWriteEndCode               (required)
- *    -> GCGtexWriteMakefileAndReadme  (optional but highly recommended)
- */
-SCIP_RETCODE GCGtexWriteMakefileAndReadme(
-   SCIP*                scip,               /**< SCIP data structure */
-   FILE*                file                /**< File for which the makefile & readme are generated */
-   );
-
-/** Getter of parameter usegp */
-SCIP_Bool GCGtexGetUseGp(
-   SCIP*                scip               /**< SCIP data structure */
-   );
-
-/** Getter of parameter picturesonly */
-SCIP_Bool GCGtexGetPicturesonly(
-   SCIP*                scip               /**< SCIP data structure */
-   );
-
-/** Getter of parameter draftmode */
-SCIP_Bool GCGtexGetDraftmode(
-   SCIP*                scip               /**< SCIP data structure */
+/** makes a new makefile and readme for the given .tex file */
+extern SCIP_RETCODE GCGtexWriteMakefileAndReadme(
+   SCIP* scip,          /**< SCIP data structure */
+   FILE* file,          /**< File for which the makefile & readme are generated */
+   SCIP_Bool usegp,     /**< true if the gp reader was used for creation of file */
+   SCIP_Bool compiletex /**< true if there are tex files to be compiled before main document */
    );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+
+#endif /* GCG_READER_TEX_H__ */
+

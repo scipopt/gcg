@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2016 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -38,36 +38,148 @@
 #ifndef GCG_PARAMS_VISU_H__
 #define GCG_PARAMS_VISU_H__
 
-#define COLOR_WHITE     "#FFFFFF"
-#define COLOR_BLUE      "#00549F"
-#define COLOR_LBLUE     "#8EBAE5"
-#define COLOR_PURPLE    "#7A6FAC"
-#define COLOR_VIOLET    "#612158"
-#define COLOR_CARMINE   "#A11035"
-#define COLOR_RED       "#CC071E"
-#define COLOR_MAGENTA   "#E30066"
-#define COLOR_ORANGE    "#F6A800"
-#define COLOR_YELLOW    "#FFED00"
-#define COLOR_GRASS     "#BDAB27"
-#define COLOR_GREEN     "#57AB27"
-#define COLOR_CYAN      "#0098A1"
-#define COLOR_TEAL      "#006165"
-#define COLOR_BLACK     "#000000"
-
-#define DEFAULT_COLOR_MASTERVARS   COLOR_WHITE   /* for mastervars (in block area) */
-#define DEFAULT_COLOR_MASTERCONS   COLOR_BLUE    /* for mastercons */
-#define DEFAULT_COLOR_LINKING      COLOR_PURPLE
-#define DEFAULT_COLOR_STAIRLINKING COLOR_MAGENTA
-#define DEFAULT_COLOR_BLOCK        COLOR_TEAL
-#define DEFAULT_COLOR_OPEN         COLOR_GREEN   /* for open (not assigned) elements */
-#define DEFAULT_COLOR_NONZERO      COLOR_BLACK
-#define DEFAULT_COLOR_LINE         COLOR_BLACK   /* for outlines of blocks */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* function headers here */
+#include "type_decomp.h"
+
+#include "scip/scip.h"
+
+enum Colorscheme
+{
+   COLORSCHEME_DEFAULT  = 0,     /**< default colors (supposedly eye-friendly) */
+   COLORSCHEME_GREY     = 1,     /**< on a range from black to white */
+   COLORSCHEME_MANUAL   = 2      /**< take user-defined input */
+};
+
+typedef enum Colorscheme VISU_COLORSCHEME; /**< visualization colorscheme type */
+
+
+/** includes the visualization parameters into GCG */
+extern SCIP_RETCODE SCIPincludeParamsVisu(
+   SCIP* scip     /**< SCIP data structure */
+   );
+
+/** gets if draftmode is on
+ * draftmode lets visualizations omit nonzeros */
+extern SCIP_Bool SCIPvisuGetDraftmode(void);
+
+/** sets draftmode
+ * draftmode lets visualizations omit nonzeros */
+extern void SCIPvisuSetDraftmode(
+   SCIP_Bool setmode /**< true iff draftmode should be on */
+   );
+
+/** gets the colorscheme for visualizations */
+extern VISU_COLORSCHEME SCIPvisuGetColorscheme(void);
+
+/** sets colorscheme for visualizations */
+extern void SCIPvisuSetColorscheme(
+   VISU_COLORSCHEME newscheme    /**< new colorscheme */
+   );
+
+/** sets color for mastercon block in current color scheme */
+extern void SCIPvisuSetColorManMasterconss(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for mastervar block in current color scheme */
+extern void SCIPvisuSetColorManMastervars(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for linking blocks in current color scheme */
+extern void SCIPvisuSetColorManLinking(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for stairlinking blocks in current color scheme */
+extern void SCIPvisuSetColorManStairlinking(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for normal decomp blocks in current color scheme */
+extern void SCIPvisuSetColorManBlock(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for open blocks in current color scheme */
+extern void SCIPvisuSetColorManOpen(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for non-zero points in current color scheme */
+extern void SCIPvisuSetColorManNonzero(
+   char* newcolor       /**< new color */
+   );
+
+/** sets manual color for lines in current color scheme */
+extern void SCIPvisuSetColorManLine(
+   char* newcolor       /**< new color */
+   );
+
+/** gets color for mastercon block in current color scheme */
+extern char* SCIPvisuGetColorMasterconss(void);
+
+/** gets color for mastervar block in current color scheme */
+extern char* SCIPvisuGetColorMastervars(void);
+
+/** gets color for linking blocks in current color scheme */
+extern char* SCIPvisuGetColorLinking(void);
+
+/** gets color for stairlinking blocks in current color scheme */
+extern char* SCIPvisuGetColorStairlinking(void);
+
+/** gets color for normal decomp blocks in current color scheme */
+extern char* SCIPvisuGetColorBlock(void);
+
+/** gets color for open blocks in current color scheme */
+extern char* SCIPvisuGetColorOpen(void);
+
+/** gets color for non-zero points in current color scheme */
+extern char* SCIPvisuGetColorNonzero(void);
+
+/** gets color for lines in current color scheme */
+extern char* SCIPvisuGetColorLine(void);
+
+/** gets appropriate radius for nonzeros
+ * needs highest indices of both axes for scaling*/
+extern float SCIPvisuGetNonzeroRadius(
+   int maxindx,         /**< highest index x-axis */
+   int maxindy,         /**< highest index y-axis */
+   float scalingfactor  /**< percentage to scale radius, 1 if no scaling */
+   );
+
+/** if true gp reader should be used for sub-visualizations, otherwise tex reader */
+extern SCIP_Bool GCGgetUseGp(void);
+
+/** gets the name of the pdf reader that should be used */
+extern char* GCGVisuGetPdfReader(void);
+
+/** gets the max number of decomps to be included in reports */
+extern int GCGreportGetMaxNDecomps(void);
+
+/** gets what type of decomps to show in reports (where 0 corresponds to 'show all') */
+extern DEC_DECTYPE GCGreportGetDecompTypeToShow(void);
+
+/** gets whether a titlepage should be included in reports */
+extern SCIP_Bool GCGreportGetShowTitlepage(void);
+
+/** gets whether a table of contents should be included in reports */
+extern SCIP_Bool GCGreportGetShowToc(void);
+
+/** gets whether statistics should be included for each decomp in reports */
+extern SCIP_Bool GCGreportGetShowStatistics(void);
+
+/** gets the max number of finished decomps to be included in family tree */
+extern int GCGfamtreeGetMaxNDecomps(void);
+
+/*@todo include this somewhere where it is automatically called at quitting GCG */
+/** frees all visualization parameters */
+extern void GCGVisuFreeParams(
+   SCIP* scip     /**< SCIP data structure */
+   );
 
 #ifdef __cplusplus
 }

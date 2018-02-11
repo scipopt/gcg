@@ -66,6 +66,7 @@
 #define DEC_ENABLED              FALSE          /**< should the detection be enabled */
 #define DEC_ENABLEDORIGINAL      FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING     FALSE        /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the finishing be enabled */
 #define DEFAULT_REGEX            "(consname)(.*)" /**< default regular expression that is used to decide mastercons */
 #define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL         FALSE       /**< is it useful to call this detector on a descendant of the propagated seeed */
@@ -246,15 +247,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectConsname)
 
    if( *result == SCIP_SUCCESS )
    {
-      DEC_DECOMP *newdecomp;
       assert((*decdecomps)[0] != NULL);
-      SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[0], &newdecomp) );
-      if( newdecomp != NULL )
-      {
-         SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[0])) );
-         (*decdecomps)[0] = newdecomp;
-      }
-
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found with %d blocks.\n", DECdecompGetNBlocks((*decdecomps)[0]));
       *ndecdecomps = 1;
    }
@@ -273,6 +266,7 @@ DEC_DECL_DETECTSTRUCTURE(detectorDetectConsname)
 
 #define detectorPropagateSeeedConsname NULL
 #define detectorFinishSeeedConsname NULL
+#define detectorPostprocessSeeedConsname NULL
 
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsname)
@@ -280,13 +274,13 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConsname)
    char setstr[SCIP_MAXSTRLEN];
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    return SCIP_OKAY;
@@ -301,13 +295,13 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultConsname)
 
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
    return SCIP_OKAY;
@@ -321,13 +315,13 @@ DEC_DECL_SETPARAMFAST(setParamFastConsname)
 
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
 
@@ -357,11 +351,11 @@ SCIP_RETCODE SCIPincludeDetectorConsname(
    detectordata->regex = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
-      DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectorDetectConsname,
-      detectorFreeConsname, detectorInitConsname, detectorExitConsname, detectorPropagateSeeedConsname, detectorFinishSeeedConsname, setParamAggressiveConsname, setParamDefaultConsname, setParamFastConsname) );
+      DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectorDetectConsname,
+      detectorFreeConsname, detectorInitConsname, detectorExitConsname, detectorPropagateSeeedConsname, detectorFinishSeeedConsname, detectorPostprocessSeeedConsname, setParamAggressiveConsname, setParamDefaultConsname, setParamFastConsname) );
 
    /* add consname detector parameters */
-   SCIP_CALL( SCIPaddStringParam(scip, "detectors/consname/regex", "All cons whose name match this regular expression will be mastercons", &detectordata->regex, FALSE, DEFAULT_REGEX, NULL, NULL) );
+   SCIP_CALL( SCIPaddStringParam(scip, "detection/detectors/consname/regex", "All cons whose name match this regular expression will be mastercons", &detectordata->regex, FALSE, DEFAULT_REGEX, NULL, NULL) );
 
    return SCIP_OKAY;
 }

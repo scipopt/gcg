@@ -2137,22 +2137,25 @@ SCIP_RETCODE DECdecompAddRemainingConss(
 
    for( c = 0; c < SCIPgetNConss(scip); ++c )
    {
-      SCIP_CONS* cons = SCIPgetConss(scip)[c];
+      SCIP_CONS* cons;
+      cons = SCIPgetConss(scip)[c];
+
 
       if( !GCGisConsGCGCons(cons) && !SCIPhashmapExists(DECdecompGetConstoblock(decdecomp), cons) )
       {
          int block;
          SCIP_CALL( DECdetermineConsBlock(scip, decdecomp, cons, &block) );
-         SCIPdebugMessage("cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
+         SCIPdebugMessage("add remaining: cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
 
          /* If the constraint has only variables appearing in the master only,
           * we assign it to the master rather than creating a new block
           */
-         if( block >= 0 && block == DECdecompGetNBlocks(decdecomp) )
+         if( block == -1 || (block >= 0 && block == DECdecompGetNBlocks(decdecomp) ) )
          {
             if( decdecomp->nlinkingconss == 0 )
             {
-               int newsize = SCIPcalcMemGrowSize(scip, 1);
+               int newsize;
+               newsize = SCIPcalcMemGrowSize(scip, 1);
                SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decdecomp->linkingconss, newsize) );
 
                switch( decdecomp->type )
@@ -2171,8 +2174,10 @@ SCIP_RETCODE DECdecompAddRemainingConss(
             }
             else
             {
-               int oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss);
-               int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss+1);
+               int oldsize;
+               int newsize;
+               oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss);
+               newsize = SCIPcalcMemGrowSize(scip, decdecomp->nlinkingconss+1);
                SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->linkingconss, oldsize, newsize) );
             }
             decdecomp->linkingconss[decdecomp->nlinkingconss] = cons;
@@ -2181,8 +2186,13 @@ SCIP_RETCODE DECdecompAddRemainingConss(
          }
          else
          {
-            int oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]);
-            int newsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]+1);
+            int oldsize;
+            int newsize;
+            assert(block>=0);
+
+            oldsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]);
+            newsize = SCIPcalcMemGrowSize(scip, decdecomp->nsubscipconss[block]+1);
+
             assert(decdecomp->nsubscipconss[block] > 0);
             SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decdecomp->subscipconss[block], oldsize, newsize) ); /*lint !e866*/
             decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
@@ -2193,6 +2203,7 @@ SCIP_RETCODE DECdecompAddRemainingConss(
          SCIP_CALL( SCIPcaptureCons(scip, cons) );
       }
    }
+
 
    return SCIP_OKAY;
 }
@@ -2217,6 +2228,8 @@ SCIP_RETCODE DECdecompCheckConsistency(
 
    for( v = 0; v < SCIPgetNVars(scip); ++v )
    {
+      if( SCIPisEQ(scip, SCIPvarGetLbGlobal(SCIPgetVars(scip)[v]), SCIPvarGetUbGlobal(SCIPgetVars(scip)[v]) ) && SCIPisEQ(scip, SCIPvarGetUbGlobal(SCIPgetVars(scip)[v]), 0. ) )
+         continue;
       assert(SCIPhashmapExists(DECdecompGetVartoblock(decdecomp), SCIPgetVars(scip)[v]));
    }
 
@@ -2231,8 +2244,6 @@ SCIP_RETCODE DECdecompCheckConsistency(
    /* Check whether subscipcons are correct */
    for( b = 0; b < DECdecompGetNBlocks(decdecomp); ++b )
    {
-
-
       for( c = 0; c < DECdecompGetNSubscipconss(decdecomp)[b]; ++c )
       {
          SCIP_VAR** curvars;
@@ -2253,7 +2264,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
             int varblock;
             SCIP_VAR* var = SCIPvarGetProbvar(curvars[v]);
 
-            if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED )
+            if( SCIPvarGetStatus(var) == SCIP_VARSTATUS_FIXED || SCIPvarGetLbGlobal(var) == SCIPvarGetUbGlobal(var)  )
                continue;
 
             varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) - 1;  /*lint !e507*/
@@ -2262,6 +2273,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
             assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
             assert(SCIPvarIsActive(var));
             assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp)+1 );
+
          }
          SCIPfreeBufferArray(scip, &curvars);
       }
@@ -4041,6 +4053,8 @@ SCIP_RETCODE DECdetermineConsBlock(
 
    if( npricingvars == 0 && nmastervars > 0 )
       *block = -1;
+
+
 
    return SCIP_OKAY;
 }

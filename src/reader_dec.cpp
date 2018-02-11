@@ -478,7 +478,7 @@ SCIP_Bool isNewSection(
 
    }
 
-   if( strcasecmp(decinput->token, "MASTERCONSS") == 0 )
+   if( strcasecmp(decinput->token, "MASTERCONSS") == 0 || strcasecmp(decinput->token, "MASTERCONS") == 0 )
    {
       decinput->section = DEC_MASTERCONSS;
 
@@ -577,7 +577,7 @@ SCIP_RETCODE readConsDefaultMaster(
       if( isNewSection(scip, decinput) )
          return SCIP_OKAY;
 
-      /* read number of blocks */
+      /* read if the consdefaultmaster */
       if( isInt(scip, decinput, &consdefaultmaster) )
       {
          if( consdefaultmaster == 1 )
@@ -586,7 +586,7 @@ SCIP_RETCODE readConsDefaultMaster(
             decinput->consdefaultmaster = FALSE;
          else
             syntaxError(scip, decinput, "consdefaultmaster parameter must be 0 or 1");
-         SCIPdebugMessage("The constraints that are not specified is this decomposition are %s  forced to the master\n",
+         SCIPdebugMessage("The constraints that are not specified in this decomposition are %s  forced to the master\n",
             decinput->consdefaultmaster ? "" : " not");
       }
    }
@@ -1112,14 +1112,13 @@ SCIP_RETCODE readDECFile(
             SCIP_CALL( readNBlocks(scip, decinput) );
             if( decinput->haspresolvesection && !decinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
             {
-               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
-               retcode = SCIP_READERROR;
+               SCIPwarningMessage(scip, "decomposition belongs to the unpresolved problem, but the problem is already presolved, please consider to re-read the problem and read the decomposition without presolving when transforming do not succeed.\n");
                break;
 
             }
             if( !decinput->haspresolvesection )
             {
-               SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
+               SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. Please add a presolve section. File reading is aborted. \n");
             }
             break;
 
@@ -1230,15 +1229,8 @@ SCIP_DECL_READERWRITE(readerWriteDec)
    assert(scip != NULL);
    assert(reader != NULL);
 
-   DEC_DECOMP* bestdecomp;
-
-   bestdecomp = DECgetBestDecomp(scip);
-
-   SCIP_CALL( GCGwriteDecomp(scip, file, bestdecomp ) );
+   SCIPconshdlrDecompWriteDec(scip, file, transformed);
    *result = SCIP_SUCCESS;
-
-   if ( bestdecomp != NULL )
-      DECdecompFree(scip, &bestdecomp);
 
    return SCIP_OKAY;
 }
@@ -1306,6 +1298,7 @@ SCIP_RETCODE SCIPreadDec(
    decinput.nblocks = NOVALUE;
    decinput.blocknr = - 2;
    decinput.haserror = FALSE;
+   decinput.consdefaultmaster = TRUE;
 
    /* read the file */
    retcode = readDECFile(scip, reader, &decinput, filename);

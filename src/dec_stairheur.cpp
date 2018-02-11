@@ -69,6 +69,7 @@
 #define DEC_ENABLED               FALSE          /**< should detector be called by default */
 #define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE          /**< should the finishing be enabled */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL          FALSE          /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -2577,6 +2578,7 @@ static DEC_DECL_PROPAGATESEEED(detectorPropagateSeeedStairheur)
 }
 #define detectorExitStairheur NULL
 #define detectorFinishSeeedStairheur NULL
+#define detectorPostprocessSeeedStairheur NULL
 
 #define setParamAggressiveStairheur NULL
 #define setParamDefaultStairheur NULL
@@ -2598,36 +2600,36 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
 
    detectordata->constoblock  = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
-      detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagateSeeedStairheur, detectorFinishSeeedStairheur, setParamAggressiveStairheur, setParamDefaultStairheur, setParamFastStairheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING,DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE,
+      detectordata, detectorDetectStairheur, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagateSeeedStairheur, detectorFinishSeeedStairheur, detectorPostprocessSeeedStairheur, setParamAggressiveStairheur, setParamDefaultStairheur, setParamFastStairheur) );
 
 
 
    /* add stairheur detector parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/nconssperblock",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/nconssperblock",
       "The number of constraints per block (static blocking only)",
       &detectordata->nconssperblock, FALSE, DEFAULT_NCONSSPERBLOCK, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxblocks",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/maxblocks",
       "The maximal number of blocks",
       &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/minblocks", "The minimal number of blocks",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/minblocks", "The minimal number of blocks",
       &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/desiredblocks",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/desiredblocks",
       "The desired number of blocks. 0 means automatic determination of the number of blocks.",
       &detectordata->desiredblocks, FALSE, DEFAULT_DESIREDBLOCKS, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/dynamicblocking",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/dynamicblocking",
       "Enable blocking type 'dynamic'",
       &detectordata->dynamicblocking, FALSE, DEFAULT_DYNAMICBLOCKING, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/staticblocking",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/staticblocking",
       "Enable blocking type 'static'",
       &detectordata->staticblocking, FALSE, DEFAULT_STATICBLOCKING, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/blockingassoonaspossible",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/blockingassoonaspossible",
       "Enable blocking type 'as soon as possible", &detectordata->blockingassoonaspossible,
       FALSE, DEFAULT_BLOCKINGASSOONASPOSSIBLE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/multipledecomps",
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/multipledecomps",
       "Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks",
       &detectordata->multipledecomps, FALSE, DEFAULT_MULTIPLEDECOMPS, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxiterationsROC",
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/maxiterationsROC",
       "The maximum number of iterations of the ROC-algorithm. -1 for no limit",
       &detectordata->maxiterationsROC, FALSE, DEFAULT_MAXITERATIONSROC, -1, 1000000, NULL, NULL) );
 

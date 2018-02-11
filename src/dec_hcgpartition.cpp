@@ -87,9 +87,10 @@ using gcg::Weights;
 #define DEC_MINCALLROUNDORIGINAL  0           /** first round the detector gets called while detecting the original problem    */
 #define DEC_PRIORITY              1000           /**< priority of the detector */
 #define DEC_DECCHAR               'G'            /**< display character of detector */
-#define DEC_ENABLED               TRUE           /**< should detector be called by default */
-#define DEC_ENABLEDORIGINAL       TRUE        /**< should the detection of the original problem be enabled */
+#define DEC_ENABLED               FALSE           /**< should detector be called by default */
+#define DEC_ENABLEDORIGINAL       FALSE        /**< should the detection of the original problem be enabled */
 #define DEC_ENABLEDFINISHING      FALSE          /**< should detector be called by default */
+#define DEC_ENABLEDPOSTPROCESSING FALSE          /**< should the postprocessing be enabled */
 #define DEC_SKIP                  FALSE          /**< should detector be skipped if others found detections */
 #define DEC_USEFULRECALL          TRUE           /**< is it useful to call this detector on a descendant of the propagated seeed */
 #define DEC_LEGACYMODE            FALSE       /**< should (old) DETECTSTRUCTURE method also be used for detection */
@@ -460,7 +461,7 @@ SCIP_RETCODE detection(
    int nconss = seeedPropagationData->seeedpool->getNConss();
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/hcgpartition/maxnblockcandidates");
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/hcgpartition/maxnblockcandidates");
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
 
    maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
@@ -684,14 +685,11 @@ DEC_DECL_PROPAGATESEEED(propagateSeeedHcgpartition)
 
    seeed->refineToMaster(seeedPropagationData->seeedpool);
 
-   seeed->sort();
    //assert( seeed->checkConsistency( seeedPropagationData->seeedpool ));
 
    if(!connected(seeedPropagationData->seeedpool, seeed) || seeed->alreadyAssignedConssToBlocks() )
    {
-      seeedPropagationData->nNewSeeeds = 0;
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
+      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, TRUE, result);
@@ -712,9 +710,7 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
 
    if( !connected(seeedPropagationData->seeedpool, seeed ) )
    {
-      seeedPropagationData->nNewSeeeds = 0;
-      *result = SCIP_SUCCESS;
-      return SCIP_OKAY;
+      seeed->assignSmallestComponentsButOneConssAdjacency(seeedPropagationData->seeedpool);
    }
 
    detection(scip, DECdetectorGetData(detector), seeedPropagationData, seeed, FALSE, result);
@@ -729,6 +725,8 @@ DEC_DECL_FINISHSEEED(finishSeeedHcgpartition)
    return SCIP_OKAY;
 }
 
+#define detectorPostprocessSeeedHcgpartition NULL
+
 static
 DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHcgpartition)
 {
@@ -737,23 +735,23 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHcgpartition)
    int newval;
    SCIP_Real modifier;
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
 
-     (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxcallround", name);
+     (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxcallround", name);
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
    ++newval;
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "After Setting %s = %d\n", setstr, newval);
 
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origmaxcallround", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origmaxcallround", name);
    SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
    ++newval;
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
@@ -771,7 +769,7 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHcgpartition)
    modifier += 1;
 
    newval = MAX( 0, DEFAULT_MAXNBLOCKCANDIDATES - modifier + 2 );
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnblockcandidates", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
@@ -789,13 +787,13 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultHcgpartition)
 
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDORIGINAL) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
@@ -809,7 +807,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultHcgpartition)
    modifier += 1;
 
    newval = MAX( 0, DEFAULT_MAXNBLOCKCANDIDATES - modifier );
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnblockcandidates", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
@@ -829,13 +827,13 @@ DEC_DECL_SETPARAMFAST(setParamFastHcgpartition)
 
    const char* name = DECdetectorGetName(detector);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/origenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/finishingenabled", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
 
@@ -850,7 +848,7 @@ DEC_DECL_SETPARAMFAST(setParamFastHcgpartition)
    modifier += 1;
 
    newval = MAX( 0, DEFAULT_MAXNBLOCKCANDIDATES - modifier - 2 );
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/maxnblockcandidates", name);
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
@@ -874,29 +872,29 @@ SCIP_RETCODE SCIPincludeDetectorHcgpartition(
    assert(detectordata != NULL);
 
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectHcgpartition, freeHcgpartition, initHcgpartition, exitHcgpartition, propagateSeeedHcgpartition, finishSeeedHcgpartition, setParamAggressiveHcgpartition, setParamDefaultHcgpartition, setParamFastHcgpartition) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDORIGINAL, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, DEC_LEGACYMODE, detectordata, detectHcgpartition, freeHcgpartition, initHcgpartition, exitHcgpartition, propagateSeeedHcgpartition, finishSeeedHcgpartition, detectorPostprocessSeeedHcgpartition, setParamAggressiveHcgpartition, setParamDefaultHcgpartition, setParamFastHcgpartition) );
 
 
    /* add hcgpartition detector parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/maxnblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detectors/hcgpartition/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detectors/hcgpartition/alpha", "factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/varWeight", "Weight of a variable hyperedge", &detectordata->varWeight, FALSE, DEFAULT_VARWEIGHT, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/varWeightBinary", "Weight of a binary variable hyperedge", &detectordata->varWeightBinary, FALSE, DEFAULT_VARWEIGHTBIN, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/varWeightContinous", "Weight of a continuos variable hyperedge", &detectordata->varWeightContinous, FALSE, DEFAULT_VARWEIGHTCONT, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/varWeightImplint", "Weight of a implicit integer variable hyperedge", &detectordata->varWeightImplint, FALSE, DEFAULT_VARWEIGHTIMPL, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/varWeightInteger", "Weight of a integer variable hyperedge", &detectordata->varWeightInteger, FALSE, DEFAULT_VARWEIGHTINT, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/consWeight", "Weight of a constraint hyperedge", &detectordata->consWeight, FALSE, DEFAULT_CONSWEIGHT, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/hcgpartition/tidy", "Whether to clean up temporary files", &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/randomseed", "random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detectors/hcgpartition/dummynodes", "percentage of dummy nodes for metis", &detectordata->dummynodes, FALSE, DEFAULT_DUMMYNODES, 0.0, 1.0, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detectors/hcgpartition/consWeightSetppc", "Weight for constraint hyperedges that are setpartitioning or covering constraints", &detectordata->consWeightSetppc, FALSE, DEFAULT_CONSWEIGHT_SETPPC, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "detectors/hcgpartition/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/hcgpartition/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/hcgpartition/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/hcgpartition/realname", "Should the problem be used for metis files or a temporary name", &detectordata->realname, FALSE, DEFAULT_REALNAME, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/maxnblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/alpha", "factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeight", "Weight of a variable hyperedge", &detectordata->varWeight, FALSE, DEFAULT_VARWEIGHT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeightBinary", "Weight of a binary variable hyperedge", &detectordata->varWeightBinary, FALSE, DEFAULT_VARWEIGHTBIN, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeightContinous", "Weight of a continuos variable hyperedge", &detectordata->varWeightContinous, FALSE, DEFAULT_VARWEIGHTCONT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeightImplint", "Weight of a implicit integer variable hyperedge", &detectordata->varWeightImplint, FALSE, DEFAULT_VARWEIGHTIMPL, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeightInteger", "Weight of a integer variable hyperedge", &detectordata->varWeightInteger, FALSE, DEFAULT_VARWEIGHTINT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/consWeight", "Weight of a constraint hyperedge", &detectordata->consWeight, FALSE, DEFAULT_CONSWEIGHT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hcgpartition/tidy", "Whether to clean up temporary files", &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/randomseed", "random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/dummynodes", "percentage of dummy nodes for metis", &detectordata->dummynodes, FALSE, DEFAULT_DUMMYNODES, 0.0, 1.0, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/consWeightSetppc", "Weight for constraint hyperedges that are setpartitioning or covering constraints", &detectordata->consWeightSetppc, FALSE, DEFAULT_CONSWEIGHT_SETPPC, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hcgpartition/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hcgpartition/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hcgpartition/realname", "Should the problem be used for metis files or a temporary name", &detectordata->realname, FALSE, DEFAULT_REALNAME, NULL, NULL) );
 
 #endif
    return SCIP_OKAY;

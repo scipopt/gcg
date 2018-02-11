@@ -1320,7 +1320,7 @@ SCIP_DECL_HEURINIT(heurInitXpcrossover)
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &heurdata->randnumgen,
-         DEFAULT_RANDSEED) );
+         SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED)) );
 
    /* initialize hash table */
    SCIP_CALL( SCIPhashtableCreate(&heurdata->hashtable, SCIPblkmem(scip), HASHSIZE_POINTS,
@@ -1360,7 +1360,7 @@ SCIP_DECL_HEUREXIT(heurExitXpcrossover)
    SCIPhashtableFree(&heurdata->hashtable);
 
    /* free random number generator */
-   SCIPfreeRandom(scip, &heurdata->randnumgen );
+   SCIPfreeRandom(scip, &heurdata->randnumgen);
 
    return SCIP_OKAY;
 }
