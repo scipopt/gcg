@@ -171,11 +171,14 @@ private:
    bool isfromlegacymode;                             /**< true if this seeed stems from a detector operating in legacy mode */
    SCIP_Real score;                                   /**< score to evaluate the seeeds */
    SCIP_Real maxwhitescore;                           /**< score corresponding to the max white measure */
+   SCIP_Real strongdecompositionscore;                /**< strong decomposition score  */
+
    SCIP_Real borderareascore;                         /**< 1 - fraction of border area to complete area */
    SCIP_Real maxwhitescoreagg;                        /**< score corresponding to the max white measure according to aggregated blocks */
 
    SCIP_Real blockareascore;                          /**< 1 - fraction of block area to complete area */
    SCIP_Real blockareascoreagg;                       /**< 1 - fraction of aggregated block area to complete area */
+
 
    SCIP_Real maxforeseeingwhitescore;                /**< maximum foreseeing  white area score (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */
    SCIP_Real maxforeseeingwhitescoreagg;             /**< maximum foreseeing  white area score with respect to aggregatable blocks  (i.e. maximize fraction of white area score considering problem with copied linking variables and corresponding master constraints; white area is nonblock and nonborder area, stairlinking variables count as linking) */

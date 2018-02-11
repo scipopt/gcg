@@ -709,6 +709,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecToolbox)
 /** dialog execution method for the optimize command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 {  /*lint --e{715}*/
+
    SCIP_RESULT result;
    int presolrounds;
    SCIP_Bool emphfast;
@@ -716,6 +717,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    presolrounds = -1;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+   presolrounds = -1;
+
 
    assert(SCIPconshdlrDecompCheckConsistency(scip) );
 

@@ -99,6 +99,9 @@ typedef gcg::Seeed* SeeedPtr;
 #define MAXNDECOMPS 5000                /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 
 #define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
+#define DEFAULT_DUALVALRANDOMMETHOD 1   /**< default value for method to dual initilization of dual values for strong decomposition: 1) naive, 2) expected equal, 3) expected overestimation */
+#define DEFAULT_COEFFACTORORIGVSRANDOM 0.5 /**< default value for convex coefficient for orig dual val (1-this coef is facor for random dual value)  */
+
 #define DEFAULT_ALLOWCLASSIFIERDUPLICATES FALSE
 #define DEFAULT_MAXDETECTIONROUNDS 1    /**< maximal number of detection rounds */
 #define DEFAULT_MAXNCLASSESLARGEPROBS 5
@@ -160,9 +163,13 @@ struct SCIP_ConshdlrData
    int                   sizedecomps;                       /**< size of the decomp and complete seeeds array */
    int                   sizeincompleteseeeds;              /**< size of the incomplete seeeds array */
    int                   maxndetectionrounds;               /**< maximum number of detection loop rounds  */
+   int                   strongdetectiondualvalrandommethod;/**< method to dual initilization of dual values for strong decomposition: 1) naive, 2) expected equal, 3) expected overestimation */
+   SCIP_Real             coeffactororigvsrandom;            /**< convex coefficient for orig dual val (1-this coef is facor for random dual value)  */
+
    int                   maxnclassesfornblockcandidates;
    int                   maxnclassesperclassifier;              /**< maximum number of classes per classifier */
    int                   maxnclassesperclassifierforlargeprobs; /** maximum number of classes per classifier for large problems (nvars + nconss >= 50000) */
+
    int                   weightinggpresolvedoriginaldecomps; /**< weighing method for comparing presovled and original decompositions (see corresponding enum)   */
    SCIP_Bool             createbasicdecomp;                 /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
    SCIP_Bool             allowclassifierduplicates;         /**< indicates whether classifier duplicates are allowed (for statistical reasons) */
@@ -925,6 +932,14 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/onlylegacymode", "indicates whether detection should only consist of legacy mode detection", &conshdlrdata->onlylegacymode, FALSE, DEFAULT_ONLYLEGACYMODE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/enabled", "indicates whether detection consist of legacy mode detection", &conshdlrdata->legacymodeenabled, FALSE, DEFAULT_LEGACYMODE, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/legacymode/stairlinkingheur", "indicates whether heuristic to reassign linking vars to stairlinking in legacy mode should be activated", &conshdlrdata->stairlinkingheur, FALSE, DEFAULT_STAIRLINKINGHEUR, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detection/strong_detection/dualvalrandommethod",
+      "Method for random dual values use for strong decomposition: 1) naive, 2) expected equality exponential distributed, 3) expected overestimation exponential distributed ", &conshdlrdata->strongdetectiondualvalrandommethod, FALSE,
+      DEFAULT_DUALVALRANDOMMETHOD, 1, 3, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(scip, "detection/strong_detection/coeffactororigvsrandom",
+      " convex coefficient for orig dual val (1-this coef is facor for random dual value) ", &conshdlrdata->coeffactororigvsrandom, FALSE,
+      DEFAULT_COEFFACTORORIGVSRANDOM, 0., 1., NULL, NULL) );
+
    SCIP_CALL( SCIPaddIntParam(scip, "detection/maxrounds",
       "Maximum number of detection loop rounds", &conshdlrdata->maxndetectionrounds, FALSE,
       DEFAULT_MAXDETECTIONROUNDS, 0, INT_MAX, NULL, NULL) );
@@ -1336,6 +1351,67 @@ SCIP_RETCODE SCIPconshdlrDecompSelectVisualize(
    return SCIP_OKAY;
 }
 
+
+/**
+ * Calculates and displays the strong decomposition score for this decomposition in a dialog.
+ */
+SCIP_RETCODE SCIPconshdlrDecompSelectCalcStrongDecompositionScore
+(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   char* ntocalcstrong;
+   SCIP_Bool endoffile;
+   int idtocalcstrong;
+   int commandlen;
+
+   assert( scip != NULL );
+   conshdlr = SCIPfindConshdlr( scip, CONSHDLR_NAME );
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData( conshdlr );
+   assert( conshdlrdata != NULL );
+
+   /* read the id of the decomposition to be calculate strong decomp score */
+   SCIPdialogMessage( scip, NULL, "Please specify the id of the decomposition that shpould be evaluated by strong decomposition score:\n" );
+   SCIP_CALL( SCIPdialoghdlrGetWord( dialoghdlr, dialog, " ", &ntocalcstrong, &endoffile ) );
+   commandlen = strlen( ntocalcstrong );
+
+   idtocalcstrong = -1;
+   if( commandlen != 0 )
+   {
+      std::stringstream convert( ntocalcstrong );
+      convert >> idtocalcstrong;
+
+      if ( idtocalcstrong == 0 && ntocalcstrong[0] != '0' )
+      {
+         idtocalcstrong = -1;
+      }
+   }
+
+   /* call calculation strong decomp score method according to chosen parameters */
+   if( 0 <= idtocalcstrong && idtocalcstrong < (int)conshdlrdata->listall->size() )
+   {
+      SCIP_Real score;
+      gcg::Seeedpool* seeedpool = ( conshdlrdata->listall->at( idtocalcstrong )->isFromUnpresolved() ?
+         conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+      seeedpool->calcStrongDecompositionScore(conshdlrdata->listall->at( idtocalcstrong ), &score);
+      SCIPdialogMessage( scip, NULL, "Strong decomposition score of this decomposition is %f.", score) ;
+   }
+   else
+   {
+      SCIPdialogMessage( scip, NULL, "This is not an existing id." );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
 /**
  * Displays information about a seeed that is chosen by the user in a dialog.
  */
@@ -1396,7 +1472,7 @@ SCIP_RETCODE SCIPconshdlrDecompSelectInspect(
       }
    }
 
-   /* call displayInfo method accoridng to chosen parameters */
+   /* call displayInfo method according to chosen parameters */
    if( 0 <= idtoinspect && idtoinspect < (int)conshdlrdata->listall->size() )
    {
       gcg::Seeedpool* seeedpool = ( conshdlrdata->listall->at( idtoinspect )->isFromUnpresolved() ?
@@ -1545,6 +1621,8 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes selection and goes back to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "experimental feature: visualizes the specified decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "calc_strong", "calculates and displays the strong decomposition score for this decomposition");
+
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
@@ -1677,6 +1755,13 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
          SCIP_CALL( SCIPconshdlrDecompSelectInspect( scip, dialoghdlr, dialog ) );
          continue;
       }
+
+      if( strncmp( command, "calc_strong", commandlen) == 0 )
+      {
+         SCIP_CALL( SCIPconshdlrDecompSelectCalcStrongDecompositionScore( scip, dialoghdlr, dialog ) );
+         continue;
+      }
+
 
       if( strncmp( command, "select", commandlen) == 0 )
       {
@@ -4637,6 +4722,7 @@ SCIP_RETCODE DECdetectStructure(
 
      for( int j = 0; j < (int) varClassDistributions.size(); ++j )
         delete varClassDistributions[j];
+
 
 
       conshdlrdata->seeedpool->findDecompositions();

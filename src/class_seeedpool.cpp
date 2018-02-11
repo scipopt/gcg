@@ -46,6 +46,7 @@
 //#define WRITE_ORIG_CONSTYPES
  //#define SCIP_DEBUG
 
+#include "scip/scipdefplugins.h"
 #include "gcg.h"
 #include "objscip/objscip.h"
 #include "scip/scip.h"
@@ -59,6 +60,7 @@
 #include "scip/clock.h"
 #include "scip/cons.h"
 #include "scip/scip.h"
+#include "scip/var.h"
 #include <algorithm>
 #include <list>
 #include <iostream>
@@ -68,12 +70,16 @@
 #include <queue>
 #include <fstream>
 #include <exception>
+/** needed for exponential distributed random dual variables */
+#include <random>
 
 
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+
+#define DEFAULT_RANDSEED         23          /**< initial random seed */
 
 #define SCIP_CALL_EXC( x ) do                                                                                 \
                        {                                                                                      \
@@ -112,6 +118,14 @@ enum SCIP_Constype_orig
    SCIP_CONSTYPE_GENERAL       = 15          /**<  */
 };
 typedef enum SCIP_Constype_orig SCIP_CONSTYPE_ORIG;
+
+enum GCG_Random_dual_methods
+{
+   GCG_RANDOM_DUAL_NAIVE                  =  0,         /**<  */
+   GCG_RANDOM_DUAL_EXPECTED_EQUAL         =  1,         /**<  */
+   GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE  =  2         /**<  */
+};
+typedef enum GCG_Random_dual_methods GCG_RANDOM_DUAL_METHOD;
 //#endif
 
 
@@ -144,6 +158,122 @@ struct sort_pred
 };
 
 
+SCIP_RETCODE Seeedpool::calculateDualvalsOptimalOrigLP()
+{
+
+   SCIP* scipcopy;
+   SCIP_HASHMAP* origtocopiedconss;
+   SCIP_Bool valid;
+   int nvars;
+   SCIP_VAR** copiedvars;
+
+   int nconss;
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "startetd calculating optimal dual values for original lp\n");
+
+   SCIPhashmapCreate(&origtocopiedconss, SCIPblkmem(scip), SCIPgetNConss(scip) );
+
+   SCIPcreate(&scipcopy);
+  // SCIPincludeDefaultPlugins(scipcopy);
+
+
+   SCIPcopy(scip, scipcopy, NULL, origtocopiedconss, "", FALSE, FALSE, FALSE, &valid );
+
+   nconss = getNConss();
+
+   assert(SCIPgetNConss(scip) == getNConss() );
+
+   nvars = SCIPgetNVars(scipcopy);
+   copiedvars = SCIPgetVars(scipcopy);
+
+   dualvalsoptimaloriglp = std::vector<SCIP_Real>(getNConss(), 0.);
+
+   for( int var = 0; var < nvars ; ++var )
+   {
+      SCIP_VAR* copyvar = copiedvars[var];
+      SCIP_Bool infeasible;
+
+      if( SCIPvarGetType(copyvar) == SCIP_VARTYPE_BINARY )
+         SCIPchgVarUbGlobal(scipcopy, copyvar, 1. );
+
+      SCIPchgVarType(scipcopy, copyvar, SCIP_VARTYPE_CONTINUOUS, &infeasible);
+   }
+
+   copiedvars = SCIPgetVars(scipcopy);
+
+   /** deactivate presolving */
+   SCIPsetIntParam(scipcopy, "presolving/maxrounds", 0);
+
+   /** deactivate separating */
+   SCIPsetIntParam(scipcopy, "separating/maxrounds", 0);
+   SCIPsetIntParam(scipcopy, "separating/maxroundsroot", 0);
+
+   /** deactivate propagating */
+   SCIPsetIntParam(scipcopy, "propagating/maxrounds", 0);
+   SCIPsetIntParam(scipcopy, "propagating/maxroundsroot", 0);
+
+   /** solve lp */
+   SCIPsetIntParam(scipcopy, "lp/solvefreq", 1);
+
+   /** only root node */
+   SCIPsetLongintParam(scipcopy, "limits/nodes", 1);
+
+   SCIPsetIntParam(scipcopy, "display/verblevel", SCIP_VERBLEVEL_FULL);
+
+   SCIPtransformProb(scipcopy);
+
+//   SCIPstartDive(scipcopy);
+//   SCIPconstructLP(scipcopy, FALSE);
+//   SCIPsolveDiveLP(scipcopy, -1, &lperror, &cutoff );
+
+
+
+  // SCIPwriteTransProblem(scipcopy, "lporig.lp", "lp", FALSE);
+
+   //SCIPwriteParams(scipcopy, "lporig.set", TRUE, TRUE);
+
+   SCIPsolve(scipcopy);
+
+  // SCIPprintStatistics( scipcopy, NULL );
+
+  // assert(FALSE);
+
+   for( int c = 0; c < nconss; ++c )
+   {
+      SCIP_CONS* cons;
+      SCIP_CONS* copiedcons;
+
+      cons = getConsForIndex(c);
+      if( !transformed && SCIPconsGetTransformed(cons) != NULL )
+         cons = SCIPconsGetTransformed(cons);
+      else if ( !transformed )
+      {
+         SCIPwarningMessage(scip, "Could not find constraint for random dual variable initilization when calculating strong decomposition score; skip cons: %s \n", SCIPconsGetName(cons));
+         continue;
+      }
+      copiedcons = (SCIP_CONS*) SCIPhashmapGetImage(origtocopiedconss, (void*) cons);
+
+      assert(copiedcons != NULL);
+      assert( !SCIPconsIsTransformed(copiedcons) );
+
+      if( SCIPconsGetTransformed(copiedcons) != NULL )
+         copiedcons = SCIPconsGetTransformed(copiedcons);
+
+      dualvalsoptimaloriglp[c] = GCGconsGetDualsol(scipcopy, copiedcons);
+      if( !SCIPisFeasEQ(scip, 0., dualvalsoptimaloriglp[c]) )
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "optimal dual sol of constraint %s is %f \n", SCIPconsGetName(cons), dualvalsoptimaloriglp[c]);
+   }
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "finished calculating optimal dual values for original lp, start freeing\n");
+
+   SCIPhashmapFree(&origtocopiedconss);
+   SCIPfree(&scipcopy);
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "finished freeing\n");
+
+  return SCIP_OKAY;
+}
+
 /** is constraint ranged row, i.e., -inf < lhs < rhs < inf? */
 static
 SCIP_Bool isRangedRow(
@@ -169,6 +299,180 @@ SCIP_Bool isFiniteNonnegativeIntegral(
 
    return (!SCIPisInfinity(scip, x) && !SCIPisNegative(scip, x) && SCIPisIntegral(scip, x));
 }
+
+/** creates the pricing problem constraints */
+static
+SCIP_RETCODE createTestPricingprobConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 subscip,            /**< the relaxator data data structure */
+   Seeedpool*            seeedpool,
+   SeeedPtr              seeed,              /**< seeed corresponding to the decomposition to test */
+   int                   block,
+   SCIP_HASHMAP*         hashorig2pricingvar /**< hashmap mapping original to corresponding pricing variables */
+   )
+{
+   SCIP_CONS* newcons;
+   SCIP_HASHMAP* hashorig2pricingconstmp;
+   int c;
+   char name[SCIP_MAXSTRLEN];
+   SCIP_Bool success;
+
+   assert(scip != NULL);
+
+//   subscipconss = DECdecompGetSubscipconss(relaxdata->decdecomp);
+//   nsubscipconss = DECdecompGetNSubscipconss(relaxdata->decdecomp);
+
+   SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingconstmp, SCIPblkmem(scip), seeedpool->getNConss() ) ); /*lint !e613*/
+
+   assert(hashorig2pricingvar != NULL);
+   for( c = 0; c < seeed->getNConssForBlock(block); ++c )
+   {
+      SCIP_CONS* cons;
+
+      cons = seeedpool->getConsForIndex( seeed->getConssForBlock(block)[c] );
+
+      SCIPdebugMessage("copying %s to pricing problem %d\n", SCIPconsGetName(cons), block);
+      if( !SCIPconsIsActive(cons) )
+      {
+         SCIPdebugMessage("skipping, cons <%s> inactive\n", SCIPconsGetName(cons) );
+         continue;
+      }
+      SCIP_CALL( SCIPgetTransformedCons(scip, cons, &cons) );
+      assert(cons != NULL);
+
+      /* copy the constraint */
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", block, SCIPconsGetName(cons));
+      SCIP_CALL( SCIPgetConsCopy(scip, subscip, cons, &newcons, SCIPconsGetHdlr(cons),
+         hashorig2pricingvar, hashorig2pricingconstmp, name,
+         TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, &success) );
+
+      /* constraint was successfully copied */
+      assert(success);
+
+      SCIP_CALL( SCIPaddCons(subscip, newcons) );
+#ifndef NDEBUG
+      {
+         SCIP_VAR** curvars;
+         int ncurvars;
+
+         ncurvars = GCGconsGetNVars(subscip, newcons);
+         curvars = NULL;
+         if( ncurvars > 0 )
+         {
+            SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+            SCIP_CALL( GCGconsGetVars(subscip, newcons, curvars, ncurvars) );
+
+            SCIPfreeBufferArrayNull(scip, &curvars);
+         }
+      }
+#endif
+SCIP_CALL( SCIPreleaseCons(subscip, &newcons) );
+   }
+
+   SCIPhashmapFree(&hashorig2pricingconstmp);
+
+   return SCIP_OKAY;
+}
+
+
+
+/** sets the pricing problem parameters */
+static
+SCIP_RETCODE setTestpricingProblemParameters(
+   SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
+   int                   clocktype,          /**< clocktype to use in the pricing problem */
+   SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
+   SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the pricing problem */
+   SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the pricing problem */
+   SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
+   SCIP_Real             lpfeastol,          /**< primal feasibility tolerance of LP solver in the pricing problem */
+   SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
+   SCIP_Bool             enableppcuts,       /**< should ppcuts be stored for sepa_basis */
+   SCIP_Real             timelimit            /**< limit of time */
+   )
+{
+   assert(scip != NULL);
+
+   /* disable conflict analysis */
+   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
+   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useinflp", 'o') );
+   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useboundlp", 'o') );
+   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usesb", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usepseudo", FALSE) );
+
+   /* reduce the effort spent for hash tables */
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/usevartable", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/useconstable", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/usesmalltables", TRUE) );
+
+   /* disable expensive presolving */
+   /* @todo test whether this really helps, perhaps set presolving emphasis to fast? */
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolpairwise", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolpairwise", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolpairwise", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolusehashing", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolusehashing", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolusehashing", FALSE) );
+
+   /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
+   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/freq", -1) );
+   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
+   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
+   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
+
+   /* disable solution storage ! */
+   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
+   SCIP_CALL( SCIPsetRealParam(scip, "limits/time", timelimit ) );
+
+   /* disable multiaggregation because of infinite values */
+   SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
+
+   /* @todo enable presolving and propagation of xor constraints if bug is fixed */
+
+   /* disable presolving and propagation of xor constraints as work-around for a SCIP bug */
+   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/maxprerounds", 0) );
+   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/propfreq", -1) );
+
+   /* disable output to console */
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
+#if SCIP_VERSION > 210
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
+#endif
+   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
+   SCIP_CALL( SCIPfixParam(scip, "limits/maxorigsol") );
+
+   /* do not abort subproblem on CTRL-C */
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/catchctrlc", FALSE) );
+
+   /* set clock type */
+   SCIP_CALL( SCIPsetIntParam(scip, "timing/clocktype", clocktype) );
+
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/finitesolutionstore", TRUE) );
+
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/infinity", infinity) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/epsilon", epsilon) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/sumepsilon", sumepsilon) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/feastol", feastol) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/lpfeastol", lpfeastol) );
+   SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
+
+   /* jonas' stuff */
+   if( enableppcuts )
+   {
+      int pscost;
+      int prop;
+
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/pscost/priority", &pscost) );
+      SCIP_CALL( SCIPgetIntParam(scip, "propagating/maxroundsroot", &prop) );
+      SCIP_CALL( SCIPsetIntParam(scip, "branching/pscost/priority", 11000) );
+      SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
+      SCIP_CALL( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+   }
+   return SCIP_OKAY;
+}
+
+
 
 
 /** returns true if there exists an unfinished child in childsfinished array */
@@ -527,7 +831,7 @@ Seeedpool::Seeedpool(
    ) :
    scip( givenScip ), incompleteSeeeds( 0 ), currSeeeds( 0 ), ancestorseeeds( 0 ), unpresolvedfixedtozerovars(0),
    nVars( SCIPgetNVars( givenScip ) ), nConss( SCIPgetNConss( givenScip ) ), nDetectors( 0 ),
-   nFinishingDetectors( 0 ), nPostprocessingDetectors(0), nnonzeros( 0 ), candidatesNBlocks( 0 ), transformed( _transformed ),
+   nFinishingDetectors( 0 ), nPostprocessingDetectors(0), nnonzeros( 0 ), candidatesNBlocks( 0 ),   dualvalsrandom(std::vector<SCIP_Real>(0)), dualvalsoptimaloriglp(std::vector<SCIP_Real>(0)) , dualvalsrandomset(FALSE), dualvalsoptimaloriglpcalculated(FALSE), transformed( _transformed ),
    classificationtime(0.), nblockscandidatescalctime(0.), postprocessingtime(0.), scorecalculatingtime(0.), translatingtime(0.)
 {
    SCIP_CONS** conss;
@@ -1698,6 +2002,292 @@ SCIP_Bool Seeedpool::areThereContinuousVars(){
    return FALSE;
 }
 
+/** calculates the strong decomposition score of a seeed */
+/*
+ *  strong decompositon score is defined as follows:
+ */
+SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
+   SeeedPtr seeed,
+   SCIP_Real* score
+   )
+{
+   SCIP_Bool hittimelimit;
+   SCIP_Bool errorpricing;
+   //std::vector<SCIP_Real> randomdualvals;
+   SCIP_RANDNUMGEN* randnumgen;
+
+   /** @TODO introduce scip parameters */
+   SCIP_Real timelimit;
+   SCIP_Real timelimitfast;
+
+   /** @TODO use and introduce scip parameter limit (for a pricing problem to be considered fractional solvable) of difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
+   /** SCIP_Real gaplimitsolved; */
+
+   /** @TODO use and introduce scip parameter weighted limit (for a pricing problem to be considered fractional solvable) difference optimal value of LP-Relaxation and optimal value of artificial pricing problem */
+   /** SCIP_Real gaplimitbeneficial; */
+
+   SCIP_Real scorecoef_fastbenefical;
+   SCIP_Real scorecoef_mediumbenefical;
+   /** SCIP_Real scorecoef_fastlittlebenefical; */
+   /** SCIP_Real scorecoef_mediumlittlebenefical; */
+   SCIP_Real scorecoef_fastnobenefical;
+   SCIP_Real scorecoef_mediumnobenefical;
+
+   int npricingconss;
+
+   SCIP_Real infinity;
+   SCIP_Real epsilon;
+   SCIP_Real sumepsilon;
+   SCIP_Real feastol;
+   SCIP_Real lpfeastol;
+   SCIP_Real dualfeastol;
+   SCIP_Bool enableppcuts;
+
+   SCIP_Bool benefical;
+   SCIP_Bool fast;
+
+   SCIP_Bool writesubproblem;
+
+   int clocktype;
+
+   SCIP_Real dualvalmethodcoef;
+
+   if( !transformed )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, " \n Attention! Strong decomposition score is not implemented for decomps belonging to the original problem \n\n");
+      return SCIP_OKAY;
+   }
+
+   *score = 0.;
+   npricingconss = 0;
+
+   writesubproblem = TRUE;
+
+ // randomdualvals = std::vector<SCIP_Real>(getNConss(),0. );
+
+   SCIPgetRealParam(scip, "detection/strong_detection/coeffactororigvsrandom", &dualvalmethodcoef);
+
+   timelimit = 30.;
+   timelimitfast  =  0.1 * timelimit;
+
+   /**gaplimitsolved = 0.;
+   gaplimitbeneficial = 0.3; */
+
+   scorecoef_fastbenefical = 1.;
+   scorecoef_mediumbenefical = 0.75;
+
+   /** not used yes */
+/*   scorecoef_fastlittlebenefical = 0.75; */
+/*   scorecoef_mediumlittlebenefical = 0.5; */
+
+   scorecoef_fastnobenefical = 0.3;
+   scorecoef_mediumnobenefical = 0.1;
+
+   /* get numerical tolerances of the original SCIP instance in order to use the same numerical tolerances in master and pricing problems */
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/infinity", &infinity) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/epsilon", &epsilon) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/sumepsilon", &sumepsilon) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/feastol", &feastol) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/lpfeastol", &lpfeastol) );
+   SCIP_CALL( SCIPgetRealParam(scip, "numerics/dualfeastol", &dualfeastol) );
+
+   /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
+   SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype) );
+
+
+   enableppcuts = FALSE;
+   SCIP_CALL( SCIPgetBoolParam(scip, "sepa/basis/enableppcuts", &enableppcuts) );
+
+
+
+   for ( int block = 0; block < seeed->getNBlocks(); ++block )
+   {
+      npricingconss += seeed->getNConssForBlock(block);
+   }
+
+   /* for every pricing problem calculate a corresponding score coeff and break if a pricing problem cannot be solved in the timelimit */
+   for ( int block = 0; block < seeed->getNBlocks(); ++block )
+   {
+      SCIP* subscip;
+      char name[SCIP_MAXSTRLEN];
+      SCIP_HASHMAP* hashpricingvartoindex;
+      SCIP_HASHMAP* hashorig2pricingvar;
+      SCIP_Real score_coef;
+      SCIP_Real weight_subproblem;
+      std::stringstream subname;
+
+      hittimelimit = FALSE;
+      errorpricing = FALSE;
+
+
+      subname << "temp_pp_" << block << ".lp";
+      std::vector<SCIP_VAR*> indextopricingvar;
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started calculate strong decomposition subproblem for block %d \n", block );
+
+      indextopricingvar = std::vector<SCIP_VAR*>(getNVars(), NULL);
+
+      SCIP_CALL( SCIPhashmapCreate(&hashpricingvartoindex, SCIPblkmem(scip), getNVars()) ); /*lint !e613*/
+      SCIP_CALL( SCIPhashmapCreate(&hashorig2pricingvar, SCIPblkmem(scip), getNVars()) ); /*lint !e613*/
+
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "testpricing_block_%d", block);
+
+      benefical = FALSE;
+      fast = FALSE;
+      score_coef = 0.0;
+      weight_subproblem = (SCIP_Real) seeed->getNConssForBlock(block) / npricingconss;
+
+      /** build subscip */
+      SCIP_CALL( SCIPcreate(&subscip) );
+      SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
+      SCIP_CALL( setTestpricingProblemParameters(subscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastol, dualfeastol, enableppcuts, timelimit) );
+      SCIP_CALL( SCIPsetIntParam(subscip, "presolving/maxrounds", 0) );
+      SCIP_CALL( SCIPsetIntParam(subscip, "lp/solvefreq", 1) );
+      SCIP_CALL( SCIPcreateProb(subscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started calculate strong decomposition, timelimit: %f  timelimitfast: %f \n",  timelimit, timelimitfast );
+
+
+      /** copy variables */
+      for( int var = 0; var < seeed->getNVarsForBlock(block); ++var )
+      {
+         int varid;
+         SCIP_VAR* origprobvar;
+         SCIP_VAR* pricingprobvar;
+         SCIP_Real obj;
+
+
+         varid = seeed->getVarsForBlock(block)[var];
+
+         if ( transformed )
+            origprobvar = getVarForIndex(varid);
+         else
+            origprobvar = SCIPvarGetProbvar(getVarForIndex(varid));
+
+         /** calculate obj val from shuffled */
+         obj = SCIPvarGetObj(origprobvar);
+         for( int c = 0; c < getNConssForVar(varid); ++c )
+         {
+            int consid;
+            SCIP_Real dualval;
+
+            dualval = 0.;
+
+            consid = getConssForVar(varid)[c];
+            if ( seeed->isConsMastercons(consid) )
+            {
+               if( SCIPisEQ( scip, dualvalmethodcoef, 0.0) )
+                  dualval = getDualvalRandom(consid);
+               else if( SCIPisEQ( scip, dualvalmethodcoef, 1.0) )
+                  dualval = getDualvalOptimalLP(consid);
+               else
+                  dualval = dualvalmethodcoef * getDualvalOptimalLP(consid) + (1.- dualvalmethodcoef) * getDualvalRandom(consid);
+               obj -= dualval * getVal(consid, varid);
+            }
+         }
+
+         /** round variable objective coeffs to decrease numerical troubles */
+  //       obj = SCIPfloor(scip, obj * 100 + 0.5 )/100.;
+
+         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", block, SCIPvarGetName(origprobvar));
+         SCIP_CALL( SCIPcreateVar(subscip, &pricingprobvar, name, SCIPvarGetLbGlobal(origprobvar),
+                  SCIPvarGetUbGlobal(origprobvar), obj, SCIPvarGetType(origprobvar),
+                  TRUE, FALSE, NULL, NULL, NULL, NULL, NULL) );
+         SCIPhashmapSetImage(hashorig2pricingvar, origprobvar, pricingprobvar);
+         SCIPhashmapSetImage(hashpricingvartoindex, pricingprobvar, (void*) (size_t)varid);
+         indextopricingvar[varid] = pricingprobvar;
+         SCIP_CALL( SCIPaddVar(subscip, pricingprobvar) );
+      }
+
+      /** copy constraints */
+      SCIP_CALL( createTestPricingprobConss(scip, subscip, this, seeed, block, hashorig2pricingvar) );
+
+      SCIP_CALL(SCIPtransformProb(subscip) );
+      /** set parameter for subscip */
+
+      if( writesubproblem )
+         SCIPwriteTransProblem(subscip, subname.str().c_str(), "lp", FALSE);
+
+      /** solve subscip */
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "started solving subproblem for block %d \n", block );
+      SCIP_CALL( SCIPsolve(subscip) );
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "finished solving subproblem in %f seconds \n", SCIPgetSolvingTime(subscip) );
+
+      SCIPsolve(subscip);
+
+      if( SCIPgetStatus(subscip) != SCIP_STATUS_OPTIMAL )
+      {
+         if( SCIPgetStatus(subscip) == SCIP_STATUS_TIMELIMIT )
+            hittimelimit = TRUE;
+         else
+            errorpricing = TRUE;
+      }
+
+      if ( errorpricing || hittimelimit)
+      {
+         if( hittimelimit )
+            SCIPverbMessage(scip,  SCIP_VERBLEVEL_FULL, NULL, "Hit timelimit in pricing problem %d \n.", block);
+         else
+            SCIPverbMessage(scip,  SCIP_VERBLEVEL_FULL, NULL, "Error in pricing problem %d \n.", block);
+
+         *score = 0.;
+         SCIPhashmapFree(&hashpricingvartoindex);
+         SCIPfree(&subscip);
+
+         /**SCIPfreeRandom(scip, &randnumgen ); */
+
+         return SCIP_OKAY;
+      }
+
+
+      /** get coefficient */
+      if ( !SCIPisEQ( scip,  SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetDualbound(subscip) ) )
+         benefical = TRUE;
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "first dual bound: %f ; dual bound end: %f \n",SCIPgetFirstLPLowerboundRoot(subscip), SCIPgetDualbound(subscip)   );
+
+      if( SCIPisFeasLE( scip, SCIPgetSolvingTime(subscip), timelimitfast ) )
+         fast = TRUE;
+
+      if ( fast && benefical )
+         score_coef = scorecoef_fastbenefical;
+
+      if ( !fast && benefical )
+         score_coef = scorecoef_mediumbenefical;
+
+      if ( fast && !benefical )
+         score_coef = scorecoef_fastnobenefical;
+
+      if ( !fast && !benefical )
+         score_coef = scorecoef_mediumnobenefical;
+
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "scorecoef for subproblem %d is %f with weighting factor %f\n", block, score_coef, weight_subproblem );
+
+      *score += score_coef * weight_subproblem;
+
+    //  SCIPprintStatistics(subscip, NULL);
+
+
+      /** free stuff */
+      for( int var = 0; var < seeed->getNVarsForBlock(block); ++var )
+      {
+         int varid = seeed->getVarsForBlock(block)[var];
+         SCIPreleaseVar(subscip, &indextopricingvar[varid]);
+      }
+
+      SCIPhashmapFree(&hashpricingvartoindex);
+
+      SCIPfree(&subscip);
+   }// end for blocks
+
+
+   /**SCIPfreeRandom(scip, &randnumgen ); */
+   /** consider coefficients   */
+
+   return SCIP_OKAY;
+}
+
 
 /** clears ancestor seeed data structure */
 void Seeedpool::clearAncestorSeeeds()
@@ -2026,7 +2616,7 @@ void Seeedpool::calcTranslationMapping(
       for ( int i  = 0; i < (int) rowothertothis.size(); ++i )
          std::cout << (rowothertothis[i] == i) << " " ;
 
-   std::cout << std::endl;
+      std::cout << std::endl;
 
       for ( int i  = 0; i < (int) colothertothis.size(); ++i )
          std::cout << ( colothertothis[i] == i ) << " " ;
@@ -2449,6 +3039,34 @@ const int* Seeedpool::getConssForVar(
 {
    return & conssForVars[var][0];
 }
+
+/** returns the value of the optimal lp relaxation dual value of the given constrainr rid correspondoning problem of the seeedpool; if it is not calculated yet it will be calculated */
+SCIP_Real  Seeedpool::getDualvalOptimalLP(
+   int  consindex
+   )
+{
+   if( !dualvalsoptimaloriglpcalculated )
+      calculateDualvalsOptimalOrigLP();
+   dualvalsoptimaloriglpcalculated = TRUE;
+
+   return dualvalsoptimaloriglp[consindex];
+}
+
+/** return the a random value of the dual variable of the corresponding ; if it is not calculated yet it will be calculated */
+SCIP_Real  Seeedpool::getDualvalRandom(
+   int  consindex
+){
+
+   if( !dualvalsrandomset )
+      shuffleDualvalsRandom();
+   dualvalsrandomset = TRUE;
+
+   return dualvalsrandom[consindex];
+
+}
+
+
+
 
 /** returns the constraint indices of the coefficient matrix for a constraint */
 const int* Seeedpool::getConssForCons(
@@ -4111,6 +4729,154 @@ std::vector<SeeedPtr> Seeedpool::removeSomeOneblockDecomps(
    }
 
    return remainingSeeeds;
+}
+
+
+SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
+{
+
+   GCG_RANDOM_DUAL_METHOD usedmethod;
+   SCIP_RANDNUMGEN* randnumgen;
+
+   int method;
+
+   SCIPgetIntParam(scip, "detection/strong_detection/dualvalrandommethod", &method);
+
+   if( method == 1)
+      usedmethod = GCG_RANDOM_DUAL_NAIVE;
+   else if ( method == 2 )
+      usedmethod = GCG_RANDOM_DUAL_EXPECTED_EQUAL;
+   else if ( method == 3 )
+      usedmethod = GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE;
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "set dual val random method to %d. \n", method );
+   /** other possibilities
+   usedmethod = GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE;
+   usedmethod = GCG_RANDOM_DUAL_EXPECTED_EQUAL;
+   */
+
+   dualvalsrandom = std::vector<SCIP_Real>(getNConss(), 0.);
+
+   /* create random number generator */
+   SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDSEED) );
+
+
+   /** shuffle dual multipliers of constraints*/
+
+   /** 1) naive approach */
+   if( usedmethod == GCG_RANDOM_DUAL_NAIVE )
+   {
+      for( int c = 0; c < getNConss(); ++c )
+      {
+         SCIP_Real dualval;
+         SCIP_Real factor;
+         SCIP_CONS* cons;
+
+         cons = getConsForIndex(c);
+         if( SCIPisInfinity( scip, -GCGconsGetLhs(scip, cons) ))
+         {
+            SCIP_Real modifier;
+            modifier = 0.;
+            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MAXIMIZE )
+               modifier = -1.;
+
+            factor = MAX(1., ABS(GCGconsGetRhs(scip, cons)  ) );
+            dualval = SCIPrandomGetReal(randnumgen, 0.+modifier, 1.+modifier  ) * factor;
+         }
+         else if( SCIPisInfinity( scip, GCGconsGetRhs(scip, cons) ) )
+         {
+            SCIP_Real modifier;
+            modifier = 0.;
+            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MINIMIZE )
+               modifier = -1.;
+
+            factor = MAX(1., ABS(GCGconsGetLhs(scip, cons)  ) );
+            dualval = SCIPrandomGetReal(randnumgen, 0.+modifier, 1.+modifier  ) * factor;
+
+         }
+         else
+         {
+            factor = MAX(1., ABS(GCGconsGetLhs(scip, cons)  ) );
+            factor = MAX( factor, ABS(GCGconsGetRhs(scip, cons)   ) );
+            dualval = SCIPrandomGetReal(randnumgen, -1., 1. ) * factor;
+         }
+
+         dualvalsrandom[c] = dualval;
+      }
+
+   } /* end naive approach */
+
+   /** expected equal and expected overestimated approach */
+   if( usedmethod == GCG_RANDOM_DUAL_EXPECTED_EQUAL || usedmethod == GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE)
+   {
+      std::default_random_engine generator (DEFAULT_RANDSEED);
+
+
+      SCIP_Real largec  = 0.;
+      for( int v = 0; v < getNVars(); ++v )
+         largec += ABS( SCIPvarGetObj( getVarForIndex(v) ) );
+
+
+      for( int c = 0; c < getNConss(); ++c )
+      {
+         SCIP_Real dualval;
+         SCIP_CONS* cons;
+         std::exponential_distribution<SCIP_Real> distribution (1.0);
+
+         SCIP_Real divisor = 0.;
+
+         SCIP_Real randomval;
+
+         for( int v = 0; v < getNVarsForCons(c); ++v )
+         {
+            int var = getVarsForCons(c)[v];
+            divisor += ABS( getVal(c, var) );
+         }
+         if (usedmethod == GCG_RANDOM_DUAL_EXPECTED_EQUAL )
+            divisor *= getNConss();
+
+         /** 1/lambda is the expected value of the distribution */
+         distribution = std::exponential_distribution<SCIP_Real>( divisor/largec);
+
+         randomval = distribution(generator);
+
+         cons = getConsForIndex(c);
+         if( SCIPisInfinity( scip, -GCGconsGetLhs(scip, cons) ))
+         {
+            SCIP_Real modifier;
+            modifier = 1.;
+            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MAXIMIZE )
+               modifier = -1.;
+
+            dualval = modifier * randomval;
+         }
+         else if( SCIPisInfinity( scip, GCGconsGetRhs(scip, cons) ) )
+         {
+            SCIP_Real modifier;
+            modifier = 1.;
+            if ( SCIPgetObjsense(scip) != SCIP_OBJSENSE_MINIMIZE )
+               modifier = -1.;
+
+            dualval = modifier * randomval;
+
+         }
+         else
+         {
+            SCIP_Real helpval = SCIPrandomGetReal(randnumgen, -1., 1. );
+
+            if ( helpval < 0. )
+               dualval =  -1. * randomval ;
+            else dualval = randomval;
+         }
+
+         dualvalsrandom[c] = dualval;
+      }
+
+   }
+
+
+   return SCIP_OKAY;
+
 }
 
 /** creates a decomposition for a given seeed */
