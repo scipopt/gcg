@@ -4915,7 +4915,6 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
    assert( seeed->checkConsistency( this ) );
    int ndeletedblocks;
    int nmastervarsfromdeleted;
-   assert( seeed->checkConsistency( this ) );
    ndeletedblocks = 0;
    nmastervarsfromdeleted = 0;
    isblockdeleted = std::vector<SCIP_Bool>(seeed->getNBlocks(), FALSE);
@@ -4963,6 +4962,11 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
     /** set nblocks */
    DECdecompSetNBlocks( * newdecomp, seeed->getNBlocks() - ndeletedblocks );
+
+   if( seeed->getNBlocks() - ndeletedblocks == 0 )
+   {
+      SCIPwarningMessage(scip, "All blocks have been deleted since only deleted constraints are contained, no reformulationj is done.\n");
+   }
 
    //detectorchaininfo ;
    /** set constraints */
