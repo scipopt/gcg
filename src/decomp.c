@@ -759,10 +759,13 @@ SCIP_RETCODE DECdecompSetSubscipvars(
    assert(decomp != NULL);
    assert(subscipvars != NULL);
    assert(nsubscipvars != NULL);
-   assert(decomp->nblocks > 0);
+   assert(decomp->nblocks >= 0);
 
    assert(decomp->subscipvars == NULL);
    assert(decomp->nsubscipvars == NULL);
+
+   if( decomp->nblocks == 0 )
+      return SCIP_OKAY;
 
    valid = TRUE;
 
@@ -845,11 +848,14 @@ SCIP_RETCODE DECdecompSetSubscipconss(
    assert(subscipconss != NULL);
    assert(nsubscipconss != NULL);
 
-   assert(decomp->nblocks > 0);
+   assert(decomp->nblocks >= 0);
    assert(decomp->subscipconss == NULL);
    assert(decomp->nsubscipconss == NULL);
 
    valid = TRUE;
+
+   if( decomp->nblocks == 0)
+      return SCIP_OKAY;
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->subscipconss, decomp->nblocks) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->nsubscipconss, decomp->nblocks) );
@@ -1067,12 +1073,15 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    assert(stairlinkingvars != NULL);
    assert(nstairlinkingvars != NULL);
 
-   assert(decomp->nblocks > 0);
+   assert(decomp->nblocks >= 0);
 
    assert(decomp->stairlinkingvars == NULL);
    assert(decomp->nstairlinkingvars == NULL);
 
    valid = TRUE; /**@todo A valid check needs to be implemented */
+
+   if( decomp->nblocks == 0 )
+      return SCIP_OKAY;
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->stairlinkingvars, decomp->nblocks) ); /* this is more efficient */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->nstairlinkingvars, decomp->nblocks) ); /* this is more efficient */
