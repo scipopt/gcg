@@ -69,7 +69,7 @@ typedef gcg::Seeed* SeeedPtr;
 /** section in DEC File */
 enum DecSection
 {
-   DEC_START, DEC_CONSDEFAULTMASTER, DEC_PRESOLVED, DEC_NBLOCKS, DEC_BLOCKCONSS, DEC_MASTERCONSS, DEC_BLOCKVARS, DEC_MASTERVARS, DEC_LINKINGVARS, DEC_END
+   DEC_START, DEC_INCOMPLETE, DEC_PRESOLVED, DEC_NBLOCKS, DEC_BLOCKCONSS, DEC_MASTERCONSS, DEC_BLOCKVARS, DEC_MASTERVARS, DEC_LINKINGVARS, DEC_END
 };
 typedef enum DecSection DECSECTION;
 
@@ -93,7 +93,7 @@ struct DecInput
    int linepos;                              /**< current line position (column) */
    SCIP_Bool presolved;                      /**< does the decomposition refer to the presolved problem? */
    SCIP_Bool haspresolvesection;             /**< does the decomposition have a presolved section  */
-   SCIP_Bool consdefaultmaster;              /**< does the unspecified constraints should be forced to the master (for downward compatibility)  */
+   SCIP_Bool incomplete;                     /**< if false the unspecified constraints should be forced to the master (for downward compatibility)  */
    int nblocks;                              /**< number of blocks */
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    DECSECTION section;                       /**< current section */
@@ -429,10 +429,10 @@ SCIP_Bool isNewSection(
    /* reinstall the previous token by swapping back the token buffer */
    swapTokenBuffer(decinput);
 
-   if( strcasecmp(decinput->token, "CONSDEFAULTMASTER") == 0 )
+   if( strcasecmp(decinput->token, "INCOMPLETE") == 0 )
       {
-         SCIPdebugMessage("(line %d) new section: CONSDEFAULTMASTER\n", decinput->linenumber);
-         decinput->section = DEC_CONSDEFAULTMASTER;
+         SCIPdebugMessage("(line %d) new section: INCOMPLETE\n", decinput->linenumber);
+         decinput->section = DEC_INCOMPLETE;
          return TRUE;
       }
 
@@ -559,14 +559,14 @@ SCIP_RETCODE readStart(
    return SCIP_OKAY;
 }
 
-/** reads the consdefaultmaster section */
+/** reads the incomplete section */
 static
-SCIP_RETCODE readConsDefaultMaster(
+SCIP_RETCODE readIncomplete(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput            /**< DEC reading data */
    )
 {
-   int consdefaultmaster;
+   int incomplete;
 
    assert(scip != NULL);
    assert(decinput != NULL);
@@ -578,16 +578,16 @@ SCIP_RETCODE readConsDefaultMaster(
          return SCIP_OKAY;
 
       /* read if the consdefaultmaster */
-      if( isInt(scip, decinput, &consdefaultmaster) )
+      if( isInt(scip, decinput, &incomplete) )
       {
-         if( consdefaultmaster == 1 )
-            decinput->consdefaultmaster = TRUE;
-         else if ( consdefaultmaster == 0 )
-            decinput->consdefaultmaster = FALSE;
+         if( incomplete == 1 )
+            decinput->incomplete = TRUE;
+         else if ( incomplete == 0 )
+            decinput->incomplete = FALSE;
          else
-            syntaxError(scip, decinput, "consdefaultmaster parameter must be 0 or 1");
+            syntaxError(scip, decinput, "incomplete parameter must be 0 or 1");
          SCIPdebugMessage("The constraints that are not specified in this decomposition are %s  forced to the master\n",
-            decinput->consdefaultmaster ? "" : " not");
+            decinput->incomplete ? "" : " not");
       }
    }
 
@@ -1062,8 +1062,8 @@ SCIP_RETCODE readDECFile(
          case DEC_START:
             SCIP_CALL( readStart(scip, decinput) );
             break;
-         case DEC_CONSDEFAULTMASTER:
-            SCIP_CALL( readConsDefaultMaster(scip, decinput) );
+         case DEC_INCOMPLETE:
+            SCIP_CALL( readIncomplete(scip, decinput) );
             break;
 
 
@@ -1104,8 +1104,7 @@ SCIP_RETCODE readDECFile(
                SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, conss[i], (void*) (size_t) LINKINGVALUE) );
             }
 
-
-            SCIPconshdlrDecompCreateUserSeeed(scip, decinput->presolved);
+            SCIPconshdlrDecompCreateUserSeeed(scip, decinput->presolved, decinput->incomplete);
             break;
 
          case DEC_NBLOCKS:
@@ -1298,7 +1297,7 @@ SCIP_RETCODE SCIPreadDec(
    decinput.nblocks = NOVALUE;
    decinput.blocknr = - 2;
    decinput.haserror = FALSE;
-   decinput.consdefaultmaster = TRUE;
+   decinput.incomplete = FALSE;
 
    /* read the file */
    retcode = readDECFile(scip, reader, &decinput, filename);

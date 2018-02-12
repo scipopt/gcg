@@ -3047,7 +3047,8 @@ SCIP_RETCODE SCIPconshdlrDecompCreateVarmapForSeeedId(
 /** creates a user seeed for the presolved problem **/
 SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             presolved           /**< should the user seeed be created for the presolved problem */
+   SCIP_Bool             presolved,          /**< should the user seeed be created for the presolved problem */
+   SCIP_Bool             markedincomplete
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -3079,7 +3080,11 @@ SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    conshdlrdata->curruserseeed = new gcg::Seeed(scip, currseeedpool->getNewIdForSeeed(), currseeedpool->getNConss(), currseeedpool->getNVars() );
 
    conshdlrdata->curruserseeed->setSeeedpool(currseeedpool );
-   conshdlrdata->curruserseeed->setStemsFromUnpresolved( !presolved );
+   conshdlrdata->curruserseeed->setIsFromUnpresolved( !presolved );
+   if( markedincomplete )
+      conshdlrdata->curruserseeed->setUsergiven(USERGIVEN::PARTIAL);
+   else
+      conshdlrdata->curruserseeed->setUsergiven(USERGIVEN::COMPLETED_CONSTOMASTER);
 
    return SCIP_OKAY;
 }
@@ -3735,7 +3740,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
    }
 
    seeed = conshdlrdata->curruserseeed;
-   currseeedpool = seeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+   currseeedpool = seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
    seeed->setSeeedpool(currseeedpool);
    seeed->flushBooked();
 

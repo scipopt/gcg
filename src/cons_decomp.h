@@ -217,7 +217,8 @@ SEEEDPOOL_WRAPPER* SCIPconshdlrDecompGetSeeedpoolExtern(
 /** creates a user seeed for the presolved problem **/
 SCIP_RETCODE SCIPconshdlrDecompCreateUserSeeed(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             presolved           /**< should the user seeed be created for the presolved problem */
+   SCIP_Bool             presolved,          /**< should the user seeed be created for the presolved problem */
+   SCIP_Bool             markedincomplete
    );
 
 SCIP_RETCODE SCIPconshdlrDecompExecSelect(

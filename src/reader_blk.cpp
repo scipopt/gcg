@@ -1011,7 +1011,7 @@ SCIP_RETCODE readBLKFile(
       case BLK_NBLOCKS:
          if( blkinput->haspresolvesection )
          {
-                     SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
+                     SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved, FALSE);
          }
          SCIP_CALL( readNBlocks(scip, blkinput) );
          if( blkinput->haspresolvesection && !blkinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
@@ -1024,7 +1024,7 @@ SCIP_RETCODE readBLKFile(
             SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. It is assumed to belong to the unpresolved problem but the behaviour is undefined. See the FAQ for further information.\n");
             blkinput->presolved = FALSE;
             SCIPconshdlrDecompCreateSeeedpoolUnpresolved(scip);
-            SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved);
+            SCIPconshdlrDecompCreateUserSeeed(scip, blkinput->presolved, FALSE);
          }
 
          break;

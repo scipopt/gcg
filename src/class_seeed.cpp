@@ -6219,9 +6219,7 @@ SCIP_RETCODE Seeed::writeAsDec(
 
 
    if( !isComplete() )
-         SCIPinfoMessage(scip, file, "CONSDEFAULTMASTER\n0\n" );
-   else
-         SCIPinfoMessage(scip, file, "CONSDEFAULTMASTER\n1\n" );
+         SCIPinfoMessage(scip, file, "INCOMPLETE\n1\n" );
 
    if( isFromUnpresolved() )
       SCIPinfoMessage(scip, file, "PRESOLVED\n0\n" );
@@ -6233,7 +6231,7 @@ SCIP_RETCODE Seeed::writeAsDec(
 
    for( int b = 0; b < getNBlocks(); ++b )
    {
-      SCIPinfoMessage(scip, file, "BLOCKCONSS %d\n", b+1 );
+      SCIPinfoMessage(scip, file, "BLOCK %d\n", b+1 );
       for( size_t c = 0; c < conssForBlocks[b].size(); ++c )
       {
          SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( conssForBlocks[b][c])) );
@@ -6245,6 +6243,9 @@ SCIP_RETCODE Seeed::writeAsDec(
    {
       SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( masterConss[mc])) );
    }
+
+   if( isComplete() )
+      return SCIP_OKAY;
 
    for( int b = 0; b < getNBlocks(); ++b )
    {
