@@ -3433,8 +3433,8 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToBlock(
       return SCIP_OKAY;
    }
 
-   currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
-   cons = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? (SCIPfindOrigCons(scip, consname ) == NULL ? SCIPfindCons(scip, consname ): SCIPfindOrigCons(scip, consname )) : SCIPfindCons(scip, consname );
+   currseeedpool = conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+   cons = conshdlrdata->curruserseeed->isFromUnpresolved() ? (SCIPfindOrigCons(scip, consname ) == NULL ? SCIPfindCons(scip, consname ): SCIPfindOrigCons(scip, consname )) : SCIPfindCons(scip, consname );
    consindex = currseeedpool->getIndexForCons( cons ) ;
 
    if( blockid >= conshdlrdata->curruserseeed->getNBlocks() )
@@ -3474,9 +3474,9 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetConsToMaster(
       return SCIP_OKAY;
    }
 
-   currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+   currseeedpool = conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
 
-   cons = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? SCIPfindOrigCons(scip, consname ) : SCIPfindCons(scip, consname );
+   cons = conshdlrdata->curruserseeed->isFromUnpresolved() ? SCIPfindOrigCons(scip, consname ) : SCIPfindCons(scip, consname );
    consindex = currseeedpool->getIndexForCons( cons );
 
    conshdlrdata->curruserseeed->bookAsMasterCons(consindex);
@@ -3515,7 +3515,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToBlock(
       return SCIP_OKAY;
    }
 
-   currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+   currseeedpool = conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
    varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
 
    if( blockid >= conshdlrdata->curruserseeed->getNBlocks() )
@@ -3554,7 +3554,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToMaster(
       return SCIP_OKAY;
    }
 
-   currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+   currseeedpool = conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
    varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
 
    conshdlrdata->curruserseeed->bookAsMasterVar(varindex);
@@ -3699,7 +3699,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedSetVarToLinking(
       return SCIP_OKAY;
    }
 
-      currseeedpool = conshdlrdata->curruserseeed->getStemsFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
+      currseeedpool = conshdlrdata->curruserseeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool;
       varindex = currseeedpool->getIndexForVar( SCIPfindVar(scip, varname ) );
 
       conshdlrdata->curruserseeed->bookAsLinkingVar(varindex);
@@ -3766,7 +3766,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       if( !seeed->shouldCompletedByConsToMaster() )
          conshdlrdata->curruserseeed->setUsergiven( gcg::USERGIVEN::COMPLETE );
       /** stems from presolved problem? */
-      if( !conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
+      if( !conshdlrdata->curruserseeed->isFromUnpresolved() )
       {
          SCIP_CALL( SCIPconshdlrDecompAddCompleteSeeedForPresolved(scip, conshdlrdata->curruserseeed));
 
@@ -3801,7 +3801,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       conshdlrdata->curruserseeed->setUsergiven( gcg::USERGIVEN::PARTIAL );
       SCIP_Bool success;
 
-      if ( !conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
+      if ( !conshdlrdata->curruserseeed->isFromUnpresolved() )
          SCIP_CALL(SCIPconshdlrDecompAddPartialSeeedForPresolved(scip, conshdlrdata->curruserseeed) );
       else
          conshdlrdata->seeedpoolunpresolved->addSeeedToIncomplete( conshdlrdata->curruserseeed, &success );
@@ -3842,7 +3842,7 @@ SCIP_RETCODE SCIPconshdlrDecompUserSeeedFlush(
       usergiveninfo = "complete";
    if( conshdlrdata->curruserseeed->getUsergiven() == gcg::USERGIVEN::COMPLETED_CONSTOMASTER )
          usergiveninfo = "complete";
-   if( conshdlrdata->curruserseeed->getStemsFromUnpresolved() )
+   if( conshdlrdata->curruserseeed->isFromUnpresolved() )
          presolvedinfo = "unpresolved";
    else presolvedinfo = "presolved";
 
@@ -5119,7 +5119,7 @@ SCIP_RETCODE DECwriteFamilyTree(
 	SCIPdebugMessage("Checking list of seeeds to visualize: \n");
 	for( size_t i = 0; i <  tovisualize.size(); ++i )
 	{
-	   SCIPdebugMessage( "%d th seeed: id: %d ahs ancestors from unpresolved: %d \n", (int) i, tovisualize[i]->getID(), tovisualize[i]->getStemsFromUnpresolved() );
+	   SCIPdebugMessage( "%d th seeed: id: %d has ancestors from unpresolved: %d \n", (int) i, tovisualize[i]->getID(), tovisualize[i]->getStemsFromUnpresolved() );
 	}
 
 	/* let tex reader handle the visualization of the family tree */
