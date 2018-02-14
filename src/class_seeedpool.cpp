@@ -5432,10 +5432,13 @@ SCIP_RETCODE Seeedpool::printBlockcandidateInformation(
 
    std::sort( candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "The following %d candidates for the number of blocks are found: (candidate : number of votes)   \n", (int) candidatesNBlocks.size() );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "The following %d candidates for the number of blocks are known: (candidate : number of votes)   \n", (int) candidatesNBlocks.size() );
    for( size_t i  = 0; i  < candidatesNBlocks.size(); ++i )
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d : %d  \n", candidatesNBlocks[i].first, candidatesNBlocks[i].second );
+      if( candidatesNBlocks[i].second != INT_MAX )
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d : %d  \n", candidatesNBlocks[i].first, candidatesNBlocks[i].second );
+      else
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d : %s  \n", candidatesNBlocks[i].first, "user given" );
    }
 
    return SCIP_OKAY;
