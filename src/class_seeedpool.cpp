@@ -4965,7 +4965,7 @@ SCIP_RETCODE Seeedpool::createDecompFromSeeed(
 
    if( seeed->getNBlocks() - ndeletedblocks == 0 )
    {
-      SCIPwarningMessage(scip, "All blocks have been deleted since only deleted constraints are contained, no reformulationj is done.\n");
+      SCIPwarningMessage(scip, "All blocks have been deleted since only deleted constraints are contained, no reformulation is done.\n");
    }
 
    //detectorchaininfo ;
