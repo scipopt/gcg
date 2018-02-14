@@ -367,7 +367,9 @@ SCIP_RETCODE solveKnapsack(
 
    for( i = 0; i < nsolitems; i++ )
    {
-      if( consvals[solitems[i]] >= 0 )
+      assert(consvals[solitems[i]] >= 0 || !SCIPvarIsNegated(consvars[solitems[i]]));
+
+      if( consvals[solitems[i]] >= 0 && !SCIPvarIsNegated(consvars[solitems[i]]) )
       {
          for( j = 0; j < nsolvars; ++j )
             if( solvars[j] == consvars[solitems[i]] )
@@ -386,15 +388,19 @@ SCIP_RETCODE solveKnapsack(
 
    for( i = 0; i < nnonsolitems; i++ )
    {
-      if( consvals[nonsolitems[i]] < 0 )
+      assert(consvals[nonsolitems[i]] >= 0 || !SCIPvarIsNegated(consvars[nonsolitems[i]]));
+
+      if( consvals[nonsolitems[i]] < 0 || SCIPvarIsNegated(consvars[nonsolitems[i]]) )
       {
+         SCIP_VAR* solvar = SCIPvarIsNegated(consvars[nonsolitems[i]]) ? SCIPvarGetNegatedVar(consvars[nonsolitems[i]]) : consvars[nonsolitems[i]];
+
          for( j = 0; j < nsolvars; ++j )
-            if( solvars[j] == consvars[nonsolitems[i]] )
+            if( solvars[j] == solvar )
                break;
 
          if( j == nsolvars )
          {
-            solvars[j] = consvars[nonsolitems[i]];
+            solvars[j] = solvar;
             solvals[j] = 1.0;
             ++nsolvars;
          }
