@@ -313,7 +313,7 @@ SCIP_RETCODE solveKnapsack(
    for( k = 0; k < nitems; k++ )
    {
       i = items[k];
-      if( SCIPisPositive(pricingprob, consvals[i]) )
+      if( consvals[i] > 0 )
       {
          weights[k] = consvals[i];
          SCIPdebugMessage("  -> item %3d: weight = %"SCIP_LONGINT_FORMAT"\n", k, weights[k]);
@@ -429,9 +429,7 @@ SCIP_RETCODE solveKnapsack(
    solval = 0.0;
 
    for( i = 0; i < nsolvars; ++i )
-   {
       solval += solvals[i] * SCIPvarGetObj(solvars[i]);
-   }
 
    *lowerbound = solval;
 
