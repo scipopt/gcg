@@ -82,14 +82,14 @@ SCIP_RETCODE MiscVisualization::GCGgetVisualizationFilename(
    else if(detectorchainstring != NULL)
    {
       /* if there is a Seeed that was detected in GCG */
-      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%s-%d-%d", name, detectorchainstring, seeed->getID(),
-         seeed->getNBlocks());
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%s-%d-%d-%s", name, detectorchainstring, seeed->getID(),
+         seeed->getNBlocks(), extension);
    }
    else
    {
       /* if there is a Seeed but it was not detected in GCG */
-      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%d-%d", name, seeed->getID(),
-         seeed->getNBlocks());
+      (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s-%d-%d-%s", name, seeed->getID(),
+         seeed->getNBlocks(), extension);
    }
 
    /* some filenames can still have dots in them (usually from prob name) which can cause confusion */
