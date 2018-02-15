@@ -58,7 +58,7 @@ def parse_arguments(args):
 
     parser.add_argument('-i', '--instances', type=str, nargs = '*',
                         default="",
-                        help='names of the instances to be included in the plot/data-collection (default is all instances in FILENAMES)')
+                        help='names of the instances to be included in the plot/data-collection (can be only part of the name; default is all instances in FILENAMES)')
 
     parser.add_argument('-a', '--complete-only', action='store_true',
                         help='create only complete plots')
@@ -191,11 +191,35 @@ def get_x1_in_data(obj, figure):
     """
     return obj.get_window_extent(renderer = figure.canvas.get_renderer()).transformed(figure.gca().transData.inverted()).x1
 
-def make_plot(data, name):
+def get_info_from_filename(filename):
+    """
+    Parses a filename and extracts the instance name, settings & scip_status
+    :param filename: the name of a pickle-file without extension
+    :return: info dictionary
+    """
+    info = {}
+    info['status'] = filename.split('.')[-1]
+    info['settings'] = filename.split('.')[-2]
+    info['instance'] = filename[:-(len(info['settings']) + len(info['status']) + 1)]
+
+def get_filename_from_info(info):
+    """
+    Parses a filename and extracts the instance name, settings & scip_status
+    :param filename: the name of a pickle-file without extension
+    :return: info dictionary
+    """
+    filename = str(info['instance']) + '.' + info['settings'] + '.' + info['status']
+    if 'minRound' in info:
+        filename += '.from' + info['minRound']
+        if 'maxRound' in info:
+            filename += 'to' + info['maxRound']
+    return filename
+
+def make_plot(data, info):
     """
     Make a complete plot from the structured data
     :param data: dataframe with the collected data
-    :param name: the problemname
+    :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
     :return:
     """
     start_time = time.time()
@@ -274,11 +298,17 @@ def make_plot(data, name):
 
     if params['no_text']:
         # save the figure
+        filename = params['outdir'] + '/' + get_filename_from_info(info)
+        n = ''
+        while os.path.isfile(filename + n):
+            if n == '':
+                n = 1
+            else:
+                n += 1
         if params['details']:
-            plt.savefig(params['outdir'] + '/' + name + '.pdf')
+            plt.savefig(filename + n + '.pdf')
         else:
-            plt.savefig(params['outdir'] + '/' + name + '.png')
-        plt.close()
+            plt.savefig(filename + n + '.png')
 
         print '    save:', time.time() - start_time
         print '    saved figure'
@@ -366,33 +396,51 @@ def make_plot(data, name):
         if len(patches) > 31:
             patches = patches[:31] + [mpatches.Patch(color = 'white', alpha = 0, label = '...')]
         handles = patches + [lines.Line2D([0,0], [0,1], color = 'red', linewidth = 2., label = 'pricing round'), lines.Line2D([0,0], [0,1], color = 'orange', linestyle = '--', linewidth = 1.6, label = 'stabilization round'), cp_scatter]
-        plt.legend(handles = handles, bbox_to_anchor = (1.02, 1), loc = 2, fontsize = textsize)
+        plt.legend(handles = handles, bbox_to_anchor = (1.02, .975), loc = 2, fontsize = textsize)
 
         # add other information
+        settings = info['settings']
+        name = info['instance']
         if len(name) <= 12:
-            ax.text(1.093, (text_height + 1.)/2., '\\textbf{\\underline{' + name.replace('_','\_') + '}}', ha = 'center', va = 'center', size = 1.3 * textsize, transform = ax.transAxes)
+            ax.text(1.093, (text_height + 1.)/2., '\\textbf{\\underline{' + name.replace('_','\_') + '}} \n (' + settings + ')', ha = 'center', va = 'center', size = 1.3 * textsize, transform = ax.transAxes)
         else:
-            ax.text(1.093, (text_height + 1.)/2., '\\textbf{\\underline{' + name[:11].replace('_','\_') + '\dots}}', ha = 'center', va = 'center', size = 1.3 * textsize, transform = ax.transAxes)
+            ax.text(1.093, (text_height + 1.)/2., '\\textbf{\\underline{' + name[:11].replace('_','\_') + '\\dots}} \n (' + settings + ')', ha = 'center', va = 'center', size = 1.3 * textsize, transform = ax.transAxes)
+        name = name + '.' + settings
 
         # save the figure
         plt.tight_layout()
         fig.subplots_adjust(top = 0.98/text_height, right = 0.85, left = 0.03)
+        filename = params['outdir'] + '/' + name
+        n = ''
+        dot = ''
         if params['details']:
-            plt.savefig(params['outdir'] + '/' + name + '.pdf')
+            while os.path.isfile(filename + dot + str(n) + '.pdf'):
+                if n == '':
+                    n = 2
+                    dot = '.'
+                else:
+                    n += 1
+            plt.savefig(filename + dot + str(n) + '.pdf')
         else:
-            plt.savefig(params['outdir'] + '/' + name + '.png')
+            while os.path.isfile(filename + dot + str(n) + '.png'):
+                if n == '':
+                    n = 2
+                    dot = '.'
+                else:
+                    n += 1
+            plt.savefig(filename + dot + str(n) + '.png')
         plt.close()
 
         print '    save:', time.time() - start_time
         print '    saved figure'
 
-def make_summary_plot(data, name):
+def make_summary_plot(data, info):
     """
     For each instance create one summary plot, which shows for each round the
     cumulated running time of the pricers in this round as well as the fraction of
     pricers, that did find a variable.
     :param data: dataframe with the collected (complete) data
-    :param name: the problemname
+    :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
     :return:
     """
     start_time = time.time()
@@ -509,9 +557,6 @@ def make_summary_plot(data, name):
             align = 'center'
         ax1.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = align, color = 'blue', zorder = 1, transform = trans)
 
-    print '    plotted summary:', time.time() - start_time
-    start_time = time.time()
-
     # draw a legend
     handles = []
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, label = 'Pricing Round'))
@@ -519,27 +564,42 @@ def make_summary_plot(data, name):
     plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1., 1.04), ncol = 2, mode = 'expand')
 
     # add other information
-    ax1.text(.5, 1.11, '\\textbf{\\underline{' + name.replace('_','\_') + '}}', ha = 'center', size = 'large', transform = ax1.transAxes)
+    ax1.text(.5, 1.11, '\\textbf{\\underline{' + info['instance'].replace('_','\_') + '}}', ha = 'center', size = 'large', transform = ax1.transAxes)
 
-    print '    legend and other information:', time.time() - start_time
+    print '    plotted summary:', time.time() - start_time
     start_time = time.time()
 
     # save the plot
     fig.set_size_inches(11.7,8.3)
     plt.tight_layout()
     fig.subplots_adjust(top = 0.87)
+    filename = params['outdir'] + '/' + info['instance'] + '.summary'
+    n = ''
+    dot = ''
     if params['details']:
-        plt.savefig(params['outdir'] + '/' + name + '_summary.pdf')
+        while os.path.isfile(filename + dot + str(n) + '.pdf'):
+            if n == '':
+                n = 2
+                dot = '.'
+            else:
+                n += 1
+        plt.savefig(filename + dot + str(n) + '.pdf')
     else:
-        plt.savefig(params['outdir'] + '/' + name + '_summary.png')
+        while os.path.isfile(filename + dot + str(n) + '.png'):
+            if n == '':
+                n = 2
+                dot = '.'
+            else:
+                n += 1
+        plt.savefig(filename + dot + str(n) + '.png')
     plt.close()
     print '    saved summary:', time.time() - start_time
 
-def make_bubble_plot(data, name):
+def make_bubble_plot(data, info):
     """
     For each instance create one bubble plot, that shows which pricing problem found a variable in each round
     :param data: dataframe with the collected (complete) data
-    :param name: the problemname
+    :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
     :return:
     """
     start_time = time.time()
@@ -666,7 +726,11 @@ def make_bubble_plot(data, name):
         ax.text(x_line, 1.01, "\it{End of initial Farkas Pricing}", size = 'smaller', ha = align, color = 'blue', zorder = 11, transform = trans)
 
     # draw the bar plot
-    ax_bar.barh(y_bar, x_bar, align = 'center', height = .95, color = [cmapping[p] for p in y_bar])
+    if pricer_max - pricer_min >= 4:
+        height = .95
+    else:
+        height = .1
+    ax_bar.barh(y_bar, x_bar, align = 'center', height = height, color = [cmapping[p] for p in y_bar])
 
     print '    plotted bubble data:', time.time() - start_time
     start_time = time.time()
@@ -676,27 +740,42 @@ def make_bubble_plot(data, name):
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markersize = 5, label = 'Pricer has found at least one variable'))
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'none', markeredgecolor = 'green', markersize = 5, label = 'Variables were taken from column pool'))
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, alpha = .5, label = 'Pricer has found at least one variable in stab. round'))
-    ax.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1., 1.04), ncol = 3, mode = 'expand')
+    ax.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1.18, .02), ncol = 3, mode = 'expand')
 
     # add other information
-    ax.text(.5, 1.11, '\\textbf{\\underline{' + name.replace('_','\_') + '}}', ha = 'center', size = 'large', transform = ax.transAxes)
+    ax.text(.5, 1.11, '\\textbf{\\underline{' + info['instance'].replace('_','\_') + '}}', ha = 'center', size = 'large', transform = transforms.blended_transform_factory(fig.transFigure, ax.transAxes))
 
     # save the plot
     fig.set_size_inches(11.7,8.3)
     gs.tight_layout(fig,rect = (0,0,1,.9))
+    filename = params['outdir'] + '/' + info['instance'] + '.bubble'
+    n = ''
+    dot = ''
     if params['details']:
-        plt.savefig(params['outdir'] + '/' + name + '_bubble.pdf')
+        while os.path.isfile(filename + dot + str(n) + '.pdf'):
+            if n == '':
+                n = 2
+                dot = '.'
+            else:
+                n += 1
+        plt.savefig(filename + dot + str(n) + '.pdf')
     else:
-        plt.savefig(params['outdir'] + '/' + name + '_bubble.png')
+        while os.path.isfile(filename + dot + str(n) + '.png'):
+            if n == '':
+                n = 2
+                dot = '.'
+            else:
+                n += 1
+        plt.savefig(filename + dot + str(n) + '.png')
     plt.close()
 
     print '    saved bubble plot:', time.time() - start_time
 
-def plots(data, name):
+def plots(data, info):
     """
     Master-function for plotting. Splits the data if necessary and calls all three plotting functions (or a subset, according to the params)
     :param data: collected data as dataframe
-    :param name: name of the problem
+    :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
     :return:
     """
 
@@ -720,17 +799,19 @@ def plots(data, name):
     if params['nSplit'] <= 0:
         # do not split the plots, but still check if rounds were neglected
         if params['minRound'] > 1 or params['maxRound'] > 0:
-            name += '_rounds' + str(params['minRound']) + 'to' + str(maxRnd)
+#            name += '_rounds' + str(params['minRound']) + 'to' + str(maxRnd)
+            info['rounds_min'] = minRnd
+            info['rounds_max'] = maxRnd
         data = data.query('node <= @maxNode & @minRnd <= pricing_round <= @maxRnd')
         if not params['no_bubble']:
             # build the bubble plot
-            make_bubble_plot(data, name)
+            make_bubble_plot(data, info)
         if not params['no_summary']:
             # build the summary plot
-            make_summary_plot(data, name)
+            make_summary_plot(data, info)
         if not params['no_complete']:
             # do not build the complete plot
-            make_plot(data, name)
+            make_plot(data, info)
     else:
         # split the plots by rounds
         fromRnd = minRnd - 1
@@ -739,16 +820,18 @@ def plots(data, name):
                 continue
             toRnd = i+minRnd
             data = data.query('@fromRnd < pricing_round <= @toRnd & node <= @maxNode')
-            name = name + '_rounds' + str(fromRnd + 1) + 'to' + str(toRnd)
+#            name = name + '_rounds' + str(fromRnd + 1) + 'to' + str(toRnd)
+            info['rounds_min'] = fromRnd + 1
+            info['rounds_max'] = toRnd
             if not params['no_bubble']:
                 # build the bubble plot
-                make_bubble_plot(data, name)
+                make_bubble_plot(data, info)
             if not params['no_summary']:
                 # build the summary plot
-                make_summary_plot(data, name)
+                make_summary_plot(data, info)
             if not params['no_complete']:
                 # do not build the complete plot
-                make_plot(data, name)
+                make_plot(data, info)
             fromRnd = toRnd
 
     # this line does not do anything, but removing code-analysis warnings, as the variable is not used where the parser could see it..
@@ -764,14 +847,15 @@ def load_data(files):
         if not os.path.exists(file):
             print 'there is no file', file
             continue
-        name, ext = os.path.splitext(os.path.basename(file))
+        filename, ext = os.path.splitext(os.path.basename(file))
+        info = get_info_from_filename(filename)
         if not (ext == '.pkl'):
             print file, 'is not a pickle file'
             continue
-        if params['instances'] <> '' and not (name in params['instances']):
-            print 'skipping', name
+        if params['instances'] <> '' and not any([(string in filename) for string in params['instances']]):
+            print 'skipping', info['instance']
             continue
-        print 'entering', name
+        print 'entering', info['instance']
         start_time = time.time()
         df = pd.read_pickle(file)
         print '    loading data:', time.time() - start_time
@@ -779,15 +863,15 @@ def load_data(files):
             print '    no data found'
         else:
             start_time = time.time()
-            plots(df, name)
+            plots(df, info)
             print '    total plotting:', time.time() - start_time
-        print '    leaving', name
+        print '    leaving', info['instance']
 
-def collect_data(name, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas):
+def collect_data(filename, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas):
     """
     Take lists containing the parsed data and structure them in a multiindex dataframe; then save or plot the data.
     All lists have to be of equal length (representing columns in a table)
-    :param name: name of the instance
+    :param filename: name of the instance, settings & SCIP_status (format: instance.settings.scip_status)
     :param ind_node: node, used as index
     :param ind_pricing_round: pricing round, used as index
     :param ind_stab_round: stabilization round, used as index
@@ -805,11 +889,11 @@ def collect_data(name, ind_node, ind_pricing_round, ind_stab_round, ind_round, i
     # save or plot the data
     if params['save']:
         start_time = time.time()
-        df.to_pickle(params['outdir'] + '/' + name + '.pkl')
+        df.to_pickle(params['outdir'] + '/' + filename + '.pkl')
         print '    total saving:', time.time() - start_time
     else:
         start_time = time.time()
-        plots(df, name)
+        plots(df, get_info_from_filename(filename))
         print '    total plotting:', time.time() - start_time
 
 def parse_files(files):
@@ -841,6 +925,8 @@ def parse_files(files):
 
             # initialize all other variables
             problemFileName = None
+            settings = 'default'
+            scip_status = 'NONE'
             farkasDone = False
             done = False
 
@@ -851,7 +937,7 @@ def parse_files(files):
                         # print message, if the previous problem is not done yet
                         if not done and problemFileName:
                             print '    ended abruptly'
-                            collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                            collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                             print '    leaving', problemFileName
                             done = True
 
@@ -876,6 +962,8 @@ def parse_files(files):
 
                         # initialize all other variables
                         problemFileName = None
+                        settings = 'default'
+                        scip_status = 'NONE'
                         farkasDone = False
                         done = False
                     else:
@@ -886,6 +974,12 @@ def parse_files(files):
                 elif done:
                     continue
 
+                elif line.startswith("loaded parameter file"):
+                    # store current settings
+                    settings=line.split()[-1]
+                    settings=settings.split("/")[-1]
+                    settings = os.path.splitext(settings)[0]
+
                 elif not problemFileName and line.startswith("read problem "):
                     # get the problem name from the file name as in "check.awk"
                     tmparray = line.split("<")[-1].replace(">","").replace("\n","").split("/")[-1].split(".")
@@ -894,7 +988,7 @@ def parse_files(files):
                         tmparray.pop()
                     for i in range(1,len(tmparray)-1):
                         problemFileName += "." + tmparray[i]
-                    if params['instances'] <> '' and not (problemFileName in params['instances']):
+                    if params['instances'] <> '' and not any([(string in problemFileName) for string in params['instances']]):
                         print 'skipping', problemFileName
                         done = True
                         continue
@@ -912,7 +1006,9 @@ def parse_files(files):
                         done = True
                         continue
 
-                    collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                    scip_status = line.split(':')[1].split('[')[1].split(']')[0].replace(' ','_')
+
+                    collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
 
                     done = True
 
@@ -934,7 +1030,7 @@ def parse_files(files):
                         stab_round = 0
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -945,7 +1041,7 @@ def parse_files(files):
                         round_counter += 1
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -971,7 +1067,7 @@ def parse_files(files):
                             val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -1000,13 +1096,13 @@ def parse_files(files):
                         val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
 
             if not done:
-                collect_data(problemFileName, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
 
 def main():
     """Entry point when calling this script"""
