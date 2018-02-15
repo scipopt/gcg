@@ -280,7 +280,7 @@ int INDSETgetLinkedNodeIndex(
    int        i;
 
    nodeindex = INDSETgetNodeIndex(var,indsetvars,indexcount);
-   if( nodeindex == -1 )
+   if( nodeindex == -1 && INDSETisVarLinked(linkedvars,nlinkedvars,var) )
    {
       for( i = 0; i < nlinkedvars; ++i )
       {
@@ -839,16 +839,16 @@ SCIP_RETCODE solveIndependentSet(
             {
                /* Delete the edges between all the variables of the constraint. 
                   This way, at most one can be part of the maximum clique */
-               for( k = 0; k < nvars; ++k )
+               for( j = 0; j < nvars; ++j )
                {
                   /* We are only interested in vars potentially relevant for pricing (obj < 0) */
-                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[k]),0) || INDSETgetLinkedNodeIndex(pricingprob,lconsvars[k],indsetvars,indexcount,linkmatrix,linkedvars,nlinkedvars) != -1 )
+                  if( SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[j]),0) || INDSETgetLinkedNodeIndex(pricingprob,lconsvars[j],indsetvars,indexcount,linkmatrix,linkedvars,nlinkedvars) != -1 )
                   {
-                     nodeindex0 = INDSETaddVarToGraph(pricingprob, g, lconsvars[k], &indexcount, scalingfactor, indsetvars, linkmatrix, INDSETisVarLinked(linkedvars,nlinkedvars,lconsvars[k]),linkedvars,nlinkedvars);
+                     nodeindex0 = INDSETaddVarToGraph(pricingprob, g, lconsvars[j], &indexcount, scalingfactor, indsetvars, linkmatrix, INDSETisVarLinked(linkedvars,nlinkedvars,lconsvars[j]),linkedvars,nlinkedvars);
 
-                     for( int l = k + 1; l < nvars; ++l )
+                     for( k = j + 1; k < nvars; ++k )
                      {
-                        nodeindex1 = INDSETaddVarToGraph(pricingprob, g, lconsvars[l], &indexcount, scalingfactor, indsetvars, linkmatrix, INDSETisVarLinked(linkedvars,nlinkedvars,lconsvars[l]),linkedvars,nlinkedvars);
+                        nodeindex1 = INDSETaddVarToGraph(pricingprob, g, lconsvars[k], &indexcount, scalingfactor, indsetvars, linkmatrix, INDSETisVarLinked(linkedvars,nlinkedvars,lconsvars[k]),linkedvars,nlinkedvars);
 
                         if( nodeindex0 != nodeindex1 )
                         {
@@ -966,7 +966,7 @@ SCIP_RETCODE solveIndependentSet(
                      }
                   }
                   /* If none of the nodes are relevant, force x to be zero, since the constraint would be violated if x = 1 and y = 0 */
-                  solvals[SCIPvarGetProbindex(vconsvars[0])] = 0;
+                  INDSETsetLinkedSolvals(pricingprob,solvals,linkmatrix,linkedvars,nlinkedvars,vconsvars[0],0.0);
                }
                else
                {
@@ -1163,10 +1163,9 @@ SCIP_RETCODE solveIndependentSet(
             || SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,markedconstraints[i]),-1)) )
       {
          /* Check if a violating assignment was made and correct it */
-         if( (solvals[SCIPvarGetProbindex(vconsvars[0])] == 1) && (SCIPvarGetProbindex(vconsvars[1]) == 0) )
+         if( (solvals[SCIPvarGetProbindex(vconsvars[0])] == 1) && (solvals[SCIPvarGetProbindex(vconsvars[1])] == 0) )
          {
-            solvals[SCIPvarGetProbindex(vconsvars[0])] = 0;
-            solvals[SCIPvarGetProbindex(vconsvars[1])] = 0;
+            INDSETsetLinkedSolvals(pricingprob,solvals,linkmatrix,linkedvars,nlinkedvars,vconsvars[0],0.0);
          }
       }
 
@@ -1178,14 +1177,12 @@ SCIP_RETCODE solveIndependentSet(
       {
          if( solvals[SCIPvarGetProbindex(vconsvars[0])] == 0 || solvals[SCIPvarGetProbindex(vconsvars[1])] == 0 )
          {
-            solvals[SCIPvarGetProbindex(vconsvars[0])] = 0.0;
-            solvals[SCIPvarGetProbindex(vconsvars[1])] = 0.0;
+            INDSETsetLinkedSolvals(pricingprob,solvals,linkmatrix,linkedvars,nlinkedvars,vconsvars[0],0.0);
          }
          else
          {
             /* One or both of the vars are unset and the other one, if not -1, is forced to be 1, thus we can set both to 1 */
-            solvals[SCIPvarGetProbindex(vconsvars[0])] = 1.0;
-            solvals[SCIPvarGetProbindex(vconsvars[1])] = 1.0;
+            INDSETsetLinkedSolvals(pricingprob,solvals,linkmatrix,linkedvars,nlinkedvars,vconsvars[0],1.0);
          }
       }
    }
