@@ -200,7 +200,8 @@ def get_info_from_filename(filename):
     info = {}
     info['status'] = filename.split('.')[-1]
     info['settings'] = filename.split('.')[-2]
-    info['instance'] = filename[:-(len(info['settings']) + len(info['status']) + 1)]
+    info['instance'] = filename[:-(len(info['settings']) + len(info['status']) + 2)]
+    return info
 
 def get_filename_from_info(info):
     """
@@ -848,10 +849,10 @@ def load_data(files):
             print 'there is no file', file
             continue
         filename, ext = os.path.splitext(os.path.basename(file))
-        info = get_info_from_filename(filename)
         if not (ext == '.pkl'):
             print file, 'is not a pickle file'
             continue
+        info = get_info_from_filename(filename)
         if params['instances'] <> '' and not any([(string in filename) for string in params['instances']]):
             print 'skipping', info['instance']
             continue
