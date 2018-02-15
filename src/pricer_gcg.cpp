@@ -1381,10 +1381,7 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercoefs(
    assert(GCGcolGetNMastercoefs(gcgcol) == 0 || GCGcolGetNMastercoefs(gcgcol) == nmasterconss);
 
    if( GCGcolGetInitializedCoefs(gcgcol) )
-   {
-      SCIPdebugMessage("Coeffictions already computed, nmastercoefs = %d\n", GCGcolGetNMastercoefs(gcgcol));
       return SCIP_OKAY;
-   }
 
    if( nmasterconss > 0)
    {
