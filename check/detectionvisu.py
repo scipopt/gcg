@@ -53,6 +53,7 @@ class App:
 
     def open_file(self):
         name = askopenfilename(initialdir="/local/bastubbe/gcg-dev/check/test")
+        print "Test 0\n"
         self.datasets.append(Dataset(name) )
         self.listboxclassifier = Listbox(self.frame)
         self.listboxclassifier.grid(row=10, column=0)
@@ -72,9 +73,12 @@ class App:
         Label(self.frame, text=self.l3text).grid(row=2, column=0, sticky=W)
         Label(self.frame, text=self.l4text).grid(row=3, column=0, sticky=W)
 
+        print "Test 1\n"
+        self.plotdetectionquality()
 
 
     def plotdetectionquality(self):
+        print "Test 2\n"
         self.plotter.plotdetectionquality(self.datasets)
 
     def plotdetectionqualitysetpartmaster(self):
