@@ -167,6 +167,18 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
    return 0;
 }
 
+/** check if the pricing job is done */
+SCIP_Bool Pricingcontroller::pricingjobIsDone(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   ) const
+{
+   return GCGpricingjobGetNImpCols(pricingjob) > 0
+      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_OPTIMAL
+      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_INFEASIBLE
+      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_UNBOUNDED
+      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_INFORUNBD;
+}
+
 SCIP_RETCODE Pricingcontroller::initSol()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
@@ -319,17 +331,14 @@ void Pricingcontroller::evaluatePricingjob(
    GCG_PRICINGJOB*       pricingjob         /**< pricing job */
    )
 {
-   SCIPdebugMessage("Problem %d, status = %d\n", GCGpricingjobGetProbnr(pricingjob), SCIPgetStatus(GCGpricingjobGetPricingscip(pricingjob)));
+   SCIPdebugMessage("Problem %d, status = %d\n", GCGpricingjobGetProbnr(pricingjob), GCGpricingjobGetStatus(pricingjob));
 
    /* If the pricing job has not yielded any improving column, possibly solve it again;
     * increase at least one of its limits, or solve it exactly if it was solved heuristically before
     */
    // @todo: update score of pricing job
-   if( GCGpricingjobGetNImpCols(pricingjob) == 0 )
+   if( !pricingjobIsDone(pricingjob) )
    {
-      // @todo: do not access pricingscip status directly
-      SCIP_STATUS status = SCIPgetStatus(GCGpricingjobGetPricingscip(pricingjob));
-
       SCIPdebugMessage("Problem %d has not yielded improving columns\n", GCGpricingjobGetProbnr(pricingjob));
 
       if( GCGpricingjobIsHeuristic(pricingjob) )
@@ -338,7 +347,7 @@ void Pricingcontroller::evaluatePricingjob(
          GCGpricingjobSetExact(pricingjob);
          SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
       }
-      else if( GCGpricingjobGetStatus(pricingjob) != SCIP_STATUS_OPTIMAL && status == SCIP_STATUS_SOLLIMIT )
+      else if( GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_SOLLIMIT )
       {
          SCIPdebugMessage("  -> increase solution limit\n");
          SCIP_CALL_EXC( GCGpricingjobIncreaseSollimit(pricingjob,
@@ -351,20 +360,22 @@ void Pricingcontroller::evaluatePricingjob(
 /** return whether the reduced cost is valid */
 SCIP_Bool Pricingcontroller::redcostIsValid()
 {
-   SCIP_Bool unknownexists = FALSE; /* Does there exist a pricing problem for which it is not known whether a negative reduced cost column exists? */
+   SCIP_Bool optimal = TRUE;
 
    for( int i = 0; i < npricingprobs; ++i )
    {
       if( pricingjobs[i] == NULL )
          continue;
 
+      assert(GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_INFEASIBLE);
+
       if( GCGpricingjobGetNImpCols(pricingjobs[i]) > 0 )
          return TRUE;
-      else if( GCGpricingjobIsHeuristic(pricingjobs[i]) || GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL )
-         unknownexists = TRUE;
+      else if( GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL )
+         optimal = FALSE;
    }
 
-   return !unknownexists;
+   return optimal;
 }
 
 /* return whether all pricing problems have been solved to optimality */
@@ -375,7 +386,7 @@ SCIP_Bool Pricingcontroller::pricingIsOptimal()
       if( pricingjobs[i] == NULL )
          continue;
 
-      if( GCGpricingjobIsHeuristic(pricingjobs[i]) || SCIPgetStatus(GCGpricingjobGetPricingscip(pricingjobs[i])) != SCIP_STATUS_OPTIMAL )
+      if( GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL )
          return FALSE;
    }
 
