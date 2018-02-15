@@ -263,10 +263,10 @@ do
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
                 echo display statistics            >> $TMPFILE
-                if test $STATISTICS = "true"
-                then
-                    echo display additionalstatistics  >> $TMPFILE
-                fi
+                #if test $STATISTICS = "true"
+                #then
+                echo display additionalstatistics  >> $TMPFILE
+                #fi
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE

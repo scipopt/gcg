@@ -145,8 +145,8 @@ struct SCIP_RelaxData
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
    SCIP_CLOCK*           rootnodetime;       /**< time in root node */
-   SCIP_Real*			 degeneracy;		 /**< degeneracy array */
-   SCIP_Real*			 dualbounds;		 /**< dual bounds array */
+   SCIP_Real*            degeneracy;         /**< degeneracy array */
+   SCIP_Real*            dualbounds;         /**< dual bounds array */
 };
 
 /*
@@ -4045,7 +4045,7 @@ int GCGgetNTransvars(
 
 /** return clock clocking root node time */
 SCIP_CLOCK* GCGgetRootNodeTime(
-   SCIP*                scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
   )
 {
    SCIP_RELAX* relax;
@@ -4064,7 +4064,7 @@ SCIP_CLOCK* GCGgetRootNodeTime(
 
 /** return degeneracy array */
 SCIP_Real* GCGgetDegeneracyArray(
-   SCIP*				scip				 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
   )
 {
    SCIP_RELAX* relax;
@@ -4083,7 +4083,7 @@ SCIP_Real* GCGgetDegeneracyArray(
 
 /** return degeneracy array */
 SCIP_Real* GCGgetDualboundsArray(
-   SCIP*				scip				 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
   )
 {
    SCIP_RELAX* relax;
