@@ -91,12 +91,13 @@ SCIP_Bool INDSETisVarLinked(
   * Use of the wrapper function INDSETareVarsLinked(..) is recommended */
 static
 SCIP_Bool INDSETareVarsLinkedRec(
-   int** linkmatrix,                              /**< Matrix indicating which variables are linked by a node */
-   int   vindex1,                                 /**< Problem index of the first variable in the pair that is to be checked */
-   int   vindex2,                                 /**< Problem index of the second variable in the pair that is to be checked */
-   int   nvars,                                   /**< Dimension of the matrix in both directions*/
-   int*  vartrace,                                /**< Array to keep track of which nodes have already been visited during recursion */
-   int   traceindex                               /**< Index to keep track of the number of visited nodes during recursion */
+   int**          linkmatrix,                     /**< Matrix indicating which variables are linked by a node */
+   int            vindex1,                        /**< Problem index of the first variable in the pair that is to be checked */
+   int            vindex2,                        /**< Problem index of the second variable in the pair that is to be checked */
+   int*           vartrace,                       /**< Array to keep track of which nodes have already been visited during recursion */
+   int            traceindex,                     /**< Index to keep track of the number of visited nodes during recursion */
+   SCIP_VAR**     linkedvars,                     /**< Array of variables that are linked by eq-constraints */
+   int            nlinkedvars                     /**< Index of linkedvars array */
    )
 {
    SCIP_Bool varintrace;
@@ -111,14 +112,14 @@ SCIP_Bool INDSETareVarsLinkedRec(
    /* More complex link by transitivity? */
    else
    {
-      for( i = 0; i < nvars; ++i )
+      for( i = 0; i < nlinkedvars; ++i )
       {
-         if( linkmatrix[vindex1][i] )
+         if( linkmatrix[vindex1][SCIPvarGetProbindex(linkedvars[i])] )
          {
             /* To ensure termination, we have to keep track of the visited vars */
             for( j = 0; j < traceindex; ++j )
             {
-               if( vartrace[j] == i )
+               if( vartrace[j] == SCIPvarGetProbindex(linkedvars[i]) )
                {
                   varintrace = TRUE;
                }
@@ -127,7 +128,7 @@ SCIP_Bool INDSETareVarsLinkedRec(
             {
                vartrace[traceindex] = vindex1;
                ++traceindex;
-               return INDSETareVarsLinkedRec(linkmatrix,i,vindex2,nvars,vartrace,traceindex);
+               return INDSETareVarsLinkedRec(linkmatrix,SCIPvarGetProbindex(linkedvars[i]),vindex2,vartrace,traceindex,linkedvars,nlinkedvars);
             }
          }
       }
@@ -138,10 +139,12 @@ SCIP_Bool INDSETareVarsLinkedRec(
 /** Wrapper function for INDSETareVarsLinkedRec, mallocs and cleans up the necessary memory and passes through the result */
 static
 SCIP_Bool INDSETareVarsLinked(
-   SCIP*     scip,                                /**< The problem instance */
-   int**     linkmatrix,                          /**< Matrix indicating which variables are linked by a node */
-   SCIP_VAR* var1,                                /**< The first variable in the pair that is to be checked */
-   SCIP_VAR* var2                                 /**< The second variable in the pair that is to be checked */
+   SCIP*          scip,                           /**< The problem instance */
+   int**          linkmatrix,                     /**< Matrix indicating which variables are linked by a node */
+   SCIP_VAR*      var1,                           /**< The first variable in the pair that is to be checked */
+   SCIP_VAR*      var2,                           /**< The second variable in the pair that is to be checked */
+   SCIP_VAR**     linkedvars,                     /**< Array of variables that are linked by eq-constraints */
+   int            nlinkedvars                     /**< Index of linkedvars array */
    )
 {
    int*      vartrace;
@@ -149,12 +152,10 @@ SCIP_Bool INDSETareVarsLinked(
    int       i;
    int       vindex1;
    int       vindex2;
-   int       nvars;
    SCIP_Bool varslinked;
 
    vindex1 = SCIPvarGetProbindex(var1);
    vindex2 = SCIPvarGetProbindex(var2);
-   nvars = SCIPgetNVars(scip);
 
    /* We can save effort if a direct link is present */
    if( linkmatrix[vindex1][vindex2] )
@@ -162,14 +163,14 @@ SCIP_Bool INDSETareVarsLinked(
       return TRUE;
    }
 
-   SCIP_CALL( SCIPallocBufferArray(scip,&vartrace,nvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip,&vartrace,nlinkedvars) );
    traceindex = 0;
-   for( i = 0; i < nvars; ++i )
+   for( i = 0; i < nlinkedvars; ++i )
    {
       vartrace[i] = -1;
    }
 
-   varslinked = INDSETareVarsLinkedRec(linkmatrix,vindex1,vindex2,nvars,vartrace,traceindex);
+   varslinked = INDSETareVarsLinkedRec(linkmatrix,vindex1,vindex2,vartrace,traceindex,linkedvars,nlinkedvars);
 
    SCIPfreeBufferArray(scip,&vartrace);
 
@@ -187,10 +188,8 @@ void INDSETupdateVarLinks(
    int*       nlinkedvars                          /**< Index of linkedvars array */
    )
 {
-   int        nvars;
    int        varindex1,varindex2;
    int        i;
-   SCIP_VAR** vars;
    SCIP_Bool  newvar1;
    SCIP_Bool  newvar2;
 
@@ -227,20 +226,18 @@ void INDSETupdateVarLinks(
    linkmatrix[varindex1][varindex2] = 1;
    linkmatrix[varindex2][varindex1] = 1;
 
-   nvars = SCIPgetNVars(scip);
-   vars = SCIPgetVars(scip);
-   for( i = 0; i < nvars; ++i )
+   for( i = 0; i < *nlinkedvars; ++i )
    {
       /* It is sufficient to check the links between var1 and all other vars, since var1 and var2 are linked */
-      if( varindex1 != i )
+      if( varindex1 != SCIPvarGetProbindex(linkedvars[i]) )
       {
-         if( INDSETareVarsLinked(scip,linkmatrix,var1,vars[i]) )
+         if( INDSETareVarsLinked(scip,linkmatrix,var1,linkedvars[i],linkedvars,*nlinkedvars) )
          {
             /* Add links to both var1 and var2 */
-            linkmatrix[varindex1][i] = 1;
-            linkmatrix[i][varindex1] = 1;
-            linkmatrix[varindex2][i] = 1;
-            linkmatrix[i][varindex2] = 1;
+            linkmatrix[varindex1][SCIPvarGetProbindex(linkedvars[i])] = 1;
+            linkmatrix[SCIPvarGetProbindex(linkedvars[i])][varindex1] = 1;
+            linkmatrix[varindex2][SCIPvarGetProbindex(linkedvars[i])] = 1;
+            linkmatrix[SCIPvarGetProbindex(linkedvars[i])][varindex2] = 1;
          }
       }
    }
@@ -286,7 +283,7 @@ int INDSETgetLinkedNodeIndex(
       {
          if( linkedvars[i] != var )
          {
-            if( INDSETareVarsLinked(scip,linkmatrix,var,linkedvars[i]) )
+            if( INDSETareVarsLinked(scip,linkmatrix,var,linkedvars[i],linkedvars,nlinkedvars) )
             {
                nodeindex = INDSETgetNodeIndex(linkedvars[i],indsetvars,indexcount);
                if( nodeindex != -1 )
@@ -365,7 +362,7 @@ void INDSETsetLinkedSolvals(
    {
       if( var != linkedvars[i] )
       {
-         if( INDSETareVarsLinked(scip, linkmatrix, var, linkedvars[i]) )
+         if( INDSETareVarsLinked(scip, linkmatrix, var, linkedvars[i],linkedvars,nlinkedvars) )
          {
             solvals[SCIPvarGetProbindex(linkedvars[i])] = val;
          }
@@ -410,7 +407,7 @@ SCIP_Real INDSETscaleScalingFactor(
    SCIP_Real  nvars;
    SCIP_Real  biggestobj;
    SCIP_VAR** vars;
-   int       i;
+   int        i;
 
    nvars = SCIPgetNVars(scip);
    vars = SCIPgetVars(scip);
@@ -700,23 +697,15 @@ SCIP_RETCODE solveIndependentSet(
             {
                vconsvars[0] = SCIPgetVarVarbound(pricingprob,constraints[i]);
                vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,constraints[i]);
+               /* Since the vars may not be part of the graph, we have to be able to set their solval later */
+               markedconstraints[markedcount] = constraints[i];
+               ++markedcount;
                /* Check if adding both variables to the solution would be worth it objective-wise:
                   This is heuristical, as a positive objective won't be weighted in the clique search */
                if( SCIPisLT(pricingprob,SCIPvarGetObj(vconsvars[0]) + SCIPvarGetObj(vconsvars[1]),0) )
                {
                   nodeindex0 = INDSETaddVarToGraph(pricingprob, g, vconsvars[0], &indexcount, scalingfactor, indsetvars, linkmatrix, INDSETisVarLinked(linkedvars,nlinkedvars,vconsvars[0]),linkedvars,nlinkedvars);
                   nodeindex1 = INDSETaddVarToGraph(pricingprob, g, vconsvars[1], &indexcount, scalingfactor, indsetvars, linkmatrix, INDSETisVarLinked(linkedvars,nlinkedvars,vconsvars[1]),linkedvars,nlinkedvars);
-
-                  /* Technically the edge between both can still be deleted, if both cons x-y==0 and x+y<=1 are present. */
-                  /* If the edge is deleted, we later force both to be zero */
-                  markedconstraints[markedcount] = constraints[i];
-                  ++markedcount;
-               }
-               else
-               {  
-                  /* Both variables have to be set to 0 to satisfy the constraint. */
-                  markedconstraints[markedcount] = constraints[i];
-                  ++markedcount;
                }
             }
          }
@@ -1205,7 +1194,7 @@ SCIP_RETCODE solveIndependentSet(
    
    /*
    //BEGIN Debug
-   SCIP_Real      varsum;
+
    FILE *outputcons;
    SCIP_SOL*      conssol;
    SCIP_RESULT    consresult;
@@ -1296,6 +1285,7 @@ SCIP_RETCODE solveIndependentSet(
    SCIPdebugMessage("\n\n");
    
    //printf("Factor: %g\n", scalingfactor);
+   SCIP_Real      varsum;
    varsum = 0;
    for( i = 0; i < npricingprobvars; ++i )
    {
