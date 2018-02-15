@@ -6018,6 +6018,7 @@ SCIP_RETCODE GCGprintDecompInformation(
    seeediter = conshdlrdata->listall->begin();
    seeediterend = conshdlrdata->listall->end();
 
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "DECOMPINFO  \n" );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",
       SCIPgetClockTime(scip, conshdlrdata->completedetectionclock ) );
 
@@ -6031,7 +6032,10 @@ SCIP_RETCODE GCGprintDecompInformation(
       seeed = *seeediter;
       seeedpool = ( seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool  );
 
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "NEWDECOMP  \n" );
+
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (*seeediter)->getNBlocks() );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (*seeediter)->getID() );
       for( int block = 0; block < nblocks; ++block )
       {
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", seeed->getNConssForBlock(block) );
@@ -6046,6 +6050,7 @@ SCIP_RETCODE GCGprintDecompInformation(
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getMaxWhiteScore() );
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getScore(scoretype::CLASSIC) );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",  seeed->getScore(scoretype::MAX_FORESSEEING_WHITE) );
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n",  seeed->hasSetppccardMaster(seeedpool) );
 

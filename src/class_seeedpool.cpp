@@ -5451,6 +5451,7 @@ SCIP_RETCODE Seeedpool::printClassifierInformation(
 {
 
    /** NCLASSIFIER */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "CONSCLASSIFIER  \n" );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n", (int) consclassescollection.size()  );
 
    for( size_t c = 0; c < consclassescollection.size() ; ++c )
@@ -5478,6 +5479,7 @@ SCIP_RETCODE Seeedpool::printClassifierInformation(
    }
 
    /** NCLASSIFIER */
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "VARCLASSIFIER  \n" );
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d  \n", (int) varclassescollection.size()  );
 
       for( size_t c = 0; c < varclassescollection.size() ; ++c )
