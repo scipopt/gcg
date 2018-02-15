@@ -7,6 +7,16 @@ import numpy as np
 import matplotlib.rcsetup as rcsetup
 
 class Dataset:
+
+	def checksection(self, line, keyword):
+		word = line.split()[0]
+		if word == keyword:
+			return  True
+		else:
+			print "ERROR: line is " + line + " but should be " + keyword
+			return False
+
+
 	def __init__(self, filename):
 		self.classnames = {}
 		self.classnmembers = {}
@@ -45,14 +55,19 @@ class Dataset:
 					self.decompssetpartmaster[instancename] = []
 					self.decompscores[instancename] = []
 
-					line = f.readline() #line now contains n blockcandidates
-					nblockcandidates = int(line)
+					line = f.readline()
+					if not self.checksection(line, "NBLOCKCANDIDATES"): return
+					line = f.readline() #line now contains n blockcandidates on third position
+					nblockcandidates = int(line.split()[2])
 					for blockcand in range(nblockcandidates):
 						#handle blockcandidates
 						line = f.readline() #line now contains information for one blockcandidate and its number of votes
 						line = line.split()
 						self.blockcandidates[instancename].append(int(line[0]))
-						self.blockcandidatesnvotes[instancename].append(int(line[2]))
+						if line[2] != "user":
+							self.blockcandidatesnvotes[instancename].append(int(line[2]))
+						else:
+							self.blockcandidatesnvotes[instancename].append("user")
 					line = f.readline() # line now contains n cons classifer
 					nconsclassifier = int(line)
 					for consclassifier in range(nconsclassifier):

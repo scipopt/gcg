@@ -5431,7 +5431,7 @@ SCIP_RETCODE Seeedpool::printBlockcandidateInformation(
 {
 
    std::sort( candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
-
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "NBLOCKCANDIDATES   \n" );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "The following %d candidates for the number of blocks are known: (candidate : number of votes)   \n", (int) candidatesNBlocks.size() );
    for( size_t i  = 0; i  < candidatesNBlocks.size(); ++i )
    {
