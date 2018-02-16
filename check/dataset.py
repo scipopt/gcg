@@ -54,7 +54,6 @@ class Dataset:
 					self.decompnblocks[instancename] = []
 					self.decompssetpartmaster[instancename] = []
 					self.decompscores[instancename] = []
-
 					line = f.readline()
 					if not self.checksection(line, "NBLOCKCANDIDATES"): return
 					line = f.readline() #line now contains n blockcandidates on third position
@@ -68,7 +67,17 @@ class Dataset:
 							self.blockcandidatesnvotes[instancename].append(int(line[2]))
 						else:
 							self.blockcandidatesnvotes[instancename].append("user")
-					line = f.readline() # line now contains n cons classifer
+					line = f.readline()
+					if not self.checksection(line, "DETECTIONTIME"): return
+					line = f.readline()
+					detectiontime = float(line)
+					self.detectiontimes[instancename] = detectiontime
+					print line
+					line = f.readline() # line now contains keyword
+					if not self.checksection(line, "CONSCLASSIFIER"): return
+					print line
+					line = f.readline() # line now contains n cons
+					print line
 					nconsclassifier = int(line)
 					for consclassifier in range(nconsclassifier):
 						line = f.readline()
@@ -88,6 +97,8 @@ class Dataset:
 							nmembers = int(line)
 							self.classnames[instancename][classifiername].append(classname)
 							self.classnmembers[instancename][classifiername].append(nmembers)
+					line = f.readline() # line now contains keyword
+					if not self.checksection(line, "VARCLASSIFIER"): return
 					line = f.readline() # line now contains n var classifer
 					nvarclassifier = int(line)
 					for varclassifier in range(nvarclassifier):
@@ -108,9 +119,7 @@ class Dataset:
 							nmembers = int(line)
 							self.classnames[instancename][classifiername].append(classname)
 							self.classnmembers[instancename][classifiername].append(nmembers)
-					line = f.readline()
-					detectiontime = float(line)
-					self.detectiontimes[instancename] = detectiontime
+
 					line = f.readline()
 					ndecomps = int(line)
 					for decomp in range(ndecomps):
