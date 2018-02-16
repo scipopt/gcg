@@ -6018,7 +6018,7 @@ SCIP_RETCODE GCGprintDecompInformation(
    seeediter = conshdlrdata->listall->begin();
    seeediterend = conshdlrdata->listall->end();
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "DECOMPINFO  \n" );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "DECOMPINFO  \n" );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",
       SCIPgetClockTime(scip, conshdlrdata->completedetectionclock ) );
 
@@ -6032,7 +6032,7 @@ SCIP_RETCODE GCGprintDecompInformation(
       seeed = *seeediter;
       seeedpool = ( seeed->isFromUnpresolved() ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool  );
 
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "NEWDECOMP  \n" );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "NEWDECOMP  \n" );
 
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (*seeediter)->getNBlocks() );
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (*seeediter)->getID() );
