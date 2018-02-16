@@ -25,6 +25,9 @@ class Dataset:
 		self.blockcandidates = {}
 		self.blockcandidatesnvotes = {}
 		self.decompscores = {}
+		self.decompmaxforwhitescores = {}
+		self.decompids = {}
+		self.classicalscores = {}
 		self.decompssetpartmaster = {}
 		self.decompnblocks = {}
 		self.maxndecomps = 0
@@ -54,6 +57,9 @@ class Dataset:
 					self.decompnblocks[instancename] = []
 					self.decompssetpartmaster[instancename] = []
 					self.decompscores[instancename] = []
+					self.classicalscores[instancename] = []
+					self.decompmaxforwhitescores[instancename] = []
+					self.decompids[instancename] = []
 
 					line = f.readline()
 					if not self.checksection(line, "NBLOCKCANDIDATES"): return
@@ -68,6 +74,8 @@ class Dataset:
 							self.blockcandidatesnvotes[instancename].append(int(line[2]))
 						else:
 							self.blockcandidatesnvotes[instancename].append("user")
+					line = f.readline()
+					if not self.checksection(line, "CONSCLASSIFIER"): return
 					line = f.readline() # line now contains n cons classifer
 					nconsclassifier = int(line)
 					for consclassifier in range(nconsclassifier):
@@ -88,6 +96,8 @@ class Dataset:
 							nmembers = int(line)
 							self.classnames[instancename][classifiername].append(classname)
 							self.classnmembers[instancename][classifiername].append(nmembers)
+					line = f.readline()
+					if not self.checksection(line, "VARCLASSIFIER"): return
 					line = f.readline() # line now contains n var classifer
 					nvarclassifier = int(line)
 					for varclassifier in range(nvarclassifier):
@@ -109,14 +119,21 @@ class Dataset:
 							self.classnames[instancename][classifiername].append(classname)
 							self.classnmembers[instancename][classifiername].append(nmembers)
 					line = f.readline()
+					if not self.checksection(line, "DECOMPINFO"): return
+					line = f.readline()
 					detectiontime = float(line)
 					self.detectiontimes[instancename] = detectiontime
 					line = f.readline()
 					ndecomps = int(line)
 					for decomp in range(ndecomps):
 						line = f.readline()
+						if not self.checksection(line, "NEWDECOMP"): return
+						line = f.readline()
 						nblocks = int(line)
 						self.decompnblocks[instancename].append(nblocks)
+						line = f.readline()
+						decompid = int(line)
+						self.decompids[instancename].append(decompid)
 						for block in range(nblocks):
 							line = f.readline()
 							nconss = int(line)
@@ -135,6 +152,10 @@ class Dataset:
 						self.decompscores[instancename].append(maxwhitescore)
 						line = f.readline()
 						classicalscore = float(line)
+						self.classicalscores[instancename].append(classicalscore)
+						line = f.readline()
+						decompmaxforwhitescore = float(line)
+						self.decompmaxforwhitescores[instancename].append(decompmaxforwhitescore)
 						line = f.readline()
 						setpartmaster = int(line)
 						self.decompssetpartmaster[instancename].append(setpartmaster)
