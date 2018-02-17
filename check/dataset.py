@@ -25,6 +25,9 @@ class Dataset:
 		self.blockcandidates = {}
 		self.blockcandidatesnvotes = {}
 		self.decompscores = {}
+		self.decompmaxforwhitescores = {}
+		self.decompids = {}
+		self.classicalscores = {}
 		self.decompssetpartmaster = {}
 		self.decompnblocks = {}
 		self.maxndecomps = 0
@@ -54,6 +57,9 @@ class Dataset:
 					self.decompnblocks[instancename] = []
 					self.decompssetpartmaster[instancename] = []
 					self.decompscores[instancename] = []
+					self.classicalscores[instancename] = []
+					self.decompmaxforwhitescores[instancename] = []
+					self.decompids[instancename] = []
 					line = f.readline()
 					if not self.checksection(line, "NBLOCKCANDIDATES"): return
 					line = f.readline() #line now contains n blockcandidates on third position
@@ -72,12 +78,9 @@ class Dataset:
 					line = f.readline()
 					detectiontime = float(line)
 					self.detectiontimes[instancename] = detectiontime
-					print line
 					line = f.readline() # line now contains keyword
 					if not self.checksection(line, "CONSCLASSIFIER"): return
-					print line
 					line = f.readline() # line now contains n cons
-					print line
 					nconsclassifier = int(line)
 					for consclassifier in range(nconsclassifier):
 						line = f.readline()
@@ -119,13 +122,19 @@ class Dataset:
 							nmembers = int(line)
 							self.classnames[instancename][classifiername].append(classname)
 							self.classnmembers[instancename][classifiername].append(nmembers)
-
+					line = f.readline()
+					if not self.checksection(line, "DECOMPINFO"): return
 					line = f.readline()
 					ndecomps = int(line)
 					for decomp in range(ndecomps):
 						line = f.readline()
+						if not self.checksection(line, "NEWDECOMP"): return
+						line = f.readline()
 						nblocks = int(line)
 						self.decompnblocks[instancename].append(nblocks)
+						line = f.readline()
+						decompid = int(line)
+						self.decompids[instancename].append(decompid)
 						for block in range(nblocks):
 							line = f.readline()
 							nconss = int(line)
@@ -144,6 +153,10 @@ class Dataset:
 						self.decompscores[instancename].append(maxwhitescore)
 						line = f.readline()
 						classicalscore = float(line)
+						self.classicalscores[instancename].append(classicalscore)
+						line = f.readline()
+						decompmaxforwhitescore = float(line)
+						self.decompmaxforwhitescores[instancename].append(decompmaxforwhitescore)
 						line = f.readline()
 						setpartmaster = int(line)
 						self.decompssetpartmaster[instancename].append(setpartmaster)

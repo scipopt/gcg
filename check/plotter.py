@@ -60,7 +60,6 @@ class Plotter:
             for tau in tauvals:
                 instfracts.append(dataset.fractionofinstanceswithscoreatleast(dataset.decompscores, tau) )
             instfractsfordataset.append(instfracts)
-
         plt.ylabel('fraction of instances')
         plt.xlabel('Whitest found decomp has at least this max white score')
     #   print tauvals
@@ -76,8 +75,8 @@ class Plotter:
            columnspacing=1.0, labelspacing=0.0,
            handletextpad=0.0, handlelength=1.5,
            fancybox=True, shadow=True)
-
         plt.show()
+
 
     def plotdetectionqualitysetpartmaster(self, datasets):
         tauvals = np.arange(0., 1., 0.01)
