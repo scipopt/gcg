@@ -485,7 +485,11 @@ SCIP_RETCODE GCGprintCompleteDetectionStatistics(
 
    SCIP_CALL( GCGprintInstanceName(scip, file) );
 
+
+
    GCGprintBlockcandidateInformation(scip, file);
+
+   GCGprintCompleteDetectionTime(scip, file);
 
    GCGprintClassifierInformation(scip, file);
 

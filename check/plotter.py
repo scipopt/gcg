@@ -33,8 +33,6 @@ class Plotter:
         plt.gca().set_color_cycle(['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'black', 'brown', 'magenta', 'purple', 'cyan', 'darkgreen'])
 
         plt.axis([0., maxdetectiontime*1.1, 0., 1.])
-        print tauvals
-        print instancefractions
         for datasetid in range(len(datasets)):
             plt.plot(tauvals, instfractsfordataset[datasetid])
             labels.append(datasets[datasetid].getsettingsname())

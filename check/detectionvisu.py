@@ -73,9 +73,6 @@ class App:
         Label(self.frame, text=self.l3text).grid(row=2, column=0, sticky=W)
         Label(self.frame, text=self.l4text).grid(row=3, column=0, sticky=W)
 
-        print "Test 1\n"
-        self.plotdetectionquality()
-
 
     def plotdetectionquality(self):
         print "Test 2\n"

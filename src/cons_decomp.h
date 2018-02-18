@@ -160,6 +160,8 @@ SCIP_Real DECgetRemainingTime(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+
+
 /** checks if two pricing problems are identical based on information from detection */
 extern
 SCIP_RETCODE SCIPconshdlrDecompArePricingprobsIdenticalForSeeedid(
@@ -317,6 +319,10 @@ SCIP_RETCODE SCIPconshdlrDecompAddBlockNumberCandidate(
     int                   index
      );
 
+ extern
+ SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
+    SCIP*                 scip
+    );
 
 /** rejects and deletes the current user seeed */
 SCIP_RETCODE SCIPconshdlrDecompUserSeeedReject(

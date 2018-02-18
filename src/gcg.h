@@ -87,6 +87,12 @@ SCIP_RETCODE GCGprintBlockcandidateInformation(
    FILE*                 file                /**< output file or NULL for standard output */
 );
 
+SCIP_RETCODE GCGprintCompleteDetectionTime(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+);
+
+
 SCIP_RETCODE GCGprintClassifierInformation(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file or NULL for standard output */
