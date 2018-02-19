@@ -14,7 +14,8 @@ if len(sys.argv) == 4 or len(sys.argv) == 5:
 		testsetname = sys.argv[4]
 
 	gcgexec = pathtogcg+"bin/gcg"
-	settings = pathtogcg+"settings/onlyConsclassConnected.set"
+#	settings = pathtogcg+"settings/onlyConsclassConnected.set"
+        settings = "default.set"
 	testsetfile = pathtogcg+"check/testset/allDec_"+testsetname+".test"
 
 	print pathtogcg

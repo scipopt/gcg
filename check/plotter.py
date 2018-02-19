@@ -19,6 +19,7 @@ class Plotter:
             currtime = dataset.getmaxdetectiontime()
             if currtime > maxdetectiontime:
                 maxdetectiontime = currtime
+        print maxdetectiontime
         tauvals = np.arange(0, maxdetectiontime*1.1, 1.1*float(maxdetectiontime)/1000.)
         instfractsfordataset = []
         for dataset in datasets:
@@ -32,8 +33,6 @@ class Plotter:
         plt.gca().set_color_cycle(['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'black', 'brown', 'magenta', 'purple', 'cyan', 'darkgreen'])
 
         plt.axis([0., maxdetectiontime*1.1, 0., 1.])
-    #   print tauvals
-        #print instancefractions
         for datasetid in range(len(datasets)):
             plt.plot(tauvals, instfractsfordataset[datasetid])
             labels.append(datasets[datasetid].getsettingsname())
@@ -59,7 +58,6 @@ class Plotter:
             for tau in tauvals:
                 instfracts.append(dataset.fractionofinstanceswithscoreatleast(dataset.decompscores, tau) )
             instfractsfordataset.append(instfracts)
-
         plt.ylabel('fraction of instances')
         plt.xlabel('Whitest found decomp has at least this max white score')
     #   print tauvals
@@ -75,8 +73,8 @@ class Plotter:
            columnspacing=1.0, labelspacing=0.0,
            handletextpad=0.0, handlelength=1.5,
            fancybox=True, shadow=True)
-
         plt.show()
+
 
     def plotdetectionqualitysetpartmaster(self, datasets):
         tauvals = np.arange(0., 1., 0.01)

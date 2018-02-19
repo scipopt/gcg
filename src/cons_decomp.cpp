@@ -3638,6 +3638,27 @@ int SCIPconshdlrDecompGetBlockNumberCandidate(
    return conshdlrdata->userblocknrcandidates->at(index);
 }
 
+SCIP_Real SCIPconshdlrDecompGetCompleteDetectionTime(
+    SCIP*                 scip
+    ){
+
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("Decomp constraint handler is not included, cannot add detector!\n");
+      return SCIP_ERROR;
+   }
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return SCIPclockGetTime( conshdlrdata->completedetectionclock );
+}
+
 
 SCIP_RETCODE SCIPconshdlrDecompBlockNumberCandidateToSeeedpool(
    SCIP*                 scip,                /**< SCIP data structure */
@@ -4754,7 +4775,9 @@ SCIP_RETCODE DECdetectStructure(
    if( conshdlrdata->seeedpool != NULL )
       conshdlrdata->seeedpool->printBlockcandidateInformation(scip, NULL);
 
+   SCIP_CALL(SCIPstartClock(scip, conshdlrdata->completedetectionclock) );
    SCIPconshdlrDecompAddLegacymodeDecompositions( scip, result );
+   SCIP_CALL(SCIPstopClock(scip, conshdlrdata->completedetectionclock) );
 
    if( *result == SCIP_DIDNOTRUN )
    {
@@ -5913,6 +5936,19 @@ SCIP_RETCODE GCGprintBlockcandidateInformation(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE GCGprintCompleteDetectionTime(
+ SCIP*                 givenscip,               /**< SCIP data structure */
+ FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "DETECTIONTIME   \n" );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%f \n", (SCIP_Real) SCIPconshdlrDecompGetCompleteDetectionTime(givenscip) );
+
+   return SCIP_OKAY;
+}
+
+
 
 /** prints blockcandiateinformation in following format:
  * NCLASSIFIER
@@ -6019,10 +6055,7 @@ SCIP_RETCODE GCGprintDecompInformation(
    seeediterend = conshdlrdata->listall->end();
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "DECOMPINFO  \n" );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%f\n",
-      SCIPgetClockTime(scip, conshdlrdata->completedetectionclock ) );
-
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (int) conshdlrdata->listall->size() );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d\n", (int) conshdlrdata->listall->size() );
 
    for( ; seeediter != seeediterend; ++seeediter)
    {
