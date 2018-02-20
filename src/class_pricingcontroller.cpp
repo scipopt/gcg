@@ -356,7 +356,7 @@ void Pricingcontroller::evaluatePricingjob(
       {
          assert(pricingjobHasLimit(pricingjob) || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_UNKNOWN);
 
-         if( !pricingjobHasLimit(pricingjob) || GCGpricingjobGetNHeurIters(pricingjob) == heurpricingiters )
+         if( !pricingjobHasLimit(pricingjob) || GCGpricingjobGetNHeurIters(pricingjob) >= heurpricingiters )
          {
             GCGpricingjobSetExact(pricingjob);
             SCIPdebugMessage("  -> solve exactly\n");
