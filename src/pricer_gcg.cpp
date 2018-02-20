@@ -822,7 +822,13 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
       }
 
       SCIP_CALL( solversolve(pricingscip, solver, probnr, pricerdata->dualsolconv[probnr],
-            &lowerbound, cols, maxcols, &ncols, &status) );      
+            &lowerbound, cols, maxcols, &ncols, &status) );
+
+      updateRedcosts(pricetype, cols, ncols);
+      SCIPsortPtr((void**) cols, GCGcolCompRedcost, ncols); /* If pricing was aborted due to a limit, columns may not be sorted */
+      SCIP_CALL( pricingcontroller->updatePricingjob(pricingjob, status, lowerbound, cols, ncols) );
+      BMSclearMemoryArray(cols, ncols);
+      ncols = 0;
 
       assert(status == SCIP_STATUS_OPTIMAL
          || status == SCIP_STATUS_INFEASIBLE
@@ -876,10 +882,6 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
          break;
       }
    }
-
-   updateRedcosts(pricetype, cols, ncols);
-   SCIPsortPtr((void**) cols, GCGcolCompRedcost, ncols); /* If pricing was aborted due to a limit, columns may not be sorted */
-   SCIP_CALL( pricingcontroller->updatePricingjob(pricingjob, status, lowerbound, cols, ncols) );
 
    SCIPfreeMemoryArray(scip, &cols);
 
