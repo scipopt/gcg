@@ -65,6 +65,7 @@ SCIP_RETCODE GCGpricingjobCreate(
    (*pricingjob)->colssize = 0;
    (*pricingjob)->ncols = 0;
    (*pricingjob)->nimpcols = 0;
+   (*pricingjob)->nheuriters = 0;
 
    SCIP_CALL( SCIPallocClearMemoryArray(scip, &(*pricingjob)->ncolsround, nroundscol) );
 
@@ -139,6 +140,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    pricingjob->colssize = maxcols;
    pricingjob->ncols = 0;
    pricingjob->nimpcols = 0;
+   pricingjob->nheuriters = 0;
 
    return SCIP_OKAY;
 }
@@ -188,6 +190,10 @@ SCIP_RETCODE GCGpricingjobUpdate(
    }
 
    pricingjob->ncols += ncols;
+
+   /* count number of heuristic pricing iterations in this mis-pricing round */
+   if( pricingjob->heuristic )
+      ++pricingjob->nheuriters;
 
    return SCIP_OKAY;
 }
@@ -368,4 +374,12 @@ void GCGpricingjobUpdateNColsround(
    for( i = nroundscol-1; i > 0; --i )
       pricingjob->ncolsround[i] = pricingjob->ncolsround[i-1];
    pricingjob->ncolsround[0] = pricingjob->nimpcols;
+}
+
+/* get the number of heuristic pricing iterations of the pricing job */
+int GCGpricingjobGetNHeurIters(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->nheuriters;
 }

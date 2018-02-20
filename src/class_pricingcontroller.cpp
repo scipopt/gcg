@@ -46,7 +46,7 @@
 
 #include <exception>
 
-#define DEFAULT_USEHEURPRICING           FALSE      /**< should heuristic pricing be used */
+#define DEFAULT_HEURPRICINGITERS         1          /**< maximum number of heuristic pricing iterations per pricing call and problem */
 #define DEFAULT_SORTING                  'r'          /**< order by which the pricing problems should be sorted:
                                                      *    'i'ndices
                                                      *    'd'ual solutions of convexity constraints
@@ -104,9 +104,9 @@ SCIP_RETCODE Pricingcontroller::addParameters()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
    
-   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/useheurpricing",
-         "should pricing be performed heuristically before solving the MIPs to optimality?",
-         &useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/heurpricingiters",
+         "maximum number of heuristic pricing iterations per pricing call and problem",
+         &heurpricingiters, FALSE, DEFAULT_HEURPRICINGITERS, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddCharParam(origprob, "pricing/masterpricer/sorting",
          "order by which the pricing problems should be sorted ('i'ndices, 'd'ual solutions of convexity constraints, 'r'eliability from previous rounds, reliability from the 'l'ast nroundscol rounds)",
@@ -279,7 +279,7 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
    {
       if( pricingjobs[i] != NULL )
       {
-         SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], useheurpricing, maxcolsprob,
+         SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], heurpricingiters > 0, maxcolsprob,
             sorting, nroundscol, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
 
          bestobjvals[i] = -SCIPinfinity(scip_);
@@ -354,9 +354,10 @@ void Pricingcontroller::evaluatePricingjob(
 
       if( GCGpricingjobIsHeuristic(pricingjob) )
       {
-         if( !pricingjobHasLimit(pricingjob) )
+         assert(pricingjobHasLimit(pricingjob) || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_UNKNOWN);
+
+         if( !pricingjobHasLimit(pricingjob) || GCGpricingjobGetNHeurIters(pricingjob) == heurpricingiters )
          {
-            assert(GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_UNKNOWN);
             GCGpricingjobSetExact(pricingjob);
             SCIPdebugMessage("  -> solve exactly\n");
          }

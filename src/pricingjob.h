@@ -139,6 +139,12 @@ void GCGpricingjobUpdateNColsround(
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
    );
 
+/* get the number of heuristic pricing iterations of the pricing job */
+EXTERN
+int GCGpricingjobGetNHeurIters(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
 #ifdef __cplusplus
 }
 #endif
