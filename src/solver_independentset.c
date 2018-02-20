@@ -905,7 +905,8 @@ SCIP_RETCODE solveIndependentSet(
                            /* Determine nodeindex1 */
                            for( k = j + 1; k < nvars; ++k )
                            {
-                              if( k != coefindex )
+                              if( k != coefindex && (SCIPisLT(pricingprob,SCIPvarGetObj(lconsvars[k]),0) 
+                                 || INDSETgetLinkedNodeIndex(pricingprob,lconsvars[k],indsetvars,indexcount,linkmatrix,linkedvars,nlinkedvars) != -1))
                               {
                                  nodeindex1 = INDSETaddVarToGraph(pricingprob, g, lconsvars[k], &indexcount, scalingfactor, indsetvars, linkmatrix, INDSETisVarLinked(linkedvars,nlinkedvars,lconsvars[k]),linkedvars,nlinkedvars);
                                  if( nodeindex0 != nodeindex1 )
@@ -1218,10 +1219,8 @@ SCIP_RETCODE solveIndependentSet(
          }
       }
    }
-   
-   /*
-   //BEGIN Debug
-
+/*
+   FILE *outputgraph;
    FILE *outputcons;
    SCIP_SOL*      conssol;
    SCIP_RESULT    consresult;
@@ -1229,7 +1228,7 @@ SCIP_RETCODE solveIndependentSet(
    SCIP_CALL( SCIPcreateSol(pricingprob,&conssol,NULL) );
    SCIP_CALL( SCIPsetSolVals(pricingprob,conssol,npricingprobvars,pricingprobvars,solvals) );
 
-   //outputgraph = fopen("writegraph.dimacs","w");
+   outputgraph = fopen("writegraph.dimacs","w");
    outputcons = fopen("constraints.out","a");
    fprintf(outputcons, "Markedcount: %d\n", markedcount);
    for( i = 0; i < nconss; ++i )
@@ -1305,8 +1304,8 @@ SCIP_RETCODE solveIndependentSet(
    }
    //printf("\n\n");
    fputs("\n\n\n",outputcons);
-   //graph_write_dimacs_ascii(g,NULL,outputgraph);
-   //fclose(outputgraph);
+   graph_write_dimacs_ascii(g,NULL,outputgraph);
+   fclose(outputgraph);
    fclose(outputcons);
    
    SCIPdebugMessage("\n\n");
@@ -1325,7 +1324,8 @@ SCIP_RETCODE solveIndependentSet(
    printf("Cumulated obj. values of active vars:%g\n", varsum );
 
    //END DEBUG
-   */
+*/
+
 
    /* Create a column corresponding to our clique result */
    SCIP_CALL( GCGcreateGcgCol(pricingprob, &cols[0], probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
