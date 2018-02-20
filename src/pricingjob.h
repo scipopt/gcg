@@ -125,6 +125,13 @@ void GCGpricingjobSetNCols(
    int                   ncols               /**< number of columns */
    );
 
+/* set the number of improving columns found by a pricing job */
+EXTERN
+void GCGpricingjobSetNImpCols(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   nimpcols            /**< number of improving columns */
+   );
+
 /* update numbers of improving columns over the last pricing rounds */
 EXTERN
 void GCGpricingjobUpdateNColsround(

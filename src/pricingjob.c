@@ -99,6 +99,10 @@ SCIP_RETCODE GCGpricingjobSetup(
 {
    int i;
 
+   /* There should be no remaining columns from the previous iteration */
+   assert(pricingjob->ncols == 0);
+   assert(pricingjob->nimpcols == 0);
+
    pricingjob->heuristic = heuristic;
 
    /* set the score; the larger, the better */
@@ -342,6 +346,15 @@ int GCGpricingjobGetNImpCols(
    )
 {
    return pricingjob->nimpcols;
+}
+
+/* set the number of improving columns found by a pricing job */
+void GCGpricingjobSetNImpCols(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   nimpcols            /**< number of improving columns */
+   )
+{
+   pricingjob->nimpcols = nimpcols;
 }
 
 /* update numbers of improving columns over the last pricing rounds */

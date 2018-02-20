@@ -485,6 +485,7 @@ SCIP_RETCODE Pricingcontroller::moveColsToColpool(
          }
 
          GCGpricingjobSetNCols(pricingjobs[i], 0);
+         GCGpricingjobSetNImpCols(pricingjobs[i], 0);
       }
    }
 
