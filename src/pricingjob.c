@@ -101,9 +101,6 @@ SCIP_RETCODE GCGpricingjobSetup(
 
    pricingjob->heuristic = heuristic;
 
-   /* set the solution limit on the pricing problem */
-   SCIP_CALL( SCIPsetIntParam(pricingjob->pricingscip, "limits/solutions", SCIPgetNLimSolsFound(pricingjob->pricingscip) + maxcolsprob) );
-
    /* set the score; the larger, the better */
    switch( scoring )
    {

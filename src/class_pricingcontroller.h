@@ -185,6 +185,11 @@ private:
    SCIP_Bool pricingjobIsDone(
       GCG_PRICINGJOB*       pricingjob          /**< pricing job */
       ) const;
+
+   /** check if the pricing job has terminated with a limit */
+   SCIP_Bool pricingjobHasLimit(
+      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+      ) const;
 };
 
 } /* namespace gcg */

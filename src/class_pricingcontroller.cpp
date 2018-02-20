@@ -179,6 +179,17 @@ SCIP_Bool Pricingcontroller::pricingjobIsDone(
       || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_INFORUNBD;
 }
 
+/** check if the pricing job has terminated with a limit */
+SCIP_Bool Pricingcontroller::pricingjobHasLimit(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   ) const
+{
+   return GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_NODELIMIT
+      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_STALLNODELIMIT
+      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_GAPLIMIT
+      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_SOLLIMIT;
+}
+
 SCIP_RETCODE Pricingcontroller::initSol()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
@@ -343,15 +354,16 @@ void Pricingcontroller::evaluatePricingjob(
 
       if( GCGpricingjobIsHeuristic(pricingjob) )
       {
-         SCIPdebugMessage("  -> solve exactly\n");
-         GCGpricingjobSetExact(pricingjob);
-         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
-      }
-      else if( GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_SOLLIMIT )
-      {
-         SCIPdebugMessage("  -> increase solution limit\n");
-         SCIP_CALL_EXC( GCGpricingjobIncreaseSollimit(pricingjob,
-            pricingtype_->getType() == GCG_PRICETYPE_REDCOST && GCGisRootNode(scip_) ? pricingtype_->getMaxcolsprobroot() : pricingtype_->getMaxcolsprob()) );
+         if( !pricingjobHasLimit(pricingjob) )
+         {
+            assert(GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_UNKNOWN);
+            GCGpricingjobSetExact(pricingjob);
+            SCIPdebugMessage("  -> solve exactly\n");
+         }
+         else
+         {
+            SCIPdebugMessage("  -> increase a limit\n");
+         }
          SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
       }
    }
