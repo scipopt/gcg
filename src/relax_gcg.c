@@ -2173,9 +2173,15 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata->masterprob != NULL);
 
    initRelaxdata(relaxdata);
+   SCIPdebugMessage("****NIKLAS**** start allocating memory for deg/db\n");
    SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
    SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->degeneracy)) );
    SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->dualbounds)) );
+   relaxdata->degeneracy->data = 0.;
+   relaxdata->degeneracy->next= NULL;
+   relaxdata->dualbounds->data = 0.;
+   relaxdata->dualbounds->next= NULL;
+   SCIPdebugMessage("****NIKLAS**** end allocating memory for deg/db\n");
 
    return SCIP_OKAY;
 }
@@ -2260,6 +2266,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    }
 
    /* free lists */
+   SCIPdebugMessage("****NIKLAS**** start freeing deg/db memory\n");
    current = relaxdata->degeneracy;
    while( current != NULL )
    {
@@ -2274,6 +2281,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       SCIPfreeMemory(scip, &current);
       current = next;
    }
+   SCIPdebugMessage("****NIKLAS**** end freeing deg/db memory\n");
 
    relaxdata->relaxisinitialized = FALSE;
 
@@ -2327,8 +2335,13 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    /* get current degeneracy and dualbounds */
 //   relaxdata->degeneracy[SCIPnodeGetNumber(SCIPgetCurrentNode(scip))] = GCGgetDegeneracy(scip);
 //   relaxdata->dualbounds[SCIPnodeGetNumber(SCIPgetCurrentNode(scip))] = SCIPgetDualbound(scip);
+   SCIPdebugMessage("****NIKLAS**** start updating list ...\n");
+   SCIP_CALL( SCIPallocMemory(scip, &current_deg) );
+   SCIP_CALL( SCIPallocMemory(scip, &current_db) );
+   SCIPdebugMessage("****NIKLAS**** ... initialize with relaxdata ...\n");
    current_deg = relaxdata->degeneracy;
    current_db = relaxdata->dualbounds;
+   SCIPdebugMessage("****NIKLAS**** ... look for latest list entry ...\n");
    while( current_deg->next != NULL )
    {
       current_deg = current_deg->next;
@@ -2337,15 +2350,17 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    {
       current_db = current_db->next;
    }
+   SCIPdebugMessage("****NIKLAS**** ... allocate new memory ...\n");
    SCIP_CALL( SCIPallocMemory(scip, &next_deg) );
    SCIP_CALL( SCIPallocMemory(scip, &next_db) );
+   SCIPdebugMessage("****NIKLAS**** ... insert into list ...\n");
    current_deg->next = next_deg;
    current_deg->next->data = GCGgetDegeneracy(scip);
    current_deg->next->next = NULL;
    current_db->next = next_db;
    current_db->next->data = SCIPgetDualbound(scip);
    current_db->next->next = NULL;
-
+   SCIPdebugMessage("****NIKLAS**** ... finished for current node.\n");
    
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
