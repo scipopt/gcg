@@ -2176,6 +2176,8 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
    SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->degeneracy)) );
    SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->dualbounds)) );
+
+   return SCIP_OKAY;
 }
 
 
