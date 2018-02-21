@@ -788,7 +788,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
    BMSclearMemoryArray(cols, maxcols);
    ncols = 0;
 
-   for( i = 0; i < pricerdata->nsolvers && SCIPgetStage(pricingscip) < SCIP_STAGE_SOLVED; i++ )
+   for( i = 0; i < pricerdata->nsolvers && GCGpricingjobGetNImpCols(pricingjob) == 0; i++ )
    {
       SCIP_CLOCK* clock;
       int* calls;
