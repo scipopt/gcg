@@ -883,6 +883,8 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
       }
    }
 
+   pricingcontroller->updatePricingjobSolvingStats(pricingjob);
+
    SCIPfreeMemoryArray(scip, &cols);
 
    return SCIP_OKAY;

@@ -86,6 +86,12 @@ SCIP_RETCODE GCGpricingjobUpdate(
    int                   ncols               /**< number of columns found */
    );
 
+/** update solving statistics of a pricing job */
+EXTERN
+void GCGpricingjobUpdateSolvingStats(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
 /** increase the solution limit of a pricing job */
 EXTERN
 SCIP_RETCODE GCGpricingjobIncreaseSollimit(

@@ -159,7 +159,6 @@ SCIP_RETCODE GCGpricingjobUpdate(
    int j;
    int k;
 
-   ++pricingjob->nsolves;
    pricingjob->pricingstatus = status;
    pricingjob->lowerbound = lowerbound;
 
@@ -191,11 +190,17 @@ SCIP_RETCODE GCGpricingjobUpdate(
 
    pricingjob->ncols += ncols;
 
-   /* count number of heuristic pricing iterations in this mis-pricing round */
+   return SCIP_OKAY;
+}
+
+/** update solving statistics of a pricing job */
+void GCGpricingjobUpdateSolvingStats(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   ++pricingjob->nsolves;
    if( pricingjob->heuristic )
       ++pricingjob->nheuriters;
-
-   return SCIP_OKAY;
 }
 
 /** increase the solution limit of a pricing job */

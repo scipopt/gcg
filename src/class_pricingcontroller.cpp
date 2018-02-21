@@ -140,15 +140,15 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
 {
    GCG_PRICINGJOB* pricingjob1;
    GCG_PRICINGJOB* pricingjob2;
-   int score1;
-   int score2;
 
    pricingjob1 = (GCG_PRICINGJOB*) elem1;
    pricingjob2 = (GCG_PRICINGJOB*) elem2;
-   score1 = GCGpricingjobGetScore(pricingjob1);
-   score2 = GCGpricingjobGetScore(pricingjob2);
 
-   /** preliminary strategy: heuristic before exact, then sorting by score */
+   /** preliminary strategy:
+    *  * heuristic before exact
+    *  * prefer pricing problems with less number of solves in the current pricing call
+    *  * then sorting by score
+    */
    if( GCGpricingjobIsHeuristic(pricingjob1) != GCGpricingjobIsHeuristic(pricingjob2) )
    {
       if( GCGpricingjobIsHeuristic(pricingjob1) )
@@ -156,13 +156,16 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
       else
          return 1;
    }
+
+   if( GCGpricingjobGetNSolves(pricingjob1) < GCGpricingjobGetNSolves(pricingjob2) )
+      return -1;
+   else if( GCGpricingjobGetNSolves(pricingjob1) > GCGpricingjobGetNSolves(pricingjob2) )
+      return 1;
+
+   if( GCGpricingjobGetScore(pricingjob1) >= GCGpricingjobGetScore(pricingjob2) )
+      return -1;
    else
-   {
-      if( score1 >= score2 )
-         return -1;
-      else
-         return 1;
-   }
+      return 1;
 
    return 0;
 }
@@ -335,6 +338,14 @@ SCIP_RETCODE Pricingcontroller::updatePricingjob(
    SCIP_CALL( GCGpricingjobUpdate(scip_, pricingjob, status, lowerbound, cols, ncols) );
 
    return SCIP_OKAY;
+}
+
+/** update solution statistics of a pricing job */
+void Pricingcontroller::updatePricingjobSolvingStats(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   GCGpricingjobUpdateSolvingStats(pricingjob);
 }
 
 /** decide whether a pricing job must be treated again */

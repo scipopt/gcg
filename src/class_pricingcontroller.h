@@ -119,6 +119,11 @@ public:
       int                   ncols               /**< number of columns found */
       );
 
+   /** update solution statistics of a pricing job */
+   void updatePricingjobSolvingStats(
+      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
    /** decide whether a pricing job must be treated again */
    void evaluatePricingjob(
       GCG_PRICINGJOB*       pricingjob         /**< pricing job */
