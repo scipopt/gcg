@@ -60,12 +60,6 @@ SCIP_RETCODE GCGwriteDecompositionData(
    int nblocks;
    int nlinkingconss;
    int nlinkingvars;
-   //SCIP_Longint nodelimit;
-   SCIP_CLOCK* rootnodetime;
-   //SCIP_Longint i;
-   //SCIP_Real* degeneracy;
-   //SCIP_Real* dualbounds;
-   SCIP_RealList* current;
 
    assert(scip != NULL);
 
@@ -80,11 +74,6 @@ SCIP_RETCODE GCGwriteDecompositionData(
    nlinkingvars = DECdecompGetNLinkingvars(decomposition);
    nlinkingconss = DECdecompGetNLinkingconss(decomposition);
 
-   rootnodetime = GCGgetRootNodeTime(scip);
-   //SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &nodelimit) );
-   //degeneracy = GCGgetDegeneracyArray(scip);
-   //dualbounds = GCGgetDualboundsArray(scip);
-
    /* print information about decomposition type and number of blocks, vars, linking vars and cons */
    SCIPinfoMessage(scip, NULL, "Decomposition:\n");
    SCIPinfoMessage(scip, NULL, "Decomposition Type: %s \n", typeName);
@@ -93,24 +82,26 @@ SCIP_RETCODE GCGwriteDecompositionData(
    SCIPinfoMessage(scip, NULL, "Number of Blocks: %d \n", nblocks);
    SCIPinfoMessage(scip, NULL, "Number of LinkingVars: %d\n", nlinkingvars);
    SCIPinfoMessage(scip, NULL, "Number of LinkingCons: %d\n", nlinkingconss);
+
+   return SCIP_OKAY;
+}
+
+/** prints out information about solving process */
+SCIP_RETCODE GCGwriteSolvingDetails(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CLOCK* rootnodetime;
+   SCIP_RealList* current;
+   
+   assert(scip != NULL);
+
+   rootnodetime = GCGgetRootNodeTime(scip);
    SCIPinfoMessage(scip, NULL, "Time in root node: %6.2f\n", SCIPgetClockTime(scip, rootnodetime));
-
-   // starting at 1!!
-/* SCIPinfoMessage(scip, NULL, "Degeneracy:\n");
-   for( i = 1; i < nodelimit; i++ )
-   {
-      SCIPinfoMessage(scip, NULL, "  %6.2f\n", degeneracy[i]);
-   }
-
-   SCIPinfoMessage(scip, NULL, "Dual Bounds:\n");
-   for( i = 1; i < nodelimit; i++ )
-   {
-      SCIPinfoMessage(scip, NULL, "  %f\n", dualbounds[i]);
-   }
-*/
-
+   
    SCIPinfoMessage(scip, NULL, "Degeneracy:\n");
    current = GCGgetDegeneracyList(scip);
+   current = current->next;
    while( current != NULL )
    {
       SCIPinfoMessage(scip, NULL, "  %6.2f\n", current->data);
@@ -118,11 +109,13 @@ SCIP_RETCODE GCGwriteDecompositionData(
    }
    SCIPinfoMessage(scip, NULL, "Dual Bounds:\n");
    current = GCGgetDualboundsList(scip);
+   current = current->next;
    while( current != NULL )
    {
       SCIPinfoMessage(scip, NULL, "  %f\n", current->data);
       current = current->next;
    }
+   
    return SCIP_OKAY;
 }
 

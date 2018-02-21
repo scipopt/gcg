@@ -47,7 +47,12 @@ extern "C" {
 extern
 SCIP_RETCODE GCGwriteDecompositionData(
    SCIP*                 scip                /**< SCIP data structure */
-   );
+);
+
+/** prints out information about solving process */
+SCIP_RETCODE GCGwriteSolvingDetails(
+   SCIP*                 scip                /**< SCIP data structure */
+);
 
 /** prints information about the creation of the Vars*/
 extern
