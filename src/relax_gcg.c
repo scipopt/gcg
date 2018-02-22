@@ -2176,6 +2176,10 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
    SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->degeneracy)) );
    SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->dualbounds)) );
+   relaxdata->degeneracy->data = 0.;
+   relaxdata->degeneracy->next= NULL;
+   relaxdata->dualbounds->data = 0.;
+   relaxdata->dualbounds->next= NULL;
 
    return SCIP_OKAY;
 }
@@ -2327,6 +2331,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    /* get current degeneracy and dualbounds */
 //   relaxdata->degeneracy[SCIPnodeGetNumber(SCIPgetCurrentNode(scip))] = GCGgetDegeneracy(scip);
 //   relaxdata->dualbounds[SCIPnodeGetNumber(SCIPgetCurrentNode(scip))] = SCIPgetDualbound(scip);
+   SCIP_CALL( SCIPallocMemory(scip, &current_deg) );
+   SCIP_CALL( SCIPallocMemory(scip, &current_db) );
    current_deg = relaxdata->degeneracy;
    current_db = relaxdata->dualbounds;
    while( current_deg->next != NULL )
@@ -2345,7 +2351,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    current_db->next = next_db;
    current_db->next->data = SCIPgetDualbound(scip);
    current_db->next->next = NULL;
-
    
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
