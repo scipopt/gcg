@@ -1,0 +1,10 @@
+detectors/connected/enabled = FALSE
+detectors/arrowheur/enabled = FALSE
+detectors/stairheur/enabled = FALSE
+detectors/staircase/enabled = FALSE
+detectors/random/enabled = FALSE
+detectors/colors/enabled = FALSE
+detectors/cutpacking/enabled = FALSE
+detectors/consname/enabled = TRUE
+detectors/consname/regex = "(makespan|order).*"
+detectors/isomorph/enabled = FALSE
