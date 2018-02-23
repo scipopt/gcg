@@ -4798,6 +4798,9 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP_Real** pricingvals;
    int* npricingvars;
 
+   SCIP_Bool addpricingvars;        /* flag to indicate whether pricing variables should be added for the solution.
+                                       this will be false if Benders' decomposition is used. */
+
    assert(scip != NULL);
 
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
@@ -4809,24 +4812,32 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
+   addpricingvars = TRUE;
+   if( GCGgetDecompositionMode(origprob) == DEC_DECMODE_BENDERS )
+      addpricingvars = FALSE;
+
    /* now compute coefficients of the master variables in the master constraint */
    origvars = SCIPgetVars(origprob);
    norigvars = SCIPgetNVars(origprob);
 
    /* allocate memory for storing variables and solution values from the solution */
    SCIP_CALL( SCIPallocBufferArray(scip, &origsolvals, norigvars) ); /*lint !e530*/
-   SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars, pricerdata->npricingprobs) ); /*lint !e530*/
-   SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals, pricerdata->npricingprobs) ); /*lint !e530*/
-   SCIP_CALL( SCIPallocBufferArray(scip, &npricingvars, pricerdata->npricingprobs) ); /*lint !e530*/
 
-   for( i = 0; i < pricerdata->npricingprobs; i++ )
+   if( addpricingvars )
    {
-      int representative;
-      representative = GCGgetBlockRepresentative(origprob, i);
-      npricingvars[i] = 0;
+      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars, pricerdata->npricingprobs) ); /*lint !e530*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals, pricerdata->npricingprobs) ); /*lint !e530*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &npricingvars, pricerdata->npricingprobs) ); /*lint !e530*/
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &(pricingvars[i]), SCIPgetNVars(pricerdata->pricingprobs[representative])) ); /*lint !e866*/
-      SCIP_CALL( SCIPallocBufferArray(scip, &(pricingvals[i]), SCIPgetNVars(pricerdata->pricingprobs[representative])) ); /*lint !e866*/
+      for( i = 0; i < pricerdata->npricingprobs; i++ )
+      {
+         int representative;
+         representative = GCGgetBlockRepresentative(origprob, i);
+         npricingvars[i] = 0;
+
+         SCIP_CALL( SCIPallocBufferArray(scip, &(pricingvars[i]), SCIPgetNVars(pricerdata->pricingprobs[representative])) ); /*lint !e866*/
+         SCIP_CALL( SCIPallocBufferArray(scip, &(pricingvals[i]), SCIPgetNVars(pricerdata->pricingprobs[representative])) ); /*lint !e866*/
+      }
    }
 
    /* get solution values */
@@ -4843,7 +4854,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 
       if( blocknr >= 0 )
       {
-         if( !SCIPisZero(scip, origsolvals[i]) )
+         if( addpricingvars && !SCIPisZero(scip, origsolvals[i]) )
          {
             pricingvars[blocknr][npricingvars[blocknr]] = GCGoriginalVarGetPricingVar(origvars[i]);
             pricingvals[blocknr][npricingvars[blocknr]] = origsolvals[i];
@@ -4870,38 +4881,55 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
 
          if( GCGoriginalVarIsLinking(origvars[i]) )
          {
-            if( !SCIPisZero(scip, origsolvals[i]) )
+            if( addpricingvars )
             {
-               int* blocks;
-               int nblocks = GCGlinkingVarGetNBlocks(origvars[i]);
-               SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nblocks) ); /*lint !e530*/
-               SCIP_CALL( GCGlinkingVarGetBlocks(origvars[i], nblocks, blocks) );
-               for ( j = 0; j < nblocks; ++j)
+               if( !SCIPisZero(scip, origsolvals[i]) )
                {
-                  prob = blocks[j];
+                  int* blocks;
+                  int nblocks = GCGlinkingVarGetNBlocks(origvars[i]);
+                  SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nblocks) ); /*lint !e530*/
+                  SCIP_CALL( GCGlinkingVarGetBlocks(origvars[i], nblocks, blocks) );
+                  for ( j = 0; j < nblocks; ++j)
+                  {
+                     prob = blocks[j];
 
-                  pricingvars[prob][npricingvars[prob]] = GCGlinkingVarGetPricingVars(origvars[i])[prob];
-                  pricingvals[prob][npricingvars[prob]] = origsolvals[i];
-                  npricingvars[prob]++;
+                     pricingvars[prob][npricingvars[prob]] = GCGlinkingVarGetPricingVars(origvars[i])[prob];
+                     pricingvals[prob][npricingvars[prob]] = origsolvals[i];
+                     npricingvars[prob]++;
+                  }
+                  SCIPfreeBufferArray(scip, &blocks);
+
                }
-               SCIPfreeBufferArray(scip, &blocks);
-
+            }
+            else
+            {
+               if( SCIPisEQ(scip, SCIPvarGetUbGlobal(mastervar), SCIPvarGetLbGlobal(mastervar)) )
+               {
+                  SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, SCIPvarGetUbGlobal(mastervar)) );
+               }
+               else
+               {
+                  SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, origsolvals[i]) );
+               }
             }
          }
       }
    }
 
    /* create variables in the master problem */
-   for( prob = 0; prob < pricerdata->npricingprobs; prob++ )
+   if( addpricingvars )
    {
-      int representative;
+      for( prob = 0; prob < pricerdata->npricingprobs; prob++ )
+      {
+         int representative;
 
-      representative = GCGgetBlockRepresentative(origprob, prob);
+         representative = GCGgetBlockRepresentative(origprob, prob);
 
-      SCIP_CALL( pricer->createNewMasterVar(scip, NULL, NULL, pricingvars[prob], pricingvals[prob], npricingvars[prob], FALSE, representative, TRUE, &added, &newvar) );
-      assert(added);
+         SCIP_CALL( pricer->createNewMasterVar(scip, NULL, NULL, pricingvars[prob], pricingvals[prob], npricingvars[prob], FALSE, representative, TRUE, &added, &newvar) );
+         assert(added);
 
-      SCIP_CALL( SCIPsetSolVal(scip, mastersol, newvar, 1.0) );
+         SCIP_CALL( SCIPsetSolVal(scip, mastersol, newvar, 1.0) );
+      }
    }
 
 #ifdef SCIP_DEBUG
@@ -4915,15 +4943,18 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
       *stored = added;
 
    /* free memory for storing variables and solution values from the solution */
-   for( i = pricerdata->npricingprobs - 1; i>= 0; i-- )
+   if( addpricingvars )
    {
-      SCIPfreeBufferArray(scip, &(pricingvals[i]));
-      SCIPfreeBufferArray(scip, &(pricingvars[i]));
-   }
+      for( i = pricerdata->npricingprobs - 1; i>= 0; i-- )
+      {
+         SCIPfreeBufferArray(scip, &(pricingvals[i]));
+         SCIPfreeBufferArray(scip, &(pricingvars[i]));
+      }
 
-   SCIPfreeBufferArray(scip, &npricingvars);
-   SCIPfreeBufferArray(scip, &pricingvals);
-   SCIPfreeBufferArray(scip, &pricingvars);
+      SCIPfreeBufferArray(scip, &npricingvars);
+      SCIPfreeBufferArray(scip, &pricingvals);
+      SCIPfreeBufferArray(scip, &pricingvars);
+   }
    SCIPfreeBufferArray(scip, &origsolvals);
 
    return SCIP_OKAY;

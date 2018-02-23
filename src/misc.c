@@ -36,6 +36,7 @@
 #include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "benders_gcg.h"
 #include "pub_gcgvar.h"
 #include "cons_decomp.h"
 
@@ -70,6 +71,18 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    npricingprobs = GCGgetNPricingprobs(scip);
 
    assert( !SCIPisInfinity(scip, SCIPgetSolOrigObj(masterprob, mastersol)) );
+
+   if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+   {
+      SCIP_SOL* relaxsol;
+
+      relaxsol = GCGgetBendersRelaxationSol(scip);
+
+      SCIP_CALL( SCIPcreateSolCopy(scip, origsol, relaxsol) );
+      SCIP_CALL( SCIPunlinkSol(scip, *origsol) );
+
+      return SCIP_OKAY;
+   }
 
    SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
 

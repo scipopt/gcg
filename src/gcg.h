@@ -268,6 +268,12 @@ SCIP_VAR* GCGgetAuxiliaryVariable(
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
+/** returns the relaxation solution from the Benders' decomposition */
+extern
+SCIP_SOL* GCGgetBendersRelaxationSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 #endif

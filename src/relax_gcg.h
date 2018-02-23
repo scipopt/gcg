@@ -215,6 +215,12 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** returns the decomposition mode */
+extern
+int GCGgetDecompositionMode(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 #endif

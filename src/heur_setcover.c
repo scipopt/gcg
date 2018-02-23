@@ -41,6 +41,7 @@
 #include "pricer_gcg.h"
 #include "scip/clock.h"
 #include "scip/cons_linear.h"
+#include "scip/misc.h"
 #include "heur_setcover.h"
 
 

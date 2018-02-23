@@ -1413,8 +1413,9 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPsetSeparating(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
    SCIP_CALL( SCIPsetHeuristics(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
    SCIP_CALL( SCIPsetPresolving(masterscip, SCIP_PARAMSETTING_OFF, TRUE) );
-   SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxrounds", 0) );
+   //SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxrounds", 0) );
    SCIP_CALL( SCIPsetIntParam(masterscip, "propagating/maxroundsroot", 0) );
+   SCIP_CALL( SCIPsetIntParam(masterscip, "heuristics/trysol/freq", 1) );
 
    return SCIP_OKAY;
 }
@@ -1736,7 +1737,7 @@ SCIP_RETCODE createMaster(
    }
 
    /* set integral objective status in the extended problem, if possible */
-   if( SCIPisObjIntegral(scip) && relaxdata->discretization )
+   if( SCIPisObjIntegral(scip) && relaxdata->discretization && relaxdata->mode == DEC_DECMODE_DANTZIGWOLFE )
    {
       SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
    }
@@ -2040,6 +2041,14 @@ SCIP_RETCODE initRelaxator(
    /* Including the GCG Benders' decomposition plugin for the master problem.
     * This must be done after the number of subproblems are known. */
    SCIP_CALL( SCIPincludeBendersGcg(relaxdata->masterprob, scip, relaxdata->npricingprobs) );
+   SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "benders/gcg/lnscheck", FALSE) );
+
+   /* for Benders' decomposition, the Benders' plugin must be activated */
+   if( relaxdata->mode == DEC_DECMODE_BENDERS )
+   {
+      SCIP_CALL( SCIPactivateBenders(relaxdata->masterprob, SCIPfindBenders(relaxdata->masterprob, "gcg"),
+            relaxdata->npricingprobs) );
+   }
 
    masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
@@ -2362,6 +2371,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    {
       /* update the number of the last solved node */
       relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
+      printf("Current node number: %lld\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
       /* increase the node limit for the master problem by 1 */
       SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
@@ -2562,7 +2572,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* TODO: Need to check a parameter if Benders' is going to be used. */
    /* The Benders' decomposition constraint handler is included here, but the Benders' decomposition plugin is included
     * after the number of subproblems are known. This occurs when the relaxator is being initialised. */
-   SCIP_CALL( SCIPincludeConshdlrBenders(relaxdata->masterprob, scip) );
+   SCIP_CALL( SCIPincludeConshdlrBenders(relaxdata->masterprob, TRUE) );
    SCIP_CALL( SCIPsetMessagehdlr(relaxdata->masterprob, SCIPgetMessagehdlr(scip)) );
 
    /* disable display output in the master problem */
@@ -2580,6 +2590,12 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/cleanupcols", TRUE) );
    SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/cleanupcolsroot", TRUE) );
 #endif
+
+   /* setting parameters for Benders' decomposition */
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "constraints/benderslp/maxdepth", -1) );
+   SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "conflict/useprop", FALSE) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "propagating/maxrounds", 0) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "propagating/maxroundsroot", 0) );
 
    /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
@@ -3733,6 +3749,36 @@ SCIP_RETCODE GCGrelaxEndProbing(
 }
 
 
+/** checks whether a variable shoudl be added as an external branching candidate, if so it is added */
+static
+SCIP_RETCODE checkAndAddExternalBranchingCandidate(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP_VAR*             var                 /**< the variable to check whether to add as a branching candidate */
+   )
+{
+   assert(scip != NULL);
+   assert(var != NULL);
+
+   if( SCIPvarGetType(var) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, var)) )
+   {
+      if( SCIPisEQ(scip, SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var)) )
+      {
+         SCIPdebugMessage("lblocal = %g, ublocal = %g\n", SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var));
+         SCIPdebugMessage("var = %s, vartype = %d, val = %g\n", SCIPvarGetName(var), SCIPvarGetType(var),
+            SCIPgetRelaxSolVal(scip, var));
+      }
+
+      assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var)));
+
+      SCIP_CALL( SCIPaddExternBranchCand(scip, var, SCIPgetRelaxSolVal(scip, var) -
+            SCIPfloor(scip, SCIPgetRelaxSolVal(scip, var)), SCIPgetRelaxSolVal(scip, var)) );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+
 /** transforms the current solution of the master problem into the original problem's space
  *  and saves this solution as currentsol in the relaxator's data
  */
@@ -3803,6 +3849,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) )
       {
          int i;
+         int j;
 
          /* transform the master solution to the original variable space */
          SCIP_CALL( GCGtransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol)) );
@@ -3819,22 +3866,39 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          if( stored )
             relaxdata->origsolfeasible = TRUE;
 
-         /* store branching candidates */
-         for( i = 0; i < norigvars; i++ )
-            if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
+         /* in the case of Benders decomposition, only the master variables can be added as branching candidates */
+         if( GCGgetDecompositionMode(scip) == DEC_DECMODE_BENDERS )
+         {
+            SCIP* masterprob;
+            SCIP_VAR** mastervars;
+            SCIP_VAR** masterorigvars;
+            int nmastervars;
+            int nmasterorigvars;
+
+            /* retrieving the master problem */
+            masterprob = GCGgetMasterprob(scip);
+
+            /* get variables of the master problem and their solution values */
+            SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+            /* looping over all master variables to get the original variable for branching candidates */
+            for( i = 0; i < nmastervars; i++ )
             {
-               if( SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])) )
-               {
-                  SCIPdebugMessage("lblocal = %g, ublocal = %g\n", SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i]));
-                  SCIPdebugMessage("var = %s, vartype = %d, val = %g\n", SCIPvarGetName(origvars[i]), SCIPvarGetType(origvars[i]), SCIPgetRelaxSolVal(scip, origvars[i]));
-               }
+               masterorigvars = GCGmasterVarGetOrigvars(mastervars[i]);
+               nmasterorigvars = GCGmasterVarGetNOrigvars(mastervars[i]);
 
-               assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
-
-               SCIP_CALL( SCIPaddExternBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip,
-                        origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])),
-                     SCIPgetRelaxSolVal(scip, origvars[i])) );
+               for( j = 0; j < nmasterorigvars; j++ )
+                  SCIP_CALL( checkAndAddExternalBranchingCandidate(scip, masterorigvars[j]) );
             }
+         }
+         else
+         {
+            assert( GCGgetDecompositionMode(scip) == DEC_DECMODE_DANTZIGWOLFE );
+            /* store branching candidates */
+            for( i = 0; i < norigvars; i++ )
+               SCIP_CALL( checkAndAddExternalBranchingCandidate(scip, origvars[i]) );
+         }
+
          SCIPdebugMessage("updated relaxation branching candidates\n");
       }
    }
@@ -4055,4 +4119,46 @@ int GCGgetNTransvars(
    assert(relaxdata != NULL);
 
    return relaxdata->ntransvars;
+}
+
+/** returns the relaxation solution from the Benders' decomposition */
+SCIP_SOL* GCGgetBendersRelaxationSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_BENDERS* benders;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   benders = SCIPfindBenders(relaxdata->masterprob, "gcg");
+   assert(benders != NULL);
+
+   return SCIPbendersGetRelaxSol(benders);
+}
+
+/** returns the decomposition mode */
+int GCGgetDecompositionMode(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->mode;
 }
