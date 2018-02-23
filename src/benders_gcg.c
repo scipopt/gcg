@@ -21,6 +21,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
+#include <string.h>
 
 #include "benders_gcg.h"
 
@@ -78,6 +79,7 @@ struct SCIP_BendersData
    SCIP_Longint          currnodenr;         /**< current node number in the masterproblem*/
    SCIP_HASHMAP*         mapcons2idx;        /**< hashmap mapping constraints to their index in the conss array */
    SCIP_Real*            score;              /**< score of the pricing problem problems */
+   SCIP_SOL*             relaxsol;           /**< the solution to the original problem related to the relaxation */
 
    /** variables used for statistics */
    SCIP_CLOCK*           freeclock;          /**< time for freeing pricing problems */
@@ -144,7 +146,7 @@ SCIP_RETCODE bendersCallOperations(
 /* returns the objective coefficient for the given variable */
 static
 SCIP_Real varGetObj(
-      SCIP_VAR* var
+   SCIP_VAR*             var
    )
 {
    SCIP_VAR* origvar;
@@ -161,209 +163,33 @@ SCIP_Real varGetObj(
 /* Initialises the objective function for all subproblems. */
 static
 SCIP_RETCODE setSubproblemObjs(
-   SCIP_BENDERS*        benders            /**< the benders' decomposition constraint handler */
+   SCIP_BENDERS*         benders,            /**< the benders' decomposition constraint handler */
+   int                   probnumber          /**< the subproblem number */
    )
 {
    SCIP* subproblem;
    SCIP_VAR** probvars;
    int nprobvars;
-   int nsubproblems;
    int i;
-   int j;
 
    assert(benders != NULL);
 
-   nsubproblems = SCIPbendersGetNSubproblems(benders);
-
-   /* set objective value of all variables in the pricing problems to 0 (for farkas pricing) /
-    * to the original objective of the variable (for redcost pricing)
-    */
-   for( i = 0; i < nsubproblems; i++ )
-   {
-      subproblem = SCIPbendersSubproblem(benders, i);
-      if( subproblem == NULL )
-         continue;
-
-      probvars = SCIPgetVars(subproblem);
-      nprobvars = SCIPgetNVars(subproblem);
-
-      for( j = 0; j < nprobvars; j++ )
-      {
-         assert(GCGvarGetBlock(probvars[j]) == i);
-         assert(GCGoriginalVarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
-
-         SCIP_CALL( SCIPchgVarObj(subproblem, probvars[j], varGetObj(probvars[j])));
-
-         SCIPdebugMessage("pricingobj var <%s> %f\n", SCIPvarGetName(probvars[j]), varGetObj(probvars[j]));
-      }
-   }
-
-   return SCIP_OKAY;
-}
-
-/* this function fixes the linking variables to the value from the master problem */
-static
-SCIP_RETCODE setupSubproblem(
-   SCIP*                 masterprob,         /**< the SCIP instance of the master problem */
-   SCIP_BENDERS*         benders,            /**< the Benders' decomposition data structure */
-   SCIP_SOL*             sol,                /**< the current incumbent solution to check. Can be NULL is generating cuts for LP solutions */
-   int                   probnumber          /**< the subproblem number that is beting set up */
-   )
-{
-   SCIP_VAR** mastervars;
-   SCIP_VAR** masterfixedvars;
-   SCIP_VAR** pricingvars;       /* the pricing vars that are related to the linking vars */
-   SCIP_Real fixedval;
-   int nmastervars;
-   int nmasterfixedvars;
-   int i;
-
-
-   assert(masterprob != NULL);
-
-   mastervars = SCIPgetVars(masterprob);
-   masterfixedvars = SCIPgetFixedVars(masterprob);
-   nmastervars = SCIPgetNVars(masterprob);
-   nmasterfixedvars = SCIPgetNFixedVars(masterprob);
-
-
-   for( i = 0; i < nmastervars + nmasterfixedvars; i++ )
-   {
-      SCIP_VAR* var;
-
-      if( i < nmastervars )
-         var = mastervars[i];
-      else
-         var = masterfixedvars[i - nmastervars];
-
-
-      /* check whether the master variable is a linking variable
-       * In the case that the variable is a linking variable, then all corresponding pricing variables will be fixed */
-      if( GCGmasterVarIsLinking(var) )
-      {
-         /* storing the value of the linking variable from the given solution.
-          * If the current solution is NULL, then the LP or Pseudo solution will be returned */
-         fixedval = SCIPgetSolVal(masterprob, sol, var);
-
-         /* collecting all pricing variables that are associated with this linking variable */
-         pricingvars = GCGlinkingVarGetPricingVars(GCGmasterVarGetOrigvars(var)[0]);
-
-         if( pricingvars[probnumber] != NULL )
-         {
-            SCIP_Bool infeasible;
-            SCIP_Bool fixed;
-
-            SCIP_CALL( SCIPfixVar(SCIPbendersSubproblem(benders, probnumber), pricingvars[probnumber], fixedval,
-                  &infeasible, &fixed) );
-
-            assert(!infeasible);
-            assert(fixed);
-         }
-      }
-   }
-
-   return SCIP_OKAY;
-}
-
-/* solving the subproblems to generated Benders' cuts */
-static
-SCIP_RETCODE solveSubproblem(
-   SCIP*                 masterprob,         /**< the SCIP instance of the master problem */
-   SCIP_BENDERS*         benders,            /**< the Benders' decomposition data structure */
-   SCIP_SOL*             sol,                /**< the current solution, can be null if an lp of pseudo solution is checked */
-   SCIP_Real*            objval,             /**< the sum of the objective function values over all subproblems */
-   int                   probnumber,         /**< the subproblem number */
-   SCIP_Bool*            infeasible          /**< a flag to indicate whether all subproblems are feasible */
-   )
-{
-   SCIP* subproblem;
-   SCIP_SOL* bestsol;
-
-   /* previous parameter settings */
-   int prevCutoffParam;
-   int prevPropMaxroundsParam;
-   int prevPropMaxroundsRootParam;
-   char prevInitAlgParam;
-   char prevResolveAlgParam;
-   SCIP_Bool prevConfParam;
-   SCIP_Bool prevDualParam;
-
-   assert(masterprob != NULL);
-   assert(benders != NULL);
-   assert(objval != NULL);
-   assert(infeasible != NULL);
-
-   (*objval) = 0;
-   (*infeasible) = FALSE;
-
-
-   /* TODO: This should be solved just as an LP, so as a MIP. There is too much overhead with the MIP.
-    * Need to change status check for checking the LP. */
+   /* changing the variable */
    subproblem = SCIPbendersSubproblem(benders, probnumber);
+   assert(subproblem != NULL);
 
-   /* modifying all of the parameters */
+   probvars = SCIPgetVars(subproblem);
+   nprobvars = SCIPgetNVars(subproblem);
 
-   /* Do we have to disable presolving? If yes, we have to store all presolving parameters. */
-   SCIPsetPresolving(subproblem, SCIP_PARAMSETTING_OFF, TRUE);
-
-   /* Disabling heuristics so that the problem is not trivially solved */
-   SCIPsetHeuristics(subproblem, SCIP_PARAMSETTING_OFF, TRUE);
-
-   /* store parameters that are changed for the generation of the subproblem cuts */
-   SCIP_CALL( SCIPgetBoolParam(subproblem, "conflict/enable", &prevConfParam) );
-   SCIPsetParam(subproblem, "conflict/enable", FALSE);
-
-   SCIP_CALL( SCIPgetIntParam(subproblem, "lp/disablecutoff", &prevCutoffParam) );
-   SCIPsetIntParam(subproblem, "lp/disablecutoff", 1);
-
-   SCIP_CALL( SCIPgetCharParam(subproblem, "lp/initalgorithm", &prevInitAlgParam) );
-   SCIPsetCharParam(subproblem, "lp/initalgorithm", 'd');
-   SCIP_CALL( SCIPgetCharParam(subproblem, "lp/resolvealgorithm", &prevResolveAlgParam) );
-   SCIPsetCharParam(subproblem, "lp/resolvealgorithm", 'd');
-
-   SCIP_CALL( SCIPgetBoolParam(subproblem, "misc/alwaysgetduals", &prevDualParam) );
-   SCIPsetBoolParam(subproblem, "misc/alwaysgetduals", TRUE);
-
-   //SCIPinfoMessage(subproblem, NULL, "Pricing problem %d\n", i);
-   //SCIP_CALL( SCIPsetIntParam(subproblem, "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
-   //SCIP_CALL( SCIPsetBoolParam(subproblem, "display/lpinfo", TRUE) );
-
-   SCIP_CALL( SCIPgetIntParam(subproblem, "propagating/maxrounds", &prevPropMaxroundsParam) );
-   SCIP_CALL( SCIPsetIntParam(subproblem, "propagating/maxrounds", 0) );
-   SCIP_CALL( SCIPgetIntParam(subproblem, "propagating/maxroundsroot", &prevPropMaxroundsRootParam) );
-   SCIP_CALL( SCIPsetIntParam(subproblem, "propagating/maxroundsroot", 0) );
-
-   SCIP_CALL( SCIPsetIntParam(subproblem, "constraints/linear/propfreq", -1) );
-
-   SCIP_CALL( SCIPsolve(subproblem) );
-
-   bestsol = SCIPgetBestSol(subproblem);
-
-   if( SCIPgetStatus(subproblem) == SCIP_STATUS_OPTIMAL )
+   for( i = 0; i < nprobvars; i++ )
    {
-      (*objval) += SCIPgetSolTransObj(subproblem, bestsol);
-   }
-   else if( SCIPgetStatus(subproblem) == SCIP_STATUS_INFEASIBLE )
-   {
-      (*infeasible) = TRUE;
-      (*objval) = SCIPinfinity(masterprob);
-   }
-   else
-      assert(FALSE);
+      assert(GCGvarGetBlock(probvars[i]) == probnumber);
+      assert(GCGoriginalVarIsLinking(GCGpricingVarGetOrigvars(probvars[i])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[i])[0]) == probnumber));
 
-   //SCIP_CALL( SCIPprintStatistics(subprob, NULL) );
+      SCIP_CALL( SCIPchgVarObj(subproblem, probvars[i], varGetObj(probvars[i])));
 
-   SCIP_CALL( SCIPsetIntParam(subproblem, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
-   /* resetting the parameter settings to the previous state */
-   SCIPsetPresolving(subproblem, SCIP_PARAMSETTING_DEFAULT, TRUE);
-   SCIPsetHeuristics(subproblem, SCIP_PARAMSETTING_DEFAULT, TRUE);
-   SCIPsetBoolParam(subproblem, "conflict/enable", prevConfParam);
-   SCIPsetIntParam(subproblem, "lp/disablecutoff", prevCutoffParam);
-   SCIPsetCharParam(subproblem, "lp/initalgorithm", prevInitAlgParam);
-   SCIPsetCharParam(subproblem, "lp/resolvealgorithm", prevResolveAlgParam);
-   SCIPsetBoolParam(subproblem, "misc/alwaysgetduals", prevDualParam);
-   SCIPsetIntParam(subproblem, "propagating/maxrounds", prevPropMaxroundsParam);
-   SCIPsetIntParam(subproblem, "propagating/maxroundsroot", prevPropMaxroundsRootParam);
+      SCIPdebugMessage("pricingobj var <%s> %f\n", SCIPvarGetName(probvars[i]), varGetObj(probvars[i]));
+   }
 
    return SCIP_OKAY;
 }
@@ -420,8 +246,9 @@ SCIP_RETCODE setOriginalProblemValues(
 /** creates an original problem solution from the master and subproblem solutions */
 static
 SCIP_RETCODE createOriginalProblemSolution(
-   SCIP*                 masterprob,
-   SCIP_BENDERS*         benders
+   SCIP*                 masterprob,         /**< the Benders' master problem */
+   SCIP_BENDERS*         benders,            /**< the Benders' decomposition structure */
+   SCIP_SOL*             sol                 /**< the solution passed to the Benders' decomposition subproblems. */
    )
 {
    /* Don't know whether we need to consider the fixed variables. Must check. */
@@ -481,6 +308,9 @@ SCIP_RETCODE createOriginalProblemSolution(
 
       /* getting the best solution from the master problem */
       bestsol = SCIPgetBestSol(subproblem);
+#ifdef SCIP_DEBUG
+      SCIP_CALL( SCIPprintSol(subproblem, bestsol, NULL, FALSE) );
+#endif
 
       SCIP_CALL( SCIPallocBufferArray(subproblem, &vals, nvars) );
       SCIP_CALL( SCIPgetSolVals(subproblem, bestsol, nvars, vars, vals) );
@@ -492,23 +322,36 @@ SCIP_RETCODE createOriginalProblemSolution(
       SCIPfreeBufferArray(subproblem, &vals);
    }
 
-#ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPtrySol(origprob, origsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
-#else
-   SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
-#endif
-   if( !stored )
+   /* if the solution is NULL, then the solution comes from the relaxation. Thus, it should be stored in the
+    * bendersdata. When it is not null, then solution comes from a heuristic. So this solution should be passed to the
+    * solution storage. */
+   if( sol != NULL )
    {
+#ifdef SCIP_DEBUG
+      SCIP_CALL( SCIPtrySol(origprob, origsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
+#else
+      SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
+#endif
+      if( !stored )
+      {
 
-      SCIP_CALL( SCIPcheckSolOrig(origprob, origsol, &stored, TRUE, TRUE) );
+         SCIP_CALL( SCIPcheckSolOrig(origprob, origsol, &stored, TRUE, TRUE) );
+      }
+      /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
+       *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+       */
+      SCIP_CALL( SCIPfreeSol(origprob, &origsol) );
+
+      if( stored )
+         SCIPdebugMessage("  updated current best primal feasible solution.\n");
    }
-   /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
-    *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
-    */
-   SCIP_CALL( SCIPfreeSol(origprob, &origsol) );
+   else
+   {
+      if( bendersdata->relaxsol != NULL )
+         SCIP_CALL( SCIPfreeSol(origprob, &bendersdata->relaxsol) );
 
-   if( stored )
-      SCIPdebugMessage("  updated current best primal feasible solution.\n");
+      bendersdata->relaxsol = origsol;
+   }
 
 
    return SCIP_OKAY;
@@ -548,6 +391,10 @@ SCIP_DECL_BENDERSFREE(bendersFreeGcg)
    assert(benders != NULL);
 
    bendersdata = SCIPbendersGetData(benders);
+
+   /* freeing the relaxation solution */
+   if( bendersdata->relaxsol != NULL )
+      SCIP_CALL( SCIPfreeSol(bendersdata->origprob, &bendersdata->relaxsol) );
 
    if( bendersdata != NULL )
    {
@@ -677,18 +524,6 @@ SCIP_DECL_BENDERSINITSOL(bendersInitsolGcg)
       bendersdata->subprobobjvals[i] = SCIPinfinity(scip);
       bendersdata->subproblemcallsdist[i] = 0;
       bendersdata->subproblemtimedist[i] = 0;
-
-      /* TODO: Not sure whether the relevance check is necessary for Benders'. Must check */
-      if( TRUE || GCGisPricingprobRelevant(origprob, i) )
-      {
-         SCIPbendersAddSubproblem(benders, GCGgetPricingprob(origprob, i));
-      }
-#if 0
-      else
-      {
-         bendersdata->pricingprobs[i] = NULL;
-      }
-#endif
    }
 
    /* alloc memory for arrays of reduced cost */
@@ -712,12 +547,6 @@ SCIP_DECL_BENDERSINITSOL(bendersInitsolGcg)
       assert((int)(size_t)SCIPhashmapGetImage(bendersdata->mapcons2idx, masterconss[i]) == i); /*lint !e507*/
    }
 
-
-   /* setting the objective coefficients for the subproblems.
-    * This is required because the variables are added to the pricing problems with a zero coefficient. In the DW
-    * context, this is appropriate because the objective coefficients are constantly changing. In the BD context, the
-    * objective coefficients are static, so they only need to be updated once. */
-   SCIP_CALL( setSubproblemObjs(benders) );
 
    /* TODO: It is not clear that this function is needed. Only a slight modification is needed for the solver interface,
     * i.e. allowing the return of dual and farkas solutions, so it could work. If the solver interface will be used for
@@ -769,38 +598,58 @@ SCIP_DECL_BENDERSEXITSOL(bendersExitsolGcg)
 
 /** mapping method between the master problem variables and the subproblem variables of Benders' decomposition */
 static
-SCIP_DECL_BENDERSGETMASTERVAR(bendersGetmastervarGcg)
+SCIP_DECL_BENDERSGETVAR(bendersGetvarGcg)
 {  /*lint --e{715}*/
    SCIP_VAR* origvar;
-   SCIP_VAR* mastervar;
 
    assert(scip != NULL);
    assert(benders != NULL);
    assert(var != NULL);
+   assert(mappedvar != NULL);
 
    /* if there is no corresponding master variable for the input variable, then NULL is returned */
-   mastervar = NULL;
+   (*mappedvar) = NULL;
 
-   /* getting the original variable for the given pricing variable */
-   origvar = GCGpricingVarGetOrigvars(var)[0];
-
-   /* checking whether the original variable is a linking variable.
-    * If this is the case, then the corresponding master variable is added to the generated cut.
-    * If the pricing variable is not a linking variable, then the farkas dual value is added to the lhs */
-   if( GCGoriginalVarIsLinking(origvar) )
+   /* if the probnumber is -1, then the master variable is requested.
+    * if the probnumber >= 0, then the subproblem variable is requested. */
+   if( probnumber == -1 )
    {
-      mastervar = GCGoriginalVarGetMastervars(origvar)[0];
-      mastervar = SCIPvarGetProbvar(mastervar);
+      /* getting the original variable for the given pricing variable */
+      origvar = GCGpricingVarGetOrigvars(var)[0];
+
+      /* checking whether the original variable is a linking variable.
+       * If this is the case, then the corresponding master variable is added to the generated cut.
+       * If the pricing variable is not a linking variable, then the farkas dual value is added to the lhs */
+      if( GCGoriginalVarIsLinking(origvar) )
+      {
+         (*mappedvar) = GCGoriginalVarGetMastervars(origvar)[0];
+         //(*mappedvar) = SCIPvarGetProbvar((*mappedvar));
+      }
+   }
+   else
+   {
+      assert(probnumber >= 0 && probnumber < SCIPbendersGetNSubproblems(benders));
+
+      /* getting the original variable for the given pricing variable */
+      origvar = GCGmasterVarGetOrigvars(var)[0];
+
+      /* checking whether the original variable is a linking variable.
+       * If this is the case, then the corresponding master variable is added to the generated cut.
+       * If the pricing variable is not a linking variable, then the farkas dual value is added to the lhs */
+      if( GCGoriginalVarIsLinking(origvar) )
+      {
+         (*mappedvar) = GCGlinkingVarGetPricingVars(origvar)[probnumber];
+         (*mappedvar) = SCIPvarGetProbvar((*mappedvar));
+      }
    }
 
-
-   return mastervar;
+   return SCIP_OKAY;
 }
 
 
 /** the execution method for Benders' decomposition */
 static
-SCIP_DECL_BENDERSEXEC(bendersExecGcg)
+SCIP_DECL_BENDERSPRESUBSOLVE(bendersPresubsolveGcg)
 {  /*lint --e{715}*/
 
    SCIP_CALL( bendersCallOperations(scip, benders) );
@@ -813,49 +662,90 @@ SCIP_DECL_BENDERSEXEC(bendersExecGcg)
 static
 SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
 {  /*lint --e{715}*/
+   SCIP_BENDERSDATA* bendersdata;
+
+   assert(benders != NULL);
+
+   bendersdata = SCIPbendersGetData(benders);
+   assert(bendersdata != NULL);
 
    /* creates a solution to the original problem */
+#ifdef SCIP_DEBUG
+   SCIP_CALL( SCIPprintSol(scip, sol, NULL, FALSE) );
+#endif
    if( !infeasible )
-      SCIP_CALL( createOriginalProblemSolution(scip, benders) );
+   {
+      SCIP_CALL( createOriginalProblemSolution(scip, benders, sol) );
+      SCIP_CALL( GCGrelaxUpdateCurrentSol(bendersdata->origprob) );
+   }
 
    return SCIP_OKAY;
 }
 
 
+
+/** the method for creating the Benders' decomposition subproblem. This method is called during the initialisation stage
+ *  (after the master problem was transformed)
+ *
+ *  This method must create the SCIP instance for the subproblem and add the required variables and constraints. In
+ *  addition, the settings required for the solving the problem must be set here. However, some settings will be
+ *  overridden by the standard solving method included in the Benders' decomposition framework. If a special solving
+ *  method is desired, the user can implement the bendersSolvesubDefault callback.
+ */
+static
+SCIP_DECL_BENDERSCREATESUB(bendersCreatesubGcg)
+{  /*lint --e{715}*/
+   SCIP_BENDERSDATA* bendersdata;
+   SCIP* origprob;
+
+   assert(scip != NULL);
+   assert(benders != NULL);
+
+   bendersdata = SCIPbendersGetData(benders);
+   assert(bendersdata != NULL);
+
+   origprob = bendersdata->origprob;
+
+   /* TODO: Not sure whether the relevance check is necessary for Benders'. Must check */
+   if( TRUE || GCGisPricingprobRelevant(origprob, probnumber) )
+   {
+      SCIPaddBendersSubproblem(scip, benders, GCGgetPricingprob(origprob, probnumber));
+
+      /* setting the objective coefficients for the subproblems.
+       * This is required because the variables are added to the pricing problems with a zero coefficient. In the DW
+       * context, this is appropriate because the objective coefficients are constantly changing. In the BD context, the
+       * objective coefficients are static, so they only need to be updated once. */
+      SCIP_CALL( setSubproblemObjs(benders, probnumber) );
+   }
+
+
+   return SCIP_OKAY;
+}
+
+
+
+#if 0
 /** the subproblem solving method for Benders' decomposition */
 static
 SCIP_DECL_BENDERSSOLVESUB(bendersSolvesubGcg)
 {  /*lint --e{715}*/
-   SCIP_Real objval;
-
-   assert(scip != NULL);
-   assert(benders != NULL);
-   assert(probnumber >= 0 && probnumber < SCIPbendersGetNSubproblems(benders));
-   assert(SCIPbendersSubproblem(benders, probnumber) != NULL);
-
-   /* TODO: Need to get the solution. Is this provided or passed through the constraint handler? */
-
-   /* setting up the subproblem to be solved */
-   SCIP_CALL( setupSubproblem(scip, benders, sol, probnumber) );
-
-   /* solves the subproblem */
-   SCIP_CALL( solveSubproblem(scip, benders, sol, &objval, probnumber, infeasible) );
-
    return SCIP_OKAY;
 }
+#else
+#define bendersSolvesubGcg NULL
+#endif
 
 
+#if 0
 /** the subproblem freeing method for Benders' decomposition */
 static
 SCIP_DECL_BENDERSFREESUB(bendersFreesubGcg)
 {  /*lint --e{715}*/
-
-   /* freeing the transform of the subproblems so that it can be updated in the next iteration. */
-   /* TODO: Consider using reoptimisation. In this case you will need to free the reoptimization problem. */
-   SCIP_CALL( SCIPfreeTransform(SCIPbendersSubproblem(benders, probnumber)) );
-
    return SCIP_OKAY;
 }
+#else
+#define bendersFreesubGcg NULL
+#endif
 
 
 /*
@@ -878,6 +768,7 @@ SCIP_RETCODE SCIPincludeBendersGcg(
    bendersdata->solvers = NULL;
    bendersdata->nsolvers = 0;
    bendersdata->nodetimehist = NULL;
+   bendersdata->relaxsol = NULL;
 
    benders = NULL;
 
@@ -895,9 +786,8 @@ SCIP_RETCODE SCIPincludeBendersGcg(
    /* use SCIPincludeBendersBasic() plus setter functions if you want to set callbacks one-by-one and your code should
     * compile independent of new callbacks being added in future SCIP versions
     */
-   SCIP_CALL( SCIPincludeBendersBasic(scip, &benders, BENDERS_NAME, BENDERS_DESC, BENDERS_PRIORITY, nsubproblems,
-         BENDERS_CUTLP, BENDERS_CUTPSEUDO, BENDERS_CUTRELAX, bendersGetmastervarGcg, bendersExecGcg,
-         bendersSolvesubGcg, bendersFreesubGcg, bendersdata) );
+   SCIP_CALL( SCIPincludeBendersBasic(scip, &benders, BENDERS_NAME, BENDERS_DESC, BENDERS_PRIORITY,
+         BENDERS_CUTLP, BENDERS_CUTPSEUDO, BENDERS_CUTRELAX, bendersGetvarGcg, bendersCreatesubGcg, bendersdata) );
    assert(benders != NULL);
 
    /* set non fundamental callbacks via setter functions */
@@ -909,7 +799,10 @@ SCIP_RETCODE SCIPincludeBendersGcg(
    SCIP_CALL( SCIPsetBendersExitpre(scip, benders, bendersExitpreGcg) );
    SCIP_CALL( SCIPsetBendersInitsol(scip, benders, bendersInitsolGcg) );
    SCIP_CALL( SCIPsetBendersExitsol(scip, benders, bendersExitsolGcg) );
+   SCIP_CALL( SCIPsetBendersPresubsolve(scip, benders, bendersPresubsolveGcg) );
+   SCIP_CALL( SCIPsetBendersSolvesub(scip, benders, bendersSolvesubGcg) );
    SCIP_CALL( SCIPsetBendersPostsolve(scip, benders, bendersPostsolveGcg) );
+   SCIP_CALL( SCIPsetBendersFreesub(scip, benders, bendersFreesubGcg) );
 #endif
 
    /* including the default cuts for Benders' decomposition */
@@ -947,4 +840,21 @@ SCIP_RETCODE SCIPincludeBendersGcg(
             &bendersdata->eagerfreq, FALSE, DEFAULT_EAGERFREQ, 0, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
+}
+
+
+
+/** returns the last relaxation solution */
+SCIP_SOL* SCIPbendersGetRelaxSol(
+   SCIP_BENDERS*         benders             /**< the Benders' decomposition structure */
+   )
+{
+   SCIP_BENDERSDATA* bendersdata;
+
+   assert(benders != NULL);
+   assert(strcmp(SCIPbendersGetName(benders), BENDERS_NAME) == 0);
+
+   bendersdata = SCIPbendersGetData(benders);
+
+   return bendersdata->relaxsol;
 }

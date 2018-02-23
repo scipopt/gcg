@@ -48,7 +48,11 @@ SCIP_RETCODE SCIPincludeBendersGcg(
  * @{
  */
 
-/** TODO: add public methods to this group for documentation purposes */
+/** returns the last relaxation solution */
+EXTERN
+SCIP_SOL* SCIPbendersGetRelaxSol(
+   SCIP_BENDERS*         benders             /**< the Benders' decomposition structure */
+   );
 
 /* @} */
 
