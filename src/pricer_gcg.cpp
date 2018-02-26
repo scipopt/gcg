@@ -3035,6 +3035,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
 #ifdef SCIP_STATISTIC
    SCIPstatisticMessage("New pr, node %" SCIP_LONGINT_FORMAT "\n", SCIPgetNNodes(scip_));
+   SCIPstatisticMessage("MLP t: %g\n", SCIPgetClockTime(scip_, scip_->stat->primallptime) + SCIPgetClockTime(scip_, scip_->stat->duallptime));
    nstabrounds = 0;
 #endif
 
@@ -3408,6 +3409,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       }
    }
 
+#ifdef SCIP_STATISTIC
+   SCIPstatisticMessage("MLP t: %g\n", SCIPgetClockTime(scip_, scip_->stat->primallptime) + SCIPgetClockTime(scip_, scip_->stat->duallptime));
+#endif
 
    /* free the pricingproblems if they exist and need to be freed */
    // @todo: actually, only the transformed problems are freed

@@ -78,7 +78,13 @@ def parse_arguments(args):
     parser.add_argument('-B', '--no-bubble', action='store_true',
                         help='create no bubble plots')
 
-    parser.add_argument('-t', '--no-text', action='store_true',
+    parser.add_argument('-t', '--time-only', action='store_true',
+                        help='create only time plots')
+
+    parser.add_argument('-T', '--no-time', action='store_true',
+                        help='create no time plots')
+
+    parser.add_argument('-n', '--no-text', action='store_true',
                         help='do not write any text on the plots (such as node or round numbers)')
 
     parser.add_argument('-S', '--save', action='store_true',
@@ -123,9 +129,10 @@ def set_params(args):
     params['colors'] = args.colors
     params['lines'] = args.lines
     params['instances'] = args.instances
-    params['no_summary'] = args.no_summary or args.bubble_only or args.complete_only
-    params['no_bubble'] = args.no_bubble or args.summary_only or args.complete_only
-    params['no_complete'] = args.no_complete or args.summary_only or args.bubble_only
+    params['no_summary'] = args.no_summary or args.bubble_only or args.time_only or args.complete_only
+    params['no_bubble'] = args.no_bubble or args.summary_only or args.time_only or args.complete_only
+    params['no_time'] = args.no_time or args.summary_only or args.bubble_only or args.complete_only
+    params['no_complete'] = args.no_complete or args.summary_only or args.bubble_only or args.time_only
     params['no_text'] = args.no_text
     params['save'] = args.save
     params['load'] = args.load
@@ -238,6 +245,9 @@ def make_plot(data, info):
     # calculate the starting time of each round
     data['starting_time'] = data.time.cumsum() - data.time
 
+    # set the height of the LP time bars to a maximum value
+    data.loc[data.pricing_prob == -2, 'nVars'] = data.nVars.max() * 10
+
     # extract the column pool data and delete it from data
     x_colpool = data[data.pricing_prob == -1].starting_time.values
     y_colpool = data[data.pricing_prob == -1].nVars.values
@@ -248,6 +258,9 @@ def make_plot(data, info):
     y = (data.nVars - ymin).values
     widths = data.time.values
     colors, cmapping = get_colmap(data.pricing_prob.values)
+
+    # sometimes we need just the pricers
+    y_pricers = (data[data.pricing_prob >= 0].nVars - ymin).values
 
     print '    data restructured:', time.time() - start_time
     start_time = time.time()
@@ -276,12 +289,12 @@ def make_plot(data, info):
         textsize = 12
     totalTime = max(x)
     if len(y_colpool) == 0:
-        ymax = 1.01 * max(y)
+        ymax = 1.01 * max(y_pricers)
     # if the maximal nVars of the column pool exceeds nVars of all pricing problems, do not take the cp into account for ymax
-    elif 2*max(y) < max(y_colpool) and max(y) >= 2:
-        ymax = max(y) * 1.5
+    elif 2*max(y_pricers) < max(y_colpool) and max(y_pricers) >= 2:
+        ymax = max(y_pricers) * 1.5
     else:
-        ymax = 1.01 * max(y.tolist() + y_colpool.tolist())
+        ymax = 1.01 * max(y_pricers.tolist() + y_colpool.tolist())
     xmin = 0
     xmax = x[-1]+widths[-1]
 
@@ -394,6 +407,7 @@ def make_plot(data, info):
 
         # draw a legend, but do not include more than 25 pricing problems
         patches = [mpatches.Patch(color = cmapping[p], label = 'pricing problem ' + str(p)) for p in cmapping]
+        patches[0].set_label('Master LP Time')
         if len(patches) > 31:
             patches = patches[:31] + [mpatches.Patch(color = 'white', alpha = 0, label = '...')]
         handles = patches + [lines.Line2D([0,0], [0,1], color = 'red', linewidth = 2., label = 'pricing round'), lines.Line2D([0,0], [0,1], color = 'orange', linestyle = '--', linewidth = 1.6, label = 'stabilization round'), cp_scatter]
@@ -447,6 +461,7 @@ def make_summary_plot(data, info):
     start_time = time.time()
 
     # extract summary data
+    data = data.query('pricing_prob <> -2')
     summary = pd.DataFrame()
     summary['time'] = data.groupby(level=['node','pricing_round','stab_round', 'round']).sum().time
     summary['found_frac'] = data.astype(bool).groupby(level=['node','pricing_round','stab_round', 'round']).sum().nVars/data.groupby(level=['node','pricing_round','stab_round', 'round']).count().nVars*100
@@ -574,7 +589,7 @@ def make_summary_plot(data, info):
     fig.set_size_inches(11.7,8.3)
     plt.tight_layout()
     fig.subplots_adjust(top = 0.87)
-    filename = params['outdir'] + '/' + info['instance'] + '.summary'
+    filename = params['outdir'] + '/' + info['instance'] + '.summary.' + info['settings']
     n = ''
     dot = ''
     if params['details']:
@@ -606,7 +621,7 @@ def make_bubble_plot(data, info):
     start_time = time.time()
 
     # flat out the data again
-    data = data.reset_index()
+    data = data.query('pricing_prob <> -2').reset_index()
 
     pricer_min = data.pricing_prob.min()
     pricer_max = data.pricing_prob.max()
@@ -749,7 +764,7 @@ def make_bubble_plot(data, info):
     # save the plot
     fig.set_size_inches(11.7,8.3)
     gs.tight_layout(fig,rect = (0,0,1,.9))
-    filename = params['outdir'] + '/' + info['instance'] + '.bubble'
+    filename = params['outdir'] + '/' + info['instance'] + '.bubble.' + info['settings']
     n = ''
     dot = ''
     if params['details']:
@@ -771,6 +786,71 @@ def make_bubble_plot(data, info):
     plt.close()
 
     print '    saved bubble plot:', time.time() - start_time
+
+def make_time_plot(data, info):
+    """
+    For each instance create a pie chart summarizing the computing time distribution
+    :param data: dataframe with the collected (complete) data
+    :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
+    :return:
+    """
+    # calculate times for the total summary
+    farkas_time = data.query('(pricing_prob >= 0) & (farkas == True)').time.sum() * 100
+    redcost_time = data.query('(pricing_prob >= 0) & (farkas == False)').time.sum() * 100
+    masterlp_time = data.query('pricing_prob == -2').time.sum() * 100
+
+    # calculate times for the pricer summary
+    df = data.query('pricing_prob >= 0').reset_index()[['pricing_prob','time','nVars']].groupby('pricing_prob').sum().sort_values('time')
+    df = df[df.time >= 0.01]
+    pricer_times = df.time.values
+    pricer_times_labels = [str(i) for i in df.index]
+    pricer_times_colors = get_colmap(df.index.values)[0]
+
+    # calculate efficiencies
+    df = df[df.nVars > 0]
+    pricer_efficiencies = (df.nVars / df.time).values
+    pricer_efficiencies = [e / pricer_efficiencies.sum() for e in pricer_efficiencies if e > 0]
+    pricer_efficiencies_labels = [str(i) for i in df.index]
+    pricer_efficiencies_colors = get_colmap(df.index.values)[0]
+
+    # create the subplots
+    fig = plt.gcf()
+    gs = gridspec.GridSpec(2,2, wspace = .2)
+    ax_total = plt.subplot(gs[0])
+    ax_pricers = plt.subplot(gs[1])
+    ax_efficiencies = plt.subplot(gs[2])
+
+    # plots
+    ax_total.pie([redcost_time, farkas_time, masterlp_time], labels = ['redcostpricing', 'initialfarkas', 'masterlp'])
+    ax_total.axis('equal')
+    ax_pricers.pie([100 * t for t in pricer_times], labels = pricer_times_labels, colors = pricer_times_colors, startangle = 90, autopct = (lambda x: str(round(x/100.,2))))
+    ax_pricers.axis('equal')
+    ax_efficiencies.pie(pricer_efficiencies, labels = pricer_efficiencies_labels, colors = pricer_efficiencies_colors, startangle = 90)
+    ax_efficiencies.axis('equal')
+
+    # save
+    fig.set_size_inches(11.7,8.3)
+#    gs.tight_layout(fig)
+    filename = params['outdir'] + '/' + info['instance'] + '.times.' + info['settings']
+    n = ''
+    dot = ''
+    if params['details']:
+        while os.path.isfile(filename + dot + str(n) + '.pdf'):
+            if n == '':
+                n = 2
+                dot = '.'
+            else:
+                n += 1
+        plt.savefig(filename + dot + str(n) + '.pdf')
+    else:
+        while os.path.isfile(filename + dot + str(n) + '.png'):
+            if n == '':
+                n = 2
+                dot = '.'
+            else:
+                n += 1
+        plt.savefig(filename + dot + str(n) + '.png')
+    plt.close()
 
 def plots(data, info):
     """
@@ -810,6 +890,9 @@ def plots(data, info):
         if not params['no_summary']:
             # build the summary plot
             make_summary_plot(data, info)
+        if not params['no_time']:
+            # build the time plot
+            make_time_plot(data, info)
         if not params['no_complete']:
             # do not build the complete plot
             make_plot(data, info)
@@ -830,6 +913,9 @@ def plots(data, info):
             if not params['no_summary']:
                 # build the summary plot
                 make_summary_plot(data, info)
+            if not params['no_time']:
+                # build the time plot
+                make_time_plot(data, info)
             if not params['no_complete']:
                 # do not build the complete plot
                 make_plot(data, info)
@@ -928,6 +1014,9 @@ def parse_files(files):
             problemFileName = None
             settings = 'default'
             scip_status = 'NONE'
+            round_begin = False
+            lptime_begin = 0
+            lptime_end = 0
             farkasDone = False
             done = False
 
@@ -965,6 +1054,9 @@ def parse_files(files):
                         problemFileName = None
                         settings = 'default'
                         scip_status = 'NONE'
+                        round_begin = False
+                        lptime_begin = 0
+                        lptime_end = 0
                         farkasDone = False
                         done = False
                     else:
@@ -977,8 +1069,8 @@ def parse_files(files):
 
                 elif line.startswith("loaded parameter file"):
                     # store current settings
-                    settings=line.split()[-1]
-                    settings=settings.split("/")[-1]
+                    settings = line.split()[-1]
+                    settings = settings.split("/")[-1]
                     settings = os.path.splitext(settings)[0]
 
                 elif not problemFileName and line.startswith("read problem "):
@@ -1029,6 +1121,36 @@ def parse_files(files):
                         pricing_round += 1
                         round_counter += 1
                         stab_round = 0
+                        round_begin = True
+                    except ValueError:
+                        print '    ended abruptly'
+                        collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        print '    leaving', problemFileName
+                        done = True
+                        continue
+
+                if message.startswith("MLP t: "):
+                    try:
+                        if round_begin:
+                            lptime_begin = float(message.split()[-1])
+                            if lptime_begin - lptime_end >= 0.01:
+                                # store all indices
+                                ind_node.append(ind_node[-1])
+                                ind_pricing_round.append(ind_pricing_round[-1])
+                                ind_stab_round.append(ind_stab_round[-1])
+                                ind_round.append(ind_round[-1])
+                                # the Master LP Time is represented as a pricing problem with ID -2
+                                ind_pricing_prob.append(-2)
+
+                                # store the data
+                                val_time.append(lptime_begin - lptime_end)
+                                val_nVars.append(0)
+                                val_farkas.append(val_farkas[-1])
+                            round_begin = False
+                        else:
+                            lptime_end = float(message.split()[-1])
+                            if lptime_end - lptime_begin > 0.005:
+                                print 'It seems, that the LP time is not constant during a pricing round. Delta t is', lptime_end - lptime_begin
                     except ValueError:
                         print '    ended abruptly'
                         collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
