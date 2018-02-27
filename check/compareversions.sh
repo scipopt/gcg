@@ -1,17 +1,5 @@
 #!/bin/bash
 
-#####
-# README: 
-# The script is called with parameters of the form 
-# "testset testparam1;testparam2;... githash/gitbranch1 param1;param2;... githash/gitbranch2 param1;param2;..."
-# Parameters:
-#	- testset:		Testset to run the different versions on
-#	- testparams:		Parameters for the test script
-#	- githash/gitbranchN:	GCG versions to be run (a githash or a branch)
-#	- params:		parameters with which to compile & run GCG version #N
-#####
-
-
 # For readability reasons: 
 # Even though not necessary please "declare" global variables here if they are guaranteed to exist.
 TESTSET=""		# testset on which to run all versions
@@ -22,38 +10,38 @@ VERSIONCOUNTER=0	# stores amount of versions to compare
 # 1) Get parameters
 echo ""
 echo "This script will run different versions of GCG using the test script for comparison."
+echo ""
+echo "Please call this script with all parameters that both GCG versions should be run with:"
+echo "e.g. 'compareversions TEST=mytestset SETTINGS=mysettings LPS=cpx'"
+echo "Additional parameters for a single branch are adjustable in the following."
+echo ""
 
 if [ -z $1 ]
 then
-	echo "No input to compare. Please call this script as"
-	echo "./compareversions testset testparam1,testparam2,... githash/gitbranch1 param1,param2,... githash/gitbranch2 param1,param2,..."
-	echo "Place \",,\" for empty parameters."
-	exit 0
+	echo "No parameters given, using defaults so far."
+else
+	ninputs=$#
+	PARAMS=""
+	while ((ninputs > 0))
+	do
+		PARAMS=("${PARAMS[*]}" "$1")
+		ninputs=$((ninputs - 1))
+		shift
+	done
+	echo "The given parameters are:"
+	echo "${PARAMS[*]}"
 fi
 
-# read & store params
-ninputs=$#
-TESTSET=$1
-ninputs=$((ninputs - 1))
-shift
-TESTPARAMS=$1
-ninputs=$((ninputs - 1))
-shift
-VERSION=""
-PARAMS=""
-nversions=0
-echo $ninputs
-while ((ninputs > 0))
-do
-	nversions=$((nversions + 1))
-	VERSION=("${VERSION[*]}" "$1")
-	ninputs=$((ninputs - 1))
-	shift
-	PARAMS=("${PARAMS[*]}" "$1")
-	ninputs=$((ninputs - 1))
-	shift
-done
-echo VERSIONCOUNTER= "$nversions", VERSION= "${VERSION[*]}", PARAMS= "${PARAMS[*]}". 
+echo ""
+echo "Enter the first git branch/hash/tag:"
+read VERSION1
+echo "Enter additional parameters for this branch (Press Enter if none):"
+read ADDPARAMS1
+echo ""
+echo "Enter the second git branch/hash/tag:"
+read VERSION2
+echo "Enter additional parameters for this branch (Press Enter if none):"
+read ADDPARAMS2
 
 # 2) TODO check out the version(s), compile, run with corresponding parameter(s)
 #		if out files would get overwritten then add version/params coding to their names
