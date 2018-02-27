@@ -37,11 +37,20 @@ echo "Enter the first git branch/hash/tag:"
 read VERSION1
 echo "Enter additional parameters for this branch (Press Enter if none):"
 read ADDPARAMS1
+if [ -z "$ADDPARAMS1" ]
+then
+	ADDPARAMS1=""
+fi
+
 echo ""
 echo "Enter the second git branch/hash/tag:"
 read VERSION2
 echo "Enter additional parameters for this branch (Press Enter if none):"
 read ADDPARAMS2
+if [ -z "$ADDPARAMS2" ]
+then
+	ADDPARAMS2=""
+fi
 
 # 2) TODO check out the version(s), compile, run with corresponding parameter(s)
 #		if out files would get overwritten then add version/params coding to their names
