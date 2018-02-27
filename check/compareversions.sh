@@ -69,7 +69,7 @@ git submodule sync
 git submodule update
 make soplex
 make scip
-make deps "${PARAMS[*]}"
+make deps ${PARAMS[*]}
 make -j ${PARAMS[*]}
 
 # run testset
