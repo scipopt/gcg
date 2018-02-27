@@ -51,27 +51,39 @@ CURRENTBRANCH=$(git symbolic-ref -q HEAD)
 CURRENTBRANCH=${CURRENTBRANCH##refs/heads/}
 CURRENTBRANCH=${CURRENTBRANCH:-HEAD}
 
-i=1
-while (( i <= ${VERSIONCOUNTER} ))
-do
-	# checkout current version
-	cd ..					# Script is in check, so switch to gcg main folder
-	git checkout "${VERSION[${i}]}"
-	git submodule init
-	git submodule sync
-	git submodule update
-	make soplex
-	make scip
-	make "${COMPARAMS[${i}]}" deps
-	make "${COMPARAMS[${i}]}"
 
-	# run testset
-	make test TEST="$TESTSET" SETTINGS
+# test version 1
+cd ..					# Script is in check, so switch to gcg main folder
+git checkout "${VERSION1}"
+git submodule init
+git submodule sync
+git submodule update
+make soplex
+make scip
+make "${PARAMS[*]}" "${ADDPARAMS1}" deps
+make "${PARAMS[*]}" "${ADDPARAMS1}"
 
-	# TODO change name of output files
+# run testset
+make test "${PARAMS[*]}" "${ADDPARAMS1}"
 
-	i=$((i + 1))
-done
+# TODO change name of output files
+
+# test version 2
+cd ..					# Script is in check, so switch to gcg main folder
+git checkout "${VERSION2}"
+git submodule init
+git submodule sync
+git submodule update
+make soplex
+make scip
+make "${PARAMS[*]}" "${ADDPARAMS2}" deps
+make "${PARAMS[*]}" "${ADDPARAMS2}"
+
+# run testset
+make test "${PARAMS[*]}" "${ADDPARAMS2}"
+
+# TODO change name of output files
+
 git checkout "${CURRENTBRANCH}"
 
 
