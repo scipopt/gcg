@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# For readability reasons: 
-# Even though not necessary please "declare" global variables here if they are guaranteed to exist.
-TESTSET=""		# testset on which to run all versions
-USERINPUT=""		# temp var for user inputs
-VERSIONCOUNTER=0	# stores amount of versions to compare
-
-
 # 1) Get parameters
 echo ""
 echo "This script will run different versions of GCG using the test script for comparison."
@@ -88,7 +81,7 @@ mv "$OLDres" "version1.res"
 git checkout "${CURRENTBRANCH}"
 
 
-# 3) do sth with the output: 
+# 3) do sth with the output: TODO
 
 # termination
 exit 0
