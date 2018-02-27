@@ -64,35 +64,16 @@ CURRENTBRANCH=${CURRENTBRANCH:-HEAD}
 # test version 1
 cd ..					# Script is in check, so switch to gcg main folder
 git checkout "${VERSION1}"
-echo "starting init"
-git submodule init
-echo "starting sync"
-git submodule sync
-echo "starting update"
-git submodule update
-make soplex
-make scip
-make "${PARAMS[*]}" "${ADDPARAMS1}" deps
-make "${PARAMS[*]}" "${ADDPARAMS1}"
-
-# run testset
-make test "${PARAMS[*]}" "${ADDPARAMS1}"
-
-# TODO change name of output files
-
-# test version 2
-cd ..					# Script is in check, so switch to gcg main folder
-git checkout "${VERSION2}"
 git submodule init
 git submodule sync
 git submodule update
 make soplex
 make scip
-make "${PARAMS[*]}" "${ADDPARAMS2}" deps
-make "${PARAMS[*]}" "${ADDPARAMS2}"
+make "${PARAMS[*]}" deps
+make "${PARAMS[*]}" 
 
 # run testset
-make test "${PARAMS[*]}" "${ADDPARAMS2}"
+make test "${PARAMS[*]}" 
 
 # TODO change name of output files
 
