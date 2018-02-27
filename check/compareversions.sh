@@ -1,53 +1,61 @@
 #!/bin/bash
 
+#####################################################################################
+# README
+#
+# This script will run different versions of GCG using the test script for comparison.
+#
+# Call this script with arguments: "global flags" "gitversion1" "flags for gitversion1" "gitversion2" "flags for gitversion2" "gitversion3" ...
+# e.g. ./compareversions "TEST=mytestset SETTINGS=mysettings -j" "master" " " "mybranch" "LPS=cpx"
+#
+# Put "" around your arguments if they include spaces.
+# Put " " for empty flags. (!)
+#
+# In detail:
+# 1st argument: all flags to be set for all git versions 
+# 2nd argument: git hash/branch/tag of 1st GCG version
+# 3rd argument: additional flags for the 1st GCG version
+# 4th argument: git hash/branch/tag of 2nd GCG version
+# 5th argument: additional flags for the 2nd GCG version
+# ...
+#
+#####################################################################################
 
-# 1) Get global parameters
+
+# 1) Get arguments
 echo ""
 echo "This script will run different versions of GCG using the test script for comparison."
 echo ""
-echo "Please call this script with all parameters that both GCG versions should be run with:"
-echo "e.g. 'compareversions TEST=mytestset SETTINGS=mysettings LPS=cpx'"
-echo "Additional parameters for a single branch are adjustable in the following."
-echo ""
 
+# Sanity checks for arguments
 if [ -z $1 ]
 then
-	echo "No parameters given, using defaults so far."
-else
-	ninputs=$#
-	PARAMS=""
-	while ((ninputs > 0))
-	do
-		PARAMS=("${PARAMS[*]}" "$1")
-		ninputs=$((ninputs - 1))
-		shift
-	done
-	echo "The given parameters are:"
-	echo "${PARAMS[*]}"
+	echo "No arguments."
+	exit 0
 fi
 
-# Get git versions and their corresponding individual parameters
+# Store arguments
+ninputs=$#
+GLOBALFLAGS=$1
+ninputs=$((ninputs - 1))
+shift
 nversions=0
-echo ""
-echo "Enter git branch/hash/tag 1:"
-read USERINPUT
-VERSION${nversions}=$USERINPUT
-
-while [ -n $USERINPUT ]
+while ((ninputs > 0))
 do
-	nversions=$(($nversions + 1))
-	echo "Enter additional parameters for this branch (Press Enter if none):"
-	read ADDPARAMS1
-	if [ -z "$ADDPARAMS${i}" ]
+	nversions=$((nversions + 1))
+	VERSION${nversions}=$1
+	ninputs=$((ninputs - 1))
+	shift
+	if ((ninputs != 0))
 	then
-		ADDPARAMS${i}=""
+		ADDFLAGS${nversions}=$1
+		ninputs=$((ninputs - 1))
+		shift
 	fi
-
-	echo ""
-	echo "Enter git branch/hash/tag" $((${nversions} + 1)) "or press Enter to stop adding more git versions:"
-	read USERINPUT
-	VERSION${nversions}=$USERINPUT
 done
+
+echo $nversions
+
 
 # 2) TODO check out the version(s), compile, run with corresponding parameter(s)
 #		if out files would get overwritten then add version/params coding to their names
