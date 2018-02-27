@@ -73,9 +73,17 @@ make deps ${PARAMS[*]}
 make -j ${PARAMS[*]}
 
 # run testset
-make test "${PARAMS[*]}" 
+make test ${PARAMS[*]}
 
-# TODO change name of output files
+# change name of output files
+cd check/results
+OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
+echo "$OLDout"
+mv "$OLDout" "version1.out"
+
+OLDres=$(find . -type f -name "*.res"  -printf "%p\n" | sort -n | head -n 1)
+echo "$OLDres"
+mv "$OLDres" "version1.res"
 
 git checkout "${CURRENTBRANCH}"
 
