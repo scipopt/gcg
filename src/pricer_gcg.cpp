@@ -2827,8 +2827,6 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    int                   maxcols             /**< size of the cols array to indicate maximum columns */
    )
 {
-   GCG_COL* bestcol = NULL; /* the column corresponding to the current best solution from the sequence of solves */
-   SCIP_Real redcost;
    SCIP_Bool found = FALSE; /* whether a feasible solution has been found */
    int i;
 
@@ -2844,11 +2842,8 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_CALL( solvePricingProblem(pricingjob, pricetype, maxcols) );
    if( GCGpricingjobGetNImpCols(pricingjob) > 0 )
    {
-      bestcol = GCGpricingjobGetCol(pricingjob, 0);
-      redcost = GCGcolGetRedcost(bestcol);
+      assert(SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(GCGpricingjobGetCol(pricingjob, 0))));
       found = TRUE;
-
-      assert(SCIPisDualfeasNegative(scip_, redcost));
    }
 
    /* If no negative reduced cost column has been found yet,
@@ -2871,11 +2866,8 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       SCIP_CALL( solvePricingProblem(pricingjob, pricetype, 1) );
       if( GCGpricingjobGetNImpCols(pricingjob) > 0 )
       {
-         bestcol = GCGpricingjobGetCol(pricingjob, 0);
-         redcost = GCGcolGetRedcost(bestcol);
+         assert(SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(GCGpricingjobGetCol(pricingjob, 0))));
          found = TRUE;
-
-         assert(SCIPisDualfeasNegative(scip_, redcost));
       }
    }
 
