@@ -442,7 +442,7 @@ SCIP_RETCODE solveKnapsack(
    for( i = 0; i < nsolvars; ++i )
       solval += solvals[i] * SCIPvarGetObj(solvars[i]);
 
-   *lowerbound = solval;
+   *lowerbound = exactly ? solval : -SCIPinfinity(pricingprob);
 
  TERMINATE:
    SCIPfreeBufferArray(pricingprob, &nonsolitems);
