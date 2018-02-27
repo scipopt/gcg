@@ -4873,6 +4873,9 @@ SCIP_RETCODE DECwriteAllDecomps(
    char tempstring[SCIP_MAXSTRLEN];
    int i;
 
+   int maxtowrite;
+   int nwritten;
+
    assert(scip != NULL);
    assert(extension != NULL);
 
@@ -4882,11 +4885,49 @@ SCIP_RETCODE DECwriteAllDecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   maxtowrite = -1;
+   nwritten = 0;
+
    if( conshdlrdata->seeedpool->getNFinishedSeeeds() == 0 )
    {
       SCIPwarningMessage(scip, "No decomposition available.\n");
       return SCIP_OKAY;
    }
+
+   SCIPgetIntParam(scip, "visual/nmaxdecompstowrite", &maxtowrite );
+
+   /** write presolved decomps */
+   for( i = 0; conshdlrdata->seeedpool!= NULL && i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
+   {
+      SeeedPtr seeed;
+
+      seeed = conshdlrdata->seeedpool->getFinishedSeeed( i );
+
+      misc->GCGgetVisualizationFilename(scip, seeed, extension, tempstring);
+      if( directory != NULL )
+      {
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", directory, tempstring, extension);
+      }
+      else
+      {
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s.%s", tempstring, extension);
+      }
+
+      conshdlrdata->seeedtowrite = seeed;
+
+      SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
+
+      ++nwritten;
+
+      conshdlrdata->seeedtowrite = NULL;
+
+      if( maxtowrite != -1 && nwritten >= maxtowrite )
+         return SCIP_OKAY;
+
+
+   }
+
+
 
    /** write orig decomps */
    for( i = 0; conshdlrdata->seeedpoolunpresolved != NULL &&  i < conshdlrdata->seeedpoolunpresolved->getNFinishedSeeeds() ; ++i )
@@ -4908,33 +4949,13 @@ SCIP_RETCODE DECwriteAllDecomps(
       conshdlrdata->seeedtowrite = seeed;
 
       SCIP_CALL( SCIPwriteOrigProblem(scip, outname, extension, FALSE) );
-
+      ++nwritten;
       conshdlrdata->seeedtowrite = NULL;
+
+      if( maxtowrite != -1 && nwritten >= maxtowrite )
+         return SCIP_OKAY;
    }
 
-   /** write presolved decomps */
-     for( i = 0; conshdlrdata->seeedpool!= NULL && i < conshdlrdata->seeedpool->getNFinishedSeeeds(); ++i )
-     {
-        SeeedPtr seeed;
-
-        seeed = conshdlrdata->seeedpool->getFinishedSeeed( i );
-
-        misc->GCGgetVisualizationFilename(scip, seeed, extension, tempstring);
-        if( directory != NULL )
-        {
-           (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s.%s", directory, tempstring, extension);
-        }
-        else
-        {
-           (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s.%s", tempstring, extension);
-        }
-
-        conshdlrdata->seeedtowrite = seeed;
-
-        SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
-
-        conshdlrdata->seeedtowrite = NULL;
-     }
 
      return SCIP_OKAY;
 }

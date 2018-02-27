@@ -28,6 +28,7 @@
 /**@file    params_visu.c
  * @brief   parameter-related stuff for visualization
  * @author  Hanna Franzen
+ * @author  Michael Bastubbe
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -132,6 +133,7 @@ struct GCG_VisualizationData
    SCIP_Bool   rep_statistics;         /**< if true statistics are included for each decomp */
 
    int         fam_maxndecomps;        /**< maximum number of finished decompositions in family tree */
+   int         nmaxdecompstowrite;     /**< maximum number of decompositions to write */
 };
 
 /** visualization parameter data */
@@ -159,6 +161,10 @@ SCIP_RETCODE SCIPincludeParamsVisu(
    SCIP_CALL( SCIPaddIntParam(scip,
       "visual/nonzeroradius", "integer value to scale dots on range 1-10",
       &visudata->visuradius, FALSE, DEFAULT_VISU_RADIUS, 1, 10, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(scip,
+      "visual/nmaxdecompstowrite", "maximum number of decompositions to write (-1: no limit)",
+      &visudata->nmaxdecompstowrite, FALSE, -1, -1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddStringParam(scip,
       "visual/pdfreader", "pdf reader that opens visualizations in select menu",
