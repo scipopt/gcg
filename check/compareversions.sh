@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# 1) Get parameters
+
+# 1) Get global parameters
 echo ""
 echo "This script will run different versions of GCG using the test script for comparison."
 echo ""
@@ -25,25 +26,28 @@ else
 	echo "${PARAMS[*]}"
 fi
 
+# Get git versions and their corresponding individual parameters
+nversions=0
 echo ""
-echo "Enter the first git branch/hash/tag:"
-read VERSION1
-echo "Enter additional parameters for this branch (Press Enter if none):"
-read ADDPARAMS1
-if [ -z "$ADDPARAMS1" ]
-then
-	ADDPARAMS1=""
-fi
+echo "Enter git branch/hash/tag 1:"
+read USERINPUT
+VERSION${nversions}=$USERINPUT
 
-echo ""
-echo "Enter the second git branch/hash/tag:"
-read VERSION2
-echo "Enter additional parameters for this branch (Press Enter if none):"
-read ADDPARAMS2
-if [ -z "$ADDPARAMS2" ]
-then
-	ADDPARAMS2=""
-fi
+while [ -n $USERINPUT ]
+do
+	nversions=$(($nversions + 1))
+	echo "Enter additional parameters for this branch (Press Enter if none):"
+	read ADDPARAMS1
+	if [ -z "$ADDPARAMS${i}" ]
+	then
+		ADDPARAMS${i}=""
+	fi
+
+	echo ""
+	echo "Enter git branch/hash/tag" $((${nversions} + 1)) "or press Enter to stop adding more git versions:"
+	read USERINPUT
+	VERSION${nversions}=$USERINPUT
+done
 
 # 2) TODO check out the version(s), compile, run with corresponding parameter(s)
 #		if out files would get overwritten then add version/params coding to their names
@@ -78,6 +82,7 @@ OLDres=$(find . -type f -name "*.res"  -printf "%p\n" | sort -n | head -n 1)
 echo "$OLDres"
 mv "$OLDres" "version1.res"
 
+# Return to branch the script was called on
 git checkout "${CURRENTBRANCH}"
 
 
