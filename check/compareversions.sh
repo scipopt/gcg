@@ -64,8 +64,11 @@ CURRENTBRANCH=${CURRENTBRANCH:-HEAD}
 # test version 1
 cd ..					# Script is in check, so switch to gcg main folder
 git checkout "${VERSION1}"
+echo "starting init"
 git submodule init
+echo "starting sync"
 git submodule sync
+echo "starting update"
 git submodule update
 make soplex
 make scip
