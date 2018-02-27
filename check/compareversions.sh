@@ -6,10 +6,9 @@
 # This script will run different versions of GCG using the test script for comparison.
 #
 # Call this script with arguments: "global flags" "gitversion1" "flags for gitversion1" "gitversion2" "flags for gitversion2" "gitversion3" ...
-# e.g. ./compareversions "TEST=mytestset SETTINGS=mysettings -j" "master" " " "mybranch" "LPS=cpx"
+# e.g. ./compareversions "TEST=mytestset SETTINGS=mysettings -j" "master" "" "mybranch" "LPS=cpx"
 #
 # Put "" around your arguments if they include spaces.
-# Put " " for empty flags. (!)
 #
 # In detail:
 # 1st argument: all flags to be set for all git versions 
@@ -27,13 +26,6 @@ echo ""
 echo "This script will run different versions of GCG using the test script for comparison."
 echo ""
 
-# Sanity checks for arguments
-if [ -z $1 ]
-then
-	echo "No arguments."
-	exit 0
-fi
-
 # Store arguments
 ninputs=$#
 GLOBALFLAGS=$1
@@ -43,17 +35,18 @@ nversions=0
 while ((ninputs > 0))
 do
 	nversions=$((nversions + 1))
-	VERSION${nversions}=$1
+	VERSION${nversions}="$1"
 	ninputs=$((ninputs - 1))
 	shift
 	if ((ninputs != 0))
 	then
-		ADDFLAGS${nversions}=$1
+		ADDFLAGS${nversions}="$1"
 		ninputs=$((ninputs - 1))
 		shift
 	fi
 done
 
+echo VERSION${nversions}
 echo $nversions
 
 
