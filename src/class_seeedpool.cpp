@@ -3532,16 +3532,16 @@ void Seeedpool::addConsClassifier(
    ConsClassifier* givenClassifier
    )
 {
-   SCIP_Bool detectionstatistics;
+   SCIP_Bool allowduplicates;
 
-   SCIPgetBoolParam(scip, "detection/allowclassifierduplicates/enabled", &detectionstatistics);
+   SCIPgetBoolParam(scip, "detection/allowclassifierduplicates/enabled", &allowduplicates);
 
    if( givenClassifier != NULL )
    {
       /** check whether there already exists an equivalent consclassifier */
       ConsClassifier* equiv = NULL;
 
-      for( size_t i = 0; !detectionstatistics && i < consclassescollection.size(); ++ i )
+      for( size_t i = 0; !allowduplicates && i < consclassescollection.size(); ++ i )
       {
          if( givenClassifier->classifierIsDuplicateOfClassifier( consclassescollection[i] ) )
          {
@@ -4400,16 +4400,16 @@ void Seeedpool::addVarClassifier(
    VarClassifier* givenClassifier
    )
 {
-   SCIP_Bool detectionstatistics;
+   SCIP_Bool allowduplicates;
 
-   SCIPgetBoolParam(scip, "detection/allowclassifierduplicates/enabled", &detectionstatistics);
+   SCIPgetBoolParam(scip, "detection/allowclassifierduplicates/enabled", &allowduplicates);
 
    if( givenClassifier != NULL )
    {
       /** check whether there already exists an equivalent varclassifier */
       VarClassifier* equiv = NULL;
 
-      for( size_t i = 0; !detectionstatistics && i < varclassescollection.size(); ++ i )
+      for( size_t i = 0; !allowduplicates && i < varclassescollection.size(); ++ i )
       {
          if( givenClassifier->classifierIsDuplicateOfClassifier( varclassescollection[i] ) )
          {

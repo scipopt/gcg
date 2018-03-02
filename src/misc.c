@@ -481,6 +481,12 @@ SCIP_RETCODE GCGprintCompleteDetectionStatistics(
 {
    assert(scip != NULL);
 
+   if( !GCGdetectionTookPlace(scip) )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nDetection did not take place so far\n");
+      return SCIP_OKAY;
+   }
+
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nStart writing complete detection information:\n");
 
    SCIP_CALL( GCGprintInstanceName(scip, file) );

@@ -4960,6 +4960,24 @@ SCIP_RETCODE DECwriteAllDecomps(
      return SCIP_OKAY;
 }
 
+SCIP_Bool GCGdetectionTookPlace(
+   SCIP*  scip
+     ){
+   SCIP_CONSHDLR* conshdlr;
+    SCIP_CONSHDLRDATA* conshdlrdata;
+
+    assert(scip != NULL);
+
+    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+    assert(conshdlr != NULL);
+
+    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+    assert(conshdlrdata != NULL);
+
+    return (conshdlrdata->seeedpool != NULL ) || (conshdlrdata->seeedpoolunpresolved != NULL );
+}
+
+
 int SCIPconshdlrDecompGetNDetectors(
    SCIP* scip
    )
@@ -5951,6 +5969,7 @@ SCIP_RETCODE GCGprintBlockcandidateInformation(
    assert(conshdlrdata != NULL);
 
    seeedpool = (conshdlrdata->seeedpool == NULL ? conshdlrdata->seeedpoolunpresolved : conshdlrdata->seeedpool );
+
 
    seeedpool->printBlockcandidateInformation(scip, file);
 

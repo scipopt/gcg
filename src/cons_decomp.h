@@ -482,6 +482,10 @@ int SCIPconshdlrDecompGetNDetectors(
    SCIP* scip
    );
 
+SCIP_Bool GCGdetectionTookPlace(
+   SCIP*  scip
+     );
+
 
 DEC_DETECTOR** SCIPconshdlrDecompGetDetectors(
    SCIP* scip

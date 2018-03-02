@@ -317,6 +317,8 @@ class Dataset:
 	def fractionofmemberswithvalatmostwithscoreatleast( self, members, hashmapvalue, maxvalue):
 		counter = 0
 		for instance in members:
+			if instance not in hashmapvalue:
+				continue
 			if hashmapvalue[instance] <= maxvalue:
 				counter = counter + 1
 		return float(counter)/float(len(members))
