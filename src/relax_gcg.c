@@ -145,10 +145,8 @@ struct SCIP_RelaxData
    /* statistical information */
    SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
    SCIP_CLOCK*           rootnodetime;       /**< time in root node */
-//   SCIP_Real*            degeneracy;         /**< degeneracy array */
-//   SCIP_Real*            dualbounds;         /**< dual bounds array */
-   SCIP_RealList*        degeneracy;
-   SCIP_RealList*        dualbounds;
+   SCIP_RealList*        degeneracy;         /**< degeneracy list */
+   SCIP_RealList*        dualbounds;         /**< dual bounds list */
 };
 
 /*
@@ -2333,11 +2331,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIPdebugMessage("Solving node %"SCIP_LONGINT_FORMAT"'s relaxation.\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
    /* get current degeneracy and dualbounds */
-//   relaxdata->degeneracy[SCIPnodeGetNumber(SCIPgetCurrentNode(scip))] = GCGgetDegeneracy(scip);
-//   relaxdata->dualbounds[SCIPnodeGetNumber(SCIPgetCurrentNode(scip))] = SCIPgetDualbound(scip);
    SCIPdebugMessage("****NIKLAS**** start updating list ...\n");
-   SCIP_CALL( SCIPallocMemory(scip, &current_deg) );
-   SCIP_CALL( SCIPallocMemory(scip, &current_db) );
    SCIPdebugMessage("****NIKLAS**** ... initialize with relaxdata ...\n");
    current_deg = relaxdata->degeneracy;
    current_db = relaxdata->dualbounds;
