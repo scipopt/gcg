@@ -21,3 +21,4 @@ obj/
 release
 src/TAGS
 src/githash.c
+build/
