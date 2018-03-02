@@ -44,7 +44,7 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 
-#include "graph.hh"
+#include "bliss/graph.hh"
 #include "pub_gcgvar.h"
 #include <cstring>
 #include <cassert>

@@ -116,12 +116,16 @@ set(CMAKE_CXX_STANDARD 11)
 
 #search the selected symmetry computation program
 if(SYM STREQUAL "bliss")
+
+    # Apparently, bliss requires GMP
+    find_package(GMP REQUIRED)
+
     find_package(BLISS)
     if(BLISS_FOUND)
         include_directories(${BLISS_INCLUDE_DIRS})
         set(sym bliss.cpp bliss_automorph.cpp dec_isomorph.cpp)
-        set(SYM_LIBRARIES ${BLISS_LIBRARIES})
-        set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES})
+        set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
+        set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_CXX_FLAGS}")
     else()
         set(sym )

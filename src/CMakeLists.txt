@@ -258,13 +258,13 @@ endif()
 add_library(libgcg ${gcgsources} ${symsources})
 setLibProperties(libgcg "gcg")
 
-target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES})
+target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
 
 if(SHARED)
-    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES})
     add_executable(gcg main.c ${gcgsources} ${symsources})
 else()
-    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
     add_executable(gcg main.c)
     target_link_libraries(gcg libgcg)
 endif()
@@ -276,7 +276,7 @@ endif()
 
 target_compile_definitions(gcg PRIVATE EXTERN=extern)
 
-target_link_libraries(gcg ${SCIP_LIBRARIES})
+target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)
