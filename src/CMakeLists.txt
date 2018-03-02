@@ -134,7 +134,6 @@ set(gcgheaders
     branch_relpsprob.h
     branch_ryanfoster.h
     branch_xyz.h
-    class_colpool.h
     class_pricingtype.h
     class_stabilization.h
     colpool.h

@@ -101,7 +101,7 @@ if((GIT) AND (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git))
       OUTPUT_VARIABLE GITHASH OUTPUT_STRIP_TRAILING_WHITESPACE)
    string(REGEX REPLACE \"^.*-g\" \"\" GITHASH \${GITHASH})
    if(NOT \${GITHASH} STREQUAL \"\${GITHASH_OLD}\")
-      file(WRITE \${DST} \"#define SCIP_GITHASH \\\"\${GITHASH}\\\"\n\")
+      file(WRITE \${DST} \"#define GCG_GITHASH \\\"\${GITHASH}\\\"\n\")
    endif()
 else()
    set(GITHASH \${GITHASH_OLD})
@@ -109,7 +109,7 @@ endif()
 message(STATUS \"Git hash: \" \${GITHASH})
 ")
 add_custom_target(gcg_update_githash
-                  COMMAND ${CMAKE_COMMAND} -DDST=${PROJECT_SOURCE_DIR}/src/gcg/githash.c
+                  COMMAND ${CMAKE_COMMAND} -DDST=${PROJECT_SOURCE_DIR}/src/githash.c
                                            -P ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake)
 # use C++11 standard
 set(CMAKE_CXX_STANDARD 11)
