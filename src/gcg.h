@@ -54,6 +54,7 @@ extern "C" {
 typedef struct SCIP_RealList
 {
    SCIP_Real data;
+   int depth;
    struct SCIP_RealList* next;
 } SCIP_RealList;
 

@@ -2176,8 +2176,10 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->degeneracy)) );
    SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->dualbounds)) );
    relaxdata->degeneracy->data = 0.;
+   relaxdata->degeneracy->depth = 0;
    relaxdata->degeneracy->next= NULL;
    relaxdata->dualbounds->data = 0.;
+   relaxdata->dualbounds->depth= 0;
    relaxdata->dualbounds->next= NULL;
    SCIPdebugMessage("****NIKLAS**** end allocating memory for deg/db\n");
 
@@ -2350,9 +2352,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIPdebugMessage("****NIKLAS**** ... insert into list ...\n");
    current_deg->next = next_deg;
    current_deg->next->data = GCGgetDegeneracy(scip);
+   current_deg->next->depth = SCIPgetDepth(scip);
    current_deg->next->next = NULL;
    current_db->next = next_db;
    current_db->next->data = SCIPgetDualbound(scip);
+   current_db->next->depth = SCIPgetDepth(scip);
    current_db->next->next = NULL;
    SCIPdebugMessage("****NIKLAS**** ... finished for current node.\n");
    
