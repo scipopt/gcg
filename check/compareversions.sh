@@ -47,9 +47,9 @@ do
 	fi
 done
 
-echo GLOBALFLAGS
-echo VERSION[$nversions]
-echo ADDFLAG[$nversions]
+echo $GLOBALFLAGS
+echo $VERSION[$nversions]
+echo $ADDFLAG[$nversions]
 echo $nversions
 
 
@@ -76,7 +76,7 @@ do
 	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# run testset
-	make test ${GLOBALFLAGS} ${ADDFLAGS${index}}
+	make test ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# change name of output files: sort by last modified and take the first one
 	cd check/results
