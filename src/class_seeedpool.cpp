@@ -2014,7 +2014,6 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    SCIP_Bool hittimelimit;
    SCIP_Bool errorpricing;
    //std::vector<SCIP_Real> randomdualvals;
-   SCIP_RANDNUMGEN* randnumgen;
 
    /** @TODO introduce scip parameters */
    SCIP_Real timelimit;
@@ -4731,9 +4730,10 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
 
    SCIPgetIntParam(scip, "detection/strong_detection/dualvalrandommethod", &method);
 
-   if( method == 1)
-      usedmethod = GCG_RANDOM_DUAL_NAIVE;
-   else if ( method == 2 )
+   /** default method == 1 */
+   usedmethod = GCG_RANDOM_DUAL_NAIVE;
+
+   if ( method == 2 )
       usedmethod = GCG_RANDOM_DUAL_EXPECTED_EQUAL;
    else if ( method == 3 )
       usedmethod = GCG_RANDOM_DUAL_EXPECTED_OVERESTIMATE;
@@ -4821,7 +4821,7 @@ SCIP_RETCODE Seeedpool::shuffleDualvalsRandom()
             int var = getVarsForCons(c)[v];
             divisor += ABS( getVal(c, var) );
          }
-         if (usedmethod == GCG_RANDOM_DUAL_EXPECTED_EQUAL )
+         if ( usedmethod == GCG_RANDOM_DUAL_EXPECTED_EQUAL )
             divisor *= getNConss();
 
          /** 1/lambda is the expected value of the distribution */
