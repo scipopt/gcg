@@ -36,19 +36,20 @@ nversions=0
 while ((ninputs > 0))
 do
 	nversions=$((nversions + 1))
-	VERSION${nversions}="$1"
+	VERSION[$nversions]="$1"
 	ninputs=$((ninputs - 1))
 	shift
 	if ((ninputs != 0))
 	then
-		ADDFLAGS${nversions}="$1"
+		ADDFLAGS[$nversions]="$1"
 		ninputs=$((ninputs - 1))
 		shift
 	fi
 done
 
-echo VERSION${nversions}
-echo ADDFLAG${nversions}
+echo GLOBALFLAGS
+echo VERSION[$nversions]
+echo ADDFLAG[$nversions]
 echo $nversions
 
 
@@ -65,14 +66,14 @@ index=1
 while [ $index -le $nversions ]
 do
 	# get version
-	git checkout "${VERSION${index}}"
+	git checkout "${VERSION[$index]}"
 	git submodule init
 	git submodule sync
 	git submodule update
 	make soplex
 	make scip
-	make deps ${GLOBALFLAGS} ${ADDFLAGS${index}}
-	make -j ${GLOBALFLAGS} ${ADDFLAGS${index}}
+	make deps ${GLOBALFLAGS} ${ADDFLAGS[$index]}
+	make -j ${GLOBALFLAGS} ${ADDFLAGS[$index]}
 
 	# run testset
 	make test ${GLOBALFLAGS} ${ADDFLAGS${index}}
