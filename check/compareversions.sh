@@ -22,6 +22,7 @@
 
 
 # 1) Get arguments
+
 echo ""
 echo "This script will run different versions of GCG using the test script for comparison."
 echo ""
@@ -47,41 +48,65 @@ do
 done
 
 echo VERSION${nversions}
+echo ADDFLAG${nversions}
 echo $nversions
 
 
-# 2) TODO check out the version(s), compile, run with corresponding parameter(s)
-#		if out files would get overwritten then add version/params coding to their names
+# 2) check out the version(s), compile, run with corresponding parameter(s)
 
 # Store current branch to return in the end
 CURRENTBRANCH=$(git symbolic-ref -q HEAD)
 CURRENTBRANCH=${CURRENTBRANCH##refs/heads/}
 CURRENTBRANCH=${CURRENTBRANCH:-HEAD}
 
+# Script is in check, so switch to gcg main folder
+cd ..
+index=1
+while [ $index -le $nversions ]
+do
+	# get version
+	git checkout "${VERSION${index}}"
+	git submodule init
+	git submodule sync
+	git submodule update
+	make soplex
+	make scip
+	make deps ${GLOBALFLAGS} ${ADDFLAGS${index}}
+	make -j ${GLOBALFLAGS} ${ADDFLAGS${index}}
 
-# test version 1
-cd ..					# Script is in check, so switch to gcg main folder
-git checkout "${VERSION1}"
-git submodule init
-git submodule sync
-git submodule update
-make soplex
-make scip
-make deps ${PARAMS[*]}
-make -j ${PARAMS[*]}
+	# run testset
+	make test ${GLOBALFLAGS} ${ADDFLAGS${index}}
 
-# run testset
-make test ${PARAMS[*]}
+	# change name of output files: sort by last modified and take the first one
+	cd check/results
+	OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
+	echo "$OLDout"
+	mv "$OLDout" "version${index}.out"
 
-# change name of output files
-cd check/results
-OLDout=$(find . -type f -name "*.out"  -printf "%p\n" | sort -n | head -n 1)
-echo "$OLDout"
-mv "$OLDout" "version1.out"
+	OLDres=$(find . -type f -name "*.res"  -printf "%p\n" | sort -n | head -n 1)
+	echo "$OLDres"
+	mv "$OLDres" "version${index}.res"
 
-OLDres=$(find . -type f -name "*.res"  -printf "%p\n" | sort -n | head -n 1)
-echo "$OLDres"
-mv "$OLDres" "version1.res"
+	OLDerr=$(find . -type f -name "*.err"  -printf "%p\n" | sort -n | head -n 1)
+	echo "$OLDerr"
+	mv "$OLDerr" "version${index}.err"
+
+	OLDtex=$(find . -type f -name "*.tex"  -printf "%p\n" | sort -n | head -n 1)
+	echo "$OLDtex"
+	mv "$OLDtex" "version${index}.tex"
+
+	OLDpav=$(find . -type f -name "*.pav"  -printf "%p\n" | sort -n | head -n 1)
+	echo "$OLDpav"
+	mv "$OLDpav" "version${index}.pav"
+
+	OLDset=$(find . -type f -name "*.set"  -printf "%p\n" | sort -n | head -n 1)
+	echo "$OLDset"
+	mv "$OLDset" "version${index}.set"
+	
+	# go back to the main folder to check out next version correctly
+	cd ../..
+	$index=$((index + 1))
+done
 
 # Return to branch the script was called on
 git checkout "${CURRENTBRANCH}"
