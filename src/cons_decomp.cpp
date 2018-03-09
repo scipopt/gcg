@@ -2128,6 +2128,11 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT )
+   {
+      SCIPinfoMessage(scip, NULL, "No problem is loaded. Please load a problem first.\n");
+      return SCIP_OKAY;
+   }
 
    /** Do user want to modify existing or create a new partial decomposition ?*/
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to modify an existing (\"yes\") or create a new partial decomposition (\"no\")? : \nGCG/toolbox : ", &command, &endoffile) );
@@ -2318,11 +2323,13 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       }
       if( strncmp( command, "finish by detector", commandlen2) == 0 )
       {
+         SCIPdialoghdlrClearBuffer(dialoghdlr);
          SCIPconshdlrDecompToolboxModifyFinish(scip, dialoghdlr, dialog);
          continue;
       }
       if( strncmp( command, "refine implicit constraint and variables assignments", commandlen2) == 0 )
       {
+         SCIPdialoghdlrClearBuffer(dialoghdlr);
          gcg::Seeedpool* seeedpool;
          if( conshdlrdata->curruserseeed->isFromUnpresolved() )
             seeedpool = conshdlrdata->seeedpoolunpresolved;
