@@ -1,5 +1,8 @@
 #!/usr/bin/env python2
 
+import matplotlib
+matplotlib.use('AGG')
+
 import sys
 import os
 import argparse
@@ -8,6 +11,7 @@ import datetime
 from collections import OrderedDict
 
 import pandas as pd
+import pickle
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -84,6 +88,12 @@ def parse_arguments(args):
     parser.add_argument('-T', '--no-time', action='store_true',
                         help='create no time plots')
 
+    parser.add_argument('-g', '--gap-only', action='store_true',
+                        help='create only gap plots')
+
+    parser.add_argument('-G', '--no-gap', action='store_true',
+                        help='create no gap plots')
+
     parser.add_argument('-n', '--no-text', action='store_true',
                         help='do not write any text on the plots (such as node or round numbers)')
 
@@ -108,7 +118,7 @@ def parse_arguments(args):
     if parsed_args.load and parsed_args.save:
         print 'please load OR save data'
         exit()
-    if not parsed_args.save and parsed_args.no_bubble and parsed_args.no_summary and parsed_args.no_complete:
+    if not parsed_args.save and parsed_args.no_bubble and parsed_args.no_summary and parsed_args.no_complete and parsed_args.no_time and parsed_args.no_gap:
         print 'based on the passed parameters, no plot will be drawn'
         exit()
 
@@ -129,10 +139,11 @@ def set_params(args):
     params['colors'] = args.colors
     params['lines'] = args.lines
     params['instances'] = args.instances
-    params['no_summary'] = args.no_summary or args.bubble_only or args.time_only or args.complete_only
-    params['no_bubble'] = args.no_bubble or args.summary_only or args.time_only or args.complete_only
-    params['no_time'] = args.no_time or args.summary_only or args.bubble_only or args.complete_only
-    params['no_complete'] = args.no_complete or args.summary_only or args.bubble_only or args.time_only
+    params['no_summary'] = args.no_summary or args.bubble_only or args.time_only or args.gap_only or args.complete_only
+    params['no_bubble'] = args.no_bubble or args.summary_only or args.time_only or args.gap_only or args.complete_only
+    params['no_time'] = args.no_time or args.summary_only or args.bubble_only or args.gap_only or args.complete_only
+    params['no_gap'] = args.no_gap or args.summary_only or args.bubble_only or args.time_only or args.complete_only
+    params['no_complete'] = args.no_complete or args.summary_only or args.bubble_only or args.time_only or args.gap_only
     params['no_text'] = args.no_text
     params['save'] = args.save
     params['load'] = args.load
@@ -340,40 +351,36 @@ def make_plot(data, info):
 
         # add information about the stabilization & pricing rounds
         prev_rnd = data['pricing_round'][0]
-        prev_stab = data['stab_round'][0]
         prev_x = 0
         prev_x_drawn = 0
         texts = []
 
         texts.append(ax.text(-0.001, 1.01, '\\textbf{Round}', rotation=0,va='bottom', ha='right', size = textsize*.75, transform = ax.transAxes))
-        for pos,rnd,stab,far in zip(x, data.pricing_round, data.stab_round, data.farkas):
-            if stab > prev_stab or rnd > prev_rnd:
-                if rnd > prev_rnd:
-                    # bold line for a new pricing round
-                    if params['lines'] or (pos - prev_x_drawn)/totalTime > 0.002 or (not farkasLine and not far):
-                        line = lines.Line2D([pos,pos],[0,1],color='r',linewidth=1.0, transform = trans)
-                        # blue line at the end of farkas pricing
-                        if not farkasLine and not far:
-                            line.set_color('blue')
-                            if pos <= (xmax + xmin) / 2:
-                                align = 'left'
-                            else:
-                                align = 'right'
-                            ax.text(pos, .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
-                            farkasLine = True
-                        ax.add_line(line)
-                        prev_x_drawn = pos
-                    # write the round number, if there is space for it
-                    if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
-                        texts.append(ax.text(prev_x, 1.01, str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
-                    prev_rnd = rnd
-                    prev_stab = stab
-                    prev_x = pos
-                else:
-                    # dashed line for a new stabilization round
-                    line = lines.Line2D([pos,pos],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
+        for pos,rnd,far in zip(data.drop_duplicates(['pricing_round','stab_round']).starting_time, data.drop_duplicates(['pricing_round','stab_round']).pricing_round, data.drop_duplicates(['pricing_round','stab_round']).farkas):
+            if rnd > prev_rnd:
+                # bold line for a new pricing round
+                if params['lines'] or (pos - prev_x_drawn)/totalTime > 0.002 or (not farkasLine and not far):
+                    line = lines.Line2D([pos,pos],[0,1],color='r',linewidth=1.0, transform = trans)
+                    # blue line at the end of farkas pricing
+                    if not farkasLine and not far:
+                        line.set_color('blue')
+                        if pos <= (xmax + xmin) / 2:
+                            align = 'left'
+                        else:
+                            align = 'right'
+                        ax.text(pos, .99, "\it{End of initial Farkas Pricing}", va = 'top', ha = align, rotation = 0, color = 'blue', zorder = 11, size = textsize * .95, transform = trans, bbox=dict(facecolor = 'white', edgecolor = 'none', alpha = .85, pad = 20))
+                        farkasLine = True
                     ax.add_line(line)
-                    prev_stab = stab
+                    prev_x_drawn = pos
+                # write the round number, if there is space for it
+                if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
+                    texts.append(ax.text(prev_x, 1.01, str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
+                prev_rnd = rnd
+                prev_x = pos
+            else:
+                # dashed line for a new stabilization round
+                line = lines.Line2D([pos,pos],[0,1],color='orange',linestyle='--',linewidth=0.8, transform = trans)
+                ax.add_line(line)
         if len(texts) == 0 or get_x1_in_data(texts[-1], fig) < prev_x:
             texts.append(ax.text(prev_x, 1.01, str(prev_rnd), rotation='vertical',va='bottom', ha='left', size = textsize, transform = trans))
         text_height = max(get_y1_in_ax(texts[0], fig),get_y1_in_ax(texts[-1], fig))
@@ -411,15 +418,17 @@ def make_plot(data, info):
         if len(patches) > 31:
             patches = patches[:31] + [mpatches.Patch(color = 'white', alpha = 0, label = '...')]
         handles = patches + [lines.Line2D([0,0], [0,1], color = 'red', linewidth = 2., label = 'pricing round'), lines.Line2D([0,0], [0,1], color = 'orange', linestyle = '--', linewidth = 1.6, label = 'stabilization round'), cp_scatter]
-        plt.legend(handles = handles, bbox_to_anchor = (1.02, .975), loc = 2, fontsize = textsize)
+        plt.legend(handles = handles, bbox_to_anchor = (1.02, .915), loc = 2, fontsize = textsize)
 
         # add other information
-        settings = info['settings']
         name = info['instance']
+        settings = info['settings']
+        status = info['status']
         if len(name) <= 12:
-            ax.text(1.093, (text_height + 1.)/2., '\\textbf{\\underline{' + name.replace('_','\_') + '}} \n (' + settings + ')', ha = 'center', va = 'center', size = 1.3 * textsize, transform = ax.transAxes)
+            ax.text(1.093, (text_height + 1.)/2., '\\textbf{\\underline{' + name.replace('_','\_') + '}}', ha = 'center', va = 'center', size = 1.3 * textsize, transform = ax.transAxes)
         else:
-            ax.text(1.093, (text_height + 1.)/2., '\\textbf{\\underline{' + name[:11].replace('_','\_') + '\\dots}} \n (' + settings + ')', ha = 'center', va = 'center', size = 1.3 * textsize, transform = ax.transAxes)
+            ax.text(1.093, (text_height + 1.)/2., '\\textbf{\\underline{' + name[:11].replace('_','\_') + '\\dots}}', ha = 'center', va = 'center', size = 1.3 * textsize, transform = ax.transAxes)
+        ax.text(1.093, .96, '\\textbf{Settings:} \n' + settings.replace('_','\_') + '\n \\textbf{SCIP Status:} \n' + status.replace('_',' '), ha = 'center', va = 'center', size = .9 * textsize, transform = ax.transAxes)
         name = name + '.' + settings
 
         # save the figure
@@ -577,10 +586,12 @@ def make_summary_plot(data, info):
     handles = []
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, label = 'Pricing Round'))
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, alpha = .7, label = 'Stabilization Round'))
-    plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1., 1.04), ncol = 2, mode = 'expand')
+    plt.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, .5, 1.04), ncol = 2, mode = 'expand')
 
     # add other information
     ax1.text(.5, 1.11, '\\textbf{\\underline{' + info['instance'].replace('_','\_') + '}}', ha = 'center', size = 'large', transform = ax1.transAxes)
+    ax1.text(.75, 1.055, '\\textbf{Settings:} \\textit{' + info['settings'].replace('_','\_') + '}', ha = 'right', size = 'medium', transform = ax1.transAxes)
+    ax1.text(1., 1.055, '\\textbf{SCIP Status:} \\textit{' + info['status'].replace('_',' ') + '}', ha = 'right', size = 'medium', transform = ax1.transAxes)
 
     print '    plotted summary:', time.time() - start_time
     start_time = time.time()
@@ -669,11 +680,14 @@ def make_bubble_plot(data, info):
 
     # format the plot
     ax.set_xlabel('Pricing Round', size='large')
-    ax.set_ylabel('Pricer ID', size='large')
+    ax.set_ylabel('Pricing Problem ID', size='large')
     xmin = 0
     xmax = data['round'].max()+0.9
     ax.set_xlim([xmin,xmax])
-    ax.set_ylim([pricer_min - 0.5, pricer_max + 0.5])
+    if pricer_max == pricer_min:
+        ax.set_ylim([pricer_min - 1, pricer_max + 1])
+    else:
+        ax.set_ylim([pricer_min - 0.5, pricer_max + 0.5])
     ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True))
     trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
     ax.tick_params(axis='both', labelsize='large')
@@ -754,12 +768,14 @@ def make_bubble_plot(data, info):
     # draw a legend
     handles = []
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'k', markersize = 5, label = 'Pricer has found at least one variable'))
-    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'none', markeredgecolor = 'green', markersize = 5, label = 'Variables were taken from column pool'))
+    handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'o', markerfacecolor = 'green', markersize = 5, label = 'Variables were taken from column pool (ID -1)'))
     handles.append(lines.Line2D([0,0], [0,1], color = 'None', marker = 'x', markerfacecolor = 'k', markeredgecolor = 'k', markersize = 5, alpha = .5, label = 'Pricer has found at least one variable in stab. round'))
     ax.legend(handles = handles, loc = 3, bbox_to_anchor = (.0, 1.04, 1.18, .02), ncol = 3, mode = 'expand')
 
     # add other information
-    ax.text(.5, 1.11, '\\textbf{\\underline{' + info['instance'].replace('_','\_') + '}}', ha = 'center', size = 'large', transform = transforms.blended_transform_factory(fig.transFigure, ax.transAxes))
+    ax.text(.3, 1.11, '\\textbf{\\underline{' + info['instance'].replace('_','\_') + '}}', ha = 'center', size = 'large', transform = transforms.blended_transform_factory(fig.transFigure, ax.transAxes))
+    ax.text(.75, 1.11, '\\textbf{Settings:} \\textit{' + info['settings'].replace('_','\_') + '}', ha = 'right', size = 'medium', transform = ax.transAxes)
+    ax.text(1., 1.11, '\\textbf{SCIP Status:} \\textit{' + info['status'].replace('_',' ') + '}', ha = 'right', size = 'medium', transform = ax.transAxes)
 
     # save the plot
     fig.set_size_inches(11.7,8.3)
@@ -794,43 +810,95 @@ def make_time_plot(data, info):
     :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
     :return:
     """
+    start_time = time.time()
+
     # calculate times for the total summary
     farkas_time = data.query('(pricing_prob >= 0) & (farkas == True)').time.sum() * 100
     redcost_time = data.query('(pricing_prob >= 0) & (farkas == False)').time.sum() * 100
     masterlp_time = data.query('pricing_prob == -2').time.sum() * 100
 
+    min_angle = 15./360.
+
     # calculate times for the pricer summary
-    df = data.query('pricing_prob >= 0').reset_index()[['pricing_prob','time','nVars']].groupby('pricing_prob').sum().sort_values('time')
-    df = df[df.time >= 0.01]
-    pricer_times = df.time.values
-    pricer_times_labels = [str(i) for i in df.index]
-    pricer_times_colors = get_colmap(df.index.values)[0]
+    df = data.query('pricing_prob >= 0').reset_index()[['pricing_prob','time','nVars']].groupby('pricing_prob').sum()
+    df['colors'] = get_colmap(df.index.tolist())[0]
+    df = df[df.time >= 0.01].sort_values('time', ascending = False)
+    pricer_times = df.time[df.time / df.time.sum() >= min_angle].tolist()
+    pricer_times_labels = df[df.time / df.time.sum() >= min_angle].index.astype('str').tolist()
+    pricer_times_colors = df.colors[df.time / df.time.sum() >= min_angle].tolist()
+    if df.time[df.time / df.time.sum() < min_angle].sum() > 0:
+        pricer_times.append(df.time[df.time / df.time.sum() < min_angle].sum())
+        pricer_times_labels.append('Others')
+        pricer_times_colors.append('grey')
+
+    # calculate number of found variables
+    pricer_nVars = df.nVars[df.nVars / df.nVars.sum() >= min_angle].tolist()
+    pricer_nVars_labels = df[df.nVars / df.nVars.sum() >= min_angle].index.astype('str').tolist()
+    pricer_nVars_colors = df.colors[df.nVars / df.nVars.sum() >= min_angle].tolist()
+    if df.nVars[df.nVars / df.nVars.sum() < min_angle].sum() > 0:
+        pricer_nVars.append(df.nVars[df.nVars / df.nVars.sum() < min_angle].sum())
+        pricer_nVars_labels.append('Others')
+        pricer_nVars_colors.append('grey')
 
     # calculate efficiencies
-    df = df[df.nVars > 0]
-    pricer_efficiencies = (df.nVars / df.time).values
-    pricer_efficiencies = [e / pricer_efficiencies.sum() for e in pricer_efficiencies if e > 0]
-    pricer_efficiencies_labels = [str(i) for i in df.index]
-    pricer_efficiencies_colors = get_colmap(df.index.values)[0]
+    df['efficiency'] = df.nVars / df.time
+    pricer_efficiencies = df.efficiency[df.efficiency / df.efficiency.sum() >= min_angle].tolist()
+    pricer_efficiencies_labels = df.efficiency[df.efficiency / df.efficiency.sum() >= min_angle].index.astype('str').tolist()
+    pricer_efficiencies_colors = df[df.efficiency / df.efficiency.sum() >= min_angle].colors.tolist()
+    if df.efficiency[df.efficiency / df.efficiency.sum() < min_angle].sum() > 0:
+        pricer_efficiencies.append(df.nVars[df.efficiency / df.efficiency.sum() < min_angle].sum() / df.time[df.efficiency / df.efficiency.sum() < min_angle].sum())
+        pricer_efficiencies_labels.append('Others')
+        pricer_efficiencies_colors.append('grey')
+
+    print '    extracted time data:', time.time() - start_time
+    start_time = time.time()
 
     # create the subplots
     fig = plt.gcf()
     gs = gridspec.GridSpec(2,2, wspace = .2)
     ax_total = plt.subplot(gs[0])
     ax_pricers = plt.subplot(gs[1])
-    ax_efficiencies = plt.subplot(gs[2])
+    ax_nVars = plt.subplot(gs[2])
+    ax_efficiencies = plt.subplot(gs[3])
 
     # plots
-    ax_total.pie([redcost_time, farkas_time, masterlp_time], labels = ['redcostpricing', 'initialfarkas', 'masterlp'])
+    numeric_labels = []
+
+    numeric_labels += ax_total.pie([redcost_time, farkas_time, masterlp_time], labels = ['redcostpricing', 'initialfarkas', 'masterlp'], startangle = 180, counterclock = False, autopct = (lambda x: str(round(x * sum([redcost_time, farkas_time, masterlp_time]) / 10000.,2))), pctdistance = .75)[2]
     ax_total.axis('equal')
-    ax_pricers.pie([100 * t for t in pricer_times], labels = pricer_times_labels, colors = pricer_times_colors, startangle = 90, autopct = (lambda x: str(round(x/100.,2))))
+
+    if len(pricer_times) == 1:
+        numeric_labels += ax_pricers.pie([t / sum(pricer_times) for t in pricer_times], labels = pricer_times_labels, colors = pricer_times_colors, startangle = 90, counterclock = False, autopct = str(pricer_times[0]), pctdistance = .75)[2]
+    elif len(pricer_times) > 1:
+        numeric_labels += ax_pricers.pie([t / sum(pricer_times) for t in pricer_times], labels = pricer_times_labels, colors = pricer_times_colors, startangle = 90, counterclock = False, autopct = (lambda x: str(round(x * sum(pricer_times),2))), pctdistance = .75)[2]
     ax_pricers.axis('equal')
-    ax_efficiencies.pie(pricer_efficiencies, labels = pricer_efficiencies_labels, colors = pricer_efficiencies_colors, startangle = 90)
+
+    if len(pricer_nVars) == 1:
+        numeric_labels += ax_nVars.pie([t / sum(pricer_nVars) for t in pricer_nVars], labels = pricer_nVars_labels, colors = pricer_nVars_colors, startangle = 90, counterclock = False, autopct = str(pricer_nVars[0]), pctdistance = .75)[2]
+    elif len(pricer_nVars) > 1:
+        numeric_labels += ax_nVars.pie(pricer_nVars, labels = pricer_nVars_labels, colors = pricer_nVars_colors, startangle = 90, counterclock = False, autopct = (lambda x: str(int(x * sum(pricer_nVars) / 100.))), pctdistance = .75)[2]
+    ax_nVars.axis('equal')
+
+    if len(pricer_efficiencies) == 1:
+        numeric_labels += ax_efficiencies.pie([e / sum(pricer_efficiencies) for e in pricer_efficiencies], labels = pricer_efficiencies_labels, colors = pricer_efficiencies_colors, startangle = 90, counterclock = False, autopct = str(pricer_efficiencies[0]), pctdistance = .75)[2]
+    elif len(pricer_efficiencies) > 1:
+        numeric_labels += ax_efficiencies.pie([e / sum(pricer_efficiencies) for e in pricer_efficiencies], labels = pricer_efficiencies_labels, colors = pricer_efficiencies_colors, startangle = 90, counterclock = False, autopct = (lambda x: str(round(x * sum(pricer_efficiencies) / 100.,2))), pctdistance = .75)[2]
     ax_efficiencies.axis('equal')
+
+    # format plots
+    fig.suptitle('\\underline{\\textbf{' + info['instance'].replace('_','\_') + '}}', size = 'large')
+    ax_total.set_title('Total Timeshares')
+    ax_pricers.set_title('Timeshares of the Pricing Problems [s]')
+    ax_nVars.set_title('\# of found Variables of the Pricing Problems')
+    ax_efficiencies.set_title('Variables per second')
+    for label in numeric_labels:
+        label.set_color('white')
+
+    print '    plotted time data:', time.time() - start_time
+    start_time = time.time()
 
     # save
     fig.set_size_inches(11.7,8.3)
-#    gs.tight_layout(fig)
     filename = params['outdir'] + '/' + info['instance'] + '.times.' + info['settings']
     n = ''
     dot = ''
@@ -852,9 +920,82 @@ def make_time_plot(data, info):
         plt.savefig(filename + dot + str(n) + '.png')
     plt.close()
 
-def plots(data, info):
+    print '    saved time plot:', time.time() - start_time
+    start_time = time.time()
+
+def make_gap_plot(data, info, root_bounds):
     """
-    Master-function for plotting. Splits the data if necessary and calls all three plotting functions (or a subset, according to the params)
+    For each instance create a plot, comparing the solving time of a prcing problem with the size of the gap in the root node
+    :param data: collected pricing data as dataframe
+    :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
+    :param root_bounds: collected root bounds data; necessary for the calculation of the gap at each round
+    :return:
+    """
+    start_time = time.time()
+
+    gap_data = data.query('(farkas == False) & (node == 1) & (pricing_prob >= 0)').groupby(['pricing_round','pricing_prob']).sum()
+    rb = root_bounds.copy()
+    rb.iter += gap_data.reset_index().pricing_round.min()
+    rb = rb.rename(columns = {'iter': 'pricing_round'})[['pricing_round','pb','db','time']].set_index('pricing_round')
+    gap_data = rb.join(gap_data, how = 'inner', lsuffix = '_rb')
+    gap_data.db = gap_data.db.expanding().max()
+    gap_data['gap'] = abs(gap_data.pb - gap_data.db)
+    gap_data['gap'] = gap_data.gap / gap_data.gap.values[0]
+    gap_data = gap_data.sort_values('time')
+
+    print '    extracted gap data:', time.time() - start_time
+    start_time = time.time()
+
+    x = gap_data.time.values
+    y = (1 - gap_data.gap).values
+    mean_data = gap_data['gap'].groupby(gap_data.time.apply(lambda x: round(x,1))).mean()
+    x_mean = mean_data.index.values
+    y_mean = (1 - mean_data).values
+
+    fig = plt.gcf()
+    ax = fig.gca()
+
+    ax.set_xlabel('Time of one pricing problem', size = 'large')
+    ax.set_ylabel('Gap closed', size = 'large')
+    ax.tick_params(axis='both', labelsize='large')
+
+    ax.scatter(x, y, color = 'black')
+    ax.plot(x_mean, y_mean, 'k--')
+
+    print '    plotted time data:', time.time() - start_time
+    start_time = time.time()
+
+    fig.set_size_inches(11.7,8.3)
+    filename = params['outdir'] + '/' + info['instance'] + '.gap.' + info['settings']
+    n = ''
+    dot = ''
+    if params['details']:
+        while os.path.isfile(filename + dot + str(n) + '.pdf'):
+            if n == '':
+                n = 2
+                dot = '.'
+            else:
+                n += 1
+        plt.savefig(filename + dot + str(n) + '.pdf')
+    else:
+        while os.path.isfile(filename + dot + str(n) + '.png'):
+            if n == '':
+                n = 2
+                dot = '.'
+            else:
+                n += 1
+        plt.savefig(filename + dot + str(n) + '.png')
+    plt.close()
+
+    print '    saved time plot:', time.time() - start_time
+    start_time = time.time()
+
+    return
+
+
+def plots(data, info, root_bounds = None):
+    """
+    Master-function for plotting. Splits the data if necessary and calls all plotting functions (or a subset, according to the params)
     :param data: collected data as dataframe
     :param info: dictionary containing information about the data like the name of the instance, the settings & the scip_status
     :return:
@@ -863,6 +1004,10 @@ def plots(data, info):
     # use tex to render the text output
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
+
+    # plot everything involving root bounds if possible and requested
+    if not (root_bounds is None or params['no_gap']):
+        make_gap_plot(data, info, root_bounds)
 
     if params['maxRound'] <= 0:
         maxRnd = max(data.index.get_level_values('pricing_round').values)
@@ -880,6 +1025,8 @@ def plots(data, info):
     if params['nSplit'] <= 0:
         # do not split the plots, but still check if rounds were neglected
         if params['minRound'] > 1 or params['maxRound'] > 0:
+            # todo: include this min/max round information in the filenames (?)
+            # todo: write a central method for saving the files
 #            name += '_rounds' + str(params['minRound']) + 'to' + str(maxRnd)
             info['rounds_min'] = minRnd
             info['rounds_max'] = maxRnd
@@ -938,23 +1085,32 @@ def load_data(files):
         if not (ext == '.pkl'):
             print file, 'is not a pickle file'
             continue
-        info = get_info_from_filename(filename)
         if params['instances'] <> '' and not any([(string in filename) for string in params['instances']]):
-            print 'skipping', info['instance']
+            print 'skipping', filename
             continue
-        print 'entering', info['instance']
+
         start_time = time.time()
-        df = pd.read_pickle(file)
+        pkl_file = open(file, 'rb')
+        objects = pickle.load(pkl_file)
+        df = objects['pricing_data']
+        info = objects['info']
+        if 'root_bounds' in objects and not objects['root_bounds'].empty:
+            root_bounds = objects['root_bounds']
+        else:
+            root_bounds = None
+        pkl_file.close()
+
+        print 'entering', info['instance']
         print '    loading data:', time.time() - start_time
         if df.empty:
             print '    no data found'
         else:
             start_time = time.time()
-            plots(df, info)
+            plots(df, info, root_bounds)
             print '    total plotting:', time.time() - start_time
         print '    leaving', info['instance']
 
-def collect_data(filename, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas):
+def collect_data(info, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, root_bounds = None):
     """
     Take lists containing the parsed data and structure them in a multiindex dataframe; then save or plot the data.
     All lists have to be of equal length (representing columns in a table)
@@ -973,14 +1129,21 @@ def collect_data(filename, ind_node, ind_pricing_round, ind_stab_round, ind_roun
     data = {'time': val_time, 'nVars': val_nVars, 'farkas': val_farkas}
     df = pd.DataFrame(data = data, index = index)
 
+    if not root_bounds is None and root_bounds.empty:
+        root_bounds = None
+
     # save or plot the data
     if params['save']:
         start_time = time.time()
-        df.to_pickle(params['outdir'] + '/' + filename + '.pkl')
+        output = open(params['outdir'] + '/' + info['instance'] + '.' + info['settings'] + '.pkl', 'wb')
+        if root_bounds is None:
+            pickle.dump({'pricing_data': df, 'info': info}, output, -1)
+        else:
+            pickle.dump({'pricing_data': df, 'info': info, 'root_bounds': root_bounds}, output, -1)
         print '    total saving:', time.time() - start_time
     else:
         start_time = time.time()
-        plots(df, get_info_from_filename(filename))
+        plots(df, info, root_bounds)
         print '    total plotting:', time.time() - start_time
 
 def parse_files(files):
@@ -991,43 +1154,21 @@ def parse_files(files):
     """
     for file in files:
         with open(file) as _file:
-            # initialize all index-lists
-            ind_node = []
-            ind_pricing_round = []
-            ind_stab_round = []
-            ind_round = []
-            ind_pricing_prob = []
-
-            # initialize the value-lists
-            val_time = []
-            val_nVars = []
-            val_farkas = []
-
-            # initialize all counters
-            node = 0
-            pricing_round = 0
-            stab_round = 0
-            pricing_prob = 0
-            round_counter = 0
-
-            # initialize all other variables
-            problemFileName = None
-            settings = 'default'
-            scip_status = 'NONE'
-            round_begin = False
-            lptime_begin = 0
-            lptime_end = 0
-            farkasDone = False
-            done = False
+            first_line_of_file = True
+            done = True
 
             for line in _file:
-                if line.find("@0")<>-1:
+                if line.find("@0")<>-1 or first_line_of_file:
                     # if the file is an out-file, generated by the check-script, reset the variables whenever a new instance starts
-                    if line.startswith("@01"):
+                    if line.startswith("@01") or first_line_of_file:
                         # print message, if the previous problem is not done yet
                         if not done and problemFileName:
+                            if not ind_node or not ind_pricing_round or not ind_stab_round or not ind_pricing_prob or not val_time or not val_nVars:
+                                print '    no pricing data found'
+                                done = True
+                                continue
                             print '    ended abruptly'
-                            collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                            collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                             print '    leaving', problemFileName
                             done = True
 
@@ -1049,16 +1190,22 @@ def parse_files(files):
                         stab_round = 0
                         pricing_prob = 0
                         round_counter = 0
+                        root_bounds_ind = 0
+
+                        # initialize flags
+                        first_line_of_file = False
+                        farkasDone = False
+                        done = False
+                        root_bounds = False
+                        round_begin = False
 
                         # initialize all other variables
                         problemFileName = None
                         settings = 'default'
                         scip_status = 'NONE'
-                        round_begin = False
                         lptime_begin = 0
                         lptime_end = 0
-                        farkasDone = False
-                        done = False
+                        root_bounds_data = pd.DataFrame()
                     else:
                         # ignore lines, where the output ends abrubtly (e.g. when the hard limit of the check-script is reached)
                         continue
@@ -1091,22 +1238,35 @@ def parse_files(files):
                 elif line.startswith("Starting reduced cost pricing..."):
                     farkasDone = True
 
-                # pricer statistics end
+                # read the SCIP status; end of pricing statistics
                 elif line.startswith("SCIP Status        :"):
                     # continue if no data is found
                     if not ind_node or not ind_pricing_round or not ind_stab_round or not ind_pricing_prob or not val_time or not val_nVars:
                         print '    no pricing data found'
                         done = True
                         continue
-
                     scip_status = line.split(':')[1].split('[')[1].split(']')[0].replace(' ','_')
-
-                    collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
-
-                    done = True
-
-                    print '    leaving', problemFileName
                     continue
+
+                # read the root bounds table
+                elif line.startswith("Root bounds"):
+                    root_bounds = True
+
+                elif root_bounds:
+                    if line.startswith('Pricing Summary:'):
+                        # end of the root bounds table; nothing more to read for this instance
+                        root_bounds_data.iter = root_bounds_data.iter.astype('int')
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas, root_bounds = root_bounds_data)
+                        root_bounds = False
+                        done = True
+                        print '    leaving', problemFileName
+                    elif line.startswith('iter	pb	db	time	dualdiff	dualoptdiff'):
+                        # create a dataframe to store the table
+                        root_bounds_data = pd.DataFrame(columns = line.split())
+                        root_bounds_ind = 0
+                    else:
+                        root_bounds_data.loc[root_bounds_ind] = [float(s) for s in line.split()]
+                        root_bounds_ind += 1
 
                 # ignore all other lines, that do not contain pricer statistics messages
                 elif not line.startswith("[src/pricer_gcg.cpp:"):
@@ -1124,16 +1284,16 @@ def parse_files(files):
                         round_begin = True
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
 
-                if message.startswith("MLP t: "):
+                elif message.startswith("MLP t: "):
                     try:
                         if round_begin:
                             lptime_begin = float(message.split()[-1])
-                            if lptime_begin - lptime_end >= 0.01:
+                            if len(ind_round) > 0 and lptime_begin - lptime_end >= 0.01:
                                 # store all indices
                                 ind_node.append(ind_node[-1])
                                 ind_pricing_round.append(ind_pricing_round[-1])
@@ -1153,7 +1313,7 @@ def parse_files(files):
                                 print 'It seems, that the LP time is not constant during a pricing round. Delta t is', lptime_end - lptime_begin
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -1164,7 +1324,7 @@ def parse_files(files):
                         round_counter += 1
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -1190,7 +1350,7 @@ def parse_files(files):
                             val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
@@ -1219,13 +1379,13 @@ def parse_files(files):
                         val_farkas.append(not farkasDone)
                     except ValueError:
                         print '    ended abruptly'
-                        collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                        collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
                         print '    leaving', problemFileName
                         done = True
                         continue
 
             if not done:
-                collect_data(problemFileName + '.' + settings + '.' + scip_status, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
+                collect_data({'instance': problemFileName, 'settings': settings, 'status': scip_status}, ind_node, ind_pricing_round, ind_stab_round, ind_round, ind_pricing_prob, val_time, val_nVars, val_farkas)
 
 def main():
     """Entry point when calling this script"""
@@ -1243,6 +1403,7 @@ def main():
             for f in parsed_args.filenames:
                 logfile.write(f + '\n')
             logfile.write('\n' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M'))
+            logfile.close()
 
 # Calling main script
 if __name__ == '__main__':
