@@ -472,6 +472,20 @@ SCIP_RETCODE GCGprintInstanceName(
 }
 
 
+SCIP_RETCODE GCGprintMiplibStructureInformation(
+   SCIP*                scip,
+   FILE*                file
+   )
+{
+   SCIP_CALL( GCGprintMiplibBaseInformation(scip, file) );
+
+   SCIP_CALL( GCGprintMiplibConnectedInformation(scip, file));
+
+   SCIP_CALL( GCGprintMiplibDecompInformation(scip, file) );
+
+   return SCIP_OKAY;
+}
+
 
 /** print out complete detection statistics */
 SCIP_RETCODE GCGprintCompleteDetectionStatistics(
