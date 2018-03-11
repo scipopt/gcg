@@ -2060,7 +2060,7 @@ SCIP_RETCODE Seeedpool::calcStrongDecompositionScore(
    *score = 0.;
    npricingconss = 0;
 
-   writesubproblem = TRUE;
+   writesubproblem = FALSE;
 
  // randomdualvals = std::vector<SCIP_Real>(getNConss(),0. );
 
