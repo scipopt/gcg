@@ -168,7 +168,9 @@ SCIP_RETCODE SCIPincludeParamsVisu(
 
    SCIP_CALL( SCIPaddStringParam(scip,
       "visual/pdfreader", "pdf reader that opens visualizations in select menu",
-      &visudata->pdfreader, FALSE, (char*) SCIPconshdlrDecompGetPdfReader(scip), NULL, NULL) );
+      &visudata->pdfreader, FALSE,
+      DEFAULT_PDFREADER,
+      NULL, NULL) );
 
    /* add parameters for manual colors */
 
