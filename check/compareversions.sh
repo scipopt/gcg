@@ -9,6 +9,7 @@
 # e.g. ./compareversions "TEST=mytestset SETTINGS=mysettings -j" "master" "" "mybranch" "LPS=cpx"
 #
 # Put "" around your arguments if they include spaces.
+# Add "" after a git version for no additional flags
 #
 # In detail:
 # 1st argument: all flags to be set for all git versions 
