@@ -48,8 +48,10 @@ do
 done
 
 echo $GLOBALFLAGS
-echo $VERSION[$nversions]
-echo $ADDFLAG[$nversions]
+echo ${VERSION[1]}
+echo ${ADDFLAGS[1]}
+echo ${VERSION[$nversions]}
+echo ${ADDFLAGS[$nversions]}
 echo $nversions
 
 
@@ -62,9 +64,10 @@ CURRENTBRANCH=${CURRENTBRANCH:-HEAD}
 
 # Script is in check, so switch to gcg main folder
 cd ..
-index=1
-while [ $index -le $nversions ]
+index=0
+while [ $index -l $nversions ]
 do
+	$index=$((index + 1))
 	# get version
 	git checkout "${VERSION[$index]}"
 	git submodule init
@@ -106,7 +109,7 @@ do
 	
 	# go back to the main folder to check out next version correctly
 	cd ../..
-	$index=$((index + 1))
+	
 done
 
 # Return to branch the script was called on
