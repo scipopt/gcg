@@ -1268,6 +1268,7 @@ SCIP_RETCODE SCIPconshdlrDecompShowToolboxInfo(
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "quit the modification process and returns to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "undo", "last modification is undone (atm only the last modification can be undone)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "shows a visualization of the current decomposition ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "propagate", "list all detectors that can propagate and apply propagation");
    SCIPdialogMessage(scip, NULL, "\n============================================================================================= \n");
 
 
@@ -1610,14 +1611,14 @@ SCIP_RETCODE SCIPconshdlrDecompShowHelp(
    SCIPdialogMessage(scip, NULL, "\n" );
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "command", "description");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "-------", "-----------");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "select", "selects/unselects decomposition with given id");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "explore", "selects/unselects decomposition with given id");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "back", "displays the preceding decompositions (if there are some)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "next", "displays the subsequent decompositions (if there are some)");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "top", "displays the first decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "end", "displays the last decompositions");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "legend", "displays the legend for table header and history abbreviations");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "help", "displays this help");
-   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "modify", "modifies the number of displayed decompositions ");
+   SCIPdialogMessage(scip, NULL, "%30s     %s\n", "dispNEntries", "modifies the number of displayed decompositions ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "quit", "finishes selection and goes back to main menu");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "visualize", "experimental feature: visualizes the specified decomposition ");
    SCIPdialogMessage(scip, NULL, "%30s     %s\n", "inspect", "displays detailed information for the specified decomposition ");
@@ -1732,7 +1733,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
          continue;
       }
 
-      if( strncmp( command, "modify", commandlen) == 0 )
+      if( strncmp( command, "dispNEntries", commandlen) == 0 )
       {
          SCIP_CALL(SCIPconshdlrDecompModifyNVisualized(scip, dialoghdlr, dialog) );
          continue;
@@ -1763,9 +1764,10 @@ SCIP_RETCODE SCIPconshdlrDecompExecSelect(
       }
 
 
-      if( strncmp( command, "select", commandlen) == 0 )
+      if( strncmp( command, "explore", commandlen) == 0 )
       {
-         SCIP_CALL(SCIPconshdlrDecompSelectSelect(scip, dialoghdlr, dialog ) );
+         //SCIP_CALL(SCIPconshdlrDecompSelectSelect(scip, dialoghdlr, dialog ) );
+         SCIPconshdlrDecompExecToolbox(scip, dialoghdlr, dialog);
          continue;
       }
    }
@@ -2227,6 +2229,12 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
                SCIP_CALL(SCIPconshdlrDecompSelectVisualize(scip, dialoghdlr, dialog ) );
                continue;
             }
+
+            if( strncmp( command, "propagate", commandlen2) == 0 )
+            {
+               //TODO
+               continue;
+            }
          }
    } /* finished yes == modify */
    else
@@ -2398,6 +2406,21 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
       if( strncmp( command, "visualize", commandlen2) == 0 )
       {
          SCIP_CALL(SCIPconshdlrDecompSelectVisualizeCurrentUserSeeed(scip, dialoghdlr, dialog ) );
+         continue;
+      }
+
+      if( strncmp( command, "propagate", commandlen2) == 0 )
+      {
+         SCIP_RESULT result;
+         SCIPinfoMessage(scip, NULL, "Available Detectors for propagation:\n");
+         for( int i = 0; i < conshdlrdata->ndetectors; ++i )
+         {
+            if( conshdlrdata->detectors[i]->propagateSeeed )
+            {
+               SCIPinfoMessage(scip, NULL, "%s\n",conshdlrdata->detectors[i]->name);
+               conshdlrdata->detectors[i]->propagateSeeed(scip, conshdlrdata->detectors[i], NULL, &result);
+            }
+         }
          continue;
       }
    }
