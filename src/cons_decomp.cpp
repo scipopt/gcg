@@ -2106,6 +2106,69 @@ SCIP_DIALOG*            dialog )
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
+   SCIP*                   scip,
+   SCIP_DIALOGHDLR*        dialoghdlr,
+   SCIP_DIALOG*            dialog )
+{
+   char* command;
+   int commandlen;
+   SCIP_Bool endoffile;
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_Result result;
+   DEC_Detector** detectors;
+   int ndetectors, i;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+
+   if( conshdlrdata->ndetectors == 0 )
+   {
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &detectors, conshdlrdata->ndetectors) );
+
+   ndetectors = 0;
+   SCIPinfoMessage(scip, NULL, "Available detectors for propagation:\n");
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      if( conshdlrdata->detectors[i]->propagateFromToolbox )
+      {
+         SCIPinfoMessage(scip, NULL, "%s\n",conshdlrdata->detectors[i]->name);
+         detectors[ndetectors] = conshdlrdata->detectors[i];
+         ++ndetectors;
+      }
+   }
+
+   if( ndetectors == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "No detector available!\n\n");
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name of the detector that you want to use (or \"none\"): \nGCG/toolbox> : ", &command, &endoffile) );
+   commandlen = strlen(command);
+
+   if( !strncmp( command, "none", commandlen) == 0 )
+   {
+      for( i = 0; i < ndetectors; ++i )
+      {
+         if( strncmp( command, detectors[i]->name, commandlen) == 0 )
+         {
+            //@TODO: Handle match beyond call
+            conshdlrdata->detectors[i]->propagateFromToolbox(scip, conshdlrdata->detectors[i], &result);
+            break;
+         }
+      }
+   }
+
+   SCIPinfoMessage(scip, NULL, "\n\n");
+
+   SCIPfreeBufferArray(scip, &detectors);
+   return SCIP_OKAY;
+}
 
 SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    SCIP*                   scip,
@@ -2137,12 +2200,12 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
    }
 
    /** Do user want to modify existing or create a new partial decomposition ?*/
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to modify an existing (\"yes\") or create a new partial decomposition (\"no\")? : \nGCG/toolbox : ", &command, &endoffile) );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Do you want to modify an existing (\"modify\") or create a new partial decomposition (\"create\")? : \nGCG/toolbox : ", &command, &endoffile) );
 
    commandlen = strlen(command);
 
    /** case distinction: */
-   if( strncmp( command, "yes", commandlen) == 0 )
+   if( strncmp( command, "modify", commandlen) == 0 )
    {
       /** 1) update list of interesting seeeds */
 
@@ -2232,7 +2295,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 
             if( strncmp( command, "propagate", commandlen2) == 0 )
             {
-               //TODO
+               SCIP_CALL( SCIPconshdlrDecompToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
                continue;
             }
          }
@@ -2411,16 +2474,7 @@ SCIP_RETCODE SCIPconshdlrDecompExecToolbox(
 
       if( strncmp( command, "propagate", commandlen2) == 0 )
       {
-         SCIP_RESULT result;
-         SCIPinfoMessage(scip, NULL, "Available Detectors for propagation:\n");
-         for( int i = 0; i < conshdlrdata->ndetectors; ++i )
-         {
-            if( conshdlrdata->detectors[i]->propagateSeeed )
-            {
-               SCIPinfoMessage(scip, NULL, "%s\n",conshdlrdata->detectors[i]->name);
-               conshdlrdata->detectors[i]->propagateSeeed(scip, conshdlrdata->detectors[i], NULL, &result);
-            }
-         }
+         SCIP_CALL( SCIPconshdlrDecompToolboxPropagateSeeed(scip, dialoghdlr, dialog) );
          continue;
       }
    }
@@ -2734,6 +2788,7 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_INITDETECTOR((*initDetector)),       /**< initialization method of detector (or NULL) */
    DEC_DECL_EXITDETECTOR((*exitDetector)),       /**< deinitialization method of detector (or NULL) */
    DEC_DECL_PROPAGATESEEED((*propagateSeeedDetector)),
+   DEC_DECL_PROPAGATEFROMTOOLBOX((*propagateFromToolboxDetector)),
    DEC_DECL_FINISHSEEED((*finishSeeedDetector)),
    DEC_DECL_POSTPROCESSSEEED((*postprocessSeeedDetector)),
    DEC_DECL_SETPARAMAGGRESSIVE((*setParamAggressiveDetector)),
@@ -2784,6 +2839,7 @@ SCIP_RETCODE DECincludeDetector(
    detector->detectStructure = detectStructure;
 
    detector->propagateSeeed = propagateSeeedDetector;
+   detector->propagateFromToolbox = propagateFromToolboxDetector;
    detector->finishSeeed = finishSeeedDetector;
    detector->postprocessSeeed = postprocessSeeedDetector;
    detector->setParamAggressive =  setParamAggressiveDetector;

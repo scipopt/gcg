@@ -125,6 +125,8 @@ typedef struct Seeed_Propagation_Data SEEED_PROPAGATION_DATA;
 
 #define DEC_DECL_PROPAGATESEEED(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SEEED_PROPAGATION_DATA* seeedPropagationData, SCIP_RESULT* result)
 
+
+#define DEC_DECL_PROPAGATEFROMTOOLBOX(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector, SCIP_RESULT* result)
 /**
  * given a seeed (incomplete decomposition) the detector
  * tries to find finished seeeds and stores them
