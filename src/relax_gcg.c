@@ -147,11 +147,6 @@ struct SCIP_RelaxData
    SCIP_CLOCK*           rootnodetime;       /**< time in root node */
    SCIP_RealList*        degeneracy;         /**< degeneracy list */
    SCIP_RealList*        dualbounds;         /**< dual bounds list */
-<<<<<<< HEAD
-   SCIP_RealList**       latest_deg;         /**< needed for adding in constant time */
-   SCIP_RealList**       latest_db;          /**< needed for adding in constant time */
-=======
->>>>>>> ee31e8ac93cdf16c3113d210a5cb36ddaafb9884
 };
 
 /*
@@ -2185,8 +2180,6 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    relaxdata->dualbounds->data = 0.;
    relaxdata->dualbounds->depth= 0;
    relaxdata->dualbounds->next= NULL;
-   relaxdata->latest_deg = &(relaxdata->degeneracy);
-   relaxdata->latest_db = &(relaxdata->dualbounds);
 
    return SCIP_OKAY;
 }
@@ -2285,8 +2278,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       SCIPfreeMemory(scip, &current);
       current = next;
    }
-   relaxdata->latest_deg = NULL;
-   relaxdata->latest_db = NULL;
 
    relaxdata->relaxisinitialized = FALSE;
 
@@ -2305,8 +2296,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_Real timelimit;
    SCIP_Real memorylimit;
    SCIP_Bool stored;
-   SCIP_RealList** latest_deg;
-   SCIP_RealList** latest_db;
+   SCIP_RealList* current_deg;
+   SCIP_RealList* current_db;
    SCIP_RealList* next_deg;
    SCIP_RealList* next_db;
 
