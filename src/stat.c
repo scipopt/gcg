@@ -104,7 +104,7 @@ SCIP_RETCODE GCGwriteSolvingDetails(
    current = current->next;
    while( current != NULL )
    {
-      SCIPinfoMessage(scip, NULL, "  %6.2f\n", current->data);
+      SCIPinfoMessage(scip, NULL, "  %d: %6.2f\n", current->depth, current->data);
       current = current->next;
    }
    SCIPinfoMessage(scip, NULL, "Dual Bounds:\n");
@@ -112,7 +112,7 @@ SCIP_RETCODE GCGwriteSolvingDetails(
    current = current->next;
    while( current != NULL )
    {
-      SCIPinfoMessage(scip, NULL, "  %f\n", current->data);
+      SCIPinfoMessage(scip, NULL, "  %d: %f\n", current->depth, current->data);
       current = current->next;
    }
    

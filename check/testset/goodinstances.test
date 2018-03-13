@@ -82,3 +82,9 @@ instances/striplibn/lotsizing/trigeiro/F40N.lp.gz;instances/striplibn/lotsizing/
 instances/striplibn/lotsizing/trigeiro/F30N.lp.gz;instances/striplibn/lotsizing/trigeiro/F30N-product.dec.gz
 instances/striplibn/lotsizing/trigeiro/F21N.lp.gz;instances/striplibn/lotsizing/trigeiro/F21N-product.dec.gz
 instances/striplibn/tup/umps10B_5_2.lp.gz;instances/striplibn/tup/umps10B_5_2.dec.gz
+instances/striplibn/umcfp/carbin/Bs02.lp.gz;instances/striplibn/umcfp/carbin/Bs02-knapsack.dec.gz
+instances/striplibn/umcfp/carbin/Bs04.lp.gz;instances/striplibn/umcfp/carbin/Bs04-knapsack.dec.gz
+instances/striplibn/umcfp/carbin/Bl02.lp.gz;instances/striplibn/umcfp/carbin/Bl02-knapsack.dec.gz
+instances/striplibn/sscwlp/class2/8Cap20.lp.gz;instances/striplibn/sscwlp/class2/8Cap20.dec.gz
+instances/striplibn/vrptw/25/R105.lp.gz;instances/striplibn/vrptw/25/R105.dec.gz
+instances/striplibn/vrptw/25/C201.lp.gz;instances/striplibn/vrptw/25/C201.dec.gz
