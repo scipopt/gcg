@@ -245,10 +245,7 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultCompgreedily)
       SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   if( SCIPgetNConss(scip) + SCIPgetNVars(scip) < DEFAULT_LIMITHALFPERIMETERENABLEDFINISHING )
-      SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
-   else
-      SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
 
    return SCIP_OKAY;

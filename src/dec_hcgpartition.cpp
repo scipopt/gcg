@@ -757,7 +757,14 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHcgpartition)
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
-
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      newval =
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+      return SCIP_OKAY;
+   }
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 
    modifier = log(modifier) / log(2);
