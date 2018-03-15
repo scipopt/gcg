@@ -821,8 +821,12 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
          SCIP_CALL_ABORT( SCIPstartClock(scip_, clock) );
       }
 
+      SCIPdebugMessage(" Apply solver <%s>\n", solver->name);
+
       SCIP_CALL( solversolve(pricingscip, solver, probnr, pricerdata->dualsolconv[probnr],
             &lowerbound, cols, maxcols, &ncols, &status) );
+
+      SCIPdebugMessage("   -> status = %d, ncols = %d\n", status, ncols);
 
       updateRedcosts(pricetype, cols, ncols);
       SCIPsortPtr((void**) cols, GCGcolCompRedcost, ncols); /* If pricing was aborted due to a limit, columns may not be sorted */
@@ -1929,12 +1933,14 @@ void ObjPricerGcg::updateRedcosts(
    int                   ncols               /**< number of columns */
    )
 {
+   SCIPdebugMessage("Update reduced costs\n");
+
    for( int i = 0; i < ncols; ++i )
    {
       SCIP_Real redcost = computeRedCostGcgCol(pricetype, cols[i], NULL);
       GCGcolUpdateRedcost(cols[i], redcost, FALSE);
 
-      SCIPdebugMessage("column %d/%d <%p>, reduced cost = %g\n", i+1, ncols, (void*) cols[i], redcost);
+      SCIPdebugMessage("  -> column %d/%d <%p>, reduced cost = %g\n", i+1, ncols, (void*) cols[i], redcost);
    }
 }
 
@@ -3158,6 +3164,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          pricingtime = pricetype->getClockTime() - pricingtime;
 #endif
 
+         SCIPdebugMessage("Pricing problem solved:\n");
          SCIPdebugMessage("  -> status: %d\n", GCGpricingjobGetStatus(pricingjob));
          SCIPdebugMessage("  -> ncols: %d, pricinglowerbound: %.4g\n", GCGpricingjobGetNCols(pricingjob), GCGpricingjobGetLowerbound(pricingjob));
 
