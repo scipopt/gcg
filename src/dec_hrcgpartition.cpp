@@ -790,6 +790,15 @@ DEC_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrcgpartition)
    SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
+   /* check if no problem is read */
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
+        SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
+        SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+        return SCIP_OKAY;
+   }
+
 
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 
@@ -828,6 +837,16 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultHrcgpartition)
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+
+   /* check if no problem is read */
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   {
+      (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
+      SCIP_CALL( SCIPsetIntParam(scip, setstr, DEFAULT_MAXNBLOCKCANDIDATES ) );
+      SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, DEFAULT_MAXNBLOCKCANDIDATES);
+      return SCIP_OKAY;
+   }
+
 
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 
@@ -869,6 +888,14 @@ DEC_DECL_SETPARAMFAST(setParamFastHrcgpartition)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
 
+   /* check if no problem is read */
+      if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+      {
+         (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
+         SCIP_CALL( SCIPsetIntParam(scip, setstr, DEFAULT_MAXNBLOCKCANDIDATES ) );
+         SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, DEFAULT_MAXNBLOCKCANDIDATES);
+         return SCIP_OKAY;
+      }
 
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 

@@ -803,6 +803,11 @@ DEC_DECL_SETPARAMDEFAULT(setParamDefaultHcgpartition)
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
 
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+     {
+        return SCIP_OKAY;
+     }
+
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
 
    modifier = log(modifier) / log(2);
@@ -842,6 +847,14 @@ DEC_DECL_SETPARAMFAST(setParamFastHcgpartition)
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+
+   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+     {
+        (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnblockcandidates", name);
+        SCIP_CALL( SCIPsetIntParam(scip, setstr, DEFAULT_MAXNBLOCKCANDIDATES ) );
+        SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, DEFAULT_MAXNBLOCKCANDIDATES);
+        return SCIP_OKAY;
+     }
 
 
    modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
