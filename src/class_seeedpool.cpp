@@ -1293,6 +1293,13 @@ std::vector<SeeedPtr> Seeedpool::findSeeeds()
    for( int round = 0; round < maxndetectionrounds; ++ round )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Begin of detection round %d of %d total rounds \n", round, maxndetectionrounds);
+      if( currSeeeds.size() == 0 )
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "Detection loop can be aborted since there are no more partial decompositions to refine! \n" );
+         break;
+      }
+
+
       std::vector<SeeedPtr> nextSeeeds = std::vector < SeeedPtr > ( 0 );
       std::vector<SeeedPtr> currSeeedsToDelete = std::vector < SeeedPtr > ( 0 );
 
