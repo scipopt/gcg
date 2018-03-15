@@ -393,10 +393,16 @@ SCIP_RETCODE HypercolGraph<T>::createSeeedFromPartition(
        SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) seeedpool->getIndexForCons(conss[c]), (void*) (size_t) consblock) );
    }
 
-   (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars());
-   SCIP_CALL((*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool));
-   (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars());
-   SCIP_CALL((*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool));
+   if( firstSeeed != NULL )
+   {
+      (*firstSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars());
+      SCIP_CALL((*firstSeeed)->filloutSeeedFromConstoblock(constoblock, nblocks, seeedpool));
+   }
+   if( secondSeeed != NULL )
+   {
+      (*secondSeeed) = new Seeed(this->scip_, seeedpool->getNewIdForSeeed(), seeedpool->getNConss(), seeedpool->getNVars());
+      SCIP_CALL((*secondSeeed)->filloutBorderFromConstoblock(constoblock, nblocks, seeedpool));
+   }
    SCIPhashmapFree(&constoblock);
 
    return SCIP_OKAY;

@@ -2117,14 +2117,19 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_Result result;
+   SCIP_RETCODE retcode;
    DEC_Detector** detectors;
    int ndetectors, i;
+   SEEED_PROPAGATION_DATA* seeedPropData;
+   gcg::Seeedpool* seeedpool;
+   SCIP_Bool finished;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
 
    if( conshdlrdata->ndetectors == 0 )
    {
+      SCIPinfoMessage(scip, NULL, "No detector available!\n\n");
       return SCIP_OKAY;
    }
 
@@ -2136,7 +2141,7 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
    {
       if( conshdlrdata->detectors[i]->propagateFromToolbox )
       {
-         SCIPinfoMessage(scip, NULL, "%s\n",conshdlrdata->detectors[i]->name);
+         SCIPinfoMessage(scip, NULL, "%s\n", conshdlrdata->detectors[i]->name);
          detectors[ndetectors] = conshdlrdata->detectors[i];
          ++ndetectors;
       }
@@ -2148,23 +2153,80 @@ SCIP_RETCODE SCIPconshdlrDecompToolboxPropagateSeeed(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name of the detector that you want to use (or \"none\"): \nGCG/toolbox> : ", &command, &endoffile) );
-   commandlen = strlen(command);
-
-   if( !strncmp( command, "none", commandlen) == 0 )
+   if (conshdlrdata->seeedpool != NULL )
    {
-      for( i = 0; i < ndetectors; ++i )
+      seeedpool = conshdlrdata->seeedpool;
+   }
+   else
+   {
+      seeedpool = conshdlrdata->seeedpoolunpresolved;
+   }
+
+   seeedPropData = new SEEED_PROPAGATION_DATA();
+   seeedPropData->seeedpool = seeedpool;
+   seeedPropData->nNewSeeeds = 0;
+   seeedPropData->seeedToPropagate = new gcg::Seeed(conshdlrdata->curruserseeed);
+
+   retcode = SCIP_ERROR;
+   finished = FALSE;
+   while( !finished )
+   {
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "Type in the name of the detector that you want to use (or \"none\"): \nGCG/toolbox> : ", &command, &endoffile) );
+      commandlen = strlen(command);
+
+      if( !strncmp( command, "none", commandlen) == 0 )
       {
-         if( strncmp( command, detectors[i]->name, commandlen) == 0 )
+         for( i = 0; i < ndetectors; ++i )
          {
-            //@TODO: Handle match beyond call
-            conshdlrdata->detectors[i]->propagateFromToolbox(scip, conshdlrdata->detectors[i], &result);
-            break;
+            if( strncmp( command, detectors[i]->name, commandlen) == 0 )
+            {
+               retcode = conshdlrdata->detectors[i]->propagateFromToolbox(scip, conshdlrdata->detectors[i], seeedPropData, &result, dialoghdlr, dialog);
+               break;
+            }
+         }
+      }
+      if( retcode == SCIP_OKAY )
+      {
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+            "Seeed was successfully propagated. Do you want to visualize the current Seeed, (\"visualize\"),continue decomposition with the newly propagated Seeed (\"continue\"), \
+             or continue with the previous Seeed (\"previous\")?\nGCG/toolbox> : ", &command, &endoffile) );
+         //@TODO: Handle the three cases
+         if( strncmp( command, "visualize", commandlen) == 0 )
+         {
+
+         }
+         else if( strncmp( command, "continue", commandlen) == 0 )
+         {
+
+         }
+         else if( strncmp( command, "previous", commandlen) == 0 )
+         {
+            
+         }
+         //@TODO: Display additional seeed information
+      }
+      else
+      {
+         SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+            "Seeed propagation unsuccessful. Do you want to select another detector (\"detector\") or \
+            return to the previous menu(\"previous\")?\nGCG/toolbox> : ", &command, &endoffile) );
+         if( strncmp( command, "detector", commandlen) == 0 )
+         {
+            continue;
+         }
+         else if( strncmp( command, "previous", commandlen) == 0 )
+         {
+            finished = TRUE;
+            continue;
          }
       }
    }
 
-   SCIPinfoMessage(scip, NULL, "\n\n");
+   SCIPfreeMemoryArrayNull( scip, & seeedPropData->newSeeeds );
+   delete seeedPropData->seeedToPropagate;
+   seeedPropData->newSeeeds = NULL;
+   seeedPropData->nNewSeeeds = 0;
+   delete seeedPropData;
 
    SCIPfreeBufferArray(scip, &detectors);
    return SCIP_OKAY;
