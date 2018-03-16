@@ -1167,7 +1167,9 @@ public:
       );
 
    SCIP_RETCODE writeAsDec(
-      FILE* file
+      FILE* file,
+      //GCG_PROBLEM_TRANSFORMED_STATUS transformed,
+      Seeedpool*   seeedpool
       );
 
 

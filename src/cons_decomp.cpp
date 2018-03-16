@@ -5224,18 +5224,26 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
+   Seeedpool* seeedpool;
 
    int dec;
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   seeedpool = NULL;
    assert(conshdlr != NULL);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   if( transformed )
+      seeedpool = conshdlrdata->seeedpool;
+   else
+      seeedpool = conshdlrdata->seeedpoolunpresolved;
+
+
    if( conshdlrdata->seeedtowrite != NULL )
    {
-      conshdlrdata->seeedtowrite->writeAsDec(file);
+      conshdlrdata->seeedtowrite->writeAsDec(file, seeedpool);
       return SCIP_OKAY;
    }
 
@@ -5245,15 +5253,8 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
       return SCIP_OKAY;
    }
 
-   for( dec = 0; dec  < (int) conshdlrdata->candidates->size(); ++dec )
-   {
-      if ( conshdlrdata->candidates->at(dec).first->isFromUnpresolved() == !transformed )
-         break;
-   }
-   if( dec !=  (int) conshdlrdata->candidates->size() )
-      conshdlrdata->candidates->at(dec).first->writeAsDec(file);
-   else
-      SCIPwarningMessage(scip, "There is no candidate decomposition for the %s problem we can write information for!\n", transformed ? "transformed" : "untransformed");
+   conshdlrdata->candidates->at(0).first->writeAsDec(file, seeedpool);
+
 
    return SCIP_OKAY;
 }

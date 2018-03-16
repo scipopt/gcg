@@ -60,6 +60,15 @@ struct Seeed_Propagation_Data
 
 namespace gcg{
 
+enum GCG_PROBLEM_TRANSFORMED_STATUS
+{
+   original,
+   transformed,
+   native
+
+};
+
+
 
 //typedef boost::shared_ptr<Seeed> SeeedPtr;
 typedef Seeed* SeeedPtr;

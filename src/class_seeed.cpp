@@ -6199,9 +6199,55 @@ SCIP_RETCODE Seeed::setDetectorChainString(
 }
 
 SCIP_RETCODE Seeed::writeAsDec(
-   FILE* file
-   ){
+   FILE* file,
+   //GCG_PROBLEM_TRANSFORMED_STATUS transformed,
+   Seeedpool*   seeedpool
+   )
+{
+
    static const char commentchars[] = "\\";
+
+   int nconss;
+   int nvars;
+   std::vector<int> consindexmap(0);
+   std::vector<int> varindexmap(0);
+
+   assert(seeedpool != NULL);
+
+   nconss = seeedpool->getNConss();
+   nvars = seeedpool->getNVars();
+
+   consindexmap = std::vector<int>(nconss);
+   varindexmap = std::vector<int>(nvars);
+
+   /* is there no translation needed ? */
+   if( getSeeedpool() == seeedpool )
+   {
+      for( int i = 0; i < nconss; ++i )
+         consindexmap[i] = i;
+      for( int i = 0; i < nvars; ++i )
+         varindexmap[i] = i;
+   }
+   else /** translation is neeeded */
+   {
+      SCIP_Bool success;
+
+      success = FALSE;
+
+//      if( isFromUnpresolved() )
+//         findTranslationFromUnpresolved(seeed->getSeeedpool(), seeedpool, &consindex, &varindex, &success );
+//      else
+//         findTranslationFromPresolved(seeed->getSeeedpool(), seeedpool, &consindex, &varindex, &success );
+      if( ! success )
+      {
+         if( isFromUnpresolved() )
+            SCIPwarningMessage(seeedpool->getScip(), "Writing dec-file is not possible since translation to presolved (transformed) problem failed. Please consider writing for original problem.\n" )
+         else
+            SCIPwarningMessage(seeedpool->getScip(), "Writing dec-file is not possible since translation to unpresolved (non-transformed) problem failed. Please consider writing for transformed problem.\n" )
+         return SCIP_OKAY;
+      }
+
+   }
 
    /** @TODO: statistical stuff  */
    /* at first: write meta data of decomposition as comment */
@@ -6221,7 +6267,7 @@ SCIP_RETCODE Seeed::writeAsDec(
    if( !isComplete() )
          SCIPinfoMessage(scip, file, "INCOMPLETE\n1\n" );
 
-   if( isFromUnpresolved() )
+   if( ( isFromUnpresolved() && seeedpool == getSeeedpool() ) || ( !isFromUnpresolved() && seeedpool != getSeeedpool() )  )
       SCIPinfoMessage(scip, file, "PRESOLVED\n0\n" );
    else
       SCIPinfoMessage(scip, file, "PRESOLVED\n1\n" );
@@ -6234,14 +6280,14 @@ SCIP_RETCODE Seeed::writeAsDec(
       SCIPinfoMessage(scip, file, "BLOCK %d\n", b+1 );
       for( size_t c = 0; c < conssForBlocks[b].size(); ++c )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( conssForBlocks[b][c])) );
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( consindexmap(conssForBlocks[b][c]))) );
       }
    }
 
     SCIPinfoMessage(scip, file, "MASTERCONSS\n" );
    for( int mc = 0; mc < getNMasterconss(); ++mc )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( masterConss[mc])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( consindexmap(masterConss[mc]))) );
    }
 
    if( isComplete() )
@@ -6252,20 +6298,20 @@ SCIP_RETCODE Seeed::writeAsDec(
       SCIPinfoMessage(scip, file, "BLOCKVARS %d\n", b+1 );
       for( size_t v = 0; v < varsForBlocks[b].size(); ++v )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( varsForBlocks[b][v])) );
+         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( varindexmap(varsForBlocks[b][v]))) );
       }
    }
 
    SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
    for( int lv = 0; lv < getNLinkingvars(); ++lv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( linkingVars[lv])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( varindexmap(linkingVars[lv]))) );
    }
 
    SCIPinfoMessage(scip, file, "MASTERVARS\n" );
    for( int mv = 0; mv < getNMastervars(); ++mv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( masterVars[mv])) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( varindexmap(masterVars[mv]))) );
    }
 
    return SCIP_OKAY;
