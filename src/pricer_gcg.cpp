@@ -2918,9 +2918,8 @@ SCIP_RETCODE ObjPricerGcg::computeDualDiff(
    return SCIP_OKAY;
 }
 
-/** perform Farkas or reduced cost pricing */
-// @todo: change name to something like pricingLoop() ?
-SCIP_RETCODE ObjPricerGcg::performPricing(
+/** the pricing loop: solve the pricing problems */
+SCIP_RETCODE ObjPricerGcg::pricingLoop(
    PricingType*          pricetype,          /**< type of pricing */
    SCIP_RESULT*          result,             /**< result pointer */
    int*                  pnfoundvars,        /**< pointer to store number of found variables */
@@ -3613,7 +3612,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    pricingcontroller->initPricing(pricetype);
 
-   SCIP_CALL( performPricing(pricetype, result, &nfoundvars, lowerbound, &bestredcostvalid) );
+   SCIP_CALL( pricingLoop(pricetype, result, &nfoundvars, lowerbound, &bestredcostvalid) );
 
    if( pricetype->getType() == GCG_PRICETYPE_REDCOST && bestredcostvalid )
    {
@@ -4710,6 +4709,46 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    pricerdata->nsolvers++;
 
    return SCIP_OKAY;
+}
+
+/** returns the available pricing solvers */
+extern "C"
+GCG_SOLVER** GCGpricerGetSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   return pricerdata->solvers;
+}
+
+/** returns the number of available pricing solvers */
+extern "C"
+int GCGpricerGetNSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   return pricerdata->nsolvers;
 }
 
 /** returns the solverdata of a solver */

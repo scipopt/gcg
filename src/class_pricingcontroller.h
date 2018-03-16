@@ -49,8 +49,10 @@ class Pricingcontroller
 
 private:
    SCIP*                 scip_;              /**< SCIP instance (master problem) */
-   GCG_PRICINGJOB**      pricingjobs;        /**< pricing jobs, one per pricing problem */
+   GCG_PRICINGPROB**     pricingprobs;       /**< pricing problems */
    int                   npricingprobs;      /**< number of pricing problems */
+   GCG_PRICINGJOB**      pricingjobs;        /**< pricing jobs */
+   int                   npricingjobs;      /**< number of pricing jobs */
 
    /* parameters */
    int                   heurpricingiters;   /**< maximum number of heuristic pricing iterations per pricing call and problem */

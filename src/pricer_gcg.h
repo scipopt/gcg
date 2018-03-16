@@ -123,6 +123,18 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    );
 
 
+/** returns the available pricing solvers */
+extern
+GCG_SOLVER** GCGpricerGetSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the number of available pricing solvers */
+extern
+int GCGpricerGetNSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** returns the solverdata of a solver */
 extern
 GCG_SOLVERDATA* GCGsolverGetSolverdata(

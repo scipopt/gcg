@@ -25,45 +25,46 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_pricingjob.h
- * @brief  data structure for pricing jobs
+/**@file   struct_pricingprob.h
+ * @brief  data structure to store pricing problem information
  * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_PRICINGJOB_H_
-#define GCG_STRUCT_PRICINGJOB_H_
+#ifndef GCG_STRUCT_PRICINGPROB_H_
+#define GCG_STRUCT_PRICINGPROB_H_
 
 #include "scip/def.h"
 #include "scip/type_misc.h"
 #include "scip/scip.h"
 
-#include "type_pricingjob.h"
+#include "type_pricingprob.h"
 #include "type_gcgcol.h"
+#include "type_solver.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct GCG_PricingJob
+struct GCG_PricingProb
 {
    /* problem data */
-   GCG_PRICINGPROB*     pricingprob;        /**< data structure of the corresponding pricing problem */
-   GCG_SOLVER*          solver;             /**< solver with which to solve the pricing problem */
+   SCIP*                pricingscip;        /**< SCIP data structure */
+   int                  probnr;             /**< (block) index of the corresponding pricing problem */
 
-   /* strategic parameters */
-   int                  chunk;              /**< chunk the pricing job belongs to */
-   SCIP_Real            score;              /**< current score of the pricing job */
-   SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
+   /* result values */
+   int                  nsolves;            /**< number of times the pricing problem was solved during the loop */
+   SCIP_STATUS          pricingstatus;      /**< current solution status of the pricing problem */
+   SCIP_Real            lowerbound;         /**< lower bound obtained by solving the pricing problem */
+   int                  nimpcols;           /**< number of improving columns found in the current pricing round */
 
-   /* result/statistic values */
-   SCIP_STATUS          pricingstatus;      /**< last status of the pricing job */
-   int                  nheuriters;         /**< number of times the pricing job was performed heuristically */
+   /* statistics */
+   int*                 ncolsround;         /**< number of improving columns found in the last rounds */
 };
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRUCT_PRICINGJOB_H_ */
+#endif /* STRUCT_PRICINGPROB_H_ */

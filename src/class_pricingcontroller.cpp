@@ -39,7 +39,10 @@
 #include "scip_misc.h"
 #include "pub_gcgpqueue.h"
 #include "pub_pricingjob.h"
+#include "pub_pricingprob.h"
 #include "pricingjob.h"
+#include "pricingprob.h"
+#include "struct_solver.h"
 
 #include "scip/scip.h"
 #include "objscip/objscip.h"
@@ -78,8 +81,10 @@ Pricingcontroller::Pricingcontroller(
    )
 {
    scip_ = scip;
-   pricingjobs = NULL;
+   pricingprobs = NULL;
    npricingprobs = 0;
+   pricingjobs = NULL;
+   npricingjobs = 0;
 
    sorting = DEFAULT_SORTING;
    nroundscol = DEFAULT_NROUNDSCOL;
@@ -140,15 +145,33 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
 {
    GCG_PRICINGJOB* pricingjob1;
    GCG_PRICINGJOB* pricingjob2;
+   GCG_PRICINGPROB* pricingprob1;
+   GCG_PRICINGPROB* pricingprob2;
 
    pricingjob1 = (GCG_PRICINGJOB*) elem1;
    pricingjob2 = (GCG_PRICINGJOB*) elem2;
 
+   pricingprob1 = GCGpricingjobGetPricingprob(pricingjob1);
+   pricingprob2 = GCGpricingjobGetPricingprob(pricingjob2);
+
    /** preliminary strategy:
+    *  * if the pricing problems are the same, sort by priority of pricing solvers
     *  * heuristic before exact
     *  * prefer pricing problems with less number of solves in the current pricing call
     *  * then sorting by score
     */
+
+   if( pricingprob1 == pricingprob2 )
+   {
+      solver1 = GCGpricingjobGetSolver(pricingjob1);
+      solver2 = GCGpricingjobGetSolver(pricingjob2);
+
+      if( solver1->priority < solver2->priority )
+         return -1;
+      else
+         return 1;
+   }
+
    if( GCGpricingjobIsHeuristic(pricingjob1) != GCGpricingjobIsHeuristic(pricingjob2) )
    {
       if( GCGpricingjobIsHeuristic(pricingjob1) )
@@ -157,9 +180,9 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
          return 1;
    }
 
-   if( GCGpricingjobGetNSolves(pricingjob1) < GCGpricingjobGetNSolves(pricingjob2) )
+   if( GCGpricingprobGetNSolves(pricingprob1) < GCGpricingprobGetNSolves(pricingprob2) )
       return -1;
-   else if( GCGpricingjobGetNSolves(pricingjob1) > GCGpricingjobGetNSolves(pricingjob2) )
+   else if( GCGpricingprobGetNSolves(pricingprob1) > GCGpricingprobGetNSolves(pricingprob2) )
       return 1;
 
    if( GCGpricingjobGetScore(pricingjob1) >= GCGpricingjobGetScore(pricingjob2) )
@@ -196,28 +219,39 @@ SCIP_Bool Pricingcontroller::pricingjobHasLimit(
 SCIP_RETCODE Pricingcontroller::initSol()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
+   int nblocks = GCGgetNPricingprobs(origprob);
+   GCG_SOLVER** solvers = GCGpricerGetSolvers(scip_);
+   int nsolvers = GCGpricerGetNSolvers(scip_);
    int actchunksize = MIN(chunksize, GCGgetNRelPricingprobs(origprob));
-   int k = 0;
 
-   npricingprobs = GCGgetNPricingprobs(origprob);
+   npricingprobs = 0;
+   npricingjobs = 0;
    nchunks = (int) SCIPceil(scip_, (SCIP_Real) GCGgetNRelPricingprobs(origprob) / actchunksize);
    curchunk = nchunks - 1;
    eagerage = 0;
 
-   /* create pricing jobs */
-   SCIP_CALL_EXC( SCIPallocBlockMemoryArray(scip_, &pricingjobs, npricingprobs) );
-   for( int i = 0; i < npricingprobs; ++i )
+   /* create pricing problem and pricing job data structures */
+   SCIP_CALL_EXC( SCIPallocMemoryArray(scip_, &pricingprobs, GCGgetNRelPricingprobs(origprob)) );
+   SCIP_CALL_EXC( SCIPallocMemoryArray(scip_, &pricingjobs, GCGgetNRelPricingprobs(origprob) * nsolvers) );
+   for( int i = 0; i < nblocks; ++i )
    {
       if( GCGisPricingprobRelevant(origprob, i) )
       {
-         SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[i], GCGgetPricingprob(origprob, i), i, k / actchunksize, nroundscol) );
-         ++k;
+         SCIP_CALL_EXC( GCGpricingprobCreate(scip_, &pricingprobs[npricingprobs], GCGgetPricingprob(origprob, i), i, nroundscol) );
+
+         for( int j = 0; j < nsolvers; ++j )
+         {
+            SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[npricingprobs + j], pricingprobs[npricingprobs], solvers[j], npricingprobs / actchunksize) );
+            ++npricingjobs;
+         }
+         ++npricingprobs;
       }
-      else
-         pricingjobs[i] = NULL;
    }
 
-   SCIP_CALL_EXC( GCGpqueueCreate(&pqueue, npricingprobs, 2.0, comparePricingjobs) );
+   assert(npricingprobs == GCGgetNRelPricingprobs(origprob));
+   assert(npricingjobs == GCGgetNRelPricingprobs(origprob) * nsolvers);
+
+   SCIP_CALL_EXC( GCGpqueueCreate(&pqueue, npricingjobs, 2.0, comparePricingjobs) );
 
    return SCIP_OKAY;
 }
@@ -228,10 +262,14 @@ SCIP_RETCODE Pricingcontroller::exitSol()
 
    for( int i = 0; i < npricingprobs; ++i )
    {
-      if( pricingjobs[i] != NULL )
-         GCGpricingjobFree(scip_, &pricingjobs[i]);
+      GCGpricingprobFree(scip_, &pricingprobs[i]);
    }
-   SCIPfreeBlockMemoryArray(scip_, &pricingjobs, npricingprobs);
+   for( int i = 0; i < npricingjobs; ++i )
+   {
+      GCGpricingjobFree(scip_, &pricingjobs[i]);
+   }
+   SCIPfreeMemoryArray(scip_, &pricingprobs);
+   SCIPfreeMemoryArray(scip_, &pricingjobs);
 
    return SCIP_OKAY;
 }
