@@ -111,35 +111,30 @@ SCIP_RETCODE solveKnapsack(
    assert(ncols != NULL);
    assert(result != NULL);
 
+   assert(SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MINIMIZE);
+
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
 
    SCIPdebugMessage("Knapsack solver -- checking prerequisites\n");
+
+   *result = SCIP_STATUS_UNKNOWN;
 
    /* check prerequisites: the pricing problem can be solved as a knapsack problem only if
     * - all variables are nonnegative integer variables
     * - there is only one constraint, which has infinite lhs and integer rhs
     */
    if( SCIPgetNBinVars(pricingprob) + SCIPgetNIntVars(pricingprob) < npricingprobvars )
-   {
-      *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
-   }
    for( i = SCIPgetNBinVars(pricingprob); i < SCIPgetNBinVars(pricingprob) + SCIPgetNIntVars(pricingprob); ++i )
    {
       if( SCIPisNegative(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i])) )
-      {
-         *result = SCIP_STATUS_UNKNOWN;
          return SCIP_OKAY;
-      }
    }
 
    nconss = SCIPgetNConss(pricingprob);
    if( nconss != 1 )
-   {
-      *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
-   }
 
    cons = SCIPgetConss(pricingprob)[0];
    assert(cons != NULL);
@@ -149,7 +144,11 @@ SCIP_RETCODE solveKnapsack(
 
    consvals = NULL;
 
-   /* The constraint may be either of type 'linear' or 'knapsack';
+   /*
+    * Check if the constraint is a knapsack constraint, and in that case,
+    * get its variables, their coefficients as well as the capacity
+    *
+    * @note The constraint may be either of type 'linear' or 'knapsack';
     * the latter might be the case if the pricing problem has already been treated before in the loop
     * and if the constraint has therefore already been upgraded
     */
@@ -159,10 +158,7 @@ SCIP_RETCODE solveKnapsack(
 
       if( !SCIPisIntegral(pricingprob, SCIPgetRhsLinear(pricingprob, cons)) ||
          !SCIPisInfinity(pricingprob, - SCIPgetLhsLinear(pricingprob, cons)) )
-      {
-         *result = SCIP_STATUS_UNKNOWN;
          return SCIP_OKAY;
-      }
 
       consvars = SCIPgetVarsLinear(pricingprob, cons);
       realconsvals = SCIPgetValsLinear(pricingprob, cons);
@@ -170,20 +166,23 @@ SCIP_RETCODE solveKnapsack(
 
       SCIP_CALL( SCIPallocBufferArray(pricingprob, &consvals, nconsvars) );
 
+      /* Check integrality of coefficients */
       for( i = 0; i < nconsvars; i++ )
       {
          if( !SCIPisIntegral(pricingprob, realconsvals[i]) )
          {
             SCIPfreeBufferArray(pricingprob, &consvals);
-            *result = SCIP_STATUS_UNKNOWN;
             return SCIP_OKAY;
          }
          else
             consvals[i] = (SCIP_Longint) SCIPfloor(pricingprob, realconsvals[i]);
       }
       capacity = (SCIP_Longint) SCIPfloor(pricingprob, SCIPgetRhsLinear(pricingprob, cons));
-      prelcapacity = capacity;
 
+      /* Check signs of variable coefficients in constraint and objective;
+       * compute a preliminary capacity, used to deduce upper bounds for unbounded variables
+       */
+      prelcapacity = capacity;
       inferbounds = FALSE;
       for( i = 0; i < nconsvars; i++ )
       {
@@ -200,39 +199,45 @@ SCIP_RETCODE solveKnapsack(
             if( SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])) )
             {
                SCIPfreeBufferArray(pricingprob, &consvals);
-               *result = SCIP_STATUS_UNKNOWN;
                return SCIP_OKAY;
             }
             else if( SCIPisNegative(pricingprob, SCIPvarGetObj(consvars[i])) )
             {
                SCIPfreeBufferArray(pricingprob, &consvals);
-               *result = SCIP_STATUS_UNKNOWN;
                return SCIP_OKAY;
             }
 
+            /* Variable has negative weight and nonnegative cost -> increase capacity */
             prelcapacity -= (SCIP_Longint) SCIPfloor(pricingprob, consvals[i] * SCIPvarGetUbLocal(consvars[i]));
          }
       }
 
       SCIP_CALL( SCIPallocMemoryArray(pricingprob, &ubs, nconsvars) );
 
+      SCIPdebugMessage("Set variable upper bounds\n");
+
       /* infer upper bounds for unbounded variables */
       for( i = 0; i < nconsvars; i++ )
       {
          if( inferbounds && SCIPisInfinity(pricingprob, SCIPvarGetUbLocal(consvars[i])) )
          {
-            SCIP_Real newbound = SCIPfloor(pricingprob, ABS((SCIP_Real)prelcapacity/consvals[i]));
-            SCIPdebugMessage("newbound: %.2f/%"SCIP_LONGINT_FORMAT" = %.2f\n", (SCIP_Real)prelcapacity, consvals[i], newbound);
-            ubs[i] = newbound;
+            ubs[i] = SCIPfloor(pricingprob, ABS((SCIP_Real)prelcapacity/consvals[i]));
+            SCIPdebugMessage("  -> var <%s> %.2f/%"SCIP_LONGINT_FORMAT" = %.2f\n",
+               SCIPvarGetName(consvars[i]), (SCIP_Real)prelcapacity, consvals[i], ubs[i]);
          }
          else
+         {
             ubs[i] = SCIPvarGetUbLocal(consvars[i]);
+            SCIPdebugMessage("  -> var <%s> %.2f\n", SCIPvarGetName(consvars[i]), ubs[i]);
+         }
 
       }
    }
    else if( strcmp(SCIPconshdlrGetName(conshdlr), "knapsack") == 0 )
    {
       SCIP_Longint* consweights = SCIPgetWeightsKnapsack(pricingprob, cons);
+
+      SCIPdebugMessage("Use knapsack solver – constraint is already of type 'knapsack'\n");
 
       consvars = SCIPgetVarsKnapsack(pricingprob, cons);
       nconsvars = SCIPgetNVarsKnapsack(pricingprob, cons);
@@ -252,18 +257,19 @@ SCIP_RETCODE solveKnapsack(
       }
    }
    else
-   {
-      *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
-   }
 
+
+   /* Count number of knapsack items */
+   SCIPdebugMessage("Count number of knapsack items:\n");
    nitems = 0;
    for( i = 0; i < nconsvars; i++ )
    {
       assert(!SCIPisInfinity(pricingprob, ubs[i]));
-      SCIPdebugMessage("%d: %d+%d\n",i, nitems,  (int)(ubs[i] - SCIPvarGetLbLocal(consvars[i]) + 0.5));
+      SCIPdebugMessage("  -> <%s>: %d+%d\n", SCIPvarGetName(consvars[i]), nitems, (int)(ubs[i] - SCIPvarGetLbLocal(consvars[i]) + 0.5));
       nitems += (int)(ubs[i] - SCIPvarGetLbLocal(consvars[i]) + 0.5);
    }
+   SCIPdebugMessage("-> %d items\n", nitems);
 
    SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, npricingprobvars) );
    SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, npricingprobvars) );
@@ -276,6 +282,8 @@ SCIP_RETCODE solveKnapsack(
 
    BMSclearMemoryArray(weights, nitems);
 
+   /* Map variables to knapsack items, and set profits */
+   SCIPdebugMessage("Set knapsack items\n");
    k = 0;
    for( i = 0; i < nconsvars; i++ )
    {
@@ -284,13 +292,14 @@ SCIP_RETCODE solveKnapsack(
       {
          items[k] = i;
          profits[k] = - SCIPvarGetObj(consvars[i]);
-         SCIPdebugMessage("%d: <%s> %d\n",k, SCIPvarGetName(consvars[i]), i);
+         SCIPdebugMessage("  -> item %3d: <%s> (index %3d)\n", k, SCIPvarGetName(consvars[i]), i);
 
          k++;
       }
    }
    assert(k == nitems);
 
+   /* Compute knapsack capacity, and set weights */
    for( i = 0; i < nconsvars; i++ )
    {
       if( SCIPisEQ(pricingprob, SCIPvarGetUbLocal(consvars[i]), 0.0) )
@@ -301,20 +310,29 @@ SCIP_RETCODE solveKnapsack(
       }
    }
 
+   SCIPdebugMessage("Compute weights\n");
+
    for( k = 0; k < nitems; k++ )
    {
       i = items[k];
-      if( SCIPisPositive(pricingprob, consvals[i]) )
+      if( consvals[i] > 0 )
       {
          weights[k] = consvals[i];
+         SCIPdebugMessage("  -> item %3d: weight = %"SCIP_LONGINT_FORMAT"\n", k, weights[k]);
       }
       else
       {
+         assert(!SCIPisPositive(pricingprob, profits[k]));
+
          capacity -= consvals[i];
          weights[k] = -consvals[i];
          profits[k] *= -1.0;
+
+         SCIPdebugMessage("  -> item %3d: weight = %"SCIP_LONGINT_FORMAT" (negated from consval = %"SCIP_LONGINT_FORMAT")\n", k, weights[k], consvals[i]);
       }
    }
+
+   SCIPdebugMessage("Knapsack capacity = %"SCIP_LONGINT_FORMAT"\n", capacity);
 
    success = TRUE;
 
@@ -340,19 +358,23 @@ SCIP_RETCODE solveKnapsack(
          nonsolitems, &nsolitems, &nnonsolitems, &solval ));
    }
 
-   if( ! success )
+   if( !success )
    {
       SCIPwarningMessage(pricingprob, "Knapsack solver could not solve pricing problem!");
       goto TERMINATE;
    }
+   else if( exactly )
+      *result = SCIP_STATUS_OPTIMAL;
 
-   SCIPdebugMessage("knapsack solved, solval = %g\n", solval);
+   SCIPdebugMessage("Knapsack solved, solval = %g\n", solval);
 
    nsolvars = 0;
 
    for( i = 0; i < nsolitems; i++ )
    {
-      if( consvals[solitems[i]] >= 0 )
+      assert(consvals[solitems[i]] >= 0 || !SCIPvarIsNegated(consvars[solitems[i]]));
+
+      if( consvals[solitems[i]] >= 0 && !SCIPvarIsNegated(consvars[solitems[i]]) )
       {
          for( j = 0; j < nsolvars; ++j )
             if( solvars[j] == consvars[solitems[i]] )
@@ -371,15 +393,19 @@ SCIP_RETCODE solveKnapsack(
 
    for( i = 0; i < nnonsolitems; i++ )
    {
-      if( consvals[nonsolitems[i]] < 0 )
+      assert(consvals[nonsolitems[i]] >= 0 || !SCIPvarIsNegated(consvars[nonsolitems[i]]));
+
+      if( consvals[nonsolitems[i]] < 0 || SCIPvarIsNegated(consvars[nonsolitems[i]]) )
       {
+         SCIP_VAR* solvar = SCIPvarIsNegated(consvars[nonsolitems[i]]) ? SCIPvarGetNegatedVar(consvars[nonsolitems[i]]) : consvars[nonsolitems[i]];
+
          for( j = 0; j < nsolvars; ++j )
-            if( solvars[j] == consvars[nonsolitems[i]] )
+            if( solvars[j] == solvar )
                break;
 
          if( j == nsolvars )
          {
-            solvars[j] = consvars[nonsolitems[i]];
+            solvars[j] = solvar;
             solvals[j] = 1.0;
             ++nsolvars;
          }
@@ -414,13 +440,9 @@ SCIP_RETCODE solveKnapsack(
    solval = 0.0;
 
    for( i = 0; i < nsolvars; ++i )
-   {
       solval += solvals[i] * SCIPvarGetObj(solvars[i]);
-   }
 
-   *lowerbound = solval;
-
-   *result = SCIP_STATUS_OPTIMAL;
+   *lowerbound = exactly ? solval : -SCIPinfinity(pricingprob);
 
  TERMINATE:
    SCIPfreeBufferArray(pricingprob, &nonsolitems);

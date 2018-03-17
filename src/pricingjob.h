@@ -86,6 +86,12 @@ SCIP_RETCODE GCGpricingjobUpdate(
    int                   ncols               /**< number of columns found */
    );
 
+/** update solving statistics of a pricing job */
+EXTERN
+void GCGpricingjobUpdateSolvingStats(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
 /** increase the solution limit of a pricing job */
 EXTERN
 SCIP_RETCODE GCGpricingjobIncreaseSollimit(
@@ -125,11 +131,24 @@ void GCGpricingjobSetNCols(
    int                   ncols               /**< number of columns */
    );
 
+/* set the number of improving columns found by a pricing job */
+EXTERN
+void GCGpricingjobSetNImpCols(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   nimpcols            /**< number of improving columns */
+   );
+
 /* update numbers of improving columns over the last pricing rounds */
 EXTERN
 void GCGpricingjobUpdateNColsround(
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
+   );
+
+/* get the number of heuristic pricing iterations of the pricing job */
+EXTERN
+int GCGpricingjobGetNHeurIters(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 #ifdef __cplusplus

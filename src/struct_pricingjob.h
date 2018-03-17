@@ -67,6 +67,7 @@ struct GCG_PricingJob
    int                  nimpcols;           /**< number of improving columns found by the pricing problem */
 
    /* statistics */
+   int                  nheuriters;         /**< number of heuristic pricing iterations on this pricing job */
    int*                 ncolsround;         /**< number of improving columns found in the last rounds */
 };
 

@@ -65,6 +65,7 @@ SCIP_RETCODE GCGpricingjobCreate(
    (*pricingjob)->colssize = 0;
    (*pricingjob)->ncols = 0;
    (*pricingjob)->nimpcols = 0;
+   (*pricingjob)->nheuriters = 0;
 
    SCIP_CALL( SCIPallocClearMemoryArray(scip, &(*pricingjob)->ncolsround, nroundscol) );
 
@@ -99,10 +100,11 @@ SCIP_RETCODE GCGpricingjobSetup(
 {
    int i;
 
-   pricingjob->heuristic = heuristic;
+   /* There should be no remaining columns from the previous iteration */
+   assert(pricingjob->ncols == 0);
+   assert(pricingjob->nimpcols == 0);
 
-   /* set the solution limit on the pricing problem */
-   SCIP_CALL( SCIPsetIntParam(pricingjob->pricingscip, "limits/solutions", SCIPgetNLimSolsFound(pricingjob->pricingscip) + maxcolsprob) );
+   pricingjob->heuristic = heuristic;
 
    /* set the score; the larger, the better */
    switch( scoring )
@@ -138,6 +140,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    pricingjob->colssize = maxcols;
    pricingjob->ncols = 0;
    pricingjob->nimpcols = 0;
+   pricingjob->nheuriters = 0;
 
    return SCIP_OKAY;
 }
@@ -156,7 +159,6 @@ SCIP_RETCODE GCGpricingjobUpdate(
    int j;
    int k;
 
-   ++pricingjob->nsolves;
    pricingjob->pricingstatus = status;
    pricingjob->lowerbound = lowerbound;
 
@@ -189,6 +191,16 @@ SCIP_RETCODE GCGpricingjobUpdate(
    pricingjob->ncols += ncols;
 
    return SCIP_OKAY;
+}
+
+/** update solving statistics of a pricing job */
+void GCGpricingjobUpdateSolvingStats(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   ++pricingjob->nsolves;
+   if( pricingjob->heuristic )
+      ++pricingjob->nheuriters;
 }
 
 /** increase the solution limit of a pricing job */
@@ -347,6 +359,15 @@ int GCGpricingjobGetNImpCols(
    return pricingjob->nimpcols;
 }
 
+/* set the number of improving columns found by a pricing job */
+void GCGpricingjobSetNImpCols(
+   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+   int                   nimpcols            /**< number of improving columns */
+   )
+{
+   pricingjob->nimpcols = nimpcols;
+}
+
 /* update numbers of improving columns over the last pricing rounds */
 void GCGpricingjobUpdateNColsround(
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
@@ -358,4 +379,12 @@ void GCGpricingjobUpdateNColsround(
    for( i = nroundscol-1; i > 0; --i )
       pricingjob->ncolsround[i] = pricingjob->ncolsround[i-1];
    pricingjob->ncolsround[0] = pricingjob->nimpcols;
+}
+
+/* get the number of heuristic pricing iterations of the pricing job */
+int GCGpricingjobGetNHeurIters(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->nheuriters;
 }
