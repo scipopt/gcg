@@ -882,6 +882,7 @@ SCIP_RETCODE checkIdenticalBlocks(
       relaxdata->blockrepresentative[i] = i;
       relaxdata->nblocksidentical[i] = 1;
    }
+
    relaxdata->nrelpricingprobs = relaxdata->npricingprobs;
    nrelevant = 0;
 
@@ -890,6 +891,14 @@ SCIP_RETCODE checkIdenticalBlocks(
       SCIPdebugMessage("discretization is off, aggregation is off\n");
       return SCIP_OKAY;
    }
+
+
+   if(  relaxdata->nlinkingvars != 0 )
+      {
+         SCIPdebugMessage("aggregation is off in presence of linking vars\n");
+         return SCIP_OKAY;
+      }
+
 
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
