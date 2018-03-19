@@ -223,6 +223,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
    GCG_SOLVER** solvers = GCGpricerGetSolvers(scip_);
    int nsolvers = GCGpricerGetNSolvers(scip_);
    int actchunksize = MIN(chunksize, GCGgetNRelPricingprobs(origprob));
+   int colssize = MAX(MAX(farkaspricing->getMaxcolsprob(),reducedcostpricing->getMaxcolsprob()),reducedcostpricing->getMaxcolsprobroot()); /*lint !e666*/
 
    npricingprobs = 0;
    npricingjobs = 0;
@@ -237,7 +238,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
    {
       if( GCGisPricingprobRelevant(origprob, i) )
       {
-         SCIP_CALL_EXC( GCGpricingprobCreate(scip_, &pricingprobs[npricingprobs], GCGgetPricingprob(origprob, i), i, nroundscol) );
+         SCIP_CALL_EXC( GCGpricingprobCreate(scip_, &pricingprobs[npricingprobs], GCGgetPricingprob(origprob, i), i, colssize, nroundscol) );
 
          for( int j = 0; j < nsolvers; ++j )
          {
@@ -370,7 +371,7 @@ void Pricingcontroller::updatePricingprob(
    int                   nimpcols            /**< additional number of found improving columns */
    )
 {
-   GCGpricingprobUpdate(pricingprob, nsolves, status, lowerbound, nimpcols);
+   GCGpricingprobUpdate(pricingprob, nsolves, status, lowerbound, cols, ncols);
 }
 
 /** update result variables of a pricing job */

@@ -3017,6 +3017,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 {
    GCG_PRICINGJOB* pricingjob;
    SCIP_LPI* lpi;
+   GCG_COL** cols = NULL;
    SCIP_Real* bestobjvals = NULL;
    SCIP_Real* bestredcosts = NULL;
    SCIP_Real bestredcost;
@@ -3028,6 +3029,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool colpoolupdated;
    SCIP_Bool enableppcuts;
    SCIP_Bool enablestab;
+   int ncols = 0;
    int nsolvedprobs;
    int nsuccessfulprobs;
    int maxcols;
@@ -3072,6 +3074,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
    /* allocate memory */
+   SCIP_CALL( SCIPallocCleanMemoryArray(scip_, &cols, maxcols) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestredcosts, pricerdata->npricingprobs) );
 
@@ -3216,10 +3219,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
          SCIP_STATUS* status = SCIP_STATUS_UNKNOWN;
          SCIP_Real lowerbound = -SCIPinfinity(scip);
-         GCG_COL** cols = NULL;
-         int ncols = 0;
-         int nimpcols = 0;
          SCIP_RETCODE private_retcode;
+
+         int oldnimpcols = GCGpricingprobGetNImpCols(pricingprob);
 
          /* @todo: re-organize:
           *  * abortion criteria will be checked above
@@ -3259,6 +3261,11 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          SCIPdebugMessage("  -> status: %d\n", status);
          SCIPdebugMessage("  -> ncols: %d, pricinglowerbound: %.4g\n", ncols, lowerbound);
 
+         /* update pricing problem results, store columns */
+         pricingcontroller->updatePricingprob(pricingprob, 1, status, lowerbound, cols, ncols);
+         BMSclearMemoryArray(cols, maxcols);
+         ncols = 0;
+
          /* handle result */
          #pragma omp ordered
          {
@@ -3266,9 +3273,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             retcode = private_retcode; // @todo: handle return code correctly
 
             #pragma omp atomic
-            nfoundvars += nimpcols;
+            nfoundvars += GCGpricingprobGetNImpCols(pricingprob) - oldnimpcols;
 
-            if( GCGpricingprobGetNImpcols(pricingprob) == 0 && nimpcols > 0 )
+            if( oldnimpcols == 0 && GCGpricingprobGetNImpCols(pricingprob) > 0 )
             {
                #pragma omp atomic
                ++nsuccessfulprobs;
@@ -3286,7 +3293,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 #endif
          }
 
-         pricingcontroller->updatePricingprob(pricingprob, 1, status, lowerbound, nimpcols);
          pricingcontroller->evaluatePricingjob(pricingjob);
 
          /* update lower bounds and best reduced costs */
@@ -3475,6 +3481,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
    SCIPfreeBlockMemoryArray(scip_, &bestredcosts, pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs);
+   SCIPfreeMemoryArray(scip_, &cols);
 
    enableppcuts = FALSE;
    SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppcuts", &enableppcuts) );
