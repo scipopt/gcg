@@ -241,8 +241,11 @@ SCIP_RETCODE Pricingcontroller::initSol()
 
          for( int j = 0; j < nsolvers; ++j )
          {
-            SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[npricingprobs + j], pricingprobs[npricingprobs], solvers[j], npricingprobs / actchunksize) );
-            ++npricingjobs;
+            if( solvers[j]->enabled )
+            {
+               SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[npricingprobs + j], pricingprobs[npricingprobs], solvers[j], npricingprobs / actchunksize) );
+               ++npricingjobs;
+            }
          }
          ++npricingprobs;
       }
@@ -281,8 +284,13 @@ void Pricingcontroller::initPricing(
 {
    pricingtype_ = pricingtype;
 
+   /* move chunk index forward */
    curchunk = (curchunk + 1) % nchunks;
    startchunk = curchunk;
+
+   /* reset pricing problems */
+   for( int i = 0; i < npricingprobs; ++i )
+      GCGpricingprobReset(pricingprobs[i]);
 
    SCIPdebugMessage("initialize pricing, chunk = %d/%d\n", curchunk+1, nchunks);
 }
@@ -300,36 +308,25 @@ void Pricingcontroller::exitPricing()
 /** setup the priority queue (done once per stabilization round): add all pricing jobs to be performed */
 SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
    SCIP_Real*            dualsolconv,        /**< dual solution values / Farkas coefficients of convexity constraints */
-   int                   maxcols,            /**< maximum number of columns to be generated */
    SCIP_Real*            bestobjvals,
    SCIP_Real*            bestredcosts
    )
 {
-   int maxcolsprob = INT_MAX;
-
-   if( pricingtype_->getType() == GCG_PRICETYPE_REDCOST && GCGisRootNode(scip_) )
-      maxcolsprob = pricingtype_->getMaxcolsprobroot();
-   else
-      maxcolsprob = pricingtype_->getMaxcolsprob();
-
    SCIPdebugMessage("setup pricing queue, chunk = %d/%d\n", curchunk+1, nchunks);
 
    GCGpqueueClear(pqueue);
 
-   for( int i = 0; i < npricingprobs; ++i )
+   for( int i = 0; i < npricingjobs; ++i )
    {
-      if( pricingjobs[i] != NULL )
+      SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], heurpricingiters > 0,
+         sorting, nroundscol, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
+
+      bestobjvals[i] = -SCIPinfinity(scip_);
+      bestredcosts[i] = 0.0;
+
+      if( GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )
       {
-         SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], heurpricingiters > 0, maxcolsprob,
-            sorting, nroundscol, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
-
-         bestobjvals[i] = -SCIPinfinity(scip_);
-         bestredcosts[i] = 0.0;
-
-         if( GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )
-         {
-            SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjobs[i]) );
-         }
+         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjobs[i]) );
       }
    }
 
@@ -362,6 +359,18 @@ SCIP_RETCODE Pricingcontroller::setPricingjobTimelimit(
    SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/time", timelimit) );
 
    return SCIP_OKAY;
+}
+
+/** update solution information of a pricing problem */
+void Pricingcontroller::updatePricingprob(
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
+   int                   nsolves,            /**< additional number of times the pricing problem was solved */
+   SCIP_STATUS           status,             /**< new pricing status */
+   SCIP_Real             lowerbound,         /**< new lower bound */
+   int                   nimpcols            /**< additional number of found improving columns */
+   )
+{
+   GCGpricingprobUpdate(pricingprob, nsolves, status, lowerbound, nimpcols);
 }
 
 /** update result variables of a pricing job */

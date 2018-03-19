@@ -82,7 +82,7 @@ void GCGpricingprobFree(
 
 /** reset the pricing problem statistics for the current pricing round */
 void GCGpricingprobReset(
-   GCG_PRICINGPROB *     pricingprob,        /**< pricing problem structure */
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    )
 {
    pricingprob->nsolves = 0;
@@ -94,7 +94,7 @@ void GCGpricingprobReset(
 
 /** update solution information of a pricing problem */
 void GCGpricingprobUpdate(
-   GCG_PRICINGPROB *     pricingprob,        /**< pricing problem structure */
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    int                   nsolves,            /**< additional number of times the pricing problem was solved */
    SCIP_STATUS           status,             /**< new pricing status */
    SCIP_Real             lowerbound,         /**< new lower bound */
@@ -103,7 +103,8 @@ void GCGpricingprobUpdate(
 {
    pricingprob->nsolves += nsolves;
    pricingprob->status = status;
-   pricingprob->lowerbound = MAX(pricingprob->lowerbound, lowerbound);
+   if( SCIPisDualfeasGT(scip, lowerbound, pricingprob->lowerbound) )
+      pricingprob->lowerbound = lowerbound;
    pricingprob->nimpcols += nimpcols;
 }
 
@@ -153,6 +154,22 @@ int GCGpricingprobGetNImpCols(
    )
 {
    return pricingprob->nimpcols;
+}
+
+/* get the total number of improving colums found in the last pricing rounds */
+int GCGpricingprobGetNColsLastRounds(
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
+   int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
+   )
+{
+   int ncols;
+   int i;
+
+   ncols = 0;
+   for( i = 0; i < nroundcols; ++i )
+      ncols += pricingprob->ncolsround[i];
+
+   return ncols;
 }
 
 /* update numbers of improving columns over the last pricing rounds */

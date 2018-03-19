@@ -89,11 +89,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    int                   nraysprob           /**< total number of extreme rays generated so far by the pricing problem */
    )
 {
-   int i;
-
-   /* There should be no remaining columns from the previous iteration */
-   assert(pricingjob->ncols == 0);
-   assert(pricingjob->nimpcols == 0);
+   GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
 
    pricingjob->heuristic = heuristic;
 
@@ -101,7 +97,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    switch( scoring )
    {
    case 'i':
-      pricingjob->score = (SCIP_Real) pricingjob->probnr;
+      pricingjob->score = (SCIP_Real) GCGpricingprobGetProbnr(pricingprob);
       break;
    case 'd':
       pricingjob->score = dualsolconv;
@@ -110,9 +106,7 @@ SCIP_RETCODE GCGpricingjobSetup(
       pricingjob->score = 0.2 * npointsprob + nraysprob;
       break;
    case 'l':
-      pricingjob->score = 0.0;
-      for( i = 0; i < nroundscol; ++i )
-         pricingjob->score += (SCIP_Real) pricingjob->ncolsround[i];
+      pricingjob->score = (SCIP_Real) GCGpricingprobGetNColsLastRounds(pricingprob, nroundscol);
       break;
    default:
       pricingjob->score = 0.0;
