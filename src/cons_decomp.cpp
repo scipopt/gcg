@@ -5226,8 +5226,6 @@ SCIP_RETCODE SCIPconshdlrDecompWriteDec(
    assert(scip != NULL);
    Seeedpool* seeedpool;
 
-   int dec;
-
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    seeedpool = NULL;
    assert(conshdlr != NULL);

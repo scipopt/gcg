@@ -6198,54 +6198,231 @@ SCIP_RETCODE Seeed::setDetectorChainString(
    return SCIP_OKAY;
 }
 
+/**
+ * finds  a translation from orig to transformed seeedpool
+ * @param consindex already allocated
+ * @param varindex already allocated
+ */
+SCIP_RETCODE findTranslationForDec(
+   Seeedpool*        origseeedpool,
+   Seeedpool*        transseeedpool,
+   std::vector<int>* consindex,
+   std::vector<int>* varindex,
+   SCIP_Bool         fromunpresolvedtopresolved,
+   SCIP_Bool*        success
+)
+{
+   SCIP* scip;
+   int norigconss;
+   int norigvars;
+   SCIP_CONS** origconss;
+   SCIP_VAR**  origvars;
+
+   scip = origseeedpool->getScip();
+   norigconss = SCIPgetNOrigConss(scip);
+   origconss = SCIPgetOrigConss(scip);
+   norigvars = SCIPgetNOrigVars(scip);
+   origvars = SCIPgetOrigVars(scip);
+
+   for( int oc = 0; oc < norigconss; ++oc )
+   {
+      consindex->at(oc) = -1;
+   }
+
+   for( int ov = 0; ov < norigvars; ++ov )
+   {
+      varindex->at(ov) = -1;
+   }
+
+   for( int oc = 0; oc < norigconss; ++oc )
+   {
+      SCIP_CONS* origcons;
+      SCIP_CONS* transcons;
+      int origconsid;
+      int transconsid;
+
+      origconsid = -1;
+      transconsid = -1;
+
+      origcons = origconss[oc];
+      origconsid = origseeedpool->getIndexForCons(origcons);
+
+      SCIPgetTransformedCons(scip, origcons, &transcons);
+      assert(transcons != NULL);
+      transconsid = transseeedpool->getIndexForCons(transcons);
+
+      std::cout << "consname: " << SCIPconsGetName(origcons) << " ; oc:" << oc << " ;transconsid: " << transconsid << " ; origconsid: " << origconsid << " transformed: " << origseeedpool->getTransformedInfo() << std::endl;
+
+      if( fromunpresolvedtopresolved  )
+      {
+         consindex->at(origconsid) = transconsid;
+      }
+      else
+      {
+         consindex->at(transconsid) = origconsid;
+      }
+   }
+
+   for( int ov = 0; ov < norigvars; ++ov )
+   {
+      SCIP_VAR* origvar;
+      SCIP_VAR* transvar;
+      int origvarid;
+      int transvarid;
+
+      origvarid = -1;
+      transvarid = -1;
+
+      origvar = origvars[ov];
+      origvarid = origseeedpool->getIndexForVar(origvar);
+      SCIPgetTransformedVar(scip, origvar, &transvar);
+      assert(transvar != NULL);
+      transvarid = transseeedpool->getIndexForVar( SCIPvarGetProbvar(transvar) );
+
+      if( fromunpresolvedtopresolved  )
+      {
+         varindex->at(origvarid) = transvarid;
+      }
+      else
+      {
+         varindex->at(transvarid) = origvarid;
+      }
+   }
+
+
+
+   *success = TRUE;
+
+   return SCIP_OKAY;
+
+}
+
 SCIP_RETCODE Seeed::writeAsDec(
    FILE* file,
    //GCG_PROBLEM_TRANSFORMED_STATUS transformed,
-   Seeedpool*   seeedpool
+   Seeedpool*   seeedpooltowriteto
    )
 {
 
+   Seeed*      helpseeed;
    static const char commentchars[] = "\\";
 
    int nconss;
    int nvars;
-   std::vector<int> consindexmap(0);
-   std::vector<int> varindexmap(0);
+   std::vector<int> consindex(0);
+   std::vector<int> varindex(0);
 
-   assert(seeedpool != NULL);
+   assert(seeedpooltowriteto != NULL);
 
-   nconss = seeedpool->getNConss();
-   nvars = seeedpool->getNVars();
+   helpseeed = this;
+   nconss = seeedpooltowriteto->getNConss();
+   nvars = seeedpooltowriteto->getNVars();
 
-   consindexmap = std::vector<int>(nconss);
-   varindexmap = std::vector<int>(nvars);
+   consindex = std::vector<int>(nconss);
+   varindex = std::vector<int>(nvars);
 
    /* is there no translation needed ? */
-   if( getSeeedpool() == seeedpool )
+   if( getSeeedpool() == seeedpooltowriteto )
    {
       for( int i = 0; i < nconss; ++i )
-         consindexmap[i] = i;
+         consindex[i] = i;
       for( int i = 0; i < nvars; ++i )
-         varindexmap[i] = i;
+         varindex[i] = i;
    }
    else /** translation is neeeded */
    {
       SCIP_Bool success;
 
+      Seeed* transseeed;
       success = FALSE;
 
-//      if( isFromUnpresolved() )
-//         findTranslationFromUnpresolved(seeed->getSeeedpool(), seeedpool, &consindex, &varindex, &success );
-//      else
-//         findTranslationFromPresolved(seeed->getSeeedpool(), seeedpool, &consindex, &varindex, &success );
+      if( isFromUnpresolved() )
+         findTranslationForDec(getSeeedpool(), seeedpooltowriteto, &consindex, &varindex, isFromUnpresolved() , &success );
+      else
+         findTranslationForDec( seeedpooltowriteto, getSeeedpool(), &consindex, &varindex, isFromUnpresolved() , &success );
+
+      transseeed = new Seeed(seeedpooltowriteto->getScip(), -1, seeedpooltowriteto->getNConss(), seeedpooltowriteto->getNVars() );
+      transseeed->setSeeedpool(seeedpooltowriteto);
+
+      /** translate seeed */
+      transseeed->setNBlocks(getNBlocks() );
+
+      for( int b = 0; b < getNBlocks(); ++b )
+      {
+         for( int c = 0; c < getNConssForBlock(b); ++c )
+         {
+            int cons = consindex[getConssForBlock(b)[c] ];
+            if( cons == -1 )
+               continue;
+            transseeed->bookAsBlockCons(cons, b);
+         }
+
+         for( int v = 0; v < getNVarsForBlock(b); ++v )
+         {
+            int var = varindex[getVarsForBlock(b)[v] ];
+            if( var == -1 )
+               continue;
+            transseeed->bookAsBlockVar(var, b);
+         }
+
+         for( int v = 0; v < getNStairlinkingvars(b); ++v )
+         {
+            int var = varindex[getStairlinkingvars(b)[v] ];
+            if( var == -1 )
+               continue;
+            transseeed->bookAsStairlinkingVar(var, b);
+         }
+      }
+
+      for( int c = 0; c < getNMasterconss(); ++c )
+      {
+         int cons = consindex[getMasterconss()[c] ];
+         if( cons == -1 )
+            continue;
+         transseeed->bookAsMasterCons(cons);
+      }
+
+      for( int v = 0; v < getNLinkingvars(); ++v )
+      {
+         int var = varindex[getLinkingvars()[v] ];
+         if( var == -1 )
+            continue;
+         transseeed->bookAsLinkingVar(var);
+      }
+
+      for( int v = 0; v < getNMastervars(); ++v )
+      {
+         int var = varindex[getMastervars()[v] ];
+         if( var == -1 )
+            continue;
+         transseeed->bookAsMasterVar(var);
+      }
+
+      transseeed->flushBooked();
+
+      transseeed->considerImplicits(seeedpooltowriteto);
+
+      transseeed->deleteEmptyBlocks(false);
+
+      displayInfo(getSeeedpool(), 0 );
+
+      transseeed->displayInfo(seeedpooltowriteto, 0 );
+
+      if( transseeed->isComplete() != isComplete() )
+         success = FALSE;
+
+      assert(success);
+
       if( ! success )
       {
          if( isFromUnpresolved() )
-            SCIPwarningMessage(seeedpool->getScip(), "Writing dec-file is not possible since translation to presolved (transformed) problem failed. Please consider writing for original problem.\n" )
+            SCIPwarningMessage(seeedpooltowriteto->getScip(), "Writing dec-file is not possible since translation to presolved (transformed) problem failed. Please consider writing for original problem.\n" );
          else
-            SCIPwarningMessage(seeedpool->getScip(), "Writing dec-file is not possible since translation to unpresolved (non-transformed) problem failed. Please consider writing for transformed problem.\n" )
+            SCIPwarningMessage(seeedpooltowriteto->getScip(), "Writing dec-file is not possible since translation to unpresolved (non-transformed) problem failed. Please consider writing for transformed problem.\n" );
          return SCIP_OKAY;
       }
+
+      helpseeed = transseeed;
 
    }
 
@@ -6264,10 +6441,10 @@ SCIP_RETCODE Seeed::writeAsDec(
    }
 
 
-   if( !isComplete() )
+   if( !helpseeed->isComplete() )
          SCIPinfoMessage(scip, file, "INCOMPLETE\n1\n" );
 
-   if( ( isFromUnpresolved() && seeedpool == getSeeedpool() ) || ( !isFromUnpresolved() && seeedpool != getSeeedpool() )  )
+   if( ( isFromUnpresolved() && seeedpooltowriteto == getSeeedpool() ) || ( !isFromUnpresolved() && seeedpooltowriteto != getSeeedpool() )  )
       SCIPinfoMessage(scip, file, "PRESOLVED\n0\n" );
    else
       SCIPinfoMessage(scip, file, "PRESOLVED\n1\n" );
@@ -6275,44 +6452,52 @@ SCIP_RETCODE Seeed::writeAsDec(
    SCIPinfoMessage(scip, file, "NBLOCKS\n%d\n", getNBlocks() );
 
 
-   for( int b = 0; b < getNBlocks(); ++b )
+   for( int b = 0; b < helpseeed->getNBlocks(); ++b )
    {
       SCIPinfoMessage(scip, file, "BLOCK %d\n", b+1 );
-      for( size_t c = 0; c < conssForBlocks[b].size(); ++c )
+      for( size_t c = 0; c < helpseeed->conssForBlocks[b].size(); ++c )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( consindexmap(conssForBlocks[b][c]))) );
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpooltowriteto->getConsForIndex(  helpseeed->conssForBlocks[b][c]  )) );
       }
    }
 
     SCIPinfoMessage(scip, file, "MASTERCONSS\n" );
-   for( int mc = 0; mc < getNMasterconss(); ++mc )
+   for( int mc = 0; mc < helpseeed->getNMasterconss(); ++mc )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpool->getConsForIndex( consindexmap(masterConss[mc]))) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(seeedpooltowriteto->getConsForIndex( helpseeed->masterConss[mc])) );
    }
 
-   if( isComplete() )
-      return SCIP_OKAY;
+   if( helpseeed->isComplete() )
+   {
+      if( this != helpseeed )
+         delete helpseeed;
 
-   for( int b = 0; b < getNBlocks(); ++b )
+      return SCIP_OKAY;
+   }
+   for( int b = 0; b < helpseeed->getNBlocks(); ++b )
    {
       SCIPinfoMessage(scip, file, "BLOCKVARS %d\n", b+1 );
-      for( size_t v = 0; v < varsForBlocks[b].size(); ++v )
+      for( size_t v = 0; v < helpseeed->varsForBlocks[b].size(); ++v )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( varindexmap(varsForBlocks[b][v]))) );
+         SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpooltowriteto->getVarForIndex( helpseeed->varsForBlocks[b][v])) );
       }
    }
 
    SCIPinfoMessage(scip, file, "LINKINGVARS\n" );
-   for( int lv = 0; lv < getNLinkingvars(); ++lv )
+   for( int lv = 0; lv < helpseeed->getNLinkingvars(); ++lv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( varindexmap(linkingVars[lv]))) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpooltowriteto->getVarForIndex( helpseeed->linkingVars[lv])) );
    }
 
    SCIPinfoMessage(scip, file, "MASTERVARS\n" );
-   for( int mv = 0; mv < getNMastervars(); ++mv )
+   for( int mv = 0; mv < helpseeed->getNMastervars(); ++mv )
    {
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpool->getVarForIndex( varindexmap(masterVars[mv]))) );
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(seeedpooltowriteto->getVarForIndex( helpseeed->masterVars[mv])) );
    }
+
+   if( this != helpseeed )
+      delete helpseeed;
+
 
    return SCIP_OKAY;
 

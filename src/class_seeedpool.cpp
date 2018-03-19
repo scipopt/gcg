@@ -2394,6 +2394,9 @@ bool Seeedpool::hasDuplicate(
    return !seeedIsNoDuplicate( seeed, currSeeeds, finishedSeeeds, true );
 }
 
+
+
+
 /** translates seeeds and classifiers if the index structure of the problem has changed, e.g. due to presolving */
 void Seeedpool::translateSeeedData(
    Seeedpool* origpool,
@@ -2714,7 +2717,7 @@ std::vector<Seeed*> Seeedpool::getTranslatedSeeeds(
       }
 
       newseeed->setDetectorChainString( otherseeed->getDetectorChainString() );
-      newseeed->setStemsFromUnpresolved( true );
+      newseeed->setStemsFromUnpresolved( this->transformed );
       newseeed->setFinishedByFinisherUnpresolved( otherseeed->getFinishedByFinisher() );
 
       if( otherseeed->getFinishedByFinisher() )
