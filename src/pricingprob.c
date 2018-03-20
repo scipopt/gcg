@@ -192,6 +192,20 @@ int GCGpricingprobGetNImpCols(
    return pricingprob->nimpcols;
 }
 
+/* get the best reduced cost of the pricing problem */
+SCIP_Real GCGpricingprobGetBestRedcost(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
+   )
+{
+   if( pricingprob->ncols == 0 )
+      return 0.0;
+   else
+   {
+      assert(pricingprob->cols[0] != NULL);
+      return GCGcolGetRedcost(pricingprob->cols[0]);
+   }
+}
+
 /* get the total number of improving colums found in the last pricing rounds */
 int GCGpricingprobGetNColsLastRounds(
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */

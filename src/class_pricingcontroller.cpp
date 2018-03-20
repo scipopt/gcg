@@ -308,9 +308,7 @@ void Pricingcontroller::exitPricing()
 
 /** setup the priority queue (done once per stabilization round): add all pricing jobs to be performed */
 SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
-   SCIP_Real*            dualsolconv,        /**< dual solution values / Farkas coefficients of convexity constraints */
-   SCIP_Real*            bestobjvals,
-   SCIP_Real*            bestredcosts
+   SCIP_Real*            dualsolconv         /**< dual solution values / Farkas coefficients of convexity constraints */
    )
 {
    SCIPdebugMessage("setup pricing queue, chunk = %d/%d\n", curchunk+1, nchunks);
@@ -321,9 +319,6 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
    {
       SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], heurpricingiters > 0,
          sorting, nroundscol, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
-
-      bestobjvals[i] = -SCIPinfinity(scip_);
-      bestredcosts[i] = 0.0;
 
       if( GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )
       {
@@ -450,39 +445,61 @@ SCIP_Bool Pricingcontroller::redcostIsValid()
    return optimal;
 }
 
-/* return whether all pricing problems have been solved to optimality */
-SCIP_Bool Pricingcontroller::pricingIsOptimal()
+/** collect solution results from all pricing problems */
+void Pricingcontroller::collectResults(
+   SCIP_Bool*            &infeasible,        /**< pointer to store whether pricing is infeasible */
+   SCIP_Bool*            &optimal,           /**< pointer to store whether all pricing problems were solved to optimality */
+   SCIP_Real*            bestobjvals,        /**< array to store best lower bounds */
+   SCIP_Real*            beststabobj,        /**< pointer to store total lower bound */
+   SCIP_Real*            bestredcost,        /**< pointer to store best total reduced cost */
+   SCIP_Bool*            bestredcostvalid    /**< pointer to store whether best reduced cost is valid */
+   )
 {
-   for( int i = 0; i < npricingprobs; ++i )
-   {
-      if( pricingjobs[i] == NULL )
-         continue;
+   SCIP* origprob = GCGmasterGetOrigprob(scip);
+   int nblocks = GCGgetNPricingprobs(origprob);
+   SCIP_Bool foundcols = FALSE;
 
-      if( GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL )
-         return FALSE;
+   /* initializations */
+   *infeasible = (pricingtype_->getType() == GCG_PRICETYPE_FARKAS);
+   *optimal = TRUE;
+   *beststabobj = 0.0;
+   *bestredcost = 0.0;
+   for( int i = 0; i < nblocks; ++i )
+   {
+      bestobjvals[i] = -SCIPinfinity(scip);
+      bestredcosts[i] = 0.0;
    }
 
-   return TRUE;
-}
-
-/* return whether the current node is infeasible */
-SCIP_Bool Pricingcontroller::pricingIsInfeasible()
-{
-   SCIP_Bool infeasible = (pricingtype_->getType() == GCG_PRICETYPE_FARKAS);
-
    for( int i = 0; i < npricingprobs; ++i )
    {
-      if( pricingjobs[i] == NULL )
-         continue;
+      int probnr = GCGpricingprobGetProbnr(pricingprobs[i]);
+      int nidentblocks = GCGgetNIdenticalBlocks(origprob, probnr);
+      SCIP_Real lowerbound = GCGpricingprobGetLowerbound(pricingprob);
 
-      if( GCGpricingjobGetStatus(pricingjobs[i]) == SCIP_STATUS_INFEASIBLE )
-         return TRUE;
-
+      /* check infeasibility */
+      if( GCGpricingprobGetStatus(pricingprobs[i]) == SCIP_STATUS_INFEASIBLE )
+         *infeasible = TRUE;
       if( pricingtype_->getType() == GCG_PRICETYPE_FARKAS && (GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL || GCGpricingjobGetNImpCols(pricingjobs[i]) > 0) )
-         infeasible = FALSE;
+         *infeasible = FALSE;
+
+      /* check optimality */
+      *optimal &= GCGpricingjobGetStatus(pricingjobs[i]) == SCIP_STATUS_OPTIMAL;
+
+      if( pricingprob->nimpcols > 0 )
+         foundcols = TRUE;
+
+      /* update lower bound information */
+      if( pricingprob->ncols > 0 )
+         bestobjvals[probnr] = SCIPisInfinity(scip_, ABS(lowerbound)) ? lowerbound : nidentblocks * lowerbound;
+      if( SCIPisInfinity(-lowerbound) )
+         *beststabobj = -SCIPinfinity(scip);
+      else if( !SCIPisInfinity(-(*beststabobj)) )
+         *beststabobj += bestobjvals[probnr];
+
+      *bestredcost += GCGpricingprobGetBestRedcost(pricingprobs[i]) * nidentblocks;
    }
 
-   return infeasible;
+   *bestredcostvalid &= foundcols || *optimal;
 }
 
 /** reset the lower bound of a pricing job */
