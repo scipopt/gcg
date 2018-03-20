@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2017 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2018 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -71,7 +71,7 @@
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
 #define RELAX_PRIORITY         -1
 #define RELAX_FREQ             1
-#define RELAX_INCLUDESLP       FALSE
+#define RELAX_INCLUDESLP       TRUE
 
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
