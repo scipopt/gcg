@@ -661,6 +661,7 @@ SCIP_RETCODE solveCplex(
 
    *ncols = 0;
    *result = SCIP_STATUS_UNKNOWN;
+   upperbound = SCIPinfinity(pricingprob);
 
    retval = SCIP_OKAY;
 
@@ -691,6 +692,7 @@ SCIP_RETCODE solveCplex(
    case CPXMIP_OPTIMAL_TOL: /* 102 */
       assert(nsolscplex > 0);
       *result = SCIP_STATUS_OPTIMAL;
+      CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
       break;
    case CPXMIP_INFEASIBLE: /* 103 */
       assert(nsolscplex == 0);
@@ -749,6 +751,7 @@ SCIP_RETCODE solveCplex(
    case CPXMIP_SOL_LIM: /* 104 */
       assert(nsolscplex > 0);
       *result = SCIP_STATUS_UNKNOWN;
+      CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
       break;
    case CPXMIP_NODE_LIM_INFEAS: /* 106 */
    case CPXMIP_TIME_LIM_INFEAS: /* 108 */
@@ -766,7 +769,6 @@ SCIP_RETCODE solveCplex(
    }
 
    CHECK_ZERO( CPXgetbestobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], lowerbound) );
-   CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
 
    SCIPdebugMessage("pricing problem %d solved with CPLEX: status=%d, nsols=%d, lowerbound=%g, upperbound=%g\n", probnr, status, nsolscplex, *lowerbound, upperbound);
 
