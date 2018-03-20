@@ -37,7 +37,6 @@
 
 #include "pricingjob.h"
 #include "pub_pricingjob.h"
-#include "pub_pricingprob.h"
 
 #include "gcg.h"
 
@@ -61,7 +60,6 @@ SCIP_RETCODE GCGpricingjobCreate(
    (*pricingjob)->chunk = chunk;
    (*pricingjob)->score = 0.0;
    (*pricingjob)->heuristic = FALSE;
-   (*pricingjob)->pricingstatus = SCIP_STATUS_UNKNOWN;
    (*pricingjob)->nheuriters = 0;
 
    return SCIP_OKAY;
@@ -114,7 +112,6 @@ SCIP_RETCODE GCGpricingjobSetup(
    }
 
    /* initialize result variables */
-   pricingjob->pricingstatus = SCIP_STATUS_UNKNOWN;
    pricingjob->nheuriters = 0;
 
    return SCIP_OKAY;
@@ -125,11 +122,17 @@ void GCGpricingjobUpdateSolvingStats(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    )
 {
-   ++pricingjob->nsolves;
    if( pricingjob->heuristic )
       ++pricingjob->nheuriters;
 }
 
+/** get the pricing problem structure associated with a pricing job */
+GCG_PRICINGPROB* GCGpricingjobGetPricingprob(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->pricingprob;
+}
 /** get the pricing solver with which the pricing job is to be performed */
 GCG_SOLVER* GCGpricingjobGetSolver(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
@@ -176,23 +179,6 @@ void GCGpricingjobSetExact(
    )
 {
    pricingjob->heuristic = FALSE;
-}
-
-/* get the status of a pricing job */
-SCIP_STATUS GCGpricingjobGetStatus(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   )
-{
-   return pricingjob->pricingstatus;
-}
-
-/* set the status of a pricing job */
-void GCGpricingjobSetStatus(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   SCIP_STATUS           status              /**< new pricing status */
-   )
-{
-   pricingjob->pricingstatus = status;
 }
 
 /* get the number of heuristic pricing iterations of the pricing job */

@@ -40,7 +40,8 @@
 #include "scip/scip.h"
 
 #include "type_pricingjob.h"
-#include "type_gcgcol.h"
+#include "type_pricingprob.h"
+#include "type_solver.h"
 
 #ifdef __cplusplus
 extern "C" {

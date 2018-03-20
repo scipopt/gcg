@@ -77,7 +77,8 @@
 namespace gcg {
 
 Pricingcontroller::Pricingcontroller(
-   SCIP*                  scip
+   SCIP*                  scip,
+   int                    maxcols
    )
 {
    scip_ = scip;
@@ -85,6 +86,7 @@ Pricingcontroller::Pricingcontroller(
    npricingprobs = 0;
    pricingjobs = NULL;
    npricingjobs = 0;
+   maxcols_ = maxcols;
 
    sorting = DEFAULT_SORTING;
    nroundscol = DEFAULT_NROUNDSCOL;
@@ -163,8 +165,8 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
 
    if( pricingprob1 == pricingprob2 )
    {
-      solver1 = GCGpricingjobGetSolver(pricingjob1);
-      solver2 = GCGpricingjobGetSolver(pricingjob2);
+      GCG_SOLVER* solver1 = GCGpricingjobGetSolver(pricingjob1);
+      GCG_SOLVER* solver2 = GCGpricingjobGetSolver(pricingjob2);
 
       if( solver1->priority < solver2->priority )
          return -1;
@@ -193,27 +195,27 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
    return 0;
 }
 
-/** check if the pricing job is done */
-SCIP_Bool Pricingcontroller::pricingjobIsDone(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+/** check if a pricing job is done */
+SCIP_Bool Pricingcontroller::pricingprobIsDone(
+   GCG_PRICINGPROB*      pricingprob        /**< pricing problem structure */
    ) const
 {
-   return GCGpricingjobGetNImpCols(pricingjob) > 0
-      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_OPTIMAL
-      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_INFEASIBLE
-      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_UNBOUNDED
-      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_INFORUNBD;
+   return GCGpricingprobGetNImpCols(pricingprob) > 0
+      || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
+      || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
+      || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
+      || GCGpricingprobGetStatus(pricingprob) == SCIP_STATUS_INFORUNBD;
 }
 
-/** check if the pricing job has terminated with a limit */
-SCIP_Bool Pricingcontroller::pricingjobHasLimit(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+/** check if a limit was reached such that the pricing job might be treated again */
+SCIP_Bool Pricingcontroller::limitWasReached(
+   SCIP_STATUS           status             /**< pricing solution status */
    ) const
 {
-   return GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_NODELIMIT
-      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_STALLNODELIMIT
-      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_GAPLIMIT
-      || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_SOLLIMIT;
+   return status == SCIP_STATUS_NODELIMIT
+      || status == SCIP_STATUS_STALLNODELIMIT
+      || status == SCIP_STATUS_GAPLIMIT
+      || status == SCIP_STATUS_SOLLIMIT;
 }
 
 SCIP_RETCODE Pricingcontroller::initSol()
@@ -223,7 +225,6 @@ SCIP_RETCODE Pricingcontroller::initSol()
    GCG_SOLVER** solvers = GCGpricerGetSolvers(scip_);
    int nsolvers = GCGpricerGetNSolvers(scip_);
    int actchunksize = MIN(chunksize, GCGgetNRelPricingprobs(origprob));
-   int colssize = MAX(MAX(farkaspricing->getMaxcolsprob(),reducedcostpricing->getMaxcolsprob()),reducedcostpricing->getMaxcolsprobroot()); /*lint !e666*/
 
    npricingprobs = 0;
    npricingjobs = 0;
@@ -238,7 +239,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
    {
       if( GCGisPricingprobRelevant(origprob, i) )
       {
-         SCIP_CALL_EXC( GCGpricingprobCreate(scip_, &pricingprobs[npricingprobs], GCGgetPricingprob(origprob, i), i, colssize, nroundscol) );
+         SCIP_CALL_EXC( GCGpricingprobCreate(scip_, &pricingprobs[npricingprobs], GCGgetPricingprob(origprob, i), i, maxcols_, nroundscol) );
 
          for( int j = 0; j < nsolvers; ++j )
          {
@@ -300,8 +301,7 @@ void Pricingcontroller::initPricing(
 void Pricingcontroller::exitPricing()
 {
    for( int i = 0; i < npricingprobs; ++i )
-      if( pricingjobs[i] != NULL )
-         GCGpricingjobUpdateNColsround(pricingjobs[i], nroundscol);
+      GCGpricingprobUpdateNColsround(pricingprobs[i], nroundscol);
 
    pricingtype_ = NULL;
 }
@@ -318,7 +318,7 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
    for( int i = 0; i < npricingjobs; ++i )
    {
       SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i], heurpricingiters > 0,
-         sorting, nroundscol, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i), maxcols) );
+         sorting, nroundscol, dualsolconv[i], GCGpricerGetNPointsProb(scip_, i), GCGpricerGetNRaysProb(scip_, i)) );
 
       if( GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )
       {
@@ -332,7 +332,15 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
 /** get the next pricing job to be performed */
 GCG_PRICINGJOB* Pricingcontroller::getNextPricingjob()
 {
-   return (GCG_PRICINGJOB*) GCGpqueueRemove(pqueue);
+   GCG_PRICINGJOB* pricingjob = NULL;
+
+   do
+   {
+      pricingjob = (GCG_PRICINGJOB*) GCGpqueueRemove(pqueue);
+   }
+   while( pricingjob != NULL && pricingprobIsDone(GCGpricingjobGetPricingprob(pricingjob)) );
+
+   return pricingjob;
 }
 
 /** set an individual time limit for a pricing job */
@@ -340,7 +348,7 @@ SCIP_RETCODE Pricingcontroller::setPricingjobTimelimit(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    )
 {
-   SCIP* pricingscip = GCGpricingjobGetPricingscip(pricingjob);
+   SCIP* pricingscip = GCGpricingprobGetPricingscip(GCGpricingjobGetPricingprob(pricingjob));
    SCIP_Real mastertimelimit;
    SCIP_Real timelimit;
 
@@ -363,24 +371,11 @@ void Pricingcontroller::updatePricingprob(
    int                   nsolves,            /**< additional number of times the pricing problem was solved */
    SCIP_STATUS           status,             /**< new pricing status */
    SCIP_Real             lowerbound,         /**< new lower bound */
-   int                   nimpcols            /**< additional number of found improving columns */
+   GCG_COL**             cols,               /**< columns found by the last solver call */
+   int                   ncols               /**< number of found columns */
    )
 {
    GCGpricingprobUpdate(pricingprob, nsolves, status, lowerbound, cols, ncols);
-}
-
-/** update result variables of a pricing job */
-SCIP_RETCODE Pricingcontroller::updatePricingjob(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   SCIP_STATUS           status,             /**< status after solving the pricing problem */
-   SCIP_Real             lowerbound,         /**< lower bound returned by the pricing problem */
-   GCG_COL**             cols,               /**< columns found by the last solving of the pricing problem */
-   int                   ncols               /**< number of columns found */
-   )
-{
-   SCIP_CALL( GCGpricingjobUpdate(scip_, pricingjob, status, lowerbound, cols, ncols) );
-
-   return SCIP_OKAY;
 }
 
 /** update solution statistics of a pricing job */
@@ -393,24 +388,27 @@ void Pricingcontroller::updatePricingjobSolvingStats(
 
 /** decide whether a pricing job must be treated again */
 void Pricingcontroller::evaluatePricingjob(
-   GCG_PRICINGJOB*       pricingjob         /**< pricing job */
+   GCG_PRICINGJOB*       pricingjob,        /**< pricing job */
+   SCIP_STATUS           status             /**< pricing solution status */
    )
 {
-   SCIPdebugMessage("Problem %d, status = %d\n", GCGpricingjobGetProbnr(pricingjob), GCGpricingjobGetStatus(pricingjob));
+   GCG_PRICINGPROB* pricingprob = GCGpricingjobGetPricingprob(pricingjob);
+
+   SCIPdebugMessage("Problem %d, status = %d\n", GCGpricingprobGetProbnr(pricingprob), status);
 
    /* If the pricing job has not yielded any improving column, possibly solve it again;
     * increase at least one of its limits, or solve it exactly if it was solved heuristically before
     */
    // @todo: update score of pricing job
-   if( !pricingjobIsDone(pricingjob) )
+   if( !pricingprobIsDone(pricingprob) )
    {
-      SCIPdebugMessage("Problem %d has not yielded improving columns\n", GCGpricingjobGetProbnr(pricingjob));
+      SCIPdebugMessage("Problem %d has not yielded improving columns\n", GCGpricingprobGetProbnr(pricingprob));
 
       if( GCGpricingjobIsHeuristic(pricingjob) )
       {
-         assert(pricingjobHasLimit(pricingjob) || GCGpricingjobGetStatus(pricingjob) == SCIP_STATUS_UNKNOWN);
+         assert(limitWasReached(status) || status == SCIP_STATUS_UNKNOWN);
 
-         if( !pricingjobHasLimit(pricingjob) || GCGpricingjobGetNHeurIters(pricingjob) >= heurpricingiters )
+         if( !limitWasReached(status) || GCGpricingjobGetNHeurIters(pricingjob) >= heurpricingiters )
          {
             GCGpricingjobSetExact(pricingjob);
             SCIPdebugMessage("  -> solve exactly\n");
@@ -424,38 +422,17 @@ void Pricingcontroller::evaluatePricingjob(
    }
 }
 
-/** return whether the reduced cost is valid */
-SCIP_Bool Pricingcontroller::redcostIsValid()
-{
-   SCIP_Bool optimal = TRUE;
-
-   for( int i = 0; i < npricingprobs; ++i )
-   {
-      if( pricingjobs[i] == NULL )
-         continue;
-
-      assert(GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_INFEASIBLE);
-
-      if( GCGpricingjobGetNImpCols(pricingjobs[i]) > 0 )
-         return TRUE;
-      else if( GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL )
-         optimal = FALSE;
-   }
-
-   return optimal;
-}
-
 /** collect solution results from all pricing problems */
 void Pricingcontroller::collectResults(
-   SCIP_Bool*            &infeasible,        /**< pointer to store whether pricing is infeasible */
-   SCIP_Bool*            &optimal,           /**< pointer to store whether all pricing problems were solved to optimality */
+   SCIP_Bool*            infeasible,         /**< pointer to store whether pricing is infeasible */
+   SCIP_Bool*            optimal,            /**< pointer to store whether all pricing problems were solved to optimality */
    SCIP_Real*            bestobjvals,        /**< array to store best lower bounds */
    SCIP_Real*            beststabobj,        /**< pointer to store total lower bound */
    SCIP_Real*            bestredcost,        /**< pointer to store best total reduced cost */
    SCIP_Bool*            bestredcostvalid    /**< pointer to store whether best reduced cost is valid */
    )
 {
-   SCIP* origprob = GCGmasterGetOrigprob(scip);
+   SCIP* origprob = GCGmasterGetOrigprob(scip_);
    int nblocks = GCGgetNPricingprobs(origprob);
    SCIP_Bool foundcols = FALSE;
 
@@ -465,35 +442,32 @@ void Pricingcontroller::collectResults(
    *beststabobj = 0.0;
    *bestredcost = 0.0;
    for( int i = 0; i < nblocks; ++i )
-   {
-      bestobjvals[i] = -SCIPinfinity(scip);
-      bestredcosts[i] = 0.0;
-   }
+      bestobjvals[i] = -SCIPinfinity(scip_);
 
    for( int i = 0; i < npricingprobs; ++i )
    {
       int probnr = GCGpricingprobGetProbnr(pricingprobs[i]);
       int nidentblocks = GCGgetNIdenticalBlocks(origprob, probnr);
-      SCIP_Real lowerbound = GCGpricingprobGetLowerbound(pricingprob);
+      SCIP_Real lowerbound = GCGpricingprobGetLowerbound(pricingprobs[i]);
 
       /* check infeasibility */
       if( GCGpricingprobGetStatus(pricingprobs[i]) == SCIP_STATUS_INFEASIBLE )
          *infeasible = TRUE;
-      if( pricingtype_->getType() == GCG_PRICETYPE_FARKAS && (GCGpricingjobGetStatus(pricingjobs[i]) != SCIP_STATUS_OPTIMAL || GCGpricingjobGetNImpCols(pricingjobs[i]) > 0) )
+      if( pricingtype_->getType() == GCG_PRICETYPE_FARKAS && (GCGpricingprobGetStatus(pricingprobs[i]) != SCIP_STATUS_OPTIMAL || GCGpricingprobGetNImpCols(pricingprobs[i]) > 0) )
          *infeasible = FALSE;
 
       /* check optimality */
-      *optimal &= GCGpricingjobGetStatus(pricingjobs[i]) == SCIP_STATUS_OPTIMAL;
+      *optimal &= GCGpricingprobGetStatus(pricingprobs[i]) == SCIP_STATUS_OPTIMAL;
 
-      if( pricingprob->nimpcols > 0 )
+      if( GCGpricingprobGetNImpCols(pricingprobs[i]) > 0 )
          foundcols = TRUE;
 
       /* update lower bound information */
-      if( pricingprob->ncols > 0 )
+      if( GCGpricingprobGetNCols(pricingprobs[i]) > 0 )
          bestobjvals[probnr] = SCIPisInfinity(scip_, ABS(lowerbound)) ? lowerbound : nidentblocks * lowerbound;
-      if( SCIPisInfinity(-lowerbound) )
-         *beststabobj = -SCIPinfinity(scip);
-      else if( !SCIPisInfinity(-(*beststabobj)) )
+      if( SCIPisInfinity(scip_, -lowerbound) )
+         *beststabobj = -SCIPinfinity(scip_);
+      else if( !SCIPisInfinity(scip_, -(*beststabobj)) )
          *beststabobj += bestobjvals[probnr];
 
       *bestredcost += GCGpricingprobGetBestRedcost(pricingprobs[i]) * nidentblocks;
@@ -502,17 +476,9 @@ void Pricingcontroller::collectResults(
    *bestredcostvalid &= foundcols || *optimal;
 }
 
-/** reset the lower bound of a pricing job */
-void Pricingcontroller::resetPricingjobLowerbound(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   )
-{
-   GCGpricingjobSetLowerbound(pricingjob, -SCIPinfinity(scip_));
-}
-
-/** for all pricing jobs, move their columns to the column pool */
-SCIP_RETCODE Pricingcontroller::moveColsToColpool(
-   GCG_COLPOOL*          colpool,            /**< column pool */
+/** for all pricing problems, move their columns to the pricing store or column pool */
+SCIP_RETCODE Pricingcontroller::moveCols(
+   GCG_COLPOOL*          colpool,            /**< GCG column pool */
    GCG_PRICESTORE*       pricestore,         /**< GCG pricing store */
    SCIP_Bool             usecolpool,         /**< use column pool? */
    SCIP_Bool             usepricestore       /**< use price store? */
@@ -522,48 +488,7 @@ SCIP_RETCODE Pricingcontroller::moveColsToColpool(
 
    for( int i = 0; i < npricingprobs; ++i )
    {
-      if( pricingjobs[i] != NULL )
-      {
-         GCG_COL** cols = GCGpricingjobGetCols(pricingjobs[i]);
-         int ncols = GCGpricingjobGetNCols(pricingjobs[i]);
-         SCIP_Bool added;
-
-         assert(cols != NULL || ncols == 0);
-
-         for( int j = 0; j < ncols; ++j )
-         {
-            SCIPdebugMessage("  (prob %d) column %d/%d <%p>: ", GCGpricingjobGetProbnr(pricingjobs[i]), j+1, ncols, (void*) cols[j]);
-
-            added = FALSE;
-
-            if( usepricestore && SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(cols[j])) )
-            {
-               SCIP_CALL( GCGcomputeColMastercoefs(scip_, cols[j]) );
-
-               SCIP_CALL( GCGpricestoreAddCol(scip_, pricestore, cols[j], FALSE) );
-               added = TRUE;
-            }
-            else if( usecolpool )
-            {
-               SCIP_CALL( GCGcolpoolAddCol(colpool, cols[j], &added) );
-            }
-
-            if( !added )
-            {
-               GCGfreeGcgCol(&cols[j]);
-               SCIPdebugPrintf("freed.\n");
-            }
-            else
-            {
-               SCIPdebugPrintf("added to column pool or price store.\n");
-            }
-
-            cols[j] = NULL;
-         }
-
-         GCGpricingjobSetNCols(pricingjobs[i], 0);
-         GCGpricingjobSetNImpCols(pricingjobs[i], 0);
-      }
+      SCIP_CALL( GCGpricingprobMoveCols(pricingprobs[i], colpool, pricestore, usecolpool, usepricestore) );
    }
 
    return SCIP_OKAY;
@@ -592,16 +517,15 @@ void Pricingcontroller::getBestCols(
    GCG_COL**             cols                /**< column array to be filled */
    )
 {
+   int nblocks = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip_));
+
+   for( int i = 0; i < nblocks; ++i )
+      cols[i] = NULL;
+
    for( int i = 0; i < npricingprobs; ++i )
    {
-      if( pricingjobs[i] == NULL )
-         cols[i] = NULL;
-      else
-      {
-         assert(pricingjobs[i]->cols != NULL);
-         assert(pricingjobs[i]->ncols > 0);
-         cols[i] = pricingjobs[i]->cols[0];
-      }
+      int probnr = GCGpricingprobGetProbnr(pricingprobs[i]);
+      cols[probnr] = GCGpricingprobGetBestCol(pricingprobs[i]);
    }
 }
 
@@ -615,23 +539,13 @@ SCIP_Real Pricingcontroller::getDualconvsum(
 
    for( int i = 0; i < npricingprobs; ++i )
    {
-      if( pricingjobs[i] != NULL && !(pricingjobs[i]->ncols > 0 && GCGcolIsRay(pricingjobs[i]->cols[0])))
-         dualconvsum += GCGgetNIdenticalBlocks(origprob, i) * pricetype->consGetDual(scip_, GCGgetConvCons(origprob, i));
+      int probnr = GCGpricingprobGetProbnr(pricingprobs[i]);
+
+      if( !(GCGpricingprobGetNCols(pricingprobs[i]) > 0 && GCGcolIsRay(GCGpricingprobGetBestCol(pricingprobs[i]))))
+         dualconvsum += GCGgetNIdenticalBlocks(origprob, probnr) * pricetype->consGetDual(scip_, GCGgetConvCons(origprob, probnr));
    }
 
    return dualconvsum;
-}
-
-/** free all columns of the pricing jobs */
-void Pricingcontroller::freeCols()
-{
-   for( int i = 0; i < npricingprobs; ++i )
-   {
-      if( pricingjobs[i] != NULL )
-      {
-         GCGpricingjobFreeCols(pricingjobs[i]);
-      }
-   }
 }
 
 /** decide whether the pricing loop can be aborted */

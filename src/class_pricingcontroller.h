@@ -40,6 +40,7 @@
 #include "class_pricingtype.h"
 #include "type_gcgpqueue.h"
 #include "type_pricingjob.h"
+#include "type_pricingprob.h"
 #include "objscip/objscip.h"
 
 namespace gcg {
@@ -52,7 +53,8 @@ private:
    GCG_PRICINGPROB**     pricingprobs;       /**< pricing problems */
    int                   npricingprobs;      /**< number of pricing problems */
    GCG_PRICINGJOB**      pricingjobs;        /**< pricing jobs */
-   int                   npricingjobs;      /**< number of pricing jobs */
+   int                   npricingjobs;       /**< number of pricing jobs */
+   int                   maxcols_;           /**< maximum number of columns per job in a round */
 
    /* parameters */
    int                   heurpricingiters;   /**< maximum number of heuristic pricing iterations per pricing call and problem */
@@ -77,7 +79,7 @@ private:
 
 public:
    /** constructor */
-   Pricingcontroller(SCIP* scip);
+   Pricingcontroller(SCIP* scip, int maxcols);
 
    /** destructor */
    virtual ~Pricingcontroller();
@@ -98,11 +100,8 @@ public:
 
    /** setup the priority queue (done once per stabilization round): add all pricing jobs to be performed */
    SCIP_RETCODE setupPriorityQueue(
-      SCIP_Real*            dualsolconv,        /**< dual solution values / Farkas coefficients of convexity constraints */
-      int                   maxcols,            /**< maximum number of columns to be generated */
-      SCIP_Real*            bestobjvals,
-      SCIP_Real*            bestredcosts
-      );
+      SCIP_Real*            dualsolconv         /**< dual solution values / Farkas coefficients of convexity constraints */
+   );
 
    /** get the next pricing job to be performed */
    GCG_PRICINGJOB* getNextPricingjob();
@@ -112,13 +111,14 @@ public:
       GCG_PRICINGJOB*       pricingjob          /**< pricing job */
       );
 
-   /** update statistics of a pricing job, and possibly add it again to the queue with different settings */
-   SCIP_RETCODE updatePricingjob(
-      GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-      SCIP_STATUS           status,             /**< status after solving the pricing problem */
-      SCIP_Real             lowerbound,         /**< lower bound returned by the pricing problem */
-      GCG_COL**             cols,               /**< columns found by the last solving of the pricing problem */
-      int                   ncols               /**< number of columns found */
+   /** update solution information of a pricing problem */
+   void updatePricingprob(
+      GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
+      int                   nsolves,            /**< additional number of times the pricing problem was solved */
+      SCIP_STATUS           status,             /**< new pricing status */
+      SCIP_Real             lowerbound,         /**< new lower bound */
+      GCG_COL**             cols,               /**< columns found by the last solver call */
+      int                   ncols               /**< number of found columns */
       );
 
    /** update solution statistics of a pricing job */
@@ -128,26 +128,23 @@ public:
 
    /** decide whether a pricing job must be treated again */
    void evaluatePricingjob(
-      GCG_PRICINGJOB*       pricingjob         /**< pricing job */
+      GCG_PRICINGJOB*       pricingjob,        /**< pricing job */
+      SCIP_STATUS           status             /**< pricing solution status */
       );
 
-   /** return whether the reduced cost is valid */
-   SCIP_Bool redcostIsValid();
-
-   /* return whether all pricing problems have been solved to optimality */
-   SCIP_Bool pricingIsOptimal();
-
-   /* return whether the current node is infeasible */
-   SCIP_Bool pricingIsInfeasible();
-
-   /** reset the lower bound of a pricing job */
-   void resetPricingjobLowerbound(
-      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   /** collect solution results from all pricing problems */
+   void collectResults(
+      SCIP_Bool*            infeasible,         /**< pointer to store whether pricing is infeasible */
+      SCIP_Bool*            optimal,            /**< pointer to store whether all pricing problems were solved to optimality */
+      SCIP_Real*            bestobjvals,        /**< array to store best lower bounds */
+      SCIP_Real*            beststabobj,        /**< pointer to store total lower bound */
+      SCIP_Real*            bestredcost,        /**< pointer to store best total reduced cost */
+      SCIP_Bool*            bestredcostvalid    /**< pointer to store whether best reduced cost is valid */
       );
 
-   /** for all pricing jobs, move their columns to the column pool */
-   SCIP_RETCODE moveColsToColpool(
-      GCG_COLPOOL*          colpool,            /**< column pool */
+   /** for all pricing problems, move their columns to the pricing store or column pool */
+   SCIP_RETCODE moveCols(
+      GCG_COLPOOL*          colpool,            /**< GCG column pool */
       GCG_PRICESTORE*       pricestore,         /**< GCG pricing store */
       SCIP_Bool             usecolpool,         /**< use column pool? */
       SCIP_Bool             usepricestore       /**< use price store? */
@@ -165,9 +162,6 @@ public:
    SCIP_Real getDualconvsum(
       PricingType*          pricetype           /**< type of pricing (reduced cost or Farkas) */
       );
-
-   /** free all columns of the pricing jobs */
-   void freeCols();
 
    /** decide whether the pricing loop can be aborted */
    SCIP_Bool canPricingloopBeAborted(
@@ -188,14 +182,14 @@ private:
    static
    SCIP_DECL_SORTPTRCOMP(comparePricingjobs);
 
-   /** check if the pricing job is done */
-   SCIP_Bool pricingjobIsDone(
-      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   /** check if a pricing job is done */
+   SCIP_Bool pricingprobIsDone(
+      GCG_PRICINGPROB*      pricingprob        /**< pricing problem structure */
       ) const;
 
-   /** check if the pricing job has terminated with a limit */
-   SCIP_Bool pricingjobHasLimit(
-      GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   /** check if a limit was reached such that the pricing job might be treated again */
+   SCIP_Bool limitWasReached(
+      SCIP_STATUS           status             /**< pricing solution status */
       ) const;
 };
 

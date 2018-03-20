@@ -52,78 +52,65 @@ extern "C" {
  */
 
 
-/** free all columns of a pricing job */
-/* @todo: Move this to pricingjob.h ? */
+/** get the SCIP instance corresponding to the pricing problem */
 EXTERN
-void GCGpricingjobFreeCols(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/** get the SCIP instance corresponding to the pricing job */
-EXTERN
-SCIP* GCGpricingjobGetPricingscip(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+SCIP* GCGpricingprobGetPricingscip(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** get the index of the corresponding pricing problem */
 EXTERN
-int GCGpricingjobGetProbnr(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+int GCGpricingprobGetProbnr(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/** return whether the pricing job is to be performed heuristically */
+/** get the number of times the pricing problem was solved during the loop */
 EXTERN
-SCIP_Bool GCGpricingjobIsHeuristic(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+int GCGpricingprobGetNSolves(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/** get the chunk of a pricing job */
+/* get the status of a pricing problem */
 EXTERN
-SCIP_Real GCGpricingjobGetChunk(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+SCIP_STATUS GCGpricingprobGetStatus(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/** get the score of a pricing job */
+/* get the lower bound of a pricing problem */
 EXTERN
-SCIP_Real GCGpricingjobGetScore(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+SCIP_Real GCGpricingprobGetLowerbound(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/** get the number of times the pricing job was performed during the loop */
+/* get the best column found by solving a particular pricing problem */
 EXTERN
-int GCGpricingjobGetNSolves(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+GCG_COL* GCGpricingprobGetBestCol(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/* get the status of a pricing job */
+/* get the best reduced cost of a pricing problem */
 EXTERN
-SCIP_STATUS GCGpricingjobGetStatus(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+SCIP_Real GCGpricingprobGetBestRedcost(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/* get the lower bound of a pricing job */
+/* get the number of columns found for this pricing problem */
 EXTERN
-SCIP_Real GCGpricingjobGetLowerbound(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+int GCGpricingprobGetNCols(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/* get a column found by a pricing job */
+/* get the number of improving columns found for this pricing problem */
 EXTERN
-GCG_COL* GCGpricingjobGetCol(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   int                   idx                 /**< index of a column */
+int GCGpricingprobGetNImpCols(
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/* get the number of columns found by a pricing job */
+/* get the total number of improving colums found in the last pricing rounds */
 EXTERN
-int GCGpricingjobGetNCols(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/* get the number of improving columns found by a pricing job */
-EXTERN
-int GCGpricingjobGetNImpCols(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+int GCGpricingprobGetNColsLastRounds(
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
+   int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
    );
 
 /**@} */

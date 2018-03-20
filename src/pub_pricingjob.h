@@ -52,28 +52,15 @@ extern "C" {
  */
 
 
-/** free all columns of a pricing job */
-/* @todo: Move this to pricingjob.h ? */
+/** get the pricing problem structure associated with a pricing job */
 EXTERN
-void GCGpricingjobFreeCols(
+GCG_PRICINGPROB* GCGpricingjobGetPricingprob(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
-/** get the SCIP instance corresponding to the pricing job */
+/** get the pricing solver with which the pricing job is to be performed */
 EXTERN
-SCIP* GCGpricingjobGetPricingscip(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/** get the index of the corresponding pricing problem */
-EXTERN
-int GCGpricingjobGetProbnr(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/** return whether the pricing job is to be performed heuristically */
-EXTERN
-SCIP_Bool GCGpricingjobIsHeuristic(
+GCG_SOLVER* GCGpricingjobGetSolver(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
@@ -89,40 +76,15 @@ SCIP_Real GCGpricingjobGetScore(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
-/** get the number of times the pricing job was performed during the loop */
+/** return whether the pricing job is to be performed heuristically */
 EXTERN
-int GCGpricingjobGetNSolves(
+SCIP_Bool GCGpricingjobIsHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
-/* get the status of a pricing job */
+/* get the number of heuristic pricing iterations of the pricing job */
 EXTERN
-SCIP_STATUS GCGpricingjobGetStatus(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/* get the lower bound of a pricing job */
-EXTERN
-SCIP_Real GCGpricingjobGetLowerbound(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/* get a column found by a pricing job */
-EXTERN
-GCG_COL* GCGpricingjobGetCol(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   int                   idx                 /**< index of a column */
-   );
-
-/* get the number of columns found by a pricing job */
-EXTERN
-int GCGpricingjobGetNCols(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/* get the number of improving columns found by a pricing job */
-EXTERN
-int GCGpricingjobGetNImpCols(
+int GCGpricingjobGetNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 

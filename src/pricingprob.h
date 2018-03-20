@@ -34,7 +34,7 @@
 #ifndef GCG_PRICINGPROB_H__
 #define GCG_PRICINGPROB_H__
 
-#include "struct_pricinprjob.h"
+#include "struct_pricingprob.h"
 #include "type_pricingprob.h"
 #include "type_solver.h"
 
@@ -49,57 +49,42 @@ SCIP_RETCODE GCGpricingprobCreate(
    GCG_PRICINGPROB**     pricingprob,        /**< pricing problem to be created */
    SCIP*                 pricingscip,        /**< SCIP data structure of the corresponding pricing problem */
    int                   probnr,             /**< index of the corresponding pricing problem */
-   GCG_SOLVER**          solvers,            /**< available pricing solvers */
-   int                   nsolvers            /**< number of pricing solvers */
+   int                   colssize,           /**< size of column array */
+   int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
 );
 
 /** free a pricing problem */
 EXTERN
 void GCGpricingprobFree(
    SCIP*                 scip,               /**< SCIP data structure (master problem) */
-   GCG_PRICINGPROB**     pricingprob          /**< pricing problem to be freed */
+   GCG_PRICINGPROB**     pricingprob         /**< pricing problem to be freed */
 );
 
 /** reset the pricing problem statistics for the current pricing round */
 EXTERN
 void GCGpricingprobReset(
-   GCG_PRICINGPROB *     pricingprob,        /**< pricing problem structure */
+   GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
-/** update a pricing job after the pricing problem has been solved */
+/** update solution information of a pricing problem */
 EXTERN
-SCIP_RETCODE GCGpricingjobUpdate(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   SCIP_STATUS           status,             /**< status after solving the pricing problem */
-   SCIP_Real             lowerbound,         /**< lower bound returned by the pricing problem */
-   GCG_COL**             cols,               /**< columns found by the last solving of the pricing problem */
-   int                   ncols               /**< number of columns found */
+void GCGpricingprobUpdate(
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
+   int                   nsolves,            /**< additional number of times the pricing problem was solved */
+   SCIP_STATUS           status,             /**< new pricing status */
+   SCIP_Real             lowerbound,         /**< new lower bound */
+   GCG_COL**             cols,               /**< columns found by the last solver call */
+   int                   ncols               /**< number of found columns */
    );
 
-/** update solving statistics of a pricing job */
+/** for a pricing problem, move its columns to the pricing store or column pool */
 EXTERN
-void GCGpricingjobUpdateSolvingStats(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/** increase the solution limit of a pricing job */
-EXTERN
-SCIP_RETCODE GCGpricingjobIncreaseSollimit(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   int                   maxcolsprob         /**< maximum number of columns that the problem should be looking for */
-   );
-
-/** set the pricing job to be performed heuristically */
-EXTERN
-void GCGpricingjobSetHeuristic(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/** set the pricing job to be performed exactly */
-EXTERN
-void GCGpricingjobSetExact(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+SCIP_RETCODE GCGpricingprobMoveCols(
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
+   GCG_COLPOOL*          colpool,            /**< GCG column pool */
+   GCG_PRICESTORE*       pricestore,         /**< GCG pricing store */
+   SCIP_Bool             usecolpool,         /**< use column pool? */
+   SCIP_Bool             usepricestore       /**< use price store? */
    );
 
 /** set the lower bound of a pricing job */
@@ -109,37 +94,11 @@ void GCGpricingjobSetLowerbound(
    SCIP_Real             lowerbound          /**< new lower bound */
    );
 
-/* get a column array of a pricing job */
-EXTERN
-GCG_COL** GCGpricingjobGetCols(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
-   );
-
-/* set the number of columns found by a pricing job */
-EXTERN
-void GCGpricingjobSetNCols(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   int                   ncols               /**< number of columns */
-   );
-
-/* set the number of improving columns found by a pricing job */
-EXTERN
-void GCGpricingjobSetNImpCols(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   int                   nimpcols            /**< number of improving columns */
-   );
-
 /* update numbers of improving columns over the last pricing rounds */
 EXTERN
-void GCGpricingjobUpdateNColsround(
-   GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
+void GCGpricingprobUpdateNColsround(
+   GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
-   );
-
-/* get the number of heuristic pricing iterations of the pricing job */
-EXTERN
-int GCGpricingjobGetNHeurIters(
-   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 #ifdef __cplusplus
