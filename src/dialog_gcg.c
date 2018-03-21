@@ -663,6 +663,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 
    SCIPgetBoolParam(scip, "detection/emphfast/enabled", &emphfast);
    SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL," start of detectstructure, test for emph fast: %d\n", emphfast);
+
+   if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+      SCIPsetIntParam(scip, "presolving/maxrounds", 0 );
+
    if( emphfast )
       SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_FAST, FALSE) );
 
